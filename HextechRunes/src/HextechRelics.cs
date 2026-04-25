@@ -444,6 +444,192 @@ public sealed class SlowCookRune : HextechRelicBase
 	}
 }
 
+public sealed class FrostWraithRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("TurnsNeeded", 3m),
+		new PowerVar<SlowPower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<SlowPower>()
+	];
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner.Creature.IsDead
+			|| player.Creature.CombatState is not CombatState combatState
+			|| combatState.RoundNumber <= 1
+			|| combatState.RoundNumber % DynamicVars["TurnsNeeded"].IntValue != 0)
+		{
+			return;
+		}
+
+		IReadOnlyList<Creature> enemies = combatState.HittableEnemies.ToList();
+		if (enemies.Count == 0)
+		{
+			return;
+		}
+
+		Flash(enemies);
+		await PowerCmd.Apply<HextechTemporarySlowPower>(enemies, DynamicVars["SlowPower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class OkBoomerangRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("TurnsNeeded", 2m),
+		new DynamicVar("DamagePercent", 10m)
+	];
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner.Creature.IsDead
+			|| player.Creature.CombatState is not CombatState combatState
+			|| combatState.RoundNumber <= 1
+			|| combatState.RoundNumber % DynamicVars["TurnsNeeded"].IntValue != 0)
+		{
+			return;
+		}
+
+		IReadOnlyList<Creature> enemies = combatState.HittableEnemies.ToList();
+		int damage = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["DamagePercent"].BaseValue / 100m));
+		if (enemies.Count == 0 || damage <= 0)
+		{
+			return;
+		}
+
+		Flash(enemies);
+		foreach (Creature enemy in enemies)
+		{
+			await CreatureCmd.Damage(
+				choiceContext,
+				enemy,
+				damage,
+				ValueProp.Unpowered | ValueProp.SkipHurtAnim,
+				Owner.Creature,
+				cardSource: null);
+		}
+	}
+}
+
+public sealed class DivineInterventionRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("TurnsNeeded", 3m),
+		new PowerVar<IntangiblePower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<IntangiblePower>()
+	];
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner.Creature.IsDead
+			|| player.Creature.CombatState is not CombatState combatState
+			|| combatState.RoundNumber <= 1
+			|| combatState.RoundNumber % DynamicVars["TurnsNeeded"].IntValue != 0)
+		{
+			return;
+		}
+
+		IReadOnlyList<Creature> players = combatState.Players
+			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)
+			.Select(static combatPlayer => combatPlayer.Creature)
+			.ToList();
+		if (players.Count == 0)
+		{
+			return;
+		}
+
+		Flash(players);
+		await PowerCmd.Apply<IntangiblePower>(players, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class SonataRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(1),
+		new EnergyVar(1),
+		new HealVar(2m)
+	];
+
+	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner.Creature.IsDead
+			|| player.Creature.CombatState is not CombatState combatState)
+		{
+			return;
+		}
+
+		List<Player> players = combatState.Players
+			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)
+			.ToList();
+		if (players.Count == 0)
+		{
+			return;
+		}
+
+		Flash(players.Select(static combatPlayer => combatPlayer.Creature).ToArray());
+		if (combatState.RoundNumber % 2 == 1)
+		{
+			foreach (Player combatPlayer in players)
+			{
+				await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, combatPlayer, fromHandDraw: false);
+				await PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, combatPlayer);
+			}
+
+			return;
+		}
+
+		foreach (Player combatPlayer in players)
+		{
+			await CreatureCmd.Heal(combatPlayer.Creature, DynamicVars.Heal.BaseValue);
+		}
+	}
+}
+
+public sealed class MikaelsBlessingRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("HealPercent", 10m)
+	];
+
+	public override async Task AfterPotionUsed(PotionModel potion, Creature? target)
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		int healAmount = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
+		await CreatureCmd.Heal(Owner.Creature, healAmount);
+
+		List<PowerModel> negativePowers = Owner.Creature.Powers
+			.Where(static power => power.GetTypeForAmount(power.Amount) == PowerType.Debuff)
+			.ToList();
+		foreach (PowerModel power in negativePowers)
+		{
+			await PowerCmd.Remove(power);
+		}
+	}
+}
+
 public sealed class NoNonsenseRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
