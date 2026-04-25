@@ -200,6 +200,28 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
                 }
             }
 
+            if (HasActiveMonsterHex(MonsterHexKind.MountainSoul))
+            {
+                foreach (Creature enemy in GetAliveEnemies(combatState))
+                {
+                    if (enemy.CombatId == null)
+                    {
+                        continue;
+                    }
+
+                    uint combatId = enemy.CombatId.Value;
+                    if (_mountainSoulHasPreviousTurn.Contains(combatId)
+                        && !_mountainSoulDamagedSinceLastTurn.Contains(combatId))
+                    {
+                        int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.1m));
+                        await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
+                    }
+
+                    _mountainSoulHasPreviousTurn.Add(combatId);
+                    _mountainSoulDamagedSinceLastTurn.Remove(combatId);
+                }
+            }
+
             return;
         }
 
@@ -259,28 +281,6 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
                 {
                     await CreatureCmd.Heal(enemy, heal);
                 }
-            }
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.MountainSoul))
-        {
-            foreach (Creature enemy in enemies)
-            {
-                if (enemy.CombatId == null)
-                {
-                    continue;
-                }
-
-                uint combatId = enemy.CombatId.Value;
-                if (_mountainSoulHasPreviousTurn.Contains(combatId)
-                    && !_mountainSoulDamagedSinceLastTurn.Contains(combatId))
-                {
-                    int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.1m));
-                    await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
-                }
-
-                _mountainSoulHasPreviousTurn.Add(combatId);
-                _mountainSoulDamagedSinceLastTurn.Remove(combatId);
             }
         }
 
