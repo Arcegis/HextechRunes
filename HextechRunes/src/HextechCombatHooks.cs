@@ -107,6 +107,11 @@ internal static class HextechCombatHooks
 			{
 				amount *= 1.2m;
 			}
+
+			if (player.GetRelic<ProteinShakeRune>() is ProteinShakeRune proteinShakeRune)
+			{
+				amount *= proteinShakeRune.SustainMultiplier;
+			}
 		}
 
 		if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune && creature == player.Creature)
@@ -148,6 +153,13 @@ internal static class HextechCombatHooks
 				Creature target = enemies[player.RunState.Rng.Niche.NextInt(enemies.Count)];
 				await PowerCmd.Apply<HextechBurnPower>(target, burnAmount, player.Creature, null);
 			}
+		}
+
+		if (player?.GetRelic<CircleOfDeathRune>() is CircleOfDeathRune circleOfDeathRune
+			&& creature == player.Creature
+			&& creature.CombatState != null)
+		{
+			await circleOfDeathRune.HandleSustainGained(amount);
 		}
 	}
 

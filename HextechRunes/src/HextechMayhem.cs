@@ -66,9 +66,16 @@ internal enum MonsterHexKind
 
 internal sealed partial class HextechMayhemModifier : ModifierModel
 {
-    public override Task AfterActEntered()
+    public override async Task AfterActEntered()
     {
-        return Task.CompletedTask;
+        int actIndex = RunState.CurrentActIndex;
+        if (actIndex <= 0 || actIndex > 2 || IsActResolved(actIndex))
+        {
+            return;
+        }
+
+        Log.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: resolving act selection before first room actIndex={actIndex}");
+        await HextechRuneSelectionCoordinator.HandleActSelection(RunState, this);
     }
 
     public override async Task BeforeRoomEntered(AbstractRoom room)
@@ -646,7 +653,8 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
                 .ToList();
             if (enemies.Count > 0)
             {
-                await PowerCmd.Apply<IntangiblePower>(enemies, 1m, null, null);
+                await PowerCmd.Apply<StrengthPower>(enemies, 1m, null, null);
+                await PowerCmd.Apply<PaperCutsPower>(enemies, 1m, null, null);
             }
         }
 
@@ -657,6 +665,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
                 .ToList();
             if (enemies.Count > 0)
             {
+                await PowerCmd.Apply<StrengthPower>(enemies, 1m, null, null);
                 await PowerCmd.Apply<PainfulStabsPower>(enemies, 1m, null, null);
             }
         }

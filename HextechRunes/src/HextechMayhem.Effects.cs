@@ -117,8 +117,7 @@ internal sealed partial class HextechMayhemModifier
         if (HasActiveMonsterHex(MonsterHexKind.Thornmail)
             && TryMarkPersistentHexApplied(_thornmailApplied, creature))
         {
-            int thorns = 2 + Math.Min(3, (int)Math.Floor(creature.MaxHp / 50m));
-            await PowerCmd.Apply<ThornsPower>(creature, thorns, creature, null);
+            await PowerCmd.Apply<ReflectPower>(creature, 5m, creature, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.SuperBrain)

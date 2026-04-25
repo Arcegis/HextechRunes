@@ -45,6 +45,7 @@ internal static class ModInfo
         typeof(UltimateUnstoppableRune),
         typeof(ThornmailRune),
         typeof(ZealotRune),
+        typeof(MindToMatterRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -105,6 +106,12 @@ internal static class ModInfo
         typeof(QueenRune),
         typeof(UltimateRefreshRune),
         typeof(GoldrendRune),
+        typeof(CerberusRune),
+        typeof(CircleOfDeathRune),
+        typeof(FanTheHammerRune),
+        typeof(FeyMagicRune),
+        typeof(WatchOutGrapefruitRune),
+        typeof(ProteinShakeRune),
         typeof(TransmuteChaosRune)
     ];
 

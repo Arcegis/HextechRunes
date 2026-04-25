@@ -107,6 +107,7 @@ internal static class HextechRuneSelectionCoordinator
 			modifier.SetActResolved(actIndex, true);
 			HextechEnemyUi.Refresh(modifier);
 			await modifier.ApplyToCurrentEnemiesIfNeeded();
+			await PersistActSelection(runState, actIndex);
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection resolved: act={actIndex}");
 		}
 		finally
@@ -122,6 +123,24 @@ internal static class HextechRuneSelectionCoordinator
 
 			_handlingActSelection = false;
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection exit: act={actIndex}");
+		}
+	}
+
+	private static async Task PersistActSelection(RunState runState, int actIndex)
+	{
+		try
+		{
+			if (!IsCurrentRun(runState) || RunManager.Instance.NetService.Type == NetGameType.Replay)
+			{
+				return;
+			}
+
+			await SaveManager.Instance.SaveRun(null!, saveProgress: false);
+			Log.Info($"[{ModInfo.Id}][Mayhem] PersistActSelection: saved current run after resolving act={actIndex}");
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] PersistActSelection failed: act={actIndex} error={ex}");
 		}
 	}
 

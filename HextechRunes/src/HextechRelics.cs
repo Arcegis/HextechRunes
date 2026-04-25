@@ -17,6 +17,7 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
@@ -700,6 +701,33 @@ public sealed class SuperBrainRune : HextechRelicBase
 
 		Flash();
 		return PowerCmd.Apply<PlatingPower>(Owner.Creature, plating, Owner.Creature, null);
+	}
+}
+
+public sealed class MindToMatterRune : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new MaxHpVar(1m)
+	];
+
+	public override Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return Task.CompletedTask;
+		}
+
+		int maxHpGain = Owner.Deck.Cards.Count;
+		if (maxHpGain <= 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return CreatureCmd.GainMaxHp(Owner.Creature, maxHpGain);
 	}
 }
 
@@ -2039,6 +2067,279 @@ public sealed class GoldrendRune : HextechRelicBase
 			: 0m;
 	}
 
+}
+
+public sealed class CerberusRune : HextechRelicBase
+{
+	private int _attacksPlayedThisTurn;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedAttacksPlayedThisTurn
+	{
+		get => _attacksPlayedThisTurn;
+		set
+		{
+			_attacksPlayedThisTurn = Math.Max(0, value);
+			InvokeDisplayAmountChanged();
+		}
+	}
+
+	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+
+	public override int DisplayAmount => !IsCanonical ? Math.Max(0, 3 - _attacksPlayedThisTurn) : 0;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("FreeAttacks", 3m)
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		ResetAttacksPlayedThisTurn();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetAttacksPlayedThisTurn();
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	{
+		if (Owner != null && side == Owner.Creature.Side)
+		{
+			ResetAttacksPlayedThisTurn();
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
+	{
+		modifiedCost = originalCost;
+		if (Owner == null
+			|| card.Owner != Owner
+			|| card.Type != CardType.Attack
+			|| card.Pile?.Type != PileType.Hand
+			|| card.EnergyCost.CostsX
+			|| _attacksPlayedThisTurn >= DynamicVars["FreeAttacks"].IntValue)
+		{
+			return false;
+		}
+
+		modifiedCost = 0m;
+		return true;
+	}
+
+	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	{
+		if (!cardPlay.IsFirstInSeries || cardPlay.IsAutoPlay || !IsOwnedAttack(cardPlay.Card))
+		{
+			return Task.CompletedTask;
+		}
+
+		_attacksPlayedThisTurn++;
+		InvokeDisplayAmountChanged();
+		if (_attacksPlayedThisTurn <= DynamicVars["FreeAttacks"].IntValue)
+		{
+			Flash();
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private void ResetAttacksPlayedThisTurn()
+	{
+		_attacksPlayedThisTurn = 0;
+		InvokeDisplayAmountChanged();
+	}
+}
+
+public sealed class CircleOfDeathRune : HextechRelicBase
+{
+	public Task HandleSustainGained(decimal amount)
+	{
+		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null || amount <= 0m)
+		{
+			return Task.CompletedTask;
+		}
+
+		int damage = FloorToInt(amount);
+		if (damage <= 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies
+			.Where(static enemy => enemy.IsAlive)
+			.ToList();
+		if (enemies.Count == 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		Creature target = enemies[Owner.RunState.Rng.Niche.NextInt(enemies.Count)];
+		Flash([target]);
+		return CreatureCmd.Damage(new BlockingPlayerChoiceContext(), target, damage, ValueProp.Unpowered, Owner.Creature, null);
+	}
+
+	public override Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
+	{
+		return creature == Owner?.Creature ? HandleSustainGained(amount) : Task.CompletedTask;
+	}
+}
+
+public sealed class FanTheHammerRune : HextechRelicBase
+{
+	private bool _triggeredThisTurn;
+	private bool _triggeredLastPlay;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public bool SavedTriggeredThisTurn
+	{
+		get => _triggeredThisTurn;
+		set => _triggeredThisTurn = value;
+	}
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("NormalReplays", 1m),
+		new DynamicVar("EliteReplays", 2m),
+		new DynamicVar("BossReplays", 3m)
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		ResetTurnState();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetTurnState();
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	{
+		if (Owner != null && side == Owner.Creature.Side)
+		{
+			ResetTurnState();
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
+	{
+		_triggeredLastPlay = false;
+		if (_triggeredThisTurn || !IsOwnedAttack(card))
+		{
+			return playCount;
+		}
+
+		_triggeredThisTurn = true;
+		_triggeredLastPlay = true;
+		return playCount + GetReplayCount();
+	}
+
+	public override Task AfterModifyingCardPlayCount(CardModel card)
+	{
+		if (_triggeredLastPlay && IsOwnedAttack(card))
+		{
+			Flash();
+			_triggeredLastPlay = false;
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private int GetReplayCount()
+	{
+		if (Owner?.RunState.CurrentRoom is CombatRoom { RoomType: RoomType.Boss })
+		{
+			return DynamicVars["BossReplays"].IntValue;
+		}
+
+		if (Owner?.RunState.CurrentRoom is CombatRoom { RoomType: RoomType.Elite })
+		{
+			return DynamicVars["EliteReplays"].IntValue;
+		}
+
+		return DynamicVars["NormalReplays"].IntValue;
+	}
+
+	private void ResetTurnState()
+	{
+		_triggeredThisTurn = false;
+		_triggeredLastPlay = false;
+	}
+}
+
+public sealed class FeyMagicRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("MinCost", 3m)
+	];
+
+	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
+	{
+		if (Owner == null
+			|| target.Side != CombatSide.Enemy
+			|| result.TotalDamage <= 0m
+			|| !IsOwnedNonXCardWithCostAtLeast(cardSource, DynamicVars["MinCost"].BaseValue))
+		{
+			return;
+		}
+
+		Flash([target]);
+		await CreatureCmd.Stun(target, null);
+	}
+}
+
+public sealed class WatchOutGrapefruitRune : HextechRelicBase
+{
+	private static readonly Type[] FruitRelicTypes =
+	[
+		typeof(Strawberry),
+		typeof(Pear),
+		typeof(Mango),
+		typeof(DragonFruit),
+		typeof(LoomingFruit)
+	];
+
+	public override Task AfterCombatVictory(CombatRoom room)
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Type fruitType = FruitRelicTypes[Owner.PlayerRng.Rewards.NextInt(FruitRelicTypes.Length)];
+		RelicModel fruit = ModelDb.GetById<RelicModel>(ModelDb.GetId(fruitType)).ToMutable();
+		Flash(Array.Empty<Creature>());
+		room.AddExtraReward(Owner, new RelicReward(fruit, Owner));
+		return Task.CompletedTask;
+	}
+}
+
+public sealed class ProteinShakeRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("SustainPercentPerMaxHp", 1m)
+	];
+
+	public decimal SustainMultiplier => Owner == null
+		? 1m
+		: 1m + Owner.Creature.MaxHp * DynamicVars["SustainPercentPerMaxHp"].BaseValue / 100m;
+
+	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
+	{
+		return target == Owner?.Creature ? SustainMultiplier : 1m;
+	}
 }
 
 public sealed class ProtectiveVeilRune : HextechRelicBase
