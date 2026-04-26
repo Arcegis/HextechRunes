@@ -181,7 +181,8 @@ internal static class ModInfo
         MonsterHexKind.LightEmUp,
         MonsterHexKind.MountainSoul,
         MonsterHexKind.FirstAidKit,
-        MonsterHexKind.SpeedDemon
+        MonsterHexKind.SpeedDemon,
+        MonsterHexKind.FrostWraith
     ];
 
     private static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes =
@@ -199,6 +200,7 @@ internal static class ModInfo
         MonsterHexKind.TwiceThrice,
         MonsterHexKind.Loop,
         MonsterHexKind.ServantMaster,
+        MonsterHexKind.CuttingEdgeAlchemist,
         MonsterHexKind.DivineIntervention,
         MonsterHexKind.Sonata,
         MonsterHexKind.DevilsDance
@@ -312,6 +314,7 @@ internal static class ModInfo
             MonsterHexKind.MountainSoul => ModelDb.Relic<MountainSoulRune>(),
             MonsterHexKind.FirstAidKit => ModelDb.Relic<FirstAidKitRune>(),
             MonsterHexKind.SpeedDemon => ModelDb.Relic<SpeedDemonRune>(),
+            MonsterHexKind.FrostWraith => ModelDb.Relic<FrostWraithRune>(),
             MonsterHexKind.Sturdy => ModelDb.Relic<SturdyRune>(),
             MonsterHexKind.DawnbringersResolve => ModelDb.Relic<DawnbringersResolveRune>(),
             MonsterHexKind.ShrinkRay => ModelDb.Relic<ShrinkRayRune>(),
@@ -325,6 +328,7 @@ internal static class ModInfo
             MonsterHexKind.TwiceThrice => ModelDb.Relic<TwiceThriceRune>(),
             MonsterHexKind.Loop => ModelDb.Relic<LoopRune>(),
             MonsterHexKind.ServantMaster => ModelDb.Relic<ServantMasterRune>(),
+            MonsterHexKind.CuttingEdgeAlchemist => ModelDb.Relic<CuttingEdgeAlchemistRune>(),
             MonsterHexKind.DivineIntervention => ModelDb.Relic<DivineInterventionRune>(),
             MonsterHexKind.Sonata => ModelDb.Relic<SonataRune>(),
             MonsterHexKind.DevilsDance => ModelDb.Relic<DevilsDanceRune>(),
