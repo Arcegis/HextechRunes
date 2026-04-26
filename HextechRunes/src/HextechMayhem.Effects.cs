@@ -48,7 +48,7 @@ internal sealed partial class HextechMayhemModifier
 
     private const decimal ShrinkEngineSlipperyStacks = 1m;
 
-    private const decimal CourageOfColossusPlatingStacks = 3m;
+    private const decimal CourageOfColossusBlockPercent = 0.2m;
 
     private const decimal CantTouchThisSlipperyStacks = 1m;
 

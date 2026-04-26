@@ -69,7 +69,8 @@ internal enum MonsterHexKind
     FeyMagic = 39,
     FinalForm = 40,
     UnmovableMountain = 41,
-    MikaelsBlessing = 42
+    MikaelsBlessing = 42,
+    DevilsDance = 43
 }
 
 internal sealed partial class HextechMayhemModifier : ModifierModel
@@ -77,6 +78,11 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
     public override async Task AfterActEntered()
     {
         int actIndex = RunState.CurrentActIndex;
+        if (!IsActResolved(actIndex) && TryRecoverResolvedActsFromPlayerRelics(nameof(AfterActEntered)))
+        {
+            HextechEnemyUi.Refresh(this);
+        }
+
         if (actIndex <= 0 || actIndex > 2 || IsActResolved(actIndex))
         {
             return;
@@ -89,6 +95,11 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
     public override async Task BeforeRoomEntered(AbstractRoom room)
     {
         int actIndex = RunState.CurrentActIndex;
+        if (!IsActResolved(actIndex) && TryRecoverResolvedActsFromPlayerRelics(nameof(BeforeRoomEntered)))
+        {
+            HextechEnemyUi.Refresh(this);
+        }
+
         if (actIndex < 0 || actIndex > 2 || IsActResolved(actIndex) || room is EventRoom or MapRoom)
         {
             return;
@@ -106,7 +117,6 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
     public override async Task BeforeCombatStart()
     {
-        HextechGoldrendSync.EnsureRegistered();
         HextechGoldrendSync.ResetCombat();
         ResetCombatTracking();
         HextechEnemyUi.Refresh(this);
@@ -145,6 +155,11 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
     {
         await HextechGoldrendSync.ApplyPendingCombatGoldLosses(RunState);
         ResetCombatTracking();
+    }
+
+    public override Task AfterCombatVictory(CombatRoom room)
+    {
+        return HextechForgeGrantHelper.TryAddRandomForgeRewardAfterVictory(RunState, room);
     }
 
     public override async Task AfterCreatureAddedToCombat(Creature creature)
@@ -360,7 +375,11 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         {
             if (combatState.RoundNumber % 2 == 1)
             {
-                await PowerCmd.Apply<SlipperyPower>(enemies, 1m, null, null);
+                foreach (Creature enemy in enemies)
+                {
+                    int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.1m));
+                    await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
+                }
             }
             else
             {
@@ -636,6 +655,12 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             return;
         }
 
+        if (HasActiveMonsterHex(MonsterHexKind.DevilsDance) && dealer.IsAlive)
+        {
+            int heal = Math.Max(1, (int)Math.Floor(dealer.MaxHp * 0.1m));
+            await CreatureCmd.Heal(dealer, heal);
+        }
+
         if (HasActiveMonsterHex(MonsterHexKind.SpeedDemon)
             && dealer.IsAlive
             && dealer.CombatId != null)
@@ -737,9 +762,10 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.CourageOfColossus)
             && hasCourageTrigger
-            && TryConsumeLimitedProc(_courageProcsThisTurn, courageSource!, 2))
+            && TryConsumeLimitedProc(_courageProcsThisTurn, courageSource!, 1))
         {
-            await PowerCmd.Apply<PlatingPower>(courageSource!, CourageOfColossusPlatingStacks, courageSource, null);
+            int block = Math.Max(1, (int)Math.Floor(courageSource!.MaxHp * CourageOfColossusBlockPercent));
+            await CreatureCmd.GainBlock(courageSource, block, ValueProp.Unpowered, null);
         }
 
     }

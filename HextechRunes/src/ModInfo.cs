@@ -13,9 +13,13 @@ internal static class ModInfo
 
     public const string DisplayName = "海克斯符文";
 
+    public const string Version = "0.4.0";
+
     public const string TargetGameVersion = "0.103.2";
 
     public const string HextechSubcategoryKey = "HEXTECH_RUNES_SUBCATEGORY";
+
+    public const string ForgeSubcategoryKey = "HEXTECH_FORGES_SUBCATEGORY";
 
     private static readonly IReadOnlyList<Type> SilverRuneTypes =
     [
@@ -46,6 +50,7 @@ internal static class ModInfo
         typeof(ThornmailRune),
         typeof(ZealotRune),
         typeof(MindToMatterRune),
+        typeof(StatsRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -82,6 +87,7 @@ internal static class ModInfo
         typeof(NightstalkingRune),
         typeof(GetExcitedRune),
         typeof(ShrinkEngineRune),
+        typeof(StatsOnStatsRune),
         typeof(TransmutePrismaticRune),
         typeof(DawnbringersResolveRune),
         typeof(ShrinkRayRune)
@@ -125,7 +131,34 @@ internal static class ModInfo
         typeof(FeyMagicRune),
         typeof(WatchOutGrapefruitRune),
         typeof(ProteinShakeRune),
+        typeof(StatsOnStatsOnStatsRune),
         typeof(TransmuteChaosRune)
+    ];
+
+    private static readonly IReadOnlyList<Type> SilverForgeTypes =
+    [
+        typeof(StrengthForge),
+        typeof(DexterityForge),
+        typeof(FocusForge),
+        typeof(LifeForge)
+    ];
+
+    private static readonly IReadOnlyList<Type> GoldForgeTypes =
+    [
+        typeof(EnergyForge),
+        typeof(DrawForge),
+        typeof(StarsForge),
+        typeof(OrbSlotForge),
+        typeof(PlatingForge),
+        typeof(ThornsForge)
+    ];
+
+    private static readonly IReadOnlyList<Type> PrismaticForgeTypes =
+    [
+        typeof(RitualForge),
+        typeof(RegenForge),
+        typeof(BufferForge),
+        typeof(SlipperyForge)
     ];
 
     private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
@@ -167,7 +200,8 @@ internal static class ModInfo
         MonsterHexKind.Loop,
         MonsterHexKind.ServantMaster,
         MonsterHexKind.DivineIntervention,
-        MonsterHexKind.Sonata
+        MonsterHexKind.Sonata,
+        MonsterHexKind.DevilsDance
     ];
 
     private static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes =
@@ -194,7 +228,20 @@ internal static class ModInfo
         .Concat(PrismaticRuneTypes)
         .ToArray();
 
+    private static readonly IReadOnlyList<Type> AllForgeTypes = SilverForgeTypes
+        .Concat(GoldForgeTypes)
+        .Concat(PrismaticForgeTypes)
+        .ToArray();
+
+    private static readonly IReadOnlyList<Type> AllCustomRelicTypes = AllRuneTypes
+        .Concat(AllForgeTypes)
+        .ToArray();
+
     public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
+
+    public static IReadOnlyList<Type> GetAllForgeTypes() => AllForgeTypes;
+
+    public static IReadOnlyList<Type> GetAllCustomRelicTypes() => AllCustomRelicTypes;
 
     public static IReadOnlyList<Type> GetPlayerRuneTypesForRarity(HextechRarityTier rarity)
     {
@@ -203,6 +250,17 @@ internal static class ModInfo
             HextechRarityTier.Silver => SilverRuneTypes,
             HextechRarityTier.Gold => GoldRuneTypes,
             HextechRarityTier.Prismatic => PrismaticRuneTypes,
+            _ => Array.Empty<Type>()
+        };
+    }
+
+    public static IReadOnlyList<Type> GetForgeTypesForRarity(HextechRarityTier rarity)
+    {
+        return rarity switch
+        {
+            HextechRarityTier.Silver => SilverForgeTypes,
+            HextechRarityTier.Gold => GoldForgeTypes,
+            HextechRarityTier.Prismatic => PrismaticForgeTypes,
             _ => Array.Empty<Type>()
         };
     }
@@ -269,6 +327,7 @@ internal static class ModInfo
             MonsterHexKind.ServantMaster => ModelDb.Relic<ServantMasterRune>(),
             MonsterHexKind.DivineIntervention => ModelDb.Relic<DivineInterventionRune>(),
             MonsterHexKind.Sonata => ModelDb.Relic<SonataRune>(),
+            MonsterHexKind.DevilsDance => ModelDb.Relic<DevilsDanceRune>(),
             MonsterHexKind.CourageOfColossus => ModelDb.Relic<CourageOfColossusRune>(),
             MonsterHexKind.GlassCannon => ModelDb.Relic<GlassCannonRune>(),
             MonsterHexKind.Goliath => ModelDb.Relic<GoliathRune>(),
@@ -331,6 +390,20 @@ internal static class ModInfo
             .ToArray();
     }
 
+    public static IReadOnlyList<RelicModel> GetCanonicalForges()
+    {
+        return AllForgeTypes
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<RelicModel> GetCanonicalCustomRelics()
+    {
+        return AllCustomRelicTypes
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
     public static bool IsHextechRelic(RelicModel? relic)
     {
         if (relic == null)
@@ -340,6 +413,82 @@ internal static class ModInfo
 
         ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
         return AllRuneTypes.Any(type => id == ModelDb.GetId(type));
+    }
+
+    public static bool IsHextechForgeRelic(RelicModel? relic)
+    {
+        if (relic == null)
+        {
+            return false;
+        }
+
+        ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+        return AllForgeTypes.Any(type => id == ModelDb.GetId(type));
+    }
+
+    public static bool IsHextechCustomRelic(RelicModel? relic)
+    {
+        return IsHextechRelic(relic) || IsHextechForgeRelic(relic);
+    }
+
+    public static bool TryGetPlayerRuneRarity(RelicModel? relic, out HextechRarityTier rarity)
+    {
+        rarity = default;
+        if (relic == null)
+        {
+            return false;
+        }
+
+        ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+        if (SilverRuneTypes.Any(type => id == ModelDb.GetId(type)))
+        {
+            rarity = HextechRarityTier.Silver;
+            return true;
+        }
+
+        if (GoldRuneTypes.Any(type => id == ModelDb.GetId(type)))
+        {
+            rarity = HextechRarityTier.Gold;
+            return true;
+        }
+
+        if (PrismaticRuneTypes.Any(type => id == ModelDb.GetId(type)))
+        {
+            rarity = HextechRarityTier.Prismatic;
+            return true;
+        }
+
+        return false;
+    }
+
+    public static bool TryGetForgeRarity(RelicModel? relic, out HextechRarityTier rarity)
+    {
+        rarity = default;
+        if (relic == null)
+        {
+            return false;
+        }
+
+        ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+        if (SilverForgeTypes.Any(type => id == ModelDb.GetId(type)))
+        {
+            rarity = HextechRarityTier.Silver;
+            return true;
+        }
+
+        if (GoldForgeTypes.Any(type => id == ModelDb.GetId(type)))
+        {
+            rarity = HextechRarityTier.Gold;
+            return true;
+        }
+
+        if (PrismaticForgeTypes.Any(type => id == ModelDb.GetId(type)))
+        {
+            rarity = HextechRarityTier.Prismatic;
+            return true;
+        }
+
+        return false;
     }
 
     public static bool IsAvailableForPlayer(RelicModel relic, Player player)
@@ -370,13 +519,25 @@ internal static class ModInfo
 
     public static string? TryGetCustomRelicIconPath(RelicModel relic)
     {
-        if (!IsHextechRelic(relic))
+        if (IsHextechRelic(relic))
         {
-            return null;
+            ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+            return $"res://{Id}/images/relics/{ToImageFileStem(id.Entry)}.png";
         }
 
-        ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-        return $"res://{Id}/images/relics/{ToImageFileStem(id.Entry)}.png";
+        if (TryGetForgeRarity(relic, out HextechRarityTier forgeRarity))
+        {
+            string iconStem = forgeRarity switch
+            {
+                HextechRarityTier.Silver => "silverForge",
+                HextechRarityTier.Gold => "goldForge",
+                HextechRarityTier.Prismatic => "prismaticForge",
+                _ => "silverForge"
+            };
+            return $"res://{Id}/images/relics/{iconStem}.png";
+        }
+
+        return null;
     }
 
     private static string ToImageFileStem(string entry)
@@ -419,6 +580,34 @@ internal static class ModInfo
             new RuneSeriesGroup("SILVER", BuildGroup(SilverRuneTypes)),
             new RuneSeriesGroup("GOLD", BuildGroup(GoldRuneTypes)),
             new RuneSeriesGroup("PRISMATIC", BuildGroup(PrismaticRuneTypes))
+        ];
+    }
+
+    public static IReadOnlyList<RuneSeriesGroup> GetForgeSeriesGroups()
+    {
+        IReadOnlyList<RelicModel> relics = GetCanonicalForges();
+        Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalInstance?.Id ?? relic.Id);
+
+        IReadOnlyList<RelicModel> BuildGroup(IEnumerable<Type> forgeTypes)
+        {
+            List<RelicModel> group = new();
+            foreach (Type forgeType in forgeTypes)
+            {
+                ModelId id = ModelDb.GetId(forgeType);
+                if (byId.TryGetValue(id, out RelicModel? relic))
+                {
+                    group.Add(relic);
+                }
+            }
+
+            return group;
+        }
+
+        return
+        [
+            new RuneSeriesGroup("SILVER", BuildGroup(SilverForgeTypes)),
+            new RuneSeriesGroup("GOLD", BuildGroup(GoldForgeTypes)),
+            new RuneSeriesGroup("PRISMATIC", BuildGroup(PrismaticForgeTypes))
         ];
     }
 }

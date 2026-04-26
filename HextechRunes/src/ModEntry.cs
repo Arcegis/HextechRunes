@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Runs.History;
 using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Saves;
 using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
@@ -24,6 +25,8 @@ public static class ModEntry
 
 	private static Hook? _eventRoomProceedHook;
 
+	private static Hook? _runEndedHook;
+
 	private static bool _subscribedRoomEntered;
 
 	private static bool _subscribedRoomExited;
@@ -34,13 +37,15 @@ public static class ModEntry
 
 	private delegate Task OrigEventRoomProceed();
 
+	private delegate SerializableRun OrigRunEnded(RunManager self, bool isVictory);
+
 	public static void Initialize()
 	{
 		HextechModelBootstrap.Install();
+		HextechTelemetry.Initialize();
 		InstallHooks();
 		HextechCombatHooks.Install();
 		HextechInspectHooks.Install();
-		HextechGoldrendSync.Install();
 		AssetHooks.Install();
 		CollectionHooks.Install();
 		Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
@@ -57,6 +62,9 @@ public static class ModEntry
 		_eventRoomProceedHook = new Hook(
 			RequireMethod(typeof(NEventRoom), nameof(NEventRoom.Proceed), BindingFlags.Public | BindingFlags.Static),
 			EventRoomProceedDetour);
+		_runEndedHook = new Hook(
+			RequireMethod(typeof(RunManager), nameof(RunManager.OnEnded), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
+			RunEndedDetour);
 	}
 
 	private static async Task FinalizeStartingRelicsDetour(OrigFinalizeStartingRelics orig, RunManager self)
@@ -77,7 +85,6 @@ public static class ModEntry
 
 	private static async Task StartRunDetour(OrigStartRun orig, NGame self, RunState runState)
 	{
-		HextechGoldrendSync.EnsureRegistered();
 		HextechGoldrendSync.ResetCombat();
 		HextechRuneSelectionCoordinator.ResetActSelectionState();
 		HextechEnemyUi.Clear();
@@ -161,6 +168,14 @@ public static class ModEntry
 				NMapScreen.Instance?.SetTravelEnabled(enabled: true);
 			}
 		}
+	}
+
+	private static SerializableRun RunEndedDetour(OrigRunEnded orig, RunManager self, bool isVictory)
+	{
+		RunState? runState = self.DebugOnlyGetState();
+		SerializableRun serializableRun = orig(self, isVictory);
+		HextechTelemetry.OnRunEnded(runState, serializableRun, isVictory);
+		return serializableRun;
 	}
 
 	private static HextechMayhemModifier? GetMayhemModifier(RunState runState)
@@ -249,8 +264,7 @@ public static class ModEntry
 	{
 		if (GetMayhemModifier(runState) is HextechMayhemModifier existing)
 		{
-			existing.ResetForNewRun();
-			Log.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: reset existing state");
+			Log.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: existing state preserved {existing.DescribeActState()}");
 			return existing;
 		}
 

@@ -31,6 +31,7 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 	private readonly List<bool> _rerolledSlots = new();
 	private readonly List<int> _rerollHistory = new();
 	private HBoxContainer? _cardsRow;
+	private MegaLabel? _statusLabel;
 	private bool _choiceLocked;
 	private bool _restoreAfterMapReopenQueued;
 
@@ -151,6 +152,17 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 
 		RebuildCards();
 
+		_statusLabel = new MegaLabel()
+		{
+			HorizontalAlignment = HorizontalAlignment.Center,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			MaxFontSize = 22,
+			MinFontSize = 16,
+			Visible = false
+		};
+		ApplyDefaultMegaLabelTheme(_statusLabel);
+		_statusLabel.Modulate = new Color(0.88f, 0.92f, 0.97f, 0.82f);
+		root.AddChild(_statusLabel);
 	}
 
 	private void RebuildCards()
@@ -531,22 +543,59 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 		RebuildCards();
 	}
 
-	public async Task<IEnumerable<RelicModel>> RelicsSelected()
+	public async Task<IEnumerable<RelicModel>> RelicsSelected(bool removeOverlay = true)
 	{
 		IEnumerable<RelicModel> result = await _completionSource.Task;
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: begin dismiss mousePressed={Input.IsMouseButtonPressed(MouseButton.Left)}");
-		if (IsInsideTree())
+		await WaitForMouseReleaseAsync();
+		if (!removeOverlay)
 		{
-			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-			while (Input.IsMouseButtonPressed(MouseButton.Left))
-			{
-				await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-			}
-			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			ShowWaitingForRemotePlayers();
+			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: keeping overlay until multiplayer sync completes");
+			return result;
 		}
+
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: removing overlay");
 		NOverlayStack.Instance?.Remove(this);
 		return result;
+	}
+
+	public async Task DismissAfterSelectionComplete()
+	{
+		if (!IsInsideTree())
+		{
+			return;
+		}
+
+		await WaitForMouseReleaseAsync();
+		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: removing overlay");
+		NOverlayStack.Instance?.Remove(this);
+	}
+
+	private async Task WaitForMouseReleaseAsync()
+	{
+		if (!IsInsideTree())
+		{
+			return;
+		}
+
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		while (Input.IsMouseButtonPressed(MouseButton.Left))
+		{
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		}
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+	}
+
+	private void ShowWaitingForRemotePlayers()
+	{
+		if (_statusLabel == null)
+		{
+			return;
+		}
+
+		_statusLabel.SetTextAutoSize(new LocString(LocTable, "HEXTECH_WAITING_FOR_PLAYERS").GetRawText());
+		_statusLabel.Visible = true;
 	}
 
 	public void AfterOverlayOpened()
