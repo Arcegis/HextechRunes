@@ -112,6 +112,11 @@ internal static class HextechCombatHooks
 			{
 				amount *= proteinShakeRune.SustainMultiplier;
 			}
+
+			if (player.GetRelic<ProtectionForge>() is ProtectionForge protectionForge)
+			{
+				amount *= protectionForge.SustainMultiplier;
+			}
 		}
 
 		if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune && creature == player.Creature)

@@ -45,11 +45,12 @@ public static class ModEntry
 		HextechTelemetry.Initialize();
 		InstallHooks();
 		HextechCombatHooks.Install();
-		HextechInspectHooks.Install();
-		AssetHooks.Install();
-		CollectionHooks.Install();
-		Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
-	}
+			HextechInspectHooks.Install();
+			AssetHooks.Install();
+			CollectionHooks.Install();
+			HextechShopForgeHooks.Install();
+			Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
+		}
 
 	private static void InstallHooks()
 	{

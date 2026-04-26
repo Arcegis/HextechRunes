@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
@@ -21,6 +22,7 @@ using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
@@ -3816,6 +3818,71 @@ public sealed class DexterityForge : HextechRelicBase
 	}
 }
 
+public sealed class SilverPlatingForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<PlatingPower>(3m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<PlatingPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<PlatingPower>(Owner.Creature, DynamicVars["PlatingPower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class UpgradeForge : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(1)
+	];
+
+	public override Task AfterObtained()
+	{
+		UpgradeRandomCards(DynamicVars.Cards.IntValue);
+		return Task.CompletedTask;
+	}
+
+	private void UpgradeRandomCards(int count)
+	{
+		if (Owner == null || count <= 0)
+		{
+			return;
+		}
+
+		List<CardModel> cards = Owner.Deck.Cards
+			.Where(static card => card != null && card.IsUpgradable)
+			.ToList()
+			.StableShuffle(Owner.RunState.Rng.Niche)
+			.Take(count)
+			.ToList();
+		if (cards.Count == 0)
+		{
+			return;
+		}
+
+		Flash();
+		foreach (CardModel card in cards)
+		{
+			CardCmd.Upgrade(card);
+		}
+	}
+}
+
 public sealed class FocusForge : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -3863,6 +3930,132 @@ public sealed class LifeForge : HextechRelicBase
 
 		Flash();
 		return CreatureCmd.GainMaxHp(Owner.Creature, DynamicVars.MaxHp.BaseValue);
+	}
+}
+
+public sealed class PreparedForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(1)
+	];
+
+	public override decimal ModifyHandDraw(Player player, decimal count)
+	{
+		if (player != Owner || player.Creature.CombatState?.RoundNumber > 1)
+		{
+			return count;
+		}
+
+		return count + DynamicVars.Cards.BaseValue;
+	}
+}
+
+public sealed class ConstitutionForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<StrengthPower>(1m),
+		new PowerVar<DexterityPower>(1m)
+	];
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<DexterityPower>(Owner.Creature, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class GoldLifeForge : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new MaxHpVar(20m)
+	];
+
+	public override Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return CreatureCmd.GainMaxHp(Owner.Creature, DynamicVars.MaxHp.BaseValue);
+	}
+}
+
+public sealed class GoldFocusForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<FocusPower>(2m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<FocusPower>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsDefectPlayer(player);
+	}
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead || !IsDefectOwner)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class GoldUpgradeForge : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(3)
+	];
+
+	public override Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return Task.CompletedTask;
+		}
+
+		List<CardModel> cards = Owner.Deck.Cards
+			.Where(static card => card != null && card.IsUpgradable)
+			.ToList()
+			.StableShuffle(Owner.RunState.Rng.Niche)
+			.Take(DynamicVars.Cards.IntValue)
+			.ToList();
+		if (cards.Count == 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		foreach (CardModel card in cards)
+		{
+			CardCmd.Upgrade(card);
+		}
+
+		return Task.CompletedTask;
 	}
 }
 
@@ -3994,6 +4187,80 @@ public sealed class ThornsForge : HextechRelicBase
 	}
 }
 
+public sealed class ArtifactForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<ArtifactPower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<ArtifactPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, DynamicVars["ArtifactPower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class PrismaticLifeForge : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("MaxHpPercent", 30m)
+	];
+
+	public override Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return Task.CompletedTask;
+		}
+
+		int maxHpGain = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["MaxHpPercent"].BaseValue / 100m));
+		Flash();
+		return CreatureCmd.GainMaxHp(Owner.Creature, maxHpGain);
+	}
+}
+
+public sealed class AttackForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("DamageMultiplier", 1.2m)
+	];
+
+	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return IsDamageFromOwner(dealer, cardSource) ? DynamicVars["DamageMultiplier"].BaseValue : 1m;
+	}
+}
+
+public sealed class ProtectionForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("SustainMultiplier", 1.2m)
+	];
+
+	public decimal SustainMultiplier => DynamicVars["SustainMultiplier"].BaseValue;
+
+	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
+	{
+		return target == Owner?.Creature ? SustainMultiplier : 1m;
+	}
+}
+
 public sealed class RitualForge : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -4046,7 +4313,7 @@ public sealed class BufferForge : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<BufferPower>(2m)
+		new PowerVar<BufferPower>(1m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -4070,7 +4337,7 @@ public sealed class SlipperyForge : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<SlipperyPower>(3m)
+		new PowerVar<SlipperyPower>(2m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -4087,6 +4354,62 @@ public sealed class SlipperyForge : HextechRelicBase
 
 		Flash();
 		return PowerCmd.Apply<SlipperyPower>(Owner.Creature, DynamicVars["SlipperyPower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class PrismaticArtifactForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<ArtifactPower>(2m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<ArtifactPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, DynamicVars["ArtifactPower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class GhostForge : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<IntangiblePower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<IntangiblePower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<IntangiblePower>(Owner.Creature, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class RandomForgeShopRelic : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return false;
 	}
 }
 
@@ -4141,13 +4464,23 @@ internal static class HextechForgeGrantHelper
 		return true;
 	}
 
-	private static bool TryCreateRandomForge(Player player, out RelicModel? forge)
+	internal static bool TryCreateRandomForge(Player player, Rng rng, out RelicModel? forge)
 	{
-		HextechRarityTier rarity = RollForgeRarity(player);
-		return TryCreateRandomForge(player, rarity, out forge);
+		HextechRarityTier rarity = RollForgeRarity(rng);
+		return TryCreateRandomForge(player, rarity, rng, out forge);
 	}
 
 	private static bool TryCreateRandomForge(Player player, HextechRarityTier rarity, out RelicModel? forge)
+	{
+		return TryCreateRandomForge(player, rarity, player.PlayerRng.Rewards, out forge);
+	}
+
+	private static bool TryCreateRandomForge(Player player, out RelicModel? forge)
+	{
+		return TryCreateRandomForge(player, player.PlayerRng.Rewards, out forge);
+	}
+
+	private static bool TryCreateRandomForge(Player player, HextechRarityTier rarity, Rng rng, out RelicModel? forge)
 	{
 		List<Type> pool = BuildAvailableForgePool(player, ModInfo.GetForgeTypesForRarity(rarity));
 		if (pool.Count == 0)
@@ -4161,7 +4494,7 @@ internal static class HextechForgeGrantHelper
 			return false;
 		}
 
-		Type forgeType = pool[player.PlayerRng.Rewards.NextInt(pool.Count)];
+		Type forgeType = pool[rng.NextInt(pool.Count)];
 		forge = ModelDb.GetById<RelicModel>(ModelDb.GetId(forgeType)).ToMutable();
 		return true;
 	}
@@ -4173,9 +4506,9 @@ internal static class HextechForgeGrantHelper
 			.ToList();
 	}
 
-	private static HextechRarityTier RollForgeRarity(Player player)
+	private static HextechRarityTier RollForgeRarity(Rng rng)
 	{
-		int roll = player.PlayerRng.Rewards.NextInt(100);
+		int roll = rng.NextInt(100);
 		if (roll < 65)
 		{
 			return HextechRarityTier.Silver;

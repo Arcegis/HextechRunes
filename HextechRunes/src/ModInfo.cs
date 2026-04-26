@@ -139,26 +139,44 @@ internal static class ModInfo
     [
         typeof(StrengthForge),
         typeof(DexterityForge),
+        typeof(SilverPlatingForge),
+        typeof(UpgradeForge),
         typeof(FocusForge),
-        typeof(LifeForge)
+        typeof(LifeForge),
+        typeof(PreparedForge)
     ];
 
     private static readonly IReadOnlyList<Type> GoldForgeTypes =
     [
-        typeof(EnergyForge),
+        typeof(ConstitutionForge),
+        typeof(GoldLifeForge),
+        typeof(GoldFocusForge),
         typeof(DrawForge),
+        typeof(GoldUpgradeForge),
         typeof(StarsForge),
         typeof(OrbSlotForge),
         typeof(PlatingForge),
-        typeof(ThornsForge)
+        typeof(ThornsForge),
+        typeof(ArtifactForge)
     ];
 
     private static readonly IReadOnlyList<Type> PrismaticForgeTypes =
     [
+        typeof(PrismaticLifeForge),
+        typeof(AttackForge),
+        typeof(ProtectionForge),
+        typeof(EnergyForge),
         typeof(RitualForge),
         typeof(RegenForge),
         typeof(BufferForge),
-        typeof(SlipperyForge)
+        typeof(SlipperyForge),
+        typeof(PrismaticArtifactForge),
+        typeof(GhostForge)
+    ];
+
+    private static readonly IReadOnlyList<Type> ShopOnlyRelicTypes =
+    [
+        typeof(RandomForgeShopRelic)
     ];
 
     private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
@@ -237,6 +255,7 @@ internal static class ModInfo
 
     private static readonly IReadOnlyList<Type> AllCustomRelicTypes = AllRuneTypes
         .Concat(AllForgeTypes)
+        .Concat(ShopOnlyRelicTypes)
         .ToArray();
 
     public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
@@ -430,9 +449,20 @@ internal static class ModInfo
         return AllForgeTypes.Any(type => id == ModelDb.GetId(type));
     }
 
+    public static bool IsHextechShopRelic(RelicModel? relic)
+    {
+        if (relic == null)
+        {
+            return false;
+        }
+
+        ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+        return ShopOnlyRelicTypes.Any(type => id == ModelDb.GetId(type));
+    }
+
     public static bool IsHextechCustomRelic(RelicModel? relic)
     {
-        return IsHextechRelic(relic) || IsHextechForgeRelic(relic);
+        return IsHextechRelic(relic) || IsHextechForgeRelic(relic) || IsHextechShopRelic(relic);
     }
 
     public static bool TryGetPlayerRuneRarity(RelicModel? relic, out HextechRarityTier rarity)
@@ -539,6 +569,11 @@ internal static class ModInfo
                 _ => "silverForge"
             };
             return $"res://{Id}/images/relics/{iconStem}.png";
+        }
+
+        if (IsHextechShopRelic(relic))
+        {
+            return $"res://{Id}/images/relics/goldForge.png";
         }
 
         return null;
