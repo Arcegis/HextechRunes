@@ -1,9 +1,7 @@
-using System.Globalization;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -37,6 +35,7 @@ internal static class ModInfo
         typeof(AdamantRune),
         typeof(MountainSoulRune),
         typeof(FrostWraithRune),
+        typeof(BadgeBrothersRune),
         typeof(HomeguardRune),
         typeof(SwiftAndSafeRune),
         typeof(SacrificeRune),
@@ -66,6 +65,11 @@ internal static class ModInfo
         typeof(OkBoomerangRune),
         typeof(DivineInterventionRune),
         typeof(SonataRune),
+        typeof(CuttingEdgeAlchemistRune),
+        typeof(DevilsDanceRune),
+        typeof(BeginningAndEndRune),
+        typeof(KeystoneHunterRune),
+        typeof(WarmogsSpiritRune),
         typeof(RedEnvelopeRune),
         typeof(MindPurificationRune),
         typeof(EndlessRecoveryRune),
@@ -96,6 +100,10 @@ internal static class ModInfo
         typeof(DrawYourSwordRune),
         typeof(FeelTheBurnRune),
         typeof(MikaelsBlessingRune),
+        typeof(EarthAwakensRune),
+        typeof(SymphonyOfWarRune),
+        typeof(UnmovableMountainRune),
+        typeof(MysteryRune),
         typeof(MadScientistRune),
         typeof(JeweledGauntletRune),
         typeof(HailToTheKingRune),
@@ -138,7 +146,9 @@ internal static class ModInfo
         MonsterHexKind.Repulsor,
         MonsterHexKind.Thornmail,
         MonsterHexKind.LightEmUp,
-        MonsterHexKind.MountainSoul
+        MonsterHexKind.MountainSoul,
+        MonsterHexKind.FirstAidKit,
+        MonsterHexKind.SpeedDemon
     ];
 
     private static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes =
@@ -155,7 +165,9 @@ internal static class ModInfo
         MonsterHexKind.GetExcited,
         MonsterHexKind.TwiceThrice,
         MonsterHexKind.Loop,
-        MonsterHexKind.ServantMaster
+        MonsterHexKind.ServantMaster,
+        MonsterHexKind.DivineIntervention,
+        MonsterHexKind.Sonata
     ];
 
     private static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes =
@@ -170,7 +182,11 @@ internal static class ModInfo
         MonsterHexKind.Goldrend,
         MonsterHexKind.FeelTheBurn,
         MonsterHexKind.BackToBasics,
-        MonsterHexKind.MadScientist
+        MonsterHexKind.MadScientist,
+        MonsterHexKind.FeyMagic,
+        MonsterHexKind.FinalForm,
+        MonsterHexKind.UnmovableMountain,
+        MonsterHexKind.MikaelsBlessing
     ];
 
     private static readonly IReadOnlyList<Type> AllRuneTypes = SilverRuneTypes
@@ -236,6 +252,8 @@ internal static class ModInfo
             MonsterHexKind.Thornmail => ModelDb.Relic<ThornmailRune>(),
             MonsterHexKind.LightEmUp => ModelDb.Relic<LightEmUpRune>(),
             MonsterHexKind.MountainSoul => ModelDb.Relic<MountainSoulRune>(),
+            MonsterHexKind.FirstAidKit => ModelDb.Relic<FirstAidKitRune>(),
+            MonsterHexKind.SpeedDemon => ModelDb.Relic<SpeedDemonRune>(),
             MonsterHexKind.Sturdy => ModelDb.Relic<SturdyRune>(),
             MonsterHexKind.DawnbringersResolve => ModelDb.Relic<DawnbringersResolveRune>(),
             MonsterHexKind.ShrinkRay => ModelDb.Relic<ShrinkRayRune>(),
@@ -249,6 +267,8 @@ internal static class ModInfo
             MonsterHexKind.TwiceThrice => ModelDb.Relic<TwiceThriceRune>(),
             MonsterHexKind.Loop => ModelDb.Relic<LoopRune>(),
             MonsterHexKind.ServantMaster => ModelDb.Relic<ServantMasterRune>(),
+            MonsterHexKind.DivineIntervention => ModelDb.Relic<DivineInterventionRune>(),
+            MonsterHexKind.Sonata => ModelDb.Relic<SonataRune>(),
             MonsterHexKind.CourageOfColossus => ModelDb.Relic<CourageOfColossusRune>(),
             MonsterHexKind.GlassCannon => ModelDb.Relic<GlassCannonRune>(),
             MonsterHexKind.Goliath => ModelDb.Relic<GoliathRune>(),
@@ -261,6 +281,10 @@ internal static class ModInfo
             MonsterHexKind.BackToBasics => ModelDb.Relic<BackToBasicsRune>(),
             MonsterHexKind.DrawYourSword => ModelDb.Relic<DrawYourSwordRune>(),
             MonsterHexKind.MadScientist => ModelDb.Relic<MadScientistRune>(),
+            MonsterHexKind.FeyMagic => ModelDb.Relic<FeyMagicRune>(),
+            MonsterHexKind.FinalForm => ModelDb.Relic<FinalFormRune>(),
+            MonsterHexKind.UnmovableMountain => ModelDb.Relic<UnmovableMountainRune>(),
+            MonsterHexKind.MikaelsBlessing => ModelDb.Relic<MikaelsBlessingRune>(),
             _ => ModelDb.Relic<JudicatorRune>()
         };
     }
@@ -283,16 +307,7 @@ internal static class ModInfo
 
     public static string GetEnemyHexDescriptionFormatted(MonsterHexKind hex)
     {
-        int playerCount = GetCurrentMultiplayerPlayerCount();
-        string? multiplayerKey = playerCount > 1 ? GetEnemyHexMultiplayerDescriptionKey(hex) : null;
-        if (multiplayerKey == null)
-        {
-            return GetEnemyHexDescriptionLoc(hex).GetFormattedText();
-        }
-
-        return FormatEnemyHexMultiplayerDescription(
-            new LocString("relics", multiplayerKey).GetFormattedText(),
-            playerCount);
+        return GetEnemyHexDescriptionLoc(hex).GetFormattedText();
     }
 
     public static IEnumerable<IHoverTip> GetEnemyHexHoverTips(MonsterHexKind hex)
@@ -307,34 +322,6 @@ internal static class ModInfo
         RelicModel relic = GetIconRelicForMonsterHex(hex);
         ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
         return new LocString("relics", ToImageFileStem(id.Entry) + ".enemyDescription");
-    }
-
-    private static int GetCurrentMultiplayerPlayerCount()
-    {
-        RunState? runState = RunManager.Instance.DebugOnlyGetState();
-        return Math.Max(1, runState?.Players.Count ?? 1);
-    }
-
-    private static string? GetEnemyHexMultiplayerDescriptionKey(MonsterHexKind hex)
-    {
-        return hex switch
-        {
-            MonsterHexKind.ProtectiveVeil => "protectiveVeilRune.enemyDescriptionMultiplayer",
-            MonsterHexKind.Repulsor => "repulsorRune.enemyDescriptionMultiplayer",
-            MonsterHexKind.ShrinkEngine => "shrinkEngineRune.enemyDescriptionMultiplayer",
-            MonsterHexKind.CourageOfColossus => "courageOfColossusRune.enemyDescriptionMultiplayer",
-            MonsterHexKind.CantTouchThis => "cantTouchThisRune.enemyDescriptionMultiplayer",
-            _ => null
-        };
-    }
-
-    private static string FormatEnemyHexMultiplayerDescription(string text, int playerCount)
-    {
-        return text
-            .Replace("$N$", playerCount.ToString(CultureInfo.InvariantCulture))
-            .Replace("$PLATING$", (playerCount * 3).ToString(CultureInfo.InvariantCulture))
-            .Replace("$SLIPPERY$", (playerCount * 2).ToString(CultureInfo.InvariantCulture))
-            .Replace("$SLIPPERY_THRESHOLD$", (playerCount * 3).ToString(CultureInfo.InvariantCulture));
     }
 
     public static IReadOnlyList<RelicModel> GetCanonicalRunes()

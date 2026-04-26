@@ -8,6 +8,8 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.Hooks;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -40,21 +42,15 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private int MultiplayerPlayerCount => Math.Max(1, RunState.Players.Count);
+    private const decimal ProtectiveVeilInitialArtifactStacks = 1m;
 
-    private bool ShouldScaleMonsterHexForMultiplayer => MultiplayerPlayerCount > 1;
+    private const decimal RepulsorSlipperyStacks = 2m;
 
-    private decimal ProtectiveVeilInitialArtifactStacks => ShouldScaleMonsterHexForMultiplayer ? MultiplayerPlayerCount : 1m;
+    private const decimal ShrinkEngineSlipperyStacks = 1m;
 
-    private decimal RepulsorSlipperyStacks => ShouldScaleMonsterHexForMultiplayer ? MultiplayerPlayerCount : 2m;
+    private const decimal CourageOfColossusPlatingStacks = 3m;
 
-    private decimal ShrinkEngineSlipperyStacks => ShouldScaleMonsterHexForMultiplayer ? MultiplayerPlayerCount : 1m;
-
-    private decimal CourageOfColossusPlatingStacks => ShouldScaleMonsterHexForMultiplayer ? MultiplayerPlayerCount * 3m : 3m;
-
-    private decimal CantTouchThisSlipperyStacks => ShouldScaleMonsterHexForMultiplayer ? MultiplayerPlayerCount * 2m : 2m;
-
-    private decimal CantTouchThisSlipperyThreshold => ShouldScaleMonsterHexForMultiplayer ? MultiplayerPlayerCount * 3m : 3m;
+    private const decimal CantTouchThisSlipperyStacks = 1m;
 
     private async Task ApplyPersistentMonsterHexes(Creature creature)
     {
@@ -139,7 +135,58 @@ internal sealed partial class HextechMayhemModifier
             }
         }
 
+        if (HasActiveMonsterHex(MonsterHexKind.UnmovableMountain)
+            && TryMarkPersistentHexApplied(_unmovableMountainApplied, creature))
+        {
+            await PowerCmd.Apply<BarricadePower>(creature, 1m, creature, null);
+        }
+
         await TryApplyServantMasterIllusion(creature, creature, null);
+    }
+
+    private async Task NormalizeEnemyPainfulStabsPowers(CombatState combatState)
+    {
+        if (!HasActiveMonsterHex(MonsterHexKind.GetExcited))
+        {
+            return;
+        }
+
+        foreach (Creature enemy in combatState.Enemies.ToList())
+        {
+            if (enemy.CombatState != combatState)
+            {
+                continue;
+            }
+
+            PainfulStabsPower? legacyPower = enemy.GetPower<PainfulStabsPower>();
+            if (legacyPower != null && enemy.IsDead)
+            {
+                await PowerCmd.Remove(legacyPower);
+            }
+
+            RemoveRetainedDeadEnemyIfNeeded(combatState, enemy);
+        }
+    }
+
+    private static void RemoveRetainedDeadEnemyIfNeeded(CombatState combatState, Creature enemy)
+    {
+        if (enemy.Side != CombatSide.Enemy
+            || enemy.IsAlive
+            || !combatState.Enemies.Contains(enemy)
+            || !Hook.ShouldCreatureBeRemovedFromCombatAfterDeath(combatState, enemy))
+        {
+            return;
+        }
+
+        var node = NCombatRoom.Instance?.GetCreatureNode(enemy);
+        if (node != null)
+        {
+            NCombatRoom.Instance?.RemoveCreatureNode(node);
+        }
+
+        CombatManager.Instance.RemoveCreature(enemy);
+        combatState.RemoveCreature(enemy);
+        Log.Info($"[{ModInfo.Id}][Mayhem] Removed retained dead enemy after unsafe PainfulStabs cleanup: id={enemy.CombatId?.ToString() ?? "none"} model={enemy.ModelId.Entry}");
     }
 
     private async Task TryApplyServantMasterIllusion(Creature creature, Creature? applier, CardModel? cardSource)
@@ -308,6 +355,11 @@ internal sealed partial class HextechMayhemModifier
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.Goliath))
+        {
+            amount *= 1.2m;
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
         {
             amount *= 1.2m;
         }

@@ -61,7 +61,15 @@ internal enum MonsterHexKind
     ServantMaster = 31,
     BackToBasics = 32,
     DrawYourSword = 33,
-    MadScientist = 34
+    MadScientist = 34,
+    FirstAidKit = 35,
+    SpeedDemon = 36,
+    DivineIntervention = 37,
+    Sonata = 38,
+    FeyMagic = 39,
+    FinalForm = 40,
+    UnmovableMountain = 41,
+    MikaelsBlessing = 42
 }
 
 internal sealed partial class HextechMayhemModifier : ModifierModel
@@ -86,12 +94,20 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             return;
         }
 
+        if (actIndex == 0)
+        {
+            Log.Warn($"[{ModInfo.Id}][Mayhem] BeforeRoomEntered: skipping unsafe act0 selection before room={room.GetType().Name}; waiting for post-Neow or map path");
+            return;
+        }
+
         Log.Info($"[{ModInfo.Id}][Mayhem] BeforeRoomEntered: resolving pending act selection before room={room.GetType().Name} actIndex={actIndex}");
         await HextechRuneSelectionCoordinator.HandleActSelection(RunState, this);
     }
 
     public override async Task BeforeCombatStart()
     {
+        HextechGoldrendSync.EnsureRegistered();
+        HextechGoldrendSync.ResetCombat();
         ResetCombatTracking();
         HextechEnemyUi.Refresh(this);
         await ApplyToCurrentEnemiesIfNeeded();
@@ -125,10 +141,10 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         _enemyProtectiveVeilTurnCounter = 0;
     }
 
-    public override Task AfterCombatEnd(CombatRoom room)
+    public override async Task AfterCombatEnd(CombatRoom room)
     {
+        await HextechGoldrendSync.ApplyPendingCombatGoldLosses(RunState);
         ResetCombatTracking();
-        return Task.CompletedTask;
     }
 
     public override async Task AfterCreatureAddedToCombat(Creature creature)
@@ -160,10 +176,14 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
     public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
     {
+        await NormalizeEnemyPainfulStabsPowers(combatState);
+
         IReadOnlyList<Creature> players = GetAlivePlayerSideCreatures(combatState);
 
         if (side == CombatSide.Player)
         {
+            await ApplyToCurrentEnemiesIfNeeded();
+
             if (_escapePlanPending.Count > 0)
             {
                 foreach (uint combatId in _escapePlanPending.ToList())
@@ -181,7 +201,40 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
                         await CreatureCmd.GainBlock(creature, blockAmount, ValueProp.Unpowered, null);
                     }
 
-                    await PowerCmd.Apply<ShrinkPower>(creature, 2m, creature, null);
+                    await PowerCmd.Apply<ShrinkPower>(creature, 1m, creature, null);
+                }
+            }
+
+            if (_speedDemonPending.Count > 0)
+            {
+                foreach (uint combatId in _speedDemonPending.ToList())
+                {
+                    Creature? creature = combatState.GetCreature(combatId);
+                    _speedDemonPending.Remove(combatId);
+                    if (creature == null || !creature.IsAlive)
+                    {
+                        continue;
+                    }
+
+                    int blockAmount = Math.Max(1, (int)Math.Floor(creature.MaxHp * 0.1m));
+                    await CreatureCmd.GainBlock(creature, blockAmount, ValueProp.Unpowered, null);
+                }
+            }
+
+            if (_feyMagicPendingNoDrawPlayers.Count > 0)
+            {
+                foreach (KeyValuePair<uint, uint> pending in _feyMagicPendingNoDrawPlayers.ToList())
+                {
+                    uint combatId = pending.Key;
+                    Creature? creature = combatState.GetCreature(combatId);
+                    Creature? source = combatState.GetCreature(pending.Value);
+                    _feyMagicPendingNoDrawPlayers.Remove(combatId);
+                    if (creature == null || !creature.IsAlive || creature.Side != CombatSide.Player)
+                    {
+                        continue;
+                    }
+
+                    await PowerCmd.Apply<NoDrawPower>(creature, 1m, source, null);
                 }
             }
 
@@ -257,7 +310,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         {
             foreach (Creature enemy in enemies)
             {
-                if (ShouldScaleMonsterHexForMultiplayer || enemy.GetPowerAmount<SlipperyPower>() <= 0m)
+                if (enemy.GetPowerAmount<SlipperyPower>() <= 0m)
                 {
                     await PowerCmd.Apply<SlipperyPower>(enemy, ShrinkEngineSlipperyStacks, enemy, null);
                 }
@@ -279,6 +332,41 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
                 int heal = Math.Min(10, Math.Max(1, (int)Math.Floor(enemy.MaxHp * percent)));
                 if (heal > 0)
                 {
+                    await CreatureCmd.Heal(enemy, heal);
+                }
+            }
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.UnmovableMountain))
+        {
+            foreach (Creature enemy in enemies)
+            {
+                if (enemy.Block <= 0)
+                {
+                    int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.08m));
+                    await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
+                }
+            }
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.DivineIntervention)
+            && combatState.RoundNumber > 1
+            && combatState.RoundNumber % 4 == 0)
+        {
+            await PowerCmd.Apply<IntangiblePower>(enemies, 1m, null, null);
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.Sonata))
+        {
+            if (combatState.RoundNumber % 2 == 1)
+            {
+                await PowerCmd.Apply<SlipperyPower>(enemies, 1m, null, null);
+            }
+            else
+            {
+                foreach (Creature enemy in enemies)
+                {
+                    int heal = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m));
                     await CreatureCmd.Heal(enemy, heal);
                 }
             }
@@ -382,11 +470,23 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
     public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
     {
-        return target.Side == CombatSide.Enemy
-            && target.CombatState?.RunState == RunState
-            && HasActiveMonsterHex(MonsterHexKind.Goliath)
-            ? 1.2m
-            : 1m;
+        if (target.Side != CombatSide.Enemy || target.CombatState?.RunState != RunState)
+        {
+            return 1m;
+        }
+
+        decimal multiplier = 1m;
+        if (HasActiveMonsterHex(MonsterHexKind.Goliath))
+        {
+            multiplier *= 1.2m;
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
+        {
+            multiplier *= 1.2m;
+        }
+
+        return multiplier;
     }
 
     public override decimal ModifyHandDraw(Player player, decimal count)
@@ -453,9 +553,10 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         }
 
         decimal threshold = target.MaxHp * 0.5m;
+        bool isBelowThresholdAfterDamage = target.CurrentHp < threshold;
         if (HasActiveMonsterHex(MonsterHexKind.EscapePlan)
             && !_escapePlanTriggered.Contains(combatId)
-            && target.CurrentHp < threshold)
+            && isBelowThresholdAfterDamage)
         {
             _escapePlanTriggered.Add(combatId);
             _escapePlanPending.Add(combatId);
@@ -463,7 +564,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.Repulsor)
             && !_repulsorTriggered.Contains(combatId)
-            && target.CurrentHp < threshold)
+            && isBelowThresholdAfterDamage)
         {
             _repulsorTriggered.Add(combatId);
             _repulsorPending.Add(combatId);
@@ -471,17 +572,35 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.DawnbringersResolve)
             && !_dawnTriggered.Contains(combatId)
-            && target.CurrentHp < threshold)
+            && isBelowThresholdAfterDamage)
         {
             _dawnTriggered.Add(combatId);
-            int regen = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.1m));
-            await PowerCmd.Apply<RegenPower>(target, regen, target, null);
+            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.5m));
+            await CreatureCmd.Heal(target, heal);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.FeelTheBurn)
-            && target.CurrentHp < threshold)
+            && isBelowThresholdAfterDamage
+            && _feelTheBurnTriggered.Add(combatId))
         {
             _feelTheBurnPending.Add(combatId);
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.MikaelsBlessing)
+            && isBelowThresholdAfterDamage
+            && _mikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) < 3)
+        {
+            _mikaelsBlessingTriggers[combatId] = _mikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) + 1;
+            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.3m));
+            await CreatureCmd.Heal(target, heal);
+
+            List<PowerModel> negativePowers = target.Powers
+                .Where(static power => power.GetTypeForAmount(power.Amount) == PowerType.Debuff)
+                .ToList();
+            foreach (PowerModel power in negativePowers)
+            {
+                await PowerCmd.Remove(power);
+            }
         }
     }
 
@@ -499,7 +618,8 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.Firebrand)
             && result.UnblockedDamage > 0
-            && target.Side == CombatSide.Player)
+            && target.Side == CombatSide.Player
+            && !HextechBurnPower.IsResolvingDamage)
         {
             await PowerCmd.Apply<HextechBurnPower>(target, 2m, dealer, cardSource);
         }
@@ -508,9 +628,39 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             && result.UnblockedDamage > 0
             && target.Player != null)
         {
-            await PlayerCmd.LoseGold(10m, target.Player);
+            await HextechGoldrendSync.HandleEnemyGoldrendHit(target.Player);
         }
 
+        if (result.UnblockedDamage <= 0 || target.Side != CombatSide.Player)
+        {
+            return;
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.SpeedDemon)
+            && dealer.IsAlive
+            && dealer.CombatId != null)
+        {
+            _speedDemonPending.Add(dealer.CombatId.Value);
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.CantTouchThis) && dealer.IsAlive)
+        {
+            await PowerCmd.Apply<SlipperyPower>(dealer, CantTouchThisSlipperyStacks, dealer, null);
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.FeyMagic)
+            && target.CombatId != null
+            && dealer.CombatId != null
+            && !_feyMagicPendingNoDrawPlayers.ContainsKey(target.CombatId.Value))
+        {
+            _feyMagicPendingNoDrawPlayers[target.CombatId.Value] = dealer.CombatId.Value;
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.FinalForm) && dealer.IsAlive)
+        {
+            int block = Math.Max(1, (int)Math.Floor(dealer.MaxHp * 0.2m));
+            await CreatureCmd.GainBlock(dealer, block, ValueProp.Unpowered, null);
+        }
     }
 
     public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
@@ -592,49 +742,22 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             await PowerCmd.Apply<PlatingPower>(courageSource!, CourageOfColossusPlatingStacks, courageSource, null);
         }
 
-        if (_handlingMonsterBuffer
-            || !HasActiveMonsterHex(MonsterHexKind.CantTouchThis)
-            || amount <= 0m
-            || power.Owner.Side != CombatSide.Enemy
-            || power.GetTypeForAmount(amount) != PowerType.Buff
-            || HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power)
-            || power is ITemporaryPower
-            || power is BufferPower)
-        {
-            return;
-        }
-
-        if (power.Owner.GetPowerAmount<SlipperyPower>() > CantTouchThisSlipperyThreshold)
-        {
-            return;
-        }
-
-        try
-        {
-            _handlingMonsterBuffer = true;
-            await PowerCmd.Apply<SlipperyPower>(power.Owner, CantTouchThisSlipperyStacks, power.Owner, null);
-        }
-        finally
-        {
-            _handlingMonsterBuffer = false;
-        }
     }
 
-    public override async Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
+    public override async Task BeforeDeath(Creature creature)
     {
-        if (!HasActiveMonsterHex(MonsterHexKind.CantTouchThis)
-            || amount <= 0m
-            || creature.Side != CombatSide.Enemy)
+        if (!HasActiveMonsterHex(MonsterHexKind.GetExcited)
+            || creature.Side != CombatSide.Enemy
+            || creature.CombatState?.RunState != RunState)
         {
             return;
         }
 
-        if (creature.GetPowerAmount<SlipperyPower>() > CantTouchThisSlipperyThreshold)
+        PainfulStabsPower? painfulStabs = creature.GetPower<PainfulStabsPower>();
+        if (painfulStabs != null)
         {
-            return;
+            await PowerCmd.Remove(painfulStabs);
         }
-
-        await PowerCmd.Apply<SlipperyPower>(creature, CantTouchThisSlipperyStacks, creature, null);
     }
 
     public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)

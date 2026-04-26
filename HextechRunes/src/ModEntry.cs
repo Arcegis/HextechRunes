@@ -40,6 +40,7 @@ public static class ModEntry
 		InstallHooks();
 		HextechCombatHooks.Install();
 		HextechInspectHooks.Install();
+		HextechGoldrendSync.Install();
 		AssetHooks.Install();
 		CollectionHooks.Install();
 		Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
@@ -76,6 +77,8 @@ public static class ModEntry
 
 	private static async Task StartRunDetour(OrigStartRun orig, NGame self, RunState runState)
 	{
+		HextechGoldrendSync.EnsureRegistered();
+		HextechGoldrendSync.ResetCombat();
 		HextechRuneSelectionCoordinator.ResetActSelectionState();
 		HextechEnemyUi.Clear();
 		HextechEnemyUi.HideMayhemModifierBadge();

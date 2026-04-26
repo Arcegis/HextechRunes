@@ -100,7 +100,7 @@ internal static class HextechCombatHooks
 
 			if (player.GetRelic<BackToBasicsRune>() != null)
 			{
-				amount *= 1.3m;
+				amount *= 1.4m;
 			}
 
 			if (player.GetRelic<GoliathRune>() != null)

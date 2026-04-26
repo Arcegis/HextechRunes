@@ -13,6 +13,10 @@ namespace HextechRunes;
 
 public sealed class HextechBurnPower : PowerModel
 {
+	private static int _damageResolveDepth;
+
+	internal static bool IsResolvingDamage => _damageResolveDepth > 0;
+
 	public override PowerType Type => PowerType.Debuff;
 
 	public override PowerStackType StackType => PowerStackType.Counter;
@@ -26,7 +30,15 @@ public sealed class HextechBurnPower : PowerModel
 			return;
 		}
 
-		await CreatureCmd.Damage(choiceContext, Owner, Amount, ValueProp.Unpowered, Applier, null);
+		try
+		{
+			_damageResolveDepth++;
+			await CreatureCmd.Damage(choiceContext, Owner, Amount, ValueProp.Unpowered, Applier, null);
+		}
+		finally
+		{
+			_damageResolveDepth--;
+		}
 	}
 }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
@@ -25,6 +26,10 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HashSet<uint> _repulsorTriggered = new();
 	private readonly HashSet<uint> _repulsorPending = new();
 	private readonly HashSet<uint> _dawnTriggered = new();
+	private readonly HashSet<uint> _speedDemonPending = new();
+	private readonly HashSet<uint> _feelTheBurnTriggered = new();
+	private readonly Dictionary<uint, uint> _feyMagicPendingNoDrawPlayers = new();
+	private readonly Dictionary<uint, int> _mikaelsBlessingTriggers = new();
 	private readonly HashSet<uint> _goliathApplied = new();
 	private readonly HashSet<uint> _bigStrengthApplied = new();
 	private readonly HashSet<uint> _protectiveVeilApplied = new();
@@ -33,6 +38,7 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HashSet<uint> _astralBodyApplied = new();
 	private readonly HashSet<uint> _drawYourSwordApplied = new();
 	private readonly HashSet<uint> _madScientistApplied = new();
+	private readonly HashSet<uint> _unmovableMountainApplied = new();
 	private readonly Dictionary<uint, int> _tankEngineStacks = new();
 	private readonly Dictionary<uint, int> _shrinkEngineStacks = new();
 	private readonly Dictionary<uint, int> _getExcitedPending = new();
@@ -44,7 +50,6 @@ internal sealed partial class HextechMayhemModifier
 		private readonly HashSet<string> _groupedPlayerDebuffProcKeys = new();
 		private string? _lastEnemyThresholdTriggerKey;
 		private bool _handlingMonsterTormentorBurn;
-		private bool _handlingMonsterBuffer;
 		private bool _handlingServantMasterIllusion;
 		private bool _handlingGroupedPlayerDebuffs;
 		private int _enemyProtectiveVeilTurnCounter;
@@ -135,7 +140,8 @@ internal sealed partial class HextechMayhemModifier
 		HashSet<MonsterHexKind> seen = new();
 		for (int actIndex = 0; actIndex <= RunState.CurrentActIndex && actIndex < _monsterHexByAct.Length; actIndex++)
 		{
-			if (IsActResolved(actIndex) && _monsterHexByAct[actIndex] >= 0)
+			if (_monsterHexByAct[actIndex] >= 0
+				&& (IsActResolved(actIndex) || ShouldRecoverMonsterHexInCombat(actIndex)))
 			{
 				MonsterHexKind hex = (MonsterHexKind)_monsterHexByAct[actIndex];
 				if (seen.Add(hex))
@@ -146,6 +152,11 @@ internal sealed partial class HextechMayhemModifier
 		}
 
 		return result;
+	}
+
+	private bool ShouldRecoverMonsterHexInCombat(int actIndex)
+	{
+		return actIndex <= RunState.CurrentActIndex && RunState.CurrentRoom is CombatRoom;
 	}
 
 	public void ResetForNewRun()
@@ -218,6 +229,10 @@ internal sealed partial class HextechMayhemModifier
 		_repulsorTriggered.Clear();
 		_repulsorPending.Clear();
 		_dawnTriggered.Clear();
+		_speedDemonPending.Clear();
+		_feelTheBurnTriggered.Clear();
+		_feyMagicPendingNoDrawPlayers.Clear();
+		_mikaelsBlessingTriggers.Clear();
 		_goliathApplied.Clear();
 		_bigStrengthApplied.Clear();
 		_protectiveVeilApplied.Clear();
@@ -226,6 +241,7 @@ internal sealed partial class HextechMayhemModifier
 		_astralBodyApplied.Clear();
 		_drawYourSwordApplied.Clear();
 		_madScientistApplied.Clear();
+		_unmovableMountainApplied.Clear();
 		_tankEngineStacks.Clear();
 			_shrinkEngineStacks.Clear();
 			_getExcitedPending.Clear();
@@ -237,7 +253,6 @@ internal sealed partial class HextechMayhemModifier
 			_groupedPlayerDebuffProcKeys.Clear();
 			_lastEnemyThresholdTriggerKey = null;
 			_enemyProtectiveVeilTurnCounter = 0;
-			_handlingMonsterBuffer = false;
 			_handlingServantMasterIllusion = false;
 			_handlingGroupedPlayerDebuffs = false;
 		}
