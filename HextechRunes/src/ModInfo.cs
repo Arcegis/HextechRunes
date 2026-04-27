@@ -378,7 +378,7 @@ internal static class ModInfo
 
         if (IsHextechShopRelic(relic))
         {
-            return $"res://{Id}/images/relics/goldForge.png";
+            return $"res://{Id}/images/relics/silverForge.png";
         }
 
         return null;
