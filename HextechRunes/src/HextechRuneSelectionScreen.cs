@@ -609,6 +609,12 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 	public void AfterOverlayClosed()
 	{
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed");
+		if (!_choiceLocked)
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed: cancelling unresolved selection");
+			_completionSource.TrySetCanceled();
+		}
+
 		QueueFree();
 	}
 

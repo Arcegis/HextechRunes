@@ -25,10 +25,12 @@ internal static class HextechRuneSelectionCoordinator
 	private const int FirstActPrismaticWeight = 30;
 
 	private static bool _handlingActSelection;
+	private static RunState? _handlingActSelectionRunState;
 
 	public static void ResetActSelectionState()
 	{
 		_handlingActSelection = false;
+		_handlingActSelectionRunState = null;
 	}
 
 	public static Task HandleActStarted(HextechMayhemModifier modifier)
@@ -44,6 +46,14 @@ internal static class HextechRuneSelectionCoordinator
 			HextechEnemyUi.Refresh(modifier);
 		}
 
+		if (_handlingActSelection
+			&& _handlingActSelectionRunState != null
+			&& !ReferenceEquals(_handlingActSelectionRunState, runState))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: clearing stale handling state for previous run");
+			ResetActSelectionState();
+		}
+
 		Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsActResolved(actIndex)} handling={_handlingActSelection}");
 		if (_handlingActSelection || !IsCurrentRun(runState) || actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex))
 		{
@@ -52,6 +62,7 @@ internal static class HextechRuneSelectionCoordinator
 		}
 
 		_handlingActSelection = true;
+		_handlingActSelectionRunState = runState;
 		bool reopenMapAfterSelection = false;
 		try
 		{
@@ -117,6 +128,10 @@ internal static class HextechRuneSelectionCoordinator
 			await PersistActSelection(runState, actIndex);
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection resolved: act={actIndex}");
 		}
+		catch (OperationCanceledException)
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection overlay closed before choice act={actIndex}");
+		}
 		finally
 		{
 			if (reopenMapAfterSelection
@@ -128,7 +143,10 @@ internal static class HextechRuneSelectionCoordinator
 				NMapScreen.Instance.Open();
 			}
 
-			_handlingActSelection = false;
+			if (ReferenceEquals(_handlingActSelectionRunState, runState))
+			{
+				ResetActSelectionState();
+			}
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection exit: act={actIndex}");
 		}
 	}
