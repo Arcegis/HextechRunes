@@ -1,0 +1,58 @@
+namespace HextechRunes;
+
+internal enum HextechRarityTier
+{
+    Silver = 0,
+    Gold = 1,
+    Prismatic = 2
+}
+
+internal enum MonsterHexKind
+{
+    Slap = 0,
+    EscapePlan = 1,
+    HeavyHitter = 2,
+    BigStrength = 3,
+    Tormentor = 4,
+    ProtectiveVeil = 5,
+    Repulsor = 6,
+    Thornmail = 7,
+    Sturdy = 8,
+    DawnbringersResolve = 9,
+    ShrinkRay = 10,
+    Firebrand = 11,
+    SuperBrain = 12,
+    AstralBody = 13,
+    Nightstalking = 14,
+    CourageOfColossus = 15,
+    GlassCannon = 16,
+    Goliath = 17,
+    Queen = 18,
+    HandOfBaron = 19,
+    CantTouchThis = 20,
+    MasterOfDuality = 21,
+    Goldrend = 22,
+    TankEngine = 23,
+    GetExcited = 24,
+    ShrinkEngine = 25,
+    FeelTheBurn = 26,
+    LightEmUp = 27,
+    MountainSoul = 28,
+    TwiceThrice = 29,
+    Loop = 30,
+    ServantMaster = 31,
+    BackToBasics = 32,
+    DrawYourSword = 33,
+    MadScientist = 34,
+    FirstAidKit = 35,
+    SpeedDemon = 36,
+    DivineIntervention = 37,
+    Sonata = 38,
+    FeyMagic = 39,
+    FinalForm = 40,
+    UnmovableMountain = 41,
+    MikaelsBlessing = 42,
+    DevilsDance = 43,
+    FrostWraith = 44,
+    CuttingEdgeAlchemist = 45
+}

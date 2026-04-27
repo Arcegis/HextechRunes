@@ -98,12 +98,6 @@ internal sealed partial class HextechMayhemModifier
             await PowerCmd.Apply<ImbalancedPower>(creature, 1m, creature, null);
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.BigStrength)
-            && TryMarkPersistentHexApplied(_bigStrengthApplied, creature))
-        {
-            await PowerCmd.Apply<StrengthPower>(creature, 2m, creature, null);
-        }
-
         if (HasActiveMonsterHex(MonsterHexKind.ProtectiveVeil)
             && TryMarkPersistentHexApplied(_protectiveVeilApplied, creature))
         {
@@ -361,7 +355,7 @@ internal sealed partial class HextechMayhemModifier
 
         if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
         {
-            amount *= 1.2m;
+            amount *= 1.25m;
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.GlassCannon))

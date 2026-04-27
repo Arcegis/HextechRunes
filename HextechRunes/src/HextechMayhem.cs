@@ -8,70 +8,18 @@ using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
-
-internal enum HextechRarityTier
-{
-    Silver = 0,
-    Gold = 1,
-    Prismatic = 2
-}
-
-internal enum MonsterHexKind
-{
-    Slap = 0,
-    EscapePlan = 1,
-    HeavyHitter = 2,
-    BigStrength = 3,
-    Tormentor = 4,
-    ProtectiveVeil = 5,
-    Repulsor = 6,
-    Thornmail = 7,
-    Sturdy = 8,
-    DawnbringersResolve = 9,
-    ShrinkRay = 10,
-    Firebrand = 11,
-    SuperBrain = 12,
-    AstralBody = 13,
-    Nightstalking = 14,
-    CourageOfColossus = 15,
-    GlassCannon = 16,
-    Goliath = 17,
-    Queen = 18,
-    HandOfBaron = 19,
-    CantTouchThis = 20,
-    MasterOfDuality = 21,
-    Goldrend = 22,
-    TankEngine = 23,
-    GetExcited = 24,
-    ShrinkEngine = 25,
-    FeelTheBurn = 26,
-    LightEmUp = 27,
-    MountainSoul = 28,
-    TwiceThrice = 29,
-    Loop = 30,
-    ServantMaster = 31,
-    BackToBasics = 32,
-    DrawYourSword = 33,
-    MadScientist = 34,
-    FirstAidKit = 35,
-    SpeedDemon = 36,
-    DivineIntervention = 37,
-    Sonata = 38,
-    FeyMagic = 39,
-    FinalForm = 40,
-    UnmovableMountain = 41,
-    MikaelsBlessing = 42,
-    DevilsDance = 43
-}
 
 internal sealed partial class HextechMayhemModifier : ModifierModel
 {
@@ -159,7 +107,50 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        return HextechForgeGrantHelper.TryAddRandomForgeRewardAfterVictory(RunState, room);
+        return Task.CompletedTask;
+    }
+
+    public override bool TryModifyRewards(Player player, List<Reward> rewards, AbstractRoom? room)
+    {
+        if (!HasActiveMonsterHex(MonsterHexKind.CuttingEdgeAlchemist)
+            || room is not CombatRoom
+            || rewards.Count == 0)
+        {
+            return false;
+        }
+
+        bool modified = false;
+        for (int i = 0; i < rewards.Count; i++)
+        {
+			if (rewards[i] is not PotionReward potionReward
+				|| potionReward.Potion?.Rarity == PotionRarity.Common
+				|| !TryCreateCommonPotionReward(player, out PotionReward? replacement)
+				|| replacement == null)
+			{
+				continue;
+			}
+
+            rewards[i] = replacement;
+            modified = true;
+        }
+
+        return modified;
+    }
+
+    private static bool TryCreateCommonPotionReward(Player player, out PotionReward? reward)
+    {
+        List<PotionModel> candidates = PotionFactory.GetPotionOptions(player, Array.Empty<PotionModel>())
+            .Where(static potion => potion.Rarity == PotionRarity.Common)
+            .ToList();
+        if (candidates.Count == 0)
+        {
+            reward = null;
+            return false;
+        }
+
+        PotionModel potion = candidates[player.PlayerRng.Rewards.NextInt(candidates.Count)].ToMutable();
+        reward = new PotionReward(potion, player);
+        return true;
     }
 
     public override async Task AfterCreatureAddedToCombat(Creature creature)
@@ -290,6 +281,26 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
                 }
             }
 
+            IReadOnlyList<Creature> aliveEnemies = GetAliveEnemies(combatState);
+            if (HasActiveMonsterHex(MonsterHexKind.DivineIntervention)
+                && combatState.RoundNumber > 1
+                && combatState.RoundNumber % 4 == 0
+                && aliveEnemies.Count > 0)
+            {
+                await PowerCmd.Apply<IntangiblePower>(aliveEnemies, 1m, null, null);
+            }
+
+            if (HasActiveMonsterHex(MonsterHexKind.FrostWraith)
+                && combatState.RoundNumber > 1
+                && combatState.RoundNumber % 4 == 0
+                && players.Count > 0)
+            {
+                await RunGroupedPlayerDebuffBurst(async () =>
+                {
+                    await PowerCmd.Apply<BorrowedTimePower>(players, 1m, null, null);
+                });
+            }
+
             return;
         }
 
@@ -364,13 +375,6 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             }
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.DivineIntervention)
-            && combatState.RoundNumber > 1
-            && combatState.RoundNumber % 4 == 0)
-        {
-            await PowerCmd.Apply<IntangiblePower>(enemies, 1m, null, null);
-        }
-
         if (HasActiveMonsterHex(MonsterHexKind.Sonata))
         {
             if (combatState.RoundNumber % 2 == 1)
@@ -410,7 +414,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.Queen)
             && combatState.RoundNumber > 1
-            && combatState.RoundNumber % 3 == 0)
+            && combatState.RoundNumber % 2 == 0)
         {
             IReadOnlyList<Creature> queenTargets = players
                 .Where(player => player.GetPowerAmount<ChainsOfBindingPower>() <= 3m)
@@ -459,9 +463,14 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             multiplier *= 1m + Math.Min(30m, Math.Floor(dealer.MaxHp / 10m)) / 100m;
         }
 
+        if (HasActiveMonsterHex(MonsterHexKind.BigStrength))
+        {
+            multiplier *= 1.2m;
+        }
+
         if (HasActiveMonsterHex(MonsterHexKind.GlassCannon))
         {
-            multiplier *= 1.4m;
+            multiplier *= 1.5m;
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.AstralBody))
@@ -481,7 +490,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.HandOfBaron))
         {
-            multiplier *= 1.2m;
+            multiplier *= 1.1m;
         }
 
         return multiplier;
@@ -502,7 +511,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
         {
-            multiplier *= 1.2m;
+            multiplier *= 1.25m;
         }
 
         return multiplier;
@@ -594,7 +603,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             && isBelowThresholdAfterDamage)
         {
             _dawnTriggered.Add(combatId);
-            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.5m));
+            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.3m));
             await CreatureCmd.Heal(target, heal);
         }
 
@@ -610,7 +619,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             && _mikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) < 3)
         {
             _mikaelsBlessingTriggers[combatId] = _mikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) + 1;
-            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.3m));
+            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.2m));
             await CreatureCmd.Heal(target, heal);
 
             List<PowerModel> negativePowers = target.Powers

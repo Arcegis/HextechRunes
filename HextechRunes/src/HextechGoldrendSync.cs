@@ -8,7 +8,7 @@ namespace HextechRunes;
 
 internal static class HextechGoldrendSync
 {
-    private const int GoldrendStealAmount = 10;
+    private const int GoldrendStealAmount = 20;
 
     private static readonly Dictionary<ulong, int> PendingLocalCombatGoldLosses = new();
 

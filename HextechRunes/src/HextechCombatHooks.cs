@@ -95,7 +95,7 @@ internal static class HextechCombatHooks
 
 			if (player.GetRelic<FirstAidKitRune>() != null)
 			{
-				amount *= 1.2m;
+				amount *= 1.25m;
 			}
 
 			if (player.GetRelic<BackToBasicsRune>() != null)
@@ -111,6 +111,11 @@ internal static class HextechCombatHooks
 			if (player.GetRelic<ProteinShakeRune>() is ProteinShakeRune proteinShakeRune)
 			{
 				amount *= proteinShakeRune.SustainMultiplier;
+			}
+
+			if (player.GetRelic<ProtectionForge>() is ProtectionForge protectionForge)
+			{
+				amount *= protectionForge.SustainMultiplier;
 			}
 		}
 

@@ -13,7 +13,7 @@ internal static class ModInfo
 
     public const string DisplayName = "海克斯符文";
 
-    public const string Version = "0.4.0";
+    public const string Version = "0.4.1";
 
     public const string TargetGameVersion = "0.103.2";
 
@@ -21,221 +21,37 @@ internal static class ModInfo
 
     public const string ForgeSubcategoryKey = "HEXTECH_FORGES_SUBCATEGORY";
 
-    private static readonly IReadOnlyList<Type> SilverRuneTypes =
-    [
-        typeof(SlapRune),
-        typeof(DexterityToStrengthRune),
-        typeof(StrengthToDexterityRune),
-        typeof(DexterityStrengthToFocusRune),
-        typeof(WizardlyThinkingRune),
-        typeof(NimbleRune),
-        typeof(EscapePlanRune),
-        typeof(BadTasteRune),
-        typeof(FirstAidKitRune),
-        typeof(SpeedDemonRune),
-        typeof(HeavyHitterRune),
-        typeof(BigStrengthRune),
-        typeof(TormentorRune),
-        typeof(AdamantRune),
-        typeof(MountainSoulRune),
-        typeof(FrostWraithRune),
-        typeof(BadgeBrothersRune),
-        typeof(HomeguardRune),
-        typeof(SwiftAndSafeRune),
-        typeof(SacrificeRune),
-        typeof(ProtectiveVeilRune),
-        typeof(RepulsorRune),
-        typeof(LightEmUpRune),
-        typeof(UltimateUnstoppableRune),
-        typeof(ThornmailRune),
-        typeof(ZealotRune),
-        typeof(MindToMatterRune),
-        typeof(StatsRune),
-        typeof(TransmuteGoldRune)
-    ];
+    private static readonly IReadOnlyList<Type> SilverRuneTypes = HextechContentRegistry.SilverRuneTypes;
 
-    private static readonly IReadOnlyList<Type> GoldRuneTypes =
-    [
-        typeof(JudicatorRune),
-        typeof(TranscendentEvilRune),
-        typeof(TankEngineRune),
-        typeof(AstralBodyRune),
-        typeof(AncientWineRune),
-        typeof(HolyFireRune),
-        typeof(NoNonsenseRune),
-        typeof(SuperBrainRune),
-        typeof(OverflowRune),
-        typeof(SturdyRune),
-        typeof(LoopRune),
-        typeof(OkBoomerangRune),
-        typeof(DivineInterventionRune),
-        typeof(SonataRune),
-        typeof(CuttingEdgeAlchemistRune),
-        typeof(DevilsDanceRune),
-        typeof(BeginningAndEndRune),
-        typeof(KeystoneHunterRune),
-        typeof(WarmogsSpiritRune),
-        typeof(RedEnvelopeRune),
-        typeof(MindPurificationRune),
-        typeof(EndlessRecoveryRune),
-        typeof(SpeedsterRune),
-        typeof(ServantMasterRune),
-        typeof(SoulEaterRune),
-        typeof(DonationRune),
-        typeof(TwiceThriceRune),
-        typeof(FirebrandRune),
-        typeof(NightstalkingRune),
-        typeof(GetExcitedRune),
-        typeof(ShrinkEngineRune),
-        typeof(StatsOnStatsRune),
-        typeof(TransmutePrismaticRune),
-        typeof(DawnbringersResolveRune),
-        typeof(ShrinkRayRune)
-    ];
+    private static readonly IReadOnlyList<Type> GoldRuneTypes = HextechContentRegistry.GoldRuneTypes;
 
-    private static readonly IReadOnlyList<Type> PrismaticRuneTypes =
-    [
-        typeof(EurekaRune),
-        typeof(InfiniteLoopRune),
-        typeof(SlowCookRune),
-        typeof(GiantSlayerRune),
-        typeof(CourageOfColossusRune),
-        typeof(GlassCannonRune),
-        typeof(FinalFormRune),
-        typeof(BackToBasicsRune),
-        typeof(DrawYourSwordRune),
-        typeof(FeelTheBurnRune),
-        typeof(MikaelsBlessingRune),
-        typeof(EarthAwakensRune),
-        typeof(SymphonyOfWarRune),
-        typeof(UnmovableMountainRune),
-        typeof(MysteryRune),
-        typeof(MadScientistRune),
-        typeof(JeweledGauntletRune),
-        typeof(HailToTheKingRune),
-        typeof(ArcanePunchRune),
-        typeof(PandorasBoxRune),
-        typeof(TapDanceRune),
-        typeof(InfernalConduitRune),
-        typeof(DualWieldRune),
-        typeof(GoliathRune),
-        typeof(MasterOfDualityRune),
-        typeof(HandOfBaronRune),
-        typeof(CantTouchThisRune),
-        typeof(QueenRune),
-        typeof(UltimateRefreshRune),
-        typeof(GoldrendRune),
-        typeof(CerberusRune),
-        typeof(CircleOfDeathRune),
-        typeof(FanTheHammerRune),
-        typeof(FeyMagicRune),
-        typeof(WatchOutGrapefruitRune),
-        typeof(ProteinShakeRune),
-        typeof(StatsOnStatsOnStatsRune),
-        typeof(TransmuteChaosRune)
-    ];
+    private static readonly IReadOnlyList<Type> PrismaticRuneTypes = HextechContentRegistry.PrismaticRuneTypes;
 
-    private static readonly IReadOnlyList<Type> SilverForgeTypes =
-    [
-        typeof(StrengthForge),
-        typeof(DexterityForge),
-        typeof(FocusForge),
-        typeof(LifeForge)
-    ];
+    private static readonly IReadOnlyList<Type> SilverForgeTypes = HextechContentRegistry.SilverForgeTypes;
 
-    private static readonly IReadOnlyList<Type> GoldForgeTypes =
-    [
-        typeof(EnergyForge),
-        typeof(DrawForge),
-        typeof(StarsForge),
-        typeof(OrbSlotForge),
-        typeof(PlatingForge),
-        typeof(ThornsForge)
-    ];
+    private static readonly IReadOnlyList<Type> GoldForgeTypes = HextechContentRegistry.GoldForgeTypes;
 
-    private static readonly IReadOnlyList<Type> PrismaticForgeTypes =
-    [
-        typeof(RitualForge),
-        typeof(RegenForge),
-        typeof(BufferForge),
-        typeof(SlipperyForge)
-    ];
+    private static readonly IReadOnlyList<Type> PrismaticForgeTypes = HextechContentRegistry.PrismaticForgeTypes;
 
-    private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
-    [
-        typeof(DexterityToStrengthRune),
-        typeof(StrengthToDexterityRune),
-        typeof(DexterityStrengthToFocusRune)
-    ];
+    private static readonly IReadOnlyList<Type> ShopOnlyRelicTypes = HextechContentRegistry.ShopOnlyRelicTypes;
 
-    private static readonly IReadOnlyList<MonsterHexKind> SilverMonsterHexes =
-    [
-        MonsterHexKind.Slap,
-        MonsterHexKind.EscapePlan,
-        MonsterHexKind.HeavyHitter,
-        MonsterHexKind.BigStrength,
-        MonsterHexKind.Tormentor,
-        MonsterHexKind.ProtectiveVeil,
-        MonsterHexKind.Repulsor,
-        MonsterHexKind.Thornmail,
-        MonsterHexKind.LightEmUp,
-        MonsterHexKind.MountainSoul,
-        MonsterHexKind.FirstAidKit,
-        MonsterHexKind.SpeedDemon
-    ];
+    private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes = HextechContentRegistry.AttributeConversionExclusiveRuneTypes;
 
-    private static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes =
-    [
-        MonsterHexKind.Sturdy,
-        MonsterHexKind.DawnbringersResolve,
-        MonsterHexKind.ShrinkRay,
-        MonsterHexKind.Firebrand,
-        MonsterHexKind.SuperBrain,
-        MonsterHexKind.Nightstalking,
-        MonsterHexKind.AstralBody,
-        MonsterHexKind.TankEngine,
-        MonsterHexKind.ShrinkEngine,
-        MonsterHexKind.GetExcited,
-        MonsterHexKind.TwiceThrice,
-        MonsterHexKind.Loop,
-        MonsterHexKind.ServantMaster,
-        MonsterHexKind.DivineIntervention,
-        MonsterHexKind.Sonata,
-        MonsterHexKind.DevilsDance
-    ];
+    private static readonly IReadOnlySet<Type> FirstActExcludedRuneTypes = HextechContentRegistry.FirstActExcludedRuneTypes;
 
-    private static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes =
-    [
-        MonsterHexKind.CourageOfColossus,
-        MonsterHexKind.GlassCannon,
-        MonsterHexKind.Goliath,
-        MonsterHexKind.Queen,
-        MonsterHexKind.HandOfBaron,
-        MonsterHexKind.CantTouchThis,
-        MonsterHexKind.MasterOfDuality,
-        MonsterHexKind.Goldrend,
-        MonsterHexKind.FeelTheBurn,
-        MonsterHexKind.BackToBasics,
-        MonsterHexKind.MadScientist,
-        MonsterHexKind.FeyMagic,
-        MonsterHexKind.FinalForm,
-        MonsterHexKind.UnmovableMountain,
-        MonsterHexKind.MikaelsBlessing
-    ];
+    private static readonly IReadOnlySet<Type> ThirdActExcludedRuneTypes = HextechContentRegistry.ThirdActExcludedRuneTypes;
 
-    private static readonly IReadOnlyList<Type> AllRuneTypes = SilverRuneTypes
-        .Concat(GoldRuneTypes)
-        .Concat(PrismaticRuneTypes)
-        .ToArray();
+    private static readonly IReadOnlyList<MonsterHexKind> SilverMonsterHexes = HextechContentRegistry.SilverMonsterHexes;
 
-    private static readonly IReadOnlyList<Type> AllForgeTypes = SilverForgeTypes
-        .Concat(GoldForgeTypes)
-        .Concat(PrismaticForgeTypes)
-        .ToArray();
+    private static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes = HextechContentRegistry.GoldMonsterHexes;
 
-    private static readonly IReadOnlyList<Type> AllCustomRelicTypes = AllRuneTypes
-        .Concat(AllForgeTypes)
-        .ToArray();
+    private static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes = HextechContentRegistry.PrismaticMonsterHexes;
+
+    private static readonly IReadOnlyList<Type> AllRuneTypes = HextechContentRegistry.AllRuneTypes;
+
+    private static readonly IReadOnlyList<Type> AllForgeTypes = HextechContentRegistry.AllForgeTypes;
+
+    private static readonly IReadOnlyList<Type> AllCustomRelicTypes = HextechContentRegistry.AllCustomRelicTypes;
 
     public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
 
@@ -312,6 +128,7 @@ internal static class ModInfo
             MonsterHexKind.MountainSoul => ModelDb.Relic<MountainSoulRune>(),
             MonsterHexKind.FirstAidKit => ModelDb.Relic<FirstAidKitRune>(),
             MonsterHexKind.SpeedDemon => ModelDb.Relic<SpeedDemonRune>(),
+            MonsterHexKind.FrostWraith => ModelDb.Relic<FrostWraithRune>(),
             MonsterHexKind.Sturdy => ModelDb.Relic<SturdyRune>(),
             MonsterHexKind.DawnbringersResolve => ModelDb.Relic<DawnbringersResolveRune>(),
             MonsterHexKind.ShrinkRay => ModelDb.Relic<ShrinkRayRune>(),
@@ -325,6 +142,7 @@ internal static class ModInfo
             MonsterHexKind.TwiceThrice => ModelDb.Relic<TwiceThriceRune>(),
             MonsterHexKind.Loop => ModelDb.Relic<LoopRune>(),
             MonsterHexKind.ServantMaster => ModelDb.Relic<ServantMasterRune>(),
+            MonsterHexKind.CuttingEdgeAlchemist => ModelDb.Relic<CuttingEdgeAlchemistRune>(),
             MonsterHexKind.DivineIntervention => ModelDb.Relic<DivineInterventionRune>(),
             MonsterHexKind.Sonata => ModelDb.Relic<SonataRune>(),
             MonsterHexKind.DevilsDance => ModelDb.Relic<DevilsDanceRune>(),
@@ -426,9 +244,20 @@ internal static class ModInfo
         return AllForgeTypes.Any(type => id == ModelDb.GetId(type));
     }
 
+    public static bool IsHextechShopRelic(RelicModel? relic)
+    {
+        if (relic == null)
+        {
+            return false;
+        }
+
+        ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+        return ShopOnlyRelicTypes.Any(type => id == ModelDb.GetId(type));
+    }
+
     public static bool IsHextechCustomRelic(RelicModel? relic)
     {
-        return IsHextechRelic(relic) || IsHextechForgeRelic(relic);
+        return IsHextechRelic(relic) || IsHextechForgeRelic(relic) || IsHextechShopRelic(relic);
     }
 
     public static bool TryGetPlayerRuneRarity(RelicModel? relic, out HextechRarityTier rarity)
@@ -496,6 +325,16 @@ internal static class ModInfo
         return relic is not HextechRelicBase hextechRelic || hextechRelic.IsAvailableForPlayer(player);
     }
 
+    public static bool IsPlayerRuneAllowedInAct(Type runeType, int actIndex)
+    {
+        return actIndex switch
+        {
+            0 => !FirstActExcludedRuneTypes.Contains(runeType),
+            2 => !ThirdActExcludedRuneTypes.Contains(runeType),
+            _ => true
+        };
+    }
+
     public static IReadOnlySet<ModelId> GetMutuallyExclusivePlayerRuneIds(IEnumerable<ModelId> ownedIds)
     {
         HashSet<ModelId> ownedSet = ownedIds.ToHashSet();
@@ -535,6 +374,11 @@ internal static class ModInfo
                 _ => "silverForge"
             };
             return $"res://{Id}/images/relics/{iconStem}.png";
+        }
+
+        if (IsHextechShopRelic(relic))
+        {
+            return $"res://{Id}/images/relics/silverForge.png";
         }
 
         return null;
