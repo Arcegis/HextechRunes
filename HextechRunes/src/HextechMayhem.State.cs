@@ -36,7 +36,6 @@ internal sealed partial class HextechMayhemModifier
 	private readonly Dictionary<uint, uint> _feyMagicPendingNoDrawPlayers = new();
 	private readonly Dictionary<uint, int> _mikaelsBlessingTriggers = new();
 	private readonly HashSet<uint> _goliathApplied = new();
-	private readonly HashSet<uint> _bigStrengthApplied = new();
 	private readonly HashSet<uint> _protectiveVeilApplied = new();
 	private readonly HashSet<uint> _thornmailApplied = new();
 	private readonly HashSet<uint> _superBrainApplied = new();
@@ -356,7 +355,6 @@ internal sealed partial class HextechMayhemModifier
 		_feyMagicPendingNoDrawPlayers.Clear();
 		_mikaelsBlessingTriggers.Clear();
 		_goliathApplied.Clear();
-		_bigStrengthApplied.Clear();
 		_protectiveVeilApplied.Clear();
 		_thornmailApplied.Clear();
 		_superBrainApplied.Clear();

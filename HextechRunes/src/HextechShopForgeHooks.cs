@@ -14,7 +14,7 @@ namespace HextechRunes;
 
 internal static class HextechShopForgeHooks
 {
-	private const int RandomForgeShopCost = 200;
+	private const int RandomForgeShopCost = 250;
 
 	private static DetourHook? _createForNormalMerchantHook;
 

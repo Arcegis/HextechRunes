@@ -164,7 +164,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        return HextechForgeGrantHelper.TryAddRandomForgeRewardAfterVictory(RunState, room);
+        return Task.CompletedTask;
     }
 
     public override bool TryModifyRewards(Player player, List<Reward> rewards, AbstractRoom? room)
@@ -471,7 +471,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.Queen)
             && combatState.RoundNumber > 1
-            && combatState.RoundNumber % 3 == 0)
+            && combatState.RoundNumber % 2 == 0)
         {
             IReadOnlyList<Creature> queenTargets = players
                 .Where(player => player.GetPowerAmount<ChainsOfBindingPower>() <= 3m)
@@ -520,6 +520,11 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             multiplier *= 1m + Math.Min(30m, Math.Floor(dealer.MaxHp / 10m)) / 100m;
         }
 
+        if (HasActiveMonsterHex(MonsterHexKind.BigStrength))
+        {
+            multiplier *= 1.2m;
+        }
+
         if (HasActiveMonsterHex(MonsterHexKind.GlassCannon))
         {
             multiplier *= 1.5m;
@@ -563,7 +568,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
         {
-            multiplier *= 1.2m;
+            multiplier *= 1.25m;
         }
 
         return multiplier;

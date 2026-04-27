@@ -116,7 +116,16 @@
     "UNMOVABLE_MOUNTAIN_RUNE": "不动如山",
     "KEYSTONE_HUNTER_RUNE": "基石猎人",
     "WARMOGS_SPIRIT_RUNE": "狂徒豪气",
-    "MYSTERY_RUNE": "？？？"
+    "MYSTERY_RUNE": "？？？",
+    "STARTUP_ROUTINE_RUNE": "启动流程",
+    "COLLECTOR_RUNE": "收集者",
+    "LIFE_FLOW_RUNE": "生命回流",
+    "TRICK_LICENSE_RUNE": "戏法特许",
+    "GALACTIC_GIFT_RUNE": "星河馈赠",
+    "SOMETHING_FROM_NOTHING_RUNE": "无中生有",
+    "LUBRICANT_RUNE": "润滑油",
+    "HUBRIS_RUNE": "狂妄",
+    "GOLDEN_SPATULA_RUNE": "金铲铲"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",

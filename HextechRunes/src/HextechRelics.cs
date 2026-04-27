@@ -101,12 +101,27 @@ public abstract class HextechRelicBase : RelicModel
 
 	protected bool IsDefectOwner => Owner != null && IsDefectPlayer(Owner);
 
+	protected bool IsIroncladPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Ironclad>();
+	}
+
+	protected bool IsSilentPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Silent>();
+	}
+
 	protected bool IsRegentPlayer(Player player)
 	{
 		return player.Character.Id == ModelDb.GetId<Regent>();
 	}
 
 	protected bool IsRegentOwner => Owner != null && IsRegentPlayer(Owner);
+
+	protected bool IsNecrobinderPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Necrobinder>();
+	}
 
 	private string GetResolvedIconPath()
 	{
@@ -1471,13 +1486,13 @@ public sealed class RedEnvelopeRune : HextechRelicBase
 		}
 
 		Flash(Array.Empty<Creature>());
-		if (Owner.PlayerRng.Rewards.NextInt(100) < 80)
+		if (Owner.PlayerRng.Rewards.NextInt(100) < 75)
 		{
 			room.AddExtraReward(Owner, new GoldReward(10, 20, Owner));
 		}
 		else
 		{
-			room.AddExtraReward(Owner, new RelicReward(Owner));
+			HextechForgeGrantHelper.AddRandomForgeReward(Owner, room);
 		}
 
 		return Task.CompletedTask;
@@ -2298,18 +2313,12 @@ public sealed class BigStrengthRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<StrengthPower>(2m)
+		new DynamicVar("DamageMultiplier", 1.2m)
 	];
 
-	public override Task AfterRoomEntered(AbstractRoom room)
+	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (room is not CombatRoom || Owner == null)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		return IsDamageFromOwner(dealer, cardSource) ? DynamicVars["DamageMultiplier"].BaseValue : 1m;
 	}
 }
 
@@ -2695,7 +2704,7 @@ public sealed class SacrificeRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_countThisCombat += player.Creature.CombatState.Enemies.Count(static enemy => enemy.IsAlive && enemy.Side == CombatSide.Enemy) * 2;
+		_countThisCombat += player.Creature.CombatState.Enemies.Count(static enemy => enemy.IsAlive && enemy.Side == CombatSide.Enemy) * 3;
 		InvokeDisplayAmountChanged();
 		return Task.CompletedTask;
 	}
@@ -2747,16 +2756,9 @@ public sealed class GoldrendRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_countThisCombat += 2;
+		_countThisCombat += 3;
 		InvokeDisplayAmountChanged();
 		return Task.CompletedTask;
-	}
-
-	public override decimal ModifyDamageAdditive(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
-	{
-		return amount > 0m && target?.Side == CombatSide.Enemy && IsDamageFromOwner(dealer, cardSource)
-			? 2m
-			: 0m;
 	}
 
 }
@@ -3356,8 +3358,25 @@ public sealed class ServantMasterRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new SummonVar(5m)
+		new PowerVar<NecroMasteryPower>(1m),
+		new SummonVar(3m)
 	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<NecroMasteryPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<NecroMasteryPower>(Owner.Creature, DynamicVars["NecroMasteryPower"].BaseValue, Owner.Creature, null);
+	}
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
@@ -4415,8 +4434,6 @@ public sealed class RandomForgeShopRelic : HextechRelicBase
 
 internal static class HextechForgeGrantHelper
 {
-	private const int VictoryRewardChancePercent = 10;
-
 	public static async Task ObtainRandomForges(Player player, int count)
 	{
 		for (int i = 0; i < count; i++)
@@ -4431,25 +4448,16 @@ internal static class HextechForgeGrantHelper
 		}
 	}
 
-	public static Task TryAddRandomForgeRewardAfterVictory(IRunState runState, CombatRoom room)
+	public static bool AddRandomForgeReward(Player player, CombatRoom room)
 	{
-		foreach (Player player in runState.Players)
+		if (!TryCreateRandomForge(player, out RelicModel? forge) || forge == null)
 		{
-			if (player.Creature.IsDead || player.PlayerRng.Rewards.NextInt(100) >= VictoryRewardChancePercent)
-			{
-				continue;
-			}
-
-			if (!TryCreateRandomForge(player, out RelicModel? forge) || forge == null)
-			{
-				continue;
-			}
-
-			SaveManager.Instance.MarkRelicAsSeen(forge);
-			room.AddExtraReward(player, new RelicReward(forge, player));
+			return false;
 		}
 
-		return Task.CompletedTask;
+		SaveManager.Instance.MarkRelicAsSeen(forge);
+		room.AddExtraReward(player, new RelicReward(forge, player));
+		return true;
 	}
 
 	public static bool AddRandomForgeReward(Player player, CombatRoom room, HextechRarityTier rarity)
@@ -4599,7 +4607,7 @@ public sealed class FirstAidKitRune : HextechRelicBase
 {
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? 1.2m : 1m;
+		return target == Owner?.Creature ? 1.25m : 1m;
 	}
 }
 
@@ -4908,6 +4916,539 @@ public sealed class FeelTheBurnRune : HextechRelicBase
 		await PowerCmd.Apply<WeakPower>(enemies, DynamicVars.Weak.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<VulnerablePower>(enemies, DynamicVars.Vulnerable.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<HextechBurnPower>(enemies, DynamicVars["Burn"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class StartupRoutineRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new BlockVar(15m, ValueProp.Unpowered)
+	];
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, null);
+	}
+}
+
+public sealed class CollectorRune : HextechRelicBase
+{
+	private int _countThisCombat;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedCountThisCombat
+	{
+		get => _countThisCombat;
+		set
+		{
+			_countThisCombat = Math.Max(0, value);
+			InvokeDisplayAmountChanged();
+		}
+	}
+
+	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+
+	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("CountPerDeath", 5m)
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		ResetCount();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		if (Owner != null && _countThisCombat > 0)
+		{
+			room.AddExtraReward(Owner, new GoldReward(_countThisCombat, Owner));
+		}
+
+		ResetCount();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
+	{
+		if (wasRemovalPrevented
+			|| Owner == null
+			|| Owner.Creature.IsDead
+			|| target.Side == Owner.Creature.Side
+			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target))
+		{
+			return Task.CompletedTask;
+		}
+
+		_countThisCombat += DynamicVars["CountPerDeath"].IntValue;
+		InvokeDisplayAmountChanged();
+		Flash([target]);
+		return Task.CompletedTask;
+	}
+
+	private void ResetCount()
+	{
+		_countThisCombat = 0;
+		InvokeDisplayAmountChanged();
+	}
+}
+
+public sealed class LifeFlowRune : HextechRelicBase
+{
+	private int _procsThisTurn;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedProcsThisTurn
+	{
+		get => _procsThisTurn;
+		set
+		{
+			_procsThisTurn = Math.Max(0, value);
+			InvokeDisplayAmountChanged();
+		}
+	}
+
+	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+
+	public override int DisplayAmount => !IsCanonical ? Math.Max(0, DynamicVars["MaxProcsPerTurn"].IntValue - _procsThisTurn) : 0;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("HealPercent", 0.05m),
+		new DynamicVar("MaxProcsPerTurn", 3m)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsIroncladPlayer(player);
+	}
+
+	public override Task BeforeCombatStart()
+	{
+		ResetProcs();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetProcs();
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	{
+		if (Owner != null && side == Owner.Creature.Side)
+		{
+			ResetProcs();
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCardExhausted(PlayerChoiceContext choiceContext, CardModel card, bool causedByEthereal)
+	{
+		if (!IsOwnedCard(card)
+			|| Owner == null
+			|| Owner.Creature.IsDead
+			|| _procsThisTurn >= DynamicVars["MaxProcsPerTurn"].IntValue)
+		{
+			return Task.CompletedTask;
+		}
+
+		_procsThisTurn++;
+		InvokeDisplayAmountChanged();
+		int healAmount = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["HealPercent"].BaseValue));
+		Flash();
+		return CreatureCmd.Heal(Owner.Creature, healAmount);
+	}
+
+	private void ResetProcs()
+	{
+		_procsThisTurn = 0;
+		InvokeDisplayAmountChanged();
+	}
+}
+
+public sealed class TrickLicenseRune : HextechRelicBase
+{
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromKeyword(CardKeyword.Sly)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsSilentPlayer(player);
+	}
+
+	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
+	{
+		modifiedCost = originalCost;
+		if (!ShouldPlayForFree(card))
+		{
+			return false;
+		}
+
+		modifiedCost = 0m;
+		return true;
+	}
+
+	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
+	{
+		modifiedCost = originalCost;
+		if (!ShouldPlayForFree(card))
+		{
+			return false;
+		}
+
+		modifiedCost = 0m;
+		return true;
+	}
+
+	private bool ShouldPlayForFree(CardModel card)
+	{
+		return Owner != null
+			&& card.Owner == Owner
+			&& card.IsSlyThisTurn
+			&& card.Pile?.Type is PileType.Hand or PileType.Play;
+	}
+}
+
+public sealed class GalacticGiftRune : HextechRelicBase
+{
+	private int _starsSpentThisCombat;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedStarsSpentThisCombat
+	{
+		get => _starsSpentThisCombat;
+		set
+		{
+			_starsSpentThisCombat = Math.Max(0, value);
+			InvokeDisplayAmountChanged();
+		}
+	}
+
+	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+
+	public override int DisplayAmount
+	{
+		get
+		{
+			if (IsCanonical)
+			{
+				return 0;
+			}
+
+			int starsNeeded = DynamicVars["StarsSpent"].IntValue;
+			int remainder = _starsSpentThisCombat % starsNeeded;
+			return remainder == 0 ? starsNeeded : starsNeeded - remainder;
+		}
+	}
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new StarsVar("StarsSpent", 3),
+		new StarsVar(1)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsRegentPlayer(player);
+	}
+
+	public override Task BeforeCombatStart()
+	{
+		ResetStarsSpent();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetStarsSpent();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterStarsSpent(int amount, Player spender)
+	{
+		if (spender != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		int starsNeeded = DynamicVars["StarsSpent"].IntValue;
+		_starsSpentThisCombat += amount;
+		int rewards = _starsSpentThisCombat / starsNeeded;
+		_starsSpentThisCombat %= starsNeeded;
+		InvokeDisplayAmountChanged();
+		if (rewards <= 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PlayerCmd.GainStars(rewards * DynamicVars.Stars.BaseValue, Owner);
+	}
+
+	private void ResetStarsSpent()
+	{
+		_starsSpentThisCombat = 0;
+		InvokeDisplayAmountChanged();
+	}
+}
+
+public sealed class SomethingFromNothingRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(1)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNecrobinderPlayer(player);
+	}
+
+	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	{
+		if (Owner == null || cardPlay.Card.Owner != Owner || cardPlay.Card is not MegaCrit.Sts2.Core.Models.Cards.Void)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return CardPileCmd.Draw(context, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
+	}
+}
+
+public sealed class LubricantRune : HextechRelicBase
+{
+	private bool _usedThisTurn;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public bool SavedUsedThisTurn
+	{
+		get => _usedThisTurn;
+		set
+		{
+			_usedThisTurn = value;
+			InvokeDisplayAmountChanged();
+		}
+	}
+
+	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+
+	public override int DisplayAmount => !IsCanonical && !_usedThisTurn ? 1 : 0;
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsDefectPlayer(player);
+	}
+
+	public override Task BeforeCombatStart()
+	{
+		ResetTurnState();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetTurnState();
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	{
+		if (Owner != null && side == Owner.Creature.Side)
+		{
+			ResetTurnState();
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
+	{
+		modifiedCost = originalCost;
+		if (!ShouldPowerCardBeFree(card))
+		{
+			return false;
+		}
+
+		modifiedCost = 0m;
+		return true;
+	}
+
+	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
+	{
+		modifiedCost = originalCost;
+		if (!ShouldPowerCardBeFree(card))
+		{
+			return false;
+		}
+
+		modifiedCost = 0m;
+		return true;
+	}
+
+	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	{
+		if (_usedThisTurn
+			|| cardPlay.IsAutoPlay
+			|| !cardPlay.IsFirstInSeries
+			|| cardPlay.Card.Owner != Owner
+			|| cardPlay.Card.Type != CardType.Power)
+		{
+			return Task.CompletedTask;
+		}
+
+		_usedThisTurn = true;
+		InvokeDisplayAmountChanged();
+		Flash();
+		return Task.CompletedTask;
+	}
+
+	private bool ShouldPowerCardBeFree(CardModel card)
+	{
+		return !_usedThisTurn
+			&& Owner != null
+			&& card.Owner == Owner
+			&& card.Type == CardType.Power
+			&& card.Pile?.Type is PileType.Hand or PileType.Play;
+	}
+
+	private void ResetTurnState()
+	{
+		_usedThisTurn = false;
+		InvokeDisplayAmountChanged();
+	}
+}
+
+public sealed class HubrisRune : HextechRelicBase
+{
+	private int _stacks;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedStacks
+	{
+		get => _stacks;
+		set
+		{
+			_stacks = Math.Max(0, value);
+			InvokeDisplayAmountChanged();
+		}
+	}
+
+	public override bool ShowCounter => true;
+
+	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("StacksPerBonus", 3m),
+		new PowerVar<StrengthPower>(1m),
+		new CardsVar(1)
+	];
+
+	public override Task AfterCombatVictory(CombatRoom room)
+	{
+		if (Owner != null && !Owner.Creature.IsDead)
+		{
+			SavedStacks++;
+			Flash(Array.Empty<Creature>());
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override async Task AfterRoomEntered(AbstractRoom room)
+	{
+		if (room is not CombatRoom || Owner == null)
+		{
+			return;
+		}
+
+		int bonus = GetBonusAmount();
+		if (bonus <= 0)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, bonus * DynamicVars.Strength.BaseValue, Owner.Creature, null);
+	}
+
+	public override decimal ModifyHandDraw(Player player, decimal count)
+	{
+		if (player != Owner || player.Creature.CombatState?.RoundNumber > 1)
+		{
+			return count;
+		}
+
+		return count + GetBonusAmount() * DynamicVars.Cards.BaseValue;
+	}
+
+	private int GetBonusAmount()
+	{
+		return FloorToInt(_stacks / DynamicVars["StacksPerBonus"].BaseValue);
+	}
+}
+
+public sealed class GoldenSpatulaRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+			new PowerVar<StrengthPower>(1m),
+			new PowerVar<DexterityPower>(1m),
+			new PowerVar<FocusPower>(1m),
+			new DynamicVar("ForgeRewardChance", 50m)
+		];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<StrengthPower>(),
+		HoverTipFactory.FromPower<DexterityPower>(),
+		HoverTipFactory.FromPower<FocusPower>()
+	];
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<DexterityPower>(Owner.Creature, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
+	}
+
+	public override Task AfterCombatVictory(CombatRoom room)
+	{
+		if (Owner == null
+			|| Owner.Creature.IsDead
+			|| Owner.PlayerRng.Rewards.NextInt(100) >= DynamicVars["ForgeRewardChance"].IntValue)
+		{
+			return Task.CompletedTask;
+		}
+
+		if (HextechForgeGrantHelper.AddRandomForgeReward(Owner, room))
+		{
+			Flash(Array.Empty<Creature>());
+		}
+
+		return Task.CompletedTask;
 	}
 }
 

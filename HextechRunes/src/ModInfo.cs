@@ -51,6 +51,8 @@ internal static class ModInfo
         typeof(ZealotRune),
         typeof(MindToMatterRune),
         typeof(StatsRune),
+        typeof(StartupRoutineRune),
+        typeof(CollectorRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -88,6 +90,12 @@ internal static class ModInfo
         typeof(GetExcitedRune),
         typeof(ShrinkEngineRune),
         typeof(StatsOnStatsRune),
+        typeof(LifeFlowRune),
+        typeof(TrickLicenseRune),
+        typeof(GalacticGiftRune),
+        typeof(SomethingFromNothingRune),
+        typeof(LubricantRune),
+        typeof(HubrisRune),
         typeof(TransmutePrismaticRune),
         typeof(DawnbringersResolveRune),
         typeof(ShrinkRayRune)
@@ -132,6 +140,7 @@ internal static class ModInfo
         typeof(WatchOutGrapefruitRune),
         typeof(ProteinShakeRune),
         typeof(StatsOnStatsOnStatsRune),
+        typeof(GoldenSpatulaRune),
         typeof(TransmuteChaosRune)
     ];
 
