@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
@@ -720,6 +721,25 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         else if (cardPlay.Card.Type == MegaCrit.Sts2.Core.Entities.Cards.CardType.Attack)
         {
             await PowerCmd.Apply<HextechTemporaryDexterityLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
+        }
+    }
+
+    public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    {
+        Player? owner = cardPlay.Card.Owner;
+        if (owner == null
+            || cardPlay.Card.Type != CardType.Power
+            || owner.Creature.CombatState?.RunState != RunState
+            || owner.Creature.GetPower<StormPower>() is not StormPower stormPower)
+        {
+            return;
+        }
+
+        int lightningCount = Math.Max(0, (int)Math.Floor((decimal)stormPower.Amount));
+        for (int i = 0; i < lightningCount; i++)
+        {
+            OrbModel orb = ModelDb.Orb<LightningOrb>().ToMutable();
+            await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, owner);
         }
     }
 
