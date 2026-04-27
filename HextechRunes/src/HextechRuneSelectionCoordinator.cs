@@ -286,7 +286,7 @@ internal static class HextechRuneSelectionCoordinator
 		return pool[runState.Rng.Niche.NextInt(pool.Count)];
 	}
 
-	private static List<RelicModel> BuildSelectableRunePool(Player player, HextechRarityTier rarity, IReadOnlySet<ModelId>? excludedIds = null)
+	private static List<RelicModel> BuildSelectableRunePool(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
 	{
 		HashSet<ModelId> ownedIds = player.Relics
 			.Where(ModInfo.IsHextechRelic)
@@ -296,6 +296,7 @@ internal static class HextechRuneSelectionCoordinator
 		blockedOwnedIds.UnionWith(ModInfo.GetMutuallyExclusivePlayerRuneIds(ownedIds));
 
 		List<RelicModel> pool = ModInfo.GetPlayerRuneTypesForRarity(rarity)
+			.Where(type => ModInfo.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
 			.Where(relic => ModInfo.IsAvailableForPlayer(relic, player)
 				&& !blockedOwnedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)
@@ -307,7 +308,7 @@ internal static class HextechRuneSelectionCoordinator
 
 	private static List<RelicModel> BuildSelectableRunesForRarity(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
 	{
-		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, excludedIds);
+		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, excludedIds);
 
 		List<RelicModel> options = [];
 		int picks = Math.Min(3, pool.Count);
@@ -687,7 +688,8 @@ internal static class HextechRuneSelectionCoordinator
 		excludedIds.UnionWith(seenOptionIds);
 
 		HextechRarityTier rarity = GetRarityForOptions(currentOptions);
-		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, excludedIds)
+		RunState runState = (RunState)player.RunState;
+		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, excludedIds)
 			.OrderBy(static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry, StringComparer.Ordinal)
 			.ToList();
 		if (pool.Count == 0)
