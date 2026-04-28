@@ -1800,6 +1800,11 @@ public sealed class ElicitCard : CardModel
 		HoverTipFactory.Static(StaticHoverTip.Evoke)
 	];
 
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(0)
+	];
+
 	public override IEnumerable<CardKeyword> CanonicalKeywords =>
 	[
 		CardKeyword.Innate,
@@ -1819,6 +1824,16 @@ public sealed class ElicitCard : CardModel
 		{
 			await OrbCmd.EvokeNext(choiceContext, Owner);
 		}
+
+		if (DynamicVars.Cards.IntValue > 0)
+		{
+			await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
+		}
+	}
+
+	protected override void OnUpgrade()
+	{
+		DynamicVars.Cards.UpgradeValueBy(2m);
 	}
 }
 

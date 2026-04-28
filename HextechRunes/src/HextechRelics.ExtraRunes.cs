@@ -1153,18 +1153,10 @@ public sealed class BladeWaltzCard : CardModel
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 
-	public override IEnumerable<CardKeyword> CanonicalKeywords
-	{
-		get
-		{
-			if (IsUpgraded)
-			{
-				return [CardKeyword.Retain, CardKeyword.Exhaust];
-			}
-
-			return [CardKeyword.Exhaust];
-		}
-	}
+	public override IEnumerable<CardKeyword> CanonicalKeywords =>
+	[
+		CardKeyword.Exhaust
+	];
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -1179,7 +1171,7 @@ public sealed class BladeWaltzCard : CardModel
 	];
 
 	public BladeWaltzCard()
-		: base(2, CardType.Attack, CardRarity.Token, TargetType.AllEnemies)
+		: base(1, CardType.Attack, CardRarity.Token, TargetType.AllEnemies)
 	{
 	}
 
@@ -1200,6 +1192,12 @@ public sealed class BladeWaltzCard : CardModel
 		}
 
 		await PowerCmd.Apply<IntangiblePower>(Owner.Creature, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, this);
+	}
+
+	protected override void OnUpgrade()
+	{
+		_ = Keywords;
+		RemoveKeyword(CardKeyword.Exhaust);
 	}
 }
 

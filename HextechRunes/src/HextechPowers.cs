@@ -87,6 +87,8 @@ public sealed class HextechAttackReplayPower : PowerModel
 
 	public override PowerStackType StackType => PowerStackType.Counter;
 
+	protected override bool IsVisibleInternal => false;
+
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
 		_triggeredLastPlay = false;
