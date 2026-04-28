@@ -314,6 +314,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         _slapProcsThisTurn.Clear();
         _tormentorProcsThisTurn.Clear();
         _courageProcsThisTurn.Clear();
+        _devilsDanceTriggeredThisTurn.Clear();
         _monsterDebuffActionProcKeysThisTurn.Clear();
 
         IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState);
@@ -494,6 +495,11 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             multiplier *= 1.1m;
         }
 
+        if (HasActiveMonsterHex(MonsterHexKind.Goldrend))
+        {
+            multiplier *= 1.1m;
+        }
+
         return multiplier;
     }
 
@@ -604,7 +610,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             && isBelowThresholdAfterDamage)
         {
             _dawnTriggered.Add(combatId);
-            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.3m));
+            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.25m));
             await CreatureCmd.Heal(target, heal);
         }
 
@@ -617,10 +623,10 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
 
         if (HasActiveMonsterHex(MonsterHexKind.MikaelsBlessing)
             && isBelowThresholdAfterDamage
-            && _mikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) < 3)
+            && _mikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) < 2)
         {
             _mikaelsBlessingTriggers[combatId] = _mikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) + 1;
-            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.2m));
+            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.25m));
             await CreatureCmd.Heal(target, heal);
 
             List<PowerModel> negativePowers = target.Powers
@@ -665,7 +671,10 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             return;
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.DevilsDance) && dealer.IsAlive)
+        if (HasActiveMonsterHex(MonsterHexKind.DevilsDance)
+            && dealer.IsAlive
+            && dealer.CombatId != null
+            && _devilsDanceTriggeredThisTurn.Add(dealer.CombatId.Value))
         {
             int heal = Math.Max(1, (int)Math.Floor(dealer.MaxHp * 0.1m));
             await CreatureCmd.Heal(dealer, heal);

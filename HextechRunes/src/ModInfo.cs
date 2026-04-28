@@ -13,7 +13,7 @@ internal static class ModInfo
 
     public const string DisplayName = "海克斯符文";
 
-    public const string Version = "0.4.1";
+    public const string Version = "0.4.2";
 
     public const string TargetGameVersion = "0.103.2";
 
@@ -35,6 +35,8 @@ internal static class ModInfo
 
     private static readonly IReadOnlyList<Type> ShopOnlyRelicTypes = HextechContentRegistry.ShopOnlyRelicTypes;
 
+    private static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = HextechContentRegistry.DisabledPlayerRuneTypes;
+
     private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes = HextechContentRegistry.AttributeConversionExclusiveRuneTypes;
 
     private static readonly IReadOnlySet<Type> FirstActExcludedRuneTypes = HextechContentRegistry.FirstActExcludedRuneTypes;
@@ -55,19 +57,27 @@ internal static class ModInfo
 
     public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
 
+    public static IReadOnlyList<Type> GetAllSelectableRuneTypes()
+    {
+        return Enum.GetValues<HextechRarityTier>()
+            .SelectMany(GetPlayerRuneTypesForRarity)
+            .ToArray();
+    }
+
     public static IReadOnlyList<Type> GetAllForgeTypes() => AllForgeTypes;
 
     public static IReadOnlyList<Type> GetAllCustomRelicTypes() => AllCustomRelicTypes;
 
     public static IReadOnlyList<Type> GetPlayerRuneTypesForRarity(HextechRarityTier rarity)
     {
-        return rarity switch
+        IReadOnlyList<Type> runeTypes = rarity switch
         {
             HextechRarityTier.Silver => SilverRuneTypes,
             HextechRarityTier.Gold => GoldRuneTypes,
             HextechRarityTier.Prismatic => PrismaticRuneTypes,
             _ => Array.Empty<Type>()
         };
+        return runeTypes.Where(static type => !DisabledPlayerRuneTypes.Contains(type)).ToArray();
     }
 
     public static IReadOnlyList<Type> GetForgeTypesForRarity(HextechRarityTier rarity)

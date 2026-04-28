@@ -32,6 +32,7 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HashSet<uint> _repulsorPending = new();
 	private readonly HashSet<uint> _dawnTriggered = new();
 	private readonly HashSet<uint> _speedDemonPending = new();
+	private readonly HashSet<uint> _devilsDanceTriggeredThisTurn = new();
 	private readonly HashSet<uint> _feelTheBurnTriggered = new();
 	private readonly Dictionary<uint, uint> _feyMagicPendingNoDrawPlayers = new();
 	private readonly Dictionary<uint, int> _mikaelsBlessingTriggers = new();
@@ -117,7 +118,9 @@ internal sealed partial class HextechMayhemModifier
 			return false;
 		}
 
-		int recoverThroughAct = Math.Min(currentActIndex, GetHighestActResolvedByPlayerRuneCounts());
+		int telemetryRecoverThroughAct = GetHighestActResolvedByTelemetryChoices(currentActIndex);
+		int countRecoverThroughAct = GetHighestActResolvedByPlayerRuneCounts(currentActIndex == 0 ? 0 : currentActIndex - 1);
+		int recoverThroughAct = Math.Max(telemetryRecoverThroughAct, countRecoverThroughAct);
 		if (recoverThroughAct < 0)
 		{
 			return false;
@@ -132,7 +135,7 @@ internal sealed partial class HextechMayhemModifier
 				changed = true;
 			}
 
-			if (_rarityByAct[actIndex] < 0 && TryInferRarityForActFromPlayerRelics(actIndex, out HextechRarityTier rarity))
+			if (_rarityByAct[actIndex] < 0 && TryInferRarityForAct(actIndex, out HextechRarityTier rarity))
 			{
 				_rarityByAct[actIndex] = (int)rarity;
 				changed = true;
@@ -141,7 +144,7 @@ internal sealed partial class HextechMayhemModifier
 
 		if (changed)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)} counts={DescribePlayerHexCounts()}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
 		return changed;
@@ -301,8 +304,56 @@ internal sealed partial class HextechMayhemModifier
 		return normalized;
 	}
 
-	private int GetHighestActResolvedByPlayerRuneCounts()
+	private int GetHighestActResolvedByTelemetryChoices(int maxActIndex)
 	{
+		int lastActIndex = Math.Min(maxActIndex, _resolvedActs.Length - 1);
+		if (lastActIndex < 0 || RunState.Players.Count == 0)
+		{
+			return -1;
+		}
+
+		IReadOnlyList<HextechTelemetry.RuneChoiceRecord> records = GetTelemetryChoiceRecords();
+		if (records.Count == 0)
+		{
+			return -1;
+		}
+
+		int highest = -1;
+		for (int actIndex = 0; actIndex <= lastActIndex; actIndex++)
+		{
+			HashSet<int> playerSlots = records
+				.Where(record => record.ActIndex == actIndex)
+				.Select(static record => record.PlayerSlot)
+				.ToHashSet();
+			bool allPlayersRecorded = true;
+			for (int playerSlot = 0; playerSlot < RunState.Players.Count; playerSlot++)
+			{
+				if (!playerSlots.Contains(playerSlot))
+				{
+					allPlayersRecorded = false;
+					break;
+				}
+			}
+
+			if (!allPlayersRecorded)
+			{
+				break;
+			}
+
+			highest = actIndex;
+		}
+
+		return highest;
+	}
+
+	private int GetHighestActResolvedByPlayerRuneCounts(int maxActIndex)
+	{
+		int lastActIndex = Math.Min(maxActIndex, _resolvedActs.Length - 1);
+		if (lastActIndex < 0)
+		{
+			return -1;
+		}
+
 		int minHexCount = int.MaxValue;
 		foreach (Player player in RunState.Players)
 		{
@@ -315,7 +366,27 @@ internal sealed partial class HextechMayhemModifier
 			return -1;
 		}
 
-		return Math.Min(_resolvedActs.Length - 1, minHexCount - 1);
+		return Math.Min(lastActIndex, minHexCount - 1);
+	}
+
+	private bool TryInferRarityForAct(int actIndex, out HextechRarityTier rarity)
+	{
+		return TryInferRarityForActFromTelemetryChoices(actIndex, out rarity)
+			|| TryInferRarityForActFromPlayerRelics(actIndex, out rarity);
+	}
+
+	private bool TryInferRarityForActFromTelemetryChoices(int actIndex, out HextechRarityTier rarity)
+	{
+		foreach (HextechTelemetry.RuneChoiceRecord record in GetTelemetryChoiceRecords().Where(record => record.ActIndex == actIndex))
+		{
+			if (Enum.TryParse(record.Rarity, ignoreCase: true, out rarity))
+			{
+				return true;
+			}
+		}
+
+		rarity = default;
+		return false;
 	}
 
 	private bool TryInferRarityForActFromPlayerRelics(int actIndex, out HextechRarityTier rarity)
@@ -340,6 +411,14 @@ internal sealed partial class HextechMayhemModifier
 		return string.Join(",", RunState.Players.Select(player => $"{player.NetId}:{player.Relics.Count(ModInfo.IsHextechRelic)}"));
 	}
 
+	private string DescribeTelemetryChoiceCounts()
+	{
+		return string.Join(",", GetTelemetryChoiceRecords()
+			.GroupBy(static record => record.ActIndex)
+			.OrderBy(static group => group.Key)
+			.Select(static group => $"{group.Key}:{group.Count()}"));
+	}
+
 	private void ResetCombatTracking()
 	{
 		_slapProcsThisTurn.Clear();
@@ -351,6 +430,7 @@ internal sealed partial class HextechMayhemModifier
 		_repulsorPending.Clear();
 		_dawnTriggered.Clear();
 		_speedDemonPending.Clear();
+		_devilsDanceTriggeredThisTurn.Clear();
 		_feelTheBurnTriggered.Clear();
 		_feyMagicPendingNoDrawPlayers.Clear();
 		_mikaelsBlessingTriggers.Clear();

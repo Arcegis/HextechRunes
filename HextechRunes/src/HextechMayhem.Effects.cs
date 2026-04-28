@@ -58,7 +58,7 @@ internal sealed partial class HextechMayhemModifier
             && creature.CombatId != null
             && _goliathApplied.Add(creature.CombatId.Value))
         {
-            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.35m);
+            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.3m);
             if (maxHpGain > 0)
             {
                 await CreatureCmd.GainMaxHp(creature, maxHpGain);

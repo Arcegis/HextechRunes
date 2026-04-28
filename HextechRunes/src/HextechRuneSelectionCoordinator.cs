@@ -23,6 +23,10 @@ internal static class HextechRuneSelectionCoordinator
 	private const int FirstActSilverWeight = 20;
 	private const int FirstActGoldWeight = 50;
 	private const int FirstActPrismaticWeight = 30;
+	private const int HextechChoiceMagic = 0x48585452; // HXTR
+	private const int ChoiceKindActRoll = 1;
+	private const int ChoiceKindRuneSelection = 2;
+	private const int ChoiceKindActSelectionApplied = 3;
 
 	private static bool _handlingActSelection;
 	private static RunState? _handlingActSelectionRunState;
@@ -215,7 +219,12 @@ internal static class HextechRuneSelectionCoordinator
 			return (localRarity, localMonsterHex);
 		}
 
-		PlayerChoiceResult remoteChoice = await synchronizer.WaitForRemoteChoice(authorityPlayer, choiceId);
+		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+			synchronizer,
+			authorityPlayer,
+			choiceId,
+			result => TryDecodeActRollChoiceResult(result, actIndex, out _, out _),
+			$"act-roll act={actIndex}");
 		if (!TryDecodeActRollChoiceResult(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind syncedMonsterHex))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: malformed host payload act={actIndex}; using local rarity={localRarity} monsterHex={localMonsterHex}");
@@ -224,32 +233,35 @@ internal static class HextechRuneSelectionCoordinator
 
 		modifier.SetRarityForAct(actIndex, syncedRarity);
 		modifier.SetMonsterHexForAct(actIndex, syncedMonsterHex);
-		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll client sync: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} localRarity={localRarity} localMonsterHex={localMonsterHex}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} localRarity={localRarity} localMonsterHex={localMonsterHex}");
 		return (syncedRarity, syncedMonsterHex);
 	}
 
 	private static PlayerChoiceResult CreateActRollChoiceResult(int actIndex, HextechRarityTier rarity, MonsterHexKind monsterHex)
 	{
-		return PlayerChoiceResult.FromIndexes([actIndex, (int)rarity, (int)monsterHex]);
+		return PlayerChoiceResult.FromIndexes([ HextechChoiceMagic, ChoiceKindActRoll, actIndex, (int)rarity, (int)monsterHex ]);
 	}
 
 	private static bool TryDecodeActRollChoiceResult(PlayerChoiceResult result, int expectedActIndex, out HextechRarityTier rarity, out MonsterHexKind monsterHex)
 	{
 		rarity = default;
 		monsterHex = default;
-		List<int>? payload = result.AsIndexes();
-		if (payload == null || payload.Count < 3 || payload[0] != expectedActIndex)
+		if (!TryGetIndexPayload(result, out List<int>? payload)
+			|| payload.Count < 5
+			|| payload[0] != HextechChoiceMagic
+			|| payload[1] != ChoiceKindActRoll
+			|| payload[2] != expectedActIndex)
 		{
 			return false;
 		}
 
-		if (!Enum.IsDefined(typeof(HextechRarityTier), payload[1]) || !Enum.IsDefined(typeof(MonsterHexKind), payload[2]))
+		if (!Enum.IsDefined(typeof(HextechRarityTier), payload[3]) || !Enum.IsDefined(typeof(MonsterHexKind), payload[4]))
 		{
 			return false;
 		}
 
-		rarity = (HextechRarityTier)payload[1];
-		monsterHex = (MonsterHexKind)payload[2];
+		rarity = (HextechRarityTier)payload[3];
+		monsterHex = (MonsterHexKind)payload[4];
 		return true;
 	}
 
@@ -422,7 +434,7 @@ internal static class HextechRuneSelectionCoordinator
 			uint choiceId = synchronizer.ReserveChoiceId(player);
 			if (IsLocalPlayer(runManager, player))
 			{
-				synchronizer.SyncLocalChoice(player, choiceId, PlayerChoiceResult.FromIndexes([ actIndex, 1 ]));
+				synchronizer.SyncLocalChoice(player, choiceId, CreateActSelectionAppliedChoiceResult(actIndex));
 				Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} player={player.NetId} choiceId={choiceId}");
 				continue;
 			}
@@ -442,23 +454,34 @@ internal static class HextechRuneSelectionCoordinator
 
 	private static async Task WaitForRemoteActSelectionApplied(PlayerChoiceSynchronizer synchronizer, Player player, uint choiceId, int actIndex)
 	{
-		PlayerChoiceResult remoteAck = await synchronizer.WaitForRemoteChoice(player, choiceId);
+		(PlayerChoiceResult remoteAck, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+			synchronizer,
+			player,
+			choiceId,
+			result => TryDecodeActSelectionApplied(result, actIndex),
+			$"act-selection-applied act={actIndex}");
 		if (!TryDecodeActSelectionApplied(remoteAck, actIndex))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied malformed ack: act={actIndex} player={player.NetId} choiceId={choiceId}");
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} player={player.NetId} choiceId={choiceId}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} player={player.NetId} choiceId={receivedChoiceId}");
+	}
+
+	private static PlayerChoiceResult CreateActSelectionAppliedChoiceResult(int actIndex)
+	{
+		return PlayerChoiceResult.FromIndexes([ HextechChoiceMagic, ChoiceKindActSelectionApplied, actIndex, 1 ]);
 	}
 
 	private static bool TryDecodeActSelectionApplied(PlayerChoiceResult result, int expectedActIndex)
 	{
-		List<int>? payload = result.AsIndexes();
-		return payload != null
-			&& payload.Count >= 2
-			&& payload[0] == expectedActIndex
-			&& payload[1] == 1;
+		return TryGetIndexPayload(result, out List<int>? payload)
+			&& payload.Count >= 4
+			&& payload[0] == HextechChoiceMagic
+			&& payload[1] == ChoiceKindActSelectionApplied
+			&& payload[2] == expectedActIndex
+			&& payload[3] == 1;
 	}
 
 	private static async Task<RuneSelectionResult> SelectRune(Player player, IReadOnlyList<RelicModel> options, RelicModel? monsterHexRelic)
@@ -500,8 +523,13 @@ internal static class HextechRuneSelectionCoordinator
 		}
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: player={player.NetId} choiceId={choiceId}");
-		PlayerChoiceResult remoteChoice = await synchronizer.WaitForRemoteChoice(player, choiceId);
-		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: player={player.NetId} choiceId={choiceId}");
+		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+			synchronizer,
+			player,
+			choiceId,
+			IsRuneSelectionChoice,
+			"rune-choice");
+		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: player={player.NetId} choiceId={receivedChoiceId}");
 		return ResolveRemoteRuneChoice(player, options, remoteChoice, monsterHexRelic);
 	}
 
@@ -522,8 +550,13 @@ internal static class HextechRuneSelectionCoordinator
 		}
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: player={selection.Player.NetId} choiceId={selection.ChoiceId}");
-		PlayerChoiceResult remoteChoice = await synchronizer.WaitForRemoteChoice(selection.Player, selection.ChoiceId);
-		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: player={selection.Player.NetId} choiceId={selection.ChoiceId}");
+		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+			synchronizer,
+			selection.Player,
+			selection.ChoiceId,
+			IsRuneSelectionChoice,
+			"rune-choice");
+		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: player={selection.Player.NetId} choiceId={receivedChoiceId}");
 		return ResolveRemoteRuneChoice(selection.Player, selection.Options, remoteChoice, monsterHexRelic);
 	}
 
@@ -572,7 +605,7 @@ internal static class HextechRuneSelectionCoordinator
 	private static PlayerChoiceResult CreateRuneChoiceResult(HextechRuneSelectionScreen screen, RelicModel? selectedRelic)
 	{
 		int selectedIndex = selectedRelic == null ? -1 : IndexOfRelic(screen.CurrentRelics, selectedRelic);
-		List<int> payload = [ selectedIndex, screen.RerollHistory.Count ];
+		List<int> payload = [ HextechChoiceMagic, ChoiceKindRuneSelection, selectedIndex, screen.RerollHistory.Count ];
 		payload.AddRange(screen.RerollHistory);
 		Log.Info($"[{ModInfo.Id}][Mayhem] CreateRuneChoiceResult: selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
 		return PlayerChoiceResult.FromIndexes(payload);
@@ -593,7 +626,12 @@ internal static class HextechRuneSelectionCoordinator
 
 	private static RuneSelectionResult ResolveRemoteRuneChoice(Player player, IReadOnlyList<RelicModel> options, PlayerChoiceResult remoteChoice, RelicModel? monsterHexRelic)
 	{
-		(int selectedIndex, List<int> rerollHistory) = DecodeRuneChoiceResult(remoteChoice);
+		if (!TryDecodeRuneChoiceResult(remoteChoice, out int selectedIndex, out List<int> rerollHistory))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: malformed hextech rune payload player={player.NetId} result={remoteChoice}");
+			return new RuneSelectionResult(null, options.ToList(), 0);
+		}
+
 		HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic);
 		IReadOnlyList<RelicModel> currentOptions = options;
 		for (int i = 0; i < rerollHistory.Count; i++)
@@ -607,28 +645,81 @@ internal static class HextechRuneSelectionCoordinator
 		return new RuneSelectionResult(selectedRelic, currentOptions.ToList(), rerollHistory.Count);
 	}
 
-	private static (int SelectedIndex, List<int> RerollHistory) DecodeRuneChoiceResult(PlayerChoiceResult result)
+	private static bool IsRuneSelectionChoice(PlayerChoiceResult result)
 	{
-		List<int>? payload = result.AsIndexes();
-		if (payload == null || payload.Count == 0)
+		return TryDecodeRuneChoiceResult(result, out _, out _);
+	}
+
+	private static bool TryDecodeRuneChoiceResult(PlayerChoiceResult result, out int selectedIndex, out List<int> rerollHistory)
+	{
+		selectedIndex = -1;
+		rerollHistory = [];
+		if (!TryGetIndexPayload(result, out List<int>? payload)
+			|| payload.Count < 4
+			|| payload[0] != HextechChoiceMagic
+			|| payload[1] != ChoiceKindRuneSelection)
 		{
-			return (result.AsIndex(), []);
+			return false;
 		}
 
-		int selectedIndex = payload[0];
-		if (payload.Count == 1)
-		{
-			return (selectedIndex, []);
-		}
-
-		int rerollCount = Math.Max(0, payload[1]);
-		if (payload.Count < rerollCount + 2)
+		selectedIndex = payload[2];
+		int rerollCount = Math.Max(0, payload[3]);
+		if (payload.Count < rerollCount + 4)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] DecodeRuneChoiceResult: malformed payload={string.Join(",", payload)}");
-			return (selectedIndex, []);
+			return false;
 		}
 
-		return (selectedIndex, payload.Skip(2).Take(rerollCount).ToList());
+		rerollHistory = payload.Skip(4).Take(rerollCount).ToList();
+		return true;
+	}
+
+	private static async Task<(PlayerChoiceResult Result, uint ChoiceId)> WaitForRemoteHextechChoice(
+		PlayerChoiceSynchronizer synchronizer,
+		Player player,
+		uint initialChoiceId,
+		Func<PlayerChoiceResult, bool> isExpected,
+		string context)
+	{
+		uint choiceId = initialChoiceId;
+		int skipped = 0;
+		while (true)
+		{
+			PlayerChoiceResult remoteChoice = await synchronizer.WaitForRemoteChoice(player, choiceId);
+			if (isExpected(remoteChoice))
+			{
+				if (skipped > 0)
+				{
+					Log.Info($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: accepted after skipping foreign choices context={context} player={player.NetId} choiceId={choiceId} skipped={skipped}");
+				}
+
+				return (remoteChoice, choiceId);
+			}
+
+			skipped++;
+			Log.Warn($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: skipped non-hextech choice context={context} player={player.NetId} choiceId={choiceId} skipped={skipped} type={remoteChoice.ChoiceType} result={remoteChoice}");
+			choiceId = synchronizer.ReserveChoiceId(player);
+		}
+	}
+
+	private static bool TryGetIndexPayload(PlayerChoiceResult result, out List<int> payload)
+	{
+		payload = [];
+		try
+		{
+			List<int>? indexes = result.AsIndexes();
+			if (indexes == null)
+			{
+				return false;
+			}
+
+			payload = indexes;
+			return true;
+		}
+		catch (InvalidOperationException)
+		{
+			return false;
+		}
 	}
 
 	private static HashSet<ModelId> CreateSeenOptionIds(IEnumerable<RelicModel> options, RelicModel? monsterHexRelic)

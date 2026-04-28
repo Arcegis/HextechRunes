@@ -9,6 +9,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DERIVED_DIR = path.join(DATA_DIR, "derived");
 const LABELS_FILE = path.join(__dirname, "labels.json");
+const LATEST_VERSION_FILE = path.join(PUBLIC_DIR, "latest-version.json");
 const RESULTS_FILE = path.join(DATA_DIR, "run_results.jsonl");
 const MAX_BODY_BYTES = 256 * 1024;
 const MIN_RUN_TIME_FOR_DEFAULT_STATS = 60;
@@ -92,6 +93,21 @@ function sendHtml(res, status, body) {
     "content-length": Buffer.byteLength(body)
   });
   res.end(body);
+}
+
+function readLatestVersionInfo() {
+  try {
+    if (fs.existsSync(LATEST_VERSION_FILE)) {
+      return JSON.parse(fs.readFileSync(LATEST_VERSION_FILE, "utf8"));
+    }
+  } catch (error) {
+    console.warn(`failed to load latest version info: ${error.message}`);
+  }
+  return {
+    modId: "HextechRunes",
+    name: "海克斯大乱斗",
+    latestVersion: "0.4.2"
+  };
 }
 
 function readBody(req) {
@@ -698,6 +714,9 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/api/hextech-runes/summary") {
     return sendJson(res, 200, writeDerivedTables());
+  }
+  if (req.method === "GET" && url.pathname === "/api/hextech-runes/latest-version") {
+    return sendJson(res, 200, readLatestVersionInfo());
   }
   if (req.method === "GET" && url.pathname.startsWith("/api/hextech-runes/derived/")) {
     return serveDerived(req, res, url.pathname);

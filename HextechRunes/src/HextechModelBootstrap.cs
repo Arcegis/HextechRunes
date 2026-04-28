@@ -32,6 +32,8 @@ internal static class HextechModelBootstrap
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryDexterityPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryStrengthLossPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryDexterityLossPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechLethalTempoTemporaryStrengthPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechAttackReplayPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporarySlowPower));
 		EnsureSavedPropertyNetIdBitSize();
 	}

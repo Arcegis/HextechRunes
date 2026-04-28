@@ -123,6 +123,32 @@ public abstract class HextechRelicBase : RelicModel
 		return player.Character.Id == ModelDb.GetId<Necrobinder>();
 	}
 
+	protected async Task AddCardCopiesToDeckOrHand<TCard>(int count)
+		where TCard : CardModel
+	{
+		if (Owner == null || count <= 0)
+		{
+			return;
+		}
+
+		for (int i = 0; i < count; i++)
+		{
+			CardModel card = ModelDb.Card<TCard>().ToMutable();
+			card.Owner = Owner;
+			if (Owner.PlayerCombatState != null && CombatManager.Instance.IsInProgress)
+			{
+				await CardPileCmd.AddGeneratedCardToCombat(card, PileType.Hand, addedByPlayer: true);
+			}
+			else
+			{
+				card.FloorAddedToDeck = Owner.RunState.TotalFloor;
+				Owner.Deck.AddInternal(card);
+			}
+
+			SaveManager.Instance.MarkCardAsSeen(card);
+		}
+	}
+
 	private string GetResolvedIconPath()
 	{
 		string? customPath = ModInfo.TryGetCustomRelicIconPath(this);
@@ -333,7 +359,7 @@ public sealed class EurekaRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("RelicsNeeded", 5m),
+		new DynamicVar("RelicsNeeded", 6m),
 		new EnergyVar(1)
 	];
 
@@ -362,7 +388,7 @@ public sealed class InfiniteLoopRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new EnergyVar(1),
-		new DynamicVar("Combats", 5m)
+		new DynamicVar("Combats", 4m)
 	];
 
 	public override decimal ModifyMaxEnergy(Player player, decimal amount)
@@ -372,7 +398,7 @@ public sealed class InfiniteLoopRune : HextechRelicBase
 			return amount;
 		}
 
-		return amount + DynamicVars.Energy.BaseValue + FloorToInt(_combatVictories / 5m);
+		return amount + DynamicVars.Energy.BaseValue + FloorToInt(_combatVictories / DynamicVars["Combats"].BaseValue);
 	}
 
 	public override Task AfterCombatVictory(CombatRoom room)
@@ -526,7 +552,7 @@ public sealed class OkBoomerangRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("TurnsNeeded", 2m),
-		new DynamicVar("DamagePercent", 10m)
+		new DynamicVar("DamagePercent", 20m)
 	];
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
@@ -650,6 +676,7 @@ public sealed class MikaelsBlessingRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
+		new DynamicVar("PotionCount", 2m),
 		new DynamicVar("HealPercent", 20m)
 	];
 
@@ -667,8 +694,11 @@ public sealed class MikaelsBlessingRune : HextechRelicBase
 		}
 
 		Flash(Array.Empty<Creature>());
-		PotionModel potion = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Count)].ToMutable();
-		await PotionCmd.TryToProcure(potion, Owner);
+		for (int i = 0; i < DynamicVars["PotionCount"].IntValue; i++)
+		{
+			PotionModel potion = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Count)].ToMutable();
+			await PotionCmd.TryToProcure(potion, Owner);
+		}
 	}
 
 	public override async Task AfterPotionUsed(PotionModel potion, Creature? target)
@@ -723,7 +753,8 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("PotionCount", 1m)
+		new DynamicVar("RarePotionCount", 1m),
+		new DynamicVar("UncommonPotionCount", 1m)
 	];
 
 	public override async Task BeforeCombatStart()
@@ -733,18 +764,27 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 			return;
 		}
 
-		List<PotionModel> candidates = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>())
+		List<PotionModel> rareCandidates = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>())
 			.Where(static potion => potion.Rarity is PotionRarity.Rare)
 			.ToList();
-		if (candidates.Count == 0)
+		List<PotionModel> uncommonCandidates = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>())
+			.Where(static potion => potion.Rarity is PotionRarity.Uncommon)
+			.ToList();
+		if (rareCandidates.Count == 0 && uncommonCandidates.Count == 0)
 		{
 			return;
 		}
 
 		Flash(Array.Empty<Creature>());
-		for (int i = 0; i < DynamicVars["PotionCount"].IntValue; i++)
+		for (int i = 0; i < DynamicVars["RarePotionCount"].IntValue && rareCandidates.Count > 0; i++)
 		{
-			PotionModel potion = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Count)].ToMutable();
+			PotionModel potion = rareCandidates[Owner.PlayerRng.Rewards.NextInt(rareCandidates.Count)].ToMutable();
+			await PotionCmd.TryToProcure(potion, Owner);
+		}
+
+		for (int i = 0; i < DynamicVars["UncommonPotionCount"].IntValue && uncommonCandidates.Count > 0; i++)
+		{
+			PotionModel potion = uncommonCandidates[Owner.PlayerRng.Rewards.NextInt(uncommonCandidates.Count)].ToMutable();
 			await PotionCmd.TryToProcure(potion, Owner);
 		}
 	}
@@ -2756,7 +2796,7 @@ public sealed class GoldrendRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_countThisCombat += 3;
+		_countThisCombat += 5;
 		InvokeDisplayAmountChanged();
 		return Task.CompletedTask;
 	}
@@ -2905,12 +2945,23 @@ public sealed class FanTheHammerRune : HextechRelicBase
 {
 	private bool _triggeredThisTurn;
 	private bool _triggeredLastPlay;
+	private CombatState? _turnStateCombat;
+	private int _turnStateRoundNumber = -1;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get => _triggeredThisTurn;
-		set => _triggeredThisTurn = value;
+		get
+		{
+			EnsureTurnStateCurrent();
+			return _triggeredThisTurn;
+		}
+		set
+		{
+			_triggeredThisTurn = value;
+			_triggeredLastPlay = false;
+			UpdateTurnStateIdentity();
+		}
 	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -2936,7 +2987,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
-			ResetTurnState();
+			ResetTurnState(combatState);
 		}
 
 		return Task.CompletedTask;
@@ -2945,12 +2996,19 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
 		_triggeredLastPlay = false;
+		if (card.Owner != Owner)
+		{
+			return playCount;
+		}
+
+		EnsureTurnStateCurrent();
 		if (_triggeredThisTurn || !IsOwnedAttack(card))
 		{
 			return playCount;
 		}
 
 		_triggeredThisTurn = true;
+		UpdateTurnStateIdentity();
 		_triggeredLastPlay = true;
 		return playCount + GetReplayCount();
 	}
@@ -2981,10 +3039,36 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		return DynamicVars["NormalReplays"].IntValue;
 	}
 
-	private void ResetTurnState()
+	private void ResetTurnState(CombatState? combatState = null)
 	{
 		_triggeredThisTurn = false;
 		_triggeredLastPlay = false;
+		UpdateTurnStateIdentity(combatState);
+	}
+
+	private void EnsureTurnStateCurrent()
+	{
+		CombatState? combatState = Owner?.Creature.CombatState;
+		if (combatState == null)
+		{
+			_triggeredThisTurn = false;
+			_triggeredLastPlay = false;
+			_turnStateCombat = null;
+			_turnStateRoundNumber = -1;
+			return;
+		}
+
+		if (!ReferenceEquals(_turnStateCombat, combatState) || _turnStateRoundNumber != combatState.RoundNumber)
+		{
+			ResetTurnState(combatState);
+		}
+	}
+
+	private void UpdateTurnStateIdentity(CombatState? combatState = null)
+	{
+		combatState ??= Owner?.Creature.CombatState;
+		_turnStateCombat = combatState;
+		_turnStateRoundNumber = combatState?.RoundNumber ?? -1;
 	}
 }
 
@@ -3310,6 +3394,8 @@ public sealed class DawnbringersResolveRune : HextechRelicBase
 
 public sealed class ShrinkRayRune : HextechRelicBase
 {
+	private bool _applyingShrinkRay;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new PowerVar<ShrinkPower>(1m)
@@ -3322,7 +3408,8 @@ public sealed class ShrinkRayRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null
+		if (_applyingShrinkRay
+			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0
 			|| !IsDamageFromOwner(dealer, cardSource))
@@ -3331,7 +3418,15 @@ public sealed class ShrinkRayRune : HextechRelicBase
 		}
 
 		Flash([target]);
-		await PowerCmd.Apply<ShrinkPower>(target, DynamicVars["ShrinkPower"].BaseValue, Owner.Creature, cardSource);
+		_applyingShrinkRay = true;
+		try
+		{
+			await PowerCmd.Apply<ShrinkPower>(target, DynamicVars["ShrinkPower"].BaseValue, Owner.Creature, cardSource);
+		}
+		finally
+		{
+			_applyingShrinkRay = false;
+		}
 	}
 }
 

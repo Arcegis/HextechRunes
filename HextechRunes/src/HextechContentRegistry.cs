@@ -34,6 +34,8 @@ internal static class HextechContentRegistry
         typeof(StatsRune),
         typeof(StartupRoutineRune),
         typeof(CollectorRune),
+        typeof(UnyieldingArmorRune),
+        typeof(NightParadeRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -77,6 +79,9 @@ internal static class HextechContentRegistry
         typeof(SomethingFromNothingRune),
         typeof(LubricantRune),
         typeof(HubrisRune),
+        typeof(DrainRune),
+        typeof(LethalTempoRune),
+        typeof(EmergenceRune),
         typeof(TransmutePrismaticRune),
         typeof(DawnbringersResolveRune),
         typeof(ShrinkRayRune)
@@ -122,6 +127,10 @@ internal static class HextechContentRegistry
         typeof(ProteinShakeRune),
         typeof(StatsOnStatsOnStatsRune),
         typeof(GoldenSpatulaRune),
+        typeof(PrecisionCognitionRune),
+        typeof(HastyScribbleRune),
+        typeof(ClownCollegeRune),
+        typeof(BladeWaltzRune),
         typeof(TransmuteChaosRune)
     ];
 
@@ -133,12 +142,15 @@ internal static class HextechContentRegistry
         typeof(UpgradeForge),
         typeof(FocusForge),
         typeof(LifeForge),
-        typeof(PreparedForge)
+        typeof(PreparedForge),
+        typeof(SilverStarsForge),
+        typeof(SilverOrbForge)
     ];
 
     internal static readonly IReadOnlyList<Type> GoldForgeTypes =
     [
         typeof(ConstitutionForge),
+        typeof(DisasterForge),
         typeof(GoldLifeForge),
         typeof(GoldFocusForge),
         typeof(DrawForge),
@@ -161,13 +173,23 @@ internal static class HextechContentRegistry
         typeof(BufferForge),
         typeof(SlipperyForge),
         typeof(PrismaticArtifactForge),
-        typeof(GhostForge)
+        typeof(GhostForge),
+        typeof(FortuneForge)
     ];
 
     internal static readonly IReadOnlyList<Type> ShopOnlyRelicTypes =
     [
         typeof(RandomForgeShopRelic)
     ];
+
+    internal static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = new HashSet<Type>
+    {
+        typeof(HolyFireRune),
+        typeof(DawnbringersResolveRune),
+        typeof(AstralBodyRune),
+        typeof(MindPurificationRune),
+        typeof(NoNonsenseRune)
+    };
 
     internal static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
     [

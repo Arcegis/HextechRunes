@@ -319,7 +319,7 @@ public sealed class FeelTheBurnRune : HextechRelicBase
 	[
 		new PowerVar<WeakPower>(2m),
 		new PowerVar<VulnerablePower>(2m),
-		new DynamicVar("Burn", 5m)
+		new DynamicVar("BurnPercent", 10m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -328,9 +328,12 @@ public sealed class FeelTheBurnRune : HextechRelicBase
 		HoverTipFactory.FromPower<VulnerablePower>()
 	];
 
-	public override async Task AfterPotionUsed(PotionModel potion, Creature? target)
+	public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner?.Creature?.CombatState == null)
+		if (Owner == null
+			|| target != Owner.Creature
+			|| result.UnblockedDamage <= 0
+			|| Owner.Creature.CombatState == null)
 		{
 			return;
 		}
@@ -342,9 +345,10 @@ public sealed class FeelTheBurnRune : HextechRelicBase
 		}
 
 		Flash(enemies);
+		int burnAmount = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["BurnPercent"].BaseValue / 100m));
 		await PowerCmd.Apply<WeakPower>(enemies, DynamicVars.Weak.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<VulnerablePower>(enemies, DynamicVars.Vulnerable.BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<HextechBurnPower>(enemies, DynamicVars["Burn"].BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<HextechBurnPower>(enemies, burnAmount, Owner.Creature, null);
 	}
 }
 
@@ -421,7 +425,7 @@ public sealed class CollectorRune : HextechRelicBase
 
 		_countThisCombat += DynamicVars["CountPerDeath"].IntValue;
 		InvokeDisplayAmountChanged();
-		Flash([target]);
+		Flash();
 		return Task.CompletedTask;
 	}
 
@@ -881,6 +885,324 @@ public sealed class GoldenSpatulaRune : HextechRelicBase
 	}
 }
 
+public sealed class UnyieldingArmorRune : HextechRelicBase
+{
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<PlatingPower>()
+	];
+
+	public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature? applier, out decimal modifiedAmount)
+	{
+		modifiedAmount = amount;
+		if (Owner == null || target != Owner.Creature || canonicalPower is not PlatingPower || amount >= 0m)
+		{
+			return false;
+		}
+
+		modifiedAmount = 0m;
+		Flash();
+		return true;
+	}
+}
+
+public sealed class NightParadeRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(3)
+	];
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		for (int i = 0; i < DynamicVars.Cards.IntValue; i++)
+		{
+			CardModel card = ModelDb.Card<Soul>().ToMutable();
+			card.Owner = Owner;
+			await CardPileCmd.AddGeneratedCardToCombat(card, PileType.Draw, addedByPlayer: true, position: CardPilePosition.Random);
+			SaveManager.Instance.MarkCardAsSeen(card);
+		}
+	}
+}
+
+public sealed class DrainRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("CalamityMultiplier", 2m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<CalamityPower>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNecrobinderPlayer(player);
+	}
+
+	public override async Task AfterSummon(PlayerChoiceContext choiceContext, Player summoner, decimal amount)
+	{
+		if (summoner != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0m || Owner.Creature.CombatState == null)
+		{
+			return;
+		}
+
+		IReadOnlyList<Creature> enemies = Owner.Creature.CombatState.HittableEnemies.ToList();
+		if (enemies.Count == 0)
+		{
+			return;
+		}
+
+		Flash(enemies);
+		await PowerCmd.Apply<CalamityPower>(enemies, amount * DynamicVars["CalamityMultiplier"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class LethalTempoRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<StrengthPower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<StrengthPower>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsSilentPlayer(player);
+	}
+
+	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	{
+		if (!IsOwnedCard(cardPlay.Card) || !cardPlay.Card.Tags.Contains(CardTag.Shiv) || Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<HextechLethalTempoTemporaryStrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, cardPlay.Card);
+	}
+}
+
+public sealed class EmergenceRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("OrbCount", 2m)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsDefectPlayer(player);
+	}
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		for (int i = 0; i < DynamicVars["OrbCount"].IntValue; i++)
+		{
+			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
+			await OrbCmd.Channel(choiceContext, orb, Owner);
+		}
+	}
+}
+
+public sealed class PrecisionCognitionRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<FocusPower>(2m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<FocusPower>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsDefectPlayer(player);
+	}
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
+	}
+}
+
+public sealed class HastyScribbleRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(5)
+	];
+
+	public override decimal ModifyHandDraw(Player player, decimal count)
+	{
+		return player == Owner ? count + DynamicVars.Cards.BaseValue : count;
+	}
+}
+
+public sealed class ClownCollegeRune : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(3)
+	];
+
+	public override async Task AfterObtained()
+	{
+		Flash();
+		await AddCardCopiesToDeckOrHand<TrickMagicCard>(DynamicVars.Cards.IntValue);
+	}
+}
+
+public sealed class BladeWaltzRune : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(1)
+	];
+
+	public override async Task AfterObtained()
+	{
+		Flash();
+		await AddCardCopiesToDeckOrHand<BladeWaltzCard>(DynamicVars.Cards.IntValue);
+	}
+}
+
+public sealed class TrickMagicCard : CardModel
+{
+	public override CardPoolModel Pool => Owner?.Character.CardPool ?? ModelDb.CardPool<ColorlessCardPool>();
+
+	public override CardPoolModel VisualCardPool => Pool;
+
+	public override string PortraitPath => ModelDb.Card<Acrobatics>().PortraitPath;
+
+	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
+
+	public override IEnumerable<CardKeyword> CanonicalKeywords =>
+	[
+		CardKeyword.Exhaust
+	];
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(2),
+		new PowerVar<BufferPower>(2m),
+		new DynamicVar("Replays", 1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<BufferPower>(),
+		HoverTipFactory.FromPower<HextechAttackReplayPower>()
+	];
+
+	public TrickMagicCard()
+		: base(0, CardType.Skill, CardRarity.Token, TargetType.Self)
+	{
+	}
+
+	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
+		await PowerCmd.Apply<BufferPower>(Owner.Creature, DynamicVars["BufferPower"].BaseValue, Owner.Creature, this);
+		await PowerCmd.Apply<HextechAttackReplayPower>(Owner.Creature, DynamicVars["Replays"].BaseValue, Owner.Creature, this);
+	}
+
+	protected override void OnUpgrade()
+	{
+		DynamicVars["Replays"].UpgradeValueBy(1m);
+	}
+}
+
+public sealed class BladeWaltzCard : CardModel
+{
+	public override CardPoolModel Pool => Owner?.Character.CardPool ?? ModelDb.CardPool<ColorlessCardPool>();
+
+	public override CardPoolModel VisualCardPool => Pool;
+
+	public override string PortraitPath => ModelDb.Card<Ricochet>().PortraitPath;
+
+	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
+
+	public override IEnumerable<CardKeyword> CanonicalKeywords
+	{
+		get
+		{
+			if (IsUpgraded)
+			{
+				return [CardKeyword.Retain, CardKeyword.Exhaust];
+			}
+
+			return [CardKeyword.Exhaust];
+		}
+	}
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DamageVar(3m, ValueProp.Move),
+		new DynamicVar("Hits", 9m),
+		new PowerVar<IntangiblePower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<IntangiblePower>()
+	];
+
+	public BladeWaltzCard()
+		: base(2, CardType.Attack, CardRarity.Token, TargetType.AllEnemies)
+	{
+	}
+
+	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		CombatState combatState = Owner.Creature.CombatState
+			?? throw new InvalidOperationException("Blade Waltz played outside combat.");
+		for (int i = 0; i < DynamicVars["Hits"].IntValue; i++)
+		{
+			List<Creature> enemies = combatState.HittableEnemies.ToList();
+			if (enemies.Count == 0)
+			{
+				break;
+			}
+
+			Creature enemy = enemies[Owner.RunState.Rng.Niche.NextInt(enemies.Count)];
+			await CreatureCmd.Damage(choiceContext, enemy, DynamicVars.Damage, Owner.Creature, this);
+		}
+
+		await PowerCmd.Apply<IntangiblePower>(Owner.Creature, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, this);
+	}
+}
+
 public sealed class TransmuteChaosRune : HextechRelicBase
 {
 	public override bool HasUponPickupEffect => true;
@@ -894,7 +1216,7 @@ public sealed class TransmuteChaosRune : HextechRelicBase
 
 		Player player = Owner;
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, ModInfo.GetAllRuneTypes(), 2);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, ModInfo.GetAllSelectableRuneTypes(), 2);
 	}
 }
 
