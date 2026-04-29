@@ -198,8 +198,11 @@ internal sealed partial class HextechMayhemModifier
                 continue;
             }
 
-            await CardPileCmd.AddGeneratedCardToCombat(card, PileType.Draw, addedByPlayer: false, position: CardPilePosition.Random);
-            SaveManager.Instance.MarkCardAsSeen(card);
+            await HextechCardGeneration.AddGeneratedCardToCombat(
+                card,
+                PileType.Draw,
+                addedByPlayer: false,
+                position: CardPilePosition.Random);
         }
     }
 

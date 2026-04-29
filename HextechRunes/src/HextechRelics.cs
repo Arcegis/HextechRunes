@@ -718,9 +718,14 @@ public sealed class KeystoneHunterRune : HextechRelicBase
 		HoverTipFactory.FromPower<MasterPlannerPower>()
 	];
 
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsSilentPlayer(player);
+	}
+
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner == null || Owner.Creature.IsDead || !IsSilentPlayer(Owner))
 		{
 			return;
 		}
@@ -3226,9 +3231,14 @@ public sealed class ServantMasterRune : HextechRelicBase
 		HoverTipFactory.FromPower<NecroMasteryPower>()
 	];
 
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNecrobinderPlayer(player);
+	}
+
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner == null || Owner.Creature.IsDead || !IsNecrobinderPlayer(Owner))
 		{
 			return Task.CompletedTask;
 		}
@@ -3239,7 +3249,7 @@ public sealed class ServantMasterRune : HextechRelicBase
 
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (player != Owner || Owner.Creature.IsDead || player.Creature.CombatState == null)
+		if (player != Owner || Owner.Creature.IsDead || player.Creature.CombatState == null || !IsNecrobinderPlayer(player))
 		{
 			return;
 		}
@@ -3271,9 +3281,14 @@ public sealed class TranscendentEvilRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("StacksPerBonus", 4m),
-		new PowerVar<StrengthPower>(1m),
-		new PowerVar<FocusPower>(1m)
+		new PowerVar<FocusPower>(1m),
+		new DynamicVar("OrbSlots", 1m)
 	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsDefectPlayer(player);
+	}
 
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
@@ -3289,20 +3304,20 @@ public sealed class TranscendentEvilRune : HextechRelicBase
 
 	public override async Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (room is not CombatRoom || Owner == null)
+		if (room is not CombatRoom || Owner == null || !IsDefectOwner)
 		{
 			return;
 		}
 
-		int bonus = FloorToInt(_stacks / 4m);
+		int bonus = FloorToInt(_stacks / DynamicVars["StacksPerBonus"].BaseValue);
 		if (bonus <= 0)
 		{
 			return;
 		}
 
 		Flash();
-		await PowerCmd.Apply<StrengthPower>(Owner.Creature, bonus, Owner.Creature, null);
-		await PowerCmd.Apply<FocusPower>(Owner.Creature, bonus, Owner.Creature, null);
+		await PowerCmd.Apply<FocusPower>(Owner.Creature, bonus * DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
+		await OrbCmd.AddSlots(Owner, bonus * DynamicVars["OrbSlots"].IntValue);
 	}
 }
 

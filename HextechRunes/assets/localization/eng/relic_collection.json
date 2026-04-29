@@ -1,6 +1,11 @@
 {
   "HEXTECH_RUNES_SUBCATEGORY": "[gold]Hextech:[/gold] Custom relics from the Hextech rune pool.",
   "HEXTECH_FORGES_SUBCATEGORY": "[gold]Stat Forgers:[/gold] Custom relics from the stat forging system.",
+  "HEXTECH_CHARACTER.IRONCLAD": "[gold]Ironclad Hexes:[/gold] Hextech runes only available to Ironclad.",
+  "HEXTECH_CHARACTER.SILENT": "[gold]Silent Hexes:[/gold] Hextech runes only available to Silent.",
+  "HEXTECH_CHARACTER.REGENT": "[gold]Regent Hexes:[/gold] Hextech runes only available to Regent.",
+  "HEXTECH_CHARACTER.DEFECT": "[gold]Defect Hexes:[/gold] Hextech runes only available to Defect.",
+  "HEXTECH_CHARACTER.NECROBINDER": "[gold]Necrobinder Hexes:[/gold] Hextech runes only available to Necrobinder.",
   "HEXTECH_SELECTION_TITLE": "Choose A Hextech Rune",
   "HEXTECH_WAITING_FOR_PLAYERS": "Waiting for other players to choose...",
   "HEXTECH_REROLL": "Reroll",

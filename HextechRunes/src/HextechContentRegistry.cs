@@ -37,8 +37,12 @@ internal static class HextechContentRegistry
         typeof(UnyieldingArmorRune),
         typeof(NightParadeRune),
         typeof(BloodPactRune),
+        typeof(PlateletRune),
         typeof(SummonForthRune),
+        typeof(FlawlessRune),
         typeof(ByproductRune),
+        typeof(ElectricSurgeRune),
+        typeof(SoulCallingRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -77,6 +81,7 @@ internal static class HextechContentRegistry
         typeof(ShrinkEngineRune),
         typeof(StatsOnStatsRune),
         typeof(LifeFlowRune),
+        typeof(RekindleRune),
         typeof(TrickLicenseRune),
         typeof(GalacticGiftRune),
         typeof(SomethingFromNothingRune),
@@ -85,11 +90,13 @@ internal static class HextechContentRegistry
         typeof(DrainRune),
         typeof(LethalTempoRune),
         typeof(EmergenceRune),
+        typeof(MirageRune),
         typeof(AdaptiveCapacitorRune),
         typeof(RenewalRune),
         typeof(WraithRune),
         typeof(SwordIntentRune),
         typeof(ImmortalBoneRune),
+        typeof(MakeItMineRune),
         typeof(DoomsdayRune),
         typeof(TransmutePrismaticRune),
         typeof(DawnbringersResolveRune),
@@ -143,6 +150,9 @@ internal static class HextechContentRegistry
         typeof(SingularityAIRune),
         typeof(EightPennyGateRune),
         typeof(GrowingStrongerRune),
+        typeof(KillerHunterRune),
+        typeof(ExplosionArtRune),
+        typeof(MiserableFateRune),
         typeof(MiseryRune),
         typeof(GhostFormRune),
         typeof(TransmuteChaosRune)
@@ -202,8 +212,63 @@ internal static class HextechContentRegistry
         typeof(DawnbringersResolveRune),
         typeof(AstralBodyRune),
         typeof(MindPurificationRune),
-        typeof(NoNonsenseRune)
+        typeof(NoNonsenseRune),
+        typeof(FeelTheBurnRune),
+        typeof(MikaelsBlessingRune)
     };
+
+    internal static readonly IReadOnlyList<Type> IroncladRuneTypes =
+    [
+        typeof(LifeFlowRune),
+        typeof(BloodPactRune),
+        typeof(PlateletRune),
+        typeof(RekindleRune),
+        typeof(GrowingStrongerRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> SilentRuneTypes =
+    [
+        typeof(KeystoneHunterRune),
+        typeof(TrickLicenseRune),
+        typeof(LethalTempoRune),
+        typeof(RenewalRune),
+        typeof(MirageRune),
+        typeof(KillerHunterRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> RegentRuneTypes =
+    [
+        typeof(GalacticGiftRune),
+        typeof(SummonForthRune),
+        typeof(SwordIntentRune),
+        typeof(FlawlessRune),
+        typeof(ExplosionArtRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> DefectRuneTypes =
+    [
+        typeof(DexterityStrengthToFocusRune),
+        typeof(WizardlyThinkingRune),
+        typeof(TranscendentEvilRune),
+        typeof(LubricantRune),
+        typeof(EmergenceRune),
+        typeof(PrecisionCognitionRune),
+        typeof(ByproductRune),
+        typeof(AdaptiveCapacitorRune),
+        typeof(ElectricSurgeRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> NecrobinderRuneTypes =
+    [
+        typeof(ServantMasterRune),
+        typeof(SomethingFromNothingRune),
+        typeof(DrainRune),
+        typeof(WraithRune),
+        typeof(ImmortalBoneRune),
+        typeof(SoulCallingRune),
+        typeof(MakeItMineRune),
+        typeof(MiserableFateRune)
+    ];
 
     internal static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
     [

@@ -1,6 +1,11 @@
 {
   "HEXTECH_RUNES_SUBCATEGORY": "[gold]海克斯：[/gold] 来自海克斯符文池的自定义遗物。",
   "HEXTECH_FORGES_SUBCATEGORY": "[gold]属性锻造器：[/gold] 来自属性锻造系统的自定义遗物。",
+  "HEXTECH_CHARACTER.IRONCLAD": "[gold]战士海克斯：[/gold] 仅战士可抽取的海克斯符文。",
+  "HEXTECH_CHARACTER.SILENT": "[gold]猎人海克斯：[/gold] 仅猎人可抽取的海克斯符文。",
+  "HEXTECH_CHARACTER.REGENT": "[gold]储君海克斯：[/gold] 仅储君可抽取的海克斯符文。",
+  "HEXTECH_CHARACTER.DEFECT": "[gold]故障机器人海克斯：[/gold] 仅故障机器人可抽取的海克斯符文。",
+  "HEXTECH_CHARACTER.NECROBINDER": "[gold]亡灵契约师海克斯：[/gold] 仅亡灵契约师可抽取的海克斯符文。",
   "HEXTECH_SELECTION_TITLE": "选择一枚海克斯符文",
   "HEXTECH_WAITING_FOR_PLAYERS": "等待其他玩家选择海克斯符文...",
   "HEXTECH_REROLL": "重随",

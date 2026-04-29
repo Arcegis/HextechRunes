@@ -171,11 +171,7 @@ public abstract class HextechRelicBase : RelicModel
 				cards.Add(combatState.CreateCard<TCard>(Owner));
 			}
 
-			await CardPileCmd.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
-			foreach (CardModel card in cards)
-			{
-				SaveManager.Instance.MarkCardAsSeen(card);
-			}
+			await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
 
 			return;
 		}

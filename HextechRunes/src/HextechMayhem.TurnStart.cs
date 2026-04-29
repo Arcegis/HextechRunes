@@ -148,6 +148,11 @@ internal sealed partial class HextechMayhemModifier
                 await PowerCmd.Apply<BorrowedTimePower>(players, 1m, null, null);
             });
         }
+
+        if (HasActiveMonsterHex(MonsterHexKind.SingularityAI) && players.Count > 0)
+        {
+            await AddEnemySingularityAIStatusCards(players);
+        }
     }
 
     private async Task BeforeEnemySideTurnStart(CombatState combatState, IReadOnlyList<Creature> players)
@@ -246,11 +251,6 @@ internal sealed partial class HextechMayhemModifier
                     }
                 }
             });
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.SingularityAI) && players.Count > 0)
-        {
-            await AddEnemySingularityAIStatusCards(players);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.ProtectiveVeil)

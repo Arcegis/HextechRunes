@@ -9,6 +9,8 @@ internal static class ModInfo
 {
     public readonly record struct RuneSeriesGroup(string LocalizationKey, IReadOnlyList<RelicModel> Relics);
 
+    public readonly record struct CharacterRunePool(string LocalizationKey, IReadOnlyList<Type> RuneTypes);
+
     public const string Id = "HextechRunes";
 
     public const string DisplayName = "海克斯符文";
@@ -37,6 +39,19 @@ internal static class ModInfo
 
     private static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = HextechContentRegistry.DisabledPlayerRuneTypes;
 
+    private static readonly IReadOnlyList<CharacterRunePool> CharacterRunePools =
+    [
+        new("IRONCLAD", HextechContentRegistry.IroncladRuneTypes),
+        new("SILENT", HextechContentRegistry.SilentRuneTypes),
+        new("REGENT", HextechContentRegistry.RegentRuneTypes),
+        new("DEFECT", HextechContentRegistry.DefectRuneTypes),
+        new("NECROBINDER", HextechContentRegistry.NecrobinderRuneTypes)
+    ];
+
+    private static readonly IReadOnlySet<Type> CharacterSpecificRuneTypes = CharacterRunePools
+        .SelectMany(static pool => pool.RuneTypes)
+        .ToHashSet();
+
     private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes = HextechContentRegistry.AttributeConversionExclusiveRuneTypes;
 
     private static readonly IReadOnlySet<Type> FirstActExcludedRuneTypes = HextechContentRegistry.FirstActExcludedRuneTypes;
@@ -63,6 +78,13 @@ internal static class ModInfo
     {
         return Enum.GetValues<HextechRarityTier>()
             .SelectMany(GetPlayerRuneTypesForRarity)
+            .ToArray();
+    }
+
+    public static IReadOnlyList<Type> GetGenericSelectableRuneTypes()
+    {
+        return GetAllSelectableRuneTypes()
+            .Where(static type => !CharacterSpecificRuneTypes.Contains(type))
             .ToArray();
     }
 
@@ -175,6 +197,58 @@ internal static class ModInfo
         return AllRuneTypes
             .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
             .ToArray();
+    }
+
+    public static IReadOnlyList<RelicModel> GetCanonicalSelectableRunes()
+    {
+        return GetAllSelectableRuneTypes()
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<RelicModel> GetCanonicalGenericSelectableRunes()
+    {
+        return GetGenericSelectableRuneTypes()
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<RuneSeriesGroup> GetCharacterRuneGroups()
+    {
+        return CharacterRunePools
+            .Select(static pool => new RuneSeriesGroup(
+                $"CHARACTER.{pool.LocalizationKey}",
+                pool.RuneTypes
+                    .Select(static (type, index) => new IndexedRuneType(type, index))
+                    .Where(static rune => !DisabledPlayerRuneTypes.Contains(rune.Type))
+                    .OrderBy(static rune => GetPlayerRuneRaritySortOrder(rune.Type))
+                    .ThenBy(static rune => rune.Index)
+                    .Select(static rune => ModelDb.GetById<RelicModel>(ModelDb.GetId(rune.Type)))
+                    .ToArray()))
+            .Where(static group => group.Relics.Count > 0)
+            .ToArray();
+    }
+
+    private readonly record struct IndexedRuneType(Type Type, int Index);
+
+    private static int GetPlayerRuneRaritySortOrder(Type type)
+    {
+        if (SilverRuneTypes.Contains(type))
+        {
+            return 0;
+        }
+
+        if (GoldRuneTypes.Contains(type))
+        {
+            return 1;
+        }
+
+        if (PrismaticRuneTypes.Contains(type))
+        {
+            return 2;
+        }
+
+        return 3;
     }
 
     public static IReadOnlyList<RelicModel> GetCanonicalForges()
@@ -378,6 +452,11 @@ internal static class ModInfo
             List<RelicModel> group = new();
             foreach (Type runeType in runeTypes)
             {
+                if (DisabledPlayerRuneTypes.Contains(runeType))
+                {
+                    continue;
+                }
+
                 ModelId id = ModelDb.GetId(runeType);
                 if (byId.TryGetValue(id, out RelicModel? relic))
                 {
