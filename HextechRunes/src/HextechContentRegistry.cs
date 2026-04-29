@@ -38,11 +38,14 @@ internal static class HextechContentRegistry
         typeof(NightParadeRune),
         typeof(BloodPactRune),
         typeof(PlateletRune),
-        typeof(SummonForthRune),
+        typeof(SnakebiteRune),
+        typeof(SwordIntentRune),
         typeof(FlawlessRune),
+        typeof(CondensedRadianceRune),
         typeof(ByproductRune),
         typeof(ElectricSurgeRune),
         typeof(SoulCallingRune),
+        typeof(TauntRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -94,7 +97,7 @@ internal static class HextechContentRegistry
         typeof(AdaptiveCapacitorRune),
         typeof(RenewalRune),
         typeof(WraithRune),
-        typeof(SwordIntentRune),
+        typeof(SummonForthRune),
         typeof(ImmortalBoneRune),
         typeof(MakeItMineRune),
         typeof(DoomsdayRune),
@@ -150,9 +153,14 @@ internal static class HextechContentRegistry
         typeof(SingularityAIRune),
         typeof(EightPennyGateRune),
         typeof(GrowingStrongerRune),
+        typeof(GroundedRune),
         typeof(KillerHunterRune),
+        typeof(SerpentsFangRune),
         typeof(ExplosionArtRune),
+        typeof(StarlightSplendorRune),
         typeof(MiserableFateRune),
+        typeof(DieForYouRune),
+        typeof(HappyAccidentRune),
         typeof(MiseryRune),
         typeof(GhostFormRune),
         typeof(TransmuteChaosRune)
@@ -167,6 +175,7 @@ internal static class HextechContentRegistry
         typeof(FocusForge),
         typeof(LifeForge),
         typeof(PreparedForge),
+        typeof(NecrobinderForge),
         typeof(SilverStarsForge),
         typeof(SilverOrbForge)
     ];
@@ -206,6 +215,13 @@ internal static class HextechContentRegistry
         typeof(RandomForgeShopRelic)
     ];
 
+    internal static readonly IReadOnlyList<Type> CustomCardTypes =
+    [
+        typeof(ElicitCard),
+        typeof(TrickMagicCard),
+        typeof(BladeWaltzCard)
+    ];
+
     internal static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = new HashSet<Type>
     {
         typeof(HolyFireRune),
@@ -223,7 +239,8 @@ internal static class HextechContentRegistry
         typeof(BloodPactRune),
         typeof(PlateletRune),
         typeof(RekindleRune),
-        typeof(GrowingStrongerRune)
+        typeof(GrowingStrongerRune),
+        typeof(GroundedRune)
     ];
 
     internal static readonly IReadOnlyList<Type> SilentRuneTypes =
@@ -233,7 +250,9 @@ internal static class HextechContentRegistry
         typeof(LethalTempoRune),
         typeof(RenewalRune),
         typeof(MirageRune),
-        typeof(KillerHunterRune)
+        typeof(KillerHunterRune),
+        typeof(SnakebiteRune),
+        typeof(SerpentsFangRune)
     ];
 
     internal static readonly IReadOnlyList<Type> RegentRuneTypes =
@@ -242,7 +261,9 @@ internal static class HextechContentRegistry
         typeof(SummonForthRune),
         typeof(SwordIntentRune),
         typeof(FlawlessRune),
-        typeof(ExplosionArtRune)
+        typeof(CondensedRadianceRune),
+        typeof(ExplosionArtRune),
+        typeof(StarlightSplendorRune)
     ];
 
     internal static readonly IReadOnlyList<Type> DefectRuneTypes =
@@ -255,19 +276,22 @@ internal static class HextechContentRegistry
         typeof(PrecisionCognitionRune),
         typeof(ByproductRune),
         typeof(AdaptiveCapacitorRune),
-        typeof(ElectricSurgeRune)
+        typeof(ElectricSurgeRune),
+        typeof(HappyAccidentRune)
     ];
 
     internal static readonly IReadOnlyList<Type> NecrobinderRuneTypes =
     [
         typeof(ServantMasterRune),
         typeof(SomethingFromNothingRune),
+        typeof(BeginningAndEndRune),
         typeof(DrainRune),
+        typeof(TauntRune),
         typeof(WraithRune),
         typeof(ImmortalBoneRune),
-        typeof(SoulCallingRune),
         typeof(MakeItMineRune),
-        typeof(MiserableFateRune)
+        typeof(MiserableFateRune),
+        typeof(DieForYouRune)
     ];
 
     internal static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =

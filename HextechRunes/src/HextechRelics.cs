@@ -664,6 +664,11 @@ public sealed class BeginningAndEndRune : HextechRelicBase
 		HoverTipFactory.FromPower<ReaperFormPower>()
 	];
 
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNecrobinderPlayer(player);
+	}
+
 	public override async Task BeforeCombatStart()
 	{
 		if (Owner == null || Owner.Creature.IsDead)
@@ -1483,7 +1488,9 @@ public sealed class MadScientistRune : HextechRelicBase
 
 public sealed class ElicitCard : CardModel
 {
-	public override CardPoolModel Pool => Owner?.Character.CardPool ?? ModelDb.CardPool<ColorlessCardPool>();
+	public override CardPoolModel Pool => IsMutable && Owner != null
+		? Owner.Character.CardPool
+		: ModelDb.CardPool<TokenCardPool>();
 
 	public override CardPoolModel VisualCardPool => Pool;
 
@@ -1511,7 +1518,7 @@ public sealed class ElicitCard : CardModel
 	];
 
 	public ElicitCard()
-		: base(0, CardType.Skill, CardRarity.Token, TargetType.Self)
+		: base(0, CardType.Skill, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: true)
 	{
 	}
 

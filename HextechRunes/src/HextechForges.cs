@@ -257,6 +257,34 @@ public sealed class PreparedForge : HextechForgeBase
 	}
 }
 
+public sealed class NecrobinderForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new SummonVar(4m)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNecrobinderPlayer(player);
+	}
+
+	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner == null
+			|| Owner.Creature.IsDead
+			|| Owner.Creature.CombatState?.RoundNumber > 1
+			|| !IsNecrobinderPlayer(player))
+		{
+			return;
+		}
+
+		Flash();
+		await OstyCmd.Summon(choiceContext, player, Stacked(DynamicVars.Summon.BaseValue), this);
+	}
+}
+
 public sealed class ConstitutionForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>

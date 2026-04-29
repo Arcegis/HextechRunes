@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
+using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
@@ -84,6 +85,11 @@ internal static class HextechModelBootstrap
 		foreach (Type runeType in ModInfo.GetAllCustomRelicTypes())
 		{
 			AddModelToPoolMethod.MakeGenericMethod(typeof(SharedRelicPool), runeType).Invoke(null, null);
+		}
+
+		foreach (Type cardType in ModInfo.GetAllCustomCardTypes())
+		{
+			AddModelToPoolMethod.MakeGenericMethod(typeof(TokenCardPool), cardType).Invoke(null, null);
 		}
 	}
 

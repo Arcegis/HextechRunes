@@ -72,6 +72,8 @@ internal static class ModInfo
 
     private static readonly IReadOnlyList<Type> AllCustomRelicTypes = HextechContentRegistry.AllCustomRelicTypes;
 
+    private static readonly IReadOnlyList<Type> CustomCardTypes = HextechContentRegistry.CustomCardTypes;
+
     public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
 
     public static IReadOnlyList<Type> GetAllSelectableRuneTypes()
@@ -91,6 +93,8 @@ internal static class ModInfo
     public static IReadOnlyList<Type> GetAllForgeTypes() => AllForgeTypes;
 
     public static IReadOnlyList<Type> GetAllCustomRelicTypes() => AllCustomRelicTypes;
+
+    public static IReadOnlyList<Type> GetAllCustomCardTypes() => CustomCardTypes;
 
     public static IReadOnlyList<Type> GetPlayerRuneTypesForRarity(HextechRarityTier rarity)
     {
