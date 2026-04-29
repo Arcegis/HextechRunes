@@ -18,6 +18,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
@@ -1910,6 +1911,11 @@ public sealed class SwordIntentRune : HextechRelicBase
 
 public sealed class ImmortalBoneRune : HextechRelicBase
 {
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("HealPercent", 50m)
+	];
+
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsNecrobinderPlayer(player);
@@ -1923,7 +1929,8 @@ public sealed class ImmortalBoneRune : HextechRelicBase
 		}
 
 		Flash([Owner.Osty]);
-		return CreatureCmd.Heal(Owner.Osty, Owner.Osty.MaxHp);
+		int healAmount = Math.Max(1, FloorToInt(Owner.Osty.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
+		return CreatureCmd.Heal(Owner.Osty, healAmount);
 	}
 }
 
@@ -2285,12 +2292,13 @@ public sealed class DieForYouRune : HextechRelicBase
 
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
+		CombatState? combatState = target.CombatState;
 		if (Owner == null
 			|| wasRemovalPrevented
 			|| Owner.Creature.IsDead
-			|| Owner.Osty == null
-			|| target != Owner.Osty
-			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target, out CombatState? combatState))
+			|| target.PetOwner != Owner
+			|| target.Monster is not Osty
+			|| combatState == null)
 		{
 			return;
 		}

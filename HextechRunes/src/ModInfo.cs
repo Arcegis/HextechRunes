@@ -15,7 +15,7 @@ internal static class ModInfo
 
     public const string DisplayName = "海克斯符文";
 
-    public const string Version = "0.4.2";
+    public const string Version = "0.5.0";
 
     public const string TargetGameVersion = "0.103.2";
 
