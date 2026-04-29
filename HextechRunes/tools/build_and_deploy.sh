@@ -14,6 +14,8 @@ PROJECT_PATH="$ROOT/src/$FILE_STEM.csproj"
 
 rm -rf "$ROOT/src/bin" "$ROOT/src/obj" "$ROOT/dist"
 
+python3 "$ROOT/tools/validate_hextech_content.py"
+
 "$DOTNET" build "$PROJECT_PATH" -c Release
 
 mkdir -p "$ROOT/dist"

@@ -13,8 +13,8 @@
   "TRICK_MAGIC_CARD.flavor": "观众看见的是彩带，敌人看见的是账单。",
   "bladeWaltzCard.title": "利刃华尔兹",
   "BLADE_WALTZ_CARD.title": "利刃华尔兹",
-  "bladeWaltzCard.description": "随机对敌人造成[blue]{Damage}[/blue]点伤害[blue]{Hits}[/blue]次。获得[blue]{IntangiblePower}[/blue]层[gold]无实体[/gold]。",
-  "BLADE_WALTZ_CARD.description": "随机对敌人造成[blue]{Damage}[/blue]点伤害[blue]{Hits}[/blue]次。获得[blue]{IntangiblePower}[/blue]层[gold]无实体[/gold]。",
+  "bladeWaltzCard.description": "随机对敌人造成{Damage:diff()}点伤害[blue]{Hits}[/blue]次。获得[blue]{IntangiblePower}[/blue]层[gold]无实体[/gold]。",
+  "BLADE_WALTZ_CARD.description": "随机对敌人造成{Damage:diff()}点伤害[blue]{Hits}[/blue]次。获得[blue]{IntangiblePower}[/blue]层[gold]无实体[/gold]。",
   "bladeWaltzCard.flavor": "旋转、切入、谢幕。",
   "BLADE_WALTZ_CARD.flavor": "旋转、切入、谢幕。"
 }

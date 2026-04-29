@@ -79,6 +79,11 @@ public sealed class HextechLethalTempoTemporaryStrengthPower : TemporaryStrength
 	public override AbstractModel OriginModel => ModelDb.Relic<LethalTempoRune>();
 }
 
+public sealed class HextechBloodPactTemporaryStrengthPower : TemporaryStrengthPower
+{
+	public override AbstractModel OriginModel => ModelDb.Relic<BloodPactRune>();
+}
+
 public sealed class HextechAttackReplayPower : PowerModel
 {
 	private bool _triggeredLastPlay;
@@ -86,8 +91,6 @@ public sealed class HextechAttackReplayPower : PowerModel
 	public override PowerType Type => PowerType.Buff;
 
 	public override PowerStackType StackType => PowerStackType.Counter;
-
-	protected override bool IsVisibleInternal => false;
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{

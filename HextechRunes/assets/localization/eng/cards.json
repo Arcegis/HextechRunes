@@ -13,8 +13,8 @@
   "TRICK_MAGIC_CARD.flavor": "The audience sees ribbons. The enemy sees the bill.",
   "bladeWaltzCard.title": "Blade Waltz",
   "BLADE_WALTZ_CARD.title": "Blade Waltz",
-  "bladeWaltzCard.description": "Deal [blue]{Damage}[/blue] damage to random enemies [blue]{Hits}[/blue] times. Gain [blue]{IntangiblePower}[/blue] [gold]Intangible[/gold].",
-  "BLADE_WALTZ_CARD.description": "Deal [blue]{Damage}[/blue] damage to random enemies [blue]{Hits}[/blue] times. Gain [blue]{IntangiblePower}[/blue] [gold]Intangible[/gold].",
+  "bladeWaltzCard.description": "Deal {Damage:diff()} damage to random enemies [blue]{Hits}[/blue] times. Gain [blue]{IntangiblePower}[/blue] [gold]Intangible[/gold].",
+  "BLADE_WALTZ_CARD.description": "Deal {Damage:diff()} damage to random enemies [blue]{Hits}[/blue] times. Gain [blue]{IntangiblePower}[/blue] [gold]Intangible[/gold].",
   "bladeWaltzCard.flavor": "Spin, cut, bow.",
   "BLADE_WALTZ_CARD.flavor": "Spin, cut, bow."
 }

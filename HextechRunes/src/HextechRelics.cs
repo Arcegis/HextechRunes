@@ -32,216 +32,6 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 
-public abstract class HextechRelicBase : RelicModel
-{
-	private static readonly string PlaceholderIconPath = ImageHelper.GetImagePath("powers/missing_power.png");
-
-	public sealed override RelicRarity Rarity => RelicRarity.Starter;
-
-	public override string PackedIconPath => GetResolvedIconPath();
-
-	protected override string PackedIconOutlinePath => GetResolvedIconPath();
-
-	protected override string BigIconPath => GetResolvedIconPath();
-
-	public virtual bool IsAvailableForPlayer(Player player) => true;
-
-	protected static int FloorToInt(decimal value)
-	{
-		return (int)decimal.Floor(value);
-	}
-
-	protected bool IsOwnedCard(CardModel? card)
-	{
-		return card?.Owner == Owner;
-	}
-
-	protected bool IsOwnedAttack(CardModel? card)
-	{
-		return card != null && card.Owner == Owner && card.Type == CardType.Attack;
-	}
-
-	protected bool IsOwnedSkill(CardModel? card)
-	{
-		return card != null && card.Owner == Owner && card.Type == CardType.Skill;
-	}
-
-	protected bool IsOwnedNonXCardWithCostAtLeast(CardModel? card, decimal minimumCost)
-	{
-		return card != null
-			&& card.Owner == Owner
-			&& !card.EnergyCost.CostsX
-			&& card.EnergyCost.GetAmountToSpend() >= minimumCost;
-	}
-
-	protected bool IsOwnerOrPet(Creature? dealer)
-	{
-		return dealer == Owner?.Creature || dealer?.PetOwner == Owner;
-	}
-
-	protected bool IsDamageFromOwner(Creature? dealer, CardModel? cardSource)
-	{
-		if (Owner == null)
-		{
-			return false;
-		}
-
-		if (IsOwnerOrPet(dealer))
-		{
-			return true;
-		}
-
-		return cardSource?.Owner == Owner;
-	}
-
-	protected bool IsDefectPlayer(Player player)
-	{
-		return player.Character.Id == ModelDb.GetId<Defect>();
-	}
-
-	protected bool IsDefectOwner => Owner != null && IsDefectPlayer(Owner);
-
-	protected bool IsIroncladPlayer(Player player)
-	{
-		return player.Character.Id == ModelDb.GetId<Ironclad>();
-	}
-
-	protected bool IsSilentPlayer(Player player)
-	{
-		return player.Character.Id == ModelDb.GetId<Silent>();
-	}
-
-	protected bool IsRegentPlayer(Player player)
-	{
-		return player.Character.Id == ModelDb.GetId<Regent>();
-	}
-
-	protected bool IsRegentOwner => Owner != null && IsRegentPlayer(Owner);
-
-	protected bool IsNecrobinderPlayer(Player player)
-	{
-		return player.Character.Id == ModelDb.GetId<Necrobinder>();
-	}
-
-	protected async Task AddCardCopiesToDeckOrHand<TCard>(int count)
-		where TCard : CardModel
-	{
-		if (Owner == null || count <= 0)
-		{
-			return;
-		}
-
-		for (int i = 0; i < count; i++)
-		{
-			CardModel card = ModelDb.Card<TCard>().ToMutable();
-			card.Owner = Owner;
-			if (Owner.PlayerCombatState != null && CombatManager.Instance.IsInProgress)
-			{
-				await CardPileCmd.AddGeneratedCardToCombat(card, PileType.Hand, addedByPlayer: true);
-			}
-			else
-			{
-				card.FloorAddedToDeck = Owner.RunState.TotalFloor;
-				Owner.Deck.AddInternal(card);
-			}
-
-			SaveManager.Instance.MarkCardAsSeen(card);
-		}
-	}
-
-	private string GetResolvedIconPath()
-	{
-		string? customPath = ModInfo.TryGetCustomRelicIconPath(this);
-		if (!string.IsNullOrEmpty(customPath) && ResourceLoader.Exists(customPath))
-		{
-			return customPath;
-		}
-
-		return PlaceholderIconPath;
-	}
-
-	protected bool TryGetOwnedEnemyDebuffTarget(PowerModel power, decimal amount, Creature? applier, out Creature? target)
-	{
-		target = power.Owner;
-		return amount > 0m
-			&& target?.Side == CombatSide.Enemy
-			&& applier == Owner?.Creature
-			&& power.GetTypeForAmount(amount) == PowerType.Debuff
-			&& power is not ITemporaryPower;
-	}
-}
-
-public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
-{
-	private int _procsThisTurn;
-
-	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-	public int SavedProcsThisTurn
-	{
-		get => _procsThisTurn;
-		set
-		{
-			_procsThisTurn = Math.Max(0, value);
-			UpdateDisplay();
-		}
-	}
-
-	protected virtual int MaxProcsPerTurn => 3;
-
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
-
-	public override int DisplayAmount => !IsCanonical ? Math.Max(0, MaxProcsPerTurn - _procsThisTurn) : 0;
-
-	public override Task BeforeCombatStart()
-	{
-		ResetProcs();
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetProcs();
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetProcs();
-		}
-
-		return Task.CompletedTask;
-	}
-
-	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
-	{
-		if (!TryGetOwnedEnemyDebuffTarget(power, amount, applier, out Creature? target) || _procsThisTurn >= MaxProcsPerTurn)
-		{
-			return;
-		}
-
-		_procsThisTurn++;
-		UpdateDisplay();
-		Flash(target == null ? Array.Empty<Creature>() : [target]);
-		await OnEnemyDebuffApplied(target!);
-	}
-
-	protected abstract Task OnEnemyDebuffApplied(Creature target);
-
-	private void ResetProcs()
-	{
-		_procsThisTurn = 0;
-		UpdateDisplay();
-	}
-
-	private void UpdateDisplay()
-	{
-		Status = _procsThisTurn == MaxProcsPerTurn - 1 ? RelicStatus.Active : RelicStatus.Normal;
-		InvokeDisplayAmountChanged();
-	}
-}
-
 public sealed class JudicatorRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -1064,92 +854,6 @@ public sealed class NoNonsenseRune : HextechRelicBase
 	}
 }
 
-public abstract class AttributeConversionRelicBase : HextechRelicBase
-{
-	private bool _isConverting;
-	private decimal? _pendingAmount;
-	private Creature? _pendingApplier;
-	private CardModel? _pendingCardSource;
-
-	protected abstract bool ShouldConvert(PowerModel canonicalPower);
-
-	protected abstract bool ShouldConvertAppliedPower(PowerModel power);
-
-	protected abstract Task ApplyConvertedPower(decimal amount, Creature? applier, CardModel? cardSource);
-
-	protected abstract Task RevertOriginalPower(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource);
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_pendingAmount = null;
-		_pendingApplier = null;
-		_pendingCardSource = null;
-		_isConverting = false;
-		return Task.CompletedTask;
-	}
-
-	public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature? applier, out decimal modifiedAmount)
-	{
-		modifiedAmount = amount;
-		if (_isConverting || Owner == null || target != Owner.Creature || amount == 0m || !ShouldConvert(canonicalPower))
-		{
-			return false;
-		}
-
-		// Replace the original stat change with the converted one after the hook pipeline finishes.
-		_pendingAmount = amount;
-		_pendingApplier = applier;
-		_pendingCardSource = null;
-		modifiedAmount = 0m;
-		return true;
-	}
-
-	public override async Task AfterModifyingPowerAmountReceived(PowerModel power)
-	{
-		if (_pendingAmount is not decimal amount)
-		{
-			return;
-		}
-
-		Creature? applier = _pendingApplier;
-		CardModel? cardSource = _pendingCardSource;
-		_pendingAmount = null;
-		_pendingApplier = null;
-		_pendingCardSource = null;
-
-		_isConverting = true;
-		try
-		{
-			Flash();
-			await ApplyConvertedPower(amount, applier, cardSource);
-		}
-		finally
-		{
-			_isConverting = false;
-		}
-	}
-
-	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
-	{
-		if (_isConverting || Owner == null || amount == 0m || power.Owner != Owner.Creature || !ShouldConvertAppliedPower(power))
-		{
-			return;
-		}
-
-		_isConverting = true;
-		try
-		{
-			Flash();
-			await RevertOriginalPower(power, amount, applier, cardSource);
-			await ApplyConvertedPower(amount, applier, cardSource);
-		}
-		finally
-		{
-			_isConverting = false;
-		}
-	}
-}
-
 public sealed class DexterityToStrengthRune : AttributeConversionRelicBase
 {
 
@@ -1752,18 +1456,7 @@ public sealed class MadScientistRune : HextechRelicBase
 			return;
 		}
 
-		ElicitCard card = (ElicitCard)ModelDb.Card<ElicitCard>().ToMutable();
-		card.Owner = Owner;
-		if (Owner.PlayerCombatState != null && CombatManager.Instance.IsInProgress)
-		{
-			await CardPileCmd.AddGeneratedCardToCombat(card, PileType.Hand, addedByPlayer: true);
-		}
-		else
-		{
-			card.FloorAddedToDeck = Owner.RunState.TotalFloor;
-			Owner.Deck.AddInternal(card);
-		}
-		SaveManager.Instance.MarkCardAsSeen(card);
+		await AddCardCopiesToDeckOrHand<ElicitCard>(1);
 	}
 
 	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
@@ -1857,19 +1550,27 @@ public sealed class SpeedDemonRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get => _triggeredThisTurn;
-		set => _triggeredThisTurn = value;
+		get
+		{
+			EnsureTurnScopedStateCurrent(ResetTurnState);
+			return _triggeredThisTurn;
+		}
+		set
+		{
+			_triggeredThisTurn = value;
+			UpdateTurnScopedStateIdentity();
+		}
 	}
 
 	public override Task BeforeCombatStart()
 	{
-		_triggeredThisTurn = false;
+		ResetTurnState(null);
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		_triggeredThisTurn = false;
+		ResetTurnState(null);
 		return Task.CompletedTask;
 	}
 
@@ -1877,7 +1578,7 @@ public sealed class SpeedDemonRune : HextechRelicBase
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
-			_triggeredThisTurn = false;
+			ResetTurnState(combatState);
 		}
 
 		return Task.CompletedTask;
@@ -1885,6 +1586,7 @@ public sealed class SpeedDemonRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
+		EnsureTurnScopedStateCurrent(ResetTurnState);
 		if (_triggeredThisTurn
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
@@ -1895,8 +1597,20 @@ public sealed class SpeedDemonRune : HextechRelicBase
 		}
 
 		_triggeredThisTurn = true;
+		UpdateTurnScopedStateIdentity();
 		Flash([target]);
 		await CardPileCmd.Draw(choiceContext, 2m, Owner);
+	}
+
+	private void ResetTurnState()
+	{
+		ResetTurnState(null);
+	}
+
+	private void ResetTurnState(CombatState? combatState)
+	{
+		_triggeredThisTurn = false;
+		UpdateTurnScopedStateIdentity(combatState);
 	}
 }
 
@@ -2825,11 +2539,16 @@ public sealed class CerberusRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisTurn
 	{
-		get => _attacksPlayedThisTurn;
+		get
+		{
+			EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
+			return _attacksPlayedThisTurn;
+		}
 		set
 		{
 			_attacksPlayedThisTurn = Math.Max(0, value);
 			InvokeDisplayAmountChanged();
+			UpdateTurnScopedStateIdentity();
 		}
 	}
 
@@ -2844,13 +2563,13 @@ public sealed class CerberusRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		ResetAttacksPlayedThisTurn();
+		ResetAttacksPlayedThisTurn(null);
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		ResetAttacksPlayedThisTurn();
+		ResetAttacksPlayedThisTurn(null);
 		return Task.CompletedTask;
 	}
 
@@ -2858,7 +2577,7 @@ public sealed class CerberusRune : HextechRelicBase
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
-			ResetAttacksPlayedThisTurn();
+			ResetAttacksPlayedThisTurn(combatState);
 		}
 
 		return Task.CompletedTask;
@@ -2890,6 +2609,7 @@ public sealed class CerberusRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
+		EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
 		if (!cardPlay.IsFirstInSeries || cardPlay.IsAutoPlay || !IsOwnedAttack(cardPlay.Card))
 		{
 			return Task.CompletedTask;
@@ -2897,6 +2617,7 @@ public sealed class CerberusRune : HextechRelicBase
 
 		_attacksPlayedThisTurn++;
 		InvokeDisplayAmountChanged();
+		UpdateTurnScopedStateIdentity();
 		if (_attacksPlayedThisTurn <= DynamicVars["FreeAttacks"].IntValue)
 		{
 			Flash();
@@ -2907,6 +2628,7 @@ public sealed class CerberusRune : HextechRelicBase
 
 	private bool ShouldPlayAttackForFree(CardModel card)
 	{
+		EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
 		return Owner != null
 			&& card.Owner == Owner
 			&& card.Type == CardType.Attack
@@ -2917,8 +2639,14 @@ public sealed class CerberusRune : HextechRelicBase
 
 	private void ResetAttacksPlayedThisTurn()
 	{
+		ResetAttacksPlayedThisTurn(null);
+	}
+
+	private void ResetAttacksPlayedThisTurn(CombatState? combatState)
+	{
 		_attacksPlayedThisTurn = 0;
 		InvokeDisplayAmountChanged();
+		UpdateTurnScopedStateIdentity(combatState);
 	}
 }
 
@@ -3094,8 +2822,16 @@ public sealed class FeyMagicRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get => _triggeredThisTurn;
-		set => _triggeredThisTurn = value;
+		get
+		{
+			EnsureTurnScopedStateCurrent(ResetTurnState);
+			return _triggeredThisTurn;
+		}
+		set
+		{
+			_triggeredThisTurn = value;
+			UpdateTurnScopedStateIdentity();
+		}
 	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -3105,13 +2841,13 @@ public sealed class FeyMagicRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		_triggeredThisTurn = false;
+		ResetTurnState(null);
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		_triggeredThisTurn = false;
+		ResetTurnState(null);
 		return Task.CompletedTask;
 	}
 
@@ -3119,7 +2855,7 @@ public sealed class FeyMagicRune : HextechRelicBase
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
-			_triggeredThisTurn = false;
+			ResetTurnState(combatState);
 		}
 
 		return Task.CompletedTask;
@@ -3127,6 +2863,7 @@ public sealed class FeyMagicRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
+		EnsureTurnScopedStateCurrent(ResetTurnState);
 		if (_triggeredThisTurn
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
@@ -3137,8 +2874,20 @@ public sealed class FeyMagicRune : HextechRelicBase
 		}
 
 		_triggeredThisTurn = true;
+		UpdateTurnScopedStateIdentity();
 		Flash([target]);
 		await CreatureCmd.Stun(target, null);
+	}
+
+	private void ResetTurnState()
+	{
+		ResetTurnState(null);
+	}
+
+	private void ResetTurnState(CombatState? combatState)
+	{
+		_triggeredThisTurn = false;
+		UpdateTurnScopedStateIdentity(combatState);
 	}
 }
 
@@ -3614,8 +3363,16 @@ public sealed class FinalFormRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get => _triggeredThisTurn;
-		set => _triggeredThisTurn = value;
+		get
+		{
+			EnsureTurnScopedStateCurrent(ResetTurnState);
+			return _triggeredThisTurn;
+		}
+		set
+		{
+			_triggeredThisTurn = value;
+			UpdateTurnScopedStateIdentity();
+		}
 	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -3627,13 +3384,13 @@ public sealed class FinalFormRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		_triggeredThisTurn = false;
+		ResetTurnState(null);
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		_triggeredThisTurn = false;
+		ResetTurnState(null);
 		return Task.CompletedTask;
 	}
 
@@ -3641,7 +3398,7 @@ public sealed class FinalFormRune : HextechRelicBase
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
-			_triggeredThisTurn = false;
+			ResetTurnState(combatState);
 		}
 
 		return Task.CompletedTask;
@@ -3649,16 +3406,29 @@ public sealed class FinalFormRune : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
+		EnsureTurnScopedStateCurrent(ResetTurnState);
 		if (_triggeredThisTurn || Owner == null || !IsOwnedNonXCardWithCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue))
 		{
 			return;
 		}
 
 		_triggeredThisTurn = true;
+		UpdateTurnScopedStateIdentity();
 		int block = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["BlockPercent"].BaseValue));
 		Flash();
 		await CreatureCmd.GainBlock(Owner.Creature, block, ValueProp.Unpowered, cardPlay, fast: false);
 		await CardPileCmd.Draw(context, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
+	}
+
+	private void ResetTurnState()
+	{
+		ResetTurnState(null);
+	}
+
+	private void ResetTurnState(CombatState? combatState)
+	{
+		_triggeredThisTurn = false;
+		UpdateTurnScopedStateIdentity(combatState);
 	}
 }
 
@@ -3851,25 +3621,34 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 {
 	private bool _triggeredThisTurn;
 	private bool _triggeredLastPlay;
+	private CombatState? _turnStateCombat;
+	private int _turnStateRoundNumber = -1;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get => _triggeredThisTurn;
-		set => _triggeredThisTurn = value;
+		get
+		{
+			EnsureTurnStateCurrent();
+			return _triggeredThisTurn;
+		}
+		set
+		{
+			_triggeredThisTurn = value;
+			_triggeredLastPlay = false;
+			UpdateTurnStateIdentity();
+		}
 	}
 
 	public override Task BeforeCombatStart()
 	{
-		_triggeredThisTurn = false;
-		_triggeredLastPlay = false;
+		ResetTurnState();
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		_triggeredThisTurn = false;
-		_triggeredLastPlay = false;
+		ResetTurnState();
 		return Task.CompletedTask;
 	}
 
@@ -3877,8 +3656,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
-			_triggeredThisTurn = false;
-			_triggeredLastPlay = false;
+			ResetTurnState(combatState);
 		}
 
 		return Task.CompletedTask;
@@ -3887,24 +3665,63 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
 		_triggeredLastPlay = false;
+		if (card.Owner != Owner)
+		{
+			return playCount;
+		}
+
+		EnsureTurnStateCurrent();
 		if (_triggeredThisTurn || !IsOwnedNonXCardWithCostAtLeast(card, 2m))
 		{
 			return playCount;
 		}
 
 		_triggeredThisTurn = true;
+		UpdateTurnStateIdentity();
 		_triggeredLastPlay = true;
 		return playCount + 1;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-			if (_triggeredLastPlay && IsOwnedNonXCardWithCostAtLeast(card, 2m))
+		if (_triggeredLastPlay && IsOwnedNonXCardWithCostAtLeast(card, 2m))
 		{
 			Flash();
 			_triggeredLastPlay = false;
 		}
 
 		return Task.CompletedTask;
+	}
+
+	private void ResetTurnState(CombatState? combatState = null)
+	{
+		_triggeredThisTurn = false;
+		_triggeredLastPlay = false;
+		UpdateTurnStateIdentity(combatState);
+	}
+
+	private void EnsureTurnStateCurrent()
+	{
+		CombatState? combatState = Owner?.Creature.CombatState;
+		if (combatState == null)
+		{
+			_triggeredThisTurn = false;
+			_triggeredLastPlay = false;
+			_turnStateCombat = null;
+			_turnStateRoundNumber = -1;
+			return;
+		}
+
+		if (!ReferenceEquals(_turnStateCombat, combatState) || _turnStateRoundNumber != combatState.RoundNumber)
+		{
+			ResetTurnState(combatState);
+		}
+	}
+
+	private void UpdateTurnStateIdentity(CombatState? combatState = null)
+	{
+		combatState ??= Owner?.Creature.CombatState;
+		_turnStateCombat = combatState;
+		_turnStateRoundNumber = combatState?.RoundNumber ?? -1;
 	}
 }

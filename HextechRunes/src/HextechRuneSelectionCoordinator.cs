@@ -27,6 +27,7 @@ internal static class HextechRuneSelectionCoordinator
 	private const int ChoiceKindActRoll = 1;
 	private const int ChoiceKindRuneSelection = 2;
 	private const int ChoiceKindActSelectionApplied = 3;
+	private const int ActSelectionAppliedAckTimeoutFrames = 600;
 
 	private static bool _handlingActSelection;
 	private static RunState? _handlingActSelectionRunState;
@@ -448,25 +449,56 @@ internal static class HextechRuneSelectionCoordinator
 		}
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} remoteCount={pendingAcks.Count}");
-		await Task.WhenAll(pendingAcks);
-		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex}");
+		Task allAcks = Task.WhenAll(pendingAcks);
+		Task timeout = WaitForFramesOrRunChangeAsync(runState, ActSelectionAppliedAckTimeoutFrames);
+		if (await Task.WhenAny(allAcks, timeout) == allAcks)
+		{
+			await allAcks;
+			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex}");
+			return;
+		}
+
+		int completed = pendingAcks.Count(static task => task.IsCompletedSuccessfully);
+		Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied timeout: act={actIndex} completed={completed}/{pendingAcks.Count}; continuing to avoid blocking map flow");
 	}
 
 	private static async Task WaitForRemoteActSelectionApplied(PlayerChoiceSynchronizer synchronizer, Player player, uint choiceId, int actIndex)
 	{
-		(PlayerChoiceResult remoteAck, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
-			synchronizer,
-			player,
-			choiceId,
-			result => TryDecodeActSelectionApplied(result, actIndex),
-			$"act-selection-applied act={actIndex}");
-		if (!TryDecodeActSelectionApplied(remoteAck, actIndex))
+		try
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied malformed ack: act={actIndex} player={player.NetId} choiceId={choiceId}");
-			return;
-		}
+			(PlayerChoiceResult remoteAck, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+				synchronizer,
+				player,
+				choiceId,
+				result => TryDecodeActSelectionApplied(result, actIndex),
+				$"act-selection-applied act={actIndex}");
+			if (!TryDecodeActSelectionApplied(remoteAck, actIndex))
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied malformed ack: act={actIndex} player={player.NetId} choiceId={choiceId}");
+				return;
+			}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} player={player.NetId} choiceId={receivedChoiceId}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} player={player.NetId} choiceId={receivedChoiceId}");
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied wait failed: act={actIndex} player={player.NetId} choiceId={choiceId} error={ex}");
+		}
+	}
+
+	private static async Task WaitForFramesOrRunChangeAsync(RunState runState, int frameCount)
+	{
+		for (int i = 0; i < frameCount && IsCurrentRun(runState); i++)
+		{
+			if (NGame.Instance?.IsInsideTree() == true)
+			{
+				await NGame.Instance.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
+			}
+			else
+			{
+				await Task.Yield();
+			}
+		}
 	}
 
 	private static PlayerChoiceResult CreateActSelectionAppliedChoiceResult(int actIndex)

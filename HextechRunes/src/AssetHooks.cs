@@ -100,6 +100,7 @@ internal static class AssetHooks
 		string? path = self switch
 		{
 			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",
+			HextechAttackReplayPower => $"res://{ModInfo.Id}/images/powers/hextechAttackReplayPower.png",
 			_ => null
 		};
 		if (path == null)

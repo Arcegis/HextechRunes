@@ -54,6 +54,7 @@ public static class ModEntry
 		CollectionHooks.Install();
 		HextechShopForgeHooks.Install();
 		HextechForgeStackingHooks.Install();
+		HextechUiSafetyHooks.Install();
 		Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
 	}
 

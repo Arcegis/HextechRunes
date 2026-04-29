@@ -26,6 +26,8 @@ internal sealed partial class HextechMayhemModifier
 	private readonly Dictionary<uint, int> _slapProcsThisTurn = new();
 	private readonly Dictionary<uint, int> _tormentorProcsThisTurn = new();
 	private readonly Dictionary<uint, int> _courageProcsThisTurn = new();
+	private readonly Dictionary<uint, int> _bloodPactProcsThisTurn = new();
+	private readonly Dictionary<uint, int> _clownCollegeProcsThisTurn = new();
 	private readonly HashSet<uint> _escapePlanTriggered = new();
 	private readonly HashSet<uint> _escapePlanPending = new();
 	private readonly HashSet<uint> _repulsorTriggered = new();
@@ -44,20 +46,21 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HashSet<uint> _drawYourSwordApplied = new();
 	private readonly HashSet<uint> _madScientistApplied = new();
 	private readonly HashSet<uint> _unmovableMountainApplied = new();
+	private readonly HashSet<uint> _goldenSpatulaApplied = new();
 	private readonly Dictionary<uint, int> _tankEngineStacks = new();
 	private readonly Dictionary<uint, int> _shrinkEngineStacks = new();
 	private readonly Dictionary<uint, int> _getExcitedPending = new();
-		private readonly HashSet<uint> _feelTheBurnPending = new();
-		private readonly HashSet<uint> _mountainSoulHasPreviousTurn = new();
-		private readonly HashSet<uint> _mountainSoulDamagedSinceLastTurn = new();
-		private readonly Dictionary<ulong, int> _playerAttackCardsPlayedThisCombat = new();
-		private readonly HashSet<string> _monsterDebuffActionProcKeysThisTurn = new();
-		private readonly HashSet<string> _groupedPlayerDebuffProcKeys = new();
-		private string? _lastEnemyThresholdTriggerKey;
-		private bool _handlingMonsterTormentorBurn;
-		private bool _handlingServantMasterIllusion;
-		private bool _handlingGroupedPlayerDebuffs;
-		private int _enemyProtectiveVeilTurnCounter;
+	private readonly HashSet<uint> _feelTheBurnPending = new();
+	private readonly HashSet<uint> _mountainSoulHasPreviousTurn = new();
+	private readonly HashSet<uint> _mountainSoulDamagedSinceLastTurn = new();
+	private readonly Dictionary<ulong, int> _playerAttackCardsPlayedThisCombat = new();
+	private readonly HashSet<string> _monsterDebuffActionProcKeysThisTurn = new();
+	private readonly HashSet<string> _groupedPlayerDebuffProcKeys = new();
+	private string? _lastEnemyThresholdTriggerKey;
+	private bool _handlingMonsterTormentorBurn;
+	private bool _handlingServantMasterIllusion;
+	private bool _handlingGroupedPlayerDebuffs;
+	private int _enemyProtectiveVeilTurnCounter;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedRarityByAct
@@ -85,6 +88,13 @@ internal sealed partial class HextechMayhemModifier
 	{
 		get => _telemetryChoicesJson;
 		set => _telemetryChoicesJson = value ?? "";
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public string SavedCombatTrackingJson
+	{
+		get => SerializeCombatTracking();
+		set => RestoreCombatTracking(value);
 	}
 
 	public override LocString Title => new("modifiers", "HEXTECH_MAYHEM.title");
@@ -418,42 +428,4 @@ internal sealed partial class HextechMayhemModifier
 			.OrderBy(static group => group.Key)
 			.Select(static group => $"{group.Key}:{group.Count()}"));
 	}
-
-	private void ResetCombatTracking()
-	{
-		_slapProcsThisTurn.Clear();
-		_tormentorProcsThisTurn.Clear();
-		_courageProcsThisTurn.Clear();
-		_escapePlanTriggered.Clear();
-		_escapePlanPending.Clear();
-		_repulsorTriggered.Clear();
-		_repulsorPending.Clear();
-		_dawnTriggered.Clear();
-		_speedDemonPending.Clear();
-		_devilsDanceTriggeredThisTurn.Clear();
-		_feelTheBurnTriggered.Clear();
-		_feyMagicPendingNoDrawPlayers.Clear();
-		_mikaelsBlessingTriggers.Clear();
-		_goliathApplied.Clear();
-		_protectiveVeilApplied.Clear();
-		_thornmailApplied.Clear();
-		_superBrainApplied.Clear();
-		_astralBodyApplied.Clear();
-		_drawYourSwordApplied.Clear();
-		_madScientistApplied.Clear();
-		_unmovableMountainApplied.Clear();
-		_tankEngineStacks.Clear();
-			_shrinkEngineStacks.Clear();
-			_getExcitedPending.Clear();
-			_feelTheBurnPending.Clear();
-			_mountainSoulHasPreviousTurn.Clear();
-			_mountainSoulDamagedSinceLastTurn.Clear();
-			_playerAttackCardsPlayedThisCombat.Clear();
-			_monsterDebuffActionProcKeysThisTurn.Clear();
-			_groupedPlayerDebuffProcKeys.Clear();
-			_lastEnemyThresholdTriggerKey = null;
-			_enemyProtectiveVeilTurnCounter = 0;
-			_handlingServantMasterIllusion = false;
-			_handlingGroupedPlayerDebuffs = false;
-		}
-	}
+}

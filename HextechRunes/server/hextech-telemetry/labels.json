@@ -139,7 +139,21 @@
     "PRECISION_COGNITION_RUNE": "精准认知",
     "HASTY_SCRIBBLE_RUNE": "潦草急就",
     "CLOWN_COLLEGE_RUNE": "小丑学院",
-    "BLADE_WALTZ_RUNE": "利刃华尔兹"
+    "BLADE_WALTZ_RUNE": "利刃华尔兹",
+    "BLOOD_PACT_RUNE": "歃血",
+    "SUMMON_FORTH_RUNE": "剑来！",
+    "BYPRODUCT_RUNE": "副产物",
+    "ADAPTIVE_CAPACITOR_RUNE": "自适应电容",
+    "RENEWAL_RUNE": "换新",
+    "WRAITH_RUNE": "怨灵",
+    "SWORD_INTENT_RUNE": "剑意",
+    "IMMORTAL_BONE_RUNE": "不朽骨",
+    "DOOMSDAY_RUNE": "大限将至",
+    "SINGULARITY_AI_RUNE": "奇点AI",
+    "EIGHT_PENNY_GATE_RUNE": "扉八分钱",
+    "GROWING_STRONGER_RUNE": "愈战愈勇",
+    "MISERY_RUNE": "苦楚",
+    "GHOST_FORM_RUNE": "幽魂形态"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",
@@ -185,7 +199,14 @@
     "FeyMagic": "精怪魔法",
     "FinalForm": "最终形态",
     "UnmovableMountain": "不动如山",
-    "MikaelsBlessing": "米凯尔的祝福"
+    "MikaelsBlessing": "米凯尔的祝福",
+    "BloodPact": "歃血",
+    "ImmortalBone": "不朽骨",
+    "Doomsday": "大限将至",
+    "ClownCollege": "小丑学院",
+    "SingularityAI": "奇点AI",
+    "ProteinShake": "蛋白粉奶昔",
+    "GoldenSpatula": "金铲铲"
   },
   "characters": {
     "IRONCLAD": "铁甲战士",
