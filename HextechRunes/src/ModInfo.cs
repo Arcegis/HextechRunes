@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HextechRunes;
@@ -179,7 +180,25 @@ internal static class ModInfo
 
     public static string GetEnemyHexDescriptionFormatted(MonsterHexKind hex)
     {
-        return GetEnemyHexDescriptionLoc(hex).GetFormattedText();
+        RelicModel relic = GetIconRelicForMonsterHex(hex);
+        string localizationKey = GetEnemyHexDescriptionKey(relic);
+        try
+        {
+            return new LocString("relics", localizationKey).GetFormattedText();
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[{Id}][Mayhem] Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
+            try
+            {
+                return relic.DynamicDescription.GetFormattedText();
+            }
+            catch (Exception fallbackEx)
+            {
+                Log.Warn($"[{Id}][Mayhem] Enemy hex description fallback failed: hex={hex} relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry} error={fallbackEx.Message}");
+                return relic.Title.GetFormattedText();
+            }
+        }
     }
 
     public static IEnumerable<IHoverTip> GetEnemyHexHoverTips(MonsterHexKind hex)
@@ -192,8 +211,13 @@ internal static class ModInfo
     private static LocString GetEnemyHexDescriptionLoc(MonsterHexKind hex)
     {
         RelicModel relic = GetIconRelicForMonsterHex(hex);
+        return new LocString("relics", GetEnemyHexDescriptionKey(relic));
+    }
+
+    private static string GetEnemyHexDescriptionKey(RelicModel relic)
+    {
         ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-        return new LocString("relics", ToImageFileStem(id.Entry) + ".enemyDescription");
+        return ToImageFileStem(id.Entry) + ".enemyDescription";
     }
 
     public static IReadOnlyList<RelicModel> GetCanonicalRunes()
