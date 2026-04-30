@@ -1,5 +1,6 @@
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Gold;
 using MegaCrit.Sts2.Core.Entities.Merchant;
@@ -9,7 +10,6 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
-using DetourHook = MonoMod.RuntimeDetour.Hook;
 using CoreHook = MegaCrit.Sts2.Core.Hooks.Hook;
 
 namespace HextechRunes;
@@ -20,18 +20,6 @@ internal static class HextechShopForgeHooks
 	private const int RandomForgeShopCostIncrease = 50;
 	private const float CardRemovalRandomForgeOffsetY = 60f;
 
-	private static DetourHook? _createForNormalMerchantHook;
-
-	private static DetourHook? _merchantRelicPurchaseHook;
-
-	private static DetourHook? _merchantRelicRestockHook;
-
-	private static DetourHook? _modifyMerchantPriceHook;
-
-	private static DetourHook? _shouldRefillMerchantEntryHook;
-
-	private static DetourHook? _merchantInventoryInitializeHook;
-
 	private static FieldInfo? _relicEntriesField;
 
 	private static FieldInfo? _merchantInventoryRelicContainerField;
@@ -40,90 +28,83 @@ internal static class HextechShopForgeHooks
 
 	private static readonly Dictionary<ulong, Vector2> CardRemovalOriginalPositions = [];
 
-	private delegate MerchantInventory OrigCreateForNormalMerchant(Player player);
-
-	private delegate Task<(bool, int)> OrigMerchantRelicPurchase(MerchantRelicEntry self, MerchantInventory inventory, bool ignoreCost);
-
-	private delegate void OrigMerchantRelicRestock(MerchantRelicEntry self, MerchantInventory inventory);
-
-	private delegate void OrigMerchantInventoryInitialize(NMerchantInventory self, MerchantInventory inventory, MerchantDialogueSet dialogue);
-
-	private delegate bool OrigShouldRefillMerchantEntry(IRunState runState, MerchantEntry entry, Player player);
-
-	private delegate decimal OrigModifyMerchantPrice(IRunState runState, Player player, MerchantEntry entry, decimal result);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
 		_relicEntriesField = RequireField(typeof(MerchantInventory), "_relicEntries");
 		_merchantInventoryRelicContainerField = RequireField(typeof(NMerchantInventory), "_relicContainer");
 		_merchantInventoryCardRemovalNodeField = RequireField(typeof(NMerchantInventory), "_cardRemovalNode");
-		_createForNormalMerchantHook = new DetourHook(
+		harmony.Patch(
 			RequireMethod(typeof(MerchantInventory), nameof(MerchantInventory.CreateForNormalMerchant), BindingFlags.Static | BindingFlags.Public, typeof(Player)),
-			CreateForNormalMerchantDetour);
-		_merchantRelicPurchaseHook = new DetourHook(
+			postfix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(CreateForNormalMerchantPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(MerchantRelicEntry), "OnTryPurchase", BindingFlags.Instance | BindingFlags.NonPublic, typeof(MerchantInventory), typeof(bool)),
-			MerchantRelicPurchaseDetour);
-		_merchantRelicRestockHook = new DetourHook(
+			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantRelicPurchasePrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(MerchantRelicEntry), "RestockAfterPurchase", BindingFlags.Instance | BindingFlags.NonPublic, typeof(MerchantInventory)),
-			MerchantRelicRestockDetour);
-		_modifyMerchantPriceHook = new DetourHook(
+			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantRelicRestockPrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(CoreHook), nameof(CoreHook.ModifyMerchantPrice), BindingFlags.Static | BindingFlags.Public, typeof(IRunState), typeof(Player), typeof(MerchantEntry), typeof(decimal)),
-			ModifyMerchantPriceDetour);
-		_shouldRefillMerchantEntryHook = new DetourHook(
+			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(ModifyMerchantPricePrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(CoreHook), nameof(CoreHook.ShouldRefillMerchantEntry), BindingFlags.Static | BindingFlags.Public, typeof(IRunState), typeof(MerchantEntry), typeof(Player)),
-			ShouldRefillMerchantEntryDetour);
-		_merchantInventoryInitializeHook = new DetourHook(
+			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(ShouldRefillMerchantEntryPrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(NMerchantInventory), nameof(NMerchantInventory.Initialize), BindingFlags.Instance | BindingFlags.Public, typeof(MerchantInventory), typeof(MerchantDialogueSet)),
-			MerchantInventoryInitializeDetour);
+			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantInventoryInitializePrefix)),
+			postfix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantInventoryInitializePostfix)));
 	}
 
-	private static MerchantInventory CreateForNormalMerchantDetour(OrigCreateForNormalMerchant orig, Player player)
+	private static void CreateForNormalMerchantPostfix(Player player, MerchantInventory __result)
 	{
-		MerchantInventory inventory = orig(player);
-		InstallRandomForgeEntry(inventory, player);
-		return inventory;
+		InstallRandomForgeEntry(__result, player);
 	}
 
-	private static decimal ModifyMerchantPriceDetour(OrigModifyMerchantPrice orig, IRunState runState, Player player, MerchantEntry entry, decimal result)
+	private static bool ModifyMerchantPricePrefix(MerchantEntry entry, ref decimal __result)
 	{
 		if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null)
 		{
-			return GetRandomForgeShopCost(shopRelic);
+			__result = GetRandomForgeShopCost(shopRelic);
+			return false;
 		}
 
-		return orig(runState, player, entry, result);
+		return true;
 	}
 
-	private static bool ShouldRefillMerchantEntryDetour(OrigShouldRefillMerchantEntry orig, IRunState runState, MerchantEntry entry, Player player)
+	private static bool ShouldRefillMerchantEntryPrefix(MerchantEntry entry, ref bool __result)
 	{
-		return IsRandomForgeEntry(entry) || orig(runState, entry, player);
-	}
-
-	private static void MerchantInventoryInitializeDetour(OrigMerchantInventoryInitialize orig, NMerchantInventory self, MerchantInventory inventory, MerchantDialogueSet dialogue)
-	{
-		EnsureRandomForgeRelicSlot(self, inventory);
-		orig(self, inventory, dialogue);
-		MoveCardRemovalBelowRandomForge(self, inventory);
-	}
-
-	private static Task<(bool, int)> MerchantRelicPurchaseDetour(OrigMerchantRelicPurchase orig, MerchantRelicEntry self, MerchantInventory inventory, bool ignoreCost)
-	{
-		if (!IsRandomForgeEntry(self))
+		if (!IsRandomForgeEntry(entry))
 		{
-			return orig(self, inventory, ignoreCost);
+			return true;
 		}
 
-		return PurchaseRandomForge(self, inventory, ignoreCost);
+		__result = true;
+		return false;
 	}
 
-	private static void MerchantRelicRestockDetour(OrigMerchantRelicRestock orig, MerchantRelicEntry self, MerchantInventory inventory)
+	private static void MerchantInventoryInitializePrefix(NMerchantInventory __instance, MerchantInventory inventory)
 	{
-		if (IsRandomForgeEntry(self))
+		EnsureRandomForgeRelicSlot(__instance, inventory);
+	}
+
+	private static void MerchantInventoryInitializePostfix(NMerchantInventory __instance, MerchantInventory inventory)
+	{
+		MoveCardRemovalBelowRandomForge(__instance, inventory);
+	}
+
+	private static bool MerchantRelicPurchasePrefix(MerchantRelicEntry __instance, MerchantInventory inventory, bool ignoreCost, ref Task<(bool, int)> __result)
+	{
+		if (!IsRandomForgeEntry(__instance))
 		{
-			return;
+			return true;
 		}
 
-		orig(self, inventory);
+		__result = PurchaseRandomForge(__instance, inventory, ignoreCost);
+		return false;
+	}
+
+	private static bool MerchantRelicRestockPrefix(MerchantRelicEntry __instance)
+	{
+		return !IsRandomForgeEntry(__instance);
 	}
 
 	private static void InstallRandomForgeEntry(MerchantInventory inventory, Player player)

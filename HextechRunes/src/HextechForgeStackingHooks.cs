@@ -1,27 +1,23 @@
 using System.Reflection;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs.History;
 using MegaCrit.Sts2.Core.Saves;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
 internal static class HextechForgeStackingHooks
 {
-	private static Hook? _obtainHook;
-
-	private delegate Task<RelicModel> OrigObtain(RelicModel relic, Player player, int index);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
-		_obtainHook = new Hook(
+		harmony.Patch(
 			RequireMethod(typeof(RelicCmd), nameof(RelicCmd.Obtain), BindingFlags.Public | BindingFlags.Static, typeof(RelicModel), typeof(Player), typeof(int)),
-			ObtainDetour);
+			prefix: new HarmonyMethod(typeof(HextechForgeStackingHooks), nameof(ObtainPrefix)));
 	}
 
-	private static async Task<RelicModel> ObtainDetour(OrigObtain orig, RelicModel relic, Player player, int index)
+	private static bool ObtainPrefix(RelicModel relic, Player player, ref Task<RelicModel> __result)
 	{
 		if (relic is HextechForgeBase
 			&& TryGetOwnedForge(player, relic, out HextechForgeBase? ownedForge)
@@ -33,12 +29,18 @@ internal static class HextechForgeStackingHooks
 				.RelicChoices
 				.Add(new ModelChoiceHistoryEntry(relic.Id, wasPicked: true));
 			SaveManager.Instance.MarkRelicAsSeen(relic);
-			ownedForge.AddForgeStack(flash: !ownedForge.HasUponPickupEffect);
-			await ownedForge.AfterObtained();
-			return ownedForge;
+			__result = ObtainStackedForge(ownedForge);
+			return false;
 		}
 
-		return await orig(relic, player, index);
+		return true;
+	}
+
+	private static async Task<RelicModel> ObtainStackedForge(HextechForgeBase ownedForge)
+	{
+		ownedForge.AddForgeStack(flash: !ownedForge.HasUponPickupEffect);
+		await ownedForge.AfterObtained();
+		return ownedForge;
 	}
 
 	private static bool TryGetOwnedForge(Player player, RelicModel relic, out HextechForgeBase? ownedForge)

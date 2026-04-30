@@ -1832,7 +1832,7 @@ public sealed class GoliathRune : HextechRelicBase
 		}
 
 		EnsureBaseMaxHpInitialized(assumeAlreadyScaled: false);
-		await CreatureCmd.SetMaxHp(Owner.Creature, BaseMaxHp);
+		await CreatureCmdCompat.SetMaxHp(Owner.Creature, BaseMaxHp);
 		await CreatureCmd.Heal(Owner.Creature, Owner.Creature.MaxHp - Owner.Creature.CurrentHp);
 		Grow();
 	}
@@ -3340,9 +3340,9 @@ public sealed class TranscendentEvilRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterRoomEntered(AbstractRoom room)
+	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
 	{
-		if (room is not CombatRoom || Owner == null || !IsDefectOwner)
+		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsDefectOwner)
 		{
 			return;
 		}

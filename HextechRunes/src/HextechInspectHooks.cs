@@ -1,5 +1,6 @@
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Entities.Relics;
@@ -12,7 +13,6 @@ using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Unlocks;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
@@ -32,99 +32,89 @@ internal static class HextechInspectHooks
 	private static readonly FieldInfo InspectRelicScreenHoverTipRectField = RequireField(typeof(NInspectRelicScreen), "_hoverTipRect");
 	private static readonly MethodInfo InspectRelicScreenSetRarityVisualsMethod = RequireMethod(typeof(NInspectRelicScreen), "SetRarityVisuals", BindingFlags.Instance | BindingFlags.NonPublic, typeof(RelicRarity));
 
-	private static Hook? _unlockStateRelicsHook;
-	private static Hook? _saveManagerIsRelicSeenHook;
-	private static Hook? _inspectRelicScreenOpenHook;
-	private static Hook? _inspectRelicScreenUpdateRelicDisplayHook;
-	private static Hook? _energyIconPrefixHook;
+	private readonly record struct InspectOpenState(IReadOnlyList<RelicModel> CorrectedRelics, int CorrectedIndex);
 
-	private delegate IEnumerable<RelicModel> OrigGetUnlockStateRelics(UnlockState self);
-
-	private delegate bool OrigIsRelicSeen(SaveManager self, RelicModel relic);
-
-	private delegate void OrigInspectRelicScreenOpen(NInspectRelicScreen self, IReadOnlyList<RelicModel> relics, RelicModel relic);
-
-	private delegate void OrigInspectRelicScreenUpdateRelicDisplay(NInspectRelicScreen self);
-
-	private delegate string OrigEnergyIconHelperGetPrefix(AbstractModel model);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
-		_unlockStateRelicsHook = new Hook(
+		harmony.Patch(
 			typeof(UnlockState).GetProperty(nameof(UnlockState.Relics), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetMethod!,
-			GetUnlockStateRelicsDetour);
-		_saveManagerIsRelicSeenHook = new Hook(
+			postfix: new HarmonyMethod(typeof(HextechInspectHooks), nameof(GetUnlockStateRelicsPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(SaveManager), nameof(SaveManager.IsRelicSeen), BindingFlags.Instance | BindingFlags.Public, typeof(RelicModel)),
-			IsRelicSeenDetour);
-		_inspectRelicScreenOpenHook = new Hook(
+			postfix: new HarmonyMethod(typeof(HextechInspectHooks), nameof(IsRelicSeenPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(NInspectRelicScreen), nameof(NInspectRelicScreen.Open), BindingFlags.Instance | BindingFlags.Public, typeof(IReadOnlyList<RelicModel>), typeof(RelicModel)),
-			InspectRelicScreenOpenDetour);
-		_inspectRelicScreenUpdateRelicDisplayHook = new Hook(
+			prefix: new HarmonyMethod(typeof(HextechInspectHooks), nameof(InspectRelicScreenOpenPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechInspectHooks), nameof(InspectRelicScreenOpenPostfix)));
+		harmony.Patch(
 			InspectRelicScreenUpdateRelicDisplayMethod,
-			InspectRelicScreenUpdateRelicDisplayDetour);
-		_energyIconPrefixHook = new Hook(
+			prefix: new HarmonyMethod(typeof(HextechInspectHooks), nameof(InspectRelicScreenUpdateRelicDisplayPrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(EnergyIconHelper), nameof(EnergyIconHelper.GetPrefix), BindingFlags.Static | BindingFlags.Public, typeof(AbstractModel)),
-			EnergyIconHelperGetPrefixDetour);
+			postfix: new HarmonyMethod(typeof(HextechInspectHooks), nameof(EnergyIconHelperGetPrefixPostfix)));
 	}
 
-	private static IEnumerable<RelicModel> GetUnlockStateRelicsDetour(OrigGetUnlockStateRelics orig, UnlockState self)
+	private static void GetUnlockStateRelicsPostfix(ref IEnumerable<RelicModel> __result)
 	{
-		return orig(self).Concat(ModInfo.GetCanonicalCustomRelics()).Distinct();
+		__result = __result.Concat(ModInfo.GetCanonicalCustomRelics()).Distinct();
 	}
 
-	private static bool IsRelicSeenDetour(OrigIsRelicSeen orig, SaveManager self, RelicModel relic)
+	private static void IsRelicSeenPostfix(RelicModel relic, ref bool __result)
 	{
 		if (ModInfo.IsHextechCustomRelic(relic))
 		{
-			return true;
+			__result = true;
 		}
-
-		return orig(self, relic);
 	}
 
-	private static void InspectRelicScreenOpenDetour(OrigInspectRelicScreenOpen orig, NInspectRelicScreen self, IReadOnlyList<RelicModel> relics, RelicModel relic)
+	private static void InspectRelicScreenOpenPrefix(ref IReadOnlyList<RelicModel> relics, ref RelicModel relic, out InspectOpenState __state)
 	{
 		List<RelicModel> correctedRelics = relics.ToList();
-		int correctedIndex = correctedRelics.FindIndex(candidate => ReferenceEquals(candidate, relic) || candidate.Id == relic.Id);
+		RelicModel requestedRelic = relic;
+		int correctedIndex = correctedRelics.FindIndex(candidate => ReferenceEquals(candidate, requestedRelic) || candidate.Id == requestedRelic.Id);
 		if (correctedIndex < 0)
 		{
 			correctedRelics.Add(relic);
 			correctedIndex = correctedRelics.Count - 1;
 		}
 
-		orig(self, correctedRelics, correctedRelics[correctedIndex]);
-		EnsureInspectRelicsUnlocked(self, correctedRelics);
-		InspectRelicScreenRelicsField.SetValue(self, correctedRelics);
-		InspectRelicScreenSetRelicMethod.Invoke(self, [correctedIndex]);
-		InspectRelicScreenUpdateRelicDisplayMethod.Invoke(self, null);
+		relics = correctedRelics;
+		relic = correctedRelics[correctedIndex];
+		__state = new InspectOpenState(correctedRelics, correctedIndex);
 	}
 
-	private static void InspectRelicScreenUpdateRelicDisplayDetour(OrigInspectRelicScreenUpdateRelicDisplay orig, NInspectRelicScreen self)
+	private static void InspectRelicScreenOpenPostfix(NInspectRelicScreen __instance, InspectOpenState __state)
 	{
-		if (InspectRelicScreenRelicsField.GetValue(self) is IReadOnlyList<RelicModel> relics
-			&& InspectRelicScreenIndexField.GetValue(self) is int index
+		EnsureInspectRelicsUnlocked(__instance, __state.CorrectedRelics);
+		InspectRelicScreenRelicsField.SetValue(__instance, __state.CorrectedRelics);
+		InspectRelicScreenSetRelicMethod.Invoke(__instance, [__state.CorrectedIndex]);
+		InspectRelicScreenUpdateRelicDisplayMethod.Invoke(__instance, null);
+	}
+
+	private static bool InspectRelicScreenUpdateRelicDisplayPrefix(NInspectRelicScreen __instance)
+	{
+		if (InspectRelicScreenRelicsField.GetValue(__instance) is IReadOnlyList<RelicModel> relics
+			&& InspectRelicScreenIndexField.GetValue(__instance) is int index
 			&& index >= 0
 			&& index < relics.Count)
 		{
 			RelicModel relic = relics[index];
 			if (ModInfo.IsHextechCustomRelic(relic))
 			{
-				RenderHextechInspect(self, relic);
-				return;
+				RenderHextechInspect(__instance, relic);
+				return false;
 			}
 		}
 
-		orig(self);
+		return true;
 	}
 
-	private static string EnergyIconHelperGetPrefixDetour(OrigEnergyIconHelperGetPrefix orig, AbstractModel model)
+	private static void EnergyIconHelperGetPrefixPostfix(AbstractModel model, ref string __result)
 	{
 		if (model is RelicModel relic && ModInfo.IsHextechCustomRelic(relic))
 		{
-			return "red";
+			__result = "red";
 		}
-
-		return orig(model);
 	}
 
 	private static void EnsureInspectRelicsUnlocked(NInspectRelicScreen screen, IReadOnlyList<RelicModel> relics)

@@ -122,7 +122,7 @@ internal sealed partial class HextechMayhemModifier
             int newMaxHp = Math.Max(1, creature.MaxHp - maxHpLoss);
             if (newMaxHp < creature.MaxHp)
             {
-                await CreatureCmd.SetMaxHp(creature, newMaxHp);
+                await CreatureCmdCompat.SetMaxHp(creature, newMaxHp);
             }
 
             await PowerCmd.Apply<PersonalHivePower>(creature, 1m, creature, null);

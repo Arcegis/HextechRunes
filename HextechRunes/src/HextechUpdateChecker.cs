@@ -2,10 +2,10 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
@@ -24,27 +24,23 @@ internal static class HextechUpdateChecker
 	private static readonly string[] VersionEndpoints = [StaticVersionEndpoint, ApiVersionEndpoint];
 
 	private static readonly object StateLock = new();
-	private static Hook? _mainMenuReadyHook;
 	private static Task<UpdateCheckResult>? _checkTask;
 	private static UpdateCheckResult? _cachedResult;
 
-	private delegate void OrigMainMenuReady(NMainMenu self);
-
 	private sealed record UpdateCheckResult(string Text, bool Cacheable);
 
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
-		_mainMenuReadyHook = new Hook(
+		harmony.Patch(
 			RequireMethod(typeof(NMainMenu), nameof(NMainMenu._Ready), BindingFlags.Instance | BindingFlags.Public),
-			MainMenuReadyDetour);
+			postfix: new HarmonyMethod(typeof(HextechUpdateChecker), nameof(MainMenuReadyPostfix)));
 	}
 
-	private static void MainMenuReadyDetour(OrigMainMenuReady orig, NMainMenu self)
+	private static void MainMenuReadyPostfix(NMainMenu __instance)
 	{
-		orig(self);
 		try
 		{
-			ShowNotice(self);
+			ShowNotice(__instance);
 		}
 		catch (Exception ex)
 		{
