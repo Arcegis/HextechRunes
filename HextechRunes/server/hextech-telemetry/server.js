@@ -700,6 +700,9 @@ function getSummaryForDisplay(versionFilter = null) {
 
   const summary = readDerivedSummary();
   if (summary && allDerivedFilesExist()) {
+    if (!summary.versionFilter || !Array.isArray(summary.availableVersions)) {
+      return rebuildDerivedTablesNow();
+    }
     if (derivedState.dirty || !derivedFilesAreCurrent()) {
       scheduleDerivedRebuild();
     }
