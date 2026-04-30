@@ -2457,6 +2457,14 @@ public sealed class SacrificeRune : HextechRelicBase
 {
 	private int _countThisCombat;
 
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("CountPerEnemy", 5m),
+		new DynamicVar("SustainMultiplier", 1.1m)
+	];
+
+	public decimal SustainMultiplier => DynamicVars["SustainMultiplier"].BaseValue;
+
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCountThisCombat
 	{
@@ -2498,9 +2506,14 @@ public sealed class SacrificeRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_countThisCombat += player.Creature.CombatState.Enemies.Count(static enemy => enemy.IsAlive && enemy.Side == CombatSide.Enemy) * 3;
+		_countThisCombat += player.Creature.CombatState.Enemies.Count(static enemy => enemy.IsAlive && enemy.Side == CombatSide.Enemy) * DynamicVars["CountPerEnemy"].IntValue;
 		InvokeDisplayAmountChanged();
 		return Task.CompletedTask;
+	}
+
+	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
+	{
+		return target == Owner?.Creature ? SustainMultiplier : 1m;
 	}
 
 }
@@ -2508,6 +2521,11 @@ public sealed class SacrificeRune : HextechRelicBase
 public sealed class GoldrendRune : HextechRelicBase
 {
 	private int _countThisCombat;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("CountPerHit", 10m)
+	];
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCountThisCombat
@@ -2550,7 +2568,7 @@ public sealed class GoldrendRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_countThisCombat += 5;
+		_countThisCombat += DynamicVars["CountPerHit"].IntValue;
 		InvokeDisplayAmountChanged();
 		return Task.CompletedTask;
 	}

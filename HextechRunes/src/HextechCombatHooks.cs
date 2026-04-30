@@ -104,6 +104,11 @@ internal static class HextechCombatHooks
 				amount *= 1.25m;
 			}
 
+			if (player.GetRelic<SacrificeRune>() is SacrificeRune sacrificeRune)
+			{
+				amount *= sacrificeRune.SustainMultiplier;
+			}
+
 			if (player.GetRelic<BackToBasicsRune>() != null)
 			{
 				amount *= 1.4m;

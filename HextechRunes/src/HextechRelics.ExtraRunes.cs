@@ -393,8 +393,16 @@ public sealed class CollectorRune : HextechRelicBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("CountPerDeath", 5m)
+		new DynamicVar("CountPerDeath", 10m),
+		new DynamicVar("DamageMultiplier", 1.1m)
 	];
+
+	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return target?.Side == CombatSide.Enemy && IsDamageFromOwner(dealer, cardSource)
+			? DynamicVars["DamageMultiplier"].BaseValue
+			: 1m;
+	}
 
 	public override Task BeforeCombatStart()
 	{
@@ -1455,7 +1463,7 @@ public sealed class ExplosionArtRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new CardsVar(1)
+		new CardsVar(2)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -2292,12 +2300,24 @@ public sealed class DieForYouRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DamageVar(1m, ValueProp.Unpowered),
-		new BlockVar(1m, ValueProp.Unpowered)
+		new BlockVar(1m, ValueProp.Unpowered),
+		new SummonVar(5m)
 	];
 
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsNecrobinderPlayer(player);
+	}
+
+	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner || Owner.Creature.IsDead || !IsNecrobinderPlayer(player))
+		{
+			return;
+		}
+
+		Flash();
+		await OstyCmd.Summon(choiceContext, player, DynamicVars.Summon.BaseValue, this);
 	}
 
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
@@ -2334,7 +2354,13 @@ public sealed class HappyAccidentRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("OrbCount", 1m)
+		new DynamicVar("OrbCount", 1m),
+		new PowerVar<FocusPower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<FocusPower>()
 	];
 
 	public override bool IsAvailableForPlayer(Player player)
@@ -2361,6 +2387,8 @@ public sealed class HappyAccidentRune : HextechRelicBase
 			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
 			await OrbCmd.Channel(choiceContext, orb, Owner);
 		}
+
+		await PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, card);
 	}
 }
 
@@ -2391,9 +2419,12 @@ public sealed class MiseryRune : HextechRelicBase
 			return;
 		}
 
-		Flash(enemies);
+		List<Creature> flashTargets = enemies.Append(Owner.Creature).ToList();
+		Flash(flashTargets);
 		await PowerCmd.Apply<StrengthPower>(enemies, DynamicVars.Strength.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<DexterityPower>(enemies, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, -DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<DexterityPower>(Owner.Creature, -DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
 	}
 }
 
