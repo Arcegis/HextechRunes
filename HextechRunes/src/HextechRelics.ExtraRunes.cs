@@ -669,6 +669,11 @@ public sealed class SomethingFromNothingRune : HextechRelicBase
 		new CardsVar(1)
 	];
 
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromKeyword(CardKeyword.Ethereal)
+	];
+
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsNecrobinderPlayer(player);
@@ -676,7 +681,7 @@ public sealed class SomethingFromNothingRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null || cardPlay.Card.Owner != Owner || cardPlay.Card is not MegaCrit.Sts2.Core.Models.Cards.Void)
+		if (Owner == null || cardPlay.Card.Owner != Owner || !cardPlay.Card.Keywords.Contains(CardKeyword.Ethereal))
 		{
 			return Task.CompletedTask;
 		}
@@ -1749,12 +1754,12 @@ public sealed class TauntRune : HextechRelicBase
 		if (Owner == null
 			|| Owner.Creature.IsDead
 			|| power is not DoomPower
-			|| !TryGetOwnedEnemyDebuffTarget(power, amount, applier, out Creature? target))
+			|| applier != Owner.Creature)
 		{
 			return;
 		}
 
-		Flash(target == null ? Array.Empty<Creature>() : [target]);
+		Flash(power.Owner == null ? Array.Empty<Creature>() : [power.Owner]);
 		await CardPileCmd.Draw(new BlockingPlayerChoiceContext(), DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
 	}
 }
@@ -2432,8 +2437,8 @@ public sealed class GhostFormRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<IntangiblePower>(1m),
-		new PowerVar<NoBlockPower>(1m)
+		new PowerVar<IntangiblePower>(3m),
+		new PowerVar<NoBlockPower>(3m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -2442,9 +2447,9 @@ public sealed class GhostFormRune : HextechRelicBase
 		HoverTipFactory.FromPower<NoBlockPower>()
 	];
 
-	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	public override async Task BeforeCombatStart()
 	{
-		if (player != Owner || Owner.Creature.IsDead)
+		if (Owner == null || Owner.Creature.IsDead)
 		{
 			return;
 		}

@@ -841,8 +841,8 @@
   "GALACTIC_GIFT_RUNE.flavor": "Starlight is not currency. It merely gives change sometimes.",
   "somethingFromNothingRune.title": "Something From Nothing",
   "SOMETHING_FROM_NOTHING_RUNE.title": "Something From Nothing",
-  "somethingFromNothingRune.description": "Whenever you play a [gold]Void[/gold] card, draw [blue]1[/blue] card.",
-  "SOMETHING_FROM_NOTHING_RUNE.description": "Whenever you play a [gold]Void[/gold] card, draw [blue]1[/blue] card.",
+  "somethingFromNothingRune.description": "Whenever you play an [gold]Ethereal[/gold] card, draw [blue]1[/blue] card.",
+  "SOMETHING_FROM_NOTHING_RUNE.description": "Whenever you play an [gold]Ethereal[/gold] card, draw [blue]1[/blue] card.",
   "somethingFromNothingRune.flavor": "The empty space is not empty. It has not been called yet.",
   "SOMETHING_FROM_NOTHING_RUNE.flavor": "The empty space is not empty. It has not been called yet.",
   "lubricantRune.title": "Lubricant",
@@ -1158,8 +1158,8 @@
   "MISERY_RUNE.flavor": "Pain weakens best when it does not scream.",
   "ghostFormRune.title": "Ghost Form",
   "GHOST_FORM_RUNE.title": "Ghost Form",
-  "ghostFormRune.description": "At the start of your turn, gain [blue]1[/blue] [gold]Intangible[/gold] and [blue]1[/blue] [gold]No Block[/gold].",
-  "GHOST_FORM_RUNE.description": "At the start of your turn, gain [blue]1[/blue] [gold]Intangible[/gold] and [blue]1[/blue] [gold]No Block[/gold].",
+  "ghostFormRune.description": "At the start of combat, gain [blue]3[/blue] [gold]Intangible[/gold] and [blue]3[/blue] [gold]No Block[/gold].",
+  "GHOST_FORM_RUNE.description": "At the start of combat, gain [blue]3[/blue] [gold]Intangible[/gold] and [blue]3[/blue] [gold]No Block[/gold].",
   "ghostFormRune.flavor": "When the body fades, wounds have nowhere to land.",
   "GHOST_FORM_RUNE.flavor": "When the body fades, wounds have nowhere to land."
 }

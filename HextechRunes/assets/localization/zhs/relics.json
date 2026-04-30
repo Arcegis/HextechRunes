@@ -1158,8 +1158,8 @@
   "MISERY_RUNE.flavor": "痛苦不尖叫时，才最会削弱人。",
   "ghostFormRune.title": "幽魂形态",
   "GHOST_FORM_RUNE.title": "幽魂形态",
-  "ghostFormRune.description": "回合开始时，获得[blue]1[/blue]层[gold]无实体[/gold]和[blue]1[/blue]层[gold]不可格挡[/gold]。",
-  "GHOST_FORM_RUNE.description": "回合开始时，获得[blue]1[/blue]层[gold]无实体[/gold]和[blue]1[/blue]层[gold]不可格挡[/gold]。",
+  "ghostFormRune.description": "战斗开始时，获得[blue]3[/blue]层[gold]无实体[/gold]和[blue]3[/blue]层[gold]不可格挡[/gold]。",
+  "GHOST_FORM_RUNE.description": "战斗开始时，获得[blue]3[/blue]层[gold]无实体[/gold]和[blue]3[/blue]层[gold]不可格挡[/gold]。",
   "ghostFormRune.flavor": "身形淡去，伤口也无处落脚。",
   "GHOST_FORM_RUNE.flavor": "身形淡去，伤口也无处落脚。"
 }
