@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
@@ -627,15 +628,22 @@ public sealed class SymphonyOfWarRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<SerpentFormPower>(4m),
+		new PowerVar<SerpentFormPower>(3m),
 		new PowerVar<DemonFormPower>(1m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromPower<SerpentFormPower>(),
-		HoverTipFactory.FromPower<DemonFormPower>()
+		PowerPreview<SerpentFormPower>("HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description"),
+		PowerPreview<DemonFormPower>("HEXTECH_RUNE_DEMON_FORM_PREVIEW.description")
 	];
+
+	private static IHoverTip PowerPreview<TPower>(string descriptionKey)
+		where TPower : PowerModel
+	{
+		PowerModel power = ModelDb.Power<TPower>();
+		return new HoverTip(power, new LocString("powers", descriptionKey).GetFormattedText(), true);
+	}
 
 	public override async Task BeforeCombatStart()
 	{
@@ -1457,6 +1465,11 @@ public sealed class MadScientistRune : HextechRelicBase
 	[
 		new DynamicVar("OrbSlots", 5m),
 		new DynamicVar("OrbCount", 5m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<ElicitCard>()
 	];
 
 	public override async Task AfterObtained()

@@ -1103,6 +1103,11 @@ public sealed class ClownCollegeRune : HextechRelicBase
 		new CardsVar(3)
 	];
 
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<TrickMagicCard>()
+	];
+
 	public override async Task AfterObtained()
 	{
 		Flash();
@@ -1117,6 +1122,11 @@ public sealed class BladeWaltzRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new CardsVar(1)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<BladeWaltzCard>()
 	];
 
 	public override async Task AfterObtained()

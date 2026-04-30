@@ -59,6 +59,7 @@ internal static class HextechTelemetry
 	private const string ConfigFileName = "telemetry_config.json";
 	private const string PendingFileName = "telemetry_pending.jsonl";
 	private const int MaxPendingLines = 64;
+	private const long MinRunTimeForUploadSeconds = 60;
 
 	internal static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -122,6 +123,12 @@ internal static class HextechTelemetry
 			TelemetryConfig config = LoadConfig();
 			if (!config.Enabled)
 			{
+				return;
+			}
+
+			if (serializableRun.RunTime < MinRunTimeForUploadSeconds)
+			{
+				Log.Info($"[{ModInfo.Id}][Mayhem] Telemetry upload skipped for short run runTime={serializableRun.RunTime}s");
 				return;
 			}
 
@@ -232,6 +239,11 @@ internal static class HextechTelemetry
 		List<string> unsent = [];
 		foreach (string payload in pending.TakeLast(MaxPendingLines))
 		{
+			if (IsShortRunPayload(payload))
+			{
+				continue;
+			}
+
 			try
 			{
 				using StringContent content = new(payload, Encoding.UTF8, "application/json");
@@ -256,6 +268,26 @@ internal static class HextechTelemetry
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry upload deferred unsent={unsent.Count}");
 		}
+	}
+
+	private static bool IsShortRunPayload(string json)
+	{
+		try
+		{
+			using JsonDocument document = JsonDocument.Parse(json);
+			if (document.RootElement.TryGetProperty("run", out JsonElement run)
+				&& run.TryGetProperty("runTime", out JsonElement runTimeElement)
+				&& runTimeElement.TryGetInt64(out long runTime))
+			{
+				return runTime < MinRunTimeForUploadSeconds;
+			}
+		}
+		catch
+		{
+			return false;
+		}
+
+		return false;
 	}
 
 	private static TelemetryConfig LoadConfig()
