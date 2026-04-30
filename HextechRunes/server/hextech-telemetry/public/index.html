@@ -212,7 +212,7 @@
         document.getElementById("wins").textContent = summary.winCount;
         document.getElementById("winRate").textContent = fmtPct(summary.winRate);
         document.getElementById("filterNote").textContent =
-          `默认统计口径：排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的局；原始局仍保存在 runs.csv，eligibleDefaultStats=0。`;
+          `默认统计口径：排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的历史局；0.5.0 起客户端会直接跳过短局上传。`;
 
         renderTable(
           document.getElementById("versions"),

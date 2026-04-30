@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -31,6 +32,8 @@ public static class ModEntry
 
 	private static bool _subscribedRoomExited;
 
+	private static readonly HashSet<RunState> RunsInsideStartRunOrig = new();
+
 	private delegate Task OrigFinalizeStartingRelics(RunManager self);
 
 	private delegate Task OrigStartRun(NGame self, RunState runState);
@@ -45,12 +48,15 @@ public static class ModEntry
 		HextechTelemetry.Initialize();
 		InstallHooks();
 		HextechCombatHooks.Install();
-			HextechInspectHooks.Install();
-			AssetHooks.Install();
-			CollectionHooks.Install();
-			HextechShopForgeHooks.Install();
-			Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
-		}
+		HextechUpdateChecker.Install();
+		HextechInspectHooks.Install();
+		AssetHooks.Install();
+		CollectionHooks.Install();
+		HextechShopForgeHooks.Install();
+		HextechForgeStackingHooks.Install();
+		HextechUiSafetyHooks.Install();
+		Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
+	}
 
 	private static void InstallHooks()
 	{
@@ -93,7 +99,15 @@ public static class ModEntry
 		SubscribeRoomEnteredIfNeeded();
 		SubscribeRoomExitedIfNeeded();
 		Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
-		await orig(self, runState);
+		RunsInsideStartRunOrig.Add(runState);
+		try
+		{
+			await orig(self, runState);
+		}
+		finally
+		{
+			RunsInsideStartRunOrig.Remove(runState);
+		}
 
 		HextechMayhemModifier modifier = EnsureMayhemModifier(runState);
 		Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour end: currentRoom={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} {DescribeCurrentEventState(runState)}");
@@ -135,11 +149,10 @@ public static class ModEntry
 			return;
 		}
 
-		HextechMayhemModifier? modifier = GetMayhemModifier(runState);
-		if (modifier == null)
+		HextechMayhemModifier modifier = GetOrRecoverMayhemModifier(runState, $"EventRoomProceed recovered missing modifier after proceed event={eventId}");
+		if (!modifier.IsActResolved(0) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(EventRoomProceedDetour)))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: no modifier after proceed event={eventId}");
-			return;
+			HextechEnemyUi.Refresh(modifier);
 		}
 
 		if (modifier.IsActResolved(0))
@@ -215,6 +228,16 @@ public static class ModEntry
 		}
 
 		HextechMayhemModifier? modifier = GetMayhemModifier(runState);
+		if (modifier == null && !RunsInsideStartRunOrig.Contains(runState))
+		{
+			modifier = GetOrRecoverMayhemModifier(runState, $"OnRoomEntered recovered missing modifier room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex}");
+		}
+
+		if (modifier != null && !modifier.IsActResolved(runState.CurrentActIndex) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(OnRoomEntered)))
+		{
+			HextechEnemyUi.Refresh(modifier);
+		}
+
 		Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} actResolved={modifier?.IsActResolved(runState.CurrentActIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
 		if (runState.CurrentRoom is EventRoom { CanonicalEvent: AncientEventModel ancientEvent }
 			&& modifier != null
@@ -224,11 +247,9 @@ public static class ModEntry
 		{
 			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: ancient start event detected. event={ancientEvent.Id.Entry} actResolved={modifier.IsActResolved(0)} {DescribeCurrentEventState(runState)}");
 		}
-		if (runState.CurrentRoom is MapRoom
-			&& modifier != null
-			&& !modifier.IsActResolved(runState.CurrentActIndex))
+		if (modifier != null && ShouldScheduleActSelectionOnRoomEntered(runState, modifier))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: scheduling selection for MapRoom");
+			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
 			TaskHelper.RunSafely(HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier));
 		}
 
@@ -277,6 +298,17 @@ public static class ModEntry
 		return modifier;
 	}
 
+	private static HextechMayhemModifier GetOrRecoverMayhemModifier(RunState runState, string reason)
+	{
+		if (GetMayhemModifier(runState) is HextechMayhemModifier existing)
+		{
+			return existing;
+		}
+
+		Log.Warn($"[{ModInfo.Id}][Mayhem] {reason}; reattaching");
+		return EnsureMayhemModifier(runState);
+	}
+
 	internal static Task HandleHextechActStarted(HextechMayhemModifier modifier)
 	{
 		return HextechRuneSelectionCoordinator.HandleActStarted(modifier);
@@ -292,6 +324,17 @@ public static class ModEntry
 		return runState.CurrentActIndex == 0
 			&& runState.ExtraFields.StartedWithNeow
 			&& runState.CurrentRoom is EventRoom { CanonicalEvent: AncientEventModel };
+	}
+
+	private static bool ShouldScheduleActSelectionOnRoomEntered(RunState runState, HextechMayhemModifier modifier)
+	{
+		int actIndex = runState.CurrentActIndex;
+		if (actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex) || ShouldDeferAct0SelectionUntilAfterNeow(runState))
+		{
+			return false;
+		}
+
+		return runState.CurrentRoom is MapRoom || runState.CurrentRoom is not null and not EventRoom;
 	}
 
 	private static string DescribeCurrentEventState(RunState runState)

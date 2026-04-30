@@ -9,15 +9,26 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DERIVED_DIR = path.join(DATA_DIR, "derived");
 const LABELS_FILE = path.join(__dirname, "labels.json");
+const LATEST_VERSION_FILE = path.join(PUBLIC_DIR, "latest-version.json");
 const RESULTS_FILE = path.join(DATA_DIR, "run_results.jsonl");
 const MAX_BODY_BYTES = 256 * 1024;
 const MIN_RUN_TIME_FOR_DEFAULT_STATS = 60;
+const parsedDerivedRefreshDelayMs = Number.parseInt(process.env.DERIVED_REFRESH_DELAY_MS || "60000", 10);
+const DERIVED_REFRESH_DELAY_MS = Number.isFinite(parsedDerivedRefreshDelayMs) ? parsedDerivedRefreshDelayMs : 60000;
+const DERIVED_FILE_NAMES = ["summary.json", "runs.csv", "player_runes.csv", "rune_choices.csv", "monster_hexes.csv"];
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(DERIVED_DIR, { recursive: true });
 
 const LABELS = loadLabels();
 const knownRunIds = loadKnownRunIds();
+const derivedState = {
+  dirty: false,
+  rebuilding: false,
+  timer: null,
+  lastBuiltAtMs: 0,
+  lastError: null
+};
 
 function loadLabels() {
   try {
@@ -94,6 +105,21 @@ function sendHtml(res, status, body) {
   res.end(body);
 }
 
+function readLatestVersionInfo() {
+  try {
+    if (fs.existsSync(LATEST_VERSION_FILE)) {
+      return JSON.parse(fs.readFileSync(LATEST_VERSION_FILE, "utf8"));
+    }
+  } catch (error) {
+    console.warn(`failed to load latest version info: ${error.message}`);
+  }
+  return {
+    modId: "HextechRunes",
+    name: "海克斯大乱斗",
+    latestVersion: "0.4.2"
+  };
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -165,7 +191,7 @@ async function handleIngest(req, res) {
   };
   fs.appendFileSync(RESULTS_FILE, `${JSON.stringify(record)}\n`, "utf8");
   knownRunIds.add(runId);
-  writeDerivedTables();
+  markDerivedDirty();
   return sendJson(res, 202, { ok: true, duplicate: false, runId });
 }
 
@@ -570,6 +596,89 @@ function writeDerivedTables() {
   return derived.summary;
 }
 
+function readDerivedSummary() {
+  const filePath = path.join(DERIVED_DIR, "summary.json");
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function allDerivedFilesExist() {
+  return DERIVED_FILE_NAMES.every((fileName) => fs.existsSync(path.join(DERIVED_DIR, fileName)));
+}
+
+function derivedFilesAreCurrent() {
+  if (!allDerivedFilesExist()) {
+    return false;
+  }
+  const resultsMtimeMs = fs.existsSync(RESULTS_FILE) ? fs.statSync(RESULTS_FILE).mtimeMs : 0;
+  return DERIVED_FILE_NAMES.every((fileName) => fs.statSync(path.join(DERIVED_DIR, fileName)).mtimeMs >= resultsMtimeMs);
+}
+
+function markDerivedDirty() {
+  derivedState.dirty = true;
+}
+
+function scheduleDerivedRebuild(delayMs = DERIVED_REFRESH_DELAY_MS) {
+  if (derivedState.rebuilding || derivedState.timer) {
+    return;
+  }
+  const safeDelayMs = Number.isFinite(delayMs) ? Math.max(0, delayMs) : DERIVED_REFRESH_DELAY_MS;
+  derivedState.timer = setTimeout(() => {
+    derivedState.timer = null;
+    if (!derivedState.dirty && derivedFilesAreCurrent()) {
+      return;
+    }
+    try {
+      rebuildDerivedTablesNow();
+    } catch (error) {
+      derivedState.lastError = error?.message || String(error);
+      scheduleDerivedRebuild(Math.max(DERIVED_REFRESH_DELAY_MS, 30000));
+    }
+  }, safeDelayMs);
+  derivedState.timer.unref?.();
+}
+
+function rebuildDerivedTablesNow() {
+  if (derivedState.rebuilding) {
+    return readDerivedSummary();
+  }
+  if (derivedState.timer) {
+    clearTimeout(derivedState.timer);
+    derivedState.timer = null;
+  }
+  derivedState.rebuilding = true;
+  try {
+    const summary = writeDerivedTables();
+    derivedState.dirty = false;
+    derivedState.lastBuiltAtMs = Date.now();
+    derivedState.lastError = null;
+    return summary;
+  } finally {
+    derivedState.rebuilding = false;
+  }
+}
+
+function getSummaryForDisplay() {
+  const summary = readDerivedSummary();
+  if (summary && allDerivedFilesExist()) {
+    if (derivedState.dirty || !derivedFilesAreCurrent()) {
+      scheduleDerivedRebuild();
+    }
+    return summary;
+  }
+  const rebuilt = rebuildDerivedTablesNow();
+  if (rebuilt) {
+    return rebuilt;
+  }
+  throw new Error("summary is not available");
+}
+
 function writeCsv(fileName, rows, headers) {
   const lines = [headers.join(",")];
   for (const row of rows) {
@@ -595,13 +704,17 @@ function writeFileAtomic(filePath, body) {
 
 function serveDerived(req, res, pathname) {
   const fileName = path.basename(pathname);
-  const allowed = new Set(["summary.json", "runs.csv", "player_runes.csv", "rune_choices.csv", "monster_hexes.csv"]);
-  if (!allowed.has(fileName)) {
+  if (!DERIVED_FILE_NAMES.includes(fileName)) {
     return sendText(res, 404, "not found");
   }
-  writeDerivedTables();
+  const filePath = path.join(DERIVED_DIR, fileName);
+  if (!fs.existsSync(filePath)) {
+    rebuildDerivedTablesNow();
+  } else if (derivedState.dirty || !derivedFilesAreCurrent()) {
+    scheduleDerivedRebuild();
+  }
   const contentType = fileName.endsWith(".json") ? "application/json; charset=utf-8" : "text/csv; charset=utf-8";
-  return sendFile(res, path.join(DERIVED_DIR, fileName), contentType);
+  return sendFile(res, filePath, contentType);
 }
 
 function escapeHtml(value) {
@@ -629,10 +742,10 @@ function renderTable(headers, rows) {
 }
 
 function renderIndexHtml() {
-  const summary = writeDerivedTables();
+  const summary = getSummaryForDisplay();
   const indexPath = path.join(PUBLIC_DIR, "index.html");
   let html = fs.readFileSync(indexPath, "utf8");
-  const note = `默认统计口径：排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的局；原始局仍保存在 runs.csv，eligibleDefaultStats=0。`;
+  const note = `默认统计口径：排除 runTime < ${summary.filters.minRunTimeForDefaultStats} 秒的历史局；0.5.0 起客户端会直接跳过短局上传。`;
   const replacements = [
     [/正在读取数据\.\.\./, `更新时间：${escapeHtml(summary.generatedAtUtc)}`],
     [/<b id="eligibleRuns">0<\/b>/, `<b id="eligibleRuns">${summary.runCount}</b>`],
@@ -697,7 +810,10 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { ok: true, service: "hextech-runes-telemetry", runs: knownRunIds.size });
   }
   if (req.method === "GET" && url.pathname === "/api/hextech-runes/summary") {
-    return sendJson(res, 200, writeDerivedTables());
+    return sendJson(res, 200, getSummaryForDisplay());
+  }
+  if (req.method === "GET" && url.pathname === "/api/hextech-runes/latest-version") {
+    return sendJson(res, 200, readLatestVersionInfo());
   }
   if (req.method === "GET" && url.pathname.startsWith("/api/hextech-runes/derived/")) {
     return serveDerived(req, res, url.pathname);
@@ -711,7 +827,9 @@ const server = http.createServer(async (req, res) => {
   return sendText(res, 405, "method not allowed");
 });
 
-writeDerivedTables();
+if (!allDerivedFilesExist()) {
+  scheduleDerivedRebuild(0);
+}
 
 server.listen(PORT, HOST, () => {
   console.log(`hextech-runes-telemetry listening on ${HOST}:${PORT}`);

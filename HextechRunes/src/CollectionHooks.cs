@@ -13,6 +13,10 @@ namespace HextechRunes;
 
 internal static class CollectionHooks
 {
+	private readonly record struct SubcategoryHeaderText(string ZhHeader, string ZhBody, string EnHeader, string EnBody);
+
+	private const float GenericToCharacterPoolSpacing = 96f;
+
 	private const string StarterHeaderZh = "初始：";
 
 	private const string StarterHeaderZhBody = "角色们开始游戏时自身携带的遗物。";
@@ -36,6 +40,15 @@ internal static class CollectionHooks
 	private const string ForgeHeaderEn = "Stat Forgers:";
 
 	private const string ForgeHeaderEnBody = "Custom relics from the stat forging system.";
+
+	private static readonly IReadOnlyDictionary<string, SubcategoryHeaderText> CharacterHeaderTexts = new Dictionary<string, SubcategoryHeaderText>
+	{
+		["CHARACTER.IRONCLAD"] = new("战士海克斯：", "仅战士可抽取的海克斯符文。", "Ironclad Hexes:", "Hextech runes only available to Ironclad."),
+		["CHARACTER.SILENT"] = new("猎人海克斯：", "仅猎人可抽取的海克斯符文。", "Silent Hexes:", "Hextech runes only available to Silent."),
+		["CHARACTER.REGENT"] = new("储君海克斯：", "仅储君可抽取的海克斯符文。", "Regent Hexes:", "Hextech runes only available to Regent."),
+		["CHARACTER.DEFECT"] = new("故障机器人海克斯：", "仅故障机器人可抽取的海克斯符文。", "Defect Hexes:", "Hextech runes only available to Defect."),
+		["CHARACTER.NECROBINDER"] = new("亡灵契约师海克斯：", "仅亡灵契约师可抽取的海克斯符文。", "Necrobinder Hexes:", "Hextech runes only available to Necrobinder.")
+	};
 
 	private static readonly FieldInfo HeaderLabelField = RequireField(typeof(NRelicCollectionCategory), "_headerLabel");
 
@@ -110,32 +123,26 @@ internal static class CollectionHooks
 		HashSet<RelicModel> seenRelics,
 		HashSet<RelicModel> allUnlockedRelics)
 	{
-		List<NRelicCollectionCategory> subCategories = GetSubCategories(self);
 		if (collection.Relics.Any(ModInfo.IsHextechRelic))
 		{
 			return;
 		}
 
-		HashSet<RelicModel> visibleHextechRelics = ModInfo.GetCanonicalRunes().ToHashSet();
+		IReadOnlyList<RelicModel> genericRunes = ModInfo.GetCanonicalGenericSelectableRunes();
+		IReadOnlyList<ModInfo.RuneSeriesGroup> characterGroups = ModInfo.GetCharacterRuneGroups();
+		HashSet<RelicModel> visibleHextechRelics = genericRunes
+			.Concat(characterGroups.SelectMany(static group => group.Relics))
+			.ToHashSet();
 		HashSet<RelicModel> seenWithHextech = seenRelics.Concat(visibleHextechRelics).ToHashSet();
 		HashSet<RelicModel> unlockedWithHextech = allUnlockedRelics.Concat(visibleHextechRelics).ToHashSet();
 
-		NRelicCollectionCategory subCategory = (NRelicCollectionCategory)CreateForSubcategoryMethod.Invoke(self, null)!;
-		int insertIndex = ((Control)HeaderLabelField.GetValue(self)!).GetIndex() + subCategories.Count + 1;
-		subCategories.Add(subCategory);
-		self.AddChild(subCategory);
-		self.MoveChild(subCategory, insertIndex);
-
-		LoadSubcategoryMethod.Invoke(
-			subCategory,
-			[
-				collection,
-				new LocString("relic_collection", ModInfo.HextechSubcategoryKey),
-				ModInfo.GetCanonicalRunes(),
-				seenWithHextech,
-				unlockedWithHextech
-			]);
-
+		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
+			self,
+			collection,
+			ModInfo.HextechSubcategoryKey,
+			genericRunes,
+			seenWithHextech,
+			unlockedWithHextech);
 		ApplyCustomHeaderText(
 			subCategory,
 			ModInfo.HextechSubcategoryKey,
@@ -143,6 +150,23 @@ internal static class CollectionHooks
 			HextechHeaderZhBody,
 			HextechHeaderEn,
 			HextechHeaderEnBody);
+
+		NRelicCollectionCategory? firstCharacterSubcategory = null;
+		foreach (ModInfo.RuneSeriesGroup group in characterGroups)
+		{
+			NRelicCollectionCategory? characterSubcategory = AddCharacterRuneSubcategory(
+				subCategory,
+				collection,
+				group,
+				seenWithHextech,
+				unlockedWithHextech);
+			firstCharacterSubcategory ??= characterSubcategory;
+		}
+
+		if (firstCharacterSubcategory != null)
+		{
+			InsertSpacingBeforeCharacterPools(subCategory, firstCharacterSubcategory);
+		}
 	}
 
 	private static void AddForgeSubcategory(
@@ -151,7 +175,6 @@ internal static class CollectionHooks
 		HashSet<RelicModel> seenRelics,
 		HashSet<RelicModel> allUnlockedRelics)
 	{
-		List<NRelicCollectionCategory> subCategories = GetSubCategories(self);
 		if (collection.Relics.Any(ModInfo.IsHextechForgeRelic))
 		{
 			return;
@@ -161,22 +184,13 @@ internal static class CollectionHooks
 		HashSet<RelicModel> seenWithForges = seenRelics.Concat(visibleForgeRelics).ToHashSet();
 		HashSet<RelicModel> unlockedWithForges = allUnlockedRelics.Concat(visibleForgeRelics).ToHashSet();
 
-		NRelicCollectionCategory subCategory = (NRelicCollectionCategory)CreateForSubcategoryMethod.Invoke(self, null)!;
-		int insertIndex = ((Control)HeaderLabelField.GetValue(self)!).GetIndex() + subCategories.Count + 1;
-		subCategories.Add(subCategory);
-		self.AddChild(subCategory);
-		self.MoveChild(subCategory, insertIndex);
-
-		LoadSubcategoryMethod.Invoke(
-			subCategory,
-			[
-				collection,
-				new LocString("relic_collection", ModInfo.ForgeSubcategoryKey),
-				ModInfo.GetCanonicalForges(),
-				seenWithForges,
-				unlockedWithForges
-			]);
-
+		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
+			self,
+			collection,
+			ModInfo.ForgeSubcategoryKey,
+			ModInfo.GetCanonicalForges(),
+			seenWithForges,
+			unlockedWithForges);
 		ApplyCustomHeaderText(
 			subCategory,
 			ModInfo.ForgeSubcategoryKey,
@@ -184,6 +198,76 @@ internal static class CollectionHooks
 			ForgeHeaderZhBody,
 			ForgeHeaderEn,
 			ForgeHeaderEnBody);
+	}
+
+	private static NRelicCollectionCategory? AddCharacterRuneSubcategory(
+		NRelicCollectionCategory hextechCategory,
+		NRelicCollection collection,
+		ModInfo.RuneSeriesGroup group,
+		HashSet<RelicModel> seenRelics,
+		HashSet<RelicModel> allUnlockedRelics)
+	{
+		if (group.Relics.Count == 0)
+		{
+			return null;
+		}
+
+		string localizationKey = $"HEXTECH_{group.LocalizationKey}";
+		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
+			hextechCategory,
+			collection,
+			localizationKey,
+			group.Relics,
+			seenRelics,
+			allUnlockedRelics);
+		if (CharacterHeaderTexts.TryGetValue(group.LocalizationKey, out SubcategoryHeaderText text))
+		{
+			ApplyCustomHeaderText(subCategory, localizationKey, text.ZhHeader, text.ZhBody, text.EnHeader, text.EnBody);
+		}
+
+		return subCategory;
+	}
+
+	private static NRelicCollectionCategory CreateAndLoadSubcategory(
+		NRelicCollectionCategory parent,
+		NRelicCollection collection,
+		string localizationKey,
+		IEnumerable<RelicModel> relics,
+		HashSet<RelicModel> seenRelics,
+		HashSet<RelicModel> allUnlockedRelics)
+	{
+		List<NRelicCollectionCategory> subCategories = GetSubCategories(parent);
+		NRelicCollectionCategory subCategory = (NRelicCollectionCategory)CreateForSubcategoryMethod.Invoke(parent, null)!;
+		int insertIndex = ((Control)HeaderLabelField.GetValue(parent)!).GetIndex() + subCategories.Count + 1;
+		subCategories.Add(subCategory);
+		parent.AddChild(subCategory);
+		parent.MoveChild(subCategory, insertIndex);
+
+		LoadSubcategoryMethod.Invoke(
+			subCategory,
+			[
+				collection,
+				new LocString("relic_collection", localizationKey),
+				relics,
+				seenRelics,
+				allUnlockedRelics
+			]);
+
+		return subCategory;
+	}
+
+	private static void InsertSpacingBeforeCharacterPools(
+		NRelicCollectionCategory hextechCategory,
+		NRelicCollectionCategory firstCharacterSubcategory)
+	{
+		Control spacer = new()
+		{
+			Name = "HextechGenericToCharacterPoolSpacer",
+			CustomMinimumSize = new Vector2(0f, GenericToCharacterPoolSpacing),
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		hextechCategory.AddChild(spacer);
+		hextechCategory.MoveChild(spacer, firstCharacterSubcategory.GetIndex());
 	}
 
 	private static void ApplyCustomHeaderText(

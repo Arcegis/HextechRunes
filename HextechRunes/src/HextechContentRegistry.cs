@@ -34,6 +34,18 @@ internal static class HextechContentRegistry
         typeof(StatsRune),
         typeof(StartupRoutineRune),
         typeof(CollectorRune),
+        typeof(UnyieldingArmorRune),
+        typeof(NightParadeRune),
+        typeof(BloodPactRune),
+        typeof(PlateletRune),
+        typeof(SnakebiteRune),
+        typeof(SwordIntentRune),
+        typeof(FlawlessRune),
+        typeof(CondensedRadianceRune),
+        typeof(ByproductRune),
+        typeof(ElectricSurgeRune),
+        typeof(SoulCallingRune),
+        typeof(TauntRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -72,11 +84,23 @@ internal static class HextechContentRegistry
         typeof(ShrinkEngineRune),
         typeof(StatsOnStatsRune),
         typeof(LifeFlowRune),
+        typeof(RekindleRune),
         typeof(TrickLicenseRune),
         typeof(GalacticGiftRune),
         typeof(SomethingFromNothingRune),
         typeof(LubricantRune),
         typeof(HubrisRune),
+        typeof(DrainRune),
+        typeof(LethalTempoRune),
+        typeof(EmergenceRune),
+        typeof(MirageRune),
+        typeof(AdaptiveCapacitorRune),
+        typeof(RenewalRune),
+        typeof(WraithRune),
+        typeof(SummonForthRune),
+        typeof(ImmortalBoneRune),
+        typeof(MakeItMineRune),
+        typeof(DoomsdayRune),
         typeof(TransmutePrismaticRune),
         typeof(DawnbringersResolveRune),
         typeof(ShrinkRayRune)
@@ -122,6 +146,23 @@ internal static class HextechContentRegistry
         typeof(ProteinShakeRune),
         typeof(StatsOnStatsOnStatsRune),
         typeof(GoldenSpatulaRune),
+        typeof(PrecisionCognitionRune),
+        typeof(HastyScribbleRune),
+        typeof(ClownCollegeRune),
+        typeof(BladeWaltzRune),
+        typeof(SingularityAIRune),
+        typeof(EightPennyGateRune),
+        typeof(GrowingStrongerRune),
+        typeof(GroundedRune),
+        typeof(KillerHunterRune),
+        typeof(SerpentsFangRune),
+        typeof(ExplosionArtRune),
+        typeof(StarlightSplendorRune),
+        typeof(MiserableFateRune),
+        typeof(DieForYouRune),
+        typeof(HappyAccidentRune),
+        typeof(MiseryRune),
+        typeof(GhostFormRune),
         typeof(TransmuteChaosRune)
     ];
 
@@ -133,12 +174,16 @@ internal static class HextechContentRegistry
         typeof(UpgradeForge),
         typeof(FocusForge),
         typeof(LifeForge),
-        typeof(PreparedForge)
+        typeof(PreparedForge),
+        typeof(NecrobinderForge),
+        typeof(SilverStarsForge),
+        typeof(SilverOrbForge)
     ];
 
     internal static readonly IReadOnlyList<Type> GoldForgeTypes =
     [
         typeof(ConstitutionForge),
+        typeof(DisasterForge),
         typeof(GoldLifeForge),
         typeof(GoldFocusForge),
         typeof(DrawForge),
@@ -161,12 +206,92 @@ internal static class HextechContentRegistry
         typeof(BufferForge),
         typeof(SlipperyForge),
         typeof(PrismaticArtifactForge),
-        typeof(GhostForge)
+        typeof(GhostForge),
+        typeof(FortuneForge)
     ];
 
     internal static readonly IReadOnlyList<Type> ShopOnlyRelicTypes =
     [
         typeof(RandomForgeShopRelic)
+    ];
+
+    internal static readonly IReadOnlyList<Type> CustomCardTypes =
+    [
+        typeof(ElicitCard),
+        typeof(TrickMagicCard),
+        typeof(BladeWaltzCard)
+    ];
+
+    internal static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = new HashSet<Type>
+    {
+        typeof(HolyFireRune),
+        typeof(DawnbringersResolveRune),
+        typeof(AstralBodyRune),
+        typeof(MindPurificationRune),
+        typeof(NoNonsenseRune),
+        typeof(FeelTheBurnRune),
+        typeof(MikaelsBlessingRune)
+    };
+
+    internal static readonly IReadOnlyList<Type> IroncladRuneTypes =
+    [
+        typeof(LifeFlowRune),
+        typeof(BloodPactRune),
+        typeof(PlateletRune),
+        typeof(RekindleRune),
+        typeof(GrowingStrongerRune),
+        typeof(GroundedRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> SilentRuneTypes =
+    [
+        typeof(KeystoneHunterRune),
+        typeof(TrickLicenseRune),
+        typeof(LethalTempoRune),
+        typeof(RenewalRune),
+        typeof(MirageRune),
+        typeof(KillerHunterRune),
+        typeof(SnakebiteRune),
+        typeof(SerpentsFangRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> RegentRuneTypes =
+    [
+        typeof(GalacticGiftRune),
+        typeof(SummonForthRune),
+        typeof(SwordIntentRune),
+        typeof(FlawlessRune),
+        typeof(CondensedRadianceRune),
+        typeof(ExplosionArtRune),
+        typeof(StarlightSplendorRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> DefectRuneTypes =
+    [
+        typeof(DexterityStrengthToFocusRune),
+        typeof(WizardlyThinkingRune),
+        typeof(TranscendentEvilRune),
+        typeof(LubricantRune),
+        typeof(EmergenceRune),
+        typeof(PrecisionCognitionRune),
+        typeof(ByproductRune),
+        typeof(AdaptiveCapacitorRune),
+        typeof(ElectricSurgeRune),
+        typeof(HappyAccidentRune)
+    ];
+
+    internal static readonly IReadOnlyList<Type> NecrobinderRuneTypes =
+    [
+        typeof(ServantMasterRune),
+        typeof(SomethingFromNothingRune),
+        typeof(BeginningAndEndRune),
+        typeof(DrainRune),
+        typeof(TauntRune),
+        typeof(WraithRune),
+        typeof(ImmortalBoneRune),
+        typeof(MakeItMineRune),
+        typeof(MiserableFateRune),
+        typeof(DieForYouRune)
     ];
 
     internal static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
@@ -191,6 +316,68 @@ internal static class HextechContentRegistry
         typeof(HailToTheKingRune)
     };
 
+    internal static readonly IReadOnlySet<MonsterHexKind> DisabledMonsterHexes = new HashSet<MonsterHexKind>
+    {
+        MonsterHexKind.DrawYourSword
+    };
+
+    internal static readonly IReadOnlyDictionary<MonsterHexKind, Type> MonsterHexIconRelicTypes = new Dictionary<MonsterHexKind, Type>
+    {
+        { MonsterHexKind.Slap, typeof(SlapRune) },
+        { MonsterHexKind.EscapePlan, typeof(EscapePlanRune) },
+        { MonsterHexKind.HeavyHitter, typeof(HeavyHitterRune) },
+        { MonsterHexKind.BigStrength, typeof(BigStrengthRune) },
+        { MonsterHexKind.Tormentor, typeof(TormentorRune) },
+        { MonsterHexKind.ProtectiveVeil, typeof(ProtectiveVeilRune) },
+        { MonsterHexKind.Repulsor, typeof(RepulsorRune) },
+        { MonsterHexKind.Thornmail, typeof(ThornmailRune) },
+        { MonsterHexKind.LightEmUp, typeof(LightEmUpRune) },
+        { MonsterHexKind.MountainSoul, typeof(MountainSoulRune) },
+        { MonsterHexKind.FirstAidKit, typeof(FirstAidKitRune) },
+        { MonsterHexKind.SpeedDemon, typeof(SpeedDemonRune) },
+        { MonsterHexKind.FrostWraith, typeof(FrostWraithRune) },
+        { MonsterHexKind.Sturdy, typeof(SturdyRune) },
+        { MonsterHexKind.DawnbringersResolve, typeof(DawnbringersResolveRune) },
+        { MonsterHexKind.ShrinkRay, typeof(ShrinkRayRune) },
+        { MonsterHexKind.Firebrand, typeof(FirebrandRune) },
+        { MonsterHexKind.SuperBrain, typeof(SuperBrainRune) },
+        { MonsterHexKind.AstralBody, typeof(AstralBodyRune) },
+        { MonsterHexKind.Nightstalking, typeof(NightstalkingRune) },
+        { MonsterHexKind.TankEngine, typeof(TankEngineRune) },
+        { MonsterHexKind.ShrinkEngine, typeof(ShrinkEngineRune) },
+        { MonsterHexKind.GetExcited, typeof(GetExcitedRune) },
+        { MonsterHexKind.TwiceThrice, typeof(TwiceThriceRune) },
+        { MonsterHexKind.Loop, typeof(LoopRune) },
+        { MonsterHexKind.ServantMaster, typeof(ServantMasterRune) },
+        { MonsterHexKind.CuttingEdgeAlchemist, typeof(CuttingEdgeAlchemistRune) },
+        { MonsterHexKind.DivineIntervention, typeof(DivineInterventionRune) },
+        { MonsterHexKind.Sonata, typeof(SonataRune) },
+        { MonsterHexKind.DevilsDance, typeof(DevilsDanceRune) },
+        { MonsterHexKind.CourageOfColossus, typeof(CourageOfColossusRune) },
+        { MonsterHexKind.GlassCannon, typeof(GlassCannonRune) },
+        { MonsterHexKind.Goliath, typeof(GoliathRune) },
+        { MonsterHexKind.Queen, typeof(QueenRune) },
+        { MonsterHexKind.HandOfBaron, typeof(HandOfBaronRune) },
+        { MonsterHexKind.CantTouchThis, typeof(CantTouchThisRune) },
+        { MonsterHexKind.MasterOfDuality, typeof(MasterOfDualityRune) },
+        { MonsterHexKind.Goldrend, typeof(GoldrendRune) },
+        { MonsterHexKind.FeelTheBurn, typeof(FeelTheBurnRune) },
+        { MonsterHexKind.BackToBasics, typeof(BackToBasicsRune) },
+        { MonsterHexKind.DrawYourSword, typeof(DrawYourSwordRune) },
+        { MonsterHexKind.MadScientist, typeof(MadScientistRune) },
+        { MonsterHexKind.FeyMagic, typeof(FeyMagicRune) },
+        { MonsterHexKind.FinalForm, typeof(FinalFormRune) },
+        { MonsterHexKind.UnmovableMountain, typeof(UnmovableMountainRune) },
+        { MonsterHexKind.MikaelsBlessing, typeof(MikaelsBlessingRune) },
+        { MonsterHexKind.BloodPact, typeof(BloodPactRune) },
+        { MonsterHexKind.ImmortalBone, typeof(ImmortalBoneRune) },
+        { MonsterHexKind.Doomsday, typeof(DoomsdayRune) },
+        { MonsterHexKind.ClownCollege, typeof(ClownCollegeRune) },
+        { MonsterHexKind.SingularityAI, typeof(SingularityAIRune) },
+        { MonsterHexKind.ProteinShake, typeof(ProteinShakeRune) },
+        { MonsterHexKind.GoldenSpatula, typeof(GoldenSpatulaRune) }
+    };
+
     internal static readonly IReadOnlyList<MonsterHexKind> SilverMonsterHexes =
     [
         MonsterHexKind.Slap,
@@ -205,7 +392,8 @@ internal static class HextechContentRegistry
         MonsterHexKind.MountainSoul,
         MonsterHexKind.FirstAidKit,
         MonsterHexKind.SpeedDemon,
-        MonsterHexKind.FrostWraith
+        MonsterHexKind.FrostWraith,
+        MonsterHexKind.BloodPact
     ];
 
     internal static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes =
@@ -226,7 +414,9 @@ internal static class HextechContentRegistry
         MonsterHexKind.CuttingEdgeAlchemist,
         MonsterHexKind.DivineIntervention,
         MonsterHexKind.Sonata,
-        MonsterHexKind.DevilsDance
+        MonsterHexKind.DevilsDance,
+        MonsterHexKind.ImmortalBone,
+        MonsterHexKind.Doomsday
     ];
 
     internal static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes =
@@ -245,21 +435,28 @@ internal static class HextechContentRegistry
         MonsterHexKind.FeyMagic,
         MonsterHexKind.FinalForm,
         MonsterHexKind.UnmovableMountain,
-        MonsterHexKind.MikaelsBlessing
+        MonsterHexKind.MikaelsBlessing,
+        MonsterHexKind.ClownCollege,
+        MonsterHexKind.SingularityAI,
+        MonsterHexKind.ProteinShake,
+        MonsterHexKind.GoldenSpatula
     ];
 
     internal static readonly IReadOnlyList<Type> AllRuneTypes = SilverRuneTypes
         .Concat(GoldRuneTypes)
         .Concat(PrismaticRuneTypes)
+        .Distinct()
         .ToArray();
 
     internal static readonly IReadOnlyList<Type> AllForgeTypes = SilverForgeTypes
         .Concat(GoldForgeTypes)
         .Concat(PrismaticForgeTypes)
+        .Distinct()
         .ToArray();
 
     internal static readonly IReadOnlyList<Type> AllCustomRelicTypes = AllRuneTypes
         .Concat(AllForgeTypes)
         .Concat(ShopOnlyRelicTypes)
+        .Distinct()
         .ToArray();
 }

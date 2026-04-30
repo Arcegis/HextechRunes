@@ -2,5 +2,11 @@
   "hextechBurnPower.title": "灼烧",
   "HEXTECH_BURN_POWER.title": "灼烧",
   "hextechBurnPower.description": "在玩家回合结束时，受到等同于层数的伤害。",
-  "HEXTECH_BURN_POWER.description": "在玩家回合结束时，受到等同于层数的伤害。"
+  "HEXTECH_BURN_POWER.description": "在玩家回合结束时，受到等同于层数的伤害。",
+  "hextechAttackReplayPower.title": "欺诈魔术",
+  "HEXTECH_ATTACK_REPLAY_POWER.title": "欺诈魔术",
+  "hextechAttackReplayPower.description": "下一张打出的攻击牌会被重放等同于层数的次数。",
+  "HEXTECH_ATTACK_REPLAY_POWER.description": "下一张打出的攻击牌会被重放等同于层数的次数。",
+  "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "你每打出一张牌，就对随机一名敌人造成[blue]3[/blue]点伤害。",
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "在你的回合开始时，获得[blue]1[/blue]点[gold]力量[/gold]。"
 }

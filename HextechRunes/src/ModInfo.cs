@@ -9,11 +9,13 @@ internal static class ModInfo
 {
     public readonly record struct RuneSeriesGroup(string LocalizationKey, IReadOnlyList<RelicModel> Relics);
 
+    public readonly record struct CharacterRunePool(string LocalizationKey, IReadOnlyList<Type> RuneTypes);
+
     public const string Id = "HextechRunes";
 
     public const string DisplayName = "海克斯符文";
 
-    public const string Version = "0.4.1";
+    public const string Version = "0.5.0";
 
     public const string TargetGameVersion = "0.103.2";
 
@@ -35,6 +37,21 @@ internal static class ModInfo
 
     private static readonly IReadOnlyList<Type> ShopOnlyRelicTypes = HextechContentRegistry.ShopOnlyRelicTypes;
 
+    private static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = HextechContentRegistry.DisabledPlayerRuneTypes;
+
+    private static readonly IReadOnlyList<CharacterRunePool> CharacterRunePools =
+    [
+        new("IRONCLAD", HextechContentRegistry.IroncladRuneTypes),
+        new("SILENT", HextechContentRegistry.SilentRuneTypes),
+        new("REGENT", HextechContentRegistry.RegentRuneTypes),
+        new("DEFECT", HextechContentRegistry.DefectRuneTypes),
+        new("NECROBINDER", HextechContentRegistry.NecrobinderRuneTypes)
+    ];
+
+    private static readonly IReadOnlySet<Type> CharacterSpecificRuneTypes = CharacterRunePools
+        .SelectMany(static pool => pool.RuneTypes)
+        .ToHashSet();
+
     private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes = HextechContentRegistry.AttributeConversionExclusiveRuneTypes;
 
     private static readonly IReadOnlySet<Type> FirstActExcludedRuneTypes = HextechContentRegistry.FirstActExcludedRuneTypes;
@@ -47,27 +64,48 @@ internal static class ModInfo
 
     private static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes = HextechContentRegistry.PrismaticMonsterHexes;
 
+    private static readonly IReadOnlyDictionary<MonsterHexKind, Type> MonsterHexIconRelicTypes = HextechContentRegistry.MonsterHexIconRelicTypes;
+
     private static readonly IReadOnlyList<Type> AllRuneTypes = HextechContentRegistry.AllRuneTypes;
 
     private static readonly IReadOnlyList<Type> AllForgeTypes = HextechContentRegistry.AllForgeTypes;
 
     private static readonly IReadOnlyList<Type> AllCustomRelicTypes = HextechContentRegistry.AllCustomRelicTypes;
 
+    private static readonly IReadOnlyList<Type> CustomCardTypes = HextechContentRegistry.CustomCardTypes;
+
     public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
+
+    public static IReadOnlyList<Type> GetAllSelectableRuneTypes()
+    {
+        return Enum.GetValues<HextechRarityTier>()
+            .SelectMany(GetPlayerRuneTypesForRarity)
+            .ToArray();
+    }
+
+    public static IReadOnlyList<Type> GetGenericSelectableRuneTypes()
+    {
+        return GetAllSelectableRuneTypes()
+            .Where(static type => !CharacterSpecificRuneTypes.Contains(type))
+            .ToArray();
+    }
 
     public static IReadOnlyList<Type> GetAllForgeTypes() => AllForgeTypes;
 
     public static IReadOnlyList<Type> GetAllCustomRelicTypes() => AllCustomRelicTypes;
 
+    public static IReadOnlyList<Type> GetAllCustomCardTypes() => CustomCardTypes;
+
     public static IReadOnlyList<Type> GetPlayerRuneTypesForRarity(HextechRarityTier rarity)
     {
-        return rarity switch
+        IReadOnlyList<Type> runeTypes = rarity switch
         {
             HextechRarityTier.Silver => SilverRuneTypes,
             HextechRarityTier.Gold => GoldRuneTypes,
             HextechRarityTier.Prismatic => PrismaticRuneTypes,
             _ => Array.Empty<Type>()
         };
+        return runeTypes.Where(static type => !DisabledPlayerRuneTypes.Contains(type)).ToArray();
     }
 
     public static IReadOnlyList<Type> GetForgeTypesForRarity(HextechRarityTier rarity)
@@ -114,66 +152,23 @@ internal static class ModInfo
 
     public static RelicModel GetIconRelicForMonsterHex(MonsterHexKind hex)
     {
-        return hex switch
+        if (!MonsterHexIconRelicTypes.TryGetValue(hex, out Type? relicType))
         {
-            MonsterHexKind.Slap => ModelDb.Relic<SlapRune>(),
-            MonsterHexKind.EscapePlan => ModelDb.Relic<EscapePlanRune>(),
-            MonsterHexKind.HeavyHitter => ModelDb.Relic<HeavyHitterRune>(),
-            MonsterHexKind.BigStrength => ModelDb.Relic<BigStrengthRune>(),
-            MonsterHexKind.Tormentor => ModelDb.Relic<TormentorRune>(),
-            MonsterHexKind.ProtectiveVeil => ModelDb.Relic<ProtectiveVeilRune>(),
-            MonsterHexKind.Repulsor => ModelDb.Relic<RepulsorRune>(),
-            MonsterHexKind.Thornmail => ModelDb.Relic<ThornmailRune>(),
-            MonsterHexKind.LightEmUp => ModelDb.Relic<LightEmUpRune>(),
-            MonsterHexKind.MountainSoul => ModelDb.Relic<MountainSoulRune>(),
-            MonsterHexKind.FirstAidKit => ModelDb.Relic<FirstAidKitRune>(),
-            MonsterHexKind.SpeedDemon => ModelDb.Relic<SpeedDemonRune>(),
-            MonsterHexKind.FrostWraith => ModelDb.Relic<FrostWraithRune>(),
-            MonsterHexKind.Sturdy => ModelDb.Relic<SturdyRune>(),
-            MonsterHexKind.DawnbringersResolve => ModelDb.Relic<DawnbringersResolveRune>(),
-            MonsterHexKind.ShrinkRay => ModelDb.Relic<ShrinkRayRune>(),
-            MonsterHexKind.Firebrand => ModelDb.Relic<FirebrandRune>(),
-            MonsterHexKind.SuperBrain => ModelDb.Relic<SuperBrainRune>(),
-            MonsterHexKind.AstralBody => ModelDb.Relic<AstralBodyRune>(),
-            MonsterHexKind.Nightstalking => ModelDb.Relic<NightstalkingRune>(),
-            MonsterHexKind.TankEngine => ModelDb.Relic<TankEngineRune>(),
-            MonsterHexKind.ShrinkEngine => ModelDb.Relic<ShrinkEngineRune>(),
-            MonsterHexKind.GetExcited => ModelDb.Relic<GetExcitedRune>(),
-            MonsterHexKind.TwiceThrice => ModelDb.Relic<TwiceThriceRune>(),
-            MonsterHexKind.Loop => ModelDb.Relic<LoopRune>(),
-            MonsterHexKind.ServantMaster => ModelDb.Relic<ServantMasterRune>(),
-            MonsterHexKind.CuttingEdgeAlchemist => ModelDb.Relic<CuttingEdgeAlchemistRune>(),
-            MonsterHexKind.DivineIntervention => ModelDb.Relic<DivineInterventionRune>(),
-            MonsterHexKind.Sonata => ModelDb.Relic<SonataRune>(),
-            MonsterHexKind.DevilsDance => ModelDb.Relic<DevilsDanceRune>(),
-            MonsterHexKind.CourageOfColossus => ModelDb.Relic<CourageOfColossusRune>(),
-            MonsterHexKind.GlassCannon => ModelDb.Relic<GlassCannonRune>(),
-            MonsterHexKind.Goliath => ModelDb.Relic<GoliathRune>(),
-            MonsterHexKind.Queen => ModelDb.Relic<QueenRune>(),
-            MonsterHexKind.HandOfBaron => ModelDb.Relic<HandOfBaronRune>(),
-            MonsterHexKind.CantTouchThis => ModelDb.Relic<CantTouchThisRune>(),
-            MonsterHexKind.MasterOfDuality => ModelDb.Relic<MasterOfDualityRune>(),
-            MonsterHexKind.Goldrend => ModelDb.Relic<GoldrendRune>(),
-            MonsterHexKind.FeelTheBurn => ModelDb.Relic<FeelTheBurnRune>(),
-            MonsterHexKind.BackToBasics => ModelDb.Relic<BackToBasicsRune>(),
-            MonsterHexKind.DrawYourSword => ModelDb.Relic<DrawYourSwordRune>(),
-            MonsterHexKind.MadScientist => ModelDb.Relic<MadScientistRune>(),
-            MonsterHexKind.FeyMagic => ModelDb.Relic<FeyMagicRune>(),
-            MonsterHexKind.FinalForm => ModelDb.Relic<FinalFormRune>(),
-            MonsterHexKind.UnmovableMountain => ModelDb.Relic<UnmovableMountainRune>(),
-            MonsterHexKind.MikaelsBlessing => ModelDb.Relic<MikaelsBlessingRune>(),
-            _ => ModelDb.Relic<JudicatorRune>()
-        };
+            throw new ArgumentOutOfRangeException(nameof(hex), hex, "Unknown monster hex icon relic.");
+        }
+
+        return ModelDb.GetById<RelicModel>(ModelDb.GetId(relicType));
     }
 
     public static bool TryGetMonsterHexKind(RelicModel relic, out MonsterHexKind hex)
     {
         ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-        foreach (MonsterHexKind candidate in Enum.GetValues<MonsterHexKind>())
+        foreach (KeyValuePair<MonsterHexKind, Type> pair in MonsterHexIconRelicTypes)
         {
-            if ((GetIconRelicForMonsterHex(candidate).CanonicalInstance?.Id ?? GetIconRelicForMonsterHex(candidate).Id) == id)
+            RelicModel iconRelic = ModelDb.GetById<RelicModel>(ModelDb.GetId(pair.Value));
+            if ((iconRelic.CanonicalInstance?.Id ?? iconRelic.Id) == id)
             {
-                hex = candidate;
+                hex = pair.Key;
                 return true;
             }
         }
@@ -206,6 +201,58 @@ internal static class ModInfo
         return AllRuneTypes
             .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
             .ToArray();
+    }
+
+    public static IReadOnlyList<RelicModel> GetCanonicalSelectableRunes()
+    {
+        return GetAllSelectableRuneTypes()
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<RelicModel> GetCanonicalGenericSelectableRunes()
+    {
+        return GetGenericSelectableRuneTypes()
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<RuneSeriesGroup> GetCharacterRuneGroups()
+    {
+        return CharacterRunePools
+            .Select(static pool => new RuneSeriesGroup(
+                $"CHARACTER.{pool.LocalizationKey}",
+                pool.RuneTypes
+                    .Select(static (type, index) => new IndexedRuneType(type, index))
+                    .Where(static rune => !DisabledPlayerRuneTypes.Contains(rune.Type))
+                    .OrderBy(static rune => GetPlayerRuneRaritySortOrder(rune.Type))
+                    .ThenBy(static rune => rune.Index)
+                    .Select(static rune => ModelDb.GetById<RelicModel>(ModelDb.GetId(rune.Type)))
+                    .ToArray()))
+            .Where(static group => group.Relics.Count > 0)
+            .ToArray();
+    }
+
+    private readonly record struct IndexedRuneType(Type Type, int Index);
+
+    private static int GetPlayerRuneRaritySortOrder(Type type)
+    {
+        if (SilverRuneTypes.Contains(type))
+        {
+            return 0;
+        }
+
+        if (GoldRuneTypes.Contains(type))
+        {
+            return 1;
+        }
+
+        if (PrismaticRuneTypes.Contains(type))
+        {
+            return 2;
+        }
+
+        return 3;
     }
 
     public static IReadOnlyList<RelicModel> GetCanonicalForges()
@@ -409,6 +456,11 @@ internal static class ModInfo
             List<RelicModel> group = new();
             foreach (Type runeType in runeTypes)
             {
+                if (DisabledPlayerRuneTypes.Contains(runeType))
+                {
+                    continue;
+                }
+
                 ModelId id = ModelDb.GetId(runeType);
                 if (byId.TryGetValue(id, out RelicModel? relic))
                 {

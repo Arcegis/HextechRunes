@@ -54,5 +54,12 @@ internal enum MonsterHexKind
     MikaelsBlessing = 42,
     DevilsDance = 43,
     FrostWraith = 44,
-    CuttingEdgeAlchemist = 45
+    CuttingEdgeAlchemist = 45,
+    BloodPact = 46,
+    ImmortalBone = 47,
+    Doomsday = 48,
+    ClownCollege = 49,
+    SingularityAI = 50,
+    ProteinShake = 51,
+    GoldenSpatula = 52
 }

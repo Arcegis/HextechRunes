@@ -7,12 +7,16 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
@@ -52,13 +56,34 @@ internal sealed partial class HextechMayhemModifier
 
     private const decimal CantTouchThisSlipperyStacks = 1m;
 
+    private static readonly IReadOnlySet<Type> ExcludedEnemySingularityAIStatusTypes = new HashSet<Type>
+    {
+        typeof(Sloth),
+        typeof(WasteAway),
+        typeof(Disintegration),
+        typeof(MindRot)
+    };
+
+    private static readonly IReadOnlyList<CardModel> EnemySingularityAIStatusPool = new CardModel[]
+    {
+        ModelDb.Card<Burn>(),
+        ModelDb.Card<Dazed>(),
+        ModelDb.Card<Slimed>(),
+        ModelDb.Card<Wound>(),
+        ModelDb.Card<MegaCrit.Sts2.Core.Models.Cards.Void>(),
+        ModelDb.Card<Sloth>(),
+        ModelDb.Card<WasteAway>(),
+        ModelDb.Card<Disintegration>(),
+        ModelDb.Card<MindRot>()
+    }.Where(static card => !ExcludedEnemySingularityAIStatusTypes.Contains(card.GetType())).ToArray();
+
     private async Task ApplyPersistentMonsterHexes(Creature creature)
     {
         if (HasActiveMonsterHex(MonsterHexKind.Goliath)
             && creature.CombatId != null
             && _goliathApplied.Add(creature.CombatId.Value))
         {
-            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.35m);
+            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.3m);
             if (maxHpGain > 0)
             {
                 await CreatureCmd.GainMaxHp(creature, maxHpGain);
@@ -72,6 +97,17 @@ internal sealed partial class HextechMayhemModifier
             && _astralBodyApplied.Add(creature.CombatId.Value))
         {
             int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.3m);
+            if (maxHpGain > 0)
+            {
+                await CreatureCmd.GainMaxHp(creature, maxHpGain);
+            }
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula)
+            && creature.CombatId != null
+            && _goldenSpatulaApplied.Add(creature.CombatId.Value))
+        {
+            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.35m);
             if (maxHpGain > 0)
             {
                 await CreatureCmd.GainMaxHp(creature, maxHpGain);
@@ -135,7 +171,45 @@ internal sealed partial class HextechMayhemModifier
             await PowerCmd.Apply<BarricadePower>(creature, 1m, creature, null);
         }
 
+        if (HasActiveMonsterHex(MonsterHexKind.ImmortalBone)
+            && creature.GetPowerAmount<HardenedShellPower>() <= 0m)
+        {
+            int shell = Math.Max(10, (int)Math.Floor(creature.MaxHp * 0.5m));
+            await PowerCmd.Apply<HardenedShellPower>(creature, shell, creature, null);
+        }
+
         await TryApplyServantMasterIllusion(creature, creature, null);
+    }
+
+    private async Task AddEnemySingularityAIStatusCards(IReadOnlyList<Creature> players)
+    {
+        foreach (Player player in players
+            .Select(static creature => creature.Player)
+            .OfType<Player>()
+            .OrderBy(static player => player.NetId))
+        {
+            CardModel? card = CardFactory.GetDistinctForCombat(
+                player,
+                EnemySingularityAIStatusPool,
+                1,
+                RunState.Rng.CombatCardGeneration).FirstOrDefault();
+            if (card == null)
+            {
+                continue;
+            }
+
+            await HextechCardGeneration.AddGeneratedCardToCombat(
+                card,
+                PileType.Draw,
+                addedByPlayer: false,
+                position: CardPilePosition.Random);
+        }
+    }
+
+    private static decimal GetMonsterProteinShakeSustainMultiplier(Creature creature)
+    {
+        decimal bonusPercent = Math.Min(50m, Math.Floor(creature.MaxHp / 5m));
+        return 1m + bonusPercent / 100m;
     }
 
     private async Task NormalizeEnemyPainfulStabsPowers(CombatState combatState)
@@ -356,6 +430,16 @@ internal sealed partial class HextechMayhemModifier
         if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
         {
             amount *= 1.25m;
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.ProteinShake))
+        {
+            amount *= GetMonsterProteinShakeSustainMultiplier(creature);
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula))
+        {
+            amount *= 0.5m;
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.GlassCannon))

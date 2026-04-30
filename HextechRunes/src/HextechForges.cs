@@ -32,7 +32,61 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 
-public sealed class StrengthForge : HextechRelicBase
+public abstract class HextechForgeBase : HextechRelicBase
+{
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedStackCount
+	{
+		get => StackCount;
+		set
+		{
+			int target = Math.Max(1, value);
+			while (StackCount < target)
+			{
+				IncrementStackCount();
+			}
+
+			InvokeDisplayAmountChanged();
+		}
+	}
+
+	public override bool IsStackable => true;
+
+	public override bool ShowCounter => true;
+
+	public override int DisplayAmount => !IsCanonical ? StackCount : 0;
+
+	protected int StackAmount => Math.Max(1, StackCount);
+
+	protected decimal StackMultiplier => StackAmount;
+
+	protected decimal Stacked(decimal value)
+	{
+		return value * StackMultiplier;
+	}
+
+	protected decimal StackedMultiplier(decimal value)
+	{
+		if (StackAmount <= 1)
+		{
+			return value;
+		}
+
+		return (decimal)Math.Pow((double)value, StackAmount);
+	}
+
+	public void AddForgeStack(bool flash = true)
+	{
+		IncrementStackCount();
+		InvokeDisplayAmountChanged();
+		if (flash)
+		{
+			Flash();
+		}
+	}
+}
+
+public sealed class StrengthForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -47,11 +101,11 @@ public sealed class StrengthForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<StrengthPower>(Owner.Creature, Stacked(DynamicVars.Strength.BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class DexterityForge : HextechRelicBase
+public sealed class DexterityForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -66,11 +120,11 @@ public sealed class DexterityForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<DexterityPower>(Owner.Creature, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<DexterityPower>(Owner.Creature, Stacked(DynamicVars.Dexterity.BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class SilverPlatingForge : HextechRelicBase
+public sealed class SilverPlatingForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -90,11 +144,11 @@ public sealed class SilverPlatingForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<PlatingPower>(Owner.Creature, DynamicVars["PlatingPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<PlatingPower>(Owner.Creature, Stacked(DynamicVars["PlatingPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class UpgradeForge : HextechRelicBase
+public sealed class UpgradeForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;
 
@@ -135,7 +189,7 @@ public sealed class UpgradeForge : HextechRelicBase
 	}
 }
 
-public sealed class FocusForge : HextechRelicBase
+public sealed class FocusForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -160,11 +214,11 @@ public sealed class FocusForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<FocusPower>(Owner.Creature, Stacked(DynamicVars["FocusPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class LifeForge : HextechRelicBase
+public sealed class LifeForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;
 
@@ -185,7 +239,7 @@ public sealed class LifeForge : HextechRelicBase
 	}
 }
 
-public sealed class PreparedForge : HextechRelicBase
+public sealed class PreparedForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -199,11 +253,39 @@ public sealed class PreparedForge : HextechRelicBase
 			return count;
 		}
 
-		return count + DynamicVars.Cards.BaseValue;
+		return count + Stacked(DynamicVars.Cards.BaseValue);
 	}
 }
 
-public sealed class ConstitutionForge : HextechRelicBase
+public sealed class NecrobinderForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new SummonVar(4m)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNecrobinderPlayer(player);
+	}
+
+	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner == null
+			|| Owner.Creature.IsDead
+			|| Owner.Creature.CombatState?.RoundNumber > 1
+			|| !IsNecrobinderPlayer(player))
+		{
+			return;
+		}
+
+		Flash();
+		await OstyCmd.Summon(choiceContext, player, Stacked(DynamicVars.Summon.BaseValue), this);
+	}
+}
+
+public sealed class ConstitutionForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -219,12 +301,100 @@ public sealed class ConstitutionForge : HextechRelicBase
 		}
 
 		Flash();
-		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<DexterityPower>(Owner.Creature, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, Stacked(DynamicVars.Strength.BaseValue), Owner.Creature, null);
+		await PowerCmd.Apply<DexterityPower>(Owner.Creature, Stacked(DynamicVars.Dexterity.BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class GoldLifeForge : HextechRelicBase
+public sealed class SilverStarsForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new StarsVar(3)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsRegentPlayer(player);
+	}
+
+	public override Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	{
+		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsRegentOwner)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PlayerCmd.GainStars(Stacked(DynamicVars.Stars.BaseValue), Owner);
+	}
+}
+
+public sealed class SilverOrbForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("OrbCount", 1m)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsDefectPlayer(player);
+	}
+
+	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	{
+		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsDefectOwner)
+		{
+			return;
+		}
+
+		Flash();
+		int orbCount = Math.Max(0, FloorToInt(Stacked(DynamicVars["OrbCount"].BaseValue)));
+		for (int i = 0; i < orbCount; i++)
+		{
+			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
+			await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, Owner);
+		}
+	}
+}
+
+public sealed class DisasterForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<WeakPower>(1m),
+		new PowerVar<VulnerablePower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<WeakPower>(),
+		HoverTipFactory.FromPower<VulnerablePower>()
+	];
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		{
+			return;
+		}
+
+		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies
+			.Where(static enemy => enemy.IsAlive)
+			.ToList();
+		if (enemies.Count == 0)
+		{
+			return;
+		}
+
+		Flash(enemies);
+		await PowerCmd.Apply<WeakPower>(enemies, Stacked(DynamicVars.Weak.BaseValue), Owner.Creature, null);
+		await PowerCmd.Apply<VulnerablePower>(enemies, Stacked(DynamicVars.Vulnerable.BaseValue), Owner.Creature, null);
+	}
+}
+
+public sealed class GoldLifeForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;
 
@@ -245,7 +415,7 @@ public sealed class GoldLifeForge : HextechRelicBase
 	}
 }
 
-public sealed class GoldFocusForge : HextechRelicBase
+public sealed class GoldFocusForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -270,11 +440,11 @@ public sealed class GoldFocusForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<FocusPower>(Owner.Creature, Stacked(DynamicVars["FocusPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class GoldUpgradeForge : HextechRelicBase
+public sealed class GoldUpgradeForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;
 
@@ -311,7 +481,7 @@ public sealed class GoldUpgradeForge : HextechRelicBase
 	}
 }
 
-public sealed class EnergyForge : HextechRelicBase
+public sealed class EnergyForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -326,11 +496,11 @@ public sealed class EnergyForge : HextechRelicBase
 		}
 
 		Flash();
-		return PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, Owner);
+		return PlayerCmd.GainEnergy(Stacked(DynamicVars.Energy.BaseValue), Owner);
 	}
 }
 
-public sealed class DrawForge : HextechRelicBase
+public sealed class DrawForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -339,11 +509,11 @@ public sealed class DrawForge : HextechRelicBase
 
 	public override decimal ModifyHandDraw(Player player, decimal count)
 	{
-		return player == Owner ? count + DynamicVars.Cards.BaseValue : count;
+		return player == Owner ? count + Stacked(DynamicVars.Cards.BaseValue) : count;
 	}
 }
 
-public sealed class StarsForge : HextechRelicBase
+public sealed class StarsForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -363,11 +533,11 @@ public sealed class StarsForge : HextechRelicBase
 		}
 
 		Flash();
-		return PlayerCmd.GainStars(DynamicVars.Stars.BaseValue, Owner);
+		return PlayerCmd.GainStars(Stacked(DynamicVars.Stars.BaseValue), Owner);
 	}
 }
 
-public sealed class OrbSlotForge : HextechRelicBase
+public sealed class OrbSlotForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -387,11 +557,11 @@ public sealed class OrbSlotForge : HextechRelicBase
 		}
 
 		Flash();
-		await OrbCmd.AddSlots(Owner, DynamicVars["OrbSlots"].IntValue);
+		await OrbCmd.AddSlots(Owner, Math.Max(0, FloorToInt(Stacked(DynamicVars["OrbSlots"].BaseValue))));
 	}
 }
 
-public sealed class PlatingForge : HextechRelicBase
+public sealed class PlatingForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -411,11 +581,11 @@ public sealed class PlatingForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<PlatingPower>(Owner.Creature, DynamicVars["PlatingPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<PlatingPower>(Owner.Creature, Stacked(DynamicVars["PlatingPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class ThornsForge : HextechRelicBase
+public sealed class ThornsForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -435,11 +605,11 @@ public sealed class ThornsForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<ThornsPower>(Owner.Creature, DynamicVars["ThornsPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<ThornsPower>(Owner.Creature, Stacked(DynamicVars["ThornsPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class ArtifactForge : HextechRelicBase
+public sealed class ArtifactForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -459,11 +629,11 @@ public sealed class ArtifactForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, DynamicVars["ArtifactPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, Stacked(DynamicVars["ArtifactPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class PrismaticLifeForge : HextechRelicBase
+public sealed class PrismaticLifeForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;
 
@@ -485,7 +655,7 @@ public sealed class PrismaticLifeForge : HextechRelicBase
 	}
 }
 
-public sealed class AttackForge : HextechRelicBase
+public sealed class AttackForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -494,18 +664,18 @@ public sealed class AttackForge : HextechRelicBase
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return IsDamageFromOwner(dealer, cardSource) ? DynamicVars["DamageMultiplier"].BaseValue : 1m;
+		return IsDamageFromOwner(dealer, cardSource) ? StackedMultiplier(DynamicVars["DamageMultiplier"].BaseValue) : 1m;
 	}
 }
 
-public sealed class ProtectionForge : HextechRelicBase
+public sealed class ProtectionForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("SustainMultiplier", 1.2m)
 	];
 
-	public decimal SustainMultiplier => DynamicVars["SustainMultiplier"].BaseValue;
+	public decimal SustainMultiplier => StackedMultiplier(DynamicVars["SustainMultiplier"].BaseValue);
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
@@ -513,7 +683,7 @@ public sealed class ProtectionForge : HextechRelicBase
 	}
 }
 
-public sealed class RitualForge : HextechRelicBase
+public sealed class RitualForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -533,11 +703,11 @@ public sealed class RitualForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<RitualPower>(Owner.Creature, DynamicVars["RitualPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<RitualPower>(Owner.Creature, Stacked(DynamicVars["RitualPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class RegenForge : HextechRelicBase
+public sealed class RegenForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -557,11 +727,11 @@ public sealed class RegenForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<RegenPower>(Owner.Creature, DynamicVars["RegenPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<RegenPower>(Owner.Creature, Stacked(DynamicVars["RegenPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class BufferForge : HextechRelicBase
+public sealed class BufferForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -581,11 +751,11 @@ public sealed class BufferForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<BufferPower>(Owner.Creature, DynamicVars["BufferPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<BufferPower>(Owner.Creature, Stacked(DynamicVars["BufferPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class SlipperyForge : HextechRelicBase
+public sealed class SlipperyForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -605,11 +775,11 @@ public sealed class SlipperyForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<SlipperyPower>(Owner.Creature, DynamicVars["SlipperyPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<SlipperyPower>(Owner.Creature, Stacked(DynamicVars["SlipperyPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class PrismaticArtifactForge : HextechRelicBase
+public sealed class PrismaticArtifactForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -629,39 +799,76 @@ public sealed class PrismaticArtifactForge : HextechRelicBase
 		}
 
 		Flash();
-		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, DynamicVars["ArtifactPower"].BaseValue, Owner.Creature, null);
+		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, Stacked(DynamicVars["ArtifactPower"].BaseValue), Owner.Creature, null);
 	}
 }
 
-public sealed class GhostForge : HextechRelicBase
+public sealed class GhostForge : HextechForgeBase
 {
+	public override bool HasUponPickupEffect => true;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<IntangiblePower>(1m)
+		new CardsVar(1)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromPower<IntangiblePower>()
+		HoverTipFactory.FromCard(ModelDb.Card<Apparition>())
 	];
 
-	public override Task BeforeCombatStart()
+	public override async Task AfterObtained()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner == null)
+		{
+			return;
+		}
+
+		Flash();
+		await AddCardCopiesToDeckOrHand<Apparition>(DynamicVars.Cards.IntValue);
+	}
+}
+
+public sealed class FortuneForge : HextechForgeBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new GoldVar(1000)
+	];
+
+	public override Task AfterObtained()
+	{
+		if (Owner == null)
 		{
 			return Task.CompletedTask;
 		}
 
 		Flash();
-		return PowerCmd.Apply<IntangiblePower>(Owner.Creature, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, null);
+		return PlayerCmd.GainGold(DynamicVars.Gold.BaseValue, Owner);
 	}
 }
 
 public sealed class RandomForgeShopRelic : HextechRelicBase
 {
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedPurchaseCount
+	{
+		get => PurchaseCount;
+		set => PurchaseCount = Math.Max(0, value);
+	}
+
+	public int PurchaseCount { get; private set; }
+
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return false;
+	}
+
+	public void IncrementPurchaseCount()
+	{
+		PurchaseCount++;
 	}
 }
 

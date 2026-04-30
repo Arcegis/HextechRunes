@@ -2,5 +2,11 @@
   "hextechBurnPower.title": "Burn",
   "HEXTECH_BURN_POWER.title": "Burn",
   "hextechBurnPower.description": "At the end of the player's turn, take damage equal to this amount.",
-  "HEXTECH_BURN_POWER.description": "At the end of the player's turn, take damage equal to this amount."
+  "HEXTECH_BURN_POWER.description": "At the end of the player's turn, take damage equal to this amount.",
+  "hextechAttackReplayPower.title": "Trick Magic",
+  "HEXTECH_ATTACK_REPLAY_POWER.title": "Trick Magic",
+  "hextechAttackReplayPower.description": "The next Attack played is replayed a number of times equal to this amount.",
+  "HEXTECH_ATTACK_REPLAY_POWER.description": "The next Attack played is replayed a number of times equal to this amount.",
+  "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "Whenever you play a card, deal [blue]3[/blue] damage to a random enemy.",
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "At the start of your turn, gain [blue]1[/blue] [gold]Strength[/gold]."
 }

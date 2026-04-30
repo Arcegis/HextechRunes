@@ -34,6 +34,7 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 	private MegaLabel? _statusLabel;
 	private bool _choiceLocked;
 	private bool _restoreAfterMapReopenQueued;
+	private bool _closed;
 
 	public NetScreenType ScreenType => NetScreenType.Rewards;
 
@@ -574,17 +575,36 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 
 	private async Task WaitForMouseReleaseAsync()
 	{
-		if (!IsInsideTree())
+		if (!await AwaitProcessFrameIfInsideTreeAsync())
 		{
 			return;
 		}
 
-		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 		while (Input.IsMouseButtonPressed(MouseButton.Left))
 		{
-			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			if (!await AwaitProcessFrameIfInsideTreeAsync())
+			{
+				return;
+			}
 		}
-		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		await AwaitProcessFrameIfInsideTreeAsync();
+	}
+
+	private async Task<bool> AwaitProcessFrameIfInsideTreeAsync()
+	{
+		if (!IsInsideTree())
+		{
+			return false;
+		}
+
+		SceneTree tree = GetTree();
+		if (tree == null)
+		{
+			return false;
+		}
+
+		await ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+		return IsInsideTree();
 	}
 
 	private void ShowWaitingForRemotePlayers()
@@ -608,7 +628,19 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 
 	public void AfterOverlayClosed()
 	{
+		if (_closed)
+		{
+			return;
+		}
+
+		_closed = true;
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed");
+		if (!_choiceLocked)
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed: cancelling unresolved selection");
+			_completionSource.TrySetCanceled();
+		}
+
 		QueueFree();
 	}
 
@@ -620,6 +652,11 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 
 	public void AfterOverlayHidden()
 	{
+		if (_closed)
+		{
+			return;
+		}
+
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayHidden: choiceLocked={_choiceLocked} capstoneOpen={NCapstoneContainer.Instance?.InUse == true} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 		Visible = false;
 		if (!_choiceLocked && !_restoreAfterMapReopenQueued && IsInsideTree())

@@ -22,6 +22,7 @@ internal static class HextechCombatHooks
 	private static Hook? _gainMaxHpHook;
 	private static Hook? _loseMaxHpHook;
 	private static Hook? _setMaxHpHook;
+	private static Hook? _stormAfterCardPlayedHook;
 
 	private static bool _handlingGoliathMaxHp;
 
@@ -38,6 +39,8 @@ internal static class HextechCombatHooks
 	private delegate Task OrigLoseMaxHp(PlayerChoiceContext choiceContext, Creature creature, decimal amount, bool isFromCard);
 
 	private delegate Task<decimal> OrigSetMaxHp(Creature creature, decimal amount);
+
+	private delegate Task OrigStormAfterCardPlayed(StormPower self, PlayerChoiceContext context, CardPlay cardPlay);
 
 	public static void Install()
 	{
@@ -62,6 +65,9 @@ internal static class HextechCombatHooks
 		_setMaxHpHook = new Hook(
 			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.SetMaxHp), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal)),
 			SetMaxHpDetour);
+		_stormAfterCardPlayedHook = new Hook(
+			RequireMethod(typeof(StormPower), nameof(StormPower.AfterCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			StormAfterCardPlayedDetour);
 	}
 
 	private static async Task<IEnumerable<CardModel>> DrawDetour(OrigDraw orig, PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw)
@@ -96,6 +102,11 @@ internal static class HextechCombatHooks
 			if (player.GetRelic<FirstAidKitRune>() != null)
 			{
 				amount *= 1.25m;
+			}
+
+			if (player.GetRelic<SacrificeRune>() is SacrificeRune sacrificeRune)
+			{
+				amount *= sacrificeRune.SustainMultiplier;
 			}
 
 			if (player.GetRelic<BackToBasicsRune>() != null)
@@ -243,6 +254,17 @@ internal static class HextechCombatHooks
 		rune.BaseMaxHp = (int)Math.Max(1m, amount);
 		_handlingGoliathMaxHp = true;
 		return CompleteWithReset(orig(creature, rune.GetScaledMaxHp()));
+	}
+
+	private static Task StormAfterCardPlayedDetour(OrigStormAfterCardPlayed orig, StormPower self, PlayerChoiceContext context, CardPlay cardPlay)
+	{
+		if (self.Owner?.CombatState?.RunState is RunState runState
+			&& GetMayhemModifier(runState) != null)
+		{
+			return Task.CompletedTask;
+		}
+
+		return orig(self, context, cardPlay);
 	}
 
 	private static async Task CompleteWithReset(Task task)
