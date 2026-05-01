@@ -1550,7 +1550,7 @@ public sealed class ElicitCard : CardModel
 
 	public override OrbEvokeType OrbEvokeType => OrbEvokeType.All;
 
-	public override string PortraitPath => ModelDb.Card<Shatter>().PortraitPath;
+	public override string PortraitPath => ModInfo.ElicitCardPortraitPath;
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 

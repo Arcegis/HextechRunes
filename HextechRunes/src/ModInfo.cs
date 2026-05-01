@@ -24,6 +24,12 @@ internal static class ModInfo
 
     public const string ForgeSubcategoryKey = "HEXTECH_FORGES_SUBCATEGORY";
 
+    public const string ElicitCardPortraitPath = "res://HextechRunes/images/cards/elicitCard.png";
+
+    public const string TrickMagicCardPortraitPath = "res://HextechRunes/images/cards/trickMagicCard.png";
+
+    public const string BladeWaltzCardPortraitPath = "res://HextechRunes/images/cards/bladeWaltzCard.png";
+
     private static readonly IReadOnlyList<Type> SilverRuneTypes = HextechContentRegistry.SilverRuneTypes;
 
     private static readonly IReadOnlyList<Type> GoldRuneTypes = HextechContentRegistry.GoldRuneTypes;
@@ -218,12 +224,8 @@ internal static class ModInfo
         return [mainTip];
     }
 
-    private static readonly HashSet<MonsterHexKind> EnemyHexesWithBurnHoverTip =
-    [
-        MonsterHexKind.Tormentor,
-        MonsterHexKind.Firebrand,
-        MonsterHexKind.FeelTheBurn
-    ];
+    private static readonly IReadOnlySet<MonsterHexKind> EnemyHexesWithBurnHoverTip =
+        HextechContentRegistry.MonsterHexesWithBurnHoverTip;
 
     private static LocString GetEnemyHexDescriptionLoc(MonsterHexKind hex)
     {

@@ -1162,7 +1162,7 @@ public sealed class TrickMagicCard : CardModel
 
 	public override CardPoolModel VisualCardPool => Pool;
 
-	public override string PortraitPath => ModelDb.Card<Acrobatics>().PortraitPath;
+	public override string PortraitPath => ModInfo.TrickMagicCardPortraitPath;
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 
@@ -1210,7 +1210,7 @@ public sealed class BladeWaltzCard : CardModel
 
 	public override CardPoolModel VisualCardPool => Pool;
 
-	public override string PortraitPath => ModelDb.Card<Ricochet>().PortraitPath;
+	public override string PortraitPath => ModInfo.BladeWaltzCardPortraitPath;
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 

@@ -3,6 +3,7 @@ using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 
@@ -22,12 +23,22 @@ internal static class AssetHooks
 		MethodInfo relicReload = RequireMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
 		MethodInfo getPowerIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.Icon));
 		MethodInfo getPowerBigIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.BigIcon));
+		MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
 
 		harmony.Patch(getRelicIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicIconPostfix)));
 		harmony.Patch(getRelicBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicBigIconPostfix)));
 		harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(NRelicReloadPrefix)));
 		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerIconPostfix)));
 		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
+		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
+	}
+
+	private static void CardPortraitPostfix(CardModel __instance, ref Texture2D __result)
+	{
+		if (TryGetHextechCardTexture(__instance, out Texture2D? texture))
+		{
+			__result = texture!;
+		}
 	}
 
 	private static void RelicIconPostfix(RelicModel __instance, ref Texture2D __result)
@@ -97,6 +108,25 @@ internal static class AssetHooks
 		{
 			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",
 			HextechAttackReplayPower => $"res://{ModInfo.Id}/images/powers/hextechAttackReplayPower.png",
+			_ => null
+		};
+		if (path == null)
+		{
+			return false;
+		}
+
+		texture = LoadPortableTexture(path);
+		return texture != null;
+	}
+
+	private static bool TryGetHextechCardTexture(CardModel self, out Texture2D? texture)
+	{
+		texture = null;
+		string? path = self switch
+		{
+			ElicitCard => ModInfo.ElicitCardPortraitPath,
+			TrickMagicCard => ModInfo.TrickMagicCardPortraitPath,
+			BladeWaltzCard => ModInfo.BladeWaltzCardPortraitPath,
 			_ => null
 		};
 		if (path == null)
