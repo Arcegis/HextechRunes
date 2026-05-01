@@ -208,7 +208,7 @@ internal static class HextechEnemyUi
 	private static void ShowEnemyHexHoverTip(Control holder, MonsterHexKind hex)
 	{
 		NHoverTipSet.Remove(holder);
-		NHoverTipSet hoverTipSet = NHoverTipSet.CreateAndShow(holder, ModInfo.GetEnemyHexHoverTips(hex));
-		hoverTipSet.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, ModInfo.GetEnemyHexHoverTips(hex));
+		hoverTipSet?.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
 	}
 }

@@ -14,7 +14,7 @@ internal static class HextechMonsterInteractionPolicy
         return IsTrueCombatDeath(creature, out _);
     }
 
-    public static bool IsTrueCombatDeath(Creature creature, [NotNullWhen(true)] out CombatState? combatState)
+    public static bool IsTrueCombatDeath(Creature creature, [NotNullWhen(true)] out HextechCombatState? combatState)
     {
         combatState = creature.CombatState;
         return combatState != null && Hook.ShouldCreatureBeRemovedFromCombatAfterDeath(combatState, creature);

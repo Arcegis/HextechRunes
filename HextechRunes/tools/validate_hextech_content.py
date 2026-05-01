@@ -43,12 +43,15 @@ TRACKING_PERSISTENT_FIELDS = {
     "_mountainSoulHasPreviousTurn",
     "_mountainSoulDamagedSinceLastTurn",
     "_playerAttackCardsPlayedThisCombat",
+    "_playerCardsDrawnThisCombat",
+    "_eightPennyGatePlayersTriggeredThisTurn",
     "_enemyProtectiveVeilTurnCounter",
 }
 
 TRACKING_TRANSIENT_FIELDS = {
     "_monsterDebuffActionProcKeysThisTurn",
     "_groupedPlayerDebuffProcKeys",
+    "_eightPennyGatePendingCardHashes",
     "_lastEnemyThresholdTriggerKey",
     "_handlingMonsterTormentorBurn",
     "_handlingServantMasterIllusion",
@@ -58,6 +61,14 @@ TRACKING_TRANSIENT_FIELDS = {
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def source_files(pattern: str = "*.cs") -> list[Path]:
+    return [
+        path
+        for path in SRC.rglob(pattern)
+        if "bin" not in path.parts and "obj" not in path.parts
+    ]
 
 
 def fail(errors: list[str], message: str) -> None:
@@ -107,6 +118,56 @@ def extract_monster_hex_icon_pairs(text: str) -> dict[str, str]:
     return dict(re.findall(r"\{\s*MonsterHexKind\.(\w+)\s*,\s*typeof\((\w+)\)\s*\}", block))
 
 
+def extract_rune_registrations(text: str) -> list[dict[str, object]]:
+    registrations: list[dict[str, object]] = []
+    pattern = re.compile(
+        r"Rune<(?P<type>\w+)>\(\s*HextechRarityTier\.(?P<rarity>\w+)(?P<args>[^)]*)\)"
+    )
+    for match in pattern.finditer(text):
+        args = match.group("args")
+        character_pool_match = re.search(r"characterPool:\s*HextechCharacterPool\.(\w+)", args)
+        character_order_match = re.search(r"characterOrder:\s*(\d+)", args)
+        registrations.append(
+            {
+                "type": match.group("type"),
+                "rarity": match.group("rarity"),
+                "flags": set(re.findall(r"RuneFlags\.(\w+)", args)),
+                "character_pool": character_pool_match.group(1) if character_pool_match else None,
+                "character_order": int(character_order_match.group(1)) if character_order_match else 0,
+            }
+        )
+    return registrations
+
+
+def extract_forge_registrations(text: str) -> list[dict[str, str]]:
+    pattern = re.compile(r"Forge<(?P<type>\w+)>\(\s*HextechRarityTier\.(?P<rarity>\w+)\s*\)")
+    return [
+        {
+            "type": match.group("type"),
+            "rarity": match.group("rarity"),
+        }
+        for match in pattern.finditer(text)
+    ]
+
+
+def extract_monster_hex_registrations(text: str) -> list[dict[str, object]]:
+    registrations: list[dict[str, object]] = []
+    pattern = re.compile(
+        r"Monster<(?P<type>\w+)>\(\s*MonsterHexKind\.(?P<kind>\w+),\s*HextechRarityTier\.(?P<rarity>\w+)(?P<args>[^)]*)\)"
+    )
+    for match in pattern.finditer(text):
+        args = match.group("args")
+        registrations.append(
+            {
+                "type": match.group("type"),
+                "kind": match.group("kind"),
+                "rarity": match.group("rarity"),
+                "disabled": bool(re.search(r"disabled:\s*true", args)),
+            }
+        )
+    return registrations
+
+
 def check_duplicates(errors: list[str], label: str, values: list[str]) -> None:
     seen: set[str] = set()
     duplicates: list[str] = []
@@ -123,12 +184,15 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
     registry_text = read(SRC / "HextechContentRegistry.cs")
 
     enum_values = extract_enum_values(types_text, "MonsterHexKind")
-    rarity_values = (
-        extract_monster_hex_list(registry_text, "SilverMonsterHexes")
-        + extract_monster_hex_list(registry_text, "GoldMonsterHexes")
-        + extract_monster_hex_list(registry_text, "PrismaticMonsterHexes")
-    )
-    disabled_values = extract_monster_hex_list(registry_text, "DisabledMonsterHexes")
+    monster_regs = extract_monster_hex_registrations(registry_text)
+    if not monster_regs:
+        fail(errors, "MonsterHexRegistrations block not found")
+        return
+
+    registry_values = [str(reg["kind"]) for reg in monster_regs]
+    rarity_values = [str(reg["kind"]) for reg in monster_regs if not reg["disabled"]]
+    disabled_values = [str(reg["kind"]) for reg in monster_regs if reg["disabled"]]
+    check_duplicates(errors, "monster hex registry", registry_values)
     check_duplicates(errors, "monster hex rarity registry", rarity_values)
     check_duplicates(errors, "disabled monster hex registry", disabled_values)
 
@@ -142,7 +206,7 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
     if unknown_disabled:
         fail(errors, f"Unknown MonsterHexKind in disabled registry: {', '.join(unknown_disabled)}")
 
-    icon_pairs = extract_monster_hex_icon_pairs(registry_text)
+    icon_pairs = {str(reg["kind"]): str(reg["type"]) for reg in monster_regs}
     missing_from_icons = sorted(set(enum_values) - set(icon_pairs))
     if missing_from_icons:
         fail(errors, f"MonsterHexKind missing from MonsterHexIconRelicTypes: {', '.join(missing_from_icons)}")
@@ -163,24 +227,48 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
 
 def validate_relic_registry(errors: list[str]) -> None:
     registry_text = read(SRC / "HextechContentRegistry.cs")
-    list_names = [
-        "SilverRuneTypes",
-        "GoldRuneTypes",
-        "PrismaticRuneTypes",
-        "SilverForgeTypes",
-        "GoldForgeTypes",
-        "PrismaticForgeTypes",
-        "ShopOnlyRelicTypes",
-    ]
+
+    rune_regs = extract_rune_registrations(registry_text)
+    forge_regs = extract_forge_registrations(registry_text)
+    if not rune_regs:
+        fail(errors, "RuneRegistrations block not found")
+        return
+    if not forge_regs:
+        fail(errors, "ForgeRegistrations block not found")
+        return
+
     all_types: list[str] = []
-    for name in list_names:
-        values = extract_type_list(registry_text, name)
-        check_duplicates(errors, name, values)
+
+    for rarity in ("Silver", "Gold", "Prismatic"):
+        values = [str(reg["type"]) for reg in rune_regs if reg["rarity"] == rarity]
+        check_duplicates(errors, f"{rarity}RuneTypes", values)
         all_types.extend(values)
+
+    for rarity in ("Silver", "Gold", "Prismatic"):
+        values = [str(reg["type"]) for reg in forge_regs if reg["rarity"] == rarity]
+        check_duplicates(errors, f"{rarity}ForgeTypes", values)
+        all_types.extend(values)
+
+    values = extract_type_list(registry_text, "ShopOnlyRelicTypes")
+    check_duplicates(errors, "ShopOnlyRelicTypes", values)
+    all_types.extend(values)
+
+    for character_pool in ("Ironclad", "Silent", "Regent", "Defect", "Necrobinder"):
+        values = [str(reg["type"]) for reg in rune_regs if reg["character_pool"] == character_pool]
+        orders = [str(reg["character_order"]) for reg in rune_regs if reg["character_pool"] == character_pool]
+        check_duplicates(errors, f"{character_pool}RuneTypes", values)
+        check_duplicates(errors, f"{character_pool}RuneTypes character order", orders)
+        missing_order = [str(reg["type"]) for reg in rune_regs if reg["character_pool"] == character_pool and reg["character_order"] == 0]
+        if missing_order:
+            fail(errors, f"{character_pool}RuneTypes missing character order: {', '.join(missing_order)}")
+
+    for flag in ("Disabled", "AttributeConversionExclusive", "FirstActExcluded", "ThirdActExcluded"):
+        values = [str(reg["type"]) for reg in rune_regs if flag in reg["flags"]]
+        check_duplicates(errors, f"{flag} rune registry", values)
 
     check_duplicates(errors, "all custom relic registries", all_types)
 
-    source_text = "\n".join(read(path) for path in SRC.glob("*.cs"))
+    source_text = "\n".join(read(path) for path in source_files())
     declared_relics = set(re.findall(r"\bclass\s+(\w+)\s*:", source_text))
     missing_declarations = sorted(set(all_types) - declared_relics)
     if missing_declarations:
@@ -189,7 +277,7 @@ def validate_relic_registry(errors: list[str]) -> None:
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
     state_text = read(SRC / "HextechMayhem.State.cs")
-    mayhem_text = "\n".join(read(path) for path in SRC.glob("HextechMayhem*.cs"))
+    mayhem_text = "\n".join(read(path) for path in source_files("HextechMayhem*.cs"))
     tracking_decl_match = re.search(
         r"private readonly Dictionary<uint, int> _slapProcsThisTurn = new\(\);(?P<body>.*?)private int _enemyProtectiveVeilTurnCounter;",
         state_text,

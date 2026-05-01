@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection;
 using MegaCrit.Sts2.Core.Unlocks;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
@@ -66,22 +66,11 @@ internal static class CollectionHooks
 		typeof(HashSet<RelicModel>),
 		typeof(HashSet<RelicModel>));
 
-	private static Hook? _loadRelicsHook;
-
 	private static string? _starterHeaderTemplate;
 
-	private delegate void OrigLoadRelics(
-		NRelicCollectionCategory self,
-		RelicRarity relicRarity,
-		NRelicCollection collection,
-		LocString header,
-		HashSet<RelicModel> seenRelics,
-		UnlockState unlockState,
-		HashSet<RelicModel> allUnlockedRelics);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
-		_loadRelicsHook = new Hook(
+		harmony.Patch(
 			RequireMethod(
 				typeof(NRelicCollectionCategory),
 				"LoadRelics",
@@ -92,12 +81,11 @@ internal static class CollectionHooks
 				typeof(HashSet<RelicModel>),
 				typeof(UnlockState),
 				typeof(HashSet<RelicModel>)),
-			LoadRelicsDetour);
+			postfix: new HarmonyMethod(typeof(CollectionHooks), nameof(LoadRelicsPostfix)));
 	}
 
-	private static void LoadRelicsDetour(
-		OrigLoadRelics orig,
-		NRelicCollectionCategory self,
+	private static void LoadRelicsPostfix(
+		NRelicCollectionCategory __instance,
 		RelicRarity relicRarity,
 		NRelicCollection collection,
 		LocString header,
@@ -105,16 +93,14 @@ internal static class CollectionHooks
 		UnlockState unlockState,
 		HashSet<RelicModel> allUnlockedRelics)
 	{
-		orig(self, relicRarity, collection, header, seenRelics, unlockState, allUnlockedRelics);
-
 		if (relicRarity != RelicRarity.Starter)
 		{
 			return;
 		}
 
 		_starterHeaderTemplate ??= header.GetRawText();
-		AddHextechSubcategory(self, collection, seenRelics, allUnlockedRelics);
-		AddForgeSubcategory(self, collection, seenRelics, allUnlockedRelics);
+		AddHextechSubcategory(__instance, collection, seenRelics, allUnlockedRelics);
+		AddForgeSubcategory(__instance, collection, seenRelics, allUnlockedRelics);
 	}
 
 	private static void AddHextechSubcategory(

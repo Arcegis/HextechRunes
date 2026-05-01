@@ -1,84 +1,91 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Relics;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
 internal static class AssetHooks
 {
-	private static readonly Dictionary<string, PortableCompressedTexture2D> ManualTextureCache = new();
+	private static readonly Dictionary<string, Texture2D> TextureCache = new();
 
 	private static readonly FieldInfo NRelicModelField = typeof(NRelic).GetField("_model", BindingFlags.Instance | BindingFlags.NonPublic)
 		?? throw new InvalidOperationException("Could not access NRelic._model.");
 
-	private static Hook? _relicIconHook;
-	private static Hook? _relicBigIconHook;
-	private static Hook? _relicReloadHook;
-	private static Hook? _powerIconHook;
-	private static Hook? _powerBigIconHook;
-
-	private delegate Texture2D OrigGetRelicIcon(RelicModel self);
-
-	private delegate Texture2D OrigGetRelicBigIcon(RelicModel self);
-
-	private delegate void OrigNRelicReload(NRelic self);
-
-	private delegate Texture2D OrigGetPowerIcon(PowerModel self);
-
-	private delegate Texture2D OrigGetPowerBigIcon(PowerModel self);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
 		MethodInfo getRelicIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.Icon));
 		MethodInfo getRelicBigIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.BigIcon));
 		MethodInfo relicReload = RequireMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
 		MethodInfo getPowerIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.Icon));
 		MethodInfo getPowerBigIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.BigIcon));
+		MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
 
-		_relicIconHook = new Hook(getRelicIcon, RelicIconDetour);
-		_relicBigIconHook = new Hook(getRelicBigIcon, RelicBigIconDetour);
-		_relicReloadHook = new Hook(relicReload, NRelicReloadDetour);
-		_powerIconHook = new Hook(getPowerIcon, PowerIconDetour);
-		_powerBigIconHook = new Hook(getPowerBigIcon, PowerBigIconDetour);
+		harmony.Patch(getRelicIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicIconPostfix)));
+		harmony.Patch(getRelicBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicBigIconPostfix)));
+		harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(NRelicReloadPrefix)));
+		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerIconPostfix)));
+		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
+		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
 	}
 
-	private static Texture2D RelicIconDetour(OrigGetRelicIcon orig, RelicModel self)
+	private static void CardPortraitPostfix(CardModel __instance, ref Texture2D __result)
 	{
-		return TryGetHextechRelicTexture(self, out Texture2D? texture) ? texture! : orig(self);
+		if (TryGetHextechCardTexture(__instance, out Texture2D? texture))
+		{
+			__result = texture!;
+		}
 	}
 
-	private static Texture2D RelicBigIconDetour(OrigGetRelicBigIcon orig, RelicModel self)
+	private static void RelicIconPostfix(RelicModel __instance, ref Texture2D __result)
 	{
-		return TryGetHextechRelicTexture(self, out Texture2D? texture) ? texture! : orig(self);
+		if (TryGetHextechRelicTexture(__instance, out Texture2D? texture))
+		{
+			__result = texture!;
+		}
 	}
 
-	private static void NRelicReloadDetour(OrigNRelicReload orig, NRelic self)
+	private static void RelicBigIconPostfix(RelicModel __instance, ref Texture2D __result)
 	{
-		if (!self.IsNodeReady()
-			|| NRelicModelField.GetValue(self) is not RelicModel model
+		if (TryGetHextechRelicTexture(__instance, out Texture2D? texture))
+		{
+			__result = texture!;
+		}
+	}
+
+	private static bool NRelicReloadPrefix(NRelic __instance)
+	{
+		if (!__instance.IsNodeReady()
+			|| NRelicModelField.GetValue(__instance) is not RelicModel model
 			|| !TryGetHextechRelicTexture(model, out Texture2D? texture))
 		{
-			orig(self);
-			return;
+			return true;
 		}
 
-		model.UpdateTexture(self.Icon);
-		self.Icon.Texture = texture;
-		self.Outline.Visible = false;
+		model.UpdateTexture(__instance.Icon);
+		__instance.Icon.Texture = texture;
+		__instance.Outline.Visible = false;
+		return false;
 	}
 
-	private static Texture2D PowerIconDetour(OrigGetPowerIcon orig, PowerModel self)
+	private static void PowerIconPostfix(PowerModel __instance, ref Texture2D __result)
 	{
-		return TryGetHextechPowerTexture(self, out Texture2D? texture) ? texture! : orig(self);
+		if (TryGetHextechPowerTexture(__instance, out Texture2D? texture))
+		{
+			__result = texture!;
+		}
 	}
 
-	private static Texture2D PowerBigIconDetour(OrigGetPowerBigIcon orig, PowerModel self)
+	private static void PowerBigIconPostfix(PowerModel __instance, ref Texture2D __result)
 	{
-		return TryGetHextechPowerTexture(self, out Texture2D? texture) ? texture! : orig(self);
+		if (TryGetHextechPowerTexture(__instance, out Texture2D? texture))
+		{
+			__result = texture!;
+		}
 	}
 
 	private static bool TryGetHextechRelicTexture(RelicModel self, out Texture2D? texture)
@@ -112,14 +119,39 @@ internal static class AssetHooks
 		return texture != null;
 	}
 
+	private static bool TryGetHextechCardTexture(CardModel self, out Texture2D? texture)
+	{
+		texture = null;
+		string? path = self switch
+		{
+			ElicitCard => ModInfo.ElicitCardPortraitPath,
+			TrickMagicCard => ModInfo.TrickMagicCardPortraitPath,
+			BladeWaltzCard => ModInfo.BladeWaltzCardPortraitPath,
+			_ => null
+		};
+		if (path == null)
+		{
+			return false;
+		}
+
+		texture = LoadPortableTexture(path);
+		return texture != null;
+	}
+
 	internal static Texture2D? LoadUiTexture(string path)
 	{
 		return LoadPortableTexture(path);
 	}
 
-	private static PortableCompressedTexture2D? LoadPortableTexture(string path)
+	private static Texture2D? LoadPortableTexture(string path)
 	{
-		if (ManualTextureCache.TryGetValue(path, out PortableCompressedTexture2D? cachedTexture))
+		if (ResourceLoader.Load<Texture2D>(path) is Texture2D loadedTexture)
+		{
+			TextureCache[path] = loadedTexture;
+			return loadedTexture;
+		}
+
+		if (TextureCache.TryGetValue(path, out Texture2D? cachedTexture))
 		{
 			return cachedTexture;
 		}
@@ -142,7 +174,7 @@ internal static class AssetHooks
 		PortableCompressedTexture2D texture = new();
 		texture.CreateFromImage(image, PortableCompressedTexture2D.CompressionMode.Lossless);
 		texture.ResourcePath = path;
-		ManualTextureCache[path] = texture;
+		TextureCache[path] = texture;
 		return texture;
 	}
 

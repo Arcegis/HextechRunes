@@ -1,4 +1,5 @@
 using System.Reflection;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -9,87 +10,91 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Runs;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
 internal static class HextechCombatHooks
 {
-	private static Hook? _drawHook;
-	private static Hook? _healHook;
-	private static Hook? _cardCanPlayHook;
-	private static Hook? _cardCanPlayWithReasonHook;
-	private static Hook? _gainMaxHpHook;
-	private static Hook? _loseMaxHpHook;
-	private static Hook? _setMaxHpHook;
-	private static Hook? _stormAfterCardPlayedHook;
-
 	private static bool _handlingGoliathMaxHp;
 
-	private delegate Task<IEnumerable<CardModel>> OrigDraw(PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw);
+	private readonly record struct HealPostState(Player? Player, Creature Creature, decimal Amount, bool ShouldProcess);
 
-	private delegate Task OrigHeal(Creature creature, decimal amount, bool playAnim);
-
-	private delegate bool OrigCardCanPlay(CardModel self);
-
-	private delegate bool OrigCardCanPlayWithReason(CardModel self, out UnplayableReason reason, out AbstractModel preventer);
-
-	private delegate Task OrigGainMaxHp(Creature creature, decimal amount);
-
-	private delegate Task OrigLoseMaxHp(PlayerChoiceContext choiceContext, Creature creature, decimal amount, bool isFromCard);
-
-	private delegate Task<decimal> OrigSetMaxHp(Creature creature, decimal amount);
-
-	private delegate Task OrigStormAfterCardPlayed(StormPower self, PlayerChoiceContext context, CardPlay cardPlay);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
-		_drawHook = new Hook(
+		HarmonyMethod canPlayPostfix = new(typeof(HextechCombatHooks), nameof(CardCanPlayPostfix))
+		{
+			priority = Priority.Last
+		};
+		HarmonyMethod canPlayWithReasonPostfix = new(typeof(HextechCombatHooks), nameof(CardCanPlayWithReasonPostfix))
+		{
+			priority = Priority.Last
+		};
+
+		harmony.Patch(
 			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.Draw), BindingFlags.Public | BindingFlags.Static, typeof(PlayerChoiceContext), typeof(decimal), typeof(Player), typeof(bool)),
-			DrawDetour);
-		_healHook = new Hook(
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DrawPrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.Heal), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal), typeof(bool)),
-			HealDetour);
-		_cardCanPlayHook = new Hook(
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HealPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HealPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(CardModel), nameof(CardModel.CanPlay), BindingFlags.Instance | BindingFlags.Public),
-			CardCanPlayDetour);
-		_cardCanPlayWithReasonHook = new Hook(
+			postfix: canPlayPostfix);
+		harmony.Patch(
 			RequireMethod(typeof(CardModel), nameof(CardModel.CanPlay), BindingFlags.Instance | BindingFlags.Public, typeof(UnplayableReason).MakeByRefType(), typeof(AbstractModel).MakeByRefType()),
-			CardCanPlayWithReasonDetour);
-		_gainMaxHpHook = new Hook(
+			postfix: canPlayWithReasonPostfix);
+		harmony.Patch(
 			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.GainMaxHp), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal)),
-			GainMaxHpDetour);
-		_loseMaxHpHook = new Hook(
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(GainMaxHpPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ResetGoliathTaskPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.LoseMaxHp), BindingFlags.Public | BindingFlags.Static, typeof(PlayerChoiceContext), typeof(Creature), typeof(decimal), typeof(bool)),
-			LoseMaxHpDetour);
-		_setMaxHpHook = new Hook(
-			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.SetMaxHp), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal)),
-			SetMaxHpDetour);
-		_stormAfterCardPlayedHook = new Hook(
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(LoseMaxHpPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ResetGoliathTaskPostfix)));
+		MethodInfo setMaxHpMethod = RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.SetMaxHp), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal));
+		harmony.Patch(
+			setMaxHpMethod,
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SetMaxHpPrefix)),
+			postfix: new HarmonyMethod(
+				typeof(HextechCombatHooks),
+				setMaxHpMethod.ReturnType == typeof(Task<decimal>)
+					? nameof(ResetGoliathDecimalTaskPostfix)
+					: nameof(ResetGoliathTaskPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(StormPower), nameof(StormPower.BeforeCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(StormBeforeCardPlayedPrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(StormPower), nameof(StormPower.AfterCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			StormAfterCardPlayedDetour);
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(StormAfterCardPlayedPrefix)));
 	}
 
-	private static async Task<IEnumerable<CardModel>> DrawDetour(OrigDraw orig, PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw)
+	private static bool DrawPrefix(PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw, ref Task<IEnumerable<CardModel>> __result)
 	{
 		NoNonsenseRune? noNonsenseRune = player.GetRelic<NoNonsenseRune>();
 		if (noNonsenseRune == null || fromHandDraw || count <= 0m || player.Creature.CombatState == null)
 		{
-			return await orig(choiceContext, count, player, fromHandDraw);
+			return true;
 		}
 
 		int drawsPrevented = (int)Math.Ceiling(count);
 		if (drawsPrevented <= 0)
 		{
-			return Array.Empty<CardModel>();
+			__result = Task.FromResult<IEnumerable<CardModel>>(Array.Empty<CardModel>());
+			return false;
 		}
 
+		__result = DrawNoNonsense(noNonsenseRune, drawsPrevented, player);
+		return false;
+	}
+
+	private static async Task<IEnumerable<CardModel>> DrawNoNonsense(NoNonsenseRune noNonsenseRune, int drawsPrevented, Player player)
+	{
 		await noNonsenseRune.HandlePreventedNonHandDraw(drawsPrevented);
 		await PowerCmd.Apply<StrengthPower>(player.Creature, drawsPrevented, player.Creature, null);
 		return Array.Empty<CardModel>();
 	}
 
-	private static async Task HealDetour(OrigHeal orig, Creature creature, decimal amount, bool playAnim)
+	private static bool HealPrefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 	{
 		Player? player = creature.Player;
 		if (player != null && creature == player.Creature)
@@ -136,7 +141,9 @@ internal static class HextechCombatHooks
 			amount = Math.Min(amount, Math.Max(0, healCap - creature.CurrentHp));
 			if (amount <= 0m)
 			{
-				return;
+				__state = default;
+				__result = Task.CompletedTask;
+				return false;
 			}
 		}
 
@@ -147,17 +154,40 @@ internal static class HextechCombatHooks
 			amount = modifier.ModifyEnemyHealAmount(creature, amount);
 			if (amount <= 0m)
 			{
-				return;
+				__state = default;
+				__result = Task.CompletedTask;
+				return false;
 			}
 		}
 
 		if (amount <= 0m)
 		{
+			__state = default;
+			__result = Task.CompletedTask;
+			return false;
+		}
+
+		__state = new HealPostState(player, creature, amount, ShouldProcess: true);
+		return true;
+	}
+
+	private static void HealPostfix(HealPostState __state, ref Task __result)
+	{
+		if (!__state.ShouldProcess)
+		{
 			return;
 		}
 
-		await orig(creature, amount, playAnim);
+		__result = HealAfterOriginal(__result, __state);
+	}
 
+	private static async Task HealAfterOriginal(Task original, HealPostState state)
+	{
+		await original;
+
+		Player? player = state.Player;
+		Creature creature = state.Creature;
+		decimal amount = state.Amount;
 		if (player?.GetRelic<HolyFireRune>() != null
 			&& creature == player.Creature
 			&& creature.CombatState != null)
@@ -179,34 +209,37 @@ internal static class HextechCombatHooks
 		}
 	}
 
-	private static bool CardCanPlayDetour(OrigCardCanPlay orig, CardModel self)
+	private static void CardCanPlayPostfix(CardModel __instance, ref bool __result)
 	{
-		return orig(self) && !IsBlockedByBackToBasics(self);
+		if (__result && IsBlockedByBackToBasics(__instance))
+		{
+			__result = false;
+		}
 	}
 
-	private static bool CardCanPlayWithReasonDetour(OrigCardCanPlayWithReason orig, CardModel self, out UnplayableReason reason, out AbstractModel preventer)
+	private static void CardCanPlayWithReasonPostfix(CardModel __instance, ref bool __result, ref UnplayableReason reason, ref AbstractModel preventer)
 	{
-		bool canPlay = orig(self, out reason, out preventer);
-		if (!canPlay)
+		if (!__result)
 		{
-			return false;
+			return;
 		}
 
-		if (!IsBlockedByBackToBasics(self, out AbstractModel? backToBasicsPreventer))
+		if (!IsBlockedByBackToBasics(__instance, out AbstractModel? backToBasicsPreventer))
 		{
-			return true;
+			return;
 		}
 
 		reason = default;
 		preventer = backToBasicsPreventer!;
-		return false;
+		__result = false;
 	}
 
-	private static Task GainMaxHpDetour(OrigGainMaxHp orig, Creature creature, decimal amount)
+	private static bool GainMaxHpPrefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 	{
+		__state = false;
 		if (_handlingGoliathMaxHp || creature.Player?.GetRelic<GoliathRune>() is not GoliathRune rune)
 		{
-			return orig(creature, amount);
+			return true;
 		}
 
 		rune.EnsureBaseMaxHpInitialized();
@@ -216,18 +249,22 @@ internal static class HextechCombatHooks
 		int delta = Math.Max(0, newActual - oldActual);
 		if (delta == 0)
 		{
-			return Task.CompletedTask;
+			__result = Task.CompletedTask;
+			return false;
 		}
 
 		_handlingGoliathMaxHp = true;
-		return CompleteWithReset(orig(creature, delta));
+		__state = true;
+		amount = delta;
+		return true;
 	}
 
-	private static Task LoseMaxHpDetour(OrigLoseMaxHp orig, PlayerChoiceContext choiceContext, Creature creature, decimal amount, bool isFromCard)
+	private static bool LoseMaxHpPrefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 	{
+		__state = false;
 		if (_handlingGoliathMaxHp || creature.Player?.GetRelic<GoliathRune>() is not GoliathRune rune)
 		{
-			return orig(choiceContext, creature, amount, isFromCard);
+			return true;
 		}
 
 		rune.EnsureBaseMaxHpInitialized();
@@ -237,34 +274,73 @@ internal static class HextechCombatHooks
 		int loss = Math.Max(0, oldActual - newActual);
 		if (loss == 0)
 		{
-			return Task.CompletedTask;
+			__result = Task.CompletedTask;
+			return false;
 		}
 
 		_handlingGoliathMaxHp = true;
-		return CompleteWithReset(orig(choiceContext, creature, loss, isFromCard));
+		__state = true;
+		amount = loss;
+		return true;
 	}
 
-	private static Task<decimal> SetMaxHpDetour(OrigSetMaxHp orig, Creature creature, decimal amount)
+	private static bool SetMaxHpPrefix(Creature creature, ref decimal amount, out bool __state)
 	{
+		__state = false;
 		if (_handlingGoliathMaxHp || creature.Player?.GetRelic<GoliathRune>() is not GoliathRune rune)
 		{
-			return orig(creature, amount);
+			return true;
 		}
 
 		rune.BaseMaxHp = (int)Math.Max(1m, amount);
 		_handlingGoliathMaxHp = true;
-		return CompleteWithReset(orig(creature, rune.GetScaledMaxHp()));
+		__state = true;
+		amount = rune.GetScaledMaxHp();
+		return true;
 	}
 
-	private static Task StormAfterCardPlayedDetour(OrigStormAfterCardPlayed orig, StormPower self, PlayerChoiceContext context, CardPlay cardPlay)
+	private static bool StormBeforeCardPlayedPrefix(StormPower __instance, ref Task __result)
 	{
-		if (self.Owner?.CombatState?.RunState is RunState runState
-			&& GetMayhemModifier(runState) != null)
+		if (ShouldUseHextechStormHandling(__instance))
 		{
-			return Task.CompletedTask;
+			__result = Task.CompletedTask;
+			return false;
 		}
 
-		return orig(self, context, cardPlay);
+		return true;
+	}
+
+	private static bool StormAfterCardPlayedPrefix(StormPower __instance, ref Task __result)
+	{
+		if (ShouldUseHextechStormHandling(__instance))
+		{
+			__result = Task.CompletedTask;
+			return false;
+		}
+
+		return true;
+	}
+
+	private static bool ShouldUseHextechStormHandling(StormPower stormPower)
+	{
+		return stormPower.Owner?.CombatState?.RunState is RunState runState
+			&& GetMayhemModifier(runState) != null;
+	}
+
+	private static void ResetGoliathTaskPostfix(bool __state, ref Task __result)
+	{
+		if (__state)
+		{
+			__result = CompleteWithReset(__result);
+		}
+	}
+
+	private static void ResetGoliathDecimalTaskPostfix(bool __state, ref Task<decimal> __result)
+	{
+		if (__state)
+		{
+			__result = CompleteWithReset(__result);
+		}
 	}
 
 	private static async Task CompleteWithReset(Task task)

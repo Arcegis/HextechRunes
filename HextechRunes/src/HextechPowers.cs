@@ -23,8 +23,7 @@ public sealed class HextechBurnPower : PowerModel
 
 	public override async Task AfterTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		bool shouldTrigger = (Owner.Side == CombatSide.Enemy && side == CombatSide.Player)
-			|| (Owner.Side == CombatSide.Player && side == CombatSide.Enemy);
+		bool shouldTrigger = side == Owner.Side;
 		if (!shouldTrigger || Amount <= 0 || !Owner.IsAlive)
 		{
 			return;
@@ -153,7 +152,11 @@ public sealed class HextechTemporarySlowPower : PowerModel, ITemporaryPower
 		await PowerCmd.Apply<SlowPower>(target, amount, applier, cardSource, silent: true);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (power != this || amount == Amount)
 		{
@@ -169,7 +172,7 @@ public sealed class HextechTemporarySlowPower : PowerModel, ITemporaryPower
 		await PowerCmd.Apply<SlowPower>(Owner, amount, applier, cardSource, silent: true);
 	}
 
-	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (side != Owner.Side)
 		{

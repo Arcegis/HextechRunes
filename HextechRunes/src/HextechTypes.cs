@@ -61,5 +61,10 @@ internal enum MonsterHexKind
     ClownCollege = 49,
     SingularityAI = 50,
     ProteinShake = 51,
-    GoldenSpatula = 52
+    GoldenSpatula = 52,
+    StartupRoutine = 53,
+    WarmogsSpirit = 54,
+    HailToTheKing = 55,
+    EightPennyGate = 56,
+    HastyScribble = 57
 }

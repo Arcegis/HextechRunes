@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves;
@@ -21,11 +22,20 @@ internal static class HextechCardGeneration
 			return Array.Empty<CardPileAddResult>();
 		}
 
+#if STS2_104_OR_NEWER
+		Player? creator = addedByPlayer ? cardList.FirstOrDefault()?.Owner : null;
+		IReadOnlyList<CardPileAddResult> results = await CardPileCmd.AddGeneratedCardsToCombat(
+			cardList,
+			pileType,
+			creator,
+			position);
+#else
 		IReadOnlyList<CardPileAddResult> results = await CardPileCmd.AddGeneratedCardsToCombat(
 			cardList,
 			pileType,
 			addedByPlayer,
 			position);
+#endif
 		foreach (CardModel card in cardList)
 		{
 			SaveManager.Instance.MarkCardAsSeen(card);

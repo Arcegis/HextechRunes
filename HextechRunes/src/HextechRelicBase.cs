@@ -35,7 +35,7 @@ namespace HextechRunes;
 public abstract class HextechRelicBase : RelicModel
 {
 	private static readonly string PlaceholderIconPath = ImageHelper.GetImagePath("powers/missing_power.png");
-	private CombatState? _turnScopedCombatState;
+	private HextechCombatState? _turnScopedCombatState;
 	private int _turnScopedRoundNumber = -1;
 
 	public sealed override RelicRarity Rarity => RelicRarity.Starter;
@@ -55,7 +55,7 @@ public abstract class HextechRelicBase : RelicModel
 
 	protected void EnsureTurnScopedStateCurrent(Action resetState)
 	{
-		CombatState? combatState = Owner?.Creature.CombatState;
+		HextechCombatState? combatState = Owner?.Creature.CombatState;
 		if (combatState == null)
 		{
 			resetState();
@@ -72,7 +72,7 @@ public abstract class HextechRelicBase : RelicModel
 		}
 	}
 
-	protected void UpdateTurnScopedStateIdentity(CombatState? combatState = null)
+	protected void UpdateTurnScopedStateIdentity(HextechCombatState? combatState = null)
 	{
 		combatState ??= Owner?.Creature.CombatState;
 		_turnScopedCombatState = combatState;
@@ -159,7 +159,7 @@ public abstract class HextechRelicBase : RelicModel
 			return;
 		}
 
-		CombatState? combatState = Owner.Creature.CombatState;
+		HextechCombatState? combatState = Owner.Creature.CombatState;
 		if (Owner.PlayerCombatState != null
 			&& combatState != null
 			&& CombatManager.Instance.IsInProgress
@@ -247,7 +247,7 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -257,7 +257,11 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		EnsureTurnScopedStateCurrent(ResetProcs);
 		if (!TryGetOwnedEnemyDebuffTarget(power, amount, applier, out Creature? target) || _procsThisTurn >= MaxProcsPerTurn)
@@ -278,7 +282,7 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 		ResetProcs(null);
 	}
 
-	private void ResetProcs(CombatState? combatState)
+	private void ResetProcs(HextechCombatState? combatState)
 	{
 		_procsThisTurn = 0;
 		UpdateDisplay();
@@ -357,7 +361,11 @@ public abstract class AttributeConversionRelicBase : HextechRelicBase
 		}
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (_isConverting || Owner == null || amount == 0m || power.Owner != Owner.Creature || !ShouldConvertAppliedPower(power))
 		{

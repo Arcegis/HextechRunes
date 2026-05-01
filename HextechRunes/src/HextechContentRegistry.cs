@@ -2,213 +2,322 @@ namespace HextechRunes;
 
 internal static class HextechContentRegistry
 {
-    internal static readonly IReadOnlyList<Type> SilverRuneTypes =
+    [Flags]
+    private enum RuneFlags
+    {
+        None = 0,
+        Disabled = 1,
+        AttributeConversionExclusive = 2,
+        FirstActExcluded = 4,
+        ThirdActExcluded = 8
+    }
+
+    private enum HextechCharacterPool
+    {
+        Ironclad,
+        Silent,
+        Regent,
+        Defect,
+        Necrobinder
+    }
+
+    private readonly record struct RuneRegistration(
+        Type Type,
+        HextechRarityTier Rarity,
+        RuneFlags Flags = RuneFlags.None,
+        HextechCharacterPool? CharacterPool = null,
+        int CharacterOrder = 0);
+
+    private readonly record struct ForgeRegistration(Type Type, HextechRarityTier Rarity);
+
+    private readonly record struct MonsterHexRegistration(
+        MonsterHexKind Kind,
+        HextechRarityTier Rarity,
+        Type IconRelicType,
+        bool Disabled = false,
+        bool HasBurnHoverTip = false);
+
+    private static readonly IReadOnlyList<RuneRegistration> RuneRegistrations =
     [
-        typeof(SlapRune),
-        typeof(DexterityToStrengthRune),
-        typeof(StrengthToDexterityRune),
-        typeof(DexterityStrengthToFocusRune),
-        typeof(WizardlyThinkingRune),
-        typeof(NimbleRune),
-        typeof(EscapePlanRune),
-        typeof(BadTasteRune),
-        typeof(FirstAidKitRune),
-        typeof(SpeedDemonRune),
-        typeof(HeavyHitterRune),
-        typeof(BigStrengthRune),
-        typeof(TormentorRune),
-        typeof(AdamantRune),
-        typeof(MountainSoulRune),
-        typeof(FrostWraithRune),
-        typeof(BadgeBrothersRune),
-        typeof(HomeguardRune),
-        typeof(SwiftAndSafeRune),
-        typeof(SacrificeRune),
-        typeof(ProtectiveVeilRune),
-        typeof(RepulsorRune),
-        typeof(LightEmUpRune),
-        typeof(UltimateUnstoppableRune),
-        typeof(ThornmailRune),
-        typeof(ZealotRune),
-        typeof(MindToMatterRune),
-        typeof(StatsRune),
-        typeof(StartupRoutineRune),
-        typeof(CollectorRune),
-        typeof(UnyieldingArmorRune),
-        typeof(NightParadeRune),
-        typeof(BloodPactRune),
-        typeof(PlateletRune),
-        typeof(SnakebiteRune),
-        typeof(SwordIntentRune),
-        typeof(FlawlessRune),
-        typeof(CondensedRadianceRune),
-        typeof(ByproductRune),
-        typeof(ElectricSurgeRune),
-        typeof(SoulCallingRune),
-        typeof(TauntRune),
-        typeof(TransmuteGoldRune)
+        Rune<SlapRune>(HextechRarityTier.Silver),
+        Rune<DexterityToStrengthRune>(HextechRarityTier.Silver, flags: RuneFlags.AttributeConversionExclusive),
+        Rune<StrengthToDexterityRune>(HextechRarityTier.Silver, flags: RuneFlags.AttributeConversionExclusive),
+        Rune<DexterityStrengthToFocusRune>(HextechRarityTier.Silver, flags: RuneFlags.AttributeConversionExclusive, characterPool: HextechCharacterPool.Defect, characterOrder: 1),
+        Rune<WizardlyThinkingRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Defect, characterOrder: 2),
+        Rune<NimbleRune>(HextechRarityTier.Silver),
+        Rune<EscapePlanRune>(HextechRarityTier.Silver, flags: RuneFlags.Disabled),
+        Rune<BadTasteRune>(HextechRarityTier.Silver),
+        Rune<FirstAidKitRune>(HextechRarityTier.Silver),
+        Rune<SpeedDemonRune>(HextechRarityTier.Silver),
+        Rune<HeavyHitterRune>(HextechRarityTier.Silver),
+        Rune<BigStrengthRune>(HextechRarityTier.Silver),
+        Rune<TormentorRune>(HextechRarityTier.Silver),
+        Rune<AdamantRune>(HextechRarityTier.Silver),
+        Rune<MountainSoulRune>(HextechRarityTier.Silver),
+        Rune<FrostWraithRune>(HextechRarityTier.Silver),
+        Rune<BadgeBrothersRune>(HextechRarityTier.Silver),
+        Rune<HomeguardRune>(HextechRarityTier.Silver),
+        Rune<SwiftAndSafeRune>(HextechRarityTier.Silver),
+        Rune<SacrificeRune>(HextechRarityTier.Silver),
+        Rune<ProtectiveVeilRune>(HextechRarityTier.Silver),
+        Rune<RepulsorRune>(HextechRarityTier.Silver),
+        Rune<LightEmUpRune>(HextechRarityTier.Silver),
+        Rune<UltimateUnstoppableRune>(HextechRarityTier.Silver),
+        Rune<ThornmailRune>(HextechRarityTier.Silver),
+        Rune<ZealotRune>(HextechRarityTier.Silver),
+        Rune<MindToMatterRune>(HextechRarityTier.Silver),
+        Rune<StatsRune>(HextechRarityTier.Silver),
+        Rune<StartupRoutineRune>(HextechRarityTier.Silver),
+        Rune<CollectorRune>(HextechRarityTier.Silver),
+        Rune<UnyieldingArmorRune>(HextechRarityTier.Silver),
+        Rune<NightParadeRune>(HextechRarityTier.Silver),
+        Rune<BloodPactRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Ironclad, characterOrder: 2),
+        Rune<PlateletRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Ironclad, characterOrder: 3),
+        Rune<SnakebiteRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Silent, characterOrder: 7),
+        Rune<SwordIntentRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Regent, characterOrder: 3),
+        Rune<FlawlessRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Regent, characterOrder: 4),
+        Rune<CondensedRadianceRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Regent, characterOrder: 5),
+        Rune<ByproductRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Defect, characterOrder: 7),
+        Rune<ElectricSurgeRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Defect, characterOrder: 9),
+        Rune<SoulCallingRune>(HextechRarityTier.Silver),
+        Rune<TauntRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 5),
+        Rune<SwordsmanshipRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Regent, characterOrder: 9),
+        Rune<EasyDoesItRune>(HextechRarityTier.Silver),
+        Rune<SweepingBladeRune>(HextechRarityTier.Silver),
+        Rune<TransmuteGoldRune>(HextechRarityTier.Silver),
+
+        Rune<JudicatorRune>(HextechRarityTier.Gold),
+        Rune<TranscendentEvilRune>(HextechRarityTier.Gold, flags: RuneFlags.ThirdActExcluded, characterPool: HextechCharacterPool.Defect, characterOrder: 3),
+        Rune<TankEngineRune>(HextechRarityTier.Gold, flags: RuneFlags.ThirdActExcluded),
+        Rune<AstralBodyRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
+        Rune<AncientWineRune>(HextechRarityTier.Gold),
+        Rune<HolyFireRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
+        Rune<NoNonsenseRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
+        Rune<SuperBrainRune>(HextechRarityTier.Gold),
+        Rune<OverflowRune>(HextechRarityTier.Gold),
+        Rune<SturdyRune>(HextechRarityTier.Gold),
+        Rune<LoopRune>(HextechRarityTier.Gold),
+        Rune<OkBoomerangRune>(HextechRarityTier.Gold),
+        Rune<DivineInterventionRune>(HextechRarityTier.Gold),
+        Rune<SonataRune>(HextechRarityTier.Gold),
+        Rune<CuttingEdgeAlchemistRune>(HextechRarityTier.Gold),
+        Rune<DevilsDanceRune>(HextechRarityTier.Gold),
+        Rune<BeginningAndEndRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 3),
+        Rune<KeystoneHunterRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 1),
+        Rune<WarmogsSpiritRune>(HextechRarityTier.Gold),
+        Rune<RedEnvelopeRune>(HextechRarityTier.Gold),
+        Rune<MindPurificationRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
+        Rune<EndlessRecoveryRune>(HextechRarityTier.Gold),
+        Rune<SpeedsterRune>(HextechRarityTier.Gold),
+        Rune<ServantMasterRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 1),
+        Rune<SoulEaterRune>(HextechRarityTier.Gold),
+        Rune<DonationRune>(HextechRarityTier.Gold),
+        Rune<TwiceThriceRune>(HextechRarityTier.Gold),
+        Rune<FirebrandRune>(HextechRarityTier.Gold),
+        Rune<NightstalkingRune>(HextechRarityTier.Gold),
+        Rune<GetExcitedRune>(HextechRarityTier.Gold),
+        Rune<ShrinkEngineRune>(HextechRarityTier.Gold, flags: RuneFlags.ThirdActExcluded),
+        Rune<StatsOnStatsRune>(HextechRarityTier.Gold),
+        Rune<LifeFlowRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 1),
+        Rune<RekindleRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 4),
+        Rune<TrickLicenseRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 2),
+        Rune<GalacticGiftRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 1),
+        Rune<SomethingFromNothingRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 2),
+        Rune<LubricantRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Defect, characterOrder: 4),
+        Rune<HubrisRune>(HextechRarityTier.Gold, flags: RuneFlags.ThirdActExcluded),
+        Rune<DrainRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 4),
+        Rune<LethalTempoRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 3),
+        Rune<EmergenceRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Defect, characterOrder: 5),
+        Rune<MirageRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 5),
+        Rune<AdaptiveCapacitorRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Defect, characterOrder: 8),
+        Rune<RenewalRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 4),
+        Rune<WraithRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 6),
+        Rune<SummonForthRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 2),
+        Rune<ImmortalBoneRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 7),
+        Rune<MakeItMineRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 8),
+        Rune<DoomsdayRune>(HextechRarityTier.Gold),
+        Rune<OldIdolRune>(HextechRarityTier.Gold),
+        Rune<MonarchsGazeRune>(HextechRarityTier.Gold),
+        Rune<HardBonesRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 11),
+        Rune<SendThemInRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 8),
+        Rune<TransmutePrismaticRune>(HextechRarityTier.Gold),
+        Rune<DawnbringersResolveRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
+        Rune<ShrinkRayRune>(HextechRarityTier.Gold),
+
+        Rune<EurekaRune>(HextechRarityTier.Prismatic),
+        Rune<InfiniteLoopRune>(HextechRarityTier.Prismatic, flags: RuneFlags.ThirdActExcluded),
+        Rune<SlowCookRune>(HextechRarityTier.Prismatic),
+        Rune<GiantSlayerRune>(HextechRarityTier.Prismatic),
+        Rune<CourageOfColossusRune>(HextechRarityTier.Prismatic),
+        Rune<GlassCannonRune>(HextechRarityTier.Prismatic),
+        Rune<FinalFormRune>(HextechRarityTier.Prismatic),
+        Rune<BackToBasicsRune>(HextechRarityTier.Prismatic),
+        Rune<DrawYourSwordRune>(HextechRarityTier.Prismatic),
+        Rune<FeelTheBurnRune>(HextechRarityTier.Prismatic, flags: RuneFlags.Disabled),
+        Rune<MikaelsBlessingRune>(HextechRarityTier.Prismatic, flags: RuneFlags.Disabled),
+        Rune<EarthAwakensRune>(HextechRarityTier.Prismatic),
+        Rune<SymphonyOfWarRune>(HextechRarityTier.Prismatic),
+        Rune<UnmovableMountainRune>(HextechRarityTier.Prismatic),
+        Rune<MysteryRune>(HextechRarityTier.Prismatic),
+        Rune<MadScientistRune>(HextechRarityTier.Prismatic),
+        Rune<JeweledGauntletRune>(HextechRarityTier.Prismatic),
+        Rune<HailToTheKingRune>(HextechRarityTier.Prismatic, flags: RuneFlags.ThirdActExcluded),
+        Rune<ArcanePunchRune>(HextechRarityTier.Prismatic),
+        Rune<PandorasBoxRune>(HextechRarityTier.Prismatic, flags: RuneFlags.FirstActExcluded),
+        Rune<TapDanceRune>(HextechRarityTier.Prismatic),
+        Rune<InfernalConduitRune>(HextechRarityTier.Prismatic),
+        Rune<DualWieldRune>(HextechRarityTier.Prismatic),
+        Rune<GoliathRune>(HextechRarityTier.Prismatic),
+        Rune<MasterOfDualityRune>(HextechRarityTier.Prismatic),
+        Rune<HandOfBaronRune>(HextechRarityTier.Prismatic),
+        Rune<CantTouchThisRune>(HextechRarityTier.Prismatic),
+        Rune<QueenRune>(HextechRarityTier.Prismatic),
+        Rune<UltimateRefreshRune>(HextechRarityTier.Prismatic),
+        Rune<GoldrendRune>(HextechRarityTier.Prismatic),
+        Rune<CerberusRune>(HextechRarityTier.Prismatic),
+        Rune<CircleOfDeathRune>(HextechRarityTier.Prismatic),
+        Rune<FanTheHammerRune>(HextechRarityTier.Prismatic),
+        Rune<FeyMagicRune>(HextechRarityTier.Prismatic),
+        Rune<WatchOutGrapefruitRune>(HextechRarityTier.Prismatic),
+        Rune<ProteinShakeRune>(HextechRarityTier.Prismatic),
+        Rune<StatsOnStatsOnStatsRune>(HextechRarityTier.Prismatic),
+        Rune<GoldenSpatulaRune>(HextechRarityTier.Prismatic),
+        Rune<PrecisionCognitionRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Defect, characterOrder: 6),
+        Rune<HastyScribbleRune>(HextechRarityTier.Prismatic),
+        Rune<ClownCollegeRune>(HextechRarityTier.Prismatic),
+        Rune<BladeWaltzRune>(HextechRarityTier.Prismatic),
+        Rune<SingularityAIRune>(HextechRarityTier.Prismatic),
+        Rune<EightPennyGateRune>(HextechRarityTier.Prismatic),
+        Rune<GrowingStrongerRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Ironclad, characterOrder: 5),
+        Rune<GroundedRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Ironclad, characterOrder: 6),
+        Rune<KillerHunterRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Silent, characterOrder: 6),
+        Rune<SerpentsFangRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Silent, characterOrder: 8),
+        Rune<ExplosionArtRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Regent, characterOrder: 6),
+        Rune<StarlightSplendorRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Regent, characterOrder: 7),
+        Rune<MiserableFateRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 9),
+        Rune<DieForYouRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 10),
+        Rune<HappyAccidentRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Defect, characterOrder: 10),
+        Rune<MiseryRune>(HextechRarityTier.Prismatic),
+        Rune<GhostFormRune>(HextechRarityTier.Prismatic),
+        Rune<ForbiddenGrimoireRune>(HextechRarityTier.Prismatic),
+        Rune<OneLaneBridgeRune>(HextechRarityTier.Prismatic),
+        Rune<OrbSymbiosisRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Defect, characterOrder: 11),
+        Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic)
     ];
 
-    internal static readonly IReadOnlyList<Type> GoldRuneTypes =
+    private static readonly IReadOnlyList<ForgeRegistration> ForgeRegistrations =
     [
-        typeof(JudicatorRune),
-        typeof(TranscendentEvilRune),
-        typeof(TankEngineRune),
-        typeof(AstralBodyRune),
-        typeof(AncientWineRune),
-        typeof(HolyFireRune),
-        typeof(NoNonsenseRune),
-        typeof(SuperBrainRune),
-        typeof(OverflowRune),
-        typeof(SturdyRune),
-        typeof(LoopRune),
-        typeof(OkBoomerangRune),
-        typeof(DivineInterventionRune),
-        typeof(SonataRune),
-        typeof(CuttingEdgeAlchemistRune),
-        typeof(DevilsDanceRune),
-        typeof(BeginningAndEndRune),
-        typeof(KeystoneHunterRune),
-        typeof(WarmogsSpiritRune),
-        typeof(RedEnvelopeRune),
-        typeof(MindPurificationRune),
-        typeof(EndlessRecoveryRune),
-        typeof(SpeedsterRune),
-        typeof(ServantMasterRune),
-        typeof(SoulEaterRune),
-        typeof(DonationRune),
-        typeof(TwiceThriceRune),
-        typeof(FirebrandRune),
-        typeof(NightstalkingRune),
-        typeof(GetExcitedRune),
-        typeof(ShrinkEngineRune),
-        typeof(StatsOnStatsRune),
-        typeof(LifeFlowRune),
-        typeof(RekindleRune),
-        typeof(TrickLicenseRune),
-        typeof(GalacticGiftRune),
-        typeof(SomethingFromNothingRune),
-        typeof(LubricantRune),
-        typeof(HubrisRune),
-        typeof(DrainRune),
-        typeof(LethalTempoRune),
-        typeof(EmergenceRune),
-        typeof(MirageRune),
-        typeof(AdaptiveCapacitorRune),
-        typeof(RenewalRune),
-        typeof(WraithRune),
-        typeof(SummonForthRune),
-        typeof(ImmortalBoneRune),
-        typeof(MakeItMineRune),
-        typeof(DoomsdayRune),
-        typeof(TransmutePrismaticRune),
-        typeof(DawnbringersResolveRune),
-        typeof(ShrinkRayRune)
+        Forge<StrengthForge>(HextechRarityTier.Silver),
+        Forge<DexterityForge>(HextechRarityTier.Silver),
+        Forge<SilverPlatingForge>(HextechRarityTier.Silver),
+        Forge<UpgradeForge>(HextechRarityTier.Silver),
+        Forge<FocusForge>(HextechRarityTier.Silver),
+        Forge<LifeForge>(HextechRarityTier.Silver),
+        Forge<PreparedForge>(HextechRarityTier.Silver),
+        Forge<NecrobinderForge>(HextechRarityTier.Silver),
+        Forge<SilverStarsForge>(HextechRarityTier.Silver),
+        Forge<SilverOrbForge>(HextechRarityTier.Silver),
+
+        Forge<ConstitutionForge>(HextechRarityTier.Gold),
+        Forge<DisasterForge>(HextechRarityTier.Gold),
+        Forge<GoldLifeForge>(HextechRarityTier.Gold),
+        Forge<GoldFocusForge>(HextechRarityTier.Gold),
+        Forge<DrawForge>(HextechRarityTier.Gold),
+        Forge<GoldUpgradeForge>(HextechRarityTier.Gold),
+        Forge<StarsForge>(HextechRarityTier.Gold),
+        Forge<OrbSlotForge>(HextechRarityTier.Gold),
+        Forge<PlatingForge>(HextechRarityTier.Gold),
+        Forge<ThornsForge>(HextechRarityTier.Gold),
+        Forge<ArtifactForge>(HextechRarityTier.Gold),
+
+        Forge<PrismaticLifeForge>(HextechRarityTier.Prismatic),
+        Forge<AttackForge>(HextechRarityTier.Prismatic),
+        Forge<ProtectionForge>(HextechRarityTier.Prismatic),
+        Forge<EnergyForge>(HextechRarityTier.Prismatic),
+        Forge<RitualForge>(HextechRarityTier.Prismatic),
+        Forge<RegenForge>(HextechRarityTier.Prismatic),
+        Forge<BufferForge>(HextechRarityTier.Prismatic),
+        Forge<SlipperyForge>(HextechRarityTier.Prismatic),
+        Forge<PrismaticArtifactForge>(HextechRarityTier.Prismatic),
+        Forge<GhostForge>(HextechRarityTier.Prismatic),
+        Forge<FortuneForge>(HextechRarityTier.Prismatic)
     ];
 
-    internal static readonly IReadOnlyList<Type> PrismaticRuneTypes =
+    private static readonly IReadOnlyList<MonsterHexRegistration> MonsterHexRegistrations =
     [
-        typeof(EurekaRune),
-        typeof(InfiniteLoopRune),
-        typeof(SlowCookRune),
-        typeof(GiantSlayerRune),
-        typeof(CourageOfColossusRune),
-        typeof(GlassCannonRune),
-        typeof(FinalFormRune),
-        typeof(BackToBasicsRune),
-        typeof(DrawYourSwordRune),
-        typeof(FeelTheBurnRune),
-        typeof(MikaelsBlessingRune),
-        typeof(EarthAwakensRune),
-        typeof(SymphonyOfWarRune),
-        typeof(UnmovableMountainRune),
-        typeof(MysteryRune),
-        typeof(MadScientistRune),
-        typeof(JeweledGauntletRune),
-        typeof(HailToTheKingRune),
-        typeof(ArcanePunchRune),
-        typeof(PandorasBoxRune),
-        typeof(TapDanceRune),
-        typeof(InfernalConduitRune),
-        typeof(DualWieldRune),
-        typeof(GoliathRune),
-        typeof(MasterOfDualityRune),
-        typeof(HandOfBaronRune),
-        typeof(CantTouchThisRune),
-        typeof(QueenRune),
-        typeof(UltimateRefreshRune),
-        typeof(GoldrendRune),
-        typeof(CerberusRune),
-        typeof(CircleOfDeathRune),
-        typeof(FanTheHammerRune),
-        typeof(FeyMagicRune),
-        typeof(WatchOutGrapefruitRune),
-        typeof(ProteinShakeRune),
-        typeof(StatsOnStatsOnStatsRune),
-        typeof(GoldenSpatulaRune),
-        typeof(PrecisionCognitionRune),
-        typeof(HastyScribbleRune),
-        typeof(ClownCollegeRune),
-        typeof(BladeWaltzRune),
-        typeof(SingularityAIRune),
-        typeof(EightPennyGateRune),
-        typeof(GrowingStrongerRune),
-        typeof(GroundedRune),
-        typeof(KillerHunterRune),
-        typeof(SerpentsFangRune),
-        typeof(ExplosionArtRune),
-        typeof(StarlightSplendorRune),
-        typeof(MiserableFateRune),
-        typeof(DieForYouRune),
-        typeof(HappyAccidentRune),
-        typeof(MiseryRune),
-        typeof(GhostFormRune),
-        typeof(TransmuteChaosRune)
+        Monster<SlapRune>(MonsterHexKind.Slap, HextechRarityTier.Silver),
+        Monster<EscapePlanRune>(MonsterHexKind.EscapePlan, HextechRarityTier.Silver),
+        Monster<HeavyHitterRune>(MonsterHexKind.HeavyHitter, HextechRarityTier.Silver),
+        Monster<BigStrengthRune>(MonsterHexKind.BigStrength, HextechRarityTier.Silver),
+        Monster<TormentorRune>(MonsterHexKind.Tormentor, HextechRarityTier.Silver, hasBurnHoverTip: true),
+        Monster<ProtectiveVeilRune>(MonsterHexKind.ProtectiveVeil, HextechRarityTier.Silver),
+        Monster<RepulsorRune>(MonsterHexKind.Repulsor, HextechRarityTier.Silver),
+        Monster<ThornmailRune>(MonsterHexKind.Thornmail, HextechRarityTier.Silver),
+        Monster<LightEmUpRune>(MonsterHexKind.LightEmUp, HextechRarityTier.Silver),
+        Monster<MountainSoulRune>(MonsterHexKind.MountainSoul, HextechRarityTier.Silver),
+        Monster<FirstAidKitRune>(MonsterHexKind.FirstAidKit, HextechRarityTier.Silver),
+        Monster<SpeedDemonRune>(MonsterHexKind.SpeedDemon, HextechRarityTier.Silver),
+        Monster<FrostWraithRune>(MonsterHexKind.FrostWraith, HextechRarityTier.Silver),
+        Monster<BloodPactRune>(MonsterHexKind.BloodPact, HextechRarityTier.Silver),
+        Monster<StartupRoutineRune>(MonsterHexKind.StartupRoutine, HextechRarityTier.Silver),
+
+        Monster<SturdyRune>(MonsterHexKind.Sturdy, HextechRarityTier.Gold),
+        Monster<DawnbringersResolveRune>(MonsterHexKind.DawnbringersResolve, HextechRarityTier.Gold),
+        Monster<ShrinkRayRune>(MonsterHexKind.ShrinkRay, HextechRarityTier.Gold),
+        Monster<FirebrandRune>(MonsterHexKind.Firebrand, HextechRarityTier.Gold, hasBurnHoverTip: true),
+        Monster<SuperBrainRune>(MonsterHexKind.SuperBrain, HextechRarityTier.Gold),
+        Monster<NightstalkingRune>(MonsterHexKind.Nightstalking, HextechRarityTier.Gold),
+        Monster<AstralBodyRune>(MonsterHexKind.AstralBody, HextechRarityTier.Gold),
+        Monster<TankEngineRune>(MonsterHexKind.TankEngine, HextechRarityTier.Gold),
+        Monster<ShrinkEngineRune>(MonsterHexKind.ShrinkEngine, HextechRarityTier.Gold),
+        Monster<GetExcitedRune>(MonsterHexKind.GetExcited, HextechRarityTier.Gold),
+        Monster<TwiceThriceRune>(MonsterHexKind.TwiceThrice, HextechRarityTier.Gold),
+        Monster<LoopRune>(MonsterHexKind.Loop, HextechRarityTier.Gold),
+        Monster<ServantMasterRune>(MonsterHexKind.ServantMaster, HextechRarityTier.Gold),
+        Monster<CuttingEdgeAlchemistRune>(MonsterHexKind.CuttingEdgeAlchemist, HextechRarityTier.Gold),
+        Monster<DivineInterventionRune>(MonsterHexKind.DivineIntervention, HextechRarityTier.Gold),
+        Monster<SonataRune>(MonsterHexKind.Sonata, HextechRarityTier.Gold),
+        Monster<DevilsDanceRune>(MonsterHexKind.DevilsDance, HextechRarityTier.Gold),
+        Monster<ImmortalBoneRune>(MonsterHexKind.ImmortalBone, HextechRarityTier.Gold),
+        Monster<DoomsdayRune>(MonsterHexKind.Doomsday, HextechRarityTier.Gold),
+        Monster<WarmogsSpiritRune>(MonsterHexKind.WarmogsSpirit, HextechRarityTier.Gold),
+
+        Monster<CourageOfColossusRune>(MonsterHexKind.CourageOfColossus, HextechRarityTier.Prismatic),
+        Monster<GlassCannonRune>(MonsterHexKind.GlassCannon, HextechRarityTier.Prismatic),
+        Monster<GoliathRune>(MonsterHexKind.Goliath, HextechRarityTier.Prismatic),
+        Monster<QueenRune>(MonsterHexKind.Queen, HextechRarityTier.Prismatic),
+        Monster<HandOfBaronRune>(MonsterHexKind.HandOfBaron, HextechRarityTier.Prismatic),
+        Monster<CantTouchThisRune>(MonsterHexKind.CantTouchThis, HextechRarityTier.Prismatic),
+        Monster<MasterOfDualityRune>(MonsterHexKind.MasterOfDuality, HextechRarityTier.Prismatic),
+        Monster<GoldrendRune>(MonsterHexKind.Goldrend, HextechRarityTier.Prismatic),
+        Monster<FeelTheBurnRune>(MonsterHexKind.FeelTheBurn, HextechRarityTier.Prismatic, hasBurnHoverTip: true),
+        Monster<BackToBasicsRune>(MonsterHexKind.BackToBasics, HextechRarityTier.Prismatic),
+        Monster<DrawYourSwordRune>(MonsterHexKind.DrawYourSword, HextechRarityTier.Prismatic, disabled: true),
+        Monster<MadScientistRune>(MonsterHexKind.MadScientist, HextechRarityTier.Prismatic),
+        Monster<FeyMagicRune>(MonsterHexKind.FeyMagic, HextechRarityTier.Prismatic),
+        Monster<FinalFormRune>(MonsterHexKind.FinalForm, HextechRarityTier.Prismatic),
+        Monster<UnmovableMountainRune>(MonsterHexKind.UnmovableMountain, HextechRarityTier.Prismatic),
+        Monster<MikaelsBlessingRune>(MonsterHexKind.MikaelsBlessing, HextechRarityTier.Prismatic),
+        Monster<ClownCollegeRune>(MonsterHexKind.ClownCollege, HextechRarityTier.Prismatic),
+        Monster<SingularityAIRune>(MonsterHexKind.SingularityAI, HextechRarityTier.Prismatic),
+        Monster<ProteinShakeRune>(MonsterHexKind.ProteinShake, HextechRarityTier.Prismatic),
+        Monster<GoldenSpatulaRune>(MonsterHexKind.GoldenSpatula, HextechRarityTier.Prismatic),
+        Monster<HailToTheKingRune>(MonsterHexKind.HailToTheKing, HextechRarityTier.Prismatic),
+        Monster<EightPennyGateRune>(MonsterHexKind.EightPennyGate, HextechRarityTier.Prismatic),
+        Monster<HastyScribbleRune>(MonsterHexKind.HastyScribble, HextechRarityTier.Prismatic)
     ];
 
-    internal static readonly IReadOnlyList<Type> SilverForgeTypes =
-    [
-        typeof(StrengthForge),
-        typeof(DexterityForge),
-        typeof(SilverPlatingForge),
-        typeof(UpgradeForge),
-        typeof(FocusForge),
-        typeof(LifeForge),
-        typeof(PreparedForge),
-        typeof(NecrobinderForge),
-        typeof(SilverStarsForge),
-        typeof(SilverOrbForge)
-    ];
+    internal static readonly IReadOnlyList<Type> SilverRuneTypes = RuneTypesForRarity(HextechRarityTier.Silver);
 
-    internal static readonly IReadOnlyList<Type> GoldForgeTypes =
-    [
-        typeof(ConstitutionForge),
-        typeof(DisasterForge),
-        typeof(GoldLifeForge),
-        typeof(GoldFocusForge),
-        typeof(DrawForge),
-        typeof(GoldUpgradeForge),
-        typeof(StarsForge),
-        typeof(OrbSlotForge),
-        typeof(PlatingForge),
-        typeof(ThornsForge),
-        typeof(ArtifactForge)
-    ];
+    internal static readonly IReadOnlyList<Type> GoldRuneTypes = RuneTypesForRarity(HextechRarityTier.Gold);
 
-    internal static readonly IReadOnlyList<Type> PrismaticForgeTypes =
-    [
-        typeof(PrismaticLifeForge),
-        typeof(AttackForge),
-        typeof(ProtectionForge),
-        typeof(EnergyForge),
-        typeof(RitualForge),
-        typeof(RegenForge),
-        typeof(BufferForge),
-        typeof(SlipperyForge),
-        typeof(PrismaticArtifactForge),
-        typeof(GhostForge),
-        typeof(FortuneForge)
-    ];
+    internal static readonly IReadOnlyList<Type> PrismaticRuneTypes = RuneTypesForRarity(HextechRarityTier.Prismatic);
+
+    internal static readonly IReadOnlyList<Type> SilverForgeTypes = ForgeTypesForRarity(HextechRarityTier.Silver);
+
+    internal static readonly IReadOnlyList<Type> GoldForgeTypes = ForgeTypesForRarity(HextechRarityTier.Gold);
+
+    internal static readonly IReadOnlyList<Type> PrismaticForgeTypes = ForgeTypesForRarity(HextechRarityTier.Prismatic);
 
     internal static readonly IReadOnlyList<Type> ShopOnlyRelicTypes =
     [
@@ -222,225 +331,42 @@ internal static class HextechContentRegistry
         typeof(BladeWaltzCard)
     ];
 
-    internal static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = new HashSet<Type>
-    {
-        typeof(HolyFireRune),
-        typeof(DawnbringersResolveRune),
-        typeof(AstralBodyRune),
-        typeof(MindPurificationRune),
-        typeof(NoNonsenseRune),
-        typeof(FeelTheBurnRune),
-        typeof(MikaelsBlessingRune)
-    };
+    internal static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = RuneTypesWithFlag(RuneFlags.Disabled).ToHashSet();
 
-    internal static readonly IReadOnlyList<Type> IroncladRuneTypes =
-    [
-        typeof(LifeFlowRune),
-        typeof(BloodPactRune),
-        typeof(PlateletRune),
-        typeof(RekindleRune),
-        typeof(GrowingStrongerRune),
-        typeof(GroundedRune)
-    ];
+    internal static readonly IReadOnlyList<Type> IroncladRuneTypes = RuneTypesForCharacter(HextechCharacterPool.Ironclad);
 
-    internal static readonly IReadOnlyList<Type> SilentRuneTypes =
-    [
-        typeof(KeystoneHunterRune),
-        typeof(TrickLicenseRune),
-        typeof(LethalTempoRune),
-        typeof(RenewalRune),
-        typeof(MirageRune),
-        typeof(KillerHunterRune),
-        typeof(SnakebiteRune),
-        typeof(SerpentsFangRune)
-    ];
+    internal static readonly IReadOnlyList<Type> SilentRuneTypes = RuneTypesForCharacter(HextechCharacterPool.Silent);
 
-    internal static readonly IReadOnlyList<Type> RegentRuneTypes =
-    [
-        typeof(GalacticGiftRune),
-        typeof(SummonForthRune),
-        typeof(SwordIntentRune),
-        typeof(FlawlessRune),
-        typeof(CondensedRadianceRune),
-        typeof(ExplosionArtRune),
-        typeof(StarlightSplendorRune)
-    ];
+    internal static readonly IReadOnlyList<Type> RegentRuneTypes = RuneTypesForCharacter(HextechCharacterPool.Regent);
 
-    internal static readonly IReadOnlyList<Type> DefectRuneTypes =
-    [
-        typeof(DexterityStrengthToFocusRune),
-        typeof(WizardlyThinkingRune),
-        typeof(TranscendentEvilRune),
-        typeof(LubricantRune),
-        typeof(EmergenceRune),
-        typeof(PrecisionCognitionRune),
-        typeof(ByproductRune),
-        typeof(AdaptiveCapacitorRune),
-        typeof(ElectricSurgeRune),
-        typeof(HappyAccidentRune)
-    ];
+    internal static readonly IReadOnlyList<Type> DefectRuneTypes = RuneTypesForCharacter(HextechCharacterPool.Defect);
 
-    internal static readonly IReadOnlyList<Type> NecrobinderRuneTypes =
-    [
-        typeof(ServantMasterRune),
-        typeof(SomethingFromNothingRune),
-        typeof(BeginningAndEndRune),
-        typeof(DrainRune),
-        typeof(TauntRune),
-        typeof(WraithRune),
-        typeof(ImmortalBoneRune),
-        typeof(MakeItMineRune),
-        typeof(MiserableFateRune),
-        typeof(DieForYouRune)
-    ];
+    internal static readonly IReadOnlyList<Type> NecrobinderRuneTypes = RuneTypesForCharacter(HextechCharacterPool.Necrobinder);
 
-    internal static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
-    [
-        typeof(DexterityToStrengthRune),
-        typeof(StrengthToDexterityRune),
-        typeof(DexterityStrengthToFocusRune)
-    ];
+    internal static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes = RuneTypesWithFlag(RuneFlags.AttributeConversionExclusive);
 
-    internal static readonly IReadOnlySet<Type> FirstActExcludedRuneTypes = new HashSet<Type>
-    {
-        typeof(PandorasBoxRune)
-    };
+    internal static readonly IReadOnlySet<Type> FirstActExcludedRuneTypes = RuneTypesWithFlag(RuneFlags.FirstActExcluded).ToHashSet();
 
-    internal static readonly IReadOnlySet<Type> ThirdActExcludedRuneTypes = new HashSet<Type>
-    {
-        typeof(TranscendentEvilRune),
-        typeof(TankEngineRune),
-        typeof(HubrisRune),
-        typeof(ShrinkEngineRune),
-        typeof(InfiniteLoopRune),
-        typeof(HailToTheKingRune)
-    };
+    internal static readonly IReadOnlySet<Type> ThirdActExcludedRuneTypes = RuneTypesWithFlag(RuneFlags.ThirdActExcluded).ToHashSet();
 
-    internal static readonly IReadOnlySet<MonsterHexKind> DisabledMonsterHexes = new HashSet<MonsterHexKind>
-    {
-        MonsterHexKind.DrawYourSword
-    };
+    internal static readonly IReadOnlySet<MonsterHexKind> DisabledMonsterHexes = MonsterHexRegistrations
+        .Where(static registration => registration.Disabled)
+        .Select(static registration => registration.Kind)
+        .ToHashSet();
 
-    internal static readonly IReadOnlyDictionary<MonsterHexKind, Type> MonsterHexIconRelicTypes = new Dictionary<MonsterHexKind, Type>
-    {
-        { MonsterHexKind.Slap, typeof(SlapRune) },
-        { MonsterHexKind.EscapePlan, typeof(EscapePlanRune) },
-        { MonsterHexKind.HeavyHitter, typeof(HeavyHitterRune) },
-        { MonsterHexKind.BigStrength, typeof(BigStrengthRune) },
-        { MonsterHexKind.Tormentor, typeof(TormentorRune) },
-        { MonsterHexKind.ProtectiveVeil, typeof(ProtectiveVeilRune) },
-        { MonsterHexKind.Repulsor, typeof(RepulsorRune) },
-        { MonsterHexKind.Thornmail, typeof(ThornmailRune) },
-        { MonsterHexKind.LightEmUp, typeof(LightEmUpRune) },
-        { MonsterHexKind.MountainSoul, typeof(MountainSoulRune) },
-        { MonsterHexKind.FirstAidKit, typeof(FirstAidKitRune) },
-        { MonsterHexKind.SpeedDemon, typeof(SpeedDemonRune) },
-        { MonsterHexKind.FrostWraith, typeof(FrostWraithRune) },
-        { MonsterHexKind.Sturdy, typeof(SturdyRune) },
-        { MonsterHexKind.DawnbringersResolve, typeof(DawnbringersResolveRune) },
-        { MonsterHexKind.ShrinkRay, typeof(ShrinkRayRune) },
-        { MonsterHexKind.Firebrand, typeof(FirebrandRune) },
-        { MonsterHexKind.SuperBrain, typeof(SuperBrainRune) },
-        { MonsterHexKind.AstralBody, typeof(AstralBodyRune) },
-        { MonsterHexKind.Nightstalking, typeof(NightstalkingRune) },
-        { MonsterHexKind.TankEngine, typeof(TankEngineRune) },
-        { MonsterHexKind.ShrinkEngine, typeof(ShrinkEngineRune) },
-        { MonsterHexKind.GetExcited, typeof(GetExcitedRune) },
-        { MonsterHexKind.TwiceThrice, typeof(TwiceThriceRune) },
-        { MonsterHexKind.Loop, typeof(LoopRune) },
-        { MonsterHexKind.ServantMaster, typeof(ServantMasterRune) },
-        { MonsterHexKind.CuttingEdgeAlchemist, typeof(CuttingEdgeAlchemistRune) },
-        { MonsterHexKind.DivineIntervention, typeof(DivineInterventionRune) },
-        { MonsterHexKind.Sonata, typeof(SonataRune) },
-        { MonsterHexKind.DevilsDance, typeof(DevilsDanceRune) },
-        { MonsterHexKind.CourageOfColossus, typeof(CourageOfColossusRune) },
-        { MonsterHexKind.GlassCannon, typeof(GlassCannonRune) },
-        { MonsterHexKind.Goliath, typeof(GoliathRune) },
-        { MonsterHexKind.Queen, typeof(QueenRune) },
-        { MonsterHexKind.HandOfBaron, typeof(HandOfBaronRune) },
-        { MonsterHexKind.CantTouchThis, typeof(CantTouchThisRune) },
-        { MonsterHexKind.MasterOfDuality, typeof(MasterOfDualityRune) },
-        { MonsterHexKind.Goldrend, typeof(GoldrendRune) },
-        { MonsterHexKind.FeelTheBurn, typeof(FeelTheBurnRune) },
-        { MonsterHexKind.BackToBasics, typeof(BackToBasicsRune) },
-        { MonsterHexKind.DrawYourSword, typeof(DrawYourSwordRune) },
-        { MonsterHexKind.MadScientist, typeof(MadScientistRune) },
-        { MonsterHexKind.FeyMagic, typeof(FeyMagicRune) },
-        { MonsterHexKind.FinalForm, typeof(FinalFormRune) },
-        { MonsterHexKind.UnmovableMountain, typeof(UnmovableMountainRune) },
-        { MonsterHexKind.MikaelsBlessing, typeof(MikaelsBlessingRune) },
-        { MonsterHexKind.BloodPact, typeof(BloodPactRune) },
-        { MonsterHexKind.ImmortalBone, typeof(ImmortalBoneRune) },
-        { MonsterHexKind.Doomsday, typeof(DoomsdayRune) },
-        { MonsterHexKind.ClownCollege, typeof(ClownCollegeRune) },
-        { MonsterHexKind.SingularityAI, typeof(SingularityAIRune) },
-        { MonsterHexKind.ProteinShake, typeof(ProteinShakeRune) },
-        { MonsterHexKind.GoldenSpatula, typeof(GoldenSpatulaRune) }
-    };
+    internal static readonly IReadOnlySet<MonsterHexKind> MonsterHexesWithBurnHoverTip = MonsterHexRegistrations
+        .Where(static registration => registration.HasBurnHoverTip)
+        .Select(static registration => registration.Kind)
+        .ToHashSet();
 
-    internal static readonly IReadOnlyList<MonsterHexKind> SilverMonsterHexes =
-    [
-        MonsterHexKind.Slap,
-        MonsterHexKind.EscapePlan,
-        MonsterHexKind.HeavyHitter,
-        MonsterHexKind.BigStrength,
-        MonsterHexKind.Tormentor,
-        MonsterHexKind.ProtectiveVeil,
-        MonsterHexKind.Repulsor,
-        MonsterHexKind.Thornmail,
-        MonsterHexKind.LightEmUp,
-        MonsterHexKind.MountainSoul,
-        MonsterHexKind.FirstAidKit,
-        MonsterHexKind.SpeedDemon,
-        MonsterHexKind.FrostWraith,
-        MonsterHexKind.BloodPact
-    ];
+    internal static readonly IReadOnlyDictionary<MonsterHexKind, Type> MonsterHexIconRelicTypes = MonsterHexRegistrations
+        .ToDictionary(static registration => registration.Kind, static registration => registration.IconRelicType);
 
-    internal static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes =
-    [
-        MonsterHexKind.Sturdy,
-        MonsterHexKind.DawnbringersResolve,
-        MonsterHexKind.ShrinkRay,
-        MonsterHexKind.Firebrand,
-        MonsterHexKind.SuperBrain,
-        MonsterHexKind.Nightstalking,
-        MonsterHexKind.AstralBody,
-        MonsterHexKind.TankEngine,
-        MonsterHexKind.ShrinkEngine,
-        MonsterHexKind.GetExcited,
-        MonsterHexKind.TwiceThrice,
-        MonsterHexKind.Loop,
-        MonsterHexKind.ServantMaster,
-        MonsterHexKind.CuttingEdgeAlchemist,
-        MonsterHexKind.DivineIntervention,
-        MonsterHexKind.Sonata,
-        MonsterHexKind.DevilsDance,
-        MonsterHexKind.ImmortalBone,
-        MonsterHexKind.Doomsday
-    ];
+    internal static readonly IReadOnlyList<MonsterHexKind> SilverMonsterHexes = MonsterHexesForRarity(HextechRarityTier.Silver);
 
-    internal static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes =
-    [
-        MonsterHexKind.CourageOfColossus,
-        MonsterHexKind.GlassCannon,
-        MonsterHexKind.Goliath,
-        MonsterHexKind.Queen,
-        MonsterHexKind.HandOfBaron,
-        MonsterHexKind.CantTouchThis,
-        MonsterHexKind.MasterOfDuality,
-        MonsterHexKind.Goldrend,
-        MonsterHexKind.FeelTheBurn,
-        MonsterHexKind.BackToBasics,
-        MonsterHexKind.MadScientist,
-        MonsterHexKind.FeyMagic,
-        MonsterHexKind.FinalForm,
-        MonsterHexKind.UnmovableMountain,
-        MonsterHexKind.MikaelsBlessing,
-        MonsterHexKind.ClownCollege,
-        MonsterHexKind.SingularityAI,
-        MonsterHexKind.ProteinShake,
-        MonsterHexKind.GoldenSpatula
-    ];
+    internal static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes = MonsterHexesForRarity(HextechRarityTier.Gold);
+
+    internal static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes = MonsterHexesForRarity(HextechRarityTier.Prismatic);
 
     internal static readonly IReadOnlyList<Type> AllRuneTypes = SilverRuneTypes
         .Concat(GoldRuneTypes)
@@ -459,4 +385,68 @@ internal static class HextechContentRegistry
         .Concat(ShopOnlyRelicTypes)
         .Distinct()
         .ToArray();
+
+    private static RuneRegistration Rune<TRune>(
+        HextechRarityTier rarity,
+        RuneFlags flags = RuneFlags.None,
+        HextechCharacterPool? characterPool = null,
+        int characterOrder = 0)
+    {
+        return new RuneRegistration(typeof(TRune), rarity, flags, characterPool, characterOrder);
+    }
+
+    private static ForgeRegistration Forge<TForge>(HextechRarityTier rarity)
+    {
+        return new ForgeRegistration(typeof(TForge), rarity);
+    }
+
+    private static MonsterHexRegistration Monster<TRelic>(
+        MonsterHexKind kind,
+        HextechRarityTier rarity,
+        bool disabled = false,
+        bool hasBurnHoverTip = false)
+    {
+        return new MonsterHexRegistration(kind, rarity, typeof(TRelic), disabled, hasBurnHoverTip);
+    }
+
+    private static IReadOnlyList<Type> RuneTypesForRarity(HextechRarityTier rarity)
+    {
+        return RuneRegistrations
+            .Where(registration => registration.Rarity == rarity)
+            .Select(static registration => registration.Type)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<Type> ForgeTypesForRarity(HextechRarityTier rarity)
+    {
+        return ForgeRegistrations
+            .Where(registration => registration.Rarity == rarity)
+            .Select(static registration => registration.Type)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<Type> RuneTypesForCharacter(HextechCharacterPool characterPool)
+    {
+        return RuneRegistrations
+            .Where(registration => registration.CharacterPool == characterPool)
+            .OrderBy(static registration => registration.CharacterOrder)
+            .Select(static registration => registration.Type)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<Type> RuneTypesWithFlag(RuneFlags flag)
+    {
+        return RuneRegistrations
+            .Where(registration => (registration.Flags & flag) != 0)
+            .Select(static registration => registration.Type)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<MonsterHexKind> MonsterHexesForRarity(HextechRarityTier rarity)
+    {
+        return MonsterHexRegistrations
+            .Where(registration => registration.Rarity == rarity && !registration.Disabled)
+            .Select(static registration => registration.Kind)
+            .ToArray();
+    }
 }

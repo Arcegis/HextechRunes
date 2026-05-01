@@ -1,36 +1,50 @@
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Relics;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
 internal static class HextechUiSafetyHooks
 {
-	private static Hook? _relicAcquiredAnimationHook;
 	private static int _relicAnimationSkipLogs;
 
-	private delegate Task OrigPlayNewlyAcquiredAnimation(NRelicInventoryHolder self, Vector2? startLocation, Vector2? startScale);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
-		_relicAcquiredAnimationHook = new Hook(
+		harmony.Patch(
 			RequireMethod(typeof(NRelicInventoryHolder), nameof(NRelicInventoryHolder.PlayNewlyAcquiredAnimation), BindingFlags.Instance | BindingFlags.Public, typeof(Vector2?), typeof(Vector2?)),
-			PlayNewlyAcquiredAnimationDetour);
+			prefix: new HarmonyMethod(typeof(HextechUiSafetyHooks), nameof(PlayNewlyAcquiredAnimationPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechUiSafetyHooks), nameof(PlayNewlyAcquiredAnimationPostfix)));
 	}
 
-	private static async Task PlayNewlyAcquiredAnimationDetour(OrigPlayNewlyAcquiredAnimation orig, NRelicInventoryHolder self, Vector2? startLocation, Vector2? startScale)
+	private static bool PlayNewlyAcquiredAnimationPrefix(NRelicInventoryHolder __instance, ref Task __result, out bool __state)
 	{
-		if (!IsNodeUsable(self))
+		__state = false;
+		if (!IsNodeUsable(__instance))
 		{
 			LogRelicAnimationSkipped("holder-not-in-tree");
-			return;
+			__result = Task.CompletedTask;
+			return false;
 		}
 
+		__state = true;
+		return true;
+	}
+
+	private static void PlayNewlyAcquiredAnimationPostfix(NRelicInventoryHolder __instance, bool __state, ref Task __result)
+	{
+		if (__state)
+		{
+			__result = PlayNewlyAcquiredAnimationSafely(__result, __instance);
+		}
+	}
+
+	private static async Task PlayNewlyAcquiredAnimationSafely(Task original, NRelicInventoryHolder self)
+	{
 		try
 		{
-			await orig(self, startLocation, startScale);
+			await original;
 		}
 		catch (NullReferenceException) when (!IsNodeUsable(self))
 		{

@@ -1,140 +1,159 @@
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Unlocks;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
 internal static class HextechInspectHooks
 {
-	private static readonly FieldInfo InspectRelicScreenUnlockedRelicsField = RequireField(typeof(NInspectRelicScreen), "_allUnlockedRelics");
-	private static readonly FieldInfo InspectRelicScreenRelicsField = RequireField(typeof(NInspectRelicScreen), "_relics");
-	private static readonly FieldInfo InspectRelicScreenIndexField = RequireField(typeof(NInspectRelicScreen), "_index");
-	private static readonly FieldInfo RelicCanonicalInstanceField = RequireField(typeof(RelicModel), "_canonicalInstance");
-	private static readonly MethodInfo InspectRelicScreenUpdateRelicDisplayMethod = RequireMethod(typeof(NInspectRelicScreen), "UpdateRelicDisplay", BindingFlags.Instance | BindingFlags.NonPublic);
-	private static readonly MethodInfo InspectRelicScreenSetRelicMethod = RequireMethod(typeof(NInspectRelicScreen), "SetRelic", BindingFlags.Instance | BindingFlags.NonPublic, typeof(int));
-	private static readonly FieldInfo InspectRelicScreenNameLabelField = RequireField(typeof(NInspectRelicScreen), "_nameLabel");
-	private static readonly FieldInfo InspectRelicScreenRarityLabelField = RequireField(typeof(NInspectRelicScreen), "_rarityLabel");
-	private static readonly FieldInfo InspectRelicScreenDescriptionField = RequireField(typeof(NInspectRelicScreen), "_description");
-	private static readonly FieldInfo InspectRelicScreenFlavorField = RequireField(typeof(NInspectRelicScreen), "_flavor");
-	private static readonly FieldInfo InspectRelicScreenImageField = RequireField(typeof(NInspectRelicScreen), "_relicImage");
-	private static readonly FieldInfo InspectRelicScreenHoverTipRectField = RequireField(typeof(NInspectRelicScreen), "_hoverTipRect");
-	private static readonly MethodInfo InspectRelicScreenSetRarityVisualsMethod = RequireMethod(typeof(NInspectRelicScreen), "SetRarityVisuals", BindingFlags.Instance | BindingFlags.NonPublic, typeof(RelicRarity));
+	private static readonly PropertyInfo? UnlockStateRelicsProperty = typeof(UnlockState).GetProperty(nameof(UnlockState.Relics), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+	private static readonly MethodInfo? SaveManagerIsRelicSeenMethod = TryGetMethod(typeof(SaveManager), nameof(SaveManager.IsRelicSeen), BindingFlags.Instance | BindingFlags.Public, typeof(RelicModel));
+	private static readonly MethodInfo? InspectRelicScreenOpenMethod = TryGetMethod(typeof(NInspectRelicScreen), nameof(NInspectRelicScreen.Open), BindingFlags.Instance | BindingFlags.Public, typeof(IReadOnlyList<RelicModel>), typeof(RelicModel));
+	private static readonly FieldInfo? InspectRelicScreenUnlockedRelicsField = TryGetField(typeof(NInspectRelicScreen), "_allUnlockedRelics");
+	private static readonly FieldInfo? InspectRelicScreenRelicsField = TryGetField(typeof(NInspectRelicScreen), "_relics");
+	private static readonly FieldInfo? InspectRelicScreenIndexField = TryGetField(typeof(NInspectRelicScreen), "_index");
+	private static readonly FieldInfo? RelicCanonicalInstanceField = TryGetField(typeof(RelicModel), "_canonicalInstance");
+	private static readonly MethodInfo? InspectRelicScreenUpdateRelicDisplayMethod = TryGetMethod(typeof(NInspectRelicScreen), "UpdateRelicDisplay", BindingFlags.Instance | BindingFlags.NonPublic);
+	private static readonly MethodInfo? InspectRelicScreenSetRelicMethod = TryGetMethod(typeof(NInspectRelicScreen), "SetRelic", BindingFlags.Instance | BindingFlags.NonPublic, typeof(int));
+	private static readonly FieldInfo? InspectRelicScreenNameLabelField = TryGetField(typeof(NInspectRelicScreen), "_nameLabel");
+	private static readonly FieldInfo? InspectRelicScreenRarityLabelField = TryGetField(typeof(NInspectRelicScreen), "_rarityLabel");
+	private static readonly FieldInfo? InspectRelicScreenDescriptionField = TryGetField(typeof(NInspectRelicScreen), "_description");
+	private static readonly FieldInfo? InspectRelicScreenFlavorField = TryGetField(typeof(NInspectRelicScreen), "_flavor");
+	private static readonly FieldInfo? InspectRelicScreenImageField = TryGetField(typeof(NInspectRelicScreen), "_relicImage");
+	private static readonly FieldInfo? InspectRelicScreenHoverTipRectField = TryGetField(typeof(NInspectRelicScreen), "_hoverTipRect");
+	private static readonly MethodInfo? InspectRelicScreenSetRarityVisualsMethod = TryGetMethod(typeof(NInspectRelicScreen), "SetRarityVisuals", BindingFlags.Instance | BindingFlags.NonPublic, typeof(RelicRarity));
+	private static readonly MethodInfo? EnergyIconHelperGetPrefixMethod = TryGetMethod(typeof(EnergyIconHelper), nameof(EnergyIconHelper.GetPrefix), BindingFlags.Static | BindingFlags.Public, typeof(AbstractModel));
 
-	private static Hook? _unlockStateRelicsHook;
-	private static Hook? _saveManagerIsRelicSeenHook;
-	private static Hook? _inspectRelicScreenOpenHook;
-	private static Hook? _inspectRelicScreenUpdateRelicDisplayHook;
-	private static Hook? _energyIconPrefixHook;
+	private static bool _inspectScreenHooksInstalled;
 
-	private delegate IEnumerable<RelicModel> OrigGetUnlockStateRelics(UnlockState self);
+	private readonly record struct InspectOpenState(IReadOnlyList<RelicModel> CorrectedRelics, int CorrectedIndex);
 
-	private delegate bool OrigIsRelicSeen(SaveManager self, RelicModel relic);
-
-	private delegate void OrigInspectRelicScreenOpen(NInspectRelicScreen self, IReadOnlyList<RelicModel> relics, RelicModel relic);
-
-	private delegate void OrigInspectRelicScreenUpdateRelicDisplay(NInspectRelicScreen self);
-
-	private delegate string OrigEnergyIconHelperGetPrefix(AbstractModel model);
-
-	public static void Install()
+	public static void Install(Harmony harmony)
 	{
-		_unlockStateRelicsHook = new Hook(
-			typeof(UnlockState).GetProperty(nameof(UnlockState.Relics), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetMethod!,
-			GetUnlockStateRelicsDetour);
-		_saveManagerIsRelicSeenHook = new Hook(
-			RequireMethod(typeof(SaveManager), nameof(SaveManager.IsRelicSeen), BindingFlags.Instance | BindingFlags.Public, typeof(RelicModel)),
-			IsRelicSeenDetour);
-		_inspectRelicScreenOpenHook = new Hook(
-			RequireMethod(typeof(NInspectRelicScreen), nameof(NInspectRelicScreen.Open), BindingFlags.Instance | BindingFlags.Public, typeof(IReadOnlyList<RelicModel>), typeof(RelicModel)),
-			InspectRelicScreenOpenDetour);
-		_inspectRelicScreenUpdateRelicDisplayHook = new Hook(
+		TryPatch(harmony, UnlockStateRelicsProperty?.GetMethod, "UnlockState.Relics", postfix: nameof(GetUnlockStateRelicsPostfix));
+		TryPatch(harmony, SaveManagerIsRelicSeenMethod, "SaveManager.IsRelicSeen", postfix: nameof(IsRelicSeenPostfix));
+		TryPatch(harmony, EnergyIconHelperGetPrefixMethod, "EnergyIconHelper.GetPrefix", postfix: nameof(EnergyIconHelperGetPrefixPostfix));
+
+		if (!HasInspectScreenMembers(out string missingMembers))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Inspect relic screen hooks disabled: missing {missingMembers}.");
+			return;
+		}
+
+		_inspectScreenHooksInstalled = true;
+		TryPatch(
+			harmony,
+			InspectRelicScreenOpenMethod,
+			"NInspectRelicScreen.Open",
+			prefix: nameof(InspectRelicScreenOpenPrefix),
+			postfix: nameof(InspectRelicScreenOpenPostfix));
+		TryPatch(
+			harmony,
 			InspectRelicScreenUpdateRelicDisplayMethod,
-			InspectRelicScreenUpdateRelicDisplayDetour);
-		_energyIconPrefixHook = new Hook(
-			RequireMethod(typeof(EnergyIconHelper), nameof(EnergyIconHelper.GetPrefix), BindingFlags.Static | BindingFlags.Public, typeof(AbstractModel)),
-			EnergyIconHelperGetPrefixDetour);
+			"NInspectRelicScreen.UpdateRelicDisplay",
+			prefix: nameof(InspectRelicScreenUpdateRelicDisplayPrefix));
 	}
 
-	private static IEnumerable<RelicModel> GetUnlockStateRelicsDetour(OrigGetUnlockStateRelics orig, UnlockState self)
+	private static void GetUnlockStateRelicsPostfix(ref IEnumerable<RelicModel> __result)
 	{
-		return orig(self).Concat(ModInfo.GetCanonicalCustomRelics()).Distinct();
+		__result = __result.Concat(ModInfo.GetCanonicalVisibleCustomRelics()).Distinct();
 	}
 
-	private static bool IsRelicSeenDetour(OrigIsRelicSeen orig, SaveManager self, RelicModel relic)
+	private static void IsRelicSeenPostfix(RelicModel relic, ref bool __result)
 	{
 		if (ModInfo.IsHextechCustomRelic(relic))
 		{
-			return true;
+			__result = true;
 		}
-
-		return orig(self, relic);
 	}
 
-	private static void InspectRelicScreenOpenDetour(OrigInspectRelicScreenOpen orig, NInspectRelicScreen self, IReadOnlyList<RelicModel> relics, RelicModel relic)
+	private static void InspectRelicScreenOpenPrefix(ref IReadOnlyList<RelicModel> relics, ref RelicModel relic, out InspectOpenState __state)
 	{
+		__state = default;
+		if (!_inspectScreenHooksInstalled)
+		{
+			return;
+		}
+
 		List<RelicModel> correctedRelics = relics.ToList();
-		int correctedIndex = correctedRelics.FindIndex(candidate => ReferenceEquals(candidate, relic) || candidate.Id == relic.Id);
+		RelicModel requestedRelic = relic;
+		int correctedIndex = correctedRelics.FindIndex(candidate => ReferenceEquals(candidate, requestedRelic) || candidate.Id == requestedRelic.Id);
 		if (correctedIndex < 0)
 		{
 			correctedRelics.Add(relic);
 			correctedIndex = correctedRelics.Count - 1;
 		}
 
-		orig(self, correctedRelics, correctedRelics[correctedIndex]);
-		EnsureInspectRelicsUnlocked(self, correctedRelics);
-		InspectRelicScreenRelicsField.SetValue(self, correctedRelics);
-		InspectRelicScreenSetRelicMethod.Invoke(self, [correctedIndex]);
-		InspectRelicScreenUpdateRelicDisplayMethod.Invoke(self, null);
+		relics = correctedRelics;
+		relic = correctedRelics[correctedIndex];
+		__state = new InspectOpenState(correctedRelics, correctedIndex);
 	}
 
-	private static void InspectRelicScreenUpdateRelicDisplayDetour(OrigInspectRelicScreenUpdateRelicDisplay orig, NInspectRelicScreen self)
+	private static void InspectRelicScreenOpenPostfix(NInspectRelicScreen __instance, InspectOpenState __state)
 	{
-		if (InspectRelicScreenRelicsField.GetValue(self) is IReadOnlyList<RelicModel> relics
-			&& InspectRelicScreenIndexField.GetValue(self) is int index
+		if (!_inspectScreenHooksInstalled || __state.CorrectedRelics == null)
+		{
+			return;
+		}
+
+		EnsureInspectRelicsUnlocked(__instance, __state.CorrectedRelics);
+		InspectRelicScreenRelicsField?.SetValue(__instance, __state.CorrectedRelics);
+		InspectRelicScreenSetRelicMethod?.Invoke(__instance, [__state.CorrectedIndex]);
+		InspectRelicScreenUpdateRelicDisplayMethod?.Invoke(__instance, null);
+	}
+
+	private static bool InspectRelicScreenUpdateRelicDisplayPrefix(NInspectRelicScreen __instance)
+	{
+		if (!_inspectScreenHooksInstalled)
+		{
+			return true;
+		}
+
+		if (InspectRelicScreenRelicsField?.GetValue(__instance) is IReadOnlyList<RelicModel> relics
+			&& InspectRelicScreenIndexField?.GetValue(__instance) is int index
 			&& index >= 0
 			&& index < relics.Count)
 		{
 			RelicModel relic = relics[index];
 			if (ModInfo.IsHextechCustomRelic(relic))
 			{
-				RenderHextechInspect(self, relic);
-				return;
+				RenderHextechInspect(__instance, relic);
+				return false;
 			}
 		}
 
-		orig(self);
+		return true;
 	}
 
-	private static string EnergyIconHelperGetPrefixDetour(OrigEnergyIconHelperGetPrefix orig, AbstractModel model)
+	private static void EnergyIconHelperGetPrefixPostfix(AbstractModel model, ref string __result)
 	{
 		if (model is RelicModel relic && ModInfo.IsHextechCustomRelic(relic))
 		{
-			return "red";
+			__result = "red";
 		}
-
-		return orig(model);
 	}
 
 	private static void EnsureInspectRelicsUnlocked(NInspectRelicScreen screen, IReadOnlyList<RelicModel> relics)
 	{
-		if (InspectRelicScreenUnlockedRelicsField.GetValue(screen) is not HashSet<RelicModel> unlockedRelics)
+		if (InspectRelicScreenUnlockedRelicsField?.GetValue(screen) is not HashSet<RelicModel> unlockedRelics)
 		{
 			return;
 		}
 
-		foreach (RelicModel canonicalRelic in ModInfo.GetCanonicalCustomRelics())
+		foreach (RelicModel canonicalRelic in ModInfo.GetCanonicalVisibleCustomRelics())
 		{
 			unlockedRelics.Add(canonicalRelic);
 		}
@@ -158,18 +177,21 @@ internal static class HextechInspectHooks
 		}
 
 		RelicModel canonical = ModelDb.GetById<RelicModel>(relic.Id);
-		RelicCanonicalInstanceField.SetValue(relic, canonical);
+		RelicCanonicalInstanceField?.SetValue(relic, canonical);
 		return canonical;
 	}
 
 	private static void RenderHextechInspect(NInspectRelicScreen screen, RelicModel relic)
 	{
-		MegaLabel nameLabel = (MegaLabel)InspectRelicScreenNameLabelField.GetValue(screen)!;
-		MegaLabel rarityLabel = (MegaLabel)InspectRelicScreenRarityLabelField.GetValue(screen)!;
-		MegaRichTextLabel description = (MegaRichTextLabel)InspectRelicScreenDescriptionField.GetValue(screen)!;
-		MegaRichTextLabel flavor = (MegaRichTextLabel)InspectRelicScreenFlavorField.GetValue(screen)!;
-		TextureRect image = (TextureRect)InspectRelicScreenImageField.GetValue(screen)!;
-		Control hoverTipRect = (Control)InspectRelicScreenHoverTipRectField.GetValue(screen)!;
+		if (InspectRelicScreenNameLabelField?.GetValue(screen) is not MegaLabel nameLabel
+			|| InspectRelicScreenRarityLabelField?.GetValue(screen) is not MegaLabel rarityLabel
+			|| InspectRelicScreenDescriptionField?.GetValue(screen) is not MegaRichTextLabel description
+			|| InspectRelicScreenFlavorField?.GetValue(screen) is not MegaRichTextLabel flavor
+			|| InspectRelicScreenImageField?.GetValue(screen) is not TextureRect image
+			|| InspectRelicScreenHoverTipRectField?.GetValue(screen) is not Control hoverTipRect)
+		{
+			return;
+		}
 
 		nameLabel.SetTextAutoSize(relic.Title.GetFormattedText());
 		LocString rarityText = new("gameplay_ui", "RELIC_RARITY." + relic.Rarity.ToString().ToUpperInvariant());
@@ -177,23 +199,79 @@ internal static class HextechInspectHooks
 		image.SelfModulate = Colors.White;
 		description.SetTextAutoSize(relic.DynamicDescription.GetFormattedText());
 		flavor.SetTextAutoSize(relic.Flavor.GetFormattedText());
-		InspectRelicScreenSetRarityVisualsMethod.Invoke(screen, [relic.Rarity]);
+		InspectRelicScreenSetRarityVisualsMethod?.Invoke(screen, [relic.Rarity]);
 		image.Texture = relic.BigIcon;
 
 		NHoverTipSet.Clear();
-		NHoverTipSet hoverTipSet = NHoverTipSet.CreateAndShow(screen, relic.HoverTipsExcludingRelic);
-		hoverTipSet.SetAlignment(hoverTipRect, HoverTip.GetHoverTipAlignment(screen));
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(screen, relic.HoverTipsExcludingRelic);
+		hoverTipSet?.SetAlignment(hoverTipRect, HoverTip.GetHoverTipAlignment(screen));
 	}
 
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
+	private static bool HasInspectScreenMembers(out string missingMembers)
 	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
+		List<string> missing = [];
+		AddMissing(InspectRelicScreenOpenMethod != null, "NInspectRelicScreen.Open");
+		AddMissing(InspectRelicScreenUnlockedRelicsField != null, "NInspectRelicScreen._allUnlockedRelics");
+		AddMissing(InspectRelicScreenRelicsField != null, "NInspectRelicScreen._relics");
+		AddMissing(InspectRelicScreenIndexField != null, "NInspectRelicScreen._index");
+		AddMissing(RelicCanonicalInstanceField != null, "RelicModel._canonicalInstance");
+		AddMissing(InspectRelicScreenUpdateRelicDisplayMethod != null, "NInspectRelicScreen.UpdateRelicDisplay");
+		AddMissing(InspectRelicScreenSetRelicMethod != null, "NInspectRelicScreen.SetRelic");
+		AddMissing(InspectRelicScreenNameLabelField != null, "NInspectRelicScreen._nameLabel");
+		AddMissing(InspectRelicScreenRarityLabelField != null, "NInspectRelicScreen._rarityLabel");
+		AddMissing(InspectRelicScreenDescriptionField != null, "NInspectRelicScreen._description");
+		AddMissing(InspectRelicScreenFlavorField != null, "NInspectRelicScreen._flavor");
+		AddMissing(InspectRelicScreenImageField != null, "NInspectRelicScreen._relicImage");
+		AddMissing(InspectRelicScreenHoverTipRectField != null, "NInspectRelicScreen._hoverTipRect");
+		AddMissing(InspectRelicScreenSetRarityVisualsMethod != null, "NInspectRelicScreen.SetRarityVisuals");
+
+		missingMembers = string.Join(", ", missing);
+		return missing.Count == 0;
+
+		void AddMissing(bool present, string memberName)
+		{
+			if (!present)
+			{
+				missing.Add(memberName);
+			}
+		}
 	}
 
-	private static FieldInfo RequireField(Type type, string name)
+	private static void TryPatch(Harmony harmony, MethodBase? target, string label, string? prefix = null, string? postfix = null)
 	{
-		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new InvalidOperationException($"Could not find required field {type.FullName}.{name}.");
+		if (target == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Inspect hook skipped: missing {label}.");
+			return;
+		}
+
+		try
+		{
+			harmony.Patch(target, GetHarmonyMethod(prefix), GetHarmonyMethod(postfix));
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Inspect hook skipped: {label}: {ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
+	private static HarmonyMethod? GetHarmonyMethod(string? methodName)
+	{
+		if (methodName == null)
+		{
+			return null;
+		}
+
+		return new HarmonyMethod(typeof(HextechInspectHooks), methodName);
+	}
+
+	private static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
+	{
+		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null);
+	}
+
+	private static FieldInfo? TryGetField(Type type, string name)
+	{
+		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
 	}
 }

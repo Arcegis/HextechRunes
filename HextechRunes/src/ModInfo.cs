@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HextechRunes;
@@ -15,13 +16,19 @@ internal static class ModInfo
 
     public const string DisplayName = "海克斯符文";
 
-    public const string Version = "0.5.0";
+    public const string Version = "0.5.1";
 
     public const string TargetGameVersion = "0.103.2";
 
     public const string HextechSubcategoryKey = "HEXTECH_RUNES_SUBCATEGORY";
 
     public const string ForgeSubcategoryKey = "HEXTECH_FORGES_SUBCATEGORY";
+
+    public const string ElicitCardPortraitPath = "res://HextechRunes/images/cards/elicitCard.png";
+
+    public const string TrickMagicCardPortraitPath = "res://HextechRunes/images/cards/trickMagicCard.png";
+
+    public const string BladeWaltzCardPortraitPath = "res://HextechRunes/images/cards/bladeWaltzCard.png";
 
     private static readonly IReadOnlyList<Type> SilverRuneTypes = HextechContentRegistry.SilverRuneTypes;
 
@@ -81,6 +88,11 @@ internal static class ModInfo
         return Enum.GetValues<HextechRarityTier>()
             .SelectMany(GetPlayerRuneTypesForRarity)
             .ToArray();
+    }
+
+    public static bool IsPlayerRuneTypeSelectable(Type runeType)
+    {
+        return AllRuneTypes.Contains(runeType) && !DisabledPlayerRuneTypes.Contains(runeType);
     }
 
     public static IReadOnlyList<Type> GetGenericSelectableRuneTypes()
@@ -179,21 +191,52 @@ internal static class ModInfo
 
     public static string GetEnemyHexDescriptionFormatted(MonsterHexKind hex)
     {
-        return GetEnemyHexDescriptionLoc(hex).GetFormattedText();
+        RelicModel relic = GetIconRelicForMonsterHex(hex);
+        string localizationKey = GetEnemyHexDescriptionKey(relic);
+        try
+        {
+            return new LocString("relics", localizationKey).GetFormattedText();
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[{Id}][Mayhem] Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
+            try
+            {
+                return relic.DynamicDescription.GetFormattedText();
+            }
+            catch (Exception fallbackEx)
+            {
+                Log.Warn($"[{Id}][Mayhem] Enemy hex description fallback failed: hex={hex} relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry} error={fallbackEx.Message}");
+                return relic.Title.GetFormattedText();
+            }
+        }
     }
 
     public static IEnumerable<IHoverTip> GetEnemyHexHoverTips(MonsterHexKind hex)
     {
         RelicModel relic = GetIconRelicForMonsterHex(hex);
         HoverTip mainTip = new(relic.Title, GetEnemyHexDescriptionFormatted(hex), relic.Icon);
+        if (EnemyHexesWithBurnHoverTip.Contains(hex))
+        {
+            return [mainTip, HoverTipFactory.FromPower<HextechBurnPower>()];
+        }
+
         return [mainTip];
     }
+
+    private static readonly IReadOnlySet<MonsterHexKind> EnemyHexesWithBurnHoverTip =
+        HextechContentRegistry.MonsterHexesWithBurnHoverTip;
 
     private static LocString GetEnemyHexDescriptionLoc(MonsterHexKind hex)
     {
         RelicModel relic = GetIconRelicForMonsterHex(hex);
+        return new LocString("relics", GetEnemyHexDescriptionKey(relic));
+    }
+
+    private static string GetEnemyHexDescriptionKey(RelicModel relic)
+    {
         ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-        return new LocString("relics", ToImageFileStem(id.Entry) + ".enemyDescription");
+        return ToImageFileStem(id.Entry) + ".enemyDescription";
     }
 
     public static IReadOnlyList<RelicModel> GetCanonicalRunes()
@@ -265,6 +308,14 @@ internal static class ModInfo
     public static IReadOnlyList<RelicModel> GetCanonicalCustomRelics()
     {
         return AllCustomRelicTypes
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<RelicModel> GetCanonicalVisibleCustomRelics()
+    {
+        return AllCustomRelicTypes
+            .Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeSelectable(type))
             .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
             .ToArray();
     }

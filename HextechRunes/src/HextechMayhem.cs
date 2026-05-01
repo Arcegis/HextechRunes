@@ -71,6 +71,11 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         HextechEnemyUi.Refresh(this);
         await ApplyToCurrentEnemiesIfNeeded();
 
+        if (RunState.CurrentRoom is CombatRoom currentCombatRoom)
+        {
+            await ApplyMonsterCombatStartHexes(currentCombatRoom);
+        }
+
         if (HasActiveMonsterHex(MonsterHexKind.Queen)
             && RunState.CurrentRoom is CombatRoom combatRoom)
         {
@@ -98,6 +103,37 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         }
 
         _enemyProtectiveVeilTurnCounter = 0;
+    }
+
+    private async Task ApplyMonsterCombatStartHexes(CombatRoom room)
+    {
+        IReadOnlyList<Creature> enemies = GetAliveEnemies(room.CombatState);
+        if (enemies.Count == 0)
+        {
+            return;
+        }
+
+        if (HasActiveMonsterHex(MonsterHexKind.StartupRoutine))
+        {
+            foreach (Creature enemy in enemies)
+            {
+                await CreatureCmd.GainBlock(enemy, 15m, ValueProp.Unpowered, null);
+            }
+        }
+
+        if (!HasActiveMonsterHex(MonsterHexKind.HailToTheKing)
+            || room.RoomType is not (RoomType.Elite or RoomType.Boss))
+        {
+            return;
+        }
+
+        foreach (Creature enemy in enemies)
+        {
+            int sustain = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m));
+            await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(enemy, 3m, enemy, null);
+            await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(enemy, sustain, enemy, null);
+            await HextechEnemyPowerScalingHooks.Apply<RegenPower>(enemy, sustain, enemy, null);
+        }
     }
 
     public override async Task AfterCombatEnd(CombatRoom room)
@@ -181,7 +217,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         HextechEnemyUi.Refresh(this);
     }
 
-    public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+    public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
     {
         await NormalizeEnemyPainfulStabsPowers(combatState);
 

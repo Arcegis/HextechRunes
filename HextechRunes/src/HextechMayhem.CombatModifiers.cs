@@ -149,4 +149,17 @@ internal sealed partial class HextechMayhemModifier
         modifiedCost = originalCost * multiplier;
         return true;
     }
+
+    public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
+    {
+        return ShouldEnemyEightPennyGateExhaust(card, isAutoPlay)
+            ? (PileType.Exhaust, position)
+            : (pileType, position);
+    }
+
+    public override Task AfterModifyingCardPlayResultPileOrPosition(CardModel card, PileType pileType, CardPilePosition position)
+    {
+        ClearEnemyEightPennyGatePendingCard(card);
+        return Task.CompletedTask;
+    }
 }

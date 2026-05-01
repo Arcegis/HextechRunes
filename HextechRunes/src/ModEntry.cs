@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Logging;
@@ -13,70 +14,71 @@ using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Runs.History;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
-using MonoMod.RuntimeDetour;
 
 namespace HextechRunes;
 
 [ModInitializer(nameof(Initialize))]
 public static class ModEntry
 {
-	private static Hook? _finalizeStartingRelicsHook;
+	private const string HarmonyId = "Natsuki.HextechRunes";
 
-	private static Hook? _startRunHook;
-
-	private static Hook? _eventRoomProceedHook;
-
-	private static Hook? _runEndedHook;
+	private static Harmony? _harmony;
 
 	private static bool _subscribedRoomEntered;
 
 	private static bool _subscribedRoomExited;
 
-	private static readonly HashSet<RunState> RunsInsideStartRunOrig = new();
+	private static HashSet<RunState>? _runsInsideStartRunOrig;
 
-	private delegate Task OrigFinalizeStartingRelics(RunManager self);
+	private static HashSet<RunState> RunsInsideStartRunOrig => _runsInsideStartRunOrig ??= new HashSet<RunState>();
 
-	private delegate Task OrigStartRun(NGame self, RunState runState);
-
-	private delegate Task OrigEventRoomProceed();
-
-	private delegate SerializableRun OrigRunEnded(RunManager self, bool isVictory);
+	private readonly record struct EventRoomProceedState(bool ShouldSelectAfterProceed, RunState RunState, string EventId);
 
 	public static void Initialize()
 	{
 		HextechModelBootstrap.Install();
 		HextechTelemetry.Initialize();
-		InstallHooks();
-		HextechCombatHooks.Install();
-		HextechUpdateChecker.Install();
-		HextechInspectHooks.Install();
-		AssetHooks.Install();
-		CollectionHooks.Install();
-		HextechShopForgeHooks.Install();
-		HextechForgeStackingHooks.Install();
-		HextechUiSafetyHooks.Install();
+		Harmony harmony = _harmony ??= new Harmony(HarmonyId);
+		InstallHooks(harmony);
+		HextechCombatHooks.Install(harmony);
+		HextechEnemyPowerScalingHooks.Install(harmony);
+		HextechUpdateChecker.Install(harmony);
+		HextechInspectHooks.Install(harmony);
+		AssetHooks.Install(harmony);
+		CollectionHooks.Install(harmony);
+		HextechShopForgeHooks.Install(harmony);
+		HextechForgeStackingHooks.Install(harmony);
+		HextechUiSafetyHooks.Install(harmony);
 		Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
 	}
 
-	private static void InstallHooks()
+	private static void InstallHooks(Harmony harmony)
 	{
-		_finalizeStartingRelicsHook = new Hook(
+		harmony.Patch(
 			RequireMethod(typeof(RunManager), nameof(RunManager.FinalizeStartingRelics), BindingFlags.Instance | BindingFlags.Public),
-			FinalizeStartingRelicsDetour);
-		_startRunHook = new Hook(
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(FinalizeStartingRelicsPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(NGame), "StartRun", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, typeof(RunState)),
-			StartRunDetour);
-		_eventRoomProceedHook = new Hook(
+			prefix: new HarmonyMethod(typeof(ModEntry), nameof(StartRunPrefix)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(StartRunPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(NEventRoom), nameof(NEventRoom.Proceed), BindingFlags.Public | BindingFlags.Static),
-			EventRoomProceedDetour);
-		_runEndedHook = new Hook(
+			prefix: new HarmonyMethod(typeof(ModEntry), nameof(EventRoomProceedPrefix)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(EventRoomProceedPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(RunManager), nameof(RunManager.OnEnded), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
-			RunEndedDetour);
+			prefix: new HarmonyMethod(typeof(ModEntry), nameof(RunEndedPrefix)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(RunEndedPostfix)));
 	}
 
-	private static async Task FinalizeStartingRelicsDetour(OrigFinalizeStartingRelics orig, RunManager self)
+	private static void FinalizeStartingRelicsPostfix(RunManager __instance, ref Task __result)
 	{
-		await orig(self);
+		__result = FinalizeStartingRelicsAfterOriginal(__result, __instance);
+	}
+
+	private static async Task FinalizeStartingRelicsAfterOriginal(Task original, RunManager self)
+	{
+		await original;
 
 		RunState? runState = self.DebugOnlyGetState();
 		if (runState == null)
@@ -90,7 +92,7 @@ public static class ModEntry
 		}
 	}
 
-	private static async Task StartRunDetour(OrigStartRun orig, NGame self, RunState runState)
+	private static void StartRunPrefix(RunState runState)
 	{
 		HextechGoldrendSync.ResetCombat();
 		HextechRuneSelectionCoordinator.ResetActSelectionState();
@@ -100,9 +102,18 @@ public static class ModEntry
 		SubscribeRoomExitedIfNeeded();
 		Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
 		RunsInsideStartRunOrig.Add(runState);
+	}
+
+	private static void StartRunPostfix(RunState runState, ref Task __result)
+	{
+		__result = StartRunAfterOriginal(__result, runState);
+	}
+
+	private static async Task StartRunAfterOriginal(Task original, RunState runState)
+	{
 		try
 		{
-			await orig(self, runState);
+			await original;
 		}
 		finally
 		{
@@ -128,21 +139,32 @@ public static class ModEntry
 		}
 	}
 
-	private static async Task EventRoomProceedDetour(OrigEventRoomProceed orig)
+	private static void EventRoomProceedPrefix(out EventRoomProceedState __state)
 	{
 		bool shouldSelectAfterProceed = TryGetPendingAncientProceedSelection(out RunState runState, out string eventId);
+		__state = new EventRoomProceedState(shouldSelectAfterProceed, runState, eventId);
 		if (shouldSelectAfterProceed)
 		{
 			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed begin: event={eventId} {DescribeCurrentEventState(runState)}");
 		}
+	}
 
-		await orig();
+	private static void EventRoomProceedPostfix(EventRoomProceedState __state, ref Task __result)
+	{
+		__result = EventRoomProceedAfterOriginal(__result, __state);
+	}
 
-		if (!shouldSelectAfterProceed)
+	private static async Task EventRoomProceedAfterOriginal(Task original, EventRoomProceedState state)
+	{
+		await original;
+
+		if (!state.ShouldSelectAfterProceed)
 		{
 			return;
 		}
 
+		RunState runState = state.RunState;
+		string eventId = state.EventId;
 		if (!IsCurrentRun(runState))
 		{
 			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: run changed after proceed event={eventId}");
@@ -150,7 +172,7 @@ public static class ModEntry
 		}
 
 		HextechMayhemModifier modifier = GetOrRecoverMayhemModifier(runState, $"EventRoomProceed recovered missing modifier after proceed event={eventId}");
-		if (!modifier.IsActResolved(0) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(EventRoomProceedDetour)))
+		if (!modifier.IsActResolved(0) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(EventRoomProceedAfterOriginal)))
 		{
 			HextechEnemyUi.Refresh(modifier);
 		}
@@ -184,12 +206,14 @@ public static class ModEntry
 		}
 	}
 
-	private static SerializableRun RunEndedDetour(OrigRunEnded orig, RunManager self, bool isVictory)
+	private static void RunEndedPrefix(RunManager __instance, out RunState? __state)
 	{
-		RunState? runState = self.DebugOnlyGetState();
-		SerializableRun serializableRun = orig(self, isVictory);
-		HextechTelemetry.OnRunEnded(runState, serializableRun, isVictory);
-		return serializableRun;
+		__state = __instance.DebugOnlyGetState();
+	}
+
+	private static void RunEndedPostfix(RunState? __state, bool isVictory, SerializableRun __result)
+	{
+		HextechTelemetry.OnRunEnded(__state, __result, isVictory);
 	}
 
 	private static HextechMayhemModifier? GetMayhemModifier(RunState runState)
