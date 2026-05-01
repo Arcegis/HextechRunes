@@ -171,8 +171,8 @@ internal static class HextechInspectHooks
 		image.Texture = relic.BigIcon;
 
 		NHoverTipSet.Clear();
-		NHoverTipSet hoverTipSet = NHoverTipSet.CreateAndShow(screen, relic.HoverTipsExcludingRelic);
-		hoverTipSet.SetAlignment(hoverTipRect, HoverTip.GetHoverTipAlignment(screen));
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(screen, relic.HoverTipsExcludingRelic);
+		hoverTipSet?.SetAlignment(hoverTipRect, HoverTip.GetHoverTipAlignment(screen));
 	}
 
 	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)

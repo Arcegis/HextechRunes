@@ -16,9 +16,9 @@ internal static class ModInfo
 
     public const string DisplayName = "海克斯符文";
 
-    public const string Version = "0.5.0";
+    public const string Version = "0.5.1";
 
-    public const string TargetGameVersion = "0.103.2 / 0.104.0";
+    public const string TargetGameVersion = "0.103.2";
 
     public const string HextechSubcategoryKey = "HEXTECH_RUNES_SUBCATEGORY";
 

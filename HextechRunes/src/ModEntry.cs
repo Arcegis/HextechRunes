@@ -28,7 +28,9 @@ public static class ModEntry
 
 	private static bool _subscribedRoomExited;
 
-	private static readonly HashSet<RunState> RunsInsideStartRunOrig = new();
+	private static HashSet<RunState>? _runsInsideStartRunOrig;
+
+	private static HashSet<RunState> RunsInsideStartRunOrig => _runsInsideStartRunOrig ??= new HashSet<RunState>();
 
 	private readonly record struct EventRoomProceedState(bool ShouldSelectAfterProceed, RunState RunState, string EventId);
 

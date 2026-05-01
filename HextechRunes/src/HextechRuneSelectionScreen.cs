@@ -474,8 +474,8 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 	private static void ShowRelicHoverTips(Control holder, RelicModel relic)
 	{
 		NHoverTipSet.Remove(holder);
-		NHoverTipSet hoverTipSet = NHoverTipSet.CreateAndShow(holder, relic.HoverTips, HoverTip.GetHoverTipAlignment(holder));
-		hoverTipSet.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, relic.HoverTips, HoverTip.GetHoverTipAlignment(holder));
+		hoverTipSet?.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
 	}
 
 	private MegaRichTextLabel CreateDescriptionLabel()
