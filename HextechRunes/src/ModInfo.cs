@@ -84,6 +84,11 @@ internal static class ModInfo
             .ToArray();
     }
 
+    public static bool IsPlayerRuneTypeSelectable(Type runeType)
+    {
+        return AllRuneTypes.Contains(runeType) && !DisabledPlayerRuneTypes.Contains(runeType);
+    }
+
     public static IReadOnlyList<Type> GetGenericSelectableRuneTypes()
     {
         return GetAllSelectableRuneTypes()
@@ -289,6 +294,14 @@ internal static class ModInfo
     public static IReadOnlyList<RelicModel> GetCanonicalCustomRelics()
     {
         return AllCustomRelicTypes
+            .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<RelicModel> GetCanonicalVisibleCustomRelics()
+    {
+        return AllCustomRelicTypes
+            .Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeSelectable(type))
             .Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
             .ToArray();
     }

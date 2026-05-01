@@ -88,6 +88,7 @@ internal static class HextechRuneGrantHelper
 		}
 
 		return candidateTypes
+			.Where(ModInfo.IsPlayerRuneTypeSelectable)
 			.Where(type => !ExcludedRewardRuneTypes.Contains(type))
 			.Where(type => !unavailableIds.Contains(ModelDb.GetId(type)))
 			.Where(type =>

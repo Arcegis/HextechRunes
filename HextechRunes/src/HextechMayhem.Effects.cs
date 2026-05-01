@@ -174,7 +174,7 @@ internal sealed partial class HextechMayhemModifier
         if (HasActiveMonsterHex(MonsterHexKind.ImmortalBone)
             && creature.GetPowerAmount<HardenedShellPower>() <= 0m)
         {
-            int shell = Math.Max(10, (int)Math.Floor(creature.MaxHp * 0.5m));
+            int shell = Math.Max(12, (int)Math.Floor(creature.MaxHp * 0.6m));
             await PowerCmd.Apply<HardenedShellPower>(creature, shell, creature, null);
         }
 
@@ -208,7 +208,7 @@ internal sealed partial class HextechMayhemModifier
 
     private static decimal GetMonsterProteinShakeSustainMultiplier(Creature creature)
     {
-        decimal bonusPercent = Math.Min(50m, Math.Floor(creature.MaxHp / 5m));
+        decimal bonusPercent = Math.Min(100m, Math.Floor(creature.MaxHp / 5m));
         return 1m + bonusPercent / 100m;
     }
 

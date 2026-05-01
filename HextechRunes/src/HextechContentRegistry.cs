@@ -224,6 +224,7 @@ internal static class HextechContentRegistry
 
     internal static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = new HashSet<Type>
     {
+        typeof(EscapePlanRune),
         typeof(HolyFireRune),
         typeof(DawnbringersResolveRune),
         typeof(AstralBodyRune),

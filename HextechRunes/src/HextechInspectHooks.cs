@@ -56,7 +56,7 @@ internal static class HextechInspectHooks
 
 	private static void GetUnlockStateRelicsPostfix(ref IEnumerable<RelicModel> __result)
 	{
-		__result = __result.Concat(ModInfo.GetCanonicalCustomRelics()).Distinct();
+		__result = __result.Concat(ModInfo.GetCanonicalVisibleCustomRelics()).Distinct();
 	}
 
 	private static void IsRelicSeenPostfix(RelicModel relic, ref bool __result)
@@ -124,7 +124,7 @@ internal static class HextechInspectHooks
 			return;
 		}
 
-		foreach (RelicModel canonicalRelic in ModInfo.GetCanonicalCustomRelics())
+		foreach (RelicModel canonicalRelic in ModInfo.GetCanonicalVisibleCustomRelics())
 		{
 			unlockedRelics.Add(canonicalRelic);
 		}

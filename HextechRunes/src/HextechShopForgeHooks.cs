@@ -16,23 +16,14 @@ namespace HextechRunes;
 
 internal static class HextechShopForgeHooks
 {
-	private const int RandomForgeShopInitialCost = 150;
-	private const int RandomForgeShopCostIncrease = 50;
+	private const int RandomForgeShopFirstCost = 125;
+	private const int RandomForgeShopRegularCost = 250;
 	private const float CardRemovalRandomForgeOffsetY = 60f;
-
-	private static FieldInfo? _relicEntriesField;
-
-	private static FieldInfo? _merchantInventoryRelicContainerField;
-
-	private static FieldInfo? _merchantInventoryCardRemovalNodeField;
 
 	private static readonly Dictionary<ulong, Vector2> CardRemovalOriginalPositions = [];
 
 	public static void Install(Harmony harmony)
 	{
-		_relicEntriesField = RequireField(typeof(MerchantInventory), "_relicEntries");
-		_merchantInventoryRelicContainerField = RequireField(typeof(NMerchantInventory), "_relicContainer");
-		_merchantInventoryCardRemovalNodeField = RequireField(typeof(NMerchantInventory), "_cardRemovalNode");
 		harmony.Patch(
 			RequireMethod(typeof(MerchantInventory), nameof(MerchantInventory.CreateForNormalMerchant), BindingFlags.Static | BindingFlags.Public, typeof(Player)),
 			postfix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(CreateForNormalMerchantPostfix)));
@@ -83,6 +74,7 @@ internal static class HextechShopForgeHooks
 
 	private static void MerchantInventoryInitializePrefix(NMerchantInventory __instance, MerchantInventory inventory)
 	{
+		InstallRandomForgeEntry(inventory, inventory.Player);
 		EnsureRandomForgeRelicSlot(__instance, inventory);
 	}
 
@@ -109,13 +101,7 @@ internal static class HextechShopForgeHooks
 
 	private static void InstallRandomForgeEntry(MerchantInventory inventory, Player player)
 	{
-		if (_relicEntriesField?.GetValue(inventory) is not List<MerchantRelicEntry> relicEntries)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop entry skipped: relic entry list unavailable.");
-			return;
-		}
-
-		if (relicEntries.Any(IsRandomForgeEntry))
+		if (inventory.RelicEntries.Any(IsRandomForgeEntry))
 		{
 			return;
 		}
@@ -130,7 +116,7 @@ internal static class HextechShopForgeHooks
 		Player player = inventory.Player;
 		int cost = TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null
 			? GetRandomForgeShopCost(shopRelic)
-			: RandomForgeShopInitialCost;
+			: RandomForgeShopFirstCost;
 
 		if (!HextechForgeGrantHelper.TryCreateRandomForge(player, player.PlayerRng.Shops, out RelicModel? forge) || forge == null)
 		{
@@ -173,7 +159,7 @@ internal static class HextechShopForgeHooks
 
 	private static int GetRandomForgeShopCost(RandomForgeShopRelic shopRelic)
 	{
-		return RandomForgeShopInitialCost + (shopRelic.PurchaseCount * RandomForgeShopCostIncrease);
+		return shopRelic.PurchaseCount == 0 ? RandomForgeShopFirstCost : RandomForgeShopRegularCost;
 	}
 
 	private static void UpdateInventoryEntries(MerchantInventory inventory)
@@ -191,7 +177,7 @@ internal static class HextechShopForgeHooks
 			return;
 		}
 
-		if (_merchantInventoryRelicContainerField?.GetValue(merchantInventory) is not Control relicContainer)
+		if (merchantInventory.GetNodeOrNull<Control>("%Relics") is not Control relicContainer)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop slot skipped: relic container unavailable.");
 			return;
@@ -229,7 +215,7 @@ internal static class HextechShopForgeHooks
 			return;
 		}
 
-		object? cardRemovalNode = _merchantInventoryCardRemovalNodeField?.GetValue(merchantInventory);
+		object? cardRemovalNode = merchantInventory.GetNodeOrNull<NMerchantCardRemoval>("%MerchantCardRemoval");
 		if (!TryMoveCardRemovalNode(cardRemovalNode, new Vector2(0f, CardRemovalRandomForgeOffsetY)))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop card removal offset skipped: card removal node unavailable.");
@@ -296,9 +282,4 @@ internal static class HextechShopForgeHooks
 		throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
 	}
 
-	private static FieldInfo RequireField(Type type, string name)
-	{
-		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new InvalidOperationException($"Could not find required field {type.FullName}.{name}.");
-	}
 }

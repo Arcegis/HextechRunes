@@ -1962,7 +1962,7 @@ public sealed class DoomsdayRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("DoomPercent", 5m),
-		new DynamicVar("MinimumDoom", 3m)
+		new DynamicVar("MinimumDoom", 5m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>

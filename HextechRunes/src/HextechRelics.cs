@@ -38,7 +38,7 @@ public sealed class JudicatorRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new EnergyVar(1),
-		new DynamicVar("DamageMultiplier", 1.2m)
+		new DynamicVar("DamageMultiplier", 1.25m)
 	];
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
@@ -545,7 +545,8 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("RarePotionCount", 1m),
-		new DynamicVar("UncommonPotionCount", 1m)
+		new DynamicVar("UncommonPotionCount", 1m),
+		new DynamicVar("CommonPotionCount", 1m)
 	];
 
 	public override async Task BeforeCombatStart()
@@ -555,13 +556,17 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 			return;
 		}
 
-		List<PotionModel> rareCandidates = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>())
+		List<PotionModel> potionOptions = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>()).ToList();
+		List<PotionModel> rareCandidates = potionOptions
 			.Where(static potion => potion.Rarity is PotionRarity.Rare)
 			.ToList();
-		List<PotionModel> uncommonCandidates = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>())
+		List<PotionModel> uncommonCandidates = potionOptions
 			.Where(static potion => potion.Rarity is PotionRarity.Uncommon)
 			.ToList();
-		if (rareCandidates.Count == 0 && uncommonCandidates.Count == 0)
+		List<PotionModel> commonCandidates = potionOptions
+			.Where(static potion => potion.Rarity is PotionRarity.Common)
+			.ToList();
+		if (rareCandidates.Count == 0 && uncommonCandidates.Count == 0 && commonCandidates.Count == 0)
 		{
 			return;
 		}
@@ -576,6 +581,12 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 		for (int i = 0; i < DynamicVars["UncommonPotionCount"].IntValue && uncommonCandidates.Count > 0; i++)
 		{
 			PotionModel potion = uncommonCandidates[Owner.PlayerRng.Rewards.NextInt(uncommonCandidates.Count)].ToMutable();
+			await PotionCmd.TryToProcure(potion, Owner);
+		}
+
+		for (int i = 0; i < DynamicVars["CommonPotionCount"].IntValue && commonCandidates.Count > 0; i++)
+		{
+			PotionModel potion = commonCandidates[Owner.PlayerRng.Rewards.NextInt(commonCandidates.Count)].ToMutable();
 			await PotionCmd.TryToProcure(potion, Owner);
 		}
 	}
@@ -604,7 +615,7 @@ public sealed class EarthAwakensRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<RollingBoulderPower>(15m)
+		new PowerVar<RollingBoulderPower>(5m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -615,6 +626,17 @@ public sealed class EarthAwakensRune : HextechRelicBase
 	public override async Task BeforeCombatStart()
 	{
 		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<RollingBoulderPower>(Owner.Creature, DynamicVars["RollingBoulderPower"].BaseValue, Owner.Creature, null);
+	}
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner || Owner == null || Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -1703,7 +1725,7 @@ public sealed class SoulEaterRune : HextechRelicBase
 		}
 
 		_debuffsThisCombat++;
-			if (Owner == null || _hpGainedThisCombat >= 5 || _debuffsThisCombat % 3 != 0)
+		if (Owner == null || _hpGainedThisCombat >= 10 || _debuffsThisCombat % 3 != 0)
 		{
 			return;
 		}
@@ -3724,7 +3746,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 		}
 
 		EnsureTurnStateCurrent();
-		if (_triggeredThisTurn || !IsOwnedNonXCardWithCostAtLeast(card, 2m))
+		if (!IsOwnedNonXCardWithCostAtLeast(card, 2m))
 		{
 			return playCount;
 		}
