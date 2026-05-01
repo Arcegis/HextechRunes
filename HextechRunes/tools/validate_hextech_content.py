@@ -63,6 +63,14 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def source_files(pattern: str = "*.cs") -> list[Path]:
+    return [
+        path
+        for path in SRC.rglob(pattern)
+        if "bin" not in path.parts and "obj" not in path.parts
+    ]
+
+
 def fail(errors: list[str], message: str) -> None:
     errors.append(message)
 
@@ -260,7 +268,7 @@ def validate_relic_registry(errors: list[str]) -> None:
 
     check_duplicates(errors, "all custom relic registries", all_types)
 
-    source_text = "\n".join(read(path) for path in SRC.glob("*.cs"))
+    source_text = "\n".join(read(path) for path in source_files())
     declared_relics = set(re.findall(r"\bclass\s+(\w+)\s*:", source_text))
     missing_declarations = sorted(set(all_types) - declared_relics)
     if missing_declarations:
@@ -269,7 +277,7 @@ def validate_relic_registry(errors: list[str]) -> None:
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
     state_text = read(SRC / "HextechMayhem.State.cs")
-    mayhem_text = "\n".join(read(path) for path in SRC.glob("HextechMayhem*.cs"))
+    mayhem_text = "\n".join(read(path) for path in source_files("HextechMayhem*.cs"))
     tracking_decl_match = re.search(
         r"private readonly Dictionary<uint, int> _slapProcsThisTurn = new\(\);(?P<body>.*?)private int _enemyProtectiveVeilTurnCounter;",
         state_text,
