@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Combat.History.Entries;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -13,6 +14,8 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
@@ -207,6 +210,11 @@ internal sealed partial class HextechMayhemModifier
             return;
         }
 
+        if (IsNetworkMultiplayer())
+        {
+            return;
+        }
+
         Player owner = card.Owner;
         ulong playerId = owner.NetId;
         int cardsDrawn = _playerCardsDrawnThisCombat.GetValueOrDefault(playerId, 0) + 1;
@@ -225,6 +233,11 @@ internal sealed partial class HextechMayhemModifier
 
     public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        if (IsNetworkMultiplayer() && cardPlay.Card.Owner?.Creature.CombatState is HextechCombatState combatStateForWarmogs)
+        {
+            await ResolveWarmogsSpiritDrawProgressFromHistory(combatStateForWarmogs);
+        }
+
         Player? owner = cardPlay.Card.Owner;
         if (owner == null
             || cardPlay.Card.Type != CardType.Power
@@ -240,6 +253,69 @@ internal sealed partial class HextechMayhemModifier
             OrbModel orb = ModelDb.Orb<LightningOrb>().ToMutable();
             await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, owner);
         }
+    }
+
+    public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (IsNetworkMultiplayer() && player.Creature.CombatState is HextechCombatState combatState)
+        {
+            await ResolveWarmogsSpiritDrawProgressFromHistory(combatState);
+        }
+    }
+
+#if !STS2_104_OR_NEWER
+    public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (IsNetworkMultiplayer() && player.Creature.CombatState is HextechCombatState combatState)
+        {
+            await ResolveWarmogsSpiritDrawProgressFromHistory(combatState);
+        }
+    }
+#endif
+
+    private async Task ResolveWarmogsSpiritDrawProgressFromHistory(HextechCombatState combatState)
+    {
+        if (!HasActiveMonsterHex(MonsterHexKind.WarmogsSpirit)
+            || combatState.RunState != RunState)
+        {
+            return;
+        }
+
+        int pendingPlating = 0;
+        foreach (Player player in combatState.Players.OrderBy(static player => player.NetId))
+        {
+            int drawnCards = CountPlayerDrawnCardsFromHistory(player);
+            int previousDrawnCards = _playerCardsDrawnThisCombat.GetValueOrDefault(player.NetId, 0);
+            if (drawnCards <= previousDrawnCards)
+            {
+                continue;
+            }
+
+            pendingPlating += drawnCards / 8 - previousDrawnCards / 8;
+            _playerCardsDrawnThisCombat[player.NetId] = drawnCards;
+        }
+
+        if (pendingPlating <= 0)
+        {
+            return;
+        }
+
+        foreach (Creature enemy in GetAliveEnemies(combatState))
+        {
+            await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(enemy, pendingPlating, enemy, null);
+        }
+    }
+
+    private static int CountPlayerDrawnCardsFromHistory(Player player)
+    {
+        return CombatManager.Instance.History.Entries
+            .OfType<CardDrawnEntry>()
+            .Count(entry => entry.Card.Owner?.NetId == player.NetId);
+    }
+
+    private static bool IsNetworkMultiplayer()
+    {
+        return RunManager.Instance.NetService.Type is NetGameType.Host or NetGameType.Client;
     }
 
 #if STS2_104_OR_NEWER

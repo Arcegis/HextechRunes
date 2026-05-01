@@ -1,3 +1,4 @@
+using System.Reflection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -308,6 +309,9 @@ public sealed class EasyDoesItRune : HextechRelicBase
 
 public sealed class SweepingBladeRune : HextechRelicBase
 {
+	private static readonly FieldInfo? AttackCommandSingleTargetField = typeof(AttackCommand).GetField("_singleTarget", BindingFlags.Instance | BindingFlags.NonPublic);
+	private static readonly FieldInfo? AttackCommandCombatStateField = typeof(AttackCommand).GetField("_combatState", BindingFlags.Instance | BindingFlags.NonPublic);
+
 	public override Task BeforeAttack(AttackCommand command)
 	{
 		if (Owner == null
@@ -323,7 +327,18 @@ public sealed class SweepingBladeRune : HextechRelicBase
 		}
 
 		Flash();
-		command.TargetingAllOpponents(Owner.Creature.CombatState);
+		RetargetToAllOpponents(command, Owner.Creature.CombatState);
 		return Task.CompletedTask;
+	}
+
+	private static void RetargetToAllOpponents(AttackCommand command, object combatState)
+	{
+		if (AttackCommandSingleTargetField == null || AttackCommandCombatStateField == null)
+		{
+			return;
+		}
+
+		AttackCommandSingleTargetField.SetValue(command, null);
+		AttackCommandCombatStateField.SetValue(command, combatState);
 	}
 }

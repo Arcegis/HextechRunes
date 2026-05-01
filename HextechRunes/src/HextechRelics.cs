@@ -660,7 +660,6 @@ public sealed class EarthAwakensRune : HextechRelicBase
 			return;
 		}
 
-		Flash();
 		await PowerCmd.Apply<RollingBoulderPower>(Owner.Creature, DynamicVars["RollingBoulderPower"].BaseValue, Owner.Creature, null);
 	}
 }

@@ -61,6 +61,9 @@ internal static class HextechCombatHooks
 					? nameof(ResetGoliathDecimalTaskPostfix)
 					: nameof(ResetGoliathTaskPostfix)));
 		harmony.Patch(
+			RequireMethod(typeof(StormPower), nameof(StormPower.BeforeCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(StormBeforeCardPlayedPrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(StormPower), nameof(StormPower.AfterCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(StormAfterCardPlayedPrefix)));
 	}
@@ -296,16 +299,32 @@ internal static class HextechCombatHooks
 		return true;
 	}
 
-	private static bool StormAfterCardPlayedPrefix(StormPower __instance, ref Task __result)
+	private static bool StormBeforeCardPlayedPrefix(StormPower __instance, ref Task __result)
 	{
-		if (__instance.Owner?.CombatState?.RunState is RunState runState
-			&& GetMayhemModifier(runState) != null)
+		if (ShouldUseHextechStormHandling(__instance))
 		{
 			__result = Task.CompletedTask;
 			return false;
 		}
 
 		return true;
+	}
+
+	private static bool StormAfterCardPlayedPrefix(StormPower __instance, ref Task __result)
+	{
+		if (ShouldUseHextechStormHandling(__instance))
+		{
+			__result = Task.CompletedTask;
+			return false;
+		}
+
+		return true;
+	}
+
+	private static bool ShouldUseHextechStormHandling(StormPower stormPower)
+	{
+		return stormPower.Owner?.CombatState?.RunState is RunState runState
+			&& GetMayhemModifier(runState) != null;
 	}
 
 	private static void ResetGoliathTaskPostfix(bool __state, ref Task __result)

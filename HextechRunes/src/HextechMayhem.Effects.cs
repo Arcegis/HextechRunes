@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Combat.History.Entries;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -84,38 +85,25 @@ internal sealed partial class HextechMayhemModifier
     private async Task ApplyPersistentMonsterHexes(Creature creature)
     {
         if (HasActiveMonsterHex(MonsterHexKind.Goliath)
-            && creature.CombatId != null
-            && _goliathApplied.Add(creature.CombatId.Value))
+            && creature.CombatId != null)
         {
-            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.3m);
-            if (maxHpGain > 0)
-            {
-                await CreatureCmd.GainMaxHp(creature, maxHpGain);
-            }
-
+            _goliathApplied.Add(creature.CombatId.Value);
+            await EnsureMonsterMaxHpBonus(creature, 0.3m);
             UpdateEnemyScale(creature);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.AstralBody)
-            && creature.CombatId != null
-            && _astralBodyApplied.Add(creature.CombatId.Value))
+            && creature.CombatId != null)
         {
-            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.3m);
-            if (maxHpGain > 0)
-            {
-                await CreatureCmd.GainMaxHp(creature, maxHpGain);
-            }
+            _astralBodyApplied.Add(creature.CombatId.Value);
+            await EnsureMonsterMaxHpBonus(creature, 0.3m);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula)
-            && creature.CombatId != null
-            && _goldenSpatulaApplied.Add(creature.CombatId.Value))
+            && creature.CombatId != null)
         {
-            int maxHpGain = (int)Math.Floor(creature.MaxHp * 0.35m);
-            if (maxHpGain > 0)
-            {
-                await CreatureCmd.GainMaxHp(creature, maxHpGain);
-            }
+            _goldenSpatulaApplied.Add(creature.CombatId.Value);
+            await EnsureMonsterMaxHpBonus(creature, 0.35m);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.MadScientist)
@@ -183,6 +171,17 @@ internal sealed partial class HextechMayhemModifier
         }
 
         await TryApplyServantMasterIllusion(creature, creature, null);
+    }
+
+    private static async Task EnsureMonsterMaxHpBonus(Creature creature, decimal bonusPercent)
+    {
+        int baseMaxHp = creature.MonsterMaxHpBeforeModification ?? creature.MaxHp;
+        int expectedMaxHp = baseMaxHp + (int)Math.Floor(baseMaxHp * bonusPercent);
+        int missingMaxHp = expectedMaxHp - creature.MaxHp;
+        if (missingMaxHp > 0)
+        {
+            await CreatureCmd.GainMaxHp(creature, missingMaxHp);
+        }
     }
 
     private async Task AddEnemySingularityAIStatusCards(IReadOnlyList<Creature> players)
@@ -459,7 +458,25 @@ internal sealed partial class HextechMayhemModifier
 
     private int GetPlayerAttacksPlayedThisCombat(CardModel card)
     {
-        return card.Owner == null ? 0 : _playerAttackCardsPlayedThisCombat.GetValueOrDefault(card.Owner.NetId, 0);
+        if (card.Owner == null)
+        {
+            return 0;
+        }
+
+        return IsNetworkMultiplayer()
+            ? CountPlayerAttackCardsPlayedFromHistory(card.Owner)
+            : _playerAttackCardsPlayedThisCombat.GetValueOrDefault(card.Owner.NetId, 0);
+    }
+
+    private static int CountPlayerAttackCardsPlayedFromHistory(Player player)
+    {
+        return CombatManager.Instance.History.Entries
+            .OfType<CardPlayFinishedEntry>()
+            .Count(entry =>
+                entry.CardPlay.IsFirstInSeries
+                && !entry.CardPlay.IsAutoPlay
+                && entry.CardPlay.Card.Type == CardType.Attack
+                && entry.CardPlay.Card.Owner?.NetId == player.NetId);
     }
 
     public decimal ModifyEnemyHealAmount(Creature creature, decimal amount)
