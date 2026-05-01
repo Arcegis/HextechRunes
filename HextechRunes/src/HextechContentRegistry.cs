@@ -46,6 +46,9 @@ internal static class HextechContentRegistry
         typeof(ElectricSurgeRune),
         typeof(SoulCallingRune),
         typeof(TauntRune),
+        typeof(SwordsmanshipRune),
+        typeof(EasyDoesItRune),
+        typeof(SweepingBladeRune),
         typeof(TransmuteGoldRune)
     ];
 
@@ -101,6 +104,10 @@ internal static class HextechContentRegistry
         typeof(ImmortalBoneRune),
         typeof(MakeItMineRune),
         typeof(DoomsdayRune),
+        typeof(OldIdolRune),
+        typeof(MonarchsGazeRune),
+        typeof(HardBonesRune),
+        typeof(SendThemInRune),
         typeof(TransmutePrismaticRune),
         typeof(DawnbringersResolveRune),
         typeof(ShrinkRayRune)
@@ -163,6 +170,9 @@ internal static class HextechContentRegistry
         typeof(HappyAccidentRune),
         typeof(MiseryRune),
         typeof(GhostFormRune),
+        typeof(ForbiddenGrimoireRune),
+        typeof(OneLaneBridgeRune),
+        typeof(OrbSymbiosisRune),
         typeof(TransmuteChaosRune)
     ];
 
@@ -264,7 +274,9 @@ internal static class HextechContentRegistry
         typeof(FlawlessRune),
         typeof(CondensedRadianceRune),
         typeof(ExplosionArtRune),
-        typeof(StarlightSplendorRune)
+        typeof(StarlightSplendorRune),
+        typeof(SendThemInRune),
+        typeof(SwordsmanshipRune)
     ];
 
     internal static readonly IReadOnlyList<Type> DefectRuneTypes =
@@ -278,7 +290,8 @@ internal static class HextechContentRegistry
         typeof(ByproductRune),
         typeof(AdaptiveCapacitorRune),
         typeof(ElectricSurgeRune),
-        typeof(HappyAccidentRune)
+        typeof(HappyAccidentRune),
+        typeof(OrbSymbiosisRune)
     ];
 
     internal static readonly IReadOnlyList<Type> NecrobinderRuneTypes =
@@ -292,7 +305,8 @@ internal static class HextechContentRegistry
         typeof(ImmortalBoneRune),
         typeof(MakeItMineRune),
         typeof(MiserableFateRune),
-        typeof(DieForYouRune)
+        typeof(DieForYouRune),
+        typeof(HardBonesRune)
     ];
 
     internal static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =

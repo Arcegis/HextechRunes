@@ -184,6 +184,10 @@ public sealed class LightEmUpRune : HextechRelicBase
 
 public sealed class HolyFireRune : HextechRelicBase
 {
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<HextechBurnPower>()
+	];
 }
 
 public sealed class ShrinkEngineRune : HextechRelicBase
@@ -326,7 +330,8 @@ public sealed class FeelTheBurnRune : HextechRelicBase
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
 		HoverTipFactory.FromPower<WeakPower>(),
-		HoverTipFactory.FromPower<VulnerablePower>()
+		HoverTipFactory.FromPower<VulnerablePower>(),
+		HoverTipFactory.FromPower<HextechBurnPower>()
 	];
 
 	public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
@@ -1400,6 +1405,11 @@ public sealed class RekindleRune : HextechRelicBase
 
 public sealed class SummonForthRune : HextechRelicBase
 {
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new ForgeVar("ForgeAmount", 5)
+	];
+
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
 		HoverTipFactory.FromCard<SovereignBlade>()
@@ -1408,6 +1418,17 @@ public sealed class SummonForthRune : HextechRelicBase
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsRegentPlayer(player);
+	}
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead || !IsRegentOwner)
+		{
+			return;
+		}
+
+		Flash();
+		await ForgeCmd.Forge(DynamicVars["ForgeAmount"].BaseValue, Owner, this);
 	}
 
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
@@ -1826,6 +1847,7 @@ public sealed class WraithRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
+		new CardsVar(1),
 		new DynamicVar("DamagePercentPerSoul", 3m)
 	];
 
@@ -1837,6 +1859,18 @@ public sealed class WraithRune : HextechRelicBase
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsNecrobinderPlayer(player);
+	}
+
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	{
+		if (player != Owner || Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		IEnumerable<Soul> souls = Soul.Create(Owner, DynamicVars.Cards.IntValue, combatState);
+		await HextechCardGeneration.AddGeneratedCardsToCombat(souls, PileType.Hand, addedByPlayer: true);
 	}
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)

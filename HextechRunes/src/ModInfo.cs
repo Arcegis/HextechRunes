@@ -210,8 +210,20 @@ internal static class ModInfo
     {
         RelicModel relic = GetIconRelicForMonsterHex(hex);
         HoverTip mainTip = new(relic.Title, GetEnemyHexDescriptionFormatted(hex), relic.Icon);
+        if (EnemyHexesWithBurnHoverTip.Contains(hex))
+        {
+            return [mainTip, HoverTipFactory.FromPower<HextechBurnPower>()];
+        }
+
         return [mainTip];
     }
+
+    private static readonly HashSet<MonsterHexKind> EnemyHexesWithBurnHoverTip =
+    [
+        MonsterHexKind.Tormentor,
+        MonsterHexKind.Firebrand,
+        MonsterHexKind.FeelTheBurn
+    ];
 
     private static LocString GetEnemyHexDescriptionLoc(MonsterHexKind hex)
     {

@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Screens.Capstones;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -367,7 +369,8 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 			MouseFilter = MouseFilterEnum.Ignore
 		};
 		content.AddChild(iconBox);
-		iconBox.AddChild(CreateRelicTexture(relic, 152f));
+		TextureRect relicTexture = CreateRelicTexture(relic, 152f);
+		iconBox.AddChild(relicTexture);
 
 		MegaLabel title = new()
 		{
@@ -394,6 +397,7 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 		content.AddChild(body);
 
 		SetMouseFilterIgnoreRecursive(margin);
+		AttachRelicHoverTips(relicTexture, relic);
 		button.Pressed += () => OnHolderSelected(relic);
 		return button;
 	}
@@ -456,6 +460,22 @@ internal sealed class HextechRuneSelectionScreen : Control, IOverlayScreen, IScr
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize
 		};
 		return textureRect;
+	}
+
+	private static void AttachRelicHoverTips(Control holder, RelicModel relic)
+	{
+		holder.MouseFilter = MouseFilterEnum.Pass;
+		holder.MouseDefaultCursorShape = CursorShape.Help;
+		holder.MouseEntered += () => ShowRelicHoverTips(holder, relic);
+		holder.MouseExited += () => NHoverTipSet.Remove(holder);
+		holder.TreeExiting += () => NHoverTipSet.Remove(holder);
+	}
+
+	private static void ShowRelicHoverTips(Control holder, RelicModel relic)
+	{
+		NHoverTipSet.Remove(holder);
+		NHoverTipSet hoverTipSet = NHoverTipSet.CreateAndShow(holder, relic.HoverTips, HoverTip.GetHoverTipAlignment(holder));
+		hoverTipSet.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
 	}
 
 	private MegaRichTextLabel CreateDescriptionLabel()

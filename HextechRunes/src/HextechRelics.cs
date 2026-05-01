@@ -255,6 +255,11 @@ public sealed class SlowCookRune : HextechRelicBase
 		new DynamicVar("BurnPercent", 5m)
 	];
 
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<HextechBurnPower>()
+	];
+
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner)
@@ -449,7 +454,6 @@ public sealed class SonataRune : HextechRelicBase
 			foreach (Player combatPlayer in players)
 			{
 				await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, combatPlayer, fromHandDraw: false);
-				await PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, combatPlayer);
 			}
 
 			return;
@@ -460,6 +464,21 @@ public sealed class SonataRune : HextechRelicBase
 			await CreatureCmd.Heal(combatPlayer.Creature, DynamicVars.Heal.BaseValue);
 			await CreatureCmd.GainBlock(combatPlayer.Creature, DynamicVars.Block, null);
 		}
+	}
+
+	public override Task AfterEnergyResetLate(Player player)
+	{
+		if (Owner == null
+			|| Owner.Creature.IsDead
+			|| player.Creature.IsDead
+			|| player.Creature.CombatState is not CombatState combatState
+			|| !ReferenceEquals(Owner.Creature.CombatState, combatState)
+			|| combatState.RoundNumber % 2 != 1)
+		{
+			return Task.CompletedTask;
+		}
+
+		return PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, player);
 	}
 }
 
@@ -1272,7 +1291,7 @@ public sealed class RedEnvelopeRune : HextechRelicBase
 		Flash(Array.Empty<Creature>());
 		if (Owner.PlayerRng.Rewards.NextInt(100) < 75)
 		{
-			room.AddExtraReward(Owner, new GoldReward(10, 20, Owner));
+			room.AddExtraReward(Owner, new GoldReward(20, 50, Owner));
 		}
 		else
 		{
@@ -1740,6 +1759,11 @@ public sealed class InfernalConduitRune : HextechRelicBase
 {
 	private int _pendingEnergy;
 
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<HextechBurnPower>()
+	];
+
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedPendingEnergy
 	{
@@ -2016,6 +2040,11 @@ public sealed class TwiceThriceRune : HextechRelicBase
 
 public sealed class FirebrandRune : HextechRelicBase
 {
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<HextechBurnPower>()
+	];
+
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
 		if (Owner == null || target.Side != CombatSide.Enemy || !props.IsPoweredAttack() || !IsDamageFromOwner(dealer, cardSource))
@@ -2195,7 +2224,12 @@ public sealed class TormentorRune : LimitedDebuffProcRelicBase
 {
 	private bool _applyingBurnProc;
 
-	protected override int MaxProcsPerTurn => 5;
+	protected override int MaxProcsPerTurn => 3;
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<HextechBurnPower>()
+	];
 
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
@@ -2212,7 +2246,7 @@ public sealed class TormentorRune : LimitedDebuffProcRelicBase
 		try
 		{
 			_applyingBurnProc = true;
-			await PowerCmd.Apply<HextechBurnPower>(target, 1m, Owner!.Creature, null);
+			await PowerCmd.Apply<HextechBurnPower>(target, 2m, Owner!.Creature, null);
 		}
 		finally
 		{
