@@ -259,6 +259,7 @@ internal static class HextechContentRegistry
         Monster<SpeedDemonRune>(MonsterHexKind.SpeedDemon, HextechRarityTier.Silver),
         Monster<FrostWraithRune>(MonsterHexKind.FrostWraith, HextechRarityTier.Silver),
         Monster<BloodPactRune>(MonsterHexKind.BloodPact, HextechRarityTier.Silver),
+        Monster<StartupRoutineRune>(MonsterHexKind.StartupRoutine, HextechRarityTier.Silver),
 
         Monster<SturdyRune>(MonsterHexKind.Sturdy, HextechRarityTier.Gold),
         Monster<DawnbringersResolveRune>(MonsterHexKind.DawnbringersResolve, HextechRarityTier.Gold),
@@ -279,6 +280,7 @@ internal static class HextechContentRegistry
         Monster<DevilsDanceRune>(MonsterHexKind.DevilsDance, HextechRarityTier.Gold),
         Monster<ImmortalBoneRune>(MonsterHexKind.ImmortalBone, HextechRarityTier.Gold),
         Monster<DoomsdayRune>(MonsterHexKind.Doomsday, HextechRarityTier.Gold),
+        Monster<WarmogsSpiritRune>(MonsterHexKind.WarmogsSpirit, HextechRarityTier.Gold),
 
         Monster<CourageOfColossusRune>(MonsterHexKind.CourageOfColossus, HextechRarityTier.Prismatic),
         Monster<GlassCannonRune>(MonsterHexKind.GlassCannon, HextechRarityTier.Prismatic),
@@ -299,7 +301,10 @@ internal static class HextechContentRegistry
         Monster<ClownCollegeRune>(MonsterHexKind.ClownCollege, HextechRarityTier.Prismatic),
         Monster<SingularityAIRune>(MonsterHexKind.SingularityAI, HextechRarityTier.Prismatic),
         Monster<ProteinShakeRune>(MonsterHexKind.ProteinShake, HextechRarityTier.Prismatic),
-        Monster<GoldenSpatulaRune>(MonsterHexKind.GoldenSpatula, HextechRarityTier.Prismatic)
+        Monster<GoldenSpatulaRune>(MonsterHexKind.GoldenSpatula, HextechRarityTier.Prismatic),
+        Monster<HailToTheKingRune>(MonsterHexKind.HailToTheKing, HextechRarityTier.Prismatic),
+        Monster<EightPennyGateRune>(MonsterHexKind.EightPennyGate, HextechRarityTier.Prismatic),
+        Monster<HastyScribbleRune>(MonsterHexKind.HastyScribble, HextechRarityTier.Prismatic)
     ];
 
     internal static readonly IReadOnlyList<Type> SilverRuneTypes = RuneTypesForRarity(HextechRarityTier.Silver);

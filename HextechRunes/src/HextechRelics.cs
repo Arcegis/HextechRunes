@@ -273,7 +273,7 @@ public sealed class SlowCookRune : HextechRelicBase
 			return;
 		}
 
-		CombatState? combatState = player.Creature.CombatState;
+		HextechCombatState? combatState = player.Creature.CombatState;
 		if (combatState == null)
 		{
 			return;
@@ -308,7 +308,7 @@ public sealed class FrostWraithRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState is not CombatState combatState)
+		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
@@ -320,7 +320,7 @@ public sealed class FrostWraithRune : HextechRelicBase
 	{
 		if (player != Owner
 			|| Owner.Creature.IsDead
-			|| player.Creature.CombatState is not CombatState combatState
+			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RoundNumber <= 1
 			|| (combatState.RoundNumber - 1) % DynamicVars["TurnsNeeded"].IntValue != 0)
 		{
@@ -330,7 +330,7 @@ public sealed class FrostWraithRune : HextechRelicBase
 		await ApplySlow(combatState);
 	}
 
-	private async Task ApplySlow(CombatState combatState)
+	private async Task ApplySlow(HextechCombatState combatState)
 	{
 		IReadOnlyList<Creature> enemies = combatState.HittableEnemies.ToList();
 		if (enemies.Count == 0)
@@ -355,7 +355,7 @@ public sealed class OkBoomerangRune : HextechRelicBase
 	{
 		if (player != Owner
 			|| Owner.Creature.IsDead
-			|| player.Creature.CombatState is not CombatState combatState
+			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RoundNumber <= 1
 			|| combatState.RoundNumber % DynamicVars["TurnsNeeded"].IntValue != 0)
 		{
@@ -400,7 +400,7 @@ public sealed class DivineInterventionRune : HextechRelicBase
 	{
 		if (player != Owner
 			|| Owner.Creature.IsDead
-			|| player.Creature.CombatState is not CombatState combatState
+			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RoundNumber <= 1
 			|| combatState.RoundNumber % DynamicVars["TurnsNeeded"].IntValue != 0)
 		{
@@ -435,7 +435,7 @@ public sealed class SonataRune : HextechRelicBase
 	{
 		if (player != Owner
 			|| Owner.Creature.IsDead
-			|| player.Creature.CombatState is not CombatState combatState)
+			|| player.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
@@ -471,7 +471,7 @@ public sealed class SonataRune : HextechRelicBase
 		if (Owner == null
 			|| Owner.Creature.IsDead
 			|| player.Creature.IsDead
-			|| player.Creature.CombatState is not CombatState combatState
+			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| !ReferenceEquals(Owner.Creature.CombatState, combatState)
 			|| combatState.RoundNumber % 2 != 1)
 		{
@@ -1394,7 +1394,7 @@ public sealed class MindPurificationRune : HextechRelicBase
 		if (Owner == null
 			|| wasRemovalPrevented
 			|| target.Side == Owner.Creature.Side
-			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target, out CombatState? combatState))
+			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target, out HextechCombatState? combatState))
 		{
 			return;
 		}
@@ -1523,7 +1523,7 @@ public sealed class MadScientistRune : HextechRelicBase
 		await AddCardCopiesToDeckOrHand<ElicitCard>(1);
 	}
 
-	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1)
 		{
@@ -1640,7 +1640,7 @@ public sealed class SpeedDemonRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -1673,7 +1673,7 @@ public sealed class SpeedDemonRune : HextechRelicBase
 		ResetTurnState(null);
 	}
 
-	private void ResetTurnState(CombatState? combatState)
+	private void ResetTurnState(HextechCombatState? combatState)
 	{
 		_triggeredThisTurn = false;
 		UpdateTurnScopedStateIdentity(combatState);
@@ -1736,7 +1736,11 @@ public sealed class SoulEaterRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (!TryGetOwnedEnemyDebuffTarget(power, amount, applier, out _))
 		{
@@ -2047,7 +2051,7 @@ public sealed class FirebrandRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null || target.Side != CombatSide.Enemy || !props.IsPoweredAttack() || !IsDamageFromOwner(dealer, cardSource))
+		if (Owner == null || target.Side != CombatSide.Enemy || !HextechSts2Compat.IsPoweredAttack(props) || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;
 		}
@@ -2180,7 +2184,7 @@ public sealed class HandOfBaronRune : HextechRelicBase
 		return IsDamageFromOwner(dealer, cardSource) ? DynamicVars["DamageMultiplier"].BaseValue : 1m;
 	}
 
-	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side)
 		{
@@ -2231,14 +2235,22 @@ public sealed class TormentorRune : LimitedDebuffProcRelicBase
 		HoverTipFactory.FromPower<HextechBurnPower>()
 	];
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (_applyingBurnProc)
 		{
 			return;
 		}
 
+#if STS2_104_OR_NEWER
+		await base.AfterPowerAmountChanged(choiceContext, power, amount, applier, cardSource);
+#else
 		await base.AfterPowerAmountChanged(power, amount, applier, cardSource);
+#endif
 	}
 
 	protected override async Task OnEnemyDebuffApplied(Creature target)
@@ -2358,7 +2370,7 @@ public sealed class QueenRune : HextechRelicBase
 		HoverTipFactory.FromPower<VulnerablePower>()
 	];
 
-	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side)
 		{
@@ -2672,7 +2684,7 @@ public sealed class CerberusRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -2741,7 +2753,7 @@ public sealed class CerberusRune : HextechRelicBase
 		ResetAttacksPlayedThisTurn(null);
 	}
 
-	private void ResetAttacksPlayedThisTurn(CombatState? combatState)
+	private void ResetAttacksPlayedThisTurn(HextechCombatState? combatState)
 	{
 		_attacksPlayedThisTurn = 0;
 		InvokeDisplayAmountChanged();
@@ -2787,7 +2799,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 {
 	private bool _triggeredThisTurn;
 	private bool _triggeredLastPlay;
-	private CombatState? _turnStateCombat;
+	private HextechCombatState? _turnStateCombat;
 	private int _turnStateRoundNumber = -1;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -2825,7 +2837,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -2881,7 +2893,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		return DynamicVars["NormalReplays"].IntValue;
 	}
 
-	private void ResetTurnState(CombatState? combatState = null)
+	private void ResetTurnState(HextechCombatState? combatState = null)
 	{
 		_triggeredThisTurn = false;
 		_triggeredLastPlay = false;
@@ -2890,7 +2902,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 
 	private void EnsureTurnStateCurrent()
 	{
-		CombatState? combatState = Owner?.Creature.CombatState;
+		HextechCombatState? combatState = Owner?.Creature.CombatState;
 		if (combatState == null)
 		{
 			_triggeredThisTurn = false;
@@ -2906,7 +2918,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		}
 	}
 
-	private void UpdateTurnStateIdentity(CombatState? combatState = null)
+	private void UpdateTurnStateIdentity(HextechCombatState? combatState = null)
 	{
 		combatState ??= Owner?.Creature.CombatState;
 		_turnStateCombat = combatState;
@@ -2950,7 +2962,7 @@ public sealed class FeyMagicRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -2983,7 +2995,7 @@ public sealed class FeyMagicRune : HextechRelicBase
 		ResetTurnState(null);
 	}
 
-	private void ResetTurnState(CombatState? combatState)
+	private void ResetTurnState(HextechCombatState? combatState)
 	{
 		_triggeredThisTurn = false;
 		UpdateTurnScopedStateIdentity(combatState);
@@ -3086,7 +3098,7 @@ public sealed class ProtectiveVeilRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side)
 		{
@@ -3341,7 +3353,11 @@ public sealed class ServantMasterRune : HextechRelicBase
 		return PowerCmd.Apply<NecroMasteryPower>(Owner.Creature, DynamicVars["NecroMasteryPower"].BaseValue, Owner.Creature, null);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+#else
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+#endif
 	{
 		if (player != Owner || Owner.Creature.IsDead || player.Creature.CombatState == null || !IsNecrobinderPlayer(player))
 		{
@@ -3396,7 +3412,7 @@ public sealed class TranscendentEvilRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsDefectOwner)
 		{
@@ -3503,7 +3519,7 @@ public sealed class FinalFormRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -3534,7 +3550,7 @@ public sealed class FinalFormRune : HextechRelicBase
 		ResetTurnState(null);
 	}
 
-	private void ResetTurnState(CombatState? combatState)
+	private void ResetTurnState(HextechCombatState? combatState)
 	{
 		_triggeredThisTurn = false;
 		UpdateTurnScopedStateIdentity(combatState);
@@ -3730,7 +3746,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 {
 	private bool _triggeredThisTurn;
 	private bool _triggeredLastPlay;
-	private CombatState? _turnStateCombat;
+	private HextechCombatState? _turnStateCombat;
 	private int _turnStateRoundNumber = -1;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -3761,7 +3777,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -3802,7 +3818,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	private void ResetTurnState(CombatState? combatState = null)
+	private void ResetTurnState(HextechCombatState? combatState = null)
 	{
 		_triggeredThisTurn = false;
 		_triggeredLastPlay = false;
@@ -3811,7 +3827,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 
 	private void EnsureTurnStateCurrent()
 	{
-		CombatState? combatState = Owner?.Creature.CombatState;
+		HextechCombatState? combatState = Owner?.Creature.CombatState;
 		if (combatState == null)
 		{
 			_triggeredThisTurn = false;
@@ -3827,7 +3843,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 		}
 	}
 
-	private void UpdateTurnStateIdentity(CombatState? combatState = null)
+	private void UpdateTurnStateIdentity(HextechCombatState? combatState = null)
 	{
 		combatState ??= Owner?.Creature.CombatState;
 		_turnStateCombat = combatState;

@@ -43,12 +43,15 @@ TRACKING_PERSISTENT_FIELDS = {
     "_mountainSoulHasPreviousTurn",
     "_mountainSoulDamagedSinceLastTurn",
     "_playerAttackCardsPlayedThisCombat",
+    "_playerCardsDrawnThisCombat",
+    "_eightPennyGatePlayersTriggeredThisTurn",
     "_enemyProtectiveVeilTurnCounter",
 }
 
 TRACKING_TRANSIENT_FIELDS = {
     "_monsterDebuffActionProcKeysThisTurn",
     "_groupedPlayerDebuffProcKeys",
+    "_eightPennyGatePendingCardHashes",
     "_lastEnemyThresholdTriggerKey",
     "_handlingMonsterTormentorBurn",
     "_handlingServantMasterIllusion",

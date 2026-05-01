@@ -43,7 +43,7 @@ internal sealed partial class HextechMayhemModifier
             && target.IsAlive
             && TryConsumeLimitedProc(_clownCollegeProcsThisTurn, target, 1))
         {
-            await PowerCmd.Apply<SlipperyPower>(target, 1m, target, null);
+            await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(target, 1m, target, null);
         }
 
         if (ShouldSuppressDuplicateEnemyThresholdTrigger(target, result, dealer, cardSource))
@@ -51,7 +51,7 @@ internal sealed partial class HextechMayhemModifier
             return;
         }
 
-        decimal threshold = target.MaxHp * 0.5m;
+        decimal threshold = target.MaxHp * EscapePlanHealthThresholdPercent;
         bool isBelowThresholdAfterDamage = target.CurrentHp < threshold;
         if (HasActiveMonsterHex(MonsterHexKind.EscapePlan)
             && !_escapePlanTriggered.Contains(combatId)
@@ -74,8 +74,8 @@ internal sealed partial class HextechMayhemModifier
             && isBelowThresholdAfterDamage)
         {
             _dawnTriggered.Add(combatId);
-            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.25m));
-            await CreatureCmd.Heal(target, heal);
+            int regen = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.1m));
+            await HextechEnemyPowerScalingHooks.Apply<RegenPower>(target, regen, target, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.FeelTheBurn)
@@ -153,7 +153,7 @@ internal sealed partial class HextechMayhemModifier
 
         if (HasActiveMonsterHex(MonsterHexKind.CantTouchThis) && dealer.IsAlive)
         {
-            await PowerCmd.Apply<SlipperyPower>(dealer, CantTouchThisSlipperyStacks, dealer, null);
+            await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(dealer, CantTouchThisSlipperyStacks, dealer, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.FeyMagic)
@@ -174,6 +174,7 @@ internal sealed partial class HextechMayhemModifier
     public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
     {
         TrackPlayerAttackCardPlayed(cardPlay);
+        TrackEnemyEightPennyGateCardPlayed(cardPlay);
 
         if (!HasActiveMonsterHex(MonsterHexKind.MasterOfDuality)
             || cardPlay.Card.Owner?.Creature.Side != CombatSide.Player)
@@ -197,6 +198,31 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
+    public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
+    {
+        if (!HasActiveMonsterHex(MonsterHexKind.WarmogsSpirit)
+            || card.Owner?.Creature.Side != CombatSide.Player
+            || card.Owner.Creature.CombatState?.RunState != RunState)
+        {
+            return;
+        }
+
+        Player owner = card.Owner;
+        ulong playerId = owner.NetId;
+        int cardsDrawn = _playerCardsDrawnThisCombat.GetValueOrDefault(playerId, 0) + 1;
+        _playerCardsDrawnThisCombat[playerId] = cardsDrawn;
+        if (cardsDrawn % 8 != 0)
+        {
+            return;
+        }
+
+        HextechCombatState combatState = owner.Creature.CombatState;
+        foreach (Creature enemy in GetAliveEnemies(combatState))
+        {
+            await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(enemy, 1m, enemy, null);
+        }
+    }
+
     public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         Player? owner = cardPlay.Card.Owner;
@@ -216,7 +242,11 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
+#if STS2_104_OR_NEWER
+    public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
     public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
     {
         if (power is MinionPower && amount > 0m)
         {
@@ -266,8 +296,8 @@ internal sealed partial class HextechMayhemModifier
             && hasCourageTrigger
             && TryConsumeLimitedProc(_courageProcsThisTurn, courageSource!, 1))
         {
-            int block = Math.Max(1, (int)Math.Floor(courageSource!.MaxHp * CourageOfColossusBlockPercent));
-            await CreatureCmd.GainBlock(courageSource, block, ValueProp.Unpowered, null);
+            int plating = Math.Max(1, (int)Math.Floor(courageSource!.MaxHp * CourageOfColossusPlatingPercent));
+            await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(courageSource, plating, courageSource, null);
         }
 
     }
@@ -292,7 +322,7 @@ internal sealed partial class HextechMayhemModifier
     {
         if (wasRemovalPrevented
             || target.Side != CombatSide.Enemy
-            || !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target, out CombatState? combatState))
+            || !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target, out HextechCombatState? combatState))
         {
             return;
         }

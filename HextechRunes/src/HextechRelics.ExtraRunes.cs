@@ -497,7 +497,7 @@ public sealed class LifeFlowRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -531,7 +531,7 @@ public sealed class LifeFlowRune : HextechRelicBase
 		ResetProcs(null);
 	}
 
-	private void ResetProcs(CombatState? combatState)
+	private void ResetProcs(HextechCombatState? combatState)
 	{
 		_procsThisTurn = 0;
 		InvokeDisplayAmountChanged();
@@ -737,7 +737,7 @@ public sealed class LubricantRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner != null && side == Owner.Creature.Side)
 		{
@@ -805,7 +805,7 @@ public sealed class LubricantRune : HextechRelicBase
 		ResetTurnState(null);
 	}
 
-	private void ResetTurnState(CombatState? combatState)
+	private void ResetTurnState(HextechCombatState? combatState)
 	{
 		_usedThisTurn = false;
 		InvokeDisplayAmountChanged();
@@ -1238,7 +1238,7 @@ public sealed class BladeWaltzCard : CardModel
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		CombatState combatState = Owner.Creature.CombatState
+		HextechCombatState combatState = Owner.Creature.CombatState
 			?? throw new InvalidOperationException("Blade Waltz played outside combat.");
 		for (int i = 0; i < DynamicVars["Hits"].IntValue; i++)
 		{
@@ -1285,7 +1285,7 @@ public sealed class BloodPactRune : HextechRelicBase
 			|| creature != Owner.Creature
 			|| delta >= 0m
 			|| Owner.Creature.IsDead
-			|| !CombatManager.Instance.IsPartOfPlayerTurn(Owner))
+			|| !HextechSts2Compat.IsPartOfPlayerTurn(Owner))
 		{
 			return;
 		}
@@ -1313,7 +1313,7 @@ public sealed class PlateletRune : HextechRelicBase
 			|| creature != Owner.Creature
 			|| delta >= 0m
 			|| Owner.Creature.IsDead
-			|| !CombatManager.Instance.IsPartOfPlayerTurn(Owner))
+			|| !HextechSts2Compat.IsPartOfPlayerTurn(Owner))
 		{
 			return Task.CompletedTask;
 		}
@@ -1431,7 +1431,7 @@ public sealed class SummonForthRune : HextechRelicBase
 		await ForgeCmd.Forge(DynamicVars["ForgeAmount"].BaseValue, Owner, this);
 	}
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner?.PlayerCombatState == null || Owner.Creature.IsDead)
 		{
@@ -1502,7 +1502,7 @@ public sealed class ExplosionArtRune : HextechRelicBase
 		return IsRegentPlayer(player);
 	}
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead)
 		{
@@ -1532,8 +1532,15 @@ public sealed class ByproductRune : HextechRelicBase
 		return IsDefectPlayer(player);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
+#else
 	public override async Task AfterCardGeneratedForCombat(CardModel card, bool addedByPlayer)
+#endif
 	{
+#if STS2_104_OR_NEWER
+		bool addedByPlayer = creator == Owner;
+#endif
 		if (!addedByPlayer || card.Owner != Owner || Owner == null || Owner.Creature.IsDead || card.Type != CardType.Status)
 		{
 			return;
@@ -1710,7 +1717,7 @@ public sealed class SnakebiteRune : HextechRelicBase
 		return IsSilentPlayer(player);
 	}
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead || combatState.RoundNumber > 1)
 		{
@@ -1736,7 +1743,7 @@ public sealed class SoulCallingRune : HextechRelicBase
 		HoverTipFactory.FromCard<Soul>()
 	];
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead)
 		{
@@ -1770,7 +1777,11 @@ public sealed class TauntRune : HextechRelicBase
 		return IsNecrobinderPlayer(player);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (Owner == null
 			|| Owner.Creature.IsDead
@@ -1826,7 +1837,11 @@ public sealed class MakeItMineRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+#else
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+#endif
 	{
 		if (player != Owner
 			|| Owner == null
@@ -1861,7 +1876,7 @@ public sealed class WraithRune : HextechRelicBase
 		return IsNecrobinderPlayer(player);
 	}
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead)
 		{
@@ -2035,7 +2050,7 @@ public sealed class SingularityAIRune : HextechRelicBase
 		new CardsVar(1)
 	];
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead)
 		{
@@ -2116,7 +2131,11 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 		return IsIroncladPlayer(player);
 	}
 
+#if STS2_104_OR_NEWER
+	public override Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (Owner == null
 			|| power.Owner != Owner.Creature
@@ -2235,7 +2254,11 @@ public sealed class SerpentsFangRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (power is not PoisonPower
 			|| Owner == null
@@ -2322,8 +2345,15 @@ public sealed class CondensedRadianceRune : HextechRelicBase
 		return IsRegentPlayer(player);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
+#else
 	public override async Task AfterCardGeneratedForCombat(CardModel card, bool addedByPlayer)
+#endif
 	{
+#if STS2_104_OR_NEWER
+		bool addedByPlayer = creator == Owner;
+#endif
 		if (!addedByPlayer || card.Owner != Owner || Owner == null || Owner.Creature.IsDead)
 		{
 			return;
@@ -2348,7 +2378,11 @@ public sealed class DieForYouRune : HextechRelicBase
 		return IsNecrobinderPlayer(player);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+#else
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+#endif
 	{
 		if (player != Owner || Owner.Creature.IsDead || !IsNecrobinderPlayer(player))
 		{
@@ -2361,7 +2395,7 @@ public sealed class DieForYouRune : HextechRelicBase
 
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
-		CombatState? combatState = target.CombatState;
+		HextechCombatState? combatState = target.CombatState;
 		if (Owner == null
 			|| wasRemovalPrevented
 			|| Owner.Creature.IsDead
@@ -2407,8 +2441,15 @@ public sealed class HappyAccidentRune : HextechRelicBase
 		return IsDefectPlayer(player);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
+#else
 	public override async Task AfterCardGeneratedForCombat(CardModel card, bool addedByPlayer)
+#endif
 	{
+#if STS2_104_OR_NEWER
+		bool addedByPlayer = creator == Owner;
+#endif
 		if (!addedByPlayer
 			|| card.Owner != Owner
 			|| Owner == null

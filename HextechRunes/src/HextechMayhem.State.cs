@@ -56,6 +56,9 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HashSet<uint> _mountainSoulHasPreviousTurn = new();
 	private readonly HashSet<uint> _mountainSoulDamagedSinceLastTurn = new();
 	private readonly Dictionary<ulong, int> _playerAttackCardsPlayedThisCombat = new();
+	private readonly Dictionary<ulong, int> _playerCardsDrawnThisCombat = new();
+	private readonly HashSet<ulong> _eightPennyGatePlayersTriggeredThisTurn = new();
+	private readonly Dictionary<ulong, int> _eightPennyGatePendingCardHashes = new();
 	private readonly HashSet<string> _monsterDebuffActionProcKeysThisTurn = new();
 	private readonly HashSet<string> _groupedPlayerDebuffProcKeys = new();
 	private string? _lastEnemyThresholdTriggerKey;

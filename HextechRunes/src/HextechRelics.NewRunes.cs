@@ -149,7 +149,7 @@ public sealed class OldIdolRune : HextechRelicBase
 		return player == Owner && player.Creature.CombatState?.RoundNumber == 1 ? 0m : count;
 	}
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead || _secondTurnStrengthGranted || combatState.RoundNumber != 2)
 		{
@@ -234,7 +234,7 @@ public sealed class SendThemInRune : HextechRelicBase
 		return IsRegentPlayer(player);
 	}
 
-	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, CombatState combatState)
+	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead || !IsRegentPlayer(player))
 		{

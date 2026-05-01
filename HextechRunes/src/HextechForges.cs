@@ -269,7 +269,11 @@ public sealed class NecrobinderForge : HextechForgeBase
 		return IsNecrobinderPlayer(player);
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+#else
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+#endif
 	{
 		if (player != Owner
 			|| Owner == null
@@ -318,7 +322,7 @@ public sealed class SilverStarsForge : HextechForgeBase
 		return IsRegentPlayer(player);
 	}
 
-	public override Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsRegentOwner)
 		{
@@ -342,7 +346,7 @@ public sealed class SilverOrbForge : HextechForgeBase
 		return IsDefectPlayer(player);
 	}
 
-	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsDefectOwner)
 		{
@@ -549,7 +553,7 @@ public sealed class OrbSlotForge : HextechForgeBase
 		return IsDefectPlayer(player);
 	}
 
-	public override async Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsDefectOwner)
 		{

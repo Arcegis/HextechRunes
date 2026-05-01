@@ -39,6 +39,7 @@ public static class ModEntry
 		Harmony harmony = _harmony ??= new Harmony(HarmonyId);
 		InstallHooks(harmony);
 		HextechCombatHooks.Install(harmony);
+		HextechEnemyPowerScalingHooks.Install(harmony);
 		HextechUpdateChecker.Install(harmony);
 		HextechInspectHooks.Install(harmony);
 		AssetHooks.Install(harmony);

@@ -120,7 +120,11 @@ internal static class HextechShopForgeHooks
 
 		if (!HextechForgeGrantHelper.TryCreateRandomForge(player, player.PlayerRng.Shops, out RelicModel? forge) || forge == null)
 		{
+#if STS2_104_OR_NEWER
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
+#else
+			entry.InvokePurchaseFailed(PurchaseStatus.FailureForbidden);
+#endif
 			return (false, 0);
 		}
 

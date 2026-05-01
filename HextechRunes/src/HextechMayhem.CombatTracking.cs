@@ -45,11 +45,13 @@ internal sealed partial class HextechMayhemModifier
 			ShrinkEngineStacks = CopyDictionary(_shrinkEngineStacks),
 			GetExcitedPending = CopyDictionary(_getExcitedPending),
 			FeelTheBurnPending = CopySet(_feelTheBurnPending),
-			MountainSoulHasPreviousTurn = CopySet(_mountainSoulHasPreviousTurn),
-			MountainSoulDamagedSinceLastTurn = CopySet(_mountainSoulDamagedSinceLastTurn),
-			PlayerAttackCardsPlayedThisCombat = CopyDictionary(_playerAttackCardsPlayedThisCombat),
-			EnemyProtectiveVeilTurnCounter = _enemyProtectiveVeilTurnCounter
-		};
+				MountainSoulHasPreviousTurn = CopySet(_mountainSoulHasPreviousTurn),
+				MountainSoulDamagedSinceLastTurn = CopySet(_mountainSoulDamagedSinceLastTurn),
+				PlayerAttackCardsPlayedThisCombat = CopyDictionary(_playerAttackCardsPlayedThisCombat),
+				PlayerCardsDrawnThisCombat = CopyDictionary(_playerCardsDrawnThisCombat),
+				EightPennyGatePlayersTriggeredThisTurn = CopySet(_eightPennyGatePlayersTriggeredThisTurn),
+				EnemyProtectiveVeilTurnCounter = _enemyProtectiveVeilTurnCounter
+			};
 		return JsonSerializer.Serialize(snapshot);
 	}
 
@@ -97,11 +99,13 @@ internal sealed partial class HextechMayhemModifier
 			RestoreDictionary(_shrinkEngineStacks, snapshot.ShrinkEngineStacks);
 			RestoreDictionary(_getExcitedPending, snapshot.GetExcitedPending);
 			RestoreSet(_feelTheBurnPending, snapshot.FeelTheBurnPending);
-			RestoreSet(_mountainSoulHasPreviousTurn, snapshot.MountainSoulHasPreviousTurn);
-			RestoreSet(_mountainSoulDamagedSinceLastTurn, snapshot.MountainSoulDamagedSinceLastTurn);
-			RestoreDictionary(_playerAttackCardsPlayedThisCombat, snapshot.PlayerAttackCardsPlayedThisCombat);
-			_enemyProtectiveVeilTurnCounter = Math.Max(0, snapshot.EnemyProtectiveVeilTurnCounter);
-		}
+				RestoreSet(_mountainSoulHasPreviousTurn, snapshot.MountainSoulHasPreviousTurn);
+				RestoreSet(_mountainSoulDamagedSinceLastTurn, snapshot.MountainSoulDamagedSinceLastTurn);
+				RestoreDictionary(_playerAttackCardsPlayedThisCombat, snapshot.PlayerAttackCardsPlayedThisCombat);
+				RestoreDictionary(_playerCardsDrawnThisCombat, snapshot.PlayerCardsDrawnThisCombat);
+				RestoreSet(_eightPennyGatePlayersTriggeredThisTurn, snapshot.EightPennyGatePlayersTriggeredThisTurn);
+				_enemyProtectiveVeilTurnCounter = Math.Max(0, snapshot.EnemyProtectiveVeilTurnCounter);
+			}
 		catch (Exception ex)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to restore combat tracking snapshot: {ex}");
@@ -138,11 +142,13 @@ internal sealed partial class HextechMayhemModifier
 			|| _tankEngineStacks.Count > 0
 			|| _shrinkEngineStacks.Count > 0
 			|| _getExcitedPending.Count > 0
-			|| _feelTheBurnPending.Count > 0
-			|| _mountainSoulHasPreviousTurn.Count > 0
-			|| _mountainSoulDamagedSinceLastTurn.Count > 0
-			|| _playerAttackCardsPlayedThisCombat.Count > 0
-			|| _enemyProtectiveVeilTurnCounter > 0;
+				|| _feelTheBurnPending.Count > 0
+				|| _mountainSoulHasPreviousTurn.Count > 0
+				|| _mountainSoulDamagedSinceLastTurn.Count > 0
+				|| _playerAttackCardsPlayedThisCombat.Count > 0
+				|| _playerCardsDrawnThisCombat.Count > 0
+				|| _eightPennyGatePlayersTriggeredThisTurn.Count > 0
+				|| _enemyProtectiveVeilTurnCounter > 0;
 	}
 
 	private void ResetCombatTracking()
@@ -179,12 +185,15 @@ internal sealed partial class HextechMayhemModifier
 		_tankEngineStacks.Clear();
 		_shrinkEngineStacks.Clear();
 		_getExcitedPending.Clear();
-		_feelTheBurnPending.Clear();
-		_mountainSoulHasPreviousTurn.Clear();
-		_mountainSoulDamagedSinceLastTurn.Clear();
-		_playerAttackCardsPlayedThisCombat.Clear();
-		_monsterDebuffActionProcKeysThisTurn.Clear();
-		_groupedPlayerDebuffProcKeys.Clear();
+			_feelTheBurnPending.Clear();
+			_mountainSoulHasPreviousTurn.Clear();
+			_mountainSoulDamagedSinceLastTurn.Clear();
+			_playerAttackCardsPlayedThisCombat.Clear();
+			_playerCardsDrawnThisCombat.Clear();
+			_eightPennyGatePlayersTriggeredThisTurn.Clear();
+			_eightPennyGatePendingCardHashes.Clear();
+			_monsterDebuffActionProcKeysThisTurn.Clear();
+			_groupedPlayerDebuffProcKeys.Clear();
 		_lastEnemyThresholdTriggerKey = null;
 		_enemyProtectiveVeilTurnCounter = 0;
 		_handlingMonsterTormentorBurn = false;
@@ -264,9 +273,11 @@ internal sealed partial class HextechMayhemModifier
 		public Dictionary<uint, int> ShrinkEngineStacks { get; set; } = new();
 		public Dictionary<uint, int> GetExcitedPending { get; set; } = new();
 		public List<uint> FeelTheBurnPending { get; set; } = [];
-		public List<uint> MountainSoulHasPreviousTurn { get; set; } = [];
-		public List<uint> MountainSoulDamagedSinceLastTurn { get; set; } = [];
-		public Dictionary<ulong, int> PlayerAttackCardsPlayedThisCombat { get; set; } = new();
-		public int EnemyProtectiveVeilTurnCounter { get; set; }
-	}
+			public List<uint> MountainSoulHasPreviousTurn { get; set; } = [];
+			public List<uint> MountainSoulDamagedSinceLastTurn { get; set; } = [];
+			public Dictionary<ulong, int> PlayerAttackCardsPlayedThisCombat { get; set; } = new();
+			public Dictionary<ulong, int> PlayerCardsDrawnThisCombat { get; set; } = new();
+			public List<ulong> EightPennyGatePlayersTriggeredThisTurn { get; set; } = [];
+			public int EnemyProtectiveVeilTurnCounter { get; set; }
+		}
 }

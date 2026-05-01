@@ -13,17 +13,43 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-    private async Task BeforePlayerSideTurnStart(CombatState combatState, IReadOnlyList<Creature> players)
-    {
-        _bloodPactProcsThisTurn.Clear();
-        _clownCollegeProcsThisTurn.Clear();
+	private async Task BeforePlayerSideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
+	{
+		_bloodPactProcsThisTurn.Clear();
+		_clownCollegeProcsThisTurn.Clear();
+		_eightPennyGatePlayersTriggeredThisTurn.Clear();
+		_eightPennyGatePendingCardHashes.Clear();
 
-        await ApplyToCurrentEnemiesIfNeeded();
+		await ApplyToCurrentEnemiesIfNeeded();
+        QueueEscapePlanTriggersFromCurrentEnemyState(combatState);
         await ResolvePlayerTurnPendingEnemyEffects(combatState);
         await ApplyPlayerTurnStartEnemyHexes(combatState, players);
     }
 
-    private async Task ResolvePlayerTurnPendingEnemyEffects(CombatState combatState)
+    private void QueueEscapePlanTriggersFromCurrentEnemyState(HextechCombatState combatState)
+    {
+        if (!HasActiveMonsterHex(MonsterHexKind.EscapePlan))
+        {
+            return;
+        }
+
+        foreach (Creature creature in GetAliveEnemies(combatState))
+        {
+            if (creature.CombatId == null
+                || _escapePlanTriggered.Contains(creature.CombatId.Value)
+                || _escapePlanPending.Contains(creature.CombatId.Value)
+                || creature.CurrentHp >= creature.MaxHp * EscapePlanHealthThresholdPercent)
+            {
+                continue;
+            }
+
+            uint combatId = creature.CombatId.Value;
+            _escapePlanTriggered.Add(combatId);
+            _escapePlanPending.Add(combatId);
+        }
+    }
+
+    private async Task ResolvePlayerTurnPendingEnemyEffects(HextechCombatState combatState)
     {
         if (_escapePlanPending.Count > 0)
         {
@@ -36,7 +62,7 @@ internal sealed partial class HextechMayhemModifier
                     continue;
                 }
 
-                int blockAmount = (int)Math.Floor(creature.MaxHp * 0.6m);
+                int blockAmount = (int)Math.Floor(creature.MaxHp * EscapePlanBlockPercent);
                 if (blockAmount > 0)
                 {
                     await CreatureCmd.GainBlock(creature, blockAmount, ValueProp.Unpowered, null);
@@ -90,12 +116,12 @@ internal sealed partial class HextechMayhemModifier
                     continue;
                 }
 
-                await PowerCmd.Apply<SlipperyPower>(creature, RepulsorSlipperyStacks, creature, null);
+                await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(creature, RepulsorSlipperyStacks, creature, null);
             }
         }
     }
 
-    private async Task ApplyPlayerTurnStartEnemyHexes(CombatState combatState, IReadOnlyList<Creature> players)
+    private async Task ApplyPlayerTurnStartEnemyHexes(HextechCombatState combatState, IReadOnlyList<Creature> players)
     {
         if (HasActiveMonsterHex(MonsterHexKind.MountainSoul))
         {
@@ -143,10 +169,12 @@ internal sealed partial class HextechMayhemModifier
             && combatState.RoundNumber % 4 == 0
             && players.Count > 0)
         {
+#if STS2_104_OR_NEWER
             await RunGroupedPlayerDebuffBurst(async () =>
             {
                 await PowerCmd.Apply<BorrowedTimePower>(players, 1m, null, null);
             });
+#endif
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.SingularityAI) && players.Count > 0)
@@ -155,7 +183,7 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private async Task BeforeEnemySideTurnStart(CombatState combatState, IReadOnlyList<Creature> players)
+    private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
     {
         _enemyProtectiveVeilTurnCounter++;
         _slapProcsThisTurn.Clear();
@@ -189,7 +217,7 @@ internal sealed partial class HextechMayhemModifier
             {
                 if (enemy.GetPowerAmount<SlipperyPower>() <= 0m)
                 {
-                    await PowerCmd.Apply<SlipperyPower>(enemy, ShrinkEngineSlipperyStacks, enemy, null);
+                    await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(enemy, ShrinkEngineSlipperyStacks, enemy, null);
                 }
 
                 if (enemy.CombatId != null)
@@ -258,7 +286,7 @@ internal sealed partial class HextechMayhemModifier
         {
             foreach (Creature enemy in enemies)
             {
-                await PowerCmd.Apply<ArtifactPower>(enemy, 1m, enemy, null);
+                await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(enemy, 1m, enemy, null);
             }
         }
 
