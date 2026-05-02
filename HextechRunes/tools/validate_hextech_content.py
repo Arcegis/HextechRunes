@@ -12,50 +12,50 @@ SRC = REPO_ROOT / "src"
 LOCALIZATION = REPO_ROOT / "assets" / "localization"
 
 TRACKING_PERSISTENT_FIELDS = {
-    "_slapProcsThisTurn",
-    "_tormentorProcsThisTurn",
-    "_courageProcsThisTurn",
-    "_bloodPactProcsThisTurn",
-    "_clownCollegeProcsThisTurn",
-    "_escapePlanTriggered",
-    "_escapePlanPending",
-    "_repulsorTriggered",
-    "_repulsorPending",
-    "_dawnTriggered",
-    "_speedDemonPending",
-    "_devilsDanceTriggeredThisTurn",
-    "_feelTheBurnTriggered",
-    "_feyMagicPendingNoDrawPlayers",
-    "_mikaelsBlessingTriggers",
-    "_goliathApplied",
-    "_protectiveVeilApplied",
-    "_thornmailApplied",
-    "_superBrainApplied",
-    "_astralBodyApplied",
-    "_drawYourSwordApplied",
-    "_madScientistApplied",
-    "_unmovableMountainApplied",
-    "_goldenSpatulaApplied",
-    "_tankEngineStacks",
-    "_shrinkEngineStacks",
-    "_getExcitedPending",
-    "_feelTheBurnPending",
-    "_mountainSoulHasPreviousTurn",
-    "_mountainSoulDamagedSinceLastTurn",
-    "_playerAttackCardsPlayedThisCombat",
-    "_playerCardsDrawnThisCombat",
-    "_eightPennyGatePlayersTriggeredThisTurn",
-    "_enemyProtectiveVeilTurnCounter",
+    "SlapProcsThisTurn",
+    "TormentorProcsThisTurn",
+    "CourageProcsThisTurn",
+    "BloodPactProcsThisTurn",
+    "ClownCollegeProcsThisTurn",
+    "EscapePlanTriggered",
+    "EscapePlanPending",
+    "RepulsorTriggered",
+    "RepulsorPending",
+    "DawnTriggered",
+    "SpeedDemonPending",
+    "DevilsDanceTriggeredThisTurn",
+    "FeelTheBurnTriggered",
+    "FeyMagicPendingNoDrawPlayers",
+    "MikaelsBlessingTriggers",
+    "GoliathApplied",
+    "ProtectiveVeilApplied",
+    "ThornmailApplied",
+    "SuperBrainApplied",
+    "AstralBodyApplied",
+    "DrawYourSwordApplied",
+    "MadScientistApplied",
+    "UnmovableMountainApplied",
+    "GoldenSpatulaApplied",
+    "TankEngineStacks",
+    "ShrinkEngineStacks",
+    "GetExcitedPending",
+    "FeelTheBurnPending",
+    "MountainSoulHasPreviousTurn",
+    "MountainSoulDamagedSinceLastTurn",
+    "PlayerAttackCardsPlayedThisCombat",
+    "PlayerCardsDrawnThisCombat",
+    "EightPennyGatePlayersTriggeredThisTurn",
+    "EnemyProtectiveVeilTurnCounter",
 }
 
 TRACKING_TRANSIENT_FIELDS = {
-    "_monsterDebuffActionProcKeysThisTurn",
-    "_groupedPlayerDebuffProcKeys",
-    "_eightPennyGatePendingCardHashes",
-    "_lastEnemyThresholdTriggerKey",
-    "_handlingMonsterTormentorBurn",
-    "_handlingServantMasterIllusion",
-    "_handlingGroupedPlayerDebuffs",
+    "MonsterDebuffActionProcKeysThisTurn",
+    "GroupedPlayerDebuffProcKeys",
+    "EightPennyGatePendingCardHashes",
+    "LastEnemyThresholdTriggerKey",
+    "HandlingMonsterTormentorBurn",
+    "HandlingServantMasterIllusion",
+    "HandlingGroupedPlayerDebuffs",
 }
 
 
@@ -276,10 +276,10 @@ def validate_relic_registry(errors: list[str]) -> None:
 
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
-    state_text = read(SRC / "HextechMayhem.State.cs")
+    state_text = read(SRC / "HextechMayhemCombatTrackingState.cs")
     mayhem_text = "\n".join(read(path) for path in source_files("HextechMayhem*.cs"))
     tracking_decl_match = re.search(
-        r"private readonly Dictionary<uint, int> _slapProcsThisTurn = new\(\);(?P<body>.*?)private int _enemyProtectiveVeilTurnCounter;",
+        r"internal sealed class HextechMayhemCombatTrackingState\s*\{(?P<body>.*?)\n\tpublic string Serialize\(\)",
         state_text,
         re.S,
     )
@@ -287,8 +287,12 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
         fail(errors, "combat tracking field block not found")
         return
 
-    declared = {"_slapProcsThisTurn", "_enemyProtectiveVeilTurnCounter"}
-    declared.update(re.findall(r"\b(_[A-Za-z0-9]+)\b", tracking_decl_match.group("body")))
+    declared = set(
+        re.findall(
+            r"\bpublic\s+(?:readonly\s+)?(?:Dictionary<[^>]+>|HashSet<[^>]+>|string\?|bool|int)\s+([A-Za-z0-9]+)",
+            tracking_decl_match.group("body"),
+        )
+    )
     classified = TRACKING_PERSISTENT_FIELDS | TRACKING_TRANSIENT_FIELDS
     unclassified = sorted(declared - classified)
     stale_classification = sorted(classified - declared)
@@ -299,7 +303,7 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
 
     for field in sorted(TRACKING_PERSISTENT_FIELDS):
         occurrences = mayhem_text.count(field)
-        if field == "_enemyProtectiveVeilTurnCounter":
+        if field == "EnemyProtectiveVeilTurnCounter":
             minimum = 4
         else:
             minimum = 5

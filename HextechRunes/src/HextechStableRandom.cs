@@ -49,6 +49,21 @@ internal static class HextechStableRandom
 		return (int)(HashRaw(parts) % (ulong)count);
 	}
 
+	public static int PlayerCombatRoundIndex(RunState runState, Player player, int count, int roundNumber)
+	{
+		return IndexFromRawParts(
+			count,
+			runState.Rng.StringSeed,
+			"|act:",
+			runState.CurrentActIndex.ToString(),
+			"|round:",
+			roundNumber.ToString(),
+			"|slot:",
+			runState.GetPlayerSlotIndex(player).ToString(),
+			"|net:",
+			player.NetId.ToString());
+	}
+
 	public static ulong HashRaw(params string?[] parts)
 	{
 		ulong hash = OffsetBasis;

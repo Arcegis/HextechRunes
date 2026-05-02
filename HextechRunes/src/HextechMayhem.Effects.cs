@@ -33,11 +33,11 @@ internal sealed partial class HextechMayhemModifier
 
     private async Task RunGroupedPlayerDebuffBurst(Func<Task> action)
     {
-        bool wasHandlingGroupedPlayerDebuffs = _handlingGroupedPlayerDebuffs;
+        bool wasHandlingGroupedPlayerDebuffs = _combatTracking.HandlingGroupedPlayerDebuffs;
         if (!wasHandlingGroupedPlayerDebuffs)
         {
-            _handlingGroupedPlayerDebuffs = true;
-            _groupedPlayerDebuffProcKeys.Clear();
+            _combatTracking.HandlingGroupedPlayerDebuffs = true;
+            _combatTracking.GroupedPlayerDebuffProcKeys.Clear();
         }
 
         try
@@ -48,8 +48,8 @@ internal sealed partial class HextechMayhemModifier
         {
             if (!wasHandlingGroupedPlayerDebuffs)
             {
-                _groupedPlayerDebuffProcKeys.Clear();
-                _handlingGroupedPlayerDebuffs = false;
+                _combatTracking.GroupedPlayerDebuffProcKeys.Clear();
+                _combatTracking.HandlingGroupedPlayerDebuffs = false;
             }
         }
     }
@@ -82,7 +82,7 @@ internal sealed partial class HextechMayhemModifier
         if (HasActiveMonsterHex(MonsterHexKind.Goliath)
             && creature.CombatId != null)
         {
-            _goliathApplied.Add(creature.CombatId.Value);
+            _combatTracking.GoliathApplied.Add(creature.CombatId.Value);
             await EnsureMonsterMaxHpBonus(creature, 0.3m);
             UpdateEnemyScale(creature);
         }
@@ -90,20 +90,20 @@ internal sealed partial class HextechMayhemModifier
         if (HasActiveMonsterHex(MonsterHexKind.AstralBody)
             && creature.CombatId != null)
         {
-            _astralBodyApplied.Add(creature.CombatId.Value);
+            _combatTracking.AstralBodyApplied.Add(creature.CombatId.Value);
             await EnsureMonsterMaxHpBonus(creature, 0.3m);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula)
             && creature.CombatId != null)
         {
-            _goldenSpatulaApplied.Add(creature.CombatId.Value);
+            _combatTracking.GoldenSpatulaApplied.Add(creature.CombatId.Value);
             await EnsureMonsterMaxHpBonus(creature, 0.35m);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.MadScientist)
             && creature.CombatId != null
-            && _madScientistApplied.Add(creature.CombatId.Value))
+            && _combatTracking.MadScientistApplied.Add(creature.CombatId.Value))
         {
             int maxHpLoss = Math.Max(1, (int)Math.Floor(creature.MaxHp * 0.2m));
             int newMaxHp = Math.Max(1, creature.MaxHp - maxHpLoss);
@@ -116,25 +116,25 @@ internal sealed partial class HextechMayhemModifier
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.DrawYourSword)
-            && TryMarkPersistentHexApplied(_drawYourSwordApplied, creature))
+            && TryMarkPersistentHexApplied(_combatTracking.DrawYourSwordApplied, creature))
         {
             await PowerCmd.Apply<ImbalancedPower>(creature, 1m, creature, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.ProtectiveVeil)
-            && TryMarkPersistentHexApplied(_protectiveVeilApplied, creature))
+            && TryMarkPersistentHexApplied(_combatTracking.ProtectiveVeilApplied, creature))
         {
             await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(creature, ProtectiveVeilInitialArtifactStacks, creature, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.Thornmail)
-            && TryMarkPersistentHexApplied(_thornmailApplied, creature))
+            && TryMarkPersistentHexApplied(_combatTracking.ThornmailApplied, creature))
         {
             await HextechEnemyPowerScalingHooks.Apply<ReflectPower>(creature, 5m, creature, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.SuperBrain)
-            && TryMarkPersistentHexApplied(_superBrainApplied, creature))
+            && TryMarkPersistentHexApplied(_combatTracking.SuperBrainApplied, creature))
         {
             int plating = (int)Math.Floor(creature.MaxHp * 0.04m);
             if (plating > 0)
@@ -153,7 +153,7 @@ internal sealed partial class HextechMayhemModifier
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.UnmovableMountain)
-            && TryMarkPersistentHexApplied(_unmovableMountainApplied, creature))
+            && TryMarkPersistentHexApplied(_combatTracking.UnmovableMountainApplied, creature))
         {
             await PowerCmd.Apply<BarricadePower>(creature, 1m, creature, null);
         }
@@ -199,17 +199,11 @@ internal sealed partial class HextechMayhemModifier
 
     private int GetEnemySingularityAIStatusIndex(Player player, int roundNumber)
     {
-        return HextechStableRandom.IndexFromRawParts(
+        return HextechStableRandom.PlayerCombatRoundIndex(
+            RunState,
+            player,
             EnemySingularityAIStatusPool.Count,
-            RunState.Rng.StringSeed,
-            "|act:",
-            RunState.CurrentActIndex.ToString(),
-            "|round:",
-            roundNumber.ToString(),
-            "|slot:",
-            RunState.GetPlayerSlotIndex(player).ToString(),
-            "|net:",
-            player.NetId.ToString());
+            roundNumber);
     }
 
     private static CardModel CreateEnemySingularityAIStatusCard(
@@ -280,7 +274,7 @@ internal sealed partial class HextechMayhemModifier
 
     private async Task TryApplyServantMasterIllusion(Creature creature, Creature? applier, CardModel? cardSource)
     {
-        if (_handlingServantMasterIllusion
+        if (_combatTracking.HandlingServantMasterIllusion
             || !HasActiveMonsterHex(MonsterHexKind.ServantMaster)
             || creature.Side != CombatSide.Enemy
             || !creature.IsAlive
@@ -293,12 +287,12 @@ internal sealed partial class HextechMayhemModifier
 
         try
         {
-            _handlingServantMasterIllusion = true;
+            _combatTracking.HandlingServantMasterIllusion = true;
             await PowerCmd.Apply<IllusionPower>(creature, 1m, applier ?? creature, cardSource);
         }
         finally
         {
-            _handlingServantMasterIllusion = false;
+            _combatTracking.HandlingServantMasterIllusion = false;
         }
     }
 
@@ -316,8 +310,8 @@ internal sealed partial class HextechMayhemModifier
     private void UpdateEnemyScale(Creature creature)
     {
         float baseScale = HasActiveMonsterHex(MonsterHexKind.Goliath) ? 1.35f : 1f;
-        int tankStacks = creature.CombatId == null ? 0 : _tankEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
-        int shrinkStacks = creature.CombatId == null ? 0 : _shrinkEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
+        int tankStacks = creature.CombatId == null ? 0 : _combatTracking.TankEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
+        int shrinkStacks = creature.CombatId == null ? 0 : _combatTracking.ShrinkEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
         float finalScale = Math.Max(0.2f, baseScale + tankStacks * 0.05f - shrinkStacks * 0.02f);
         NCombatRoom.Instance?.GetCreatureNode(creature)?.SetDefaultScaleTo(finalScale, 0f);
     }
@@ -364,10 +358,10 @@ internal sealed partial class HextechMayhemModifier
     private bool ShouldSuppressMonsterDebuffDuplicate(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
     {
         string powerTypeName = power.GetType().FullName ?? power.GetType().Name;
-        if (_handlingGroupedPlayerDebuffs)
+        if (_combatTracking.HandlingGroupedPlayerDebuffs)
         {
             string groupedKey = $"{applier?.CombatId?.ToString() ?? "none"}:{powerTypeName}:{amount}";
-            return !_groupedPlayerDebuffProcKeys.Add(groupedKey);
+            return !_combatTracking.GroupedPlayerDebuffProcKeys.Add(groupedKey);
         }
 
         if (cardSource == null || applier?.CombatId == null)
@@ -376,7 +370,7 @@ internal sealed partial class HextechMayhemModifier
         }
 
         string actionKey = $"{applier.CombatId.Value}:{HextechStableRandom.InstanceHash(cardSource)}:{powerTypeName}:{amount}";
-        return !_monsterDebuffActionProcKeysThisTurn.Add(actionKey);
+        return !_combatTracking.MonsterDebuffActionProcKeysThisTurn.Add(actionKey);
     }
 
     private bool ShouldSuppressDuplicateEnemyThresholdTrigger(Creature target, DamageResult result, Creature? dealer, CardModel? cardSource)
@@ -387,8 +381,8 @@ internal sealed partial class HextechMayhemModifier
             result.UnblockedDamage.ToString(System.Globalization.CultureInfo.InvariantCulture),
             dealer?.CombatId?.ToString() ?? "none",
             HextechStableRandom.InstanceKey(cardSource));
-        bool suppress = key == _lastEnemyThresholdTriggerKey;
-        _lastEnemyThresholdTriggerKey = key;
+        bool suppress = key == _combatTracking.LastEnemyThresholdTriggerKey;
+        _combatTracking.LastEnemyThresholdTriggerKey = key;
         return suppress;
     }
 
@@ -428,7 +422,7 @@ internal sealed partial class HextechMayhemModifier
         }
 
         ulong playerId = cardPlay.Card.Owner.NetId;
-        _playerAttackCardsPlayedThisCombat[playerId] = _playerAttackCardsPlayedThisCombat.GetValueOrDefault(playerId, 0) + 1;
+        _combatTracking.PlayerAttackCardsPlayedThisCombat[playerId] = _combatTracking.PlayerAttackCardsPlayedThisCombat.GetValueOrDefault(playerId, 0) + 1;
     }
 
     private void TrackEnemyEightPennyGateCardPlayed(CardPlay cardPlay)
@@ -439,8 +433,8 @@ internal sealed partial class HextechMayhemModifier
             return;
         }
 
-        _eightPennyGatePlayersTriggeredThisTurn.Add(cardPlay.Card.Owner!.NetId);
-        _eightPennyGatePendingCardHashes[cardPlay.Card.Owner.NetId] = HextechStableRandom.InstanceHash(cardPlay.Card);
+        _combatTracking.EightPennyGatePlayersTriggeredThisTurn.Add(cardPlay.Card.Owner!.NetId);
+        _combatTracking.EightPennyGatePendingCardHashes[cardPlay.Card.Owner.NetId] = HextechStableRandom.InstanceHash(cardPlay.Card);
     }
 
     private bool ShouldEnemyEightPennyGateExhaust(CardModel card, bool isAutoPlay)
@@ -455,8 +449,8 @@ internal sealed partial class HextechMayhemModifier
         }
 
         ulong playerId = owner.NetId;
-        return !_eightPennyGatePlayersTriggeredThisTurn.Contains(playerId)
-            || (_eightPennyGatePendingCardHashes.TryGetValue(playerId, out int pendingCardHash)
+        return !_combatTracking.EightPennyGatePlayersTriggeredThisTurn.Contains(playerId)
+            || (_combatTracking.EightPennyGatePendingCardHashes.TryGetValue(playerId, out int pendingCardHash)
                 && pendingCardHash == HextechStableRandom.InstanceHash(card));
     }
 
@@ -468,9 +462,9 @@ internal sealed partial class HextechMayhemModifier
         }
 
         ulong playerId = card.Owner.NetId;
-        if (_eightPennyGatePendingCardHashes.GetValueOrDefault(playerId, 0) == HextechStableRandom.InstanceHash(card))
+        if (_combatTracking.EightPennyGatePendingCardHashes.GetValueOrDefault(playerId, 0) == HextechStableRandom.InstanceHash(card))
         {
-            _eightPennyGatePendingCardHashes.Remove(playerId);
+            _combatTracking.EightPennyGatePendingCardHashes.Remove(playerId);
         }
     }
 
@@ -483,7 +477,7 @@ internal sealed partial class HextechMayhemModifier
 
         return IsNetworkMultiplayer()
             ? CountPlayerAttackCardsPlayedFromHistory(card.Owner)
-            : _playerAttackCardsPlayedThisCombat.GetValueOrDefault(card.Owner.NetId, 0);
+            : _combatTracking.PlayerAttackCardsPlayedThisCombat.GetValueOrDefault(card.Owner.NetId, 0);
     }
 
     private static int CountPlayerAttackCardsPlayedFromHistory(Player player)

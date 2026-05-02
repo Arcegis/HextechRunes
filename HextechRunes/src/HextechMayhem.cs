@@ -103,7 +103,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             }
         }
 
-        _enemyProtectiveVeilTurnCounter = 0;
+        _combatTracking.EnemyProtectiveVeilTurnCounter = 0;
     }
 
     private async Task ApplyMonsterCombatStartHexes(CombatRoom room)
