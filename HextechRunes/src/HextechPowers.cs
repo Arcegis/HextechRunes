@@ -23,8 +23,7 @@ public sealed class HextechBurnPower : PowerModel
 
 	public override async Task AfterTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		bool shouldTrigger = side == Owner.Side;
-		if (!shouldTrigger || Amount <= 0 || !Owner.IsAlive)
+		if (side != CombatSide.Player || Amount <= 0 || !Owner.IsAlive)
 		{
 			return;
 		}
