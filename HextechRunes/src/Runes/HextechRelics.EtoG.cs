@@ -57,7 +57,8 @@ public sealed class ExplosionArtRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new CardsVar(2)
+		new CardsVar(2),
+		new DynamicVar("TurnStartCards", 1m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -77,9 +78,19 @@ public sealed class ExplosionArtRune : HextechRelicBase
 			return;
 		}
 
+		int cardsToCreate = DynamicVars["TurnStartCards"].IntValue;
+		if (combatState.RoundNumber == 1)
+		{
+			cardsToCreate += DynamicVars.Cards.IntValue;
+		}
+		if (cardsToCreate <= 0)
+		{
+			return;
+		}
+
 		Flash();
-		List<CardModel> cards = new(DynamicVars.Cards.IntValue);
-		for (int i = 0; i < DynamicVars.Cards.IntValue; i++)
+		List<CardModel> cards = new(cardsToCreate);
+		for (int i = 0; i < cardsToCreate; i++)
 		{
 			cards.Add(combatState.CreateCard<BigBang>(Owner));
 		}
@@ -115,7 +126,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	[
 		new DynamicVar("NormalReplays", 1m),
 		new DynamicVar("EliteReplays", 2m),
-		new DynamicVar("BossReplays", 3m)
+		new DynamicVar("BossReplays", 2m)
 	];
 
 	public override Task BeforeCombatStart()

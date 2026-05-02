@@ -106,7 +106,10 @@ internal static class HextechEnemyPowerScalingHooks
 			return ScalingOverride.PlayerCount;
 		}
 
-		if (powerType == typeof(HardenedShellPower) || powerType == typeof(RegenPower) || powerType == typeof(PlatingPower))
+		if (powerType == typeof(HardenedShellPower)
+			|| powerType == typeof(RegenPower)
+			|| powerType == typeof(PlatingPower)
+			|| powerType == typeof(ReflectPower))
 		{
 			return ScalingOverride.Unscaled;
 		}

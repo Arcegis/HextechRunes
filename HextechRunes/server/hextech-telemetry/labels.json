@@ -185,6 +185,15 @@
     "DIE_FOR_YOU_RUNE": "为你而死",
     "HAPPY_ACCIDENT_RUNE": "歪打正着",
     "MISERY_RUNE": "苦楚",
+    "ADVANCE_TO_RETREAT_RUNE": "以进为退",
+    "NEAR_DEATH_FEAST_RUNE": "濒死狂宴",
+    "CHAIN_IN_SLEEVE_RUNE": "袖中连环",
+    "ROYAL_COMMAND_RUNE": "王令",
+    "ROYAL_TRIAL_RUNE": "御前试剑",
+    "UNSEALED_THRONE_RUNE": "解封王座",
+    "CORE_OVERLOAD_RUNE": "核心过载",
+    "BONE_GUARD_RUNE": "尸骨护主",
+    "PLASTER_RUNE": "石膏",
     "GHOST_FORM_RUNE": "幽魂形态"
   },
   "monsterHexes": {

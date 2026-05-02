@@ -780,10 +780,11 @@ public sealed class MiseryRune : HextechRelicBase
 			return;
 		}
 
-		List<Creature> flashTargets = enemies.Append(Owner.Creature).ToList();
+		Creature target = enemies[Owner.RunState.Rng.Niche.NextInt(enemies.Count)];
+		List<Creature> flashTargets = [target, Owner.Creature];
 		Flash(flashTargets);
-		await PowerCmd.Apply<StrengthPower>(enemies, DynamicVars.Strength.BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<DexterityPower>(enemies, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<StrengthPower>(target, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<DexterityPower>(target, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<StrengthPower>(Owner.Creature, -DynamicVars.Strength.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<DexterityPower>(Owner.Creature, -DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
 	}

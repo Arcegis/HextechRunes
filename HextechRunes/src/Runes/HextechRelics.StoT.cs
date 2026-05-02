@@ -771,7 +771,7 @@ public sealed class TrickMagicCard : CardModel
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new CardsVar(2),
-		new PowerVar<BufferPower>(2m),
+		new PowerVar<BufferPower>(1m),
 		new DynamicVar("Replays", 1m)
 	];
 
@@ -795,6 +795,6 @@ public sealed class TrickMagicCard : CardModel
 
 	protected override void OnUpgrade()
 	{
-		DynamicVars["Replays"].UpgradeValueBy(1m);
+		DynamicVars["BufferPower"].UpgradeValueBy(1m);
 	}
 }

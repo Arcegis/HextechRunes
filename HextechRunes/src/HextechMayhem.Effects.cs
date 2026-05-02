@@ -135,7 +135,7 @@ internal sealed partial class HextechMayhemModifier
         if (HasActiveMonsterHex(MonsterHexKind.Thornmail)
             && TryMarkPersistentHexApplied(_thornmailApplied, creature))
         {
-            await PowerCmd.Apply<ReflectPower>(creature, 5m, creature, null);
+            await HextechEnemyPowerScalingHooks.Apply<ReflectPower>(creature, 5m, creature, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.SuperBrain)
