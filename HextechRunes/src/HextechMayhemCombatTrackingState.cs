@@ -38,7 +38,6 @@ internal sealed class HextechMayhemCombatTrackingState
 	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisCombat = new();
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
-	public readonly Dictionary<ulong, int> EightPennyGatePendingCardHashes = new();
 	public readonly HashSet<string> MonsterDebuffActionProcKeysThisTurn = new();
 	public readonly HashSet<string> GroupedPlayerDebuffProcKeys = new();
 	public string? LastEnemyThresholdTriggerKey;
@@ -230,7 +229,6 @@ internal sealed class HextechMayhemCombatTrackingState
 		PlayerAttackCardsPlayedThisCombat.Clear();
 		PlayerCardsDrawnThisCombat.Clear();
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
-		EightPennyGatePendingCardHashes.Clear();
 		MonsterDebuffActionProcKeysThisTurn.Clear();
 		GroupedPlayerDebuffProcKeys.Clear();
 		LastEnemyThresholdTriggerKey = null;

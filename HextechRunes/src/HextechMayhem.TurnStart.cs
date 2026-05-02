@@ -18,7 +18,6 @@ internal sealed partial class HextechMayhemModifier
 		_combatTracking.BloodPactProcsThisTurn.Clear();
 		_combatTracking.ClownCollegeProcsThisTurn.Clear();
 		_combatTracking.EightPennyGatePlayersTriggeredThisTurn.Clear();
-		_combatTracking.EightPennyGatePendingCardHashes.Clear();
 
 		await ApplyToCurrentEnemiesIfNeeded();
         QueueEscapePlanTriggersFromCurrentEnemyState(combatState);

@@ -51,7 +51,6 @@ TRACKING_PERSISTENT_FIELDS = {
 TRACKING_TRANSIENT_FIELDS = {
     "MonsterDebuffActionProcKeysThisTurn",
     "GroupedPlayerDebuffProcKeys",
-    "EightPennyGatePendingCardHashes",
     "LastEnemyThresholdTriggerKey",
     "HandlingMonsterTormentorBurn",
     "HandlingServantMasterIllusion",

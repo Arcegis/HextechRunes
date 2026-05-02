@@ -425,19 +425,7 @@ internal sealed partial class HextechMayhemModifier
         _combatTracking.PlayerAttackCardsPlayedThisCombat[playerId] = _combatTracking.PlayerAttackCardsPlayedThisCombat.GetValueOrDefault(playerId, 0) + 1;
     }
 
-    private void TrackEnemyEightPennyGateCardPlayed(CardPlay cardPlay)
-    {
-        if (!ShouldEnemyEightPennyGateExhaust(cardPlay.Card, cardPlay.IsAutoPlay)
-            || !cardPlay.IsFirstInSeries)
-        {
-            return;
-        }
-
-        _combatTracking.EightPennyGatePlayersTriggeredThisTurn.Add(cardPlay.Card.Owner!.NetId);
-        _combatTracking.EightPennyGatePendingCardHashes[cardPlay.Card.Owner.NetId] = HextechStableRandom.InstanceHash(cardPlay.Card);
-    }
-
-    private bool ShouldEnemyEightPennyGateExhaust(CardModel card, bool isAutoPlay)
+    private bool TryConsumeEnemyEightPennyGate(CardModel card, bool isAutoPlay)
     {
         Player? owner = card.Owner;
         if (!HasActiveMonsterHex(MonsterHexKind.EightPennyGate)
@@ -449,23 +437,7 @@ internal sealed partial class HextechMayhemModifier
         }
 
         ulong playerId = owner.NetId;
-        return !_combatTracking.EightPennyGatePlayersTriggeredThisTurn.Contains(playerId)
-            || (_combatTracking.EightPennyGatePendingCardHashes.TryGetValue(playerId, out int pendingCardHash)
-                && pendingCardHash == HextechStableRandom.InstanceHash(card));
-    }
-
-    private void ClearEnemyEightPennyGatePendingCard(CardModel card)
-    {
-        if (card.Owner == null)
-        {
-            return;
-        }
-
-        ulong playerId = card.Owner.NetId;
-        if (_combatTracking.EightPennyGatePendingCardHashes.GetValueOrDefault(playerId, 0) == HextechStableRandom.InstanceHash(card))
-        {
-            _combatTracking.EightPennyGatePendingCardHashes.Remove(playerId);
-        }
+        return _combatTracking.EightPennyGatePlayersTriggeredThisTurn.Add(playerId);
     }
 
     private int GetPlayerAttacksPlayedThisCombat(CardModel card)
