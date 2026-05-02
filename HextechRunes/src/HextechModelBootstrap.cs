@@ -37,6 +37,12 @@ internal static class HextechModelBootstrap
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechBloodPactTemporaryStrengthPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechAttackReplayPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporarySlowPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechOceanDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechInfernalDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechMountainDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechChemtechDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechCloudDragonSoulPower));
 		EnsureSavedPropertyNetIdBitSize();
 	}
 

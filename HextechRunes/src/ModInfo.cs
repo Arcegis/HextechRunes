@@ -30,6 +30,30 @@ internal static class ModInfo
 
     public const string BladeWaltzCardPortraitPath = "res://HextechRunes/images/cards/bladeWaltzCard.png";
 
+    public const string OceanDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/oceanDragonSoulCard.png";
+
+    public const string InfernalDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/infernalDragonSoulCard.png";
+
+    public const string HextechDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/hextechDragonSoulCard.png";
+
+    public const string MountainDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/mountainDragonSoulCard.png";
+
+    public const string ChemtechDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/chemtechDragonSoulCard.png";
+
+    public const string CloudDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/cloudDragonSoulCard.png";
+
+    public const string OceanDragonSoulPowerIconPath = "res://HextechRunes/images/powers/oceanDragonSoulPower.png";
+
+    public const string InfernalDragonSoulPowerIconPath = "res://HextechRunes/images/powers/infernalDragonSoulPower.png";
+
+    public const string HextechDragonSoulPowerIconPath = "res://HextechRunes/images/powers/hextechDragonSoulPower.png";
+
+    public const string MountainDragonSoulPowerIconPath = "res://HextechRunes/images/powers/mountainDragonSoulPower.png";
+
+    public const string ChemtechDragonSoulPowerIconPath = "res://HextechRunes/images/powers/chemtechDragonSoulPower.png";
+
+    public const string CloudDragonSoulPowerIconPath = "res://HextechRunes/images/powers/cloudDragonSoulPower.png";
+
     private static readonly IReadOnlyList<Type> SilverRuneTypes = HextechContentRegistry.SilverRuneTypes;
 
     private static readonly IReadOnlyList<Type> GoldRuneTypes = HextechContentRegistry.GoldRuneTypes;

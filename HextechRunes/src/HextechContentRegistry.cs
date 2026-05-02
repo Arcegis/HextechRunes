@@ -88,6 +88,9 @@ internal static class HextechContentRegistry
         Rune<PlasterRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 13),
         Rune<EasyDoesItRune>(HextechRarityTier.Silver),
         Rune<SweepingBladeRune>(HextechRarityTier.Silver),
+        Rune<OceanDragonSoulRune>(HextechRarityTier.Silver),
+        Rune<InfernalDragonSoulRune>(HextechRarityTier.Silver),
+        Rune<HextechDragonSoulRune>(HextechRarityTier.Silver),
         Rune<TransmuteGoldRune>(HextechRarityTier.Silver),
 
         Rune<JudicatorRune>(HextechRarityTier.Gold),
@@ -117,6 +120,9 @@ internal static class HextechContentRegistry
         Rune<SoulEaterRune>(HextechRarityTier.Gold),
         Rune<DonationRune>(HextechRarityTier.Gold),
         Rune<TwiceThriceRune>(HextechRarityTier.Gold),
+        Rune<BreadAndButterRune>(HextechRarityTier.Gold),
+        Rune<BreadAndCheeseRune>(HextechRarityTier.Gold),
+        Rune<BreadAndJamRune>(HextechRarityTier.Gold),
         Rune<FirebrandRune>(HextechRarityTier.Gold),
         Rune<NightstalkingRune>(HextechRarityTier.Gold),
         Rune<GetExcitedRune>(HextechRarityTier.Gold),
@@ -139,7 +145,7 @@ internal static class HextechContentRegistry
         Rune<SummonForthRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 2),
         Rune<ImmortalBoneRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 7),
         Rune<MakeItMineRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 8),
-        Rune<DoomsdayRune>(HextechRarityTier.Gold),
+        Rune<DoomsdayRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 14),
         Rune<OldIdolRune>(HextechRarityTier.Gold),
         Rune<MonarchsGazeRune>(HextechRarityTier.Gold),
         Rune<HardBonesRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 11),
@@ -158,9 +164,6 @@ internal static class HextechContentRegistry
         Rune<GlassCannonRune>(HextechRarityTier.Prismatic),
         Rune<FinalFormRune>(HextechRarityTier.Prismatic),
         Rune<BackToBasicsRune>(HextechRarityTier.Prismatic),
-        Rune<BreadAndButterRune>(HextechRarityTier.Prismatic),
-        Rune<BreadAndCheeseRune>(HextechRarityTier.Prismatic),
-        Rune<BreadAndJamRune>(HextechRarityTier.Prismatic),
         Rune<DrawYourSwordRune>(HextechRarityTier.Prismatic),
         Rune<FeelTheBurnRune>(HextechRarityTier.Prismatic, flags: RuneFlags.Disabled),
         Rune<MikaelsBlessingRune>(HextechRarityTier.Prismatic, flags: RuneFlags.Disabled),
@@ -214,6 +217,7 @@ internal static class HextechContentRegistry
         Rune<NearDeathFeastRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Ironclad, characterOrder: 8),
         Rune<UnsealedThroneRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Regent, characterOrder: 12),
         Rune<CoreOverloadRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Defect, characterOrder: 12),
+        Rune<OmniDragonSoulRune>(HextechRarityTier.Prismatic),
         Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic)
     ];
 
@@ -340,7 +344,13 @@ internal static class HextechContentRegistry
     [
         typeof(ElicitCard),
         typeof(TrickMagicCard),
-        typeof(BladeWaltzCard)
+        typeof(BladeWaltzCard),
+        typeof(OceanDragonSoulCard),
+        typeof(InfernalDragonSoulCard),
+        typeof(HextechDragonSoulCard),
+        typeof(MountainDragonSoulCard),
+        typeof(ChemtechDragonSoulCard),
+        typeof(CloudDragonSoulCard)
     ];
 
     internal static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = RuneTypesWithFlag(RuneFlags.Disabled).ToHashSet();

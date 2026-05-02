@@ -116,6 +116,12 @@ internal static class AssetHooks
 		{
 			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",
 			HextechAttackReplayPower => $"res://{ModInfo.Id}/images/powers/hextechAttackReplayPower.png",
+			HextechOceanDragonSoulPower => ModInfo.OceanDragonSoulPowerIconPath,
+			HextechInfernalDragonSoulPower => ModInfo.InfernalDragonSoulPowerIconPath,
+			HextechDragonSoulPower => ModInfo.HextechDragonSoulPowerIconPath,
+			HextechMountainDragonSoulPower => ModInfo.MountainDragonSoulPowerIconPath,
+			HextechChemtechDragonSoulPower => ModInfo.ChemtechDragonSoulPowerIconPath,
+			HextechCloudDragonSoulPower => ModInfo.CloudDragonSoulPowerIconPath,
 			_ => null
 		};
 		if (path == null)
@@ -135,6 +141,12 @@ internal static class AssetHooks
 			ElicitCard => ModInfo.ElicitCardPortraitPath,
 			TrickMagicCard => ModInfo.TrickMagicCardPortraitPath,
 			BladeWaltzCard => ModInfo.BladeWaltzCardPortraitPath,
+			OceanDragonSoulCard => ModInfo.OceanDragonSoulCardPortraitPath,
+			InfernalDragonSoulCard => ModInfo.InfernalDragonSoulCardPortraitPath,
+			HextechDragonSoulCard => ModInfo.HextechDragonSoulCardPortraitPath,
+			MountainDragonSoulCard => ModInfo.MountainDragonSoulCardPortraitPath,
+			ChemtechDragonSoulCard => ModInfo.ChemtechDragonSoulCardPortraitPath,
+			CloudDragonSoulCard => ModInfo.CloudDragonSoulCardPortraitPath,
 			_ => null
 		};
 		if (path == null)
