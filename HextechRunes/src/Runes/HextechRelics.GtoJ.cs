@@ -68,7 +68,12 @@ public sealed class GoldenSpatulaRune : HextechRelicBase
 	{
 		if (Owner == null
 			|| Owner.Creature.IsDead
-			|| Owner.PlayerRng.Rewards.NextInt(100) >= DynamicVars["ForgeRewardChance"].IntValue)
+			|| !HextechStableRandom.PercentChance(
+				(RunState)Owner.RunState,
+				DynamicVars["ForgeRewardChance"].IntValue,
+				"gacha-addict-forge-reward",
+				HextechStableRandom.PlayerKey(Owner),
+				Owner.Relics.Count.ToString()))
 		{
 			return Task.CompletedTask;
 		}
@@ -281,7 +286,7 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 		bool freedAny = false;
 		for (int i = 0; i < cardsToFree; i++)
 		{
-			CardModel? card = PickCardToMakeFree();
+			CardModel? card = PickCardToMakeFree(i, cardsToFree);
 			if (card == null)
 			{
 				break;
@@ -299,7 +304,7 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	private CardModel? PickCardToMakeFree()
+	private CardModel? PickCardToMakeFree(int ordinal, int total)
 	{
 		if (Owner?.PlayerCombatState == null)
 		{
@@ -307,9 +312,36 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 		}
 
 		IReadOnlyList<CardModel> handCards = PileType.Hand.GetPile(Owner).Cards;
-		Rng rng = Owner.RunState.Rng.CombatCardSelection;
-		return rng.NextItem(handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: false)))
-			?? rng.NextItem(handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)));
+		return PickCardToMakeFreeFromCandidates(
+				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: false)).ToList(),
+				ordinal,
+				total,
+				includeGlobalModifiers: false)
+			?? PickCardToMakeFreeFromCandidates(
+				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
+				ordinal,
+				total,
+				includeGlobalModifiers: true);
+	}
+
+	private CardModel? PickCardToMakeFreeFromCandidates(IReadOnlyList<CardModel> candidates, int ordinal, int total, bool includeGlobalModifiers)
+	{
+		if (Owner == null || candidates.Count == 0)
+		{
+			return null;
+		}
+
+		int index = HextechStableRandom.Index(
+			(RunState)Owner.RunState,
+			candidates.Count,
+			"guinsoos-rageblade-free-card",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			ordinal.ToString(),
+			total.ToString(),
+			includeGlobalModifiers ? "global" : "base",
+			HextechStableRandom.CardPileKey(candidates));
+		return candidates[index];
 	}
 }
 
@@ -429,7 +461,12 @@ public sealed class HappyAccidentRune : HextechRelicBase
 		PlayerChoiceContext choiceContext = new BlockingPlayerChoiceContext();
 		for (int i = 0; i < DynamicVars["OrbCount"].IntValue; i++)
 		{
-			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
+			OrbModel orb = HextechStableRandom.CreateOrb(
+				(RunState)Owner.RunState,
+				Owner,
+				"happy-accident-status-orb",
+				CombatManager.Instance.History.Entries.Count() + i,
+				Owner.Creature.CombatState.RoundNumber);
 			await OrbCmd.Channel(choiceContext, orb, Owner);
 		}
 
@@ -739,7 +776,15 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 			return playCount;
 		}
 
-		return Owner.RunState.Rng.Niche.NextInt(100) < 33 ? playCount + 1 : playCount;
+		bool shouldReplay = HextechStableRandom.PercentChance(
+			(RunState)Owner.RunState,
+			33,
+			"jeweled-gauntlet-replay",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			CombatManager.Instance.History.Entries.Count().ToString(),
+			HextechStableRandom.CardKey(card));
+		return shouldReplay ? playCount + 1 : playCount;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)

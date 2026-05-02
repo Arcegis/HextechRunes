@@ -45,7 +45,7 @@ public static class ModEntry
 		HextechUpdateChecker.Install(harmony);
 		TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
 		AssetHooks.Install(harmony);
-		CollectionHooks.Install(harmony);
+		TryInstallOptionalHookGroup("relic collection", () => CollectionHooks.Install(harmony));
 		HextechShopForgeHooks.Install(harmony);
 		HextechForgeStackingHooks.Install(harmony);
 		HextechUiSafetyHooks.Install(harmony);

@@ -196,7 +196,14 @@ internal static class HextechCombatHooks
 			int burnAmount = (int)Math.Floor(amount);
 			if (enemies.Count > 0 && burnAmount > 0)
 			{
-				Creature target = enemies[player.RunState.Rng.Niche.NextInt(enemies.Count)];
+				Creature target = enemies[HextechStableRandom.Index(
+					(RunState)player.RunState,
+					enemies.Count,
+					"holy-fire-heal-target",
+					HextechStableRandom.PlayerKey(player),
+					creature.CombatState.RoundNumber.ToString(),
+					burnAmount.ToString(),
+					CombatManager.Instance.History.Entries.Count().ToString())];
 				await PowerCmd.Apply<HextechBurnPower>(target, burnAmount, player.Creature, null);
 			}
 		}

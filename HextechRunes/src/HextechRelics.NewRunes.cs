@@ -244,12 +244,7 @@ public sealed class SendThemInRune : HextechRelicBase
 			return;
 		}
 
-		CardModel card = Owner.RunState.Rng.CombatCardGeneration.NextInt(3) switch
-		{
-			0 => combatState.CreateCard<MinionStrike>(Owner),
-			1 => combatState.CreateCard<MinionDiveBomb>(Owner),
-			_ => combatState.CreateCard<MinionSacrifice>(Owner)
-		};
+		CardModel card = HextechStableRandom.CreateMinionCard(combatState, Owner, "send-them-in", combatState.RoundNumber);
 
 		Flash();
 		await HextechCardGeneration.AddGeneratedCardToCombat(card, PileType.Hand, addedByPlayer: true);
@@ -649,21 +644,20 @@ public sealed class RoyalTrialRune : HextechRelicBase
 		List<CardModel> cards = new(DynamicVars.Cards.IntValue);
 		for (int i = 0; i < DynamicVars.Cards.IntValue; i++)
 		{
-			cards.Add(CreateRandomMinionCard(combatState));
+			cards.Add(CreateRandomMinionCard(combatState, i));
 		}
 
 		Flash();
 		await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
 	}
 
-	private CardModel CreateRandomMinionCard(HextechCombatState combatState)
+	private CardModel CreateRandomMinionCard(HextechCombatState combatState, int ordinal)
 	{
-		return Owner!.RunState.Rng.CombatCardGeneration.NextInt(3) switch
-		{
-			0 => combatState.CreateCard<MinionStrike>(Owner),
-			1 => combatState.CreateCard<MinionDiveBomb>(Owner),
-			_ => combatState.CreateCard<MinionSacrifice>(Owner)
-		};
+		return HextechStableRandom.CreateMinionCard(
+			combatState,
+			Owner!,
+			"royal-trial",
+			CombatManager.Instance.History.Entries.Count() + ordinal);
 	}
 }
 

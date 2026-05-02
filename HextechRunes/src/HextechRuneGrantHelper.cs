@@ -58,10 +58,18 @@ internal static class HextechRuneGrantHelper
 				return;
 			}
 
-			int index = player.RunState.Rng.Niche.NextInt(pool.Count);
-			Type runeType = pool[index];
-			ModelId runeId = ModelDb.GetId(runeType);
-			selectedIds.Add(runeId);
+				Type runeType = HextechStableRandom.Pick(
+					pool,
+					(RunState)player.RunState,
+					HextechStableRandom.TypeModelKey,
+					"rune-grant",
+					HextechStableRandom.PlayerKey(player),
+					i.ToString(),
+					count.ToString(),
+					string.Join(",", selectedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal)),
+					blockedIds == null ? "" : string.Join(",", blockedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal)));
+				ModelId runeId = ModelDb.GetId(runeType);
+				selectedIds.Add(runeId);
 
 			RelicModel relic = ModelDb.GetById<RelicModel>(runeId).ToMutable();
 			SaveManager.Instance.MarkRelicAsSeen(relic);

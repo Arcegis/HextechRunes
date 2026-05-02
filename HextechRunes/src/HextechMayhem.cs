@@ -18,6 +18,7 @@ using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
@@ -161,7 +162,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         {
 			if (rewards[i] is not PotionReward potionReward
 				|| potionReward.Potion?.Rarity == PotionRarity.Common
-				|| !TryCreateCommonPotionReward(player, out PotionReward? replacement)
+				|| !TryCreateCommonPotionReward(player, i, out PotionReward? replacement)
 				|| replacement == null)
 			{
 				continue;
@@ -174,7 +175,7 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
         return modified;
     }
 
-    private static bool TryCreateCommonPotionReward(Player player, out PotionReward? reward)
+    private static bool TryCreateCommonPotionReward(Player player, int rewardIndex, out PotionReward? reward)
     {
         List<PotionModel> candidates = PotionFactory.GetPotionOptions(player, Array.Empty<PotionModel>())
             .Where(static potion => potion.Rarity == PotionRarity.Common)
@@ -185,7 +186,13 @@ internal sealed partial class HextechMayhemModifier : ModifierModel
             return false;
         }
 
-        PotionModel potion = candidates[player.PlayerRng.Rewards.NextInt(candidates.Count)].ToMutable();
+        PotionModel potion = HextechStableRandom.Pick(
+            candidates,
+            (RunState)player.RunState,
+            HextechStableRandom.PotionKey,
+            "enemy-cutting-edge-alchemist-common-potion",
+            HextechStableRandom.PlayerKey(player),
+            rewardIndex.ToString()).ToMutable();
         reward = new PotionReward(potion, player);
         return true;
     }

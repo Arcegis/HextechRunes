@@ -608,7 +608,12 @@ public sealed class RedEnvelopeRune : HextechRelicBase
 		}
 
 		Flash(Array.Empty<Creature>());
-		if (Owner.PlayerRng.Rewards.NextInt(100) < 75)
+		if (HextechStableRandom.PercentChance(
+			(RunState)Owner.RunState,
+			75,
+			"red-envelope-reward",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Relics.Count.ToString()))
 		{
 			room.AddExtraReward(Owner, new GoldReward(20, 50, Owner));
 		}

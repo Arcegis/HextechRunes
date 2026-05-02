@@ -5,6 +5,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection;
 using MegaCrit.Sts2.Core.Unlocks;
@@ -50,13 +51,13 @@ internal static class CollectionHooks
 		["CHARACTER.NECROBINDER"] = new("亡灵契约师海克斯：", "仅亡灵契约师可抽取的海克斯符文。", "Necrobinder Hexes:", "Hextech runes only available to Necrobinder.")
 	};
 
-	private static readonly FieldInfo HeaderLabelField = RequireField(typeof(NRelicCollectionCategory), "_headerLabel");
+	private static readonly FieldInfo? HeaderLabelField = TryGetField(typeof(NRelicCollectionCategory), "_headerLabel");
 
-	private static readonly FieldInfo SubCategoriesField = RequireField(typeof(NRelicCollectionCategory), "_subCategories");
+	private static readonly FieldInfo? SubCategoriesField = TryGetField(typeof(NRelicCollectionCategory), "_subCategories");
 
-	private static readonly MethodInfo CreateForSubcategoryMethod = RequireMethod(typeof(NRelicCollectionCategory), "CreateForSubcategory", BindingFlags.Instance | BindingFlags.NonPublic);
+	private static readonly MethodInfo? CreateForSubcategoryMethod = TryGetMethod(typeof(NRelicCollectionCategory), "CreateForSubcategory", BindingFlags.Instance | BindingFlags.NonPublic);
 
-	private static readonly MethodInfo LoadSubcategoryMethod = RequireMethod(
+	private static readonly MethodInfo? LoadSubcategoryMethod = TryGetMethod(
 		typeof(NRelicCollectionCategory),
 		"LoadSubcategory",
 		BindingFlags.Instance | BindingFlags.NonPublic,
@@ -66,21 +67,30 @@ internal static class CollectionHooks
 		typeof(HashSet<RelicModel>),
 		typeof(HashSet<RelicModel>));
 
+	private static readonly MethodInfo? LoadRelicsMethod = TryGetMethod(
+		typeof(NRelicCollectionCategory),
+		"LoadRelics",
+		BindingFlags.Instance | BindingFlags.Public,
+		typeof(RelicRarity),
+		typeof(NRelicCollection),
+		typeof(LocString),
+		typeof(HashSet<RelicModel>),
+		typeof(UnlockState),
+		typeof(HashSet<RelicModel>));
+
 	private static string? _starterHeaderTemplate;
 
 	public static void Install(Harmony harmony)
 	{
+		List<string> missing = GetMissingHookDependencies().ToList();
+		if (missing.Count > 0)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic collection hooks disabled: missing {string.Join(", ", missing)}.");
+			return;
+		}
+
 		harmony.Patch(
-			RequireMethod(
-				typeof(NRelicCollectionCategory),
-				"LoadRelics",
-				BindingFlags.Instance | BindingFlags.Public,
-				typeof(RelicRarity),
-				typeof(NRelicCollection),
-				typeof(LocString),
-				typeof(HashSet<RelicModel>),
-				typeof(UnlockState),
-				typeof(HashSet<RelicModel>)),
+			LoadRelicsMethod!,
 			postfix: new HarmonyMethod(typeof(CollectionHooks), nameof(LoadRelicsPostfix)));
 	}
 
@@ -223,13 +233,13 @@ internal static class CollectionHooks
 		HashSet<RelicModel> allUnlockedRelics)
 	{
 		List<NRelicCollectionCategory> subCategories = GetSubCategories(parent);
-		NRelicCollectionCategory subCategory = (NRelicCollectionCategory)CreateForSubcategoryMethod.Invoke(parent, null)!;
-		int insertIndex = ((Control)HeaderLabelField.GetValue(parent)!).GetIndex() + subCategories.Count + 1;
+		NRelicCollectionCategory subCategory = (NRelicCollectionCategory)CreateForSubcategoryMethod!.Invoke(parent, null)!;
+		int insertIndex = ((Control)HeaderLabelField!.GetValue(parent)!).GetIndex() + subCategories.Count + 1;
 		subCategories.Add(subCategory);
 		parent.AddChild(subCategory);
 		parent.MoveChild(subCategory, insertIndex);
 
-		LoadSubcategoryMethod.Invoke(
+		LoadSubcategoryMethod!.Invoke(
 			subCategory,
 			[
 				collection,
@@ -264,7 +274,7 @@ internal static class CollectionHooks
 		string enHeader,
 		string enBody)
 	{
-		if (HeaderLabelField.GetValue(subCategory) is not MegaRichTextLabel headerLabel)
+		if (HeaderLabelField!.GetValue(subCategory) is not MegaRichTextLabel headerLabel)
 		{
 			return;
 		}
@@ -297,18 +307,44 @@ internal static class CollectionHooks
 
 	private static List<NRelicCollectionCategory> GetSubCategories(NRelicCollectionCategory category)
 	{
-		return (List<NRelicCollectionCategory>)SubCategoriesField.GetValue(category)!;
+		return (List<NRelicCollectionCategory>)SubCategoriesField!.GetValue(category)!;
 	}
 
-	private static FieldInfo RequireField(Type type, string name)
+	private static IEnumerable<string> GetMissingHookDependencies()
 	{
-		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new InvalidOperationException($"Could not find field {type.FullName}.{name}.");
+		if (HeaderLabelField == null)
+		{
+			yield return "NRelicCollectionCategory._headerLabel";
+		}
+
+		if (SubCategoriesField == null)
+		{
+			yield return "NRelicCollectionCategory._subCategories";
+		}
+
+		if (CreateForSubcategoryMethod == null)
+		{
+			yield return "NRelicCollectionCategory.CreateForSubcategory";
+		}
+
+		if (LoadSubcategoryMethod == null)
+		{
+			yield return "NRelicCollectionCategory.LoadSubcategory";
+		}
+
+		if (LoadRelicsMethod == null)
+		{
+			yield return "NRelicCollectionCategory.LoadRelics";
+		}
 	}
 
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
+	private static FieldInfo? TryGetField(Type type, string name)
 	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find method {type.FullName}.{name}.");
+		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+	}
+
+	private static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
+	{
+		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null);
 	}
 }

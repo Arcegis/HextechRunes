@@ -167,12 +167,16 @@ public sealed class GoldUpgradeForge : HextechForgeBase
 			return Task.CompletedTask;
 		}
 
-		List<CardModel> cards = Owner.Deck.Cards
-			.Where(static card => card != null && card.IsUpgradable)
-			.ToList()
-			.StableShuffle(Owner.RunState.Rng.Niche)
-			.Take(DynamicVars.Cards.IntValue)
-			.ToList();
+			List<CardModel> cards = HextechStableRandom.PickDistinct(
+				Owner.Deck.Cards
+				.Where(static card => card != null && card.IsUpgradable)
+				.ToList(),
+				DynamicVars.Cards.IntValue,
+				(RunState)Owner.RunState,
+				HextechStableRandom.CardKey,
+				"gold-upgrade-forge",
+				HextechStableRandom.PlayerKey(Owner),
+				Owner.Deck.Cards.Count.ToString());
 		if (cards.Count == 0)
 		{
 			return Task.CompletedTask;

@@ -449,11 +449,17 @@ public sealed class WatchOutGrapefruitRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		Type[] candidates = Owner.GetRelic<IceCream>() == null
-			? FoodRelicTypes
-			: FoodRelicTypes.Where(static type => type != typeof(IceCream)).ToArray();
-		Type relicType = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Length)];
-		RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(relicType)).ToMutable();
+			Type[] candidates = Owner.GetRelic<IceCream>() == null
+				? FoodRelicTypes
+				: FoodRelicTypes.Where(static type => type != typeof(IceCream)).ToArray();
+			Type relicType = HextechStableRandom.Pick(
+				candidates,
+				(RunState)Owner.RunState,
+				HextechStableRandom.TypeModelKey,
+				"treat-yourself-food-relic",
+				HextechStableRandom.PlayerKey(Owner),
+				Owner.Relics.Count.ToString());
+			RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(relicType)).ToMutable();
 		Flash(Array.Empty<Creature>());
 		room.AddExtraReward(Owner, new RelicReward(relic, Owner));
 		return Task.CompletedTask;

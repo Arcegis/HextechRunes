@@ -389,7 +389,15 @@ public sealed class BladeWaltzCard : CardModel
 				break;
 			}
 
-			Creature enemy = enemies[Owner.RunState.Rng.Niche.NextInt(enemies.Count)];
+			Creature enemy = enemies[HextechStableRandom.Index(
+				(RunState)Owner.RunState,
+				enemies.Count,
+				"blade-waltz-target",
+				HextechStableRandom.PlayerKey(Owner),
+				combatState.RoundNumber.ToString(),
+				i.ToString(),
+				CombatManager.Instance.History.Entries.Count().ToString(),
+				HextechStableRandom.CardKey(this))];
 			await CreatureCmd.Damage(choiceContext, enemy, DynamicVars.Damage, Owner.Creature, this);
 		}
 
@@ -750,7 +758,14 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		Creature target = enemies[Owner.RunState.Rng.Niche.NextInt(enemies.Count)];
+		Creature target = enemies[HextechStableRandom.Index(
+			(RunState)Owner.RunState,
+			enemies.Count,
+			"circle-of-death-target",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Creature.CombatState.RoundNumber.ToString(),
+			damage.ToString(),
+			CombatManager.Instance.History.Entries.Count().ToString())];
 		Flash([target]);
 		return CreatureCmd.Damage(new BlockingPlayerChoiceContext(), target, damage, ValueProp.Unpowered, Owner.Creature, null);
 	}

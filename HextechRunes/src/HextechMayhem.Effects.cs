@@ -10,7 +10,6 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
-using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
@@ -24,6 +23,15 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
+    private enum EnemySingularityAIStatusKind
+    {
+        Burn,
+        Dazed,
+        Slimed,
+        Wound,
+        Void
+    }
+
     private async Task RunGroupedPlayerDebuffBurst(Func<Task> action)
     {
         bool wasHandlingGroupedPlayerDebuffs = _handlingGroupedPlayerDebuffs;
@@ -61,26 +69,14 @@ internal sealed partial class HextechMayhemModifier
 
     private const decimal CantTouchThisSlipperyStacks = 1m;
 
-    private static readonly IReadOnlySet<Type> ExcludedEnemySingularityAIStatusTypes = new HashSet<Type>
-    {
-        typeof(Sloth),
-        typeof(WasteAway),
-        typeof(Disintegration),
-        typeof(MindRot)
-    };
-
-    private static readonly IReadOnlyList<CardModel> EnemySingularityAIStatusPool = new CardModel[]
-    {
-        ModelDb.Card<Burn>(),
-        ModelDb.Card<Dazed>(),
-        ModelDb.Card<Slimed>(),
-        ModelDb.Card<Wound>(),
-        ModelDb.Card<MegaCrit.Sts2.Core.Models.Cards.Void>(),
-        ModelDb.Card<Sloth>(),
-        ModelDb.Card<WasteAway>(),
-        ModelDb.Card<Disintegration>(),
-        ModelDb.Card<MindRot>()
-    }.Where(static card => !ExcludedEnemySingularityAIStatusTypes.Contains(card.GetType())).ToArray();
+    private static readonly IReadOnlyList<EnemySingularityAIStatusKind> EnemySingularityAIStatusPool =
+    [
+        EnemySingularityAIStatusKind.Burn,
+        EnemySingularityAIStatusKind.Dazed,
+        EnemySingularityAIStatusKind.Slimed,
+        EnemySingularityAIStatusKind.Wound,
+        EnemySingularityAIStatusKind.Void
+    ];
 
     private async Task ApplyPersistentMonsterHexes(Creature creature)
     {
@@ -184,28 +180,61 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private async Task AddEnemySingularityAIStatusCards(IReadOnlyList<Creature> players)
+    private async Task AddEnemySingularityAIStatusCards(HextechCombatState combatState, IReadOnlyList<Creature> players)
     {
         foreach (Player player in players
             .Select(static creature => creature.Player)
             .OfType<Player>()
             .OrderBy(static player => player.NetId))
         {
-            CardModel? card = CardFactory.GetDistinctForCombat(
-                player,
-                EnemySingularityAIStatusPool,
-                1,
-                RunState.Rng.CombatCardGeneration).FirstOrDefault();
-            if (card == null)
-            {
-                continue;
-            }
+            int statusIndex = GetEnemySingularityAIStatusIndex(player, combatState.RoundNumber);
+            CardModel card = CreateEnemySingularityAIStatusCard(combatState, player, EnemySingularityAIStatusPool[statusIndex]);
 
             await HextechCardGeneration.AddGeneratedCardToCombat(
                 card,
                 PileType.Draw,
                 addedByPlayer: false,
-                position: CardPilePosition.Random);
+                position: CardPilePosition.Bottom);
+        }
+    }
+
+    private int GetEnemySingularityAIStatusIndex(Player player, int roundNumber)
+    {
+        ulong hash = 14695981039346656037UL;
+        AddDeterministicHash(ref hash, RunState.Rng.StringSeed);
+        AddDeterministicHash(ref hash, "|act:");
+        AddDeterministicHash(ref hash, RunState.CurrentActIndex.ToString());
+        AddDeterministicHash(ref hash, "|round:");
+        AddDeterministicHash(ref hash, roundNumber.ToString());
+        AddDeterministicHash(ref hash, "|slot:");
+        AddDeterministicHash(ref hash, RunState.GetPlayerSlotIndex(player).ToString());
+        AddDeterministicHash(ref hash, "|net:");
+        AddDeterministicHash(ref hash, player.NetId.ToString());
+        return (int)(hash % (ulong)EnemySingularityAIStatusPool.Count);
+    }
+
+    private static CardModel CreateEnemySingularityAIStatusCard(
+        HextechCombatState combatState,
+        Player player,
+        EnemySingularityAIStatusKind kind)
+    {
+        return kind switch
+        {
+            EnemySingularityAIStatusKind.Burn => combatState.CreateCard<Burn>(player),
+            EnemySingularityAIStatusKind.Dazed => combatState.CreateCard<Dazed>(player),
+            EnemySingularityAIStatusKind.Slimed => combatState.CreateCard<Slimed>(player),
+            EnemySingularityAIStatusKind.Wound => combatState.CreateCard<Wound>(player),
+            _ => combatState.CreateCard<MegaCrit.Sts2.Core.Models.Cards.Void>(player)
+        };
+    }
+
+    private static void AddDeterministicHash(ref ulong hash, string value)
+    {
+        const ulong prime = 1099511628211UL;
+        foreach (char ch in value)
+        {
+            hash ^= ch;
+            hash *= prime;
         }
     }
 

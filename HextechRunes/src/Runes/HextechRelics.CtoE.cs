@@ -68,19 +68,37 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 		Flash(Array.Empty<Creature>());
 		for (int i = 0; i < DynamicVars["RarePotionCount"].IntValue && rareCandidates.Count > 0; i++)
 		{
-			PotionModel potion = rareCandidates[Owner.PlayerRng.Rewards.NextInt(rareCandidates.Count)].ToMutable();
+			PotionModel potion = HextechStableRandom.Pick(
+				rareCandidates,
+				(RunState)Owner.RunState,
+				HextechStableRandom.PotionKey,
+				"cutting-edge-alchemist-rare",
+				HextechStableRandom.PlayerKey(Owner),
+				i.ToString()).ToMutable();
 			await PotionCmd.TryToProcure(potion, Owner);
 		}
 
 		for (int i = 0; i < DynamicVars["UncommonPotionCount"].IntValue && uncommonCandidates.Count > 0; i++)
 		{
-			PotionModel potion = uncommonCandidates[Owner.PlayerRng.Rewards.NextInt(uncommonCandidates.Count)].ToMutable();
+			PotionModel potion = HextechStableRandom.Pick(
+				uncommonCandidates,
+				(RunState)Owner.RunState,
+				HextechStableRandom.PotionKey,
+				"cutting-edge-alchemist-uncommon",
+				HextechStableRandom.PlayerKey(Owner),
+				i.ToString()).ToMutable();
 			await PotionCmd.TryToProcure(potion, Owner);
 		}
 
 		for (int i = 0; i < DynamicVars["CommonPotionCount"].IntValue && commonCandidates.Count > 0; i++)
 		{
-			PotionModel potion = commonCandidates[Owner.PlayerRng.Rewards.NextInt(commonCandidates.Count)].ToMutable();
+			PotionModel potion = HextechStableRandom.Pick(
+				commonCandidates,
+				(RunState)Owner.RunState,
+				HextechStableRandom.PotionKey,
+				"cutting-edge-alchemist-common",
+				HextechStableRandom.PlayerKey(Owner),
+				i.ToString()).ToMutable();
 			await PotionCmd.TryToProcure(potion, Owner);
 		}
 	}
@@ -688,7 +706,12 @@ public sealed class EmergenceRune : HextechRelicBase
 		Flash();
 		for (int i = 0; i < DynamicVars["OrbCount"].IntValue; i++)
 		{
-			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
+			OrbModel orb = HextechStableRandom.CreateOrb(
+				(RunState)Owner.RunState,
+				Owner,
+				"emergence-turn-start-orb",
+				i,
+				Owner.Creature.CombatState?.RoundNumber ?? -1);
 			await OrbCmd.Channel(choiceContext, orb, Owner);
 		}
 	}

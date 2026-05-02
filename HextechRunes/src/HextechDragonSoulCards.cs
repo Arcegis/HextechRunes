@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -324,12 +325,19 @@ public sealed class HextechChemtechDragonSoulPower : PowerModel
 			return;
 		}
 
-		Flash();
-		for (int i = 0; i < (int)Amount; i++)
-		{
-			PotionModel potion = candidates[player.PlayerRng.Rewards.NextInt(candidates.Count)].ToMutable();
-			await PotionCmd.TryToProcure(potion, player);
-		}
+			Flash();
+			for (int i = 0; i < (int)Amount; i++)
+			{
+				PotionModel potion = HextechStableRandom.Pick(
+					candidates,
+					(RunState)player.RunState,
+					HextechStableRandom.PotionKey,
+					"chemtech-dragon-soul-potion",
+					HextechStableRandom.PlayerKey(player),
+					combatState.RoundNumber.ToString(),
+					i.ToString()).ToMutable();
+				await PotionCmd.TryToProcure(potion, player);
+			}
 	}
 }
 

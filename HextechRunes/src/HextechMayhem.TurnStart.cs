@@ -179,7 +179,7 @@ internal sealed partial class HextechMayhemModifier
 
         if (HasActiveMonsterHex(MonsterHexKind.SingularityAI) && players.Count > 0)
         {
-            await AddEnemySingularityAIStatusCards(players);
+            await AddEnemySingularityAIStatusCards(combatState, players);
         }
     }
 

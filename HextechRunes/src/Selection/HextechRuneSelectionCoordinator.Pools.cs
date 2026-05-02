@@ -53,6 +53,24 @@ internal static partial class HextechRuneSelectionCoordinator
 		return options;
 	}
 
+	private static List<RelicModel> BuildStableSelectableRunesForRarity(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
+	{
+		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, excludedIds);
+		int picks = Math.Min(3, pool.Count);
+		return HextechStableRandom.PickDistinct(
+			pool,
+			picks,
+			runState,
+			static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry,
+			"rune-selection-options",
+			runState.CurrentActIndex.ToString(),
+			HextechStableRandom.PlayerKey(player),
+			((int)rarity).ToString(),
+			excludedIds == null ? "" : string.Join(",", excludedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal)))
+			.Select(static relic => relic.ToMutable())
+			.ToList();
+	}
+
 	private static HashSet<ModelId> CreateBaseExcludedIds(HextechMayhemModifier modifier, Player player, RelicModel? monsterHexRelic)
 	{
 		HashSet<ModelId> excludedIds = modifier.GetSeenPlayerRuneIds(player);

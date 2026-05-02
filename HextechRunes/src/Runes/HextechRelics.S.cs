@@ -293,18 +293,24 @@ public sealed class SingularityAIRune : HextechRelicBase
 			return;
 		}
 
-		IEnumerable<CardModel> powerPool = Owner.Character.CardPool
+		List<CardModel> powerPool = Owner.Character.CardPool
 			.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint)
-			.Where(static card => card.Type == CardType.Power);
-		CardModel? card = CardFactory.GetDistinctForCombat(
-			Owner,
-			powerPool,
-			DynamicVars.Cards.IntValue,
-			Owner.RunState.Rng.CombatCardGeneration).FirstOrDefault();
-		if (card == null)
+			.Where(static card => card.Type == CardType.Power)
+			.ToList();
+		if (powerPool.Count == 0)
 		{
 			return;
 		}
+
+		CardModel canonicalCard = HextechStableRandom.Pick(
+			powerPool,
+			(RunState)Owner.RunState,
+			HextechStableRandom.CardKey,
+			"singularity-ai-player-power",
+			HextechStableRandom.PlayerKey(Owner),
+			combatState.RoundNumber.ToString(),
+			CountOwnedCardsDrawnFromHistory().ToString());
+		CardModel card = combatState.CreateCard(canonicalCard, Owner);
 
 		card.SetToFreeThisTurn();
 		Flash();
