@@ -167,7 +167,7 @@ public sealed class SwiftAndSafeRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCardsDrawnThisCombat
 	{
-		get => _cardsDrawnThisCombat;
+		get => GetCardsDrawnThisCombat();
 		set
 		{
 			_cardsDrawnThisCombat = Math.Max(0, value);
@@ -186,7 +186,7 @@ public sealed class SwiftAndSafeRune : HextechRelicBase
 				return 0;
 			}
 
-			int remainder = _cardsDrawnThisCombat % 10;
+			int remainder = GetCardsDrawnThisCombat() % 10;
 			return remainder == 0 ? 10 : 10 - remainder;
 		}
 	}
@@ -223,6 +223,12 @@ public sealed class SwiftAndSafeRune : HextechRelicBase
 			return;
 		}
 
+		if (ShouldUseNetworkCombatHistory())
+		{
+			await ResolveDrawProgressFromHistory();
+			return;
+		}
+
 		_cardsDrawnThisCombat++;
 		InvokeDisplayAmountChanged();
 		if (Owner == null || _cardsDrawnThisCombat % 10 != 0)
@@ -230,8 +236,74 @@ public sealed class SwiftAndSafeRune : HextechRelicBase
 			return;
 		}
 
+		await ApplyDrawThresholdReward();
+	}
+
+	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		if (ShouldUseNetworkCombatHistory() && cardPlay.Card.Owner == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+
+	public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (ShouldUseNetworkCombatHistory() && player == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+
+#if !STS2_104_OR_NEWER
+	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (ShouldUseNetworkCombatHistory() && player == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+#endif
+
+	private async Task ResolveDrawProgressFromHistory()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		int cardsDrawn = CountOwnedCardsDrawnFromHistory();
+		int previousCardsDrawn = _cardsDrawnThisCombat;
+		if (cardsDrawn <= previousCardsDrawn)
+		{
+			return;
+		}
+
+		_cardsDrawnThisCombat = cardsDrawn;
+		InvokeDisplayAmountChanged();
+		int rewards = cardsDrawn / 10 - previousCardsDrawn / 10;
+		for (int i = 0; i < rewards; i++)
+		{
+			await ApplyDrawThresholdReward();
+		}
+	}
+
+	private async Task ApplyDrawThresholdReward()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
 		Flash();
 		await PowerCmd.Apply<ArtifactPower>(Owner.Creature, DynamicVars["ArtifactPower"].BaseValue, Owner.Creature, null);
+	}
+
+	private int GetCardsDrawnThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedCardsDrawnFromHistory()
+			: _cardsDrawnThisCombat;
 	}
 }
 

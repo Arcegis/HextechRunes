@@ -99,7 +99,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => _attacksPlayedThisCombat;
+		get => GetAttacksPlayedThisCombat();
 		set
 		{
 			_attacksPlayedThisCombat = Math.Max(0, value);
@@ -118,7 +118,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 				return 0;
 			}
 
-			int remainder = _attacksPlayedThisCombat % 2;
+			int remainder = GetAttacksPlayedThisCombat() % 2;
 			return remainder == 0 ? 2 : 1;
 		}
 	}
@@ -150,15 +150,65 @@ public sealed class ArcanePunchRune : HextechRelicBase
 			return;
 		}
 
-		_attacksPlayedThisCombat++;
+		if (ShouldUseNetworkCombatHistory())
+		{
+			await ResolveAttackProgressFromHistory();
+			return;
+		}
+
+		int attacksPlayed = _attacksPlayedThisCombat + 1;
+		_attacksPlayedThisCombat = attacksPlayed;
 		InvokeDisplayAmountChanged();
-		if (_attacksPlayedThisCombat % 2 != 0)
+		if (attacksPlayed % 2 != 0)
+		{
+			return;
+		}
+
+		await GainEnergyForAttackThreshold();
+	}
+
+	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		if (ShouldUseNetworkCombatHistory() && IsOwnedAttack(cardPlay.Card))
+		{
+			await ResolveAttackProgressFromHistory();
+		}
+	}
+
+	private async Task ResolveAttackProgressFromHistory()
+	{
+		int attacksPlayed = CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true);
+		int previousAttacksPlayed = _attacksPlayedThisCombat;
+		if (attacksPlayed <= previousAttacksPlayed)
+		{
+			return;
+		}
+
+		_attacksPlayedThisCombat = attacksPlayed;
+		InvokeDisplayAmountChanged();
+		int energyTriggers = attacksPlayed / 2 - previousAttacksPlayed / 2;
+		for (int i = 0; i < energyTriggers; i++)
+		{
+			await GainEnergyForAttackThreshold();
+		}
+	}
+
+	private async Task GainEnergyForAttackThreshold()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
 		{
 			return;
 		}
 
 		Flash();
-		await PlayerCmd.GainEnergy(1m, Owner!);
+		await PlayerCmd.GainEnergy(1m, Owner);
+	}
+
+	private int GetAttacksPlayedThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true)
+			: _attacksPlayedThisCombat;
 	}
 }
 

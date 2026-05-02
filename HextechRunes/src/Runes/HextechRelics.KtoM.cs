@@ -230,7 +230,7 @@ public sealed class LightEmUpRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => _attacksPlayedThisCombat;
+		get => GetAttacksPlayedThisCombat();
 		set
 		{
 			_attacksPlayedThisCombat = Math.Max(0, value) % AttacksPerReplay;
@@ -249,7 +249,7 @@ public sealed class LightEmUpRune : HextechRelicBase
 				return 0;
 			}
 
-			return _attacksPlayedThisCombat;
+			return GetAttacksPlayedThisCombat();
 		}
 	}
 
@@ -272,10 +272,10 @@ public sealed class LightEmUpRune : HextechRelicBase
 			return playCount;
 		}
 
-		_attacksPlayedThisCombat++;
-		if (_attacksPlayedThisCombat >= AttacksPerReplay)
+		int nextAttacksPlayed = GetAttacksPlayedBeforeCurrentAttack() + 1;
+		_attacksPlayedThisCombat = nextAttacksPlayed % AttacksPerReplay;
+		if (nextAttacksPlayed % AttacksPerReplay == 0)
 		{
-			_attacksPlayedThisCombat = 0;
 			InvokeDisplayAmountChanged();
 			return playCount + 1;
 		}
@@ -298,6 +298,20 @@ public sealed class LightEmUpRune : HextechRelicBase
 	{
 		_attacksPlayedThisCombat = 0;
 		InvokeDisplayAmountChanged();
+	}
+
+	private int GetAttacksPlayedThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory() % AttacksPerReplay
+			: _attacksPlayedThisCombat;
+	}
+
+	private int GetAttacksPlayedBeforeCurrentAttack()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory()
+			: _attacksPlayedThisCombat;
 	}
 }
 

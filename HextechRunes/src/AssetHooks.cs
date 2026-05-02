@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -13,21 +14,27 @@ internal static class AssetHooks
 {
 	private static readonly Dictionary<string, Texture2D> TextureCache = new();
 
-	private static readonly FieldInfo NRelicModelField = typeof(NRelic).GetField("_model", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("Could not access NRelic._model.");
+	private static readonly FieldInfo? NRelicModelField = TryGetField(typeof(NRelic), "_model");
 
 	public static void Install(Harmony harmony)
 	{
 		MethodInfo getRelicIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.Icon));
 		MethodInfo getRelicBigIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.BigIcon));
-		MethodInfo relicReload = RequireMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
+		MethodInfo? relicReload = TryGetMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
 		MethodInfo getPowerIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.Icon));
 		MethodInfo getPowerBigIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.BigIcon));
 		MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
 
 		harmony.Patch(getRelicIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicIconPostfix)));
 		harmony.Patch(getRelicBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicBigIconPostfix)));
-		harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(NRelicReloadPrefix)));
+		if (relicReload != null && NRelicModelField != null)
+		{
+			harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(NRelicReloadPrefix)));
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] NRelic.Reload asset hook skipped: missing {(relicReload == null ? "NRelic.Reload" : "NRelic._model")}.");
+		}
 		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerIconPostfix)));
 		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
 		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
@@ -60,6 +67,7 @@ internal static class AssetHooks
 	private static bool NRelicReloadPrefix(NRelic __instance)
 	{
 		if (!__instance.IsNodeReady()
+			|| NRelicModelField == null
 			|| NRelicModelField.GetValue(__instance) is not RelicModel model
 			|| !TryGetHextechRelicTexture(model, out Texture2D? texture))
 		{
@@ -182,6 +190,16 @@ internal static class AssetHooks
 	{
 		return type.GetMethod(name, flags, binder: null, parameterTypes, modifiers: null)
 			?? throw new InvalidOperationException($"Could not find method {type.FullName}.{name}.");
+	}
+
+	private static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameterTypes)
+	{
+		return type.GetMethod(name, flags, binder: null, parameterTypes, modifiers: null);
+	}
+
+	private static FieldInfo? TryGetField(Type type, string name)
+	{
+		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
 	}
 
 	private static MethodInfo RequireGetter(Type type, string propertyName)

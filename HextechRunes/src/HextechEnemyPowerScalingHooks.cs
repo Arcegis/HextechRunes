@@ -123,22 +123,29 @@ internal static class HextechEnemyPowerScalingHooks
 
 	private static decimal MultiplyByPlayerCount(decimal amount, int playerCount)
 	{
-		int scale = Math.Max(1, playerCount);
+		int scale = Math.Clamp(playerCount, 1, 16);
 		if (scale <= 1)
 		{
 			return ClampPowerAmount(amount);
 		}
 
-		if (amount > int.MaxValue / scale)
+		if (amount >= int.MaxValue / scale)
 		{
 			return int.MaxValue;
 		}
-		if (amount < int.MinValue / scale)
+		if (amount <= int.MinValue / scale)
 		{
 			return int.MinValue;
 		}
 
-		return ClampPowerAmount(amount * scale);
+		try
+		{
+			return ClampPowerAmount(amount * scale);
+		}
+		catch (OverflowException)
+		{
+			return amount < 0m ? int.MinValue : int.MaxValue;
+		}
 	}
 
 	private static decimal ClampPowerAmount(decimal amount)

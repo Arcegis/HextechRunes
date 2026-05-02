@@ -43,13 +43,25 @@ public static class ModEntry
 		HextechCombatHooks.Install(harmony);
 		HextechEnemyPowerScalingHooks.Install(harmony);
 		HextechUpdateChecker.Install(harmony);
-		HextechInspectHooks.Install(harmony);
+		TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
 		AssetHooks.Install(harmony);
 		CollectionHooks.Install(harmony);
 		HextechShopForgeHooks.Install(harmony);
 		HextechForgeStackingHooks.Install(harmony);
 		HextechUiSafetyHooks.Install(harmony);
 		Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
+	}
+
+	private static void TryInstallOptionalHookGroup(string label, Action install)
+	{
+		try
+		{
+			install();
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Optional hook group skipped: {label}: {ex.GetType().Name}: {ex.Message}");
+		}
 	}
 
 	private static void InstallHooks(Harmony harmony)
