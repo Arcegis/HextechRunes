@@ -583,15 +583,12 @@ public sealed class SpeedDemonRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get
-		{
-			EnsureTurnScopedStateCurrent(ResetTurnState);
-			return _triggeredThisTurn;
-		}
+		get => false;
 		set
 		{
-			_triggeredThisTurn = value;
-			UpdateTurnScopedStateIdentity();
+			// Legacy save compatibility: this is turn-scoped runtime state and must not enter multiplayer checksums.
+			_triggeredThisTurn = false;
+			UpdateTurnScopedStateIdentity(null);
 		}
 	}
 

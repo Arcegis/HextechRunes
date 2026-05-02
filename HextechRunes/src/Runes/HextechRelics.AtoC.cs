@@ -99,7 +99,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => GetAttacksPlayedThisCombat();
+		get => IsNetworkMultiplayer() ? 0 : GetAttacksPlayedThisCombat();
 		set
 		{
 			_attacksPlayedThisCombat = Math.Max(0, value);
@@ -455,6 +455,99 @@ public sealed class BloodPactRune : HextechRelicBase
 		Flash();
 		await PowerCmd.Apply<HextechBloodPactTemporaryStrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
 	}
+}
+
+public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
+{
+	private bool _triggeredThisTurn;
+	private bool _triggeredLastPlay;
+
+	protected abstract CardType TargetCardType { get; }
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("Replays", 1m)
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		ResetTriggered(null);
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetTriggered(null);
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
+	{
+		if (Owner != null && side == Owner.Creature.Side)
+		{
+			ResetTriggered(combatState);
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
+	{
+		_triggeredLastPlay = false;
+		EnsureTurnScopedStateCurrent(ResetTriggered);
+		if (_triggeredThisTurn || !IsOwnedTargetType(card))
+		{
+			return playCount;
+		}
+
+		_triggeredThisTurn = true;
+		_triggeredLastPlay = true;
+		UpdateTurnScopedStateIdentity();
+		return playCount + DynamicVars["Replays"].IntValue;
+	}
+
+	public override Task AfterModifyingCardPlayCount(CardModel card)
+	{
+		if (_triggeredLastPlay && IsOwnedTargetType(card))
+		{
+			Flash();
+			_triggeredLastPlay = false;
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private bool IsOwnedTargetType(CardModel? card)
+	{
+		return card?.Owner == Owner && card.Type == TargetCardType;
+	}
+
+	private void ResetTriggered()
+	{
+		ResetTriggered(null);
+	}
+
+	private void ResetTriggered(HextechCombatState? combatState)
+	{
+		_triggeredThisTurn = false;
+		_triggeredLastPlay = false;
+		UpdateTurnScopedStateIdentity(combatState);
+	}
+}
+
+public sealed class BreadAndButterRune : FirstTypedCardReplayRuneBase
+{
+	protected override CardType TargetCardType => CardType.Attack;
+}
+
+public sealed class BreadAndCheeseRune : FirstTypedCardReplayRuneBase
+{
+	protected override CardType TargetCardType => CardType.Power;
+}
+
+public sealed class BreadAndJamRune : FirstTypedCardReplayRuneBase
+{
+	protected override CardType TargetCardType => CardType.Skill;
 }
 
 public sealed class ByproductRune : HextechRelicBase

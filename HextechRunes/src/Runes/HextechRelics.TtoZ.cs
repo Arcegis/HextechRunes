@@ -43,7 +43,7 @@ public sealed class TwiceThriceRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => GetAttacksPlayedThisCombat();
+		get => IsNetworkMultiplayer() ? 0 : GetAttacksPlayedThisCombat();
 		set
 		{
 			_attacksPlayedThisCombat = Math.Max(0, value) % AttacksPerReplay;
@@ -281,7 +281,7 @@ public sealed class WarmogsSpiritRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCardsDrawnThisCombat
 	{
-		get => GetCardsDrawnThisCombat();
+		get => IsNetworkMultiplayer() ? 0 : GetCardsDrawnThisCombat();
 		set
 		{
 			_cardsDrawnThisCombat = Math.Max(0, value);

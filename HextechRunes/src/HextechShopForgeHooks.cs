@@ -20,6 +20,7 @@ internal static class HextechShopForgeHooks
 	private const int RandomForgeShopRegularCost = 250;
 	private const float CardRemovalRandomForgeOffsetY = 60f;
 
+	private static readonly FieldInfo? MerchantInventoryRelicEntriesField = typeof(MerchantInventory).GetField("_relicEntries", BindingFlags.Instance | BindingFlags.NonPublic);
 	private static readonly Dictionary<ulong, Vector2> CardRemovalOriginalPositions = [];
 
 	public static void Install(Harmony harmony)
@@ -74,12 +75,23 @@ internal static class HextechShopForgeHooks
 
 	private static void MerchantInventoryInitializePrefix(NMerchantInventory __instance, MerchantInventory inventory)
 	{
+		if (IsFakeMerchantInventory(__instance))
+		{
+			RemoveRandomForgeEntries(inventory);
+			return;
+		}
+
 		InstallRandomForgeEntry(inventory, inventory.Player);
 		EnsureRandomForgeRelicSlot(__instance, inventory);
 	}
 
 	private static void MerchantInventoryInitializePostfix(NMerchantInventory __instance, MerchantInventory inventory)
 	{
+		if (IsFakeMerchantInventory(__instance))
+		{
+			return;
+		}
+
 		MoveCardRemovalBelowRandomForge(__instance, inventory);
 	}
 
@@ -153,6 +165,24 @@ internal static class HextechShopForgeHooks
 	private static bool IsRandomForgeEntry(MerchantEntry entry)
 	{
 		return entry is MerchantRelicEntry relicEntry && ModInfo.IsHextechShopRelic(relicEntry.Model);
+	}
+
+	private static bool IsFakeMerchantInventory(NMerchantInventory merchantInventory)
+	{
+		return merchantInventory is NFakeMerchantInventory;
+	}
+
+	private static void RemoveRandomForgeEntries(MerchantInventory inventory)
+	{
+		if (!inventory.RelicEntries.Any(IsRandomForgeEntry))
+		{
+			return;
+		}
+
+		if (MerchantInventoryRelicEntriesField?.GetValue(inventory) is List<MerchantRelicEntry> relicEntries)
+		{
+			relicEntries.RemoveAll(IsRandomForgeEntry);
+		}
 	}
 
 	private static bool TryGetRandomForgeShopRelic(MerchantEntry entry, out RandomForgeShopRelic? shopRelic)

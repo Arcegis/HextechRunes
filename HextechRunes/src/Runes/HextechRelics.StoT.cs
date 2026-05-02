@@ -167,7 +167,7 @@ public sealed class SwiftAndSafeRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCardsDrawnThisCombat
 	{
-		get => GetCardsDrawnThisCombat();
+		get => IsNetworkMultiplayer() ? 0 : GetCardsDrawnThisCombat();
 		set
 		{
 			_cardsDrawnThisCombat = Math.Max(0, value);
