@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
@@ -36,6 +37,27 @@ internal static class HextechStableRandom
 		}
 
 		return Index(runState, 100, saltParts) < percent;
+	}
+
+	public static int IndexFromRawParts(int count, params string?[] parts)
+	{
+		if (count <= 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot choose from an empty pool.");
+		}
+
+		return (int)(HashRaw(parts) % (ulong)count);
+	}
+
+	public static ulong HashRaw(params string?[] parts)
+	{
+		ulong hash = OffsetBasis;
+		foreach (string? part in parts)
+		{
+			Add(ref hash, part);
+		}
+
+		return hash;
 	}
 
 	public static T Pick<T>(IEnumerable<T> candidates, RunState runState, Func<T, string> keySelector, params string?[] saltParts)
@@ -133,6 +155,16 @@ internal static class HextechStableRandom
 	public static string CardPileKey(IEnumerable<CardModel> cards)
 	{
 		return string.Join(",", cards.Select(CardKey));
+	}
+
+	public static int InstanceHash(object instance)
+	{
+		return RuntimeHelpers.GetHashCode(instance);
+	}
+
+	public static string InstanceKey(object? instance)
+	{
+		return instance == null ? "none" : InstanceHash(instance).ToString();
 	}
 
 	private static ulong Hash(RunState runState, IEnumerable<string?> saltParts)

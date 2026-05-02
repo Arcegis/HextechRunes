@@ -6,6 +6,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -367,9 +368,4 @@ internal static class HextechUpdateChecker
 		return parts.Count == 0 ? [0] : parts.ToArray();
 	}
 
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, null, parameters, null)
-			?? throw new MissingMethodException(type.FullName, name);
-	}
 }

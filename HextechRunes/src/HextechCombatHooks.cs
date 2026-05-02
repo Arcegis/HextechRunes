@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Runs;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -416,9 +417,4 @@ internal static class HextechCombatHooks
 		return runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault();
 	}
 
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
-	}
 }

@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs.History;
 using MegaCrit.Sts2.Core.Saves;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -52,9 +53,4 @@ internal static class HextechForgeStackingHooks
 		return ownedForge != null;
 	}
 
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
-	}
 }

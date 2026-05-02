@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Singleton;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -168,12 +169,6 @@ internal static class HextechEnemyPowerScalingHooks
 	private static OverrideScope BeginOverride(ScalingOverride scalingOverride)
 	{
 		return new OverrideScope(scalingOverride);
-	}
-
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
 	}
 
 	private static MethodInfo ResolveModifyPowerAmountGivenTarget()

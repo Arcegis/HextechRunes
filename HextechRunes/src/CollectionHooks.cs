@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection;
 using MegaCrit.Sts2.Core.Unlocks;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -338,13 +339,4 @@ internal static class CollectionHooks
 		}
 	}
 
-	private static FieldInfo? TryGetField(Type type, string name)
-	{
-		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
-	}
-
-	private static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null);
-	}
 }

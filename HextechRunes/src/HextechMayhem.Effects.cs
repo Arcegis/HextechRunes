@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Combat.History.Entries;
@@ -200,17 +199,17 @@ internal sealed partial class HextechMayhemModifier
 
     private int GetEnemySingularityAIStatusIndex(Player player, int roundNumber)
     {
-        ulong hash = 14695981039346656037UL;
-        AddDeterministicHash(ref hash, RunState.Rng.StringSeed);
-        AddDeterministicHash(ref hash, "|act:");
-        AddDeterministicHash(ref hash, RunState.CurrentActIndex.ToString());
-        AddDeterministicHash(ref hash, "|round:");
-        AddDeterministicHash(ref hash, roundNumber.ToString());
-        AddDeterministicHash(ref hash, "|slot:");
-        AddDeterministicHash(ref hash, RunState.GetPlayerSlotIndex(player).ToString());
-        AddDeterministicHash(ref hash, "|net:");
-        AddDeterministicHash(ref hash, player.NetId.ToString());
-        return (int)(hash % (ulong)EnemySingularityAIStatusPool.Count);
+        return HextechStableRandom.IndexFromRawParts(
+            EnemySingularityAIStatusPool.Count,
+            RunState.Rng.StringSeed,
+            "|act:",
+            RunState.CurrentActIndex.ToString(),
+            "|round:",
+            roundNumber.ToString(),
+            "|slot:",
+            RunState.GetPlayerSlotIndex(player).ToString(),
+            "|net:",
+            player.NetId.ToString());
     }
 
     private static CardModel CreateEnemySingularityAIStatusCard(
@@ -226,16 +225,6 @@ internal sealed partial class HextechMayhemModifier
             EnemySingularityAIStatusKind.Wound => combatState.CreateCard<Wound>(player),
             _ => combatState.CreateCard<MegaCrit.Sts2.Core.Models.Cards.Void>(player)
         };
-    }
-
-    private static void AddDeterministicHash(ref ulong hash, string value)
-    {
-        const ulong prime = 1099511628211UL;
-        foreach (char ch in value)
-        {
-            hash ^= ch;
-            hash *= prime;
-        }
     }
 
     private static decimal GetMonsterProteinShakeSustainMultiplier(Creature creature)
@@ -386,7 +375,7 @@ internal sealed partial class HextechMayhemModifier
             return false;
         }
 
-        string actionKey = $"{applier.CombatId.Value}:{RuntimeHelpers.GetHashCode(cardSource)}:{powerTypeName}:{amount}";
+        string actionKey = $"{applier.CombatId.Value}:{HextechStableRandom.InstanceHash(cardSource)}:{powerTypeName}:{amount}";
         return !_monsterDebuffActionProcKeysThisTurn.Add(actionKey);
     }
 
@@ -397,7 +386,7 @@ internal sealed partial class HextechMayhemModifier
             target.CurrentHp.ToString(System.Globalization.CultureInfo.InvariantCulture),
             result.UnblockedDamage.ToString(System.Globalization.CultureInfo.InvariantCulture),
             dealer?.CombatId?.ToString() ?? "none",
-            cardSource != null ? RuntimeHelpers.GetHashCode(cardSource).ToString() : "none");
+            HextechStableRandom.InstanceKey(cardSource));
         bool suppress = key == _lastEnemyThresholdTriggerKey;
         _lastEnemyThresholdTriggerKey = key;
         return suppress;
@@ -451,7 +440,7 @@ internal sealed partial class HextechMayhemModifier
         }
 
         _eightPennyGatePlayersTriggeredThisTurn.Add(cardPlay.Card.Owner!.NetId);
-        _eightPennyGatePendingCardHashes[cardPlay.Card.Owner.NetId] = RuntimeHelpers.GetHashCode(cardPlay.Card);
+        _eightPennyGatePendingCardHashes[cardPlay.Card.Owner.NetId] = HextechStableRandom.InstanceHash(cardPlay.Card);
     }
 
     private bool ShouldEnemyEightPennyGateExhaust(CardModel card, bool isAutoPlay)
@@ -468,7 +457,7 @@ internal sealed partial class HextechMayhemModifier
         ulong playerId = owner.NetId;
         return !_eightPennyGatePlayersTriggeredThisTurn.Contains(playerId)
             || (_eightPennyGatePendingCardHashes.TryGetValue(playerId, out int pendingCardHash)
-                && pendingCardHash == RuntimeHelpers.GetHashCode(card));
+                && pendingCardHash == HextechStableRandom.InstanceHash(card));
     }
 
     private void ClearEnemyEightPennyGatePendingCard(CardModel card)
@@ -479,7 +468,7 @@ internal sealed partial class HextechMayhemModifier
         }
 
         ulong playerId = card.Owner.NetId;
-        if (_eightPennyGatePendingCardHashes.GetValueOrDefault(playerId, 0) == RuntimeHelpers.GetHashCode(card))
+        if (_eightPennyGatePendingCardHashes.GetValueOrDefault(playerId, 0) == HextechStableRandom.InstanceHash(card))
         {
             _eightPennyGatePendingCardHashes.Remove(playerId);
         }

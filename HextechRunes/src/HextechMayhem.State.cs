@@ -16,11 +16,7 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	private static readonly IReadOnlyList<int> DefaultArray = [ -1, -1, -1 ];
-
-	private int[] _rarityByAct = [ -1, -1, -1 ];
-	private int[] _monsterHexByAct = [ -1, -1, -1 ];
-	private int[] _resolvedActs = [ 0, 0, 0 ];
+	private readonly HextechMayhemActState _actState = new();
 	private string _telemetryChoicesJson = "";
 	private string _seenPlayerRuneIdsJson = "";
 	private readonly object _seenPlayerRuneIdsLock = new();
@@ -70,22 +66,22 @@ internal sealed partial class HextechMayhemModifier
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedRarityByAct
 	{
-		get => _rarityByAct;
-		set => _rarityByAct = NormalizeSavedArray(value);
+		get => _actState.SavedRarityByAct;
+		set => _actState.SavedRarityByAct = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedMonsterHexByAct
 	{
-		get => _monsterHexByAct;
-		set => _monsterHexByAct = NormalizeSavedArray(value);
+		get => _actState.SavedMonsterHexByAct;
+		set => _actState.SavedMonsterHexByAct = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedResolvedActs
 	{
-		get => _resolvedActs;
-		set => _resolvedActs = NormalizeResolvedArray(value);
+		get => _actState.SavedResolvedActs;
+		set => _actState.SavedResolvedActs = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -121,20 +117,17 @@ internal sealed partial class HextechMayhemModifier
 
 	public bool IsActResolved(int actIndex)
 	{
-		return actIndex >= 0 && actIndex < _resolvedActs.Length && _resolvedActs[actIndex] > 0;
+		return _actState.IsResolved(actIndex);
 	}
 
 	public void SetActResolved(int actIndex, bool resolved)
 	{
-		if (actIndex >= 0 && actIndex < _resolvedActs.Length)
-		{
-			_resolvedActs[actIndex] = resolved ? 1 : 0;
-		}
+		_actState.SetResolved(actIndex, resolved);
 	}
 
 	public bool TryRecoverResolvedActsFromPlayerRelics(string reason)
 	{
-		int currentActIndex = Math.Min(RunState.CurrentActIndex, _resolvedActs.Length - 1);
+		int currentActIndex = Math.Min(RunState.CurrentActIndex, _actState.ActCount - 1);
 		if (currentActIndex < 0 || RunState.Players.Count == 0)
 		{
 			return false;
@@ -151,22 +144,17 @@ internal sealed partial class HextechMayhemModifier
 		bool changed = false;
 		for (int actIndex = 0; actIndex <= recoverThroughAct; actIndex++)
 		{
-			if (!IsActResolved(actIndex))
-			{
-				_resolvedActs[actIndex] = 1;
-				changed = true;
-			}
+			changed |= _actState.TryMarkResolved(actIndex);
 
-			if (_rarityByAct[actIndex] < 0 && TryInferRarityForAct(actIndex, out HextechRarityTier rarity))
+			if (TryInferRarityForAct(actIndex, out HextechRarityTier rarity))
 			{
-				_rarityByAct[actIndex] = (int)rarity;
-				changed = true;
+				changed |= _actState.TrySetRarityIfMissing(actIndex, rarity);
 			}
 		}
 
 		if (changed)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
 		return changed;
@@ -174,63 +162,32 @@ internal sealed partial class HextechMayhemModifier
 
 	public string DescribeActState()
 	{
-		return $"resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)}";
+		return _actState.Describe();
 	}
 
 	public HextechRarityTier? GetRarityForAct(int actIndex)
 	{
-		if (actIndex < 0 || actIndex >= _rarityByAct.Length || _rarityByAct[actIndex] < 0)
-		{
-			return null;
-		}
-
-		return (HextechRarityTier)_rarityByAct[actIndex];
+		return _actState.GetRarity(actIndex);
 	}
 
 	public void SetRarityForAct(int actIndex, HextechRarityTier rarity)
 	{
-		if (actIndex >= 0 && actIndex < _rarityByAct.Length)
-		{
-			_rarityByAct[actIndex] = (int)rarity;
-		}
+		_actState.SetRarity(actIndex, rarity);
 	}
 
 	public MonsterHexKind? GetMonsterHexForAct(int actIndex)
 	{
-		if (actIndex < 0 || actIndex >= _monsterHexByAct.Length || _monsterHexByAct[actIndex] < 0)
-		{
-			return null;
-		}
-
-		return (MonsterHexKind)_monsterHexByAct[actIndex];
+		return _actState.GetMonsterHex(actIndex);
 	}
 
 	public void SetMonsterHexForAct(int actIndex, MonsterHexKind hex)
 	{
-		if (actIndex >= 0 && actIndex < _monsterHexByAct.Length)
-		{
-			_monsterHexByAct[actIndex] = (int)hex;
-		}
+		_actState.SetMonsterHex(actIndex, hex);
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexes()
 	{
-		List<MonsterHexKind> result = new();
-		HashSet<MonsterHexKind> seen = new();
-		for (int actIndex = 0; actIndex <= RunState.CurrentActIndex && actIndex < _monsterHexByAct.Length; actIndex++)
-		{
-			if (_monsterHexByAct[actIndex] >= 0
-				&& (IsActResolved(actIndex) || ShouldRecoverMonsterHexInCombat(actIndex)))
-			{
-				MonsterHexKind hex = (MonsterHexKind)_monsterHexByAct[actIndex];
-				if (seen.Add(hex))
-				{
-					result.Add(hex);
-				}
-			}
-		}
-
-		return result;
+		return _actState.GetActiveMonsterHexes(RunState.CurrentActIndex, ShouldRecoverMonsterHexInCombat);
 	}
 
 	private bool ShouldRecoverMonsterHexInCombat(int actIndex)
@@ -240,9 +197,7 @@ internal sealed partial class HextechMayhemModifier
 
 	public void ResetForNewRun()
 	{
-		_rarityByAct = [ -1, -1, -1 ];
-		_monsterHexByAct = [ -1, -1, -1 ];
-		_resolvedActs = [ 0, 0, 0 ];
+		_actState.Reset();
 		_telemetryChoicesJson = "";
 		_seenPlayerRuneIdsJson = "";
 		ResetCombatTracking();
@@ -250,17 +205,9 @@ internal sealed partial class HextechMayhemModifier
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
-		_rarityByAct = [ -1, -1, -1 ];
-		_monsterHexByAct = [ -1, -1, -1 ];
-		_resolvedActs = [ 0, 0, 0 ];
+		_actState.DebugSetOnlyMonsterHex(actIndex, hex, rarity);
 		_telemetryChoicesJson = "";
 		_seenPlayerRuneIdsJson = "";
-		if (actIndex >= 0 && actIndex < _monsterHexByAct.Length)
-		{
-			_rarityByAct[actIndex] = (int)rarity;
-			_monsterHexByAct[actIndex] = (int)hex;
-			_resolvedActs[actIndex] = 1;
-		}
 
 		ResetCombatTracking();
 	}
@@ -375,38 +322,6 @@ internal sealed partial class HextechMayhemModifier
 		}
 	}
 
-	private static int[] NormalizeSavedArray(int[]? value)
-	{
-		int[] normalized = DefaultArray.ToArray();
-		if (value == null)
-		{
-			return normalized;
-		}
-
-		for (int i = 0; i < Math.Min(normalized.Length, value.Length); i++)
-		{
-			normalized[i] = value[i];
-		}
-
-		return normalized;
-	}
-
-	private static int[] NormalizeResolvedArray(int[]? value)
-	{
-		int[] normalized = [ 0, 0, 0 ];
-		if (value == null)
-		{
-			return normalized;
-		}
-
-		for (int i = 0; i < Math.Min(normalized.Length, value.Length); i++)
-		{
-			normalized[i] = value[i] > 0 ? 1 : 0;
-		}
-
-		return normalized;
-	}
-
 	private HashSet<string> GetSeenPlayerRuneEntries(int playerSlot)
 	{
 		Dictionary<int, HashSet<string>> seenBySlot = DecodeSeenPlayerRuneEntries();
@@ -473,7 +388,7 @@ internal sealed partial class HextechMayhemModifier
 
 	private int GetHighestActResolvedByTelemetryChoices(int maxActIndex)
 	{
-		int lastActIndex = Math.Min(maxActIndex, _resolvedActs.Length - 1);
+		int lastActIndex = _actState.LastActIndexFor(maxActIndex);
 		if (lastActIndex < 0 || RunState.Players.Count == 0)
 		{
 			return -1;
@@ -515,7 +430,7 @@ internal sealed partial class HextechMayhemModifier
 
 	private int GetHighestActResolvedByPlayerRuneCounts(int maxActIndex)
 	{
-		int lastActIndex = Math.Min(maxActIndex, _resolvedActs.Length - 1);
+		int lastActIndex = _actState.LastActIndexFor(maxActIndex);
 		if (lastActIndex < 0)
 		{
 			return -1;

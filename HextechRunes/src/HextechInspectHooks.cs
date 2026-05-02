@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Unlocks;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -265,13 +266,4 @@ internal static class HextechInspectHooks
 		return new HarmonyMethod(typeof(HextechInspectHooks), methodName);
 	}
 
-	private static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null);
-	}
-
-	private static FieldInfo? TryGetField(Type type, string name)
-	{
-		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
-	}
 }

@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Relics;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -198,25 +199,4 @@ internal static class AssetHooks
 		return texture;
 	}
 
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameterTypes)
-	{
-		return type.GetMethod(name, flags, binder: null, parameterTypes, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find method {type.FullName}.{name}.");
-	}
-
-	private static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameterTypes)
-	{
-		return type.GetMethod(name, flags, binder: null, parameterTypes, modifiers: null);
-	}
-
-	private static FieldInfo? TryGetField(Type type, string name)
-	{
-		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
-	}
-
-	private static MethodInfo RequireGetter(Type type, string propertyName)
-	{
-		return type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetMethod
-			?? throw new InvalidOperationException($"Could not find property getter {type.FullName}.{propertyName}.");
-	}
 }
