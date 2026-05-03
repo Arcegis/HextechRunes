@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Saves.Runs;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -51,7 +52,7 @@ internal static class HextechModelBootstrap
 		const int minimumBitSize = 16;
 		const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
 
-		FieldInfo? mapField = typeof(SavedPropertiesTypeCache).GetField("_netIdToPropertyNameMap", flags);
+		FieldInfo? mapField = TryGetField(typeof(SavedPropertiesTypeCache), "_netIdToPropertyNameMap", flags);
 		int propertyNameCount = (mapField?.GetValue(null) as System.Collections.ICollection)?.Count ?? 0;
 		int requiredBitSize = GetRequiredBitSize(propertyNameCount);
 		int targetBitSize = Math.Max(minimumBitSize, requiredBitSize);
@@ -62,7 +63,7 @@ internal static class HextechModelBootstrap
 			return;
 		}
 
-		FieldInfo? backingField = typeof(SavedPropertiesTypeCache).GetField("<NetIdBitSize>k__BackingField", flags);
+		FieldInfo? backingField = TryGetField(typeof(SavedPropertiesTypeCache), "<NetIdBitSize>k__BackingField", flags);
 		if (backingField == null)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize backing field not found; custom saved properties may desync in multiplayer.");

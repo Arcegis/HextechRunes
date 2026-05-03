@@ -19,6 +19,7 @@ using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -306,8 +307,8 @@ public sealed class EasyDoesItRune : HextechRelicBase
 
 public sealed class SweepingBladeRune : HextechRelicBase
 {
-	private static readonly FieldInfo? AttackCommandSingleTargetField = typeof(AttackCommand).GetField("_singleTarget", BindingFlags.Instance | BindingFlags.NonPublic);
-	private static readonly FieldInfo? AttackCommandCombatStateField = typeof(AttackCommand).GetField("_combatState", BindingFlags.Instance | BindingFlags.NonPublic);
+	private static readonly FieldInfo? AttackCommandSingleTargetField = TryGetField(typeof(AttackCommand), "_singleTarget");
+	private static readonly FieldInfo? AttackCommandCombatStateField = TryGetField(typeof(AttackCommand), "_combatState");
 
 	public override Task BeforeAttack(AttackCommand command)
 	{

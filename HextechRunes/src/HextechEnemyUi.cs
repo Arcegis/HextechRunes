@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.sts2.Core.Nodes.TopBar;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -23,13 +24,15 @@ internal static class HextechEnemyUi
 	private const int EnemyHexStripMarginBottom = 2;
 	private const int EnemyHexSeparation = 30;
 
-	private static readonly FieldInfo ModifiersContainerField =
-		typeof(NTopBar).GetField("_modifiersContainer", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("Could not access NTopBar._modifiersContainer.");
+	private static readonly FieldInfo ModifiersContainerField = RequireField(
+		typeof(NTopBar),
+		"_modifiersContainer",
+		BindingFlags.Instance | BindingFlags.NonPublic);
 
-	private static readonly FieldInfo TopBarModifierModelField =
-		typeof(NTopBarModifier).GetField("_modifier", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("Could not access NTopBarModifier._modifier.");
+	private static readonly FieldInfo TopBarModifierModelField = RequireField(
+		typeof(NTopBarModifier),
+		"_modifier",
+		BindingFlags.Instance | BindingFlags.NonPublic);
 
 	public static void Refresh(HextechMayhemModifier modifier)
 	{

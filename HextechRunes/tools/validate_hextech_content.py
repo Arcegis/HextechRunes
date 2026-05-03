@@ -277,21 +277,16 @@ def validate_relic_registry(errors: list[str]) -> None:
 def validate_combat_tracking_state(errors: list[str]) -> None:
     state_text = read(SRC / "HextechMayhemCombatTrackingState.cs")
     mayhem_text = "\n".join(read(path) for path in source_files("HextechMayhem*.cs"))
-    tracking_decl_match = re.search(
-        r"internal sealed class HextechMayhemCombatTrackingState\s*\{(?P<body>.*?)\n\tpublic string Serialize\(\)",
-        state_text,
-        re.S,
-    )
-    if not tracking_decl_match:
-        fail(errors, "combat tracking field block not found")
-        return
-
     declared = set(
         re.findall(
             r"\bpublic\s+(?:readonly\s+)?(?:Dictionary<[^>]+>|HashSet<[^>]+>|string\?|bool|int)\s+([A-Za-z0-9]+)",
-            tracking_decl_match.group("body"),
+            state_text,
         )
     )
+    if not declared:
+        fail(errors, "combat tracking field block not found")
+        return
+
     classified = TRACKING_PERSISTENT_FIELDS | TRACKING_TRANSIENT_FIELDS
     unclassified = sorted(declared - classified)
     stale_classification = sorted(classified - declared)

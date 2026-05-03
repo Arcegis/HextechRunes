@@ -21,7 +21,7 @@ internal static class HextechShopForgeHooks
 	private const int RandomForgeShopRegularCost = 250;
 	private const float CardRemovalRandomForgeOffsetY = 60f;
 
-	private static readonly FieldInfo? MerchantInventoryRelicEntriesField = typeof(MerchantInventory).GetField("_relicEntries", BindingFlags.Instance | BindingFlags.NonPublic);
+	private static readonly FieldInfo? MerchantInventoryRelicEntriesField = TryGetField(typeof(MerchantInventory), "_relicEntries");
 	private static readonly Dictionary<ulong, Vector2> CardRemovalOriginalPositions = [];
 
 	public static void Install(Harmony harmony)

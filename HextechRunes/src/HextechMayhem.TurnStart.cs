@@ -15,12 +15,10 @@ internal sealed partial class HextechMayhemModifier
 {
 	private async Task BeforePlayerSideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
-		_combatTracking.BloodPactProcsThisTurn.Clear();
-		_combatTracking.ClownCollegeProcsThisTurn.Clear();
-		_combatTracking.EightPennyGatePlayersTriggeredThisTurn.Clear();
+		_combatTracking.PreparePlayerSideTurnStart();
 
 		await ApplyToCurrentEnemiesIfNeeded();
-        QueueEscapePlanTriggersFromCurrentEnemyState(combatState);
+	    QueueEscapePlanTriggersFromCurrentEnemyState(combatState);
         await ResolvePlayerTurnPendingEnemyEffects(combatState);
         await ApplyPlayerTurnStartEnemyHexes(combatState, players);
     }
@@ -182,18 +180,11 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
-    {
-        _combatTracking.EnemyProtectiveVeilTurnCounter++;
-        _combatTracking.SlapProcsThisTurn.Clear();
-        _combatTracking.TormentorProcsThisTurn.Clear();
-        _combatTracking.CourageProcsThisTurn.Clear();
-        _combatTracking.BloodPactProcsThisTurn.Clear();
-        _combatTracking.ClownCollegeProcsThisTurn.Clear();
-        _combatTracking.DevilsDanceTriggeredThisTurn.Clear();
-        _combatTracking.MonsterDebuffActionProcKeysThisTurn.Clear();
+	private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
+	{
+	    _combatTracking.PrepareEnemySideTurnStart();
 
-        IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState);
+	    IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState);
 
         if (HasActiveMonsterHex(MonsterHexKind.TankEngine))
         {

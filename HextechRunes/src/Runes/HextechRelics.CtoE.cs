@@ -557,49 +557,6 @@ public sealed class EarthAwakensRune : HextechRelicBase
 	}
 }
 
-public sealed class EightPennyGateRune : HextechRelicBase
-{
-	private bool _triggeredLastPlay;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("Replays", 1m)
-	];
-
-	public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
-	{
-		return ShouldReplayAndExhaust(card) ? (PileType.Exhaust, position) : (pileType, position);
-	}
-
-	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
-	{
-		_triggeredLastPlay = false;
-		if (!ShouldReplayAndExhaust(card))
-		{
-			return playCount;
-		}
-
-		_triggeredLastPlay = true;
-		return playCount + DynamicVars["Replays"].IntValue;
-	}
-
-	public override Task AfterModifyingCardPlayCount(CardModel card)
-	{
-		if (_triggeredLastPlay && ShouldReplayAndExhaust(card))
-		{
-			Flash();
-		}
-
-		_triggeredLastPlay = false;
-		return Task.CompletedTask;
-	}
-
-	private bool ShouldReplayAndExhaust(CardModel card)
-	{
-		return card.Owner == Owner && card.Type is CardType.Attack or CardType.Skill;
-	}
-}
-
 public sealed class ElectricSurgeRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -625,62 +582,6 @@ public sealed class ElectricSurgeRune : HextechRelicBase
 			OrbModel orb = ModelDb.Orb<LightningOrb>().ToMutable();
 			await OrbCmd.Channel(choiceContext, orb, Owner);
 		}
-	}
-}
-
-public sealed class ElicitCard : CardModel
-{
-	public override CardPoolModel Pool => IsMutable && Owner != null
-		? Owner.Character.CardPool
-		: ModelDb.CardPool<TokenCardPool>();
-
-	public override CardPoolModel VisualCardPool => Pool;
-
-	public override OrbEvokeType OrbEvokeType => OrbEvokeType.All;
-
-	public override string PortraitPath => ModInfo.ElicitCardPortraitPath;
-
-	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.Static(StaticHoverTip.Evoke)
-	];
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new CardsVar(0)
-	];
-
-	public override IEnumerable<CardKeyword> CanonicalKeywords =>
-	[
-		CardKeyword.Innate,
-		CardKeyword.Retain,
-		CardKeyword.Exhaust
-	];
-
-	public ElicitCard()
-		: base(0, CardType.Skill, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: true)
-	{
-	}
-
-	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
-	{
-		int orbCount = Owner.PlayerCombatState?.OrbQueue.Orbs.Count ?? 0;
-		for (int i = 0; i < orbCount; i++)
-		{
-			await OrbCmd.EvokeNext(choiceContext, Owner);
-		}
-
-		if (DynamicVars.Cards.IntValue > 0)
-		{
-			await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
-		}
-	}
-
-	protected override void OnUpgrade()
-	{
-		DynamicVars.Cards.UpgradeValueBy(2m);
 	}
 }
 
