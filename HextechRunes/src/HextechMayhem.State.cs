@@ -18,26 +18,42 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HextechMayhemActState _actState = new();
 	private readonly HextechMayhemCombatTrackingState _combatTracking = new();
 	private readonly HextechMayhemChoiceHistoryState _choiceHistory = new();
+	private IReadOnlyList<MonsterHexKind>? _cachedActiveMonsterHexes;
+	private HashSet<MonsterHexKind>? _cachedActiveMonsterHexSet;
+	private int _cachedActiveMonsterHexActIndex = int.MinValue;
+	private bool _cachedActiveMonsterHexCombatRecovery;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedRarityByAct
 	{
 		get => _actState.SavedRarityByAct;
-		set => _actState.SavedRarityByAct = value;
+		set
+		{
+			_actState.SavedRarityByAct = value;
+			InvalidateActiveMonsterHexCache();
+		}
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedMonsterHexByAct
 	{
 		get => _actState.SavedMonsterHexByAct;
-		set => _actState.SavedMonsterHexByAct = value;
+		set
+		{
+			_actState.SavedMonsterHexByAct = value;
+			InvalidateActiveMonsterHexCache();
+		}
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedResolvedActs
 	{
 		get => _actState.SavedResolvedActs;
-		set => _actState.SavedResolvedActs = value;
+		set
+		{
+			_actState.SavedResolvedActs = value;
+			InvalidateActiveMonsterHexCache();
+		}
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -79,6 +95,7 @@ internal sealed partial class HextechMayhemModifier
 	public void SetActResolved(int actIndex, bool resolved)
 	{
 		_actState.SetResolved(actIndex, resolved);
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public bool TryRecoverResolvedActsFromPlayerRelics(string reason)
@@ -110,6 +127,7 @@ internal sealed partial class HextechMayhemModifier
 
 		if (changed)
 		{
+			InvalidateActiveMonsterHexCache();
 			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
@@ -129,6 +147,7 @@ internal sealed partial class HextechMayhemModifier
 	public void SetRarityForAct(int actIndex, HextechRarityTier rarity)
 	{
 		_actState.SetRarity(actIndex, rarity);
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public MonsterHexKind? GetMonsterHexForAct(int actIndex)
@@ -139,11 +158,13 @@ internal sealed partial class HextechMayhemModifier
 	public void SetMonsterHexForAct(int actIndex, MonsterHexKind hex)
 	{
 		_actState.SetMonsterHex(actIndex, hex);
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexes()
 	{
-		return _actState.GetActiveMonsterHexes(RunState.CurrentActIndex, ShouldRecoverMonsterHexInCombat);
+		EnsureActiveMonsterHexCache();
+		return _cachedActiveMonsterHexes!;
 	}
 
 	private bool ShouldRecoverMonsterHexInCombat(int actIndex)
@@ -156,6 +177,7 @@ internal sealed partial class HextechMayhemModifier
 		_actState.Reset();
 		_choiceHistory.Reset();
 		ResetCombatTracking();
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
@@ -164,11 +186,40 @@ internal sealed partial class HextechMayhemModifier
 		_choiceHistory.Reset();
 
 		ResetCombatTracking();
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public bool HasActiveMonsterHex(MonsterHexKind hex)
 	{
-		return GetActiveMonsterHexes().Contains(hex);
+		EnsureActiveMonsterHexCache();
+		return _cachedActiveMonsterHexSet!.Contains(hex);
+	}
+
+	private void EnsureActiveMonsterHexCache()
+	{
+		int actIndex = RunState.CurrentActIndex;
+		bool combatRecovery = ShouldRecoverMonsterHexInCombat(actIndex);
+		if (_cachedActiveMonsterHexes != null
+			&& _cachedActiveMonsterHexSet != null
+			&& _cachedActiveMonsterHexActIndex == actIndex
+			&& _cachedActiveMonsterHexCombatRecovery == combatRecovery)
+		{
+			return;
+		}
+
+		IReadOnlyList<MonsterHexKind> activeHexes = _actState.GetActiveMonsterHexes(actIndex, ShouldRecoverMonsterHexInCombat);
+		_cachedActiveMonsterHexes = activeHexes;
+		_cachedActiveMonsterHexSet = activeHexes.ToHashSet();
+		_cachedActiveMonsterHexActIndex = actIndex;
+		_cachedActiveMonsterHexCombatRecovery = combatRecovery;
+	}
+
+	private void InvalidateActiveMonsterHexCache()
+	{
+		_cachedActiveMonsterHexes = null;
+		_cachedActiveMonsterHexSet = null;
+		_cachedActiveMonsterHexActIndex = int.MinValue;
+		_cachedActiveMonsterHexCombatRecovery = false;
 	}
 
 	public IReadOnlyList<HextechTelemetry.RuneChoiceRecord> GetTelemetryChoiceRecords()
