@@ -40,7 +40,7 @@ public abstract class DragonSoulCardBase : CardModel
 
 public sealed class OceanDragonSoulCard : DragonSoulCardBase
 {
-	public override string PortraitPath => ModInfo.OceanDragonSoulCardPortraitPath;
+	public override string PortraitPath => HextechAssets.OceanDragonSoulCardPortraitPath;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -65,7 +65,7 @@ public sealed class OceanDragonSoulCard : DragonSoulCardBase
 
 public sealed class InfernalDragonSoulCard : DragonSoulCardBase
 {
-	public override string PortraitPath => ModInfo.InfernalDragonSoulCardPortraitPath;
+	public override string PortraitPath => HextechAssets.InfernalDragonSoulCardPortraitPath;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -91,7 +91,7 @@ public sealed class InfernalDragonSoulCard : DragonSoulCardBase
 
 public sealed class HextechDragonSoulCard : DragonSoulCardBase
 {
-	public override string PortraitPath => ModInfo.HextechDragonSoulCardPortraitPath;
+	public override string PortraitPath => HextechAssets.HextechDragonSoulCardPortraitPath;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -116,7 +116,7 @@ public sealed class HextechDragonSoulCard : DragonSoulCardBase
 
 public sealed class MountainDragonSoulCard : DragonSoulCardBase
 {
-	public override string PortraitPath => ModInfo.MountainDragonSoulCardPortraitPath;
+	public override string PortraitPath => HextechAssets.MountainDragonSoulCardPortraitPath;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -142,7 +142,7 @@ public sealed class MountainDragonSoulCard : DragonSoulCardBase
 
 public sealed class ChemtechDragonSoulCard : DragonSoulCardBase
 {
-	public override string PortraitPath => ModInfo.ChemtechDragonSoulCardPortraitPath;
+	public override string PortraitPath => HextechAssets.ChemtechDragonSoulCardPortraitPath;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -167,7 +167,7 @@ public sealed class ChemtechDragonSoulCard : DragonSoulCardBase
 
 public sealed class CloudDragonSoulCard : DragonSoulCardBase
 {
-	public override string PortraitPath => ModInfo.CloudDragonSoulCardPortraitPath;
+	public override string PortraitPath => HextechAssets.CloudDragonSoulCardPortraitPath;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[

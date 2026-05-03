@@ -42,7 +42,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 		}
 
 		HextechMayhemModifier modifier = ModEntry.EnsureMayhemModifier(runState);
-		modifier.DebugSetOnlyMonsterHex(actIndex, hex, ModInfo.GetMonsterHexRarity(hex));
+		modifier.DebugSetOnlyMonsterHex(actIndex, hex, MonsterHexCatalog.GetMonsterHexRarity(hex));
 		HextechEnemyUi.Refresh(modifier);
 		return new CmdResult(ApplyIfNeeded(modifier), success: true, $"当前楼层敌方海克斯已设置为 {hex}。");
 	}
@@ -77,7 +77,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 				return true;
 			}
 
-			string relicId = ModInfo.GetIconRelicForMonsterHex(candidate).Id.Entry;
+			string relicId = MonsterHexCatalog.GetIconRelicForMonsterHex(candidate).Id.Entry;
 			if (Normalize(relicId) == normalized)
 			{
 				hex = candidate;
@@ -93,7 +93,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 	{
 		foreach (HextechRarityTier rarity in Enum.GetValues<HextechRarityTier>())
 		{
-			foreach (MonsterHexKind hex in ModInfo.GetMonsterHexesForRarity(rarity))
+			foreach (MonsterHexKind hex in MonsterHexCatalog.GetMonsterHexesForRarity(rarity))
 			{
 				yield return hex;
 			}

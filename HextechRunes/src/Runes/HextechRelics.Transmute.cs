@@ -15,7 +15,7 @@ public sealed class TransmuteChaosRune : HextechRelicBase
 
 		Player player = Owner;
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, ModInfo.GetAllSelectableRuneTypes(), 2);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetAllSelectableRuneTypes(), 2);
 	}
 }
 
@@ -32,7 +32,7 @@ public sealed class TransmuteGoldRune : HextechRelicBase
 
 		Player player = Owner;
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, ModInfo.GetPlayerRuneTypesForRarity(HextechRarityTier.Gold), 1);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Gold), 1);
 	}
 }
 
@@ -49,6 +49,6 @@ public sealed class TransmutePrismaticRune : HextechRelicBase
 
 		Player player = Owner;
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, ModInfo.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic), 1);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic), 1);
 	}
 }

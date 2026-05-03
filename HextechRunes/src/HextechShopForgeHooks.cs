@@ -165,7 +165,7 @@ internal static class HextechShopForgeHooks
 
 	private static bool IsRandomForgeEntry(MerchantEntry entry)
 	{
-		return entry is MerchantRelicEntry relicEntry && ModInfo.IsHextechShopRelic(relicEntry.Model);
+		return entry is MerchantRelicEntry relicEntry && HextechCatalog.IsHextechShopRelic(relicEntry.Model);
 	}
 
 	private static bool IsFakeMerchantInventory(NMerchantInventory merchantInventory)

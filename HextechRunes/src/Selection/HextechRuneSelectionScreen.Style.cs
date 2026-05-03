@@ -27,13 +27,13 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return "GOLD";
 		}
 
-		Type? relicType = ModInfo.GetPlayerRuneTypesForRarity(HextechRarityTier.Silver).FirstOrDefault(type => ModelDb.GetId(type) == (relics[0].CanonicalInstance?.Id ?? relics[0].Id));
+		Type? relicType = HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Silver).FirstOrDefault(type => ModelDb.GetId(type) == (relics[0].CanonicalInstance?.Id ?? relics[0].Id));
 		if (relicType != null)
 		{
 			return "SILVER";
 		}
 
-		relicType = ModInfo.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic).FirstOrDefault(type => ModelDb.GetId(type) == (relics[0].CanonicalInstance?.Id ?? relics[0].Id));
+		relicType = HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic).FirstOrDefault(type => ModelDb.GetId(type) == (relics[0].CanonicalInstance?.Id ?? relics[0].Id));
 		return relicType != null ? "PRISMATIC" : "GOLD";
 	}
 

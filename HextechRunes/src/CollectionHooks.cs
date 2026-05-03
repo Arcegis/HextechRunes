@@ -120,13 +120,13 @@ internal static class CollectionHooks
 		HashSet<RelicModel> seenRelics,
 		HashSet<RelicModel> allUnlockedRelics)
 	{
-		if (collection.Relics.Any(ModInfo.IsHextechRelic))
+		if (collection.Relics.Any(HextechCatalog.IsHextechRelic))
 		{
 			return;
 		}
 
-		IReadOnlyList<RelicModel> genericRunes = ModInfo.GetCanonicalGenericSelectableRunes();
-		IReadOnlyList<ModInfo.RuneSeriesGroup> characterGroups = ModInfo.GetCharacterRuneGroups();
+		IReadOnlyList<RelicModel> genericRunes = HextechCatalog.GetCanonicalGenericSelectableRunes();
+		IReadOnlyList<HextechCatalog.RuneSeriesGroup> characterGroups = HextechCatalog.GetCharacterRuneGroups();
 		HashSet<RelicModel> visibleHextechRelics = genericRunes
 			.Concat(characterGroups.SelectMany(static group => group.Relics))
 			.ToHashSet();
@@ -136,20 +136,20 @@ internal static class CollectionHooks
 		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
 			self,
 			collection,
-			ModInfo.HextechSubcategoryKey,
+			HextechAssets.HextechSubcategoryKey,
 			genericRunes,
 			seenWithHextech,
 			unlockedWithHextech);
 		ApplyCustomHeaderText(
 			subCategory,
-			ModInfo.HextechSubcategoryKey,
+			HextechAssets.HextechSubcategoryKey,
 			HextechHeaderZh,
 			HextechHeaderZhBody,
 			HextechHeaderEn,
 			HextechHeaderEnBody);
 
 		NRelicCollectionCategory? firstCharacterSubcategory = null;
-		foreach (ModInfo.RuneSeriesGroup group in characterGroups)
+		foreach (HextechCatalog.RuneSeriesGroup group in characterGroups)
 		{
 			NRelicCollectionCategory? characterSubcategory = AddCharacterRuneSubcategory(
 				subCategory,
@@ -172,25 +172,25 @@ internal static class CollectionHooks
 		HashSet<RelicModel> seenRelics,
 		HashSet<RelicModel> allUnlockedRelics)
 	{
-		if (collection.Relics.Any(ModInfo.IsHextechForgeRelic))
+		if (collection.Relics.Any(HextechCatalog.IsHextechForgeRelic))
 		{
 			return;
 		}
 
-		HashSet<RelicModel> visibleForgeRelics = ModInfo.GetCanonicalForges().ToHashSet();
+		HashSet<RelicModel> visibleForgeRelics = HextechCatalog.GetCanonicalForges().ToHashSet();
 		HashSet<RelicModel> seenWithForges = seenRelics.Concat(visibleForgeRelics).ToHashSet();
 		HashSet<RelicModel> unlockedWithForges = allUnlockedRelics.Concat(visibleForgeRelics).ToHashSet();
 
 		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
 			self,
 			collection,
-			ModInfo.ForgeSubcategoryKey,
-			ModInfo.GetCanonicalForges(),
+			HextechAssets.ForgeSubcategoryKey,
+			HextechCatalog.GetCanonicalForges(),
 			seenWithForges,
 			unlockedWithForges);
 		ApplyCustomHeaderText(
 			subCategory,
-			ModInfo.ForgeSubcategoryKey,
+			HextechAssets.ForgeSubcategoryKey,
 			ForgeHeaderZh,
 			ForgeHeaderZhBody,
 			ForgeHeaderEn,
@@ -200,7 +200,7 @@ internal static class CollectionHooks
 	private static NRelicCollectionCategory? AddCharacterRuneSubcategory(
 		NRelicCollectionCategory hextechCategory,
 		NRelicCollection collection,
-		ModInfo.RuneSeriesGroup group,
+		HextechCatalog.RuneSeriesGroup group,
 		HashSet<RelicModel> seenRelics,
 		HashSet<RelicModel> allUnlockedRelics)
 	{

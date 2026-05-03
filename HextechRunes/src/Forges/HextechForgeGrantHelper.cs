@@ -108,10 +108,10 @@ internal static class HextechForgeGrantHelper
 
 	private static bool TryCreateStableRandomForge(Player player, HextechRarityTier rarity, string source, int ordinal, out RelicModel? forge)
 	{
-		List<Type> pool = BuildAvailableForgePool(player, ModInfo.GetForgeTypesForRarity(rarity));
+		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
 		if (pool.Count == 0)
 		{
-			pool = BuildAvailableForgePool(player, ModInfo.GetAllForgeTypes());
+			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
 		}
 
 		if (pool.Count == 0)
@@ -135,10 +135,10 @@ internal static class HextechForgeGrantHelper
 
 	private static bool TryCreateRandomForge(Player player, HextechRarityTier rarity, Rng rng, out RelicModel? forge)
 	{
-		List<Type> pool = BuildAvailableForgePool(player, ModInfo.GetForgeTypesForRarity(rarity));
+		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
 		if (pool.Count == 0)
 		{
-			pool = BuildAvailableForgePool(player, ModInfo.GetAllForgeTypes());
+			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
 		}
 
 		if (pool.Count == 0)
@@ -155,7 +155,7 @@ internal static class HextechForgeGrantHelper
 	private static List<Type> BuildAvailableForgePool(Player player, IEnumerable<Type> candidateTypes)
 	{
 		return candidateTypes
-			.Where(type => ModInfo.IsAvailableForPlayer(ModelDb.GetById<RelicModel>(ModelDb.GetId(type)), player))
+			.Where(type => HextechCatalog.IsAvailableForPlayer(ModelDb.GetById<RelicModel>(ModelDb.GetId(type)), player))
 			.ToList();
 	}
 

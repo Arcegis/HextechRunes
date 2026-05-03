@@ -100,7 +100,7 @@ internal static class AssetHooks
 	private static bool TryGetHextechRelicTexture(RelicModel self, out Texture2D? texture)
 	{
 		texture = null;
-		string? path = ModInfo.TryGetCustomRelicIconPath(self);
+		string? path = HextechAssets.TryGetCustomRelicIconPath(self);
 		if (path == null)
 		{
 			return false;
@@ -117,12 +117,12 @@ internal static class AssetHooks
 		{
 			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",
 			HextechAttackReplayPower => $"res://{ModInfo.Id}/images/powers/hextechAttackReplayPower.png",
-			HextechOceanDragonSoulPower => ModInfo.OceanDragonSoulPowerIconPath,
-			HextechInfernalDragonSoulPower => ModInfo.InfernalDragonSoulPowerIconPath,
-			HextechDragonSoulPower => ModInfo.HextechDragonSoulPowerIconPath,
-			HextechMountainDragonSoulPower => ModInfo.MountainDragonSoulPowerIconPath,
-			HextechChemtechDragonSoulPower => ModInfo.ChemtechDragonSoulPowerIconPath,
-			HextechCloudDragonSoulPower => ModInfo.CloudDragonSoulPowerIconPath,
+			HextechOceanDragonSoulPower => HextechAssets.OceanDragonSoulPowerIconPath,
+			HextechInfernalDragonSoulPower => HextechAssets.InfernalDragonSoulPowerIconPath,
+			HextechDragonSoulPower => HextechAssets.HextechDragonSoulPowerIconPath,
+			HextechMountainDragonSoulPower => HextechAssets.MountainDragonSoulPowerIconPath,
+			HextechChemtechDragonSoulPower => HextechAssets.ChemtechDragonSoulPowerIconPath,
+			HextechCloudDragonSoulPower => HextechAssets.CloudDragonSoulPowerIconPath,
 			_ => null
 		};
 		if (path == null)
@@ -139,15 +139,15 @@ internal static class AssetHooks
 		texture = null;
 		string? path = self switch
 		{
-			ElicitCard => ModInfo.ElicitCardPortraitPath,
-			TrickMagicCard => ModInfo.TrickMagicCardPortraitPath,
-			BladeWaltzCard => ModInfo.BladeWaltzCardPortraitPath,
-			OceanDragonSoulCard => ModInfo.OceanDragonSoulCardPortraitPath,
-			InfernalDragonSoulCard => ModInfo.InfernalDragonSoulCardPortraitPath,
-			HextechDragonSoulCard => ModInfo.HextechDragonSoulCardPortraitPath,
-			MountainDragonSoulCard => ModInfo.MountainDragonSoulCardPortraitPath,
-			ChemtechDragonSoulCard => ModInfo.ChemtechDragonSoulCardPortraitPath,
-			CloudDragonSoulCard => ModInfo.CloudDragonSoulCardPortraitPath,
+			ElicitCard => HextechAssets.ElicitCardPortraitPath,
+			TrickMagicCard => HextechAssets.TrickMagicCardPortraitPath,
+			BladeWaltzCard => HextechAssets.BladeWaltzCardPortraitPath,
+			OceanDragonSoulCard => HextechAssets.OceanDragonSoulCardPortraitPath,
+			InfernalDragonSoulCard => HextechAssets.InfernalDragonSoulCardPortraitPath,
+			HextechDragonSoulCard => HextechAssets.HextechDragonSoulCardPortraitPath,
+			MountainDragonSoulCard => HextechAssets.MountainDragonSoulCardPortraitPath,
+			ChemtechDragonSoulCard => HextechAssets.ChemtechDragonSoulCardPortraitPath,
+			CloudDragonSoulCard => HextechAssets.CloudDragonSoulCardPortraitPath,
 			_ => null
 		};
 		if (path == null)

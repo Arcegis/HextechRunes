@@ -23,7 +23,7 @@ internal static class HextechModelBootstrap
 
 	private static void InjectSavedPropertyCaches()
 	{
-		foreach (Type type in ModInfo.GetAllCustomRelicTypes())
+		foreach (Type type in HextechCatalog.GetAllCustomRelicTypes())
 		{
 			SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 		}
@@ -89,12 +89,12 @@ internal static class HextechModelBootstrap
 
 	private static void RegisterModels()
 	{
-		foreach (Type runeType in ModInfo.GetAllCustomRelicTypes())
+		foreach (Type runeType in HextechCatalog.GetAllCustomRelicTypes())
 		{
 			AddModelToPoolMethod.MakeGenericMethod(typeof(SharedRelicPool), runeType).Invoke(null, null);
 		}
 
-		foreach (Type cardType in ModInfo.GetAllCustomCardTypes())
+		foreach (Type cardType in HextechCatalog.GetAllCustomCardTypes())
 		{
 			AddModelToPoolMethod.MakeGenericMethod(typeof(TokenCardPool), cardType).Invoke(null, null);
 		}

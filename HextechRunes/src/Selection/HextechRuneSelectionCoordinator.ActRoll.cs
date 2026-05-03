@@ -170,12 +170,12 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 		}
 
-		List<MonsterHexKind> pool = ModInfo.GetMonsterHexesForRarity(rarity)
+		List<MonsterHexKind> pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
 			.Where(kind => !alreadyChosen.Contains(kind))
 			.ToList();
 		if (pool.Count == 0)
 		{
-			pool = ModInfo.GetMonsterHexesForRarity(rarity).ToList();
+			pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity).ToList();
 		}
 
 		return pool[runState.Rng.Niche.NextInt(pool.Count)];
@@ -205,12 +205,12 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 		}
 
-		List<MonsterHexKind> pool = ModInfo.GetMonsterHexesForRarity(rarity)
+		List<MonsterHexKind> pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
 			.Where(kind => !alreadyChosen.Contains(kind))
 			.ToList();
 		if (pool.Count == 0)
 		{
-			pool = ModInfo.GetMonsterHexesForRarity(rarity).ToList();
+			pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity).ToList();
 		}
 
 		return pool;

@@ -351,7 +351,7 @@ public sealed class BladeWaltzCard : CardModel
 
 	public override CardPoolModel VisualCardPool => Pool;
 
-	public override string PortraitPath => ModInfo.BladeWaltzCardPortraitPath;
+	public override string PortraitPath => HextechAssets.BladeWaltzCardPortraitPath;
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 

@@ -21,7 +21,7 @@ public sealed class ElicitCard : CardModel
 
 	public override OrbEvokeType OrbEvokeType => OrbEvokeType.All;
 
-	public override string PortraitPath => ModInfo.ElicitCardPortraitPath;
+	public override string PortraitPath => HextechAssets.ElicitCardPortraitPath;
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 
@@ -75,7 +75,7 @@ public sealed class TrickMagicCard : CardModel
 
 	public override CardPoolModel VisualCardPool => Pool;
 
-	public override string PortraitPath => ModInfo.TrickMagicCardPortraitPath;
+	public override string PortraitPath => HextechAssets.TrickMagicCardPortraitPath;
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 

@@ -240,7 +240,7 @@ public abstract class HextechRelicBase : RelicModel
 
 	private string GetResolvedIconPath()
 	{
-		string? customPath = ModInfo.TryGetCustomRelicIconPath(this);
+		string? customPath = HextechAssets.TryGetCustomRelicIconPath(this);
 		if (!string.IsNullOrEmpty(customPath) && ResourceLoader.Exists(customPath))
 		{
 			return customPath;

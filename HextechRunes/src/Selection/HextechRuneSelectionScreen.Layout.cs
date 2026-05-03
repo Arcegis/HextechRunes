@@ -219,9 +219,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		MegaRichTextLabel body = CreateDescriptionLabel();
 		body.MaxFontSize = 17;
 		body.MinFontSize = 13;
-		if (ModInfo.TryGetMonsterHexKind(relic, out MonsterHexKind enemyHex))
+		if (MonsterHexCatalog.TryGetMonsterHexKind(relic, out MonsterHexKind enemyHex))
 		{
-			body.SetTextAutoSize(ModInfo.GetEnemyHexDescriptionFormatted(enemyHex));
+			body.SetTextAutoSize(MonsterHexCatalog.GetEnemyHexDescriptionFormatted(enemyHex));
 		}
 		else
 		{

@@ -97,7 +97,7 @@ internal sealed class HextechMayhemChoiceHistoryState
 		foreach (RelicModel relic in relics)
 		{
 			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-			if (ModInfo.IsHextechRelic(relic) && !string.IsNullOrWhiteSpace(id.Entry))
+			if (HextechCatalog.IsHextechRelic(relic) && !string.IsNullOrWhiteSpace(id.Entry))
 			{
 				entriesToAdd.Add(id.Entry);
 			}

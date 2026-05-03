@@ -218,7 +218,7 @@ internal static class HextechEnemyUi
 
 	private static Control CreateEnemyHexHolder(MonsterHexKind hex)
 	{
-		RelicModel relic = ModInfo.GetIconRelicForMonsterHex(hex).ToMutable();
+		RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(hex).ToMutable();
 		Control holder = new()
 		{
 			Name = $"EnemyHex-{hex}",
@@ -248,7 +248,7 @@ internal static class HextechEnemyUi
 	private static void ShowEnemyHexHoverTip(Control holder, MonsterHexKind hex)
 	{
 		NHoverTipSet.Remove(holder);
-		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, ModInfo.GetEnemyHexHoverTips(hex));
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, MonsterHexCatalog.GetEnemyHexHoverTips(hex));
 		hoverTipSet?.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
 	}
 }

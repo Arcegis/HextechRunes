@@ -295,7 +295,7 @@ internal sealed partial class HextechMayhemModifier
 		int minHexCount = int.MaxValue;
 		foreach (Player player in RunState.Players)
 		{
-			int count = player.Relics.Count(ModInfo.IsHextechRelic);
+			int count = player.Relics.Count(HextechCatalog.IsHextechRelic);
 			minHexCount = Math.Min(minHexCount, count);
 		}
 
@@ -332,9 +332,9 @@ internal sealed partial class HextechMayhemModifier
 		foreach (Player player in RunState.Players)
 		{
 			RelicModel? relic = player.Relics
-				.Where(ModInfo.IsHextechRelic)
+				.Where(HextechCatalog.IsHextechRelic)
 				.ElementAtOrDefault(actIndex);
-			if (ModInfo.TryGetPlayerRuneRarity(relic, out rarity))
+			if (HextechCatalog.TryGetPlayerRuneRarity(relic, out rarity))
 			{
 				return true;
 			}
@@ -346,7 +346,7 @@ internal sealed partial class HextechMayhemModifier
 
 	private string DescribePlayerHexCounts()
 	{
-		return string.Join(",", RunState.Players.Select(player => $"{player.NetId}:{player.Relics.Count(ModInfo.IsHextechRelic)}"));
+		return string.Join(",", RunState.Players.Select(player => $"{player.NetId}:{player.Relics.Count(HextechCatalog.IsHextechRelic)}"));
 	}
 
 	private string DescribeTelemetryChoiceCounts()

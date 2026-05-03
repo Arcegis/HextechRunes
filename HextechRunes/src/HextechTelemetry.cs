@@ -203,7 +203,7 @@ internal static class HextechTelemetry
 				i,
 				player.Character.Id.Entry,
 				player.Relics
-					.Where(ModInfo.IsHextechRelic)
+					.Where(HextechCatalog.IsHextechRelic)
 					.Select(GetRelicId)
 					.Distinct(StringComparer.Ordinal)
 					.OrderBy(static id => id, StringComparer.Ordinal)

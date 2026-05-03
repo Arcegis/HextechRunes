@@ -84,32 +84,32 @@ internal static class HextechRuneGrantHelper
 		IReadOnlySet<ModelId> selectedIds)
 	{
 		HashSet<ModelId> ownedAndSelectedIds = player.Relics
-			.Where(ModInfo.IsHextechRelic)
+			.Where(HextechCatalog.IsHextechRelic)
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
 			.Concat(selectedIds)
 			.ToHashSet();
 		HashSet<ModelId> unavailableIds = ownedAndSelectedIds.ToHashSet();
-		unavailableIds.UnionWith(ModInfo.GetMutuallyExclusivePlayerRuneIds(ownedAndSelectedIds));
+		unavailableIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedAndSelectedIds));
 		if (blockedIds != null)
 		{
 			unavailableIds.UnionWith(blockedIds);
 		}
 
 		return candidateTypes
-			.Where(ModInfo.IsPlayerRuneTypeSelectable)
+			.Where(HextechCatalog.IsPlayerRuneTypeSelectable)
 			.Where(type => !ExcludedRewardRuneTypes.Contains(type))
 			.Where(type => !unavailableIds.Contains(ModelDb.GetId(type)))
 			.Where(type =>
 			{
 				RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(type));
-				return ModInfo.IsAvailableForPlayer(relic, player);
+				return HextechCatalog.IsAvailableForPlayer(relic, player);
 			})
 			.ToList();
 	}
 
 	public static async Task ReplaceOwnedHextechRunesWithRandomRunes(Player player, IEnumerable<Type> candidateTypes, IReadOnlySet<ModelId>? blockedIds = null)
 	{
-		List<RelicModel> ownedRunes = player.Relics.Where(ModInfo.IsHextechRelic).ToList();
+		List<RelicModel> ownedRunes = player.Relics.Where(HextechCatalog.IsHextechRelic).ToList();
 		if (ownedRunes.Count == 0)
 		{
 			return;
