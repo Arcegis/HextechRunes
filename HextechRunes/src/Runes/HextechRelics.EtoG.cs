@@ -57,7 +57,7 @@ public sealed class ExplosionArtRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new CardsVar(2)
+		new DynamicVar("TurnStartCards", 1m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -77,9 +77,15 @@ public sealed class ExplosionArtRune : HextechRelicBase
 			return;
 		}
 
+		int cardsToCreate = DynamicVars["TurnStartCards"].IntValue;
+		if (cardsToCreate <= 0)
+		{
+			return;
+		}
+
 		Flash();
-		List<CardModel> cards = new(DynamicVars.Cards.IntValue);
-		for (int i = 0; i < DynamicVars.Cards.IntValue; i++)
+		List<CardModel> cards = new(cardsToCreate);
+		for (int i = 0; i < cardsToCreate; i++)
 		{
 			cards.Add(combatState.CreateCard<BigBang>(Owner));
 		}
@@ -98,16 +104,14 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get
-		{
-			EnsureTurnStateCurrent();
-			return _triggeredThisTurn;
-		}
+		get => false;
 		set
 		{
-			_triggeredThisTurn = value;
+			// Legacy save compatibility: this is turn-scoped runtime state and must not enter multiplayer checksums.
+			_triggeredThisTurn = false;
 			_triggeredLastPlay = false;
-			UpdateTurnStateIdentity();
+			_turnStateCombat = null;
+			_turnStateRoundNumber = -1;
 		}
 	}
 
@@ -115,7 +119,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	[
 		new DynamicVar("NormalReplays", 1m),
 		new DynamicVar("EliteReplays", 2m),
-		new DynamicVar("BossReplays", 3m)
+		new DynamicVar("BossReplays", 2m)
 	];
 
 	public override Task BeforeCombatStart()
@@ -266,15 +270,12 @@ public sealed class FeyMagicRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get
-		{
-			EnsureTurnScopedStateCurrent(ResetTurnState);
-			return _triggeredThisTurn;
-		}
+		get => false;
 		set
 		{
-			_triggeredThisTurn = value;
-			UpdateTurnScopedStateIdentity();
+			// Legacy save compatibility: this is turn-scoped runtime state and must not enter multiplayer checksums.
+			_triggeredThisTurn = false;
+			UpdateTurnScopedStateIdentity(null);
 		}
 	}
 
@@ -342,15 +343,12 @@ public sealed class FinalFormRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get
-		{
-			EnsureTurnScopedStateCurrent(ResetTurnState);
-			return _triggeredThisTurn;
-		}
+		get => false;
 		set
 		{
-			_triggeredThisTurn = value;
-			UpdateTurnScopedStateIdentity();
+			// Legacy save compatibility: this is turn-scoped runtime state and must not enter multiplayer checksums.
+			_triggeredThisTurn = false;
+			UpdateTurnScopedStateIdentity(null);
 		}
 	}
 

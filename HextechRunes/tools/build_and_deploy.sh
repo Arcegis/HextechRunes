@@ -22,6 +22,15 @@ major_minor_version() {
   sed -E 's/^([0-9]+[.][0-9]+).*/\1/' <<< "$1"
 }
 
+clean_macos_metadata() {
+  local target="$1"
+  [[ -d "$target" ]] || return 0
+
+  find "$target" -name "__MACOSX" -type d -prune -exec rm -rf {} +
+  find "$target" -name ".DS_Store" -type f -delete
+  find "$target" -name "._*" -type f -delete
+}
+
 GAME_GODOT_VERSION="$("$GAME_BIN" --version 2>/dev/null | head -n 1)"
 IMPORT_GODOT_VERSION="$("$GODOT_EDITOR" --version 2>/dev/null | head -n 1)"
 if [[ -n "$GAME_GODOT_VERSION" && -n "$IMPORT_GODOT_VERSION" \
@@ -88,6 +97,7 @@ mkdir -p "$IMPORT_PROJECT/$FILE_STEM"
 
 cp "$ROOT/tools/project.godot" "$IMPORT_PROJECT/project.godot"
 rsync -a --exclude "$FILE_STEM.json" "$ROOT/assets/" "$IMPORT_PROJECT/$FILE_STEM/"
+clean_macos_metadata "$IMPORT_PROJECT"
 
 "$GODOT_EDITOR" --headless \
   --path "$IMPORT_PROJECT" \
@@ -116,5 +126,8 @@ for dll in "$BUILD_OUT"/*.dll; do
   cp "$dll" "$ROOT/dist/$base_name"
   cp "$dll" "$MOD_DIR/$base_name"
 done
+
+clean_macos_metadata "$ROOT/dist"
+clean_macos_metadata "$MOD_DIR"
 
 echo "Deployed to $MOD_DIR"

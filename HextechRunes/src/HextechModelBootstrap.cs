@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Saves.Runs;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -22,7 +23,7 @@ internal static class HextechModelBootstrap
 
 	private static void InjectSavedPropertyCaches()
 	{
-		foreach (Type type in ModInfo.GetAllCustomRelicTypes())
+		foreach (Type type in HextechCatalog.GetAllCustomRelicTypes())
 		{
 			SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 		}
@@ -37,6 +38,12 @@ internal static class HextechModelBootstrap
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechBloodPactTemporaryStrengthPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechAttackReplayPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporarySlowPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechOceanDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechInfernalDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechMountainDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechChemtechDragonSoulPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechCloudDragonSoulPower));
 		EnsureSavedPropertyNetIdBitSize();
 	}
 
@@ -45,7 +52,7 @@ internal static class HextechModelBootstrap
 		const int minimumBitSize = 16;
 		const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
 
-		FieldInfo? mapField = typeof(SavedPropertiesTypeCache).GetField("_netIdToPropertyNameMap", flags);
+		FieldInfo? mapField = TryGetField(typeof(SavedPropertiesTypeCache), "_netIdToPropertyNameMap", flags);
 		int propertyNameCount = (mapField?.GetValue(null) as System.Collections.ICollection)?.Count ?? 0;
 		int requiredBitSize = GetRequiredBitSize(propertyNameCount);
 		int targetBitSize = Math.Max(minimumBitSize, requiredBitSize);
@@ -56,7 +63,7 @@ internal static class HextechModelBootstrap
 			return;
 		}
 
-		FieldInfo? backingField = typeof(SavedPropertiesTypeCache).GetField("<NetIdBitSize>k__BackingField", flags);
+		FieldInfo? backingField = TryGetField(typeof(SavedPropertiesTypeCache), "<NetIdBitSize>k__BackingField", flags);
 		if (backingField == null)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize backing field not found; custom saved properties may desync in multiplayer.");
@@ -82,12 +89,12 @@ internal static class HextechModelBootstrap
 
 	private static void RegisterModels()
 	{
-		foreach (Type runeType in ModInfo.GetAllCustomRelicTypes())
+		foreach (Type runeType in HextechCatalog.GetAllCustomRelicTypes())
 		{
 			AddModelToPoolMethod.MakeGenericMethod(typeof(SharedRelicPool), runeType).Invoke(null, null);
 		}
 
-		foreach (Type cardType in ModInfo.GetAllCustomCardTypes())
+		foreach (Type cardType in HextechCatalog.GetAllCustomCardTypes())
 		{
 			AddModelToPoolMethod.MakeGenericMethod(typeof(TokenCardPool), cardType).Invoke(null, null);
 		}

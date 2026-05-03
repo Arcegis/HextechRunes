@@ -1,0 +1,6 @@
+.DS_Store
+.build/
+dist/
+src/bin/
+src/obj/
+versioned-dll-backups/

@@ -20,16 +20,16 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static List<RelicModel> BuildSelectableRunePool(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
 	{
 		HashSet<ModelId> ownedIds = player.Relics
-			.Where(ModInfo.IsHextechRelic)
+			.Where(HextechCatalog.IsHextechRelic)
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
 			.ToHashSet();
 		HashSet<ModelId> blockedOwnedIds = ownedIds.ToHashSet();
-		blockedOwnedIds.UnionWith(ModInfo.GetMutuallyExclusivePlayerRuneIds(ownedIds));
+		blockedOwnedIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedIds));
 
-		List<RelicModel> pool = ModInfo.GetPlayerRuneTypesForRarity(rarity)
-			.Where(type => ModInfo.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
+		List<RelicModel> pool = HextechCatalog.GetPlayerRuneTypesForRarity(rarity)
+			.Where(type => HextechCatalog.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
-			.Where(relic => ModInfo.IsAvailableForPlayer(relic, player)
+			.Where(relic => HextechCatalog.IsAvailableForPlayer(relic, player)
 				&& !blockedOwnedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)
 				&& (excludedIds == null || !excludedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)))
 			.ToList();
@@ -51,6 +51,24 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		return options;
+	}
+
+	private static List<RelicModel> BuildStableSelectableRunesForRarity(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
+	{
+		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, excludedIds);
+		int picks = Math.Min(3, pool.Count);
+		return HextechStableRandom.PickDistinct(
+			pool,
+			picks,
+			runState,
+			static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry,
+			"rune-selection-options",
+			runState.CurrentActIndex.ToString(),
+			HextechStableRandom.PlayerKey(player),
+			((int)rarity).ToString(),
+			excludedIds == null ? "" : string.Join(",", excludedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal)))
+			.Select(static relic => relic.ToMutable())
+			.ToList();
 	}
 
 	private static HashSet<ModelId> CreateBaseExcludedIds(HextechMayhemModifier modifier, Player player, RelicModel? monsterHexRelic)
@@ -98,12 +116,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		ModelId id = relics[0].CanonicalInstance?.Id ?? relics[0].Id;
-		if (ModInfo.GetPlayerRuneTypesForRarity(HextechRarityTier.Silver).Any(type => ModelDb.GetId(type) == id))
+		if (HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Silver).Any(type => ModelDb.GetId(type) == id))
 		{
 			return HextechRarityTier.Silver;
 		}
 
-		if (ModInfo.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic).Any(type => ModelDb.GetId(type) == id))
+		if (HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic).Any(type => ModelDb.GetId(type) == id))
 		{
 			return HextechRarityTier.Prismatic;
 		}
@@ -113,7 +131,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	public static void RemoveRunesFromGrabBags(Player player)
 	{
-		foreach (RelicModel relic in ModInfo.GetCanonicalRunes())
+		foreach (RelicModel relic in HextechCatalog.GetCanonicalRunes())
 		{
 			player.RelicGrabBag.Remove(relic);
 			player.RunState.SharedRelicGrabBag.Remove(relic);

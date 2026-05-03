@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Singleton;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -40,6 +41,12 @@ internal static class HextechEnemyPowerScalingHooks
 		}
 
 		decimal finalAmount = CalculateFinalAmount(target, amount, applier, scalingOverride.Value);
+		finalAmount = ClampPowerOffsetForApply<T>(target, finalAmount);
+		if (finalAmount == 0m)
+		{
+			return target.GetPower<T>();
+		}
+
 		Creature? effectiveApplier = ShouldClearSelfApplier(target, applier) ? null : applier;
 		using (BeginOverride(ScalingOverride.FinalAmount))
 		{
@@ -68,10 +75,10 @@ internal static class HextechEnemyPowerScalingHooks
 
 		__result = activeOverride.Value switch
 		{
-			ScalingOverride.PlayerCount => MultiplyByPlayerCount(amount, GetPlayerCount(giver, target)),
-			ScalingOverride.Unscaled => ClampPowerAmount(amount),
-			ScalingOverride.FinalAmount => ClampPowerAmount(amount),
-			_ => ClampPowerAmount(amount)
+			ScalingOverride.PlayerCount => ClampPowerOffsetForApply(power, target, MultiplyByPlayerCount(amount, GetPlayerCount(giver, target))),
+			ScalingOverride.Unscaled => ClampPowerOffsetForApply(power, target, amount),
+			ScalingOverride.FinalAmount => ClampPowerOffsetForApply(power, target, amount),
+			_ => ClampPowerOffsetForApply(power, target, amount)
 		};
 		return false;
 	}
@@ -92,6 +99,36 @@ internal static class HextechEnemyPowerScalingHooks
 		};
 	}
 
+	private static decimal ClampPowerOffsetForApply<T>(Creature target, decimal amount)
+		where T : PowerModel
+	{
+		return ClampPowerOffsetForApply(ModelDb.Power<T>(), target, amount);
+	}
+
+	private static decimal ClampPowerOffsetForApply(PowerModel power, Creature target, decimal amount)
+	{
+		decimal clamped = ClampPowerAmount(amount);
+		if (power.IsInstanced)
+		{
+			return clamped;
+		}
+
+		int currentAmount = target.GetPower(power.Id)?.Amount ?? 0;
+		if (clamped > 0m)
+		{
+			decimal maxOffset = int.MaxValue - (decimal)currentAmount;
+			return Math.Min(clamped, Math.Max(0m, maxOffset));
+		}
+
+		if (clamped < 0m)
+		{
+			decimal minOffset = int.MinValue - (decimal)currentAmount;
+			return Math.Max(clamped, Math.Min(0m, minOffset));
+		}
+
+		return clamped;
+	}
+
 	private static bool ShouldClearSelfApplier(Creature target, Creature? applier)
 	{
 		return applier != null
@@ -106,7 +143,10 @@ internal static class HextechEnemyPowerScalingHooks
 			return ScalingOverride.PlayerCount;
 		}
 
-		if (powerType == typeof(HardenedShellPower) || powerType == typeof(RegenPower) || powerType == typeof(PlatingPower))
+		if (powerType == typeof(HardenedShellPower)
+			|| powerType == typeof(RegenPower)
+			|| powerType == typeof(PlatingPower)
+			|| powerType == typeof(ReflectPower))
 		{
 			return ScalingOverride.Unscaled;
 		}
@@ -123,22 +163,29 @@ internal static class HextechEnemyPowerScalingHooks
 
 	private static decimal MultiplyByPlayerCount(decimal amount, int playerCount)
 	{
-		int scale = Math.Max(1, playerCount);
+		int scale = Math.Clamp(playerCount, 1, 16);
 		if (scale <= 1)
 		{
 			return ClampPowerAmount(amount);
 		}
 
-		if (amount > int.MaxValue / scale)
+		if (amount >= int.MaxValue / scale)
 		{
 			return int.MaxValue;
 		}
-		if (amount < int.MinValue / scale)
+		if (amount <= int.MinValue / scale)
 		{
 			return int.MinValue;
 		}
 
-		return ClampPowerAmount(amount * scale);
+		try
+		{
+			return ClampPowerAmount(amount * scale);
+		}
+		catch (OverflowException)
+		{
+			return amount < 0m ? int.MinValue : int.MaxValue;
+		}
 	}
 
 	private static decimal ClampPowerAmount(decimal amount)
@@ -158,12 +205,6 @@ internal static class HextechEnemyPowerScalingHooks
 	private static OverrideScope BeginOverride(ScalingOverride scalingOverride)
 	{
 		return new OverrideScope(scalingOverride);
-	}
-
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
 	}
 
 	private static MethodInfo ResolveModifyPowerAmountGivenTarget()

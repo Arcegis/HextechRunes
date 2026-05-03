@@ -15,13 +15,10 @@ internal sealed partial class HextechMayhemModifier
 {
 	private async Task BeforePlayerSideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
-		_bloodPactProcsThisTurn.Clear();
-		_clownCollegeProcsThisTurn.Clear();
-		_eightPennyGatePlayersTriggeredThisTurn.Clear();
-		_eightPennyGatePendingCardHashes.Clear();
+		_combatTracking.PreparePlayerSideTurnStart();
 
 		await ApplyToCurrentEnemiesIfNeeded();
-        QueueEscapePlanTriggersFromCurrentEnemyState(combatState);
+	    QueueEscapePlanTriggersFromCurrentEnemyState(combatState);
         await ResolvePlayerTurnPendingEnemyEffects(combatState);
         await ApplyPlayerTurnStartEnemyHexes(combatState, players);
     }
@@ -36,27 +33,27 @@ internal sealed partial class HextechMayhemModifier
         foreach (Creature creature in GetAliveEnemies(combatState))
         {
             if (creature.CombatId == null
-                || _escapePlanTriggered.Contains(creature.CombatId.Value)
-                || _escapePlanPending.Contains(creature.CombatId.Value)
+                || _combatTracking.EscapePlanTriggered.Contains(creature.CombatId.Value)
+                || _combatTracking.EscapePlanPending.Contains(creature.CombatId.Value)
                 || creature.CurrentHp >= creature.MaxHp * EscapePlanHealthThresholdPercent)
             {
                 continue;
             }
 
             uint combatId = creature.CombatId.Value;
-            _escapePlanTriggered.Add(combatId);
-            _escapePlanPending.Add(combatId);
+            _combatTracking.EscapePlanTriggered.Add(combatId);
+            _combatTracking.EscapePlanPending.Add(combatId);
         }
     }
 
     private async Task ResolvePlayerTurnPendingEnemyEffects(HextechCombatState combatState)
     {
-        if (_escapePlanPending.Count > 0)
+        if (_combatTracking.EscapePlanPending.Count > 0)
         {
-            foreach (uint combatId in _escapePlanPending.ToList())
+            foreach (uint combatId in _combatTracking.EscapePlanPending.ToList())
             {
                 Creature? creature = combatState.GetCreature(combatId);
-                _escapePlanPending.Remove(combatId);
+                _combatTracking.EscapePlanPending.Remove(combatId);
                 if (creature == null || !creature.IsAlive)
                 {
                     continue;
@@ -72,12 +69,12 @@ internal sealed partial class HextechMayhemModifier
             }
         }
 
-        if (_speedDemonPending.Count > 0)
+        if (_combatTracking.SpeedDemonPending.Count > 0)
         {
-            foreach (uint combatId in _speedDemonPending.ToList())
+            foreach (uint combatId in _combatTracking.SpeedDemonPending.ToList())
             {
                 Creature? creature = combatState.GetCreature(combatId);
-                _speedDemonPending.Remove(combatId);
+                _combatTracking.SpeedDemonPending.Remove(combatId);
                 if (creature == null || !creature.IsAlive)
                 {
                     continue;
@@ -88,14 +85,14 @@ internal sealed partial class HextechMayhemModifier
             }
         }
 
-        if (_feyMagicPendingNoDrawPlayers.Count > 0)
+        if (_combatTracking.FeyMagicPendingNoDrawPlayers.Count > 0)
         {
-            foreach (KeyValuePair<uint, uint> pending in _feyMagicPendingNoDrawPlayers.ToList())
+            foreach (KeyValuePair<uint, uint> pending in _combatTracking.FeyMagicPendingNoDrawPlayers.ToList())
             {
                 uint combatId = pending.Key;
                 Creature? creature = combatState.GetCreature(combatId);
                 Creature? source = combatState.GetCreature(pending.Value);
-                _feyMagicPendingNoDrawPlayers.Remove(combatId);
+                _combatTracking.FeyMagicPendingNoDrawPlayers.Remove(combatId);
                 if (creature == null || !creature.IsAlive || creature.Side != CombatSide.Player)
                 {
                     continue;
@@ -105,12 +102,12 @@ internal sealed partial class HextechMayhemModifier
             }
         }
 
-        if (_repulsorPending.Count > 0)
+        if (_combatTracking.RepulsorPending.Count > 0)
         {
-            foreach (uint combatId in _repulsorPending.ToList())
+            foreach (uint combatId in _combatTracking.RepulsorPending.ToList())
             {
                 Creature? creature = combatState.GetCreature(combatId);
-                _repulsorPending.Remove(combatId);
+                _combatTracking.RepulsorPending.Remove(combatId);
                 if (creature == null || !creature.IsAlive)
                 {
                     continue;
@@ -133,15 +130,15 @@ internal sealed partial class HextechMayhemModifier
                 }
 
                 uint combatId = enemy.CombatId.Value;
-                if (_mountainSoulHasPreviousTurn.Contains(combatId)
-                    && !_mountainSoulDamagedSinceLastTurn.Contains(combatId))
+                if (_combatTracking.MountainSoulHasPreviousTurn.Contains(combatId)
+                    && !_combatTracking.MountainSoulDamagedSinceLastTurn.Contains(combatId))
                 {
                     int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.1m));
                     await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
                 }
 
-                _mountainSoulHasPreviousTurn.Add(combatId);
-                _mountainSoulDamagedSinceLastTurn.Remove(combatId);
+                _combatTracking.MountainSoulHasPreviousTurn.Add(combatId);
+                _combatTracking.MountainSoulDamagedSinceLastTurn.Remove(combatId);
             }
         }
 
@@ -179,22 +176,15 @@ internal sealed partial class HextechMayhemModifier
 
         if (HasActiveMonsterHex(MonsterHexKind.SingularityAI) && players.Count > 0)
         {
-            await AddEnemySingularityAIStatusCards(players);
+            await AddEnemySingularityAIStatusCards(combatState, players);
         }
     }
 
-    private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
-    {
-        _enemyProtectiveVeilTurnCounter++;
-        _slapProcsThisTurn.Clear();
-        _tormentorProcsThisTurn.Clear();
-        _courageProcsThisTurn.Clear();
-        _bloodPactProcsThisTurn.Clear();
-        _clownCollegeProcsThisTurn.Clear();
-        _devilsDanceTriggeredThisTurn.Clear();
-        _monsterDebuffActionProcKeysThisTurn.Clear();
+	private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
+	{
+	    _combatTracking.PrepareEnemySideTurnStart();
 
-        IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState);
+	    IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState);
 
         if (HasActiveMonsterHex(MonsterHexKind.TankEngine))
         {
@@ -205,7 +195,7 @@ internal sealed partial class HextechMayhemModifier
                 if (enemy.CombatId != null)
                 {
                     uint combatId = enemy.CombatId.Value;
-                    _tankEngineStacks[combatId] = _tankEngineStacks.GetValueOrDefault(combatId, 0) + 1;
+                    _combatTracking.TankEngineStacks[combatId] = _combatTracking.TankEngineStacks.GetValueOrDefault(combatId, 0) + 1;
                     UpdateEnemyScale(enemy);
                 }
             }
@@ -223,7 +213,7 @@ internal sealed partial class HextechMayhemModifier
                 if (enemy.CombatId != null)
                 {
                     uint combatId = enemy.CombatId.Value;
-                    _shrinkEngineStacks[combatId] = _shrinkEngineStacks.GetValueOrDefault(combatId, 0) + 1;
+                    _combatTracking.ShrinkEngineStacks[combatId] = _combatTracking.ShrinkEngineStacks.GetValueOrDefault(combatId, 0) + 1;
                     UpdateEnemyScale(enemy);
                 }
             }
@@ -282,7 +272,7 @@ internal sealed partial class HextechMayhemModifier
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.ProtectiveVeil)
-            && _enemyProtectiveVeilTurnCounter % 2 == 0)
+            && _combatTracking.EnemyProtectiveVeilTurnCounter % 2 == 0)
         {
             foreach (Creature enemy in enemies)
             {
@@ -314,12 +304,12 @@ internal sealed partial class HextechMayhemModifier
             }
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.FeelTheBurn) && _feelTheBurnPending.Count > 0 && players.Count > 0)
+        if (HasActiveMonsterHex(MonsterHexKind.FeelTheBurn) && _combatTracking.FeelTheBurnPending.Count > 0 && players.Count > 0)
         {
-            foreach (uint combatId in _feelTheBurnPending.ToList())
+            foreach (uint combatId in _combatTracking.FeelTheBurnPending.ToList())
             {
                 Creature? creature = combatState.GetCreature(combatId);
-                _feelTheBurnPending.Remove(combatId);
+                _combatTracking.FeelTheBurnPending.Remove(combatId);
                 if (creature == null || !creature.IsAlive)
                 {
                     continue;

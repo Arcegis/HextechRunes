@@ -1,0 +1,51 @@
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Saves;
+
+namespace HextechRunes;
+
+public sealed class EightPennyGateRune : HextechRelicBase
+{
+	private bool _triggeredLastPlay;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("Replays", 1m)
+	];
+
+	public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
+	{
+		return ShouldReplayAndExhaust(card) ? (PileType.Exhaust, position) : (pileType, position);
+	}
+
+	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
+	{
+		_triggeredLastPlay = false;
+		if (!ShouldReplayAndExhaust(card))
+		{
+			return playCount;
+		}
+
+		_triggeredLastPlay = true;
+		return playCount + DynamicVars["Replays"].IntValue;
+	}
+
+	public override Task AfterModifyingCardPlayCount(CardModel card)
+	{
+		if (_triggeredLastPlay && ShouldReplayAndExhaust(card))
+		{
+			Flash();
+		}
+
+		_triggeredLastPlay = false;
+		return Task.CompletedTask;
+	}
+
+	private bool ShouldReplayAndExhaust(CardModel card)
+	{
+		return card.Owner == Owner && card.Type is CardType.Attack or CardType.Skill;
+	}
+}

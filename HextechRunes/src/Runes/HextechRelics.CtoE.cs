@@ -39,50 +39,74 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("RarePotionCount", 1m),
-		new DynamicVar("UncommonPotionCount", 1m),
-		new DynamicVar("CommonPotionCount", 1m)
+		new DynamicVar("UncommonPotionCount", 1m)
 	];
 
-	public override async Task BeforeCombatStart()
+	public override Task AfterCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
 		List<PotionModel> potionOptions = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>()).ToList();
-		List<PotionModel> rareCandidates = potionOptions
-			.Where(static potion => potion.Rarity is PotionRarity.Rare)
-			.ToList();
-		List<PotionModel> uncommonCandidates = potionOptions
-			.Where(static potion => potion.Rarity is PotionRarity.Uncommon)
-			.ToList();
-		List<PotionModel> commonCandidates = potionOptions
-			.Where(static potion => potion.Rarity is PotionRarity.Common)
-			.ToList();
-		if (rareCandidates.Count == 0 && uncommonCandidates.Count == 0 && commonCandidates.Count == 0)
+		bool added = AddPotionRewards(
+			room,
+			Owner,
+			potionOptions,
+			PotionRarity.Rare,
+			DynamicVars["RarePotionCount"].IntValue,
+			"cutting-edge-alchemist-rare-reward");
+		added |= AddPotionRewards(
+			room,
+			Owner,
+			potionOptions,
+			PotionRarity.Uncommon,
+			DynamicVars["UncommonPotionCount"].IntValue,
+			"cutting-edge-alchemist-uncommon-reward");
+
+		if (added)
 		{
-			return;
+			Flash(Array.Empty<Creature>());
 		}
 
-		Flash(Array.Empty<Creature>());
-		for (int i = 0; i < DynamicVars["RarePotionCount"].IntValue && rareCandidates.Count > 0; i++)
+		return Task.CompletedTask;
+	}
+
+	private static bool AddPotionRewards(
+		CombatRoom room,
+		Player player,
+		IReadOnlyList<PotionModel> potionOptions,
+		PotionRarity rarity,
+		int count,
+		string source)
+	{
+		if (count <= 0)
 		{
-			PotionModel potion = rareCandidates[Owner.PlayerRng.Rewards.NextInt(rareCandidates.Count)].ToMutable();
-			await PotionCmd.TryToProcure(potion, Owner);
+			return false;
 		}
 
-		for (int i = 0; i < DynamicVars["UncommonPotionCount"].IntValue && uncommonCandidates.Count > 0; i++)
+		List<PotionModel> candidates = potionOptions
+			.Where(potion => potion.Rarity == rarity)
+			.ToList();
+		if (candidates.Count == 0)
 		{
-			PotionModel potion = uncommonCandidates[Owner.PlayerRng.Rewards.NextInt(uncommonCandidates.Count)].ToMutable();
-			await PotionCmd.TryToProcure(potion, Owner);
+			return false;
 		}
 
-		for (int i = 0; i < DynamicVars["CommonPotionCount"].IntValue && commonCandidates.Count > 0; i++)
+		for (int i = 0; i < count; i++)
 		{
-			PotionModel potion = commonCandidates[Owner.PlayerRng.Rewards.NextInt(commonCandidates.Count)].ToMutable();
-			await PotionCmd.TryToProcure(potion, Owner);
+			PotionModel potion = HextechStableRandom.Pick(
+				candidates,
+				(RunState)player.RunState,
+				HextechStableRandom.PotionKey,
+				source,
+				HextechStableRandom.PlayerKey(player),
+				i.ToString()).ToMutable();
+			room.AddExtraReward(player, new PotionReward(potion, player));
 		}
+
+		return true;
 	}
 }
 
@@ -539,49 +563,6 @@ public sealed class EarthAwakensRune : HextechRelicBase
 	}
 }
 
-public sealed class EightPennyGateRune : HextechRelicBase
-{
-	private bool _triggeredLastPlay;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("Replays", 1m)
-	];
-
-	public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
-	{
-		return ShouldReplayAndExhaust(card) ? (PileType.Exhaust, position) : (pileType, position);
-	}
-
-	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
-	{
-		_triggeredLastPlay = false;
-		if (!ShouldReplayAndExhaust(card))
-		{
-			return playCount;
-		}
-
-		_triggeredLastPlay = true;
-		return playCount + DynamicVars["Replays"].IntValue;
-	}
-
-	public override Task AfterModifyingCardPlayCount(CardModel card)
-	{
-		if (_triggeredLastPlay && ShouldReplayAndExhaust(card))
-		{
-			Flash();
-		}
-
-		_triggeredLastPlay = false;
-		return Task.CompletedTask;
-	}
-
-	private bool ShouldReplayAndExhaust(CardModel card)
-	{
-		return card.Owner == Owner && card.Type is CardType.Attack or CardType.Skill;
-	}
-}
-
 public sealed class ElectricSurgeRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -610,62 +591,6 @@ public sealed class ElectricSurgeRune : HextechRelicBase
 	}
 }
 
-public sealed class ElicitCard : CardModel
-{
-	public override CardPoolModel Pool => IsMutable && Owner != null
-		? Owner.Character.CardPool
-		: ModelDb.CardPool<TokenCardPool>();
-
-	public override CardPoolModel VisualCardPool => Pool;
-
-	public override OrbEvokeType OrbEvokeType => OrbEvokeType.All;
-
-	public override string PortraitPath => ModInfo.ElicitCardPortraitPath;
-
-	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.Static(StaticHoverTip.Evoke)
-	];
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new CardsVar(0)
-	];
-
-	public override IEnumerable<CardKeyword> CanonicalKeywords =>
-	[
-		CardKeyword.Innate,
-		CardKeyword.Retain,
-		CardKeyword.Exhaust
-	];
-
-	public ElicitCard()
-		: base(0, CardType.Skill, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: true)
-	{
-	}
-
-	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
-	{
-		int orbCount = Owner.PlayerCombatState?.OrbQueue.Orbs.Count ?? 0;
-		for (int i = 0; i < orbCount; i++)
-		{
-			await OrbCmd.EvokeNext(choiceContext, Owner);
-		}
-
-		if (DynamicVars.Cards.IntValue > 0)
-		{
-			await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
-		}
-	}
-
-	protected override void OnUpgrade()
-	{
-		DynamicVars.Cards.UpgradeValueBy(2m);
-	}
-}
-
 public sealed class EmergenceRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -688,7 +613,12 @@ public sealed class EmergenceRune : HextechRelicBase
 		Flash();
 		for (int i = 0; i < DynamicVars["OrbCount"].IntValue; i++)
 		{
-			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
+			OrbModel orb = HextechStableRandom.CreateOrb(
+				(RunState)Owner.RunState,
+				Owner,
+				"emergence-turn-start-orb",
+				i,
+				Owner.Creature.CombatState?.RoundNumber ?? -1);
 			await OrbCmd.Channel(choiceContext, orb, Owner);
 		}
 	}

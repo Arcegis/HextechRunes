@@ -117,7 +117,7 @@ function readLatestVersionInfo() {
   return {
     modId: "HextechRunes",
     name: "海克斯大乱斗",
-    latestVersion: "0.5.1"
+    latestVersion: "0.5.3"
   };
 }
 

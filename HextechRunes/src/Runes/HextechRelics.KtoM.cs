@@ -230,7 +230,7 @@ public sealed class LightEmUpRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => _attacksPlayedThisCombat;
+		get => IsNetworkMultiplayer() ? 0 : GetAttacksPlayedThisCombat();
 		set
 		{
 			_attacksPlayedThisCombat = Math.Max(0, value) % AttacksPerReplay;
@@ -249,7 +249,7 @@ public sealed class LightEmUpRune : HextechRelicBase
 				return 0;
 			}
 
-			return _attacksPlayedThisCombat;
+			return GetAttacksPlayedThisCombat();
 		}
 	}
 
@@ -272,10 +272,10 @@ public sealed class LightEmUpRune : HextechRelicBase
 			return playCount;
 		}
 
-		_attacksPlayedThisCombat++;
-		if (_attacksPlayedThisCombat >= AttacksPerReplay)
+		int nextAttacksPlayed = GetAttacksPlayedBeforeCurrentAttack() + 1;
+		_attacksPlayedThisCombat = nextAttacksPlayed % AttacksPerReplay;
+		if (nextAttacksPlayed % AttacksPerReplay == 0)
 		{
-			_attacksPlayedThisCombat = 0;
 			InvokeDisplayAmountChanged();
 			return playCount + 1;
 		}
@@ -298,6 +298,20 @@ public sealed class LightEmUpRune : HextechRelicBase
 	{
 		_attacksPlayedThisCombat = 0;
 		InvokeDisplayAmountChanged();
+	}
+
+	private int GetAttacksPlayedThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory() % AttacksPerReplay
+			: _attacksPlayedThisCombat;
+	}
+
+	private int GetAttacksPlayedBeforeCurrentAttack()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory()
+			: _attacksPlayedThisCombat;
 	}
 }
 
@@ -465,7 +479,12 @@ public sealed class MadScientistRune : HextechRelicBase
 		await OrbCmd.AddSlots(Owner, DynamicVars["OrbSlots"].IntValue);
 		for (int i = 0; i < DynamicVars["OrbCount"].IntValue; i++)
 		{
-			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
+			OrbModel orb = HextechStableRandom.CreateOrb(
+				(RunState)Owner.RunState,
+				Owner,
+				"mad-scientist-start-orb",
+				i,
+				combatState.RoundNumber);
 			await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, Owner);
 		}
 	}
@@ -579,7 +598,13 @@ public sealed class MikaelsBlessingRune : HextechRelicBase
 		Flash(Array.Empty<Creature>());
 		for (int i = 0; i < DynamicVars["PotionCount"].IntValue; i++)
 		{
-			PotionModel potion = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Count)].ToMutable();
+			PotionModel potion = HextechStableRandom.Pick(
+				candidates,
+				(RunState)Owner.RunState,
+				HextechStableRandom.PotionKey,
+				"mikaels-blessing-potion",
+				HextechStableRandom.PlayerKey(Owner),
+				i.ToString()).ToMutable();
 			await PotionCmd.TryToProcure(potion, Owner);
 		}
 	}
@@ -766,10 +791,16 @@ public sealed class MiseryRune : HextechRelicBase
 			return;
 		}
 
-		List<Creature> flashTargets = enemies.Append(Owner.Creature).ToList();
+		Creature target = enemies[HextechStableRandom.Index(
+			(RunState)Owner.RunState,
+			enemies.Count,
+			"misery-target",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Creature.CombatState.RoundNumber.ToString())];
+		List<Creature> flashTargets = [target, Owner.Creature];
 		Flash(flashTargets);
-		await PowerCmd.Apply<StrengthPower>(enemies, DynamicVars.Strength.BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<DexterityPower>(enemies, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<StrengthPower>(target, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<DexterityPower>(target, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<StrengthPower>(Owner.Creature, -DynamicVars.Strength.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<DexterityPower>(Owner.Creature, -DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
 	}

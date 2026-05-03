@@ -99,7 +99,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => _attacksPlayedThisCombat;
+		get => IsNetworkMultiplayer() ? 0 : GetAttacksPlayedThisCombat();
 		set
 		{
 			_attacksPlayedThisCombat = Math.Max(0, value);
@@ -118,7 +118,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 				return 0;
 			}
 
-			int remainder = _attacksPlayedThisCombat % 2;
+			int remainder = GetAttacksPlayedThisCombat() % 2;
 			return remainder == 0 ? 2 : 1;
 		}
 	}
@@ -150,15 +150,65 @@ public sealed class ArcanePunchRune : HextechRelicBase
 			return;
 		}
 
-		_attacksPlayedThisCombat++;
+		if (ShouldUseNetworkCombatHistory())
+		{
+			await ResolveAttackProgressFromHistory();
+			return;
+		}
+
+		int attacksPlayed = _attacksPlayedThisCombat + 1;
+		_attacksPlayedThisCombat = attacksPlayed;
 		InvokeDisplayAmountChanged();
-		if (_attacksPlayedThisCombat % 2 != 0)
+		if (attacksPlayed % 2 != 0)
+		{
+			return;
+		}
+
+		await GainEnergyForAttackThreshold();
+	}
+
+	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		if (ShouldUseNetworkCombatHistory() && IsOwnedAttack(cardPlay.Card))
+		{
+			await ResolveAttackProgressFromHistory();
+		}
+	}
+
+	private async Task ResolveAttackProgressFromHistory()
+	{
+		int attacksPlayed = CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true);
+		int previousAttacksPlayed = _attacksPlayedThisCombat;
+		if (attacksPlayed <= previousAttacksPlayed)
+		{
+			return;
+		}
+
+		_attacksPlayedThisCombat = attacksPlayed;
+		InvokeDisplayAmountChanged();
+		int energyTriggers = attacksPlayed / 2 - previousAttacksPlayed / 2;
+		for (int i = 0; i < energyTriggers; i++)
+		{
+			await GainEnergyForAttackThreshold();
+		}
+	}
+
+	private async Task GainEnergyForAttackThreshold()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
 		{
 			return;
 		}
 
 		Flash();
-		await PlayerCmd.GainEnergy(1m, Owner!);
+		await PlayerCmd.GainEnergy(1m, Owner);
+	}
+
+	private int GetAttacksPlayedThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true)
+			: _attacksPlayedThisCombat;
 	}
 }
 
@@ -301,7 +351,7 @@ public sealed class BladeWaltzCard : CardModel
 
 	public override CardPoolModel VisualCardPool => Pool;
 
-	public override string PortraitPath => ModInfo.BladeWaltzCardPortraitPath;
+	public override string PortraitPath => HextechAssets.BladeWaltzCardPortraitPath;
 
 	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
 
@@ -339,7 +389,15 @@ public sealed class BladeWaltzCard : CardModel
 				break;
 			}
 
-			Creature enemy = enemies[Owner.RunState.Rng.Niche.NextInt(enemies.Count)];
+			Creature enemy = enemies[HextechStableRandom.Index(
+				(RunState)Owner.RunState,
+				enemies.Count,
+				"blade-waltz-target",
+				HextechStableRandom.PlayerKey(Owner),
+				combatState.RoundNumber.ToString(),
+				i.ToString(),
+				CombatManager.Instance.History.Entries.Count().ToString(),
+				HextechStableRandom.CardKey(this))];
 			await CreatureCmd.Damage(choiceContext, enemy, DynamicVars.Damage, Owner.Creature, this);
 		}
 
@@ -405,6 +463,99 @@ public sealed class BloodPactRune : HextechRelicBase
 		Flash();
 		await PowerCmd.Apply<HextechBloodPactTemporaryStrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
 	}
+}
+
+public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
+{
+	private bool _triggeredThisTurn;
+	private bool _triggeredLastPlay;
+
+	protected abstract CardType TargetCardType { get; }
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("Replays", 1m)
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		ResetTriggered(null);
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetTriggered(null);
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
+	{
+		if (Owner != null && side == Owner.Creature.Side)
+		{
+			ResetTriggered(combatState);
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
+	{
+		_triggeredLastPlay = false;
+		EnsureTurnScopedStateCurrent(ResetTriggered);
+		if (_triggeredThisTurn || !IsOwnedTargetType(card))
+		{
+			return playCount;
+		}
+
+		_triggeredThisTurn = true;
+		_triggeredLastPlay = true;
+		UpdateTurnScopedStateIdentity();
+		return playCount + DynamicVars["Replays"].IntValue;
+	}
+
+	public override Task AfterModifyingCardPlayCount(CardModel card)
+	{
+		if (_triggeredLastPlay && IsOwnedTargetType(card))
+		{
+			Flash();
+			_triggeredLastPlay = false;
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private bool IsOwnedTargetType(CardModel? card)
+	{
+		return card?.Owner == Owner && card.Type == TargetCardType;
+	}
+
+	private void ResetTriggered()
+	{
+		ResetTriggered(null);
+	}
+
+	private void ResetTriggered(HextechCombatState? combatState)
+	{
+		_triggeredThisTurn = false;
+		_triggeredLastPlay = false;
+		UpdateTurnScopedStateIdentity(combatState);
+	}
+}
+
+public sealed class BreadAndButterRune : FirstTypedCardReplayRuneBase
+{
+	protected override CardType TargetCardType => CardType.Attack;
+}
+
+public sealed class BreadAndCheeseRune : FirstTypedCardReplayRuneBase
+{
+	protected override CardType TargetCardType => CardType.Power;
+}
+
+public sealed class BreadAndJamRune : FirstTypedCardReplayRuneBase
+{
+	protected override CardType TargetCardType => CardType.Skill;
 }
 
 public sealed class ByproductRune : HextechRelicBase
@@ -607,7 +758,14 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		Creature target = enemies[Owner.RunState.Rng.Niche.NextInt(enemies.Count)];
+		Creature target = enemies[HextechStableRandom.Index(
+			(RunState)Owner.RunState,
+			enemies.Count,
+			"circle-of-death-target",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Creature.CombatState.RoundNumber.ToString(),
+			damage.ToString(),
+			CombatManager.Instance.History.Entries.Count().ToString())];
 		Flash([target]);
 		return CreatureCmd.Damage(new BlockingPlayerChoiceContext(), target, damage, ValueProp.Unpowered, Owner.Creature, null);
 	}

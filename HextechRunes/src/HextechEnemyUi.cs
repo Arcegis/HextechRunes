@@ -1,5 +1,6 @@
-using System.Reflection;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Logging;
@@ -9,6 +10,7 @@ using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.sts2.Core.Nodes.TopBar;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -23,13 +25,17 @@ internal static class HextechEnemyUi
 	private const int EnemyHexStripMarginBottom = 2;
 	private const int EnemyHexSeparation = 30;
 
-	private static readonly FieldInfo ModifiersContainerField =
-		typeof(NTopBar).GetField("_modifiersContainer", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("Could not access NTopBar._modifiersContainer.");
+	private static readonly FieldInfo? ModifiersContainerField = TryGetField(
+		typeof(NTopBar),
+		"_modifiersContainer",
+		BindingFlags.Instance | BindingFlags.NonPublic);
 
-	private static readonly FieldInfo TopBarModifierModelField =
-		typeof(NTopBarModifier).GetField("_modifier", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("Could not access NTopBarModifier._modifier.");
+	private static readonly FieldInfo? TopBarModifierModelField = TryGetField(
+		typeof(NTopBarModifier),
+		"_modifier",
+		BindingFlags.Instance | BindingFlags.NonPublic);
+
+	private static bool _reportedMissingTopBarMembers;
 
 	public static void Refresh(HextechMayhemModifier modifier)
 	{
@@ -82,6 +88,7 @@ internal static class HextechEnemyUi
 		foreach (Node child in container.GetChildren())
 		{
 			if (child is NTopBarModifier topBarModifier
+				&& TopBarModifierModelField != null
 				&& TopBarModifierModelField.GetValue(topBarModifier) is HextechMayhemModifier)
 			{
 				Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.HideMayhemModifierBadge: removed top bar modifier badge");
@@ -92,8 +99,41 @@ internal static class HextechEnemyUi
 
 	private static Control? GetModifiersContainer()
 	{
+		FieldInfo? modifiersContainerField = ModifiersContainerField;
+		if (!HasTopBarMembers() || modifiersContainerField == null)
+		{
+			return null;
+		}
+
 		NTopBar? topBar = NRun.Instance?.GlobalUi?.TopBar;
-		return topBar == null ? null : ModifiersContainerField.GetValue(topBar) as Control;
+		return topBar == null ? null : modifiersContainerField.GetValue(topBar) as Control;
+	}
+
+	private static bool HasTopBarMembers()
+	{
+		if (ModifiersContainerField != null && TopBarModifierModelField != null)
+		{
+			return true;
+		}
+
+		if (!_reportedMissingTopBarMembers)
+		{
+			List<string> missing = [];
+			if (ModifiersContainerField == null)
+			{
+				missing.Add("NTopBar._modifiersContainer");
+			}
+
+			if (TopBarModifierModelField == null)
+			{
+				missing.Add("NTopBarModifier._modifier");
+			}
+
+			Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyUi disabled: missing {string.Join(", ", missing)}.");
+			_reportedMissingTopBarMembers = true;
+		}
+
+		return false;
 	}
 
 	private static HBoxContainer GetOrCreateStrip(Control container)
@@ -178,7 +218,7 @@ internal static class HextechEnemyUi
 
 	private static Control CreateEnemyHexHolder(MonsterHexKind hex)
 	{
-		RelicModel relic = ModInfo.GetIconRelicForMonsterHex(hex).ToMutable();
+		RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(hex).ToMutable();
 		Control holder = new()
 		{
 			Name = $"EnemyHex-{hex}",
@@ -208,7 +248,7 @@ internal static class HextechEnemyUi
 	private static void ShowEnemyHexHoverTip(Control holder, MonsterHexKind hex)
 	{
 		NHoverTipSet.Remove(holder);
-		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, ModInfo.GetEnemyHexHoverTips(hex));
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, MonsterHexCatalog.GetEnemyHexHoverTips(hex));
 		hoverTipSet?.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
 	}
 }

@@ -99,36 +99,28 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static int GetMultiplayerRerollIndex(Player player, IReadOnlyList<RelicModel> pool, HextechRarityTier rarity, int slotIndex, int rerollOrdinal)
 	{
 		RunState runState = (RunState)player.RunState;
-		ulong hash = 14695981039346656037UL;
-		AddDeterministicHash(ref hash, runState.Rng.StringSeed);
-		AddDeterministicHash(ref hash, "|act:");
-		AddDeterministicHash(ref hash, runState.CurrentActIndex.ToString());
-		AddDeterministicHash(ref hash, "|player:");
-		AddDeterministicHash(ref hash, runState.GetPlayerSlotIndex(player).ToString());
-		AddDeterministicHash(ref hash, "|net:");
-		AddDeterministicHash(ref hash, player.NetId.ToString());
-		AddDeterministicHash(ref hash, "|rarity:");
-		AddDeterministicHash(ref hash, ((int)rarity).ToString());
-		AddDeterministicHash(ref hash, "|slot:");
-		AddDeterministicHash(ref hash, slotIndex.ToString());
-		AddDeterministicHash(ref hash, "|ordinal:");
-		AddDeterministicHash(ref hash, rerollOrdinal.ToString());
+		List<string> parts =
+		[
+			runState.Rng.StringSeed,
+			"|act:",
+			runState.CurrentActIndex.ToString(),
+			"|player:",
+			runState.GetPlayerSlotIndex(player).ToString(),
+			"|net:",
+			player.NetId.ToString(),
+			"|rarity:",
+			((int)rarity).ToString(),
+			"|slot:",
+			slotIndex.ToString(),
+			"|ordinal:",
+			rerollOrdinal.ToString()
+		];
 		foreach (RelicModel relic in pool)
 		{
-			AddDeterministicHash(ref hash, "|pool:");
-			AddDeterministicHash(ref hash, (relic.CanonicalInstance?.Id ?? relic.Id).Entry);
+			parts.Add("|pool:");
+			parts.Add((relic.CanonicalInstance?.Id ?? relic.Id).Entry);
 		}
 
-		return (int)(hash % (ulong)pool.Count);
-	}
-
-	private static void AddDeterministicHash(ref ulong hash, string value)
-	{
-		const ulong prime = 1099511628211UL;
-		foreach (char ch in value)
-		{
-			hash ^= (ulong)ch;
-			hash *= prime;
-		}
+		return HextechStableRandom.IndexFromRawParts(pool.Count, parts.ToArray());
 	}
 }

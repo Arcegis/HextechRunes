@@ -1,18 +1,18 @@
 using System.Reflection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static class CreatureCmdCompat
 {
-	private static readonly MethodInfo SetMaxHpMethod = typeof(CreatureCmd).GetMethod(
+	private static readonly MethodInfo SetMaxHpMethod = RequireMethod(
+		typeof(CreatureCmd),
 		nameof(CreatureCmd.SetMaxHp),
 		BindingFlags.Public | BindingFlags.Static,
-		binder: null,
-		[typeof(Creature), typeof(decimal)],
-		modifiers: null)
-		?? throw new InvalidOperationException("Could not find CreatureCmd.SetMaxHp(Creature, decimal).");
+		typeof(Creature),
+		typeof(decimal));
 
 	internal static async Task SetMaxHp(Creature creature, decimal amount)
 	{

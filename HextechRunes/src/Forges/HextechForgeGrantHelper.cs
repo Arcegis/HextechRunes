@@ -60,7 +60,7 @@ internal static class HextechForgeGrantHelper
 	{
 		for (int i = 0; i < count; i++)
 		{
-			if (!TryCreateRandomForge(player, out RelicModel? forge) || forge == null)
+			if (!TryCreateStableRandomForge(player, "obtain-random-forges", i, out RelicModel? forge) || forge == null)
 			{
 				return;
 			}
@@ -72,7 +72,7 @@ internal static class HextechForgeGrantHelper
 
 	public static bool AddRandomForgeReward(Player player, CombatRoom room)
 	{
-		if (!TryCreateRandomForge(player, out RelicModel? forge) || forge == null)
+		if (!TryCreateStableRandomForge(player, "combat-random-forge-reward", 0, out RelicModel? forge) || forge == null)
 		{
 			return false;
 		}
@@ -84,7 +84,7 @@ internal static class HextechForgeGrantHelper
 
 	public static bool AddRandomForgeReward(Player player, CombatRoom room, HextechRarityTier rarity)
 	{
-		if (!TryCreateRandomForge(player, rarity, out RelicModel? forge) || forge == null)
+		if (!TryCreateStableRandomForge(player, rarity, "combat-random-forge-reward-rarity", 0, out RelicModel? forge) || forge == null)
 		{
 			return false;
 		}
@@ -100,22 +100,45 @@ internal static class HextechForgeGrantHelper
 		return TryCreateRandomForge(player, rarity, rng, out forge);
 	}
 
-	private static bool TryCreateRandomForge(Player player, HextechRarityTier rarity, out RelicModel? forge)
+	private static bool TryCreateStableRandomForge(Player player, string source, int ordinal, out RelicModel? forge)
 	{
-		return TryCreateRandomForge(player, rarity, player.PlayerRng.Rewards, out forge);
+		HextechRarityTier rarity = RollStableForgeRarity(player, source, ordinal);
+		return TryCreateStableRandomForge(player, rarity, source, ordinal, out forge);
 	}
 
-	private static bool TryCreateRandomForge(Player player, out RelicModel? forge)
+	private static bool TryCreateStableRandomForge(Player player, HextechRarityTier rarity, string source, int ordinal, out RelicModel? forge)
 	{
-		return TryCreateRandomForge(player, player.PlayerRng.Rewards, out forge);
+		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
+		if (pool.Count == 0)
+		{
+			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
+		}
+
+		if (pool.Count == 0)
+		{
+			forge = null;
+			return false;
+		}
+
+		Type forgeType = HextechStableRandom.Pick(
+			pool,
+			(RunState)player.RunState,
+			HextechStableRandom.TypeModelKey,
+			source,
+			HextechStableRandom.PlayerKey(player),
+			ordinal.ToString(),
+			((int)rarity).ToString(),
+			player.Relics.Count.ToString());
+		forge = ModelDb.GetById<RelicModel>(ModelDb.GetId(forgeType)).ToMutable();
+		return true;
 	}
 
 	private static bool TryCreateRandomForge(Player player, HextechRarityTier rarity, Rng rng, out RelicModel? forge)
 	{
-		List<Type> pool = BuildAvailableForgePool(player, ModInfo.GetForgeTypesForRarity(rarity));
+		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
 		if (pool.Count == 0)
 		{
-			pool = BuildAvailableForgePool(player, ModInfo.GetAllForgeTypes());
+			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
 		}
 
 		if (pool.Count == 0)
@@ -132,13 +155,36 @@ internal static class HextechForgeGrantHelper
 	private static List<Type> BuildAvailableForgePool(Player player, IEnumerable<Type> candidateTypes)
 	{
 		return candidateTypes
-			.Where(type => ModInfo.IsAvailableForPlayer(ModelDb.GetById<RelicModel>(ModelDb.GetId(type)), player))
+			.Where(type => HextechCatalog.IsAvailableForPlayer(ModelDb.GetById<RelicModel>(ModelDb.GetId(type)), player))
 			.ToList();
 	}
 
 	private static HextechRarityTier RollForgeRarity(Rng rng)
 	{
 		int roll = rng.NextInt(100);
+		if (roll < 65)
+		{
+			return HextechRarityTier.Silver;
+		}
+
+		if (roll < 90)
+		{
+			return HextechRarityTier.Gold;
+		}
+
+		return HextechRarityTier.Prismatic;
+	}
+
+	private static HextechRarityTier RollStableForgeRarity(Player player, string source, int ordinal)
+	{
+		int roll = HextechStableRandom.Index(
+			(RunState)player.RunState,
+			100,
+			source,
+			"forge-rarity",
+			HextechStableRandom.PlayerKey(player),
+			ordinal.ToString(),
+			player.Relics.Count.ToString());
 		if (roll < 65)
 		{
 			return HextechRarityTier.Silver;

@@ -156,7 +156,7 @@ public sealed class NightstalkingRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCardsDrawnThisCombat
 	{
-		get => _cardsDrawnThisCombat;
+		get => IsNetworkMultiplayer() ? 0 : GetCardsDrawnThisCombat();
 		set
 		{
 			_cardsDrawnThisCombat = Math.Max(0, value);
@@ -176,7 +176,7 @@ public sealed class NightstalkingRune : HextechRelicBase
 			}
 
 			int cardsNeeded = DynamicVars["CardsNeeded"].IntValue;
-			int remainder = _cardsDrawnThisCombat % cardsNeeded;
+			int remainder = GetCardsDrawnThisCombat() % cardsNeeded;
 			return remainder == 0 ? cardsNeeded : cardsNeeded - remainder;
 		}
 	}
@@ -213,6 +213,12 @@ public sealed class NightstalkingRune : HextechRelicBase
 			return;
 		}
 
+		if (ShouldUseNetworkCombatHistory())
+		{
+			await ResolveDrawProgressFromHistory();
+			return;
+		}
+
 		_cardsDrawnThisCombat++;
 		InvokeDisplayAmountChanged();
 		if (_cardsDrawnThisCombat % DynamicVars["CardsNeeded"].IntValue != 0)
@@ -220,8 +226,75 @@ public sealed class NightstalkingRune : HextechRelicBase
 			return;
 		}
 
+		await ApplyDrawThresholdReward();
+	}
+
+	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		if (ShouldUseNetworkCombatHistory() && cardPlay.Card.Owner == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+
+	public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (ShouldUseNetworkCombatHistory() && player == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+
+#if !STS2_104_OR_NEWER
+	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (ShouldUseNetworkCombatHistory() && player == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+#endif
+
+	private async Task ResolveDrawProgressFromHistory()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		int cardsDrawn = CountOwnedCardsDrawnFromHistory();
+		int previousCardsDrawn = _cardsDrawnThisCombat;
+		if (cardsDrawn <= previousCardsDrawn)
+		{
+			return;
+		}
+
+		int cardsNeeded = DynamicVars["CardsNeeded"].IntValue;
+		_cardsDrawnThisCombat = cardsDrawn;
+		InvokeDisplayAmountChanged();
+		int rewards = cardsDrawn / cardsNeeded - previousCardsDrawn / cardsNeeded;
+		for (int i = 0; i < rewards; i++)
+		{
+			await ApplyDrawThresholdReward();
+		}
+	}
+
+	private async Task ApplyDrawThresholdReward()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
 		Flash();
 		await PowerCmd.Apply<IntangiblePower>(Owner.Creature, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, null);
+	}
+
+	private int GetCardsDrawnThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedCardsDrawnFromHistory()
+			: _cardsDrawnThisCombat;
 	}
 }
 
@@ -352,7 +425,7 @@ public sealed class PandorasBoxRune : HextechRelicBase
 		Flash();
 		await HextechRuneGrantHelper.ReplaceOwnedHextechRunesWithRandomRunes(
 			player,
-			ModInfo.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic),
+			HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic),
 			new HashSet<ModelId> { ModelDb.GetId<PandorasBoxRune>() });
 	}
 }
@@ -535,7 +608,12 @@ public sealed class RedEnvelopeRune : HextechRelicBase
 		}
 
 		Flash(Array.Empty<Creature>());
-		if (Owner.PlayerRng.Rewards.NextInt(100) < 75)
+		if (HextechStableRandom.PercentChance(
+			(RunState)Owner.RunState,
+			75,
+			"red-envelope-reward",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Relics.Count.ToString()))
 		{
 			room.AddExtraReward(Owner, new GoldReward(20, 50, Owner));
 		}

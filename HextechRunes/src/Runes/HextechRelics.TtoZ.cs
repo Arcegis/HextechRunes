@@ -43,7 +43,7 @@ public sealed class TwiceThriceRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => _attacksPlayedThisCombat;
+		get => IsNetworkMultiplayer() ? 0 : GetAttacksPlayedThisCombat();
 		set
 		{
 			_attacksPlayedThisCombat = Math.Max(0, value) % AttacksPerReplay;
@@ -62,7 +62,7 @@ public sealed class TwiceThriceRune : HextechRelicBase
 				return 0;
 			}
 
-			return _attacksPlayedThisCombat;
+			return GetAttacksPlayedThisCombat();
 		}
 	}
 
@@ -85,10 +85,10 @@ public sealed class TwiceThriceRune : HextechRelicBase
 			return playCount;
 		}
 
-		_attacksPlayedThisCombat++;
-		if (_attacksPlayedThisCombat >= AttacksPerReplay)
+		int nextAttacksPlayed = GetAttacksPlayedBeforeCurrentAttack() + 1;
+		_attacksPlayedThisCombat = nextAttacksPlayed % AttacksPerReplay;
+		if (nextAttacksPlayed % AttacksPerReplay == 0)
 		{
-			_attacksPlayedThisCombat = 0;
 			InvokeDisplayAmountChanged();
 			return playCount + 1;
 		}
@@ -112,28 +112,34 @@ public sealed class TwiceThriceRune : HextechRelicBase
 		_attacksPlayedThisCombat = 0;
 		InvokeDisplayAmountChanged();
 	}
+
+	private int GetAttacksPlayedThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory() % AttacksPerReplay
+			: _attacksPlayedThisCombat;
+	}
+
+	private int GetAttacksPlayedBeforeCurrentAttack()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedAttackCardsPlayedFromHistory()
+			: _attacksPlayedThisCombat;
+	}
 }
 
 public sealed class UltimateRefreshRune : HextechRelicBase
 {
-	private bool _triggeredThisTurn;
 	private bool _triggeredLastPlay;
-	private HextechCombatState? _turnStateCombat;
-	private int _turnStateRoundNumber = -1;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get
-		{
-			EnsureTurnStateCurrent();
-			return _triggeredThisTurn;
-		}
+		get => false;
 		set
 		{
-			_triggeredThisTurn = value;
+			// Legacy save compatibility: this was a transient flash flag and must not enter multiplayer checksums.
 			_triggeredLastPlay = false;
-			UpdateTurnStateIdentity();
 		}
 	}
 
@@ -167,14 +173,11 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 			return playCount;
 		}
 
-		EnsureTurnStateCurrent();
 		if (!IsOwnedNonXCardWithCostAtLeast(card, 2m))
 		{
 			return playCount;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnStateIdentity();
 		_triggeredLastPlay = true;
 		return playCount + 1;
 	}
@@ -192,34 +195,7 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 
 	private void ResetTurnState(HextechCombatState? combatState = null)
 	{
-		_triggeredThisTurn = false;
 		_triggeredLastPlay = false;
-		UpdateTurnStateIdentity(combatState);
-	}
-
-	private void EnsureTurnStateCurrent()
-	{
-		HextechCombatState? combatState = Owner?.Creature.CombatState;
-		if (combatState == null)
-		{
-			_triggeredThisTurn = false;
-			_triggeredLastPlay = false;
-			_turnStateCombat = null;
-			_turnStateRoundNumber = -1;
-			return;
-		}
-
-		if (!ReferenceEquals(_turnStateCombat, combatState) || _turnStateRoundNumber != combatState.RoundNumber)
-		{
-			ResetTurnState(combatState);
-		}
-	}
-
-	private void UpdateTurnStateIdentity(HextechCombatState? combatState = null)
-	{
-		combatState ??= Owner?.Creature.CombatState;
-		_turnStateCombat = combatState;
-		_turnStateRoundNumber = combatState?.RoundNumber ?? -1;
 	}
 }
 
@@ -305,7 +281,7 @@ public sealed class WarmogsSpiritRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCardsDrawnThisCombat
 	{
-		get => _cardsDrawnThisCombat;
+		get => IsNetworkMultiplayer() ? 0 : GetCardsDrawnThisCombat();
 		set
 		{
 			_cardsDrawnThisCombat = Math.Max(0, value);
@@ -324,7 +300,7 @@ public sealed class WarmogsSpiritRune : HextechRelicBase
 				return 0;
 			}
 
-			int remainder = _cardsDrawnThisCombat % CardsNeeded;
+			int remainder = GetCardsDrawnThisCombat() % CardsNeeded;
 			return remainder == 0 ? CardsNeeded : CardsNeeded - remainder;
 		}
 	}
@@ -361,6 +337,12 @@ public sealed class WarmogsSpiritRune : HextechRelicBase
 			return;
 		}
 
+		if (ShouldUseNetworkCombatHistory())
+		{
+			await ResolveDrawProgressFromHistory();
+			return;
+		}
+
 		_cardsDrawnThisCombat++;
 		InvokeDisplayAmountChanged();
 		if (Owner == null || Owner.Creature.IsDead || _cardsDrawnThisCombat % CardsNeeded != 0)
@@ -368,8 +350,74 @@ public sealed class WarmogsSpiritRune : HextechRelicBase
 			return;
 		}
 
+		await ApplyDrawThresholdReward();
+	}
+
+	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		if (ShouldUseNetworkCombatHistory() && cardPlay.Card.Owner == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+
+	public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (ShouldUseNetworkCombatHistory() && player == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+
+#if !STS2_104_OR_NEWER
+	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (ShouldUseNetworkCombatHistory() && player == Owner)
+		{
+			await ResolveDrawProgressFromHistory();
+		}
+	}
+#endif
+
+	private async Task ResolveDrawProgressFromHistory()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		int cardsDrawn = CountOwnedCardsDrawnFromHistory();
+		int previousCardsDrawn = _cardsDrawnThisCombat;
+		if (cardsDrawn <= previousCardsDrawn)
+		{
+			return;
+		}
+
+		_cardsDrawnThisCombat = cardsDrawn;
+		InvokeDisplayAmountChanged();
+		int rewards = cardsDrawn / CardsNeeded - previousCardsDrawn / CardsNeeded;
+		for (int i = 0; i < rewards; i++)
+		{
+			await ApplyDrawThresholdReward();
+		}
+	}
+
+	private async Task ApplyDrawThresholdReward()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
 		Flash();
 		await PowerCmd.Apply<PlatingPower>(Owner.Creature, DynamicVars["PlatingPower"].BaseValue, Owner.Creature, null);
+	}
+
+	private int GetCardsDrawnThisCombat()
+	{
+		return ShouldUseNetworkCombatHistory()
+			? CountOwnedCardsDrawnFromHistory()
+			: _cardsDrawnThisCombat;
 	}
 }
 
@@ -401,11 +449,17 @@ public sealed class WatchOutGrapefruitRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		Type[] candidates = Owner.GetRelic<IceCream>() == null
-			? FoodRelicTypes
-			: FoodRelicTypes.Where(static type => type != typeof(IceCream)).ToArray();
-		Type relicType = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Length)];
-		RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(relicType)).ToMutable();
+			Type[] candidates = Owner.GetRelic<IceCream>() == null
+				? FoodRelicTypes
+				: FoodRelicTypes.Where(static type => type != typeof(IceCream)).ToArray();
+			Type relicType = HextechStableRandom.Pick(
+				candidates,
+				(RunState)Owner.RunState,
+				HextechStableRandom.TypeModelKey,
+				"treat-yourself-food-relic",
+				HextechStableRandom.PlayerKey(Owner),
+				Owner.Relics.Count.ToString());
+			RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(relicType)).ToMutable();
 		Flash(Array.Empty<Creature>());
 		room.AddExtraReward(Owner, new RelicReward(relic, Owner));
 		return Task.CompletedTask;

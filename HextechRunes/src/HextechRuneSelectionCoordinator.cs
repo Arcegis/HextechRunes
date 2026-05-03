@@ -92,7 +92,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			(HextechRarityTier rarity, MonsterHexKind monsterHex) = await ResolveActRoll(runState, modifier, actIndex);
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
-			RelicModel? monsterHexRelic = ModInfo.GetIconRelicForMonsterHex(monsterHex).ToMutable();
+			RelicModel? monsterHexRelic = MonsterHexCatalog.GetIconRelicForMonsterHex(monsterHex).ToMutable();
 
 			NetGameType gameType = RunManager.Instance.NetService.Type;
 			if (gameType is NetGameType.Singleplayer or NetGameType.None)

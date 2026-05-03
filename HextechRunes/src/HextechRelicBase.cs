@@ -1,6 +1,7 @@
 using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Combat.History.Entries;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -21,6 +22,7 @@ using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rewards;
@@ -92,6 +94,55 @@ public abstract class HextechRelicBase : RelicModel
 	protected bool IsOwnedSkill(CardModel? card)
 	{
 		return card != null && card.Owner == Owner && card.Type == CardType.Skill;
+	}
+
+	protected static bool IsNetworkMultiplayer()
+	{
+		try
+		{
+			return RunManager.Instance?.NetService?.Type is NetGameType.Host or NetGameType.Client;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	protected bool ShouldUseNetworkCombatHistory()
+	{
+		return IsNetworkMultiplayer()
+			&& CombatManager.Instance?.IsInProgress == true
+			&& Owner != null;
+	}
+
+	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	{
+		if (Owner == null)
+		{
+			return 0;
+		}
+
+		ulong ownerId = Owner.NetId;
+		return CombatManager.Instance.History.Entries
+			.OfType<CardPlayFinishedEntry>()
+			.Count(entry =>
+				(!firstInSeriesOnly || entry.CardPlay.IsFirstInSeries)
+				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
+				&& entry.CardPlay.Card.Type == CardType.Attack
+				&& entry.CardPlay.Card.Owner?.NetId == ownerId);
+	}
+
+	protected int CountOwnedCardsDrawnFromHistory()
+	{
+		if (Owner == null)
+		{
+			return 0;
+		}
+
+		ulong ownerId = Owner.NetId;
+		return CombatManager.Instance.History.Entries
+			.OfType<CardDrawnEntry>()
+			.Count(entry => entry.Card.Owner?.NetId == ownerId);
 	}
 
 	protected bool IsOwnedNonXCardWithCostAtLeast(CardModel? card, decimal minimumCost)
@@ -187,9 +238,31 @@ public abstract class HextechRelicBase : RelicModel
 		CardCmd.PreviewCardPileAdd(results, 2f);
 	}
 
+	protected async Task AddCardCopiesToCombatHand<TCard>(int count)
+		where TCard : CardModel
+	{
+		if (Owner == null
+			|| count <= 0
+			|| Owner.PlayerCombatState == null
+			|| Owner.Creature.CombatState is not HextechCombatState combatState
+			|| !CombatManager.Instance.IsInProgress
+			|| CombatManager.Instance.IsOverOrEnding)
+		{
+			return;
+		}
+
+		List<CardModel> cards = new(count);
+		for (int i = 0; i < count; i++)
+		{
+			cards.Add(combatState.CreateCard<TCard>(Owner));
+		}
+
+		await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
+	}
+
 	private string GetResolvedIconPath()
 	{
-		string? customPath = ModInfo.TryGetCustomRelicIconPath(this);
+		string? customPath = HextechAssets.TryGetCustomRelicIconPath(this);
 		if (!string.IsNullOrEmpty(customPath) && ResourceLoader.Exists(customPath))
 		{
 			return customPath;

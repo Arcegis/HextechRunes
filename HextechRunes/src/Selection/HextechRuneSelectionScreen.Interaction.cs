@@ -148,7 +148,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayOpened");
 		Modulate = Colors.White;
 		Visible = true;
-		GrabFocus();
+		TryGrabOverlayFocus();
 	}
 
 	public void AfterOverlayClosed()
@@ -172,7 +172,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	public void AfterOverlayShown()
 	{
 		Visible = true;
-		GrabFocus();
+		TryGrabOverlayFocus();
 	}
 
 	public void AfterOverlayHidden()
@@ -219,5 +219,15 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			_restoreAfterMapReopenQueued = false;
 		}
+	}
+
+	private void TryGrabOverlayFocus()
+	{
+		if (_closed || !IsInsideTree() || !IsVisibleInTree() || FocusMode == FocusModeEnum.None)
+		{
+			return;
+		}
+
+		GrabFocus();
 	}
 }

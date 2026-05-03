@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Unlocks;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -69,12 +70,12 @@ internal static class HextechInspectHooks
 
 	private static void GetUnlockStateRelicsPostfix(ref IEnumerable<RelicModel> __result)
 	{
-		__result = __result.Concat(ModInfo.GetCanonicalVisibleCustomRelics()).Distinct();
+		__result = __result.Concat(HextechCatalog.GetCanonicalVisibleCustomRelics()).Distinct();
 	}
 
 	private static void IsRelicSeenPostfix(RelicModel relic, ref bool __result)
 	{
-		if (ModInfo.IsHextechCustomRelic(relic))
+		if (HextechCatalog.IsHextechCustomRelic(relic))
 		{
 			__result = true;
 		}
@@ -128,7 +129,7 @@ internal static class HextechInspectHooks
 			&& index < relics.Count)
 		{
 			RelicModel relic = relics[index];
-			if (ModInfo.IsHextechCustomRelic(relic))
+			if (HextechCatalog.IsHextechCustomRelic(relic))
 			{
 				RenderHextechInspect(__instance, relic);
 				return false;
@@ -140,7 +141,7 @@ internal static class HextechInspectHooks
 
 	private static void EnergyIconHelperGetPrefixPostfix(AbstractModel model, ref string __result)
 	{
-		if (model is RelicModel relic && ModInfo.IsHextechCustomRelic(relic))
+		if (model is RelicModel relic && HextechCatalog.IsHextechCustomRelic(relic))
 		{
 			__result = "red";
 		}
@@ -153,14 +154,14 @@ internal static class HextechInspectHooks
 			return;
 		}
 
-		foreach (RelicModel canonicalRelic in ModInfo.GetCanonicalVisibleCustomRelics())
+		foreach (RelicModel canonicalRelic in HextechCatalog.GetCanonicalVisibleCustomRelics())
 		{
 			unlockedRelics.Add(canonicalRelic);
 		}
 
 		foreach (RelicModel relic in relics)
 		{
-			if (!ModInfo.IsHextechCustomRelic(relic))
+			if (!HextechCatalog.IsHextechCustomRelic(relic))
 			{
 				continue;
 			}
@@ -265,13 +266,4 @@ internal static class HextechInspectHooks
 		return new HarmonyMethod(typeof(HextechInspectHooks), methodName);
 	}
 
-	private static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null);
-	}
-
-	private static FieldInfo? TryGetField(Type type, string name)
-	{
-		return type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
-	}
 }

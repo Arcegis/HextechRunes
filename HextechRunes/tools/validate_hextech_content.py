@@ -11,54 +11,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC = REPO_ROOT / "src"
 LOCALIZATION = REPO_ROOT / "assets" / "localization"
 
-TRACKING_PERSISTENT_FIELDS = {
-    "_slapProcsThisTurn",
-    "_tormentorProcsThisTurn",
-    "_courageProcsThisTurn",
-    "_bloodPactProcsThisTurn",
-    "_clownCollegeProcsThisTurn",
-    "_escapePlanTriggered",
-    "_escapePlanPending",
-    "_repulsorTriggered",
-    "_repulsorPending",
-    "_dawnTriggered",
-    "_speedDemonPending",
-    "_devilsDanceTriggeredThisTurn",
-    "_feelTheBurnTriggered",
-    "_feyMagicPendingNoDrawPlayers",
-    "_mikaelsBlessingTriggers",
-    "_goliathApplied",
-    "_protectiveVeilApplied",
-    "_thornmailApplied",
-    "_superBrainApplied",
-    "_astralBodyApplied",
-    "_drawYourSwordApplied",
-    "_madScientistApplied",
-    "_unmovableMountainApplied",
-    "_goldenSpatulaApplied",
-    "_tankEngineStacks",
-    "_shrinkEngineStacks",
-    "_getExcitedPending",
-    "_feelTheBurnPending",
-    "_mountainSoulHasPreviousTurn",
-    "_mountainSoulDamagedSinceLastTurn",
-    "_playerAttackCardsPlayedThisCombat",
-    "_playerCardsDrawnThisCombat",
-    "_eightPennyGatePlayersTriggeredThisTurn",
-    "_enemyProtectiveVeilTurnCounter",
-}
-
-TRACKING_TRANSIENT_FIELDS = {
-    "_monsterDebuffActionProcKeysThisTurn",
-    "_groupedPlayerDebuffProcKeys",
-    "_eightPennyGatePendingCardHashes",
-    "_lastEnemyThresholdTriggerKey",
-    "_handlingMonsterTormentorBurn",
-    "_handlingServantMasterIllusion",
-    "_handlingGroupedPlayerDebuffs",
-}
-
-
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
@@ -276,39 +228,62 @@ def validate_relic_registry(errors: list[str]) -> None:
 
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
-    state_text = read(SRC / "HextechMayhem.State.cs")
-    mayhem_text = "\n".join(read(path) for path in source_files("HextechMayhem*.cs"))
-    tracking_decl_match = re.search(
-        r"private readonly Dictionary<uint, int> _slapProcsThisTurn = new\(\);(?P<body>.*?)private int _enemyProtectiveVeilTurnCounter;",
-        state_text,
-        re.S,
+    state_text = read(SRC / "HextechMayhemCombatTrackingState.cs")
+    serialization_text = read(SRC / "HextechMayhemCombatTrackingState.Serialization.cs")
+    state_fields = {
+        name: field_type
+        for field_type, name in re.findall(
+            r"\bpublic\s+(?:readonly\s+)?(Dictionary<[^>]+>|HashSet<[^>]+>|string\?|bool|int)\s+([A-Za-z0-9]+)",
+            state_text,
+        )
+    }
+    declared = set(state_fields)
+    snapshot_fields = {
+        name: field_type
+        for field_type, name in re.findall(
+            r"\bpublic\s+(Dictionary<[^>]+>|List<[^>]+>|int)\s+([A-Za-z0-9]+)\s*\{\s*get;\s*set;\s*\}",
+            serialization_text,
+        )
+    }
+    persistent = set(snapshot_fields)
+    transient = set(
+        name
+        for _, name in re.findall(
+            r"\[CombatTrackingTransient\]\s*\n\s*public\s+(?:readonly\s+)?(Dictionary<[^>]+>|HashSet<[^>]+>|string\?|bool|int)\s+([A-Za-z0-9]+)",
+            state_text,
+        )
     )
-    if not tracking_decl_match:
+    if not declared:
         fail(errors, "combat tracking field block not found")
         return
 
-    declared = {"_slapProcsThisTurn", "_enemyProtectiveVeilTurnCounter"}
-    declared.update(re.findall(r"\b(_[A-Za-z0-9]+)\b", tracking_decl_match.group("body")))
-    classified = TRACKING_PERSISTENT_FIELDS | TRACKING_TRANSIENT_FIELDS
+    if not persistent:
+        fail(errors, "combat tracking snapshot properties not found")
+        return
+
+    classified = persistent | transient
     unclassified = sorted(declared - classified)
-    stale_classification = sorted(classified - declared)
+    snapshot_without_state = sorted(persistent - declared)
+    transient_and_persistent = sorted(transient & persistent)
     if unclassified:
         fail(errors, f"combat tracking fields need classification: {', '.join(unclassified)}")
-    if stale_classification:
-        fail(errors, f"combat tracking classification references missing fields: {', '.join(stale_classification)}")
+    if snapshot_without_state:
+        fail(errors, f"combat tracking snapshot properties missing state fields: {', '.join(snapshot_without_state)}")
+    if transient_and_persistent:
+        fail(errors, f"combat tracking fields marked both persistent and transient: {', '.join(transient_and_persistent)}")
 
-    for field in sorted(TRACKING_PERSISTENT_FIELDS):
-        occurrences = mayhem_text.count(field)
-        if field == "_enemyProtectiveVeilTurnCounter":
-            minimum = 4
+    for field in sorted(persistent & declared):
+        state_type = state_fields[field]
+        snapshot_type = snapshot_fields[field]
+        if state_type.startswith("Dictionary<"):
+            expected = state_type
+        elif state_type.startswith("HashSet<"):
+            expected = "List<" + state_type.removeprefix("HashSet<")
         else:
-            minimum = 5
-        if occurrences < minimum:
-            fail(errors, f"{field} may be missing serialize/restore/has/clear coverage; occurrences={occurrences}")
+            expected = state_type
 
-    for field in sorted(TRACKING_TRANSIENT_FIELDS):
-        if mayhem_text.count(field) < 2:
-            fail(errors, f"{field} may be missing clear/reset coverage")
+        if snapshot_type != expected:
+            fail(errors, f"combat tracking snapshot type mismatch for {field}: expected {expected}, got {snapshot_type}")
 
 
 def main() -> int:

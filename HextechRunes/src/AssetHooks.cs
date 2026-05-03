@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Relics;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -13,21 +15,27 @@ internal static class AssetHooks
 {
 	private static readonly Dictionary<string, Texture2D> TextureCache = new();
 
-	private static readonly FieldInfo NRelicModelField = typeof(NRelic).GetField("_model", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("Could not access NRelic._model.");
+	private static readonly FieldInfo? NRelicModelField = TryGetField(typeof(NRelic), "_model");
 
 	public static void Install(Harmony harmony)
 	{
 		MethodInfo getRelicIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.Icon));
 		MethodInfo getRelicBigIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.BigIcon));
-		MethodInfo relicReload = RequireMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
+		MethodInfo? relicReload = TryGetMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
 		MethodInfo getPowerIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.Icon));
 		MethodInfo getPowerBigIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.BigIcon));
 		MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
 
 		harmony.Patch(getRelicIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicIconPostfix)));
 		harmony.Patch(getRelicBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicBigIconPostfix)));
-		harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(NRelicReloadPrefix)));
+		if (relicReload != null && NRelicModelField != null)
+		{
+			harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(NRelicReloadPrefix)));
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] NRelic.Reload asset hook skipped: missing {(relicReload == null ? "NRelic.Reload" : "NRelic._model")}.");
+		}
 		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerIconPostfix)));
 		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
 		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
@@ -60,6 +68,7 @@ internal static class AssetHooks
 	private static bool NRelicReloadPrefix(NRelic __instance)
 	{
 		if (!__instance.IsNodeReady()
+			|| NRelicModelField == null
 			|| NRelicModelField.GetValue(__instance) is not RelicModel model
 			|| !TryGetHextechRelicTexture(model, out Texture2D? texture))
 		{
@@ -91,7 +100,7 @@ internal static class AssetHooks
 	private static bool TryGetHextechRelicTexture(RelicModel self, out Texture2D? texture)
 	{
 		texture = null;
-		string? path = ModInfo.TryGetCustomRelicIconPath(self);
+		string? path = HextechAssets.TryGetCustomRelicIconPath(self);
 		if (path == null)
 		{
 			return false;
@@ -108,6 +117,12 @@ internal static class AssetHooks
 		{
 			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",
 			HextechAttackReplayPower => $"res://{ModInfo.Id}/images/powers/hextechAttackReplayPower.png",
+			HextechOceanDragonSoulPower => HextechAssets.OceanDragonSoulPowerIconPath,
+			HextechInfernalDragonSoulPower => HextechAssets.InfernalDragonSoulPowerIconPath,
+			HextechDragonSoulPower => HextechAssets.HextechDragonSoulPowerIconPath,
+			HextechMountainDragonSoulPower => HextechAssets.MountainDragonSoulPowerIconPath,
+			HextechChemtechDragonSoulPower => HextechAssets.ChemtechDragonSoulPowerIconPath,
+			HextechCloudDragonSoulPower => HextechAssets.CloudDragonSoulPowerIconPath,
 			_ => null
 		};
 		if (path == null)
@@ -124,9 +139,15 @@ internal static class AssetHooks
 		texture = null;
 		string? path = self switch
 		{
-			ElicitCard => ModInfo.ElicitCardPortraitPath,
-			TrickMagicCard => ModInfo.TrickMagicCardPortraitPath,
-			BladeWaltzCard => ModInfo.BladeWaltzCardPortraitPath,
+			ElicitCard => HextechAssets.ElicitCardPortraitPath,
+			TrickMagicCard => HextechAssets.TrickMagicCardPortraitPath,
+			BladeWaltzCard => HextechAssets.BladeWaltzCardPortraitPath,
+			OceanDragonSoulCard => HextechAssets.OceanDragonSoulCardPortraitPath,
+			InfernalDragonSoulCard => HextechAssets.InfernalDragonSoulCardPortraitPath,
+			HextechDragonSoulCard => HextechAssets.HextechDragonSoulCardPortraitPath,
+			MountainDragonSoulCard => HextechAssets.MountainDragonSoulCardPortraitPath,
+			ChemtechDragonSoulCard => HextechAssets.ChemtechDragonSoulCardPortraitPath,
+			CloudDragonSoulCard => HextechAssets.CloudDragonSoulCardPortraitPath,
 			_ => null
 		};
 		if (path == null)
@@ -178,15 +199,4 @@ internal static class AssetHooks
 		return texture;
 	}
 
-	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameterTypes)
-	{
-		return type.GetMethod(name, flags, binder: null, parameterTypes, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find method {type.FullName}.{name}.");
-	}
-
-	private static MethodInfo RequireGetter(Type type, string propertyName)
-	{
-		return type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetMethod
-			?? throw new InvalidOperationException($"Could not find property getter {type.FullName}.{propertyName}.");
-	}
 }

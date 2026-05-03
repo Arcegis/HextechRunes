@@ -116,12 +116,16 @@ public sealed class UpgradeForge : HextechForgeBase
 			return;
 		}
 
-		List<CardModel> cards = Owner.Deck.Cards
+		List<CardModel> cards = HextechStableRandom.PickDistinct(
+			Owner.Deck.Cards
 			.Where(static card => card != null && card.IsUpgradable)
-			.ToList()
-			.StableShuffle(Owner.RunState.Rng.Niche)
-			.Take(count)
-			.ToList();
+			.ToList(),
+			count,
+			(RunState)Owner.RunState,
+			HextechStableRandom.CardKey,
+			"silver-upgrade-forge",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Deck.Cards.Count.ToString());
 		if (cards.Count == 0)
 		{
 			return;
@@ -282,7 +286,7 @@ public sealed class SilverOrbForge : HextechForgeBase
 		int orbCount = Math.Max(0, FloorToInt(Stacked(DynamicVars["OrbCount"].BaseValue)));
 		for (int i = 0; i < orbCount; i++)
 		{
-			OrbModel orb = OrbModel.GetRandomOrb(Owner.RunState.Rng.CombatOrbGeneration).ToMutable();
+			OrbModel orb = HextechStableRandom.CreateOrb((RunState)Owner.RunState, Owner, "silver-orb-forge", i, combatState.RoundNumber);
 			await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, Owner);
 		}
 	}

@@ -26,7 +26,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			foreach (Player player in runState.Players)
 			{
 				HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
-				List<RelicModel> options = BuildSelectableRunesForRarity(player, rarity, runState, excludedIds);
+				List<RelicModel> options = BuildStableSelectableRunesForRarity(player, rarity, runState, excludedIds);
 				RuneSelectionResult selection = await SelectRune(modifier, player, options, monsterHexRelic);
 				RelicModel selected = selection.SelectedRelic ?? options[0];
 				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount);
@@ -40,7 +40,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		foreach (Player player in runState.Players)
 		{
 			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
-			List<RelicModel> options = BuildSelectableRunesForRarity(player, rarity, runState, excludedIds);
+			List<RelicModel> options = BuildStableSelectableRunesForRarity(player, rarity, runState, excludedIds);
 			MarkRelicsSeen(options);
 			modifier.RecordSeenPlayerRunes(player, options);
 

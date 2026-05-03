@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -16,97 +15,66 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	private static readonly IReadOnlyList<int> DefaultArray = [ -1, -1, -1 ];
-
-	private int[] _rarityByAct = [ -1, -1, -1 ];
-	private int[] _monsterHexByAct = [ -1, -1, -1 ];
-	private int[] _resolvedActs = [ 0, 0, 0 ];
-	private string _telemetryChoicesJson = "";
-	private string _seenPlayerRuneIdsJson = "";
-	private readonly object _seenPlayerRuneIdsLock = new();
-
-	private readonly Dictionary<uint, int> _slapProcsThisTurn = new();
-	private readonly Dictionary<uint, int> _tormentorProcsThisTurn = new();
-	private readonly Dictionary<uint, int> _courageProcsThisTurn = new();
-	private readonly Dictionary<uint, int> _bloodPactProcsThisTurn = new();
-	private readonly Dictionary<uint, int> _clownCollegeProcsThisTurn = new();
-	private readonly HashSet<uint> _escapePlanTriggered = new();
-	private readonly HashSet<uint> _escapePlanPending = new();
-	private readonly HashSet<uint> _repulsorTriggered = new();
-	private readonly HashSet<uint> _repulsorPending = new();
-	private readonly HashSet<uint> _dawnTriggered = new();
-	private readonly HashSet<uint> _speedDemonPending = new();
-	private readonly HashSet<uint> _devilsDanceTriggeredThisTurn = new();
-	private readonly HashSet<uint> _feelTheBurnTriggered = new();
-	private readonly Dictionary<uint, uint> _feyMagicPendingNoDrawPlayers = new();
-	private readonly Dictionary<uint, int> _mikaelsBlessingTriggers = new();
-	private readonly HashSet<uint> _goliathApplied = new();
-	private readonly HashSet<uint> _protectiveVeilApplied = new();
-	private readonly HashSet<uint> _thornmailApplied = new();
-	private readonly HashSet<uint> _superBrainApplied = new();
-	private readonly HashSet<uint> _astralBodyApplied = new();
-	private readonly HashSet<uint> _drawYourSwordApplied = new();
-	private readonly HashSet<uint> _madScientistApplied = new();
-	private readonly HashSet<uint> _unmovableMountainApplied = new();
-	private readonly HashSet<uint> _goldenSpatulaApplied = new();
-	private readonly Dictionary<uint, int> _tankEngineStacks = new();
-	private readonly Dictionary<uint, int> _shrinkEngineStacks = new();
-	private readonly Dictionary<uint, int> _getExcitedPending = new();
-	private readonly HashSet<uint> _feelTheBurnPending = new();
-	private readonly HashSet<uint> _mountainSoulHasPreviousTurn = new();
-	private readonly HashSet<uint> _mountainSoulDamagedSinceLastTurn = new();
-	private readonly Dictionary<ulong, int> _playerAttackCardsPlayedThisCombat = new();
-	private readonly Dictionary<ulong, int> _playerCardsDrawnThisCombat = new();
-	private readonly HashSet<ulong> _eightPennyGatePlayersTriggeredThisTurn = new();
-	private readonly Dictionary<ulong, int> _eightPennyGatePendingCardHashes = new();
-	private readonly HashSet<string> _monsterDebuffActionProcKeysThisTurn = new();
-	private readonly HashSet<string> _groupedPlayerDebuffProcKeys = new();
-	private string? _lastEnemyThresholdTriggerKey;
-	private bool _handlingMonsterTormentorBurn;
-	private bool _handlingServantMasterIllusion;
-	private bool _handlingGroupedPlayerDebuffs;
-	private int _enemyProtectiveVeilTurnCounter;
+	private readonly HextechMayhemActState _actState = new();
+	private readonly HextechMayhemCombatTrackingState _combatTracking = new();
+	private readonly HextechMayhemChoiceHistoryState _choiceHistory = new();
+	private IReadOnlyList<MonsterHexKind>? _cachedActiveMonsterHexes;
+	private HashSet<MonsterHexKind>? _cachedActiveMonsterHexSet;
+	private int _cachedActiveMonsterHexActIndex = int.MinValue;
+	private bool _cachedActiveMonsterHexCombatRecovery;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedRarityByAct
 	{
-		get => _rarityByAct;
-		set => _rarityByAct = NormalizeSavedArray(value);
+		get => _actState.SavedRarityByAct;
+		set
+		{
+			_actState.SavedRarityByAct = value;
+			InvalidateActiveMonsterHexCache();
+		}
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedMonsterHexByAct
 	{
-		get => _monsterHexByAct;
-		set => _monsterHexByAct = NormalizeSavedArray(value);
+		get => _actState.SavedMonsterHexByAct;
+		set
+		{
+			_actState.SavedMonsterHexByAct = value;
+			InvalidateActiveMonsterHexCache();
+		}
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedResolvedActs
 	{
-		get => _resolvedActs;
-		set => _resolvedActs = NormalizeResolvedArray(value);
+		get => _actState.SavedResolvedActs;
+		set
+		{
+			_actState.SavedResolvedActs = value;
+			InvalidateActiveMonsterHexCache();
+		}
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedTelemetryChoicesJson
 	{
-		get => _telemetryChoicesJson;
-		set => _telemetryChoicesJson = value ?? "";
+		get => _choiceHistory.SavedTelemetryChoicesJson;
+		set => _choiceHistory.SavedTelemetryChoicesJson = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedSeenPlayerRuneIdsJson
 	{
-		get => _seenPlayerRuneIdsJson;
-		set => _seenPlayerRuneIdsJson = value ?? "";
+		get => _choiceHistory.SavedSeenPlayerRuneIdsJson;
+		set => _choiceHistory.SavedSeenPlayerRuneIdsJson = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedCombatTrackingJson
 	{
-		get => SerializeCombatTracking();
-		set => RestoreCombatTracking(value);
+		get => _combatTracking.Serialize();
+		set => _combatTracking.Restore(value);
 	}
 
 	public override LocString Title => new("modifiers", "HEXTECH_MAYHEM.title");
@@ -121,20 +89,18 @@ internal sealed partial class HextechMayhemModifier
 
 	public bool IsActResolved(int actIndex)
 	{
-		return actIndex >= 0 && actIndex < _resolvedActs.Length && _resolvedActs[actIndex] > 0;
+		return _actState.IsResolved(actIndex);
 	}
 
 	public void SetActResolved(int actIndex, bool resolved)
 	{
-		if (actIndex >= 0 && actIndex < _resolvedActs.Length)
-		{
-			_resolvedActs[actIndex] = resolved ? 1 : 0;
-		}
+		_actState.SetResolved(actIndex, resolved);
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public bool TryRecoverResolvedActsFromPlayerRelics(string reason)
 	{
-		int currentActIndex = Math.Min(RunState.CurrentActIndex, _resolvedActs.Length - 1);
+		int currentActIndex = Math.Min(RunState.CurrentActIndex, _actState.ActCount - 1);
 		if (currentActIndex < 0 || RunState.Players.Count == 0)
 		{
 			return false;
@@ -151,22 +117,18 @@ internal sealed partial class HextechMayhemModifier
 		bool changed = false;
 		for (int actIndex = 0; actIndex <= recoverThroughAct; actIndex++)
 		{
-			if (!IsActResolved(actIndex))
-			{
-				_resolvedActs[actIndex] = 1;
-				changed = true;
-			}
+			changed |= _actState.TryMarkResolved(actIndex);
 
-			if (_rarityByAct[actIndex] < 0 && TryInferRarityForAct(actIndex, out HextechRarityTier rarity))
+			if (TryInferRarityForAct(actIndex, out HextechRarityTier rarity))
 			{
-				_rarityByAct[actIndex] = (int)rarity;
-				changed = true;
+				changed |= _actState.TrySetRarityIfMissing(actIndex, rarity);
 			}
 		}
 
 		if (changed)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
+			InvalidateActiveMonsterHexCache();
+			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
 		return changed;
@@ -174,63 +136,35 @@ internal sealed partial class HextechMayhemModifier
 
 	public string DescribeActState()
 	{
-		return $"resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)}";
+		return _actState.Describe();
 	}
 
 	public HextechRarityTier? GetRarityForAct(int actIndex)
 	{
-		if (actIndex < 0 || actIndex >= _rarityByAct.Length || _rarityByAct[actIndex] < 0)
-		{
-			return null;
-		}
-
-		return (HextechRarityTier)_rarityByAct[actIndex];
+		return _actState.GetRarity(actIndex);
 	}
 
 	public void SetRarityForAct(int actIndex, HextechRarityTier rarity)
 	{
-		if (actIndex >= 0 && actIndex < _rarityByAct.Length)
-		{
-			_rarityByAct[actIndex] = (int)rarity;
-		}
+		_actState.SetRarity(actIndex, rarity);
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public MonsterHexKind? GetMonsterHexForAct(int actIndex)
 	{
-		if (actIndex < 0 || actIndex >= _monsterHexByAct.Length || _monsterHexByAct[actIndex] < 0)
-		{
-			return null;
-		}
-
-		return (MonsterHexKind)_monsterHexByAct[actIndex];
+		return _actState.GetMonsterHex(actIndex);
 	}
 
 	public void SetMonsterHexForAct(int actIndex, MonsterHexKind hex)
 	{
-		if (actIndex >= 0 && actIndex < _monsterHexByAct.Length)
-		{
-			_monsterHexByAct[actIndex] = (int)hex;
-		}
+		_actState.SetMonsterHex(actIndex, hex);
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexes()
 	{
-		List<MonsterHexKind> result = new();
-		HashSet<MonsterHexKind> seen = new();
-		for (int actIndex = 0; actIndex <= RunState.CurrentActIndex && actIndex < _monsterHexByAct.Length; actIndex++)
-		{
-			if (_monsterHexByAct[actIndex] >= 0
-				&& (IsActResolved(actIndex) || ShouldRecoverMonsterHexInCombat(actIndex)))
-			{
-				MonsterHexKind hex = (MonsterHexKind)_monsterHexByAct[actIndex];
-				if (seen.Add(hex))
-				{
-					result.Add(hex);
-				}
-			}
-		}
-
-		return result;
+		EnsureActiveMonsterHexCache();
+		return _cachedActiveMonsterHexes!;
 	}
 
 	private bool ShouldRecoverMonsterHexInCombat(int actIndex)
@@ -240,240 +174,77 @@ internal sealed partial class HextechMayhemModifier
 
 	public void ResetForNewRun()
 	{
-		_rarityByAct = [ -1, -1, -1 ];
-		_monsterHexByAct = [ -1, -1, -1 ];
-		_resolvedActs = [ 0, 0, 0 ];
-		_telemetryChoicesJson = "";
-		_seenPlayerRuneIdsJson = "";
+		_actState.Reset();
+		_choiceHistory.Reset();
 		ResetCombatTracking();
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
-		_rarityByAct = [ -1, -1, -1 ];
-		_monsterHexByAct = [ -1, -1, -1 ];
-		_resolvedActs = [ 0, 0, 0 ];
-		_telemetryChoicesJson = "";
-		_seenPlayerRuneIdsJson = "";
-		if (actIndex >= 0 && actIndex < _monsterHexByAct.Length)
-		{
-			_rarityByAct[actIndex] = (int)rarity;
-			_monsterHexByAct[actIndex] = (int)hex;
-			_resolvedActs[actIndex] = 1;
-		}
+		_actState.DebugSetOnlyMonsterHex(actIndex, hex, rarity);
+		_choiceHistory.Reset();
 
 		ResetCombatTracking();
+		InvalidateActiveMonsterHexCache();
 	}
 
 	public bool HasActiveMonsterHex(MonsterHexKind hex)
 	{
-		return GetActiveMonsterHexes().Contains(hex);
+		EnsureActiveMonsterHexCache();
+		return _cachedActiveMonsterHexSet!.Contains(hex);
 	}
 
-	public IReadOnlyList<HextechTelemetry.RuneChoiceRecord> GetTelemetryChoiceRecords()
+	private void EnsureActiveMonsterHexCache()
 	{
-		if (string.IsNullOrWhiteSpace(_telemetryChoicesJson))
-		{
-			return [];
-		}
-
-		try
-		{
-			return JsonSerializer.Deserialize<List<HextechTelemetry.RuneChoiceRecord>>(_telemetryChoicesJson, HextechTelemetry.JsonOptions) ?? [];
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry choices decode failed: {ex.Message}");
-			return [];
-		}
-	}
-
-	public void RecordTelemetryChoice(HextechTelemetry.RuneChoiceRecord record)
-	{
-		List<HextechTelemetry.RuneChoiceRecord> records = GetTelemetryChoiceRecords().ToList();
-		records.RemoveAll(existing => existing.ActIndex == record.ActIndex && existing.PlayerSlot == record.PlayerSlot);
-		records.Add(record);
-		_telemetryChoicesJson = JsonSerializer.Serialize(records, HextechTelemetry.JsonOptions);
-	}
-
-	public HashSet<ModelId> GetSeenPlayerRuneIds(Player player)
-	{
-		int playerSlot = GetPlayerSlotIndex(player);
-		HashSet<string> entries;
-		lock (_seenPlayerRuneIdsLock)
-		{
-			entries = GetSeenPlayerRuneEntries(playerSlot);
-		}
-
-		foreach (string entry in GetTelemetryChoiceRecords()
-			.Where(record => record.PlayerSlot == playerSlot)
-			.SelectMany(static record => record.Options))
-		{
-			if (!string.IsNullOrWhiteSpace(entry))
-			{
-				entries.Add(entry);
-			}
-		}
-
-		HashSet<ModelId> result = [];
-		foreach (string entry in entries)
-		{
-			try
-			{
-				result.Add(new ModelId(ModInfo.Id, entry));
-			}
-			catch (Exception ex)
-			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Seen player rune id ignored: slot={playerSlot} entry={entry} error={ex.Message}");
-			}
-		}
-
-		return result;
-	}
-
-	public void RecordSeenPlayerRunes(Player player, IEnumerable<RelicModel> relics)
-	{
-		List<string> entriesToAdd = [];
-		foreach (RelicModel relic in relics)
-		{
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-			if (ModInfo.IsHextechRelic(relic) && !string.IsNullOrWhiteSpace(id.Entry))
-			{
-				entriesToAdd.Add(id.Entry);
-			}
-		}
-
-		if (entriesToAdd.Count == 0)
+		int actIndex = RunState.CurrentActIndex;
+		bool combatRecovery = ShouldRecoverMonsterHexInCombat(actIndex);
+		if (_cachedActiveMonsterHexes != null
+			&& _cachedActiveMonsterHexSet != null
+			&& _cachedActiveMonsterHexActIndex == actIndex
+			&& _cachedActiveMonsterHexCombatRecovery == combatRecovery)
 		{
 			return;
 		}
 
-		int playerSlot = GetPlayerSlotIndex(player);
-		lock (_seenPlayerRuneIdsLock)
-		{
-			Dictionary<int, HashSet<string>> seenBySlot = DecodeSeenPlayerRuneEntries();
-			if (!seenBySlot.TryGetValue(playerSlot, out HashSet<string>? seenEntries))
-			{
-				seenEntries = new HashSet<string>(StringComparer.Ordinal);
-				seenBySlot[playerSlot] = seenEntries;
-			}
-
-			bool changed = false;
-			foreach (string entry in entriesToAdd)
-			{
-				changed |= seenEntries.Add(entry);
-			}
-
-			if (changed)
-			{
-				_seenPlayerRuneIdsJson = JsonSerializer.Serialize(
-					seenBySlot.ToDictionary(
-						static pair => pair.Key.ToString(),
-						static pair => pair.Value.OrderBy(static entry => entry, StringComparer.Ordinal).ToArray()),
-					HextechTelemetry.JsonOptions);
-			}
-		}
+		IReadOnlyList<MonsterHexKind> activeHexes = _actState.GetActiveMonsterHexes(actIndex, ShouldRecoverMonsterHexInCombat);
+		_cachedActiveMonsterHexes = activeHexes;
+		_cachedActiveMonsterHexSet = activeHexes.ToHashSet();
+		_cachedActiveMonsterHexActIndex = actIndex;
+		_cachedActiveMonsterHexCombatRecovery = combatRecovery;
 	}
 
-	private static int[] NormalizeSavedArray(int[]? value)
+	private void InvalidateActiveMonsterHexCache()
 	{
-		int[] normalized = DefaultArray.ToArray();
-		if (value == null)
-		{
-			return normalized;
-		}
-
-		for (int i = 0; i < Math.Min(normalized.Length, value.Length); i++)
-		{
-			normalized[i] = value[i];
-		}
-
-		return normalized;
+		_cachedActiveMonsterHexes = null;
+		_cachedActiveMonsterHexSet = null;
+		_cachedActiveMonsterHexActIndex = int.MinValue;
+		_cachedActiveMonsterHexCombatRecovery = false;
 	}
 
-	private static int[] NormalizeResolvedArray(int[]? value)
+	public IReadOnlyList<HextechTelemetry.RuneChoiceRecord> GetTelemetryChoiceRecords()
 	{
-		int[] normalized = [ 0, 0, 0 ];
-		if (value == null)
-		{
-			return normalized;
-		}
-
-		for (int i = 0; i < Math.Min(normalized.Length, value.Length); i++)
-		{
-			normalized[i] = value[i] > 0 ? 1 : 0;
-		}
-
-		return normalized;
+		return _choiceHistory.GetTelemetryChoiceRecords();
 	}
 
-	private HashSet<string> GetSeenPlayerRuneEntries(int playerSlot)
+	public void RecordTelemetryChoice(HextechTelemetry.RuneChoiceRecord record)
 	{
-		Dictionary<int, HashSet<string>> seenBySlot = DecodeSeenPlayerRuneEntries();
-		if (seenBySlot.TryGetValue(playerSlot, out HashSet<string>? entries))
-		{
-			return entries.ToHashSet(StringComparer.Ordinal);
-		}
-
-		return new HashSet<string>(StringComparer.Ordinal);
+		_choiceHistory.RecordTelemetryChoice(record);
 	}
 
-	private Dictionary<int, HashSet<string>> DecodeSeenPlayerRuneEntries()
+	public HashSet<ModelId> GetSeenPlayerRuneIds(Player player)
 	{
-		Dictionary<int, HashSet<string>> result = [];
-		if (string.IsNullOrWhiteSpace(_seenPlayerRuneIdsJson))
-		{
-			return result;
-		}
-
-		try
-		{
-			Dictionary<string, string[]>? decoded = JsonSerializer.Deserialize<Dictionary<string, string[]>>(_seenPlayerRuneIdsJson, HextechTelemetry.JsonOptions);
-			if (decoded == null)
-			{
-				return result;
-			}
-
-			foreach ((string slotText, string[] entries) in decoded)
-			{
-				if (int.TryParse(slotText, out int slot))
-				{
-					result[slot] = entries
-						.Where(static entry => !string.IsNullOrWhiteSpace(entry))
-						.ToHashSet(StringComparer.Ordinal);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Seen player rune ids decode failed: {ex.Message}");
-		}
-
-		return result;
+		return _choiceHistory.GetSeenPlayerRuneIds(player, RunState);
 	}
 
-	private int GetPlayerSlotIndex(Player player)
+	public void RecordSeenPlayerRunes(Player player, IEnumerable<RelicModel> relics)
 	{
-		int slot = RunState.GetPlayerSlotIndex(player);
-		if (slot >= 0)
-		{
-			return slot;
-		}
-
-		for (int i = 0; i < RunState.Players.Count; i++)
-		{
-			if (ReferenceEquals(RunState.Players[i], player))
-			{
-				return i;
-			}
-		}
-
-		return 0;
+		_choiceHistory.RecordSeenPlayerRunes(player, relics, RunState);
 	}
 
 	private int GetHighestActResolvedByTelemetryChoices(int maxActIndex)
 	{
-		int lastActIndex = Math.Min(maxActIndex, _resolvedActs.Length - 1);
+		int lastActIndex = _actState.LastActIndexFor(maxActIndex);
 		if (lastActIndex < 0 || RunState.Players.Count == 0)
 		{
 			return -1;
@@ -515,7 +286,7 @@ internal sealed partial class HextechMayhemModifier
 
 	private int GetHighestActResolvedByPlayerRuneCounts(int maxActIndex)
 	{
-		int lastActIndex = Math.Min(maxActIndex, _resolvedActs.Length - 1);
+		int lastActIndex = _actState.LastActIndexFor(maxActIndex);
 		if (lastActIndex < 0)
 		{
 			return -1;
@@ -524,7 +295,7 @@ internal sealed partial class HextechMayhemModifier
 		int minHexCount = int.MaxValue;
 		foreach (Player player in RunState.Players)
 		{
-			int count = player.Relics.Count(ModInfo.IsHextechRelic);
+			int count = player.Relics.Count(HextechCatalog.IsHextechRelic);
 			minHexCount = Math.Min(minHexCount, count);
 		}
 
@@ -561,9 +332,9 @@ internal sealed partial class HextechMayhemModifier
 		foreach (Player player in RunState.Players)
 		{
 			RelicModel? relic = player.Relics
-				.Where(ModInfo.IsHextechRelic)
+				.Where(HextechCatalog.IsHextechRelic)
 				.ElementAtOrDefault(actIndex);
-			if (ModInfo.TryGetPlayerRuneRarity(relic, out rarity))
+			if (HextechCatalog.TryGetPlayerRuneRarity(relic, out rarity))
 			{
 				return true;
 			}
@@ -575,7 +346,7 @@ internal sealed partial class HextechMayhemModifier
 
 	private string DescribePlayerHexCounts()
 	{
-		return string.Join(",", RunState.Players.Select(player => $"{player.NetId}:{player.Relics.Count(ModInfo.IsHextechRelic)}"));
+		return string.Join(",", RunState.Players.Select(player => $"{player.NetId}:{player.Relics.Count(HextechCatalog.IsHextechRelic)}"));
 	}
 
 	private string DescribeTelemetryChoiceCounts()

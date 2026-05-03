@@ -55,12 +55,14 @@ public sealed class SerpentsFangRune : HextechRelicBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
+		new PowerVar<EnvenomPower>(1m),
 		new DynamicVar("PoisonApplications", 2m),
 		new CardsVar(1)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
+		HoverTipFactory.FromPower<EnvenomPower>(),
 		HoverTipFactory.FromPower<PoisonPower>(),
 		HoverTipFactory.FromCard<Shiv>()
 	];
@@ -70,10 +72,16 @@ public sealed class SerpentsFangRune : HextechRelicBase
 		return IsSilentPlayer(player);
 	}
 
-	public override Task BeforeCombatStart()
+	public override async Task BeforeCombatStart()
 	{
 		ResetCounter();
-		return Task.CompletedTask;
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<EnvenomPower>(Owner.Creature, DynamicVars["EnvenomPower"].BaseValue, Owner.Creature, null);
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
@@ -112,7 +120,7 @@ public sealed class SerpentsFangRune : HextechRelicBase
 		}
 
 		Flash(target == null ? Array.Empty<Creature>() : [target]);
-		await AddCardCopiesToDeckOrHand<Shiv>(shivsToCreate);
+		await AddCardCopiesToCombatHand<Shiv>(shivsToCreate);
 	}
 
 	private void ResetCounter()
@@ -293,18 +301,24 @@ public sealed class SingularityAIRune : HextechRelicBase
 			return;
 		}
 
-		IEnumerable<CardModel> powerPool = Owner.Character.CardPool
+		List<CardModel> powerPool = Owner.Character.CardPool
 			.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint)
-			.Where(static card => card.Type == CardType.Power);
-		CardModel? card = CardFactory.GetDistinctForCombat(
-			Owner,
-			powerPool,
-			DynamicVars.Cards.IntValue,
-			Owner.RunState.Rng.CombatCardGeneration).FirstOrDefault();
-		if (card == null)
+			.Where(static card => card.Type == CardType.Power)
+			.ToList();
+		if (powerPool.Count == 0)
 		{
 			return;
 		}
+
+		CardModel canonicalCard = HextechStableRandom.Pick(
+			powerPool,
+			(RunState)Owner.RunState,
+			HextechStableRandom.CardKey,
+			"singularity-ai-player-power",
+			HextechStableRandom.PlayerKey(Owner),
+			combatState.RoundNumber.ToString(),
+			CountOwnedCardsDrawnFromHistory().ToString());
+		CardModel card = combatState.CreateCard(canonicalCard, Owner);
 
 		card.SetToFreeThisTurn();
 		Flash();
@@ -583,15 +597,12 @@ public sealed class SpeedDemonRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
-		get
-		{
-			EnsureTurnScopedStateCurrent(ResetTurnState);
-			return _triggeredThisTurn;
-		}
+		get => false;
 		set
 		{
-			_triggeredThisTurn = value;
-			UpdateTurnScopedStateIdentity();
+			// Legacy save compatibility: this is turn-scoped runtime state and must not enter multiplayer checksums.
+			_triggeredThisTurn = false;
+			UpdateTurnScopedStateIdentity(null);
 		}
 	}
 

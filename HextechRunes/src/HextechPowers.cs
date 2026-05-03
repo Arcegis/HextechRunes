@@ -23,8 +23,7 @@ public sealed class HextechBurnPower : PowerModel
 
 	public override async Task AfterTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		bool shouldTrigger = side == Owner.Side;
-		if (!shouldTrigger || Amount <= 0 || !Owner.IsAlive)
+		if (side != CombatSide.Player || Amount <= 0 || !Owner.IsAlive)
 		{
 			return;
 		}
@@ -76,6 +75,8 @@ public sealed class HextechTemporaryDexterityLossPower : TemporaryDexterityPower
 public sealed class HextechLethalTempoTemporaryStrengthPower : TemporaryStrengthPower
 {
 	public override AbstractModel OriginModel => ModelDb.Relic<LethalTempoRune>();
+
+	protected override bool IsVisibleInternal => false;
 }
 
 public sealed class HextechBloodPactTemporaryStrengthPower : TemporaryStrengthPower
