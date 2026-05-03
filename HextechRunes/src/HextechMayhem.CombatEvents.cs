@@ -24,76 +24,92 @@ internal sealed partial class HextechMayhemModifier
 {
     public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
     {
-        if (target.Side != CombatSide.Enemy || result.UnblockedDamage <= 0 || target.CombatId == null)
+        if (!TryGetDamagedEnemy(target, result, out uint combatId))
         {
             return;
         }
 
-        uint combatId = target.CombatId.Value;
+        TrackEnemyDamageReceived(target, combatId);
+        await ApplyEnemyDamageReceivedReactiveHexes(target);
+
+        if (!ShouldSuppressDuplicateEnemyThresholdTrigger(target, result, dealer, cardSource))
+        {
+            await ApplyEnemyThresholdHexes(target, combatId);
+        }
+    }
+
+    private static bool TryGetDamagedEnemy(Creature target, DamageResult result, out uint combatId)
+    {
+        combatId = 0;
+        if (target.Side != CombatSide.Enemy || result.UnblockedDamage <= 0 || target.CombatId == null)
+        {
+            return false;
+        }
+
+        combatId = target.CombatId.Value;
+        return true;
+    }
+
+    private void TrackEnemyDamageReceived(Creature target, uint combatId)
+    {
         if (HasActiveMonsterHex(MonsterHexKind.MountainSoul))
         {
             _combatTracking.MountainSoulDamagedSinceLastTurn.Add(combatId);
         }
+    }
 
+    private async Task ApplyEnemyDamageReceivedReactiveHexes(Creature target)
+    {
         if (HasActiveMonsterHex(MonsterHexKind.BloodPact)
             && target.IsAlive
             && TryConsumeLimitedProc(_combatTracking.BloodPactProcsThisTurn, target, 2))
         {
-            await PowerCmd.Apply<HextechBloodPactTemporaryStrengthPower>(target, 1m, target, null);
+            await PowerCmd.Apply<HextechBloodPactTemporaryStrengthPower>(target, BloodPactTemporaryStrengthStacks, target, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.ClownCollege)
             && target.IsAlive
             && TryConsumeLimitedProc(_combatTracking.ClownCollegeProcsThisTurn, target, 1))
         {
-            await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(target, 1m, target, null);
+            await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(target, ClownCollegeSlipperyStacks, target, null);
         }
+    }
 
-        if (ShouldSuppressDuplicateEnemyThresholdTrigger(target, result, dealer, cardSource))
+    private async Task ApplyEnemyThresholdHexes(Creature target, uint combatId)
+    {
+        if (!IsBelowEnemyHealthThreshold(target))
         {
             return;
         }
 
-        decimal threshold = target.MaxHp * EscapePlanHealthThresholdPercent;
-        bool isBelowThresholdAfterDamage = target.CurrentHp < threshold;
-        if (HasActiveMonsterHex(MonsterHexKind.EscapePlan)
-            && !_combatTracking.EscapePlanTriggered.Contains(combatId)
-            && isBelowThresholdAfterDamage)
+        if (HasActiveMonsterHex(MonsterHexKind.EscapePlan))
         {
-            _combatTracking.EscapePlanTriggered.Add(combatId);
-            _combatTracking.EscapePlanPending.Add(combatId);
+            TryQueueEnemyThresholdEffect(_combatTracking.EscapePlanTriggered, _combatTracking.EscapePlanPending, combatId);
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.Repulsor)
-            && !_combatTracking.RepulsorTriggered.Contains(combatId)
-            && isBelowThresholdAfterDamage)
+        if (HasActiveMonsterHex(MonsterHexKind.Repulsor))
         {
-            _combatTracking.RepulsorTriggered.Add(combatId);
-            _combatTracking.RepulsorPending.Add(combatId);
+            TryQueueEnemyThresholdEffect(_combatTracking.RepulsorTriggered, _combatTracking.RepulsorPending, combatId);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.DawnbringersResolve)
-            && !_combatTracking.DawnTriggered.Contains(combatId)
-            && isBelowThresholdAfterDamage)
+            && _combatTracking.DawnTriggered.Add(combatId))
         {
-            _combatTracking.DawnTriggered.Add(combatId);
-            int regen = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.1m));
+            int regen = Math.Max(1, (int)Math.Floor(target.MaxHp * DawnbringersResolveRegenPercent));
             await HextechEnemyPowerScalingHooks.Apply<RegenPower>(target, regen, target, null);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.FeelTheBurn)
-            && isBelowThresholdAfterDamage
             && _combatTracking.FeelTheBurnTriggered.Add(combatId))
         {
             _combatTracking.FeelTheBurnPending.Add(combatId);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.MikaelsBlessing)
-            && isBelowThresholdAfterDamage
-            && _combatTracking.MikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) < 2)
+            && _combatTracking.MikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) < MikaelsBlessingMaxTriggers)
         {
             _combatTracking.MikaelsBlessingTriggers[combatId] = _combatTracking.MikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) + 1;
-            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.25m));
+            int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * MikaelsBlessingHealPercent));
             await CreatureCmd.Heal(target, heal);
 
             List<PowerModel> negativePowers = target.Powers
@@ -106,6 +122,22 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
+    private static bool IsBelowEnemyHealthThreshold(Creature target)
+    {
+        return target.CurrentHp < target.MaxHp * EscapePlanHealthThresholdPercent;
+    }
+
+    private static bool TryQueueEnemyThresholdEffect(HashSet<uint> triggered, HashSet<uint> pending, uint combatId)
+    {
+        if (!triggered.Add(combatId))
+        {
+            return false;
+        }
+
+        pending.Add(combatId);
+        return true;
+    }
+
     public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
     {
         if (dealer?.Side != CombatSide.Enemy || dealer.CombatState?.RunState != RunState || !target.IsAlive)
@@ -113,9 +145,20 @@ internal sealed partial class HextechMayhemModifier
             return;
         }
 
+        await ApplyEnemyDamageGivenImmediateHexes(dealer, result, target, cardSource);
+        if (result.UnblockedDamage <= 0 || target.Side != CombatSide.Player)
+        {
+            return;
+        }
+
+        await ApplyEnemyDamageGivenPlayerHitHexes(dealer, target);
+    }
+
+    private async Task ApplyEnemyDamageGivenImmediateHexes(Creature dealer, DamageResult result, Creature target, CardModel? cardSource)
+    {
         if (HasActiveMonsterHex(MonsterHexKind.ShrinkRay) && result.UnblockedDamage > 0 && target.Side == CombatSide.Player)
         {
-            await PowerCmd.Apply<ShrinkPower>(target, 1m, dealer, cardSource);
+            await PowerCmd.Apply<ShrinkPower>(target, ShrinkRayStacks, dealer, cardSource);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.Firebrand)
@@ -123,7 +166,7 @@ internal sealed partial class HextechMayhemModifier
             && target.Side == CombatSide.Player
             && !HextechBurnPower.IsResolvingDamage)
         {
-            await PowerCmd.Apply<HextechBurnPower>(target, 2m, dealer, cardSource);
+            await PowerCmd.Apply<HextechBurnPower>(target, FirebrandBurnStacks, dealer, cardSource);
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.Goldrend)
@@ -132,18 +175,16 @@ internal sealed partial class HextechMayhemModifier
         {
             await HextechGoldrendSync.HandleEnemyGoldrendHit(target.Player);
         }
+    }
 
-        if (result.UnblockedDamage <= 0 || target.Side != CombatSide.Player)
-        {
-            return;
-        }
-
+    private async Task ApplyEnemyDamageGivenPlayerHitHexes(Creature dealer, Creature target)
+    {
         if (HasActiveMonsterHex(MonsterHexKind.DevilsDance)
             && dealer.IsAlive
             && dealer.CombatId != null
             && _combatTracking.DevilsDanceTriggeredThisTurn.Add(dealer.CombatId.Value))
         {
-            int heal = Math.Max(1, (int)Math.Floor(dealer.MaxHp * 0.1m));
+            int heal = Math.Max(1, (int)Math.Floor(dealer.MaxHp * DevilsDanceHealPercent));
             await CreatureCmd.Heal(dealer, heal);
         }
 
@@ -169,7 +210,7 @@ internal sealed partial class HextechMayhemModifier
 
         if (HasActiveMonsterHex(MonsterHexKind.FinalForm) && dealer.IsAlive)
         {
-            int block = Math.Max(1, (int)Math.Floor(dealer.MaxHp * 0.2m));
+            int block = Math.Max(1, (int)Math.Floor(dealer.MaxHp * FinalFormBlockPercent));
             await CreatureCmd.GainBlock(dealer, block, ValueProp.Unpowered, null);
         }
     }

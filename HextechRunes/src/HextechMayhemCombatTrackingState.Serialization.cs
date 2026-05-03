@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using MegaCrit.Sts2.Core.Logging;
 
@@ -5,6 +8,11 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemCombatTrackingState
 {
+	private static readonly IReadOnlyList<CombatTrackingFieldBinding> PersistentFieldBindings = CreatePersistentFieldBindings();
+	private static readonly IReadOnlyList<FieldInfo> TransientFields = CreateTransientFields();
+
+	private readonly record struct CombatTrackingFieldBinding(FieldInfo StateField, PropertyInfo SnapshotProperty);
+
 	public string Serialize()
 	{
 		if (!HasState())
@@ -12,44 +20,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 			return "";
 		}
 
-		CombatTrackingSnapshot snapshot = new()
-		{
-			SlapProcsThisTurn = CopyDictionary(SlapProcsThisTurn),
-			TormentorProcsThisTurn = CopyDictionary(TormentorProcsThisTurn),
-			CourageProcsThisTurn = CopyDictionary(CourageProcsThisTurn),
-			BloodPactProcsThisTurn = CopyDictionary(BloodPactProcsThisTurn),
-			ClownCollegeProcsThisTurn = CopyDictionary(ClownCollegeProcsThisTurn),
-			EscapePlanTriggered = CopySet(EscapePlanTriggered),
-			EscapePlanPending = CopySet(EscapePlanPending),
-			RepulsorTriggered = CopySet(RepulsorTriggered),
-			RepulsorPending = CopySet(RepulsorPending),
-			DawnTriggered = CopySet(DawnTriggered),
-			SpeedDemonPending = CopySet(SpeedDemonPending),
-			DevilsDanceTriggeredThisTurn = CopySet(DevilsDanceTriggeredThisTurn),
-			FeelTheBurnTriggered = CopySet(FeelTheBurnTriggered),
-			FeyMagicPendingNoDrawPlayers = CopyDictionary(FeyMagicPendingNoDrawPlayers),
-			MikaelsBlessingTriggers = CopyDictionary(MikaelsBlessingTriggers),
-			GoliathApplied = CopySet(GoliathApplied),
-			ProtectiveVeilApplied = CopySet(ProtectiveVeilApplied),
-			ThornmailApplied = CopySet(ThornmailApplied),
-			SuperBrainApplied = CopySet(SuperBrainApplied),
-			AstralBodyApplied = CopySet(AstralBodyApplied),
-			DrawYourSwordApplied = CopySet(DrawYourSwordApplied),
-			MadScientistApplied = CopySet(MadScientistApplied),
-			UnmovableMountainApplied = CopySet(UnmovableMountainApplied),
-			GoldenSpatulaApplied = CopySet(GoldenSpatulaApplied),
-			TankEngineStacks = CopyDictionary(TankEngineStacks),
-			ShrinkEngineStacks = CopyDictionary(ShrinkEngineStacks),
-			GetExcitedPending = CopyDictionary(GetExcitedPending),
-			FeelTheBurnPending = CopySet(FeelTheBurnPending),
-			MountainSoulHasPreviousTurn = CopySet(MountainSoulHasPreviousTurn),
-			MountainSoulDamagedSinceLastTurn = CopySet(MountainSoulDamagedSinceLastTurn),
-			PlayerAttackCardsPlayedThisCombat = CopyDictionary(PlayerAttackCardsPlayedThisCombat),
-			PlayerCardsDrawnThisCombat = CopyDictionary(PlayerCardsDrawnThisCombat),
-			EightPennyGatePlayersTriggeredThisTurn = CopySet(EightPennyGatePlayersTriggeredThisTurn),
-			EnemyProtectiveVeilTurnCounter = EnemyProtectiveVeilTurnCounter
-		};
-		return JsonSerializer.Serialize(snapshot);
+		return JsonSerializer.Serialize(CreateSnapshot());
 	}
 
 	public void Restore(string? json)
@@ -68,40 +39,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 				return;
 			}
 
-			RestoreDictionary(SlapProcsThisTurn, snapshot.SlapProcsThisTurn);
-			RestoreDictionary(TormentorProcsThisTurn, snapshot.TormentorProcsThisTurn);
-			RestoreDictionary(CourageProcsThisTurn, snapshot.CourageProcsThisTurn);
-			RestoreDictionary(BloodPactProcsThisTurn, snapshot.BloodPactProcsThisTurn);
-			RestoreDictionary(ClownCollegeProcsThisTurn, snapshot.ClownCollegeProcsThisTurn);
-			RestoreSet(EscapePlanTriggered, snapshot.EscapePlanTriggered);
-			RestoreSet(EscapePlanPending, snapshot.EscapePlanPending);
-			RestoreSet(RepulsorTriggered, snapshot.RepulsorTriggered);
-			RestoreSet(RepulsorPending, snapshot.RepulsorPending);
-			RestoreSet(DawnTriggered, snapshot.DawnTriggered);
-			RestoreSet(SpeedDemonPending, snapshot.SpeedDemonPending);
-			RestoreSet(DevilsDanceTriggeredThisTurn, snapshot.DevilsDanceTriggeredThisTurn);
-			RestoreSet(FeelTheBurnTriggered, snapshot.FeelTheBurnTriggered);
-			RestoreDictionary(FeyMagicPendingNoDrawPlayers, snapshot.FeyMagicPendingNoDrawPlayers);
-			RestoreDictionary(MikaelsBlessingTriggers, snapshot.MikaelsBlessingTriggers);
-			RestoreSet(GoliathApplied, snapshot.GoliathApplied);
-			RestoreSet(ProtectiveVeilApplied, snapshot.ProtectiveVeilApplied);
-			RestoreSet(ThornmailApplied, snapshot.ThornmailApplied);
-			RestoreSet(SuperBrainApplied, snapshot.SuperBrainApplied);
-			RestoreSet(AstralBodyApplied, snapshot.AstralBodyApplied);
-			RestoreSet(DrawYourSwordApplied, snapshot.DrawYourSwordApplied);
-			RestoreSet(MadScientistApplied, snapshot.MadScientistApplied);
-			RestoreSet(UnmovableMountainApplied, snapshot.UnmovableMountainApplied);
-			RestoreSet(GoldenSpatulaApplied, snapshot.GoldenSpatulaApplied);
-			RestoreDictionary(TankEngineStacks, snapshot.TankEngineStacks);
-			RestoreDictionary(ShrinkEngineStacks, snapshot.ShrinkEngineStacks);
-			RestoreDictionary(GetExcitedPending, snapshot.GetExcitedPending);
-			RestoreSet(FeelTheBurnPending, snapshot.FeelTheBurnPending);
-			RestoreSet(MountainSoulHasPreviousTurn, snapshot.MountainSoulHasPreviousTurn);
-			RestoreSet(MountainSoulDamagedSinceLastTurn, snapshot.MountainSoulDamagedSinceLastTurn);
-			RestoreDictionary(PlayerAttackCardsPlayedThisCombat, snapshot.PlayerAttackCardsPlayedThisCombat);
-			RestoreDictionary(PlayerCardsDrawnThisCombat, snapshot.PlayerCardsDrawnThisCombat);
-			RestoreSet(EightPennyGatePlayersTriggeredThisTurn, snapshot.EightPennyGatePlayersTriggeredThisTurn);
-			EnemyProtectiveVeilTurnCounter = Math.Max(0, snapshot.EnemyProtectiveVeilTurnCounter);
+			RestoreSnapshot(snapshot);
 		}
 		catch (Exception ex)
 		{
@@ -110,128 +48,276 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		}
 	}
 
+	private CombatTrackingSnapshot CreateSnapshot()
+	{
+		CombatTrackingSnapshot snapshot = new();
+		foreach (CombatTrackingFieldBinding binding in PersistentFieldBindings)
+		{
+			binding.SnapshotProperty.SetValue(
+				snapshot,
+				CopyStateValue(binding.StateField.GetValue(this), binding.SnapshotProperty.PropertyType));
+		}
+
+		return snapshot;
+	}
+
+	private void RestoreSnapshot(CombatTrackingSnapshot snapshot)
+	{
+		foreach (CombatTrackingFieldBinding binding in PersistentFieldBindings)
+		{
+			RestoreStateField(binding.StateField, binding.SnapshotProperty.GetValue(snapshot));
+		}
+	}
+
 	private bool HasState()
 	{
-		return SlapProcsThisTurn.Count > 0
-			|| TormentorProcsThisTurn.Count > 0
-			|| CourageProcsThisTurn.Count > 0
-			|| BloodPactProcsThisTurn.Count > 0
-			|| ClownCollegeProcsThisTurn.Count > 0
-			|| EscapePlanTriggered.Count > 0
-			|| EscapePlanPending.Count > 0
-			|| RepulsorTriggered.Count > 0
-			|| RepulsorPending.Count > 0
-			|| DawnTriggered.Count > 0
-			|| SpeedDemonPending.Count > 0
-			|| DevilsDanceTriggeredThisTurn.Count > 0
-			|| FeelTheBurnTriggered.Count > 0
-			|| FeyMagicPendingNoDrawPlayers.Count > 0
-			|| MikaelsBlessingTriggers.Count > 0
-			|| GoliathApplied.Count > 0
-			|| ProtectiveVeilApplied.Count > 0
-			|| ThornmailApplied.Count > 0
-			|| SuperBrainApplied.Count > 0
-			|| AstralBodyApplied.Count > 0
-			|| DrawYourSwordApplied.Count > 0
-			|| MadScientistApplied.Count > 0
-			|| UnmovableMountainApplied.Count > 0
-			|| GoldenSpatulaApplied.Count > 0
-			|| TankEngineStacks.Count > 0
-			|| ShrinkEngineStacks.Count > 0
-			|| GetExcitedPending.Count > 0
-			|| FeelTheBurnPending.Count > 0
-			|| MountainSoulHasPreviousTurn.Count > 0
-			|| MountainSoulDamagedSinceLastTurn.Count > 0
-			|| PlayerAttackCardsPlayedThisCombat.Count > 0
-			|| PlayerCardsDrawnThisCombat.Count > 0
-			|| EightPennyGatePlayersTriggeredThisTurn.Count > 0
-			|| EnemyProtectiveVeilTurnCounter > 0;
+		return PersistentFieldBindings.Any(binding => HasNonDefaultValue(binding.StateField.GetValue(this)));
 	}
 
 	private void Clear()
 	{
-		SlapProcsThisTurn.Clear();
-		TormentorProcsThisTurn.Clear();
-		CourageProcsThisTurn.Clear();
-		BloodPactProcsThisTurn.Clear();
-		ClownCollegeProcsThisTurn.Clear();
-		EscapePlanTriggered.Clear();
-		EscapePlanPending.Clear();
-		RepulsorTriggered.Clear();
-		RepulsorPending.Clear();
-		DawnTriggered.Clear();
-		SpeedDemonPending.Clear();
-		DevilsDanceTriggeredThisTurn.Clear();
-		FeelTheBurnTriggered.Clear();
-		FeyMagicPendingNoDrawPlayers.Clear();
-		MikaelsBlessingTriggers.Clear();
-		GoliathApplied.Clear();
-		ProtectiveVeilApplied.Clear();
-		ThornmailApplied.Clear();
-		SuperBrainApplied.Clear();
-		AstralBodyApplied.Clear();
-		DrawYourSwordApplied.Clear();
-		MadScientistApplied.Clear();
-		UnmovableMountainApplied.Clear();
-		GoldenSpatulaApplied.Clear();
-		TankEngineStacks.Clear();
-		ShrinkEngineStacks.Clear();
-		GetExcitedPending.Clear();
-		FeelTheBurnPending.Clear();
-		MountainSoulHasPreviousTurn.Clear();
-		MountainSoulDamagedSinceLastTurn.Clear();
-		PlayerAttackCardsPlayedThisCombat.Clear();
-		PlayerCardsDrawnThisCombat.Clear();
-		EightPennyGatePlayersTriggeredThisTurn.Clear();
-		MonsterDebuffActionProcKeysThisTurn.Clear();
-		GroupedPlayerDebuffProcKeys.Clear();
-		LastEnemyThresholdTriggerKey = null;
-		EnemyProtectiveVeilTurnCounter = 0;
-		HandlingMonsterTormentorBurn = false;
-		HandlingServantMasterIllusion = false;
-		HandlingGroupedPlayerDebuffs = false;
+		foreach (CombatTrackingFieldBinding binding in PersistentFieldBindings)
+		{
+			ClearStateField(binding.StateField);
+		}
+
+		foreach (FieldInfo field in TransientFields)
+		{
+			ClearStateField(field);
+		}
 	}
 
-	private static Dictionary<TKey, TValue> CopyDictionary<TKey, TValue>(Dictionary<TKey, TValue> source)
-		where TKey : notnull
+	private static IReadOnlyList<CombatTrackingFieldBinding> CreatePersistentFieldBindings()
 	{
-		return source.Count == 0
-			? new Dictionary<TKey, TValue>()
-			: source.OrderBy(static item => item.Key).ToDictionary(static item => item.Key, static item => item.Value);
+		Dictionary<string, FieldInfo> stateFields = GetPublicStateFields()
+			.ToDictionary(static field => field.Name, StringComparer.Ordinal);
+
+		return typeof(CombatTrackingSnapshot)
+			.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+			.Select(property =>
+			{
+				if (!stateFields.TryGetValue(property.Name, out FieldInfo? stateField))
+				{
+					throw new InvalidOperationException($"Combat tracking snapshot field '{property.Name}' has no matching state field.");
+				}
+
+				return new CombatTrackingFieldBinding(stateField, property);
+			})
+			.ToArray();
 	}
 
-	private static List<T> CopySet<T>(HashSet<T> source)
+	private static IReadOnlyList<FieldInfo> CreateTransientFields()
 	{
-		return source.Count == 0 ? [] : source.OrderBy(static item => item).ToList();
+		return GetPublicStateFields()
+			.Where(static field => field.GetCustomAttribute<CombatTrackingTransientAttribute>() != null)
+			.ToArray();
 	}
 
-	private static void RestoreDictionary<TKey, TValue>(Dictionary<TKey, TValue> target, Dictionary<TKey, TValue>? source)
-		where TKey : notnull
+	private static FieldInfo[] GetPublicStateFields()
 	{
-		target.Clear();
+		return typeof(HextechMayhemCombatTrackingState)
+			.GetFields(BindingFlags.Instance | BindingFlags.Public);
+	}
+
+	private static object? CopyStateValue(object? source, Type snapshotType)
+	{
 		if (source == null)
 		{
-			return;
+			return null;
 		}
 
-		foreach (KeyValuePair<TKey, TValue> pair in source)
+		if (source is IDictionary dictionary)
 		{
-			target[pair.Key] = pair.Value;
+			return CopyDictionary(dictionary, snapshotType);
 		}
+
+		if (IsHashSet(source.GetType()))
+		{
+			return CopySet(source, snapshotType);
+		}
+
+		return source is int counter ? Math.Max(0, counter) : source;
 	}
 
-	private static void RestoreSet<T>(HashSet<T> target, IEnumerable<T>? source)
+	private static object CopyDictionary(IDictionary source, Type snapshotType)
 	{
-		target.Clear();
-		if (source == null)
+		IDictionary target = (IDictionary)(Activator.CreateInstance(snapshotType)
+			?? throw new InvalidOperationException($"Failed to create combat tracking dictionary {snapshotType}."));
+		foreach (object key in OrderedValues(source.Keys))
 		{
-			return;
+			target.Add(key, source[key]);
 		}
 
-		foreach (T value in source)
+		return target;
+	}
+
+	private static object CopySet(object source, Type snapshotType)
+	{
+		IList target = (IList)(Activator.CreateInstance(snapshotType)
+			?? throw new InvalidOperationException($"Failed to create combat tracking list {snapshotType}."));
+		foreach (object value in OrderedValues((IEnumerable)source))
 		{
 			target.Add(value);
 		}
+
+		return target;
+	}
+
+	private void RestoreStateField(FieldInfo field, object? snapshotValue)
+	{
+		object? target = field.GetValue(this);
+		if (target is IDictionary targetDictionary)
+		{
+			targetDictionary.Clear();
+			if (snapshotValue is IDictionary sourceDictionary)
+			{
+				foreach (DictionaryEntry entry in sourceDictionary)
+				{
+					targetDictionary[entry.Key] = entry.Value;
+				}
+			}
+
+			return;
+		}
+
+		if (target != null && IsHashSet(target.GetType()))
+		{
+			ClearCollection(target);
+			if (snapshotValue is IEnumerable sourceValues)
+			{
+				foreach (object value in sourceValues)
+				{
+					AddToCollection(target, value);
+				}
+			}
+
+			return;
+		}
+
+		if (field.FieldType == typeof(int))
+		{
+			field.SetValue(this, Math.Max(0, snapshotValue is int value ? value : 0));
+		}
+	}
+
+	private void ClearStateField(FieldInfo field)
+	{
+		object? target = field.GetValue(this);
+		if (target != null && TryInvokeClear(target))
+		{
+			return;
+		}
+
+		if (field.FieldType == typeof(string))
+		{
+			field.SetValue(this, null);
+		}
+		else if (field.FieldType == typeof(bool))
+		{
+			field.SetValue(this, false);
+		}
+		else if (field.FieldType == typeof(int))
+		{
+			field.SetValue(this, 0);
+		}
+	}
+
+	private static bool HasNonDefaultValue(object? value)
+	{
+		return value switch
+		{
+			null => false,
+			IDictionary dictionary => dictionary.Count > 0,
+			_ when TryGetCount(value, out int count) => count > 0,
+			int counter => counter > 0,
+			bool flag => flag,
+			string text => !string.IsNullOrEmpty(text),
+			_ => false
+		};
+	}
+
+	private static bool TryGetCount(object value, out int count)
+	{
+		if (value is ICollection collection)
+		{
+			count = collection.Count;
+			return true;
+		}
+
+		PropertyInfo? countProperty = value.GetType().GetProperty(nameof(ICollection.Count), BindingFlags.Instance | BindingFlags.Public);
+		if (countProperty?.GetValue(value) is int propertyCount)
+		{
+			count = propertyCount;
+			return true;
+		}
+
+		count = 0;
+		return false;
+	}
+
+	private static bool IsHashSet(Type type)
+	{
+		return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>);
+	}
+
+	private static IEnumerable<object> OrderedValues(IEnumerable values)
+	{
+		return values.Cast<object>().OrderBy(static value => value, Comparer<object>.Create(CompareValues));
+	}
+
+	private static int CompareValues(object? left, object? right)
+	{
+		if (ReferenceEquals(left, right))
+		{
+			return 0;
+		}
+
+		if (left == null)
+		{
+			return -1;
+		}
+
+		if (right == null)
+		{
+			return 1;
+		}
+
+		return left is IComparable comparable
+			? comparable.CompareTo(right)
+			: string.CompareOrdinal(left.ToString(), right.ToString());
+	}
+
+	private static bool TryInvokeClear(object target)
+	{
+		MethodInfo? clear = target.GetType().GetMethod(nameof(List<object>.Clear), Type.EmptyTypes);
+		if (clear == null)
+		{
+			return false;
+		}
+
+		clear.Invoke(target, null);
+		return true;
+	}
+
+	private static void ClearCollection(object target)
+	{
+		if (!TryInvokeClear(target))
+		{
+			throw new InvalidOperationException($"Combat tracking collection {target.GetType()} does not expose Clear().");
+		}
+	}
+
+	private static void AddToCollection(object target, object value)
+	{
+		MethodInfo? add = target.GetType()
+			.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+			.FirstOrDefault(static method => method.Name == nameof(List<object>.Add) && method.GetParameters().Length == 1);
+		if (add == null)
+		{
+			throw new InvalidOperationException($"Combat tracking collection {target.GetType()} does not expose Add().");
+		}
+
+		add.Invoke(target, [value]);
 	}
 
 	private sealed class CombatTrackingSnapshot

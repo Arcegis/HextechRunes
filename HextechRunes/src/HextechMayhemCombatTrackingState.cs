@@ -2,6 +2,11 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemCombatTrackingState
 {
+	[System.AttributeUsage(System.AttributeTargets.Field)]
+	private sealed class CombatTrackingTransientAttribute : System.Attribute
+	{
+	}
+
 	public readonly Dictionary<uint, int> SlapProcsThisTurn = new();
 	public readonly Dictionary<uint, int> TormentorProcsThisTurn = new();
 	public readonly Dictionary<uint, int> CourageProcsThisTurn = new();
@@ -35,11 +40,17 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisCombat = new();
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
+	[CombatTrackingTransient]
 	public readonly HashSet<string> MonsterDebuffActionProcKeysThisTurn = new();
+	[CombatTrackingTransient]
 	public readonly HashSet<string> GroupedPlayerDebuffProcKeys = new();
+	[CombatTrackingTransient]
 	public string? LastEnemyThresholdTriggerKey;
+	[CombatTrackingTransient]
 	public bool HandlingMonsterTormentorBurn;
+	[CombatTrackingTransient]
 	public bool HandlingServantMasterIllusion;
+	[CombatTrackingTransient]
 	public bool HandlingGroupedPlayerDebuffs;
 	public int EnemyProtectiveVeilTurnCounter;
 
