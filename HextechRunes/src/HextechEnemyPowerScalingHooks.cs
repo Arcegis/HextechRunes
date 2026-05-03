@@ -41,6 +41,12 @@ internal static class HextechEnemyPowerScalingHooks
 		}
 
 		decimal finalAmount = CalculateFinalAmount(target, amount, applier, scalingOverride.Value);
+		finalAmount = ClampPowerOffsetForApply<T>(target, finalAmount);
+		if (finalAmount == 0m)
+		{
+			return target.GetPower<T>();
+		}
+
 		Creature? effectiveApplier = ShouldClearSelfApplier(target, applier) ? null : applier;
 		using (BeginOverride(ScalingOverride.FinalAmount))
 		{
@@ -69,10 +75,10 @@ internal static class HextechEnemyPowerScalingHooks
 
 		__result = activeOverride.Value switch
 		{
-			ScalingOverride.PlayerCount => MultiplyByPlayerCount(amount, GetPlayerCount(giver, target)),
-			ScalingOverride.Unscaled => ClampPowerAmount(amount),
-			ScalingOverride.FinalAmount => ClampPowerAmount(amount),
-			_ => ClampPowerAmount(amount)
+			ScalingOverride.PlayerCount => ClampPowerOffsetForApply(power, target, MultiplyByPlayerCount(amount, GetPlayerCount(giver, target))),
+			ScalingOverride.Unscaled => ClampPowerOffsetForApply(power, target, amount),
+			ScalingOverride.FinalAmount => ClampPowerOffsetForApply(power, target, amount),
+			_ => ClampPowerOffsetForApply(power, target, amount)
 		};
 		return false;
 	}
@@ -91,6 +97,36 @@ internal static class HextechEnemyPowerScalingHooks
 			ScalingOverride.FinalAmount => ClampPowerAmount(amount),
 			_ => ClampPowerAmount(amount)
 		};
+	}
+
+	private static decimal ClampPowerOffsetForApply<T>(Creature target, decimal amount)
+		where T : PowerModel
+	{
+		return ClampPowerOffsetForApply(ModelDb.Power<T>(), target, amount);
+	}
+
+	private static decimal ClampPowerOffsetForApply(PowerModel power, Creature target, decimal amount)
+	{
+		decimal clamped = ClampPowerAmount(amount);
+		if (power.IsInstanced)
+		{
+			return clamped;
+		}
+
+		int currentAmount = target.GetPower(power.Id)?.Amount ?? 0;
+		if (clamped > 0m)
+		{
+			decimal maxOffset = int.MaxValue - (decimal)currentAmount;
+			return Math.Min(clamped, Math.Max(0m, maxOffset));
+		}
+
+		if (clamped < 0m)
+		{
+			decimal minOffset = int.MinValue - (decimal)currentAmount;
+			return Math.Max(clamped, Math.Min(0m, minOffset));
+		}
+
+		return clamped;
 	}
 
 	private static bool ShouldClearSelfApplier(Creature target, Creature? applier)
