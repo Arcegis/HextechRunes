@@ -39,68 +39,74 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("RarePotionCount", 1m),
-		new DynamicVar("UncommonPotionCount", 1m),
-		new DynamicVar("CommonPotionCount", 1m)
+		new DynamicVar("UncommonPotionCount", 1m)
 	];
 
-	public override async Task BeforeCombatStart()
+	public override Task AfterCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
 		List<PotionModel> potionOptions = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>()).ToList();
-		List<PotionModel> rareCandidates = potionOptions
-			.Where(static potion => potion.Rarity is PotionRarity.Rare)
-			.ToList();
-		List<PotionModel> uncommonCandidates = potionOptions
-			.Where(static potion => potion.Rarity is PotionRarity.Uncommon)
-			.ToList();
-		List<PotionModel> commonCandidates = potionOptions
-			.Where(static potion => potion.Rarity is PotionRarity.Common)
-			.ToList();
-		if (rareCandidates.Count == 0 && uncommonCandidates.Count == 0 && commonCandidates.Count == 0)
+		bool added = AddPotionRewards(
+			room,
+			Owner,
+			potionOptions,
+			PotionRarity.Rare,
+			DynamicVars["RarePotionCount"].IntValue,
+			"cutting-edge-alchemist-rare-reward");
+		added |= AddPotionRewards(
+			room,
+			Owner,
+			potionOptions,
+			PotionRarity.Uncommon,
+			DynamicVars["UncommonPotionCount"].IntValue,
+			"cutting-edge-alchemist-uncommon-reward");
+
+		if (added)
 		{
-			return;
+			Flash(Array.Empty<Creature>());
 		}
 
-		Flash(Array.Empty<Creature>());
-		for (int i = 0; i < DynamicVars["RarePotionCount"].IntValue && rareCandidates.Count > 0; i++)
+		return Task.CompletedTask;
+	}
+
+	private static bool AddPotionRewards(
+		CombatRoom room,
+		Player player,
+		IReadOnlyList<PotionModel> potionOptions,
+		PotionRarity rarity,
+		int count,
+		string source)
+	{
+		if (count <= 0)
 		{
-			PotionModel potion = HextechStableRandom.Pick(
-				rareCandidates,
-				(RunState)Owner.RunState,
-				HextechStableRandom.PotionKey,
-				"cutting-edge-alchemist-rare",
-				HextechStableRandom.PlayerKey(Owner),
-				i.ToString()).ToMutable();
-			await PotionCmd.TryToProcure(potion, Owner);
+			return false;
 		}
 
-		for (int i = 0; i < DynamicVars["UncommonPotionCount"].IntValue && uncommonCandidates.Count > 0; i++)
+		List<PotionModel> candidates = potionOptions
+			.Where(potion => potion.Rarity == rarity)
+			.ToList();
+		if (candidates.Count == 0)
 		{
-			PotionModel potion = HextechStableRandom.Pick(
-				uncommonCandidates,
-				(RunState)Owner.RunState,
-				HextechStableRandom.PotionKey,
-				"cutting-edge-alchemist-uncommon",
-				HextechStableRandom.PlayerKey(Owner),
-				i.ToString()).ToMutable();
-			await PotionCmd.TryToProcure(potion, Owner);
+			return false;
 		}
 
-		for (int i = 0; i < DynamicVars["CommonPotionCount"].IntValue && commonCandidates.Count > 0; i++)
+		for (int i = 0; i < count; i++)
 		{
 			PotionModel potion = HextechStableRandom.Pick(
-				commonCandidates,
-				(RunState)Owner.RunState,
+				candidates,
+				(RunState)player.RunState,
 				HextechStableRandom.PotionKey,
-				"cutting-edge-alchemist-common",
-				HextechStableRandom.PlayerKey(Owner),
+				source,
+				HextechStableRandom.PlayerKey(player),
 				i.ToString()).ToMutable();
-			await PotionCmd.TryToProcure(potion, Owner);
+			room.AddExtraReward(player, new PotionReward(potion, player));
 		}
+
+		return true;
 	}
 }
 

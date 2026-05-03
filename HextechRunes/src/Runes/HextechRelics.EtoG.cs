@@ -57,7 +57,6 @@ public sealed class ExplosionArtRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new CardsVar(2),
 		new DynamicVar("TurnStartCards", 1m)
 	];
 
@@ -79,10 +78,6 @@ public sealed class ExplosionArtRune : HextechRelicBase
 		}
 
 		int cardsToCreate = DynamicVars["TurnStartCards"].IntValue;
-		if (combatState.RoundNumber == 1)
-		{
-			cardsToCreate += DynamicVars.Cards.IntValue;
-		}
 		if (cardsToCreate <= 0)
 		{
 			return;

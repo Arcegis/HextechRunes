@@ -53,7 +53,7 @@ public sealed class OceanDragonSoulCard : DragonSoulCardBase
 	];
 
 	public OceanDragonSoulCard()
-		: base(1)
+		: base(0)
 	{
 	}
 
@@ -79,7 +79,7 @@ public sealed class InfernalDragonSoulCard : DragonSoulCardBase
 	];
 
 	public InfernalDragonSoulCard()
-		: base(1)
+		: base(0)
 	{
 	}
 
@@ -104,7 +104,7 @@ public sealed class HextechDragonSoulCard : DragonSoulCardBase
 	];
 
 	public HextechDragonSoulCard()
-		: base(1)
+		: base(0)
 	{
 	}
 
@@ -130,7 +130,7 @@ public sealed class MountainDragonSoulCard : DragonSoulCardBase
 	];
 
 	public MountainDragonSoulCard()
-		: base(1)
+		: base(0)
 	{
 	}
 
@@ -155,7 +155,7 @@ public sealed class ChemtechDragonSoulCard : DragonSoulCardBase
 	];
 
 	public ChemtechDragonSoulCard()
-		: base(2)
+		: base(1)
 	{
 	}
 
@@ -180,7 +180,7 @@ public sealed class CloudDragonSoulCard : DragonSoulCardBase
 	];
 
 	public CloudDragonSoulCard()
-		: base(1)
+		: base(0)
 	{
 	}
 
