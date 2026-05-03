@@ -221,10 +221,16 @@ internal sealed partial class HextechMayhemModifier
         return true;
     }
 
-    private static bool TryMarkPersistentHexApplied(HashSet<uint> appliedSet, Creature creature)
-    {
-        return creature.CombatId != null && appliedSet.Add(creature.CombatId.Value);
-    }
+	private static bool TryMarkPersistentHexApplied(HashSet<uint> appliedSet, Creature creature, bool forceReapply = false)
+	{
+		if (creature.CombatId == null)
+		{
+			return false;
+		}
+
+		bool firstApplication = appliedSet.Add(creature.CombatId.Value);
+		return forceReapply || firstApplication;
+	}
 
     private void TrackPlayerAttackCardPlayed(CardPlay cardPlay)
     {
