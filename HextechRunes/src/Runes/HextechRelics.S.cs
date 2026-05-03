@@ -55,12 +55,14 @@ public sealed class SerpentsFangRune : HextechRelicBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
+		new PowerVar<EnvenomPower>(1m),
 		new DynamicVar("PoisonApplications", 2m),
 		new CardsVar(1)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
+		HoverTipFactory.FromPower<EnvenomPower>(),
 		HoverTipFactory.FromPower<PoisonPower>(),
 		HoverTipFactory.FromCard<Shiv>()
 	];
@@ -70,10 +72,16 @@ public sealed class SerpentsFangRune : HextechRelicBase
 		return IsSilentPlayer(player);
 	}
 
-	public override Task BeforeCombatStart()
+	public override async Task BeforeCombatStart()
 	{
 		ResetCounter();
-		return Task.CompletedTask;
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		Flash();
+		await PowerCmd.Apply<EnvenomPower>(Owner.Creature, DynamicVars["EnvenomPower"].BaseValue, Owner.Creature, null);
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
@@ -112,7 +120,7 @@ public sealed class SerpentsFangRune : HextechRelicBase
 		}
 
 		Flash(target == null ? Array.Empty<Creature>() : [target]);
-		await AddCardCopiesToDeckOrHand<Shiv>(shivsToCreate);
+		await AddCardCopiesToCombatHand<Shiv>(shivsToCreate);
 	}
 
 	private void ResetCounter()

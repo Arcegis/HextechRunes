@@ -238,6 +238,28 @@ public abstract class HextechRelicBase : RelicModel
 		CardCmd.PreviewCardPileAdd(results, 2f);
 	}
 
+	protected async Task AddCardCopiesToCombatHand<TCard>(int count)
+		where TCard : CardModel
+	{
+		if (Owner == null
+			|| count <= 0
+			|| Owner.PlayerCombatState == null
+			|| Owner.Creature.CombatState is not HextechCombatState combatState
+			|| !CombatManager.Instance.IsInProgress
+			|| CombatManager.Instance.IsOverOrEnding)
+		{
+			return;
+		}
+
+		List<CardModel> cards = new(count);
+		for (int i = 0; i < count; i++)
+		{
+			cards.Add(combatState.CreateCard<TCard>(Owner));
+		}
+
+		await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
+	}
+
 	private string GetResolvedIconPath()
 	{
 		string? customPath = HextechAssets.TryGetCustomRelicIconPath(this);

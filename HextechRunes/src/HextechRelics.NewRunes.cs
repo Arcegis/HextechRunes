@@ -533,7 +533,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 		}
 
 		Flash();
-		await AddCardCopiesToDeckOrHand<Shiv>(rewards * DynamicVars.Cards.IntValue);
+		await AddCardCopiesToCombatHand<Shiv>(rewards * DynamicVars.Cards.IntValue);
 	}
 
 	private bool IsCountedShivPlay(CardPlay cardPlay)
