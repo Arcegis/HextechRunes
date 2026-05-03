@@ -60,6 +60,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 		MouseFilter = MouseFilterEnum.Stop;
 		FocusMode = FocusModeEnum.All;
+		FocusBehaviorRecursive = FocusBehaviorRecursiveEnum.Enabled;
 		Visible = true;
 		BuildUi();
 	}

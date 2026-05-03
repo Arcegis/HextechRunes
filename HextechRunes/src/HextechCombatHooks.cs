@@ -1,11 +1,13 @@
 using System.Reflection;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -67,6 +69,9 @@ internal static class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(StormPower), nameof(StormPower.AfterCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(StormAfterCardPlayedPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(EntropyPower), nameof(EntropyPower.AfterPlayerTurnStart), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(Player)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(EntropyAfterPlayerTurnStartPrefix)));
 	}
 
 	private static bool DrawPrefix(PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw, ref Task<IEnumerable<CardModel>> __result)
@@ -327,6 +332,52 @@ internal static class HextechCombatHooks
 		}
 
 		return true;
+	}
+
+	private static bool EntropyAfterPlayerTurnStartPrefix(EntropyPower __instance, PlayerChoiceContext choiceContext, Player player, ref Task __result)
+	{
+		__result = SafeEntropyAfterPlayerTurnStart(__instance, choiceContext, player);
+		return false;
+	}
+
+	private static async Task SafeEntropyAfterPlayerTurnStart(EntropyPower entropyPower, PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != entropyPower.Owner.Player)
+		{
+			return;
+		}
+
+		IEnumerable<CardModel> selected = await CardSelectCmd.FromHand(
+			choiceContext,
+			player,
+			new CardSelectorPrefs(CardSelectorPrefs.TransformSelectionPrompt, entropyPower.Amount),
+			CanTransformToRandomCard,
+			entropyPower);
+
+		foreach (CardModel card in selected.ToList())
+		{
+			if (CanTransformToRandomCard(card))
+			{
+				await CardCmd.TransformToRandom(card, player.RunState.Rng.CombatCardSelection);
+			}
+		}
+	}
+
+	private static bool CanTransformToRandomCard(CardModel card)
+	{
+		if (!card.IsTransformable || card.Pile?.Type != PileType.Hand)
+		{
+			return false;
+		}
+
+		try
+		{
+			return CardFactory.GetDefaultTransformationOptions(card, card.CombatState != null).Any();
+		}
+		catch (InvalidOperationException)
+		{
+			return false;
+		}
 	}
 
 	private static bool ShouldUseHextechStormHandling(StormPower stormPower)
