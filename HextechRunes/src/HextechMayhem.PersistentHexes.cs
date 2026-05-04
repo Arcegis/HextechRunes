@@ -14,24 +14,21 @@ internal sealed partial class HextechMayhemModifier
 		int? maxHpBaseOverride = replayOneShotPowers ? creature.MaxHp : null;
 
 		if (HasActiveMonsterHex(MonsterHexKind.Goliath)
-			&& creature.CombatId != null)
+			&& TryMarkPersistentHexApplied(_combatTracking.GoliathApplied, creature, replayOneShotPowers))
 		{
-			_combatTracking.GoliathApplied.Add(creature.CombatId.Value);
 			await EnsureMonsterMaxHpBonus(creature, 0.3m, maxHpBaseOverride);
 			UpdateEnemyScale(creature);
 		}
 
 		if (HasActiveMonsterHex(MonsterHexKind.AstralBody)
-			&& creature.CombatId != null)
+			&& TryMarkPersistentHexApplied(_combatTracking.AstralBodyApplied, creature, replayOneShotPowers))
 		{
-			_combatTracking.AstralBodyApplied.Add(creature.CombatId.Value);
 			await EnsureMonsterMaxHpBonus(creature, 0.3m, maxHpBaseOverride);
 		}
 
 		if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula)
-			&& creature.CombatId != null)
+			&& TryMarkPersistentHexApplied(_combatTracking.GoldenSpatulaApplied, creature, replayOneShotPowers))
 		{
-			_combatTracking.GoldenSpatulaApplied.Add(creature.CombatId.Value);
 			await EnsureMonsterMaxHpBonus(creature, 0.35m, maxHpBaseOverride);
 		}
 
