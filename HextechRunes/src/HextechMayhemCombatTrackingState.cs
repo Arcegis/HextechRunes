@@ -64,6 +64,12 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
 	}
 
+	public void PreparePlayerSideTurnEnd()
+	{
+		PlayerAttackCardsPlayedThisTurn.Clear();
+		EightPennyGatePlayersTriggeredThisTurn.Clear();
+	}
+
 	public void PrepareEnemySideTurnStart()
 	{
 		EnemyProtectiveVeilTurnCounter++;

@@ -42,8 +42,6 @@ internal sealed partial class HextechMayhemModifier
 			{
 				await CreatureCmdCompat.SetMaxHp(creature, newMaxHp);
 			}
-
-			await PowerCmd.Apply<PersonalHivePower>(creature, 1m, creature, null);
 		}
 
 		if (HasActiveMonsterHex(MonsterHexKind.DrawYourSword)

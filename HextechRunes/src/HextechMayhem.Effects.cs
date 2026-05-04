@@ -250,6 +250,7 @@ internal sealed partial class HextechMayhemModifier
         Player? owner = card.Owner;
         if (!HasActiveMonsterHex(MonsterHexKind.EightPennyGate)
             || isAutoPlay
+            || card.Type == CardType.Power
             || owner?.Creature.Side != CombatSide.Player
             || owner.Creature.CombatState?.RunState != RunState)
         {

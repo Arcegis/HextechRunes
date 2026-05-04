@@ -22,6 +22,11 @@ internal sealed partial class HextechMayhemModifier
             await ResolveWarmogsSpiritDrawProgressFromHistory(currentCombatRoom.CombatState);
         }
 
+        if (side == CombatSide.Player)
+        {
+            _combatTracking.PreparePlayerSideTurnEnd();
+        }
+
         if (side != CombatSide.Player
             || !HasActiveMonsterHex(MonsterHexKind.HastyScribble)
             || RunState.CurrentRoom is not CombatRoom combatRoom)
