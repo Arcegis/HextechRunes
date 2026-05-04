@@ -231,18 +231,51 @@ internal sealed partial class HextechMayhemModifier
 		return forceReapply || firstApplication;
 	}
 
-    private void TrackPlayerAttackCardPlayedThisTurn(CardPlay cardPlay)
+    private bool TrackPlayerAttackCardPlayedThisTurn(CardPlay cardPlay)
     {
         if (!cardPlay.IsFirstInSeries
             || cardPlay.IsAutoPlay
             || cardPlay.Card.Type != CardType.Attack
             || cardPlay.Card.Owner?.Creature.Side != CombatSide.Player)
         {
-            return;
+            return false;
         }
 
         ulong playerId = cardPlay.Card.Owner.NetId;
         _combatTracking.PlayerAttackCardsPlayedThisTurn[playerId] = _combatTracking.PlayerAttackCardsPlayedThisTurn.GetValueOrDefault(playerId, 0) + 1;
+        return true;
+    }
+
+    private bool HasEnemyAttackCostDoublingHex()
+    {
+        return HasActiveMonsterHex(MonsterHexKind.LightEmUp)
+            || HasActiveMonsterHex(MonsterHexKind.TwiceThrice);
+    }
+
+    private void RefreshPlayerAttackCostDoublingPreviews(IEnumerable<Creature> playerCreatures)
+    {
+        if (!HasEnemyAttackCostDoublingHex())
+        {
+            return;
+        }
+
+        foreach (Creature playerCreature in playerCreatures)
+        {
+            Player? player = playerCreature.Player;
+            if (player == null
+                || playerCreature.CombatState?.RunState != RunState)
+            {
+                continue;
+            }
+
+            foreach (CardModel card in PileType.Hand.GetPile(player).Cards)
+            {
+                if (card.Type == CardType.Attack && !card.EnergyCost.CostsX)
+                {
+                    card.InvokeEnergyCostChanged();
+                }
+            }
+        }
     }
 
     private bool TryConsumeEnemyEightPennyGate(CardModel card, bool isAutoPlay)

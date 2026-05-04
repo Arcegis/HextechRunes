@@ -16,6 +16,7 @@ internal sealed partial class HextechMayhemModifier
 	private async Task BeforePlayerSideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
 		_combatTracking.PreparePlayerSideTurnStart();
+		RefreshPlayerAttackCostDoublingPreviews(players);
 
 		await ApplyToCurrentEnemiesIfNeeded();
 	    QueueEscapePlanTriggersFromCurrentEnemyState(combatState);
@@ -194,6 +195,7 @@ internal sealed partial class HextechMayhemModifier
 	private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
 	    _combatTracking.PrepareEnemySideTurnStart();
+		RefreshPlayerAttackCostDoublingPreviews(players);
 
 	    IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState);
 
