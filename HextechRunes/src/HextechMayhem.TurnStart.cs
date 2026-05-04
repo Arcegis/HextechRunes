@@ -4,14 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
-using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
@@ -269,7 +264,10 @@ internal sealed partial class HextechMayhemModifier
 
         if (HasActiveMonsterHex(MonsterHexKind.Doomsday) && players.Count > 0)
         {
-            await AddEnemyDoomsdayDecayCards(combatState, players);
+            await RunGroupedPlayerDebuffBurst(async () =>
+            {
+                await PowerCmd.Apply<DisintegrationPower>(players, 2m, null, null);
+            });
         }
 
         if (HasActiveMonsterHex(MonsterHexKind.ProtectiveVeil)
@@ -323,27 +321,6 @@ internal sealed partial class HextechMayhemModifier
                     await PowerCmd.Apply<HextechBurnPower>(players, 5m, creature, null);
                 });
             }
-        }
-	}
-
-    private async Task AddEnemyDoomsdayDecayCards(HextechCombatState combatState, IReadOnlyList<Creature> players)
-    {
-        foreach (Player player in players
-            .Select(static creature => creature.Player)
-            .OfType<Player>()
-            .OrderBy(static player => player.NetId))
-        {
-            List<CardModel> decays = [];
-            for (int i = 0; i < 2; i++)
-            {
-                decays.Add(combatState.CreateCard<Decay>(player));
-            }
-
-            await HextechCardGeneration.AddGeneratedCardsToCombat(
-                decays,
-                PileType.Discard,
-                addedByPlayer: false,
-                position: CardPilePosition.Top);
         }
     }
 }

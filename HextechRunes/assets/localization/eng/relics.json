@@ -912,7 +912,7 @@
   "mikaelsBlessingRune.enemyDescription": "When damage drops you below [blue]50%[/blue] of your Max HP, heal [blue]25%[/blue] of your Max HP and remove all debuffs from yourself. Twice per combat.",
   "bloodPactRune.enemyDescription": "After taking damage, gain [blue]1[/blue] temporary Strength. Triggers up to [blue]2[/blue] times each turn.",
   "immortalBoneRune.enemyDescription": "At the start of combat, if you have no [gold]Hardened Shell[/gold], gain [gold]Hardened Shell[/gold] equal to [blue]60%[/blue] of your Max HP, with a minimum of [blue]12[/blue].",
-  "doomsdayRune.enemyDescription": "At the start of the enemy turn, add [blue]2[/blue] [gold]Decay[/gold] to each player's discard pile.",
+  "doomsdayRune.enemyDescription": "At the start of the enemy turn, apply [blue]2[/blue] [gold]Disintegration[/gold] to all players.",
   "warmogsSpiritRune.enemyDescription": "For every [blue]8[/blue] cards players draw, all enemies gain [blue]1[/blue] [gold]Plating[/gold].",
   "clownCollegeRune.enemyDescription": "After taking damage, gain [blue]1[/blue] [gold]Slippery[/gold]. Triggers up to [blue]1[/blue] time each turn.",
   "singularityAIRune.enemyDescription": "At the start of the player turn, add [blue]1[/blue] random Status card to each player's draw pile.",
