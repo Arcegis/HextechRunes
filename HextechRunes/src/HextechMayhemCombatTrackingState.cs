@@ -39,7 +39,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> FeelTheBurnPending = new();
 	public readonly HashSet<uint> MountainSoulHasPreviousTurn = new();
 	public readonly HashSet<uint> MountainSoulDamagedSinceLastTurn = new();
-	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisCombat = new();
+	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn = new();
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
 	[CombatTrackingTransient]
@@ -58,6 +58,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 
 	public void PreparePlayerSideTurnStart()
 	{
+		PlayerAttackCardsPlayedThisTurn.Clear();
 		BloodPactProcsThisTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
@@ -66,6 +67,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public void PrepareEnemySideTurnStart()
 	{
 		EnemyProtectiveVeilTurnCounter++;
+		PlayerAttackCardsPlayedThisTurn.Clear();
 		SlapProcsThisTurn.Clear();
 		TormentorProcsThisTurn.Clear();
 		CourageProcsThisTurn.Clear();

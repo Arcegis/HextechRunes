@@ -19,7 +19,7 @@ internal sealed partial class HextechMayhemModifier
 {
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		TrackPlayerAttackCardPlayed(cardPlay);
+		TrackPlayerAttackCardPlayedThisTurn(cardPlay);
 
 		if (!HasActiveMonsterHex(MonsterHexKind.MasterOfDuality)
 			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player)

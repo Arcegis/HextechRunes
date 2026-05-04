@@ -293,7 +293,7 @@ internal sealed partial class HextechMayhemModifier
             && combatState.RoundNumber % 2 == 0)
         {
             IReadOnlyList<Creature> queenTargets = players
-                .Where(player => player.GetPowerAmount<ChainsOfBindingPower>() <= 3m)
+                .Where(player => player.GetPowerAmount<ChainsOfBindingPower>() < 3m)
                 .ToList();
             if (queenTargets.Count > 0)
             {
