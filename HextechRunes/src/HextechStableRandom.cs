@@ -56,6 +56,8 @@ internal static class HextechStableRandom
 			runState.Rng.StringSeed,
 			"|act:",
 			runState.CurrentActIndex.ToString(),
+			"|floor:",
+			runState.TotalFloor.ToString(),
 			"|round:",
 			roundNumber.ToString(),
 			"|slot:",
@@ -188,6 +190,8 @@ internal static class HextechStableRandom
 		Add(ref hash, runState.Rng.StringSeed);
 		Add(ref hash, "|act:");
 		Add(ref hash, runState.CurrentActIndex.ToString());
+		Add(ref hash, "|floor:");
+		Add(ref hash, runState.TotalFloor.ToString());
 		foreach (string? part in saltParts)
 		{
 			Add(ref hash, "|");
