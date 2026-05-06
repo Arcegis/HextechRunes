@@ -22,6 +22,7 @@ internal sealed partial class HextechMayhemModifier
 	private HashSet<MonsterHexKind>? _cachedActiveMonsterHexSet;
 	private int _cachedActiveMonsterHexActIndex = int.MinValue;
 	private bool _cachedActiveMonsterHexCombatRecovery;
+	private int _hexCountRecoveryBaseline;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedRarityByAct
@@ -41,6 +42,17 @@ internal sealed partial class HextechMayhemModifier
 		set
 		{
 			_actState.SavedMonsterHexByAct = value;
+			InvalidateActiveMonsterHexCache();
+		}
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int[] SavedCarriedMonsterHexes
+	{
+		get => _actState.SavedCarriedMonsterHexes;
+		set
+		{
+			_actState.SavedCarriedMonsterHexes = value;
 			InvalidateActiveMonsterHexCache();
 		}
 	}
@@ -68,6 +80,13 @@ internal sealed partial class HextechMayhemModifier
 	{
 		get => _choiceHistory.SavedSeenPlayerRuneIdsJson;
 		set => _choiceHistory.SavedSeenPlayerRuneIdsJson = value;
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedHexCountRecoveryBaseline
+	{
+		get => _hexCountRecoveryBaseline;
+		set => _hexCountRecoveryBaseline = Math.Max(0, value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -128,7 +147,7 @@ internal sealed partial class HextechMayhemModifier
 		if (changed)
 		{
 			InvalidateActiveMonsterHexCache();
-			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recoverThroughAct} telemetryThrough={telemetryRecoverThroughAct} countThrough={countRecoverThroughAct} baseline={_hexCountRecoveryBaseline} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
 		return changed;
@@ -173,6 +192,11 @@ internal sealed partial class HextechMayhemModifier
 		return _cachedActiveMonsterHexes!;
 	}
 
+	public IReadOnlyList<MonsterHexKind> GetKnownMonsterHexes()
+	{
+		return _actState.GetKnownMonsterHexes();
+	}
+
 	private bool ShouldRecoverMonsterHexInCombat(int actIndex)
 	{
 		return actIndex <= RunState.CurrentActIndex && RunState.CurrentRoom is CombatRoom;
@@ -180,14 +204,26 @@ internal sealed partial class HextechMayhemModifier
 
 	public void ResetForNewRun()
 	{
+		_hexCountRecoveryBaseline = 0;
 		_actState.Reset();
 		_choiceHistory.Reset();
 		ResetCombatTracking();
 		InvalidateActiveMonsterHexCache();
 	}
 
+	public void ResetForEndlessLoop(string reason)
+	{
+		_hexCountRecoveryBaseline = GetMinimumPlayerHexCount();
+		_actState.ResetForEndlessLoop();
+		_choiceHistory.Reset();
+		ResetCombatTracking();
+		InvalidateActiveMonsterHexCache();
+		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
+	}
+
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
+		_hexCountRecoveryBaseline = 0;
 		_actState.DebugSetOnlyMonsterHex(actIndex, hex, rarity);
 		_choiceHistory.Reset();
 
@@ -305,12 +341,18 @@ internal sealed partial class HextechMayhemModifier
 			minHexCount = Math.Min(minHexCount, count);
 		}
 
-		if (minHexCount == int.MaxValue || minHexCount <= 0)
+		if (minHexCount == int.MaxValue)
 		{
 			return -1;
 		}
 
-		return Math.Min(lastActIndex, minHexCount - 1);
+		int loopHexCount = Math.Max(0, minHexCount - _hexCountRecoveryBaseline);
+		if (loopHexCount <= 0)
+		{
+			return -1;
+		}
+
+		return Math.Min(lastActIndex, loopHexCount - 1);
 	}
 
 	private bool TryInferRarityForAct(int actIndex, out HextechRarityTier rarity)
@@ -339,7 +381,7 @@ internal sealed partial class HextechMayhemModifier
 		{
 			RelicModel? relic = player.Relics
 				.Where(HextechCatalog.IsHextechRelic)
-				.ElementAtOrDefault(actIndex);
+				.ElementAtOrDefault(_hexCountRecoveryBaseline + actIndex);
 			if (HextechCatalog.TryGetPlayerRuneRarity(relic, out rarity))
 			{
 				return true;
@@ -361,5 +403,17 @@ internal sealed partial class HextechMayhemModifier
 			.GroupBy(static record => record.ActIndex)
 			.OrderBy(static group => group.Key)
 			.Select(static group => $"{group.Key}:{group.Count()}"));
+	}
+
+	private int GetMinimumPlayerHexCount()
+	{
+		int minHexCount = int.MaxValue;
+		foreach (Player player in RunState.Players)
+		{
+			int count = player.Relics.Count(HextechCatalog.IsHextechRelic);
+			minHexCount = Math.Min(minHexCount, count);
+		}
+
+		return minHexCount == int.MaxValue ? 0 : minHexCount;
 	}
 }
