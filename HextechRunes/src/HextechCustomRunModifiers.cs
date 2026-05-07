@@ -1,8 +1,10 @@
 using System.Reflection;
+using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CustomRun;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Runs;
@@ -48,19 +50,51 @@ internal static class HextechCustomRunModifierHooks
 	];
 
 	private static readonly FieldInfo? ModifierTickboxesField = TryGetField(typeof(NCustomRunModifiersList), "_modifierTickboxes");
+	private static readonly FieldInfo? ModifiersContainerField = TryGetField(typeof(NCustomRunModifiersList), "_container");
 	private static readonly FieldInfo? RunModifierLabelField = TryGetField(typeof(NRunModifierTickbox), "_label");
 
 	public static void Install(Harmony harmony)
 	{
-		harmony.Patch(
-			RequireMethod(typeof(NCustomRunModifiersList), "GetAllModifiers", BindingFlags.Instance | BindingFlags.NonPublic),
-			postfix: new HarmonyMethod(typeof(HextechCustomRunModifierHooks), nameof(AppendCustomRarityModifiersPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCustomRunModifiersList), "UntickMutuallyExclusiveModifiersForTickbox", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NRunModifierTickbox)),
-			postfix: new HarmonyMethod(typeof(HextechCustomRunModifierHooks), nameof(UntickOtherHextechRarityModifiersPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NRunModifierTickbox), nameof(NRunModifierTickbox._Ready), BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechCustomRunModifierHooks), nameof(ColorCustomRarityModifierTickboxPostfix)));
+		MethodInfo? getAllModifiers = TryGetMethod(typeof(NCustomRunModifiersList), "GetAllModifiers", BindingFlags.Instance | BindingFlags.NonPublic);
+		if (getAllModifiers != null)
+		{
+			harmony.Patch(
+				getAllModifiers,
+				postfix: new HarmonyMethod(typeof(HextechCustomRunModifierHooks), nameof(AppendCustomRarityModifiersPostfix)));
+		}
+		else if (TryGetMethod(typeof(NCustomRunModifiersList), nameof(NCustomRunModifiersList._Ready), BindingFlags.Instance | BindingFlags.Public) is { } readyMethod)
+		{
+			harmony.Patch(
+				readyMethod,
+				postfix: new HarmonyMethod(typeof(HextechCustomRunModifierHooks), nameof(AppendCustomRarityModifierTickboxesPostfix)));
+			Log.Warn($"[{ModInfo.Id}][CustomRun] NCustomRunModifiersList.GetAllModifiers not found; using _Ready fallback for custom rarity modifiers.");
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][CustomRun] Could not install custom rarity modifier list hook; no compatible NCustomRunModifiersList entrypoint found.");
+		}
+
+		if (TryGetMethod(typeof(NCustomRunModifiersList), "UntickMutuallyExclusiveModifiersForTickbox", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NRunModifierTickbox)) is { } untickMethod)
+		{
+			harmony.Patch(
+				untickMethod,
+				postfix: new HarmonyMethod(typeof(HextechCustomRunModifierHooks), nameof(UntickOtherHextechRarityModifiersPostfix)));
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][CustomRun] Could not install mutual exclusion hook for custom rarity modifiers.");
+		}
+
+		if (TryGetMethod(typeof(NRunModifierTickbox), nameof(NRunModifierTickbox._Ready), BindingFlags.Instance | BindingFlags.Public) is { } tickboxReadyMethod)
+		{
+			harmony.Patch(
+				tickboxReadyMethod,
+				postfix: new HarmonyMethod(typeof(HextechCustomRunModifierHooks), nameof(ColorCustomRarityModifierTickboxPostfix)));
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][CustomRun] Could not install custom rarity modifier label color hook.");
+		}
 	}
 
 	public static HextechRarityTier? GetForcedRarity(RunState runState)
@@ -79,6 +113,47 @@ internal static class HextechCustomRunModifierHooks
 	private static void AppendCustomRarityModifiersPostfix(ref IEnumerable<ModifierModel> __result)
 	{
 		__result = __result.Concat(CreateCustomRarityModifiers());
+	}
+
+	private static void AppendCustomRarityModifierTickboxesPostfix(NCustomRunModifiersList __instance)
+	{
+		if (ModifierTickboxesField?.GetValue(__instance) is not IList<NRunModifierTickbox> tickboxes)
+		{
+			Log.Warn($"[{ModInfo.Id}][CustomRun] Could not read custom run modifier tickbox list; custom rarity modifiers were not added.");
+			return;
+		}
+
+		Control? container = ModifiersContainerField?.GetValue(__instance) as Control
+			?? __instance.GetNodeOrNull<Control>("ScrollContainer/Mask/Content");
+		if (container == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][CustomRun] Could not find custom run modifier container; custom rarity modifiers were not added.");
+			return;
+		}
+
+		foreach (ModifierModel modifier in CreateCustomRarityModifiers())
+		{
+			if (tickboxes.Any(tickbox => tickbox.Modifier?.GetType() == modifier.GetType()))
+			{
+				continue;
+			}
+
+			NRunModifierTickbox? tickbox = NRunModifierTickbox.Create(modifier);
+			if (tickbox == null)
+			{
+				continue;
+			}
+
+			container.AddChild(tickbox);
+			tickboxes.Add(tickbox);
+			tickbox.Connect(NTickbox.SignalName.Toggled, Callable.From<NTickbox>(_ => OnCustomRarityModifierToggled(__instance, tickbox)));
+		}
+	}
+
+	private static void OnCustomRarityModifierToggled(NCustomRunModifiersList list, NRunModifierTickbox tickbox)
+	{
+		UntickOtherHextechRarityModifiersPostfix(list, tickbox);
+		list.EmitSignal(NCustomRunModifiersList.SignalName.ModifiersChanged);
 	}
 
 	private static IEnumerable<ModifierModel> CreateCustomRarityModifiers()
