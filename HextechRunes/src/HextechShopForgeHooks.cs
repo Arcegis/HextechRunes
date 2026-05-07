@@ -52,15 +52,12 @@ internal static class HextechShopForgeHooks
 		InstallRandomForgeEntry(__result, player);
 	}
 
-	private static bool ModifyMerchantPricePrefix(MerchantEntry entry, ref decimal __result)
+	private static void ModifyMerchantPricePrefix(MerchantEntry entry, ref decimal result)
 	{
 		if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null)
 		{
-			__result = GetRandomForgeShopCost(shopRelic);
-			return false;
+			result = GetRandomForgeShopBaseCost(shopRelic);
 		}
-
-		return true;
 	}
 
 	private static bool ShouldRefillMerchantEntryPrefix(MerchantEntry entry, ref bool __result)
@@ -128,7 +125,7 @@ internal static class HextechShopForgeHooks
 	{
 		Player player = inventory.Player;
 		int cost = TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null
-			? GetRandomForgeShopCost(shopRelic)
+			? entry.Cost
 			: RandomForgeShopFirstCost;
 
 		if (!HextechForgeGrantHelper.TryCreateRandomForge(player, player.PlayerRng.Shops, out RelicModel? forge) || forge == null)
@@ -192,7 +189,7 @@ internal static class HextechShopForgeHooks
 		return shopRelic != null;
 	}
 
-	private static int GetRandomForgeShopCost(RandomForgeShopRelic shopRelic)
+	private static int GetRandomForgeShopBaseCost(RandomForgeShopRelic shopRelic)
 	{
 		return shopRelic.PurchaseCount == 0 ? RandomForgeShopFirstCost : RandomForgeShopRegularCost;
 	}

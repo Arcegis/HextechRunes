@@ -41,6 +41,11 @@ internal static class HextechModelBootstrap
 		}
 
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechMayhemModifier));
+		foreach (Type type in HextechCustomRunModifierHooks.CustomRarityModifierTypes)
+		{
+			SavedPropertiesTypeCache.InjectTypeIntoCache(type);
+		}
+
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechBurnPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryStrengthPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryDexterityPower));

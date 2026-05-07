@@ -27,6 +27,7 @@ public static class ModEntry
 			HextechModelBootstrap.Install();
 			HextechTelemetry.Initialize();
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
+			HextechCustomRunModifierHooks.Install(harmony);
 			HextechRunLifecycleHooks.Install(harmony);
 			HextechCombatHooks.Install(harmony);
 			HextechEnemyPowerScalingHooks.Install(harmony);

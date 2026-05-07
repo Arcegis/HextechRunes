@@ -53,9 +53,16 @@ internal static partial class HextechRuneSelectionCoordinator
 		NetGameType gameType = runManager.NetService.Type;
 		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
 
-		HextechRarityTier localRarity = modifier.GetRarityForAct(actIndex)
+		HextechRarityTier? savedRarity = modifier.GetRarityForAct(actIndex);
+		HextechRarityTier? forcedRarity = HextechCustomRunModifierHooks.GetForcedRarity(runState);
+		HextechRarityTier localRarity = savedRarity
+			?? forcedRarity
 			?? (isMultiplayer ? RollStableRarity(modifier, actIndex, runState) : RollRandomRarity(modifier, actIndex, runState));
 		modifier.SetRarityForAct(actIndex, localRarity);
+		if (!savedRarity.HasValue && forcedRarity.HasValue)
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll forced rarity: act={actIndex} rarity={localRarity}");
+		}
 
 		MonsterHexKind localMonsterHex = modifier.GetMonsterHexForAct(actIndex)
 			?? (isMultiplayer ? ChooseStableMonsterHexForAct(modifier, localRarity, runState, actIndex) : ChooseMonsterHexForAct(modifier, localRarity, runState));

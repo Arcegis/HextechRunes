@@ -150,7 +150,7 @@ public abstract class HextechRelicBase : RelicModel
 		return card != null
 			&& card.Owner == Owner
 			&& !card.EnergyCost.CostsX
-			&& card.EnergyCost.GetAmountToSpend() >= minimumCost;
+			&& HextechCombatHooks.GetEnergyCostForCurrentCardPlay(card) >= minimumCost;
 	}
 
 	protected bool IsOwnerOrPet(Creature? dealer)
