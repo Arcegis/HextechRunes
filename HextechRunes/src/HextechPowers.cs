@@ -82,6 +82,8 @@ public sealed class HextechLethalTempoTemporaryStrengthPower : TemporaryStrength
 public sealed class HextechBloodPactTemporaryStrengthPower : TemporaryStrengthPower
 {
 	public override AbstractModel OriginModel => ModelDb.Relic<BloodPactRune>();
+
+	protected override bool IsVisibleInternal => false;
 }
 
 public sealed class HextechAttackReplayPower : PowerModel
