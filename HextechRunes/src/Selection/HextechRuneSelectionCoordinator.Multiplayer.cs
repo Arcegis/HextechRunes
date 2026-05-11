@@ -102,7 +102,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			await SynchronizeActSelectionApplied(runState, synchronizer, actIndex);
-			return enemyHexSync?.CurrentMonsterHex ?? initialMonsterHex;
+			return enemyHexSync != null ? enemyHexSync.CurrentMonsterHex : initialMonsterHex;
 		}
 		finally
 		{

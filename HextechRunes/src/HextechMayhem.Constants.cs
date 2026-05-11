@@ -11,8 +11,8 @@ internal sealed partial class HextechMayhemModifier
 	private const decimal MikaelsBlessingHealPercent = 0.25m;
 	private const decimal ShrinkRayStacks = 1m;
 	private const decimal FirebrandBurnStacks = 2m;
-	private const decimal DevilsDanceHealPercent = 0.1m;
-	private const decimal FinalFormBlockPercent = 0.2m;
+	private const decimal DevilsDanceHealPercent = 0.06m;
+	private const decimal FinalFormBlockPercent = 0.15m;
 	private const decimal ProtectiveVeilInitialArtifactStacks = 1m;
 	private const decimal RepulsorSlipperyStacks = 2m;
 	private const decimal ShrinkEngineSlipperyStacks = 1m;

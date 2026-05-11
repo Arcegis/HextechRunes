@@ -35,9 +35,9 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
 			AssetHooks.Install(harmony);
 			TryInstallOptionalHookGroup("relic collection", () => CollectionHooks.Install(harmony));
-			HextechShopForgeHooks.Install(harmony);
-			HextechForgeStackingHooks.Install(harmony);
-			HextechUiSafetyHooks.Install(harmony);
+			TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
+			TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
+			TryInstallOptionalHookGroup("relic UI safety", () => HextechUiSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
 			_initialized = true;
 			Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");

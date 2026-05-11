@@ -91,6 +91,9 @@ internal static class HextechContentRegistry
         Rune<OceanDragonSoulRune>(HextechRarityTier.Silver),
         Rune<InfernalDragonSoulRune>(HextechRarityTier.Silver),
         Rune<HextechDragonSoulRune>(HextechRarityTier.Silver),
+        Rune<CarefulSelectionRune>(HextechRarityTier.Silver),
+        Rune<PowerShieldRune>(HextechRarityTier.Silver),
+        Rune<CorrosionRune>(HextechRarityTier.Silver),
         Rune<TransmuteGoldRune>(HextechRarityTier.Silver),
 
         Rune<JudicatorRune>(HextechRarityTier.Gold),
@@ -152,6 +155,8 @@ internal static class HextechContentRegistry
         Rune<SendThemInRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 8),
         Rune<ChainInSleeveRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 9),
         Rune<RoyalTrialRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 11),
+        Rune<GoodLuckRune>(HextechRarityTier.Gold),
+        Rune<RadianceRune>(HextechRarityTier.Gold),
         Rune<TransmutePrismaticRune>(HextechRarityTier.Gold),
         Rune<DawnbringersResolveRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
         Rune<ShrinkRayRune>(HextechRarityTier.Gold),
@@ -217,6 +222,8 @@ internal static class HextechContentRegistry
         Rune<NearDeathFeastRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Ironclad, characterOrder: 8),
         Rune<UnsealedThroneRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Regent, characterOrder: 12),
         Rune<CoreOverloadRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Defect, characterOrder: 12),
+        Rune<ForgottenSoulRune>(HextechRarityTier.Prismatic),
+        Rune<UpgradeRune>(HextechRarityTier.Prismatic),
         Rune<OmniDragonSoulRune>(HextechRarityTier.Prismatic),
         Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic)
     ];

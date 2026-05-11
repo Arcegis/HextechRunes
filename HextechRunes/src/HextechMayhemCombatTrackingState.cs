@@ -19,6 +19,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> DawnTriggered = new();
 	public readonly HashSet<uint> SpeedDemonPending = new();
 	public readonly HashSet<uint> DevilsDanceTriggeredThisTurn = new();
+	public readonly HashSet<uint> FinalFormTriggeredThisTurn = new();
 	public readonly HashSet<uint> FeelTheBurnTriggered = new();
 	public readonly Dictionary<uint, uint> FeyMagicPendingNoDrawPlayers = new();
 	public readonly Dictionary<uint, int> MikaelsBlessingTriggers = new();
@@ -80,6 +81,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		BloodPactProcsThisTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
 		DevilsDanceTriggeredThisTurn.Clear();
+		FinalFormTriggeredThisTurn.Clear();
 		MonsterDebuffActionProcKeysThisTurn.Clear();
 	}
 
