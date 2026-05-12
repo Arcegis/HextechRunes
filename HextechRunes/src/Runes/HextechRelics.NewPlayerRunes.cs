@@ -90,6 +90,25 @@ public sealed class GoodLuckRune : HextechRelicBase
 	}
 }
 
+public sealed class ManipulateRealityRune : HextechRelicBase
+{
+#if STS2_104_OR_NEWER
+	public override Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
+#else
+	public override Task AfterCardGeneratedForCombat(CardModel card, bool addedByPlayer)
+#endif
+	{
+		if (card.Owner != Owner || !card.IsUpgradable)
+		{
+			return Task.CompletedTask;
+		}
+
+		CardCmd.Upgrade(card, CardPreviewStyle.None);
+		Flash();
+		return Task.CompletedTask;
+	}
+}
+
 public sealed class CarefulSelectionRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -128,6 +147,32 @@ public sealed class CarefulSelectionRune : HextechRelicBase
 		}
 
 		return modified;
+	}
+}
+
+public sealed class CatalystRune : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(1)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<CatalystCard>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsSilentPlayer(player);
+	}
+
+	public override async Task AfterObtained()
+	{
+		Flash();
+		await AddCardCopiesToDeckOrHand<CatalystCard>(DynamicVars.Cards.IntValue);
 	}
 }
 

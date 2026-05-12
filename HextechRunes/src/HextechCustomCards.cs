@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
@@ -112,5 +113,61 @@ public sealed class TrickMagicCard : CardModel
 	protected override void OnUpgrade()
 	{
 		DynamicVars["BufferPower"].UpgradeValueBy(1m);
+	}
+}
+
+public sealed class CatalystCard : CardModel
+{
+	public override CardPoolModel Pool => IsMutable && Owner != null
+		? Owner.Character.CardPool
+		: ModelDb.CardPool<TokenCardPool>();
+
+	public override CardPoolModel VisualCardPool => Pool;
+
+	public override string PortraitPath => HextechAssets.CatalystCardPortraitPath;
+
+	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
+
+	public override IEnumerable<CardKeyword> CanonicalKeywords =>
+	[
+		CardKeyword.Exhaust
+	];
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("PoisonMultiplier", 2m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<PoisonPower>()
+	];
+
+	public CatalystCard()
+		: base(0, CardType.Skill, CardRarity.Token, TargetType.AnyEnemy, shouldShowInCardLibrary: true)
+	{
+	}
+
+	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		if (cardPlay.Target == null || Owner == null)
+		{
+			return;
+		}
+
+		decimal poison = cardPlay.Target.GetPowerAmount<PoisonPower>();
+		decimal multiplier = DynamicVars["PoisonMultiplier"].BaseValue;
+		decimal additionalPoison = poison * (multiplier - 1m);
+		if (additionalPoison <= 0m)
+		{
+			return;
+		}
+
+		await PowerCmd.Apply<PoisonPower>(cardPlay.Target, additionalPoison, Owner.Creature, this);
+	}
+
+	protected override void OnUpgrade()
+	{
+		DynamicVars["PoisonMultiplier"].UpgradeValueBy(1m);
 	}
 }
