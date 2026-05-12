@@ -487,6 +487,18 @@ public sealed class DrawYourSwordRune : HextechRelicBase
 		HoverTipFactory.FromPower<FocusPower>()
 	];
 
+	public override Task BeforeCombatStart()
+	{
+		_pendingEnergyConversions.Clear();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		_pendingEnergyConversions.Clear();
+		return Task.CompletedTask;
+	}
+
 	public override async Task AfterObtained()
 	{
 		if (Owner == null)
