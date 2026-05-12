@@ -244,7 +244,7 @@ public sealed class BackToBasicsRune : HextechRelicBase
 	{
 		return card.Owner != Owner
 			|| card.EnergyCost.CostsX
-			|| card.EnergyCost.GetAmountToSpend() < 3m;
+			|| HextechCombatHooks.GetEnergyCostForCurrentCardPlay(card) < 3m;
 	}
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
@@ -604,10 +604,7 @@ public sealed class CantTouchThisRune : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
-			|| cardPlay.Card.EnergyCost.CostsX
-			|| cardPlay.Card.EnergyCost.GetAmountToSpend() < DynamicVars["MinCost"].BaseValue)
+		if (Owner == null || !IsOwnedNonXCardWithCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue))
 		{
 			return;
 		}

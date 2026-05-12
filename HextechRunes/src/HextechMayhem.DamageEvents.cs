@@ -238,7 +238,10 @@ internal sealed partial class HextechMayhemModifier
 			_combatTracking.FeyMagicPendingNoDrawPlayers[target.CombatId.Value] = dealer.CombatId.Value;
 		}
 
-		if (HasActiveMonsterHex(MonsterHexKind.FinalForm) && dealer.IsAlive)
+		if (HasActiveMonsterHex(MonsterHexKind.FinalForm)
+			&& dealer.IsAlive
+			&& dealer.CombatId != null
+			&& _combatTracking.FinalFormTriggeredThisTurn.Add(dealer.CombatId.Value))
 		{
 			int block = Math.Max(1, (int)Math.Floor(dealer.MaxHp * FinalFormBlockPercent));
 			await CreatureCmd.GainBlock(dealer, block, ValueProp.Unpowered, null);

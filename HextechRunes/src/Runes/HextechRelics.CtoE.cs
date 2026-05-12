@@ -471,15 +471,33 @@ public sealed class DrainRune : HextechRelicBase
 
 public sealed class DrawYourSwordRune : HextechRelicBase
 {
+	private readonly Queue<decimal> _pendingEnergyConversions = new();
+
 	public override bool HasUponPickupEffect => true;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 		[
-				new DynamicVar("HpGainPercent", 0.3m),
-				new PowerVar<StrengthPower>(3m),
-				new PowerVar<DexterityPower>(3m),
-				new PowerVar<FocusPower>(3m)
+				new DynamicVar("HpGainPercent", 0.3m)
 			];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<StrengthPower>(),
+		HoverTipFactory.FromPower<DexterityPower>(),
+		HoverTipFactory.FromPower<FocusPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		_pendingEnergyConversions.Clear();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		_pendingEnergyConversions.Clear();
+		return Task.CompletedTask;
+	}
 
 	public override async Task AfterObtained()
 	{
@@ -492,22 +510,31 @@ public sealed class DrawYourSwordRune : HextechRelicBase
 		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
 	}
 
-	public override decimal ModifyMaxEnergy(Player player, decimal amount)
+	public override decimal ModifyEnergyGain(Player player, decimal amount)
 	{
-		return player == Owner ? Math.Max(0m, amount - 1m) : amount;
+		if (player != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0m)
+		{
+			return amount;
+		}
+
+		_pendingEnergyConversions.Enqueue(amount);
+		return 0m;
 	}
 
-	public override async Task AfterRoomEntered(AbstractRoom room)
+	public override async Task AfterModifyingEnergyGain()
 	{
-		if (room is not CombatRoom || Owner == null)
+		if (!_pendingEnergyConversions.TryDequeue(out decimal amount)
+			|| Owner == null
+			|| Owner.Creature.IsDead
+			|| amount <= 0m)
 		{
 			return;
 		}
 
 		Flash();
-		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<DexterityPower>(Owner.Creature, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, amount, Owner.Creature, null);
+		await PowerCmd.Apply<DexterityPower>(Owner.Creature, amount, Owner.Creature, null);
+		await PowerCmd.Apply<FocusPower>(Owner.Creature, amount, Owner.Creature, null);
 	}
 }
 

@@ -273,24 +273,28 @@ public sealed class LightEmUpRune : HextechRelicBase
 		}
 
 		int nextAttacksPlayed = GetAttacksPlayedBeforeCurrentAttack() + 1;
-		_attacksPlayedThisCombat = nextAttacksPlayed % AttacksPerReplay;
 		if (nextAttacksPlayed % AttacksPerReplay == 0)
 		{
-			InvokeDisplayAmountChanged();
 			return playCount + 1;
 		}
 
-		InvokeDisplayAmountChanged();
 		return playCount;
 	}
 
-	public override Task AfterModifyingCardPlayCount(CardModel card)
+	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (IsOwnedAttack(card))
+		if (!IsCountedAttackPlay(cardPlay))
 		{
-			Flash();
+			return Task.CompletedTask;
 		}
 
+		if (!ShouldUseNetworkCombatHistory())
+		{
+			_attacksPlayedThisCombat = (_attacksPlayedThisCombat + 1) % AttacksPerReplay;
+		}
+
+		InvokeDisplayAmountChanged();
+		Flash();
 		return Task.CompletedTask;
 	}
 
@@ -312,6 +316,13 @@ public sealed class LightEmUpRune : HextechRelicBase
 		return ShouldUseNetworkCombatHistory()
 			? CountOwnedAttackCardsPlayedFromHistory()
 			: _attacksPlayedThisCombat;
+	}
+
+	private bool IsCountedAttackPlay(CardPlay cardPlay)
+	{
+		return cardPlay.IsFirstInSeries
+			&& !cardPlay.IsAutoPlay
+			&& IsOwnedAttack(cardPlay.Card);
 	}
 }
 

@@ -26,25 +26,59 @@ internal static class HextechShopForgeHooks
 
 	public static void Install(Harmony harmony)
 	{
-		harmony.Patch(
-			RequireMethodAllowingSingleArityFallback(typeof(MerchantInventory), nameof(MerchantInventory.CreateForNormalMerchant), BindingFlags.Static | BindingFlags.Public, typeof(Player)),
-			postfix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(CreateForNormalMerchantPostfix)));
-		harmony.Patch(
-			RequireMethodAllowingSingleArityFallback(typeof(MerchantRelicEntry), "OnTryPurchase", BindingFlags.Instance | BindingFlags.NonPublic, typeof(MerchantInventory), typeof(bool)),
+		bool purchaseHookInstalled = TryPatch(
+			harmony,
+			() => RequireMethodAllowingSingleArityFallback(typeof(MerchantRelicEntry), "OnTryPurchase", BindingFlags.Instance | BindingFlags.NonPublic, typeof(MerchantInventory), typeof(bool)),
+			"random forge purchase",
 			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantRelicPurchasePrefix)));
-		harmony.Patch(
-			RequireMethodAllowingSingleArityFallback(typeof(MerchantRelicEntry), "RestockAfterPurchase", BindingFlags.Instance | BindingFlags.NonPublic, typeof(MerchantInventory)),
+		bool restockHookInstalled = TryPatch(
+			harmony,
+			() => RequireMethodAllowingSingleArityFallback(typeof(MerchantRelicEntry), "RestockAfterPurchase", BindingFlags.Instance | BindingFlags.NonPublic, typeof(MerchantInventory)),
+			"random forge restock",
 			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantRelicRestockPrefix)));
-		harmony.Patch(
-			RequireMethodAllowingSingleArityFallback(typeof(CoreHook), nameof(CoreHook.ModifyMerchantPrice), BindingFlags.Static | BindingFlags.Public, typeof(IRunState), typeof(Player), typeof(MerchantEntry), typeof(decimal)),
+		bool priceHookInstalled = TryPatch(
+			harmony,
+			() => RequireMethodAllowingSingleArityFallback(typeof(CoreHook), nameof(CoreHook.ModifyMerchantPrice), BindingFlags.Static | BindingFlags.Public, typeof(IRunState), typeof(Player), typeof(MerchantEntry), typeof(decimal)),
+			"random forge price",
 			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(ModifyMerchantPricePrefix)));
-		harmony.Patch(
-			RequireMethodAllowingSingleArityFallback(typeof(CoreHook), nameof(CoreHook.ShouldRefillMerchantEntry), BindingFlags.Static | BindingFlags.Public, typeof(IRunState), typeof(MerchantEntry), typeof(Player)),
+		bool refillHookInstalled = TryPatch(
+			harmony,
+			() => RequireMethodAllowingSingleArityFallback(typeof(CoreHook), nameof(CoreHook.ShouldRefillMerchantEntry), BindingFlags.Static | BindingFlags.Public, typeof(IRunState), typeof(MerchantEntry), typeof(Player)),
+			"random forge refill",
 			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(ShouldRefillMerchantEntryPrefix)));
-		harmony.Patch(
-			RequireMethodAllowingSingleArityFallback(typeof(NMerchantInventory), nameof(NMerchantInventory.Initialize), BindingFlags.Instance | BindingFlags.Public, typeof(MerchantInventory), typeof(MerchantDialogueSet)),
+
+		if (!purchaseHookInstalled || !restockHookInstalled || !priceHookInstalled || !refillHookInstalled)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop entry disabled because one or more merchant hooks are unavailable.");
+			return;
+		}
+
+		TryPatch(
+			harmony,
+			() => RequireMethodAllowingSingleArityFallback(typeof(MerchantInventory), nameof(MerchantInventory.CreateForNormalMerchant), BindingFlags.Static | BindingFlags.Public, typeof(Player)),
+			"random forge merchant entry",
+			postfix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(CreateForNormalMerchantPostfix)));
+		TryPatch(
+			harmony,
+			() => RequireMethodAllowingSingleArityFallback(typeof(NMerchantInventory), nameof(NMerchantInventory.Initialize), BindingFlags.Instance | BindingFlags.Public, typeof(MerchantInventory), typeof(MerchantDialogueSet)),
+			"random forge shop layout",
 			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantInventoryInitializePrefix)),
 			postfix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantInventoryInitializePostfix)));
+	}
+
+	private static bool TryPatch(Harmony harmony, Func<MethodInfo> resolveTarget, string label, HarmonyMethod? prefix = null, HarmonyMethod? postfix = null)
+	{
+		try
+		{
+			MethodInfo target = resolveTarget();
+			harmony.Patch(target, prefix, postfix);
+			return true;
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Shop random forge hook skipped: {label}: {ex.GetType().Name}: {ex.Message}");
+			return false;
+		}
 	}
 
 	private static void CreateForNormalMerchantPostfix(Player player, MerchantInventory __result)
@@ -52,15 +86,12 @@ internal static class HextechShopForgeHooks
 		InstallRandomForgeEntry(__result, player);
 	}
 
-	private static bool ModifyMerchantPricePrefix(MerchantEntry entry, ref decimal __result)
+	private static void ModifyMerchantPricePrefix(MerchantEntry entry, ref decimal result)
 	{
 		if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null)
 		{
-			__result = GetRandomForgeShopCost(shopRelic);
-			return false;
+			result = GetRandomForgeShopBaseCost(shopRelic);
 		}
-
-		return true;
 	}
 
 	private static bool ShouldRefillMerchantEntryPrefix(MerchantEntry entry, ref bool __result)
@@ -128,7 +159,7 @@ internal static class HextechShopForgeHooks
 	{
 		Player player = inventory.Player;
 		int cost = TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null
-			? GetRandomForgeShopCost(shopRelic)
+			? entry.Cost
 			: RandomForgeShopFirstCost;
 
 		if (!HextechForgeGrantHelper.TryCreateRandomForge(player, player.PlayerRng.Shops, out RelicModel? forge) || forge == null)
@@ -192,7 +223,7 @@ internal static class HextechShopForgeHooks
 		return shopRelic != null;
 	}
 
-	private static int GetRandomForgeShopCost(RandomForgeShopRelic shopRelic)
+	private static int GetRandomForgeShopBaseCost(RandomForgeShopRelic shopRelic)
 	{
 		return shopRelic.PurchaseCount == 0 ? RandomForgeShopFirstCost : RandomForgeShopRegularCost;
 	}

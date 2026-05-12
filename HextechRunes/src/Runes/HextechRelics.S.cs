@@ -471,7 +471,7 @@ public sealed class SonataRune : HextechRelicBase
 			return;
 		}
 
-		Flash(players.Select(static combatPlayer => combatPlayer.Creature).ToArray());
+		FlashDeferred(players.Select(static combatPlayer => combatPlayer.Creature));
 		if (combatState.RoundNumber % 2 == 1)
 		{
 			foreach (Player combatPlayer in players)

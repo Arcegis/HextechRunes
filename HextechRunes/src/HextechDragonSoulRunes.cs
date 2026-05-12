@@ -50,8 +50,6 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 {
 	private const int DragonSoulCardKinds = 6;
 
-	public override bool HasUponPickupEffect => true;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new CardsVar(3)
@@ -67,50 +65,36 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 		HoverTipFactory.FromCard<CloudDragonSoulCard>()
 	];
 
-	public override async Task AfterObtained()
+	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null)
+		if (Owner == null
+			|| Owner.PlayerCombatState == null
+			|| Owner.Creature.CombatState is not HextechCombatState combatState
+			|| !CombatManager.Instance.IsInProgress
+			|| CombatManager.Instance.IsOverOrEnding)
 		{
 			return;
 		}
 
 		Flash();
-		await AddRandomUpgradedDragonSoulCards(DynamicVars.Cards.IntValue);
+		await AddRandomUpgradedDragonSoulCardsToCombatHand(DynamicVars.Cards.IntValue, combatState);
 	}
 
-	private async Task AddRandomUpgradedDragonSoulCards(int count)
+	private async Task AddRandomUpgradedDragonSoulCardsToCombatHand(int count, HextechCombatState combatState)
 	{
 		if (Owner == null || count <= 0)
 		{
 			return;
 		}
 
-		HextechCombatState? combatState = Owner.Creature.CombatState;
 		IReadOnlyList<int> dragonSoulRolls = RollDistinctDragonSoulCardKinds(count, combatState);
-		if (Owner.PlayerCombatState != null
-			&& combatState != null
-			&& CombatManager.Instance.IsInProgress
-			&& !CombatManager.Instance.IsOverOrEnding)
-		{
-			List<CardModel> cards = new(dragonSoulRolls.Count);
-			foreach (int roll in dragonSoulRolls)
-			{
-				cards.Add(CreateUpgradedDragonSoulCard(combatState, roll));
-			}
-
-			await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
-			return;
-		}
-
-		List<CardPileAddResult> results = new(dragonSoulRolls.Count);
+		List<CardModel> cards = new(dragonSoulRolls.Count);
 		foreach (int roll in dragonSoulRolls)
 		{
-			CardModel card = CreateUpgradedDragonSoulCard(null, roll);
-			results.Add(await CardPileCmd.Add(card, PileType.Deck));
-			SaveManager.Instance.MarkCardAsSeen(card);
+			cards.Add(CreateUpgradedDragonSoulCard(combatState, roll));
 		}
 
-		CardCmd.PreviewCardPileAdd(results, 2f);
+		await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
 	}
 
 	private IReadOnlyList<int> RollDistinctDragonSoulCardKinds(int count, HextechCombatState? combatState)

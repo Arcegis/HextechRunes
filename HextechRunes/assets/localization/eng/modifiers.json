@@ -1,4 +1,10 @@
 {
   "HEXTECH_MAYHEM.title": "Hextech Mayhem",
-  "HEXTECH_MAYHEM.description": "At the start of Acts [blue]1[/blue], [blue]2[/blue], and [blue]3[/blue], choose Hextech runes and give monsters of that Act a Hextech bonus of the same rarity."
+  "HEXTECH_MAYHEM.description": "At the start of Acts [blue]1[/blue], [blue]2[/blue], and [blue]3[/blue], choose Hextech runes and give monsters of that Act a Hextech bonus of the same rarity.",
+  "HEXTECH_SILVER_RUN.title": "Silver Run",
+  "HEXTECH_SILVER_RUN.description": "All Hextech runes refreshed this run are Silver tier.",
+  "HEXTECH_GOLD_RUN.title": "Gold Run",
+  "HEXTECH_GOLD_RUN.description": "All Hextech runes refreshed this run are Gold tier.",
+  "HEXTECH_PRISMATIC_RUN.title": "Prismatic Run",
+  "HEXTECH_PRISMATIC_RUN.description": "All Hextech runes refreshed this run are Prismatic tier."
 }

@@ -45,6 +45,13 @@ internal static partial class HextechCombatHooks
 			RequireMethod(typeof(CardModel), nameof(CardModel.CanPlay), BindingFlags.Instance | BindingFlags.Public, typeof(UnplayableReason).MakeByRefType(), typeof(AbstractModel).MakeByRefType()),
 			postfix: canPlayWithReasonPostfix);
 		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.SpendResources), BindingFlags.Instance | BindingFlags.Public),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardSpendResourcesPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.OnPlayWrapper), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext), typeof(Creature), typeof(bool), typeof(ResourceInfo), typeof(bool)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardOnPlayWrapperPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardOnPlayWrapperPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.GainMaxHp), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(GainMaxHpPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ResetGoliathTaskPostfix)));

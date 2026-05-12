@@ -46,7 +46,7 @@ internal static partial class HextechCombatHooks
 			return false;
 		}
 
-		if (card.EnergyCost.CostsX || card.EnergyCost.GetAmountToSpend() < 3m)
+		if (card.EnergyCost.CostsX || GetEnergyCostForCurrentCardPlay(card) < 3m)
 		{
 			return false;
 		}

@@ -53,9 +53,16 @@ internal static partial class HextechRuneSelectionCoordinator
 		NetGameType gameType = runManager.NetService.Type;
 		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
 
-		HextechRarityTier localRarity = modifier.GetRarityForAct(actIndex)
+		HextechRarityTier? savedRarity = modifier.GetRarityForAct(actIndex);
+		HextechRarityTier? forcedRarity = HextechCustomRunModifierHooks.GetForcedRarity(runState);
+		HextechRarityTier localRarity = savedRarity
+			?? forcedRarity
 			?? (isMultiplayer ? RollStableRarity(modifier, actIndex, runState) : RollRandomRarity(modifier, actIndex, runState));
 		modifier.SetRarityForAct(actIndex, localRarity);
+		if (!savedRarity.HasValue && forcedRarity.HasValue)
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll forced rarity: act={actIndex} rarity={localRarity}");
+		}
 
 		MonsterHexKind localMonsterHex = modifier.GetMonsterHexForAct(actIndex)
 			?? (isMultiplayer ? ChooseStableMonsterHexForAct(modifier, localRarity, runState, actIndex) : ChooseMonsterHexForAct(modifier, localRarity, runState));
@@ -160,15 +167,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static MonsterHexKind ChooseMonsterHexForAct(HextechMayhemModifier modifier, HextechRarityTier rarity, RunState runState)
 	{
-		HashSet<MonsterHexKind> alreadyChosen = [];
-		for (int i = 0; i < 3; i++)
-		{
-			MonsterHexKind? kind = modifier.GetMonsterHexForAct(i);
-			if (kind.HasValue)
-			{
-				alreadyChosen.Add(kind.Value);
-			}
-		}
+		HashSet<MonsterHexKind> alreadyChosen = modifier.GetKnownMonsterHexes().ToHashSet();
 
 		List<MonsterHexKind> pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
 			.Where(kind => !alreadyChosen.Contains(kind))
@@ -195,15 +194,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static List<MonsterHexKind> BuildMonsterHexPoolForAct(HextechMayhemModifier modifier, HextechRarityTier rarity)
 	{
-		HashSet<MonsterHexKind> alreadyChosen = [];
-		for (int i = 0; i < 3; i++)
-		{
-			MonsterHexKind? kind = modifier.GetMonsterHexForAct(i);
-			if (kind.HasValue)
-			{
-				alreadyChosen.Add(kind.Value);
-			}
-		}
+		HashSet<MonsterHexKind> alreadyChosen = modifier.GetKnownMonsterHexes().ToHashSet();
 
 		List<MonsterHexKind> pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
 			.Where(kind => !alreadyChosen.Contains(kind))
@@ -225,16 +216,19 @@ internal static partial class HextechRuneSelectionCoordinator
 		int rerollOrdinal,
 		IReadOnlySet<ModelId> excludedIconRelicIds)
 	{
+		HashSet<MonsterHexKind> alreadyChosen = modifier.GetKnownMonsterHexes()
+			.Where(kind => kind != currentHex)
+			.ToHashSet();
 		List<MonsterHexKind> pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
 			.Where(kind => kind != currentHex)
-			.Where(kind => !IsMonsterHexChosenInOtherAct(modifier, actIndex, kind))
+			.Where(kind => !alreadyChosen.Contains(kind))
 			.Where(kind => !excludedIconRelicIds.Contains(GetMonsterHexIconRelicId(kind)))
 			.ToList();
 		if (pool.Count == 0)
 		{
 			pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
 				.Where(kind => kind != currentHex)
-				.Where(kind => !IsMonsterHexChosenInOtherAct(modifier, actIndex, kind))
+				.Where(kind => !alreadyChosen.Contains(kind))
 				.ToList();
 		}
 		if (pool.Count == 0)
@@ -263,19 +257,6 @@ internal static partial class HextechRuneSelectionCoordinator
 			rerollOrdinal.ToString(),
 			poolKey);
 		return pool[index];
-	}
-
-	private static bool IsMonsterHexChosenInOtherAct(HextechMayhemModifier modifier, int actIndex, MonsterHexKind hex)
-	{
-		for (int i = 0; i < 3; i++)
-		{
-			if (i != actIndex && modifier.GetMonsterHexForAct(i) == hex)
-			{
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	private static ModelId GetMonsterHexIconRelicId(MonsterHexKind hex)
