@@ -3,6 +3,7 @@ using System.Threading;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Singleton;
@@ -108,7 +109,7 @@ internal static class HextechEnemyPowerScalingHooks
 	private static decimal ClampPowerOffsetForApply(PowerModel power, Creature target, decimal amount)
 	{
 		decimal clamped = ClampPowerAmount(amount);
-		if (power.IsInstanced)
+		if (IsInstancedPower(power))
 		{
 			return clamped;
 		}
@@ -127,6 +128,15 @@ internal static class HextechEnemyPowerScalingHooks
 		}
 
 		return clamped;
+	}
+
+	private static bool IsInstancedPower(PowerModel power)
+	{
+#if STS2_105_OR_NEWER
+		return power.InstanceType != PowerInstanceType.None;
+#else
+		return power.IsInstanced;
+#endif
 	}
 
 	private static bool ShouldClearSelfApplier(Creature target, Creature? applier)
