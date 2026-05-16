@@ -35,6 +35,14 @@ public sealed class MobileHomeRune : HextechRelicBase
 		typeof(MiniatureTent)
 	];
 
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		.. HoverTipFactory.FromRelic<MeatCleaver>(),
+		.. HoverTipFactory.FromRelic<Shovel>(),
+		.. HoverTipFactory.FromRelic<Girya>(),
+		.. HoverTipFactory.FromRelic<MiniatureTent>()
+	];
+
 	public override async Task AfterObtained()
 	{
 		if (Owner == null)
