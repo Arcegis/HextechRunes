@@ -227,6 +227,18 @@ def validate_relic_registry(errors: list[str]) -> None:
         fail(errors, f"registered relic types not declared: {', '.join(missing_declarations)}")
 
 
+def validate_rune_file_layout(errors: list[str]) -> None:
+    for path in source_files():
+        text = read(path)
+        rune_classes = re.findall(r"^public\s+sealed\s+class\s+(\w+Rune)\b", text, re.M)
+        if len(rune_classes) > 1:
+            fail(errors, f"{path.relative_to(REPO_ROOT)} contains multiple rune classes: {', '.join(rune_classes)}")
+            continue
+
+        if len(rune_classes) == 1 and path.stem != rune_classes[0]:
+            fail(errors, f"{path.relative_to(REPO_ROOT)} should be named {rune_classes[0]}.cs")
+
+
 def validate_combat_tracking_state(errors: list[str]) -> None:
     state_text = read(SRC / "HextechMayhemCombatTrackingState.cs")
     serialization_text = read(SRC / "HextechMayhemCombatTrackingState.Serialization.cs")
@@ -291,6 +303,7 @@ def main() -> int:
     warnings: list[str] = []
     validate_monster_hex_registry(errors, warnings)
     validate_relic_registry(errors)
+    validate_rune_file_layout(errors)
     validate_combat_tracking_state(errors)
 
     if errors:

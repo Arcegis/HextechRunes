@@ -1,0 +1,96 @@
+using Godot;
+using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.Factories;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.CardPools;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.Orbs;
+using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Random;
+using MegaCrit.Sts2.Core.Rewards;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Saves.Runs;
+using MegaCrit.Sts2.Core.ValueProps;
+using MegaCrit.Sts2.Core.Models.Monsters;
+
+namespace HextechRunes;
+
+public sealed class SonataRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(1),
+		new EnergyVar(1),
+		new HealVar(1m),
+		new BlockVar(2m, ValueProp.Unpowered)
+	];
+
+	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner.Creature.IsDead
+			|| player.Creature.CombatState is not HextechCombatState combatState)
+		{
+			return;
+		}
+
+		List<Player> players = combatState.Players
+			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)
+			.ToList();
+		if (players.Count == 0)
+		{
+			return;
+		}
+
+		FlashDeferred(players.Select(static combatPlayer => combatPlayer.Creature));
+		if (combatState.RoundNumber % 2 == 1)
+		{
+			foreach (Player combatPlayer in players)
+			{
+				await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, combatPlayer, fromHandDraw: false);
+			}
+
+			return;
+		}
+
+		foreach (Player combatPlayer in players)
+		{
+			await CreatureCmd.Heal(combatPlayer.Creature, DynamicVars.Heal.BaseValue);
+			await CreatureCmd.GainBlock(combatPlayer.Creature, DynamicVars.Block, null);
+		}
+	}
+
+	public override Task AfterEnergyResetLate(Player player)
+	{
+		if (Owner == null
+			|| Owner.Creature.IsDead
+			|| player.Creature.IsDead
+			|| player.Creature.CombatState is not HextechCombatState combatState
+			|| !ReferenceEquals(Owner.Creature.CombatState, combatState)
+			|| combatState.RoundNumber % 2 != 1)
+		{
+			return Task.CompletedTask;
+		}
+
+		return PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, player);
+	}
+}
