@@ -54,7 +54,7 @@ public sealed class DuffsVintageRune : HextechRelicBase
 		foreach (CardModel card in cards)
 		{
 			int nextCost = Math.Max(0, card.EnergyCost.GetAmountToSpend() - DynamicVars["CostReduction"].IntValue);
-			card.EnergyCost.SetThisCombat(nextCost, reduceOnly: true);
+			card.EnergyCost.SetUntilPlayed(nextCost, reduceOnly: true);
 		}
 
 		return Task.CompletedTask;

@@ -63,6 +63,6 @@ public sealed class BloodPactRune : HextechRelicBase
 		}
 
 		Flash();
-		await PowerCmd.Apply<HextechBloodPactTemporaryStrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
 	}
 }

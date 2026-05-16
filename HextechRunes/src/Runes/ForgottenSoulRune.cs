@@ -29,6 +29,7 @@ public sealed class ForgottenSoulRune : HextechRelicBase
 		_preventedExhaustLastPlay = false;
 		if (card.Owner == Owner
 			&& pileType == PileType.Exhaust
+			&& card.Type != CardType.Status
 			&& card.Keywords.Contains(CardKeyword.Exhaust))
 		{
 			_preventedExhaustLastPlay = true;

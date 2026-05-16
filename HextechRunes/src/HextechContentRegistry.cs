@@ -171,7 +171,7 @@ internal static class HextechContentRegistry
         Rune<FleshAndBoneRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 16),
         Rune<MobileHomeRune>(HextechRarityTier.Gold),
         Rune<MoreTheMerrierRune>(HextechRarityTier.Gold),
-        Rune<MirrorReflectionRune>(HextechRarityTier.Gold),
+        Rune<MirrorReflectionRune>(HextechRarityTier.Gold, flags: RuneFlags.FirstActExcluded),
         Rune<BloodArmorRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 9),
         Rune<ScaredStiffRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 10),
         Rune<TanksShieldRune>(HextechRarityTier.Gold),

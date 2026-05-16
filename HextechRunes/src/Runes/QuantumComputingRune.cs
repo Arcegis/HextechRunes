@@ -28,7 +28,7 @@ public sealed class QuantumComputingRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("DamagePercent", 10m),
-		new DamageVar(30m, ValueProp.Unpowered),
+		new DamageVar(10m, ValueProp.Unpowered),
 		new DynamicVar("HealPercent", 10m)
 	];
 
@@ -55,7 +55,7 @@ public sealed class QuantumComputingRune : HextechRelicBase
 		int totalDamage = 0;
 		foreach (Creature enemy in enemies)
 		{
-			decimal damage = Math.Max(DynamicVars.Damage.BaseValue, Math.Floor(enemy.MaxHp * DynamicVars["DamagePercent"].BaseValue / 100m));
+			decimal damage = DynamicVars.Damage.BaseValue + Math.Floor(enemy.MaxHp * DynamicVars["DamagePercent"].BaseValue / 100m);
 			IEnumerable<DamageResult> results = await CreatureCmd.Damage(choiceContext, enemy, damage, ValueProp.Unpowered, Owner.Creature, null);
 			totalDamage += results.Sum(static result => result.UnblockedDamage);
 		}
