@@ -116,6 +116,12 @@ internal sealed partial class HextechMayhemModifier
         return Math.Max(0m, count - 1m);
     }
 
+    public override bool ShouldFlush(Player player)
+    {
+        return !HasActiveMonsterHex(MonsterHexKind.DuffsVintage)
+            || player.Creature.CombatState?.RunState != RunState;
+    }
+
     public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
     {
         modifiedCost = originalCost;

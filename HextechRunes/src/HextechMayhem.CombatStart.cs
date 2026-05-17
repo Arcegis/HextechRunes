@@ -31,23 +31,18 @@ internal sealed partial class HextechMayhemModifier
             return;
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.StartupRoutine))
-        {
-            foreach (Creature enemy in enemies)
-            {
-                await ApplyMonsterCombatStartHexesToEnemy(enemy, room, applyStartupRoutine: true, applyHailToTheKing: false);
-            }
-        }
-
-        if (!HasActiveMonsterHex(MonsterHexKind.HailToTheKing)
-            || room.RoomType is not (RoomType.Elite or RoomType.Boss))
+        bool applyStartupRoutine = HasActiveMonsterHex(MonsterHexKind.StartupRoutine);
+        bool applyBrutalForce = HasActiveMonsterHex(MonsterHexKind.BrutalForce);
+        bool applyHailToTheKing = HasActiveMonsterHex(MonsterHexKind.HailToTheKing)
+            && room.RoomType is RoomType.Elite or RoomType.Boss;
+        if (!applyStartupRoutine && !applyBrutalForce && !applyHailToTheKing)
         {
             return;
         }
 
         foreach (Creature enemy in enemies)
         {
-            await ApplyMonsterCombatStartHexesToEnemy(enemy, room, applyStartupRoutine: false, applyHailToTheKing: true);
+            await ApplyMonsterCombatStartHexesToEnemy(enemy, room, applyStartupRoutine, applyHailToTheKing, applyBrutalForce);
         }
     }
 
@@ -55,11 +50,19 @@ internal sealed partial class HextechMayhemModifier
         Creature enemy,
         CombatRoom room,
         bool applyStartupRoutine = true,
-        bool applyHailToTheKing = true)
+        bool applyHailToTheKing = true,
+        bool applyBrutalForce = true)
     {
         if (applyStartupRoutine && HasActiveMonsterHex(MonsterHexKind.StartupRoutine))
         {
             await CreatureCmd.GainBlock(enemy, 15m, ValueProp.Unpowered, null);
+        }
+
+        if (applyBrutalForce && HasActiveMonsterHex(MonsterHexKind.BrutalForce))
+        {
+            await PowerCmd.Apply<StrengthPower>(enemy, 1m, enemy, null);
+            int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * BrutalForceBlockPercent));
+            await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
         }
 
         if (!applyHailToTheKing

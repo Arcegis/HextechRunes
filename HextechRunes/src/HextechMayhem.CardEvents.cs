@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
@@ -23,6 +24,11 @@ internal sealed partial class HextechMayhemModifier
 			&& cardPlay.Card.Owner?.Creature.CombatState is HextechCombatState combatState)
 		{
 			RefreshPlayerAttackCostDoublingPreviews(GetAlivePlayerSideCreatures(combatState));
+		}
+
+		if (HasActiveMonsterHex(MonsterHexKind.MirrorReflection))
+		{
+			await TryApplyEnemyMirrorReflection(cardPlay);
 		}
 
 		if (!HasActiveMonsterHex(MonsterHexKind.MasterOfDuality)
@@ -45,6 +51,45 @@ internal sealed partial class HextechMayhemModifier
 		{
 			await PowerCmd.Apply<HextechTemporaryDexterityLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
 		}
+	}
+
+	public override async Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
+	{
+		if (!HasActiveMonsterHex(MonsterHexKind.DizzySpinning)
+			|| shuffler.Creature.Side != CombatSide.Player
+			|| shuffler.Creature.IsDead
+			|| shuffler.Creature.CombatState is not HextechCombatState combatState
+			|| combatState.RunState != RunState)
+		{
+			return;
+		}
+
+		CardModel dazed = combatState.CreateCard<Dazed>(shuffler);
+		await HextechCardGeneration.AddGeneratedCardToCombat(
+			dazed,
+			PileType.Draw,
+			addedByPlayer: false,
+			CardPilePosition.Random);
+	}
+
+	private async Task TryApplyEnemyMirrorReflection(CardPlay cardPlay)
+	{
+		if (!cardPlay.IsFirstInSeries
+			|| cardPlay.IsAutoPlay
+			|| !cardPlay.Card.IsBasicStrikeOrDefend
+			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
+			|| cardPlay.Card.Owner.Creature.CombatState?.RunState != RunState)
+		{
+			return;
+		}
+
+		Player owner = cardPlay.Card.Owner;
+		CardModel copy = owner.RunState.CloneCard(cardPlay.Card);
+		await HextechCardGeneration.AddGeneratedCardToCombat(
+			copy,
+			PileType.Discard,
+			addedByPlayer: false,
+			CardPilePosition.Top);
 	}
 
 	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)

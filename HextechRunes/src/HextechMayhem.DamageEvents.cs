@@ -47,6 +47,36 @@ internal sealed partial class HextechMayhemModifier
 		await ApplyEnemyDamageGivenPlayerHitHexes(dealer, target);
 	}
 
+	public override async Task AfterCurrentHpChanged(Creature creature, decimal delta)
+	{
+		if (!HasActiveMonsterHex(MonsterHexKind.BloodArmor)
+			|| delta >= 0m
+			|| creature.Side != CombatSide.Enemy
+			|| creature.IsDead
+			|| creature.CombatId == null
+			|| creature.CombatState is not HextechCombatState combatState
+			|| combatState.RunState != RunState
+			|| combatState.CurrentSide != CombatSide.Player)
+		{
+			return;
+		}
+
+		int hpLoss = (int)Math.Floor(-delta);
+		if (hpLoss <= 0)
+		{
+			return;
+		}
+
+		uint combatId = creature.CombatId.Value;
+		int accumulated = _combatTracking.BloodArmorHpLossThisPlayerTurn.GetValueOrDefault(combatId, 0) + hpLoss;
+		int plating = accumulated / BloodArmorHpLossPerPlating;
+		_combatTracking.BloodArmorHpLossThisPlayerTurn[combatId] = accumulated % BloodArmorHpLossPerPlating;
+		if (plating > 0)
+		{
+			await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(creature, plating, creature, null);
+		}
+	}
+
 	private static bool TryGetDamagedEnemy(Creature target, DamageResult result, out uint combatId)
 	{
 		combatId = 0;

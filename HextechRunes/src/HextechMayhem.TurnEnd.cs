@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -30,6 +31,7 @@ internal sealed partial class HextechMayhemModifier
             if (combatRoom != null)
             {
                 RefreshPlayerAttackCostDoublingPreviews(GetAlivePlayerSideCreatures(combatRoom.CombatState));
+                ApplyEnemyDuffsVintageCostIncrease(combatRoom.CombatState);
             }
         }
 
@@ -52,6 +54,33 @@ internal sealed partial class HextechMayhemModifier
             if (handCount > 0)
             {
                 await CreatureCmd.Damage(choiceContext, playerCreature, handCount, ValueProp.Unpowered, null, null);
+            }
+        }
+    }
+
+    private void ApplyEnemyDuffsVintageCostIncrease(HextechCombatState combatState)
+    {
+        if (!HasActiveMonsterHex(MonsterHexKind.DuffsVintage))
+        {
+            return;
+        }
+
+        foreach (Creature playerCreature in GetAlivePlayerSideCreatures(combatState))
+        {
+            Player? player = playerCreature.Player;
+            if (player == null)
+            {
+                continue;
+            }
+
+            foreach (CardModel card in PileType.Hand.GetPile(player).Cards)
+            {
+                if (card.EnergyCost.CostsX)
+                {
+                    continue;
+                }
+
+                card.EnergyCost.SetUntilPlayed(card.EnergyCost.GetAmountToSpend() + 1, reduceOnly: false);
             }
         }
     }

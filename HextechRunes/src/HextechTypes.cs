@@ -66,5 +66,11 @@ internal enum MonsterHexKind
     WarmogsSpirit = 54,
     HailToTheKing = 55,
     EightPennyGate = 56,
-    HastyScribble = 57
+    HastyScribble = 57,
+    DizzySpinning = 58,
+    BrutalForce = 59,
+    BloodArmor = 60,
+    JinlianBox = 61,
+    MirrorReflection = 62,
+    DuffsVintage = 63
 }

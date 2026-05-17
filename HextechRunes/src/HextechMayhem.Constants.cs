@@ -5,6 +5,8 @@ internal sealed partial class HextechMayhemModifier
 	private const decimal EscapePlanHealthThresholdPercent = 0.5m;
 	private const decimal EscapePlanBlockPercent = 0.6m;
 	private const decimal BloodPactTemporaryStrengthStacks = 1m;
+	private const decimal BrutalForceBlockPercent = 0.08m;
+	private const int BloodArmorHpLossPerPlating = 10;
 	private const decimal ClownCollegeSlipperyStacks = 1m;
 	private const decimal DawnbringersResolveRegenPercent = 0.1m;
 	private const int MikaelsBlessingMaxTriggers = 2;
