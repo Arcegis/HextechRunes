@@ -95,6 +95,12 @@ internal static class HextechContentRegistry
         Rune<CarefulSelectionRune>(HextechRarityTier.Silver),
         Rune<PowerShieldRune>(HextechRarityTier.Silver),
         Rune<CorrosionRune>(HextechRarityTier.Silver),
+        Rune<DizzySpinningRune>(HextechRarityTier.Silver),
+        Rune<WarmupExerciseRune>(HextechRarityTier.Silver),
+        Rune<PacifistRune>(HextechRarityTier.Silver),
+        Rune<CrackTheEggRune>(HextechRarityTier.Silver),
+        Rune<KakaRune>(HextechRarityTier.Silver),
+        Rune<BrutalForceRune>(HextechRarityTier.Silver),
         Rune<TransmuteGoldRune>(HextechRarityTier.Silver),
 
         Rune<JudicatorRune>(HextechRarityTier.Gold),
@@ -159,6 +165,16 @@ internal static class HextechContentRegistry
         Rune<GoodLuckRune>(HextechRarityTier.Gold),
         Rune<RadianceRune>(HextechRarityTier.Gold),
         Rune<ManipulateRealityRune>(HextechRarityTier.Gold),
+        Rune<BlueCandleMedkitRune>(HextechRarityTier.Gold),
+        Rune<BigHandsRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 15),
+        Rune<JinlianBoxRune>(HextechRarityTier.Gold),
+        Rune<FleshAndBoneRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 16),
+        Rune<MobileHomeRune>(HextechRarityTier.Gold),
+        Rune<MoreTheMerrierRune>(HextechRarityTier.Gold),
+        Rune<MirrorReflectionRune>(HextechRarityTier.Gold, flags: RuneFlags.FirstActExcluded),
+        Rune<BloodArmorRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 9),
+        Rune<ScaredStiffRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 10),
+        Rune<TanksShieldRune>(HextechRarityTier.Gold),
         Rune<TransmutePrismaticRune>(HextechRarityTier.Gold),
         Rune<DawnbringersResolveRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
         Rune<ShrinkRayRune>(HextechRarityTier.Gold),
@@ -227,6 +243,12 @@ internal static class HextechContentRegistry
         Rune<ForgottenSoulRune>(HextechRarityTier.Prismatic),
         Rune<UpgradeRune>(HextechRarityTier.Prismatic),
         Rune<OmniDragonSoulRune>(HextechRarityTier.Prismatic),
+        Rune<ShoulderVakuRune>(HextechRarityTier.Prismatic),
+        Rune<PrimitiveMadnessRune>(HextechRarityTier.Prismatic),
+        Rune<ThoughtOverwriteRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 17),
+        Rune<QuantumComputingRune>(HextechRarityTier.Prismatic),
+        Rune<MindOverMatterRune>(HextechRarityTier.Prismatic),
+        Rune<DuffsVintageRune>(HextechRarityTier.Prismatic),
         Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic)
     ];
 
@@ -285,6 +307,8 @@ internal static class HextechContentRegistry
         Monster<FrostWraithRune>(MonsterHexKind.FrostWraith, HextechRarityTier.Silver),
         Monster<BloodPactRune>(MonsterHexKind.BloodPact, HextechRarityTier.Silver),
         Monster<StartupRoutineRune>(MonsterHexKind.StartupRoutine, HextechRarityTier.Silver),
+        Monster<DizzySpinningRune>(MonsterHexKind.DizzySpinning, HextechRarityTier.Silver),
+        Monster<BrutalForceRune>(MonsterHexKind.BrutalForce, HextechRarityTier.Silver),
 
         Monster<SturdyRune>(MonsterHexKind.Sturdy, HextechRarityTier.Gold),
         Monster<DawnbringersResolveRune>(MonsterHexKind.DawnbringersResolve, HextechRarityTier.Gold),
@@ -306,6 +330,9 @@ internal static class HextechContentRegistry
         Monster<ImmortalBoneRune>(MonsterHexKind.ImmortalBone, HextechRarityTier.Gold),
         Monster<DoomsdayRune>(MonsterHexKind.Doomsday, HextechRarityTier.Gold),
         Monster<WarmogsSpiritRune>(MonsterHexKind.WarmogsSpirit, HextechRarityTier.Gold),
+        Monster<BloodArmorRune>(MonsterHexKind.BloodArmor, HextechRarityTier.Gold),
+        Monster<JinlianBoxRune>(MonsterHexKind.JinlianBox, HextechRarityTier.Gold),
+        Monster<MirrorReflectionRune>(MonsterHexKind.MirrorReflection, HextechRarityTier.Gold),
 
         Monster<CourageOfColossusRune>(MonsterHexKind.CourageOfColossus, HextechRarityTier.Prismatic),
         Monster<GlassCannonRune>(MonsterHexKind.GlassCannon, HextechRarityTier.Prismatic),
@@ -329,6 +356,7 @@ internal static class HextechContentRegistry
         Monster<GoldenSpatulaRune>(MonsterHexKind.GoldenSpatula, HextechRarityTier.Prismatic),
         Monster<HailToTheKingRune>(MonsterHexKind.HailToTheKing, HextechRarityTier.Prismatic),
         Monster<EightPennyGateRune>(MonsterHexKind.EightPennyGate, HextechRarityTier.Prismatic),
+        Monster<DuffsVintageRune>(MonsterHexKind.DuffsVintage, HextechRarityTier.Prismatic),
         Monster<HastyScribbleRune>(MonsterHexKind.HastyScribble, HextechRarityTier.Prismatic)
     ];
 

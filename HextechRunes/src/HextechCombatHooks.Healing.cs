@@ -27,6 +27,11 @@ internal static partial class HextechCombatHooks
 				amount *= 1.25m;
 			}
 
+			if (player.GetRelic<PacifistRune>() is PacifistRune pacifistRune)
+			{
+				amount *= pacifistRune.SustainMultiplier;
+			}
+
 			if (player.GetRelic<SacrificeRune>() is SacrificeRune sacrificeRune)
 			{
 				amount *= sacrificeRune.SustainMultiplier;
@@ -50,6 +55,11 @@ internal static partial class HextechCombatHooks
 			if (player.GetRelic<ProtectionForge>() is ProtectionForge protectionForge)
 			{
 				amount *= protectionForge.SustainMultiplier;
+			}
+
+			if (player.GetRelic<MoreTheMerrierRune>() is MoreTheMerrierRune moreTheMerrierRune)
+			{
+				amount *= moreTheMerrierRune.SustainMultiplier;
 			}
 		}
 

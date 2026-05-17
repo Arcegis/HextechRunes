@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Reflection;
 using System.Runtime.Loader;
 using MegaCrit.Sts2.Core.Logging;
@@ -11,8 +12,11 @@ namespace HextechRunes;
 
 internal static class HextechModelBootstrap
 {
-	private static readonly MethodInfo AddModelToPoolMethod = typeof(ModHelper).GetMethods(BindingFlags.Public | BindingFlags.Static)
-		.Single(method => method.Name == "AddModelToPool" && method.IsGenericMethodDefinition && method.GetGenericArguments().Length == 2);
+	private const BindingFlags InstanceFields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+	private static readonly FieldInfo? ModdedContentForPoolsField =
+		typeof(ModHelper).GetField("_moddedContentForPools", BindingFlags.NonPublic | BindingFlags.Static);
+
 	private static readonly object InstallLock = new();
 	private static bool _installed;
 
@@ -53,6 +57,7 @@ internal static class HextechModelBootstrap
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryDexterityLossPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechLethalTempoTemporaryStrengthPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechBloodPactTemporaryStrengthPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechPowerShieldTemporaryStrengthPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechAttackReplayPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporarySlowPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechOceanDragonSoulPower));
@@ -108,13 +113,82 @@ internal static class HextechModelBootstrap
 	{
 		foreach (Type runeType in HextechCatalog.GetAllCustomRelicTypes())
 		{
-			AddModelToPoolMethod.MakeGenericMethod(typeof(SharedRelicPool), runeType).Invoke(null, null);
+			TryAddModelToPool(typeof(SharedRelicPool), runeType);
 		}
 
 		foreach (Type cardType in HextechCatalog.GetAllCustomCardTypes())
 		{
-			AddModelToPoolMethod.MakeGenericMethod(typeof(TokenCardPool), cardType).Invoke(null, null);
+			TryAddModelToPool(typeof(TokenCardPool), cardType);
 		}
+	}
+
+	private static void TryAddModelToPool(Type poolType, Type modelType)
+	{
+		if (IsModelAlreadyQueuedForPool(poolType, modelType))
+		{
+			Log.Info($"[{ModInfo.Id}] Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
+			return;
+		}
+
+		ModHelper.AddModelToPool(poolType, modelType);
+	}
+
+	private static bool IsModelAlreadyQueuedForPool(Type poolType, Type modelType)
+	{
+		try
+		{
+			if (ModdedContentForPoolsField?.GetValue(null) is not IDictionary pools)
+			{
+				return false;
+			}
+
+			foreach (DictionaryEntry entry in pools)
+			{
+				if (entry.Key is Type existingPoolType
+					&& IsSameModelType(existingPoolType, poolType)
+					&& ContentContainsModelType(entry.Value, modelType))
+				{
+					return true;
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}] Could not inspect existing mod pool registrations: {ex.GetType().Name}: {ex.Message}");
+		}
+
+		return false;
+	}
+
+	private static bool ContentContainsModelType(object? content, Type modelType)
+	{
+		if (content == null)
+		{
+			return false;
+		}
+
+		FieldInfo? modelsField = content.GetType().GetField("modelsToAdd", InstanceFields);
+		if (modelsField?.GetValue(content) is not IEnumerable models)
+		{
+			return false;
+		}
+
+		foreach (object? model in models)
+		{
+			if (model is Type existingModelType && IsSameModelType(existingModelType, modelType))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static bool IsSameModelType(Type left, Type right)
+	{
+		return left == right
+			|| (string.Equals(left.FullName, right.FullName, StringComparison.Ordinal)
+				&& string.Equals(left.Assembly.GetName().Name, right.Assembly.GetName().Name, StringComparison.Ordinal));
 	}
 
 	private static void PreloadDependencyAssemblies()

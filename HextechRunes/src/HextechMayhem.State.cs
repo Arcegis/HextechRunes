@@ -106,6 +106,8 @@ internal sealed partial class HextechMayhemModifier
 
 	public RunState ActiveRunState => RunState;
 
+	internal HextechMayhemCombatTrackingState CombatTracking => _combatTracking;
+
 	public bool IsActResolved(int actIndex)
 	{
 		return _actState.IsResolved(actIndex);

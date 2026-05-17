@@ -15,34 +15,19 @@ internal sealed partial class HextechMayhemModifier
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 #endif
 	{
-		if (power is MinionPower && amount > 0m)
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			await TryApplyServantMasterIllusion(power.Owner, applier, cardSource);
+			await effect.AfterPowerAmountChanged(context, power, amount, applier, cardSource);
 		}
 
 		bool hasMonsterDebuffTrigger = TryGetMonsterDebuffTrigger(power, amount, applier, out Creature? target, out Creature? source);
 		bool suppressMonsterDebuffDuplicate = hasMonsterDebuffTrigger && ShouldSuppressMonsterDebuffDuplicate(power, amount, source, cardSource);
 		if (hasMonsterDebuffTrigger && !suppressMonsterDebuffDuplicate)
 		{
-			if (HasActiveMonsterHex(MonsterHexKind.Slap)
-				&& TryConsumeLimitedProc(_combatTracking.SlapProcsThisTurn, source!, 3))
+			foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 			{
-				await PowerCmd.Apply<StrengthPower>(source!, 1m, source, null);
-			}
-
-			if (HasActiveMonsterHex(MonsterHexKind.Tormentor)
-				&& !_combatTracking.HandlingMonsterTormentorBurn
-				&& TryConsumeLimitedProc(_combatTracking.TormentorProcsThisTurn, source!, 5))
-			{
-				try
-				{
-					_combatTracking.HandlingMonsterTormentorBurn = true;
-					await PowerCmd.Apply<HextechBurnPower>(target!, 2m, source, null);
-				}
-				finally
-				{
-					_combatTracking.HandlingMonsterTormentorBurn = false;
-				}
+				await effect.AfterMonsterDebuffApplied(context, power, amount, target!, source!, cardSource);
 			}
 		}
 
@@ -59,12 +44,12 @@ internal sealed partial class HextechMayhemModifier
 			hasCourageTrigger = true;
 		}
 
-		if (HasActiveMonsterHex(MonsterHexKind.CourageOfColossus)
-			&& hasCourageTrigger
-			&& TryConsumeLimitedProc(_combatTracking.CourageProcsThisTurn, courageSource!, 1))
+		if (hasCourageTrigger)
 		{
-			int plating = Math.Max(1, (int)Math.Floor(courageSource!.MaxHp * CourageOfColossusPlatingPercent));
-			await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(courageSource, plating, courageSource, null);
+			foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
+			{
+				await effect.AfterCourageTrigger(context, courageSource!);
+			}
 		}
 	}
 }

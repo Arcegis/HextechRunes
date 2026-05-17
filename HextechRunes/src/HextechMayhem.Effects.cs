@@ -21,7 +21,7 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-    private async Task RunGroupedPlayerDebuffBurst(Func<Task> action)
+    internal async Task RunGroupedPlayerDebuffBurst(Func<Task> action)
     {
         bool wasHandlingGroupedPlayerDebuffs = _combatTracking.HandlingGroupedPlayerDebuffs;
         if (!wasHandlingGroupedPlayerDebuffs)
@@ -44,37 +44,13 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private static decimal GetMonsterProteinShakeSustainMultiplier(Creature creature)
+    internal static decimal GetMonsterProteinShakeSustainMultiplier(Creature creature)
     {
         decimal bonusPercent = Math.Min(100m, Math.Floor(creature.MaxHp / 5m));
         return 1m + bonusPercent / 100m;
     }
 
-    private async Task NormalizeEnemyPainfulStabsPowers(HextechCombatState combatState)
-    {
-        if (!HasActiveMonsterHex(MonsterHexKind.GetExcited))
-        {
-            return;
-        }
-
-        foreach (Creature enemy in combatState.Enemies.ToList())
-        {
-            if (enemy.CombatState != combatState)
-            {
-                continue;
-            }
-
-            PainfulStabsPower? legacyPower = enemy.GetPower<PainfulStabsPower>();
-            if (legacyPower != null && enemy.IsDead)
-            {
-                await PowerCmd.Remove(legacyPower);
-            }
-
-            RemoveRetainedDeadEnemyIfNeeded(combatState, enemy);
-        }
-    }
-
-    private static void RemoveRetainedDeadEnemyIfNeeded(HextechCombatState combatState, Creature enemy)
+    internal static void RemoveRetainedDeadEnemyIfNeeded(HextechCombatState combatState, Creature enemy)
     {
         if (enemy.Side != CombatSide.Enemy
             || enemy.IsAlive
@@ -95,10 +71,9 @@ internal sealed partial class HextechMayhemModifier
         Log.Info($"[{ModInfo.Id}][Mayhem] Removed retained dead enemy after unsafe PainfulStabs cleanup: id={enemy.CombatId?.ToString() ?? "none"} model={enemy.ModelId.Entry}");
     }
 
-    private async Task TryApplyServantMasterIllusion(Creature creature, Creature? applier, CardModel? cardSource)
+    internal async Task TryApplyServantMasterIllusion(Creature creature, Creature? applier, CardModel? cardSource)
     {
         if (_combatTracking.HandlingServantMasterIllusion
-            || !HasActiveMonsterHex(MonsterHexKind.ServantMaster)
             || creature.Side != CombatSide.Enemy
             || !creature.IsAlive
             || creature.CombatState?.RunState != RunState
@@ -119,7 +94,7 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private static void DowngradePlayerCombatCards(HextechCombatState combatState)
+    internal static void DowngradePlayerCombatCards(HextechCombatState combatState)
     {
         foreach (CardModel card in combatState.Players
             .SelectMany(static player => player.PlayerCombatState?.AllCards ?? Array.Empty<CardModel>())
@@ -130,17 +105,17 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private static IReadOnlyList<Creature> GetAliveEnemies(HextechCombatState combatState)
+    internal static IReadOnlyList<Creature> GetAliveEnemies(HextechCombatState combatState)
     {
         return combatState.Enemies.Where(static creature => creature.IsAlive).ToList();
     }
 
-    private static IReadOnlyList<Creature> GetAlivePlayerSideCreatures(HextechCombatState combatState)
+    internal static IReadOnlyList<Creature> GetAlivePlayerSideCreatures(HextechCombatState combatState)
     {
         return combatState.PlayerCreatures.Where(static creature => creature.IsAlive).ToList();
     }
 
-    private static bool TryConsumeLimitedProc(Dictionary<uint, int> counts, Creature creature, int maxPerTurn)
+    internal static bool TryConsumeLimitedProc(Dictionary<uint, int> counts, Creature creature, int maxPerTurn)
     {
         if (creature.CombatId == null)
         {
@@ -158,7 +133,7 @@ internal sealed partial class HextechMayhemModifier
         return true;
     }
 
-    private static bool TryGetMonsterDebuffTrigger(PowerModel power, decimal amount, Creature? applier, out Creature? target, out Creature? source)
+    internal static bool TryGetMonsterDebuffTrigger(PowerModel power, decimal amount, Creature? applier, out Creature? target, out Creature? source)
     {
         target = power.Owner;
         source = applier;
@@ -169,7 +144,7 @@ internal sealed partial class HextechMayhemModifier
             && power is not ITemporaryPower;
     }
 
-    private bool ShouldSuppressMonsterDebuffDuplicate(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+    internal bool ShouldSuppressMonsterDebuffDuplicate(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
     {
         string powerTypeName = power.GetType().FullName ?? power.GetType().Name;
         if (_combatTracking.HandlingGroupedPlayerDebuffs)
@@ -187,7 +162,7 @@ internal sealed partial class HextechMayhemModifier
         return !_combatTracking.MonsterDebuffActionProcKeysThisTurn.Add(actionKey);
     }
 
-    private bool ShouldSuppressDuplicateEnemyThresholdTrigger(Creature target, DamageResult result, Creature? dealer, CardModel? cardSource)
+    internal bool ShouldSuppressDuplicateEnemyThresholdTrigger(Creature target, DamageResult result, Creature? dealer, CardModel? cardSource)
     {
         string key = string.Join(":",
             target.CombatId?.ToString() ?? "none",
@@ -200,7 +175,7 @@ internal sealed partial class HextechMayhemModifier
         return suppress;
     }
 
-    private static bool TryGetMonsterSelfBuffTrigger(PowerModel power, decimal amount, Creature? applier, out Creature? source)
+    internal static bool TryGetMonsterSelfBuffTrigger(PowerModel power, decimal amount, Creature? applier, out Creature? source)
     {
         source = null;
         Creature? owner = power.Owner;
@@ -220,7 +195,7 @@ internal sealed partial class HextechMayhemModifier
         return true;
     }
 
-	private static bool TryMarkPersistentHexApplied(HashSet<uint> appliedSet, Creature creature, bool forceReapply = false)
+	internal static bool TryMarkPersistentHexApplied(HashSet<uint> appliedSet, Creature creature, bool forceReapply = false)
 	{
 		if (creature.CombatId == null)
 		{
@@ -248,11 +223,10 @@ internal sealed partial class HextechMayhemModifier
 
     private bool HasEnemyAttackCostDoublingHex()
     {
-        return HasActiveMonsterHex(MonsterHexKind.LightEmUp)
-            || HasActiveMonsterHex(MonsterHexKind.TwiceThrice);
+        return HextechEnemyHexEffects.HasActiveAttackCostPreviewEffect(this);
     }
 
-    private void RefreshPlayerAttackCostDoublingPreviews(IEnumerable<Creature> playerCreatures)
+    internal void RefreshPlayerAttackCostDoublingPreviews(IEnumerable<Creature> playerCreatures)
     {
         if (!HasEnemyAttackCostDoublingHex())
         {
@@ -278,23 +252,7 @@ internal sealed partial class HextechMayhemModifier
         }
     }
 
-    private bool TryConsumeEnemyEightPennyGate(CardModel card, bool isAutoPlay)
-    {
-        Player? owner = card.Owner;
-        if (!HasActiveMonsterHex(MonsterHexKind.EightPennyGate)
-            || isAutoPlay
-            || card.Type == CardType.Power
-            || owner?.Creature.Side != CombatSide.Player
-            || owner.Creature.CombatState?.RunState != RunState)
-        {
-            return false;
-        }
-
-        ulong playerId = owner.NetId;
-        return _combatTracking.EightPennyGatePlayersTriggeredThisTurn.Add(playerId);
-    }
-
-    private int GetPlayerAttacksPlayedThisTurn(CardModel card)
+    internal int GetPlayerAttacksPlayedThisTurn(CardModel card)
     {
         if (card.Owner == null)
         {
@@ -311,30 +269,10 @@ internal sealed partial class HextechMayhemModifier
             return amount;
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.Goliath))
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this).OrderBy(static effect => effect.EnemyHealOrder))
         {
-            amount *= 1.2m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
-        {
-            amount *= 1.25m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.ProteinShake))
-        {
-            amount *= GetMonsterProteinShakeSustainMultiplier(creature);
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula))
-        {
-            amount *= 0.5m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.GlassCannon))
-        {
-            int healCap = (int)Math.Floor(creature.MaxHp * 0.7m);
-            amount = Math.Min(amount, Math.Max(0, healCap - creature.CurrentHp));
+            amount = effect.ModifyEnemyHealAmount(context, creature, amount);
         }
 
         return amount;

@@ -11,17 +11,10 @@ internal sealed partial class HextechMayhemModifier
 {
 	public override async Task BeforeDeath(Creature creature)
 	{
-		if (!HasActiveMonsterHex(MonsterHexKind.GetExcited)
-			|| creature.Side != CombatSide.Enemy
-			|| creature.CombatState?.RunState != RunState)
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			return;
-		}
-
-		PainfulStabsPower? painfulStabs = creature.GetPower<PainfulStabsPower>();
-		if (painfulStabs != null)
-		{
-			await PowerCmd.Remove(painfulStabs);
+			await effect.BeforeDeath(context, creature);
 		}
 	}
 
@@ -34,28 +27,10 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		if (HasActiveMonsterHex(MonsterHexKind.Nightstalking))
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState)
-				.Where(enemy => enemy != target)
-				.ToList();
-			if (enemies.Count > 0)
-			{
-				await PowerCmd.Apply<StrengthPower>(enemies, 1m, null, null);
-				await PowerCmd.Apply<PaperCutsPower>(enemies, 1m, null, null);
-			}
-		}
-
-		if (HasActiveMonsterHex(MonsterHexKind.GetExcited))
-		{
-			IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState)
-				.Where(enemy => enemy != target)
-				.ToList();
-			if (enemies.Count > 0)
-			{
-				await PowerCmd.Apply<StrengthPower>(enemies, 1m, null, null);
-				await PowerCmd.Apply<PainfulStabsPower>(enemies, 1m, null, null);
-			}
+			await effect.AfterDeath(context, choiceContext, target, combatState);
 		}
 	}
 }

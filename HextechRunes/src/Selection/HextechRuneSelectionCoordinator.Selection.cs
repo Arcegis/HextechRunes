@@ -66,6 +66,16 @@ internal static partial class HextechRuneSelectionCoordinator
 			return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex);
 		}
 
+		if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice AI auto-select: player={player.NetId} choiceId={choiceId}");
+			MarkRelicsSeen(options);
+			modifier.RecordSeenPlayerRunes(player, options);
+			int selectedIndex = HextechAiTeammateCompat.PickRandomRuneIndex(player, options);
+			RelicModel? selectedRelic = selectedIndex >= 0 && selectedIndex < options.Count ? options[selectedIndex] : null;
+			return new RuneSelectionResult(selectedRelic, options.ToList(), 0, null);
+		}
+
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: player={player.NetId} choiceId={choiceId}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
@@ -104,6 +114,14 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen);
+		}
+
+		if (HextechAiTeammateCompat.ShouldAutoSelectRune(selection.Player))
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice AI auto-select: player={selection.Player.NetId} choiceId={selection.ChoiceId}");
+			int selectedIndex = HextechAiTeammateCompat.PickRandomRuneIndex(selection.Player, selection.Options);
+			RelicModel? selectedRelic = selectedIndex >= 0 && selectedIndex < selection.Options.Count ? selection.Options[selectedIndex] : null;
+			return new RuneSelectionResult(selectedRelic, selection.Options.ToList(), 0, null);
 		}
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: player={selection.Player.NetId} choiceId={selection.ChoiceId}");

@@ -26,49 +26,10 @@ internal sealed partial class HextechMayhemModifier
         }
 
         decimal multiplier = 1m;
-        if (HasActiveMonsterHex(MonsterHexKind.HeavyHitter))
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
         {
-            multiplier *= 1m + Math.Min(30m, Math.Floor(dealer.MaxHp / 10m)) / 100m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.BigStrength))
-        {
-            multiplier *= 1.2m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.GlassCannon))
-        {
-            multiplier *= 1.5m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.AstralBody))
-        {
-            multiplier *= 0.9m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.Goliath))
-        {
-            multiplier *= 1.2m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.DrawYourSword))
-        {
-            multiplier *= 1.4m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.HandOfBaron))
-        {
-            multiplier *= 1.1m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.Goldrend))
-        {
-            multiplier *= 1.1m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula))
-        {
-            multiplier *= 1.35m;
+            multiplier *= effect.ModifyDamageMultiplicative(context, target, amount, props, dealer, cardSource);
         }
 
         return multiplier;
@@ -82,24 +43,10 @@ internal sealed partial class HextechMayhemModifier
         }
 
         decimal multiplier = 1m;
-        if (HasActiveMonsterHex(MonsterHexKind.Goliath))
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
         {
-            multiplier *= 1.2m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.FirstAidKit))
-        {
-            multiplier *= 1.25m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.ProteinShake))
-        {
-            multiplier *= GetMonsterProteinShakeSustainMultiplier(target);
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.GoldenSpatula))
-        {
-            multiplier *= 0.5m;
+            multiplier *= effect.ModifyBlockMultiplicative(context, target, block, props, cardSource, cardPlay);
         }
 
         return multiplier;
@@ -107,13 +54,27 @@ internal sealed partial class HextechMayhemModifier
 
     public override decimal ModifyHandDraw(Player player, decimal count)
     {
-        if (!HasActiveMonsterHex(MonsterHexKind.Loop)
-            || player.Creature.CombatState?.RunState != RunState)
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
         {
-            return count;
+            count = effect.ModifyHandDraw(context, player, count);
         }
 
-        return Math.Max(0m, count - 1m);
+        return count;
+    }
+
+    public override bool ShouldFlush(Player player)
+    {
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
+        {
+            if (!effect.ShouldFlush(context, player))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
@@ -129,16 +90,11 @@ internal sealed partial class HextechMayhemModifier
             return false;
         }
 
-        int nextAttackIndex = GetPlayerAttacksPlayedThisTurn(card) + 1;
         decimal multiplier = 1m;
-        if (HasActiveMonsterHex(MonsterHexKind.LightEmUp) && nextAttackIndex % 4 == 0)
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
         {
-            multiplier *= 2m;
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.TwiceThrice) && nextAttackIndex % 3 == 0)
-        {
-            multiplier *= 2m;
+            multiplier *= effect.ModifyPlayerAttackEnergyCostMultiplier(context, card, originalCost);
         }
 
         if (multiplier == 1m)
@@ -152,8 +108,16 @@ internal sealed partial class HextechMayhemModifier
 
     public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
     {
-        return TryConsumeEnemyEightPennyGate(card, isAutoPlay)
-            ? (PileType.Exhaust, position)
-            : (pileType, position);
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
+        {
+            if (effect.ModifyCardPlayResultPileTypeAndPosition(context, card, isAutoPlay, resources, pileType, position) is (PileType nextPileType, CardPilePosition nextPosition))
+            {
+                pileType = nextPileType;
+                position = nextPosition;
+            }
+        }
+
+        return (pileType, position);
     }
 }

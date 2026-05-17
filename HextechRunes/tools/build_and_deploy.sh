@@ -12,7 +12,12 @@ MOD_DIR="$GAME_APP/Contents/MacOS/mods/$FILE_STEM"
 BUILD_OUT="$ROOT/src/bin/Release/net9.0"
 PROJECT_PATH="$ROOT/src/$FILE_STEM.csproj"
 IMPORT_PROJECT="$ROOT/.build/import_project"
-GODOT_EDITOR="${GODOT_EDITOR:-/opt/homebrew/bin/godot}"
+DEFAULT_GODOT_EDITOR="$ROOT/../.tools/godot-4.5.1/Godot_mono.app/Contents/MacOS/Godot"
+if [[ -z "${GODOT_EDITOR:-}" && -x "$DEFAULT_GODOT_EDITOR" ]]; then
+  GODOT_EDITOR="$DEFAULT_GODOT_EDITOR"
+else
+  GODOT_EDITOR="${GODOT_EDITOR:-/opt/homebrew/bin/godot}"
+fi
 REFS_103="$ROOT/versioned-dll-backups/0.103.2/game-refs"
 REFS_104="$ROOT/versioned-dll-backups/0.104.0/game-refs"
 REFS_105="$ROOT/versioned-dll-backups/0.105.1/game-refs"

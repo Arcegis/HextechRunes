@@ -11,6 +11,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<uint, int> TormentorProcsThisTurn = new();
 	public readonly Dictionary<uint, int> CourageProcsThisTurn = new();
 	public readonly Dictionary<uint, int> BloodPactProcsThisTurn = new();
+	public readonly Dictionary<uint, int> BloodArmorHpLossThisPlayerTurn = new();
 	public readonly Dictionary<uint, int> ClownCollegeProcsThisTurn = new();
 	public readonly HashSet<uint> EscapePlanTriggered = new();
 	public readonly HashSet<uint> EscapePlanPending = new();
@@ -61,6 +62,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	{
 		PlayerAttackCardsPlayedThisTurn.Clear();
 		BloodPactProcsThisTurn.Clear();
+		BloodArmorHpLossThisPlayerTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
 	}
@@ -79,6 +81,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		TormentorProcsThisTurn.Clear();
 		CourageProcsThisTurn.Clear();
 		BloodPactProcsThisTurn.Clear();
+		BloodArmorHpLossThisPlayerTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
 		DevilsDanceTriggeredThisTurn.Clear();
 		FinalFormTriggeredThisTurn.Clear();

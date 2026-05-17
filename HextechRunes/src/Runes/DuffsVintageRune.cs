@@ -1,0 +1,62 @@
+using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.Factories;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
+using MegaCrit.Sts2.Core.Random;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.ValueProps;
+
+namespace HextechRunes;
+
+public sealed class DuffsVintageRune : HextechRelicBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("CostReduction", 1m)
+	];
+
+	public override bool ShouldFlush(Player player)
+	{
+		return player != Owner;
+	}
+
+	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
+	{
+		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		List<CardModel> cards = PileType.Hand.GetPile(Owner).Cards
+			.Where(static card => !card.EnergyCost.CostsX)
+			.ToList();
+		if (cards.Count == 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		foreach (CardModel card in cards)
+		{
+			int nextCost = Math.Max(0, card.EnergyCost.GetAmountToSpend() - DynamicVars["CostReduction"].IntValue);
+			card.EnergyCost.SetUntilPlayed(nextCost, reduceOnly: true);
+		}
+
+		return Task.CompletedTask;
+	}
+}

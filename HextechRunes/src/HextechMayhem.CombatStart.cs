@@ -31,48 +31,21 @@ internal sealed partial class HextechMayhemModifier
             return;
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.StartupRoutine))
-        {
-            foreach (Creature enemy in enemies)
-            {
-                await ApplyMonsterCombatStartHexesToEnemy(enemy, room, applyStartupRoutine: true, applyHailToTheKing: false);
-            }
-        }
-
-        if (!HasActiveMonsterHex(MonsterHexKind.HailToTheKing)
-            || room.RoomType is not (RoomType.Elite or RoomType.Boss))
-        {
-            return;
-        }
-
         foreach (Creature enemy in enemies)
         {
-            await ApplyMonsterCombatStartHexesToEnemy(enemy, room, applyStartupRoutine: false, applyHailToTheKing: true);
+            await ApplyMonsterCombatStartHexesToEnemy(enemy, room);
         }
     }
 
     private async Task ApplyMonsterCombatStartHexesToEnemy(
         Creature enemy,
-        CombatRoom room,
-        bool applyStartupRoutine = true,
-        bool applyHailToTheKing = true)
+        CombatRoom room)
     {
-        if (applyStartupRoutine && HasActiveMonsterHex(MonsterHexKind.StartupRoutine))
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
         {
-            await CreatureCmd.GainBlock(enemy, 15m, ValueProp.Unpowered, null);
+            await effect.ApplyCombatStartToEnemy(context, enemy, room);
         }
-
-        if (!applyHailToTheKing
-            || !HasActiveMonsterHex(MonsterHexKind.HailToTheKing)
-            || room.RoomType is not (RoomType.Elite or RoomType.Boss))
-        {
-            return;
-        }
-
-        int sustain = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m));
-        await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(enemy, 3m, enemy, null);
-        await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(enemy, sustain, enemy, null);
-        await HextechEnemyPowerScalingHooks.Apply<RegenPower>(enemy, sustain, enemy, null);
     }
 
     private async Task ApplyCombatStartPlayerDebuffHexes(CombatRoom room)
@@ -83,20 +56,10 @@ internal sealed partial class HextechMayhemModifier
             return;
         }
 
-        if (HasActiveMonsterHex(MonsterHexKind.Queen))
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
         {
-            await RunGroupedPlayerDebuffBurst(async () =>
-            {
-                await PowerCmd.Apply<ChainsOfBindingPower>(players, 1m, null, null);
-            });
-        }
-
-        if (HasActiveMonsterHex(MonsterHexKind.HandOfBaron))
-        {
-            await RunGroupedPlayerDebuffBurst(async () =>
-            {
-                await PowerCmd.Apply<ShrinkPower>(players, 99m, null, null);
-            });
+            await effect.ApplyCombatStartPlayerDebuffs(context, room, players);
         }
     }
 }

@@ -10,7 +10,19 @@ internal static partial class HextechCombatHooks
 {
 	private static void CardCanPlayPostfix(CardModel __instance, ref bool __result)
 	{
+		if (!__result && BlueCandleMedkitRune.AllowsPlaying(__instance))
+		{
+			__result = true;
+			return;
+		}
+
 		if (__result && IsBlockedByBackToBasics(__instance))
+		{
+			__result = false;
+			return;
+		}
+
+		if (__result && KakaRune.BlocksAttack(__instance))
 		{
 			__result = false;
 		}
@@ -20,17 +32,30 @@ internal static partial class HextechCombatHooks
 	{
 		if (!__result)
 		{
+			if (BlueCandleMedkitRune.AllowsPlaying(__instance))
+			{
+				reason = default;
+				preventer = null!;
+				__result = true;
+			}
+
 			return;
 		}
 
-		if (!IsBlockedByBackToBasics(__instance, out AbstractModel? backToBasicsPreventer))
+		if (IsBlockedByBackToBasics(__instance, out AbstractModel? backToBasicsPreventer))
 		{
+			reason = default;
+			preventer = backToBasicsPreventer!;
+			__result = false;
 			return;
 		}
 
-		reason = default;
-		preventer = backToBasicsPreventer!;
-		__result = false;
+		if (KakaRune.BlocksAttack(__instance) && __instance.Owner?.GetRelic<KakaRune>() is KakaRune kakaRune)
+		{
+			reason = default;
+			preventer = kakaRune;
+			__result = false;
+		}
 	}
 
 	private static bool IsBlockedByBackToBasics(CardModel card)
