@@ -10,13 +10,13 @@ internal sealed class MirrorReflectionEnemyHex : HextechEnemyHexEffect
 			|| cardPlay.IsAutoPlay
 			|| !cardPlay.Card.IsBasicStrikeOrDefend
 			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
-			|| cardPlay.Card.Owner.Creature.CombatState?.RunState != context.RunState)
+			|| cardPlay.Card.Owner.Creature.CombatState is not HextechCombatState combatState
+			|| combatState.RunState != context.RunState)
 		{
 			return;
 		}
 
-		Player owner = cardPlay.Card.Owner;
-		CardModel copy = owner.RunState.CloneCard(cardPlay.Card);
+		CardModel copy = combatState.CloneCard(cardPlay.Card);
 		await HextechCardGeneration.AddGeneratedCardToCombat(
 			copy,
 			PileType.Discard,

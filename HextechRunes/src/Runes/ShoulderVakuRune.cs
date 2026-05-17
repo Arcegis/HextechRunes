@@ -9,12 +9,14 @@ using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
+using MegaCrit.Sts2.Core.Nodes.Vfx;
 using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
@@ -25,6 +27,8 @@ namespace HextechRunes;
 
 public sealed class ShoulderVakuRune : HextechRelicBase
 {
+	private static readonly ModelId WhisperingEarringId = ModelDb.GetId<WhisperingEarring>();
+
 	private int _lastControlledRound;
 	private bool _controllingTurn;
 
@@ -54,15 +58,9 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		return player == Owner ? count + DynamicVars.Cards.BaseValue : count;
 	}
 
-	public override Task AfterEnergyResetLate(Player player)
+	public override decimal ModifyMaxEnergy(Player player, decimal amount)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, Owner);
+		return player == Owner ? amount + DynamicVars.Energy.BaseValue : amount;
 	}
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
@@ -77,9 +75,23 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		await CreatureCmd.Heal(Owner.Creature, heal);
 	}
 
-	public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
+#if STS2_104_OR_NEWER
+	public override Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
+#else
+	public override Task BeforePlayPhaseStartLate(PlayerChoiceContext choiceContext, Player player)
+#endif
+	{
+		return ControlOddTurnWithVakuu(choiceContext, player);
+	}
+
+	private async Task ControlOddTurnWithVakuu(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (!IsOddOwnerTurn(player, out int round) || _lastControlledRound == round || _controllingTurn)
+		{
+			return;
+		}
+
+		if (round == 1 && OwnerHasWhisperingEarring())
 		{
 			return;
 		}
@@ -89,9 +101,20 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		try
 		{
 			Flash();
+			bool hitPlayCap;
+			int cardsPlayed;
 			using (CardSelectCmd.PushSelector(new VakuuCardSelector()))
 			{
-				await AutoPlayPlayableHand(choiceContext, round);
+				cardsPlayed = await AutoPlayPlayableHand(choiceContext);
+				hitPlayCap = cardsPlayed >= 13;
+			}
+
+			if (cardsPlayed > 0)
+			{
+				LocString line = hitPlayCap
+					? new LocString("relics", "WHISPERING_EARRING.warning")
+					: new LocString("relics", "WHISPERING_EARRING.approval");
+				TalkCmd.Play(line, Owner!.Creature, VfxColor.Purple);
 			}
 		}
 		finally
@@ -112,32 +135,51 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		return round > 0 && round % 2 == 1;
 	}
 
-	private async Task AutoPlayPlayableHand(PlayerChoiceContext choiceContext, int round)
+	private bool OwnerHasWhisperingEarring()
 	{
-		if (Owner == null || Owner.Creature.CombatState == null)
+		return Owner?.Relics.Any(static relic =>
+			(relic.CanonicalInstance?.Id ?? relic.Id) == WhisperingEarringId) == true;
+	}
+
+	private async Task<int> AutoPlayPlayableHand(PlayerChoiceContext choiceContext)
+	{
+		if (Owner == null || Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
-			return;
+			return 0;
 		}
 
-		List<CardModel> cards = PileType.Hand.GetPile(Owner).Cards
-			.Where(card => card.Owner == Owner && card.Type is CardType.Attack or CardType.Skill or CardType.Power)
-			.ToList();
-		for (int i = 0; i < cards.Count; i++)
+		int cardsPlayed;
+		for (cardsPlayed = 0; cardsPlayed < 13; cardsPlayed++)
 		{
-			CardModel card = cards[i];
-			if (card.Pile?.Type != PileType.Hand || !card.CanPlay())
+			if (CombatManager.Instance.IsOverOrEnding || CombatManager.Instance.IsPlayerReadyToEndTurn(Owner))
 			{
-				continue;
+				break;
 			}
 
-			Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
-				Owner,
-				Owner.Creature.CombatState,
-				"shoulder-vaku",
-				round.ToString(),
-				i.ToString(),
-				CombatManager.Instance.History.Entries.Count().ToString());
-			await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default);
+			CardModel? card = PileType.Hand.GetPile(Owner).Cards.FirstOrDefault(static card => card.CanPlay());
+			if (card == null)
+			{
+				break;
+			}
+
+			Creature? target = GetTarget(card, combatState);
+			await card.SpendResources();
+			await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default, skipXCapture: true);
 		}
+
+		return cardsPlayed;
+	}
+
+	private Creature? GetTarget(CardModel card, HextechCombatState combatState)
+	{
+		Rng combatTargets = Owner!.RunState.Rng.CombatTargets;
+		return card.TargetType switch
+		{
+			TargetType.AnyEnemy => combatState.HittableEnemies.FirstOrDefault(),
+			TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where(creature =>
+				creature is { IsAlive: true, IsPlayer: true } && creature != Owner.Creature)),
+			TargetType.AnyPlayer => Owner.Creature,
+			_ => null
+		};
 	}
 }
