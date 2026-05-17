@@ -239,6 +239,35 @@ def validate_rune_file_layout(errors: list[str]) -> None:
             fail(errors, f"{path.relative_to(REPO_ROOT)} should be named {rune_classes[0]}.cs")
 
 
+def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
+    registry_text = read(SRC / "HextechContentRegistry.cs")
+    effect_registry_text = read(SRC / "EnemyHexes" / "HextechEnemyHexEffects.cs")
+    monster_regs = extract_monster_hex_registrations(registry_text)
+    if not monster_regs:
+        fail(errors, "MonsterHexRegistrations block not found for enemy hex effect layout")
+        return
+
+    for reg in monster_regs:
+        kind = str(reg["kind"])
+        expected_class = f"{kind}EnemyHex"
+        expected_path = SRC / "EnemyHexes" / f"{expected_class}.cs"
+        if not expected_path.exists():
+            fail(errors, f"enemy hex effect file missing: {expected_path.relative_to(REPO_ROOT)}")
+            continue
+
+        text = read(expected_path)
+        class_pattern = rf"\binternal\s+sealed\s+class\s+{expected_class}\s*:\s*HextechEnemyHexEffect\b"
+        if not re.search(class_pattern, text):
+            fail(errors, f"{expected_path.relative_to(REPO_ROOT)} should declare {expected_class} : HextechEnemyHexEffect")
+
+        kind_pattern = rf"\bKind\s*=>\s*MonsterHexKind\.{kind}\b"
+        if not re.search(kind_pattern, text):
+            fail(errors, f"{expected_path.relative_to(REPO_ROOT)} should bind Kind to MonsterHexKind.{kind}")
+
+        if f"new {expected_class}()" not in effect_registry_text:
+            fail(errors, f"enemy hex effect registry missing {expected_class}")
+
+
 def validate_combat_tracking_state(errors: list[str]) -> None:
     state_text = read(SRC / "HextechMayhemCombatTrackingState.cs")
     serialization_text = read(SRC / "HextechMayhemCombatTrackingState.Serialization.cs")
@@ -304,6 +333,7 @@ def main() -> int:
     validate_monster_hex_registry(errors, warnings)
     validate_relic_registry(errors)
     validate_rune_file_layout(errors)
+    validate_enemy_hex_effect_layout(errors)
     validate_combat_tracking_state(errors)
 
     if errors:

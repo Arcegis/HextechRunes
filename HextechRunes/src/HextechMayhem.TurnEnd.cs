@@ -18,11 +18,10 @@ internal sealed partial class HextechMayhemModifier
     {
         CombatRoom? combatRoom = RunState.CurrentRoom as CombatRoom;
 
-        if (side == CombatSide.Player
-            && combatRoom != null
-            && IsNetworkMultiplayer())
+        HextechEnemyHexContext context = new(this);
+        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
         {
-            await ResolveWarmogsSpiritDrawProgressFromHistory(combatRoom.CombatState);
+            await effect.BeforeTurnEnd(context, choiceContext, side, combatRoom);
         }
 
         if (side == CombatSide.Player)
@@ -31,56 +30,6 @@ internal sealed partial class HextechMayhemModifier
             if (combatRoom != null)
             {
                 RefreshPlayerAttackCostDoublingPreviews(GetAlivePlayerSideCreatures(combatRoom.CombatState));
-                ApplyEnemyDuffsVintageCostIncrease(combatRoom.CombatState);
-            }
-        }
-
-        if (side != CombatSide.Player
-            || !HasActiveMonsterHex(MonsterHexKind.HastyScribble)
-            || combatRoom == null)
-        {
-            return;
-        }
-
-        foreach (Creature playerCreature in GetAlivePlayerSideCreatures(combatRoom.CombatState))
-        {
-            Player? player = playerCreature.Player;
-            if (player == null)
-            {
-                continue;
-            }
-
-            int handCount = PileType.Hand.GetPile(player).Cards.Count;
-            if (handCount > 0)
-            {
-                await CreatureCmd.Damage(choiceContext, playerCreature, handCount, ValueProp.Unpowered, null, null);
-            }
-        }
-    }
-
-    private void ApplyEnemyDuffsVintageCostIncrease(HextechCombatState combatState)
-    {
-        if (!HasActiveMonsterHex(MonsterHexKind.DuffsVintage))
-        {
-            return;
-        }
-
-        foreach (Creature playerCreature in GetAlivePlayerSideCreatures(combatState))
-        {
-            Player? player = playerCreature.Player;
-            if (player == null)
-            {
-                continue;
-            }
-
-            foreach (CardModel card in PileType.Hand.GetPile(player).Cards)
-            {
-                if (card.EnergyCost.CostsX)
-                {
-                    continue;
-                }
-
-                card.EnergyCost.SetUntilPlayed(card.EnergyCost.GetAmountToSpend() + 1, reduceOnly: false);
             }
         }
     }

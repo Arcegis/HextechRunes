@@ -1,0 +1,27 @@
+namespace HextechRunes;
+
+internal sealed class GlassCannonEnemyHex : HextechEnemyHexEffect
+{
+	internal override MonsterHexKind Kind => MonsterHexKind.GlassCannon;
+
+	internal override int PersistentOrder => 90;
+
+	internal override int EnemyHealOrder => 50;
+
+	internal override decimal ModifyDamageMultiplicative(HextechEnemyHexContext context, Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return 1.5m;
+	}
+
+	internal override decimal ModifyEnemyHealAmount(HextechEnemyHexContext context, Creature creature, decimal amount)
+	{
+		int healCap = (int)Math.Floor(creature.MaxHp * 0.7m);
+		return Math.Min(amount, Math.Max(0, healCap - creature.CurrentHp));
+	}
+
+	internal override Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
+	{
+		int hpCap = Math.Max(1, (int)Math.Floor(creature.MaxHp * 0.7m));
+		return creature.CurrentHp > hpCap ? CreatureCmd.SetCurrentHp(creature, hpCap) : Task.CompletedTask;
+	}
+}

@@ -1,0 +1,33 @@
+namespace HextechRunes;
+
+internal sealed class GoldenSpatulaEnemyHex : HextechEnemyHexEffect
+{
+	internal override MonsterHexKind Kind => MonsterHexKind.GoldenSpatula;
+
+	internal override int PersistentOrder => 30;
+
+	internal override int EnemyHealOrder => 40;
+
+	internal override decimal ModifyDamageMultiplicative(HextechEnemyHexContext context, Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return 1.35m;
+	}
+
+	internal override decimal ModifyBlockMultiplicative(HextechEnemyHexContext context, Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
+	{
+		return 0.5m;
+	}
+
+	internal override decimal ModifyEnemyHealAmount(HextechEnemyHexContext context, Creature creature, decimal amount)
+	{
+		return amount * 0.5m;
+	}
+
+	internal override async Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
+	{
+		if (HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.GoldenSpatulaApplied, creature, replayOneShotPowers))
+		{
+			await HextechMayhemModifier.EnsureMonsterMaxHpBonus(creature, 0.35m, maxHpBaseOverride);
+		}
+	}
+}

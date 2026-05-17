@@ -26,107 +26,37 @@ internal sealed partial class HextechMayhemModifier
 			RefreshPlayerAttackCostDoublingPreviews(GetAlivePlayerSideCreatures(combatState));
 		}
 
-		if (HasActiveMonsterHex(MonsterHexKind.MirrorReflection))
+		HextechEnemyHexContext enemyHexContext = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			await TryApplyEnemyMirrorReflection(cardPlay);
-		}
-
-		if (!HasActiveMonsterHex(MonsterHexKind.MasterOfDuality)
-			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player)
-		{
-			return;
-		}
-
-		Creature playerCreature = cardPlay.Card.Owner.Creature;
-		if (!playerCreature.IsAlive)
-		{
-			return;
-		}
-
-		if (cardPlay.Card.Type == CardType.Skill)
-		{
-			await PowerCmd.Apply<HextechTemporaryStrengthLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
-		}
-		else if (cardPlay.Card.Type == CardType.Attack)
-		{
-			await PowerCmd.Apply<HextechTemporaryDexterityLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
+			await effect.AfterCardPlayed(enemyHexContext, context, cardPlay);
 		}
 	}
 
 	public override async Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
 	{
-		if (!HasActiveMonsterHex(MonsterHexKind.DizzySpinning)
-			|| shuffler.Creature.Side != CombatSide.Player
-			|| shuffler.Creature.IsDead
-			|| shuffler.Creature.CombatState is not HextechCombatState combatState
-			|| combatState.RunState != RunState)
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			return;
+			await effect.AfterShuffle(context, choiceContext, shuffler);
 		}
-
-		CardModel dazed = combatState.CreateCard<Dazed>(shuffler);
-		await HextechCardGeneration.AddGeneratedCardToCombat(
-			dazed,
-			PileType.Draw,
-			addedByPlayer: false,
-			CardPilePosition.Random);
-	}
-
-	private async Task TryApplyEnemyMirrorReflection(CardPlay cardPlay)
-	{
-		if (!cardPlay.IsFirstInSeries
-			|| cardPlay.IsAutoPlay
-			|| !cardPlay.Card.IsBasicStrikeOrDefend
-			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
-			|| cardPlay.Card.Owner.Creature.CombatState?.RunState != RunState)
-		{
-			return;
-		}
-
-		Player owner = cardPlay.Card.Owner;
-		CardModel copy = owner.RunState.CloneCard(cardPlay.Card);
-		await HextechCardGeneration.AddGeneratedCardToCombat(
-			copy,
-			PileType.Discard,
-			addedByPlayer: false,
-			CardPilePosition.Top);
 	}
 
 	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
-		if (!HasActiveMonsterHex(MonsterHexKind.WarmogsSpirit)
-			|| card.Owner?.Creature.Side != CombatSide.Player
-			|| card.Owner.Creature.CombatState?.RunState != RunState)
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			return;
-		}
-
-		if (IsNetworkMultiplayer())
-		{
-			return;
-		}
-
-		Player owner = card.Owner;
-		ulong playerId = owner.NetId;
-		int cardsDrawn = _combatTracking.PlayerCardsDrawnThisCombat.GetValueOrDefault(playerId, 0) + 1;
-		_combatTracking.PlayerCardsDrawnThisCombat[playerId] = cardsDrawn;
-		if (cardsDrawn % 8 != 0)
-		{
-			return;
-		}
-
-		HextechCombatState combatState = owner.Creature.CombatState;
-		foreach (Creature enemy in GetAliveEnemies(combatState))
-		{
-			await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(enemy, 1m, enemy, null);
+			await effect.AfterCardDrawn(context, choiceContext, card, fromHandDraw);
 		}
 	}
 
 	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (IsNetworkMultiplayer() && cardPlay.Card.Owner?.Creature.CombatState is HextechCombatState combatStateForWarmogs)
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			await ResolveWarmogsSpiritDrawProgressFromHistory(combatStateForWarmogs);
+			await effect.AfterCardPlayedLate(context, choiceContext, cardPlay);
 		}
 
 		Player? owner = cardPlay.Card.Owner;
@@ -148,64 +78,21 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (IsNetworkMultiplayer() && player.Creature.CombatState is HextechCombatState combatState)
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			await ResolveWarmogsSpiritDrawProgressFromHistory(combatState);
+			await effect.AfterPlayerTurnStartLate(context, choiceContext, player);
 		}
 	}
 
 #if !STS2_104_OR_NEWER
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (IsNetworkMultiplayer() && player.Creature.CombatState is HextechCombatState combatState)
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
-			await ResolveWarmogsSpiritDrawProgressFromHistory(combatState);
+			await effect.BeforePlayPhaseStart(context, choiceContext, player);
 		}
 	}
 #endif
-
-	private async Task ResolveWarmogsSpiritDrawProgressFromHistory(HextechCombatState combatState)
-	{
-		if (!HasActiveMonsterHex(MonsterHexKind.WarmogsSpirit)
-			|| combatState.RunState != RunState)
-		{
-			return;
-		}
-
-		int pendingPlating = 0;
-		foreach (Player player in combatState.Players.OrderBy(static player => player.NetId))
-		{
-			int drawnCards = CountPlayerDrawnCardsFromHistory(player);
-			int previousDrawnCards = _combatTracking.PlayerCardsDrawnThisCombat.GetValueOrDefault(player.NetId, 0);
-			if (drawnCards <= previousDrawnCards)
-			{
-				continue;
-			}
-
-			pendingPlating += drawnCards / 8 - previousDrawnCards / 8;
-			_combatTracking.PlayerCardsDrawnThisCombat[player.NetId] = drawnCards;
-		}
-
-		if (pendingPlating <= 0)
-		{
-			return;
-		}
-
-		foreach (Creature enemy in GetAliveEnemies(combatState))
-		{
-			await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(enemy, pendingPlating, enemy, null);
-		}
-	}
-
-	private static int CountPlayerDrawnCardsFromHistory(Player player)
-	{
-		return CombatManager.Instance.History.Entries
-			.OfType<CardDrawnEntry>()
-			.Count(entry => entry.Card.Owner?.NetId == player.NetId);
-	}
-
-	private static bool IsNetworkMultiplayer()
-	{
-		return RunManager.Instance.NetService.Type is NetGameType.Host or NetGameType.Client;
-	}
 }
