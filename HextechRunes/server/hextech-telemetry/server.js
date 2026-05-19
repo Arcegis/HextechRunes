@@ -22,6 +22,7 @@ fs.mkdirSync(DERIVED_DIR, { recursive: true });
 
 const LABELS = loadLabels();
 const knownRunIds = loadKnownRunIds();
+const summaryCache = new Map();
 const derivedState = {
   dirty: false,
   rebuilding: false,
@@ -57,12 +58,17 @@ function displayLabel(row) {
 
 function loadKnownRunIds() {
   const ids = new Set();
-  for (const record of readRecordSet().records) {
-    const runId = record?.payload?.run?.runId;
-    if (typeof runId === "string" && runId.length > 0) {
-      ids.add(runId);
+  forEachJsonlLine(RESULTS_FILE, (line) => {
+    try {
+      const record = JSON.parse(line);
+      const runId = record?.payload?.run?.runId;
+      if (typeof runId === "string" && runId.length > 0) {
+        ids.add(runId);
+      }
+    } catch {
+      // Bad historical lines are ignored here; readRecordSet records them for analytics.
     }
-  }
+  });
   return ids;
 }
 
@@ -200,32 +206,111 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+function forEachJsonlLine(filePath, callback) {
+  if (!fs.existsSync(filePath)) {
+    return 0;
+  }
+
+  const fd = fs.openSync(filePath, "r");
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
+  let carry = Buffer.alloc(0);
+  let carryOffset = 0;
+  let lineCount = 0;
+  try {
+    while (true) {
+      const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, null);
+      if (bytesRead <= 0) {
+        break;
+      }
+
+      const chunk = carry.length > 0
+        ? Buffer.concat([carry, buffer.subarray(0, bytesRead)])
+        : buffer.subarray(0, bytesRead);
+      let lineStart = 0;
+      for (let i = 0; i < chunk.length; i++) {
+        if (chunk[i] !== 10) {
+          continue;
+        }
+
+        let line = chunk.subarray(lineStart, i);
+        if (line.length > 0 && line[line.length - 1] === 13) {
+          line = line.subarray(0, line.length - 1);
+        }
+        if (line.toString("utf8").trim().length > 0) {
+          callback(line.toString("utf8"), carryOffset + lineStart);
+          lineCount += 1;
+        }
+        lineStart = i + 1;
+      }
+
+      carry = Buffer.from(chunk.subarray(lineStart));
+      carryOffset += chunk.length - carry.length;
+    }
+
+    if (carry.length > 0 && carry.toString("utf8").trim().length > 0) {
+      callback(carry.toString("utf8"), carryOffset);
+      lineCount += 1;
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  return lineCount;
+}
+
+function buildRecordIndex() {
+  const latestOffsetsByRunId = new Map();
+  let physicalLines = 0;
+  let malformedLines = 0;
+  forEachJsonlLine(RESULTS_FILE, (line, offset) => {
+    physicalLines += 1;
+    try {
+      const record = JSON.parse(line);
+      const runId = record?.payload?.run?.runId;
+      if (typeof runId === "string" && runId.length > 0) {
+        latestOffsetsByRunId.set(runId, offset);
+      }
+    } catch {
+      malformedLines += 1;
+    }
+  });
+
+  return {
+    latestOffsets: new Set(latestOffsetsByRunId.values()),
+    physicalLines,
+    duplicateLines: Math.max(0, physicalLines - latestOffsetsByRunId.size - malformedLines),
+    malformedLines,
+    totalUniqueRuns: latestOffsetsByRunId.size
+  };
+}
+
+function forEachLatestRecord(recordIndex, callback) {
+  forEachJsonlLine(RESULTS_FILE, (line, offset) => {
+    if (!recordIndex.latestOffsets.has(offset)) {
+      return;
+    }
+    try {
+      callback(JSON.parse(line));
+    } catch {
+      // Malformed latest lines are already counted during indexing.
+    }
+  });
+}
+
 function readRecordSet() {
   if (!fs.existsSync(RESULTS_FILE)) {
     return { records: [], physicalLines: 0, duplicateLines: 0, malformedLines: 0 };
   }
 
-  const lines = fs.readFileSync(RESULTS_FILE, "utf8").split(/\r?\n/).filter((line) => line.trim());
-  const byRunId = new Map();
-  let malformedLines = 0;
-  for (const line of lines) {
-    try {
-      const record = JSON.parse(line);
-      const payload = record?.payload;
-      const runId = payload?.run?.runId;
-      if (typeof runId === "string" && runId.length > 0) {
-        byRunId.set(runId, record);
-      }
-    } catch {
-      malformedLines += 1;
-    }
-  }
+  const recordIndex = buildRecordIndex();
+  const records = [];
+  forEachLatestRecord(recordIndex, (record) => records.push(record));
 
   return {
-    records: [...byRunId.values()],
-    physicalLines: lines.length,
-    duplicateLines: Math.max(0, lines.length - byRunId.size - malformedLines),
-    malformedLines
+    records,
+    physicalLines: recordIndex.physicalLines,
+    duplicateLines: recordIndex.duplicateLines,
+    malformedLines: recordIndex.malformedLines
   };
 }
 
@@ -492,6 +577,112 @@ function buildDerivedData(options = {}) {
   };
 }
 
+function buildSummaryData(options = {}) {
+  const versionFilter = normalizeVersionFilter(options.version);
+  const recordIndex = buildRecordIndex();
+  const availableVersionCounts = {};
+  const summary = {
+    generatedAtUtc: new Date().toISOString(),
+    filters: {
+      minRunTimeForDefaultStats: MIN_RUN_TIME_FOR_DEFAULT_STATS,
+      defaultExcludes: ["short_run"],
+      version: versionFilter || "all"
+    },
+    versionFilter: versionFilter || "all",
+    availableVersions: [],
+    raw: {
+      physicalLines: recordIndex.physicalLines,
+      uniqueRuns: 0,
+      totalUniqueRuns: recordIndex.totalUniqueRuns,
+      duplicateLines: recordIndex.duplicateLines,
+      malformedLines: recordIndex.malformedLines
+    },
+    runCount: 0,
+    winCount: 0,
+    winRate: 0,
+    excludedShortRuns: 0,
+    playerRuneRuns: {},
+    playerRuneChoices: {},
+    monsterHexRuns: {},
+    versions: {},
+    netModes: {},
+    characters: {},
+    tables: {
+      playerRuneRuns: [],
+      playerRuneChoices: [],
+      monsterHexRuns: [],
+      versions: [],
+      netModes: [],
+      characters: []
+    }
+  };
+
+  forEachLatestRecord(recordIndex, (record) => {
+    const recordVersion = getModVersion(record);
+    const allEligible = isDefaultEligible(record);
+    if (allEligible) {
+      addSimpleCounter(availableVersionCounts, recordVersion);
+    }
+    if (versionFilter && recordVersion !== versionFilter) {
+      return;
+    }
+
+    summary.raw.uniqueRuns += 1;
+    if (!allEligible) {
+      summary.excludedShortRuns += 1;
+      return;
+    }
+
+    const payload = record.payload || {};
+    const run = payload.run || {};
+    const isVictory = run.isVictory === true;
+    if (isVictory) {
+      summary.winCount += 1;
+    }
+    summary.runCount += 1;
+    addSimpleCounter(summary.versions, recordVersion);
+    addSimpleCounter(summary.netModes, run.netMode || "(unknown)");
+
+    for (const player of payload.players || []) {
+      const character = player.character || "";
+      addSimpleCounter(summary.characters, character || "(unknown)");
+      for (const rune of Array.isArray(player.hextechRunes) ? player.hextechRunes : []) {
+        addCounter(summary.playerRuneRuns, rune, isVictory);
+      }
+    }
+
+    for (const choice of payload.runeChoices || []) {
+      const options = Array.isArray(choice.options) ? choice.options : [];
+      const selected = typeof choice.selected === "string" ? choice.selected : "";
+      for (const option of options) {
+        const isSelected = option === selected;
+        addChoiceCounter(summary.playerRuneChoices, option, "offered", isVictory);
+        if (isSelected) {
+          addChoiceCounter(summary.playerRuneChoices, option, "selected", isVictory);
+        }
+      }
+      if (selected && !options.includes(selected)) {
+        addChoiceCounter(summary.playerRuneChoices, selected, "offered", isVictory);
+        addChoiceCounter(summary.playerRuneChoices, selected, "selected", isVictory);
+      }
+    }
+
+    for (const monsterHex of payload.monsterHexes || []) {
+      addMonsterCounter(summary.monsterHexRuns, monsterHex.hex, isVictory);
+    }
+  });
+
+  summary.winRate = pctNumber(summary.winCount, summary.runCount);
+  summary.availableVersions = buildCountRows(availableVersionCounts);
+  summary.tables.playerRuneRuns = buildRateRows(summary.playerRuneRuns, "runes");
+  summary.tables.playerRuneChoices = buildChoiceRows(summary.playerRuneChoices, "runes");
+  summary.tables.monsterHexRuns = buildMonsterRows(summary.monsterHexRuns, "monsterHexes");
+  summary.tables.versions = buildCountRows(summary.versions);
+  summary.tables.netModes = buildCountRows(summary.netModes, "netModes");
+  summary.tables.characters = buildCountRows(summary.characters, "characters");
+  return summary;
+}
+
 function pctNumber(part, total) {
   return total > 0 ? Number(((part / total) * 100).toFixed(1)) : 0;
 }
@@ -651,6 +842,7 @@ function derivedFilesAreCurrent() {
 
 function markDerivedDirty() {
   derivedState.dirty = true;
+  summaryCache.clear();
 }
 
 function scheduleDerivedRebuild(delayMs = DERIVED_REFRESH_DELAY_MS) {
@@ -695,25 +887,16 @@ function rebuildDerivedTablesNow() {
 
 function getSummaryForDisplay(versionFilter = null) {
   const normalizedVersionFilter = normalizeVersionFilter(versionFilter);
-  if (normalizedVersionFilter) {
-    return buildDerivedData({ version: normalizedVersionFilter }).summary;
+  const resultsMtimeMs = fs.existsSync(RESULTS_FILE) ? fs.statSync(RESULTS_FILE).mtimeMs : 0;
+  const cacheKey = normalizedVersionFilter || "all";
+  const cached = summaryCache.get(cacheKey);
+  if (cached && cached.resultsMtimeMs === resultsMtimeMs) {
+    return cached.summary;
   }
 
-  const summary = readDerivedSummary();
-  if (summary && allDerivedFilesExist()) {
-    if (!summary.versionFilter || !Array.isArray(summary.availableVersions)) {
-      return rebuildDerivedTablesNow();
-    }
-    if (derivedState.dirty || !derivedFilesAreCurrent()) {
-      scheduleDerivedRebuild();
-    }
-    return summary;
-  }
-  const rebuilt = rebuildDerivedTablesNow();
-  if (rebuilt) {
-    return rebuilt;
-  }
-  throw new Error("summary is not available");
+  const summary = buildSummaryData({ version: normalizedVersionFilter });
+  summaryCache.set(cacheKey, { resultsMtimeMs, summary });
+  return summary;
 }
 
 function writeCsv(fileName, rows, headers) {
@@ -746,9 +929,10 @@ function serveDerived(req, res, pathname) {
   }
   const filePath = path.join(DERIVED_DIR, fileName);
   if (!fs.existsSync(filePath)) {
-    rebuildDerivedTablesNow();
-  } else if (derivedState.dirty || !derivedFilesAreCurrent()) {
-    scheduleDerivedRebuild();
+    if (fileName === "summary.json") {
+      return sendJson(res, 200, getSummaryForDisplay(null));
+    }
+    return sendText(res, 503, "derived file is not available; rebuild it offline");
   }
   const contentType = fileName.endsWith(".json") ? "application/json; charset=utf-8" : "text/csv; charset=utf-8";
   return sendFile(res, filePath, contentType);

@@ -45,7 +45,10 @@ public sealed class JinlianBoxRune : HextechRelicBase
 
 		List<CardTransformation> transformations = Owner.Deck.Cards
 			.Where(static card => card.IsTransformable)
-			.Select(card => new CardTransformation(card, rareOptions))
+			.Select(card => CardTransformUpgradeHelper.CreateRandomOptionTransformation(
+				card,
+				rareOptions,
+				Owner.RunState.Rng.CombatCardSelection))
 			.ToList();
 		if (transformations.Count == 0)
 		{
@@ -53,6 +56,6 @@ public sealed class JinlianBoxRune : HextechRelicBase
 		}
 
 		Flash();
-		await CardCmd.Transform(transformations, Owner.RunState.Rng.CombatCardSelection, CardPreviewStyle.GridLayout);
+		await CardCmd.Transform(transformations, null, CardPreviewStyle.GridLayout);
 	}
 }
