@@ -15,7 +15,7 @@ internal sealed class RepulsorEnemyHex : HextechEnemyHexEffect
 				continue;
 			}
 
-			await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(creature, HextechMayhemModifier.RepulsorSlipperyStacks, creature, null);
+			await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(creature, context.TierValue(Kind, 1, 2, 3), creature, null);
 		}
 	}
 

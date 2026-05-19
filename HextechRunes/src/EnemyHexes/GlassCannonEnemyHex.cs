@@ -10,7 +10,7 @@ internal sealed class GlassCannonEnemyHex : HextechEnemyHexEffect
 
 	internal override decimal ModifyDamageMultiplicative(HextechEnemyHexContext context, Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return 1.5m;
+		return 1m + context.TierValue(Kind, 0.30m, 0.40m, 0.50m);
 	}
 
 	internal override decimal ModifyEnemyHealAmount(HextechEnemyHexContext context, Creature creature, decimal amount)

@@ -18,11 +18,9 @@ internal sealed class UnmovableMountainEnemyHex : HextechEnemyHexEffect
 	{
 		foreach (Creature enemy in enemies)
 		{
-			if (enemy.Block <= 0)
-			{
-				int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.08m));
-				await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
-			}
+			decimal blockPercent = context.TierValue(Kind, 0.06m, 0.08m, 0.10m);
+			int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * blockPercent));
+			await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
 		}
 	}
 }

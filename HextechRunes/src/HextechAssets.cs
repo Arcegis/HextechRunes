@@ -4,6 +4,12 @@ namespace HextechRunes;
 
 internal static class HextechAssets
 {
+    private static readonly Dictionary<string, string> RelicIconOverrides = new()
+    {
+        ["MOBILE_HOME_RUNE"] = "eightPennyGateRune",
+        ["PORTABLE_SLEEPING_BAG_RUNE"] = "mobileHomeRune"
+    };
+
     public const string HextechSubcategoryKey = "HEXTECH_RUNES_SUBCATEGORY";
 
     public const string ForgeSubcategoryKey = "HEXTECH_FORGES_SUBCATEGORY";
@@ -45,6 +51,11 @@ internal static class HextechAssets
         if (HextechCatalog.IsHextechRelic(relic))
         {
             ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+            if (RelicIconOverrides.TryGetValue(id.Entry, out string? iconStem))
+            {
+                return $"res://{ModInfo.Id}/images/relics/{iconStem}.png";
+            }
+
             return $"res://{ModInfo.Id}/images/relics/{ToImageFileStem(id.Entry)}.png";
         }
 

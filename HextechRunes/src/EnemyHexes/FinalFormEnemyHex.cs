@@ -10,7 +10,8 @@ internal sealed class FinalFormEnemyHex : HextechEnemyHexEffect
 			&& dealer.CombatId != null
 			&& context.Tracking.FinalFormTriggeredThisTurn.Add(dealer.CombatId.Value))
 		{
-			int block = Math.Max(1, (int)Math.Floor(dealer.MaxHp * HextechMayhemModifier.FinalFormBlockPercent));
+			decimal blockPercent = context.TierValue(Kind, 0.10m, 0.15m, 0.20m);
+			int block = Math.Max(1, (int)Math.Floor(dealer.MaxHp * blockPercent));
 			await CreatureCmd.GainBlock(dealer, block, ValueProp.Unpowered, null);
 		}
 	}

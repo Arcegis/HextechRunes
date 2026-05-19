@@ -11,7 +11,8 @@ internal sealed class DawnbringersResolveEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int regen = Math.Max(1, (int)Math.Floor(target.MaxHp * HextechMayhemModifier.DawnbringersResolveRegenPercent));
+		decimal regenPercent = context.TierValue(Kind, 0.08m, 0.10m, 0.12m);
+		int regen = Math.Max(1, (int)Math.Floor(target.MaxHp * regenPercent));
 		await HextechEnemyPowerScalingHooks.Apply<RegenPower>(target, regen, target, null);
 	}
 }

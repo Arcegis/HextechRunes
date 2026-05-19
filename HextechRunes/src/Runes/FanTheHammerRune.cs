@@ -37,7 +37,6 @@ namespace HextechRunes;
 public sealed class FanTheHammerRune : HextechRelicBase
 {
 	private bool _triggeredThisTurn;
-	private bool _triggeredLastPlay;
 	private HextechCombatState? _turnStateCombat;
 	private int _turnStateRoundNumber = -1;
 
@@ -49,7 +48,6 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		{
 			// Legacy save compatibility: this is turn-scoped runtime state and must not enter multiplayer checksums.
 			_triggeredThisTurn = false;
-			_triggeredLastPlay = false;
 			_turnStateCombat = null;
 			_turnStateRoundNumber = -1;
 		}
@@ -86,7 +84,6 @@ public sealed class FanTheHammerRune : HextechRelicBase
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		_triggeredLastPlay = false;
 		if (card.Owner != Owner)
 		{
 			return playCount;
@@ -98,18 +95,22 @@ public sealed class FanTheHammerRune : HextechRelicBase
 			return playCount;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnStateIdentity();
-		_triggeredLastPlay = true;
 		return playCount + GetReplayCount();
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (_triggeredLastPlay && IsOwnedAttack(card))
+		if (card.Owner != Owner)
 		{
+			return Task.CompletedTask;
+		}
+
+		EnsureTurnStateCurrent();
+		if (!_triggeredThisTurn && IsOwnedAttack(card))
+		{
+			_triggeredThisTurn = true;
+			UpdateTurnStateIdentity();
 			Flash();
-			_triggeredLastPlay = false;
 		}
 
 		return Task.CompletedTask;
@@ -133,7 +134,6 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	private void ResetTurnState(HextechCombatState? combatState = null)
 	{
 		_triggeredThisTurn = false;
-		_triggeredLastPlay = false;
 		UpdateTurnStateIdentity(combatState);
 	}
 
@@ -143,7 +143,6 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		if (combatState == null)
 		{
 			_triggeredThisTurn = false;
-			_triggeredLastPlay = false;
 			_turnStateCombat = null;
 			_turnStateRoundNumber = -1;
 			return;

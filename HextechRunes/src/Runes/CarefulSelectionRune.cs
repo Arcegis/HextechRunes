@@ -27,36 +27,77 @@ public sealed class CarefulSelectionRune : HextechRelicBase
 		new CardsVar(4)
 	];
 
-	public override bool TryModifyRewardsLate(Player player, List<Reward> rewards, AbstractRoom? room)
+	public override bool TryModifyCardRewardOptions(Player player, List<CardCreationResult> cardRewardOptions, CardCreationOptions creationOptions)
 	{
-		if (player != Owner || room is not CombatRoom)
+		if (player != Owner
+			|| creationOptions.Source != CardCreationSource.Encounter
+			|| cardRewardOptions.Count == 0)
 		{
 			return false;
 		}
 
-		bool modified = false;
-		for (int i = 0; i < rewards.Count; i++)
+		int targetCount = DynamicVars.Cards.IntValue;
+		int cardsToAdd = targetCount - cardRewardOptions.Count;
+		if (cardsToAdd <= 0)
 		{
-			if (rewards[i] is not CardReward cardReward)
-			{
-				continue;
-			}
-
-			rewards[i] = new CardReward(
-				CardCreationOptions.ForRoom(player, room.RoomType),
-				DynamicVars.Cards.IntValue,
-				player)
-			{
-				CanReroll = cardReward.CanReroll
-			};
-			modified = true;
+			return false;
 		}
 
-		if (modified)
+		List<CardModel> candidates = BuildAdditionalCardPool(player, cardRewardOptions, creationOptions);
+		if (candidates.Count == 0)
 		{
-			Flash();
+			return false;
 		}
 
-		return modified;
+		CardCreationOptions extraOptions = new CardCreationOptions(
+				candidates,
+				creationOptions.Source,
+				GetRarityOddsForAdditionalPool(creationOptions, candidates))
+			.WithFlags(creationOptions.Flags | CardCreationFlags.NoModifyHooks);
+		if (creationOptions.RngOverride != null)
+		{
+			extraOptions.WithRngOverride(creationOptions.RngOverride);
+		}
+
+		List<CardCreationResult> extraCards = CardFactory
+			.CreateForReward(player, Math.Min(cardsToAdd, candidates.Count), extraOptions)
+			.ToList();
+		if (extraCards.Count == 0)
+		{
+			return false;
+		}
+
+		cardRewardOptions.AddRange(extraCards);
+		Flash();
+		return true;
+	}
+
+	private static List<CardModel> BuildAdditionalCardPool(
+		Player player,
+		IEnumerable<CardCreationResult> cardRewardOptions,
+		CardCreationOptions creationOptions)
+	{
+		HashSet<ModelId> existingIds = cardRewardOptions
+			.Select(static result => result.Card.CanonicalInstance.Id)
+			.ToHashSet();
+		return creationOptions
+			.GetPossibleCards(player)
+			.Where(card => !existingIds.Contains(card.Id))
+			.GroupBy(static card => card.Id)
+			.Select(static group => group.First())
+			.ToList();
+	}
+
+	private static CardRarityOddsType GetRarityOddsForAdditionalPool(
+		CardCreationOptions creationOptions,
+		IReadOnlyCollection<CardModel> candidates)
+	{
+		CardRarity? onlyRarity = candidates
+			.Select(static card => card.Rarity)
+			.Distinct()
+			.Count() == 1
+			? candidates.First().Rarity
+			: null;
+		return onlyRarity.HasValue ? CardRarityOddsType.Uniform : creationOptions.RarityOdds;
 	}
 }

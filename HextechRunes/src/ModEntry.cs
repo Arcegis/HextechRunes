@@ -30,6 +30,7 @@ public static class ModEntry
 			HextechCustomRunModifierHooks.Install(harmony);
 			HextechRunLifecycleHooks.Install(harmony);
 			HextechCombatHooks.Install(harmony);
+			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechEnemyPowerScalingHooks.Install(harmony);
 			HextechUpdateChecker.Install(harmony);
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));

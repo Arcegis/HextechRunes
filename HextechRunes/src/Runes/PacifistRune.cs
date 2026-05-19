@@ -26,6 +26,7 @@ namespace HextechRunes;
 public sealed class PacifistRune : HextechRelicBase
 {
 	private readonly Dictionary<uint, decimal> _pendingDoomByTarget = new();
+	private int _replacementDoomApplicationDepth;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -43,12 +44,14 @@ public sealed class PacifistRune : HextechRelicBase
 	public override Task BeforeCombatStart()
 	{
 		_pendingDoomByTarget.Clear();
+		_replacementDoomApplicationDepth = 0;
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
 		_pendingDoomByTarget.Clear();
+		_replacementDoomApplicationDepth = 0;
 		return Task.CompletedTask;
 	}
 
@@ -65,6 +68,11 @@ public sealed class PacifistRune : HextechRelicBase
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
+		if (_replacementDoomApplicationDepth > 0)
+		{
+			return 0m;
+		}
+
 		if (Owner == null || target?.Side != CombatSide.Enemy || amount <= 0m || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return 1m;
@@ -91,6 +99,20 @@ public sealed class PacifistRune : HextechRelicBase
 		}
 
 		Flash([target]);
-		await PowerCmd.Apply<DoomPower>(target, Math.Max(1, Math.Floor(doom)), Owner.Creature, cardSource);
+		await ApplyReplacementDoom(target, Math.Max(1, Math.Floor(doom)), cardSource);
+	}
+
+	private async Task ApplyReplacementDoom(Creature target, decimal amount, CardModel? cardSource)
+	{
+		// Prevent damage-on-debuff effects, such as Sleight of Flesh, from escaping Pacifist or recursively becoming more Doom.
+		_replacementDoomApplicationDepth++;
+		try
+		{
+			await PowerCmd.Apply<DoomPower>(target, amount, Owner!.Creature, cardSource);
+		}
+		finally
+		{
+			_replacementDoomApplicationDepth--;
+		}
 	}
 }

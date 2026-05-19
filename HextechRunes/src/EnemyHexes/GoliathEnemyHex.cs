@@ -10,25 +10,30 @@ internal sealed class GoliathEnemyHex : HextechEnemyHexEffect
 
 	internal override decimal ModifyDamageMultiplicative(HextechEnemyHexContext context, Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return 1.2m;
+		return SustainMultiplier(context);
 	}
 
 	internal override decimal ModifyBlockMultiplicative(HextechEnemyHexContext context, Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return 1.2m;
+		return SustainMultiplier(context);
 	}
 
 	internal override decimal ModifyEnemyHealAmount(HextechEnemyHexContext context, Creature creature, decimal amount)
 	{
-		return amount * 1.2m;
+		return amount * SustainMultiplier(context);
 	}
 
 	internal override async Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
 	{
 		if (HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.GoliathApplied, creature, replayOneShotPowers))
 		{
-			await HextechMayhemModifier.EnsureMonsterMaxHpBonus(creature, 0.3m, maxHpBaseOverride);
+			await HextechMayhemModifier.EnsureMonsterMaxHpBonus(creature, context.TierValue(Kind, 0.20m, 0.30m, 0.40m), maxHpBaseOverride);
 			context.UpdateEnemyScale(creature);
 		}
+	}
+
+	private decimal SustainMultiplier(HextechEnemyHexContext context)
+	{
+		return 1m + context.TierValue(Kind, 0.15m, 0.20m, 0.25m);
 	}
 }

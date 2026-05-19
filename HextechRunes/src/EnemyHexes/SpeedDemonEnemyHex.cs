@@ -15,7 +15,8 @@ internal sealed class SpeedDemonEnemyHex : HextechEnemyHexEffect
 				continue;
 			}
 
-			int blockAmount = Math.Max(1, (int)Math.Floor(creature.MaxHp * 0.1m));
+			decimal blockPercent = context.TierValue(Kind, 0.05m, 0.10m, 0.15m);
+			int blockAmount = Math.Max(1, (int)Math.Floor(creature.MaxHp * blockPercent));
 			await CreatureCmd.GainBlock(creature, blockAmount, ValueProp.Unpowered, null);
 		}
 	}

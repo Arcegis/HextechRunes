@@ -6,6 +6,6 @@ internal sealed class StartupRoutineEnemyHex : HextechEnemyHexEffect
 
 	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{
-		return CreatureCmd.GainBlock(enemy, 15m, ValueProp.Unpowered, null);
+		return CreatureCmd.GainBlock(enemy, context.TierValue(Kind, 10, 15, 20), ValueProp.Unpowered, null);
 	}
 }

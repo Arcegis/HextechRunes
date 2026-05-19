@@ -14,11 +14,15 @@ internal sealed class DizzySpinningEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		CardModel dazed = combatState.CreateCard<Dazed>(shuffler);
-		await HextechCardGeneration.AddGeneratedCardToCombat(
-			dazed,
-			PileType.Draw,
-			addedByPlayer: false,
-			CardPilePosition.Random);
+		int dazedCount = context.TierValue(Kind, 1, 1, 2);
+		for (int i = 0; i < dazedCount; i++)
+		{
+			CardModel dazed = combatState.CreateCard<Dazed>(shuffler);
+			await HextechCardGeneration.AddGeneratedCardToCombat(
+				dazed,
+				PileType.Draw,
+				addedByPlayer: false,
+				CardPilePosition.Random);
+		}
 	}
 }

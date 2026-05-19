@@ -6,17 +6,10 @@ internal sealed partial class HextechMayhemModifier
 	internal const decimal EscapePlanBlockPercent = 0.6m;
 	internal const decimal BloodPactTemporaryStrengthStacks = 1m;
 	internal const decimal BrutalForceBlockPercent = 0.08m;
-	internal const int BloodArmorHpLossPerPlating = 10;
 	internal const decimal ClownCollegeSlipperyStacks = 1m;
-	internal const decimal DawnbringersResolveRegenPercent = 0.1m;
 	internal const int MikaelsBlessingMaxTriggers = 2;
-	internal const decimal MikaelsBlessingHealPercent = 0.25m;
 	internal const decimal ShrinkRayStacks = 1m;
 	internal const decimal FirebrandBurnStacks = 2m;
-	internal const decimal DevilsDanceHealPercent = 0.06m;
-	internal const decimal FinalFormBlockPercent = 0.15m;
-	internal const decimal ProtectiveVeilInitialArtifactStacks = 1m;
-	internal const decimal RepulsorSlipperyStacks = 2m;
 	internal const decimal ShrinkEngineSlipperyStacks = 1m;
 	internal const decimal CourageOfColossusPlatingPercent = 0.03m;
 	internal const decimal CantTouchThisSlipperyStacks = 1m;

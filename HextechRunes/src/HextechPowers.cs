@@ -95,15 +95,12 @@ public sealed class HextechPowerShieldTemporaryStrengthPower : TemporaryStrength
 
 public sealed class HextechAttackReplayPower : PowerModel
 {
-	private bool _triggeredLastPlay;
-
 	public override PowerType Type => PowerType.Buff;
 
 	public override PowerStackType StackType => PowerStackType.Counter;
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		_triggeredLastPlay = false;
 		if (Amount <= 0m
 			|| card.Owner?.Creature != Owner
 			|| card.Type != CardType.Attack)
@@ -111,18 +108,18 @@ public sealed class HextechAttackReplayPower : PowerModel
 			return playCount;
 		}
 
-		_triggeredLastPlay = true;
 		return playCount + Amount;
 	}
 
 	public override async Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (!_triggeredLastPlay || card.Owner?.Creature != Owner || card.Type != CardType.Attack)
+		if (Amount <= 0m
+			|| card.Owner?.Creature != Owner
+			|| card.Type != CardType.Attack)
 		{
 			return;
 		}
 
-		_triggeredLastPlay = false;
 		Flash();
 		await PowerCmd.Remove(this);
 	}

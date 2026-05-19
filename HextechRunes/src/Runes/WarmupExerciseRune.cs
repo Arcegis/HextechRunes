@@ -19,6 +19,7 @@ using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
@@ -26,6 +27,14 @@ namespace HextechRunes;
 public sealed class WarmupExerciseRune : HextechRelicBase
 {
 	private bool _dealtDamageThisTurn;
+	private bool _triggeredThisCombat;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public bool SavedTriggeredThisCombat
+	{
+		get => _triggeredThisCombat;
+		set => _triggeredThisCombat = value;
+	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -42,6 +51,14 @@ public sealed class WarmupExerciseRune : HextechRelicBase
 	public override Task BeforeCombatStart()
 	{
 		_dealtDamageThisTurn = false;
+		_triggeredThisCombat = false;
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		_dealtDamageThisTurn = false;
+		_triggeredThisCombat = false;
 		return Task.CompletedTask;
 	}
 
@@ -67,11 +84,12 @@ public sealed class WarmupExerciseRune : HextechRelicBase
 
 	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || Owner.Creature.IsDead || side != Owner.Creature.Side || _dealtDamageThisTurn)
+		if (Owner == null || Owner.Creature.IsDead || side != Owner.Creature.Side || _dealtDamageThisTurn || _triggeredThisCombat)
 		{
 			return;
 		}
 
+		_triggeredThisCombat = true;
 		Flash();
 		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
 		await PowerCmd.Apply<DexterityPower>(Owner.Creature, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);

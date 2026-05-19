@@ -13,7 +13,7 @@ internal sealed class DoomsdayEnemyHex : HextechEnemyHexEffect
 
 		await context.RunGroupedPlayerDebuffBurst(async () =>
 		{
-			await PowerCmd.Apply<DisintegrationPower>(players, 2m, null, null);
+			await PowerCmd.Apply<DisintegrationPower>(players, context.TierValue(Kind, 1, 2, 3), null, null);
 		});
 	}
 }

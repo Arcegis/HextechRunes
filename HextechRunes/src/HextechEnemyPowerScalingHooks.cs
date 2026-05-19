@@ -30,6 +30,18 @@ internal static class HextechEnemyPowerScalingHooks
 		};
 
 		harmony.Patch(ResolveModifyPowerAmountGivenTarget(), prefix: prefix);
+
+#if STS2_105_OR_NEWER
+		HarmonyMethod scaledPrefix = new(typeof(HextechEnemyPowerScalingHooks), nameof(GetScaledAmountForMultiplayerPrefix))
+		{
+			priority = Priority.First
+		};
+
+		foreach (MethodInfo scaledTarget in ResolveGetScaledAmountForMultiplayerTargets())
+		{
+			harmony.Patch(scaledTarget, prefix: scaledPrefix);
+		}
+#endif
 	}
 
 	public static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
@@ -83,6 +95,26 @@ internal static class HextechEnemyPowerScalingHooks
 		};
 		return false;
 	}
+
+#if STS2_105_OR_NEWER
+	private static bool GetScaledAmountForMultiplayerPrefix(
+		PowerModel __instance,
+		decimal amount,
+		Creature target,
+		ref decimal __result)
+	{
+		if (CurrentOverride.Value != ScalingOverride.FinalAmount
+			|| target == null
+			|| (!target.IsPrimaryEnemy && !target.IsSecondaryEnemy)
+			|| GetScalingOverride(__instance.GetType()) == null)
+		{
+			return true;
+		}
+
+		__result = ClampPowerOffsetForApply(__instance, target, amount);
+		return false;
+	}
+#endif
 
 	private static decimal CalculateFinalAmount(Creature target, decimal amount, Creature? applier, ScalingOverride scalingOverride)
 	{
@@ -252,6 +284,65 @@ internal static class HextechEnemyPowerScalingHooks
 			typeof(Creature),
 			typeof(CardModel));
 	}
+
+#if STS2_105_OR_NEWER
+	private static IEnumerable<MethodInfo> ResolveGetScaledAmountForMultiplayerTargets()
+	{
+		List<MethodInfo> targets = new();
+		foreach (Type powerType in GetPowerTypesWithScalingOverride())
+		{
+			MethodInfo method = RequireMethod(
+				powerType,
+				nameof(PowerModel.GetScaledAmountForMultiplayer),
+				BindingFlags.Public | BindingFlags.Instance,
+				typeof(HextechCombatState),
+				typeof(Creature),
+				typeof(decimal),
+				typeof(Creature),
+				typeof(CardModel));
+			Type declaringType = method.DeclaringType ?? typeof(PowerModel);
+			method = RequireMethod(
+				declaringType,
+				nameof(PowerModel.GetScaledAmountForMultiplayer),
+				BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
+				typeof(HextechCombatState),
+				typeof(Creature),
+				typeof(decimal),
+				typeof(Creature),
+				typeof(CardModel));
+
+			if (!ContainsMethod(targets, method))
+			{
+				targets.Add(method);
+			}
+		}
+
+		return targets;
+	}
+
+	private static IEnumerable<Type> GetPowerTypesWithScalingOverride()
+	{
+		yield return typeof(ArtifactPower);
+		yield return typeof(SlipperyPower);
+		yield return typeof(HardenedShellPower);
+		yield return typeof(RegenPower);
+		yield return typeof(PlatingPower);
+		yield return typeof(ReflectPower);
+	}
+
+	private static bool ContainsMethod(IEnumerable<MethodInfo> methods, MethodInfo candidate)
+	{
+		foreach (MethodInfo method in methods)
+		{
+			if (method.Module == candidate.Module && method.MetadataToken == candidate.MetadataToken)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+#endif
 
 	private sealed class OverrideScope : IDisposable
 	{

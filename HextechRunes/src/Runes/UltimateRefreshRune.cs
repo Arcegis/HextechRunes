@@ -36,44 +36,18 @@ namespace HextechRunes;
 
 public sealed class UltimateRefreshRune : HextechRelicBase
 {
-	private bool _triggeredLastPlay;
-
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
 		get => false;
 		set
 		{
-			// Legacy save compatibility: this was a transient flash flag and must not enter multiplayer checksums.
-			_triggeredLastPlay = false;
+			// Legacy save compatibility: this was a transient flash flag.
 		}
-	}
-
-	public override Task BeforeCombatStart()
-	{
-		ResetTurnState();
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTurnState();
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTurnState(combatState);
-		}
-
-		return Task.CompletedTask;
 	}
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		_triggeredLastPlay = false;
 		if (card.Owner != Owner)
 		{
 			return playCount;
@@ -84,23 +58,16 @@ public sealed class UltimateRefreshRune : HextechRelicBase
 			return playCount;
 		}
 
-		_triggeredLastPlay = true;
 		return playCount + 1;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (_triggeredLastPlay && IsOwnedNonXCardWithCostAtLeast(card, 2m))
+		if (IsOwnedNonXCardWithCostAtLeast(card, 2m))
 		{
 			Flash();
-			_triggeredLastPlay = false;
 		}
 
 		return Task.CompletedTask;
-	}
-
-	private void ResetTurnState(HextechCombatState? combatState = null)
-	{
-		_triggeredLastPlay = false;
 	}
 }

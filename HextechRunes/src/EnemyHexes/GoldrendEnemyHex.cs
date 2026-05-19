@@ -6,7 +6,7 @@ internal sealed class GoldrendEnemyHex : HextechEnemyHexEffect
 
 	internal override decimal ModifyDamageMultiplicative(HextechEnemyHexContext context, Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return 1.1m;
+		return 1m + context.TierValue(Kind, 0.05m, 0.10m, 0.15m);
 	}
 
 	internal override Task AfterEnemyDamageGivenImmediate(HextechEnemyHexContext context, Creature dealer, DamageResult result, Creature target, CardModel? cardSource)
