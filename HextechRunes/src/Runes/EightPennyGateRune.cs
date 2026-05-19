@@ -9,8 +9,6 @@ namespace HextechRunes;
 
 public sealed class EightPennyGateRune : HextechRelicBase
 {
-	private bool _triggeredLastPlay;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("Replays", 1m)
@@ -23,24 +21,21 @@ public sealed class EightPennyGateRune : HextechRelicBase
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		_triggeredLastPlay = false;
 		if (!ShouldReplayAndExhaust(card))
 		{
 			return playCount;
 		}
 
-		_triggeredLastPlay = true;
 		return playCount + DynamicVars["Replays"].IntValue;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (_triggeredLastPlay && ShouldReplayAndExhaust(card))
+		if (ShouldReplayAndExhaust(card))
 		{
 			Flash();
 		}
 
-		_triggeredLastPlay = false;
 		return Task.CompletedTask;
 	}
 

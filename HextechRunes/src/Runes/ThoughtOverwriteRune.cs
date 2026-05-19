@@ -25,8 +25,6 @@ namespace HextechRunes;
 
 public sealed class ThoughtOverwriteRune : HextechRelicBase
 {
-	private bool _triggeredLastPlay;
-
 	public override bool HasUponPickupEffect => true;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -80,24 +78,21 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		_triggeredLastPlay = false;
 		if (Owner == null || card.Owner != Owner || !card.Keywords.Contains(CardKeyword.Ethereal))
 		{
 			return playCount;
 		}
 
-		_triggeredLastPlay = true;
 		return playCount + DynamicVars["Replays"].IntValue;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (_triggeredLastPlay)
+		if (Owner != null && card.Owner == Owner && card.Keywords.Contains(CardKeyword.Ethereal))
 		{
 			Flash();
 		}
 
-		_triggeredLastPlay = false;
 		return Task.CompletedTask;
 	}
 }

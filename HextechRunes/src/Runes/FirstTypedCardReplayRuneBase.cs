@@ -37,7 +37,6 @@ namespace HextechRunes;
 public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 {
 	private bool _triggeredThisTurn;
-	private bool _triggeredLastPlay;
 
 	protected abstract CardType TargetCardType { get; }
 
@@ -70,25 +69,23 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		_triggeredLastPlay = false;
 		EnsureTurnScopedStateCurrent(ResetTriggered);
 		if (_triggeredThisTurn || !IsOwnedTargetType(card))
 		{
 			return playCount;
 		}
 
-		_triggeredThisTurn = true;
-		_triggeredLastPlay = true;
-		UpdateTurnScopedStateIdentity();
 		return playCount + DynamicVars["Replays"].IntValue;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (_triggeredLastPlay && IsOwnedTargetType(card))
+		EnsureTurnScopedStateCurrent(ResetTriggered);
+		if (!_triggeredThisTurn && IsOwnedTargetType(card))
 		{
+			_triggeredThisTurn = true;
+			UpdateTurnScopedStateIdentity();
 			Flash();
-			_triggeredLastPlay = false;
 		}
 
 		return Task.CompletedTask;
@@ -107,7 +104,6 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 	private void ResetTriggered(HextechCombatState? combatState)
 	{
 		_triggeredThisTurn = false;
-		_triggeredLastPlay = false;
 		UpdateTurnScopedStateIdentity(combatState);
 	}
 }
