@@ -34,7 +34,7 @@ internal sealed class FeelTheBurnEnemyHex : HextechEnemyHexEffect
 			{
 				await PowerCmd.Apply<WeakPower>(players, 1m, creature, null);
 				await PowerCmd.Apply<VulnerablePower>(players, 1m, creature, null);
-				await PowerCmd.Apply<HextechBurnPower>(players, 5m, creature, null);
+				await PowerCmd.Apply<HextechBurnPower>(players, context.TierValue(Kind, 3, 4, 5), creature, null);
 			});
 		}
 	}

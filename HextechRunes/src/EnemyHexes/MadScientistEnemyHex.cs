@@ -14,7 +14,8 @@ internal sealed class MadScientistEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int maxHpLoss = Math.Max(1, (int)Math.Floor(creature.MaxHp * 0.2m));
+		decimal maxHpLossPercent = context.TierValue(Kind, 0.30m, 0.20m, 0.10m);
+		int maxHpLoss = Math.Max(1, (int)Math.Floor(creature.MaxHp * maxHpLossPercent));
 		int newMaxHp = Math.Max(1, creature.MaxHp - maxHpLoss);
 		if (newMaxHp < creature.MaxHp)
 		{

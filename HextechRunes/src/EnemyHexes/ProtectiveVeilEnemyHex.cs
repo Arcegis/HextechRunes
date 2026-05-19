@@ -10,20 +10,7 @@ internal sealed class ProtectiveVeilEnemyHex : HextechEnemyHexEffect
 	{
 		if (HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.ProtectiveVeilApplied, creature, replayOneShotPowers))
 		{
-			await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(creature, HextechMayhemModifier.ProtectiveVeilInitialArtifactStacks, creature, null);
-		}
-	}
-
-	internal override async Task BeforeEnemySideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players, IReadOnlyList<Creature> enemies)
-	{
-		if (context.Tracking.EnemyProtectiveVeilTurnCounter % 2 != 0)
-		{
-			return;
-		}
-
-		foreach (Creature enemy in enemies)
-		{
-			await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(enemy, 1m, enemy, null);
+			await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(creature, context.TierValue(Kind, 1, 2, 3), creature, null);
 		}
 	}
 }

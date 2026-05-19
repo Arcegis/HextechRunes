@@ -13,7 +13,8 @@ internal sealed class SuperBrainEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int plating = (int)Math.Floor(creature.MaxHp * 0.04m);
+		decimal platingPercent = context.TierValue(Kind, 0.03m, 0.04m, 0.05m);
+		int plating = (int)Math.Floor(creature.MaxHp * platingPercent);
 		if (plating > 0)
 		{
 			await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(creature, plating, creature, null);

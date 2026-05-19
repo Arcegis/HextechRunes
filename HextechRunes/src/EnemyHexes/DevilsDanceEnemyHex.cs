@@ -10,7 +10,8 @@ internal sealed class DevilsDanceEnemyHex : HextechEnemyHexEffect
 			&& dealer.CombatId != null
 			&& context.Tracking.DevilsDanceTriggeredThisTurn.Add(dealer.CombatId.Value))
 		{
-			int heal = Math.Max(1, (int)Math.Floor(dealer.MaxHp * HextechMayhemModifier.DevilsDanceHealPercent));
+			decimal healPercent = context.TierValue(Kind, 0.06m, 0.08m, 0.10m);
+			int heal = Math.Max(1, (int)Math.Floor(dealer.MaxHp * healPercent));
 			await CreatureCmd.Heal(dealer, heal);
 		}
 	}

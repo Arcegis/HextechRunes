@@ -24,9 +24,10 @@ internal sealed class BloodArmorEnemyHex : HextechEnemyHexEffect
 		}
 
 		uint combatId = creature.CombatId.Value;
+		int hpLossPerPlating = context.TierValue(Kind, 12, 10, 8);
 		int accumulated = context.Tracking.BloodArmorHpLossThisPlayerTurn.GetValueOrDefault(combatId, 0) + hpLoss;
-		int plating = accumulated / HextechMayhemModifier.BloodArmorHpLossPerPlating;
-		context.Tracking.BloodArmorHpLossThisPlayerTurn[combatId] = accumulated % HextechMayhemModifier.BloodArmorHpLossPerPlating;
+		int plating = accumulated / hpLossPerPlating;
+		context.Tracking.BloodArmorHpLossThisPlayerTurn[combatId] = accumulated % hpLossPerPlating;
 		if (plating > 0)
 		{
 			await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(creature, plating, creature, null);

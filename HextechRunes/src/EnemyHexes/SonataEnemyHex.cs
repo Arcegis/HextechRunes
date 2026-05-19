@@ -13,7 +13,8 @@ internal sealed class SonataEnemyHex : HextechEnemyHexEffect
 
 		foreach (Creature enemy in context.GetAliveEnemies(combatState))
 		{
-			int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.1m));
+			decimal blockPercent = context.TierValue(Kind, 0.08m, 0.10m, 0.12m);
+			int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * blockPercent));
 			await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
 		}
 	}
@@ -27,7 +28,8 @@ internal sealed class SonataEnemyHex : HextechEnemyHexEffect
 
 		foreach (Creature enemy in enemies)
 		{
-			int heal = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m));
+			decimal healPercent = context.TierValue(Kind, 0.04m, 0.05m, 0.06m);
+			int heal = Math.Max(1, (int)Math.Floor(enemy.MaxHp * healPercent));
 			await CreatureCmd.Heal(enemy, heal);
 		}
 	}

@@ -34,18 +34,24 @@ internal sealed class SingularityAIEnemyHex : HextechEnemyHexEffect
 			.OfType<Player>()
 			.OrderBy(static player => player.NetId))
 		{
-			int statusIndex = HextechStableRandom.PlayerCombatRoundIndex(
-				context.RunState,
-				player,
-				StatusPool.Count,
-				combatState.RoundNumber);
-			CardModel card = CreateStatusCard(combatState, player, StatusPool[statusIndex]);
+			int statusCount = context.TierValue(Kind, 1, 1, 2);
+			for (int i = 0; i < statusCount; i++)
+			{
+				int statusIndex = HextechStableRandom.Index(
+					context.RunState,
+					StatusPool.Count,
+					"singularity-ai-status",
+					HextechStableRandom.PlayerKey(player),
+					combatState.RoundNumber.ToString(),
+					i.ToString());
+				CardModel card = CreateStatusCard(combatState, player, StatusPool[statusIndex]);
 
-			await HextechCardGeneration.AddGeneratedCardToCombat(
-				card,
-				PileType.Draw,
-				addedByPlayer: false,
-				position: CardPilePosition.Bottom);
+				await HextechCardGeneration.AddGeneratedCardToCombat(
+					card,
+					PileType.Draw,
+					addedByPlayer: false,
+					position: CardPilePosition.Bottom);
+			}
 		}
 	}
 

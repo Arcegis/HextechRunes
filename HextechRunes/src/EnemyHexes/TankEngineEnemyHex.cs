@@ -8,7 +8,8 @@ internal sealed class TankEngineEnemyHex : HextechEnemyHexEffect
 	{
 		foreach (Creature enemy in enemies)
 		{
-			int hpGain = Math.Min(5, Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m)));
+			int maxHpGain = context.TierValue(Kind, 5, 10, 15);
+			int hpGain = Math.Min(maxHpGain, Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m)));
 			await CreatureCmd.GainMaxHp(enemy, hpGain);
 			if (enemy.CombatId != null)
 			{

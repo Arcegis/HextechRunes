@@ -264,15 +264,14 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 
 		MegaRichTextLabel body = CreateDescriptionLabel();
-		body.MaxFontSize = 17;
-		body.MinFontSize = 13;
+		body.CustomMinimumSize = new Vector2(0f, 48f);
 		if (_monsterHexKind.HasValue && !_enemyHexRemoved)
 		{
-			body.SetTextAutoSize(MonsterHexCatalog.GetEnemyHexDescriptionFormatted(_monsterHexKind.Value));
+			SetFixedDescriptionText(body, MonsterHexCatalog.GetEnemyHexDescriptionFormatted(_monsterHexKind.Value), 16);
 		}
 		else
 		{
-			body.SetTextAutoSize(new LocString(LocTable, "HEXTECH_ENEMY_REMOVED_DESCRIPTION").GetRawText());
+			SetFixedDescriptionText(body, new LocString(LocTable, "HEXTECH_ENEMY_REMOVED_DESCRIPTION").GetRawText(), 16);
 		}
 		textColumn.AddChild(body);
 
@@ -512,6 +511,18 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		ApplyDefaultMegaRichTextTheme(body);
 		body.AddThemeColorOverride("default_color", new Color(0.9f, 0.93f, 0.97f, 0.92f));
 		return body;
+	}
+
+	private static void SetFixedDescriptionText(MegaRichTextLabel label, string text, int fontSize)
+	{
+		label.MinFontSize = fontSize;
+		label.MaxFontSize = fontSize;
+		label.AddThemeFontSizeOverride("normal_font_size", fontSize);
+		label.AddThemeFontSizeOverride("bold_font_size", fontSize);
+		label.AddThemeFontSizeOverride("italics_font_size", fontSize);
+		label.AddThemeFontSizeOverride("bold_italics_font_size", fontSize);
+		label.AddThemeFontSizeOverride("mono_font_size", fontSize);
+		label.Text = text;
 	}
 
 	private Control CreateRarityPill()

@@ -10,7 +10,7 @@ internal sealed class GoldenSpatulaEnemyHex : HextechEnemyHexEffect
 
 	internal override decimal ModifyDamageMultiplicative(HextechEnemyHexContext context, Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return 1.35m;
+		return 1m + context.TierValue(Kind, 0.25m, 0.30m, 0.45m);
 	}
 
 	internal override decimal ModifyBlockMultiplicative(HextechEnemyHexContext context, Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
@@ -27,7 +27,7 @@ internal sealed class GoldenSpatulaEnemyHex : HextechEnemyHexEffect
 	{
 		if (HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.GoldenSpatulaApplied, creature, replayOneShotPowers))
 		{
-			await HextechMayhemModifier.EnsureMonsterMaxHpBonus(creature, 0.35m, maxHpBaseOverride);
+			await HextechMayhemModifier.EnsureMonsterMaxHpBonus(creature, context.TierValue(Kind, 0.25m, 0.30m, 0.45m), maxHpBaseOverride);
 		}
 	}
 }

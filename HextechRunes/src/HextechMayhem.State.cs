@@ -239,6 +239,13 @@ internal sealed partial class HextechMayhemModifier
 		return _cachedActiveMonsterHexSet!.Contains(hex);
 	}
 
+	public int GetMonsterHexStrengthTier(MonsterHexKind hex)
+	{
+		_ = hex;
+		// Enemy hex strength tracks the current act, even for hexes obtained in earlier acts.
+		return Math.Clamp(RunState.CurrentActIndex + 1, 1, 3);
+	}
+
 	private void EnsureActiveMonsterHexCache()
 	{
 		int actIndex = RunState.CurrentActIndex;

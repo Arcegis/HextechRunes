@@ -13,6 +13,31 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier)
 		return modifier.HasActiveMonsterHex(kind);
 	}
 
+	internal int GetStrengthTier(MonsterHexKind kind)
+	{
+		return modifier.GetMonsterHexStrengthTier(kind);
+	}
+
+	internal int TierValue(MonsterHexKind kind, int tier1, int tier2, int tier3)
+	{
+		return GetStrengthTier(kind) switch
+		{
+			<= 1 => tier1,
+			2 => tier2,
+			_ => tier3
+		};
+	}
+
+	internal decimal TierValue(MonsterHexKind kind, decimal tier1, decimal tier2, decimal tier3)
+	{
+		return GetStrengthTier(kind) switch
+		{
+			<= 1 => tier1,
+			2 => tier2,
+			_ => tier3
+		};
+	}
+
 	internal IReadOnlyList<Creature> GetAliveEnemies(HextechCombatState combatState)
 	{
 		return HextechMayhemModifier.GetAliveEnemies(combatState);
