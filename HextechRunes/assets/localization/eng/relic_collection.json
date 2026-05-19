@@ -18,5 +18,11 @@
   "HEXTECH_SKIP": "Skip",
   "HEXTECH_SERIES.SILVER": "Silver",
   "HEXTECH_SERIES.GOLD": "Gold",
-  "HEXTECH_SERIES.PRISMATIC": "Prismatic"
+  "HEXTECH_SERIES.PRISMATIC": "Prismatic",
+  "HEXTECH_POOL.GENERIC": "Generic",
+  "HEXTECH_POOL.IRONCLAD": "Ironclad",
+  "HEXTECH_POOL.SILENT": "Silent",
+  "HEXTECH_POOL.REGENT": "Regent",
+  "HEXTECH_POOL.NECROBINDER": "Necrobinder",
+  "HEXTECH_POOL.DEFECT": "Defect"
 }
