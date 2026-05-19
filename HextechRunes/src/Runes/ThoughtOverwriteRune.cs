@@ -19,13 +19,23 @@ using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 
 public sealed class ThoughtOverwriteRune : HextechRelicBase
 {
+	internal const string EtherealMarkerSavedPropertyName = "SavedThoughtOverwriteEtherealMarker";
+
 	public override bool HasUponPickupEffect => true;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	private int SavedThoughtOverwriteEtherealMarker
+	{
+		get => 0;
+		set { }
+	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -72,8 +82,24 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 		Flash();
 		foreach (CardModel card in selectedCards)
 		{
+			ThoughtOverwriteKeywordPersistence.Track(card);
 			CardCmd.ApplyKeyword(card, CardKeyword.Ethereal);
 		}
+	}
+
+	public override Task AfterCardEnteredCombat(CardModel card)
+	{
+		if (Owner == null || card.Owner != Owner)
+		{
+			return Task.CompletedTask;
+		}
+
+		if (ThoughtOverwriteKeywordPersistence.IsTracked(card.DeckVersion))
+		{
+			ThoughtOverwriteKeywordPersistence.Restore(card);
+		}
+
+		return Task.CompletedTask;
 	}
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
