@@ -13,8 +13,6 @@ namespace HextechRunes;
 internal static class HextechUpdateChecker
 {
 	private const string NoticeName = "HextechRunesUpdateNotice";
-	private const string StaticVersionEndpoint = "http://39.96.216.77/latest-version.json";
-	private const string ApiVersionEndpoint = "http://39.96.216.77/api/hextech-runes/latest-version";
 	private const int MaxCheckAttempts = 2;
 	private const int MaxNoticeAttachAttempts = 30;
 
@@ -23,7 +21,11 @@ internal static class HextechUpdateChecker
 		Timeout = TimeSpan.FromSeconds(12)
 	};
 
-	private static readonly string[] VersionEndpoints = [StaticVersionEndpoint, ApiVersionEndpoint];
+	private static readonly string[] VersionEndpoints =
+	[
+		HextechServerEndpoints.StaticVersionEndpoint,
+		HextechServerEndpoints.ApiVersionEndpoint
+	];
 
 	private static readonly object StateLock = new();
 	private static Task<UpdateCheckResult>? _checkTask;
@@ -366,11 +368,19 @@ internal static class HextechUpdateChecker
 			}
 
 			string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-			string? latestVersion = TryReadLatestVersion(json);
+			using JsonDocument document = JsonDocument.Parse(json);
+			JsonElement root = document.RootElement;
+			string? latestVersion = TryReadLatestVersion(root);
 			if (string.IsNullOrWhiteSpace(latestVersion))
 			{
 				failures.Add($"{endpoint}: missing latestVersion");
 				return null;
+			}
+
+			if (HextechIntegrityCheck.IsOfficialServerResponse(endpoint, root))
+			{
+				HextechIntegrityCheck.LogOfficialServerConnection(endpoint, latestVersion);
+				HextechIntegrityCheck.VerifyOfficialBuild(root);
 			}
 
 			return BuildVersionResult(latestVersion);
@@ -402,10 +412,8 @@ internal static class HextechUpdateChecker
 		}
 	}
 
-	private static string? TryReadLatestVersion(string json)
+	private static string? TryReadLatestVersion(JsonElement root)
 	{
-		using JsonDocument document = JsonDocument.Parse(json);
-		JsonElement root = document.RootElement;
 		return TryGetString(root, "latestVersion")
 			?? TryGetString(root, "version")
 			?? TryGetString(root, "latest");

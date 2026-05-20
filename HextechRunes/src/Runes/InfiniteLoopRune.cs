@@ -34,7 +34,7 @@ using MegaCrit.Sts2.Core.Models.Monsters;
 
 namespace HextechRunes;
 
-public sealed class InfiniteLoopRune : HextechRelicBase
+public sealed class InfiniteLoopRune : HextechRelicBase, IHextechSharedCombatVictoryRune
 {
 	private int _combatVictories;
 
@@ -62,6 +62,16 @@ public sealed class InfiniteLoopRune : HextechRelicBase
 	}
 
 	public override Task AfterCombatVictory(CombatRoom room)
+	{
+		if (IsNetworkMultiplayer())
+		{
+			return Task.CompletedTask;
+		}
+
+		return ApplySharedCombatVictory(room);
+	}
+
+	public Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner != null && !Owner.Creature.IsDead)
 		{

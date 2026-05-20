@@ -122,8 +122,10 @@ function readLatestVersionInfo() {
   }
   return {
     modId: "HextechRunes",
+    serverIdentity: "Natsuki.HextechRunes.official",
     name: "海克斯大乱斗",
-    latestVersion: "0.5.5"
+    latestVersion: "0.5.5",
+    officialBuilds: []
   };
 }
 

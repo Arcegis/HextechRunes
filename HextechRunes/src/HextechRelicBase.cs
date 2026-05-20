@@ -96,7 +96,7 @@ public abstract class HextechRelicBase : RelicModel
 		return card != null && card.Owner == Owner && card.Type == CardType.Skill;
 	}
 
-	protected static bool IsNetworkMultiplayer()
+	internal static bool IsNetworkMultiplayerRun()
 	{
 		try
 		{
@@ -106,6 +106,11 @@ public abstract class HextechRelicBase : RelicModel
 		{
 			return false;
 		}
+	}
+
+	protected static bool IsNetworkMultiplayer()
+	{
+		return IsNetworkMultiplayerRun();
 	}
 
 	protected bool ShouldUseNetworkCombatHistory()

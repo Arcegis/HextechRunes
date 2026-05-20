@@ -55,7 +55,7 @@ internal static class HextechTelemetry
 		string Rarity,
 		string Hex);
 
-	private const string DefaultEndpoint = "http://39.96.216.77/api/hextech-runes/run-result";
+	private const string DefaultEndpoint = HextechServerEndpoints.TelemetryEndpoint;
 	private const string ConfigFileName = "telemetry_config.json";
 	private const string PendingFileName = "telemetry_pending.jsonl";
 	private const int MaxPendingLines = 64;

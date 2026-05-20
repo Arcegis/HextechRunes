@@ -153,6 +153,15 @@ if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
   clean_macos_metadata "$MOD_DIR"
 fi
 
+python3 "$ROOT/tools/update_latest_version_hashes.py" \
+  --latest-json "$ROOT/server/hextech-telemetry/public/latest-version.json" \
+  --dist "$ROOT/dist" \
+  --mod-id "$FILE_STEM" \
+  --server-name "海克斯大乱斗" \
+  --server-identity "Natsuki.HextechRunes.official" \
+  --game-version "$HEXTECH_STS2_TARGET" \
+  --output-fingerprint "$ROOT/dist/build-fingerprint.json"
+
 if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
   echo "Deployed to $MOD_DIR"
 else

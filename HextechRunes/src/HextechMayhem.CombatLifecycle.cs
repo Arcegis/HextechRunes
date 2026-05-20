@@ -39,7 +39,19 @@ internal sealed partial class HextechMayhemModifier
 
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		return Task.CompletedTask;
+		return HextechRelicBase.IsNetworkMultiplayerRun()
+			? ApplySharedCombatVictoryRunes(room)
+			: Task.CompletedTask;
+	}
+
+	private async Task ApplySharedCombatVictoryRunes(CombatRoom room)
+	{
+		foreach (IHextechSharedCombatVictoryRune rune in RunState.Players
+			.SelectMany(static player => player.Relics)
+			.OfType<IHextechSharedCombatVictoryRune>())
+		{
+			await rune.ApplySharedCombatVictory(room);
+		}
 	}
 
 	public override async Task AfterCreatureAddedToCombat(Creature creature)
