@@ -88,7 +88,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			bool hostUsesExternalScaling = HextechMultiplayerScalingCompat.IsBetterMultiplayerScalingLoaded();
 			modifier.HostUsesBetterMultiplayerScaling = hostUsesExternalScaling;
-			synchronizer.SyncLocalChoice(authorityPlayer, choiceId, CreateActRollChoiceResult(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling));
+			synchronizer.SyncLocalChoice(authorityPlayer, choiceId, HextechChoiceCodec.CreateActRoll(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling));
 			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} betterMultiplayerScaling={hostUsesExternalScaling}");
 			return (localRarity, localMonsterHex);
 		}
@@ -97,9 +97,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			synchronizer,
 			authorityPlayer,
 			choiceId,
-			result => TryDecodeActRollChoiceResult(result, actIndex, out _, out _, out _),
+			result => HextechChoiceCodec.TryDecodeActRoll(result, actIndex, out _, out _, out _),
 			$"act-roll act={actIndex}");
-		if (!TryDecodeActRollChoiceResult(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind syncedMonsterHex, out bool syncedHostUsesExternalScaling))
+		if (!HextechChoiceCodec.TryDecodeActRoll(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind syncedMonsterHex, out bool syncedHostUsesExternalScaling))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: malformed host payload act={actIndex}; using local rarity={localRarity} monsterHex={localMonsterHex}");
 			return (localRarity, localMonsterHex);
@@ -110,36 +110,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		modifier.HostUsesBetterMultiplayerScaling = syncedHostUsesExternalScaling;
 		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} betterMultiplayerScaling={syncedHostUsesExternalScaling} localRarity={localRarity} localMonsterHex={localMonsterHex}");
 		return (syncedRarity, syncedMonsterHex);
-	}
-
-	private static PlayerChoiceResult CreateActRollChoiceResult(int actIndex, HextechRarityTier rarity, MonsterHexKind monsterHex, bool hostUsesBetterMultiplayerScaling)
-	{
-		return PlayerChoiceResult.FromIndexes([ HextechChoiceMagic, ChoiceKindActRoll, actIndex, (int)rarity, (int)monsterHex, hostUsesBetterMultiplayerScaling ? 1 : 0 ]);
-	}
-
-	private static bool TryDecodeActRollChoiceResult(PlayerChoiceResult result, int expectedActIndex, out HextechRarityTier rarity, out MonsterHexKind monsterHex, out bool hostUsesBetterMultiplayerScaling)
-	{
-		rarity = default;
-		monsterHex = default;
-		hostUsesBetterMultiplayerScaling = false;
-		if (!TryGetIndexPayload(result, out List<int>? payload)
-			|| payload.Count < 5
-			|| payload[0] != HextechChoiceMagic
-			|| payload[1] != ChoiceKindActRoll
-			|| payload[2] != expectedActIndex)
-		{
-			return false;
-		}
-
-		if (!Enum.IsDefined(typeof(HextechRarityTier), payload[3]) || !Enum.IsDefined(typeof(MonsterHexKind), payload[4]))
-		{
-			return false;
-		}
-
-		rarity = (HextechRarityTier)payload[3];
-		monsterHex = (MonsterHexKind)payload[4];
-		hostUsesBetterMultiplayerScaling = payload.Count >= 6 && payload[5] != 0;
-		return true;
 	}
 
 	private static Player? GetActRollAuthorityPlayer(RunManager runManager, RunState runState)

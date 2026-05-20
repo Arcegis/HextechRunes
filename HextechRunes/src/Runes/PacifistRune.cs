@@ -25,7 +25,9 @@ namespace HextechRunes;
 
 public sealed class PacifistRune : HextechRelicBase
 {
-	private readonly Dictionary<uint, decimal> _pendingDoomByTarget = new();
+	private static readonly HashSet<PacifistRune> RunesWithPendingDoom = new();
+
+	private readonly List<PendingDoomApplication> _pendingDoomApplications = [];
 	private int _replacementDoomApplicationDepth;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -43,21 +45,21 @@ public sealed class PacifistRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		_pendingDoomByTarget.Clear();
+		ClearPendingDoomApplicationsForRune();
 		_replacementDoomApplicationDepth = 0;
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		_pendingDoomByTarget.Clear();
+		ClearPendingDoomApplicationsForRune();
 		_replacementDoomApplicationDepth = 0;
 		return Task.CompletedTask;
 	}
 
 	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		_pendingDoomByTarget.Clear();
+		ClearPendingDoomApplicationsForRune();
 		return Task.CompletedTask;
 	}
 
@@ -80,7 +82,7 @@ public sealed class PacifistRune : HextechRelicBase
 
 		if (HextechCombatHooks.IsResolvingActualDamageCommand && target.CombatId is uint combatId)
 		{
-			_pendingDoomByTarget[combatId] = Math.Max(_pendingDoomByTarget.GetValueOrDefault(combatId), amount);
+			EnqueuePendingDoomApplication(combatId, target, amount, cardSource);
 		}
 
 		return 0m;
@@ -93,13 +95,123 @@ public sealed class PacifistRune : HextechRelicBase
 			return;
 		}
 
-		if (!_pendingDoomByTarget.Remove(combatId, out decimal doom) || doom <= 0m)
+		if (!TryTakePendingDoomApplication(combatId, out PendingDoomApplication? pending))
 		{
 			return;
 		}
 
+		PendingDoomApplication doom = pending!;
 		Flash([target]);
-		await ApplyReplacementDoom(target, Math.Max(1, Math.Floor(doom)), cardSource);
+		await ApplyReplacementDoom(target, doom.Amount, doom.CardSource);
+	}
+
+	internal static async Task FlushPendingDoomApplications()
+	{
+		if (RunesWithPendingDoom.Count == 0)
+		{
+			return;
+		}
+
+		PacifistRune[] runes = RunesWithPendingDoom.ToArray();
+		foreach (PacifistRune rune in runes)
+		{
+			await rune.FlushPendingDoomApplicationsForRune();
+		}
+	}
+
+	internal static void ClearPendingDoomApplications()
+	{
+		if (RunesWithPendingDoom.Count == 0)
+		{
+			return;
+		}
+
+		PacifistRune[] runes = RunesWithPendingDoom.ToArray();
+		foreach (PacifistRune rune in runes)
+		{
+			rune._pendingDoomApplications.Clear();
+		}
+
+		RunesWithPendingDoom.Clear();
+	}
+
+	private void EnqueuePendingDoomApplication(uint combatId, Creature target, decimal amount, CardModel? cardSource)
+	{
+		decimal doom = Math.Max(1m, Math.Floor(amount));
+		for (int i = _pendingDoomApplications.Count - 1; i >= 0; i--)
+		{
+			PendingDoomApplication pending = _pendingDoomApplications[i];
+			if (pending.CombatId == combatId)
+			{
+				_pendingDoomApplications[i] = pending with
+				{
+					Amount = Math.Max(pending.Amount, doom),
+					CardSource = cardSource ?? pending.CardSource
+				};
+				RunesWithPendingDoom.Add(this);
+				return;
+			}
+		}
+
+		_pendingDoomApplications.Add(new PendingDoomApplication(combatId, target, doom, cardSource));
+		RunesWithPendingDoom.Add(this);
+	}
+
+	private bool TryTakePendingDoomApplication(uint combatId, out PendingDoomApplication? pending)
+	{
+		for (int i = 0; i < _pendingDoomApplications.Count; i++)
+		{
+			pending = _pendingDoomApplications[i];
+			if (pending.CombatId != combatId)
+			{
+				continue;
+			}
+
+			_pendingDoomApplications.RemoveAt(i);
+			RemoveFromPendingRegistryIfEmpty();
+			return true;
+		}
+
+		pending = null;
+		return false;
+	}
+
+	private async Task FlushPendingDoomApplicationsForRune()
+	{
+		if (_pendingDoomApplications.Count == 0)
+		{
+			RemoveFromPendingRegistryIfEmpty();
+			return;
+		}
+
+		PendingDoomApplication[] pendingApplications = _pendingDoomApplications.ToArray();
+		_pendingDoomApplications.Clear();
+		RunesWithPendingDoom.Remove(this);
+
+		foreach (PendingDoomApplication pending in pendingApplications)
+		{
+			if (Owner == null || pending.Target.Side != CombatSide.Enemy || !pending.Target.IsAlive)
+			{
+				continue;
+			}
+
+			Flash([pending.Target]);
+			await ApplyReplacementDoom(pending.Target, pending.Amount, pending.CardSource);
+		}
+	}
+
+	private void ClearPendingDoomApplicationsForRune()
+	{
+		_pendingDoomApplications.Clear();
+		RunesWithPendingDoom.Remove(this);
+	}
+
+	private void RemoveFromPendingRegistryIfEmpty()
+	{
+		if (_pendingDoomApplications.Count == 0)
+		{
+			RunesWithPendingDoom.Remove(this);
+		}
 	}
 
 	private async Task ApplyReplacementDoom(Creature target, decimal amount, CardModel? cardSource)
@@ -115,4 +227,6 @@ public sealed class PacifistRune : HextechRelicBase
 			_replacementDoomApplicationDepth--;
 		}
 	}
+
+	private sealed record PendingDoomApplication(uint CombatId, Creature Target, decimal Amount, CardModel? CardSource);
 }

@@ -245,6 +245,7 @@ internal sealed partial class HextechMayhemModifier
 		ResetCombatTracking();
 		InvalidateActiveMonsterHexCache();
 		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
+		HextechRunLifecycleHooks.HandleEndlessLoopReset(this, reason);
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)

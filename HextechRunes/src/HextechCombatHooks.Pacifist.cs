@@ -35,11 +35,18 @@ internal static partial class HextechCombatHooks
 	{
 		try
 		{
-			return await task;
+			T result = await task;
+			// Zeroed damage can skip AfterDamageGiven; apply any leftover Pacifist conversions before multiplayer checksums.
+			await PacifistRune.FlushPendingDoomApplications();
+			return result;
 		}
 		finally
 		{
 			_actualDamageCommandDepth = Math.Max(0, _actualDamageCommandDepth - 1);
+			if (_actualDamageCommandDepth == 0)
+			{
+				PacifistRune.ClearPendingDoomApplications();
+			}
 		}
 	}
 }

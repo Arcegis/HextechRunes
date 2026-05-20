@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
 
 namespace HextechRunes;
@@ -16,6 +17,12 @@ internal sealed partial class HextechMayhemModifier
 
 		if (actIndex <= 0 || actIndex > 2 || IsActResolved(actIndex))
 		{
+			return;
+		}
+
+		if (ShouldDeferImmediateActSelection(RunState.CurrentRoom))
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: deferring act selection until room/event flow is stable actIndex={actIndex} currentRoom={RunState.CurrentRoom?.GetType().Name ?? "null"}");
 			return;
 		}
 
@@ -44,5 +51,11 @@ internal sealed partial class HextechMayhemModifier
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] BeforeRoomEntered: resolving pending act selection before room={room.GetType().Name} actIndex={actIndex}");
 		await HextechRuneSelectionCoordinator.HandleActSelection(RunState, this);
+	}
+
+	private static bool ShouldDeferImmediateActSelection(AbstractRoom? currentRoom)
+	{
+		return currentRoom == null
+			|| currentRoom is EventRoom { CanonicalEvent: AncientEventModel };
 	}
 }

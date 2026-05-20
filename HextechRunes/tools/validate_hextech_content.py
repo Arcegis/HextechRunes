@@ -23,6 +23,10 @@ def source_files(pattern: str = "*.cs") -> list[Path]:
     ]
 
 
+def registry_source_text() -> str:
+    return "\n".join(read(path) for path in sorted(SRC.glob("HextechContentRegistry*.cs")))
+
+
 def fail(errors: list[str], message: str) -> None:
     errors.append(message)
 
@@ -59,15 +63,6 @@ def extract_block(text: str, name: str) -> str:
 
 def extract_type_list(text: str, name: str) -> list[str]:
     return re.findall(r"typeof\((\w+)\)", extract_block(text, name))
-
-
-def extract_monster_hex_list(text: str, name: str) -> list[str]:
-    return re.findall(r"MonsterHexKind\.(\w+)", extract_block(text, name))
-
-
-def extract_monster_hex_icon_pairs(text: str) -> dict[str, str]:
-    block = extract_block(text, "MonsterHexIconRelicTypes")
-    return dict(re.findall(r"\{\s*MonsterHexKind\.(\w+)\s*,\s*typeof\((\w+)\)\s*\}", block))
 
 
 def extract_rune_registrations(text: str) -> list[dict[str, object]]:
@@ -133,7 +128,7 @@ def check_duplicates(errors: list[str], label: str, values: list[str]) -> None:
 
 def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> None:
     types_text = read(SRC / "HextechTypes.cs")
-    registry_text = read(SRC / "HextechContentRegistry.cs")
+    registry_text = registry_source_text()
 
     enum_values = extract_enum_values(types_text, "MonsterHexKind")
     monster_regs = extract_monster_hex_registrations(registry_text)
@@ -178,7 +173,7 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
 
 
 def validate_relic_registry(errors: list[str]) -> None:
-    registry_text = read(SRC / "HextechContentRegistry.cs")
+    registry_text = registry_source_text()
 
     rune_regs = extract_rune_registrations(registry_text)
     forge_regs = extract_forge_registrations(registry_text)
@@ -240,7 +235,7 @@ def validate_rune_file_layout(errors: list[str]) -> None:
 
 
 def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
-    registry_text = read(SRC / "HextechContentRegistry.cs")
+    registry_text = registry_source_text()
     effect_registry_text = read(SRC / "EnemyHexes" / "HextechEnemyHexEffects.cs")
     monster_regs = extract_monster_hex_registrations(registry_text)
     if not monster_regs:

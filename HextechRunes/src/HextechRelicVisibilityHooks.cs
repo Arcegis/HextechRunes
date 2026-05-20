@@ -27,7 +27,6 @@ internal static class HextechRelicVisibilityHooks
 	private const string PositionTimerNodeName = "HextechHideRelicsTogglePositionTimer";
 	private const string TickboxVisualScenePath = "res://scenes/ui/tickbox.tscn";
 	private const BindingFlags CombatUiFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-	private const int ToggleZIndex = 1000;
 	private static readonly Vector2 ToggleRootSize = new(72f, 80f);
 	private static readonly Vector2 ToggleBoxSize = new(64f, 64f);
 	private const float DrawPileGap = 10f;
@@ -196,8 +195,7 @@ internal static class HextechRelicVisibilityHooks
 			Name = ToggleRootNodeName,
 			CustomMinimumSize = ToggleRootSize,
 			Size = ToggleRootSize,
-			MouseFilter = Control.MouseFilterEnum.Pass,
-			ZIndex = ToggleZIndex
+			MouseFilter = Control.MouseFilterEnum.Pass
 		};
 		root.AnchorLeft = 0f;
 		root.AnchorRight = 0f;

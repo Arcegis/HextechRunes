@@ -17,39 +17,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	private readonly record struct PendingRuneSelection(Player Player, List<RelicModel> Options, uint ChoiceId, bool IsLocal);
-	private readonly record struct RuneSelectionResult(RelicModel? SelectedRelic, IReadOnlyList<RelicModel> FinalOptions, int RerollCount, MonsterHexKind? FinalMonsterHex, HextechRuneSelectionScreen? BlockingScreen = null);
-	private readonly record struct EnemyHexAdjustmentPayload(int ActIndex, int Sequence, MonsterHexKind? MonsterHex, bool Removed, int RerollCount, bool IsFinal);
-
-	private sealed class EnemyHexAdjustmentSyncContext(
-		PlayerChoiceSynchronizer synchronizer,
-		Player authorityPlayer,
-		uint initialChoiceId,
-		int actIndex,
-		MonsterHexKind? initialMonsterHex)
-	{
-		public PlayerChoiceSynchronizer Synchronizer { get; } = synchronizer;
-		public Player AuthorityPlayer { get; } = authorityPlayer;
-		public uint NextChoiceId { get; set; } = initialChoiceId;
-		public int ActIndex { get; } = actIndex;
-		public int Sequence { get; set; }
-		public MonsterHexKind? CurrentMonsterHex { get; set; } = initialMonsterHex;
-		public bool Removed { get; set; }
-		public int RerollCount { get; set; }
-		public bool FinalSent { get; set; }
-		public Task? RemoteReceiveTask { get; set; }
-	}
-
-	private const int FirstActSilverWeight = 20;
-	private const int FirstActGoldWeight = 50;
-	private const int FirstActPrismaticWeight = 30;
-	private const int HextechChoiceMagic = 0x48585452; // HXTR
-	private const int ChoiceKindActRoll = 1;
-	private const int ChoiceKindRuneSelection = 2;
-	private const int ChoiceKindActSelectionApplied = 3;
-	private const int ChoiceKindEnemyHexAdjustment = 4;
-	private const int ActSelectionAppliedAckTimeoutFrames = 600;
-
 	private static bool _handlingActSelection;
 	private static RunState? _handlingActSelectionRunState;
 

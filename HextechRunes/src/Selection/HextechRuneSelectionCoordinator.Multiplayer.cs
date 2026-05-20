@@ -215,7 +215,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			removed,
 			rerollCount,
 			isFinal);
-		syncContext.Synchronizer.SyncLocalChoice(syncContext.AuthorityPlayer, syncContext.NextChoiceId, CreateEnemyHexAdjustmentChoiceResult(payload));
+		syncContext.Synchronizer.SyncLocalChoice(syncContext.AuthorityPlayer, syncContext.NextChoiceId, HextechChoiceCodec.CreateEnemyHexAdjustment(payload));
 		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} seq={syncContext.Sequence} removed={removed} hex={monsterHex} rerolls={rerollCount} final={isFinal}");
 		if (isFinal)
 		{
@@ -235,9 +235,9 @@ internal static partial class HextechRuneSelectionCoordinator
 				syncContext.Synchronizer,
 				syncContext.AuthorityPlayer,
 				syncContext.NextChoiceId,
-				choice => TryDecodeEnemyHexAdjustment(choice, syncContext.ActIndex, out _),
+				choice => HextechChoiceCodec.TryDecodeEnemyHexAdjustment(choice, syncContext.ActIndex, out _),
 				$"enemy-hex-adjustment act={syncContext.ActIndex}");
-			if (!TryDecodeEnemyHexAdjustment(result, syncContext.ActIndex, out EnemyHexAdjustmentPayload payload))
+			if (!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, syncContext.ActIndex, out EnemyHexAdjustmentPayload payload))
 			{
 				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync malformed: act={syncContext.ActIndex} choiceId={receivedChoiceId}");
 				return;
@@ -267,7 +267,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			uint choiceId = synchronizer.ReserveChoiceId(player);
 			if (IsLocalPlayer(runManager, player))
 			{
-				synchronizer.SyncLocalChoice(player, choiceId, CreateActSelectionAppliedChoiceResult(actIndex));
+				synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateActSelectionApplied(actIndex));
 				Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} player={player.NetId} choiceId={choiceId}");
 				continue;
 			}
@@ -308,9 +308,9 @@ internal static partial class HextechRuneSelectionCoordinator
 				synchronizer,
 				player,
 				choiceId,
-				result => TryDecodeActSelectionApplied(result, actIndex),
+				result => HextechChoiceCodec.TryDecodeActSelectionApplied(result, actIndex),
 				$"act-selection-applied act={actIndex}");
-			if (!TryDecodeActSelectionApplied(remoteAck, actIndex))
+			if (!HextechChoiceCodec.TryDecodeActSelectionApplied(remoteAck, actIndex))
 			{
 				Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied malformed ack: act={actIndex} player={player.NetId} choiceId={choiceId}");
 				return;
@@ -337,69 +337,6 @@ internal static partial class HextechRuneSelectionCoordinator
 				await Task.Yield();
 			}
 		}
-	}
-
-	private static PlayerChoiceResult CreateActSelectionAppliedChoiceResult(int actIndex)
-	{
-		return PlayerChoiceResult.FromIndexes([ HextechChoiceMagic, ChoiceKindActSelectionApplied, actIndex, 1 ]);
-	}
-
-	private static bool TryDecodeActSelectionApplied(PlayerChoiceResult result, int expectedActIndex)
-	{
-		return TryGetIndexPayload(result, out List<int>? payload)
-			&& payload.Count >= 4
-			&& payload[0] == HextechChoiceMagic
-			&& payload[1] == ChoiceKindActSelectionApplied
-			&& payload[2] == expectedActIndex
-			&& payload[3] == 1;
-	}
-
-	private static PlayerChoiceResult CreateEnemyHexAdjustmentChoiceResult(EnemyHexAdjustmentPayload payload)
-	{
-		return PlayerChoiceResult.FromIndexes(
-		[
-			HextechChoiceMagic,
-			ChoiceKindEnemyHexAdjustment,
-			payload.ActIndex,
-			payload.Sequence,
-			payload.Removed ? 1 : 0,
-			payload.MonsterHex.HasValue ? (int)payload.MonsterHex.Value : -1,
-			payload.RerollCount,
-			payload.IsFinal ? 1 : 0
-		]);
-	}
-
-	private static bool TryDecodeEnemyHexAdjustment(PlayerChoiceResult result, int expectedActIndex, out EnemyHexAdjustmentPayload payload)
-	{
-		payload = default;
-		if (!TryGetIndexPayload(result, out List<int>? indexes)
-			|| indexes.Count < 8
-			|| indexes[0] != HextechChoiceMagic
-			|| indexes[1] != ChoiceKindEnemyHexAdjustment
-			|| indexes[2] != expectedActIndex)
-		{
-			return false;
-		}
-
-		MonsterHexKind? monsterHex = null;
-		if (indexes[5] >= 0)
-		{
-			if (!Enum.IsDefined(typeof(MonsterHexKind), indexes[5]))
-			{
-				return false;
-			}
-
-			monsterHex = (MonsterHexKind)indexes[5];
-		}
-
-		payload = new EnemyHexAdjustmentPayload(
-			indexes[2],
-			Math.Max(0, indexes[3]),
-			monsterHex,
-			indexes[4] != 0,
-			Math.Max(0, indexes[6]),
-			indexes[7] != 0);
-		return true;
 	}
 
 	private static async Task<PlayerChoiceSynchronizer?> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
@@ -450,23 +387,4 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
-	private static bool TryGetIndexPayload(PlayerChoiceResult result, out List<int> payload)
-	{
-		payload = [];
-		try
-		{
-			List<int>? indexes = result.AsIndexes();
-			if (indexes == null)
-			{
-				return false;
-			}
-
-			payload = indexes;
-			return true;
-		}
-		catch (InvalidOperationException)
-		{
-			return false;
-		}
-	}
 }
