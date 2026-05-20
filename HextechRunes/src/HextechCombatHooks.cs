@@ -77,5 +77,6 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(EntropyPower), nameof(EntropyPower.AfterPlayerTurnStart), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(Player)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(EntropyAfterPlayerTurnStartPrefix)));
+		InstallRuneSpecificHooks(harmony);
 	}
 }

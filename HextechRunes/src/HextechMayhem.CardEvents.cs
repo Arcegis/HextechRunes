@@ -44,6 +44,11 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
+		if (card.Owner?.Creature.CombatState?.RunState == RunState && card is WhiteHoleCard whiteHole)
+		{
+			await whiteHole.AfterDrawn();
+		}
+
 		HextechEnemyHexContext context = new(this);
 		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{

@@ -1,0 +1,46 @@
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
+
+namespace HextechRunes;
+
+public sealed class BarbarianWayRune : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<Claw>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsDefectPlayer(player);
+	}
+
+	public override async Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return;
+		}
+
+		List<CardTransformation> transformations = Owner.Deck.Cards
+			.Where(static card => card.IsBasicStrikeOrDefend && card.Type == CardType.Attack && card.IsTransformable)
+			.Select(card => CardTransformUpgradeHelper.CreateFixedReplacementTransformation(
+				card,
+				Owner.RunState.CreateCard<Claw>(Owner)))
+			.ToList();
+		if (transformations.Count == 0)
+		{
+			return;
+		}
+
+		Flash();
+		await CardCmd.Transform(transformations, null, CardPreviewStyle.GridLayout);
+	}
+}
