@@ -77,7 +77,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		};
 		ApplyDefaultMegaLabelTheme(title);
 		title.Modulate = new Color(0.96f, 0.97f, 0.99f, 0.98f);
-		title.SetTextAutoSize(new LocString(LocTable, "HEXTECH_SELECTION_TITLE").GetRawText());
+		title.SetTextAutoSize(_titleOverride ?? new LocString(LocTable, "HEXTECH_SELECTION_TITLE").GetRawText());
 		root.AddChild(title);
 
 		if (_monsterHexRelic != null || _enemyHexControlsEnabled)

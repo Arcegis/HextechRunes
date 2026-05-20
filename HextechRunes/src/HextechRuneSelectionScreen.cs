@@ -40,6 +40,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private readonly Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? _rerollFunc;
 	private readonly Func<MonsterHexKind?, int, MonsterHexKind?>? _enemyHexRerollFunc;
 	private readonly Action<MonsterHexKind?, bool, int>? _enemyHexChanged;
+	private readonly string? _titleOverride;
 	private List<RelicModel> _relics;
 	private MonsterHexKind? _monsterHexKind;
 	private MonsterHexKind? _monsterHexBeforeRemoval;
@@ -81,12 +82,14 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		IReadOnlyList<RelicModel> relics,
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc,
-		HextechEnemyHexAdjustmentOptions? enemyHexOptions)
+		HextechEnemyHexAdjustmentOptions? enemyHexOptions,
+		string? titleOverride)
 	{
 		_relics = relics.ToList();
 		_rerollFunc = rerollFunc;
 		_enemyHexRerollFunc = enemyHexOptions?.RerollFunc;
 		_enemyHexChanged = enemyHexOptions?.Changed;
+		_titleOverride = titleOverride;
 		_enemyHexControlsEnabled = enemyHexOptions?.ControlsEnabled == true || enemyHexOptions?.RerollFunc != null;
 		_monsterHexKind = enemyHexOptions?.InitialHex;
 		if (_monsterHexKind == null && monsterHexRelic != null && MonsterHexCatalog.TryGetMonsterHexKind(monsterHexRelic, out MonsterHexKind monsterHexKind))
@@ -108,10 +111,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		IReadOnlyList<RelicModel> relics,
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc = null,
-		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null)
+		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null,
+		string? titleOverride = null)
 	{
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count}");
-		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions);
+		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions, titleOverride);
 	}
 
 	public override void _ExitTree()

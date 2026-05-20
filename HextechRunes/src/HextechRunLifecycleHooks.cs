@@ -454,9 +454,9 @@ internal static class HextechRunLifecycleHooks
 		{
 			IReadOnlyList<EventModel> events = RunManager.Instance.EventSynchronizer.Events;
 			int finishedCount = events.Count(static eventModel => eventModel.IsFinished);
-			if (events.Count >= runState.Players.Count && finishedCount == events.Count)
+			if (AreRequiredCurrentEventsFinished(runState, events, finishedCount, out string completionReason))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: all events finished event={eventId} count={events.Count} waitedFrames={frame}");
+				Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: required events finished event={eventId} count={events.Count} finished={finishedCount} reason={completionReason} waitedFrames={frame}");
 				return;
 			}
 
@@ -467,6 +467,36 @@ internal static class HextechRunLifecycleHooks
 
 			await WaitOneFrame();
 		}
+	}
+
+	private static bool AreRequiredCurrentEventsFinished(
+		RunState runState,
+		IReadOnlyList<EventModel> events,
+		int finishedCount,
+		out string completionReason)
+	{
+		if (HextechAiTeammateCompat.IsAiTeammateLoopbackRun(runState)
+			&& HextechAiTeammateCompat.TryGetHostPlayerId(out ulong hostPlayerId))
+		{
+			EventModel? hostEvent = events.FirstOrDefault(eventModel => eventModel.Owner?.NetId == hostPlayerId);
+			if (hostEvent != null)
+			{
+				completionReason = "ai-teammate-host-event";
+				return hostEvent.IsFinished;
+			}
+
+			if (finishedCount > 0)
+			{
+				completionReason = "ai-teammate-any-finished-fallback";
+				return true;
+			}
+
+			completionReason = "ai-teammate-waiting-host-event";
+			return false;
+		}
+
+		completionReason = "all-player-events";
+		return events.Count >= runState.Players.Count && finishedCount == events.Count;
 	}
 
 	private static async Task WaitOneFrame()
