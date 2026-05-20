@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Runs;
 
@@ -88,6 +89,13 @@ internal static partial class HextechCombatHooks
 			}
 		}
 
+		if (IsSkulkingColony(creature))
+		{
+			__state = default;
+			__result = CreatureCmd.GainBlock(creature, amount, ValueProp.Unpowered, null);
+			return false;
+		}
+
 		if (amount <= 0m)
 		{
 			__state = default;
@@ -142,5 +150,10 @@ internal static partial class HextechCombatHooks
 		{
 			await circleOfDeathRune.HandleSustainGained(amount);
 		}
+	}
+
+	private static bool IsSkulkingColony(Creature creature)
+	{
+		return creature.Side == CombatSide.Enemy && creature.Monster is SkulkingColony;
 	}
 }

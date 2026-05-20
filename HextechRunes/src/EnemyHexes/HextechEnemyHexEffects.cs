@@ -44,6 +44,8 @@ internal static class HextechEnemyHexEffects
 		new BloodArmorEnemyHex(),
 		new JinlianBoxEnemyHex(),
 		new MirrorReflectionEnemyHex(),
+		new BlueCandleMedkitEnemyHex(),
+		new TanksShieldEnemyHex(),
 		new CourageOfColossusEnemyHex(),
 		new GlassCannonEnemyHex(),
 		new GoliathEnemyHex(),
@@ -67,7 +69,11 @@ internal static class HextechEnemyHexEffects
 		new HailToTheKingEnemyHex(),
 		new EightPennyGateEnemyHex(),
 		new DuffsVintageEnemyHex(),
-		new HastyScribbleEnemyHex()
+		new HastyScribbleEnemyHex(),
+		new MiseryEnemyHex(),
+		new ShoulderVakuEnemyHex(),
+		new UpgradeEnemyHex(),
+		new NearDeathFeastEnemyHex()
 	];
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

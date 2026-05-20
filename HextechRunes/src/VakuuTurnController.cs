@@ -1,0 +1,71 @@
+using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.Vfx;
+using MegaCrit.Sts2.Core.Random;
+
+namespace HextechRunes;
+
+internal static class VakuuTurnController
+{
+	internal const int MaxCardsPlayed = 13;
+
+	internal static async Task<int> AutoPlayPlayableHand(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player.Creature.CombatState is not HextechCombatState combatState)
+		{
+			return 0;
+		}
+
+		int cardsPlayed;
+		using (CardSelectCmd.PushSelector(new VakuuCardSelector()))
+		{
+			for (cardsPlayed = 0; cardsPlayed < MaxCardsPlayed; cardsPlayed++)
+			{
+				if (CombatManager.Instance.IsOverOrEnding || CombatManager.Instance.IsPlayerReadyToEndTurn(player))
+				{
+					break;
+				}
+
+				CardModel? card = PileType.Hand.GetPile(player).Cards.FirstOrDefault(static card => card.CanPlay());
+				if (card == null)
+				{
+					break;
+				}
+
+				Creature? target = GetTarget(player, card, combatState);
+				await card.SpendResources();
+				await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default, skipXCapture: true);
+			}
+		}
+
+		return cardsPlayed;
+	}
+
+	internal static void PlayLineIfCardsPlayed(Player player, int cardsPlayed)
+	{
+		if (cardsPlayed <= 0)
+		{
+			return;
+		}
+
+		LocString line = cardsPlayed >= MaxCardsPlayed
+			? new LocString("relics", "WHISPERING_EARRING.warning")
+			: new LocString("relics", "WHISPERING_EARRING.approval");
+		TalkCmd.Play(line, player.Creature, VfxColor.Purple);
+	}
+
+	private static Creature? GetTarget(Player owner, CardModel card, HextechCombatState combatState)
+	{
+		Rng combatTargets = owner.RunState.Rng.CombatTargets;
+		return card.TargetType switch
+		{
+			TargetType.AnyEnemy => combatState.HittableEnemies.FirstOrDefault(),
+			TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where(creature =>
+				creature is { IsAlive: true, IsPlayer: true } && creature != owner.Creature)),
+			TargetType.AnyPlayer => owner.Creature,
+			_ => null
+		};
+	}
+}

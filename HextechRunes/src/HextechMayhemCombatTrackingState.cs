@@ -18,6 +18,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> RepulsorTriggered = new();
 	public readonly HashSet<uint> RepulsorPending = new();
 	public readonly HashSet<uint> DawnTriggered = new();
+	public readonly HashSet<uint> NearDeathFeastTriggered = new();
 	public readonly HashSet<uint> SpeedDemonPending = new();
 	public readonly HashSet<uint> DevilsDanceTriggeredThisTurn = new();
 	public readonly HashSet<uint> FinalFormTriggeredThisTurn = new();
@@ -43,6 +44,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> MountainSoulDamagedSinceLastTurn = new();
 	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn = new();
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
+	public readonly HashSet<ulong> VakuuControlledPlayersThisCombat = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
 	[CombatTrackingTransient]
 	public readonly HashSet<string> MonsterDebuffActionProcKeysThisTurn = new();

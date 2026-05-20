@@ -45,6 +45,8 @@ internal static partial class HextechContentRegistry
         Monster<BloodArmorRune>(MonsterHexKind.BloodArmor, HextechRarityTier.Gold),
         Monster<JinlianBoxRune>(MonsterHexKind.JinlianBox, HextechRarityTier.Gold),
         Monster<MirrorReflectionRune>(MonsterHexKind.MirrorReflection, HextechRarityTier.Gold),
+        Monster<BlueCandleMedkitRune>(MonsterHexKind.BlueCandleMedkit, HextechRarityTier.Gold),
+        Monster<TanksShieldRune>(MonsterHexKind.TanksShield, HextechRarityTier.Gold),
 
         Monster<CourageOfColossusRune>(MonsterHexKind.CourageOfColossus, HextechRarityTier.Prismatic),
         Monster<GlassCannonRune>(MonsterHexKind.GlassCannon, HextechRarityTier.Prismatic),
@@ -69,6 +71,10 @@ internal static partial class HextechContentRegistry
         Monster<HailToTheKingRune>(MonsterHexKind.HailToTheKing, HextechRarityTier.Prismatic),
         Monster<EightPennyGateRune>(MonsterHexKind.EightPennyGate, HextechRarityTier.Prismatic),
         Monster<DuffsVintageRune>(MonsterHexKind.DuffsVintage, HextechRarityTier.Prismatic),
-        Monster<HastyScribbleRune>(MonsterHexKind.HastyScribble, HextechRarityTier.Prismatic)
+        Monster<HastyScribbleRune>(MonsterHexKind.HastyScribble, HextechRarityTier.Prismatic),
+        Monster<MiseryRune>(MonsterHexKind.Misery, HextechRarityTier.Prismatic),
+        Monster<ShoulderVakuRune>(MonsterHexKind.ShoulderVaku, HextechRarityTier.Prismatic),
+        Monster<UpgradeRune>(MonsterHexKind.Upgrade, HextechRarityTier.Prismatic),
+        Monster<NearDeathFeastRune>(MonsterHexKind.NearDeathFeast, HextechRarityTier.Prismatic)
     ];
 }

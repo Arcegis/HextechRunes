@@ -398,6 +398,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		public List<uint> RepulsorTriggered { get; set; } = [];
 		public List<uint> RepulsorPending { get; set; } = [];
 		public List<uint> DawnTriggered { get; set; } = [];
+		public List<uint> NearDeathFeastTriggered { get; set; } = [];
 		public List<uint> SpeedDemonPending { get; set; } = [];
 		public List<uint> DevilsDanceTriggeredThisTurn { get; set; } = [];
 		public List<uint> FinalFormTriggeredThisTurn { get; set; } = [];
@@ -423,6 +424,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		public List<uint> MountainSoulDamagedSinceLastTurn { get; set; } = [];
 		public Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn { get; set; } = new();
 		public Dictionary<ulong, int> PlayerCardsDrawnThisCombat { get; set; } = new();
+		public List<ulong> VakuuControlledPlayersThisCombat { get; set; } = [];
 		public List<ulong> EightPennyGatePlayersTriggeredThisTurn { get; set; } = [];
 		public int EnemyProtectiveVeilTurnCounter { get; set; }
 	}
