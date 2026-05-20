@@ -48,8 +48,8 @@ internal static class CollectionHooks
 
 	private static readonly IReadOnlyDictionary<string, SubcategoryHeaderText> CharacterHeaderTexts = new Dictionary<string, SubcategoryHeaderText>
 	{
-		["CHARACTER.IRONCLAD"] = new("战士海克斯：", "仅战士可抽取的海克斯符文。", "Ironclad Hexes:", "Hextech runes only available to Ironclad."),
-		["CHARACTER.SILENT"] = new("猎人海克斯：", "仅猎人可抽取的海克斯符文。", "Silent Hexes:", "Hextech runes only available to Silent."),
+		["CHARACTER.IRONCLAD"] = new("铁甲战士海克斯：", "仅铁甲战士可抽取的海克斯符文。", "Ironclad Hexes:", "Hextech runes only available to Ironclad."),
+		["CHARACTER.SILENT"] = new("静默猎手海克斯：", "仅静默猎手可抽取的海克斯符文。", "Silent Hexes:", "Hextech runes only available to Silent."),
 		["CHARACTER.REGENT"] = new("储君海克斯：", "仅储君可抽取的海克斯符文。", "Regent Hexes:", "Hextech runes only available to Regent."),
 		["CHARACTER.DEFECT"] = new("故障机器人海克斯：", "仅故障机器人可抽取的海克斯符文。", "Defect Hexes:", "Hextech runes only available to Defect."),
 		["CHARACTER.NECROBINDER"] = new("亡灵契约师海克斯：", "仅亡灵契约师可抽取的海克斯符文。", "Necrobinder Hexes:", "Hextech runes only available to Necrobinder.")

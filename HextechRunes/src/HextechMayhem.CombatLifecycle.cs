@@ -15,6 +15,12 @@ internal sealed partial class HextechMayhemModifier
 		HextechGoldrendSync.ResetCombat();
 		ResetCombatTracking();
 		HextechEnemyUi.Refresh(this);
+		HextechMultiplayerScalingCompat.RefreshHostScalingFlagForLocalHost(this);
+		if (RunState.CurrentRoom is CombatRoom currentCombatRoom)
+		{
+			await HextechMultiplayerScalingCompat.NormalizeCombatEnemyHpIfNeeded(this, currentCombatRoom);
+		}
+
 		await ApplyToCurrentEnemiesIfNeeded();
 
 		if (RunState.CurrentRoom is CombatRoom combatRoom)
@@ -42,6 +48,8 @@ internal sealed partial class HextechMayhemModifier
 		{
 			return;
 		}
+
+		await HextechMultiplayerScalingCompat.NormalizeEnemyHpIfNeeded(this, creature);
 
 		if (RunState.CurrentRoom is CombatRoom combatRoom
 			&& await TryApplyDeferredBossStartHexes(creature, combatRoom))

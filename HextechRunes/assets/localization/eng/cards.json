@@ -67,8 +67,8 @@
   "ALL_IN_CARD.flavor": "Only the wager and the edge remain on the table.",
   "whiteHoleCard.title": "White Hole",
   "WHITE_HOLE_CARD.title": "White Hole",
-  "whiteHoleCard.description": "Whenever you draw this, gain {Energy:energyIcons()}.",
-  "WHITE_HOLE_CARD.description": "Whenever you draw this, gain {Energy:energyIcons()}.",
+  "whiteHoleCard.description": "Whenever you draw this, gain {Energy:energyIcons()}.\nDraw {Cards} cards.",
+  "WHITE_HOLE_CARD.description": "Whenever you draw this, gain {Energy:energyIcons()}.\nDraw {Cards} cards.",
   "whiteHoleCard.flavor": "It does not swallow choices. It spits them back into your hand.",
   "WHITE_HOLE_CARD.flavor": "It does not swallow choices. It spits them back into your hand."
 }

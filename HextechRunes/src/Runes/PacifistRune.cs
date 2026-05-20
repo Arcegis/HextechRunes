@@ -78,7 +78,7 @@ public sealed class PacifistRune : HextechRelicBase
 			return 1m;
 		}
 
-		if (target.CombatId is uint combatId)
+		if (HextechCombatHooks.IsResolvingActualDamageCommand && target.CombatId is uint combatId)
 		{
 			_pendingDoomByTarget[combatId] = Math.Max(_pendingDoomByTarget.GetValueOrDefault(combatId), amount);
 		}

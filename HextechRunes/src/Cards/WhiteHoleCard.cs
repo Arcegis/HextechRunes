@@ -21,22 +21,37 @@ public sealed class WhiteHoleCard : CardModel
 
 	public override IEnumerable<CardKeyword> CanonicalKeywords =>
 	[
-		CardKeyword.Unplayable
+		CardKeyword.Exhaust
 	];
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new EnergyVar(1)
+		new EnergyVar(1),
+		new CardsVar(2)
 	];
 
 	public WhiteHoleCard()
-		: base(-1, CardType.Status, CardRarity.Token, TargetType.None, shouldShowInCardLibrary: true)
+		: base(0, CardType.Status, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: true)
 	{
+	}
+
+	internal static bool AllowsPlaying(CardModel card)
+	{
+		return card is WhiteHoleCard
+			&& card.Owner != null
+			&& card.Pile?.Type is PileType.Hand or PileType.Play;
 	}
 
 	internal Task AfterDrawn()
 	{
 		return Owner == null ? Task.CompletedTask : PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, Owner);
+	}
+
+	protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		return Owner == null
+			? Task.CompletedTask
+			: CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
 	}
 
 	protected override void OnUpgrade()
