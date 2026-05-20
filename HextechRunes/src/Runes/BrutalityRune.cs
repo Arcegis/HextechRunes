@@ -9,7 +9,7 @@ public sealed class BrutalityRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("HpLoss", 1m),
+		new DynamicVar("HpLoss", 2m),
 		new CardsVar(2)
 	];
 

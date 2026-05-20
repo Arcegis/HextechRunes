@@ -36,9 +36,12 @@ namespace HextechRunes;
 
 public sealed class BloodPactRune : HextechRelicBase
 {
+	private bool _triggeredThisTurn;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<StrengthPower>(1m)
+		new PowerVar<StrengthPower>(1m),
+		new DynamicVar("MaxProcsPerTurn", 1m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -51,9 +54,33 @@ public sealed class BloodPactRune : HextechRelicBase
 		return IsIroncladPlayer(player);
 	}
 
+	public override Task BeforeCombatStart()
+	{
+		ResetTurnState(null);
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetTurnState(null);
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
+	{
+		if (Owner != null && side == Owner.Creature.Side)
+		{
+			ResetTurnState(combatState);
+		}
+
+		return Task.CompletedTask;
+	}
+
 	public override async Task AfterCurrentHpChanged(Creature creature, decimal delta)
 	{
+		EnsureTurnScopedStateCurrent(ResetTurnState);
 		if (Owner == null
+			|| _triggeredThisTurn
 			|| creature != Owner.Creature
 			|| delta >= 0m
 			|| Owner.Creature.IsDead
@@ -62,7 +89,20 @@ public sealed class BloodPactRune : HextechRelicBase
 			return;
 		}
 
+		_triggeredThisTurn = true;
+		UpdateTurnScopedStateIdentity();
 		Flash();
 		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
+	}
+
+	private void ResetTurnState()
+	{
+		ResetTurnState(null);
+	}
+
+	private void ResetTurnState(HextechCombatState? combatState)
+	{
+		_triggeredThisTurn = false;
+		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

@@ -184,7 +184,7 @@ internal static class HextechContentRegistry
         Rune<ScaredStiffRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 10),
         Rune<DeviantCognitionRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Ironclad, characterOrder: 13),
         Rune<CorpseExplosionRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 12),
-        Rune<SwordFlightRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 13),
+        Rune<SwordFlightRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled, characterPool: HextechCharacterPool.Regent, characterOrder: 13),
         Rune<ElectrodynamicsRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Defect, characterOrder: 15),
         Rune<EnlightenmentRune>(HextechRarityTier.Gold),
         Rune<WhiteHoleRune>(HextechRarityTier.Gold),

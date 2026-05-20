@@ -36,7 +36,7 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	[
 		new EnergyVar(2),
 		new CardsVar(2),
-		new DynamicVar("HealPercent", 10m)
+		new DynamicVar("HealPercent", 5m)
 	];
 
 	public override Task BeforeCombatStart()
