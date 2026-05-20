@@ -38,7 +38,7 @@ public sealed class TormentorRune : LimitedDebuffProcRelicBase
 {
 	private bool _applyingBurnProc;
 
-	protected override int MaxProcsPerTurn => 3;
+	protected override int MaxProcsPerTurn => 1;
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
@@ -68,7 +68,7 @@ public sealed class TormentorRune : LimitedDebuffProcRelicBase
 		try
 		{
 			_applyingBurnProc = true;
-			await PowerCmd.Apply<HextechBurnPower>(target, 2m, Owner!.Creature, null);
+			await PowerCmd.Apply<HextechBurnPower>(target, 5m, Owner!.Creature, null);
 		}
 		finally
 		{

@@ -62,14 +62,14 @@ public sealed class InfernalConduitRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null || cardPlay.Card.Owner != Owner || cardPlay.Target is not { Side: CombatSide.Enemy } enemy)
+		if (Owner == null || target.Side != CombatSide.Enemy || !HextechSts2Compat.IsPoweredAttack(props) || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;
 		}
 
-		await PowerCmd.Apply<HextechBurnPower>(enemy, 2m, Owner.Creature, cardPlay.Card);
+		await PowerCmd.Apply<HextechBurnPower>(target, 3m, Owner.Creature, cardSource);
 	}
 
 	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
@@ -81,7 +81,7 @@ public sealed class InfernalConduitRune : HextechRelicBase
 
 		_pendingEnergy = Owner.Creature.CombatState.Enemies
 			.Where(enemy => enemy.IsAlive)
-			.Sum(enemy => Math.Max(0, enemy.GetPowerAmount<HextechBurnPower>()) / 6);
+			.Sum(enemy => Math.Max(0, enemy.GetPowerAmount<HextechBurnPower>()) / 5);
 		return Task.CompletedTask;
 	}
 
