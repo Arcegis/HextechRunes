@@ -81,7 +81,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			synchronizer,
 			player,
 			choiceId,
-			IsRuneSelectionChoice,
+			HextechChoiceCodec.IsRuneSelection,
 			"rune-choice");
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: player={player.NetId} choiceId={receivedChoiceId}");
 		return ResolveRemoteRuneChoice(modifier, player, options, remoteChoice, monsterHexRelic);
@@ -129,7 +129,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			synchronizer,
 			selection.Player,
 			selection.ChoiceId,
-			IsRuneSelectionChoice,
+			HextechChoiceCodec.IsRuneSelection,
 			"rune-choice");
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: player={selection.Player.NetId} choiceId={receivedChoiceId}");
 		return ResolveRemoteRuneChoice(modifier, selection.Player, selection.Options, remoteChoice, monsterHexRelic);
@@ -139,7 +139,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		IReadOnlyList<RelicModel> relics,
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc = null,
-		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null)
+		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null,
+		string? titleOverride = null)
 	{
 		for (int i = 0; i < 60; i++)
 		{
@@ -151,7 +152,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			await Task.Yield();
 		}
 
-		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(relics, monsterHexRelic, rerollFunc, enemyHexOptions);
+		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(relics, monsterHexRelic, rerollFunc, enemyHexOptions, titleOverride);
 		if (NOverlayStack.Instance == null)
 		{
 			throw new InvalidOperationException("NOverlayStack is not available for rune selection.");
@@ -162,13 +163,36 @@ internal static partial class HextechRuneSelectionCoordinator
 		return selectionScreen;
 	}
 
+	private static async Task<RuneSelectionResult> SelectRuneWithLocalScreen(
+		HextechMayhemModifier modifier,
+		Player player,
+		IReadOnlyList<RelicModel> options,
+		RelicModel? monsterHexRelic,
+		HextechEnemyHexAdjustmentOptions? enemyHexOptions,
+		bool useMultiplayerReroll,
+		bool removeOverlay,
+		string? titleOverride = null)
+	{
+		MarkRelicsSeen(options);
+		modifier.RecordSeenPlayerRunes(player, options);
+		HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
+		HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
+			options,
+			monsterHexRelic,
+			useMultiplayerReroll
+				? (relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, player, relics, slotIndex, rerollOrdinal, seenOptionIds)
+				: (relics, slotIndex, _) => RerollSingleOptionAndTrack(modifier, player, relics, slotIndex, seenOptionIds),
+			enemyHexOptions,
+			titleOverride);
+		RelicModel? selectedRelic = (await screen.RelicsSelected(removeOverlay)).FirstOrDefault();
+		return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex, removeOverlay ? null : screen);
+	}
+
 	private static PlayerChoiceResult CreateRuneChoiceResult(HextechRuneSelectionScreen screen, RelicModel? selectedRelic)
 	{
 		int selectedIndex = selectedRelic == null ? -1 : IndexOfRelic(screen.CurrentRelics, selectedRelic);
-		List<int> payload = [ HextechChoiceMagic, ChoiceKindRuneSelection, selectedIndex, screen.RerollHistory.Count ];
-		payload.AddRange(screen.RerollHistory);
 		Log.Info($"[{ModInfo.Id}][Mayhem] CreateRuneChoiceResult: selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
-		return PlayerChoiceResult.FromIndexes(payload);
+		return HextechChoiceCodec.CreateRuneSelection(selectedIndex, screen.RerollHistory);
 	}
 
 	private static int IndexOfRelic(IReadOnlyList<RelicModel> relics, RelicModel relic)
@@ -186,7 +210,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static RuneSelectionResult ResolveRemoteRuneChoice(HextechMayhemModifier modifier, Player player, IReadOnlyList<RelicModel> options, PlayerChoiceResult remoteChoice, RelicModel? monsterHexRelic)
 	{
-		if (!TryDecodeRuneChoiceResult(remoteChoice, out int selectedIndex, out List<int> rerollHistory))
+		if (!HextechChoiceCodec.TryDecodeRuneSelection(remoteChoice, out int selectedIndex, out List<int> rerollHistory))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: malformed hextech rune payload player={player.NetId} result={remoteChoice}");
 			return new RuneSelectionResult(null, options.ToList(), 0, null);
@@ -205,34 +229,5 @@ internal static partial class HextechRuneSelectionCoordinator
 		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)}");
 		RelicModel? selectedRelic = selectedIndex >= 0 && selectedIndex < currentOptions.Count ? currentOptions[selectedIndex] : null;
 		return new RuneSelectionResult(selectedRelic, currentOptions.ToList(), rerollHistory.Count, null);
-	}
-
-	private static bool IsRuneSelectionChoice(PlayerChoiceResult result)
-	{
-		return TryDecodeRuneChoiceResult(result, out _, out _);
-	}
-
-	private static bool TryDecodeRuneChoiceResult(PlayerChoiceResult result, out int selectedIndex, out List<int> rerollHistory)
-	{
-		selectedIndex = -1;
-		rerollHistory = [];
-		if (!TryGetIndexPayload(result, out List<int>? payload)
-			|| payload.Count < 4
-			|| payload[0] != HextechChoiceMagic
-			|| payload[1] != ChoiceKindRuneSelection)
-		{
-			return false;
-		}
-
-		selectedIndex = payload[2];
-		int rerollCount = Math.Max(0, payload[3]);
-		if (payload.Count < rerollCount + 4)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] DecodeRuneChoiceResult: malformed payload={string.Join(",", payload)}");
-			return false;
-		}
-
-		rerollHistory = payload.Skip(4).Take(rerollCount).ToList();
-		return true;
 	}
 }

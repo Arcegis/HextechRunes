@@ -36,7 +36,7 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	[
 		new EnergyVar(2),
 		new CardsVar(2),
-		new DynamicVar("HealPercent", 10m)
+		new DynamicVar("HealPercent", 5m)
 	];
 
 	public override Task BeforeCombatStart()
@@ -101,21 +101,8 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		try
 		{
 			Flash();
-			bool hitPlayCap;
-			int cardsPlayed;
-			using (CardSelectCmd.PushSelector(new VakuuCardSelector()))
-			{
-				cardsPlayed = await AutoPlayPlayableHand(choiceContext);
-				hitPlayCap = cardsPlayed >= 13;
-			}
-
-			if (cardsPlayed > 0)
-			{
-				LocString line = hitPlayCap
-					? new LocString("relics", "WHISPERING_EARRING.warning")
-					: new LocString("relics", "WHISPERING_EARRING.approval");
-				TalkCmd.Play(line, Owner!.Creature, VfxColor.Purple);
-			}
+			int cardsPlayed = await VakuuTurnController.AutoPlayPlayableHand(choiceContext, Owner!);
+			VakuuTurnController.PlayLineIfCardsPlayed(Owner!, cardsPlayed);
 		}
 		finally
 		{
@@ -139,47 +126,5 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	{
 		return Owner?.Relics.Any(static relic =>
 			(relic.CanonicalInstance?.Id ?? relic.Id) == WhisperingEarringId) == true;
-	}
-
-	private async Task<int> AutoPlayPlayableHand(PlayerChoiceContext choiceContext)
-	{
-		if (Owner == null || Owner.Creature.CombatState is not HextechCombatState combatState)
-		{
-			return 0;
-		}
-
-		int cardsPlayed;
-		for (cardsPlayed = 0; cardsPlayed < 13; cardsPlayed++)
-		{
-			if (CombatManager.Instance.IsOverOrEnding || CombatManager.Instance.IsPlayerReadyToEndTurn(Owner))
-			{
-				break;
-			}
-
-			CardModel? card = PileType.Hand.GetPile(Owner).Cards.FirstOrDefault(static card => card.CanPlay());
-			if (card == null)
-			{
-				break;
-			}
-
-			Creature? target = GetTarget(card, combatState);
-			await card.SpendResources();
-			await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default, skipXCapture: true);
-		}
-
-		return cardsPlayed;
-	}
-
-	private Creature? GetTarget(CardModel card, HextechCombatState combatState)
-	{
-		Rng combatTargets = Owner!.RunState.Rng.CombatTargets;
-		return card.TargetType switch
-		{
-			TargetType.AnyEnemy => combatState.HittableEnemies.FirstOrDefault(),
-			TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where(creature =>
-				creature is { IsAlive: true, IsPlayer: true } && creature != Owner.Creature)),
-			TargetType.AnyPlayer => Owner.Creature,
-			_ => null
-		};
 	}
 }

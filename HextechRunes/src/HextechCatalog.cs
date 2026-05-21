@@ -73,6 +73,23 @@ internal static partial class HextechCatalog
 			.ToArray();
 	}
 
+	public static string GetPlayerRunePoolKey(RelicModel relic)
+	{
+		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		foreach (CharacterRunePool pool in CharacterRunePools)
+		{
+			foreach (Type runeType in pool.RuneTypes)
+			{
+				if (ModelDb.GetId(runeType) == id)
+				{
+					return pool.LocalizationKey;
+				}
+			}
+		}
+
+		return "GENERIC";
+	}
+
 	public static IReadOnlyList<Type> GetAllForgeTypes() => AllForgeTypes;
 
 	public static IReadOnlyList<Type> GetAllCustomRelicTypes() => AllCustomRelicTypes;

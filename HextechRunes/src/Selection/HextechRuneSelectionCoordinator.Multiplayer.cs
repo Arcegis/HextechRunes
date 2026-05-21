@@ -26,6 +26,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		RelicModel? monsterHexRelic)
 	{
 		RunManager runManager = RunManager.Instance;
+		if (HextechAiTeammateCompat.IsLoopbackHostSession()
+			&& runState.Players.Any(static player => HextechAiTeammateCompat.IsAiPlayer(player)))
+		{
+			return await SelectRunesForAllPlayersAiTeammateHostControlled(runState, modifier, actIndex, rarity, initialMonsterHex, monsterHexRelic);
+		}
+
 		PlayerChoiceSynchronizer? synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
 		if (synchronizer == null)
 		{
@@ -122,6 +128,84 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
+	private static async Task<MonsterHexKind?> SelectRunesForAllPlayersAiTeammateHostControlled(
+		RunState runState,
+		HextechMayhemModifier modifier,
+		int actIndex,
+		HextechRarityTier rarity,
+		MonsterHexKind? initialMonsterHex,
+		RelicModel? monsterHexRelic)
+	{
+		Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled rune selection started: act={actIndex}");
+		List<(Player Player, List<RelicModel> Options)> selections = [];
+		HashSet<ModelId> enemyRerollExcludedIdsForAllPlayers = new();
+		foreach (Player player in runState.Players)
+		{
+			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
+			List<RelicModel> options = BuildStableSelectableRunesForRarity(player, rarity, runState, excludedIds);
+			enemyRerollExcludedIdsForAllPlayers.UnionWith(CreateEnemyHexRerollExcludedIds(options));
+			selections.Add((player, options));
+			Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled options: player={player.NetId} ai={HextechAiTeammateCompat.IsAiPlayer(player)} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+		}
+
+		MonsterHexKind? finalMonsterHex = initialMonsterHex;
+		RelicModel? currentMonsterHexRelic = monsterHexRelic;
+		bool enemyHexControlsUsed = false;
+		HextechAiTeammateCompat.TryGetHostPlayerId(out ulong hostPlayerId);
+		List<(Player Player, List<RelicModel> Options)> orderedSelections = selections
+			.OrderBy(selection => hostPlayerId != 0UL
+				? (selection.Player.NetId == hostPlayerId ? 0 : 1)
+				: (HextechAiTeammateCompat.IsAiPlayer(selection.Player) ? 1 : 0))
+			.ToList();
+		foreach ((Player player, List<RelicModel> options) in orderedSelections)
+		{
+			bool isAiPlayer = HextechAiTeammateCompat.IsAiPlayer(player);
+			bool canControlEnemyHex = !enemyHexControlsUsed
+				&& (hostPlayerId == 0UL
+					? !isAiPlayer
+					: player.NetId == hostPlayerId);
+			HextechEnemyHexAdjustmentOptions enemyHexOptions = new()
+			{
+				InitialHex = finalMonsterHex,
+				ControlsEnabled = canControlEnemyHex,
+				RerollFunc = canControlEnemyHex
+					? (currentHex, rerollOrdinal) => RerollEnemyHexForAct(modifier, rarity, runState, actIndex, currentHex, rerollOrdinal, enemyRerollExcludedIdsForAllPlayers)
+					: null
+			};
+			RuneSelectionResult selection = await SelectRuneWithLocalScreen(
+				modifier,
+				player,
+				options,
+				currentMonsterHexRelic,
+				enemyHexOptions,
+				useMultiplayerReroll: true,
+				removeOverlay: true,
+				titleOverride: isAiPlayer
+					? $"为{HextechAiTeammateCompat.GetDisplayName(player)}选择一个海克斯符文"
+					: null);
+			if (!IsCurrentRun(runState))
+			{
+				Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled selection abort: stale run player={player.NetId}");
+				return finalMonsterHex;
+			}
+
+			if (canControlEnemyHex)
+			{
+				enemyHexControlsUsed = true;
+			}
+
+			finalMonsterHex = selection.FinalMonsterHex;
+			currentMonsterHexRelic = CreateMonsterHexRelic(finalMonsterHex);
+			RelicModel selectedRelic = selection.SelectedRelic ?? options[0];
+			HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selectedRelic, selection.RerollCount);
+			await RelicCmd.Obtain(selectedRelic, player);
+			Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled obtained: player={player.NetId} ai={isAiPlayer} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
+		}
+
+		Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled rune selection complete: act={actIndex} monsterHex={finalMonsterHex}");
+		return finalMonsterHex;
+	}
+
 	private static EnemyHexAdjustmentSyncContext? CreateEnemyHexAdjustmentSyncContext(
 		RunManager runManager,
 		RunState runState,
@@ -215,7 +299,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			removed,
 			rerollCount,
 			isFinal);
-		syncContext.Synchronizer.SyncLocalChoice(syncContext.AuthorityPlayer, syncContext.NextChoiceId, CreateEnemyHexAdjustmentChoiceResult(payload));
+		syncContext.Synchronizer.SyncLocalChoice(syncContext.AuthorityPlayer, syncContext.NextChoiceId, HextechChoiceCodec.CreateEnemyHexAdjustment(payload));
 		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} seq={syncContext.Sequence} removed={removed} hex={monsterHex} rerolls={rerollCount} final={isFinal}");
 		if (isFinal)
 		{
@@ -235,9 +319,9 @@ internal static partial class HextechRuneSelectionCoordinator
 				syncContext.Synchronizer,
 				syncContext.AuthorityPlayer,
 				syncContext.NextChoiceId,
-				choice => TryDecodeEnemyHexAdjustment(choice, syncContext.ActIndex, out _),
+				choice => HextechChoiceCodec.TryDecodeEnemyHexAdjustment(choice, syncContext.ActIndex, out _),
 				$"enemy-hex-adjustment act={syncContext.ActIndex}");
-			if (!TryDecodeEnemyHexAdjustment(result, syncContext.ActIndex, out EnemyHexAdjustmentPayload payload))
+			if (!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, syncContext.ActIndex, out EnemyHexAdjustmentPayload payload))
 			{
 				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync malformed: act={syncContext.ActIndex} choiceId={receivedChoiceId}");
 				return;
@@ -267,7 +351,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			uint choiceId = synchronizer.ReserveChoiceId(player);
 			if (IsLocalPlayer(runManager, player))
 			{
-				synchronizer.SyncLocalChoice(player, choiceId, CreateActSelectionAppliedChoiceResult(actIndex));
+				synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateActSelectionApplied(actIndex));
 				Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} player={player.NetId} choiceId={choiceId}");
 				continue;
 			}
@@ -308,9 +392,9 @@ internal static partial class HextechRuneSelectionCoordinator
 				synchronizer,
 				player,
 				choiceId,
-				result => TryDecodeActSelectionApplied(result, actIndex),
+				result => HextechChoiceCodec.TryDecodeActSelectionApplied(result, actIndex),
 				$"act-selection-applied act={actIndex}");
-			if (!TryDecodeActSelectionApplied(remoteAck, actIndex))
+			if (!HextechChoiceCodec.TryDecodeActSelectionApplied(remoteAck, actIndex))
 			{
 				Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied malformed ack: act={actIndex} player={player.NetId} choiceId={choiceId}");
 				return;
@@ -337,69 +421,6 @@ internal static partial class HextechRuneSelectionCoordinator
 				await Task.Yield();
 			}
 		}
-	}
-
-	private static PlayerChoiceResult CreateActSelectionAppliedChoiceResult(int actIndex)
-	{
-		return PlayerChoiceResult.FromIndexes([ HextechChoiceMagic, ChoiceKindActSelectionApplied, actIndex, 1 ]);
-	}
-
-	private static bool TryDecodeActSelectionApplied(PlayerChoiceResult result, int expectedActIndex)
-	{
-		return TryGetIndexPayload(result, out List<int>? payload)
-			&& payload.Count >= 4
-			&& payload[0] == HextechChoiceMagic
-			&& payload[1] == ChoiceKindActSelectionApplied
-			&& payload[2] == expectedActIndex
-			&& payload[3] == 1;
-	}
-
-	private static PlayerChoiceResult CreateEnemyHexAdjustmentChoiceResult(EnemyHexAdjustmentPayload payload)
-	{
-		return PlayerChoiceResult.FromIndexes(
-		[
-			HextechChoiceMagic,
-			ChoiceKindEnemyHexAdjustment,
-			payload.ActIndex,
-			payload.Sequence,
-			payload.Removed ? 1 : 0,
-			payload.MonsterHex.HasValue ? (int)payload.MonsterHex.Value : -1,
-			payload.RerollCount,
-			payload.IsFinal ? 1 : 0
-		]);
-	}
-
-	private static bool TryDecodeEnemyHexAdjustment(PlayerChoiceResult result, int expectedActIndex, out EnemyHexAdjustmentPayload payload)
-	{
-		payload = default;
-		if (!TryGetIndexPayload(result, out List<int>? indexes)
-			|| indexes.Count < 8
-			|| indexes[0] != HextechChoiceMagic
-			|| indexes[1] != ChoiceKindEnemyHexAdjustment
-			|| indexes[2] != expectedActIndex)
-		{
-			return false;
-		}
-
-		MonsterHexKind? monsterHex = null;
-		if (indexes[5] >= 0)
-		{
-			if (!Enum.IsDefined(typeof(MonsterHexKind), indexes[5]))
-			{
-				return false;
-			}
-
-			monsterHex = (MonsterHexKind)indexes[5];
-		}
-
-		payload = new EnemyHexAdjustmentPayload(
-			indexes[2],
-			Math.Max(0, indexes[3]),
-			monsterHex,
-			indexes[4] != 0,
-			Math.Max(0, indexes[6]),
-			indexes[7] != 0);
-		return true;
 	}
 
 	private static async Task<PlayerChoiceSynchronizer?> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
@@ -450,23 +471,4 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
-	private static bool TryGetIndexPayload(PlayerChoiceResult result, out List<int> payload)
-	{
-		payload = [];
-		try
-		{
-			List<int>? indexes = result.AsIndexes();
-			if (indexes == null)
-			{
-				return false;
-			}
-
-			payload = indexes;
-			return true;
-		}
-		catch (InvalidOperationException)
-		{
-			return false;
-		}
-	}
 }

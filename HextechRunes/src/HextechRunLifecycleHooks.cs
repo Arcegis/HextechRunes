@@ -21,11 +21,13 @@ internal static class HextechRunLifecycleHooks
 {
 	private static bool _subscribedRoomEntered;
 	private static bool _subscribedRoomExited;
+	private static RunManager? _subscribedRoomEnteredManager;
+	private static RunManager? _subscribedRoomExitedManager;
 	private static HashSet<RunState>? _runsInsideStartRunOrig;
 
 	private static HashSet<RunState> RunsInsideStartRunOrig => _runsInsideStartRunOrig ??= new HashSet<RunState>();
 
-	private readonly record struct EventRoomProceedState(bool ShouldSelectAfterProceed, RunState RunState, string EventId);
+	private readonly record struct EventRoomProceedState(bool ShouldSelectAfterProceed, RunState RunState, int ActIndex, string EventId);
 
 	public static void Install(Harmony harmony)
 	{
@@ -102,9 +104,9 @@ internal static class HextechRunLifecycleHooks
 		if (!modifier.IsActResolved(runState.CurrentActIndex)
 			&& IsCurrentRun(runState))
 		{
-			if (ShouldDeferAct0SelectionUntilAfterNeow(runState))
+			if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: deferring act0 selection until safe post-Neow selection point {DescribeCurrentEventState(runState)}");
+				Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: deferring act{runState.CurrentActIndex} selection until ancient event finishes {DescribeCurrentEventState(runState)}");
 			}
 			else
 			{
@@ -116,11 +118,11 @@ internal static class HextechRunLifecycleHooks
 
 	private static void EventRoomProceedPrefix(out EventRoomProceedState __state)
 	{
-		bool shouldSelectAfterProceed = TryGetPendingAncientProceedSelection(out RunState runState, out string eventId);
-		__state = new EventRoomProceedState(shouldSelectAfterProceed, runState, eventId);
+		bool shouldSelectAfterProceed = TryGetPendingEventProceedSelection(out RunState runState, out int actIndex, out string eventId);
+		__state = new EventRoomProceedState(shouldSelectAfterProceed, runState, actIndex, eventId);
 		if (shouldSelectAfterProceed)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed begin: event={eventId} {DescribeCurrentEventState(runState)}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed begin: act={actIndex} event={eventId} {DescribeCurrentEventState(runState)}");
 		}
 	}
 
@@ -139,37 +141,38 @@ internal static class HextechRunLifecycleHooks
 		}
 
 		RunState runState = state.RunState;
+		int actIndex = state.ActIndex;
 		string eventId = state.EventId;
 		if (!IsCurrentRun(runState))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: run changed after proceed event={eventId}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: run changed after proceed act={actIndex} event={eventId}");
 			return;
 		}
 
-		HextechMayhemModifier modifier = GetOrRecoverMayhemModifier(runState, $"EventRoomProceed recovered missing modifier after proceed event={eventId}");
-		if (!modifier.IsActResolved(0) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(EventRoomProceedAfterOriginal)))
+		HextechMayhemModifier modifier = GetOrRecoverMayhemModifier(runState, $"EventRoomProceed recovered missing modifier after proceed act={actIndex} event={eventId}");
+		if (!modifier.IsActResolved(actIndex) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(EventRoomProceedAfterOriginal)))
 		{
 			HextechEnemyUi.Refresh(modifier);
 		}
 
-		if (modifier.IsActResolved(0))
+		if (modifier.IsActResolved(actIndex))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: act0 already resolved event={eventId}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: act{actIndex} already resolved event={eventId}");
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: waiting for all ancient events before act0 selection event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: waiting for all ancient events before act{actIndex} selection event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 		NMapScreen.Instance?.SetTravelEnabled(enabled: false);
 		try
 		{
 			await WaitForAllCurrentEventsFinished(runState, eventId);
-			if (!IsCurrentRun(runState) || modifier.IsActResolved(0))
+			if (!IsCurrentRun(runState) || modifier.IsActResolved(actIndex))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: run changed or act0 resolved after wait event={eventId}");
+				Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: run changed or act{actIndex} resolved after wait event={eventId}");
 				return;
 			}
 
-			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: selecting act0 hex after all ancient events finished event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: selecting act{actIndex} hex after all ancient events finished event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 			await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
 		}
 		finally
@@ -212,6 +215,14 @@ internal static class HextechRunLifecycleHooks
 		return HextechRuneSelectionCoordinator.HandleActStarted(modifier);
 	}
 
+	internal static void HandleEndlessLoopReset(HextechMayhemModifier modifier, string reason)
+	{
+		SubscribeRoomEnteredIfNeeded(force: true);
+		SubscribeRoomExitedIfNeeded(force: true);
+		HextechRuneSelectionCoordinator.ResetActSelectionState();
+		TaskHelper.RunSafely(HandleEndlessLoopActSelection(modifier, reason));
+	}
+
 	private static HextechMayhemModifier? GetMayhemModifier(RunState runState)
 	{
 		return runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault();
@@ -228,26 +239,48 @@ internal static class HextechRunLifecycleHooks
 		return EnsureMayhemModifier(runState);
 	}
 
-	private static void SubscribeRoomEnteredIfNeeded()
+	private static void SubscribeRoomEnteredIfNeeded(bool force = false)
 	{
-		if (_subscribedRoomEntered)
+		RunManager manager = RunManager.Instance;
+		if (_subscribedRoomEntered && ReferenceEquals(_subscribedRoomEnteredManager, manager))
 		{
-			return;
+			if (!force)
+			{
+				return;
+			}
+
+			manager.RoomEntered -= OnRoomEntered;
+		}
+		else if (_subscribedRoomEnteredManager != null)
+		{
+			_subscribedRoomEnteredManager.RoomEntered -= OnRoomEntered;
 		}
 
-		RunManager.Instance.RoomEntered += OnRoomEntered;
+		manager.RoomEntered += OnRoomEntered;
 		_subscribedRoomEntered = true;
+		_subscribedRoomEnteredManager = manager;
 	}
 
-	private static void SubscribeRoomExitedIfNeeded()
+	private static void SubscribeRoomExitedIfNeeded(bool force = false)
 	{
-		if (_subscribedRoomExited)
+		RunManager manager = RunManager.Instance;
+		if (_subscribedRoomExited && ReferenceEquals(_subscribedRoomExitedManager, manager))
 		{
-			return;
+			if (!force)
+			{
+				return;
+			}
+
+			manager.RoomExited -= OnRoomExited;
+		}
+		else if (_subscribedRoomExitedManager != null)
+		{
+			_subscribedRoomExitedManager.RoomExited -= OnRoomExited;
 		}
 
-		RunManager.Instance.RoomExited += OnRoomExited;
+		manager.RoomExited += OnRoomExited;
 		_subscribedRoomExited = true;
+		_subscribedRoomExitedManager = manager;
 	}
 
 	private static void OnRoomEntered()
@@ -272,11 +305,10 @@ internal static class HextechRunLifecycleHooks
 		Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} actResolved={modifier?.IsActResolved(runState.CurrentActIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
 		if (runState.CurrentRoom is EventRoom { CanonicalEvent: AncientEventModel ancientEvent }
 			&& modifier != null
-			&& runState.CurrentActIndex == 0
-			&& runState.ExtraFields.StartedWithNeow
-			&& !modifier.IsActResolved(0))
+			&& runState.CurrentActIndex is >= 0 and <= 2
+			&& !modifier.IsActResolved(runState.CurrentActIndex))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: ancient start event detected. event={ancientEvent.Id.Entry} actResolved={modifier.IsActResolved(0)} {DescribeCurrentEventState(runState)}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: pending act selection is deferred until ancient event proceed. act={runState.CurrentActIndex} event={ancientEvent.Id.Entry} {DescribeCurrentEventState(runState)}");
 		}
 		if (modifier != null && ShouldScheduleActSelectionOnRoomEntered(runState, modifier))
 		{
@@ -318,22 +350,60 @@ internal static class HextechRunLifecycleHooks
 		return ReferenceEquals(RunManager.Instance.DebugOnlyGetState(), runState);
 	}
 
-	private static bool ShouldDeferAct0SelectionUntilAfterNeow(RunState runState)
+	private static bool ShouldDeferActSelectionUntilAfterCurrentEvent(RunState runState)
 	{
-		return runState.CurrentActIndex == 0
-			&& runState.ExtraFields.StartedWithNeow
+		return runState.CurrentActIndex is >= 0 and <= 2
 			&& runState.CurrentRoom is EventRoom { CanonicalEvent: AncientEventModel };
 	}
 
 	private static bool ShouldScheduleActSelectionOnRoomEntered(RunState runState, HextechMayhemModifier modifier)
 	{
 		int actIndex = runState.CurrentActIndex;
-		if (actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex) || ShouldDeferAct0SelectionUntilAfterNeow(runState))
+		if (actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex) || ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
 		{
 			return false;
 		}
 
 		return runState.CurrentRoom is MapRoom || runState.CurrentRoom is not null and not EventRoom;
+	}
+
+	private static async Task HandleEndlessLoopActSelection(HextechMayhemModifier modifier, string reason)
+	{
+		RunState runState = modifier.ActiveRunState;
+		for (int frame = 0; frame < 600 && IsCurrentRun(runState); frame++)
+		{
+			int actIndex = runState.CurrentActIndex;
+			if (actIndex == 0)
+			{
+				if (modifier.IsActResolved(actIndex))
+				{
+					Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection skipped: act0 already resolved reason={reason} frame={frame}");
+					return;
+				}
+
+				if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
+				{
+					Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection deferred to ancient event proceed reason={reason} frame={frame} {DescribeCurrentEventState(runState)}");
+					return;
+				}
+
+				if (runState.CurrentRoom != null || NMapScreen.Instance?.IsOpen == true)
+				{
+					Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection starting: reason={reason} frame={frame} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+					await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
+					return;
+				}
+			}
+
+			if (frame % 120 == 0)
+			{
+				Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection waiting: reason={reason} frame={frame} act={actIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+			}
+
+			await WaitOneFrame();
+		}
+
+		Log.Warn($"[{ModInfo.Id}][Mayhem] Endless loop selection timed out: reason={reason} currentRun={IsCurrentRun(runState)} act={runState.CurrentActIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 	}
 
 	private static string DescribeCurrentEventState(RunState runState)
@@ -354,25 +424,26 @@ internal static class HextechRunLifecycleHooks
 		}
 	}
 
-	private static bool TryGetPendingAncientProceedSelection(out RunState runState, out string eventId)
+	private static bool TryGetPendingEventProceedSelection(out RunState runState, out int actIndex, out string eventId)
 	{
 		runState = null!;
+		actIndex = -1;
 		eventId = "null";
 
 		if (RunManager.Instance.DebugOnlyGetState() is not RunState currentRunState
-			|| currentRunState.CurrentActIndex != 0
-			|| !currentRunState.ExtraFields.StartedWithNeow
+			|| currentRunState.CurrentActIndex is < 0 or > 2
 			|| currentRunState.CurrentRoom is not EventRoom { CanonicalEvent: AncientEventModel ancientEvent })
 		{
 			return false;
 		}
 
-		if (GetMayhemModifier(currentRunState)?.IsActResolved(0) == true)
+		if (GetMayhemModifier(currentRunState)?.IsActResolved(currentRunState.CurrentActIndex) == true)
 		{
 			return false;
 		}
 
 		runState = currentRunState;
+		actIndex = currentRunState.CurrentActIndex;
 		eventId = ancientEvent.Id.Entry;
 		return true;
 	}
@@ -383,9 +454,9 @@ internal static class HextechRunLifecycleHooks
 		{
 			IReadOnlyList<EventModel> events = RunManager.Instance.EventSynchronizer.Events;
 			int finishedCount = events.Count(static eventModel => eventModel.IsFinished);
-			if (events.Count >= runState.Players.Count && finishedCount == events.Count)
+			if (AreRequiredCurrentEventsFinished(runState, events, finishedCount, out string completionReason))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: all events finished event={eventId} count={events.Count} waitedFrames={frame}");
+				Log.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: required events finished event={eventId} count={events.Count} finished={finishedCount} reason={completionReason} waitedFrames={frame}");
 				return;
 			}
 
@@ -396,6 +467,36 @@ internal static class HextechRunLifecycleHooks
 
 			await WaitOneFrame();
 		}
+	}
+
+	private static bool AreRequiredCurrentEventsFinished(
+		RunState runState,
+		IReadOnlyList<EventModel> events,
+		int finishedCount,
+		out string completionReason)
+	{
+		if (HextechAiTeammateCompat.IsAiTeammateLoopbackRun(runState)
+			&& HextechAiTeammateCompat.TryGetHostPlayerId(out ulong hostPlayerId))
+		{
+			EventModel? hostEvent = events.FirstOrDefault(eventModel => eventModel.Owner?.NetId == hostPlayerId);
+			if (hostEvent != null)
+			{
+				completionReason = "ai-teammate-host-event";
+				return hostEvent.IsFinished;
+			}
+
+			if (finishedCount > 0)
+			{
+				completionReason = "ai-teammate-any-finished-fallback";
+				return true;
+			}
+
+			completionReason = "ai-teammate-waiting-host-event";
+			return false;
+		}
+
+		completionReason = "all-player-events";
+		return events.Count >= runState.Players.Count && finishedCount == events.Count;
 	}
 
 	private static async Task WaitOneFrame()

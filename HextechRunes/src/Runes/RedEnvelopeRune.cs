@@ -34,9 +34,19 @@ using MegaCrit.Sts2.Core.Models.Monsters;
 
 namespace HextechRunes;
 
-public sealed class RedEnvelopeRune : HextechRelicBase
+public sealed class RedEnvelopeRune : HextechRelicBase, IHextechSharedCombatVictoryRune
 {
 	public override Task AfterCombatVictory(CombatRoom room)
+	{
+		if (IsNetworkMultiplayer())
+		{
+			return Task.CompletedTask;
+		}
+
+		return ApplySharedCombatVictory(room);
+	}
+
+	public Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

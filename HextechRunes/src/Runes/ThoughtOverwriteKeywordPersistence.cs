@@ -46,6 +46,44 @@ internal static class ThoughtOverwriteKeywordPersistence
 	}
 }
 
+internal static class CurtainCallKeywordPersistence
+{
+	private static readonly ConditionalWeakTable<CardModel, Marker> TrackedCards = new();
+
+	private sealed class Marker
+	{
+	}
+
+	public static void Track(CardModel? card)
+	{
+		if (card == null)
+		{
+			return;
+		}
+
+		TrackedCards.GetValue(card, static _ => new Marker());
+	}
+
+	public static bool IsTracked(CardModel? card)
+	{
+		return card != null && TrackedCards.TryGetValue(card, out _);
+	}
+
+	public static void Restore(CardModel card)
+	{
+		Track(card);
+		if (!card.Keywords.Contains(CardKeyword.Retain))
+		{
+			card.AddKeyword(CardKeyword.Retain);
+		}
+	}
+
+	public static bool ShouldPersist(CardModel card)
+	{
+		return IsTracked(card) || IsTracked(card.DeckVersion);
+	}
+}
+
 internal static class ThoughtOverwriteKeywordPersistenceHooks
 {
 	public static void Install(Harmony harmony)
@@ -62,36 +100,46 @@ internal static class ThoughtOverwriteKeywordPersistenceHooks
 	{
 		if (ThoughtOverwriteKeywordPersistence.ShouldPersist(__instance))
 		{
-			AddMarker(__result);
+			AddMarker(__result, ThoughtOverwriteRune.EtherealMarkerSavedPropertyName);
+		}
+
+		if (CurtainCallKeywordPersistence.ShouldPersist(__instance))
+		{
+			AddMarker(__result, CurtainCallRune.RetainMarkerSavedPropertyName);
 		}
 	}
 
 	private static void CardFromSerializablePostfix(SerializableCard save, CardModel __result)
 	{
-		if (HasMarker(save.Props))
+		if (HasMarker(save.Props, ThoughtOverwriteRune.EtherealMarkerSavedPropertyName))
 		{
 			ThoughtOverwriteKeywordPersistence.Restore(__result);
 		}
+
+		if (HasMarker(save.Props, CurtainCallRune.RetainMarkerSavedPropertyName))
+		{
+			CurtainCallKeywordPersistence.Restore(__result);
+		}
 	}
 
-	private static void AddMarker(SerializableCard card)
+	private static void AddMarker(SerializableCard card, string markerSavedPropertyName)
 	{
 		card.Props ??= new SavedProperties();
 		card.Props.ints ??= new List<SavedProperties.SavedProperty<int>>();
-		if (card.Props.ints.Any(static property => property.name == ThoughtOverwriteRune.EtherealMarkerSavedPropertyName))
+		if (card.Props.ints.Any(property => property.name == markerSavedPropertyName))
 		{
 			return;
 		}
 
 		card.Props.ints.Add(new SavedProperties.SavedProperty<int>(
-			ThoughtOverwriteRune.EtherealMarkerSavedPropertyName,
+			markerSavedPropertyName,
 			1));
 	}
 
-	private static bool HasMarker(SavedProperties? props)
+	private static bool HasMarker(SavedProperties? props, string markerSavedPropertyName)
 	{
-		return props?.ints?.Any(static property =>
-			property.name == ThoughtOverwriteRune.EtherealMarkerSavedPropertyName
+		return props?.ints?.Any(property =>
+			property.name == markerSavedPropertyName
 			&& property.value != 0) == true;
 	}
 }

@@ -34,7 +34,7 @@ using MegaCrit.Sts2.Core.Models.Monsters;
 
 namespace HextechRunes;
 
-public sealed class TankEngineRune : HextechRelicBase
+public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVictoryRune
 {
 	private int _stacks;
 
@@ -72,6 +72,16 @@ public sealed class TankEngineRune : HextechRelicBase
 	}
 
 	public override async Task AfterCombatVictory(CombatRoom room)
+	{
+		if (IsNetworkMultiplayer())
+		{
+			return;
+		}
+
+		await ApplySharedCombatVictory(room);
+	}
+
+	public async Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

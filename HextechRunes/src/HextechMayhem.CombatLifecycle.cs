@@ -15,6 +15,12 @@ internal sealed partial class HextechMayhemModifier
 		HextechGoldrendSync.ResetCombat();
 		ResetCombatTracking();
 		HextechEnemyUi.Refresh(this);
+		HextechMultiplayerScalingCompat.RefreshHostScalingFlagForLocalHost(this);
+		if (RunState.CurrentRoom is CombatRoom currentCombatRoom)
+		{
+			await HextechMultiplayerScalingCompat.NormalizeCombatEnemyHpIfNeeded(this, currentCombatRoom);
+		}
+
 		await ApplyToCurrentEnemiesIfNeeded();
 
 		if (RunState.CurrentRoom is CombatRoom combatRoom)
@@ -33,7 +39,19 @@ internal sealed partial class HextechMayhemModifier
 
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		return Task.CompletedTask;
+		return HextechRelicBase.IsNetworkMultiplayerRun()
+			? ApplySharedCombatVictoryRunes(room)
+			: Task.CompletedTask;
+	}
+
+	private async Task ApplySharedCombatVictoryRunes(CombatRoom room)
+	{
+		foreach (IHextechSharedCombatVictoryRune rune in RunState.Players
+			.SelectMany(static player => player.Relics)
+			.OfType<IHextechSharedCombatVictoryRune>())
+		{
+			await rune.ApplySharedCombatVictory(room);
+		}
 	}
 
 	public override async Task AfterCreatureAddedToCombat(Creature creature)
@@ -42,6 +60,8 @@ internal sealed partial class HextechMayhemModifier
 		{
 			return;
 		}
+
+		await HextechMultiplayerScalingCompat.NormalizeEnemyHpIfNeeded(this, creature);
 
 		if (RunState.CurrentRoom is CombatRoom combatRoom
 			&& await TryApplyDeferredBossStartHexes(creature, combatRoom))

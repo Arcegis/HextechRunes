@@ -34,7 +34,7 @@ using MegaCrit.Sts2.Core.Models.Monsters;
 
 namespace HextechRunes;
 
-public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
+public sealed class CuttingEdgeAlchemistRune : HextechRelicBase, IHextechSharedCombatVictoryRune
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -43,6 +43,16 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase
 	];
 
 	public override Task AfterCombatVictory(CombatRoom room)
+	{
+		if (IsNetworkMultiplayer())
+		{
+			return Task.CompletedTask;
+		}
+
+		return ApplySharedCombatVictory(room);
+	}
+
+	public Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

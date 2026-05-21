@@ -13,16 +13,19 @@ namespace HextechRunes;
 internal static class HextechUpdateChecker
 {
 	private const string NoticeName = "HextechRunesUpdateNotice";
-	private const string StaticVersionEndpoint = "http://39.96.216.77/latest-version.json";
-	private const string ApiVersionEndpoint = "http://39.96.216.77/api/hextech-runes/latest-version";
 	private const int MaxCheckAttempts = 2;
+	private const int MaxNoticeAttachAttempts = 30;
 
 	private static readonly System.Net.Http.HttpClient HttpClient = new()
 	{
 		Timeout = TimeSpan.FromSeconds(12)
 	};
 
-	private static readonly string[] VersionEndpoints = [StaticVersionEndpoint, ApiVersionEndpoint];
+	private static readonly string[] VersionEndpoints =
+	[
+		HextechServerEndpoints.StaticVersionEndpoint,
+		HextechServerEndpoints.ApiVersionEndpoint
+	];
 
 	private static readonly object StateLock = new();
 	private static Task<UpdateCheckResult>? _checkTask;
@@ -39,20 +42,70 @@ internal static class HextechUpdateChecker
 
 	private static void MainMenuReadyPostfix(NMainMenu __instance)
 	{
-		try
-		{
-			ShowNotice(__instance);
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI failed: {ex.Message}");
-		}
+		_ = ShowNoticeWhenStatusLayerReadyAsync(__instance);
 	}
 
-	private static void ShowNotice(NMainMenu mainMenu)
+	private static async Task ShowNoticeWhenStatusLayerReadyAsync(NMainMenu mainMenu)
 	{
-		RemoveExistingNotice(mainMenu);
-		Label label = CreateNotice(mainMenu);
+		for (int attempt = 1; attempt <= MaxNoticeAttachAttempts; attempt++)
+		{
+			if (!GodotObject.IsInstanceValid(mainMenu))
+			{
+				return;
+			}
+
+			try
+			{
+				if (TryShowNotice(mainMenu, attempt))
+				{
+					return;
+				}
+			}
+			catch (Exception ex)
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI failed: {ex.Message}");
+				return;
+			}
+
+			if (!await AwaitProcessFrameAsync(mainMenu))
+			{
+				return;
+			}
+		}
+
+		Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI skipped: vanilla mod status label not found after {MaxNoticeAttachAttempts} frames.");
+	}
+
+	private static bool TryShowNotice(NMainMenu mainMenu, int attempt)
+	{
+		Node searchRoot = ResolveNoticeSearchRoot(mainMenu);
+		Label? template = FindVanillaModStatusLabel(searchRoot);
+		if (template == null)
+		{
+			if (attempt is 1 or MaxNoticeAttachAttempts || attempt % 10 == 0)
+			{
+				Log.Info($"[{ModInfo.Id}][Mayhem] Update checker UI waiting for vanilla mod status label: attempt={attempt} root={DescribeNode(searchRoot)}.");
+			}
+
+			return false;
+		}
+
+		Node? noticeHost = template.GetParent();
+		if (noticeHost == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI skipped: vanilla mod status label has no parent path={DescribeNode(template)}.");
+			return true;
+		}
+
+		ShowNotice(searchRoot, template, noticeHost);
+		Log.Info($"[{ModInfo.Id}][Mayhem] Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
+		return true;
+	}
+
+	private static void ShowNotice(Node searchRoot, Label template, Node noticeHost)
+	{
+		RemoveExistingNotice(searchRoot);
+		Label label = CreateNotice(template, noticeHost);
 		UpdateCheckResult? cachedResult;
 		Task<UpdateCheckResult> checkTask;
 		lock (StateLock)
@@ -60,7 +113,7 @@ internal static class HextechUpdateChecker
 			cachedResult = _cachedResult;
 			if (cachedResult != null)
 			{
-				label.Text = cachedResult.Text;
+				SetNoticeText(label, cachedResult.Text);
 				return;
 			}
 
@@ -71,15 +124,25 @@ internal static class HextechUpdateChecker
 		_ = ApplyCheckResultAsync(label, checkTask);
 	}
 
-	private static Label CreateNotice(NMainMenu mainMenu)
+	private static Label CreateNotice(Label template, Node noticeHost)
 	{
-		Label? template = FindVanillaModStatusLabel(mainMenu);
 		Label label = CreateNoticeLabel(template);
 		ConfigureNoticePlacement(label);
 		SetNoticeText(label, "正在检查海克斯大乱斗模组版本");
-		mainMenu.AddChild(label);
-		mainMenu.MoveChild(label, mainMenu.GetChildCount() - 1);
+		noticeHost.AddChild(label);
+		MoveNoticeNextToTemplate(label, template, noticeHost);
 		return label;
+	}
+
+	private static void MoveNoticeNextToTemplate(Label label, Label template, Node noticeHost)
+	{
+		int targetIndex = Math.Min(template.GetIndex() + 1, noticeHost.GetChildCount() - 1);
+		noticeHost.MoveChild(label, targetIndex);
+	}
+
+	private static Node ResolveNoticeSearchRoot(NMainMenu mainMenu)
+	{
+		return mainMenu.GetTree()?.Root is Node root ? root : mainMenu;
 	}
 
 	private static Label CreateNoticeLabel(Label? template)
@@ -87,7 +150,8 @@ internal static class HextechUpdateChecker
 		Label label = template is MegaLabel ? new MegaLabel() : new Label();
 		label.Name = NoticeName;
 		label.MouseFilter = Control.MouseFilterEnum.Ignore;
-		label.ZIndex = template != null ? Math.Max(template.ZIndex + 1, 200) : 200;
+		label.ZIndex = template?.ZIndex ?? 0;
+		label.ZAsRelative = template?.ZAsRelative ?? true;
 		if (template != null)
 		{
 			ApplyNoticeStyleFromTemplate(label, template);
@@ -103,6 +167,9 @@ internal static class HextechUpdateChecker
 
 	private static void ApplyNoticeStyleFromTemplate(Label label, Label template)
 	{
+		label.Modulate = template.Modulate;
+		label.SelfModulate = template.SelfModulate;
+		label.Theme = template.Theme;
 		label.ThemeTypeVariation = template.ThemeTypeVariation;
 		Font font = template.GetThemeFont("font");
 		if (font != null)
@@ -196,9 +263,45 @@ internal static class HextechUpdateChecker
 		{
 			if (child.Name == NoticeName)
 			{
-				mainMenu.RemoveChild(child);
 				child.QueueFree();
+				continue;
 			}
+
+			RemoveExistingNotice(child);
+		}
+	}
+
+	private static async Task<bool> AwaitProcessFrameAsync(Node node)
+	{
+		if (!GodotObject.IsInstanceValid(node) || !node.IsInsideTree())
+		{
+			return false;
+		}
+
+		SceneTree tree = node.GetTree();
+		if (tree == null)
+		{
+			return false;
+		}
+
+		await node.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+		return GodotObject.IsInstanceValid(node) && node.IsInsideTree();
+	}
+
+	private static string DescribeNode(Node? node)
+	{
+		if (node == null || !GodotObject.IsInstanceValid(node))
+		{
+			return "<null>";
+		}
+
+		try
+		{
+			return $"{node.GetType().Name}:{node.GetPath()}";
+		}
+		catch
+		{
+			return node.GetType().Name;
 		}
 	}
 
@@ -265,11 +368,19 @@ internal static class HextechUpdateChecker
 			}
 
 			string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-			string? latestVersion = TryReadLatestVersion(json);
+			using JsonDocument document = JsonDocument.Parse(json);
+			JsonElement root = document.RootElement;
+			string? latestVersion = TryReadLatestVersion(root);
 			if (string.IsNullOrWhiteSpace(latestVersion))
 			{
 				failures.Add($"{endpoint}: missing latestVersion");
 				return null;
+			}
+
+			if (HextechIntegrityCheck.IsOfficialServerResponse(endpoint, root))
+			{
+				HextechIntegrityCheck.LogOfficialServerConnection(endpoint, latestVersion);
+				HextechIntegrityCheck.VerifyOfficialBuild(root);
 			}
 
 			return BuildVersionResult(latestVersion);
@@ -301,10 +412,8 @@ internal static class HextechUpdateChecker
 		}
 	}
 
-	private static string? TryReadLatestVersion(string json)
+	private static string? TryReadLatestVersion(JsonElement root)
 	{
-		using JsonDocument document = JsonDocument.Parse(json);
-		JsonElement root = document.RootElement;
 		return TryGetString(root, "latestVersion")
 			?? TryGetString(root, "version")
 			?? TryGetString(root, "latest");

@@ -72,5 +72,11 @@ internal enum MonsterHexKind
     BloodArmor = 60,
     JinlianBox = 61,
     MirrorReflection = 62,
-    DuffsVintage = 63
+    DuffsVintage = 63,
+    Misery = 64,
+    ShoulderVaku = 65,
+    Upgrade = 66,
+    NearDeathFeast = 67,
+    BlueCandleMedkit = 68,
+    TanksShield = 69
 }

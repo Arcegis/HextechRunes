@@ -66,7 +66,12 @@ public sealed class JudicatorRune : HextechRelicBase
 		Flash(Array.Empty<Creature>());
 		if (Owner.PlayerCombatState != null)
 		{
-			await PlayerCmd.SetEnergy(Owner.PlayerCombatState.MaxEnergy, Owner);
+			var combatState = Owner.PlayerCombatState;
+			var maxEnergy = combatState.MaxEnergy;
+			if (combatState.Energy < maxEnergy)
+			{
+				await PlayerCmd.SetEnergy(maxEnergy, Owner);
+			}
 		}
 	}
 }

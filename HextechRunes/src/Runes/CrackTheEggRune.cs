@@ -25,6 +25,11 @@ namespace HextechRunes;
 
 public sealed class CrackTheEggRune : HextechRelicBase
 {
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DamageVar(6m, ValueProp.Unpowered)
+	];
+
 	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		if (Owner == null || Owner.Creature.IsDead || side != Owner.Creature.Side || Owner.Creature.Block <= 0)
@@ -32,19 +37,16 @@ public sealed class CrackTheEggRune : HextechRelicBase
 			return;
 		}
 
-		Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
-			Owner,
-			combatState,
-			"crack-the-egg",
-			combatState.RoundNumber.ToString(),
-			CombatManager.Instance.History.Entries.Count().ToString());
-		if (target == null)
+		List<Creature> enemies = combatState.HittableEnemies.ToList();
+		if (enemies.Count == 0)
 		{
 			return;
 		}
 
-		int block = Owner.Creature.Block;
-		Flash([target]);
-		await CreatureCmd.Damage(choiceContext, target, block, ValueProp.Unpowered, Owner.Creature, null);
+		Flash(enemies);
+		foreach (Creature enemy in enemies)
+		{
+			await CreatureCmd.Damage(choiceContext, enemy, DynamicVars.Damage.BaseValue, ValueProp.Unpowered, Owner.Creature, null);
+		}
 	}
 }

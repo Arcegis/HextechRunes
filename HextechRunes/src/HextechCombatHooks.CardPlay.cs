@@ -16,6 +16,12 @@ internal static partial class HextechCombatHooks
 			return;
 		}
 
+		if (!__result && WhiteHoleCard.AllowsPlaying(__instance))
+		{
+			__result = true;
+			return;
+		}
+
 		if (__result && IsBlockedByBackToBasics(__instance))
 		{
 			__result = false;
@@ -33,6 +39,14 @@ internal static partial class HextechCombatHooks
 		if (!__result)
 		{
 			if (BlueCandleMedkitRune.AllowsPlaying(__instance))
+			{
+				reason = default;
+				preventer = null!;
+				__result = true;
+				return;
+			}
+
+			if (WhiteHoleCard.AllowsPlaying(__instance))
 			{
 				reason = default;
 				preventer = null!;

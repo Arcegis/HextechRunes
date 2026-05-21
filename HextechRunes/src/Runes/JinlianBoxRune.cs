@@ -44,7 +44,7 @@ public sealed class JinlianBoxRune : HextechRelicBase
 		}
 
 		List<CardTransformation> transformations = Owner.Deck.Cards
-			.Where(static card => card.IsTransformable)
+			.Where(static card => card.IsTransformable && card.IsBasicStrikeOrDefend)
 			.Select(card => CardTransformUpgradeHelper.CreateRandomOptionTransformation(
 				card,
 				rareOptions,

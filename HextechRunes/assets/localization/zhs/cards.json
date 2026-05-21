@@ -58,5 +58,17 @@
   "cloudDragonSoulCard.description": "每回合额外抽[blue]{Cards}[/blue]张牌。",
   "CLOUD_DRAGON_SOUL_CARD.description": "每回合额外抽[blue]{Cards}[/blue]张牌。",
   "cloudDragonSoulCard.flavor": "风会把选择送到手边。",
-  "CLOUD_DRAGON_SOUL_CARD.flavor": "风会把选择送到手边。"
+  "CLOUD_DRAGON_SOUL_CARD.flavor": "风会把选择送到手边。",
+  "allInCard.title": "乾坤一掷",
+  "ALL_IN_CARD.title": "乾坤一掷",
+  "allInCard.description": "造成{Damage:diff()}点伤害。\n丢弃所有非攻击牌。",
+  "ALL_IN_CARD.description": "造成{Damage:diff()}点伤害。\n丢弃所有非攻击牌。",
+  "allInCard.flavor": "桌面上只剩下注与刀口。",
+  "ALL_IN_CARD.flavor": "桌面上只剩下注与刀口。",
+  "whiteHoleCard.title": "白洞",
+  "WHITE_HOLE_CARD.title": "白洞",
+  "whiteHoleCard.description": "每当你抽到这张牌时，获得{Energy:energyIcons()}。\n抽{Cards}张牌。",
+  "WHITE_HOLE_CARD.description": "每当你抽到这张牌时，获得{Energy:energyIcons()}。\n抽{Cards}张牌。",
+  "whiteHoleCard.flavor": "它不吞噬选择，只把选择吐回手心。",
+  "WHITE_HOLE_CARD.flavor": "它不吞噬选择，只把选择吐回手心。"
 }

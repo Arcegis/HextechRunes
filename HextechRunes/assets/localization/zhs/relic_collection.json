@@ -1,8 +1,8 @@
 {
   "HEXTECH_RUNES_SUBCATEGORY": "[gold]海克斯：[/gold] 来自海克斯符文池的自定义遗物。",
   "HEXTECH_FORGES_SUBCATEGORY": "[gold]属性锻造器：[/gold] 来自属性锻造系统的自定义遗物。",
-  "HEXTECH_CHARACTER.IRONCLAD": "[gold]战士海克斯：[/gold] 仅战士可抽取的海克斯符文。",
-  "HEXTECH_CHARACTER.SILENT": "[gold]猎人海克斯：[/gold] 仅猎人可抽取的海克斯符文。",
+  "HEXTECH_CHARACTER.IRONCLAD": "[gold]铁甲战士海克斯：[/gold] 仅铁甲战士可抽取的海克斯符文。",
+  "HEXTECH_CHARACTER.SILENT": "[gold]静默猎手海克斯：[/gold] 仅静默猎手可抽取的海克斯符文。",
   "HEXTECH_CHARACTER.REGENT": "[gold]储君海克斯：[/gold] 仅储君可抽取的海克斯符文。",
   "HEXTECH_CHARACTER.DEFECT": "[gold]故障机器人海克斯：[/gold] 仅故障机器人可抽取的海克斯符文。",
   "HEXTECH_CHARACTER.NECROBINDER": "[gold]亡灵契约师海克斯：[/gold] 仅亡灵契约师可抽取的海克斯符文。",
@@ -18,5 +18,11 @@
   "HEXTECH_SKIP": "跳过",
   "HEXTECH_SERIES.SILVER": "白银",
   "HEXTECH_SERIES.GOLD": "黄金",
-  "HEXTECH_SERIES.PRISMATIC": "棱彩"
+  "HEXTECH_SERIES.PRISMATIC": "棱彩",
+  "HEXTECH_POOL.GENERIC": "通用",
+  "HEXTECH_POOL.IRONCLAD": "铁甲战士",
+  "HEXTECH_POOL.SILENT": "静默猎手",
+  "HEXTECH_POOL.REGENT": "储君",
+  "HEXTECH_POOL.NECROBINDER": "亡灵契约师",
+  "HEXTECH_POOL.DEFECT": "故障机器人"
 }

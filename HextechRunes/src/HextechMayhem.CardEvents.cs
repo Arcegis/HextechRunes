@@ -44,6 +44,11 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
+		if (card.Owner?.Creature.CombatState?.RunState == RunState && card is WhiteHoleCard whiteHole)
+		{
+			await whiteHole.AfterDrawn();
+		}
+
 		HextechEnemyHexContext context = new(this);
 		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{
@@ -85,7 +90,16 @@ internal sealed partial class HextechMayhemModifier
 		}
 	}
 
-#if !STS2_104_OR_NEWER
+#if STS2_104_OR_NEWER
+	public override async Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
+	{
+		HextechEnemyHexContext context = new(this);
+		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
+		{
+			await effect.AfterAutoPrePlayPhaseEnteredLate(context, choiceContext, player);
+		}
+	}
+#else
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		HextechEnemyHexContext context = new(this);

@@ -195,8 +195,7 @@ internal static class HextechRelicVisibilityHooks
 			Name = ToggleRootNodeName,
 			CustomMinimumSize = ToggleRootSize,
 			Size = ToggleRootSize,
-			MouseFilter = Control.MouseFilterEnum.Pass,
-			ZIndex = 5000
+			MouseFilter = Control.MouseFilterEnum.Pass
 		};
 		root.AnchorLeft = 0f;
 		root.AnchorRight = 0f;

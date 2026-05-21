@@ -58,5 +58,17 @@
   "cloudDragonSoulCard.description": "Draw [blue]{Cards}[/blue] extra cards each turn.",
   "CLOUD_DRAGON_SOUL_CARD.description": "Draw [blue]{Cards}[/blue] extra cards each turn.",
   "cloudDragonSoulCard.flavor": "The wind puts choices in your hand.",
-  "CLOUD_DRAGON_SOUL_CARD.flavor": "The wind puts choices in your hand."
+  "CLOUD_DRAGON_SOUL_CARD.flavor": "The wind puts choices in your hand.",
+  "allInCard.title": "All In",
+  "ALL_IN_CARD.title": "All In",
+  "allInCard.description": "Deal {Damage:diff()} damage.\nDiscard all non-Attack cards.",
+  "ALL_IN_CARD.description": "Deal {Damage:diff()} damage.\nDiscard all non-Attack cards.",
+  "allInCard.flavor": "Only the wager and the edge remain on the table.",
+  "ALL_IN_CARD.flavor": "Only the wager and the edge remain on the table.",
+  "whiteHoleCard.title": "White Hole",
+  "WHITE_HOLE_CARD.title": "White Hole",
+  "whiteHoleCard.description": "Whenever you draw this, gain {Energy:energyIcons()}.\nDraw {Cards} cards.",
+  "WHITE_HOLE_CARD.description": "Whenever you draw this, gain {Energy:energyIcons()}.\nDraw {Cards} cards.",
+  "whiteHoleCard.flavor": "It does not swallow choices. It spits them back into your hand.",
+  "WHITE_HOLE_CARD.flavor": "It does not swallow choices. It spits them back into your hand."
 }

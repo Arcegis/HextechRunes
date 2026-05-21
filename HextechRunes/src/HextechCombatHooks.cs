@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using static HextechRunes.HextechHookReflection;
 
@@ -77,5 +78,22 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(EntropyPower), nameof(EntropyPower.AfterPlayerTurnStart), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(Player)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(EntropyAfterPlayerTurnStartPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(ForbiddenGrimoirePower), nameof(ForbiddenGrimoirePower.AfterCombatEnd), BindingFlags.Public | BindingFlags.Instance, typeof(CombatRoom)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ForbiddenGrimoireAfterCombatEndPrefix)));
+		harmony.Patch(
+			RequireMethod(
+				typeof(CreatureCmd),
+				nameof(CreatureCmd.Damage),
+				BindingFlags.Public | BindingFlags.Static,
+				typeof(PlayerChoiceContext),
+				typeof(IEnumerable<Creature>),
+				typeof(decimal),
+				typeof(ValueProp),
+				typeof(Creature),
+				typeof(CardModel)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
+		InstallRuneSpecificHooks(harmony);
 	}
 }
