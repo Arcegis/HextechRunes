@@ -1,52 +1,70 @@
-using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 
 namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static int _actualDamageCommandDepth;
+	private static readonly AsyncLocal<long[]?> ActualDamageCommandIds = new();
+	private static long _nextActualDamageCommandId;
 
-	internal static bool IsResolvingActualDamageCommand => _actualDamageCommandDepth > 0;
-
-	private static void ActualDamageCommandPrefix(out bool __state)
+	internal static long CurrentActualDamageCommandId
 	{
-		_actualDamageCommandDepth++;
-		__state = true;
-	}
-
-	private static void ActualDamageCommandPostfix(bool __state, ref Task<IEnumerable<DamageResult>> __result)
-	{
-		if (__state)
+		get
 		{
-			__result = CompleteWithActualDamageCommandReset(__result);
+			long[]? ids = ActualDamageCommandIds.Value;
+			return ids is { Length: > 0 } ? ids[^1] : 0L;
 		}
 	}
 
-	private static void ActualAttackCommandPostfix(bool __state, ref Task<AttackCommand> __result)
+	private static void ActualDamageCommandPrefix(out long __state)
 	{
-		if (__state)
+		__state = Interlocked.Increment(ref _nextActualDamageCommandId);
+		long[] current = ActualDamageCommandIds.Value ?? [];
+		long[] next = new long[current.Length + 1];
+		Array.Copy(current, next, current.Length);
+		next[^1] = __state;
+		ActualDamageCommandIds.Value = next;
+	}
+
+	private static void ActualDamageCommandPostfix(long __state, ref Task<IEnumerable<DamageResult>> __result)
+	{
+		if (__state != 0L)
 		{
-			__result = CompleteWithActualDamageCommandReset(__result);
+			__result = CompleteWithActualDamageCommandReset(__result, __state);
 		}
 	}
 
-	private static async Task<T> CompleteWithActualDamageCommandReset<T>(Task<T> task)
+	private static async Task<T> CompleteWithActualDamageCommandReset<T>(Task<T> task, long commandId)
 	{
 		try
 		{
-			T result = await task;
-			// Zeroed damage can skip AfterDamageGiven; apply any leftover Pacifist conversions before multiplayer checksums.
-			await PacifistRune.FlushPendingDoomApplications();
-			return result;
+			return await task;
 		}
 		finally
 		{
-			_actualDamageCommandDepth = Math.Max(0, _actualDamageCommandDepth - 1);
-			if (_actualDamageCommandDepth == 0)
-			{
-				PacifistRune.ClearPendingDoomApplications();
-			}
+			PopActualDamageCommand(commandId);
+			PacifistRune.ClearPendingDoomApplications(commandId);
 		}
+	}
+
+	private static void PopActualDamageCommand(long commandId)
+	{
+		long[]? current = ActualDamageCommandIds.Value;
+		if (current is not { Length: > 0 })
+		{
+			return;
+		}
+
+		long[] next;
+		if (current[^1] == commandId)
+		{
+			next = current[..^1];
+		}
+		else
+		{
+			next = current.Where(id => id != commandId).ToArray();
+		}
+
+		ActualDamageCommandIds.Value = next.Length == 0 ? null : next;
 	}
 }

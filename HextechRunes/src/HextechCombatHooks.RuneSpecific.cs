@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.ValueProps;
 using static HextechRunes.HextechHookReflection;
@@ -27,13 +28,30 @@ internal static partial class HextechCombatHooks
 	private static void CardTagsPostfix(CardModel __instance, ref IEnumerable<CardTag> __result)
 	{
 		if (__instance.Type != CardType.Attack
-			|| __instance.Owner?.GetRelic<DeviantCognitionRune>() == null
 			|| __result.Contains(CardTag.Strike))
 		{
 			return;
 		}
 
+		Player? owner = TryGetMutableCardOwner(__instance);
+		if (owner?.GetRelic<DeviantCognitionRune>() == null)
+		{
+			return;
+		}
+
 		__result = __result.Append(CardTag.Strike);
+	}
+
+	private static Player? TryGetMutableCardOwner(CardModel card)
+	{
+		try
+		{
+			return card.Owner;
+		}
+		catch (CanonicalModelException)
+		{
+			return null;
+		}
 	}
 
 	private static bool LightningApplyDamagePrefix(LightningOrb __instance, decimal value, Creature? target, PlayerChoiceContext choiceContext, ref Task<IEnumerable<Creature>> __result)

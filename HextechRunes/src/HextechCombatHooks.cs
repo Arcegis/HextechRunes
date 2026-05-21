@@ -3,7 +3,6 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -82,18 +81,19 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(ForbiddenGrimoirePower), nameof(ForbiddenGrimoirePower.AfterCombatEnd), BindingFlags.Public | BindingFlags.Instance, typeof(CombatRoom)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ForbiddenGrimoireAfterCombatEndPrefix)));
-		foreach (MethodInfo damageMethod in typeof(CreatureCmd).GetMethods(BindingFlags.Public | BindingFlags.Static)
-			.Where(static method => method.Name == nameof(CreatureCmd.Damage)))
-		{
-			harmony.Patch(
-				damageMethod,
-				prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
-				postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
-		}
 		harmony.Patch(
-			RequireMethod(typeof(AttackCommand), nameof(AttackCommand.Execute), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext)),
+			RequireMethod(
+				typeof(CreatureCmd),
+				nameof(CreatureCmd.Damage),
+				BindingFlags.Public | BindingFlags.Static,
+				typeof(PlayerChoiceContext),
+				typeof(IEnumerable<Creature>),
+				typeof(decimal),
+				typeof(ValueProp),
+				typeof(Creature),
+				typeof(CardModel)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualAttackCommandPostfix)));
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
 		InstallRuneSpecificHooks(harmony);
 	}
 }
