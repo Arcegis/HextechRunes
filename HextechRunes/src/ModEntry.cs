@@ -27,10 +27,10 @@ public static class ModEntry
 			HextechModelBootstrap.Install();
 			HextechTelemetry.Initialize();
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
+			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechCustomRunModifierHooks.Install(harmony);
 			HextechRunLifecycleHooks.Install(harmony);
 			HextechCombatHooks.Install(harmony);
-			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechEnemyPowerScalingHooks.Install(harmony);
 			HextechUpdateChecker.Install(harmony);
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));

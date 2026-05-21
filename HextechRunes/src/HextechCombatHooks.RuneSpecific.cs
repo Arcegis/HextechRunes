@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Models.Orbs;
@@ -20,8 +21,27 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Tags", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTagsPostfix)));
+
+		InstallElectrodynamicsLightningHook(harmony);
+	}
+
+	private static void InstallElectrodynamicsLightningHook(Harmony harmony)
+	{
+		MethodInfo? lightningApplyDamage = TryGetMethod(
+			typeof(LightningOrb),
+			"ApplyLightningDamage",
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+			typeof(decimal),
+			typeof(Creature),
+			typeof(PlayerChoiceContext));
+		if (lightningApplyDamage == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Electrodynamics lightning hook skipped: LightningOrb.ApplyLightningDamage was not found in this game build.");
+			return;
+		}
+
 		harmony.Patch(
-			RequireMethod(typeof(LightningOrb), "ApplyLightningDamage", BindingFlags.Instance | BindingFlags.NonPublic, typeof(decimal), typeof(Creature), typeof(PlayerChoiceContext)),
+			lightningApplyDamage,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(LightningApplyDamagePrefix)));
 	}
 
