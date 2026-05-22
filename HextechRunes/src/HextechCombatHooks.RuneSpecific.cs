@@ -1,14 +1,17 @@
 using System.Reflection;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Models.Orbs;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.ValueProps;
 using static HextechRunes.HextechHookReflection;
 
@@ -21,6 +24,10 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Tags", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTagsPostfix)));
+
+		harmony.Patch(
+			RequireMethod(typeof(OrbCmd), nameof(OrbCmd.AddSlots), BindingFlags.Static | BindingFlags.Public, typeof(Player), typeof(int)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbAddSlotsPrefix)));
 
 		InstallElectrodynamicsLightningHook(harmony);
 	}
@@ -72,6 +79,30 @@ internal static partial class HextechCombatHooks
 		{
 			return null;
 		}
+	}
+
+	private static bool OrbAddSlotsPrefix(Player player, int amount, ref Task __result)
+	{
+		if (player.GetRelic<MadScientistRune>() == null)
+		{
+			return true;
+		}
+
+		if (CombatManager.Instance.IsOverOrEnding || amount <= 0)
+		{
+			__result = Task.CompletedTask;
+			return false;
+		}
+
+		if (player.PlayerCombatState == null)
+		{
+			return true;
+		}
+
+		player.PlayerCombatState.OrbQueue.AddCapacity(amount);
+		NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.OrbManager?.AddSlotAnim(amount);
+		__result = Task.CompletedTask;
+		return false;
 	}
 
 	private static bool LightningApplyDamagePrefix(LightningOrb __instance, decimal value, Creature? target, PlayerChoiceContext choiceContext, ref Task<IEnumerable<Creature>> __result)

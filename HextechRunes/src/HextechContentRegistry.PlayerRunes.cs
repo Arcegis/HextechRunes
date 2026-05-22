@@ -53,7 +53,7 @@ internal static partial class HextechContentRegistry
         Rune<BoneGuardRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 12),
         Rune<PlasterRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 13),
         Rune<EasyDoesItRune>(HextechRarityTier.Silver),
-        Rune<SweepingBladeRune>(HextechRarityTier.Silver),
+        Rune<SweepingBladeRune>(HextechRarityTier.Silver, characterPool: HextechCharacterPool.Ironclad, characterOrder: 14),
         Rune<OceanDragonSoulRune>(HextechRarityTier.Silver),
         Rune<InfernalDragonSoulRune>(HextechRarityTier.Silver),
         Rune<HextechDragonSoulRune>(HextechRarityTier.Silver),

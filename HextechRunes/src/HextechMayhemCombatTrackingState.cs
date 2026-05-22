@@ -37,6 +37,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> DoormakerRealStartApplied = new();
 	public readonly Dictionary<uint, int> TestSubjectPhaseStartApplied = new();
 	public readonly Dictionary<uint, int> TankEngineStacks = new();
+	public readonly Dictionary<uint, int> TankEngineLastAppliedRound = new();
 	public readonly Dictionary<uint, int> ShrinkEngineStacks = new();
 	public readonly Dictionary<uint, int> GetExcitedPending = new();
 	public readonly HashSet<uint> FeelTheBurnPending = new();

@@ -417,6 +417,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		public List<uint> DoormakerRealStartApplied { get; set; } = [];
 		public Dictionary<uint, int> TestSubjectPhaseStartApplied { get; set; } = new();
 		public Dictionary<uint, int> TankEngineStacks { get; set; } = new();
+		public Dictionary<uint, int> TankEngineLastAppliedRound { get; set; } = new();
 		public Dictionary<uint, int> ShrinkEngineStacks { get; set; } = new();
 		public Dictionary<uint, int> GetExcitedPending { get; set; } = new();
 		public List<uint> FeelTheBurnPending { get; set; } = [];

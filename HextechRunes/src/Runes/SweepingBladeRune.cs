@@ -28,6 +28,11 @@ public sealed class SweepingBladeRune : HextechRelicBase
 	private static readonly FieldInfo? AttackCommandSingleTargetField = TryGetField(typeof(AttackCommand), "_singleTarget");
 	private static readonly FieldInfo? AttackCommandCombatStateField = TryGetField(typeof(AttackCommand), "_combatState");
 
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsIroncladPlayer(player);
+	}
+
 	public override Task BeforeAttack(AttackCommand command)
 	{
 		if (Owner == null
@@ -35,7 +40,7 @@ public sealed class SweepingBladeRune : HextechRelicBase
 			|| command.Attacker != Owner.Creature
 			|| command.ModelSource is not CardModel card
 			|| !IsOwnedAttack(card)
-			|| !card.IsBasicStrikeOrDefend
+			|| !card.Tags.Contains(CardTag.Strike)
 			|| !command.IsSingleTargeted
 			|| Owner.Creature.CombatState == null)
 		{
