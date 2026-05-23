@@ -1,4 +1,5 @@
 using System.Reflection;
+using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -11,6 +12,8 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Models.Orbs;
+using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.Orbs;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.ValueProps;
 using static HextechRunes.HextechHookReflection;
@@ -19,6 +22,16 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
+	private const int OrbLayoutRadiusSoftCapSlots = 10;
+	private const float OrbLayoutRangeDegrees = 125f;
+	private const float OrbLayoutAngleOffsetDegrees = -25f;
+	private const float OrbLayoutMaxRadius = 300f;
+	private const float OrbLayoutTweenSpeed = 0.45f;
+
+	private static readonly FieldInfo OrbManagerOrbsField = RequireField(typeof(NOrbManager), "_orbs");
+	private static readonly FieldInfo OrbManagerCreatureField = RequireField(typeof(NOrbManager), "_creatureNode");
+	private static readonly FieldInfo OrbManagerCurrentTweenField = RequireField(typeof(NOrbManager), "_curTween");
+
 	private static void InstallRuneSpecificHooks(Harmony harmony)
 	{
 		harmony.Patch(
@@ -28,6 +41,9 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(OrbCmd), nameof(OrbCmd.AddSlots), BindingFlags.Static | BindingFlags.Public, typeof(Player), typeof(int)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbAddSlotsPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(NOrbManager), "TweenLayout", BindingFlags.Instance | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbTweenLayoutPrefix)));
 
 		InstallElectrodynamicsLightningHook(harmony);
 	}
@@ -103,6 +119,53 @@ internal static partial class HextechCombatHooks
 		NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.OrbManager?.AddSlotAnim(amount);
 		__result = Task.CompletedTask;
 		return false;
+	}
+
+	private static bool OrbTweenLayoutPrefix(NOrbManager __instance)
+	{
+		if (!TryGetOrbLayoutState(__instance, out List<NOrb> orbs, out int capacity)
+			|| capacity <= OrbLayoutRadiusSoftCapSlots)
+		{
+			return true;
+		}
+
+		if (orbs.Count == 0)
+		{
+			return false;
+		}
+
+		float angle = OrbLayoutRangeDegrees;
+		float angleStep = OrbLayoutRangeDegrees / Math.Max(1, capacity - 1);
+		float radius = OrbLayoutMaxRadius;
+		if (!__instance.IsLocal)
+		{
+			radius *= 0.75f;
+		}
+
+		((Tween?)OrbManagerCurrentTweenField.GetValue(__instance))?.Kill();
+		Tween tween = __instance.CreateTween().SetParallel();
+		OrbManagerCurrentTweenField.SetValue(__instance, tween);
+
+		int layoutCount = Math.Min(capacity, orbs.Count);
+		for (int i = 0; i < layoutCount; i++)
+		{
+			float radians = (OrbLayoutAngleOffsetDegrees - angle) * MathF.PI / 180f;
+			Vector2 position = new(-MathF.Cos(radians) * radius, MathF.Sin(radians) * radius);
+			tween.TweenProperty(orbs[i], "position", position, OrbLayoutTweenSpeed)
+				.SetEase(Tween.EaseType.InOut)
+				.SetTrans(Tween.TransitionType.Sine);
+			angle -= angleStep;
+		}
+
+		return false;
+	}
+
+	private static bool TryGetOrbLayoutState(NOrbManager manager, out List<NOrb> orbs, out int capacity)
+	{
+		orbs = (List<NOrb>?)OrbManagerOrbsField.GetValue(manager) ?? new List<NOrb>();
+		NCreature? creature = (NCreature?)OrbManagerCreatureField.GetValue(manager);
+		capacity = creature?.Entity.Player?.PlayerCombatState?.OrbQueue.Capacity ?? 0;
+		return capacity > 0;
 	}
 
 	private static bool LightningApplyDamagePrefix(LightningOrb __instance, decimal value, Creature? target, PlayerChoiceContext choiceContext, ref Task<IEnumerable<Creature>> __result)
