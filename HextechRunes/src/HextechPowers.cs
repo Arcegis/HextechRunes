@@ -30,13 +30,14 @@ public sealed class HextechBurnPower : PowerModel
 		}
 
 		int stacks = Amount;
-		int hpLoss = Math.Max(1, (int)Math.Floor(Owner.CurrentHp * stacks / 100m));
+		int percentHpLoss = Math.Max(1, (int)Math.Floor(Owner.CurrentHp * stacks / 100m));
+		int hpLoss = Math.Max(stacks, percentHpLoss);
 		int stackLoss = Math.Max(1, (int)Math.Ceiling(stacks * StackDecayPercent));
 		Flash();
 		try
 		{
 			_resolveDepth++;
-			await CreatureCmd.SetCurrentHp(Owner, Math.Max(0, Owner.CurrentHp - hpLoss));
+			await CreatureCmd.Damage(new ThrowingPlayerChoiceContext(), Owner, hpLoss, ValueProp.Unblockable | ValueProp.Unpowered, null, null);
 		}
 		finally
 		{
@@ -46,6 +47,10 @@ public sealed class HextechBurnPower : PowerModel
 		if (Owner.IsAlive)
 		{
 			await PowerCmd.Apply<HextechBurnPower>(Owner, -stackLoss, null, null);
+		}
+		else
+		{
+			await Cmd.CustomScaledWait(0.1f, 0.25f);
 		}
 	}
 }
