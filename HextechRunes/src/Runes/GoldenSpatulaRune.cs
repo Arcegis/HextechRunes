@@ -55,7 +55,8 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-			new DynamicVar("StackBonusPercent", 2m)
+			new DynamicVar("StackBonusPercent", 1m),
+			new DynamicVar("StackOverloadThreshold", 10m)
 		];
 
 	public decimal SustainMultiplier => StackMultiplier;
@@ -77,9 +78,11 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 			return;
 		}
 
-		SavedStacks++;
+		int previousStacks = _stacks;
+		SavedStacks = previousStacks + 1;
 		Flash(Array.Empty<Creature>());
-		int hpGain = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["StackBonusPercent"].BaseValue / 100m));
+		decimal hpGainPercent = TotalBonusPercentFor(_stacks) - TotalBonusPercentFor(previousStacks);
+		int hpGain = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * hpGainPercent / 100m));
 		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
 	}
 
@@ -102,7 +105,18 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 				return 1m;
 			}
 
-			return 1m + _stacks * DynamicVars["StackBonusPercent"].BaseValue / 100m;
+			return 1m + TotalBonusPercentFor(_stacks) / 100m;
 		}
+	}
+
+	private decimal TotalBonusPercentFor(int stacks)
+	{
+		if (stacks <= 0)
+		{
+			return 0m;
+		}
+
+		decimal multiplier = stacks > DynamicVars["StackOverloadThreshold"].IntValue ? 2m : 1m;
+		return stacks * DynamicVars["StackBonusPercent"].BaseValue * multiplier;
 	}
 }
