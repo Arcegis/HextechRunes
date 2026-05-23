@@ -400,6 +400,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		public List<uint> DawnTriggered { get; set; } = [];
 		public List<uint> NearDeathFeastTriggered { get; set; } = [];
 		public List<uint> SpeedDemonPending { get; set; } = [];
+		public Dictionary<uint, int> DelayedEnemyHealingBlock { get; set; } = new();
 		public List<uint> DevilsDanceTriggeredThisTurn { get; set; } = [];
 		public List<uint> FinalFormTriggeredThisTurn { get; set; } = [];
 		public List<uint> FeelTheBurnTriggered { get; set; } = [];

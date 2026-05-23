@@ -81,10 +81,13 @@ internal static partial class HextechCombatHooks
 			}
 		}
 
+		RunState? currentRunState = creature.CombatState?.RunState as RunState;
+		HextechMayhemModifier? modifier = null;
 		if (creature.Side == CombatSide.Enemy
-			&& creature.CombatState?.RunState is RunState runState
-			&& GetMayhemModifier(runState) is HextechMayhemModifier modifier)
+			&& currentRunState != null
+			&& GetMayhemModifier(currentRunState) is HextechMayhemModifier activeModifier)
 		{
+			modifier = activeModifier;
 			amount = modifier.ModifyEnemyHealAmount(creature, amount);
 			if (amount <= 0m)
 			{
@@ -94,10 +97,10 @@ internal static partial class HextechCombatHooks
 			}
 		}
 
-		if (IsSkulkingColony(creature))
+		if (TryQueueEnemyHealAsDelayedBlock(creature, amount, currentRunState, modifier))
 		{
 			__state = default;
-			__result = CreatureCmd.GainBlock(creature, amount, ValueProp.Unpowered, null);
+			__result = Task.CompletedTask;
 			return false;
 		}
 
@@ -160,5 +163,39 @@ internal static partial class HextechCombatHooks
 	private static bool IsSkulkingColony(Creature creature)
 	{
 		return creature.Side == CombatSide.Enemy && creature.Monster is SkulkingColony;
+	}
+
+	private static bool TryQueueEnemyHealAsDelayedBlock(
+		Creature creature,
+		decimal amount,
+		RunState? runState,
+		HextechMayhemModifier? modifier)
+	{
+		if (creature.Side != CombatSide.Enemy || amount <= 0m || runState == null)
+		{
+			return false;
+		}
+
+		List<RegenerationSuppressionRune> suppressionRunes = runState.Players
+			.Select(static player => player.GetRelic<RegenerationSuppressionRune>())
+			.OfType<RegenerationSuppressionRune>()
+			.ToList();
+		if (!IsSkulkingColony(creature) && suppressionRunes.Count == 0)
+		{
+			return false;
+		}
+
+		modifier ??= ModEntry.EnsureMayhemModifier(runState);
+		if (!modifier.QueueEnemyHealingBlock(creature, amount))
+		{
+			return false;
+		}
+
+		foreach (RegenerationSuppressionRune rune in suppressionRunes)
+		{
+			rune.NotifyEnemyHealSuppressed(creature);
+		}
+
+		return true;
 	}
 }

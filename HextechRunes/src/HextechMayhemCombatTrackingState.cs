@@ -20,6 +20,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> DawnTriggered = new();
 	public readonly HashSet<uint> NearDeathFeastTriggered = new();
 	public readonly HashSet<uint> SpeedDemonPending = new();
+	public readonly Dictionary<uint, int> DelayedEnemyHealingBlock = new();
 	public readonly HashSet<uint> DevilsDanceTriggeredThisTurn = new();
 	public readonly HashSet<uint> FinalFormTriggeredThisTurn = new();
 	public readonly HashSet<uint> FeelTheBurnTriggered = new();

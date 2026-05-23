@@ -13,6 +13,8 @@ internal static partial class HextechContentRegistry
         Rune<EscapePlanRune>(HextechRarityTier.Silver, flags: RuneFlags.Disabled),
         Rune<BadTasteRune>(HextechRarityTier.Silver),
         Rune<FirstAidKitRune>(HextechRarityTier.Silver),
+        Rune<RegenerationSuppressionRune>(HextechRarityTier.Silver),
+        Rune<GiantSerpentsFangRune>(HextechRarityTier.Silver),
         Rune<SpeedDemonRune>(HextechRarityTier.Silver),
         Rune<HeavyHitterRune>(HextechRarityTier.Silver),
         Rune<BigStrengthRune>(HextechRarityTier.Silver),
