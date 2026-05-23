@@ -2,7 +2,7 @@
   "modId": "HextechRunes",
   "serverIdentity": "Natsuki.HextechRunes.official",
   "name": "海克斯大乱斗",
-  "latestVersion": "0.6.2",
+  "latestVersion": "0.6.3",
   "officialBuilds": [
     {
       "modVersion": "0.6.1",
@@ -28,6 +28,34 @@
       "manifestSha256": "ddbfa5e0cfac22381475acfce4b23badc7980c07cd71a15e84aa0d05663f85d0",
       "artifactSizes": {
         "dllBytes": 897024,
+        "pckBytes": 5608536,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.6.3",
+      "gameVersion": "0.103.2",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-05-23T06:05:14Z",
+      "dllSha256": "7b38b3eaffa3e728194753beb0cb8195e73678fc653594eb2086ac79453a6a9e",
+      "pckSha256": "bec8c8955e3842be27a2bb079a6aff162acdf298bdb2fe2bd18021aa50aa000e",
+      "manifestSha256": "47a319e7948a3629f732e7e22cac6c6a3f17a872dd7a831b4eab983193ad670f",
+      "artifactSizes": {
+        "dllBytes": 897024,
+        "pckBytes": 5608536,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.6.3",
+      "gameVersion": "0.106.1",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-05-23T05:52:32Z",
+      "dllSha256": "1f9858347281246a312623761fd3fdd87dbb1a94656d1a33fd3e92845283a65a",
+      "pckSha256": "bec8c8955e3842be27a2bb079a6aff162acdf298bdb2fe2bd18021aa50aa000e",
+      "manifestSha256": "47a319e7948a3629f732e7e22cac6c6a3f17a872dd7a831b4eab983193ad670f",
+      "artifactSizes": {
+        "dllBytes": 902144,
         "pckBytes": 5608536,
         "manifestBytes": 485
       }

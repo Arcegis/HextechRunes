@@ -11,7 +11,7 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 
-public sealed class HextechBurnPower : PowerModel
+public sealed class HextechBurnPower : HextechPowerBase
 {
 	private const decimal StackDecayPercent = 0.1m;
 	private static int _resolveDepth;
@@ -140,7 +140,7 @@ public sealed class HextechAttackReplayPower : PowerModel
 	}
 }
 
-public sealed class HextechTemporarySlowPower : PowerModel, ITemporaryPower
+public sealed class HextechTemporarySlowPower : HextechPowerBase, ITemporaryPower
 {
 	private bool _shouldIgnoreNextInstance;
 
