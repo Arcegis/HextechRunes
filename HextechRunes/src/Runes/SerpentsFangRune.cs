@@ -52,6 +52,8 @@ public sealed class SerpentsFangRune : HextechRelicBase
 			|| Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0
+			|| HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse
+			|| HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse
 			|| !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;

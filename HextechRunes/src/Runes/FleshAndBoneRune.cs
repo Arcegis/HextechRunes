@@ -72,7 +72,7 @@ public sealed class FleshAndBoneRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		Flash([Owner.Osty]);
-		return CreatureCmd.Heal(Owner.Osty, healAmount);
+		Flash([Owner.Creature]);
+		return CreatureCmd.Heal(Owner.Creature, healAmount);
 	}
 }
