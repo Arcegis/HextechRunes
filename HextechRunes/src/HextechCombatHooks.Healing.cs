@@ -83,8 +83,10 @@ internal static partial class HextechCombatHooks
 
 		RunState? currentRunState = creature.CombatState?.RunState as RunState;
 		HextechMayhemModifier? modifier = null;
+		bool isEnemyReviveHeal = IsEnemyReviveHeal(creature, amount);
 		if (creature.Side == CombatSide.Enemy
 			&& currentRunState != null
+			&& !isEnemyReviveHeal
 			&& GetMayhemModifier(currentRunState) is HextechMayhemModifier activeModifier)
 		{
 			modifier = activeModifier;
@@ -97,7 +99,7 @@ internal static partial class HextechCombatHooks
 			}
 		}
 
-		if (TryQueueEnemyHealAsDelayedBlock(creature, amount, currentRunState, modifier))
+		if (!isEnemyReviveHeal && TryQueueEnemyHealAsDelayedBlock(creature, amount, currentRunState, modifier))
 		{
 			__state = default;
 			__result = Task.CompletedTask;
@@ -134,7 +136,8 @@ internal static partial class HextechCombatHooks
 		decimal amount = state.Amount;
 		if (player?.GetRelic<HolyFireRune>() != null
 			&& creature == player.Creature
-			&& creature.CombatState != null)
+			&& creature.CombatState != null
+			&& CombatManager.Instance.IsInProgress)
 		{
 			List<Creature> enemies = creature.CombatState.Enemies.Where(static enemy => enemy.IsAlive).ToList();
 			int burnAmount = (int)Math.Floor(amount);
@@ -163,6 +166,11 @@ internal static partial class HextechCombatHooks
 	private static bool IsSkulkingColony(Creature creature)
 	{
 		return creature.Side == CombatSide.Enemy && creature.Monster is SkulkingColony;
+	}
+
+	private static bool IsEnemyReviveHeal(Creature creature, decimal amount)
+	{
+		return creature.Side == CombatSide.Enemy && creature.IsDead && amount > 0m;
 	}
 
 	private static bool TryQueueEnemyHealAsDelayedBlock(

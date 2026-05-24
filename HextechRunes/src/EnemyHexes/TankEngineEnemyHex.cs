@@ -21,36 +21,12 @@ internal sealed class TankEngineEnemyHex : HextechEnemyHexEffect
 
 			int maxHpGain = context.TierValue(Kind, 5, 10, 15);
 			int hpGain = Math.Min(maxHpGain, Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m)));
-			await GainMaxHpWithoutModifiedHeal(enemy, hpGain);
+			await HextechMayhemModifier.GainMonsterMaxHpWithoutHeal(enemy, hpGain);
 			if (enemy.CombatId is uint trackedCombatId)
 			{
 				context.Tracking.TankEngineStacks[trackedCombatId] = context.Tracking.TankEngineStacks.GetValueOrDefault(trackedCombatId, 0) + 1;
 				context.UpdateEnemyScale(enemy);
 			}
-		}
-	}
-
-	private static async Task GainMaxHpWithoutModifiedHeal(Creature enemy, int amount)
-	{
-		if (amount <= 0)
-		{
-			return;
-		}
-
-		int oldMaxHp = enemy.MaxHp;
-		int oldCurrentHp = enemy.CurrentHp;
-		await CreatureCmdCompat.SetMaxHp(enemy, oldMaxHp + amount);
-
-		int actualMaxHpGain = Math.Max(0, enemy.MaxHp - oldMaxHp);
-		if (actualMaxHpGain <= 0)
-		{
-			return;
-		}
-
-		int newCurrentHp = Math.Min(enemy.MaxHp, oldCurrentHp + actualMaxHpGain);
-		if (newCurrentHp != enemy.CurrentHp)
-		{
-			await CreatureCmd.SetCurrentHp(enemy, newCurrentHp);
 		}
 	}
 }
