@@ -38,8 +38,8 @@ public sealed class MadScientistRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("OrbSlots", 1m),
-		new DynamicVar("OrbCount", 1m)
+		new DynamicVar("OrbSlots", 3m),
+		new DynamicVar("OrbCount", 3m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -64,8 +64,8 @@ public sealed class MadScientistRune : HextechRelicBase
 			return;
 		}
 
-		int orbSlots = Math.Max(0, combatState.RoundNumber * DynamicVars["OrbSlots"].IntValue);
-		int orbCount = Math.Max(0, combatState.RoundNumber * DynamicVars["OrbCount"].IntValue);
+		int orbSlots = Math.Max(0, DynamicVars["OrbSlots"].IntValue);
+		int orbCount = Math.Max(0, DynamicVars["OrbCount"].IntValue);
 		if (orbSlots <= 0 && orbCount <= 0)
 		{
 			return;
