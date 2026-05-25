@@ -53,6 +53,8 @@ public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVic
 
 	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
 
+	internal float BodyScaleDelta => -_stacks * 0.02f;
+
 	public override Task AfterObtained()
 	{
 		Shrink();
@@ -100,12 +102,6 @@ public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVic
 
 	private void Shrink()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		float scale = Math.Max(0.2f, 1f - _stacks * 0.02f);
-		NCombatRoom.Instance?.GetCreatureNode(Owner.Creature)?.SetDefaultScaleTo(scale, 0f);
+		HextechPlayerBodyScaleHelper.Update(Owner);
 	}
 }

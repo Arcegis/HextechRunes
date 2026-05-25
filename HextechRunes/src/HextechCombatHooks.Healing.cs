@@ -67,6 +67,11 @@ internal static partial class HextechCombatHooks
 			{
 				amount *= goldenSpatulaRune.SustainMultiplier;
 			}
+
+			if (player.GetRelic<NineDragonPowerRune>() is NineDragonPowerRune nineDragonPowerRune)
+			{
+				amount *= nineDragonPowerRune.SustainMultiplier;
+			}
 		}
 
 		if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune && creature == player.Creature)

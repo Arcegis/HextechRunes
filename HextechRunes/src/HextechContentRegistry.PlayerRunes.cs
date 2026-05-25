@@ -15,6 +15,9 @@ internal static partial class HextechContentRegistry
         Rune<FirstAidKitRune>(HextechRarityTier.Silver),
         Rune<RegenerationSuppressionRune>(HextechRarityTier.Silver),
         Rune<GiantSerpentsFangRune>(HextechRarityTier.Silver),
+        Rune<AttackDefenseUnityRune>(HextechRarityTier.Silver),
+        Rune<BlackCandleRune>(HextechRarityTier.Silver),
+        Rune<SearingAttackRune>(HextechRarityTier.Silver),
         Rune<SpeedDemonRune>(HextechRarityTier.Silver),
         Rune<HeavyHitterRune>(HextechRarityTier.Silver),
         Rune<BigStrengthRune>(HextechRarityTier.Silver),
@@ -83,6 +86,9 @@ internal static partial class HextechContentRegistry
         Rune<TankEngineRune>(HextechRarityTier.Gold, flags: RuneFlags.ThirdActExcluded),
         Rune<AstralBodyRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
         Rune<AncientWineRune>(HextechRarityTier.Gold),
+        Rune<PiggyBankRune>(HextechRarityTier.Gold),
+        Rune<OrobasBlessingRune>(HextechRarityTier.Gold),
+        Rune<CrossOrbRune>(HextechRarityTier.Gold),
         Rune<HolyFireRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
         Rune<NoNonsenseRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
         Rune<SuperBrainRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled),
@@ -233,6 +239,9 @@ internal static partial class HextechContentRegistry
         Rune<QuantumComputingRune>(HextechRarityTier.Prismatic),
         Rune<MindOverMatterRune>(HextechRarityTier.Prismatic),
         Rune<DuffsVintageRune>(HextechRarityTier.Prismatic),
+        Rune<NineDragonPowerRune>(HextechRarityTier.Prismatic),
+        Rune<OtterAndFriendsRune>(HextechRarityTier.Prismatic),
+        Rune<SellOffRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Silent, characterOrder: 15),
         Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic)
     ];
 }

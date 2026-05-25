@@ -47,6 +47,11 @@ public sealed class DivineInterventionRune : HextechRelicBase
 		HoverTipFactory.FromPower<IntangiblePower>()
 	];
 
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNetworkMultiplayer();
+	}
+
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner

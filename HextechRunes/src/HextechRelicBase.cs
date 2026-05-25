@@ -155,6 +155,16 @@ public abstract class HextechRelicBase : RelicModel
 		return IsNetworkMultiplayerRun();
 	}
 
+	protected int GetPlayerActNumberForScaling()
+	{
+		if (Owner?.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()?.IsEndlessLoopActive == true)
+		{
+			return 3;
+		}
+
+		return Math.Clamp((Owner?.RunState.CurrentActIndex ?? 0) + 1, 1, 3);
+	}
+
 	protected bool ShouldUseNetworkCombatHistory()
 	{
 		return IsNetworkMultiplayer()

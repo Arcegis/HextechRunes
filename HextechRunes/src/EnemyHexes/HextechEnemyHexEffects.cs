@@ -48,6 +48,7 @@ internal static class HextechEnemyHexEffects
 		new BlueCandleMedkitEnemyHex(),
 		new TanksShieldEnemyHex(),
 		new ScaredStiffEnemyHex(),
+		new AncientWineEnemyHex(),
 		new CourageOfColossusEnemyHex(),
 		new GlassCannonEnemyHex(),
 		new GoliathEnemyHex(),

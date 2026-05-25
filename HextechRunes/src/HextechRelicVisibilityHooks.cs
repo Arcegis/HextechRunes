@@ -96,7 +96,7 @@ internal static class HextechRelicVisibilityHooks
 	{
 		try
 		{
-			InstallToggle(__instance, IsDrawPileAnchorUsable());
+			InstallToggle(__instance);
 			ApplyHiddenState(__instance.RelicInventory);
 		}
 		catch (Exception ex)
@@ -116,7 +116,7 @@ internal static class HextechRelicVisibilityHooks
 				return;
 			}
 
-			InstallToggle(globalUi, visible: true);
+			InstallToggle(globalUi);
 			ApplyHiddenState(globalUi.RelicInventory);
 		}
 		catch (Exception ex)
@@ -128,7 +128,7 @@ internal static class HextechRelicVisibilityHooks
 	private static void NCombatUiHiddenPostfix()
 	{
 		_drawPileAnchor = null;
-		HideToggleRoot();
+		RefreshToggleRootPosition();
 	}
 
 	private static void NRelicInventoryRefreshPostfix(NRelicInventory __instance)
@@ -148,7 +148,7 @@ internal static class HextechRelicVisibilityHooks
 		return !_config.HideRelics;
 	}
 
-	private static void InstallToggle(NGlobalUi globalUi, bool visible)
+	private static void InstallToggle(NGlobalUi globalUi)
 	{
 		Control? root = FindToggleRoot(globalUi);
 		Button? button = root?.GetNodeOrNull<Button>($"{ToggleColumnNodeName}/{ToggleBoxNodeName}/{ToggleButtonNodeName}");
@@ -168,7 +168,7 @@ internal static class HextechRelicVisibilityHooks
 
 		button.SetPressedNoSignal(_config.HideRelics);
 		UpdateToggleVisualState(root, _config.HideRelics);
-		root.Visible = visible;
+		root.Visible = true;
 		EnsurePositionTimer(globalUi, root);
 		PositionToggleRoot(root);
 		Callable.From(() => PositionToggleRoot(root)).CallDeferred();
@@ -351,12 +351,8 @@ internal static class HextechRelicVisibilityHooks
 				return;
 			}
 
-			bool visible = IsDrawPileAnchorUsable();
-			root.Visible = visible;
-			if (visible)
-			{
-				PositionToggleRoot(root);
-			}
+			root.Visible = true;
+			PositionToggleRoot(root);
 		};
 		root.AddChild(timer);
 	}
@@ -393,20 +389,13 @@ internal static class HextechRelicVisibilityHooks
 			MathF.Max(0f, viewportSize.Y - ToggleRootSize.Y - BottomFallbackPadding));
 	}
 
-	private static bool IsDrawPileAnchorUsable()
-	{
-		return _drawPileAnchor is { } anchor
-			&& GodotObject.IsInstanceValid(anchor)
-			&& anchor.IsInsideTree()
-			&& anchor.Visible;
-	}
-
-	private static void HideToggleRoot()
+	private static void RefreshToggleRootPosition()
 	{
 		NGlobalUi? globalUi = NRun.Instance?.GlobalUi;
 		if (globalUi?.GetNodeOrNull<Control>(ToggleRootNodeName) is { } root && GodotObject.IsInstanceValid(root))
 		{
-			root.Visible = false;
+			root.Visible = true;
+			PositionToggleRoot(root);
 		}
 	}
 

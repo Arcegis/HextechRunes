@@ -41,8 +41,23 @@ public sealed class GiantSlayerRune : HextechRelicBase
 		new CardsVar(2),
 		new DynamicVar("HpGap", 6m),
 		new DynamicVar("DamagePerStepPercent", 0.01m),
-		new DynamicVar("MaxBonusPercent", 0.5m)
+		new DynamicVar("MaxBonusPercent", 0.5m),
+		new DynamicVar("Scale", 0.65m)
 	];
+
+	internal float BodyScaleDelta => (float)DynamicVars["Scale"].BaseValue - 1f;
+
+	public override Task AfterObtained()
+	{
+		HextechPlayerBodyScaleHelper.Update(Owner);
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterRoomEntered(AbstractRoom room)
+	{
+		HextechPlayerBodyScaleHelper.Update(Owner);
+		return Task.CompletedTask;
+	}
 
 	public override decimal ModifyHandDraw(Player player, decimal count)
 	{
