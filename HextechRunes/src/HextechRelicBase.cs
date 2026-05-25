@@ -217,7 +217,20 @@ public abstract class HextechRelicBase : RelicModel
 			return true;
 		}
 
-		return cardSource?.Owner == Owner;
+		if (dealer?.Side == CombatSide.Player)
+		{
+			return false;
+		}
+
+		Player? cardOwner = cardSource?.Owner;
+		if (cardOwner == null)
+		{
+			return false;
+		}
+
+		return IsNetworkMultiplayer()
+			? cardOwner.NetId == Owner.NetId
+			: cardOwner == Owner;
 	}
 
 	protected bool IsDefectPlayer(Player player)

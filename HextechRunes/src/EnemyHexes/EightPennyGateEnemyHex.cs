@@ -21,7 +21,13 @@ internal sealed class EightPennyGateEnemyHex : HextechEnemyHexEffect
 		}
 
 		ulong playerId = card.Owner.NetId;
-		return context.Tracking.EightPennyGatePlayersTriggeredThisTurn.Add(playerId)
+		if (context.Tracking.EightPennyGatePlayersTriggeredThisTurn.Add(playerId))
+		{
+			return (PileType.Exhaust, position);
+		}
+
+		int limit = context.TierValue(Kind, 1, 1, 2);
+		return limit > 1 && context.Tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Add(playerId)
 			? (PileType.Exhaust, position)
 			: null;
 	}

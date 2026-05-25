@@ -39,22 +39,22 @@ public sealed class PrimitiveMadnessRune : HextechRelicBase
 			return;
 		}
 
-		List<CardModel> attackCards = Owner.Deck.Cards
-			.Where(static card => card.Type == CardType.Attack && card.IsTransformable)
+		List<CardModel> transformableCards = Owner.Deck.Cards
+			.Where(static card => card.IsTransformable)
 			.ToList();
-		if (attackCards.Count == 0)
+		if (transformableCards.Count == 0)
 		{
 			return;
 		}
 
 		IEnumerable<CardModel> selected = await CardSelectCmd.FromDeckGeneric(
 			Owner,
-			new CardSelectorPrefs(CardSelectorPrefs.TransformSelectionPrompt, 0, attackCards.Count)
+			new CardSelectorPrefs(CardSelectorPrefs.TransformSelectionPrompt, 0, transformableCards.Count)
 			{
 				Cancelable = true,
 				RequireManualConfirmation = true
 			},
-			card => card.Type == CardType.Attack && card.IsTransformable);
+			static card => card.IsTransformable);
 
 		List<CardTransformation> transformations = selected
 			.Select(card => CardTransformUpgradeHelper.CreateFixedReplacementTransformation(

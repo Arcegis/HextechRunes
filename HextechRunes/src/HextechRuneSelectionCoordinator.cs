@@ -59,6 +59,11 @@ internal static partial class HextechRuneSelectionCoordinator
 		bool reopenMapAfterSelection = false;
 		try
 		{
+			if (!await WaitForSelectionBlockingOverlaysToClear(runState, actIndex, "before-map-close"))
+			{
+				return;
+			}
+
 			if (NMapScreen.Instance?.IsOpen == true && NGame.Instance != null)
 			{
 				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: closing map before showing selection overlay");
@@ -69,6 +74,10 @@ internal static partial class HextechRuneSelectionCoordinator
 			if (!IsCurrentRun(runState))
 			{
 				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run is no longer current");
+				return;
+			}
+			if (!await WaitForSelectionBlockingOverlaysToClear(runState, actIndex, "before-selection"))
+			{
 				return;
 			}
 
@@ -161,6 +170,52 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection exit: act={actIndex}");
 		}
+	}
+
+	private static async Task<bool> WaitForSelectionBlockingOverlaysToClear(RunState runState, int actIndex, string reason)
+	{
+		for (int frame = 0; IsCurrentRun(runState); frame++)
+		{
+			object? topOverlay = NOverlayStack.Instance?.Peek();
+			if (!IsSelectionBlockingOverlay(topOverlay, out string overlayName))
+			{
+				return true;
+			}
+
+			if (frame % 120 == 0)
+			{
+				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection waiting: act={actIndex} reason={reason} topOverlay={overlayName} frame={frame}");
+			}
+
+			await WaitOneFrame();
+		}
+
+		Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run changed while waiting for overlays act={actIndex} reason={reason}");
+		return false;
+	}
+
+	private static bool IsSelectionBlockingOverlay(object? overlay, out string overlayName)
+	{
+		if (overlay == null || overlay is HextechRuneSelectionScreen)
+		{
+			overlayName = overlay?.GetType().FullName ?? "null";
+			return false;
+		}
+
+		Type overlayType = overlay.GetType();
+		overlayName = overlayType.FullName ?? overlayType.Name;
+		return overlayName.Contains("Reward", StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static async Task WaitOneFrame()
+	{
+		if (NGame.Instance != null)
+		{
+			await NGame.Instance.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
+			return;
+		}
+
+		await Task.Yield();
 	}
 
 	private static async Task PersistActSelection(RunState runState, int actIndex)

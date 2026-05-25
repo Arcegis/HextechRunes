@@ -428,6 +428,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		public Dictionary<ulong, int> PlayerCardsDrawnThisCombat { get; set; } = new();
 		public List<ulong> VakuuControlledPlayersThisCombat { get; set; } = [];
 		public List<ulong> EightPennyGatePlayersTriggeredThisTurn { get; set; } = [];
+		public List<ulong> EightPennyGatePlayersTriggeredSecondThisTurn { get; set; } = [];
 		public int EnemyProtectiveVeilTurnCounter { get; set; }
 	}
 }
