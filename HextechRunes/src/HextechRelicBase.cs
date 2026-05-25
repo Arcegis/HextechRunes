@@ -155,6 +155,16 @@ public abstract class HextechRelicBase : RelicModel
 		return IsNetworkMultiplayerRun();
 	}
 
+	protected int GetPlayerActNumberForScaling()
+	{
+		if (Owner?.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()?.IsEndlessLoopActive == true)
+		{
+			return 3;
+		}
+
+		return Math.Clamp((Owner?.RunState.CurrentActIndex ?? 0) + 1, 1, 3);
+	}
+
 	protected bool ShouldUseNetworkCombatHistory()
 	{
 		return IsNetworkMultiplayer()
@@ -217,7 +227,20 @@ public abstract class HextechRelicBase : RelicModel
 			return true;
 		}
 
-		return cardSource?.Owner == Owner;
+		if (dealer?.Side == CombatSide.Player)
+		{
+			return false;
+		}
+
+		Player? cardOwner = cardSource?.Owner;
+		if (cardOwner == null)
+		{
+			return false;
+		}
+
+		return IsNetworkMultiplayer()
+			? cardOwner.NetId == Owner.NetId
+			: cardOwner == Owner;
 	}
 
 	protected bool IsDefectPlayer(Player player)

@@ -48,6 +48,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
 	public readonly HashSet<ulong> VakuuControlledPlayersThisCombat = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
+	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredSecondThisTurn = new();
 	[CombatTrackingTransient]
 	public readonly HashSet<string> MonsterDebuffActionProcKeysThisTurn = new();
 	[CombatTrackingTransient]
@@ -69,12 +70,14 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		BloodArmorHpLossThisPlayerTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
+		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
 	}
 
 	public void PreparePlayerSideTurnEnd()
 	{
 		PlayerAttackCardsPlayedThisTurn.Clear();
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
+		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
 	}
 
 	public void PrepareEnemySideTurnStart()

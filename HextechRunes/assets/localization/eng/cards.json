@@ -1,8 +1,8 @@
 {
   "elicitCard.title": "Elicit",
   "ELICIT_CARD.title": "Elicit",
-  "elicitCard.description": "Evoke all of your Orbs [blue]{Repeat}[/blue] time(s).",
-  "ELICIT_CARD.description": "Evoke all of your Orbs [blue]{Repeat}[/blue] time(s).",
+  "elicitCard.description": "Evoke all of your Orbs.",
+  "ELICIT_CARD.description": "Evoke all of your Orbs.",
   "elicitCard.flavor": "Let every coil discharge at once.",
   "ELICIT_CARD.flavor": "Let every coil discharge at once.",
   "trickMagicCard.title": "Trick Magic",
@@ -70,5 +70,11 @@
   "whiteHoleCard.description": "Whenever you draw this, gain {Energy:energyIcons()}.\nDraw {Cards} cards.",
   "WHITE_HOLE_CARD.description": "Whenever you draw this, gain {Energy:energyIcons()}.\nDraw {Cards} cards.",
   "whiteHoleCard.flavor": "It does not swallow choices. It spits them back into your hand.",
-  "WHITE_HOLE_CARD.flavor": "It does not swallow choices. It spits them back into your hand."
+  "WHITE_HOLE_CARD.flavor": "It does not swallow choices. It spits them back into your hand.",
+  "searingAttackCard.title": "Searing Attack",
+  "SEARING_ATTACK_CARD.title": "Searing Attack",
+  "searingAttackCard.description": "Deal {Damage:diff()} damage. Can be upgraded any number of times.",
+  "SEARING_ATTACK_CARD.description": "Deal {Damage:diff()} damage. Can be upgraded any number of times.",
+  "searingAttackCard.flavor": "Hotter with each edge.",
+  "SEARING_ATTACK_CARD.flavor": "Hotter with each edge."
 }

@@ -61,6 +61,8 @@ public sealed class GoliathRune : HextechRelicBase
 		new DynamicVar("Scale", 1.35m)
 	];
 
+	internal float BodyScaleDelta => (float)DynamicVars["Scale"].BaseValue - 1f;
+
 	public override async Task AfterObtained()
 	{
 		if (Owner == null)
@@ -97,12 +99,7 @@ public sealed class GoliathRune : HextechRelicBase
 
 	private void Grow()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		NCombatRoom.Instance?.GetCreatureNode(Owner.Creature)?.SetDefaultScaleTo((float)DynamicVars["Scale"].BaseValue, 0f);
+		HextechPlayerBodyScaleHelper.Update(Owner);
 	}
 
 	public void EnsureBaseMaxHpInitialized(bool assumeAlreadyScaled = true)

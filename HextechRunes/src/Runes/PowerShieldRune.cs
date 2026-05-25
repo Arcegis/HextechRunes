@@ -62,7 +62,7 @@ public sealed class PowerShieldRune : HextechRelicBase
 		_triggeredThisTurn = true;
 		UpdateTurnScopedStateIdentity();
 		Flash();
-		int strength = Math.Max(1, Owner.RunState.CurrentActIndex + 1);
+		int strength = GetPlayerActNumberForScaling();
 		await PowerCmd.Apply<HextechPowerShieldTemporaryStrengthPower>(Owner.Creature, strength, Owner.Creature, cardSource);
 	}
 

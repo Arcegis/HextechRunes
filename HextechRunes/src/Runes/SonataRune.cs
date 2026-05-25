@@ -44,6 +44,11 @@ public sealed class SonataRune : HextechRelicBase
 		new BlockVar(2m, ValueProp.Unpowered)
 	];
 
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNetworkMultiplayer();
+	}
+
 	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner

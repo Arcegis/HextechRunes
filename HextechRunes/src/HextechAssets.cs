@@ -26,6 +26,8 @@ internal static class HextechAssets
 
     public const string WhiteHoleCardPortraitPath = "res://HextechRunes/images/cards/whiteHoleCard.png";
 
+    public const string SearingAttackCardPortraitPath = "res://HextechRunes/images/cards/searingAttackCard.png";
+
     public const string OceanDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/oceanDragonSoulCard.png";
 
     public const string InfernalDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/infernalDragonSoulCard.png";

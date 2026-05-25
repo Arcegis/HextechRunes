@@ -49,6 +49,7 @@ internal static partial class HextechContentRegistry
         Monster<BlueCandleMedkitRune>(MonsterHexKind.BlueCandleMedkit, HextechRarityTier.Gold),
         Monster<TanksShieldRune>(MonsterHexKind.TanksShield, HextechRarityTier.Gold),
         Monster<ScaredStiffRune>(MonsterHexKind.ScaredStiff, HextechRarityTier.Gold),
+        Monster<AncientWineRune>(MonsterHexKind.AncientWine, HextechRarityTier.Gold),
 
         Monster<CourageOfColossusRune>(MonsterHexKind.CourageOfColossus, HextechRarityTier.Prismatic),
         Monster<GlassCannonRune>(MonsterHexKind.GlassCannon, HextechRarityTier.Prismatic),

@@ -22,7 +22,8 @@ internal sealed class HastyScribbleEnemyHex : HextechEnemyHexEffect
 			int handCount = PileType.Hand.GetPile(player).Cards.Count;
 			if (handCount > 0)
 			{
-				await CreatureCmd.Damage(choiceContext, playerCreature, handCount, ValueProp.Unpowered, null, null);
+				int multiplier = context.TierValue(Kind, 1, 1, 2);
+				await CreatureCmd.Damage(choiceContext, playerCreature, handCount * multiplier, ValueProp.Unpowered, null, null);
 			}
 		}
 	}

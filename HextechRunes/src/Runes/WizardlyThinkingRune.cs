@@ -53,7 +53,7 @@ public sealed class WizardlyThinkingRune : HextechRelicBase
 			return;
 		}
 
-		int focus = Owner.RunState.CurrentActIndex + 1;
+		int focus = GetPlayerActNumberForScaling();
 		Flash();
 		await PowerCmd.Apply<FocusPower>(Owner.Creature, focus, Owner.Creature, null);
 	}

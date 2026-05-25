@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Rooms;
 
 namespace HextechRunes;
@@ -85,7 +86,12 @@ public sealed class TriPrismRune : HextechRelicBase
 		EnsureTurnScopedStateCurrent(ResetTriggered);
 		return !_triggeredThisTurn
 			&& card.Owner == Owner
-			&& (card.Pool is ColorlessCardPool || card.VisualCardPool is ColorlessCardPool);
+			&& (IsColorlessCard(card) || HextechRegentGeneratedCardHelper.IsAllowedGeneratedCard(card));
+	}
+
+	private static bool IsColorlessCard(CardModel card)
+	{
+		return card.Pool is ColorlessCardPool || card.VisualCardPool is ColorlessCardPool;
 	}
 
 	private void ResetTriggered()

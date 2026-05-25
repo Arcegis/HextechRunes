@@ -59,6 +59,8 @@ public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVicto
 		new DynamicVar("ScalePercent", 5m)
 	];
 
+	internal float BodyScaleDelta => _stacks * (float)(DynamicVars["ScalePercent"].BaseValue / 100m);
+
 	public override Task AfterObtained()
 	{
 		Grow();
@@ -97,12 +99,6 @@ public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVicto
 
 	private void Grow()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		float size = 1f + _stacks * 0.05f;
-		NCombatRoom.Instance?.GetCreatureNode(Owner.Creature)?.SetDefaultScaleTo(size, 0f);
+		HextechPlayerBodyScaleHelper.Update(Owner);
 	}
 }

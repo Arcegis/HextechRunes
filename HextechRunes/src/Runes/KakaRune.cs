@@ -49,7 +49,7 @@ public sealed class KakaRune : HextechRelicBase
 			return;
 		}
 
-		int act = Math.Max(1, Owner.RunState.CurrentActIndex + 1);
+		int act = GetPlayerActNumberForScaling();
 		Flash();
 		await PowerCmd.Apply<RitualPower>(Owner.Creature, act, Owner.Creature, null);
 	}

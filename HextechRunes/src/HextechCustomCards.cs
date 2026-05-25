@@ -34,14 +34,10 @@ public sealed class ElicitCard : CardModel
 		HoverTipFactory.Static(StaticHoverTip.Evoke)
 	];
 
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new RepeatVar(1)
-	];
-
 	public override IEnumerable<CardKeyword> CanonicalKeywords =>
 	[
-		CardKeyword.Retain
+		CardKeyword.Retain,
+		CardKeyword.Exhaust
 	];
 
 	public ElicitCard()
@@ -51,58 +47,16 @@ public sealed class ElicitCard : CardModel
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		int repeatCount = Math.Max(1, DynamicVars.Repeat.IntValue);
-		for (int repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++)
+		int orbCount = Owner.PlayerCombatState?.OrbQueue.Orbs.Count ?? 0;
+		for (int i = 0; i < orbCount; i++)
 		{
-			int orbCount = Owner.PlayerCombatState?.OrbQueue.Orbs.Count ?? 0;
-			if (orbCount <= 0)
-			{
-				break;
-			}
-
-			if (repeatIndex == repeatCount - 1)
-			{
-				for (int i = 0; i < orbCount; i++)
-				{
-					await OrbCmd.EvokeNext(choiceContext, Owner);
-				}
-				continue;
-			}
-
-			foreach (OrbModel orb in Owner.PlayerCombatState!.OrbQueue.Orbs.ToArray())
-			{
-				await EvokeWithoutRemoving(choiceContext, orb);
-			}
+			await OrbCmd.EvokeNext(choiceContext, Owner);
 		}
-	}
-
-	private async Task EvokeWithoutRemoving(PlayerChoiceContext choiceContext, OrbModel orb)
-	{
-		if (Owner?.Creature.CombatState == null
-			|| Owner.PlayerCombatState == null
-			|| CombatManager.Instance.IsOverOrEnding
-			|| !Owner.PlayerCombatState.OrbQueue.Orbs.Contains(orb))
-		{
-			return;
-		}
-
-		IEnumerable<Creature> targets;
-		choiceContext.PushModel(orb);
-		try
-		{
-			targets = await orb.Evoke(choiceContext);
-		}
-		finally
-		{
-			choiceContext.PopModel(orb);
-		}
-
-		await Hook.AfterOrbEvoked(choiceContext, Owner.Creature.CombatState, orb, targets);
 	}
 
 	protected override void OnUpgrade()
 	{
-		DynamicVars.Repeat.UpgradeValueBy(1m);
+		RemoveKeyword(CardKeyword.Exhaust);
 	}
 }
 

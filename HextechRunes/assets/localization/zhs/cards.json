@@ -1,8 +1,8 @@
 {
   "elicitCard.title": "激发",
   "ELICIT_CARD.title": "激发",
-  "elicitCard.description": "激发你的所有充能球[blue]{Repeat}[/blue]次。",
-  "ELICIT_CARD.description": "激发你的所有充能球[blue]{Repeat}[/blue]次。",
+  "elicitCard.description": "激发你的所有充能球。",
+  "ELICIT_CARD.description": "激发你的所有充能球。",
   "elicitCard.flavor": "把它们一口气全放出去。",
   "ELICIT_CARD.flavor": "把它们一口气全放出去。",
   "trickMagicCard.title": "欺诈魔术",
@@ -70,5 +70,11 @@
   "whiteHoleCard.description": "每当你抽到这张牌时，获得{Energy:energyIcons()}。\n抽{Cards}张牌。",
   "WHITE_HOLE_CARD.description": "每当你抽到这张牌时，获得{Energy:energyIcons()}。\n抽{Cards}张牌。",
   "whiteHoleCard.flavor": "它不吞噬选择，只把选择吐回手心。",
-  "WHITE_HOLE_CARD.flavor": "它不吞噬选择，只把选择吐回手心。"
+  "WHITE_HOLE_CARD.flavor": "它不吞噬选择，只把选择吐回手心。",
+  "searingAttackCard.title": "灼热攻击",
+  "SEARING_ATTACK_CARD.title": "灼热攻击",
+  "searingAttackCard.description": "造成{Damage:diff()}点伤害。可以被多次升级。",
+  "SEARING_ATTACK_CARD.description": "造成{Damage:diff()}点伤害。可以被多次升级。",
+  "searingAttackCard.flavor": "越烧越亮，越斩越深。",
+  "SEARING_ATTACK_CARD.flavor": "越烧越亮，越斩越深。"
 }

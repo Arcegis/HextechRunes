@@ -84,5 +84,6 @@ internal enum MonsterHexKind
     GhostForm = 72,
     SerpentsFang = 73,
     PandorasBox = 74,
-    ForbiddenGrimoire = 75
+    ForbiddenGrimoire = 75,
+    AncientWine = 76
 }

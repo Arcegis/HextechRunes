@@ -41,6 +41,14 @@ public sealed class FlawlessRune : HextechRelicBase
 		new BlockVar(3m, ValueProp.Unpowered)
 	];
 
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<SovereignBlade>(),
+		HoverTipFactory.FromCard<MinionStrike>(),
+		HoverTipFactory.FromCard<MinionDiveBomb>(),
+		HoverTipFactory.FromCard<MinionSacrifice>()
+	];
+
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsRegentPlayer(player);
@@ -48,7 +56,7 @@ public sealed class FlawlessRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!IsOwnedCard(cardPlay.Card) || Owner == null || Owner.Creature.IsDead || !IsColorlessCard(cardPlay.Card))
+		if (!IsOwnedCard(cardPlay.Card) || Owner == null || Owner.Creature.IsDead || !ShouldCountCard(cardPlay.Card))
 		{
 			return Task.CompletedTask;
 		}
@@ -57,9 +65,13 @@ public sealed class FlawlessRune : HextechRelicBase
 		return CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
 	}
 
+	private static bool ShouldCountCard(CardModel card)
+	{
+		return IsColorlessCard(card) || HextechRegentGeneratedCardHelper.IsAllowedGeneratedCard(card);
+	}
+
 	private static bool IsColorlessCard(CardModel card)
 	{
-		CardPoolModel colorlessPool = ModelDb.CardPool<ColorlessCardPool>();
-		return card.Pool == colorlessPool || card.VisualCardPool == colorlessPool;
+		return card.Pool is ColorlessCardPool || card.VisualCardPool is ColorlessCardPool;
 	}
 }
