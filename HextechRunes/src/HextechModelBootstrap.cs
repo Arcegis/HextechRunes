@@ -18,6 +18,7 @@ internal static class HextechModelBootstrap
 		typeof(ModHelper).GetField("_moddedContentForPools", BindingFlags.NonPublic | BindingFlags.Static);
 
 	private static readonly object InstallLock = new();
+	private static readonly List<(Type PoolType, Type ModelType)> MobileDuplicateRegistrations = new();
 	private static bool _installed;
 
 	public static void Install()
@@ -111,12 +112,22 @@ internal static class HextechModelBootstrap
 
 	private static void RegisterModels()
 	{
-		foreach (Type runeType in HextechCatalog.GetAllCustomRelicTypes())
+		IReadOnlyList<Type> customRelicTypes = HextechCatalog.GetAllCustomRelicTypes();
+		IReadOnlyList<Type> customCardTypes = HextechCatalog.GetAllCustomCardTypes();
+		bool useMobileFirstModelRegistrationWorkaround = ShouldUseMobileFirstModelRegistrationWorkaround();
+
+		if (useMobileFirstModelRegistrationWorkaround)
+		{
+			QueueMobileFirstModelRegistrationWorkaround(typeof(SharedRelicPool), customRelicTypes);
+			QueueMobileFirstModelRegistrationWorkaround(typeof(TokenCardPool), customCardTypes);
+		}
+
+		foreach (Type runeType in customRelicTypes)
 		{
 			TryAddModelToPool(typeof(SharedRelicPool), runeType);
 		}
 
-		foreach (Type cardType in HextechCatalog.GetAllCustomCardTypes())
+		foreach (Type cardType in customCardTypes)
 		{
 			TryAddModelToPool(typeof(TokenCardPool), cardType);
 		}
@@ -124,7 +135,7 @@ internal static class HextechModelBootstrap
 
 	private static void TryAddModelToPool(Type poolType, Type modelType)
 	{
-		if (IsModelAlreadyQueuedForPool(poolType, modelType))
+		if (IsModelAlreadyQueuedForPool(poolType, modelType) && !IsMobileFirstModelWorkaroundDuplicate(poolType, modelType))
 		{
 			Log.Info($"[{ModInfo.Id}] Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
 			return;
@@ -158,6 +169,113 @@ internal static class HextechModelBootstrap
 		}
 
 		return false;
+	}
+
+	private static bool ShouldUseMobileFirstModelRegistrationWorkaround()
+	{
+		try
+		{
+			return OperatingSystem.IsAndroid();
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	private static bool IsMobileFirstModelWorkaroundDuplicate(Type poolType, Type modelType)
+	{
+		return MobileDuplicateRegistrations.Any(entry =>
+			IsSameModelType(entry.PoolType, poolType)
+			&& IsSameModelType(entry.ModelType, modelType));
+	}
+
+	private static void QueueMobileFirstModelRegistrationWorkaround(Type poolType, IReadOnlyList<Type> modelTypes)
+	{
+		if (modelTypes.Count == 0)
+		{
+			return;
+		}
+
+		Type modelType = modelTypes[0];
+		try
+		{
+			ModHelper.AddModelToPool(poolType, modelType);
+			MobileDuplicateRegistrations.Add((poolType, modelType));
+			Log.Warn($"[{ModInfo.Id}] Android model registration workaround queued first-model sentinel: pool={poolType.Name} model={modelType.Name}.");
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}] Android model registration workaround failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
+	internal static void CleanupMobileFirstModelRegistrationWorkaround()
+	{
+		if (MobileDuplicateRegistrations.Count == 0)
+		{
+			return;
+		}
+
+		foreach ((Type poolType, Type modelType) in MobileDuplicateRegistrations)
+		{
+			RemoveDuplicatePoolRegistration(poolType, modelType);
+		}
+
+		MobileDuplicateRegistrations.Clear();
+	}
+
+	private static void RemoveDuplicatePoolRegistration(Type poolType, Type modelType)
+	{
+		try
+		{
+			if (ModdedContentForPoolsField?.GetValue(null) is not IDictionary pools)
+			{
+				return;
+			}
+
+			foreach (DictionaryEntry entry in pools)
+			{
+				if (entry.Key is not Type existingPoolType || !IsSameModelType(existingPoolType, poolType))
+				{
+					continue;
+				}
+
+				FieldInfo? modelsField = entry.Value?.GetType().GetField("modelsToAdd", InstanceFields);
+				if (modelsField?.GetValue(entry.Value) is not IList models)
+				{
+					continue;
+				}
+
+				int seen = 0;
+				int removed = 0;
+				for (int index = models.Count - 1; index >= 0; index--)
+				{
+					if (models[index] is not Type existingModelType || !IsSameModelType(existingModelType, modelType))
+					{
+						continue;
+					}
+
+					seen++;
+					if (seen > 1)
+					{
+						models.RemoveAt(index);
+						removed++;
+					}
+				}
+
+				if (removed > 0)
+				{
+					Log.Info($"[{ModInfo.Id}] Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
+				}
+
+				return;
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}] Android model registration workaround cleanup failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
+		}
 	}
 
 	private static bool ContentContainsModelType(object? content, Type modelType)
