@@ -46,7 +46,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		for (int i = 0; i < picks; i++)
 		{
 			int index = runState.Rng.Niche.NextInt(pool.Count);
-			options.Add(pool[index].ToMutable());
+			options.Add(CreateSelectableRuneOption(player, pool[index]));
 			pool.RemoveAt(index);
 		}
 
@@ -67,8 +67,23 @@ internal static partial class HextechRuneSelectionCoordinator
 			HextechStableRandom.PlayerKey(player),
 			((int)rarity).ToString(),
 			excludedIds == null ? "" : string.Join(",", excludedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal)))
-			.Select(static relic => relic.ToMutable())
+			.Select(relic => CreateSelectableRuneOption(player, relic))
 			.ToList();
+	}
+
+	private static RelicModel CreateSelectableRuneOption(Player player, RelicModel relic)
+	{
+		RelicModel option = relic.ToMutable();
+		RefreshPlayerContextualRuneDescription(player, option);
+		return option;
+	}
+
+	private static void RefreshPlayerContextualRuneDescription(Player player, RelicModel relic)
+	{
+		if (relic is FlyingKickRune flyingKickRune)
+		{
+			flyingKickRune.RefreshExecutePercent(player.Creature.MaxHp);
+		}
 	}
 
 	private static HashSet<ModelId> CreateBaseExcludedIds(HextechMayhemModifier modifier, Player player, RelicModel? monsterHexRelic)

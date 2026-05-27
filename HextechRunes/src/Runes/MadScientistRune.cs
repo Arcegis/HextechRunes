@@ -38,8 +38,8 @@ public sealed class MadScientistRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("OrbSlots", 3m),
-		new DynamicVar("OrbCount", 3m)
+		new DynamicVar("OrbSlots", 2m),
+		new DynamicVar("OrbCount", 2m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>

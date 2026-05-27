@@ -17,11 +17,11 @@ internal sealed class MasterOfDualityEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		if (cardPlay.Card.Type == CardType.Skill)
+		if (IllusoryWeaponRune.IsSkillForEffects(cardPlay.Card))
 		{
 			await PowerCmd.Apply<HextechTemporaryStrengthLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
 		}
-		else if (cardPlay.Card.Type == CardType.Attack)
+		if (cardPlay.Card.Type == CardType.Attack)
 		{
 			await PowerCmd.Apply<HextechTemporaryDexterityLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
 		}

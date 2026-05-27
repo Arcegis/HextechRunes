@@ -41,14 +41,6 @@ public sealed class FlawlessRune : HextechRelicBase
 		new BlockVar(3m, ValueProp.Unpowered)
 	];
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromCard<SovereignBlade>(),
-		HoverTipFactory.FromCard<MinionStrike>(),
-		HoverTipFactory.FromCard<MinionDiveBomb>(),
-		HoverTipFactory.FromCard<MinionSacrifice>()
-	];
-
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsRegentPlayer(player);

@@ -13,7 +13,15 @@ internal sealed class ForbiddenGrimoireEnemyHex : HextechEnemyHexEffect
 			return false;
 		}
 
-		cardRewardOptions.RemoveAt(cardRewardOptions.Count - 1);
-		return true;
+		int removals = context.TierValue(Kind, 1, 1, 2);
+		bool modified = false;
+		while (removals > 0 && cardRewardOptions.Count > 1)
+		{
+			cardRewardOptions.RemoveAt(cardRewardOptions.Count - 1);
+			removals--;
+			modified = true;
+		}
+
+		return modified;
 	}
 }

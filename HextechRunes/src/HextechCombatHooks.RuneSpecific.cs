@@ -37,6 +37,12 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Tags", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTagsPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), "get_Type", BindingFlags.Instance | BindingFlags.Public),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTypePostfix)));
+		harmony.Patch(
+			RequireGetter(typeof(RelicModel), nameof(RelicModel.DynamicDescription)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(RelicDynamicDescriptionPrefix)));
 
 		harmony.Patch(
 			RequireMethod(typeof(OrbCmd), nameof(OrbCmd.AddSlots), BindingFlags.Static | BindingFlags.Public, typeof(Player), typeof(int)),
@@ -46,6 +52,14 @@ internal static partial class HextechCombatHooks
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbTweenLayoutPrefix)));
 
 		InstallElectrodynamicsLightningHook(harmony);
+	}
+
+	private static void RelicDynamicDescriptionPrefix(RelicModel __instance)
+	{
+		if (__instance is FlyingKickRune flyingKickRune)
+		{
+			flyingKickRune.RefreshExecutePercentFromOwner();
+		}
 	}
 
 	private static void InstallElectrodynamicsLightningHook(Harmony harmony)
@@ -83,6 +97,20 @@ internal static partial class HextechCombatHooks
 		}
 
 		__result = __result.Append(CardTag.Strike);
+	}
+
+	private static void CardTypePostfix(CardModel __instance, ref CardType __result)
+	{
+		if (__result != CardType.Skill)
+		{
+			return;
+		}
+
+		Player? owner = TryGetMutableCardOwner(__instance);
+		if (IllusoryWeaponRune.ShouldTreatSkillAsAttack(owner))
+		{
+			__result = CardType.Attack;
+		}
 	}
 
 	private static Player? TryGetMutableCardOwner(CardModel card)

@@ -144,6 +144,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				modifier.ClearMonsterHexForAct(actIndex);
 			}
 			modifier.SetActResolved(actIndex, true);
+			modifier.ApplyMapModifiersToCurrentAct(nameof(HandleActSelection));
 			HextechEnemyUi.Refresh(modifier);
 			await modifier.ApplyToCurrentEnemiesIfNeeded();
 			await PersistActSelection(runState, actIndex);

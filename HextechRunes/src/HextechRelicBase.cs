@@ -135,7 +135,7 @@ public abstract class HextechRelicBase : RelicModel
 
 	protected bool IsOwnedSkill(CardModel? card)
 	{
-		return card != null && card.Owner == Owner && card.Type == CardType.Skill;
+		return card != null && card.Owner == Owner && IllusoryWeaponRune.IsSkillForEffects(card);
 	}
 
 	internal static bool IsNetworkMultiplayerRun()
