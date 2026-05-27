@@ -103,6 +103,7 @@ internal static partial class HextechCombatHooks
 				typeof(CardModel)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
+		InstallNearDeathFeastHooks(harmony);
 		InstallRuneSpecificHooks(harmony);
 	}
 }

@@ -71,23 +71,23 @@ internal static partial class HextechCombatHooks
 		return true;
 	}
 
-	private static void ResetGoliathTaskPostfix(bool __state, ref Task __result)
+	private static void ResetGoliathTaskPostfix(Creature creature, bool __state, ref Task __result)
 	{
-		if (__state)
+		if (__state || creature.Player?.GetRelic<NearDeathFeastRune>() != null)
 		{
-			__result = CompleteWithReset(__result);
+			__result = CompleteWithMaxHpPostfix(__result, __state, creature);
 		}
 	}
 
-	private static void ResetGoliathDecimalTaskPostfix(bool __state, ref Task<decimal> __result)
+	private static void ResetGoliathDecimalTaskPostfix(Creature creature, bool __state, ref Task<decimal> __result)
 	{
-		if (__state)
+		if (__state || creature.Player?.GetRelic<NearDeathFeastRune>() != null)
 		{
-			__result = CompleteWithReset(__result);
+			__result = CompleteWithMaxHpPostfix(__result, __state, creature);
 		}
 	}
 
-	private static async Task CompleteWithReset(Task task)
+	private static async Task CompleteWithMaxHpPostfix(Task task, bool resetGoliath, Creature creature)
 	{
 		try
 		{
@@ -95,11 +95,15 @@ internal static partial class HextechCombatHooks
 		}
 		finally
 		{
-			_handlingGoliathMaxHp = false;
+			if (resetGoliath)
+			{
+				_handlingGoliathMaxHp = false;
+			}
+			creature.Player?.GetRelic<NearDeathFeastRune>()?.RefreshDeathLimitDisplay();
 		}
 	}
 
-	private static async Task<decimal> CompleteWithReset(Task<decimal> task)
+	private static async Task<decimal> CompleteWithMaxHpPostfix(Task<decimal> task, bool resetGoliath, Creature creature)
 	{
 		try
 		{
@@ -107,7 +111,11 @@ internal static partial class HextechCombatHooks
 		}
 		finally
 		{
-			_handlingGoliathMaxHp = false;
+			if (resetGoliath)
+			{
+				_handlingGoliathMaxHp = false;
+			}
+			creature.Player?.GetRelic<NearDeathFeastRune>()?.RefreshDeathLimitDisplay();
 		}
 	}
 }

@@ -359,7 +359,7 @@ internal static class HextechRelicVisibilityHooks
 
 	private static void PositionToggleRoot(Control root)
 	{
-		if (!GodotObject.IsInstanceValid(root))
+		if (!GodotObject.IsInstanceValid(root) || !root.IsInsideTree())
 		{
 			return;
 		}
