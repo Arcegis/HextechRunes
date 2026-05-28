@@ -61,10 +61,7 @@ public sealed class DieForYouRune : HextechRelicBase
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		new HoverTip(
-			new LocString("cards", "ostyWishCard.title"),
-			new LocString("cards", "ostyWishCard.hoverTip"),
-			null!)
+		HoverTipFactory.FromCard(OstyWishCard.CreatePlaceholderPreview())
 	];
 
 	public override bool IsAvailableForPlayer(Player player)

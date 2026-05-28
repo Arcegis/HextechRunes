@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
@@ -11,6 +12,11 @@ namespace HextechRunes;
 
 public sealed class OstyWishCard : CardModel
 {
+	private const string WishBlockDisplayVar = "WishBlock";
+	private const string WishDamageDisplayVar = "WishDamage";
+
+	private bool _usePlaceholderDisplayValues;
+
 	public override CardPoolModel Pool => IsMutable && Owner != null
 		? Owner.Character.CardPool
 		: ModelDb.CardPool<TokenCardPool>();
@@ -37,6 +43,17 @@ public sealed class OstyWishCard : CardModel
 	{
 	}
 
+	internal static CardModel CreatePlaceholderPreview()
+	{
+		CardModel card = ModelDb.Card<OstyWishCard>().ToMutable();
+		if (card is OstyWishCard wish)
+		{
+			wish._usePlaceholderDisplayValues = true;
+		}
+
+		return card;
+	}
+
 	internal static void SetWishAmount(CardModel card, decimal amount)
 	{
 		if (card is not OstyWishCard wish)
@@ -47,6 +64,20 @@ public sealed class OstyWishCard : CardModel
 		decimal value = Math.Max(0m, amount);
 		wish.DynamicVars.Block.BaseValue = value;
 		wish.DynamicVars.Damage.BaseValue = value;
+		wish._usePlaceholderDisplayValues = false;
+	}
+
+	protected override void AddExtraArgsToDescription(LocString description)
+	{
+		if (_usePlaceholderDisplayValues)
+		{
+			description.Add(WishBlockDisplayVar, "[blue]X[/blue]");
+			description.Add(WishDamageDisplayVar, "[blue]X[/blue]");
+			return;
+		}
+
+		description.Add(WishBlockDisplayVar, DynamicVars.Block.ToHighlightedString(inverse: false));
+		description.Add(WishDamageDisplayVar, DynamicVars.Damage.ToHighlightedString(inverse: false));
 	}
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

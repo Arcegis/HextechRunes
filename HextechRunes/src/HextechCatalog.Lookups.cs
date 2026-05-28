@@ -14,6 +14,8 @@ internal static partial class HextechCatalog
 
 	private static readonly Lazy<IReadOnlyDictionary<ModelId, HextechRarityTier>> ForgeRarityById = new(BuildForgeRarityById);
 
+	private static readonly Lazy<IReadOnlyDictionary<ModelId, string>> PlayerRuneTagKeyById = new(BuildPlayerRuneTagKeyById);
+
 	private static readonly Lazy<IReadOnlySet<ModelId>> AttributeConversionExclusiveRuneIds =
 		new(() => ToModelIdSet(AttributeConversionExclusiveRuneTypes));
 
@@ -79,6 +81,14 @@ internal static partial class HextechCatalog
 		return ForgeRarityById.Value.TryGetValue(id, out rarity);
 	}
 
+	public static string GetPlayerRuneTagKey(RelicModel relic)
+	{
+		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		return PlayerRuneTagKeyById.Value.TryGetValue(id, out string? tagKey)
+			? tagKey
+			: HextechRuneTags.DefaultTagKey;
+	}
+
 	public static IReadOnlySet<ModelId> GetMutuallyExclusivePlayerRuneIds(IEnumerable<ModelId> ownedIds)
 	{
 		HashSet<ModelId> ownedSet = ownedIds.ToHashSet();
@@ -125,6 +135,17 @@ internal static partial class HextechCatalog
 		AddRarityEntries(byId, SilverForgeTypes, HextechRarityTier.Silver);
 		AddRarityEntries(byId, GoldForgeTypes, HextechRarityTier.Gold);
 		AddRarityEntries(byId, PrismaticForgeTypes, HextechRarityTier.Prismatic);
+		return byId;
+	}
+
+	private static IReadOnlyDictionary<ModelId, string> BuildPlayerRuneTagKeyById()
+	{
+		Dictionary<ModelId, string> byId = new();
+		foreach (KeyValuePair<Type, string> entry in HextechRuneTags.ByType)
+		{
+			byId[ModelDb.GetId(entry.Key)] = entry.Value;
+		}
+
 		return byId;
 	}
 
