@@ -41,7 +41,7 @@ public sealed class ElicitCard : CardModel
 	];
 
 	public ElicitCard()
-		: base(1, CardType.Skill, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: true)
+		: base(0, CardType.Skill, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: true)
 	{
 	}
 

@@ -98,7 +98,12 @@ internal static partial class HextechRuneSelectionCoordinator
 				foreach (Player player in runState.Players)
 				{
 					HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
-					List<RelicModel> options = BuildSelectableRunesForRarity(player, rarity, runState, excludedIds);
+					List<RelicModel> options = BuildSelectableRunesForRarity(
+						player,
+						rarity,
+						runState,
+						excludedIds,
+						useEndlessTagWindow: modifier.IsEndlessLoopActive);
 					HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
 					Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection options: player={player.NetId} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
 					RuneSelectionResult selection = await SelectRune(
@@ -144,6 +149,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				modifier.ClearMonsterHexForAct(actIndex);
 			}
 			modifier.SetActResolved(actIndex, true);
+			modifier.ApplyMapModifiersToCurrentAct(nameof(HandleActSelection));
 			HextechEnemyUi.Refresh(modifier);
 			await modifier.ApplyToCurrentEnemiesIfNeeded();
 			await PersistActSelection(runState, actIndex);

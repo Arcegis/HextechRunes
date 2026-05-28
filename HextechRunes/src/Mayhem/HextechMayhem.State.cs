@@ -116,7 +116,7 @@ internal sealed partial class HextechMayhemModifier
 
 	public override LocString Description => new("modifiers", "HEXTECH_MAYHEM.description");
 
-	protected override string IconPath => ImageHelper.GetImagePath("powers/missing_power.png");
+	protected override string IconPath => $"res://{ModInfo.Id}/images/relics/prismaticForge.png";
 
 	public override IEnumerable<IHoverTip> HoverTips => [];
 

@@ -1,3 +1,4 @@
+using Godot;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
@@ -85,13 +86,19 @@ internal static class MonsterHexCatalog
 	public static IEnumerable<IHoverTip> GetEnemyHexHoverTips(MonsterHexKind hex)
 	{
 		RelicModel relic = GetIconRelicForMonsterHex(hex);
-		HoverTip mainTip = new(relic.Title, GetEnemyHexDescriptionFormatted(hex), relic.Icon);
+		HoverTip mainTip = new(relic.Title, GetEnemyHexDescriptionFormatted(hex), GetEnemyHexHoverIcon(relic) ?? relic.Icon);
 		if (EnemyHexesWithBurnHoverTip.Contains(hex))
 		{
 			return [mainTip, HoverTipFactory.FromPower<HextechBurnPower>()];
 		}
 
 		return [mainTip];
+	}
+
+	private static Texture2D? GetEnemyHexHoverIcon(RelicModel relic)
+	{
+		string? path = HextechAssets.TryGetCustomRelicIconPath(relic);
+		return path == null ? null : AssetHooks.LoadUiTexture(path);
 	}
 
 	private static string GetEnemyHexDescriptionKey(RelicModel relic)

@@ -51,14 +51,14 @@ public sealed class MirageRune : HextechRelicBase
 		return IsSilentPlayer(player);
 	}
 
-	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
+	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
 
-		decimal block = Owner.Creature.CombatState.HittableEnemies
+		decimal block = combatState.HittableEnemies
 			.Sum(static enemy => Math.Max(0m, enemy.GetPowerAmount<PoisonPower>()));
 		if (block <= 0m)
 		{

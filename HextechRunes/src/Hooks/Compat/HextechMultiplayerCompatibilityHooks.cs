@@ -1,0 +1,216 @@
+using System.Collections;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using HarmonyLib;
+using MegaCrit.Sts2.Core.Entities.Multiplayer;
+using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Modding;
+using MegaCrit.Sts2.Core.Multiplayer;
+using MegaCrit.Sts2.Core.Multiplayer.Transport;
+using MegaCrit.Sts2.Core.Saves.Runs;
+
+namespace HextechRunes;
+
+internal static class HextechMultiplayerCompatibilityHooks
+{
+	private static bool _installed;
+	private static string? _cachedNetworkSignature;
+
+	public static void Install(Harmony harmony)
+	{
+		if (_installed)
+		{
+			return;
+		}
+
+		MethodInfo? modListMethod = AccessTools.Method(typeof(ModManager), nameof(ModManager.GetGameplayRelevantModNameList));
+		if (modListMethod != null)
+		{
+			harmony.Patch(
+				modListMethod,
+				postfix: new HarmonyMethod(typeof(HextechMultiplayerCompatibilityHooks), nameof(GetGameplayRelevantModNameListPostfix)));
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Could not patch gameplay mod list; multiplayer build signature checks are unavailable.");
+		}
+
+		TryPatchPacketFinalizer(harmony, typeof(NetHostGameService), nameof(NetHostGameService.OnPacketReceived), nameof(NetHostGameServiceOnPacketReceivedFinalizer));
+		TryPatchPacketFinalizer(harmony, typeof(NetClientGameService), nameof(NetClientGameService.OnPacketReceived), nameof(NetClientGameServiceOnPacketReceivedFinalizer));
+		_installed = true;
+	}
+
+	private static void GetGameplayRelevantModNameListPostfix(ref List<string>? __result)
+	{
+		if (__result == null)
+		{
+			return;
+		}
+
+		string signedEntry = $"{ModInfo.Id}-{ModInfo.Version}+{GetNetworkSignature()}";
+		for (int i = 0; i < __result.Count; i++)
+		{
+			if (__result[i].StartsWith($"{ModInfo.Id}-", StringComparison.Ordinal))
+			{
+				__result[i] = signedEntry;
+				return;
+			}
+		}
+
+		__result.Add(signedEntry);
+	}
+
+	private static Exception? NetHostGameServiceOnPacketReceivedFinalizer(Exception? __exception, NetHostGameService __instance, ulong senderId)
+	{
+		if (!IsSavedPropertiesProtocolException(__exception))
+		{
+			return __exception;
+		}
+
+		Log.Error($"[{ModInfo.Id}][MultiplayerCompat] Disconnecting peer {senderId} after SavedProperties protocol mismatch. This usually means players are using different HextechRunes builds with the same visible version. localSignature={GetNetworkSignature()} exception={__exception}");
+		try
+		{
+			__instance.DisconnectClient(senderId, NetError.ModMismatch, now: true);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Failed to disconnect incompatible peer {senderId}: {ex.Message}");
+		}
+
+		return null;
+	}
+
+	private static Exception? NetClientGameServiceOnPacketReceivedFinalizer(Exception? __exception, NetClientGameService __instance)
+	{
+		if (!IsSavedPropertiesProtocolException(__exception))
+		{
+			return __exception;
+		}
+
+		Log.Error($"[{ModInfo.Id}][MultiplayerCompat] Disconnecting from host after SavedProperties protocol mismatch. This usually means players are using different HextechRunes builds with the same visible version. localSignature={GetNetworkSignature()} exception={__exception}");
+		try
+		{
+			__instance.Disconnect(NetError.ModMismatch, now: true);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Failed to disconnect from incompatible host: {ex.Message}");
+		}
+
+		return null;
+	}
+
+	private static bool IsSavedPropertiesProtocolException(Exception? exception)
+	{
+		for (Exception? current = exception; current != null; current = current.InnerException)
+		{
+			string message = current.Message ?? string.Empty;
+			if (message.Contains("SavedProperty net ID", StringComparison.Ordinal)
+				|| current.StackTrace?.Contains(nameof(SavedPropertiesTypeCache), StringComparison.Ordinal) == true
+				|| current.StackTrace?.Contains(nameof(SavedProperties), StringComparison.Ordinal) == true)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static void TryPatchPacketFinalizer(Harmony harmony, Type type, string methodName, string finalizerName)
+	{
+		MethodInfo? target = AccessTools.Method(type, methodName);
+		if (target == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Could not patch {type.Name}.{methodName}; protocol mismatch fail-safe is unavailable.");
+			return;
+		}
+
+		harmony.Patch(
+			target,
+			finalizer: new HarmonyMethod(typeof(HextechMultiplayerCompatibilityHooks), finalizerName));
+	}
+
+	private static string GetNetworkSignature()
+	{
+		if (_cachedNetworkSignature != null)
+		{
+			return _cachedNetworkSignature;
+		}
+
+		string? dllPath = Assembly.GetExecutingAssembly().Location;
+		string? modDir = string.IsNullOrWhiteSpace(dllPath) ? null : Path.GetDirectoryName(dllPath);
+		string pckPath = modDir == null ? string.Empty : Path.Combine(modDir, $"{ModInfo.Id}.pck");
+		string manifestPath = modDir == null ? string.Empty : Path.Combine(modDir, $"{ModInfo.Id}.json");
+		string savedPropertiesSignature = BuildSavedPropertiesSignature();
+		_cachedNetworkSignature = $"target={ModInfo.TargetGameVersion};dll={ShortFileHash(dllPath)};pck={ShortFileHash(pckPath)};manifest={ShortFileHash(manifestPath)};savedProps={savedPropertiesSignature}";
+		Log.Info($"[{ModInfo.Id}][MultiplayerCompat] Network compatibility signature: {_cachedNetworkSignature}");
+		return _cachedNetworkSignature;
+	}
+
+	private static string BuildSavedPropertiesSignature()
+	{
+		const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
+		List<string> propertyNames = [];
+		object? rawMap = typeof(SavedPropertiesTypeCache)
+			.GetField("_netIdToPropertyNameMap", flags)
+			?.GetValue(null);
+
+		if (rawMap is IList list)
+		{
+			foreach (object? item in list)
+			{
+				propertyNames.Add(item?.ToString() ?? string.Empty);
+			}
+		}
+		else if (rawMap is IEnumerable enumerable)
+		{
+			foreach (object? item in enumerable)
+			{
+				propertyNames.Add(item?.ToString() ?? string.Empty);
+			}
+		}
+
+		string payload = $"{SavedPropertiesTypeCache.NetIdBitSize}\n{string.Join("\n", propertyNames)}";
+		return $"{SavedPropertiesTypeCache.NetIdBitSize}/{propertyNames.Count}/{ShortHash(ComputeSha256(Encoding.UTF8.GetBytes(payload)))}";
+	}
+
+	private static string ShortFileHash(string? path)
+	{
+		if (string.IsNullOrWhiteSpace(path))
+		{
+			return "missing";
+		}
+
+		try
+		{
+			if (!File.Exists(path))
+			{
+				return "missing";
+			}
+
+			using FileStream stream = File.OpenRead(path);
+			return ShortHash(ComputeSha256(stream));
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Failed to hash {Path.GetFileName(path)}: {ex.Message}");
+			return "error";
+		}
+	}
+
+	private static string ComputeSha256(Stream stream)
+	{
+		return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+	}
+
+	private static string ComputeSha256(byte[] bytes)
+	{
+		return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+	}
+
+	private static string ShortHash(string hash)
+	{
+		return hash.Length <= 16 ? hash : hash[..16];
+	}
+}

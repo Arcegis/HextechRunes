@@ -135,15 +135,20 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private static StyleBoxFlat CreatePillStyle(Color accent)
 	{
+		Color background = accent.Lightened(0.24f);
+		background.A = 0.78f;
+		Color border = accent.Lightened(0.34f);
+		border.A = 0.72f;
+
 		StyleBoxFlat style = new();
-		style.BgColor = accent;
-		style.BorderColor = accent.Lightened(0.15f);
+		style.BgColor = background;
+		style.BorderColor = border;
 		style.SetBorderWidthAll(1);
-		style.SetCornerRadiusAll(12);
-		style.ContentMarginLeft = 12;
-		style.ContentMarginRight = 12;
-		style.ContentMarginTop = 5;
-		style.ContentMarginBottom = 5;
+		style.SetCornerRadiusAll(7);
+		style.ContentMarginLeft = 8;
+		style.ContentMarginRight = 8;
+		style.ContentMarginTop = 3;
+		style.ContentMarginBottom = 3;
 		return style;
 	}
 

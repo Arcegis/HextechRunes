@@ -39,7 +39,12 @@ internal static partial class HextechRuneSelectionCoordinator
 			foreach (Player player in runState.Players)
 			{
 				HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
-				List<RelicModel> options = BuildStableSelectableRunesForRarity(player, rarity, runState, excludedIds);
+				List<RelicModel> options = BuildStableSelectableRunesForRarity(
+					player,
+					rarity,
+					runState,
+					excludedIds,
+					useEndlessTagWindow: modifier.IsEndlessLoopActive);
 				HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
 				RuneSelectionResult selection = await SelectRune(
 					modifier,
@@ -68,7 +73,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		foreach (Player player in runState.Players)
 		{
 			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
-			List<RelicModel> options = BuildStableSelectableRunesForRarity(player, rarity, runState, excludedIds);
+			List<RelicModel> options = BuildStableSelectableRunesForRarity(
+				player,
+				rarity,
+				runState,
+				excludedIds,
+				useEndlessTagWindow: modifier.IsEndlessLoopActive);
 			enemyRerollExcludedIdsForAllPlayers.UnionWith(CreateEnemyHexRerollExcludedIds(options));
 			MarkRelicsSeen(options);
 			modifier.RecordSeenPlayerRunes(player, options);
@@ -142,7 +152,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		foreach (Player player in runState.Players)
 		{
 			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
-			List<RelicModel> options = BuildStableSelectableRunesForRarity(player, rarity, runState, excludedIds);
+			List<RelicModel> options = BuildStableSelectableRunesForRarity(
+				player,
+				rarity,
+				runState,
+				excludedIds,
+				useEndlessTagWindow: modifier.IsEndlessLoopActive);
 			enemyRerollExcludedIdsForAllPlayers.UnionWith(CreateEnemyHexRerollExcludedIds(options));
 			selections.Add((player, options));
 			Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled options: player={player.NetId} ai={HextechAiTeammateCompat.IsAiPlayer(player)} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");

@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 internal static class HextechEnemyHexEffects
 {
-	private static readonly IReadOnlyList<HextechEnemyHexEffect> OrderedEffects =
+	private static readonly IReadOnlyList<HextechEnemyHexEffect> OrderedEffects = CreateOrderedEffects(
 	[
 		new SlapEnemyHex(),
 		new EscapePlanEnemyHex(),
@@ -81,7 +81,7 @@ internal static class HextechEnemyHexEffects
 		new SerpentsFangEnemyHex(),
 		new PandorasBoxEnemyHex(),
 		new ForbiddenGrimoireEnemyHex()
-	];
+	]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)
 	{
@@ -102,4 +102,37 @@ internal static class HextechEnemyHexEffects
 	internal static IReadOnlySet<MonsterHexKind> RegisteredKinds => OrderedEffects
 		.Select(static effect => effect.Kind)
 		.ToHashSet();
+
+	private static IReadOnlyList<HextechEnemyHexEffect> CreateOrderedEffects(IReadOnlyList<HextechEnemyHexEffect> effects)
+	{
+		MonsterHexKind[] duplicateKinds = effects
+			.GroupBy(static effect => effect.Kind)
+			.Where(static group => group.Count() > 1)
+			.Select(static group => group.Key)
+			.ToArray();
+		if (duplicateKinds.Length > 0)
+		{
+			throw new InvalidOperationException($"Duplicate enemy hex effects: {string.Join(", ", duplicateKinds)}");
+		}
+
+		IReadOnlySet<MonsterHexKind> registeredKinds = HextechContentRegistry.AllMonsterHexKinds;
+		MonsterHexKind[] missingEffects = registeredKinds
+			.Except(effects.Select(static effect => effect.Kind))
+			.ToArray();
+		if (missingEffects.Length > 0)
+		{
+			throw new InvalidOperationException($"Missing enemy hex effects: {string.Join(", ", missingEffects)}");
+		}
+
+		MonsterHexKind[] unknownEffects = effects
+			.Select(static effect => effect.Kind)
+			.Except(registeredKinds)
+			.ToArray();
+		if (unknownEffects.Length > 0)
+		{
+			throw new InvalidOperationException($"Enemy hex effects without content registrations: {string.Join(", ", unknownEffects)}");
+		}
+
+		return effects;
+	}
 }

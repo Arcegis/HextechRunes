@@ -1,10 +1,13 @@
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Models.Exceptions;
 
 namespace HextechRunes;
 
 internal static partial class HextechCatalog
 {
 	private readonly record struct IndexedRuneType(Type Type, int Index);
+	private static readonly HashSet<Type> MissingVisibleCustomRelicLogs = [];
 
 	public static IReadOnlyList<RelicModel> GetCanonicalRunes()
 	{
@@ -61,8 +64,32 @@ internal static partial class HextechCatalog
 	{
 		return AllCustomRelicTypes
 			.Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeSelectable(type))
-			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+			.Select(static type => TryGetCanonicalVisibleCustomRelic(type, out RelicModel? relic) ? relic : null)
+			.OfType<RelicModel>()
 			.ToArray();
+	}
+
+	private static bool TryGetCanonicalVisibleCustomRelic(Type type, out RelicModel? relic)
+	{
+		ModelId id = ModelDb.GetId(type);
+		try
+		{
+			relic = ModelDb.GetById<RelicModel>(id);
+			return true;
+		}
+		catch (ModelNotFoundException ex)
+		{
+			relic = null;
+			lock (MissingVisibleCustomRelicLogs)
+			{
+				if (MissingVisibleCustomRelicLogs.Add(type))
+				{
+					Log.Warn($"[{ModInfo.Id}] Skipping missing visible custom relic during inspect list build: type={type.FullName} id={id.Entry}: {ex.Message}");
+				}
+			}
+
+			return false;
+		}
 	}
 
 	public static IReadOnlyList<RuneSeriesGroup> GetRuneSeriesGroups(IReadOnlyList<RelicModel> relics)

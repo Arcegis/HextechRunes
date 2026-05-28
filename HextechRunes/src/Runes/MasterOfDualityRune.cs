@@ -43,12 +43,12 @@ public sealed class MasterOfDualityRune : HextechRelicBase
 			return;
 		}
 
-		if (cardPlay.Card.Type == CardType.Skill)
+		if (IllusoryWeaponRune.IsSkillForEffects(cardPlay.Card))
 		{
 			Flash();
 			await PowerCmd.Apply<HextechTemporaryStrengthPower>(Owner.Creature, 1m, Owner.Creature, null);
 		}
-		else if (cardPlay.Card.Type == CardType.Attack)
+		if (cardPlay.Card.Type == CardType.Attack)
 		{
 			Flash();
 			await PowerCmd.Apply<HextechTemporaryDexterityPower>(Owner.Creature, 1m, Owner.Creature, null);

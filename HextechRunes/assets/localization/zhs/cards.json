@@ -76,5 +76,13 @@
   "searingAttackCard.description": "造成{Damage:diff()}点伤害。可以被多次升级。",
   "SEARING_ATTACK_CARD.description": "造成{Damage:diff()}点伤害。可以被多次升级。",
   "searingAttackCard.flavor": "越烧越亮，越斩越深。",
-  "SEARING_ATTACK_CARD.flavor": "越烧越亮，越斩越深。"
+  "SEARING_ATTACK_CARD.flavor": "越烧越亮，越斩越深。",
+  "ostyWishCard.title": "奥斯提的遗愿",
+  "OSTY_WISH_CARD.title": "奥斯提的遗愿",
+  "ostyWishCard.description": "获得{WishBlock}点格挡。\n对所有敌人造成{WishDamage}点伤害。",
+  "OSTY_WISH_CARD.description": "获得{WishBlock}点格挡。\n对所有敌人造成{WishDamage}点伤害。",
+  "ostyWishCard.hoverTip": "[blue]0[/blue]费技能牌。获得[blue]X[/blue]点格挡，对所有敌人造成[blue]X[/blue]点伤害。[blue]X[/blue]为奥斯提死亡时的最大生命值。消耗。升级后保留。",
+  "OSTY_WISH_CARD.hoverTip": "[blue]0[/blue]费技能牌。获得[blue]X[/blue]点格挡，对所有敌人造成[blue]X[/blue]点伤害。[blue]X[/blue]为奥斯提死亡时的最大生命值。消耗。升级后保留。",
+  "ostyWishCard.flavor": "这一次，奥斯提把结局留给了你。",
+  "OSTY_WISH_CARD.flavor": "这一次，奥斯提把结局留给了你。"
 }

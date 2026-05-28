@@ -23,6 +23,13 @@ def source_files(pattern: str = "*.cs") -> list[Path]:
     ]
 
 
+def source_file_named(name: str) -> Path:
+    matches = [path for path in source_files(name) if path.name == name]
+    if len(matches) != 1:
+        raise ValueError(f"expected exactly one source file named {name}, found {len(matches)}")
+    return matches[0]
+
+
 def registry_source_text() -> str:
     return "\n".join(read(path) for path in sorted(SRC.glob("HextechContentRegistry*.cs")))
 
@@ -264,8 +271,8 @@ def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
 
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
-    state_text = read(SRC / "HextechMayhemCombatTrackingState.cs")
-    serialization_text = read(SRC / "HextechMayhemCombatTrackingState.Serialization.cs")
+    state_text = read(source_file_named("HextechMayhemCombatTrackingState.cs"))
+    serialization_text = read(source_file_named("HextechMayhemCombatTrackingState.Serialization.cs"))
     state_fields = {
         name: field_type
         for field_type, name in re.findall(

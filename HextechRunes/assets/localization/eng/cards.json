@@ -76,5 +76,13 @@
   "searingAttackCard.description": "Deal {Damage:diff()} damage. Can be upgraded any number of times.",
   "SEARING_ATTACK_CARD.description": "Deal {Damage:diff()} damage. Can be upgraded any number of times.",
   "searingAttackCard.flavor": "Hotter with each edge.",
-  "SEARING_ATTACK_CARD.flavor": "Hotter with each edge."
+  "SEARING_ATTACK_CARD.flavor": "Hotter with each edge.",
+  "ostyWishCard.title": "Osty's Wish",
+  "OSTY_WISH_CARD.title": "Osty's Wish",
+  "ostyWishCard.description": "Gain {WishBlock} Block.\nDeal {WishDamage} damage to all enemies.",
+  "OSTY_WISH_CARD.description": "Gain {WishBlock} Block.\nDeal {WishDamage} damage to all enemies.",
+  "ostyWishCard.hoverTip": "[blue]0[/blue]-cost Skill. Gain [blue]X[/blue] Block and deal [blue]X[/blue] damage to all enemies. [blue]X[/blue] is Osty's Max HP when it died. Exhaust. Upgraded copies retain.",
+  "OSTY_WISH_CARD.hoverTip": "[blue]0[/blue]-cost Skill. Gain [blue]X[/blue] Block and deal [blue]X[/blue] damage to all enemies. [blue]X[/blue] is Osty's Max HP when it died. Exhaust. Upgraded copies retain.",
+  "ostyWishCard.flavor": "This time, Osty leaves the ending in your hands.",
+  "OSTY_WISH_CARD.flavor": "This time, Osty leaves the ending in your hands."
 }

@@ -17,13 +17,10 @@ namespace HextechRunes;
 internal static class HextechEnemyUi
 {
 	private const string EnemyHexRootName = "HextechEnemyHexStrip";
-	private const string EnemyHexRowName = "HextechEnemyHexStripRow";
-	private const int EnemyHexContentOffsetX = -12;
-	private const float EnemyHexHolderSize = 42f;
-	private const int EnemyHexStripHorizontalMargin = 24;
-	private const int EnemyHexStripMarginTop = 2;
-	private const int EnemyHexStripMarginBottom = 2;
-	private const int EnemyHexSeparation = 30;
+	private const string EnemyHexPanelName = "HextechEnemyHexPanel";
+	private const string EnemyHexIconsName = "HextechEnemyHexIcons";
+	private const int EnemyHexSeparation = 2;
+	private const float EnemyHexScale = 0.72f;
 
 	private static readonly FieldInfo? ModifiersContainerField = TryGetField(
 		typeof(NTopBar),
@@ -61,6 +58,11 @@ internal static class HextechEnemyUi
 		HBoxContainer strip = GetOrCreateStrip(container);
 		RebuildStrip(strip, activeHexes);
 		UpdateContainerVisibility(container);
+	}
+
+	public static bool IsTopBarReady()
+	{
+		return GetModifiersContainer() != null;
 	}
 
 	public static void Clear()
@@ -140,35 +142,45 @@ internal static class HextechEnemyUi
 	{
 		RemoveAllEnemyHexStrips(container);
 
-		PanelContainer root = new()
+		MarginContainer root = new()
 		{
 			Name = EnemyHexRootName,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
-		root.AddThemeStyleboxOverride("panel", CreateStripStyle());
-
-		MarginContainer margin = new()
+		PanelContainer panel = new()
 		{
-			MouseFilter = Control.MouseFilterEnum.Ignore
+			Name = EnemyHexPanelName,
+			MouseFilter = Control.MouseFilterEnum.Pass
 		};
-		margin.AddThemeConstantOverride("margin_left", EnemyHexStripHorizontalMargin + EnemyHexContentOffsetX);
-		margin.AddThemeConstantOverride("margin_right", EnemyHexStripHorizontalMargin - EnemyHexContentOffsetX);
-		margin.AddThemeConstantOverride("margin_top", EnemyHexStripMarginTop);
-		margin.AddThemeConstantOverride("margin_bottom", EnemyHexStripMarginBottom);
-		root.AddChild(margin);
+		panel.AddThemeStyleboxOverride("panel", CreateEnemyHexStripStyle());
 
 		HBoxContainer strip = new()
 		{
-			Name = EnemyHexRowName,
+			Name = EnemyHexIconsName,
 			Alignment = BoxContainer.AlignmentMode.Begin,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
 		strip.AddThemeConstantOverride("separation", EnemyHexSeparation);
-		margin.AddChild(strip);
 
+		panel.AddChild(strip);
+		root.AddChild(panel);
 		container.AddChild(root);
 		container.MoveChild(root, container.GetChildCount() - 1);
 		return strip;
+	}
+
+	private static StyleBoxFlat CreateEnemyHexStripStyle()
+	{
+		StyleBoxFlat style = new();
+		style.BgColor = new Color(0.035f, 0.045f, 0.07f, 0.72f);
+		style.BorderColor = new Color(0.36f, 0.42f, 0.52f, 0.24f);
+		style.SetBorderWidthAll(1);
+		style.SetCornerRadiusAll(10);
+		style.ContentMarginLeft = 8;
+		style.ContentMarginRight = 8;
+		style.ContentMarginTop = 6;
+		style.ContentMarginBottom = 0;
+		return style;
 	}
 
 	private static void RebuildStrip(HBoxContainer strip, IReadOnlyList<MonsterHexKind> activeHexes)
@@ -203,45 +215,16 @@ internal static class HextechEnemyUi
 		container.Visible = container.GetChildren().Any(static child => !child.IsQueuedForDeletion());
 	}
 
-	private static StyleBoxFlat CreateStripStyle()
-	{
-		StyleBoxFlat style = new();
-		style.BgColor = new Color(0.05f, 0.07f, 0.11f, 0.72f);
-		style.BorderColor = new Color(0.29f, 0.35f, 0.45f, 0.55f);
-		style.SetBorderWidthAll(1);
-		style.SetCornerRadiusAll(14);
-		style.ShadowColor = new Color(0f, 0f, 0f, 0.18f);
-		style.ShadowSize = 6;
-		style.ShadowOffset = new Vector2(0f, 4f);
-		return style;
-	}
-
 	private static Control CreateEnemyHexHolder(MonsterHexKind hex)
 	{
 		RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(hex).ToMutable();
-		Control holder = new()
-		{
-			Name = $"EnemyHex-{hex}",
-			CustomMinimumSize = new Vector2(EnemyHexHolderSize, EnemyHexHolderSize),
-			MouseFilter = Control.MouseFilterEnum.Ignore,
-			FocusMode = Control.FocusModeEnum.None
-		};
-
-		CenterContainer center = new()
-		{
-			MouseFilter = Control.MouseFilterEnum.Ignore
-		};
-		center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-		holder.AddChild(center);
-
-		NRelic relicNode = NRelic.Create(relic, NRelic.IconSize.Small)
-			?? throw new InvalidOperationException("Failed to create top bar enemy hex relic.");
-		relicNode.MouseFilter = Control.MouseFilterEnum.Stop;
-		relicNode.Scale = Vector2.One * 0.72f;
-		center.AddChild(relicNode);
-
-		relicNode.MouseEntered += () => ShowEnemyHexHoverTip(relicNode, hex);
-		relicNode.MouseExited += () => NHoverTipSet.Remove(relicNode);
+		NRelicBasicHolder holder = NRelicBasicHolder.Create(relic)
+			?? throw new InvalidOperationException("Failed to create top bar enemy hex holder.");
+		holder.Name = $"EnemyHex-{hex}";
+		holder.Scale = Vector2.One * EnemyHexScale;
+		holder.MouseFilter = Control.MouseFilterEnum.Stop;
+		holder.MouseEntered += () => ShowEnemyHexHoverTip(holder, hex);
+		holder.MouseExited += () => NHoverTipSet.Remove(holder);
 		return holder;
 	}
 

@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Map;
+
 namespace HextechRunes;
 
 internal abstract class HextechEnemyHexEffect
@@ -64,6 +66,11 @@ internal abstract class HextechEnemyHexEffect
 	internal virtual Task ApplyCombatStartPlayerDebuffs(HextechEnemyHexContext context, CombatRoom room, IReadOnlyList<Creature> players)
 	{
 		return Task.CompletedTask;
+	}
+
+	internal virtual ActMap ModifyGeneratedMapLate(HextechEnemyHexContext context, IRunState runState, ActMap map, int actIndex)
+	{
+		return map;
 	}
 
 	internal virtual Task BeforeSideTurnStart(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)

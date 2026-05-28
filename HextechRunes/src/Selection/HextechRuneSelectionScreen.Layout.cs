@@ -326,7 +326,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		Control slot = new()
 		{
 			Name = $"Slot_{slotIndex}",
-			CustomMinimumSize = new Vector2(344f, 552f),
+			CustomMinimumSize = PlayerRuneCardSize,
 			MouseFilter = MouseFilterEnum.Ignore
 		};
 
@@ -342,10 +342,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			rerollButton.AnchorRight = 0.5f;
 			rerollButton.AnchorTop = 1f;
 			rerollButton.AnchorBottom = 1f;
-			rerollButton.OffsetLeft = -56f;
-			rerollButton.OffsetRight = 56f;
-			rerollButton.OffsetTop = -82f;
-			rerollButton.OffsetBottom = -26f;
+			rerollButton.OffsetLeft = -PlayerRerollButtonSize.X / 2f;
+			rerollButton.OffsetRight = PlayerRerollButtonSize.X / 2f;
+			rerollButton.OffsetBottom = -PlayerRerollButtonBottomInset;
+			rerollButton.OffsetTop = rerollButton.OffsetBottom - PlayerRerollButtonSize.Y;
 			slot.AddChild(rerollButton);
 			_rerollButtons.Add(rerollButton);
 		}
@@ -359,7 +359,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		Button button = new()
 		{
 			Name = $"{(relic.CanonicalInstance?.Id ?? relic.Id).Entry}_Card",
-			CustomMinimumSize = new Vector2(344f, 552f),
+			CustomMinimumSize = PlayerRuneCardSize,
 			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,
 			MouseDefaultCursorShape = CursorShape.PointingHand
@@ -375,7 +375,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		margin.AddThemeConstantOverride("margin_left", 22);
 		margin.AddThemeConstantOverride("margin_right", 22);
 		margin.AddThemeConstantOverride("margin_top", 22);
-		margin.AddThemeConstantOverride("margin_bottom", 84);
+		margin.AddThemeConstantOverride("margin_bottom", PlayerRuneCardBottomMargin);
 		button.AddChild(margin);
 
 		VBoxContainer content = new()
@@ -418,12 +418,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		title.SetTextAutoSize(relic.Title.GetFormattedText());
 		content.AddChild(title);
 
-		CenterContainer pillCenter = new()
-		{
-			MouseFilter = MouseFilterEnum.Ignore
-		};
-		pillCenter.AddChild(CreatePlayerPoolPill(relic));
-		content.AddChild(pillCenter);
+		content.AddChild(CreatePlayerMetadataPills(relic));
 
 		MegaRichTextLabel body = CreateDescriptionLabel();
 		body.SetTextAutoSize(relic.DynamicDescription.GetFormattedText());
@@ -444,7 +439,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,
 			MouseDefaultCursorShape = CursorShape.PointingHand,
-			CustomMinimumSize = new Vector2(112f, 56f),
+			CustomMinimumSize = PlayerRerollButtonSize,
 			Disabled = alreadyRerolled
 		};
 		Color accent = GetAccentColor();
@@ -458,7 +453,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			Name = "RerollIcon",
 			MouseFilter = MouseFilterEnum.Ignore,
-			CustomMinimumSize = new Vector2(36f, 36f),
+			CustomMinimumSize = new Vector2(PlayerRerollIconSize, PlayerRerollIconSize),
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			SelfModulate = Colors.White
@@ -467,10 +462,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		icon.AnchorRight = 0.5f;
 		icon.AnchorTop = 0.5f;
 		icon.AnchorBottom = 0.5f;
-		icon.OffsetLeft = -18f;
-		icon.OffsetRight = 18f;
-		icon.OffsetTop = -18f;
-		icon.OffsetBottom = 18f;
+		icon.OffsetLeft = -PlayerRerollIconSize / 2f;
+		icon.OffsetRight = PlayerRerollIconSize / 2f;
+		icon.OffsetTop = -PlayerRerollIconSize / 2f;
+		icon.OffsetBottom = PlayerRerollIconSize / 2f;
 		icon.Texture = AssetHooks.LoadUiTexture(RerollIconPath);
 		if (icon.Texture == null)
 		{
@@ -536,6 +531,44 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		return CreateTextPill(new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText());
 	}
 
+	private Control CreatePlayerTagPill(RelicModel relic)
+	{
+		string tagKey = HextechCatalog.GetPlayerRuneTagKey(relic);
+		return CreateTextPill(new LocString(LocTable, "HEXTECH_TAG." + tagKey).GetRawText());
+	}
+
+	private Control CreatePlayerMetadataPills(RelicModel relic)
+	{
+		Control wrapper = new()
+		{
+			MouseFilter = MouseFilterEnum.Ignore,
+			CustomMinimumSize = new Vector2(0f, 24f)
+		};
+
+		CenterContainer pillCenter = new()
+		{
+			MouseFilter = MouseFilterEnum.Ignore
+		};
+		pillCenter.AnchorLeft = 0f;
+		pillCenter.AnchorRight = 1f;
+		pillCenter.AnchorTop = 0f;
+		pillCenter.AnchorBottom = 1f;
+		pillCenter.OffsetTop = -4f;
+		pillCenter.OffsetBottom = -4f;
+
+		HBoxContainer row = new()
+		{
+			MouseFilter = MouseFilterEnum.Ignore,
+			Alignment = BoxContainer.AlignmentMode.Center
+		};
+		row.AddThemeConstantOverride("separation", 6);
+		row.AddChild(CreatePlayerPoolPill(relic));
+		row.AddChild(CreatePlayerTagPill(relic));
+		pillCenter.AddChild(row);
+		wrapper.AddChild(pillCenter);
+		return wrapper;
+	}
+
 	private Control CreateTextPill(string text)
 	{
 		PanelContainer pill = new()
@@ -550,6 +583,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			Text = text,
 			HorizontalAlignment = HorizontalAlignment.Center
 		};
+		label.AddThemeFontSizeOverride("font_size", 14);
 		label.AddThemeColorOverride("font_color", new Color(0.08f, 0.09f, 0.11f, 0.92f));
 		pill.AddChild(label);
 		return pill;

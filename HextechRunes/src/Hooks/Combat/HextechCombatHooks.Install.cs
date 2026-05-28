@@ -20,9 +20,34 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static bool _handlingGoliathMaxHp;
-
 	public static void Install(Harmony harmony)
+	{
+		InstallDrawHooks(harmony);
+		InstallHealingHooks(harmony);
+		InstallCardPlayHooks(harmony);
+		InstallMaxHpHooks(harmony);
+		InstallPowerCompatibilityHooks(harmony);
+		InstallDamageCommandHooks(harmony);
+		InstallNearDeathFeastHooks(harmony);
+		InstallRuneSpecificHooks(harmony);
+	}
+
+	private static void InstallDrawHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.Draw), BindingFlags.Public | BindingFlags.Static, typeof(PlayerChoiceContext), typeof(decimal), typeof(Player), typeof(bool)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DrawPrefix)));
+	}
+
+	private static void InstallHealingHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.Heal), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal), typeof(bool)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HealPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HealPostfix)));
+	}
+
+	private static void InstallCardPlayHooks(Harmony harmony)
 	{
 		HarmonyMethod canPlayPostfix = new(typeof(HextechCombatHooks), nameof(CardCanPlayPostfix))
 		{
@@ -33,13 +58,6 @@ internal static partial class HextechCombatHooks
 			priority = Priority.Last
 		};
 
-		harmony.Patch(
-			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.Draw), BindingFlags.Public | BindingFlags.Static, typeof(PlayerChoiceContext), typeof(decimal), typeof(Player), typeof(bool)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DrawPrefix)));
-		harmony.Patch(
-			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.Heal), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal), typeof(bool)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HealPrefix)),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HealPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), nameof(CardModel.CanPlay), BindingFlags.Instance | BindingFlags.Public),
 			postfix: canPlayPostfix);
@@ -53,6 +71,10 @@ internal static partial class HextechCombatHooks
 			RequireMethod(typeof(CardModel), nameof(CardModel.OnPlayWrapper), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext), typeof(Creature), typeof(bool), typeof(ResourceInfo), typeof(bool)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardOnPlayWrapperPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardOnPlayWrapperPostfix)));
+	}
+
+	private static void InstallMaxHpHooks(Harmony harmony)
+	{
 		harmony.Patch(
 			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.GainMaxHp), BindingFlags.Public | BindingFlags.Static, typeof(Creature), typeof(decimal)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(GainMaxHpPrefix)),
@@ -70,6 +92,10 @@ internal static partial class HextechCombatHooks
 				setMaxHpMethod.ReturnType == typeof(Task<decimal>)
 					? nameof(ResetGoliathDecimalTaskPostfix)
 					: nameof(ResetGoliathTaskPostfix)));
+	}
+
+	private static void InstallPowerCompatibilityHooks(Harmony harmony)
+	{
 		harmony.Patch(
 			RequireMethod(typeof(StormPower), nameof(StormPower.BeforeCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(StormBeforeCardPlayedPrefix)));
@@ -90,6 +116,10 @@ internal static partial class HextechCombatHooks
 			RequireMethod(typeof(SleightOfFleshPower), nameof(SleightOfFleshPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SleightOfFleshPowerAfterPowerAmountChangedPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SleightOfFleshPowerAfterPowerAmountChangedPostfix)));
+	}
+
+	private static void InstallDamageCommandHooks(Harmony harmony)
+	{
 		harmony.Patch(
 			RequireMethod(
 				typeof(CreatureCmd),
@@ -103,6 +133,5 @@ internal static partial class HextechCombatHooks
 				typeof(CardModel)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
-		InstallRuneSpecificHooks(harmony);
 	}
 }

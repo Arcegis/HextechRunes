@@ -27,6 +27,8 @@ public static class ModEntry
 			HextechModelBootstrap.Install();
 			HextechTelemetry.Initialize();
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
+			HextechMultiplayerCompatibilityHooks.Install(harmony);
+			HextechMobileModelRegistrationHooks.Install(harmony);
 			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechCustomRunModifierHooks.Install(harmony);
 			HextechRunLifecycleHooks.Install(harmony);
@@ -39,6 +41,7 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
 			TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
 			TryInstallOptionalHookGroup("relic UI safety", () => HextechUiSafetyHooks.Install(harmony));
+			TryInstallOptionalHookGroup("player stats hover", () => HextechPlayerStatsHoverHooks.Install(harmony));
 			TryInstallOptionalHookGroup("reward serialization safety", () => HextechRewardSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("relic visibility toggle", () => HextechRelicVisibilityHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));

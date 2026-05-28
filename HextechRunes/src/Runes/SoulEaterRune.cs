@@ -36,56 +36,55 @@ namespace HextechRunes;
 
 public sealed class SoulEaterRune : HextechRelicBase
 {
-	private int _debuffsThisCombat;
-	private int _hpGainedThisCombat;
-
-	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-	public int SavedDebuffsThisCombat
-	{
-		get => _debuffsThisCombat;
-		set => _debuffsThisCombat = Math.Max(0, value);
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("NormalMaxHpGain", 1m),
+		new DynamicVar("EliteMaxHpGain", 3m),
+		new DynamicVar("BossMaxHpGain", 5m)
+	];
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedHpGainedThisCombat
 	{
-		get => _hpGainedThisCombat;
-		set => _hpGainedThisCombat = Math.Max(0, value);
+		get => 0;
+		set { }
 	}
 
-	public override Task BeforeCombatStart()
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedMaxHpGainCapThisCombat
 	{
-		_debuffsThisCombat = 0;
-		_hpGainedThisCombat = 0;
-		return Task.CompletedTask;
+		get => 0;
+		set { }
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room)
+	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
-		_debuffsThisCombat = 0;
-		_hpGainedThisCombat = 0;
-		return Task.CompletedTask;
-	}
-
-#if STS2_104_OR_NEWER
-	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
-#else
-	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
-#endif
-	{
-		if (!TryGetOwnedEnemyDebuffTarget(power, amount, applier, out _))
+		if (wasRemovalPrevented
+			|| Owner == null
+			|| Owner.Creature.IsDead
+			|| target.Side == Owner.Creature.Side
+			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target))
 		{
 			return;
 		}
 
-		_debuffsThisCombat++;
-		if (Owner == null || _hpGainedThisCombat >= 10 || _debuffsThisCombat % 3 != 0)
+		int hpGain = GetMaxHpGainForCurrentRoom();
+		if (hpGain <= 0)
 		{
 			return;
 		}
 
-		_hpGainedThisCombat++;
 		Flash();
-		await CreatureCmd.GainMaxHp(Owner.Creature, 1m);
+		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
+	}
+
+	private int GetMaxHpGainForCurrentRoom()
+	{
+		return Owner?.RunState.CurrentRoom switch
+		{
+			CombatRoom { RoomType: RoomType.Boss } => DynamicVars["BossMaxHpGain"].IntValue,
+			CombatRoom { RoomType: RoomType.Elite } => DynamicVars["EliteMaxHpGain"].IntValue,
+			_ => DynamicVars["NormalMaxHpGain"].IntValue
+		};
 	}
 }

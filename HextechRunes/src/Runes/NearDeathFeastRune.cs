@@ -25,10 +25,20 @@ namespace HextechRunes;
 
 public sealed class NearDeathFeastRune : HextechRelicBase
 {
+	private const int DeathNegativeMaxHpDivisor = 2;
+	private int _nearDeathStrengthBonus;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedNearDeathStrengthBonus
+	{
+		get => _nearDeathStrengthBonus;
+		set => _nearDeathStrengthBonus = Math.Max(0, value);
+	}
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("CurrentHpLossPercent", 10m),
-		new DynamicVar("StrengthPerHpLost", 1m)
+		new DynamicVar("DeathNegativeMaxHpPercent", 50m),
+		new DynamicVar("StrengthPerNegativeHp", 1m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -41,28 +51,142 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		return IsIroncladPlayer(player);
 	}
 
-	public override async Task BeforeCombatStart()
+	public override bool ShowCounter => Owner != null && !IsCanonical;
+
+	public override int DisplayAmount => Owner != null ? GetDeathNegativeHpLimit(Owner.Creature) : 0;
+
+	internal static bool HasDyingState(Creature creature)
 	{
-		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CurrentHp <= 1)
+		return creature.Player?.GetRelic<NearDeathFeastRune>() != null;
+	}
+
+	internal static bool IsDyingButAlive(Creature creature)
+	{
+		return HasDyingState(creature)
+			&& creature.CurrentHp <= 0
+			&& creature.CurrentHp > -GetDeathNegativeHpLimit(creature);
+	}
+
+	internal static bool ShouldPreventSustain(Creature creature)
+	{
+		return IsDyingButAlive(creature);
+	}
+
+	internal static DamageResult LoseHpAllowingDying(Creature creature, decimal amount, ValueProp props)
+	{
+		if (amount <= 0m)
+		{
+			return new DamageResult(creature, props);
+		}
+
+		int oldHp = creature.CurrentHp;
+		int hpLoss = (int)Math.Min(amount, 999999999m);
+		int newHp = oldHp - hpLoss;
+		int deathLimit = GetDeathNegativeHpLimit(creature);
+		creature.SetCurrentHpInternal(newHp);
+
+		bool killed = oldHp > -deathLimit && newHp <= -deathLimit;
+		return new DamageResult(creature, props)
+		{
+			UnblockedDamage = oldHp - newHp,
+			WasTargetKilled = killed,
+			OverkillDamage = killed ? Math.Max(0, -deathLimit - newHp) : 0
+		};
+	}
+
+	internal static void ForceDeathThresholdForKill(Creature creature)
+	{
+		int deathLimit = GetDeathNegativeHpLimit(creature);
+		if (HasDyingState(creature) && creature.CurrentHp > -deathLimit)
+		{
+			creature.SetCurrentHpInternal(-deathLimit);
+		}
+	}
+
+	internal static int GetDeathNegativeHpLimit(Creature creature)
+	{
+		return Math.Max(1, FloorToInt(creature.MaxHp / (decimal)DeathNegativeMaxHpDivisor));
+	}
+
+	internal void RefreshDeathLimitDisplay()
+	{
+		InvokeDisplayAmountChanged();
+	}
+
+	public override Task AfterObtained()
+	{
+		RefreshDeathLimitDisplay();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterRoomEntered(AbstractRoom room)
+	{
+		RefreshDeathLimitDisplay();
+		return Task.CompletedTask;
+	}
+
+	public override Task BeforeCombatStart()
+	{
+		ResetNearDeathState();
+		RefreshDeathLimitDisplay();
+		return Task.CompletedTask;
+	}
+
+	public override async Task AfterCurrentHpChanged(Creature creature, decimal delta)
+	{
+		if (Owner == null || creature != Owner.Creature || creature.CurrentHp > 0 || creature.CurrentHp <= -GetDeathNegativeHpLimit(creature))
 		{
 			return;
 		}
 
-		decimal loss = Math.Floor(Owner.Creature.CurrentHp * DynamicVars["CurrentHpLossPercent"].BaseValue / 100m);
-		loss = Math.Min(loss, Owner.Creature.CurrentHp - 1m);
-		if (loss <= 0m)
+		await SyncNearDeathStrength();
+	}
+
+	public override Task AfterCombatVictory(CombatRoom room)
+	{
+		if (Owner != null && Owner.Creature.CurrentHp < 1)
+		{
+			Flash(Array.Empty<Creature>());
+			Owner.Creature.SetCurrentHpInternal(1);
+		}
+
+		ResetNearDeathState();
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetNearDeathState();
+		return Task.CompletedTask;
+	}
+
+	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
+	{
+		return target == Owner?.Creature && ShouldPreventSustain(target) ? 0m : 1m;
+	}
+
+	private async Task SyncNearDeathStrength()
+	{
+		if (Owner == null)
 		{
 			return;
 		}
 
-		decimal strength = Math.Floor(loss * DynamicVars["StrengthPerHpLost"].BaseValue);
-		if (strength <= 0m)
+		int desiredBonus = Math.Max(0, -Owner.Creature.CurrentHp) * (int)DynamicVars["StrengthPerNegativeHp"].BaseValue;
+		int delta = desiredBonus - _nearDeathStrengthBonus;
+		if (delta <= 0)
 		{
+			_nearDeathStrengthBonus = desiredBonus;
 			return;
 		}
 
+		_nearDeathStrengthBonus = desiredBonus;
 		Flash();
-		await CreatureCmd.SetCurrentHp(Owner.Creature, Owner.Creature.CurrentHp - loss);
-		await PowerCmd.Apply<StrengthPower>(Owner.Creature, strength, Owner.Creature, null);
+		await PowerCmd.Apply<StrengthPower>(Owner.Creature, delta, Owner.Creature, null);
+	}
+
+	private void ResetNearDeathState()
+	{
+		_nearDeathStrengthBonus = 0;
 	}
 }

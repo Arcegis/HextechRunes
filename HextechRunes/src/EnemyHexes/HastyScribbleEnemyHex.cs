@@ -1,30 +1,13 @@
+using MegaCrit.Sts2.Core.Map;
+
 namespace HextechRunes;
 
 internal sealed class HastyScribbleEnemyHex : HextechEnemyHexEffect
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.HastyScribble;
 
-	internal override async Task BeforeTurnEnd(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, CombatRoom? combatRoom)
+	internal override ActMap ModifyGeneratedMapLate(HextechEnemyHexContext context, IRunState runState, ActMap map, int actIndex)
 	{
-		if (side != CombatSide.Player || combatRoom == null)
-		{
-			return;
-		}
-
-		foreach (Creature playerCreature in context.GetAlivePlayerSideCreatures(combatRoom.CombatState))
-		{
-			Player? player = playerCreature.Player;
-			if (player == null)
-			{
-				continue;
-			}
-
-			int handCount = PileType.Hand.GetPile(player).Cards.Count;
-			if (handCount > 0)
-			{
-				int multiplier = context.TierValue(Kind, 1, 1, 2);
-				await CreatureCmd.Damage(choiceContext, playerCreature, handCount * multiplier, ValueProp.Unpowered, null, null);
-			}
-		}
+		return HextechMapLengthReducer.ReduceNodeLengthByOne(map, runState.CurrentMapCoord);
 	}
 }

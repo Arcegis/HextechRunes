@@ -8,7 +8,7 @@ internal sealed class AncientWineEnemyHex : HextechEnemyHexEffect
 	{
 		if (!cardPlay.IsFirstInSeries
 			|| cardPlay.IsAutoPlay
-			|| cardPlay.Card.Type != CardType.Skill
+			|| !IllusoryWeaponRune.IsSkillForEffects(cardPlay.Card)
 			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
 			|| cardPlay.Card.Owner.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RunState != context.RunState)
