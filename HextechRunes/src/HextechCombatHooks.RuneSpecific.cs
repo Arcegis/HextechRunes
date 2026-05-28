@@ -43,6 +43,9 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireGetter(typeof(RelicModel), nameof(RelicModel.DynamicDescription)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(RelicDynamicDescriptionPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(NCreature), nameof(NCreature.StartDeathAnim), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NCreatureStartDeathAnimPostfix)));
 
 		harmony.Patch(
 			RequireMethod(typeof(OrbCmd), nameof(OrbCmd.AddSlots), BindingFlags.Static | BindingFlags.Public, typeof(Player), typeof(int)),
@@ -59,6 +62,14 @@ internal static partial class HextechCombatHooks
 		if (__instance is FlyingKickRune flyingKickRune)
 		{
 			flyingKickRune.RefreshExecutePercentFromOwner();
+		}
+	}
+
+	private static void NCreatureStartDeathAnimPostfix(NCreature __instance, bool shouldRemove)
+	{
+		if (FlyingKickCorpseLaunchDriver.TryConsumePending(__instance.Entity))
+		{
+			FlyingKickCorpseLaunchDriver.TryAttach(__instance);
 		}
 	}
 

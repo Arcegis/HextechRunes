@@ -16,6 +16,7 @@ internal static partial class HextechContentRegistry
         typeof(AllInCard),
         typeof(WhiteHoleCard),
         typeof(SearingAttackCard),
+        typeof(OstyWishCard),
         typeof(OceanDragonSoulCard),
         typeof(InfernalDragonSoulCard),
         typeof(HextechDragonSoulCard),

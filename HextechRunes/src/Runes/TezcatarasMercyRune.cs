@@ -40,7 +40,7 @@ public sealed class TezcatarasMercyRune : HextechRelicBase, IHextechSharedCombat
 			return;
 		}
 
-		RelicModel waxRelic = HextechAncientRelicHelper.CreateWaxRelicFromRewardPool(Owner);
+		RelicModel waxRelic = HextechAncientRelicHelper.CreateRepeatableWaxRelic(Owner, "tezcataras-mercy-wax-relic", _combatCounter);
 		SaveManager.Instance.MarkRelicAsSeen(waxRelic);
 		room.AddExtraReward(Owner, new RelicReward(waxRelic, Owner));
 

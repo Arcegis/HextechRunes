@@ -21,9 +21,9 @@ public sealed class FlyingKickRune : HextechRelicBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar(BaseExecutePercentVar, 5m),
-		new DynamicVar(OwnerMaxHpToExecutePercentVar, 10m),
-		new DynamicVar(ExecutePercentVar, 5m),
+		new DynamicVar(BaseExecutePercentVar, 10m),
+		new DynamicVar(OwnerMaxHpToExecutePercentVar, 8m),
+		new DynamicVar(ExecutePercentVar, 10m),
 		new HealVar(10m)
 	];
 
@@ -85,10 +85,12 @@ public sealed class FlyingKickRune : HextechRelicBase
 		try
 		{
 			Flash([target]);
+			FlyingKickCorpseLaunchDriver.MarkPending(target);
 			await CreatureCmd.Kill(target);
 		}
 		finally
 		{
+			FlyingKickCorpseLaunchDriver.ClearPending(target);
 			_executing = false;
 		}
 

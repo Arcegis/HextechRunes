@@ -326,7 +326,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		Control slot = new()
 		{
 			Name = $"Slot_{slotIndex}",
-			CustomMinimumSize = new Vector2(344f, 552f),
+			CustomMinimumSize = PlayerRuneCardSize,
 			MouseFilter = MouseFilterEnum.Ignore
 		};
 
@@ -342,10 +342,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			rerollButton.AnchorRight = 0.5f;
 			rerollButton.AnchorTop = 1f;
 			rerollButton.AnchorBottom = 1f;
-			rerollButton.OffsetLeft = -56f;
-			rerollButton.OffsetRight = 56f;
-			rerollButton.OffsetTop = -82f;
-			rerollButton.OffsetBottom = -26f;
+			rerollButton.OffsetLeft = -PlayerRerollButtonSize.X / 2f;
+			rerollButton.OffsetRight = PlayerRerollButtonSize.X / 2f;
+			rerollButton.OffsetBottom = -PlayerRerollButtonBottomInset;
+			rerollButton.OffsetTop = rerollButton.OffsetBottom - PlayerRerollButtonSize.Y;
 			slot.AddChild(rerollButton);
 			_rerollButtons.Add(rerollButton);
 		}
@@ -359,7 +359,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		Button button = new()
 		{
 			Name = $"{(relic.CanonicalInstance?.Id ?? relic.Id).Entry}_Card",
-			CustomMinimumSize = new Vector2(344f, 552f),
+			CustomMinimumSize = PlayerRuneCardSize,
 			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,
 			MouseDefaultCursorShape = CursorShape.PointingHand
@@ -375,7 +375,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		margin.AddThemeConstantOverride("margin_left", 22);
 		margin.AddThemeConstantOverride("margin_right", 22);
 		margin.AddThemeConstantOverride("margin_top", 22);
-		margin.AddThemeConstantOverride("margin_bottom", 84);
+		margin.AddThemeConstantOverride("margin_bottom", PlayerRuneCardBottomMargin);
 		button.AddChild(margin);
 
 		VBoxContainer content = new()
@@ -444,7 +444,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,
 			MouseDefaultCursorShape = CursorShape.PointingHand,
-			CustomMinimumSize = new Vector2(112f, 56f),
+			CustomMinimumSize = PlayerRerollButtonSize,
 			Disabled = alreadyRerolled
 		};
 		Color accent = GetAccentColor();
@@ -458,7 +458,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			Name = "RerollIcon",
 			MouseFilter = MouseFilterEnum.Ignore,
-			CustomMinimumSize = new Vector2(36f, 36f),
+			CustomMinimumSize = new Vector2(PlayerRerollIconSize, PlayerRerollIconSize),
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			SelfModulate = Colors.White
@@ -467,10 +467,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		icon.AnchorRight = 0.5f;
 		icon.AnchorTop = 0.5f;
 		icon.AnchorBottom = 0.5f;
-		icon.OffsetLeft = -18f;
-		icon.OffsetRight = 18f;
-		icon.OffsetTop = -18f;
-		icon.OffsetBottom = 18f;
+		icon.OffsetLeft = -PlayerRerollIconSize / 2f;
+		icon.OffsetRight = PlayerRerollIconSize / 2f;
+		icon.OffsetTop = -PlayerRerollIconSize / 2f;
+		icon.OffsetBottom = PlayerRerollIconSize / 2f;
 		icon.Texture = AssetHooks.LoadUiTexture(RerollIconPath);
 		if (icon.Texture == null)
 		{
