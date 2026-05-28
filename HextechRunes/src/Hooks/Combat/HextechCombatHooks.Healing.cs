@@ -25,60 +25,7 @@ internal static partial class HextechCombatHooks
 		Player? player = creature.Player;
 		if (player != null && creature == player.Creature)
 		{
-			if (player.GetRelic<OverflowRune>() != null)
-			{
-				amount *= 2m;
-			}
-
-			if (player.GetRelic<FirstAidKitRune>() != null)
-			{
-				amount *= 1.25m;
-			}
-
-			if (player.GetRelic<PacifistRune>() is PacifistRune pacifistRune)
-			{
-				amount *= pacifistRune.SustainMultiplier;
-			}
-
-			if (player.GetRelic<SacrificeRune>() is SacrificeRune sacrificeRune)
-			{
-				amount *= sacrificeRune.SustainMultiplier;
-			}
-
-			if (player.GetRelic<BackToBasicsRune>() != null)
-			{
-				amount *= 1.4m;
-			}
-
-			if (player.GetRelic<GoliathRune>() != null)
-			{
-				amount *= 1.2m;
-			}
-
-			if (player.GetRelic<ProteinShakeRune>() is ProteinShakeRune proteinShakeRune)
-			{
-				amount *= proteinShakeRune.SustainMultiplier;
-			}
-
-			if (player.GetRelic<ProtectionForge>() is ProtectionForge protectionForge)
-			{
-				amount *= protectionForge.SustainMultiplier;
-			}
-
-			if (player.GetRelic<MoreTheMerrierRune>() is MoreTheMerrierRune moreTheMerrierRune)
-			{
-				amount *= moreTheMerrierRune.SustainMultiplier;
-			}
-
-			if (player.GetRelic<GoldenSpatulaRune>() is GoldenSpatulaRune goldenSpatulaRune)
-			{
-				amount *= goldenSpatulaRune.SustainMultiplier;
-			}
-
-			if (player.GetRelic<NineDragonPowerRune>() is NineDragonPowerRune nineDragonPowerRune)
-			{
-				amount *= nineDragonPowerRune.SustainMultiplier;
-			}
+			amount *= HextechPlayerCoefficientHelper.GetHealingMultiplier(player);
 		}
 
 		if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune && creature == player.Creature)

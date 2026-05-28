@@ -60,6 +60,11 @@ internal static class HextechEnemyUi
 		UpdateContainerVisibility(container);
 	}
 
+	public static bool IsTopBarReady()
+	{
+		return GetModifiersContainer() != null;
+	}
+
 	public static void Clear()
 	{
 		Control? container = GetModifiersContainer();

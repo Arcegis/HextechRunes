@@ -19,7 +19,7 @@ internal static partial class HextechRuneSelectionCoordinator
 {
 	private static IReadOnlyList<RelicModel> RerollSingleOptionAndTrack(HextechMayhemModifier modifier, Player player, IReadOnlyList<RelicModel> currentOptions, int slotIndex, HashSet<ModelId> seenOptionIds)
 	{
-		IReadOnlyList<RelicModel> rerolled = RerollSingleOption(player, (RunState)player.RunState, currentOptions, slotIndex, seenOptionIds);
+		IReadOnlyList<RelicModel> rerolled = RerollSingleOption(player, (RunState)player.RunState, currentOptions, slotIndex, seenOptionIds, modifier.IsEndlessLoopActive);
 		if (!ReferenceEquals(rerolled, currentOptions))
 		{
 			ModelId rerolledId = rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id;
@@ -31,7 +31,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		return rerolled;
 	}
 
-	private static IReadOnlyList<RelicModel> RerollSingleOption(Player player, RunState runState, IReadOnlyList<RelicModel> currentOptions, int slotIndex, IReadOnlySet<ModelId> seenOptionIds)
+	private static IReadOnlyList<RelicModel> RerollSingleOption(
+		Player player,
+		RunState runState,
+		IReadOnlyList<RelicModel> currentOptions,
+		int slotIndex,
+		IReadOnlySet<ModelId> seenOptionIds,
+		bool useEndlessTagWindow)
 	{
 		if (slotIndex < 0 || slotIndex >= currentOptions.Count)
 		{
@@ -42,7 +48,12 @@ internal static partial class HextechRuneSelectionCoordinator
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
 			.ToHashSet();
 		excludedIds.UnionWith(seenOptionIds);
-		List<RelicModel> rerolled = BuildSelectableRunesForRarity(player, GetRarityForOptions(currentOptions), runState, excludedIds);
+		List<RelicModel> rerolled = BuildSelectableRunesForRarity(
+			player,
+			GetRarityForOptions(currentOptions),
+			runState,
+			excludedIds,
+			useEndlessTagWindow);
 		if (rerolled.Count == 0)
 		{
 			return currentOptions;
@@ -55,7 +66,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static IReadOnlyList<RelicModel> RerollSingleOptionAndTrackMultiplayer(HextechMayhemModifier modifier, Player player, IReadOnlyList<RelicModel> currentOptions, int slotIndex, int rerollOrdinal, HashSet<ModelId> seenOptionIds)
 	{
-		IReadOnlyList<RelicModel> rerolled = RerollSingleOptionMultiplayer(player, currentOptions, slotIndex, rerollOrdinal, seenOptionIds);
+		IReadOnlyList<RelicModel> rerolled = RerollSingleOptionMultiplayer(player, currentOptions, slotIndex, rerollOrdinal, seenOptionIds, modifier.IsEndlessLoopActive);
 		if (!ReferenceEquals(rerolled, currentOptions))
 		{
 			ModelId rerolledId = rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id;
@@ -68,7 +79,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		return rerolled;
 	}
 
-	private static IReadOnlyList<RelicModel> RerollSingleOptionMultiplayer(Player player, IReadOnlyList<RelicModel> currentOptions, int slotIndex, int rerollOrdinal, IReadOnlySet<ModelId> seenOptionIds)
+	private static IReadOnlyList<RelicModel> RerollSingleOptionMultiplayer(
+		Player player,
+		IReadOnlyList<RelicModel> currentOptions,
+		int slotIndex,
+		int rerollOrdinal,
+		IReadOnlySet<ModelId> seenOptionIds,
+		bool useEndlessTagWindow)
 	{
 		if (slotIndex < 0 || slotIndex >= currentOptions.Count)
 		{
@@ -90,15 +107,23 @@ internal static partial class HextechRuneSelectionCoordinator
 			return currentOptions;
 		}
 
-		int index = GetMultiplayerRerollIndex(player, pool, rarity, slotIndex, rerollOrdinal);
+		int index = GetMultiplayerRerollIndex(player, pool, rarity, slotIndex, rerollOrdinal, useEndlessTagWindow);
 		List<RelicModel> updated = currentOptions.ToList();
-		updated[slotIndex] = pool[index].ToMutable();
+		updated[slotIndex] = CreateSelectableRuneOption(player, pool[index]);
 		return updated;
 	}
 
-	private static int GetMultiplayerRerollIndex(Player player, IReadOnlyList<RelicModel> pool, HextechRarityTier rarity, int slotIndex, int rerollOrdinal)
+	private static int GetMultiplayerRerollIndex(
+		Player player,
+		IReadOnlyList<RelicModel> pool,
+		HextechRarityTier rarity,
+		int slotIndex,
+		int rerollOrdinal,
+		bool useEndlessTagWindow)
 	{
 		RunState runState = (RunState)player.RunState;
+		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
+		List<int> weights = BuildRuneTagWeights(pool, tagCounts, useEndlessTagWindow, out int totalWeight);
 		List<string> parts =
 		[
 			runState.Rng.StringSeed,
@@ -115,12 +140,15 @@ internal static partial class HextechRuneSelectionCoordinator
 			"|ordinal:",
 			rerollOrdinal.ToString()
 		];
-		foreach (RelicModel relic in pool)
+		for (int i = 0; i < pool.Count; i++)
 		{
 			parts.Add("|pool:");
-			parts.Add((relic.CanonicalInstance?.Id ?? relic.Id).Entry);
+			parts.Add((pool[i].CanonicalInstance?.Id ?? pool[i].Id).Entry);
+			parts.Add(":");
+			parts.Add(weights[i].ToString());
 		}
 
-		return HextechStableRandom.IndexFromRawParts(pool.Count, parts.ToArray());
+		int roll = HextechStableRandom.IndexFromRawParts(totalWeight, parts.ToArray());
+		return SelectWeightedIndex(weights, roll);
 	}
 }

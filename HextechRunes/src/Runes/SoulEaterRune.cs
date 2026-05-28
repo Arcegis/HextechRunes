@@ -36,41 +36,25 @@ namespace HextechRunes;
 
 public sealed class SoulEaterRune : HextechRelicBase
 {
-	private int _hpGainedThisCombat;
-	private int _maxHpGainCapThisCombat;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("EnemyMaxHpGainPercent", 5m),
-		new DynamicVar("OwnerMaxHpGainCapPercent", 5m)
+		new DynamicVar("NormalMaxHpGain", 1m),
+		new DynamicVar("EliteMaxHpGain", 3m),
+		new DynamicVar("BossMaxHpGain", 5m)
 	];
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedHpGainedThisCombat
 	{
-		get => _hpGainedThisCombat;
-		set => _hpGainedThisCombat = Math.Max(0, value);
+		get => 0;
+		set { }
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedMaxHpGainCapThisCombat
 	{
-		get => _maxHpGainCapThisCombat;
-		set => _maxHpGainCapThisCombat = Math.Max(0, value);
-	}
-
-	public override Task BeforeCombatStart()
-	{
-		_hpGainedThisCombat = 0;
-		_maxHpGainCapThisCombat = CalculateMaxHpGainCap();
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_hpGainedThisCombat = 0;
-		_maxHpGainCapThisCombat = 0;
-		return Task.CompletedTask;
+		get => 0;
+		set { }
 	}
 
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
@@ -84,33 +68,23 @@ public sealed class SoulEaterRune : HextechRelicBase
 			return;
 		}
 
-		if (_maxHpGainCapThisCombat <= 0)
-		{
-			_maxHpGainCapThisCombat = CalculateMaxHpGainCap();
-		}
-
-		int remaining = _maxHpGainCapThisCombat - _hpGainedThisCombat;
-		if (remaining <= 0)
-		{
-			return;
-		}
-
-		int hpGain = Math.Max(1, FloorToInt(target.MaxHp * DynamicVars["EnemyMaxHpGainPercent"].BaseValue / 100m));
-		hpGain = Math.Min(hpGain, remaining);
+		int hpGain = GetMaxHpGainForCurrentRoom();
 		if (hpGain <= 0)
 		{
 			return;
 		}
 
-		_hpGainedThisCombat += hpGain;
 		Flash();
 		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
 	}
 
-	private int CalculateMaxHpGainCap()
+	private int GetMaxHpGainForCurrentRoom()
 	{
-		return Owner == null
-			? 0
-			: Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["OwnerMaxHpGainCapPercent"].BaseValue / 100m));
+		return Owner?.RunState.CurrentRoom switch
+		{
+			CombatRoom { RoomType: RoomType.Boss } => DynamicVars["BossMaxHpGain"].IntValue,
+			CombatRoom { RoomType: RoomType.Elite } => DynamicVars["EliteMaxHpGain"].IntValue,
+			_ => DynamicVars["NormalMaxHpGain"].IntValue
+		};
 	}
 }

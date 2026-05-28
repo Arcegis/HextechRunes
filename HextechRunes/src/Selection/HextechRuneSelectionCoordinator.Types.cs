@@ -38,4 +38,9 @@ internal static partial class HextechRuneSelectionCoordinator
 	private const int FirstActGoldWeight = 50;
 	private const int FirstActPrismaticWeight = 30;
 	private const int ActSelectionAppliedAckTimeoutFrames = 600;
+	private const int RuneTagBiasBaseWeight = 100;
+	private const int RuneTagBiasNormalBonusPerMatch = 25;
+	private const int RuneTagBiasEndlessBonusPerMatch = 20;
+	private const int RuneTagBiasMaxBonus = 50;
+	private const int RuneTagBiasEndlessHistoryWindow = 3;
 }

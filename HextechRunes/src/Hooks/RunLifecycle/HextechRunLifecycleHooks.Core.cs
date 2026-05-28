@@ -5,9 +5,11 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves.Runs;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -33,6 +35,12 @@ internal static partial class HextechRunLifecycleHooks
 			RequireMethod(typeof(NGame), "StartRun", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, typeof(RunState)),
 			prefix: new HarmonyMethod(typeof(HextechRunLifecycleHooks), nameof(StartRunPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechRunLifecycleHooks), nameof(StartRunPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(NGame), "LoadRun", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, typeof(RunState), typeof(SerializableRoom)),
+			postfix: new HarmonyMethod(typeof(HextechRunLifecycleHooks), nameof(LoadRunPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(NTopBar), nameof(NTopBar.Initialize), BindingFlags.Instance | BindingFlags.Public, typeof(IRunState)),
+			postfix: new HarmonyMethod(typeof(HextechRunLifecycleHooks), nameof(TopBarInitializePostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(NEventRoom), nameof(NEventRoom.Proceed), BindingFlags.Public | BindingFlags.Static),
 			prefix: new HarmonyMethod(typeof(HextechRunLifecycleHooks), nameof(EventRoomProceedPrefix)),
