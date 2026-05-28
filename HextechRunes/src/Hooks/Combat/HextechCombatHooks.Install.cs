@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Rooms;
@@ -28,8 +29,20 @@ internal static partial class HextechCombatHooks
 		InstallMaxHpHooks(harmony);
 		InstallPowerCompatibilityHooks(harmony);
 		InstallDamageCommandHooks(harmony);
-		InstallNearDeathFeastHooks(harmony);
+		TryInstallCombatHookGroup("near-death feast", () => InstallNearDeathFeastHooks(harmony));
 		InstallRuneSpecificHooks(harmony);
+	}
+
+	private static void TryInstallCombatHookGroup(string label, Action install)
+	{
+		try
+		{
+			install();
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Combat hook group skipped: {label}: {ex.GetType().Name}: {ex.Message}");
+		}
 	}
 
 	private static void InstallDrawHooks(Harmony harmony)

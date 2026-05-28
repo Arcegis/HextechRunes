@@ -13,8 +13,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static readonly FieldInfo CreatureCurrentHpField = RequireField(typeof(Creature), "_currentHp");
-	private static readonly FieldInfo CreatureCurrentHpChangedField = RequireField(typeof(Creature), "CurrentHpChanged");
 	private static readonly FieldInfo HealthBarCreatureField = RequireField(typeof(NHealthBar), "_creature");
 	private static readonly FieldInfo HealthBarHpLabelField = RequireField(typeof(NHealthBar), "_hpLabel");
 
@@ -54,7 +52,7 @@ internal static partial class HextechCombatHooks
 
 	private static bool NearDeathFeastLoseHpInternalPrefix(Creature __instance, decimal amount, ValueProp props, ref DamageResult __result)
 	{
-		if (!NearDeathFeastRune.HasDyingState(__instance))
+		if (!NearDeathFeastRune.ShouldInterceptLoseHp(__instance, amount))
 		{
 			return true;
 		}
@@ -70,14 +68,7 @@ internal static partial class HextechCombatHooks
 			return true;
 		}
 
-		int oldHp = __instance.CurrentHp;
-		if (oldHp == value)
-		{
-			return false;
-		}
-
-		CreatureCurrentHpField.SetValue(__instance, value);
-		((Action<int, int>?)CreatureCurrentHpChangedField.GetValue(__instance))?.Invoke(oldHp, value);
+		NearDeathFeastRune.PreserveNegativeHpAsDyingState(__instance, value);
 		return false;
 	}
 
@@ -129,12 +120,12 @@ internal static partial class HextechCombatHooks
 	private static void NearDeathFeastHealthBarRefreshTextPostfix(NHealthBar __instance)
 	{
 		if (HealthBarCreatureField.GetValue(__instance) is not Creature creature
-			|| !NearDeathFeastRune.IsDyingButAlive(creature)
+			|| !NearDeathFeastRune.TryGetDisplayedHp(creature, out int displayedHp)
 			|| HealthBarHpLabelField.GetValue(__instance) is not MegaLabel hpLabel)
 		{
 			return;
 		}
 
-		hpLabel.SetTextAutoSize($"{creature.CurrentHp}/{creature.MaxHp}");
+		hpLabel.SetTextAutoSize($"{displayedHp}/{creature.MaxHp}");
 	}
 }
