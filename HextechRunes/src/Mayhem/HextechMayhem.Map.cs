@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Map;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
@@ -28,6 +29,14 @@ internal sealed partial class HextechMayhemModifier
 
 		runState.Map = modifiedMap;
 		runState.RemoveStaleVisitedMapCoords(modifiedMap);
+		try
+		{
+			NMapScreen.Instance?.SetMap(modifiedMap, runState.Rng.Seed, clearDrawings: true);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to refresh map screen after map modifiers: {ex.Message}");
+		}
 		Log.Info($"[{ModInfo.Id}][Mayhem] Applied map modifiers to current act: reason={reason} act={runState.CurrentActIndex} activeHexes={string.Join(",", GetActiveMonsterHexes())}");
 	}
 

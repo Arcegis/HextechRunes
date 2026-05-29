@@ -943,7 +943,7 @@
   "hailToTheKingRune.enemyDescription": "In Elite and Boss combats, all enemies gain [blue]3[/blue] [gold]Artifact[/gold], plus [gold]Plating[/gold] and [gold]Regen[/gold] equal to [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]% of their Max HP at the start of combat.",
   "eightPennyGateRune.enemyDescription": "The first [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] non-Power cards each player plays each turn exhaust.",
   "duffsVintageRune.enemyDescription": "Players no longer automatically discard their hand at end of turn. Cards still in hand at end of turn cost [blue]1[/blue] more until played.",
-  "hastyScribbleRune.enemyDescription": "Reduce map node length by [blue]1[/blue].",
+  "hastyScribbleRune.enemyDescription": "Reduce map node length by [blue]1[/blue]. Does not affect special maps.",
   "miseryRune.enemyDescription": "At the start of combat, all players lose [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] Strength and [blue]0[/blue]/[blue]1[/blue]/[blue]1[/blue] Dexterity.",
   "shoulderVakuRune.enemyDescription": "[red]Vaku takes over the players' [blue]2[/blue]nd turn.[/red]",
   "upgradeRune.enemyDescription": "After a player plays a card, downgrade that card for this combat.",

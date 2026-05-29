@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Map;
+using MegaCrit.Sts2.Core.Logging;
 
 namespace HextechRunes;
 
@@ -6,13 +7,59 @@ internal static class HextechMapLengthReducer
 {
 	internal static ActMap ReduceNodeLengthByOne(ActMap map, MapCoord? currentCoord)
 	{
-		int rowToRemove = currentCoord.HasValue ? Math.Max(1, currentCoord.Value.row + 1) : 1;
-		if (map is ShortenedActMap || rowToRemove >= map.GetRowCount())
+		if (map is ShortenedActMap || IsSpecialMap(map))
 		{
 			return map;
 		}
 
+		int searchStartRow = currentCoord.HasValue ? currentCoord.Value.row + 2 : 1;
+		if (!TryFindSafeRowToRemove(map, searchStartRow, out int rowToRemove))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble map shrink skipped: no safe removable row. map={map.GetType().Name} rows={map.GetRowCount()} current={DescribeCoord(currentCoord)}");
+			return map;
+		}
+
 		return new ShortenedActMap(map, rowToRemove);
+	}
+
+	private static bool IsSpecialMap(ActMap map)
+	{
+		return map.GetType().Name == "GoldenPathActMap";
+	}
+
+	private static bool TryFindSafeRowToRemove(ActMap map, int searchStartRow, out int rowToRemove)
+	{
+		int rowCount = map.GetRowCount();
+		for (int row = Math.Max(1, searchStartRow); row < rowCount - 1; row++)
+		{
+			if (IsSafeRowToRemove(map, row))
+			{
+				rowToRemove = row;
+				return true;
+			}
+		}
+
+		rowToRemove = -1;
+		return false;
+	}
+
+	private static bool IsSafeRowToRemove(ActMap map, int row)
+	{
+		List<MapPoint> rowPoints = map.GetPointsInRow(row).ToList();
+		return rowPoints.Count > 0
+			&& rowPoints.All(IsSafePointToRemove);
+	}
+
+	private static bool IsSafePointToRemove(MapPoint point)
+	{
+		return point.CanBeModified
+			&& point.Quests.Count == 0
+			&& point.PointType is MapPointType.Unknown or MapPointType.Monster;
+	}
+
+	private static string DescribeCoord(MapCoord? coord)
+	{
+		return coord.HasValue ? $"{coord.Value.col},{coord.Value.row}" : "none";
 	}
 
 	private sealed class ShortenedActMap : ActMap

@@ -943,7 +943,7 @@
   "hailToTheKingRune.enemyDescription": "在精英和首领战中，所有敌人在战斗开始时获得[blue]3[/blue]层[gold]人工制品[/gold]和等同于最大生命值[blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]%的[gold]覆甲[/gold]与[gold]再生[/gold]。",
   "eightPennyGateRune.enemyDescription": "玩家每回合最先打出的[blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue]张非能力牌会消耗。",
   "duffsVintageRune.enemyDescription": "玩家在回合结束时不再自动丢弃所有手牌，回合结束时还在手牌里的卡牌费用增加[blue]1[/blue]，持续到这张牌被打出为止。",
-  "hastyScribbleRune.enemyDescription": "地图节点长度减少[blue]1[/blue]。",
+  "hastyScribbleRune.enemyDescription": "地图节点长度减少[blue]1[/blue]。不会影响特殊地图。",
   "miseryRune.enemyDescription": "战斗开始时，使所有玩家失去[blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue]点[gold]力量[/gold]和[blue]0[/blue]/[blue]1[/blue]/[blue]1[/blue]点[gold]敏捷[/gold]。",
   "shoulderVakuRune.enemyDescription": "[red]瓦库将接管玩家的第[blue]2[/blue]回合。[/red]",
   "upgradeRune.enemyDescription": "玩家打出卡牌后，该卡牌会在本场战斗中被降级。",
