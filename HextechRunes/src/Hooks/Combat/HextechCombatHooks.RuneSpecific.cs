@@ -109,10 +109,19 @@ internal static partial class HextechCombatHooks
 
 	private static void NCreatureStartDeathAnimPostfix(NCreature __instance, bool shouldRemove)
 	{
-		if (FlyingKickCorpseLaunchDriver.TryConsumePending(__instance.Entity))
+		if (!FlyingKickCorpseLaunchDriver.TryConsumePending(__instance.Entity))
 		{
-			FlyingKickCorpseLaunchDriver.TryAttach(__instance);
+			return;
 		}
+
+		if (!shouldRemove
+			|| __instance.Entity == null
+			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(__instance.Entity))
+		{
+			return;
+		}
+
+		FlyingKickCorpseLaunchDriver.TryAttach(__instance);
 	}
 
 	private static void InstallElectrodynamicsLightningHook(Harmony harmony)
