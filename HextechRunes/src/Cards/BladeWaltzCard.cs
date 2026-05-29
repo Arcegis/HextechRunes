@@ -72,25 +72,11 @@ public sealed class BladeWaltzCard : CardModel
 	{
 		HextechCombatState combatState = Owner.Creature.CombatState
 			?? throw new InvalidOperationException("Blade Waltz played outside combat.");
-		for (int i = 0; i < DynamicVars["Hits"].IntValue; i++)
-		{
-			List<Creature> enemies = combatState.HittableEnemies.ToList();
-			if (enemies.Count == 0)
-			{
-				break;
-			}
-
-			Creature enemy = enemies[HextechStableRandom.Index(
-				(RunState)Owner.RunState,
-				enemies.Count,
-				"blade-waltz-target",
-				HextechStableRandom.PlayerKey(Owner),
-				combatState.RoundNumber.ToString(),
-				i.ToString(),
-				CombatManager.Instance.History.Entries.Count().ToString(),
-				HextechStableRandom.CardKey(this))];
-			await CreatureCmd.Damage(choiceContext, enemy, DynamicVars.Damage, Owner.Creature, this);
-		}
+		await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
+			.WithHitCount(DynamicVars["Hits"].IntValue)
+			.FromCard(this)
+			.TargetingRandomOpponents(combatState, allowDuplicates: true)
+			.Execute(choiceContext);
 
 		await PowerCmd.Apply<IntangiblePower>(Owner.Creature, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, this);
 	}
