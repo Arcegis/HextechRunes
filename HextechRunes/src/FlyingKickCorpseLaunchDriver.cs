@@ -15,6 +15,7 @@ internal sealed class FlyingKickCorpseLaunchDriver
 	private static readonly HashSet<uint> PendingCombatIds = [];
 	private static readonly HashSet<Creature> PendingCreatureRefs = new(ReferenceEqualityComparer.Instance);
 	private static readonly HashSet<ulong> ActiveCreatureNodes = [];
+	private static bool LoggedAndroidSkip;
 
 	private readonly NCreature _creature;
 	private NCreatureVisuals? _visuals;
@@ -66,6 +67,17 @@ internal sealed class FlyingKickCorpseLaunchDriver
 	{
 		try
 		{
+			if (HextechRuntimeRuneCompatibility.IsAndroidRuntime)
+			{
+				if (!LoggedAndroidSkip)
+				{
+					Log.Warn($"[{ModInfo.Id}][Mayhem][Compat] Flying Kick corpse launch visual skipped on Android runtime.");
+					LoggedAndroidSkip = true;
+				}
+
+				return;
+			}
+
 			if (!GodotObject.IsInstanceValid(creature) || creature.Entity?.IsMonster != true)
 			{
 				return;

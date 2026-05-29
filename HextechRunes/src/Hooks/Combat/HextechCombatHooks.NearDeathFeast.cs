@@ -13,41 +13,59 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static readonly FieldInfo HealthBarCreatureField = RequireField(typeof(NHealthBar), "_creature");
-	private static readonly FieldInfo HealthBarHpLabelField = RequireField(typeof(NHealthBar), "_hpLabel");
+	private static FieldInfo? HealthBarCreatureField;
+	private static FieldInfo? HealthBarHpLabelField;
 
 	private static void InstallNearDeathFeastHooks(Harmony harmony)
 	{
+		EnsureNearDeathFeastFields();
+		MethodInfo loseHpInternal = RequireMethod(typeof(Creature), nameof(Creature.LoseHpInternal), BindingFlags.Instance | BindingFlags.Public, typeof(decimal), typeof(ValueProp));
+		MethodInfo currentHpSetter = RequireMethod(typeof(Creature), "set_CurrentHp", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, typeof(int));
+		MethodInfo isAliveGetter = RequireGetter(typeof(Creature), nameof(Creature.IsAlive));
+		MethodInfo isDeadGetter = RequireGetter(typeof(Creature), nameof(Creature.IsDead));
+		MethodInfo gainBlock = RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.GainBlock), BindingFlags.Static | BindingFlags.Public, typeof(Creature), typeof(decimal), typeof(ValueProp), typeof(CardPlay), typeof(bool));
+		MethodInfo gainBlockVar = RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.GainBlock), BindingFlags.Static | BindingFlags.Public, typeof(Creature), typeof(BlockVar), typeof(CardPlay), typeof(bool));
+		MethodInfo kill = RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.Kill), BindingFlags.Static | BindingFlags.Public, typeof(Creature), typeof(bool));
+		MethodInfo killMany = RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.Kill), BindingFlags.Static | BindingFlags.Public, typeof(IReadOnlyCollection<Creature>), typeof(bool));
+		MethodInfo killWithoutCheckingWinCondition = RequireMethod(typeof(CreatureCmd), "KillWithoutCheckingWinCondition", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, typeof(Creature), typeof(bool), typeof(int));
+		MethodInfo healthBarRefreshText = RequireMethod(typeof(NHealthBar), "RefreshText", BindingFlags.Instance | BindingFlags.NonPublic);
+
 		harmony.Patch(
-			RequireMethod(typeof(Creature), nameof(Creature.LoseHpInternal), BindingFlags.Instance | BindingFlags.Public, typeof(decimal), typeof(ValueProp)),
+			loseHpInternal,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastLoseHpInternalPrefix)));
 		harmony.Patch(
-			RequireMethod(typeof(Creature), "set_CurrentHp", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, typeof(int)),
+			currentHpSetter,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastCurrentHpSetterPrefix)));
 		harmony.Patch(
-			RequireGetter(typeof(Creature), nameof(Creature.IsAlive)),
+			isAliveGetter,
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastIsAlivePostfix)));
 		harmony.Patch(
-			RequireGetter(typeof(Creature), nameof(Creature.IsDead)),
+			isDeadGetter,
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastIsDeadPostfix)));
 		harmony.Patch(
-			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.GainBlock), BindingFlags.Static | BindingFlags.Public, typeof(Creature), typeof(decimal), typeof(ValueProp), typeof(CardPlay), typeof(bool)),
+			gainBlock,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastGainBlockPrefix)));
 		harmony.Patch(
-			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.GainBlock), BindingFlags.Static | BindingFlags.Public, typeof(Creature), typeof(BlockVar), typeof(CardPlay), typeof(bool)),
+			gainBlockVar,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastGainBlockVarPrefix)));
 		harmony.Patch(
-			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.Kill), BindingFlags.Static | BindingFlags.Public, typeof(Creature), typeof(bool)),
+			kill,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastKillPrefix)));
 		harmony.Patch(
-			RequireMethod(typeof(CreatureCmd), nameof(CreatureCmd.Kill), BindingFlags.Static | BindingFlags.Public, typeof(IReadOnlyCollection<Creature>), typeof(bool)),
+			killMany,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastKillManyPrefix)));
 		harmony.Patch(
-			RequireMethod(typeof(CreatureCmd), "KillWithoutCheckingWinCondition", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, typeof(Creature), typeof(bool), typeof(int)),
+			killWithoutCheckingWinCondition,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastKillPrefix)));
 		harmony.Patch(
-			RequireMethod(typeof(NHealthBar), "RefreshText", BindingFlags.Instance | BindingFlags.NonPublic),
+			healthBarRefreshText,
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NearDeathFeastHealthBarRefreshTextPostfix)));
+	}
+
+	private static void EnsureNearDeathFeastFields()
+	{
+		HealthBarCreatureField ??= RequireField(typeof(NHealthBar), "_creature");
+		HealthBarHpLabelField ??= RequireField(typeof(NHealthBar), "_hpLabel");
 	}
 
 	private static bool NearDeathFeastLoseHpInternalPrefix(Creature __instance, decimal amount, ValueProp props, ref DamageResult __result)
@@ -119,9 +137,9 @@ internal static partial class HextechCombatHooks
 
 	private static void NearDeathFeastHealthBarRefreshTextPostfix(NHealthBar __instance)
 	{
-		if (HealthBarCreatureField.GetValue(__instance) is not Creature creature
+		if (HealthBarCreatureField?.GetValue(__instance) is not Creature creature
 			|| !NearDeathFeastRune.TryGetDisplayedHp(creature, out int displayedHp)
-			|| HealthBarHpLabelField.GetValue(__instance) is not MegaLabel hpLabel)
+			|| HealthBarHpLabelField?.GetValue(__instance) is not MegaLabel hpLabel)
 		{
 			return;
 		}
