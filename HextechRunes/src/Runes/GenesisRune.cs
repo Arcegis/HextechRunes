@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
@@ -12,14 +13,13 @@ public sealed class GenesisRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
+		Player? player = Owner;
+		if (player == null)
 		{
 			return;
 		}
 
-		List<CardModel> cardsToRemove = Owner.Deck.Cards
-			.Where(static card => card.Rarity != CardRarity.Basic)
-			.ToList();
+		List<CardModel> cardsToRemove = player.Deck.Cards.ToList();
 		if (cardsToRemove.Count == 0)
 		{
 			return;
@@ -32,12 +32,12 @@ public sealed class GenesisRune : HextechRelicBase
 		}
 
 		CardCreationOptions options = new(
-			Owner.Character.CardPool.AllCards,
-			CardCreationSource.Encounter,
+			new[] { player.Character.CardPool },
+			CardCreationSource.Other,
 			CardRarityOddsType.RegularEncounter);
 		List<Reward> rewards = Enumerable.Range(0, cardsToRemove.Count)
-			.Select(_ => (Reward)new CardReward(options, 3, Owner))
+			.Select(_ => (Reward)new GenesisUpgradedCardReward(options, 3, player))
 			.ToList();
-		await RewardsCmd.OfferCustom(Owner, rewards);
+		await RewardsCmd.OfferCustom(player, rewards);
 	}
 }

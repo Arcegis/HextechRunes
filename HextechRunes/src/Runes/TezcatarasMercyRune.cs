@@ -42,7 +42,7 @@ public sealed class TezcatarasMercyRune : HextechRelicBase, IHextechSharedCombat
 
 		RelicModel waxRelic = HextechAncientRelicHelper.CreateRepeatableWaxRelic(Owner, "tezcataras-mercy-wax-relic", _combatCounter);
 		SaveManager.Instance.MarkRelicAsSeen(waxRelic);
-		room.AddExtraReward(Owner, new RelicReward(waxRelic, Owner));
+		room.AddExtraReward(Owner, new HextechWaxRelicReward(waxRelic, Owner));
 
 		SavedCombatCounter++;
 		if (_combatCounter >= DynamicVars["CombatInterval"].IntValue)

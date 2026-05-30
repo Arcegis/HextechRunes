@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -15,7 +16,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DamageVar(2m, ValueProp.Unpowered)
+		new DamageVar(2m, ValueProp.Move)
 	];
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -41,7 +42,11 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		}
 
 		Flash([target]);
-		await CreatureCmd.Damage(choiceContext, target, DynamicVars.Damage.BaseValue, ValueProp.Unpowered, Owner.Creature, cardPlay.Card);
+		await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
+			.FromCard(cardPlay.Card)
+			.Targeting(target)
+			.WithNoAttackerAnim()
+			.Execute(choiceContext);
 	}
 
 	internal static bool ShouldTreatSkillAsAttack(Player? owner)

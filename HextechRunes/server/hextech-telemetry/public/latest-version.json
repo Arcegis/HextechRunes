@@ -2,7 +2,7 @@
   "modId": "HextechRunes",
   "serverIdentity": "Natsuki.HextechRunes.official",
   "name": "海克斯大乱斗",
-  "latestVersion": "0.6.5",
+  "latestVersion": "0.6.6",
   "officialBuilds": [
     {
       "modVersion": "0.6.1",
@@ -78,13 +78,41 @@
       "modVersion": "0.6.5",
       "gameVersion": "0.103.2",
       "hashAlgorithm": "SHA-256",
-      "generatedAtUtc": "2026-05-28T13:59:54Z",
-      "dllSha256": "6f1ecbe0baf830f2e17b343023504441356418eea652fd3055503a58d5989756",
-      "pckSha256": "c6311723dcf365738629fc72b69a659012ab1e9f01b3ff88cc7bf7d6cee55fce",
+      "generatedAtUtc": "2026-05-30T07:14:40Z",
+      "dllSha256": "b0ccbc146b36c215cc7200b52a6cdc660937fb4c75005497f60a3c14420db591",
+      "pckSha256": "cdca5f983108d3345a3bc69e0f1aa18c0cdf67097f01abbf17267c0184def473",
       "manifestSha256": "2a257285edf73a231b04f504c78b79901d9bba2a2aa779ac0290dbae44e7784e",
       "artifactSizes": {
-        "dllBytes": 1000960,
-        "pckBytes": 6377324,
+        "dllBytes": 1030656,
+        "pckBytes": 6863384,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.6.6",
+      "gameVersion": "0.103.2",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-05-30T07:39:41Z",
+      "dllSha256": "b2c399d1dc43a81c1caf528dc232052f03c709fcc3c705131aff4350076f17e4",
+      "pckSha256": "cdca5f983108d3345a3bc69e0f1aa18c0cdf67097f01abbf17267c0184def473",
+      "manifestSha256": "4c3e0bd913b55bea918e2e584886ed6a625dca9498c842ac2a6119e0b47b64cf",
+      "artifactSizes": {
+        "dllBytes": 1030656,
+        "pckBytes": 6863384,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.6.6",
+      "gameVersion": "0.106.1",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-05-30T08:05:25Z",
+      "dllSha256": "9c6585b6d9495237261f0762d6822d7be405f7d86ccb7644508e25b8b6f657a4",
+      "pckSha256": "cdca5f983108d3345a3bc69e0f1aa18c0cdf67097f01abbf17267c0184def473",
+      "manifestSha256": "4c3e0bd913b55bea918e2e584886ed6a625dca9498c842ac2a6119e0b47b64cf",
+      "artifactSizes": {
+        "dllBytes": 1035776,
+        "pckBytes": 6863384,
         "manifestBytes": 485
       }
     }

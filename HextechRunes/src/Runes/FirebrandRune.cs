@@ -43,7 +43,7 @@ public sealed class FirebrandRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null || target.Side != CombatSide.Enemy || !HextechSts2Compat.IsPoweredAttack(props) || !IsDamageFromOwner(dealer, cardSource))
+		if (Owner == null || target.Side != CombatSide.Enemy || !IsAttackDamageForRuneEffects(props, cardSource) || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;
 		}

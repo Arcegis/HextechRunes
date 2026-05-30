@@ -27,6 +27,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		blockedOwnedIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedIds));
 
 		List<RelicModel> pool = HextechCatalog.GetPlayerRuneTypesForRarity(rarity)
+			.Where(HextechRuntimeRuneCompatibility.IsPlayerRuneAvailableForCurrentRuntime)
 			.Where(type => HextechCatalog.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
 			.Where(relic => HextechCatalog.IsAvailableForPlayer(relic, player)

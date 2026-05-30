@@ -92,6 +92,13 @@ public abstract class HextechRelicBase : RelicModel
 
 	public virtual bool IsAvailableForPlayer(Player player) => true;
 
+	protected static bool DeckContains<TCard>(Player player)
+		where TCard : CardModel
+	{
+		ModelId cardId = ModelDb.GetId<TCard>();
+		return player.Deck.Cards.Any(card => (card.CanonicalInstance?.Id ?? card.Id) == cardId);
+	}
+
 	protected static int FloorToInt(decimal value)
 	{
 		return (int)decimal.Floor(value);
@@ -136,6 +143,16 @@ public abstract class HextechRelicBase : RelicModel
 	protected bool IsOwnedSkill(CardModel? card)
 	{
 		return card != null && card.Owner == Owner && IllusoryWeaponRune.IsSkillForEffects(card);
+	}
+
+	protected bool IsAttackDamageForRuneEffects(ValueProp props, CardModel? cardSource)
+	{
+		if (HextechSts2Compat.IsPoweredAttack(props))
+		{
+			return true;
+		}
+
+		return Owner != null && IllusoryWeaponRune.IsOriginalOwnedSkill(cardSource, Owner);
 	}
 
 	internal static bool IsNetworkMultiplayerRun()

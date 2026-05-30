@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Nodes.Combat;
@@ -28,33 +29,78 @@ internal static partial class HextechCombatHooks
 	private const float OrbLayoutMaxRadius = 300f;
 	private const float OrbLayoutTweenSpeed = 0.45f;
 
-	private static readonly FieldInfo OrbManagerOrbsField = RequireField(typeof(NOrbManager), "_orbs");
-	private static readonly FieldInfo OrbManagerCreatureField = RequireField(typeof(NOrbManager), "_creatureNode");
-	private static readonly FieldInfo OrbManagerCurrentTweenField = RequireField(typeof(NOrbManager), "_curTween");
+	private static FieldInfo? OrbManagerOrbsField;
+	private static FieldInfo? OrbManagerCreatureField;
+	private static FieldInfo? OrbManagerCurrentTweenField;
 
 	private static void InstallRuneSpecificHooks(Harmony harmony)
+	{
+		TryInstallRuneHook<DeviantCognitionRune>("deviant cognition card tags", () => InstallDeviantCognitionHooks(harmony));
+		TryInstallRuneHook<IllusoryWeaponRune>("illusory weapon card type", () => InstallIllusoryWeaponHooks(harmony));
+		TryInstallRuneHook<FlyingKickRune>("flying kick dynamic description", () => InstallFlyingKickDescriptionHooks(harmony));
+		TryInstallCombatHookGroup("flying kick corpse launch visual", () => InstallFlyingKickCorpseLaunchHooks(harmony));
+		TryInstallRuneHook<MadScientistRune>("mad scientist orb slots", () => InstallMadScientistHooks(harmony));
+		TryInstallCombatHookGroup("orb layout soft cap", () => InstallOrbLayoutSoftCapHooks(harmony));
+		TryInstallRuneHook<ElectrodynamicsRune>("electrodynamics lightning", () => InstallElectrodynamicsLightningHook(harmony));
+		TryInstallRuneHook<SurvivorUpgradeRune>("survivor upgraded play", () => InstallSurvivorUpgradeHooks(harmony));
+		TryInstallRuneHook<CompactUpgradeRune>("compact upgraded play", () => InstallCompactUpgradeHooks(harmony));
+		TryInstallRuneHook<WhirlwindUpgradeRune>("whirlwind upgraded x value", () => InstallWhirlwindUpgradeHooks(harmony));
+	}
+
+	private static void InstallDeviantCognitionHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Tags", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTagsPostfix)));
+	}
+
+	private static void InstallIllusoryWeaponHooks(Harmony harmony)
+	{
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Type", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTypePostfix)));
+	}
+
+	private static void InstallFlyingKickDescriptionHooks(Harmony harmony)
+	{
 		harmony.Patch(
 			RequireGetter(typeof(RelicModel), nameof(RelicModel.DynamicDescription)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(RelicDynamicDescriptionPrefix)));
+	}
+
+	private static void InstallFlyingKickCorpseLaunchHooks(Harmony harmony)
+	{
+		if (HextechRuntimeRuneCompatibility.IsAndroidRuntime)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem][Compat] Flying Kick corpse launch visual hook skipped on Android runtime.");
+			return;
+		}
+
 		harmony.Patch(
 			RequireMethod(typeof(NCreature), nameof(NCreature.StartDeathAnim), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NCreatureStartDeathAnimPostfix)));
+	}
 
+	private static void InstallMadScientistHooks(Harmony harmony)
+	{
 		harmony.Patch(
 			RequireMethod(typeof(OrbCmd), nameof(OrbCmd.AddSlots), BindingFlags.Static | BindingFlags.Public, typeof(Player), typeof(int)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbAddSlotsPrefix)));
+	}
+
+	private static void InstallOrbLayoutSoftCapHooks(Harmony harmony)
+	{
+		EnsureOrbLayoutFields();
 		harmony.Patch(
 			RequireMethod(typeof(NOrbManager), "TweenLayout", BindingFlags.Instance | BindingFlags.NonPublic),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbTweenLayoutPrefix)));
+	}
 
-		InstallElectrodynamicsLightningHook(harmony);
+	private static void EnsureOrbLayoutFields()
+	{
+		OrbManagerOrbsField ??= RequireField(typeof(NOrbManager), "_orbs");
+		OrbManagerCreatureField ??= RequireField(typeof(NOrbManager), "_creatureNode");
+		OrbManagerCurrentTweenField ??= RequireField(typeof(NOrbManager), "_curTween");
 	}
 
 	private static void RelicDynamicDescriptionPrefix(RelicModel __instance)
@@ -67,10 +113,19 @@ internal static partial class HextechCombatHooks
 
 	private static void NCreatureStartDeathAnimPostfix(NCreature __instance, bool shouldRemove)
 	{
-		if (FlyingKickCorpseLaunchDriver.TryConsumePending(__instance.Entity))
+		if (!FlyingKickCorpseLaunchDriver.TryConsumePending(__instance.Entity))
 		{
-			FlyingKickCorpseLaunchDriver.TryAttach(__instance);
+			return;
 		}
+
+		if (!shouldRemove
+			|| __instance.Entity == null
+			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(__instance.Entity))
+		{
+			return;
+		}
+
+		FlyingKickCorpseLaunchDriver.TryAttach(__instance);
 	}
 
 	private static void InstallElectrodynamicsLightningHook(Harmony harmony)
@@ -84,13 +139,60 @@ internal static partial class HextechCombatHooks
 			typeof(PlayerChoiceContext));
 		if (lightningApplyDamage == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Electrodynamics lightning hook skipped: LightningOrb.ApplyLightningDamage was not found in this game build.");
-			return;
+			throw new InvalidOperationException("LightningOrb.ApplyLightningDamage was not found in this game build.");
 		}
 
 		harmony.Patch(
 			lightningApplyDamage,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(LightningApplyDamagePrefix)));
+	}
+
+	private static void InstallSurvivorUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Survivor), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SurvivorOnPlayPrefix)));
+	}
+
+	private static void InstallCompactUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Compact), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CompactOnPlayPrefix)));
+	}
+
+	private static void InstallWhirlwindUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.ResolveEnergyXValue), BindingFlags.Instance | BindingFlags.Public),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardResolveEnergyXValuePostfix)));
+	}
+
+	private static bool SurvivorOnPlayPrefix(Survivor __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!SurvivorUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = SurvivorUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
+	private static bool CompactOnPlayPrefix(Compact __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!CompactUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = CompactUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
+	private static void CardResolveEnergyXValuePostfix(CardModel __instance, ref int __result)
+	{
+		WhirlwindUpgradeRune.TryDoubleResolvedX(__instance, ref __result);
 	}
 
 	private static void CardTagsPostfix(CardModel __instance, ref IEnumerable<CardTag> __result)
@@ -181,9 +283,9 @@ internal static partial class HextechCombatHooks
 			radius *= 0.75f;
 		}
 
-		((Tween?)OrbManagerCurrentTweenField.GetValue(__instance))?.Kill();
+		((Tween?)OrbManagerCurrentTweenField?.GetValue(__instance))?.Kill();
 		Tween tween = __instance.CreateTween().SetParallel();
-		OrbManagerCurrentTweenField.SetValue(__instance, tween);
+		OrbManagerCurrentTweenField?.SetValue(__instance, tween);
 
 		int layoutCount = Math.Min(capacity, orbs.Count);
 		for (int i = 0; i < layoutCount; i++)
@@ -201,8 +303,8 @@ internal static partial class HextechCombatHooks
 
 	private static bool TryGetOrbLayoutState(NOrbManager manager, out List<NOrb> orbs, out int capacity)
 	{
-		orbs = (List<NOrb>?)OrbManagerOrbsField.GetValue(manager) ?? new List<NOrb>();
-		NCreature? creature = (NCreature?)OrbManagerCreatureField.GetValue(manager);
+		orbs = (List<NOrb>?)OrbManagerOrbsField?.GetValue(manager) ?? new List<NOrb>();
+		NCreature? creature = (NCreature?)OrbManagerCreatureField?.GetValue(manager);
 		capacity = creature?.Entity.Player?.PlayerCombatState?.OrbQueue.Capacity ?? 0;
 		return capacity > 0;
 	}

@@ -53,7 +53,8 @@ public sealed class DuffsVintageRune : HextechRelicBase
 		Flash();
 		foreach (CardModel card in cards)
 		{
-			int nextCost = Math.Max(0, card.EnergyCost.GetAmountToSpend() - DynamicVars["CostReduction"].IntValue);
+			int currentCostBeforeGlobalModifiers = card.EnergyCost.GetWithModifiers(CostModifiers.Local);
+			int nextCost = Math.Max(0, currentCostBeforeGlobalModifiers - DynamicVars["CostReduction"].IntValue);
 			card.EnergyCost.SetUntilPlayed(nextCost, reduceOnly: true);
 		}
 

@@ -36,6 +36,10 @@ namespace HextechRunes;
 
 public sealed class MiserableFateRune : HextechRelicBase
 {
+	private static readonly AsyncLocal<int> DoomDamageResolveDepth = new();
+
+	internal static bool IsResolvingDoomDamage => DoomDamageResolveDepth.Value > 0;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new BlockVar(1m, ValueProp.Unpowered)
@@ -74,7 +78,7 @@ public sealed class MiserableFateRune : HextechRelicBase
 				flashed = true;
 			}
 
-			await CreatureCmd.Damage(choiceContext, enemy, doom, ValueProp.Unblockable | ValueProp.Unpowered, Owner.Creature, null);
+			await DealDoomDamage(choiceContext, enemy, doom);
 			if (enemy.GetPower<DoomPower>() is DoomPower remainingDoom)
 			{
 				await HextechPowerCmdCompat.Remove(remainingDoom);
@@ -98,5 +102,18 @@ public sealed class MiserableFateRune : HextechRelicBase
 
 		Flash();
 		return CreatureCmd.GainBlock(Owner.Creature, block * DynamicVars.Block.BaseValue, ValueProp.Unpowered, null);
+	}
+
+	private async Task DealDoomDamage(PlayerChoiceContext choiceContext, Creature enemy, decimal doom)
+	{
+		DoomDamageResolveDepth.Value++;
+		try
+		{
+			await CreatureCmd.Damage(choiceContext, enemy, doom, ValueProp.Unblockable | ValueProp.Unpowered, Owner!.Creature, null);
+		}
+		finally
+		{
+			DoomDamageResolveDepth.Value--;
+		}
 	}
 }

@@ -15,6 +15,12 @@ namespace HextechRunes;
 public sealed class OtterAndFriendsRune : HextechRelicBase
 {
 	private int _cycleIndex;
+	private HextechCombatState? _cycleCombatState;
+	private int _cycleRoundNumber = -1;
+	private int _activeCycle = -1;
+	private bool _flashedThisRound;
+	private bool _addedBelieveInYouThisRound;
+	private readonly HashSet<ulong> _buffedPlayersThisRound = [];
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCycleIndex
@@ -43,46 +49,62 @@ public sealed class OtterAndFriendsRune : HextechRelicBase
 
 	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (player != Owner
+		if (Owner == null
 			|| Owner.Creature.IsDead
-			|| player.Creature.CombatState is not HextechCombatState combatState)
+			|| player.Creature.IsDead
+			|| player.Creature.CombatState is not HextechCombatState combatState
+			|| !ReferenceEquals(Owner.Creature.CombatState, combatState))
 		{
 			return;
 		}
 
-		List<Player> players = combatState.Players
-			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)
-			.OrderBy(static combatPlayer => combatPlayer.NetId)
-			.ToList();
-		if (players.Count == 0)
+		int cycle = GetCycleForRound(combatState);
+		if (!_flashedThisRound)
+		{
+			FlashDeferred(combatState.Players
+				.Where(static combatPlayer => combatPlayer.Creature.IsAlive)
+				.Select(static combatPlayer => combatPlayer.Creature));
+			_flashedThisRound = true;
+		}
+
+		if (player == Owner && !_addedBelieveInYouThisRound)
+		{
+			await AddCardCopiesToCombatHand<BelieveInYou>(1);
+			_addedBelieveInYouThisRound = true;
+		}
+
+		if (!_buffedPlayersThisRound.Add(player.NetId))
 		{
 			return;
 		}
 
-		await AddCardCopiesToCombatHand<BelieveInYou>(1);
-		int cycle = _cycleIndex % 3;
-		SavedCycleIndex = _cycleIndex + 1;
-		FlashDeferred(players.Select(static combatPlayer => combatPlayer.Creature));
 		switch (cycle)
 		{
 			case 0:
-				foreach (Player combatPlayer in players)
-				{
-					await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, combatPlayer, fromHandDraw: false);
-				}
+				await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, player, fromHandDraw: false);
 				break;
 			case 1:
-				foreach (Player combatPlayer in players)
-				{
-					await PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, combatPlayer);
-				}
+				await PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, player);
 				break;
 			default:
-				foreach (Player combatPlayer in players)
-				{
-					await PowerCmd.Apply<StrengthPower>(combatPlayer.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
-				}
+				await PowerCmd.Apply<StrengthPower>(player.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
 				break;
 		}
+	}
+
+	private int GetCycleForRound(HextechCombatState combatState)
+	{
+		if (!ReferenceEquals(_cycleCombatState, combatState) || _cycleRoundNumber != combatState.RoundNumber)
+		{
+			_cycleCombatState = combatState;
+			_cycleRoundNumber = combatState.RoundNumber;
+			_activeCycle = _cycleIndex % 3;
+			SavedCycleIndex = _cycleIndex + 1;
+			_flashedThisRound = false;
+			_addedBelieveInYouThisRound = false;
+			_buffedPlayersThisRound.Clear();
+		}
+
+		return _activeCycle;
 	}
 }
