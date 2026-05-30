@@ -22,6 +22,12 @@ internal static partial class HextechCombatHooks
 			return;
 		}
 
+		if (!__result && GrandFinaleUpgradeRune.AllowsPlaying(__instance))
+		{
+			__result = true;
+			return;
+		}
+
 		if (__result && IsBlockedByBackToBasics(__instance))
 		{
 			__result = false;
@@ -47,6 +53,14 @@ internal static partial class HextechCombatHooks
 			}
 
 			if (WhiteHoleCard.AllowsPlaying(__instance))
+			{
+				reason = default;
+				preventer = null!;
+				__result = true;
+				return;
+			}
+
+			if (GrandFinaleUpgradeRune.AllowsPlaying(__instance))
 			{
 				reason = default;
 				preventer = null!;

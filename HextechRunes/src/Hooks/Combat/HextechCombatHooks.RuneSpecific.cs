@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Nodes.Combat;
@@ -41,6 +42,8 @@ internal static partial class HextechCombatHooks
 		TryInstallRuneHook<MadScientistRune>("mad scientist orb slots", () => InstallMadScientistHooks(harmony));
 		TryInstallCombatHookGroup("orb layout soft cap", () => InstallOrbLayoutSoftCapHooks(harmony));
 		TryInstallRuneHook<ElectrodynamicsRune>("electrodynamics lightning", () => InstallElectrodynamicsLightningHook(harmony));
+		TryInstallRuneHook<SurvivorUpgradeRune>("survivor upgraded play", () => InstallSurvivorUpgradeHooks(harmony));
+		TryInstallRuneHook<CompactUpgradeRune>("compact upgraded play", () => InstallCompactUpgradeHooks(harmony));
 	}
 
 	private static void InstallDeviantCognitionHooks(Harmony harmony)
@@ -141,6 +144,42 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			lightningApplyDamage,
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(LightningApplyDamagePrefix)));
+	}
+
+	private static void InstallSurvivorUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Survivor), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SurvivorOnPlayPrefix)));
+	}
+
+	private static void InstallCompactUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Compact), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CompactOnPlayPrefix)));
+	}
+
+	private static bool SurvivorOnPlayPrefix(Survivor __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!SurvivorUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = SurvivorUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
+	private static bool CompactOnPlayPrefix(Compact __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!CompactUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = CompactUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
 	}
 
 	private static void CardTagsPostfix(CardModel __instance, ref IEnumerable<CardTag> __result)

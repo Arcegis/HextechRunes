@@ -1,4 +1,7 @@
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HextechRunes;
@@ -32,9 +35,47 @@ internal static partial class HextechCombatHooks
 			: card.EnergyCost.GetAmountToSpend();
 	}
 
-	private static void CardSpendResourcesPrefix(CardModel __instance)
+	private static bool CardSpendResourcesPrefix(CardModel __instance, ref Task<ValueTuple<int, int>> __result)
 	{
 		PendingManualPlayEnergyValues[__instance] = __instance.EnergyCost.GetAmountToSpend();
+		if (!StardustUpgradeRune.ShouldPreserveStars(__instance))
+		{
+			return true;
+		}
+
+		__result = SpendResourcesPreservingStars(__instance);
+		return false;
+	}
+
+	private static async Task<ValueTuple<int, int>> SpendResourcesPreservingStars(CardModel card)
+	{
+		var owner = card.Owner!;
+		var combatState = card.CombatState!;
+		var playerCombatState = owner.PlayerCombatState!;
+		int energy = playerCombatState.Energy;
+		int energyToSpend = card.EnergyCost.GetAmountToSpend();
+		int starsToSpend = Math.Max(0, card.GetStarCostWithModifiers());
+		if (energyToSpend > energy && Hook.ShouldPayExcessEnergyCostWithStars(combatState, owner))
+		{
+			starsToSpend += (energyToSpend - energy) * 2;
+			energyToSpend = energy;
+		}
+
+		if (card.EnergyCost.CostsX)
+		{
+			card.EnergyCost.CapturedXValue = energyToSpend;
+		}
+
+		if (energyToSpend > 0)
+		{
+			CombatManager.Instance.History.EnergySpent(combatState, energyToSpend, owner);
+			playerCombatState.LoseEnergy(Math.Max(0, energyToSpend));
+		}
+
+		await Hook.AfterEnergySpent(combatState, card, energyToSpend);
+		card.LastStarsSpent = starsToSpend;
+		owner.GetRelic<StardustUpgradeRune>()?.Flash();
+		return new ValueTuple<int, int>(energyToSpend, starsToSpend);
 	}
 
 	private static void CardOnPlayWrapperPrefix(CardModel __instance, ResourceInfo resources)

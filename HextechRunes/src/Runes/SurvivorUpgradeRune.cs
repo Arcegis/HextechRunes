@@ -1,0 +1,44 @@
+using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+
+namespace HextechRunes;
+
+public sealed class SurvivorUpgradeRune : CardUpgradeRuneBase<Survivor>
+{
+	protected override bool IsAvailableForCharacter(Player player)
+	{
+		return IsSilentPlayer(player);
+	}
+
+	internal static bool ShouldUseUpgradedPlay(CardModel card)
+	{
+		return card is Survivor && card.Owner?.GetRelic<SurvivorUpgradeRune>() != null;
+	}
+
+	internal static async Task PlayUpgraded(PlayerChoiceContext choiceContext, Survivor card, CardPlay cardPlay)
+	{
+		await CreatureCmd.GainBlock(card.Owner.Creature, card.DynamicVars.Block, cardPlay);
+
+		IEnumerable<CardModel> selected = await CardSelectCmd.FromHandForDiscard(
+			choiceContext,
+			card.Owner,
+			new CardSelectorPrefs(CardSelectorPrefs.DiscardSelectionPrompt, 0, 999999999),
+			null,
+			card);
+
+		List<CardModel> cards = selected.ToList();
+		if (cards.Count == 0)
+		{
+			return;
+		}
+
+		await CardCmd.Discard(choiceContext, cards);
+		await CreatureCmd.GainBlock(card.Owner.Creature, card.DynamicVars.Block.BaseValue * cards.Count, card.DynamicVars.Block.Props, cardPlay);
+		card.Owner.GetRelic<SurvivorUpgradeRune>()?.Flash();
+	}
+}

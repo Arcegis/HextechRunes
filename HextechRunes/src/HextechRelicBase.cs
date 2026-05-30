@@ -92,6 +92,13 @@ public abstract class HextechRelicBase : RelicModel
 
 	public virtual bool IsAvailableForPlayer(Player player) => true;
 
+	protected static bool DeckContains<TCard>(Player player)
+		where TCard : CardModel
+	{
+		ModelId cardId = ModelDb.GetId<TCard>();
+		return player.Deck.Cards.Any(card => (card.CanonicalInstance?.Id ?? card.Id) == cardId);
+	}
+
 	protected static int FloorToInt(decimal value)
 	{
 		return (int)decimal.Floor(value);
