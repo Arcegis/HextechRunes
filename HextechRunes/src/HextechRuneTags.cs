@@ -79,7 +79,7 @@ internal static class HextechRuneTags
 		[typeof(BarbarianWayRune)] = "OUTPUT",
 		[typeof(GloomyCloudsRune)] = "ORB",
 		[typeof(ZapUpgradeRune)] = "ORB",
-		[typeof(KnowThyPlaceUpgradeRune)] = "SWORDCRAFT",
+		[typeof(KnowThyPlaceUpgradeRune)] = "COMPREHENSIVE",
 		[typeof(MentalShieldRune)] = "SURVIVAL",
 		[typeof(PacifistRune)] = "SURVIVAL",
 		[typeof(CrackTheEggRune)] = "SURVIVAL",
