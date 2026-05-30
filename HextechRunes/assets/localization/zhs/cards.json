@@ -84,5 +84,7 @@
   "ostyWishCard.hoverTip": "[blue]0[/blue]费技能牌。获得[blue]X[/blue]点格挡，对所有敌人造成[blue]X[/blue]点伤害。[blue]X[/blue]为奥斯提死亡时的最大生命值。消耗。升级后保留。",
   "OSTY_WISH_CARD.hoverTip": "[blue]0[/blue]费技能牌。获得[blue]X[/blue]点格挡，对所有敌人造成[blue]X[/blue]点伤害。[blue]X[/blue]为奥斯提死亡时的最大生命值。消耗。升级后保留。",
   "ostyWishCard.flavor": "这一次，奥斯提把结局留给了你。",
-  "OSTY_WISH_CARD.flavor": "这一次，奥斯提把结局留给了你。"
+  "OSTY_WISH_CARD.flavor": "这一次，奥斯提把结局留给了你。",
+  "survivorUpgradeRune.selectionScreenPrompt": "选择任意张牌来丢弃。",
+  "SURVIVOR_UPGRADE_RUNE.selectionScreenPrompt": "选择任意张牌来丢弃。"
 }

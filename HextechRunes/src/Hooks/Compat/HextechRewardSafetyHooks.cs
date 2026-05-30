@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using static HextechRunes.HextechHookReflection;
 
@@ -33,6 +34,17 @@ internal static class HextechRewardSafetyHooks
 		{
 			RelicModel relic = ModelDb.GetById<RelicModel>(save.PredeterminedModelId).ToMutable();
 			__result = new HextechWaxRelicReward(relic, player);
+			return;
+		}
+
+		if (save.RewardType == RewardType.Card
+			&& save.CustomDescriptionEncounterSourceId == ModelDb.GetId<GenesisRune>())
+		{
+			CardCreationOptions options = new(
+				save.CardPoolIds.Select(ModelDb.GetById<CardPoolModel>),
+				save.Source,
+				save.RarityOdds);
+			__result = new GenesisUpgradedCardReward(options, save.OptionCount, player);
 		}
 	}
 }

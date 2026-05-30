@@ -44,6 +44,7 @@ internal static partial class HextechCombatHooks
 		TryInstallRuneHook<ElectrodynamicsRune>("electrodynamics lightning", () => InstallElectrodynamicsLightningHook(harmony));
 		TryInstallRuneHook<SurvivorUpgradeRune>("survivor upgraded play", () => InstallSurvivorUpgradeHooks(harmony));
 		TryInstallRuneHook<CompactUpgradeRune>("compact upgraded play", () => InstallCompactUpgradeHooks(harmony));
+		TryInstallRuneHook<WhirlwindUpgradeRune>("whirlwind upgraded x value", () => InstallWhirlwindUpgradeHooks(harmony));
 	}
 
 	private static void InstallDeviantCognitionHooks(Harmony harmony)
@@ -160,6 +161,13 @@ internal static partial class HextechCombatHooks
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CompactOnPlayPrefix)));
 	}
 
+	private static void InstallWhirlwindUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.ResolveEnergyXValue), BindingFlags.Instance | BindingFlags.Public),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardResolveEnergyXValuePostfix)));
+	}
+
 	private static bool SurvivorOnPlayPrefix(Survivor __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 	{
 		if (!SurvivorUpgradeRune.ShouldUseUpgradedPlay(__instance))
@@ -180,6 +188,11 @@ internal static partial class HextechCombatHooks
 
 		__result = CompactUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
 		return false;
+	}
+
+	private static void CardResolveEnergyXValuePostfix(CardModel __instance, ref int __result)
+	{
+		WhirlwindUpgradeRune.TryDoubleResolvedX(__instance, ref __result);
 	}
 
 	private static void CardTagsPostfix(CardModel __instance, ref IEnumerable<CardTag> __result)

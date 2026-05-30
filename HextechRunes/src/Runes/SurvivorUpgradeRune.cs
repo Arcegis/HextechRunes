@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 
@@ -24,10 +25,16 @@ public sealed class SurvivorUpgradeRune : CardUpgradeRuneBase<Survivor>
 	{
 		await CreatureCmd.GainBlock(card.Owner.Creature, card.DynamicVars.Block, cardPlay);
 
+		int maxSelectable = PileType.Hand.GetPile(card.Owner).Cards.Count(handCard => !ReferenceEquals(handCard, card));
+		if (maxSelectable <= 0)
+		{
+			return;
+		}
+
 		IEnumerable<CardModel> selected = await CardSelectCmd.FromHandForDiscard(
 			choiceContext,
 			card.Owner,
-			new CardSelectorPrefs(CardSelectorPrefs.DiscardSelectionPrompt, 0, 999999999),
+			new CardSelectorPrefs(new LocString("cards", "survivorUpgradeRune.selectionScreenPrompt"), 0, maxSelectable),
 			null,
 			card);
 

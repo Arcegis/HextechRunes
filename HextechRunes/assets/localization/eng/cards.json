@@ -84,5 +84,7 @@
   "ostyWishCard.hoverTip": "[blue]0[/blue]-cost Skill. Gain [blue]X[/blue] Block and deal [blue]X[/blue] damage to all enemies. [blue]X[/blue] is Osty's Max HP when it died. Exhaust. Upgraded copies retain.",
   "OSTY_WISH_CARD.hoverTip": "[blue]0[/blue]-cost Skill. Gain [blue]X[/blue] Block and deal [blue]X[/blue] damage to all enemies. [blue]X[/blue] is Osty's Max HP when it died. Exhaust. Upgraded copies retain.",
   "ostyWishCard.flavor": "This time, Osty leaves the ending in your hands.",
-  "OSTY_WISH_CARD.flavor": "This time, Osty leaves the ending in your hands."
+  "OSTY_WISH_CARD.flavor": "This time, Osty leaves the ending in your hands.",
+  "survivorUpgradeRune.selectionScreenPrompt": "Choose any number of cards to discard.",
+  "SURVIVOR_UPGRADE_RUNE.selectionScreenPrompt": "Choose any number of cards to discard."
 }
