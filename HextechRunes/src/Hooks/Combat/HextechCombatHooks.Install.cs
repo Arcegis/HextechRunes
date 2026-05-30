@@ -135,11 +135,19 @@ internal static partial class HextechCombatHooks
 			RequireMethod(typeof(ForbiddenGrimoirePower), nameof(ForbiddenGrimoirePower.AfterCombatEnd), BindingFlags.Public | BindingFlags.Instance, typeof(CombatRoom)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ForbiddenGrimoireAfterCombatEndPrefix)));
 		harmony.Patch(
+#if STS2_104_OR_NEWER
+			RequireMethod(typeof(OutbreakPower), nameof(OutbreakPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
+#else
 			RequireMethod(typeof(OutbreakPower), nameof(OutbreakPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
+#endif
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OutbreakPowerAfterPowerAmountChangedPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OutbreakPowerAfterPowerAmountChangedPostfix)));
 		harmony.Patch(
+#if STS2_104_OR_NEWER
+			RequireMethod(typeof(SleightOfFleshPower), nameof(SleightOfFleshPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
+#else
 			RequireMethod(typeof(SleightOfFleshPower), nameof(SleightOfFleshPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
+#endif
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SleightOfFleshPowerAfterPowerAmountChangedPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SleightOfFleshPowerAfterPowerAmountChangedPostfix)));
 	}

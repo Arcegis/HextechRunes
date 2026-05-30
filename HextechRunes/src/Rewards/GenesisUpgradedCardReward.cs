@@ -18,9 +18,8 @@ internal sealed class GenesisUpgradedCardReward : CardReward
 	{
 	}
 
-	public override async Task Populate()
+	private void UpgradeGeneratedCards()
 	{
-		await base.Populate();
 		if (_upgradedGeneratedCards)
 		{
 			return;
@@ -36,6 +35,20 @@ internal sealed class GenesisUpgradedCardReward : CardReward
 
 		_upgradedGeneratedCards = true;
 	}
+
+#if STS2_105_OR_NEWER
+	public override void Populate()
+	{
+		base.Populate();
+		UpgradeGeneratedCards();
+	}
+#else
+	public override async Task Populate()
+	{
+		await base.Populate();
+		UpgradeGeneratedCards();
+	}
+#endif
 
 	public override SerializableReward ToSerializable()
 	{

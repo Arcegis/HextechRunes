@@ -145,6 +145,16 @@ public abstract class HextechRelicBase : RelicModel
 		return card != null && card.Owner == Owner && IllusoryWeaponRune.IsSkillForEffects(card);
 	}
 
+	protected bool IsAttackDamageForRuneEffects(ValueProp props, CardModel? cardSource)
+	{
+		if (HextechSts2Compat.IsPoweredAttack(props))
+		{
+			return true;
+		}
+
+		return Owner != null && IllusoryWeaponRune.IsOriginalOwnedSkill(cardSource, Owner);
+	}
+
 	internal static bool IsNetworkMultiplayerRun()
 	{
 		try

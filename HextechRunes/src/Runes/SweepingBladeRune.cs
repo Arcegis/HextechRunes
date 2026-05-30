@@ -60,7 +60,11 @@ public sealed class SweepingBladeRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
+#if STS2_104_OR_NEWER
+	public override Task AfterAttack(PlayerChoiceContext choiceContext, AttackCommand command)
+#else
 	public override Task AfterAttack(AttackCommand command)
+#endif
 	{
 		if (_activeContext == null
 			|| command.ModelSource != _activeContext.Card
@@ -69,7 +73,11 @@ public sealed class SweepingBladeRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
+#if STS2_105_OR_NEWER
+		_activeContext.RecordAttackResults(command.Results.SelectMany(static results => results));
+#else
 		_activeContext.RecordAttackResults(command.Results);
+#endif
 		return Task.CompletedTask;
 	}
 
@@ -138,7 +146,11 @@ public sealed class SweepingBladeRune : HextechRelicBase
 		}
 	}
 
+#if STS2_104_OR_NEWER
+	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#else
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+#endif
 	{
 		if (_isReplicatingPower
 			|| amount == 0m
