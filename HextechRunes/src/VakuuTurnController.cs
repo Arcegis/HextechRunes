@@ -36,7 +36,7 @@ internal static class VakuuTurnController
 
 				Creature? target = GetTarget(player, card, combatState);
 				await card.SpendResources();
-				await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default, skipXCapture: true);
+				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target, skipXCapture: true);
 			}
 		}
 

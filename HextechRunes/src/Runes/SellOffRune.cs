@@ -54,7 +54,7 @@ public sealed class SellOffRune : HextechRelicBase
 					CombatManager.Instance.History.Entries.Count().ToString(),
 					card.Id.Entry)
 				: null;
-			await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default);
+			await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);
 		}
 		finally
 		{

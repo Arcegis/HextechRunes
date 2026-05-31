@@ -34,6 +34,7 @@ public static class ModEntry
 			HextechRunLifecycleHooks.Install(harmony);
 			HextechCombatHooks.Install(harmony);
 			HextechEnemyPowerScalingHooks.Install(harmony);
+			TryInstallOptionalHookGroup("artifact encounter compatibility", () => HextechArtifactCompatibilityHooks.Install(harmony));
 			HextechUpdateChecker.Install(harmony);
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
 			AssetHooks.Install(harmony);
