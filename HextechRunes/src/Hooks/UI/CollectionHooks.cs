@@ -183,7 +183,7 @@ internal static class CollectionHooks
 
 	private static List<RelicModel> GetFlatFallbackRelics()
 	{
-		return HextechCatalog.GetCanonicalGenericSelectableRunes()
+		return HextechCatalog.GetCanonicalGenericVisibleRunes()
 			.Concat(HextechCatalog.GetCharacterRuneGroups().SelectMany(static group => group.Relics))
 			.Concat(HextechCatalog.GetCanonicalForges())
 			.Distinct()
@@ -217,7 +217,7 @@ internal static class CollectionHooks
 			return;
 		}
 
-		IReadOnlyList<RelicModel> genericRunes = HextechCatalog.GetCanonicalGenericSelectableRunes();
+		IReadOnlyList<RelicModel> genericRunes = HextechCatalog.GetCanonicalGenericVisibleRunes();
 		IReadOnlyList<HextechCatalog.RuneSeriesGroup> characterGroups = HextechCatalog.GetCharacterRuneGroups();
 		HashSet<RelicModel> visibleHextechRelics = genericRunes
 			.Concat(characterGroups.SelectMany(static group => group.Relics))

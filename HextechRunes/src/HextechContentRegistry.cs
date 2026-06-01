@@ -9,7 +9,8 @@ internal static partial class HextechContentRegistry
         Disabled = 1,
         AttributeConversionExclusive = 2,
         FirstActExcluded = 4,
-        ThirdActExcluded = 8
+        ThirdActExcluded = 8,
+        SelectionExcluded = 16
     }
 
     private enum HextechCharacterPool
@@ -54,6 +55,8 @@ internal static partial class HextechContentRegistry
     internal static IReadOnlyList<Type> PrismaticForgeTypes => Lookups.PrismaticForgeTypes;
 
     internal static IReadOnlySet<Type> DisabledPlayerRuneTypes => Lookups.DisabledPlayerRuneTypes;
+
+    internal static IReadOnlySet<Type> SelectionExcludedPlayerRuneTypes => Lookups.SelectionExcludedPlayerRuneTypes;
 
     internal static IReadOnlyList<Type> IroncladRuneTypes => Lookups.IroncladRuneTypes;
 
@@ -134,6 +137,7 @@ internal static partial class HextechContentRegistry
 			GoldForgeTypes = ForgeTypesForRarity(forgeRegistrations, HextechRarityTier.Gold);
 			PrismaticForgeTypes = ForgeTypesForRarity(forgeRegistrations, HextechRarityTier.Prismatic);
 			DisabledPlayerRuneTypes = RuneTypesWithFlag(runeRegistrations, RuneFlags.Disabled).ToHashSet();
+			SelectionExcludedPlayerRuneTypes = RuneTypesWithFlag(runeRegistrations, RuneFlags.SelectionExcluded).ToHashSet();
 			IroncladRuneTypes = RuneTypesForCharacter(runeRegistrations, HextechCharacterPool.Ironclad);
 			SilentRuneTypes = RuneTypesForCharacter(runeRegistrations, HextechCharacterPool.Silent);
 			RegentRuneTypes = RuneTypesForCharacter(runeRegistrations, HextechCharacterPool.Regent);
@@ -182,6 +186,7 @@ internal static partial class HextechContentRegistry
 		public IReadOnlyList<Type> GoldForgeTypes { get; }
 		public IReadOnlyList<Type> PrismaticForgeTypes { get; }
 		public IReadOnlySet<Type> DisabledPlayerRuneTypes { get; }
+		public IReadOnlySet<Type> SelectionExcludedPlayerRuneTypes { get; }
 		public IReadOnlyList<Type> IroncladRuneTypes { get; }
 		public IReadOnlyList<Type> SilentRuneTypes { get; }
 		public IReadOnlyList<Type> RegentRuneTypes { get; }

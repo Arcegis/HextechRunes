@@ -28,6 +28,8 @@ internal static partial class HextechCatalog
 
 	private static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = HextechContentRegistry.DisabledPlayerRuneTypes;
 
+	private static readonly IReadOnlySet<Type> SelectionExcludedPlayerRuneTypes = HextechContentRegistry.SelectionExcludedPlayerRuneTypes;
+
 	private static readonly IReadOnlyList<CharacterRunePool> CharacterRunePools =
 	[
 		new("IRONCLAD", HextechContentRegistry.IroncladRuneTypes),
@@ -66,12 +68,25 @@ internal static partial class HextechCatalog
 
 	public static bool IsPlayerRuneTypeSelectable(Type runeType)
 	{
+		return IsPlayerRuneTypeVisible(runeType) && !SelectionExcludedPlayerRuneTypes.Contains(runeType);
+	}
+
+	public static bool IsPlayerRuneTypeVisible(Type runeType)
+	{
 		return AllRuneTypes.Contains(runeType) && !DisabledPlayerRuneTypes.Contains(runeType);
 	}
 
 	public static IReadOnlyList<Type> GetGenericSelectableRuneTypes()
 	{
 		return GetAllSelectableRuneTypes()
+			.Where(static type => !CharacterSpecificRuneTypes.Contains(type))
+			.ToArray();
+	}
+
+	public static IReadOnlyList<Type> GetGenericVisibleRuneTypes()
+	{
+		return AllRuneTypes
+			.Where(IsPlayerRuneTypeVisible)
 			.Where(static type => !CharacterSpecificRuneTypes.Contains(type))
 			.ToArray();
 	}
@@ -108,7 +123,7 @@ internal static partial class HextechCatalog
 			HextechRarityTier.Prismatic => PrismaticRuneTypes,
 			_ => Array.Empty<Type>()
 		};
-		return runeTypes.Where(static type => !DisabledPlayerRuneTypes.Contains(type)).ToArray();
+		return runeTypes.Where(IsPlayerRuneTypeSelectable).ToArray();
 	}
 
 	public static IReadOnlyList<Type> GetForgeTypesForRarity(HextechRarityTier rarity)

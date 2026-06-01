@@ -59,7 +59,7 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 		PowerInvokeDisplayAmountChangedMethod.Invoke(power, null);
 
 		owner.GetRelic<AutomationUpgradeRune>()?.Flash();
-		CardModel production = combatState.CreateCard<Production>(owner);
-		await HextechCardGeneration.AddGeneratedCardToCombat(production, PileType.Hand, addedByPlayer: true);
+		CardModel fuel = combatState.CreateCard<Fuel>(owner);
+		await HextechCardGeneration.AddGeneratedCardToCombat(fuel, PileType.Hand, addedByPlayer: true);
 	}
 }

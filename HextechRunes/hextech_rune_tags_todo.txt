@@ -251,4 +251,6 @@
 我方	VenerateUpgradeRune	升级：崇拜	标签=星辉
 我方	SolidTimeRune	固态时间	标签=综合
 我方	RegretRune	逆命回响	标签=生存
+我方	DiceManiacRune	掷骰狂人	标签=随机
+我方	BreadSandwichRune	面包三明治	标签=综合
 我方	TransmuteChaosRune	质变：混沌	标签=随机
