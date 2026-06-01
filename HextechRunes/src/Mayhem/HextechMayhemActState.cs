@@ -5,6 +5,7 @@ internal sealed class HextechMayhemActState
 	private int[] _rarityByAct = NewUnknownArray();
 	private int[] _monsterHexByAct = NewUnknownArray();
 	private int[] _resolvedActs = NewResolvedArray();
+	private HashSet<int> _mapLengthReducedActs = new();
 	private List<MonsterHexKind> _carriedMonsterHexes = new();
 
 	public int ActCount => _resolvedActs.Length;
@@ -33,6 +34,12 @@ internal sealed class HextechMayhemActState
 		set => _resolvedActs = NormalizeResolvedArray(value);
 	}
 
+	public int[] SavedMapLengthReducedActs
+	{
+		get => _mapLengthReducedActs.OrderBy(static actIndex => actIndex).ToArray();
+		set => _mapLengthReducedActs = NormalizeActIndexSet(value);
+	}
+
 	public bool IsResolved(int actIndex)
 	{
 		return actIndex >= 0 && actIndex < _resolvedActs.Length && _resolvedActs[actIndex] > 0;
@@ -55,6 +62,19 @@ internal sealed class HextechMayhemActState
 
 		_resolvedActs[actIndex] = 1;
 		return true;
+	}
+
+	public bool IsMapLengthReduced(int actIndex)
+	{
+		return _mapLengthReducedActs.Contains(actIndex);
+	}
+
+	public void MarkMapLengthReduced(int actIndex)
+	{
+		if (actIndex >= 0 && actIndex < _resolvedActs.Length)
+		{
+			_mapLengthReducedActs.Add(actIndex);
+		}
 	}
 
 	public HextechRarityTier? GetRarity(int actIndex)
@@ -177,6 +197,7 @@ internal sealed class HextechMayhemActState
 		_rarityByAct = NewUnknownArray();
 		_monsterHexByAct = NewUnknownArray();
 		_resolvedActs = NewResolvedArray();
+		_mapLengthReducedActs.Clear();
 		_carriedMonsterHexes.Clear();
 	}
 
@@ -186,6 +207,7 @@ internal sealed class HextechMayhemActState
 		_rarityByAct = NewUnknownArray();
 		_monsterHexByAct = NewUnknownArray();
 		_resolvedActs = NewResolvedArray();
+		_mapLengthReducedActs.Clear();
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
@@ -201,7 +223,7 @@ internal sealed class HextechMayhemActState
 
 	public string Describe()
 	{
-		return $"resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)} carried={string.Join(",", _carriedMonsterHexes)}";
+		return $"resolved={string.Join(",", _resolvedActs)} rarity={string.Join(",", _rarityByAct)} monster={string.Join(",", _monsterHexByAct)} carried={string.Join(",", _carriedMonsterHexes)} mapReduced={string.Join(",", _mapLengthReducedActs.OrderBy(static actIndex => actIndex))}";
 	}
 
 	private void CarryResolvedMonsterHexes()
@@ -285,6 +307,25 @@ internal sealed class HextechMayhemActState
 			if (seen.Add(hex))
 			{
 				normalized.Add(hex);
+			}
+		}
+
+		return normalized;
+	}
+
+	private static HashSet<int> NormalizeActIndexSet(int[]? value)
+	{
+		HashSet<int> normalized = new();
+		if (value == null)
+		{
+			return normalized;
+		}
+
+		foreach (int actIndex in value)
+		{
+			if (actIndex >= 0 && actIndex < NewResolvedArray().Length)
+			{
+				normalized.Add(actIndex);
 			}
 		}
 

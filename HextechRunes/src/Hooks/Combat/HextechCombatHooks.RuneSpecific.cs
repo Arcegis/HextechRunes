@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Models.Orbs;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Orbs;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -36,7 +37,6 @@ internal static partial class HextechCombatHooks
 	private static void InstallRuneSpecificHooks(Harmony harmony)
 	{
 		TryInstallRuneHook<DeviantCognitionRune>("deviant cognition card tags", () => InstallDeviantCognitionHooks(harmony));
-		TryInstallRuneHook<IllusoryWeaponRune>("illusory weapon card type", () => InstallIllusoryWeaponHooks(harmony));
 		TryInstallRuneHook<FlyingKickRune>("flying kick dynamic description", () => InstallFlyingKickDescriptionHooks(harmony));
 		TryInstallCombatHookGroup("flying kick corpse launch visual", () => InstallFlyingKickCorpseLaunchHooks(harmony));
 		TryInstallRuneHook<MadScientistRune>("mad scientist orb slots", () => InstallMadScientistHooks(harmony));
@@ -45,6 +45,10 @@ internal static partial class HextechCombatHooks
 		TryInstallRuneHook<SurvivorUpgradeRune>("survivor upgraded play", () => InstallSurvivorUpgradeHooks(harmony));
 		TryInstallRuneHook<CompactUpgradeRune>("compact upgraded play", () => InstallCompactUpgradeHooks(harmony));
 		TryInstallRuneHook<WhirlwindUpgradeRune>("whirlwind upgraded x value", () => InstallWhirlwindUpgradeHooks(harmony));
+		TryInstallRuneHook<JuggernautUpgradeRune>("juggernaut upgraded block damage", () => InstallJuggernautUpgradeHooks(harmony));
+		TryInstallRuneHook<HiddenGemUpgradeRune>("hidden gem upgraded play", () => InstallHiddenGemUpgradeHooks(harmony));
+		TryInstallRuneHook<AutomationUpgradeRune>("automation upgraded draw", () => InstallAutomationUpgradeHooks(harmony));
+		TryInstallRuneHook<VoltaicUpgradeRune>("voltaic upgraded play", () => InstallVoltaicUpgradeHooks(harmony));
 	}
 
 	private static void InstallDeviantCognitionHooks(Harmony harmony)
@@ -52,13 +56,6 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Tags", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTagsPostfix)));
-	}
-
-	private static void InstallIllusoryWeaponHooks(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(CardModel), "get_Type", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTypePostfix)));
 	}
 
 	private static void InstallFlyingKickDescriptionHooks(Harmony harmony)
@@ -168,6 +165,34 @@ internal static partial class HextechCombatHooks
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardResolveEnergyXValuePostfix)));
 	}
 
+	private static void InstallJuggernautUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(JuggernautPower), nameof(JuggernautPower.AfterBlockGained), BindingFlags.Instance | BindingFlags.Public, typeof(Creature), typeof(decimal), typeof(ValueProp), typeof(CardModel)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(JuggernautAfterBlockGainedPrefix)));
+	}
+
+	private static void InstallHiddenGemUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(HiddenGem), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HiddenGemOnPlayPrefix)));
+	}
+
+	private static void InstallAutomationUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(AutomationPower), nameof(AutomationPower.AfterCardDrawn), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext), typeof(CardModel), typeof(bool)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(AutomationAfterCardDrawnPrefix)));
+	}
+
+	private static void InstallVoltaicUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Voltaic), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(VoltaicOnPlayPrefix)));
+	}
+
 	private static bool SurvivorOnPlayPrefix(Survivor __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 	{
 		if (!SurvivorUpgradeRune.ShouldUseUpgradedPlay(__instance))
@@ -190,6 +215,67 @@ internal static partial class HextechCombatHooks
 		return false;
 	}
 
+	private static bool JuggernautAfterBlockGainedPrefix(JuggernautPower __instance, Creature creature, decimal amount, ValueProp props, CardModel? cardSource, ref Task __result)
+	{
+		if (__instance.Owner?.Player?.GetRelic<JuggernautUpgradeRune>() == null)
+		{
+			return true;
+		}
+
+		__result = JuggernautUpgradeAfterBlockGained(__instance, creature, amount);
+		return false;
+	}
+
+	private static async Task JuggernautUpgradeAfterBlockGained(JuggernautPower power, Creature creature, decimal amount)
+	{
+		if (amount <= 0m || creature != power.Owner)
+		{
+			return;
+		}
+
+		List<Creature> targets = power.CombatState.HittableEnemies.ToList();
+		if (targets.Count == 0)
+		{
+			return;
+		}
+
+		power.Owner.Player?.GetRelic<JuggernautUpgradeRune>()?.Flash(targets);
+		await CreatureCmd.Damage(new ThrowingPlayerChoiceContext(), targets, power.Amount, ValueProp.Unpowered, power.Owner);
+	}
+
+	private static bool HiddenGemOnPlayPrefix(HiddenGem __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!HiddenGemUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = HiddenGemUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
+	private static bool AutomationAfterCardDrawnPrefix(AutomationPower __instance, PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw, ref Task __result)
+	{
+		if (!AutomationUpgradeRune.ShouldUseUpgradedDraw(__instance, card))
+		{
+			return true;
+		}
+
+		__result = AutomationUpgradeRune.AfterCardDrawnUpgraded(choiceContext, __instance, card, fromHandDraw);
+		return false;
+	}
+
+	private static bool VoltaicOnPlayPrefix(Voltaic __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!VoltaicUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = VoltaicUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
 	private static void CardResolveEnergyXValuePostfix(CardModel __instance, ref int __result)
 	{
 		WhirlwindUpgradeRune.TryDoubleResolvedX(__instance, ref __result);
@@ -197,33 +283,19 @@ internal static partial class HextechCombatHooks
 
 	private static void CardTagsPostfix(CardModel __instance, ref IEnumerable<CardTag> __result)
 	{
-		if (__instance.Type != CardType.Attack
-			|| __result.Contains(CardTag.Strike))
+		if (__result.Contains(CardTag.Strike))
 		{
 			return;
 		}
 
 		Player? owner = TryGetMutableCardOwner(__instance);
-		if (owner?.GetRelic<DeviantCognitionRune>() == null)
+		if (owner?.GetRelic<DeviantCognitionRune>() == null
+			|| !IllusoryWeaponRune.IsAttackForEffects(__instance, owner))
 		{
 			return;
 		}
 
 		__result = __result.Append(CardTag.Strike);
-	}
-
-	private static void CardTypePostfix(CardModel __instance, ref CardType __result)
-	{
-		if (__result != CardType.Skill)
-		{
-			return;
-		}
-
-		Player? owner = TryGetMutableCardOwner(__instance);
-		if (IllusoryWeaponRune.ShouldTreatSkillAsAttack(owner))
-		{
-			__result = CardType.Attack;
-		}
 	}
 
 	private static Player? TryGetMutableCardOwner(CardModel card)

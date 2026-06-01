@@ -101,7 +101,7 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		try
 		{
 			Flash();
-			int cardsPlayed = await VakuuTurnController.AutoPlayPlayableHand(choiceContext, Owner!);
+			int cardsPlayed = await VakuuTurnController.AutoPlayPlayableHand(Owner!);
 			VakuuTurnController.PlayLineIfCardsPlayed(Owner!, cardsPlayed);
 		}
 		finally

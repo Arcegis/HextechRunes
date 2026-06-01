@@ -137,7 +137,7 @@ public abstract class HextechRelicBase : RelicModel
 
 	protected bool IsOwnedAttack(CardModel? card)
 	{
-		return card != null && card.Owner == Owner && card.Type == CardType.Attack;
+		return Owner != null && card?.Owner == Owner && IllusoryWeaponRune.IsAttackForEffects(card, Owner);
 	}
 
 	protected bool IsOwnedSkill(CardModel? card)
@@ -196,14 +196,15 @@ public abstract class HextechRelicBase : RelicModel
 			return 0;
 		}
 
-		ulong ownerId = Owner.NetId;
+		Player owner = Owner;
+		ulong ownerId = owner.NetId;
 		return CombatManager.Instance.History.Entries
 			.OfType<CardPlayFinishedEntry>()
 			.Count(entry =>
 				(!firstInSeriesOnly || entry.CardPlay.IsFirstInSeries)
 				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
-				&& entry.CardPlay.Card.Type == CardType.Attack
-				&& entry.CardPlay.Card.Owner?.NetId == ownerId);
+				&& entry.CardPlay.Card.Owner?.NetId == ownerId
+				&& IllusoryWeaponRune.IsAttackForEffects(entry.CardPlay.Card, owner));
 	}
 
 	protected int CountOwnedCardsDrawnFromHistory()

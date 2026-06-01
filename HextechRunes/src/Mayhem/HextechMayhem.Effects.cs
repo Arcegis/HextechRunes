@@ -210,8 +210,8 @@ internal sealed partial class HextechMayhemModifier
     {
         if (!cardPlay.IsFirstInSeries
             || cardPlay.IsAutoPlay
-            || cardPlay.Card.Type != CardType.Attack
-            || cardPlay.Card.Owner?.Creature.Side != CombatSide.Player)
+            || cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
+            || !IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
         {
             return false;
         }
@@ -244,7 +244,7 @@ internal sealed partial class HextechMayhemModifier
 
             foreach (CardModel card in PileType.Hand.GetPile(player).Cards)
             {
-                if (card.Type == CardType.Attack && !card.EnergyCost.CostsX)
+                if (IllusoryWeaponRune.IsAttackForEffects(card, player) && !card.EnergyCost.CostsX)
                 {
                     card.InvokeEnergyCostChanged();
                 }

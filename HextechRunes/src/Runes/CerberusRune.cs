@@ -133,7 +133,7 @@ public sealed class CerberusRune : HextechRelicBase
 		EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
 		return Owner != null
 			&& card.Owner == Owner
-			&& card.Type == CardType.Attack
+			&& IsOwnedAttack(card)
 			&& card.Pile?.Type == PileType.Hand
 			&& !card.EnergyCost.CostsX
 			&& _attacksPlayedThisTurn < DynamicVars["FreeAttacks"].IntValue;

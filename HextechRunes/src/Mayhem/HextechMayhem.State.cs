@@ -71,6 +71,13 @@ internal sealed partial class HextechMayhemModifier
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int[] SavedMapLengthReducedActs
+	{
+		get => _actState.SavedMapLengthReducedActs;
+		set => _actState.SavedMapLengthReducedActs = value;
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedTelemetryChoicesJson
 	{
 		get => _choiceHistory.SavedTelemetryChoicesJson;

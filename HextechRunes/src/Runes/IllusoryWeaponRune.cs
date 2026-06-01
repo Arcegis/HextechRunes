@@ -59,6 +59,23 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		return card?.Owner == owner && IsSkillForEffects(card);
 	}
 
+	internal static bool IsAttackForEffects(CardModel? card, Player? owner)
+	{
+		if (card == null)
+		{
+			return false;
+		}
+
+		if (card.Type == CardType.Attack)
+		{
+			return true;
+		}
+
+		return owner != null
+			&& ShouldTreatSkillAsAttack(owner)
+			&& IsOriginalOwnedSkill(card, owner);
+	}
+
 	internal static bool IsSkillForEffects(CardModel? card)
 	{
 		if (card == null)

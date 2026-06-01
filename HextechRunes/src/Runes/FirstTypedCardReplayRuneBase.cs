@@ -93,6 +93,11 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 
 	private bool IsOwnedTargetType(CardModel? card)
 	{
+		if (TargetCardType == CardType.Attack)
+		{
+			return IsOwnedAttack(card);
+		}
+
 		if (TargetCardType == CardType.Skill)
 		{
 			return IsOwnedSkill(card);

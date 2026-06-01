@@ -10,10 +10,10 @@ internal sealed class ShoulderVakuEnemyHex : HextechEnemyHexEffect
 	internal override Task BeforePlayPhaseStart(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player player)
 #endif
 	{
-		return TryControlSecondTurn(context, choiceContext, player);
+		return TryControlSecondTurn(context, player);
 	}
 
-	private static async Task TryControlSecondTurn(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player player)
+	private static async Task TryControlSecondTurn(HextechEnemyHexContext context, Player player)
 	{
 		if (player.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
@@ -24,7 +24,7 @@ internal sealed class ShoulderVakuEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int cardsPlayed = await VakuuTurnController.AutoPlayPlayableHand(choiceContext, player);
+		int cardsPlayed = await VakuuTurnController.AutoPlayPlayableHand(player);
 		VakuuTurnController.PlayLineIfCardsPlayed(player, cardsPlayed);
 	}
 }

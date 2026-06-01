@@ -40,7 +40,7 @@ public sealed class ScaredStiffRune : HextechRelicBase
 		}
 
 		List<CardModel> attacks = PileType.Hand.GetPile(Owner).Cards
-			.Where(card => card.Owner == Owner && card.Type == CardType.Attack)
+			.Where(IsOwnedAttack)
 			.ToList();
 		if (attacks.Count == 0)
 		{
