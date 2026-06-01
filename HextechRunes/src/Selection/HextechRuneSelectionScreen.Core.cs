@@ -54,6 +54,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private bool _choiceLocked;
 	private bool _enemyHexRemoved;
 	private int _enemyHexRerollCount;
+	private bool _blockMapUntilDismissed;
 	private bool _restoreAfterMapReopenQueued;
 	private bool _closed;
 

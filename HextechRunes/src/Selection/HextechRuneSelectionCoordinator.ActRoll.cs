@@ -95,6 +95,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
+			runState,
 			authorityPlayer,
 			choiceId,
 			result => HextechChoiceCodec.TryDecodeActRoll(result, actIndex, out _, out _, out _),

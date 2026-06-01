@@ -51,14 +51,14 @@ public sealed class MiserableFateRune : HextechRelicBase
 		return IsNecrobinderPlayer(player);
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
+	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
 
-		decimal block = Owner.Creature.CombatState.HittableEnemies
+		decimal block = combatState.HittableEnemies
 			.Sum(static enemy => Math.Max(0m, enemy.GetPowerAmount<DoomPower>()));
 		if (block <= 0m)
 		{

@@ -268,6 +268,28 @@ internal sealed partial class HextechMayhemModifier
 		InvalidateActiveMonsterHexCache();
 	}
 
+	public bool DebugAddMonsterHex(MonsterHexKind hex)
+	{
+		bool changed = _actState.AddCarriedMonsterHex(hex);
+		if (changed)
+		{
+			InvalidateActiveMonsterHexCache();
+		}
+
+		return changed;
+	}
+
+	public bool DebugRemoveMonsterHex(MonsterHexKind hex)
+	{
+		bool changed = _actState.RemoveMonsterHexEverywhere(hex);
+		if (changed)
+		{
+			InvalidateActiveMonsterHexCache();
+		}
+
+		return changed;
+	}
+
 	public bool HasActiveMonsterHex(MonsterHexKind hex)
 	{
 		EnsureActiveMonsterHexCache();

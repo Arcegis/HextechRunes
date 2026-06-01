@@ -156,7 +156,7 @@ internal static partial class HextechContentRegistry
         Rune<DoomsdayRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 14, tagKey: "DOOM"),
         Rune<OldIdolRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
         Rune<MonarchsGazeRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
-        Rune<HardBonesRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 11, tagKey: "SUMMON"),
+        Rune<HardBonesRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 11, tagKey: "SUMMON"),
         Rune<SendThemInRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 8, tagKey: "COMPREHENSIVE"),
         Rune<ChainInSleeveRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 9, tagKey: "SHIV"),
         Rune<RoyalTrialRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 11, tagKey: "SWORDCRAFT"),
@@ -189,9 +189,9 @@ internal static partial class HextechContentRegistry
         Rune<EnlightenmentRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
         Rune<WhiteHoleRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
         Rune<TanksShieldRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
-        Rune<TransmutePrismaticRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
         Rune<DawnbringersResolveRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
         Rune<ShrinkRayRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
+        Rune<TransmutePrismaticRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
 
         Rune<EurekaRune>(HextechRarityTier.Prismatic, tagKey: "RESOURCE"),
         Rune<InfiniteLoopRune>(HextechRarityTier.Prismatic, flags: RuneFlags.ThirdActExcluded, tagKey: "STACKING"),
@@ -279,6 +279,7 @@ internal static partial class HextechContentRegistry
         Rune<VenerateUpgradeRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Regent, characterOrder: 17, tagKey: "STARLIGHT"),
         Rune<SolidTimeRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<RegretRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),
+        Rune<ReforgedHelmetRune>(HextechRarityTier.Prismatic, characterPool: HextechCharacterPool.Ironclad, characterOrder: 19, tagKey: "OUTPUT"),
         Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic, tagKey: "RANDOM")
     ];
 }

@@ -79,6 +79,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: player={player.NetId} choiceId={choiceId}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
+			(RunState)player.RunState,
 			player,
 			choiceId,
 			HextechChoiceCodec.IsRuneSelection,
@@ -127,6 +128,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: player={selection.Player.NetId} choiceId={selection.ChoiceId}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
+			(RunState)selection.Player.RunState,
 			selection.Player,
 			selection.ChoiceId,
 			HextechChoiceCodec.IsRuneSelection,

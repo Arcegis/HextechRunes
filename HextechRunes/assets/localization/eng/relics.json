@@ -877,8 +877,8 @@
   "HUBRIS_RUNE.flavor": "The more victory weighs, the more humility feels like baggage.",
   "goldenSpatulaRune.title": "Golden Spatula",
   "GOLDEN_SPATULA_RUNE.title": "Golden Spatula",
-  "goldenSpatulaRune.description": "After winning combat, gain [blue]1[/blue] stack. Each stack gives you [blue]1%[/blue] more Max HP, damage, Block, and healing. When you have more than [blue]10[/blue] stacks, this bonus is doubled.",
-  "GOLDEN_SPATULA_RUNE.description": "After winning combat, gain [blue]1[/blue] stack. Each stack gives you [blue]1%[/blue] more Max HP, damage, Block, and healing. When you have more than [blue]10[/blue] stacks, this bonus is doubled.",
+  "goldenSpatulaRune.description": "After winning combat, gain [blue]1[/blue] stack. Each stack gives you [blue]1%[/blue] more Max HP, damage, Block, and healing. When you have more than [blue]10[/blue] stacks, this bonus is tripled.",
+  "GOLDEN_SPATULA_RUNE.description": "After winning combat, gain [blue]1[/blue] stack. Each stack gives you [blue]1%[/blue] more Max HP, damage, Block, and healing. When you have more than [blue]10[/blue] stacks, this bonus is tripled.",
   "goldenSpatulaRune.flavor": "It must do something... no, it can do everything!",
   "GOLDEN_SPATULA_RUNE.flavor": "It must do something... no, it can do everything!",
   "slapRune.enemyDescription": "Whenever you apply a debuff to a player, gain [blue]1[/blue] Strength. Triggers up to [blue]3[/blue] times each turn.",
@@ -1922,5 +1922,11 @@
   "REGRET_RUNE.description": "At the start of combat, gain [blue]2[/blue] [gold]Strength[/gold] and [blue]2[/blue] [gold]Dexterity[/gold]. When you die, revive at [blue]30%[/blue] HP, draw until your hand is full, make all cards cost [blue]0[/blue] this turn, apply [blue]2[/blue] [gold]Weak[/gold] and [gold]Vulnerable[/gold] to all enemies, and gain [blue]1[/blue] [gold]Intangible[/gold]. Can revive up to [blue]7[/blue] times per run.",
   "regretRune.flavor": "Sponsor item: Fate sometimes takes a step back, but it keeps the ledger.",
   "REGRET_RUNE.flavor": "Sponsor item: Fate sometimes takes a step back, but it keeps the ledger.",
+  "reforgedHelmetRune.title": "Reforged Helmet",
+  "REFORGED_HELMET_RUNE.title": "Reforged Helmet",
+  "reforgedHelmetRune.description": "[gold]Strength[/gold] you gain during combat is doubled.",
+  "REFORGED_HELMET_RUNE.description": "[gold]Strength[/gold] you gain during combat is doubled.",
+  "reforgedHelmetRune.flavor": "The old helm is reforged, and every roar gains an echo.",
+  "REFORGED_HELMET_RUNE.flavor": "The old helm is reforged, and every roar gains an echo.",
   "ancientWineRune.enemyDescription": "Whenever a player plays [blue]1[/blue] Skill, all enemies heal [blue]1/1/2[/blue] HP."
 }

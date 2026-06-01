@@ -132,6 +132,32 @@ internal sealed class HextechMayhemActState
 		}
 	}
 
+	public bool AddCarriedMonsterHex(MonsterHexKind hex)
+	{
+		if (_carriedMonsterHexes.Contains(hex))
+		{
+			return false;
+		}
+
+		_carriedMonsterHexes.Add(hex);
+		return true;
+	}
+
+	public bool RemoveMonsterHexEverywhere(MonsterHexKind hex)
+	{
+		bool removed = _carriedMonsterHexes.RemoveAll(existing => existing == hex) > 0;
+		for (int actIndex = 0; actIndex < _monsterHexByAct.Length; actIndex++)
+		{
+			if (_monsterHexByAct[actIndex] == (int)hex)
+			{
+				_monsterHexByAct[actIndex] = -1;
+				removed = true;
+			}
+		}
+
+		return removed;
+	}
+
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexes(int currentActIndex, Func<int, bool> shouldRecoverMonsterHex)
 	{
 		List<MonsterHexKind> result = new();

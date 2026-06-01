@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -184,6 +185,18 @@ public sealed class SolidTimeRune : HextechRelicBase
 
 	private static async Task ApplyStoredPowerDirectly(PlayerChoiceContext choiceContext, CardModel card, Creature? target)
 	{
+		bool addedToTemporaryPlayPile = false;
+		if (card.Pile == null)
+		{
+			await CardPileCmd.Add(card, PileType.Play, skipVisuals: true);
+			addedToTemporaryPlayPile = card.Pile?.Type == PileType.Play;
+			if (!addedToTemporaryPlayPile)
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] SolidTime skipped stored power without combat pile: card={card.Id}");
+				return;
+			}
+		}
+
 		CardPlay cardPlay = new()
 		{
 			Card = card,
@@ -217,6 +230,10 @@ public sealed class SolidTimeRune : HextechRelicBase
 		finally
 		{
 			choiceContext.PopModel(card);
+			if (addedToTemporaryPlayPile && card.Pile?.IsCombatPile == true)
+			{
+				await CardPileCmd.RemoveFromCombat(card, skipVisuals: true);
+			}
 		}
 	}
 
@@ -261,7 +278,9 @@ public sealed class SolidTimeRune : HextechRelicBase
 
 		try
 		{
-			return JsonSerializer.Deserialize<List<StoredCard>>(_removedCardsJson, JsonOptions) ?? [];
+			return (JsonSerializer.Deserialize<List<StoredCard>>(_removedCardsJson, JsonOptions) ?? [])
+				.Where(IsStoredPowerCard)
+				.ToList();
 		}
 		catch
 		{
@@ -269,10 +288,15 @@ public sealed class SolidTimeRune : HextechRelicBase
 		}
 	}
 
+	private static bool IsStoredPowerCard(StoredCard stored)
+	{
+		return TryGetCanonical(stored)?.Type == CardType.Power;
+	}
+
 	private static CardModel? CreatePreviewCard(StoredCard stored)
 	{
 		CardModel? canonical = TryGetCanonical(stored);
-		if (canonical == null)
+		if (canonical == null || canonical.Type != CardType.Power)
 		{
 			return null;
 		}
@@ -290,7 +314,7 @@ public sealed class SolidTimeRune : HextechRelicBase
 		}
 
 		CardModel? canonical = TryGetCanonical(stored);
-		if (canonical == null)
+		if (canonical == null || canonical.Type != CardType.Power)
 		{
 			return null;
 		}
