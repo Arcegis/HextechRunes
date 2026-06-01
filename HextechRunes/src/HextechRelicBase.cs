@@ -157,14 +157,7 @@ public abstract class HextechRelicBase : RelicModel
 
 	internal static bool IsNetworkMultiplayerRun()
 	{
-		try
-		{
-			return RunManager.Instance?.NetService?.Type is NetGameType.Host or NetGameType.Client;
-		}
-		catch
-		{
-			return false;
-		}
+		return HextechPlayerContextHelper.IsNetworkMultiplayerRun();
 	}
 
 	protected static bool IsNetworkMultiplayer()
@@ -174,12 +167,7 @@ public abstract class HextechRelicBase : RelicModel
 
 	protected int GetPlayerActNumberForScaling()
 	{
-		if (Owner?.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()?.IsEndlessLoopActive == true)
-		{
-			return 3;
-		}
-
-		return Math.Clamp((Owner?.RunState.CurrentActIndex ?? 0) + 1, 1, 3);
+		return HextechPlayerContextHelper.GetActNumberForScaling(Owner);
 	}
 
 	protected bool ShouldUseNetworkCombatHistory()
@@ -191,33 +179,12 @@ public abstract class HextechRelicBase : RelicModel
 
 	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
 	{
-		if (Owner == null)
-		{
-			return 0;
-		}
-
-		Player owner = Owner;
-		ulong ownerId = owner.NetId;
-		return CombatManager.Instance.History.Entries
-			.OfType<CardPlayFinishedEntry>()
-			.Count(entry =>
-				(!firstInSeriesOnly || entry.CardPlay.IsFirstInSeries)
-				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
-				&& entry.CardPlay.Card.Owner?.NetId == ownerId
-				&& IllusoryWeaponRune.IsAttackForEffects(entry.CardPlay.Card, owner));
+		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayed(Owner, firstInSeriesOnly, includeAutoPlay);
 	}
 
 	protected int CountOwnedCardsDrawnFromHistory()
 	{
-		if (Owner == null)
-		{
-			return 0;
-		}
-
-		ulong ownerId = Owner.NetId;
-		return CombatManager.Instance.History.Entries
-			.OfType<CardDrawnEntry>()
-			.Count(entry => entry.Card.Owner?.NetId == ownerId);
+		return HextechCombatHistoryHelper.CountOwnedCardsDrawn(Owner);
 	}
 
 	protected bool IsOwnedNonXCardWithCostAtLeast(CardModel? card, decimal minimumCost)
@@ -230,64 +197,41 @@ public abstract class HextechRelicBase : RelicModel
 
 	protected bool IsOwnerOrPet(Creature? dealer)
 	{
-		return dealer == Owner?.Creature || dealer?.PetOwner == Owner;
+		return HextechCombatHistoryHelper.IsOwnerOrPet(Owner, dealer);
 	}
 
 	protected bool IsDamageFromOwner(Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null)
-		{
-			return false;
-		}
-
-		if (IsOwnerOrPet(dealer))
-		{
-			return true;
-		}
-
-		if (dealer?.Side == CombatSide.Player)
-		{
-			return false;
-		}
-
-		Player? cardOwner = cardSource?.Owner;
-		if (cardOwner == null)
-		{
-			return false;
-		}
-
-		return IsNetworkMultiplayer()
-			? cardOwner.NetId == Owner.NetId
-			: cardOwner == Owner;
+		return HextechCombatHistoryHelper.IsDamageFromOwner(Owner, dealer, cardSource);
 	}
 
 	protected bool IsDefectPlayer(Player player)
 	{
-		return player.Character.Id == ModelDb.GetId<Defect>();
+		return HextechPlayerContextHelper.IsDefectPlayer(player);
 	}
 
 	protected bool IsDefectOwner => Owner != null && IsDefectPlayer(Owner);
 
 	protected bool IsIroncladPlayer(Player player)
 	{
-		return player.Character.Id == ModelDb.GetId<Ironclad>();
+		return HextechPlayerContextHelper.IsIroncladPlayer(player);
 	}
 
 	protected bool IsSilentPlayer(Player player)
 	{
-		return player.Character.Id == ModelDb.GetId<Silent>();
+		return HextechPlayerContextHelper.IsSilentPlayer(player);
 	}
 
 	protected bool IsRegentPlayer(Player player)
 	{
-		return player.Character.Id == ModelDb.GetId<Regent>();
+		return HextechPlayerContextHelper.IsRegentPlayer(player);
 	}
 
 	protected bool IsRegentOwner => Owner != null && IsRegentPlayer(Owner);
 
 	protected bool IsNecrobinderPlayer(Player player)
 	{
-		return player.Character.Id == ModelDb.GetId<Necrobinder>();
+		return HextechPlayerContextHelper.IsNecrobinderPlayer(player);
 	}
 
 	protected void FlashDeferred(IEnumerable<Creature>? targets = null)

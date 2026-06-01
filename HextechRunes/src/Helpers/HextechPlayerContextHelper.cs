@@ -1,0 +1,57 @@
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
+using MegaCrit.Sts2.Core.Runs;
+
+namespace HextechRunes;
+
+internal static class HextechPlayerContextHelper
+{
+	public static bool IsNetworkMultiplayerRun()
+	{
+		try
+		{
+			return RunManager.Instance?.NetService?.Type is NetGameType.Host or NetGameType.Client;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	public static int GetActNumberForScaling(Player? owner)
+	{
+		if (owner?.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()?.IsEndlessLoopActive == true)
+		{
+			return 3;
+		}
+
+		return Math.Clamp((owner?.RunState.CurrentActIndex ?? 0) + 1, 1, 3);
+	}
+
+	public static bool IsDefectPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Defect>();
+	}
+
+	public static bool IsIroncladPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Ironclad>();
+	}
+
+	public static bool IsSilentPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Silent>();
+	}
+
+	public static bool IsRegentPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Regent>();
+	}
+
+	public static bool IsNecrobinderPlayer(Player player)
+	{
+		return player.Character.Id == ModelDb.GetId<Necrobinder>();
+	}
+}

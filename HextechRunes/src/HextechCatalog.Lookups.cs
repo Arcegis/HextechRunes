@@ -81,13 +81,13 @@ internal static partial class HextechCatalog
 		return ForgeRarityById.Value.TryGetValue(id, out rarity);
 	}
 
-	public static string GetPlayerRuneTagKey(RelicModel relic)
-	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-		return PlayerRuneTagKeyById.Value.TryGetValue(id, out string? tagKey)
-			? tagKey
-			: HextechRuneTags.DefaultTagKey;
-	}
+		public static string GetPlayerRuneTagKey(RelicModel relic)
+		{
+			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			return PlayerRuneTagKeyById.Value.TryGetValue(id, out string? tagKey)
+				? tagKey
+				: HextechContentRegistry.DefaultPlayerRuneTagKey;
+		}
 
 	public static IReadOnlySet<ModelId> GetMutuallyExclusivePlayerRuneIds(IEnumerable<ModelId> ownedIds)
 	{
@@ -138,13 +138,13 @@ internal static partial class HextechCatalog
 		return byId;
 	}
 
-	private static IReadOnlyDictionary<ModelId, string> BuildPlayerRuneTagKeyById()
-	{
-		Dictionary<ModelId, string> byId = new();
-		foreach (KeyValuePair<Type, string> entry in HextechRuneTags.ByType)
+		private static IReadOnlyDictionary<ModelId, string> BuildPlayerRuneTagKeyById()
 		{
-			byId[ModelDb.GetId(entry.Key)] = entry.Value;
-		}
+			Dictionary<ModelId, string> byId = new();
+			foreach (KeyValuePair<Type, string> entry in HextechContentRegistry.PlayerRuneTagKeys)
+			{
+				byId[ModelDb.GetId(entry.Key)] = entry.Value;
+			}
 
 		return byId;
 	}

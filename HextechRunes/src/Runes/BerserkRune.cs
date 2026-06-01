@@ -32,7 +32,11 @@ public sealed class BerserkRune : HextechRelicBase
 		}
 
 		Flash();
-		await PowerCmd.Apply<VulnerablePower>(Owner.Creature, DynamicVars.Vulnerable.BaseValue, Owner.Creature, null);
+		VulnerablePower? vulnerable = await PowerCmd.Apply<VulnerablePower>(Owner.Creature, DynamicVars.Vulnerable.BaseValue, Owner.Creature, null);
+		if (vulnerable != null)
+		{
+			vulnerable.SkipNextDurationTick = false;
+		}
 	}
 
 	public override Task AfterEnergyResetLate(Player player)
