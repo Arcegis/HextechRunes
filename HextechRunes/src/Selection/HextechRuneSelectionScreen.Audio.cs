@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Godot;
 using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Saves;
 
@@ -8,17 +10,44 @@ namespace HextechRunes;
 internal sealed partial class HextechRuneSelectionScreen
 {
 	private static AudioStreamPlayer? RerollSfxPlayer;
-	private static AudioStream? RerollSfxStream;
+	private static AudioStreamPlayer? SelectSfxPlayer;
+	private static readonly Dictionary<string, AudioStream> SfxStreamCache = new();
 
 	private void PlayRerollSfx()
 	{
-		AudioStream? stream = GetRerollSfxStream();
+		PlaySfx(RerollButtonSfxPath, ref RerollSfxPlayer, "HextechRerollSfx", RerollButtonSfxVolumeScale);
+	}
+
+	private void PlayRuneSelectSfx(RelicModel relic)
+	{
+		if (!HextechCatalog.TryGetPlayerRuneRarity(relic, out HextechRarityTier rarity))
+		{
+			return;
+		}
+
+		PlaySfx(GetSelectSfxPath(rarity), ref SelectSfxPlayer, "HextechRuneSelectSfx", SelectSfxVolumeScale);
+	}
+
+	private static string GetSelectSfxPath(HextechRarityTier rarity)
+	{
+		return rarity switch
+		{
+			HextechRarityTier.Silver => SelectSilverSfxPath,
+			HextechRarityTier.Gold => SelectGoldSfxPath,
+			HextechRarityTier.Prismatic => SelectPrismaticSfxPath,
+			_ => SelectSilverSfxPath
+		};
+	}
+
+	private void PlaySfx(string path, ref AudioStreamPlayer? playerSlot, string playerName, float volumeScale)
+	{
+		AudioStream? stream = GetSfxStream(path);
 		if (stream == null)
 		{
 			return;
 		}
 
-		AudioStreamPlayer? player = GetRerollSfxPlayer();
+		AudioStreamPlayer? player = GetSfxPlayer(ref playerSlot, playerName);
 		if (player == null)
 		{
 			return;
@@ -26,36 +55,38 @@ internal sealed partial class HextechRuneSelectionScreen
 
 		player.Stop();
 		player.Stream = stream;
-		player.VolumeLinear = Math.Clamp(GetSfxVolume() * RerollButtonSfxVolumeScale, 0f, 1f);
+		player.VolumeLinear = Math.Clamp(GetSfxVolume() * volumeScale, 0f, 1f);
 		player.Play();
 	}
 
-	private AudioStream? GetRerollSfxStream()
+	private static AudioStream? GetSfxStream(string path)
 	{
-		if (RerollSfxStream != null)
+		if (SfxStreamCache.TryGetValue(path, out AudioStream? cachedStream))
 		{
-			return RerollSfxStream;
+			return cachedStream;
 		}
 
-		RerollSfxStream = GD.Load<AudioStream>(RerollButtonSfxPath) ?? ResourceLoader.Load<AudioStream>(RerollButtonSfxPath);
-		if (RerollSfxStream == null)
+		AudioStream? stream = GD.Load<AudioStream>(path) ?? ResourceLoader.Load<AudioStream>(path);
+		if (stream == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.PlayRerollSfx: failed to load sfx path={RerollButtonSfxPath}");
+			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.PlaySfx: failed to load sfx path={path}");
+			return null;
 		}
 
-		return RerollSfxStream;
+		SfxStreamCache[path] = stream;
+		return stream;
 	}
 
-	private AudioStreamPlayer? GetRerollSfxPlayer()
+	private AudioStreamPlayer? GetSfxPlayer(ref AudioStreamPlayer? playerSlot, string playerName)
 	{
-		if (GodotObject.IsInstanceValid(RerollSfxPlayer))
+		if (GodotObject.IsInstanceValid(playerSlot))
 		{
-			return RerollSfxPlayer;
+			return playerSlot;
 		}
 
-		RerollSfxPlayer = new AudioStreamPlayer
+		AudioStreamPlayer player = new()
 		{
-			Name = "HextechRerollSfx",
+			Name = playerName,
 			Bus = "Master",
 			ProcessMode = ProcessModeEnum.Always
 		};
@@ -64,14 +95,14 @@ internal sealed partial class HextechRuneSelectionScreen
 		host ??= GetTree()?.Root;
 		if (host == null || !GodotObject.IsInstanceValid(host))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.PlayRerollSfx: failed to attach audio player.");
-			RerollSfxPlayer.QueueFree();
-			RerollSfxPlayer = null;
+			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.PlaySfx: failed to attach audio player name={playerName}.");
+			player.QueueFree();
 			return null;
 		}
 
-		host.AddChild(RerollSfxPlayer);
-		return RerollSfxPlayer;
+		host.AddChild(player);
+		playerSlot = player;
+		return playerSlot;
 	}
 
 	private static float GetSfxVolume()

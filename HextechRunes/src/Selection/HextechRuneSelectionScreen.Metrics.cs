@@ -9,6 +9,9 @@ internal sealed partial class HextechRuneSelectionScreen
 	private const string RerollButtonHoverTexturePath = "res://HextechRunes/images/ui/hextechRerollButtonHover.png";
 	private const string RerollButtonUsedTexturePath = "res://HextechRunes/images/ui/hextechRerollButtonUsed.png";
 	private const string RerollButtonSfxPath = "res://HextechRunes/audio/hextechReroll.wav";
+	private const string SelectSilverSfxPath = "res://HextechRunes/audio/hextechSelectSilver.wav";
+	private const string SelectGoldSfxPath = "res://HextechRunes/audio/hextechSelectGold.wav";
+	private const string SelectPrismaticSfxPath = "res://HextechRunes/audio/hextechSelectPrismatic.wav";
 	private const string SilverCardFramePath = "res://HextechRunes/images/ui/augmentcard_frame_silver.png";
 	private const string GoldCardFramePath = "res://HextechRunes/images/ui/augmentcard_frame_gold.png";
 	private const string PrismaticCardFramePath = "res://HextechRunes/images/ui/augmentcard_frame_prismatic.png";
@@ -21,4 +24,5 @@ internal sealed partial class HextechRuneSelectionScreen
 	private static readonly Vector2 PlayerRerollButtonSize = new(PlayerRerollButtonHeight * PlayerRerollButtonTextureWidth / PlayerRerollButtonTextureHeight, PlayerRerollButtonHeight);
 	private const float PlayerRerollButtonBottomInset = 38f;
 	private const float RerollButtonSfxVolumeScale = 0.42f;
+	private const float SelectSfxVolumeScale = 0.40f;
 }
