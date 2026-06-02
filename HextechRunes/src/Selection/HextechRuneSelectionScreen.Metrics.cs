@@ -5,11 +5,20 @@ namespace HextechRunes;
 internal sealed partial class HextechRuneSelectionScreen
 {
 	private const string LocTable = "relic_collection";
-	private const string RerollIconPath = "res://HextechRunes/images/ui/hextechReroll.png";
+	private const string RerollButtonTexturePath = "res://HextechRunes/images/ui/hextechRerollButton.png";
+	private const string RerollButtonHoverTexturePath = "res://HextechRunes/images/ui/hextechRerollButtonHover.png";
+	private const string RerollButtonUsedTexturePath = "res://HextechRunes/images/ui/hextechRerollButtonUsed.png";
+	private const string RerollButtonSfxPath = "res://HextechRunes/audio/hextechReroll.wav";
+	private const string SilverCardFramePath = "res://HextechRunes/images/ui/augmentcard_frame_silver.png";
+	private const string GoldCardFramePath = "res://HextechRunes/images/ui/augmentcard_frame_gold.png";
+	private const string PrismaticCardFramePath = "res://HextechRunes/images/ui/augmentcard_frame_prismatic.png";
 
 	private static readonly Vector2 PlayerRuneCardSize = new(344f, 592f);
 	private const int PlayerRuneCardBottomMargin = 112;
-	private static readonly Vector2 PlayerRerollButtonSize = new(144f, 76f);
-	private const float PlayerRerollButtonBottomInset = 24f;
-	private const float PlayerRerollIconSize = 44f;
+	private const float PlayerRerollButtonTextureWidth = 76f;
+	private const float PlayerRerollButtonTextureHeight = 46f;
+	private const float PlayerRerollButtonHeight = 76f;
+	private static readonly Vector2 PlayerRerollButtonSize = new(PlayerRerollButtonHeight * PlayerRerollButtonTextureWidth / PlayerRerollButtonTextureHeight, PlayerRerollButtonHeight);
+	private const float PlayerRerollButtonBottomInset = 38f;
+	private const float RerollButtonSfxVolumeScale = 0.42f;
 }

@@ -47,6 +47,33 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		};
 	}
 
+	private string? GetCardFramePath()
+	{
+		return _rarityKey switch
+		{
+			"SILVER" => SilverCardFramePath,
+			"PRISMATIC" => PrismaticCardFramePath,
+			"GOLD" => GoldCardFramePath,
+			_ => null
+		};
+	}
+
+	private Texture2D? GetCardFrameTexture()
+	{
+		string? path = GetCardFramePath();
+		if (path == null)
+		{
+			return null;
+		}
+
+		Texture2D? texture = AssetHooks.LoadUiTexture(path);
+		if (texture == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.GetCardFrameTexture: failed to load frame path={path}");
+		}
+		return texture;
+	}
+
 	private static Texture2D? GetDisplayTexture(RelicModel relic)
 	{
 		return relic.BigIcon ?? relic.Icon;
@@ -103,6 +130,29 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		return style;
 	}
 
+	private static TextureRect CreateCardFrameOverlay(Texture2D texture)
+	{
+		float frameSide = PlayerRuneCardSize.Y;
+		TextureRect frame = new()
+		{
+			Name = "RarityFrame",
+			MouseFilter = MouseFilterEnum.Ignore,
+			Texture = texture,
+			CustomMinimumSize = new Vector2(frameSide, frameSide),
+			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+			StretchMode = TextureRect.StretchModeEnum.Scale
+		};
+		frame.AnchorLeft = 0.5f;
+		frame.AnchorRight = 0.5f;
+		frame.AnchorTop = 0f;
+		frame.AnchorBottom = 0f;
+		frame.OffsetLeft = -frameSide / 2f;
+		frame.OffsetRight = frameSide / 2f;
+		frame.OffsetTop = 0f;
+		frame.OffsetBottom = frameSide;
+		return frame;
+	}
+
 	private static StyleBoxFlat CreateRerollStyle(Color background, Color border)
 	{
 		StyleBoxFlat style = new();
@@ -120,17 +170,14 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		return style;
 	}
 
-	private static void ApplyRerollButtonVisualState(Button button, TextureRect icon, bool alreadyRerolled)
+	private static void ApplyRerollButtonVisualState(Button button, TextureRect icon, bool alreadyRerolled, bool hovered)
 	{
-		if (!alreadyRerolled)
-		{
-			button.Modulate = Colors.White;
-			icon.SelfModulate = Colors.White;
-			return;
-		}
-
-		button.Modulate = new Color(0.62f, 0.64f, 0.68f, 0.82f);
-		icon.SelfModulate = new Color(0.46f, 0.49f, 0.54f, 0.95f);
+		string path = alreadyRerolled
+			? RerollButtonUsedTexturePath
+			: hovered ? RerollButtonHoverTexturePath : RerollButtonTexturePath;
+		icon.Texture = AssetHooks.LoadUiTexture(path) ?? AssetHooks.LoadUiTexture(RerollButtonTexturePath);
+		button.Modulate = Colors.White;
+		icon.SelfModulate = Colors.White;
 	}
 
 	private static StyleBoxFlat CreatePillStyle(Color accent)

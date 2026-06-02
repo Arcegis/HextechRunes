@@ -63,6 +63,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: slot={slotIndex} old={oldRelic} new={newRelic}");
+		PlayRerollSfx();
 		_relics = rerolled.ToList();
 		_rerolledSlots[slotIndex] = true;
 		_rerollHistory.Add(slotIndex);
