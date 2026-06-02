@@ -172,6 +172,11 @@ public sealed class CrossOrbRune : HextechRelicBase
 				CardRarityOddsType.Uniform)
 			.WithFlags(creationOptions.Flags | CardCreationFlags.NoModifyHooks);
 		result = CardFactory.CreateForReward(player, 1, nonCommonOptions).FirstOrDefault();
+		if (result != null)
+		{
+			CardTransformUpgradeHelper.PreserveUpgradeLevel(sourceCard, result.Card);
+		}
+
 		return result != null;
 	}
 

@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
@@ -290,18 +291,20 @@ public sealed class SolidTimeRune : HextechRelicBase
 
 	private static bool IsStoredPowerCard(StoredCard stored)
 	{
-		return TryGetCanonical(stored)?.Type == CardType.Power;
+		CardModel? canonical = TryGetCanonical(stored);
+		return IsStoredAsPowerCard(canonical, stored);
 	}
 
 	private static CardModel? CreatePreviewCard(StoredCard stored)
 	{
 		CardModel? canonical = TryGetCanonical(stored);
-		if (canonical == null || canonical.Type != CardType.Power)
+		if (canonical == null || !IsStoredAsPowerCard(canonical, stored))
 		{
 			return null;
 		}
 
 		CardModel preview = canonical.ToMutable();
+		ApplyStoredCardState(preview, stored);
 		ApplyUpgradeLevels(preview, stored.Upgrades);
 		return preview;
 	}
@@ -314,15 +317,26 @@ public sealed class SolidTimeRune : HextechRelicBase
 		}
 
 		CardModel? canonical = TryGetCanonical(stored);
-		if (canonical == null || canonical.Type != CardType.Power)
+		if (canonical == null || !IsStoredAsPowerCard(canonical, stored))
 		{
 			return null;
 		}
 
 		CardModel card = combatState.CreateCard(canonical, Owner);
+		ApplyStoredCardState(card, stored);
 		ApplyUpgradeLevels(card, stored.Upgrades);
 		SaveManager.Instance.MarkCardAsSeen(card);
 		return card;
+	}
+
+	private static bool IsStoredAsPowerCard(CardModel? canonical, StoredCard stored)
+	{
+		if (canonical is MadScience)
+		{
+			return stored.GetMadScienceCardType() == CardType.Power;
+		}
+
+		return canonical?.Type == CardType.Power;
 	}
 
 	private static CardModel? TryGetCanonical(StoredCard stored)
@@ -347,12 +361,50 @@ public sealed class SolidTimeRune : HextechRelicBase
 		}
 	}
 
-	private sealed record StoredCard(string Category, string Entry, int Upgrades)
+	private static void ApplyStoredCardState(CardModel card, StoredCard stored)
+	{
+		if (card is MadScience madScience)
+		{
+			madScience.TinkerTimeType = stored.GetMadScienceCardType();
+			madScience.TinkerTimeRider = stored.GetMadScienceRider();
+		}
+	}
+
+	private sealed record StoredCard(
+		string Category,
+		string Entry,
+		int Upgrades,
+		int? MadScienceCardType = null,
+		int? MadScienceRider = null)
 	{
 		public static StoredCard From(CardModel card)
 		{
 			ModelId id = card.CanonicalInstance.Id;
+			if (card is MadScience madScience)
+			{
+				return new StoredCard(
+					id.Category,
+					id.Entry,
+					card.CurrentUpgradeLevel,
+					(int)madScience.TinkerTimeType,
+					(int)madScience.TinkerTimeRider);
+			}
+
 			return new StoredCard(id.Category, id.Entry, card.CurrentUpgradeLevel);
+		}
+
+		public CardType GetMadScienceCardType()
+		{
+			return MadScienceCardType.HasValue
+				? (CardType)MadScienceCardType.Value
+				: CardType.Power;
+		}
+
+		public TinkerTime.RiderEffect GetMadScienceRider()
+		{
+			return MadScienceRider.HasValue
+				? (TinkerTime.RiderEffect)MadScienceRider.Value
+				: TinkerTime.RiderEffect.None;
 		}
 	}
 }
