@@ -1,9 +1,7 @@
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves.Runs;
@@ -43,19 +41,47 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 		if (!wasRemovalPrevented && HextechMonsterInteractionPolicy.IsTrueCombatDeath(target))
 		{
 			_deathsThisCombat++;
+			Flash();
+			RefreshReanimateCostsInHand();
 		}
 
 		return Task.CompletedTask;
 	}
 
-	public override decimal ModifySummonAmount(Player summoner, decimal amount, AbstractModel? source)
+	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		if (summoner != Owner || source is not Reanimate || _deathsThisCombat <= 0)
+		modifiedCost = originalCost;
+		if (Owner == null
+			|| card.Owner != Owner
+			|| card is not Reanimate
+			|| card.EnergyCost.CostsX)
 		{
-			return amount;
+			return false;
 		}
 
-		Flash();
-		return amount + _deathsThisCombat * 5m;
+		decimal reducedCost = Math.Max(0m, originalCost - 1m - _deathsThisCombat);
+		if (reducedCost == originalCost)
+		{
+			return false;
+		}
+
+		modifiedCost = reducedCost;
+		return true;
+	}
+
+	private void RefreshReanimateCostsInHand()
+	{
+		if (Owner == null)
+		{
+			return;
+		}
+
+		foreach (CardModel card in PileType.Hand.GetPile(Owner).Cards)
+		{
+			if (card is Reanimate)
+			{
+				card.InvokeEnergyCostChanged();
+			}
+		}
 	}
 }

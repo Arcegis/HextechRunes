@@ -147,7 +147,7 @@ internal static partial class HextechContentRegistry
         Rune<LethalTempoRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 3, tagKey: "SHIV"),
         Rune<EmergenceRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Defect, characterOrder: 5, tagKey: "ORB"),
         Rune<MirageRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 5, tagKey: "POISON"),
-        Rune<AdaptiveCapacitorRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Defect, characterOrder: 8, tagKey: "ORB"),
+        Rune<AdaptiveCapacitorRune>(HextechRarityTier.Gold, flags: RuneFlags.Disabled, characterPool: HextechCharacterPool.Defect, characterOrder: 8, tagKey: "ORB"),
         Rune<RenewalRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Silent, characterOrder: 4, tagKey: "TRICK"),
         Rune<WraithRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Necrobinder, characterOrder: 6, tagKey: "OUTPUT"),
         Rune<SummonForthRune>(HextechRarityTier.Gold, characterPool: HextechCharacterPool.Regent, characterOrder: 2, tagKey: "SWORDCRAFT"),

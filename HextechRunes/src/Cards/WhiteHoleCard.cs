@@ -26,7 +26,7 @@ public sealed class WhiteHoleCard : CardModel
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new EnergyVar(1),
+		new EnergyVar(2),
 		new CardsVar(2)
 	];
 
