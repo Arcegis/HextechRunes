@@ -160,6 +160,17 @@ internal static partial class HextechCombatHooks
 		return false;
 	}
 
+	private static bool VoidFormOnPlayPrefix(VoidForm __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!VoidFormUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = VoidFormUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
 	private static void CardResolveEnergyXValuePostfix(CardModel __instance, ref int __result)
 	{
 		WhirlwindUpgradeRune.TryDoubleResolvedX(__instance, ref __result);

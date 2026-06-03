@@ -280,7 +280,12 @@
     "TEZCATARAS_MERCY_RUNE": "特兹卡塔拉的慈爱",
     "FLYING_KICK_RUNE": "飞身踢",
     "SELL_OFF_RUNE": "变卖",
-    "REFORGED_HELMET_RUNE": "重铸战盔"
+    "REFORGED_HELMET_RUNE": "重铸战盔",
+    "DEMON_FORM_UPGRADE_RUNE": "升级：恶魔形态",
+    "ECHO_FORM_UPGRADE_RUNE": "升级：回响形态",
+    "REAPER_FORM_UPGRADE_RUNE": "升级：死神形态",
+    "VOID_FORM_UPGRADE_RUNE": "升级：虚空形态",
+    "ARCHMAGE_RUNE": "大法师"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",
