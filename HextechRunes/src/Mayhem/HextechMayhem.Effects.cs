@@ -133,6 +133,34 @@ internal sealed partial class HextechMayhemModifier
         return true;
     }
 
+    internal int GetPlayerRuneProcsThisTurn(Player player, string procKey)
+    {
+        return _combatTracking.PlayerRuneProcsThisTurn.GetValueOrDefault(GetPlayerRuneProcKey(player, procKey), 0);
+    }
+
+    internal bool TryConsumePlayerRuneProcThisTurn(Player player, string procKey, int maxPerTurn)
+    {
+        if (maxPerTurn <= 0)
+        {
+            return false;
+        }
+
+        string key = GetPlayerRuneProcKey(player, procKey);
+        int current = _combatTracking.PlayerRuneProcsThisTurn.GetValueOrDefault(key, 0);
+        if (current >= maxPerTurn)
+        {
+            return false;
+        }
+
+        _combatTracking.PlayerRuneProcsThisTurn[key] = current + 1;
+        return true;
+    }
+
+    private static string GetPlayerRuneProcKey(Player player, string procKey)
+    {
+        return $"{player.NetId}:{procKey}";
+    }
+
     internal static bool TryGetMonsterDebuffTrigger(PowerModel power, decimal amount, Creature? applier, out Creature? target, out Creature? source)
     {
         target = power.Owner;
@@ -210,8 +238,8 @@ internal sealed partial class HextechMayhemModifier
     {
         if (!cardPlay.IsFirstInSeries
             || cardPlay.IsAutoPlay
-            || cardPlay.Card.Type != CardType.Attack
-            || cardPlay.Card.Owner?.Creature.Side != CombatSide.Player)
+            || cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
+            || !IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
         {
             return false;
         }
@@ -244,7 +272,7 @@ internal sealed partial class HextechMayhemModifier
 
             foreach (CardModel card in PileType.Hand.GetPile(player).Cards)
             {
-                if (card.Type == CardType.Attack && !card.EnergyCost.CostsX)
+                if (IllusoryWeaponRune.IsAttackForEffects(card, player) && !card.EnergyCost.CostsX)
                 {
                     card.InvokeEnergyCostChanged();
                 }

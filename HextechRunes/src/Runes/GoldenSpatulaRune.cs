@@ -116,7 +116,7 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 			return 0m;
 		}
 
-		decimal multiplier = stacks > DynamicVars["StackOverloadThreshold"].IntValue ? 2m : 1m;
+		decimal multiplier = stacks > DynamicVars["StackOverloadThreshold"].IntValue ? 3m : 1m;
 		return stacks * DynamicVars["StackBonusPercent"].BaseValue * multiplier;
 	}
 }

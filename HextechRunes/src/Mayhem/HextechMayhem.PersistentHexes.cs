@@ -1,7 +1,9 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 
@@ -28,6 +30,10 @@ internal sealed partial class HextechMayhemModifier
 		{
 			await GainMonsterMaxHpWithoutHeal(creature, missingMaxHp);
 		}
+		else
+		{
+			await KeepFurCoatMarkedEnemyAtOneHp(creature);
+		}
 	}
 
 	internal static async Task GainMonsterMaxHpWithoutHeal(Creature creature, int amount)
@@ -47,11 +53,46 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		int newCurrentHp = Math.Min(creature.MaxHp, oldCurrentHp + actualMaxHpGain);
+		int newCurrentHp = IsFurCoatMarkedEnemy(creature)
+			? 1
+			: Math.Min(creature.MaxHp, oldCurrentHp + actualMaxHpGain);
 		if (newCurrentHp != creature.CurrentHp)
 		{
 			await CreatureCmd.SetCurrentHp(creature, newCurrentHp);
 		}
+	}
+
+	private static Task KeepFurCoatMarkedEnemyAtOneHp(Creature creature)
+	{
+		if (IsFurCoatMarkedEnemy(creature) && creature.CurrentHp != 1)
+		{
+			return CreatureCmd.SetCurrentHp(creature, 1m);
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private static bool IsFurCoatMarkedEnemy(Creature creature)
+	{
+		if (creature.Side != CombatSide.Enemy || !creature.IsAlive || creature.CombatState == null)
+		{
+			return false;
+		}
+
+		foreach (RelicModel relic in creature.CombatState.Players.SelectMany(static player => player.Relics))
+		{
+			if (relic is not FurCoat furCoat || furCoat.Owner?.RunState.CurrentMapPoint == null)
+			{
+				continue;
+			}
+
+			if (furCoat.GetMarkedCoords()?.Contains(furCoat.Owner.RunState.CurrentMapPoint.coord) == true)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	internal void UpdateEnemyScale(Creature creature)

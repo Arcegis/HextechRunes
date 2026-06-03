@@ -75,11 +75,6 @@ public sealed class PacifistRune : HextechRelicBase
 			return 0m;
 		}
 
-		if (MiserableFateRune.IsResolvingDoomDamage)
-		{
-			return 1m;
-		}
-
 		if (Owner == null || target?.Side != CombatSide.Enemy || amount <= 0m || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return 1m;

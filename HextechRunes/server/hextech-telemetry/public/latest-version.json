@@ -2,7 +2,7 @@
   "modId": "HextechRunes",
   "serverIdentity": "Natsuki.HextechRunes.official",
   "name": "海克斯大乱斗",
-  "latestVersion": "0.6.6",
+  "latestVersion": "0.7.0",
   "officialBuilds": [
     {
       "modVersion": "0.6.1",
@@ -92,13 +92,13 @@
       "modVersion": "0.6.6",
       "gameVersion": "0.103.2",
       "hashAlgorithm": "SHA-256",
-      "generatedAtUtc": "2026-05-30T07:39:41Z",
-      "dllSha256": "b2c399d1dc43a81c1caf528dc232052f03c709fcc3c705131aff4350076f17e4",
-      "pckSha256": "cdca5f983108d3345a3bc69e0f1aa18c0cdf67097f01abbf17267c0184def473",
+      "generatedAtUtc": "2026-06-01T05:06:18Z",
+      "dllSha256": "a9f52ec38146b79deb7e36a1d4e114f8356881a2cbe92297aad99346e5a418a4",
+      "pckSha256": "6a97bf279eae3a5ff390ddc74cf1ba10aa18543736b68b3c40b75c20e919bb6a",
       "manifestSha256": "4c3e0bd913b55bea918e2e584886ed6a625dca9498c842ac2a6119e0b47b64cf",
       "artifactSizes": {
-        "dllBytes": 1030656,
-        "pckBytes": 6863384,
+        "dllBytes": 1071616,
+        "pckBytes": 7198916,
         "manifestBytes": 485
       }
     },
@@ -106,13 +106,69 @@
       "modVersion": "0.6.6",
       "gameVersion": "0.106.1",
       "hashAlgorithm": "SHA-256",
-      "generatedAtUtc": "2026-05-30T08:05:25Z",
-      "dllSha256": "9c6585b6d9495237261f0762d6822d7be405f7d86ccb7644508e25b8b6f657a4",
+      "generatedAtUtc": "2026-05-31T06:54:31Z",
+      "dllSha256": "04ec27261284ec9fe0d07c4112959f4250e2bdb9a5f25fd00393a04b14b1713b",
       "pckSha256": "cdca5f983108d3345a3bc69e0f1aa18c0cdf67097f01abbf17267c0184def473",
       "manifestSha256": "4c3e0bd913b55bea918e2e584886ed6a625dca9498c842ac2a6119e0b47b64cf",
       "artifactSizes": {
-        "dllBytes": 1035776,
+        "dllBytes": 1047040,
         "pckBytes": 6863384,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.6.7",
+      "gameVersion": "0.103.3",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-06-01T07:42:20Z",
+      "dllSha256": "7e0a3bb3924cfbdb2057cd4bcafbcb418d3509a64b688de2ac50d297350c67b9",
+      "pckSha256": "9100643596c93f740fa63985e159dad9452cfa7c0c87228a1702c5539d9c03fc",
+      "manifestSha256": "880cd015b0f558ebadea17f6ccc4a84e7d5757713b1e32402c3223adf2c92480",
+      "artifactSizes": {
+        "dllBytes": 1073664,
+        "pckBytes": 7198916,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.6.7",
+      "gameVersion": "0.106.1",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-06-03T05:51:02Z",
+      "dllSha256": "6b507e387db0b84e924f51e7a1ed87170c3c026f98526559256f1f418395a0ae",
+      "pckSha256": "687a258eaa5905e7bc2712aa95911aa1be59b5be3875fb73ab713b2b8c14b974",
+      "manifestSha256": "880cd015b0f558ebadea17f6ccc4a84e7d5757713b1e32402c3223adf2c92480",
+      "artifactSizes": {
+        "dllBytes": 1111552,
+        "pckBytes": 11342004,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.7.0",
+      "gameVersion": "0.103.3",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-06-03T06:34:58Z",
+      "dllSha256": "9434e9a888de3e44433b5479c3abb7a6270261b2691449f0fbee7c48ae388746",
+      "pckSha256": "687a258eaa5905e7bc2712aa95911aa1be59b5be3875fb73ab713b2b8c14b974",
+      "manifestSha256": "fa75c8b007d5a351da3e7566cbe6cd2c4a25e6510e913578f8d678cfec6ffc72",
+      "artifactSizes": {
+        "dllBytes": 1106432,
+        "pckBytes": 11342004,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.7.0",
+      "gameVersion": "0.106.1",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-06-03T06:26:35Z",
+      "dllSha256": "7a6b30684bac065447c8c7205e2a4cff8a1d0d74d0c47727a003848917a61d92",
+      "pckSha256": "687a258eaa5905e7bc2712aa95911aa1be59b5be3875fb73ab713b2b8c14b974",
+      "manifestSha256": "fa75c8b007d5a351da3e7566cbe6cd2c4a25e6510e913578f8d678cfec6ffc72",
+      "artifactSizes": {
+        "dllBytes": 1111552,
+        "pckBytes": 11342004,
         "manifestBytes": 485
       }
     }

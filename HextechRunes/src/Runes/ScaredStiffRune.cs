@@ -40,7 +40,7 @@ public sealed class ScaredStiffRune : HextechRelicBase
 		}
 
 		List<CardModel> attacks = PileType.Hand.GetPile(Owner).Cards
-			.Where(card => card.Owner == Owner && card.Type == CardType.Attack)
+			.Where(IsOwnedAttack)
 			.ToList();
 		if (attacks.Count == 0)
 		{
@@ -68,7 +68,7 @@ public sealed class ScaredStiffRune : HextechRelicBase
 					combatState?.RoundNumber.ToString() ?? "-1",
 					i.ToString(),
 					CombatManager.Instance.History.Entries.Count().ToString());
-				await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default);
+				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);
 			}
 		}
 		finally

@@ -36,7 +36,7 @@ public sealed class CrossOrbRune : HextechRelicBase
 			CardCreationResult result = cardRewardOptions[i];
 			if (result.Card.Rarity != CardRarity.Common
 				|| !ShouldReplaceCommon(player, "card-reward", i.ToString(), result.Card.Id.Entry)
-				|| !TryCreateNonCommonCard(player, creationOptions, cardRewardOptions, i, out CardCreationResult? replacement)
+				|| !TryCreateNonCommonCard(player, result.Card, creationOptions, cardRewardOptions, i, out CardCreationResult? replacement)
 				|| replacement == null)
 			{
 				continue;
@@ -74,7 +74,7 @@ public sealed class CrossOrbRune : HextechRelicBase
 			CardCreationResult result = cards[i];
 			if (result.Card.Rarity != CardRarity.Common
 				|| !ShouldReplaceCommon(player, "merchant-card", i.ToString(), result.Card.Id.Entry)
-				|| !TryCreateNonCommonCard(player, creationOptions, cards, i, out CardCreationResult? replacement)
+				|| !TryCreateNonCommonCard(player, result.Card, creationOptions, cards, i, out CardCreationResult? replacement)
 				|| replacement == null)
 			{
 				continue;
@@ -138,17 +138,27 @@ public sealed class CrossOrbRune : HextechRelicBase
 
 	private static bool TryCreateNonCommonCard(
 		Player player,
+		CardModel sourceCard,
 		CardCreationOptions creationOptions,
 		IEnumerable<CardCreationResult> currentResults,
 		int rewardIndex,
 		out CardCreationResult? result)
 	{
+		if (!TryGetCardPoolId(sourceCard, out ModelId sourcePoolId))
+		{
+			result = null;
+			return false;
+		}
+
 		HashSet<ModelId> existingIds = currentResults
 			.Select(static option => option.Card.CanonicalInstance.Id)
 			.ToHashSet();
 		List<CardModel> candidates = creationOptions
 			.GetPossibleCards(player)
-			.Where(card => card.Rarity != CardRarity.Common && !existingIds.Contains(card.Id))
+			.Where(card => card.Rarity != CardRarity.Common
+				&& !existingIds.Contains(card.Id)
+				&& TryGetCardPoolId(card, out ModelId candidatePoolId)
+				&& candidatePoolId.Equals(sourcePoolId))
 			.ToList();
 		if (candidates.Count == 0)
 		{
@@ -162,7 +172,26 @@ public sealed class CrossOrbRune : HextechRelicBase
 				CardRarityOddsType.Uniform)
 			.WithFlags(creationOptions.Flags | CardCreationFlags.NoModifyHooks);
 		result = CardFactory.CreateForReward(player, 1, nonCommonOptions).FirstOrDefault();
+		if (result != null)
+		{
+			CardTransformUpgradeHelper.PreserveUpgradeLevel(sourceCard, result.Card);
+		}
+
 		return result != null;
+	}
+
+	private static bool TryGetCardPoolId(CardModel card, out ModelId id)
+	{
+		try
+		{
+			id = card.Pool.Id;
+			return true;
+		}
+		catch
+		{
+			id = ModelId.none;
+			return false;
+		}
 	}
 
 	private static bool TryCreateNonCommonPotionReward(Player player, int rewardIndex, out PotionReward? reward)

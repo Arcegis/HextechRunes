@@ -61,7 +61,7 @@ public sealed class CorrosionRune : HextechRelicBase
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (_triggeredThisTurn
+		if (HasTurnProcTriggered(nameof(CorrosionRune), _triggeredThisTurn)
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| !target.IsAlive
@@ -71,8 +71,11 @@ public sealed class CorrosionRune : HextechRelicBase
 			return;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(CorrosionRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		Flash([target]);
 		await PowerCmd.Apply<StrengthPower>(target, -DynamicVars.Strength.BaseValue, Owner.Creature, cardSource);
 		await PowerCmd.Apply<DexterityPower>(target, -DynamicVars.Dexterity.BaseValue, Owner.Creature, cardSource);

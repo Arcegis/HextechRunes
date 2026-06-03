@@ -10,6 +10,7 @@ namespace HextechRunes;
 public sealed class SellOffRune : HextechRelicBase
 {
 	private bool _autoPlaying;
+	private readonly Queue<CardModel> _pendingDiscardedCards = new();
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
@@ -24,12 +25,13 @@ public sealed class SellOffRune : HextechRelicBase
 
 	public override async Task AfterCardDiscarded(PlayerChoiceContext choiceContext, CardModel card)
 	{
-		if (_autoPlaying
-			|| Owner == null
-			|| Owner.Creature.IsDead
-			|| card.Owner != Owner
-			|| card.Type is not (CardType.Attack or CardType.Skill or CardType.Power)
-			|| card.IsSlyThisTurn)
+		if (!CanAutoPlayDiscardedCard(card))
+		{
+			return;
+		}
+
+		_pendingDiscardedCards.Enqueue(card);
+		if (_autoPlaying)
 		{
 			return;
 		}
@@ -37,29 +39,52 @@ public sealed class SellOffRune : HextechRelicBase
 		_autoPlaying = true;
 		try
 		{
-			Flash();
-			card.ExhaustOnNextPlay = true;
-			if (card.Pile?.Type != PileType.Hand)
+			while (_pendingDiscardedCards.TryDequeue(out CardModel? discardedCard))
 			{
-				await CardPileCmd.Add(card, PileType.Hand, CardPilePosition.Top, this, skipVisuals: true);
-			}
+				if (discardedCard == null || !CanAutoPlayDiscardedCard(discardedCard))
+				{
+					continue;
+				}
 
-			HextechCombatState? combatState = Owner.Creature.CombatState;
-			Creature? target = RequiresEnemyTarget(card)
-				? HextechRuneTargeting.PickRandomHittableEnemy(
-					Owner,
-					combatState,
-					"sell-off",
-					combatState?.RoundNumber.ToString() ?? "-1",
-					CombatManager.Instance.History.Entries.Count().ToString(),
-					card.Id.Entry)
-				: null;
-			await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default);
+				await AutoPlayDiscardedCard(choiceContext, discardedCard);
+			}
 		}
 		finally
 		{
+			_pendingDiscardedCards.Clear();
 			_autoPlaying = false;
 		}
+	}
+
+	private bool CanAutoPlayDiscardedCard(CardModel card)
+	{
+		return Owner != null
+			&& !Owner.Creature.IsDead
+			&& card.Owner == Owner
+			&& card.Type is CardType.Attack or CardType.Skill or CardType.Power
+			&& !card.IsSlyThisTurn;
+	}
+
+	private async Task AutoPlayDiscardedCard(PlayerChoiceContext choiceContext, CardModel card)
+	{
+		Flash();
+		card.ExhaustOnNextPlay = true;
+		if (card.Pile?.Type != PileType.Hand)
+		{
+			await CardPileCmd.Add(card, PileType.Hand, CardPilePosition.Top, this, skipVisuals: true);
+		}
+
+		HextechCombatState? combatState = Owner!.Creature.CombatState;
+		Creature? target = RequiresEnemyTarget(card)
+			? HextechRuneTargeting.PickRandomHittableEnemy(
+				Owner,
+				combatState,
+				"sell-off",
+				combatState?.RoundNumber.ToString() ?? "-1",
+				CombatManager.Instance.History.Entries.Count().ToString(),
+				card.Id.Entry)
+			: null;
+		await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);
 	}
 
 	private static bool RequiresEnemyTarget(CardModel card)

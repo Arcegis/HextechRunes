@@ -36,10 +36,6 @@ namespace HextechRunes;
 
 public sealed class MiserableFateRune : HextechRelicBase
 {
-	private static readonly AsyncLocal<int> DoomDamageResolveDepth = new();
-
-	internal static bool IsResolvingDoomDamage => DoomDamageResolveDepth.Value > 0;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new BlockVar(1m, ValueProp.Unpowered)
@@ -55,45 +51,14 @@ public sealed class MiserableFateRune : HextechRelicBase
 		return IsNecrobinderPlayer(player);
 	}
 
-	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
+	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
-		{
-			return;
-		}
-
-		Creature[] enemies = Owner.Creature.CombatState.HittableEnemies.ToArray();
-		bool flashed = false;
-		foreach (Creature enemy in enemies)
-		{
-			decimal doom = Math.Max(0m, enemy.GetPowerAmount<DoomPower>());
-			if (doom <= 0m)
-			{
-				continue;
-			}
-
-			if (!flashed)
-			{
-				Flash();
-				flashed = true;
-			}
-
-			await DealDoomDamage(choiceContext, enemy, doom);
-			if (enemy.GetPower<DoomPower>() is DoomPower remainingDoom)
-			{
-				await HextechPowerCmdCompat.Remove(remainingDoom);
-			}
-		}
-	}
-
-	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
-	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
 
-		decimal block = Owner.Creature.CombatState.HittableEnemies
+		decimal block = combatState.HittableEnemies
 			.Sum(static enemy => Math.Max(0m, enemy.GetPowerAmount<DoomPower>()));
 		if (block <= 0m)
 		{
@@ -104,16 +69,8 @@ public sealed class MiserableFateRune : HextechRelicBase
 		return CreatureCmd.GainBlock(Owner.Creature, block * DynamicVars.Block.BaseValue, ValueProp.Unpowered, null);
 	}
 
-	private async Task DealDoomDamage(PlayerChoiceContext choiceContext, Creature enemy, decimal doom)
+	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		DoomDamageResolveDepth.Value++;
-		try
-		{
-			await CreatureCmd.Damage(choiceContext, enemy, doom, ValueProp.Unblockable | ValueProp.Unpowered, Owner!.Creature, null);
-		}
-		finally
-		{
-			DoomDamageResolveDepth.Value--;
-		}
+		return Task.CompletedTask;
 	}
 }

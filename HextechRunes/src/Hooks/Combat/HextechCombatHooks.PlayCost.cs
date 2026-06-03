@@ -1,8 +1,11 @@
+using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 
 namespace HextechRunes;
 
@@ -89,9 +92,9 @@ internal static partial class HextechCombatHooks
 		PushActivePlayEnergyValue(__instance, energyValue);
 	}
 
-	private static void CardOnPlayWrapperPostfix(CardModel __instance, ref Task __result)
+	private static void CardOnPlayWrapperPostfix(CardModel __instance, PlayerChoiceContext choiceContext, ref Task __result)
 	{
-		__result = PopActivePlayEnergyValueWhenDone(__instance, __result);
+		__result = PopActivePlayEnergyValueWhenDone(__instance, choiceContext, __result);
 	}
 
 	private static void PushActivePlayEnergyValue(CardModel card, int energyValue)
@@ -105,16 +108,52 @@ internal static partial class HextechCombatHooks
 		energyValues.Push(Math.Max(0, energyValue));
 	}
 
-	private static async Task PopActivePlayEnergyValueWhenDone(CardModel card, Task task)
+	private static async Task PopActivePlayEnergyValueWhenDone(CardModel card, PlayerChoiceContext choiceContext, Task task)
 	{
 		try
 		{
 			await task;
+			await EnsureTransformingSkillLeavesPlayPileInMultiplayer(card, choiceContext);
 		}
 		finally
 		{
 			PopActivePlayEnergyValue(card);
 		}
+	}
+
+	private static Task EnsureTransformingSkillLeavesPlayPileInMultiplayer(CardModel card, PlayerChoiceContext choiceContext)
+	{
+		if (!HextechRelicBase.IsNetworkMultiplayerRun()
+			|| !IsCleanupSensitiveTransformingSkill(card)
+			|| card.Owner?.Creature.IsDead == true
+			|| card.Pile?.Type != PileType.Play)
+		{
+			return Task.CompletedTask;
+		}
+
+		if (ShouldForceExhaustStuckPlayCard(card))
+		{
+			return CardCmd.Exhaust(choiceContext, card, false, true);
+		}
+
+		return CardPileCmd.Add(card, PileType.Discard);
+	}
+
+	private static bool IsCleanupSensitiveTransformingSkill(CardModel card)
+	{
+		return card is Begone
+			or Charge
+			or Compact
+			or Guards
+			or PrimalForce
+			or Seance;
+	}
+
+	private static bool ShouldForceExhaustStuckPlayCard(CardModel card)
+	{
+		return card.ExhaustOnNextPlay
+			|| card.Keywords.Contains(CardKeyword.Exhaust)
+			|| card.Owner?.GetRelic<EightPennyGateRune>() != null;
 	}
 
 	private static void PopActivePlayEnergyValue(CardModel card)

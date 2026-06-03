@@ -30,7 +30,7 @@ internal static class CardTransformUpgradeHelper
 		return new CardTransformation(original, replacement);
 	}
 
-	private static void PreserveUpgradeLevel(CardModel original, CardModel replacement)
+	public static void PreserveUpgradeLevel(CardModel original, CardModel replacement)
 	{
 		int targetUpgradeLevel = Math.Min(original.CurrentUpgradeLevel, replacement.MaxUpgradeLevel);
 		while (replacement.CurrentUpgradeLevel < targetUpgradeLevel && replacement.IsUpgradable)

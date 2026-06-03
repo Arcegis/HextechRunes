@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Extensions;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
@@ -11,13 +12,14 @@ internal static class VakuuTurnController
 {
 	internal const int MaxCardsPlayed = 13;
 
-	internal static async Task<int> AutoPlayPlayableHand(PlayerChoiceContext choiceContext, Player player)
+	internal static async Task<int> AutoPlayPlayableHand(Player player)
 	{
 		if (player.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return 0;
 		}
 
+		PlayerChoiceContext autoChoiceContext = new BlockingPlayerChoiceContext();
 		int cardsPlayed;
 		using (CardSelectCmd.PushSelector(new VakuuCardSelector()))
 		{
@@ -36,7 +38,7 @@ internal static class VakuuTurnController
 
 				Creature? target = GetTarget(player, card, combatState);
 				await card.SpendResources();
-				await CardCmd.AutoPlay(choiceContext, card, target, AutoPlayType.Default, skipXCapture: true);
+				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(autoChoiceContext, card, target, skipXCapture: true);
 			}
 		}
 

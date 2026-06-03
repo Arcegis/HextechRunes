@@ -94,7 +94,7 @@
     "LIFE_FORGE": "生命锻造器",
     "PREPARED_FORGE": "预备锻造器",
     "NECROBINDER_FORGE": "亡灵锻造器",
-    "SILVER_STARS_FORGE": "星辉锻造器",
+    "SILVER_STARS_FORGE": "辉星锻造器",
     "SILVER_ORB_FORGE": "球球锻造器",
     "CONSTITUTION_FORGE": "体质锻造器",
     "DISASTER_FORGE": "灾祸锻造器",
@@ -102,7 +102,7 @@
     "GOLD_FOCUS_FORGE": "集中锻造器",
     "DRAW_FORGE": "抽牌锻造器",
     "GOLD_UPGRADE_FORGE": "升级锻造器",
-    "STARS_FORGE": "星辉锻造器",
+    "STARS_FORGE": "辉星锻造器",
     "ORB_SLOT_FORGE": "鸡煲锻造器",
     "PLATING_FORGE": "覆甲锻造器",
     "THORNS_FORGE": "荆棘锻造器",
@@ -279,7 +279,13 @@
     "OTTER_AND_FRIENDS_RUNE": "水獭和朋友们",
     "TEZCATARAS_MERCY_RUNE": "特兹卡塔拉的慈爱",
     "FLYING_KICK_RUNE": "飞身踢",
-    "SELL_OFF_RUNE": "变卖"
+    "SELL_OFF_RUNE": "变卖",
+    "REFORGED_HELMET_RUNE": "重铸战盔",
+    "DEMON_FORM_UPGRADE_RUNE": "升级：恶魔形态",
+    "ECHO_FORM_UPGRADE_RUNE": "升级：回响形态",
+    "REAPER_FORM_UPGRADE_RUNE": "升级：死神形态",
+    "VOID_FORM_UPGRADE_RUNE": "升级：虚空形态",
+    "ARCHMAGE_RUNE": "大法师"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",

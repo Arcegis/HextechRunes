@@ -44,7 +44,7 @@ public sealed class CerberusRune : HextechRelicBase
 		get
 		{
 			EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
-			return _attacksPlayedThisTurn;
+			return GetTurnProcCount(nameof(CerberusRune), _attacksPlayedThisTurn);
 		}
 		set
 		{
@@ -56,7 +56,7 @@ public sealed class CerberusRune : HextechRelicBase
 
 	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
 
-	public override int DisplayAmount => !IsCanonical ? Math.Max(0, 3 - _attacksPlayedThisTurn) : 0;
+	public override int DisplayAmount => !IsCanonical ? Math.Max(0, DynamicVars["FreeAttacks"].IntValue - GetTurnProcCount(nameof(CerberusRune), _attacksPlayedThisTurn)) : 0;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -117,10 +117,12 @@ public sealed class CerberusRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_attacksPlayedThisTurn++;
-		InvokeDisplayAmountChanged();
-		UpdateTurnScopedStateIdentity();
-		if (_attacksPlayedThisTurn <= DynamicVars["FreeAttacks"].IntValue)
+		if (!TryConsumeTurnProc(nameof(CerberusRune), ref _attacksPlayedThisTurn, int.MaxValue))
+		{
+			return Task.CompletedTask;
+		}
+
+		if (GetTurnProcCount(nameof(CerberusRune), _attacksPlayedThisTurn) <= DynamicVars["FreeAttacks"].IntValue)
 		{
 			Flash();
 		}
@@ -133,10 +135,10 @@ public sealed class CerberusRune : HextechRelicBase
 		EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
 		return Owner != null
 			&& card.Owner == Owner
-			&& card.Type == CardType.Attack
+			&& IsOwnedAttack(card)
 			&& card.Pile?.Type == PileType.Hand
 			&& !card.EnergyCost.CostsX
-			&& _attacksPlayedThisTurn < DynamicVars["FreeAttacks"].IntValue;
+			&& !HasTurnProcReachedLimit(nameof(CerberusRune), _attacksPlayedThisTurn, DynamicVars["FreeAttacks"].IntValue);
 	}
 
 	private void ResetAttacksPlayedThisTurn()

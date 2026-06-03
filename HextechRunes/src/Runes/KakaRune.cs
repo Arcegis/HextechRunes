@@ -37,9 +37,11 @@ public sealed class KakaRune : HextechRelicBase
 
 	internal static bool BlocksAttack(CardModel card)
 	{
-		return card.Type == CardType.Attack
-			&& card.Owner?.GetRelic<KakaRune>() != null
-			&& card.Owner.Creature.CombatState?.RoundNumber == 1;
+		Player? owner = card.Owner;
+		return owner != null
+			&& IllusoryWeaponRune.IsAttackForEffects(card, owner)
+			&& owner.GetRelic<KakaRune>() != null
+			&& owner.Creature.CombatState?.RoundNumber == 1;
 	}
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)

@@ -90,7 +90,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		}
 
 		EnsureTurnStateCurrent();
-		if (_triggeredThisTurn || !IsOwnedAttack(card))
+		if (HasTurnProcTriggered(nameof(FanTheHammerRune), _triggeredThisTurn) || !IsOwnedAttack(card))
 		{
 			return playCount;
 		}
@@ -106,11 +106,13 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		}
 
 		EnsureTurnStateCurrent();
-		if (!_triggeredThisTurn && IsOwnedAttack(card))
+		if (!HasTurnProcTriggered(nameof(FanTheHammerRune), _triggeredThisTurn) && IsOwnedAttack(card))
 		{
-			_triggeredThisTurn = true;
-			UpdateTurnStateIdentity();
-			Flash();
+			if (TryConsumeTurnProc(nameof(FanTheHammerRune), ref _triggeredThisTurn))
+			{
+				UpdateTurnStateIdentity();
+				Flash();
+			}
 		}
 
 		return Task.CompletedTask;

@@ -48,7 +48,7 @@ public sealed class MasterOfDualityRune : HextechRelicBase
 			Flash();
 			await PowerCmd.Apply<HextechTemporaryStrengthPower>(Owner.Creature, 1m, Owner.Creature, null);
 		}
-		if (cardPlay.Card.Type == CardType.Attack)
+		if (IsOwnedAttack(cardPlay.Card))
 		{
 			Flash();
 			await PowerCmd.Apply<HextechTemporaryDexterityPower>(Owner.Creature, 1m, Owner.Creature, null);

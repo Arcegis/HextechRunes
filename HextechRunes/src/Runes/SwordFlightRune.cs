@@ -48,7 +48,7 @@ public sealed class SwordFlightRune : HextechRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent(ResetTriggered);
-		if (_triggeredThisTurn
+		if (HasTurnProcTriggered(nameof(SwordFlightRune), _triggeredThisTurn)
 			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| !cardPlay.IsFirstInSeries
@@ -60,8 +60,11 @@ public sealed class SwordFlightRune : HextechRelicBase
 		}
 
 		int cardsToDraw = Math.Max(0, 10 - PileType.Hand.GetPile(Owner).Cards.Count);
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(SwordFlightRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		if (cardsToDraw <= 0)
 		{
 			return;

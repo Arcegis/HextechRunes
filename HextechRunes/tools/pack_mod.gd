@@ -107,7 +107,7 @@ func _add_tree_with_prefix(packer: PCKPacker, root_dir: String, current_dir: Str
 	for file_name in dir.get_files():
 		if file_name.begins_with("."):
 			continue
-		if imported_only and not (file_name.ends_with(".ctex") or file_name.ends_with(".stex") or file_name.ends_with(".res")):
+		if imported_only and not (file_name.ends_with(".ctex") or file_name.ends_with(".stex") or file_name.ends_with(".res") or file_name.ends_with(".sample")):
 			continue
 		if file_name.ends_with(".md5"):
 			continue

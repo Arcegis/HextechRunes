@@ -38,6 +38,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
+		PlayRuneSelectSfx(relic);
 		GetViewport()?.SetInputAsHandled();
 		_completionSource.TrySetResult([relic]);
 	}
@@ -63,6 +64,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: slot={slotIndex} old={oldRelic} new={newRelic}");
+		PlayRerollSfx();
 		_relics = rerolled.ToList();
 		_rerolledSlots[slotIndex] = true;
 		_rerollHistory.Add(slotIndex);
@@ -146,6 +148,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		await WaitForMouseReleaseAsync();
 		if (!removeOverlay)
 		{
+			_blockMapUntilDismissed = true;
 			ShowWaitingForRemotePlayers();
 			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: keeping overlay until multiplayer sync completes");
 			return result;
@@ -165,6 +168,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		await WaitForMouseReleaseAsync();
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: removing overlay");
+		_blockMapUntilDismissed = false;
 		NOverlayStack.Instance?.Remove(this);
 	}
 
@@ -229,6 +233,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 
 		_closed = true;
+		_blockMapUntilDismissed = false;
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed");
 		if (!_choiceLocked)
 		{
@@ -254,7 +259,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayHidden: choiceLocked={_choiceLocked} capstoneOpen={NCapstoneContainer.Instance?.InUse == true} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 		Visible = false;
-		if (!_choiceLocked && !_restoreAfterMapReopenQueued && IsInsideTree())
+		if ((!_choiceLocked || _blockMapUntilDismissed) && !_restoreAfterMapReopenQueued && IsInsideTree())
 		{
 			_restoreAfterMapReopenQueued = true;
 			_ = TaskHelper.RunSafely(RestoreAfterMapReopenAsync());
@@ -267,7 +272,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-			if (!IsInsideTree() || _choiceLocked)
+			if (!IsInsideTree() || (_choiceLocked && !_blockMapUntilDismissed))
 			{
 				return;
 			}
@@ -280,7 +285,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 				return;
 			}
 
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RestoreAfterMapReopen: closing map reopened over unresolved selection");
+			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RestoreAfterMapReopen: closing map reopened over blocking selection");
 			NMapScreen.Instance?.Close(animateOut: false);
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 			NOverlayStack.Instance?.ShowOverlays();

@@ -18,12 +18,13 @@ if [[ -z "${GODOT_EDITOR:-}" && -x "$DEFAULT_GODOT_EDITOR" ]]; then
 else
   GODOT_EDITOR="${GODOT_EDITOR:-/opt/homebrew/bin/godot}"
 fi
-REFS_103="$ROOT/versioned-dll-backups/0.103.2/game-refs"
+REFS_1032="$ROOT/versioned-dll-backups/0.103.2/game-refs"
+REFS_1033="$ROOT/versioned-dll-backups/0.103.3/game-refs"
 REFS_104="$ROOT/versioned-dll-backups/0.104.0/game-refs"
 REFS_105="$ROOT/versioned-dll-backups/0.105.1/game-refs"
 REFS_106="$ROOT/versioned-dll-backups/0.106.1/game-refs"
 GAME_RELEASE_INFO="$GAME_APP/Contents/Resources/release_info.json"
-DEFAULT_STS2_TARGET="0.103.2"
+DEFAULT_STS2_TARGET="0.103.3"
 HEXTECH_DEPLOY="${HEXTECH_DEPLOY:-1}"
 
 major_minor_version() {
@@ -70,9 +71,13 @@ case "$HEXTECH_STS2_TARGET" in
     HEXTECH_STS2_TARGET="0.104.0"
     TARGET_REFS="$REFS_104"
     ;;
-  0.103*)
+  0.103.2*)
     HEXTECH_STS2_TARGET="0.103.2"
-    TARGET_REFS="$REFS_103"
+    TARGET_REFS="$REFS_1032"
+    ;;
+  0.103.3*|0.103*)
+    HEXTECH_STS2_TARGET="0.103.3"
+    TARGET_REFS="$REFS_1033"
     ;;
   *)
     print -u2 "Unsupported or unknown STS2 version '$HEXTECH_STS2_TARGET'; using live game references without compatibility defines."
@@ -82,7 +87,7 @@ esac
 
 if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
   case "$HEXTECH_STS2_TARGET:$CURRENT_GAME_VERSION" in
-    0.103.2:0.103*|0.104.0:0.104*|0.105.1:0.105*|0.106.1:0.106*|*:)
+    0.103.2:0.103.2*|0.103.3:0.103.3*|0.104.0:0.104*|0.105.1:0.105*|0.106.1:0.106*|*:)
       ;;
     *)
       if [[ "${HEXTECH_ALLOW_VERSION_MISMATCH:-0}" != "1" ]]; then

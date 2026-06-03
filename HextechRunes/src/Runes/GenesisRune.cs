@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
@@ -25,12 +26,6 @@ public sealed class GenesisRune : HextechRelicBase
 			return;
 		}
 
-		Flash();
-		foreach (CardModel card in cardsToRemove)
-		{
-			await CardPileCmd.RemoveFromDeck(card, showPreview: false);
-		}
-
 		CardCreationOptions options = new(
 			new[] { player.Character.CardPool },
 			CardCreationSource.Other,
@@ -38,6 +33,23 @@ public sealed class GenesisRune : HextechRelicBase
 		List<Reward> rewards = Enumerable.Range(0, cardsToRemove.Count)
 			.Select(_ => (Reward)new GenesisUpgradedCardReward(options, 3, player))
 			.ToList();
-		await RewardsCmd.OfferCustom(player, rewards);
+		Flash();
+		try
+		{
+			await RewardsCmd.OfferCustom(player, rewards);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}] Genesis reward flow failed before deck removal; keeping original deck. {ex.GetType().Name}: {ex.Message}");
+			return;
+		}
+
+		foreach (CardModel card in cardsToRemove)
+		{
+			if (player.Deck.Cards.Contains(card))
+			{
+				await CardPileCmd.RemoveFromDeck(card, showPreview: false);
+			}
+		}
 	}
 }

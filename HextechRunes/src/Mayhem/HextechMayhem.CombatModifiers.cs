@@ -81,7 +81,7 @@ internal sealed partial class HextechMayhemModifier
     {
         modifiedCost = originalCost;
         if (card.Owner?.Creature.Side != CombatSide.Player
-            || card.Type != CardType.Attack
+            || !IllusoryWeaponRune.IsAttackForEffects(card, card.Owner)
             || card.Pile?.Type != PileType.Hand
             || card.EnergyCost.CostsX
             || originalCost <= 0m

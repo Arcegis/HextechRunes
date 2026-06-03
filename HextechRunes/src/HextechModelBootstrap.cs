@@ -40,7 +40,7 @@ internal static class HextechModelBootstrap
 
 	private static void InjectSavedPropertyCaches()
 	{
-		foreach (Type type in HextechCatalog.GetAllCustomRelicTypes())
+		foreach (Type type in DistinctModelTypes(HextechCatalog.GetAllCustomRelicTypes()))
 		{
 			SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 		}
@@ -112,8 +112,8 @@ internal static class HextechModelBootstrap
 
 	private static void RegisterModels()
 	{
-		IReadOnlyList<Type> customRelicTypes = HextechCatalog.GetAllCustomRelicTypes();
-		IReadOnlyList<Type> customCardTypes = HextechCatalog.GetAllCustomCardTypes();
+		IReadOnlyList<Type> customRelicTypes = DistinctModelTypes(HextechCatalog.GetAllCustomRelicTypes());
+		IReadOnlyList<Type> customCardTypes = DistinctModelTypes(HextechCatalog.GetAllCustomCardTypes());
 		bool useMobileFirstModelRegistrationWorkaround = ShouldUseMobileFirstModelRegistrationWorkaround();
 
 		if (useMobileFirstModelRegistrationWorkaround)
@@ -131,6 +131,9 @@ internal static class HextechModelBootstrap
 		{
 			TryAddModelToPool(typeof(TokenCardPool), cardType);
 		}
+
+		CleanupDuplicatePoolRegistrations(typeof(SharedRelicPool), customRelicTypes);
+		CleanupDuplicatePoolRegistrations(typeof(TokenCardPool), customCardTypes);
 	}
 
 	private static void TryAddModelToPool(Type poolType, Type modelType)
@@ -278,6 +281,14 @@ internal static class HextechModelBootstrap
 		}
 	}
 
+	private static void CleanupDuplicatePoolRegistrations(Type poolType, IReadOnlyList<Type> modelTypes)
+	{
+		foreach (Type modelType in modelTypes)
+		{
+			RemoveDuplicatePoolRegistration(poolType, modelType);
+		}
+	}
+
 	private static bool ContentContainsModelType(object? content, Type modelType)
 	{
 		if (content == null)
@@ -307,6 +318,18 @@ internal static class HextechModelBootstrap
 		return left == right
 			|| (string.Equals(left.FullName, right.FullName, StringComparison.Ordinal)
 				&& string.Equals(left.Assembly.GetName().Name, right.Assembly.GetName().Name, StringComparison.Ordinal));
+	}
+
+	private static IReadOnlyList<Type> DistinctModelTypes(IEnumerable<Type> modelTypes)
+	{
+		Dictionary<string, Type> byIdentity = new(StringComparer.Ordinal);
+		foreach (Type modelType in modelTypes)
+		{
+			string identity = $"{modelType.Assembly.GetName().Name}:{modelType.FullName}";
+			byIdentity.TryAdd(identity, modelType);
+		}
+
+		return byIdentity.Values.ToArray();
 	}
 
 	private static void PreloadDependencyAssemblies()

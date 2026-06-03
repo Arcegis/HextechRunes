@@ -8,7 +8,7 @@ internal sealed class TanksShieldEnemyHex : HextechEnemyHexEffect
 	{
 		if (!cardPlay.IsFirstInSeries
 			|| cardPlay.IsAutoPlay
-			|| cardPlay.Card.Type != CardType.Attack
+			|| !IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner)
 			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
 			|| cardPlay.Card.Owner.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RunState != context.RunState)

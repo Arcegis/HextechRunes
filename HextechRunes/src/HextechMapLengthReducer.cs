@@ -1,11 +1,16 @@
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
 internal static class HextechMapLengthReducer
 {
-	internal static ActMap ReduceNodeLengthByOne(ActMap map, MapCoord? currentCoord)
+	private static readonly System.Reflection.MethodInfo? SetSpoilsCoordMethod =
+		typeof(SpoilsMap).GetProperty(nameof(SpoilsMap.SpoilsCoord))?.GetSetMethod(nonPublic: true);
+
+	internal static ActMap ReduceNodeLengthByOne(IRunState runState, ActMap map, MapCoord? currentCoord)
 	{
 		if (map is ShortenedActMap || IsSpecialMap(map))
 		{
@@ -19,7 +24,9 @@ internal static class HextechMapLengthReducer
 			return map;
 		}
 
-		return new ShortenedActMap(map, rowToRemove);
+		ActMap shortenedMap = new ShortenedActMap(map, rowToRemove);
+		AdjustSpoilsMapCoords(runState, shortenedMap, rowToRemove);
+		return shortenedMap;
 	}
 
 	private static bool IsSpecialMap(ActMap map)
@@ -60,6 +67,48 @@ internal static class HextechMapLengthReducer
 	private static string DescribeCoord(MapCoord? coord)
 	{
 		return coord.HasValue ? $"{coord.Value.col},{coord.Value.row}" : "none";
+	}
+
+	private static void AdjustSpoilsMapCoords(IRunState runState, ActMap shortenedMap, int removedRow)
+	{
+		foreach (SpoilsMap spoilsMap in runState.Players
+			.SelectMany(static player => player.Deck.Cards)
+			.OfType<SpoilsMap>())
+		{
+			if (spoilsMap.SpoilsActIndex != runState.CurrentActIndex || !spoilsMap.SpoilsCoord.HasValue)
+			{
+				continue;
+			}
+
+			MapCoord oldCoord = spoilsMap.SpoilsCoord.Value;
+			MapCoord newCoord = oldCoord.row > removedRow
+				? new MapCoord(oldCoord.col, oldCoord.row - 1)
+				: oldCoord;
+			if (newCoord == oldCoord || !shortenedMap.HasPoint(newCoord))
+			{
+				continue;
+			}
+
+			SetSpoilsCoord(spoilsMap, newCoord);
+		}
+	}
+
+	private static void SetSpoilsCoord(SpoilsMap spoilsMap, MapCoord coord)
+	{
+		if (SetSpoilsCoordMethod == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble could not update SpoilsMap coord: setter missing.");
+			return;
+		}
+
+		try
+		{
+			SetSpoilsCoordMethod.Invoke(spoilsMap, [coord]);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble failed to update SpoilsMap coord: {ex.Message}");
+		}
 	}
 
 	private sealed class ShortenedActMap : ActMap

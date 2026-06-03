@@ -71,6 +71,13 @@ internal sealed partial class HextechMayhemModifier
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int[] SavedMapLengthReducedActs
+	{
+		get => _actState.SavedMapLengthReducedActs;
+		set => _actState.SavedMapLengthReducedActs = value;
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedTelemetryChoicesJson
 	{
 		get => _choiceHistory.SavedTelemetryChoicesJson;
@@ -259,6 +266,28 @@ internal sealed partial class HextechMayhemModifier
 
 		ResetCombatTracking();
 		InvalidateActiveMonsterHexCache();
+	}
+
+	public bool DebugAddMonsterHex(MonsterHexKind hex)
+	{
+		bool changed = _actState.AddCarriedMonsterHex(hex);
+		if (changed)
+		{
+			InvalidateActiveMonsterHexCache();
+		}
+
+		return changed;
+	}
+
+	public bool DebugRemoveMonsterHex(MonsterHexKind hex)
+	{
+		bool changed = _actState.RemoveMonsterHexEverywhere(hex);
+		if (changed)
+		{
+			InvalidateActiveMonsterHexCache();
+		}
+
+		return changed;
 	}
 
 	public bool HasActiveMonsterHex(MonsterHexKind hex)

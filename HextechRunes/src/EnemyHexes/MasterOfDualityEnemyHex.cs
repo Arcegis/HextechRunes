@@ -21,7 +21,7 @@ internal sealed class MasterOfDualityEnemyHex : HextechEnemyHexEffect
 		{
 			await PowerCmd.Apply<HextechTemporaryStrengthLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
 		}
-		if (cardPlay.Card.Type == CardType.Attack)
+		if (IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
 		{
 			await PowerCmd.Apply<HextechTemporaryDexterityLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
 		}

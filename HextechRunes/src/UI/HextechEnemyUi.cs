@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
@@ -19,6 +20,7 @@ internal static class HextechEnemyUi
 	private const string EnemyHexRootName = "HextechEnemyHexStrip";
 	private const string EnemyHexPanelName = "HextechEnemyHexPanel";
 	private const string EnemyHexIconsName = "HextechEnemyHexIcons";
+	private const string EnemyHexHolderNamePrefix = "EnemyHex-";
 	private const int EnemyHexSeparation = 2;
 	private const float EnemyHexScale = 0.72f;
 
@@ -33,6 +35,16 @@ internal static class HextechEnemyUi
 		BindingFlags.Instance | BindingFlags.NonPublic);
 
 	private static bool _reportedMissingTopBarMembers;
+
+	public static void Install(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(NRelicBasicHolder), "OnFocus", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechEnemyUi), nameof(EnemyHexHolderOnFocusPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(NRelicBasicHolder), "OnUnfocus", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechEnemyUi), nameof(EnemyHexHolderOnUnfocusPrefix)));
+	}
 
 	public static void Refresh(HextechMayhemModifier modifier)
 	{
@@ -56,7 +68,11 @@ internal static class HextechEnemyUi
 		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: active={string.Join(",", activeHexes)}");
 
 		HBoxContainer strip = GetOrCreateStrip(container);
-		RebuildStrip(strip, activeHexes);
+		if (!IsStripCurrent(strip, activeHexes))
+		{
+			RebuildStrip(strip, activeHexes);
+		}
+
 		UpdateContainerVisibility(container);
 	}
 
@@ -140,7 +156,39 @@ internal static class HextechEnemyUi
 
 	private static HBoxContainer GetOrCreateStrip(Control container)
 	{
-		RemoveAllEnemyHexStrips(container);
+		HBoxContainer? existingStrip = null;
+		foreach (Node child in container.GetChildren())
+		{
+			if (child.Name != EnemyHexRootName)
+			{
+				continue;
+			}
+
+			if (existingStrip == null
+				&& child is MarginContainer existingRoot
+				&& existingRoot.GetChildCount() > 0
+				&& existingRoot.GetChild(0) is PanelContainer existingPanel
+				&& existingPanel.GetChildCount() > 0
+				&& existingPanel.GetChild(0) is HBoxContainer existingIcons)
+			{
+				existingStrip = existingIcons;
+				continue;
+			}
+
+			container.RemoveChild(child);
+			child.QueueFree();
+		}
+
+		if (existingStrip != null)
+		{
+			Node? existingRootNode = existingStrip.GetParent()?.GetParent();
+			if (existingRootNode != null)
+			{
+				container.MoveChild(existingRootNode, container.GetChildCount() - 1);
+			}
+
+			return existingStrip;
+		}
 
 		MarginContainer root = new()
 		{
@@ -187,6 +235,11 @@ internal static class HextechEnemyUi
 	{
 		foreach (Node child in strip.GetChildren())
 		{
+			if (child is Control control)
+			{
+				NHoverTipSet.Remove(control);
+			}
+
 			strip.RemoveChild(child);
 			child.QueueFree();
 		}
@@ -220,12 +273,48 @@ internal static class HextechEnemyUi
 		RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(hex).ToMutable();
 		NRelicBasicHolder holder = NRelicBasicHolder.Create(relic)
 			?? throw new InvalidOperationException("Failed to create top bar enemy hex holder.");
-		holder.Name = $"EnemyHex-{hex}";
+		holder.Name = $"{EnemyHexHolderNamePrefix}{hex}";
 		holder.Scale = Vector2.One * EnemyHexScale;
 		holder.MouseFilter = Control.MouseFilterEnum.Stop;
-		holder.MouseEntered += () => ShowEnemyHexHoverTip(holder, hex);
-		holder.MouseExited += () => NHoverTipSet.Remove(holder);
+		holder.TreeExiting += () => NHoverTipSet.Remove(holder);
 		return holder;
+	}
+
+	private static bool EnemyHexHolderOnFocusPrefix(NRelicBasicHolder __instance)
+	{
+		NHoverTipSet.Remove(__instance);
+
+		if (!TryGetHexFromHolder(__instance, out MonsterHexKind hex))
+		{
+			return true;
+		}
+
+		ShowEnemyHexHoverTip(__instance, hex);
+		return false;
+	}
+
+	private static bool EnemyHexHolderOnUnfocusPrefix(NRelicBasicHolder __instance)
+	{
+		if (!TryGetHexFromHolder(__instance, out _))
+		{
+			return true;
+		}
+
+		NHoverTipSet.Remove(__instance);
+		return false;
+	}
+
+	private static bool TryGetHexFromHolder(Control holder, out MonsterHexKind hex)
+	{
+		string name = holder.Name.ToString();
+		if (name.StartsWith(EnemyHexHolderNamePrefix, StringComparison.Ordinal)
+			&& Enum.TryParse(name[EnemyHexHolderNamePrefix.Length..], out hex))
+		{
+			return true;
+		}
+
+		hex = default;
+		return false;
 	}
 
 	private static void ShowEnemyHexHoverTip(Control holder, MonsterHexKind hex)
@@ -233,5 +322,24 @@ internal static class HextechEnemyUi
 		NHoverTipSet.Remove(holder);
 		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, MonsterHexCatalog.GetEnemyHexHoverTips(hex));
 		hoverTipSet?.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
+	}
+
+	private static bool IsStripCurrent(HBoxContainer strip, IReadOnlyList<MonsterHexKind> activeHexes)
+	{
+		Godot.Collections.Array<Node> children = strip.GetChildren();
+		if (children.Count != activeHexes.Count)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < activeHexes.Count; i++)
+		{
+			if (children[i] is not Control control || !TryGetHexFromHolder(control, out MonsterHexKind hex) || hex != activeHexes[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

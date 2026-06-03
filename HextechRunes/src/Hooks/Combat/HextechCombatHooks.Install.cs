@@ -134,22 +134,90 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(ForbiddenGrimoirePower), nameof(ForbiddenGrimoirePower.AfterCombatEnd), BindingFlags.Public | BindingFlags.Instance, typeof(CombatRoom)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ForbiddenGrimoireAfterCombatEndPrefix)));
-		harmony.Patch(
-#if STS2_104_OR_NEWER
-			RequireMethod(typeof(OutbreakPower), nameof(OutbreakPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
-#else
-			RequireMethod(typeof(OutbreakPower), nameof(OutbreakPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
-#endif
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OutbreakPowerAfterPowerAmountChangedPrefix)),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OutbreakPowerAfterPowerAmountChangedPostfix)));
-		harmony.Patch(
-#if STS2_104_OR_NEWER
-			RequireMethod(typeof(SleightOfFleshPower), nameof(SleightOfFleshPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
-#else
-			RequireMethod(typeof(SleightOfFleshPower), nameof(SleightOfFleshPower.AfterPowerAmountChanged), BindingFlags.Public | BindingFlags.Instance, typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel)),
-#endif
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SleightOfFleshPowerAfterPowerAmountChangedPrefix)),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SleightOfFleshPowerAfterPowerAmountChangedPostfix)));
+		TryPatchAfterPowerAmountChanged(
+			harmony,
+			typeof(OutbreakPower),
+			nameof(OutbreakPower),
+			nameof(OutbreakPowerAfterPowerAmountChangedPrefix),
+			nameof(OutbreakPowerAfterPowerAmountChangedPostfix));
+		TryPatchAfterPowerAmountChanged(
+			harmony,
+			typeof(SleightOfFleshPower),
+			nameof(SleightOfFleshPower),
+			nameof(SleightOfFleshPowerAfterPowerAmountChangedPrefix),
+			nameof(SleightOfFleshPowerAfterPowerAmountChangedPostfix));
+	}
+
+	private static void TryPatchAfterPowerAmountChanged(
+		Harmony harmony,
+		Type powerType,
+		string label,
+		string prefixName,
+		string postfixName)
+	{
+		int patchedCount = 0;
+		if (TryPatchAfterPowerAmountChangedOverload(
+			harmony,
+			powerType,
+			label,
+			prefixName,
+			postfixName,
+			typeof(PlayerChoiceContext),
+			typeof(PowerModel),
+			typeof(decimal),
+			typeof(Creature),
+			typeof(CardModel)))
+		{
+			patchedCount++;
+		}
+
+		if (TryPatchAfterPowerAmountChangedOverload(
+			harmony,
+			powerType,
+			label,
+			prefixName,
+			postfixName,
+			typeof(PowerModel),
+			typeof(decimal),
+			typeof(Creature),
+			typeof(CardModel)))
+		{
+			patchedCount++;
+		}
+
+		if (patchedCount == 0)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Optional power compatibility hook skipped: {label}.AfterPowerAmountChanged overload not found.");
+		}
+	}
+
+	private static bool TryPatchAfterPowerAmountChangedOverload(
+		Harmony harmony,
+		Type powerType,
+		string label,
+		string prefixName,
+		string postfixName,
+		params Type[] parameterTypes)
+	{
+		MethodInfo? target = AccessTools.Method(powerType, "AfterPowerAmountChanged", parameterTypes);
+		if (target == null)
+		{
+			return false;
+		}
+
+		try
+		{
+			harmony.Patch(
+				target,
+				prefix: new HarmonyMethod(typeof(HextechCombatHooks), prefixName),
+				postfix: new HarmonyMethod(typeof(HextechCombatHooks), postfixName));
+			return true;
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Optional power compatibility hook failed: {label}.{target.Name}: {ex.GetType().Name}: {ex.Message}");
+			return false;
+		}
 	}
 
 	private static void InstallDamageCommandHooks(Harmony harmony)

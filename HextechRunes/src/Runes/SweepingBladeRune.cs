@@ -86,7 +86,7 @@ public sealed class SweepingBladeRune : HextechRelicBase
 		if (Owner == null
 			|| Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner
-			|| cardPlay.Card.Type != CardType.Attack
+			|| !IsOwnedAttack(cardPlay.Card)
 			|| !cardPlay.Card.Tags.Contains(CardTag.Strike)
 			|| cardPlay.Target == null
 			|| cardPlay.Target.Side == Owner.Creature.Side

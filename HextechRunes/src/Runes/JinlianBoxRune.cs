@@ -25,7 +25,14 @@ namespace HextechRunes;
 
 public sealed class JinlianBoxRune : HextechRelicBase
 {
+	private const int MinimumStrikeAndDefendCount = 4;
+
 	public override bool HasUponPickupEffect => true;
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return player.Deck.Cards.Count(static card => card.IsBasicStrikeOrDefend) >= MinimumStrikeAndDefendCount;
+	}
 
 	public override async Task AfterObtained()
 	{

@@ -80,7 +80,7 @@ public sealed class FeyMagicRune : HextechRelicBase
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (_triggeredThisTurn
+		if (HasTurnProcTriggered(nameof(FeyMagicRune), _triggeredThisTurn)
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.TotalDamage <= 0m
@@ -89,8 +89,11 @@ public sealed class FeyMagicRune : HextechRelicBase
 			return;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(FeyMagicRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		Flash([target]);
 		await CreatureCmd.Stun(target, null);
 	}

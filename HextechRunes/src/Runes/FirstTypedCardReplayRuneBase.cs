@@ -70,7 +70,7 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
 		EnsureTurnScopedStateCurrent(ResetTriggered);
-		if (_triggeredThisTurn || !IsOwnedTargetType(card))
+		if (HasTurnProcTriggered(GetType().Name, _triggeredThisTurn) || !IsOwnedTargetType(card))
 		{
 			return playCount;
 		}
@@ -81,11 +81,12 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
 		EnsureTurnScopedStateCurrent(ResetTriggered);
-		if (!_triggeredThisTurn && IsOwnedTargetType(card))
+		if (!HasTurnProcTriggered(GetType().Name, _triggeredThisTurn) && IsOwnedTargetType(card))
 		{
-			_triggeredThisTurn = true;
-			UpdateTurnScopedStateIdentity();
-			Flash();
+			if (TryConsumeTurnProc(GetType().Name, ref _triggeredThisTurn))
+			{
+				Flash();
+			}
 		}
 
 		return Task.CompletedTask;
@@ -93,6 +94,11 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 
 	private bool IsOwnedTargetType(CardModel? card)
 	{
+		if (TargetCardType == CardType.Attack)
+		{
+			return IsOwnedAttack(card);
+		}
+
 		if (TargetCardType == CardType.Skill)
 		{
 			return IsOwnedSkill(card);

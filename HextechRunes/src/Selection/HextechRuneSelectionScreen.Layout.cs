@@ -356,25 +356,34 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private Button CreateCardButton(RelicModel relic)
 	{
 		Color accent = GetAccentColor();
+		Texture2D? cardFrameTexture = GetCardFrameTexture();
+		bool useImageFrame = cardFrameTexture != null;
 		Button button = new()
 		{
 			Name = $"{(relic.CanonicalInstance?.Id ?? relic.Id).Entry}_Card",
 			CustomMinimumSize = PlayerRuneCardSize,
 			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,
-			MouseDefaultCursorShape = CursorShape.PointingHand
+			MouseDefaultCursorShape = CursorShape.PointingHand,
+			ClipContents = useImageFrame
 		};
-		button.AddThemeStyleboxOverride("normal", CreateCardStyle(new Color(0.08f, 0.1f, 0.14f, 0.74f), accent.Lightened(0.08f), 2, 0.18f));
-		button.AddThemeStyleboxOverride("hover", CreateCardStyle(new Color(0.1f, 0.12f, 0.18f, 0.84f), accent, 4, 0.32f));
-		button.AddThemeStyleboxOverride("pressed", CreateCardStyle(new Color(0.07f, 0.09f, 0.13f, 0.9f), accent.Lightened(0.14f), 4, 0.24f));
-		button.AddThemeStyleboxOverride("focus", CreateCardStyle(new Color(0.1f, 0.12f, 0.18f, 0.84f), accent, 4, 0.32f));
-		button.AddThemeStyleboxOverride("disabled", CreateCardStyle(new Color(0.08f, 0.09f, 0.12f, 0.62f), accent.Darkened(0.4f), 2, 0.08f));
+		Color transparentBorder = new(0f, 0f, 0f, 0f);
+		button.AddThemeStyleboxOverride("normal", CreateCardStyle(new Color(0.08f, 0.1f, 0.14f, 0.74f), useImageFrame ? transparentBorder : accent.Lightened(0.08f), useImageFrame ? 0 : 2, 0.18f));
+		button.AddThemeStyleboxOverride("hover", CreateCardStyle(new Color(0.1f, 0.12f, 0.18f, 0.84f), useImageFrame ? transparentBorder : accent, useImageFrame ? 0 : 4, 0.32f));
+		button.AddThemeStyleboxOverride("pressed", CreateCardStyle(new Color(0.07f, 0.09f, 0.13f, 0.9f), useImageFrame ? transparentBorder : accent.Lightened(0.14f), useImageFrame ? 0 : 4, 0.24f));
+		button.AddThemeStyleboxOverride("focus", CreateCardStyle(new Color(0.1f, 0.12f, 0.18f, 0.84f), useImageFrame ? transparentBorder : accent, useImageFrame ? 0 : 4, 0.32f));
+		button.AddThemeStyleboxOverride("disabled", CreateCardStyle(new Color(0.08f, 0.09f, 0.12f, 0.62f), useImageFrame ? transparentBorder : accent.Darkened(0.4f), useImageFrame ? 0 : 2, 0.08f));
+
+		if (cardFrameTexture != null)
+		{
+			button.AddChild(CreateCardFrameOverlay(cardFrameTexture));
+		}
 
 		MarginContainer margin = new();
 		margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-		margin.AddThemeConstantOverride("margin_left", 22);
-		margin.AddThemeConstantOverride("margin_right", 22);
-		margin.AddThemeConstantOverride("margin_top", 22);
+		margin.AddThemeConstantOverride("margin_left", useImageFrame ? 40 : 22);
+		margin.AddThemeConstantOverride("margin_right", useImageFrame ? 40 : 22);
+		margin.AddThemeConstantOverride("margin_top", useImageFrame ? 32 : 22);
 		margin.AddThemeConstantOverride("margin_bottom", PlayerRuneCardBottomMargin);
 		button.AddChild(margin);
 
@@ -387,14 +396,17 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		content.AddThemeConstantOverride("separation", 14);
 		margin.AddChild(content);
 
-		ColorRect accentBar = new()
+		if (!useImageFrame)
 		{
-			MouseFilter = MouseFilterEnum.Ignore,
-			Color = accent,
-			CustomMinimumSize = new Vector2(0f, 6f),
-			SizeFlagsHorizontal = SizeFlags.ExpandFill
-		};
-		content.AddChild(accentBar);
+			ColorRect accentBar = new()
+			{
+				MouseFilter = MouseFilterEnum.Ignore,
+				Color = accent,
+				CustomMinimumSize = new Vector2(0f, 6f),
+				SizeFlagsHorizontal = SizeFlags.ExpandFill
+			};
+			content.AddChild(accentBar);
+		}
 
 		CenterContainer iconBox = new()
 		{
@@ -442,38 +454,47 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			CustomMinimumSize = PlayerRerollButtonSize,
 			Disabled = alreadyRerolled
 		};
-		Color accent = GetAccentColor();
-		button.AddThemeStyleboxOverride("normal", CreateRerollStyle(new Color(0.08f, 0.1f, 0.15f, 0.72f), accent.Lightened(0.05f)));
-		button.AddThemeStyleboxOverride("hover", CreateRerollStyle(new Color(0.1f, 0.13f, 0.18f, 0.82f), accent));
-		button.AddThemeStyleboxOverride("pressed", CreateRerollStyle(new Color(0.07f, 0.09f, 0.13f, 0.86f), accent.Lightened(0.12f)));
-		button.AddThemeStyleboxOverride("focus", CreateRerollStyle(new Color(0.1f, 0.13f, 0.18f, 0.82f), accent));
-		button.AddThemeStyleboxOverride("disabled", CreateRerollStyle(new Color(0.08f, 0.09f, 0.12f, 0.56f), accent.Darkened(0.35f)));
+		StyleBoxFlat transparentStyle = CreateRerollStyle(new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, 0f));
+		transparentStyle.SetBorderWidthAll(0);
+		transparentStyle.ShadowSize = 0;
+		transparentStyle.ShadowColor = new Color(0f, 0f, 0f, 0f);
+		button.AddThemeStyleboxOverride("normal", transparentStyle);
+		button.AddThemeStyleboxOverride("hover", transparentStyle);
+		button.AddThemeStyleboxOverride("pressed", transparentStyle);
+		button.AddThemeStyleboxOverride("focus", transparentStyle);
+		button.AddThemeStyleboxOverride("disabled", transparentStyle);
 
 		TextureRect icon = new()
 		{
-			Name = "RerollIcon",
+			Name = "RerollButtonTexture",
 			MouseFilter = MouseFilterEnum.Ignore,
-			CustomMinimumSize = new Vector2(PlayerRerollIconSize, PlayerRerollIconSize),
+			CustomMinimumSize = PlayerRerollButtonSize,
 			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
 			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
 			SelfModulate = Colors.White
 		};
-		icon.AnchorLeft = 0.5f;
-		icon.AnchorRight = 0.5f;
-		icon.AnchorTop = 0.5f;
-		icon.AnchorBottom = 0.5f;
-		icon.OffsetLeft = -PlayerRerollIconSize / 2f;
-		icon.OffsetRight = PlayerRerollIconSize / 2f;
-		icon.OffsetTop = -PlayerRerollIconSize / 2f;
-		icon.OffsetBottom = PlayerRerollIconSize / 2f;
-		icon.Texture = AssetHooks.LoadUiTexture(RerollIconPath);
+		icon.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		ApplyRerollButtonVisualState(button, icon, alreadyRerolled, hovered: false);
 		if (icon.Texture == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.CreateRerollButton: failed to load reroll icon path={RerollIconPath}");
+			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.CreateRerollButton: failed to load reroll button texture path={RerollButtonTexturePath}");
 		}
-		ApplyRerollButtonVisualState(button, icon, alreadyRerolled);
 		button.AddChild(icon);
-		button.Pressed += () => OnRerollPressed(slotIndex);
+		bool hovered = false;
+		button.MouseEntered += () =>
+		{
+			hovered = true;
+			ApplyRerollButtonVisualState(button, icon, alreadyRerolled, hovered);
+		};
+		button.MouseExited += () =>
+		{
+			hovered = false;
+			ApplyRerollButtonVisualState(button, icon, alreadyRerolled, hovered);
+		};
+		button.Pressed += () =>
+		{
+			OnRerollPressed(slotIndex);
+		};
 		return button;
 	}
 
@@ -520,72 +541,4 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		label.Text = text;
 	}
 
-	private Control CreateRarityPill()
-	{
-		return CreateTextPill(new LocString(LocTable, "HEXTECH_SERIES." + _rarityKey).GetRawText());
-	}
-
-	private Control CreatePlayerPoolPill(RelicModel relic)
-	{
-		string poolKey = HextechCatalog.GetPlayerRunePoolKey(relic);
-		return CreateTextPill(new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText());
-	}
-
-	private Control CreatePlayerTagPill(RelicModel relic)
-	{
-		string tagKey = HextechCatalog.GetPlayerRuneTagKey(relic);
-		return CreateTextPill(new LocString(LocTable, "HEXTECH_TAG." + tagKey).GetRawText());
-	}
-
-	private Control CreatePlayerMetadataPills(RelicModel relic)
-	{
-		Control wrapper = new()
-		{
-			MouseFilter = MouseFilterEnum.Ignore,
-			CustomMinimumSize = new Vector2(0f, 24f)
-		};
-
-		CenterContainer pillCenter = new()
-		{
-			MouseFilter = MouseFilterEnum.Ignore
-		};
-		pillCenter.AnchorLeft = 0f;
-		pillCenter.AnchorRight = 1f;
-		pillCenter.AnchorTop = 0f;
-		pillCenter.AnchorBottom = 1f;
-		pillCenter.OffsetTop = -4f;
-		pillCenter.OffsetBottom = -4f;
-
-		HBoxContainer row = new()
-		{
-			MouseFilter = MouseFilterEnum.Ignore,
-			Alignment = BoxContainer.AlignmentMode.Center
-		};
-		row.AddThemeConstantOverride("separation", 6);
-		row.AddChild(CreatePlayerPoolPill(relic));
-		row.AddChild(CreatePlayerTagPill(relic));
-		pillCenter.AddChild(row);
-		wrapper.AddChild(pillCenter);
-		return wrapper;
-	}
-
-	private Control CreateTextPill(string text)
-	{
-		PanelContainer pill = new()
-		{
-			MouseFilter = MouseFilterEnum.Ignore
-		};
-		pill.AddThemeStyleboxOverride("panel", CreatePillStyle(GetAccentColor()));
-
-		Label label = new()
-		{
-			MouseFilter = MouseFilterEnum.Ignore,
-			Text = text,
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-		label.AddThemeFontSizeOverride("font_size", 14);
-		label.AddThemeColorOverride("font_color", new Color(0.08f, 0.09f, 0.11f, 0.92f));
-		pill.AddChild(label);
-		return pill;
-	}
 }

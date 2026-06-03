@@ -82,6 +82,24 @@ internal static class HextechForgeGrantHelper
 		return true;
 	}
 
+	public static bool AddWeightedRandomForgeReward(
+		Player player,
+		CombatRoom room,
+		string source,
+		int silverWeight,
+		int goldWeight,
+		int prismaticWeight)
+	{
+		if (!TryCreateStableRandomForge(player, source, 0, silverWeight, goldWeight, prismaticWeight, out RelicModel? forge) || forge == null)
+		{
+			return false;
+		}
+
+		SaveManager.Instance.MarkRelicAsSeen(forge);
+		room.AddExtraReward(player, new RelicReward(forge, player));
+		return true;
+	}
+
 	public static bool AddRandomForgeReward(Player player, CombatRoom room, HextechRarityTier rarity)
 	{
 		if (!TryCreateStableRandomForge(player, rarity, "combat-random-forge-reward-rarity", 0, out RelicModel? forge) || forge == null)
@@ -103,6 +121,19 @@ internal static class HextechForgeGrantHelper
 	private static bool TryCreateStableRandomForge(Player player, string source, int ordinal, out RelicModel? forge)
 	{
 		HextechRarityTier rarity = RollStableForgeRarity(player, source, ordinal);
+		return TryCreateStableRandomForge(player, rarity, source, ordinal, out forge);
+	}
+
+	private static bool TryCreateStableRandomForge(
+		Player player,
+		string source,
+		int ordinal,
+		int silverWeight,
+		int goldWeight,
+		int prismaticWeight,
+		out RelicModel? forge)
+	{
+		HextechRarityTier rarity = RollStableForgeRarity(player, source, ordinal, silverWeight, goldWeight, prismaticWeight);
 		return TryCreateStableRandomForge(player, rarity, source, ordinal, out forge);
 	}
 
@@ -177,20 +208,43 @@ internal static class HextechForgeGrantHelper
 
 	private static HextechRarityTier RollStableForgeRarity(Player player, string source, int ordinal)
 	{
-		int roll = HextechStableRandom.Index(
-			(RunState)player.RunState,
-			100,
-			source,
-			"forge-rarity",
-			HextechStableRandom.PlayerKey(player),
-			ordinal.ToString(),
-			player.Relics.Count.ToString());
-		if (roll < 65)
+		return RollStableForgeRarity(player, source, ordinal, 65, 25, 10);
+	}
+
+	private static HextechRarityTier RollStableForgeRarity(
+		Player player,
+		string source,
+		int ordinal,
+		int silverWeight,
+		int goldWeight,
+		int prismaticWeight)
+	{
+		silverWeight = Math.Max(0, silverWeight);
+		goldWeight = Math.Max(0, goldWeight);
+		prismaticWeight = Math.Max(0, prismaticWeight);
+		int totalWeight = silverWeight + goldWeight + prismaticWeight;
+		if (totalWeight <= 0)
 		{
 			return HextechRarityTier.Silver;
 		}
 
-		if (roll < 90)
+		int roll = HextechStableRandom.Index(
+			(RunState)player.RunState,
+			totalWeight,
+			source,
+			"forge-rarity",
+			HextechStableRandom.PlayerKey(player),
+			ordinal.ToString(),
+			player.Relics.Count.ToString(),
+			silverWeight.ToString(),
+			goldWeight.ToString(),
+			prismaticWeight.ToString());
+		if (roll < silverWeight)
+		{
+			return HextechRarityTier.Silver;
+		}
+
+		if (roll < silverWeight + goldWeight)
 		{
 			return HextechRarityTier.Gold;
 		}

@@ -30,6 +30,13 @@ internal static partial class HextechCatalog
 			.ToArray();
 	}
 
+	public static IReadOnlyList<RelicModel> GetCanonicalGenericVisibleRunes()
+	{
+		return GetGenericVisibleRuneTypes()
+			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
+			.ToArray();
+	}
+
 	public static IReadOnlyList<RuneSeriesGroup> GetCharacterRuneGroups()
 	{
 		return CharacterRunePools
@@ -63,7 +70,7 @@ internal static partial class HextechCatalog
 	public static IReadOnlyList<RelicModel> GetCanonicalVisibleCustomRelics()
 	{
 		return AllCustomRelicTypes
-			.Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeSelectable(type))
+			.Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeVisible(type))
 			.Select(static type => TryGetCanonicalVisibleCustomRelic(type, out RelicModel? relic) ? relic : null)
 			.OfType<RelicModel>()
 			.ToArray();

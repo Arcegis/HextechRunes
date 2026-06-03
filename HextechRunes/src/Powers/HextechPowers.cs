@@ -116,9 +116,7 @@ public sealed class HextechAttackReplayPower : PowerModel
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		if (Amount <= 0m
-			|| card.Owner?.Creature != Owner
-			|| card.Type != CardType.Attack)
+		if (!ShouldReplay(card))
 		{
 			return playCount;
 		}
@@ -128,15 +126,20 @@ public sealed class HextechAttackReplayPower : PowerModel
 
 	public override async Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (Amount <= 0m
-			|| card.Owner?.Creature != Owner
-			|| card.Type != CardType.Attack)
+		if (!ShouldReplay(card))
 		{
 			return;
 		}
 
 		Flash();
 		await PowerCmd.Remove(this);
+	}
+
+	private bool ShouldReplay(CardModel card)
+	{
+		return Amount > 0m
+			&& card.Owner?.Creature == Owner
+			&& IllusoryWeaponRune.IsAttackForEffects(card, card.Owner);
 	}
 }
 

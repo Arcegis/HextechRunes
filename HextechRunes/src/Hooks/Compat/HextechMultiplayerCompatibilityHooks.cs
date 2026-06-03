@@ -48,7 +48,7 @@ internal static class HextechMultiplayerCompatibilityHooks
 			return;
 		}
 
-		string signedEntry = $"{ModInfo.Id}-{ModInfo.Version}+{GetNetworkSignature()}";
+		string signedEntry = $"{ModInfo.Id}-{ModInfo.Version}";
 		for (int i = 0; i < __result.Count; i++)
 		{
 			if (__result[i].StartsWith($"{ModInfo.Id}-", StringComparison.Ordinal))

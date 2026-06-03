@@ -44,7 +44,7 @@ public sealed class LubricantRune : HextechRelicBase
 		get
 		{
 			EnsureTurnScopedStateCurrent(ResetTurnState);
-			return _usedThisTurn;
+			return HasTurnProcTriggered(nameof(LubricantRune), _usedThisTurn);
 		}
 		set
 		{
@@ -56,7 +56,7 @@ public sealed class LubricantRune : HextechRelicBase
 
 	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
 
-	public override int DisplayAmount => !IsCanonical && !_usedThisTurn ? 1 : 0;
+	public override int DisplayAmount => !IsCanonical && !HasTurnProcTriggered(nameof(LubricantRune), _usedThisTurn) ? 1 : 0;
 
 	public override bool IsAvailableForPlayer(Player player)
 	{
@@ -112,7 +112,7 @@ public sealed class LubricantRune : HextechRelicBase
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (_usedThisTurn
+		if (HasTurnProcTriggered(nameof(LubricantRune), _usedThisTurn)
 			|| cardPlay.IsAutoPlay
 			|| !cardPlay.IsFirstInSeries
 			|| cardPlay.Card.Owner != Owner
@@ -121,9 +121,11 @@ public sealed class LubricantRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_usedThisTurn = true;
-		InvokeDisplayAmountChanged();
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(LubricantRune), ref _usedThisTurn))
+		{
+			return Task.CompletedTask;
+		}
+
 		Flash();
 		return Task.CompletedTask;
 	}
@@ -131,7 +133,7 @@ public sealed class LubricantRune : HextechRelicBase
 	private bool ShouldPowerCardBeFree(CardModel card)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		return !_usedThisTurn
+		return !HasTurnProcTriggered(nameof(LubricantRune), _usedThisTurn)
 			&& Owner != null
 			&& card.Owner == Owner
 			&& card.Type == CardType.Power

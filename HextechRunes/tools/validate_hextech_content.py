@@ -88,6 +88,7 @@ def extract_rune_registrations(text: str) -> list[dict[str, object]]:
                 "flags": set(re.findall(r"RuneFlags\.(\w+)", args)),
                 "character_pool": character_pool_match.group(1) if character_pool_match else None,
                 "character_order": int(character_order_match.group(1)) if character_order_match else 0,
+                "tag_key": (re.search(r'tagKey:\s*"([^"]+)"', args) or [None, "COMPREHENSIVE"])[1],
             }
         )
     return registrations
@@ -219,6 +220,13 @@ def validate_relic_registry(errors: list[str]) -> None:
     for flag in ("Disabled", "AttributeConversionExclusive", "FirstActExcluded", "ThirdActExcluded"):
         values = [str(reg["type"]) for reg in rune_regs if flag in reg["flags"]]
         check_duplicates(errors, f"{flag} rune registry", values)
+
+    tag_keys = sorted({str(reg["tag_key"]) for reg in rune_regs})
+    for locale in ("zhs", "eng"):
+        loc = json.loads(read(LOCALIZATION / locale / "relic_collection.json"))
+        missing_tags = [tag_key for tag_key in tag_keys if f"HEXTECH_TAG.{tag_key}" not in loc]
+        if missing_tags:
+            fail(errors, f"{locale} relic_collection.json missing rune tag localization: {', '.join(missing_tags)}")
 
     check_duplicates(errors, "all custom relic registries", all_types)
 
