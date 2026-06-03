@@ -149,6 +149,17 @@ internal static partial class HextechCombatHooks
 		return false;
 	}
 
+	private static bool GrandFinaleOnPlayPrefix(GrandFinale __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!GrandFinaleUpgradeRune.AllowsPlaying(__instance))
+		{
+			return true;
+		}
+
+		__result = GrandFinaleUpgradeRune.PlayUpgradedSafely(choiceContext, __instance);
+		return false;
+	}
+
 	private static void CardResolveEnergyXValuePostfix(CardModel __instance, ref int __result)
 	{
 		WhirlwindUpgradeRune.TryDoubleResolvedX(__instance, ref __result);

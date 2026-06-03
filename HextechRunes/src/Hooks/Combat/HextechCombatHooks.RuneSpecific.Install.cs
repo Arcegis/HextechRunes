@@ -56,6 +56,7 @@ internal static partial class HextechCombatHooks
 		TryInstallRuneHook<HiddenGemUpgradeRune>("hidden gem upgraded play", () => InstallHiddenGemUpgradeHooks(harmony));
 		TryInstallRuneHook<AutomationUpgradeRune>("automation upgraded draw", () => InstallAutomationUpgradeHooks(harmony));
 		TryInstallRuneHook<VoltaicUpgradeRune>("voltaic upgraded play", () => InstallVoltaicUpgradeHooks(harmony));
+		TryInstallRuneHook<GrandFinaleUpgradeRune>("grand finale upgraded play", () => InstallGrandFinaleUpgradeHooks(harmony));
 	}
 
 	private static void InstallDeviantCognitionHooks(Harmony harmony)
@@ -166,5 +167,12 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(Voltaic), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(VoltaicOnPlayPrefix)));
+	}
+
+	private static void InstallGrandFinaleUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(GrandFinale), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(GrandFinaleOnPlayPrefix)));
 	}
 }

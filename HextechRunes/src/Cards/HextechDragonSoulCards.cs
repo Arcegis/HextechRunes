@@ -228,7 +228,7 @@ public sealed class HextechInfernalDragonSoulPower : HextechPowerBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (_triggeredThisTurn
+		if (HasTriggeredThisTurn()
 			|| Amount <= 0m
 			|| !Owner.IsAlive
 			|| !cardPlay.IsFirstInSeries
@@ -245,9 +245,52 @@ public sealed class HextechInfernalDragonSoulPower : HextechPowerBase
 			return;
 		}
 
-		_triggeredThisTurn = true;
+		if (!TryConsumeTriggerThisTurn())
+		{
+			return;
+		}
+
 		Flash();
 		await PowerCmd.Apply<HextechBurnPower>(targets, Amount, Owner, cardPlay.Card);
+	}
+
+	private bool HasTriggeredThisTurn()
+	{
+		return TryGetNetworkTriggerCount(out int count) ? count > 0 : _triggeredThisTurn;
+	}
+
+	private bool TryConsumeTriggerThisTurn()
+	{
+		if (Owner.Player is Player player
+			&& HextechPlayerContextHelper.IsNetworkMultiplayerRun()
+			&& CombatManager.Instance?.IsInProgress == true
+			&& player.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+		{
+			return modifier.TryConsumePlayerRuneProcThisTurn(player, nameof(HextechInfernalDragonSoulPower), 1);
+		}
+
+		if (_triggeredThisTurn)
+		{
+			return false;
+		}
+
+		_triggeredThisTurn = true;
+		return true;
+	}
+
+	private bool TryGetNetworkTriggerCount(out int count)
+	{
+		count = 0;
+		if (Owner.Player is not Player player
+			|| !HextechPlayerContextHelper.IsNetworkMultiplayerRun()
+			|| CombatManager.Instance?.IsInProgress != true
+			|| player.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is not HextechMayhemModifier modifier)
+		{
+			return false;
+		}
+
+		count = modifier.GetPlayerRuneProcsThisTurn(player, nameof(HextechInfernalDragonSoulPower));
+		return true;
 	}
 
 	private IEnumerable<Creature> GetTargets(CardPlay cardPlay)

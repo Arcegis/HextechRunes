@@ -75,7 +75,7 @@ public sealed class SpeedDemonRune : HextechRelicBase
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (_triggeredThisTurn
+		if (HasTurnProcTriggered(nameof(SpeedDemonRune), _triggeredThisTurn)
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0
@@ -84,8 +84,11 @@ public sealed class SpeedDemonRune : HextechRelicBase
 			return;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(SpeedDemonRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		Flash([target]);
 		await CardPileCmd.Draw(choiceContext, 2m, Owner);
 	}

@@ -80,7 +80,7 @@ public sealed class BloodPactRune : HextechRelicBase
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
 		if (Owner == null
-			|| _triggeredThisTurn
+			|| HasTurnProcTriggered(nameof(BloodPactRune), _triggeredThisTurn)
 			|| creature != Owner.Creature
 			|| delta >= 0m
 			|| Owner.Creature.IsDead
@@ -89,8 +89,11 @@ public sealed class BloodPactRune : HextechRelicBase
 			return;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(BloodPactRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		Flash();
 		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
 	}

@@ -82,13 +82,16 @@ public sealed class FinalFormRune : HextechRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (_triggeredThisTurn || Owner == null || !IsOwnedNonXCardWithCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue))
+		if (HasTurnProcTriggered(nameof(FinalFormRune), _triggeredThisTurn) || Owner == null || !IsOwnedNonXCardWithCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue))
 		{
 			return;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(FinalFormRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		int block = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["BlockPercent"].BaseValue));
 		Flash();
 		await CreatureCmd.GainBlock(Owner.Creature, block, ValueProp.Unpowered, cardPlay, fast: false);

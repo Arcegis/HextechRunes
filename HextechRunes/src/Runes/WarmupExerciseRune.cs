@@ -76,7 +76,7 @@ public sealed class WarmupExerciseRune : HextechRelicBase
 	{
 		if (Owner != null && target.Side == CombatSide.Enemy && result.UnblockedDamage > 0 && IsDamageFromOwner(dealer, cardSource))
 		{
-			_dealtDamageThisTurn = true;
+			TryConsumeTurnProc($"{nameof(WarmupExerciseRune)}:Damage", ref _dealtDamageThisTurn);
 		}
 
 		return Task.CompletedTask;
@@ -84,7 +84,11 @@ public sealed class WarmupExerciseRune : HextechRelicBase
 
 	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || Owner.Creature.IsDead || side != Owner.Creature.Side || _dealtDamageThisTurn || _triggeredThisCombat)
+		if (Owner == null
+			|| Owner.Creature.IsDead
+			|| side != Owner.Creature.Side
+			|| HasTurnProcTriggered($"{nameof(WarmupExerciseRune)}:Damage", _dealtDamageThisTurn)
+			|| _triggeredThisCombat)
 		{
 			return;
 		}

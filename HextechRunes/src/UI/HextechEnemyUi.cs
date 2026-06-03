@@ -282,6 +282,8 @@ internal static class HextechEnemyUi
 
 	private static bool EnemyHexHolderOnFocusPrefix(NRelicBasicHolder __instance)
 	{
+		NHoverTipSet.Remove(__instance);
+
 		if (!TryGetHexFromHolder(__instance, out MonsterHexKind hex))
 		{
 			return true;

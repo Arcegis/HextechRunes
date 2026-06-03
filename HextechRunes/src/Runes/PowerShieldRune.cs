@@ -54,13 +54,16 @@ public sealed class PowerShieldRune : HextechRelicBase
 	public override async Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (_triggeredThisTurn || Owner == null || creature != Owner.Creature || amount <= 0m)
+		if (HasTurnProcTriggered(nameof(PowerShieldRune), _triggeredThisTurn) || Owner == null || creature != Owner.Creature || amount <= 0m)
 		{
 			return;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(PowerShieldRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		Flash();
 		int strength = GetPlayerActNumberForScaling();
 		await PowerCmd.Apply<HextechPowerShieldTemporaryStrengthPower>(Owner.Creature, strength, Owner.Creature, cardSource);

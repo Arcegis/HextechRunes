@@ -55,7 +55,7 @@ public sealed class RadianceRune : HextechRelicBase
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (_triggeredThisTurn
+		if (HasTurnProcTriggered(nameof(RadianceRune), _triggeredThisTurn)
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.TotalDamage <= 0m
@@ -64,8 +64,11 @@ public sealed class RadianceRune : HextechRelicBase
 			return;
 		}
 
-		_triggeredThisTurn = true;
-		UpdateTurnScopedStateIdentity();
+		if (!TryConsumeTurnProc(nameof(RadianceRune), ref _triggeredThisTurn))
+		{
+			return;
+		}
+
 		if (target.IsAlive)
 		{
 			int damage = Math.Max(1, FloorToInt(target.MaxHp * DynamicVars["MaxHpDamagePercent"].BaseValue));

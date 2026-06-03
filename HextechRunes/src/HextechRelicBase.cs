@@ -177,6 +177,87 @@ public abstract class HextechRelicBase : RelicModel
 			&& Owner != null;
 	}
 
+	protected bool TryGetNetworkTurnProcCount(string procKey, out int count)
+	{
+		count = 0;
+		if (!ShouldUseNetworkCombatHistory()
+			|| Owner == null
+			|| Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is not HextechMayhemModifier modifier)
+		{
+			return false;
+		}
+
+		count = modifier.GetPlayerRuneProcsThisTurn(Owner, procKey);
+		return true;
+	}
+
+	protected bool HasTurnProcReachedLimit(string procKey, int localCount, int maxPerTurn)
+	{
+		if (TryGetNetworkTurnProcCount(procKey, out int networkCount))
+		{
+			return networkCount >= maxPerTurn;
+		}
+
+		return localCount >= maxPerTurn;
+	}
+
+	protected int GetTurnProcCount(string procKey, int localCount)
+	{
+		return TryGetNetworkTurnProcCount(procKey, out int networkCount)
+			? networkCount
+			: localCount;
+	}
+
+	protected bool HasTurnProcTriggered(string procKey, bool localTriggered)
+	{
+		return HasTurnProcReachedLimit(procKey, localTriggered ? 1 : 0, 1);
+	}
+
+	protected bool TryConsumeTurnProc(string procKey, ref int localCount, int maxPerTurn)
+	{
+		if (maxPerTurn <= 0)
+		{
+			return false;
+		}
+
+		if (ShouldUseNetworkCombatHistory()
+			&& Owner != null
+			&& Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+		{
+			if (!modifier.TryConsumePlayerRuneProcThisTurn(Owner, procKey, maxPerTurn))
+			{
+				return false;
+			}
+
+			localCount = modifier.GetPlayerRuneProcsThisTurn(Owner, procKey);
+			UpdateTurnScopedStateIdentity();
+			InvokeDisplayAmountChanged();
+			return true;
+		}
+
+		if (localCount >= maxPerTurn)
+		{
+			return false;
+		}
+
+		localCount++;
+		UpdateTurnScopedStateIdentity();
+		InvokeDisplayAmountChanged();
+		return true;
+	}
+
+	protected bool TryConsumeTurnProc(string procKey, ref bool localTriggered)
+	{
+		int localCount = localTriggered ? 1 : 0;
+		if (!TryConsumeTurnProc(procKey, ref localCount, 1))
+		{
+			return false;
+		}
+
+		localTriggered = true;
+		return true;
+	}
+
 	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
 	{
 		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayed(Owner, firstInSeriesOnly, includeAutoPlay);
@@ -335,7 +416,7 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 		get
 		{
 			EnsureTurnScopedStateCurrent(ResetProcs);
-			return _procsThisTurn;
+			return GetTurnProcCount(GetProcKey(), _procsThisTurn);
 		}
 		set
 		{
@@ -349,7 +430,7 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 
 	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
 
-	public override int DisplayAmount => !IsCanonical ? Math.Max(0, MaxProcsPerTurn - _procsThisTurn) : 0;
+	public override int DisplayAmount => !IsCanonical ? Math.Max(0, MaxProcsPerTurn - GetTurnProcCount(GetProcKey(), _procsThisTurn)) : 0;
 
 	public override Task BeforeCombatStart()
 	{
@@ -380,12 +461,18 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 #endif
 	{
 		EnsureTurnScopedStateCurrent(ResetProcs);
-		if (!TryGetOwnedEnemyDebuffTarget(power, amount, applier, out Creature? target) || _procsThisTurn >= MaxProcsPerTurn)
+		string procKey = GetProcKey();
+		if (!TryGetOwnedEnemyDebuffTarget(power, amount, applier, out Creature? target)
+			|| HasTurnProcReachedLimit(procKey, _procsThisTurn, MaxProcsPerTurn))
 		{
 			return;
 		}
 
-		_procsThisTurn++;
+		if (!TryConsumeTurnProc(procKey, ref _procsThisTurn, MaxProcsPerTurn))
+		{
+			return;
+		}
+
 		UpdateDisplay();
 		Flash(target == null ? Array.Empty<Creature>() : [target]);
 		await OnEnemyDebuffApplied(target!);
@@ -407,8 +494,13 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 
 	private void UpdateDisplay()
 	{
-		Status = _procsThisTurn == MaxProcsPerTurn - 1 ? RelicStatus.Active : RelicStatus.Normal;
+		Status = GetTurnProcCount(GetProcKey(), _procsThisTurn) == MaxProcsPerTurn - 1 ? RelicStatus.Active : RelicStatus.Normal;
 		InvokeDisplayAmountChanged();
+	}
+
+	private string GetProcKey()
+	{
+		return GetType().Name;
 	}
 }
 
