@@ -4,6 +4,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Singleton;
@@ -29,7 +30,15 @@ internal static class HextechEnemyPowerScalingHooks
 			priority = Priority.First
 		};
 
-		harmony.Patch(ResolveModifyPowerAmountGivenTarget(), prefix: prefix);
+		MethodInfo? modifyPowerAmountGivenTarget = TryResolveModifyPowerAmountGivenTarget();
+		if (modifyPowerAmountGivenTarget != null)
+		{
+			harmony.Patch(modifyPowerAmountGivenTarget, prefix: prefix);
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem][Compat] Enemy power multiplayer scaling hook skipped: ModifyPowerAmountGiven target not found in this runtime.");
+		}
 
 #if STS2_105_OR_NEWER
 		HarmonyMethod scaledPrefix = new(typeof(HextechEnemyPowerScalingHooks), nameof(GetScaledAmountForMultiplayerPrefix))
@@ -250,9 +259,9 @@ internal static class HextechEnemyPowerScalingHooks
 		return new OverrideScope(scalingOverride);
 	}
 
-	private static MethodInfo ResolveModifyPowerAmountGivenTarget()
+	private static MethodInfo? TryResolveModifyPowerAmountGivenTarget()
 	{
-		MethodInfo reflectedMethod = RequireMethod(
+		MethodInfo? reflectedMethod = TryGetMethod(
 			typeof(MultiplayerScalingModel),
 			nameof(MultiplayerScalingModel.ModifyPowerAmountGiven),
 			BindingFlags.Public | BindingFlags.Instance,
@@ -261,6 +270,10 @@ internal static class HextechEnemyPowerScalingHooks
 			typeof(decimal),
 			typeof(Creature),
 			typeof(CardModel));
+		if (reflectedMethod == null)
+		{
+			return null;
+		}
 
 		if (reflectedMethod.DeclaringType == typeof(MultiplayerScalingModel)
 			&& reflectedMethod.GetMethodBody() != null)
@@ -275,7 +288,7 @@ internal static class HextechEnemyPowerScalingHooks
 		}
 
 		Type declaringType = reflectedMethod.DeclaringType ?? typeof(AbstractModel);
-		return RequireMethod(
+		return TryGetMethod(
 			declaringType,
 			nameof(AbstractModel.ModifyPowerAmountGiven),
 			BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
@@ -292,7 +305,7 @@ internal static class HextechEnemyPowerScalingHooks
 		List<MethodInfo> targets = new();
 		foreach (Type powerType in GetPowerTypesWithScalingOverride())
 		{
-			MethodInfo method = RequireMethod(
+			MethodInfo? method = TryGetMethod(
 				powerType,
 				nameof(PowerModel.GetScaledAmountForMultiplayer),
 				BindingFlags.Public | BindingFlags.Instance,
@@ -301,8 +314,13 @@ internal static class HextechEnemyPowerScalingHooks
 				typeof(decimal),
 				typeof(Creature),
 				typeof(CardModel));
+			if (method == null)
+			{
+				continue;
+			}
+
 			Type declaringType = method.DeclaringType ?? typeof(PowerModel);
-			method = RequireMethod(
+			method = TryGetMethod(
 				declaringType,
 				nameof(PowerModel.GetScaledAmountForMultiplayer),
 				BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
@@ -311,11 +329,20 @@ internal static class HextechEnemyPowerScalingHooks
 				typeof(decimal),
 				typeof(Creature),
 				typeof(CardModel));
+			if (method == null)
+			{
+				continue;
+			}
 
 			if (!ContainsMethod(targets, method))
 			{
 				targets.Add(method);
 			}
+		}
+
+		if (targets.Count == 0)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem][Compat] Enemy power multiplayer scaling hook skipped: GetScaledAmountForMultiplayer targets not found in this runtime.");
 		}
 
 		return targets;
