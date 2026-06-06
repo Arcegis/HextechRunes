@@ -20,11 +20,9 @@ internal sealed partial class HextechMayhemModifier
 
 		await ApplyToCurrentEnemiesIfNeeded();
 		await ApplyDelayedEnemyHealingBlocks(combatState);
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.BeforePlayerSideTurnStart(context, combatState, players);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.BeforePlayerSideTurnStart(context, combatState, players));
     }
 
 	private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
@@ -32,11 +30,9 @@ internal sealed partial class HextechMayhemModifier
 	    _combatTracking.PrepareEnemySideTurnStart();
 		RefreshPlayerAttackCostDoublingPreviews(players);
 
-	    IReadOnlyList<Creature> enemies = GetAliveEnemies(combatState);
-	    HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            await effect.BeforeEnemySideTurnStart(context, combatState, players, enemies);
-        }
+	    IReadOnlyList<Creature> enemies = HextechCombatCreatureHelper.GetAliveEnemies(combatState);
+	    await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.BeforeEnemySideTurnStart(context, combatState, players, enemies));
     }
 }

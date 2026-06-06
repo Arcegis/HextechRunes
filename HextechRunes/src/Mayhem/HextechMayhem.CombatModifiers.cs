@@ -25,14 +25,10 @@ internal sealed partial class HextechMayhemModifier
             return 1m;
         }
 
-        decimal multiplier = 1m;
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            multiplier *= effect.ModifyDamageMultiplicative(context, target, amount, props, dealer, cardSource);
-        }
-
-        return multiplier;
+        return HextechEnemyHexDispatcher.Transform(
+            this,
+            1m,
+            (effect, context, multiplier) => multiplier * effect.ModifyDamageMultiplicative(context, target, amount, props, dealer, cardSource));
     }
 
     public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
@@ -42,39 +38,25 @@ internal sealed partial class HextechMayhemModifier
             return 1m;
         }
 
-        decimal multiplier = 1m;
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            multiplier *= effect.ModifyBlockMultiplicative(context, target, block, props, cardSource, cardPlay);
-        }
-
-        return multiplier;
+        return HextechEnemyHexDispatcher.Transform(
+            this,
+            1m,
+            (effect, context, multiplier) => multiplier * effect.ModifyBlockMultiplicative(context, target, block, props, cardSource, cardPlay));
     }
 
     public override decimal ModifyHandDraw(Player player, decimal count)
     {
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            count = effect.ModifyHandDraw(context, player, count);
-        }
-
-        return count;
+        return HextechEnemyHexDispatcher.Transform(
+            this,
+            count,
+            (effect, context, current) => effect.ModifyHandDraw(context, player, current));
     }
 
     public override bool ShouldFlush(Player player)
     {
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            if (!effect.ShouldFlush(context, player))
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return HextechEnemyHexDispatcher.All(
+            this,
+            (effect, context) => effect.ShouldFlush(context, player));
     }
 
     public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
@@ -90,12 +72,10 @@ internal sealed partial class HextechMayhemModifier
             return false;
         }
 
-        decimal multiplier = 1m;
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            multiplier *= effect.ModifyPlayerAttackEnergyCostMultiplier(context, card, originalCost);
-        }
+        decimal multiplier = HextechEnemyHexDispatcher.Transform(
+            this,
+            1m,
+            (effect, context, current) => current * effect.ModifyPlayerAttackEnergyCostMultiplier(context, card, originalCost));
 
         if (multiplier == 1m)
         {
@@ -108,15 +88,18 @@ internal sealed partial class HextechMayhemModifier
 
     public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
     {
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            if (effect.ModifyCardPlayResultPileTypeAndPosition(context, card, isAutoPlay, resources, pileType, position) is (PileType nextPileType, CardPilePosition nextPosition))
+        (pileType, position) = HextechEnemyHexDispatcher.Transform(
+            this,
+            (pileType, position),
+            (effect, context, current) =>
             {
-                pileType = nextPileType;
-                position = nextPosition;
-            }
-        }
+                if (effect.ModifyCardPlayResultPileTypeAndPosition(context, card, isAutoPlay, resources, current.pileType, current.position) is (PileType nextPileType, CardPilePosition nextPosition))
+                {
+                    return (nextPileType, nextPosition);
+                }
+
+                return current;
+            });
 
         return (pileType, position);
     }

@@ -86,7 +86,7 @@ internal static partial class HextechCatalog
 			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
 			return PlayerRuneTagKeyById.Value.TryGetValue(id, out string? tagKey)
 				? tagKey
-				: HextechContentRegistry.DefaultPlayerRuneTagKey;
+				: HextechPlayerRuneRegistry.DefaultTagKey;
 		}
 
 	public static IReadOnlySet<ModelId> GetMutuallyExclusivePlayerRuneIds(IEnumerable<ModelId> ownedIds)

@@ -6,7 +6,7 @@ internal sealed class SlapEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task AfterMonsterDebuffApplied(HextechEnemyHexContext context, PowerModel power, decimal amount, Creature target, Creature source, CardModel? cardSource)
 	{
-		if (HextechMayhemModifier.TryConsumeLimitedProc(context.Tracking.SlapProcsThisTurn, source, 3))
+		if (HextechCombatProcTracker.TryConsumeLimitedProc(context.Tracking.SlapProcsThisTurn, source, 3))
 		{
 			await PowerCmd.Apply<StrengthPower>(source, 1m, source, null);
 		}

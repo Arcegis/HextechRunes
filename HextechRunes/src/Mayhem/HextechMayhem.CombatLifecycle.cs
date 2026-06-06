@@ -103,13 +103,11 @@ internal sealed partial class HextechMayhemModifier
 	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		await ApplyDeferredBossStartHexes(combatState);
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.BeforeSideTurnStart(context, choiceContext, side, combatState);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.BeforeSideTurnStart(context, choiceContext, side, combatState));
 
-		IReadOnlyList<Creature> players = GetAlivePlayerSideCreatures(combatState);
+		IReadOnlyList<Creature> players = HextechCombatCreatureHelper.GetAlivePlayerSideCreatures(combatState);
 
 		if (side == CombatSide.Player)
 		{

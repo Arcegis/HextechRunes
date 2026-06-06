@@ -19,7 +19,7 @@ internal sealed class GetExcitedEnemyHex : HextechEnemyHexEffect
 				await PowerCmd.Remove(legacyPower);
 			}
 
-			HextechMayhemModifier.RemoveRetainedDeadEnemyIfNeeded(combatState, enemy);
+			HextechCombatCreatureHelper.RemoveRetainedDeadEnemyIfNeeded(combatState, enemy);
 		}
 	}
 

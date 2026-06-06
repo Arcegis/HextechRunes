@@ -40,12 +40,12 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier)
 
 	internal IReadOnlyList<Creature> GetAliveEnemies(HextechCombatState combatState)
 	{
-		return HextechMayhemModifier.GetAliveEnemies(combatState);
+		return HextechCombatCreatureHelper.GetAliveEnemies(combatState);
 	}
 
 	internal IReadOnlyList<Creature> GetAlivePlayerSideCreatures(HextechCombatState combatState)
 	{
-		return HextechMayhemModifier.GetAlivePlayerSideCreatures(combatState);
+		return HextechCombatCreatureHelper.GetAlivePlayerSideCreatures(combatState);
 	}
 
 	internal Task RunGroupedPlayerDebuffBurst(Func<Task> action)

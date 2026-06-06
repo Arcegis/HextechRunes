@@ -15,20 +15,18 @@ internal sealed partial class HextechMayhemModifier
 	public override async Task AfterPowerAmountChanged(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 #endif
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterPowerAmountChanged(context, power, amount, applier, cardSource);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterPowerAmountChanged(context, power, amount, applier, cardSource));
 
-		bool hasMonsterDebuffTrigger = TryGetMonsterDebuffTrigger(power, amount, applier, out Creature? target, out Creature? source);
-		bool suppressMonsterDebuffDuplicate = hasMonsterDebuffTrigger && ShouldSuppressMonsterDebuffDuplicate(power, amount, source, cardSource);
+		bool hasMonsterDebuffTrigger = HextechEnemyPowerTriggerHelper.TryGetMonsterDebuffTrigger(power, amount, applier, out Creature? target, out Creature? source);
+		bool suppressMonsterDebuffDuplicate = hasMonsterDebuffTrigger
+			&& HextechEnemyTriggerGuard.ShouldSuppressMonsterDebuffDuplicate(_combatTracking, power, amount, source, cardSource);
 		if (hasMonsterDebuffTrigger && !suppressMonsterDebuffDuplicate)
 		{
-			foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-			{
-				await effect.AfterMonsterDebuffApplied(context, power, amount, target!, source!, cardSource);
-			}
+			await HextechEnemyHexDispatcher.ForEachActive(
+				this,
+				(effect, context) => effect.AfterMonsterDebuffApplied(context, power, amount, target!, source!, cardSource));
 		}
 
 		Creature? courageSource = null;
@@ -38,7 +36,7 @@ internal sealed partial class HextechMayhemModifier
 			courageSource = source;
 			hasCourageTrigger = courageSource != null;
 		}
-		else if (TryGetMonsterSelfBuffTrigger(power, amount, applier, out Creature? buffSource))
+		else if (HextechEnemyPowerTriggerHelper.TryGetMonsterSelfBuffTrigger(power, amount, applier, out Creature? buffSource))
 		{
 			courageSource = buffSource;
 			hasCourageTrigger = true;
@@ -46,10 +44,9 @@ internal sealed partial class HextechMayhemModifier
 
 		if (hasCourageTrigger)
 		{
-			foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-			{
-				await effect.AfterCourageTrigger(context, courageSource!);
-			}
+			await HextechEnemyHexDispatcher.ForEachActive(
+				this,
+				(effect, context) => effect.AfterCourageTrigger(context, courageSource!));
 		}
 	}
 }

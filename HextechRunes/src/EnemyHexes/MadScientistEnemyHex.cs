@@ -9,7 +9,7 @@ internal sealed class MadScientistEnemyHex : HextechEnemyHexEffect
 	internal override async Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
 	{
 		if (creature.CombatId == null
-			|| !HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.MadScientistApplied, creature, replayOneShotPowers))
+			|| !HextechCombatProcTracker.TryMarkPersistentHexApplied(context.Tracking.MadScientistApplied, creature, replayOneShotPowers))
 		{
 			return;
 		}

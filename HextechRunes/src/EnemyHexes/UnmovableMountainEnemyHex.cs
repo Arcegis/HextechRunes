@@ -8,7 +8,7 @@ internal sealed class UnmovableMountainEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
 	{
-		if (HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.UnmovableMountainApplied, creature, replayOneShotPowers))
+		if (HextechCombatProcTracker.TryMarkPersistentHexApplied(context.Tracking.UnmovableMountainApplied, creature, replayOneShotPowers))
 		{
 			await PowerCmd.Apply<BarricadePower>(creature, 1m, creature, null);
 		}

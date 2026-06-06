@@ -31,7 +31,11 @@ def source_file_named(name: str) -> Path:
 
 
 def registry_source_text() -> str:
-    return "\n".join(read(path) for path in sorted(SRC.glob("HextechContentRegistry*.cs")))
+    registry_files = list(SRC.glob("HextechContentRegistry*.cs"))
+    content_dir = SRC / "Content"
+    if content_dir.exists():
+        registry_files.extend(content_dir.glob("*.cs"))
+    return "\n".join(read(path) for path in sorted(set(registry_files)))
 
 
 def fail(errors: list[str], message: str) -> None:
@@ -57,7 +61,7 @@ def extract_enum_values(text: str, enum_name: str) -> list[str]:
 
 def extract_block(text: str, name: str) -> str:
     patterns = [
-        rf"{name}\s*=\s*\[(?P<body>.*?)\];",
+        rf"{name}\s*(?:\{{\s*get;\s*\}}\s*)?=\s*\[(?P<body>.*?)\];",
         rf"{name}\s*=\s*new\s+HashSet<[^>]+>\s*\{{(?P<body>.*?)\}};",
         rf"{name}\s*=\s*new\s+Dictionary<[^>]+>\s*\{{(?P<body>.*?)\}};",
     ]
@@ -79,13 +83,13 @@ def extract_rune_registrations(text: str) -> list[dict[str, object]]:
     )
     for match in pattern.finditer(text):
         args = match.group("args")
-        character_pool_match = re.search(r"characterPool:\s*HextechCharacterPool\.(\w+)", args)
+        character_pool_match = re.search(r"characterPool:\s*(?:HextechCharacterPool|PlayerRuneCharacterPool)\.(\w+)", args)
         character_order_match = re.search(r"characterOrder:\s*(\d+)", args)
         registrations.append(
             {
                 "type": match.group("type"),
                 "rarity": match.group("rarity"),
-                "flags": set(re.findall(r"RuneFlags\.(\w+)", args)),
+                "flags": set(re.findall(r"(?:RuneFlags|PlayerRuneFlags)\.(\w+)", args)),
                 "character_pool": character_pool_match.group(1) if character_pool_match else None,
                 "character_order": int(character_order_match.group(1)) if character_order_match else 0,
                 "tag_key": (re.search(r'tagKey:\s*"([^"]+)"', args) or [None, "COMPREHENSIVE"])[1],
@@ -280,7 +284,7 @@ def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
     state_text = read(source_file_named("HextechMayhemCombatTrackingState.cs"))
-    serialization_text = read(source_file_named("HextechMayhemCombatTrackingState.Serialization.cs"))
+    snapshot_text = read(source_file_named("HextechMayhemCombatTrackingSnapshot.cs"))
     state_fields = {
         name: field_type
         for field_type, name in re.findall(
@@ -293,7 +297,7 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
         name: field_type
         for field_type, name in re.findall(
             r"\bpublic\s+(Dictionary<[^>]+>|List<[^>]+>|int)\s+([A-Za-z0-9]+)\s*\{\s*get;\s*set;\s*\}",
-            serialization_text,
+            snapshot_text,
         )
     }
     persistent = set(snapshot_fields)

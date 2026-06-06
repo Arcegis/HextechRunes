@@ -25,7 +25,7 @@ internal sealed class GoldenSpatulaEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
 	{
-		if (HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.GoldenSpatulaApplied, creature, replayOneShotPowers))
+		if (HextechCombatProcTracker.TryMarkPersistentHexApplied(context.Tracking.GoldenSpatulaApplied, creature, replayOneShotPowers))
 		{
 			await HextechMayhemModifier.EnsureMonsterMaxHpBonus(creature, context.TierValue(Kind, 0.25m, 0.30m, 0.45m), maxHpBaseOverride);
 		}

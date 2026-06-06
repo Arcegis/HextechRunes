@@ -17,48 +17,30 @@ internal sealed partial class HextechMayhemModifier
 {
 	public override bool TryModifyRewards(Player player, List<Reward> rewards, AbstractRoom? room)
 	{
-		HextechEnemyHexContext context = new(this);
-		bool modified = false;
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			modified |= effect.TryModifyRewards(context, player, rewards, room);
-		}
-
-		return modified;
+		return HextechEnemyHexDispatcher.AnyModified(
+			this,
+			(effect, context) => effect.TryModifyRewards(context, player, rewards, room));
 	}
 
 	public override CardCreationOptions ModifyCardRewardCreationOptions(Player player, CardCreationOptions options)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			options = effect.ModifyCardRewardCreationOptions(context, player, options);
-		}
-
-		return options;
+		return HextechEnemyHexDispatcher.Transform(
+			this,
+			options,
+			(effect, context, current) => effect.ModifyCardRewardCreationOptions(context, player, current));
 	}
 
 	public override bool TryModifyCardRewardOptions(Player player, List<CardCreationResult> cardRewardOptions, CardCreationOptions creationOptions)
 	{
-		HextechEnemyHexContext context = new(this);
-		bool modified = false;
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			modified |= effect.TryModifyCardRewardOptions(context, player, cardRewardOptions, creationOptions);
-		}
-
-		return modified;
+		return HextechEnemyHexDispatcher.AnyModified(
+			this,
+			(effect, context) => effect.TryModifyCardRewardOptions(context, player, cardRewardOptions, creationOptions));
 	}
 
 	public override bool TryModifyCardRewardOptionsLate(Player player, List<CardCreationResult> cardRewardOptions, CardCreationOptions creationOptions)
 	{
-		HextechEnemyHexContext context = new(this);
-		bool modified = false;
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			modified |= effect.TryModifyCardRewardOptionsLate(context, player, cardRewardOptions, creationOptions);
-		}
-
-		return modified;
+		return HextechEnemyHexDispatcher.AnyModified(
+			this,
+			(effect, context) => effect.TryModifyCardRewardOptionsLate(context, player, cardRewardOptions, creationOptions));
 	}
 }

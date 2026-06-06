@@ -22,19 +22,16 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterEnemyDamageReceived(context, target, combatId, result, dealer, cardSource);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterEnemyDamageReceived(context, target, combatId, result, dealer, cardSource));
 
-		if (!ShouldSuppressDuplicateEnemyThresholdTrigger(target, result, dealer, cardSource)
+		if (!HextechEnemyTriggerGuard.ShouldSuppressDuplicateEnemyThresholdTrigger(_combatTracking, target, result, dealer, cardSource)
 			&& IsBelowEnemyHealthThreshold(target))
 		{
-			foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-			{
-				await effect.AfterEnemyHealthThreshold(context, target, combatId);
-			}
+			await HextechEnemyHexDispatcher.ForEachActive(
+				this,
+				(effect, context) => effect.AfterEnemyHealthThreshold(context, target, combatId));
 		}
 	}
 
@@ -45,30 +42,25 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterEnemyDamageGivenImmediate(context, dealer, result, target, cardSource);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterEnemyDamageGivenImmediate(context, dealer, result, target, cardSource));
 
 		if (result.UnblockedDamage <= 0 || target.Side != CombatSide.Player)
 		{
 			return;
 		}
 
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterEnemyDamageGivenPlayerHit(context, dealer, target);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterEnemyDamageGivenPlayerHit(context, dealer, target));
 	}
 
 	public override async Task AfterCurrentHpChanged(Creature creature, decimal delta)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterCurrentHpChanged(context, creature, delta);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterCurrentHpChanged(context, creature, delta));
 	}
 
 	private static bool TryGetDamagedEnemy(Creature target, DamageResult result, out uint combatId)

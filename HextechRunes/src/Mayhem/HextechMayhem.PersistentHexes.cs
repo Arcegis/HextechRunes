@@ -14,11 +14,10 @@ internal sealed partial class HextechMayhemModifier
 	private async Task ApplyPersistentMonsterHexes(Creature creature, bool replayOneShotPowers = false)
 	{
 		int? maxHpBaseOverride = replayOneShotPowers ? creature.MaxHp : null;
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this).OrderBy(static effect => effect.PersistentOrder))
-		{
-			await effect.ApplyPersistentToEnemy(context, creature, maxHpBaseOverride, replayOneShotPowers);
-		}
+		await HextechEnemyHexDispatcher.ForEachActiveOrdered(
+			this,
+			static effect => effect.PersistentOrder,
+			(effect, context) => effect.ApplyPersistentToEnemy(context, creature, maxHpBaseOverride, replayOneShotPowers));
 	}
 
 	internal static async Task EnsureMonsterMaxHpBonus(Creature creature, decimal bonusPercent, int? baseMaxHpOverride = null)

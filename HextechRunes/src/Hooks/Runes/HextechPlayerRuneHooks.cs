@@ -22,7 +22,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static partial class HextechCombatHooks
+internal static partial class HextechPlayerRuneHooks
 {
 	private const int OrbLayoutRadiusSoftCapSlots = 10;
 	private const float OrbLayoutRangeDegrees = 125f;

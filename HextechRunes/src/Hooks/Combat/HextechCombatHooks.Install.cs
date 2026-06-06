@@ -30,19 +30,7 @@ internal static partial class HextechCombatHooks
 		InstallPowerCompatibilityHooks(harmony);
 		InstallDamageCommandHooks(harmony);
 		TryInstallRuneHook<NearDeathFeastRune>("near-death feast", () => InstallNearDeathFeastHooks(harmony));
-		InstallRuneSpecificHooks(harmony);
-	}
-
-	private static void TryInstallCombatHookGroup(string label, Action install)
-	{
-		try
-		{
-			install();
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Combat hook group skipped: {label}: {ex.GetType().Name}: {ex.Message}");
-		}
+		HextechPlayerRuneHooks.Install(harmony);
 	}
 
 	private static void TryInstallRuneHook<TRune>(string label, Action install)

@@ -23,23 +23,19 @@ internal sealed partial class HextechMayhemModifier
 		if (TrackPlayerAttackCardPlayedThisTurn(cardPlay)
 			&& cardPlay.Card.Owner?.Creature.CombatState is HextechCombatState combatState)
 		{
-			RefreshPlayerAttackCostDoublingPreviews(GetAlivePlayerSideCreatures(combatState));
+			RefreshPlayerAttackCostDoublingPreviews(HextechCombatCreatureHelper.GetAlivePlayerSideCreatures(combatState));
 		}
 
-		HextechEnemyHexContext enemyHexContext = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterCardPlayed(enemyHexContext, context, cardPlay);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, enemyHexContext) => effect.AfterCardPlayed(enemyHexContext, context, cardPlay));
 	}
 
 	public override async Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterShuffle(context, choiceContext, shuffler);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterShuffle(context, choiceContext, shuffler));
 	}
 
 	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
@@ -49,20 +45,16 @@ internal sealed partial class HextechMayhemModifier
 			await whiteHole.AfterDrawn();
 		}
 
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterCardDrawn(context, choiceContext, card, fromHandDraw);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterCardDrawn(context, choiceContext, card, fromHandDraw));
 	}
 
 	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterCardPlayedLate(context, choiceContext, cardPlay);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterCardPlayedLate(context, choiceContext, cardPlay));
 
 		Player? owner = cardPlay.Card.Owner;
 		if (owner == null
@@ -83,30 +75,24 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterPlayerTurnStartLate(context, choiceContext, player);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterPlayerTurnStartLate(context, choiceContext, player));
 	}
 
 #if STS2_104_OR_NEWER
 	public override async Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterAutoPrePlayPhaseEnteredLate(context, choiceContext, player);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterAutoPrePlayPhaseEnteredLate(context, choiceContext, player));
 	}
 #else
 	public override async Task BeforePlayPhaseStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.BeforePlayPhaseStart(context, choiceContext, player);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.BeforePlayPhaseStart(context, choiceContext, player));
 	}
 #endif
 }

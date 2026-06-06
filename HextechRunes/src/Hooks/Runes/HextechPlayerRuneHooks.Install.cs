@@ -19,9 +19,9 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static partial class HextechCombatHooks
+internal static partial class HextechPlayerRuneHooks
 {
-	private static void InstallRuneSpecificHooks(Harmony harmony)
+	internal static void Install(Harmony harmony)
 	{
 		InstallCardIdentityRuneHooks(harmony);
 		InstallFlyingKickRuneHooks(harmony);
@@ -64,14 +64,14 @@ internal static partial class HextechCombatHooks
 	{
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Tags", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardTagsPostfix)));
+			postfix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CardTagsPostfix)));
 	}
 
 	private static void InstallFlyingKickDescriptionHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireGetter(typeof(RelicModel), nameof(RelicModel.DynamicDescription)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(RelicDynamicDescriptionPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(RelicDynamicDescriptionPrefix)));
 	}
 
 	private static void InstallFlyingKickCorpseLaunchHooks(Harmony harmony)
@@ -84,14 +84,14 @@ internal static partial class HextechCombatHooks
 
 		harmony.Patch(
 			RequireMethod(typeof(NCreature), nameof(NCreature.StartDeathAnim), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(NCreatureStartDeathAnimPostfix)));
+			postfix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(NCreatureStartDeathAnimPostfix)));
 	}
 
 	private static void InstallMadScientistHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(OrbCmd), nameof(OrbCmd.AddSlots), BindingFlags.Static | BindingFlags.Public, typeof(Player), typeof(int)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbAddSlotsPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(OrbAddSlotsPrefix)));
 	}
 
 	private static void InstallOrbLayoutSoftCapHooks(Harmony harmony)
@@ -99,7 +99,7 @@ internal static partial class HextechCombatHooks
 		EnsureOrbLayoutFields();
 		harmony.Patch(
 			RequireMethod(typeof(NOrbManager), "TweenLayout", BindingFlags.Instance | BindingFlags.NonPublic),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OrbTweenLayoutPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(OrbTweenLayoutPrefix)));
 	}
 
 	private static void InstallElectrodynamicsLightningHook(Harmony harmony)
@@ -118,69 +118,94 @@ internal static partial class HextechCombatHooks
 
 		harmony.Patch(
 			lightningApplyDamage,
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(LightningApplyDamagePrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(LightningApplyDamagePrefix)));
 	}
 
 	private static void InstallSurvivorUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(Survivor), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SurvivorOnPlayPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(SurvivorOnPlayPrefix)));
 	}
 
 	private static void InstallCompactUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(Compact), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CompactOnPlayPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CompactOnPlayPrefix)));
 	}
 
 	private static void InstallWhirlwindUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), nameof(CardModel.ResolveEnergyXValue), BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(CardResolveEnergyXValuePostfix)));
+			postfix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CardResolveEnergyXValuePostfix)));
 	}
 
 	private static void InstallJuggernautUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(JuggernautPower), nameof(JuggernautPower.AfterBlockGained), BindingFlags.Instance | BindingFlags.Public, typeof(Creature), typeof(decimal), typeof(ValueProp), typeof(CardModel)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(JuggernautAfterBlockGainedPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(JuggernautAfterBlockGainedPrefix)));
 	}
 
 	private static void InstallHiddenGemUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(HiddenGem), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(HiddenGemOnPlayPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(HiddenGemOnPlayPrefix)));
 	}
 
 	private static void InstallAutomationUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(AutomationPower), nameof(AutomationPower.AfterCardDrawn), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext), typeof(CardModel), typeof(bool)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(AutomationAfterCardDrawnPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(AutomationAfterCardDrawnPrefix)));
 	}
 
 	private static void InstallVoltaicUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(Voltaic), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(VoltaicOnPlayPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(VoltaicOnPlayPrefix)));
 	}
 
 	private static void InstallGrandFinaleUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(GrandFinale), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(GrandFinaleOnPlayPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(GrandFinaleOnPlayPrefix)));
 	}
 
 	private static void InstallVoidFormUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(VoidForm), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(VoidFormOnPlayPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(VoidFormOnPlayPrefix)));
+	}
+
+	private static void TryInstallCombatHookGroup(string label, Action install)
+	{
+		try
+		{
+			install();
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Combat hook group skipped: {label}: {ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
+	private static void TryInstallRuneHook<TRune>(string label, Action install)
+		where TRune : RelicModel
+	{
+		try
+		{
+			install();
+		}
+		catch (Exception ex)
+		{
+			HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed<TRune>(label, ex);
+		}
 	}
 }

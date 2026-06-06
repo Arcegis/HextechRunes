@@ -2,11 +2,6 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemCombatTrackingState
 {
-	[System.AttributeUsage(System.AttributeTargets.Field)]
-	private sealed class CombatTrackingTransientAttribute : System.Attribute
-	{
-	}
-
 	public readonly Dictionary<uint, int> SlapProcsThisTurn = new();
 	public readonly Dictionary<uint, int> TormentorProcsThisTurn = new();
 	public readonly Dictionary<uint, int> CourageProcsThisTurn = new();
