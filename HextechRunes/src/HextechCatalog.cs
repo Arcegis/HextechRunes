@@ -66,9 +66,21 @@ internal static partial class HextechCatalog
 			.ToArray();
 	}
 
+	public static IReadOnlyList<Type> GetAllConfigurableRuneTypes()
+	{
+		return Enum.GetValues<HextechRarityTier>()
+			.SelectMany(GetConfigurablePlayerRuneTypesForRarity)
+			.ToArray();
+	}
+
 	public static bool IsPlayerRuneTypeSelectable(Type runeType)
 	{
 		return IsPlayerRuneTypeVisible(runeType) && !SelectionExcludedPlayerRuneTypes.Contains(runeType);
+	}
+
+	public static bool IsPlayerRuneTypeConfigurable(Type runeType)
+	{
+		return AllRuneTypes.Contains(runeType) && !SelectionExcludedPlayerRuneTypes.Contains(runeType);
 	}
 
 	public static bool IsPlayerRuneTypeVisible(Type runeType)
@@ -124,6 +136,33 @@ internal static partial class HextechCatalog
 			_ => Array.Empty<Type>()
 		};
 		return runeTypes.Where(IsPlayerRuneTypeSelectable).ToArray();
+	}
+
+	public static IReadOnlyList<Type> GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier rarity)
+	{
+		IReadOnlyList<Type> runeTypes = rarity switch
+		{
+			HextechRarityTier.Silver => SilverRuneTypes,
+			HextechRarityTier.Gold => GoldRuneTypes,
+			HextechRarityTier.Prismatic => PrismaticRuneTypes,
+			_ => Array.Empty<Type>()
+		};
+		return runeTypes.Where(IsPlayerRuneTypeConfigurable).ToArray();
+	}
+
+	public static IReadOnlySet<ModelId> GetConfigurablePlayerRuneIds()
+	{
+		return GetAllConfigurableRuneTypes()
+			.Select(ModelDb.GetId)
+			.ToHashSet();
+	}
+
+	public static IReadOnlySet<ModelId> GetDefaultDisabledPlayerRuneIds()
+	{
+		return DisabledPlayerRuneTypes
+			.Where(IsPlayerRuneTypeConfigurable)
+			.Select(ModelDb.GetId)
+			.ToHashSet();
 	}
 
 	public static IReadOnlyList<Type> GetForgeTypesForRarity(HextechRarityTier rarity)

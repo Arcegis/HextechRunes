@@ -25,8 +25,11 @@ internal static partial class HextechRuneSelectionCoordinator
 			.ToHashSet();
 		HashSet<ModelId> blockedOwnedIds = ownedIds.ToHashSet();
 		blockedOwnedIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedIds));
+		bool applyConfiguration = ShouldApplyPlayerRuneConfiguration(runState);
 
-		List<RelicModel> pool = HextechCatalog.GetPlayerRuneTypesForRarity(rarity)
+		List<RelicModel> pool = (applyConfiguration
+				? HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity)
+				: HextechCatalog.GetPlayerRuneTypesForRarity(rarity))
 			.Where(HextechRuntimeRuneCompatibility.IsPlayerRuneAvailableForCurrentRuntime)
 			.Where(type => HextechCatalog.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
@@ -35,7 +38,33 @@ internal static partial class HextechRuneSelectionCoordinator
 				&& (excludedIds == null || !excludedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)))
 			.ToList();
 
+		return applyConfiguration ? ApplyPlayerRuneConfiguration(pool, rarity) : pool;
+	}
+
+	private static List<RelicModel> ApplyPlayerRuneConfiguration(List<RelicModel> pool, HextechRarityTier rarity)
+	{
+		if (!HextechRuneConfiguration.HasDisabledPlayerRunes)
+		{
+			return pool;
+		}
+
+		List<RelicModel> configuredPool = pool
+			.Where(HextechRuneConfiguration.IsPlayerRuneEnabled)
+			.ToList();
+		if (configuredPool.Count > 0 || pool.Count == 0)
+		{
+			return configuredPool;
+		}
+
+		Log.Warn($"[{ModInfo.Id}][RuneConfig] Player rune config filtered all {rarity} options; falling back to the default pool for this roll.", 2);
 		return pool;
+	}
+
+	private static bool ShouldApplyPlayerRuneConfiguration(RunState runState)
+	{
+		NetGameType gameType = RunManager.Instance.NetService.Type;
+		return gameType is NetGameType.Singleplayer or NetGameType.None
+			|| HextechAiTeammateCompat.IsLoopbackHostSession();
 	}
 
 	private static List<RelicModel> BuildSelectableRunesForRarity(
