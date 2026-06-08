@@ -1,14 +1,15 @@
 using System.Reflection;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Entities.UI;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
+using MegaCrit.Sts2.Core.Nodes.HoverTips;
+using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -20,6 +21,9 @@ internal static class HextechRuneConfigMenuHooks
 	private const string OverlayName = "HextechRuneConfigOverlay";
 	private const int MaxAttachAttempts = 30;
 	private const int NativeDuplicateFlags = 14;
+	private const int OverlayZIndex = 1000;
+	private const int HoverTipZIndex = 2000;
+	private const float ConfigRuneHolderScale = 0.84f;
 	private static readonly FieldInfo? MainMenuButtonLocStringField = TryGetField(typeof(NMainMenuTextButton), "_locString");
 	private static readonly FieldInfo? MainMenuLastHitButtonField = TryGetField(typeof(NMainMenu), "_lastHitButton");
 	private static readonly MethodInfo? MainMenuButtonFocusedMethod = TryGetMethod(typeof(NMainMenu), "MainMenuButtonFocused", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NMainMenuTextButton));
@@ -93,7 +97,7 @@ internal static class HextechRuneConfigMenuHooks
 			return false;
 		}
 
-		if (mainMenu.GetNodeOrNull<Control>("%MainMenuTextButtons") is null
+		if (!HextechUpdateChecker.TryFindNoticeLayer(mainMenu, out _, out Label template, out Node noticeHost)
 			|| mainMenu.GetNodeOrNull<NMainMenuTextButton>("MainMenuTextButtons/SettingsButton") is not { } settingsButton)
 		{
 			return false;
@@ -102,9 +106,10 @@ internal static class HextechRuneConfigMenuHooks
 		NMainMenuTextButton configButton = (NMainMenuTextButton)((Node)settingsButton).Duplicate(NativeDuplicateFlags);
 		((Node)configButton).Name = ButtonName;
 		((Node)configButton).UniqueNameInOwner = true;
-		mainMenu.AddChild(configButton);
+		noticeHost.AddChild(configButton);
+		noticeHost.MoveChild(configButton, Math.Min(template.GetIndex() + 2, noticeHost.GetChildCount() - 1));
 		ConfigureNativeMenuLabel(configButton);
-		ConfigureBottomLeftNativeMenuButton(configButton);
+		ConfigureStatusLayerMenuButton(configButton, template);
 		ConfigureNativeMenuFocus(mainMenu, configButton);
 		ConnectNativeMenuButton(configButton);
 		return true;
@@ -122,18 +127,19 @@ internal static class HextechRuneConfigMenuHooks
 		((Control)configButton).TooltipText = L("HEXTECH_CONFIG_BUTTON_TOOLTIP");
 	}
 
-	private static void ConfigureBottomLeftNativeMenuButton(NMainMenuTextButton configButton)
+	private static void ConfigureStatusLayerMenuButton(NMainMenuTextButton configButton, Label template)
 	{
 		Control control = configButton;
 		control.SetAnchorsPreset(Control.LayoutPreset.BottomLeft, false);
-		control.OffsetLeft = 28f;
-		control.OffsetRight = 360f;
-		control.OffsetTop = -108f;
-		control.OffsetBottom = -58f;
+		control.OffsetLeft = 16f;
+		control.OffsetRight = 420f;
+		control.OffsetTop = -92f;
+		control.OffsetBottom = -48f;
 		control.MouseFilter = Control.MouseFilterEnum.Stop;
 		control.FocusMode = Control.FocusModeEnum.All;
 		control.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
-		control.ZIndex = 20;
+		control.ZIndex = template.ZIndex;
+		control.ZAsRelative = template.ZAsRelative;
 	}
 
 	private static void ConfigureNativeMenuFocus(NMainMenu mainMenu, NMainMenuTextButton configButton)
@@ -185,7 +191,7 @@ internal static class HextechRuneConfigMenuHooks
 		{
 			Name = OverlayName,
 			MouseFilter = Control.MouseFilterEnum.Stop,
-			ZIndex = 1000
+			ZIndex = OverlayZIndex
 		};
 		overlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
@@ -339,20 +345,63 @@ internal static class HextechRuneConfigMenuHooks
 
 	private static RuneIconBinding CreateRuneIcon(RuneConfigEntry entry, HashSet<string> pendingDisabledIds, Label summary)
 	{
-		NRelicCollectionEntry root = NRelicCollectionEntry.Create(entry.Relic, ModelVisibility.Visible);
-		root.Name = "RuneConfigIcon_" + entry.Id;
-		root.CustomMinimumSize = new Vector2(96f, 96f);
-		root.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
-		root.MouseFilter = Control.MouseFilterEnum.Stop;
-		root.FocusMode = Control.FocusModeEnum.All;
-		root.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
+		VBoxContainer root = new()
+		{
+			Name = "RuneConfigIcon_" + entry.Id,
+			CustomMinimumSize = new Vector2(96f, 126f),
+			SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+			MouseFilter = Control.MouseFilterEnum.Stop,
+			FocusMode = Control.FocusModeEnum.All,
+			MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+			Alignment = BoxContainer.AlignmentMode.Center
+		};
+		root.AddThemeConstantOverride("separation", 5);
+
+		CenterContainer iconCenter = new()
+		{
+			CustomMinimumSize = new Vector2(96f, 82f),
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		NRelicBasicHolder holder = NRelicBasicHolder.Create(entry.Relic)
+			?? throw new InvalidOperationException($"Failed to create config relic holder for {entry.Id}.");
+		holder.Scale = Vector2.One * ConfigRuneHolderScale;
+		holder.MouseFilter = Control.MouseFilterEnum.Ignore;
+		iconCenter.AddChild(holder);
+		root.AddChild(iconCenter);
+
+		Label title = CreateRuneNameLabel(entry.Title);
+		root.AddChild(title);
 
 		RuneIconBinding binding = new(entry.Id, root);
 		ApplyRuneIconState(binding, !pendingDisabledIds.Contains(entry.Id));
-		root.Connect(
-			NClickableControl.SignalName.Released,
-			Callable.From<NRelicCollectionEntry>(_ => ToggleRune(entry.Id, binding, pendingDisabledIds, summary)));
+		root.GuiInput += inputEvent =>
+		{
+			if (IsRuneToggleInput(inputEvent))
+			{
+				root.GetViewport().SetInputAsHandled();
+				ToggleRune(entry.Id, binding, pendingDisabledIds, summary);
+			}
+		};
+		AttachRelicHoverTips(root, entry.Relic);
 		return binding;
+	}
+
+	private static Label CreateRuneNameLabel(string text)
+	{
+		Label label = CreateLabel(text, 12, new Color(0.9f, 0.92f, 0.96f, 0.95f));
+		label.CustomMinimumSize = new Vector2(96f, 34f);
+		label.HorizontalAlignment = HorizontalAlignment.Center;
+		label.VerticalAlignment = VerticalAlignment.Top;
+		label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		label.ClipText = true;
+		label.AddThemeConstantOverride("outline_size", 1);
+		return label;
+	}
+
+	private static bool IsRuneToggleInput(InputEvent inputEvent)
+	{
+		return inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }
+			|| inputEvent is InputEventScreenTouch { Pressed: false };
 	}
 
 	private static Button CreateActionButton(string text, Action action)
@@ -401,6 +450,27 @@ internal static class HextechRuneConfigMenuHooks
 
 		ApplyRuneIconState(binding, !pendingDisabledIds.Contains(id));
 		UpdateSummary(summary, pendingDisabledIds);
+	}
+
+	private static void AttachRelicHoverTips(Control holder, RelicModel relic)
+	{
+		holder.MouseEntered += () => ShowRelicHoverTips(holder, relic);
+		holder.MouseExited += () => NHoverTipSet.Remove(holder);
+		holder.TreeExiting += () => NHoverTipSet.Remove(holder);
+	}
+
+	private static void ShowRelicHoverTips(Control holder, RelicModel relic)
+	{
+		NHoverTipSet.Remove(holder);
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, relic.HoverTips, HoverTip.GetHoverTipAlignment(holder));
+		if (hoverTipSet == null)
+		{
+			return;
+		}
+
+		hoverTipSet.ZIndex = HoverTipZIndex;
+		hoverTipSet.ZAsRelative = false;
+		hoverTipSet.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
 	}
 
 	private static List<RuneConfigEntry> BuildRuneEntries()
@@ -580,5 +650,5 @@ internal static class HextechRuneConfigMenuHooks
 
 	private sealed record RuneIconBinding(
 		string Id,
-		NRelicCollectionEntry Root);
+		Control Root);
 }

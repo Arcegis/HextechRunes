@@ -78,9 +78,7 @@ internal static partial class HextechUpdateChecker
 
 	private static bool TryShowNotice(NMainMenu mainMenu, int attempt)
 	{
-		Node searchRoot = ResolveNoticeSearchRoot(mainMenu);
-		Label? template = FindVanillaModStatusLabel(searchRoot);
-		if (template == null)
+		if (!TryFindNoticeLayer(mainMenu, out Node searchRoot, out Label template, out Node noticeHost))
 		{
 			if (attempt is 1 or MaxNoticeAttachAttempts || attempt % 10 == 0)
 			{
@@ -90,16 +88,17 @@ internal static partial class HextechUpdateChecker
 			return false;
 		}
 
-		Node? noticeHost = template.GetParent();
-		if (noticeHost == null)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI skipped: vanilla mod status label has no parent path={DescribeNode(template)}.");
-			return true;
-		}
-
 		ShowNotice(searchRoot, template, noticeHost);
 		Log.Info($"[{ModInfo.Id}][Mayhem] Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
 		return true;
+	}
+
+	internal static bool TryFindNoticeLayer(NMainMenu mainMenu, out Node searchRoot, out Label template, out Node noticeHost)
+	{
+		searchRoot = ResolveNoticeSearchRoot(mainMenu);
+		template = FindVanillaModStatusLabel(searchRoot)!;
+		noticeHost = template?.GetParent()!;
+		return template != null && noticeHost != null;
 	}
 
 	private static void ShowNotice(Node searchRoot, Label template, Node noticeHost)
