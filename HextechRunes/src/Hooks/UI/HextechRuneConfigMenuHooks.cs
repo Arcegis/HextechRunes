@@ -121,6 +121,11 @@ internal static class HextechRuneConfigMenuHooks
 		if (((Node)configButton).GetChildCount() > 0 && ((Node)configButton).GetChild(0) is Label label)
 		{
 			label.Text = L("HEXTECH_CONFIG_BUTTON");
+			label.HorizontalAlignment = HorizontalAlignment.Left;
+			label.AnchorLeft = 0f;
+			label.AnchorRight = 1f;
+			label.OffsetLeft = 0f;
+			label.OffsetRight = 0f;
 			label.PivotOffset = label.Size * 0.5f;
 		}
 
@@ -131,7 +136,7 @@ internal static class HextechRuneConfigMenuHooks
 	{
 		Control control = configButton;
 		control.SetAnchorsPreset(Control.LayoutPreset.BottomLeft, false);
-		control.OffsetLeft = 16f;
+		control.OffsetLeft = 0f;
 		control.OffsetRight = 420f;
 		control.OffsetTop = -92f;
 		control.OffsetBottom = -48f;
