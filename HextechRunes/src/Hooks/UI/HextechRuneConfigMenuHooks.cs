@@ -74,7 +74,7 @@ internal static class HextechRuneConfigMenuHooks
 
 	private static bool TryAttachButton(NMainMenu host)
 	{
-		if (host.GetNodeOrNull<NMainMenuTextButton>(ButtonName) is { } existingNative
+		if (host.FindChild(ButtonName, recursive: true, owned: false) is NMainMenuTextButton existingNative
 			&& GodotObject.IsInstanceValid(existingNative))
 		{
 			return true;
@@ -97,7 +97,7 @@ internal static class HextechRuneConfigMenuHooks
 			return false;
 		}
 
-		if (!HextechUpdateChecker.TryFindNoticeLayer(mainMenu, out _, out Label template, out Node noticeHost)
+		if (mainMenu.GetNodeOrNull<Control>("MainMenuTextButtons") is not { } buttonHost
 			|| mainMenu.GetNodeOrNull<NMainMenuTextButton>("MainMenuTextButtons/SettingsButton") is not { } settingsButton)
 		{
 			return false;
@@ -106,10 +106,10 @@ internal static class HextechRuneConfigMenuHooks
 		NMainMenuTextButton configButton = (NMainMenuTextButton)((Node)settingsButton).Duplicate(NativeDuplicateFlags);
 		((Node)configButton).Name = ButtonName;
 		((Node)configButton).UniqueNameInOwner = true;
-		noticeHost.AddChild(configButton);
-		noticeHost.MoveChild(configButton, Math.Min(template.GetIndex() + 2, noticeHost.GetChildCount() - 1));
+		buttonHost.AddChild(configButton);
+		buttonHost.MoveChild(configButton, Math.Min(settingsButton.GetIndex() + 1, buttonHost.GetChildCount() - 1));
 		ConfigureNativeMenuLabel(configButton);
-		ConfigureStatusLayerMenuButton(configButton, template);
+		ConfigureNativeMenuButton(configButton, settingsButton);
 		ConfigureNativeMenuFocus(mainMenu, configButton);
 		ConnectNativeMenuButton(configButton);
 		return true;
@@ -121,30 +121,23 @@ internal static class HextechRuneConfigMenuHooks
 		if (((Node)configButton).GetChildCount() > 0 && ((Node)configButton).GetChild(0) is Label label)
 		{
 			label.Text = L("HEXTECH_CONFIG_BUTTON");
-			label.HorizontalAlignment = HorizontalAlignment.Left;
-			label.AnchorLeft = 0f;
-			label.AnchorRight = 1f;
-			label.OffsetLeft = 0f;
-			label.OffsetRight = 0f;
 			label.PivotOffset = label.Size * 0.5f;
 		}
 
 		((Control)configButton).TooltipText = L("HEXTECH_CONFIG_BUTTON_TOOLTIP");
 	}
 
-	private static void ConfigureStatusLayerMenuButton(NMainMenuTextButton configButton, Label template)
+	private static void ConfigureNativeMenuButton(NMainMenuTextButton configButton, NMainMenuTextButton template)
 	{
 		Control control = configButton;
-		control.SetAnchorsPreset(Control.LayoutPreset.BottomLeft, false);
-		control.OffsetLeft = 0f;
-		control.OffsetRight = 420f;
-		control.OffsetTop = -92f;
-		control.OffsetBottom = -48f;
 		control.MouseFilter = Control.MouseFilterEnum.Stop;
 		control.FocusMode = Control.FocusModeEnum.All;
 		control.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
-		control.ZIndex = template.ZIndex;
-		control.ZAsRelative = template.ZAsRelative;
+		control.SizeFlagsHorizontal = template.SizeFlagsHorizontal;
+		control.SizeFlagsVertical = template.SizeFlagsVertical;
+		control.CustomMinimumSize = template.CustomMinimumSize;
+		control.ZIndex = ((Control)template).ZIndex;
+		control.ZAsRelative = ((Control)template).ZAsRelative;
 	}
 
 	private static void ConfigureNativeMenuFocus(NMainMenu mainMenu, NMainMenuTextButton configButton)
@@ -192,13 +185,15 @@ internal static class HextechRuneConfigMenuHooks
 
 	private static Control CreateOverlay()
 	{
-		Control overlay = new()
+		Control overlay = new RuneConfigOverlay()
 		{
 			Name = OverlayName,
 			MouseFilter = Control.MouseFilterEnum.Stop,
-			ZIndex = OverlayZIndex
+			ZIndex = OverlayZIndex,
+			FocusMode = Control.FocusModeEnum.All
 		};
 		overlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		overlay.CallDeferred(Control.MethodName.GrabFocus);
 
 		ColorRect shade = new()
 		{
@@ -324,8 +319,19 @@ internal static class HextechRuneConfigMenuHooks
 			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved player rune config: disabled={pendingDisabledIds.Count}");
 			overlay.QueueFree();
 		}));
-		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), overlay.QueueFree));
+		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay)));
 		return toolbar;
+	}
+
+	private static void CloseWithoutSaving(Control overlay)
+	{
+		if (!GodotObject.IsInstanceValid(overlay))
+		{
+			return;
+		}
+
+		overlay.GetViewport()?.SetInputAsHandled();
+		overlay.QueueFree();
 	}
 
 	private static Label CreateSectionHeader(string text)
@@ -656,4 +662,28 @@ internal static class HextechRuneConfigMenuHooks
 	private sealed record RuneIconBinding(
 		string Id,
 		Control Root);
+
+	private sealed partial class RuneConfigOverlay : Control
+	{
+		public override void _Input(InputEvent @event)
+		{
+			if (!IsCancelInput(@event))
+			{
+				return;
+			}
+
+			GetViewport()?.SetInputAsHandled();
+			QueueFree();
+		}
+
+		private static bool IsCancelInput(InputEvent @event)
+		{
+			if (@event.IsActionPressed("ui_cancel"))
+			{
+				return true;
+			}
+
+			return @event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape };
+		}
+	}
 }

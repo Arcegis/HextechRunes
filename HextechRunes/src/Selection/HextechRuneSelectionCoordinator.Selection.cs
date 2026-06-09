@@ -194,7 +194,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		int selectedIndex = selectedRelic == null ? -1 : IndexOfRelic(screen.CurrentRelics, selectedRelic);
 		Log.Info($"[{ModInfo.Id}][Mayhem] CreateRuneChoiceResult: selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
-		return HextechChoiceCodec.CreateRuneSelection(selectedIndex, screen.RerollHistory);
+		return HextechChoiceCodec.CreateRuneSelection(selectedIndex, screen.RerollHistory, screen.CurrentRelics);
 	}
 
 	private static int IndexOfRelic(IReadOnlyList<RelicModel> relics, RelicModel relic)
@@ -212,10 +212,24 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static RuneSelectionResult ResolveRemoteRuneChoice(HextechMayhemModifier modifier, Player player, IReadOnlyList<RelicModel> options, PlayerChoiceResult remoteChoice, RelicModel? monsterHexRelic)
 	{
-		if (!HextechChoiceCodec.TryDecodeRuneSelection(remoteChoice, out int selectedIndex, out List<int> rerollHistory))
+		if (!HextechChoiceCodec.TryDecodeRuneSelection(remoteChoice, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> syncedOptionIds))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: malformed hextech rune payload player={player.NetId} result={remoteChoice}");
 			return new RuneSelectionResult(null, options.ToList(), 0, null);
+		}
+
+		if (syncedOptionIds.Count > 0)
+		{
+			if (TryCreateSyncedRuneOptions(player, syncedOptionIds, out List<RelicModel> syncedOptions))
+			{
+				MarkRelicsSeen(syncedOptions);
+				modifier.RecordSeenPlayerRunes(player, syncedOptions);
+				RelicModel? syncedSelectedRelic = selectedIndex >= 0 && selectedIndex < syncedOptions.Count ? syncedOptions[selectedIndex] : null;
+				Log.Info($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)} syncedOptions={string.Join(",", syncedOptions.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+				return new RuneSelectionResult(syncedSelectedRelic, syncedOptions, rerollHistory.Count, null);
+			}
+
+			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: failed to create synced options; falling back to deterministic replay player={player.NetId} ids={string.Join(",", syncedOptionIds.Select(static id => id.Entry))}");
 		}
 
 		MarkRelicsSeen(options);
@@ -231,5 +245,26 @@ internal static partial class HextechRuneSelectionCoordinator
 		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)}");
 		RelicModel? selectedRelic = selectedIndex >= 0 && selectedIndex < currentOptions.Count ? currentOptions[selectedIndex] : null;
 		return new RuneSelectionResult(selectedRelic, currentOptions.ToList(), rerollHistory.Count, null);
+	}
+
+	private static bool TryCreateSyncedRuneOptions(Player player, IReadOnlyList<ModelId> optionIds, out List<RelicModel> options)
+	{
+		options = new(optionIds.Count);
+		try
+		{
+			foreach (ModelId id in optionIds)
+			{
+				RelicModel relic = ModelDb.GetById<RelicModel>(id);
+				options.Add(CreateSelectableRuneOption(player, relic));
+			}
+
+			return options.Count > 0;
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: failed to load synced option model: {ex.Message}", 2);
+			options.Clear();
+			return false;
+		}
 	}
 }

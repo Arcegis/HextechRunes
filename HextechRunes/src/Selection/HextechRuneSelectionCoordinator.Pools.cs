@@ -25,7 +25,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			.ToHashSet();
 		HashSet<ModelId> blockedOwnedIds = ownedIds.ToHashSet();
 		blockedOwnedIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedIds));
-		bool applyConfiguration = ShouldApplyPlayerRuneConfiguration(runState);
+		bool applyConfiguration = ShouldApplyPlayerRuneConfiguration(player, runState);
 
 		List<RelicModel> pool = (applyConfiguration
 				? HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity)
@@ -60,11 +60,16 @@ internal static partial class HextechRuneSelectionCoordinator
 		return pool;
 	}
 
-	private static bool ShouldApplyPlayerRuneConfiguration(RunState runState)
+	private static bool ShouldApplyPlayerRuneConfiguration(Player player, RunState runState)
 	{
 		NetGameType gameType = RunManager.Instance.NetService.Type;
-		return gameType is NetGameType.Singleplayer or NetGameType.None
-			|| HextechAiTeammateCompat.IsLoopbackHostSession();
+		if (gameType is NetGameType.Singleplayer or NetGameType.None
+			|| HextechAiTeammateCompat.IsLoopbackHostSession())
+		{
+			return true;
+		}
+
+		return IsLocalPlayer(RunManager.Instance, player);
 	}
 
 	private static List<RelicModel> BuildSelectableRunesForRarity(
@@ -306,12 +311,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		ModelId id = relics[0].CanonicalInstance?.Id ?? relics[0].Id;
-		if (HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Silver).Any(type => ModelDb.GetId(type) == id))
+		if (HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Silver).Any(type => ModelDb.GetId(type) == id))
 		{
 			return HextechRarityTier.Silver;
 		}
 
-		if (HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic).Any(type => ModelDb.GetId(type) == id))
+		if (HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Prismatic).Any(type => ModelDb.GetId(type) == id))
 		{
 			return HextechRarityTier.Prismatic;
 		}

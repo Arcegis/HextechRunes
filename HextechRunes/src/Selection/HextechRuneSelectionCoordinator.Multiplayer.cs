@@ -115,7 +115,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			{
 				PendingRuneSelection selection = pendingSelections[i];
 				RuneSelectionResult selectedResult = selectedRelics[i];
-				RelicModel selectedRelic = selectedResult.SelectedRelic ?? selection.Options[0];
+				RelicModel selectedRelic = selectedResult.SelectedRelic ?? selectedResult.FinalOptions.FirstOrDefault() ?? selection.Options[0];
 				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, selection.Player, selectedResult.FinalOptions, selectedRelic, selectedResult.RerollCount);
 			}
 
@@ -125,7 +125,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			{
 				PendingRuneSelection selection = pendingSelections[i];
 				RuneSelectionResult selectedResult = selectedRelics[i];
-				RelicModel selectedRelic = selectedResult.SelectedRelic ?? selection.Options[0];
+				RelicModel selectedRelic = selectedResult.SelectedRelic ?? selectedResult.FinalOptions.FirstOrDefault() ?? selection.Options[0];
 				await RelicCmd.Obtain(selectedRelic, selection.Player);
 			}
 

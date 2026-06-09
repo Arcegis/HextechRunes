@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.Models;
 
 namespace HextechRunes;
 
@@ -48,22 +49,44 @@ internal static class HextechChoiceCodec
 		return true;
 	}
 
-	public static PlayerChoiceResult CreateRuneSelection(int selectedIndex, IReadOnlyList<int> rerollHistory)
+	private static readonly Lazy<IReadOnlyList<ModelId>> PlayerRuneIdsByOrdinal = new(
+		() => HextechCatalog.GetConfigurablePlayerRuneIds()
+			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
+			.ToArray());
+
+	private static readonly Lazy<IReadOnlyDictionary<ModelId, int>> PlayerRuneOrdinalById = new(
+		() => PlayerRuneIdsByOrdinal.Value
+			.Select(static (id, index) => (id, index))
+			.ToDictionary(static item => item.id, static item => item.index));
+
+	public static PlayerChoiceResult CreateRuneSelection(int selectedIndex, IReadOnlyList<int> rerollHistory, IReadOnlyList<RelicModel> finalOptions)
 	{
 		List<int> payload = [ Magic, ChoiceKindRuneSelection, selectedIndex, rerollHistory.Count ];
 		payload.AddRange(rerollHistory);
+		if (TryEncodeRuneOptionOrdinals(finalOptions, out List<int> optionOrdinals))
+		{
+			payload.Add(optionOrdinals.Count);
+			payload.AddRange(optionOrdinals);
+		}
+
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
 	public static bool IsRuneSelection(PlayerChoiceResult result)
 	{
-		return TryDecodeRuneSelection(result, out _, out _);
+		return TryDecodeRuneSelection(result, out _, out _, out _);
 	}
 
 	public static bool TryDecodeRuneSelection(PlayerChoiceResult result, out int selectedIndex, out List<int> rerollHistory)
 	{
+		return TryDecodeRuneSelection(result, out selectedIndex, out rerollHistory, out _);
+	}
+
+	public static bool TryDecodeRuneSelection(PlayerChoiceResult result, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> finalOptionIds)
+	{
 		selectedIndex = -1;
 		rerollHistory = [];
+		finalOptionIds = [];
 		if (!TryGetIndexPayload(result, out List<int> payload)
 			|| payload.Count < 4
 			|| payload[0] != Magic
@@ -80,6 +103,61 @@ internal static class HextechChoiceCodec
 		}
 
 		rerollHistory = payload.Skip(4).Take(rerollCount).ToList();
+		int cursor = rerollCount + 4;
+		if (payload.Count <= cursor)
+		{
+			return true;
+		}
+
+		int optionCount = Math.Max(0, payload[cursor]);
+		cursor++;
+		if (payload.Count < cursor + optionCount)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < optionCount; i++)
+		{
+			if (!TryGetRuneIdForOrdinal(payload[cursor + i], out ModelId id))
+			{
+				finalOptionIds.Clear();
+				return true;
+			}
+
+			finalOptionIds.Add(id);
+		}
+
+		return true;
+	}
+
+	private static bool TryEncodeRuneOptionOrdinals(IReadOnlyList<RelicModel> finalOptions, out List<int> optionOrdinals)
+	{
+		optionOrdinals = new(finalOptions.Count);
+		foreach (RelicModel relic in finalOptions)
+		{
+			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			if (!PlayerRuneOrdinalById.Value.TryGetValue(id, out int ordinal))
+			{
+				optionOrdinals.Clear();
+				return false;
+			}
+
+			optionOrdinals.Add(ordinal);
+		}
+
+		return true;
+	}
+
+	private static bool TryGetRuneIdForOrdinal(int ordinal, out ModelId id)
+	{
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		if (ordinal < 0 || ordinal >= ids.Count)
+		{
+			id = null!;
+			return false;
+		}
+
+		id = ids[ordinal];
 		return true;
 	}
 
