@@ -1,6 +1,7 @@
 using System.Reflection;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
@@ -23,7 +24,14 @@ internal static class HextechRuneConfigMenuHooks
 	private const int NativeDuplicateFlags = 14;
 	private const int OverlayZIndex = 1000;
 	private const int HoverTipZIndex = 2000;
-	private const float ConfigRuneHolderScale = 0.84f;
+	private const int RuneConfigColumns = 7;
+	private const float ConfigRuneHolderScale = 1.3f;
+	private const float RuneConfigCellWidth = 118f;
+	private const float RuneConfigCellHeight = 146f;
+	private const float RuneConfigIconLayerHeight = 104f;
+	private const float RuneConfigDragThreshold = 12f;
+	private const float RuneConfigLongPressSeconds = 0.35f;
+	private const int RuneConfigIconsPerFrame = 12;
 	private static readonly FieldInfo? MainMenuButtonLocStringField = TryGetField(typeof(NMainMenuTextButton), "_locString");
 	private static readonly FieldInfo? MainMenuLastHitButtonField = TryGetField(typeof(NMainMenu), "_lastHitButton");
 	private static readonly MethodInfo? MainMenuButtonFocusedMethod = TryGetMethod(typeof(NMainMenu), "MainMenuButtonFocused", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NMainMenuTextButton));
@@ -179,21 +187,20 @@ internal static class HextechRuneConfigMenuHooks
 	{
 		Node root = ResolveRoot(source);
 		RemoveExistingOverlay(root);
-		Control overlay = CreateOverlay();
+		Control overlay = CreateOverlay(out RuneConfigOverlayState state);
 		root.AddChild(overlay);
+		_ = PopulateRuneIconsAsync(overlay, state);
 	}
 
-	private static Control CreateOverlay()
+	private static Control CreateOverlay(out RuneConfigOverlayState state)
 	{
-		Control overlay = new RuneConfigOverlay()
+		Control overlay = new()
 		{
 			Name = OverlayName,
 			MouseFilter = Control.MouseFilterEnum.Stop,
-			ZIndex = OverlayZIndex,
-			FocusMode = Control.FocusModeEnum.All
+			ZIndex = OverlayZIndex
 		};
 		overlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-		overlay.CallDeferred(Control.MethodName.GrabFocus);
 
 		ColorRect shade = new()
 		{
@@ -210,11 +217,11 @@ internal static class HextechRuneConfigMenuHooks
 		center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 		overlay.AddChild(center);
 
-			PanelContainer panel = new()
-			{
-				CustomMinimumSize = new Vector2(980f, 700f),
-				MouseFilter = Control.MouseFilterEnum.Stop
-			};
+		PanelContainer panel = new()
+		{
+			CustomMinimumSize = GetResponsivePanelSize(),
+			MouseFilter = Control.MouseFilterEnum.Stop
+		};
 		panel.AddThemeStyleboxOverride("panel", CreatePanelStyle());
 		center.AddChild(panel);
 
@@ -236,15 +243,17 @@ internal static class HextechRuneConfigMenuHooks
 		title.HorizontalAlignment = HorizontalAlignment.Center;
 		content.AddChild(title);
 
-			Label description = CreateLabel(L("HEXTECH_CONFIG_DESCRIPTION"), 16, new Color(0.82f, 0.86f, 0.92f, 0.92f));
-			description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-			content.AddChild(description);
+		Label description = CreateLabel(L("HEXTECH_CONFIG_DESCRIPTION"), 16, new Color(0.82f, 0.86f, 0.92f, 0.92f));
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		content.AddChild(description);
 
-			HashSet<string> pendingDisabledIds = HextechRuneConfiguration.GetDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal);
-			List<RuneIconBinding> iconBindings = [];
-			Label summary = CreateLabel(string.Empty, 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
-			content.AddChild(CreateToolbar(overlay, pendingDisabledIds, iconBindings, summary));
-			content.AddChild(summary);
+		List<RuneConfigEntry> entries = BuildRuneEntries();
+		HashSet<string> pendingDisabledIds = HextechRuneConfiguration.GetDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal);
+		List<RuneIconBinding> iconBindings = [];
+		List<RuneConfigLoadTarget> loadTargets = [];
+		Label summary = CreateLabel(string.Empty, 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
+		content.AddChild(CreateToolbar(overlay, entries, pendingDisabledIds, iconBindings, summary));
+		content.AddChild(summary);
 
 		ScrollContainer scroll = new()
 		{
@@ -252,33 +261,72 @@ internal static class HextechRuneConfigMenuHooks
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseFilter = Control.MouseFilterEnum.Stop
 		};
-			VBoxContainer list = new()
-			{
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-			};
-			list.AddThemeConstantOverride("separation", 16);
-			scroll.AddChild(list);
-			content.AddChild(scroll);
+		VBoxContainer list = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+		};
+		list.AddThemeConstantOverride("separation", 16);
+		scroll.AddChild(list);
+		content.AddChild(scroll);
 
-			foreach (IGrouping<int, RuneConfigEntry> rarityGroup in BuildRuneEntries().GroupBy(static entry => entry.RarityOrder))
+		foreach (IGrouping<int, RuneConfigEntry> rarityGroup in entries.GroupBy(static entry => entry.RarityOrder))
+		{
+			list.AddChild(CreateSectionHeader(rarityGroup.First().RarityText));
+			VBoxContainer grid = CreateRuneGrid();
+			list.AddChild(grid);
+
+			HBoxContainer? currentRow = null;
+			int column = 0;
+			foreach (RuneConfigEntry entry in rarityGroup)
 			{
-				list.AddChild(CreateSectionHeader(rarityGroup.First().RarityText));
-				GridContainer grid = CreateRuneGrid();
-				list.AddChild(grid);
-				foreach (RuneConfigEntry entry in rarityGroup)
+				if (column == 0)
 				{
-					RuneIconBinding binding = CreateRuneIcon(entry, pendingDisabledIds, summary);
-					iconBindings.Add(binding);
-					grid.AddChild(binding.Root);
+					currentRow = CreateRuneRow();
+					grid.AddChild(currentRow);
+				}
+
+				CenterContainer slot = CreateRuneSlot();
+				currentRow?.AddChild(slot);
+				loadTargets.Add(new RuneConfigLoadTarget(entry, slot));
+
+				column++;
+				if (column == RuneConfigColumns)
+				{
+					column = 0;
 				}
 			}
 
+			if (currentRow != null && column > 0)
+			{
+				for (; column < RuneConfigColumns; column++)
+				{
+					currentRow.AddChild(CreateRuneSlot());
+				}
+			}
+		}
+
 		UpdateSummary(summary, pendingDisabledIds);
+		state = new RuneConfigOverlayState(loadTargets, pendingDisabledIds, iconBindings, summary);
 		return overlay;
+	}
+
+	private static Vector2 GetResponsivePanelSize()
+	{
+		Vector2I windowSize = DisplayServer.WindowGetSize();
+		float windowWidth = windowSize.X > 0 ? windowSize.X : 1280f;
+		float windowHeight = windowSize.Y > 0 ? windowSize.Y : 720f;
+		float width = windowWidth < 760f
+			? Math.Max(320f, windowWidth * 0.96f)
+			: Mathf.Clamp(windowWidth * 0.9f, 760f, 1080f);
+		float height = windowHeight < 680f
+			? Math.Max(420f, windowHeight * 0.94f)
+			: Mathf.Clamp(windowHeight * 0.88f, 620f, 760f);
+		return new Vector2(width, height);
 	}
 
 	private static Control CreateToolbar(
 		Control overlay,
+		IReadOnlyList<RuneConfigEntry> entries,
 		HashSet<string> pendingDisabledIds,
 		IReadOnlyList<RuneIconBinding> iconBindings,
 		Label summary)
@@ -290,32 +338,33 @@ internal static class HextechRuneConfigMenuHooks
 		};
 		toolbar.AddThemeConstantOverride("separation", 12);
 
-			toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_ENABLE_ALL"), () =>
+		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_ENABLE_ALL"), () =>
+		{
+			pendingDisabledIds.Clear();
+			UpdateAllRuneIcons(iconBindings, pendingDisabledIds);
+			UpdateSummary(summary, pendingDisabledIds);
+		}));
+		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_DISABLE_ALL"), () =>
+		{
+			foreach (RuneConfigEntry entry in entries)
 			{
-				pendingDisabledIds.Clear();
-				UpdateAllRuneIcons(iconBindings, pendingDisabledIds);
-				UpdateSummary(summary, pendingDisabledIds);
-			}));
-			toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_DISABLE_ALL"), () =>
-			{
-				foreach (RuneConfigEntry entry in BuildRuneEntries())
-			{
-					pendingDisabledIds.Add(entry.Id);
-				}
+				pendingDisabledIds.Add(entry.Id);
+			}
 
-				UpdateAllRuneIcons(iconBindings, pendingDisabledIds);
-				UpdateSummary(summary, pendingDisabledIds);
-			}));
-			toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_RESET"), () =>
-			{
-				pendingDisabledIds.Clear();
-				pendingDisabledIds.UnionWith(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds());
-				UpdateAllRuneIcons(iconBindings, pendingDisabledIds);
-				UpdateSummary(summary, pendingDisabledIds);
-			}));
+			UpdateAllRuneIcons(iconBindings, pendingDisabledIds);
+			UpdateSummary(summary, pendingDisabledIds);
+		}));
+		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_RESET"), () =>
+		{
+			pendingDisabledIds.Clear();
+			pendingDisabledIds.UnionWith(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds());
+			UpdateAllRuneIcons(iconBindings, pendingDisabledIds);
+			UpdateSummary(summary, pendingDisabledIds);
+		}));
 		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_SAVE_CLOSE"), () =>
 		{
 			HextechRuneConfiguration.SaveDisabledPlayerRuneIds(pendingDisabledIds);
+			CollectionHooks.RefreshOpenRelicCollections();
 			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved player rune config: disabled={pendingDisabledIds.Count}");
 			overlay.QueueFree();
 		}));
@@ -341,17 +390,36 @@ internal static class HextechRuneConfigMenuHooks
 		return label;
 	}
 
-	private static GridContainer CreateRuneGrid()
+	private static VBoxContainer CreateRuneGrid()
 	{
-		GridContainer grid = new()
+		VBoxContainer grid = new()
 		{
-			Columns = 9,
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
-		grid.AddThemeConstantOverride("h_separation", 14);
-		grid.AddThemeConstantOverride("v_separation", 14);
+		grid.AddThemeConstantOverride("separation", 14);
 		return grid;
+	}
+
+	private static HBoxContainer CreateRuneRow()
+	{
+		HBoxContainer row = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddThemeConstantOverride("separation", 14);
+		return row;
+	}
+
+	private static CenterContainer CreateRuneSlot()
+	{
+		return new CenterContainer()
+		{
+			CustomMinimumSize = new Vector2(RuneConfigCellWidth, RuneConfigCellHeight),
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
 	}
 
 	private static RuneIconBinding CreateRuneIcon(RuneConfigEntry entry, HashSet<string> pendingDisabledIds, Label summary)
@@ -359,67 +427,230 @@ internal static class HextechRuneConfigMenuHooks
 		VBoxContainer root = new()
 		{
 			Name = "RuneConfigIcon_" + entry.Id,
-			CustomMinimumSize = new Vector2(96f, 126f),
+			CustomMinimumSize = new Vector2(RuneConfigCellWidth, RuneConfigCellHeight),
 			SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
 			MouseFilter = Control.MouseFilterEnum.Stop,
 			FocusMode = Control.FocusModeEnum.All,
 			MouseDefaultCursorShape = Control.CursorShape.PointingHand,
 			Alignment = BoxContainer.AlignmentMode.Center
 		};
-		root.AddThemeConstantOverride("separation", 5);
+		root.AddThemeConstantOverride("separation", 2);
 
-		CenterContainer iconCenter = new()
+		Control iconLayer = new()
 		{
-			CustomMinimumSize = new Vector2(96f, 82f),
+			CustomMinimumSize = new Vector2(RuneConfigCellWidth, RuneConfigIconLayerHeight),
 			MouseFilter = Control.MouseFilterEnum.Ignore
 		};
+		CenterContainer iconCenter = new()
+		{
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		iconCenter.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		ApplyConfigIconScale(iconCenter);
 		NRelicBasicHolder holder = NRelicBasicHolder.Create(entry.Relic)
 			?? throw new InvalidOperationException($"Failed to create config relic holder for {entry.Id}.");
-		holder.Scale = Vector2.One * ConfigRuneHolderScale;
 		holder.MouseFilter = Control.MouseFilterEnum.Ignore;
 		iconCenter.AddChild(holder);
-		root.AddChild(iconCenter);
+		iconLayer.AddChild(iconCenter);
+		root.AddChild(iconLayer);
 
 		Label title = CreateRuneNameLabel(entry.Title);
 		root.AddChild(title);
 
-		RuneIconBinding binding = new(entry.Id, root);
+		RuneIconBinding binding = new(entry.Id, root, holder, title);
 		ApplyRuneIconState(binding, !pendingDisabledIds.Contains(entry.Id));
-		root.GuiInput += inputEvent =>
-		{
-			if (IsRuneToggleInput(inputEvent))
-			{
-				root.GetViewport().SetInputAsHandled();
-				ToggleRune(entry.Id, binding, pendingDisabledIds, summary);
-			}
-		};
+		AttachRuneToggleInput(root, entry, binding, pendingDisabledIds, summary);
 		AttachRelicHoverTips(root, entry.Relic);
 		return binding;
 	}
 
+	private static void ApplyConfigIconScale(Control control)
+	{
+		control.Scale = Vector2.One * ConfigRuneHolderScale;
+		control.PivotOffset = new Vector2(RuneConfigCellWidth, RuneConfigIconLayerHeight) * 0.5f;
+		control.Resized += () =>
+		{
+			if (GodotObject.IsInstanceValid(control))
+			{
+				control.PivotOffset = control.Size * 0.5f;
+			}
+		};
+	}
+
+	private static async Task PopulateRuneIconsAsync(Control overlay, RuneConfigOverlayState state)
+	{
+		if (!await AwaitProcessFrameAsync(overlay))
+		{
+			return;
+		}
+
+		int loadedThisFrame = 0;
+		foreach (RuneConfigLoadTarget target in state.LoadTargets)
+		{
+			if (!GodotObject.IsInstanceValid(overlay) || !overlay.IsInsideTree())
+			{
+				return;
+			}
+
+			RuneIconBinding binding = CreateRuneIcon(target.Entry, state.PendingDisabledIds, state.Summary);
+			state.IconBindings.Add(binding);
+			target.Grid.AddChild(binding.Root);
+
+			loadedThisFrame++;
+			if (loadedThisFrame < RuneConfigIconsPerFrame)
+			{
+				continue;
+			}
+
+			loadedThisFrame = 0;
+			if (!await AwaitProcessFrameAsync(overlay))
+			{
+				return;
+			}
+		}
+	}
+
 	private static Label CreateRuneNameLabel(string text)
 	{
-		Label label = CreateLabel(text, 12, new Color(0.9f, 0.92f, 0.96f, 0.95f));
-		label.CustomMinimumSize = new Vector2(96f, 34f);
+		Label label = CreateLabel(text, 13, new Color(0.96f, 0.97f, 1f, 1f));
+		label.CustomMinimumSize = new Vector2(108f, 38f);
 		label.HorizontalAlignment = HorizontalAlignment.Center;
 		label.VerticalAlignment = VerticalAlignment.Top;
 		label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 		label.ClipText = true;
-		label.AddThemeConstantOverride("outline_size", 1);
+		label.AddThemeColorOverride("font_outline_color", new Color(0f, 0f, 0f, 0.82f));
+		label.AddThemeConstantOverride("outline_size", 2);
 		return label;
 	}
 
-	private static bool IsRuneToggleInput(InputEvent inputEvent)
+	private static void AttachRuneToggleInput(
+		Control root,
+		RuneConfigEntry entry,
+		RuneIconBinding binding,
+		HashSet<string> pendingDisabledIds,
+		Label summary)
 	{
-		return inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }
-			|| inputEvent is InputEventScreenTouch { Pressed: false };
+		bool pointerPressed = false;
+		bool pointerDragged = false;
+		bool longPressShown = false;
+		int pointerToken = 0;
+		Vector2 pressPosition = Vector2.Zero;
+
+		root.GuiInput += inputEvent =>
+		{
+			switch (inputEvent)
+			{
+				case InputEventMouseButton { ButtonIndex: MouseButton.Left } mouseButton:
+					if (mouseButton.Pressed)
+					{
+						BeginRunePress(mouseButton.Position, false);
+					}
+					else
+					{
+						EndRunePress();
+					}
+					break;
+				case InputEventMouseMotion mouseMotion when pointerPressed:
+					UpdateRuneDrag(mouseMotion.Position);
+					break;
+				case InputEventScreenTouch screenTouch:
+					if (screenTouch.Pressed)
+					{
+						BeginRunePress(screenTouch.Position, true);
+					}
+					else
+					{
+						EndRunePress();
+					}
+					break;
+				case InputEventScreenDrag screenDrag when pointerPressed:
+					UpdateRuneDrag(screenDrag.Position);
+					break;
+			}
+		};
+
+		void BeginRunePress(Vector2 position, bool touch)
+		{
+			pointerPressed = true;
+			pointerDragged = false;
+			longPressShown = false;
+			pressPosition = position;
+			pointerToken++;
+			if (touch)
+			{
+				int currentToken = pointerToken;
+				_ = ShowTouchHoverTipAfterDelay(root, entry.Relic, currentToken, () => pointerToken == currentToken && pointerPressed && !pointerDragged, () => longPressShown = true);
+			}
+		}
+
+		void UpdateRuneDrag(Vector2 position)
+		{
+			if (pressPosition.DistanceTo(position) <= RuneConfigDragThreshold)
+			{
+				return;
+			}
+
+			pointerDragged = true;
+			NHoverTipSet.Remove(root);
+		}
+
+		void EndRunePress()
+		{
+			if (!pointerPressed)
+			{
+				return;
+			}
+
+			pointerPressed = false;
+			pointerToken++;
+			if (!pointerDragged && !longPressShown)
+			{
+				root.GetViewport()?.SetInputAsHandled();
+				ToggleRune(entry.Id, binding, pendingDisabledIds, summary);
+			}
+			else if (longPressShown)
+			{
+				root.GetViewport()?.SetInputAsHandled();
+			}
+
+			NHoverTipSet.Remove(root);
+		}
+	}
+
+	private static async Task ShowTouchHoverTipAfterDelay(
+		Control holder,
+		RelicModel relic,
+		int token,
+		Func<bool> shouldShow,
+		Action onShown)
+	{
+		if (!GodotObject.IsInstanceValid(holder) || !holder.IsInsideTree())
+		{
+			return;
+		}
+
+		SceneTree tree = holder.GetTree();
+		if (tree == null)
+		{
+			return;
+		}
+
+		await holder.ToSignal(tree.CreateTimer(RuneConfigLongPressSeconds), "timeout");
+		if (!GodotObject.IsInstanceValid(holder) || !holder.IsInsideTree() || !shouldShow())
+		{
+			return;
+		}
+
+		ShowRelicHoverTips(holder, relic);
+		onShown();
+		holder.GetViewport()?.SetInputAsHandled();
 	}
 
 	private static Button CreateActionButton(string text, Action action)
 	{
 		Button button = new()
 		{
-			Text = text,
+			Text = string.Empty,
 			CustomMinimumSize = new Vector2(132f, 38f),
 			MouseDefaultCursorShape = Control.CursorShape.PointingHand
 		};
@@ -427,8 +658,7 @@ internal static class HextechRuneConfigMenuHooks
 		button.AddThemeStyleboxOverride("hover", CreateButtonStyle(new Color(0.13f, 0.16f, 0.22f, 0.95f), new Color(0.88f, 0.72f, 0.36f, 0.92f)));
 		button.AddThemeStyleboxOverride("pressed", CreateButtonStyle(new Color(0.07f, 0.09f, 0.13f, 0.98f), new Color(0.88f, 0.62f, 0.28f, 0.92f)));
 		button.AddThemeStyleboxOverride("focus", CreateButtonStyle(new Color(0.13f, 0.16f, 0.22f, 0.95f), new Color(0.88f, 0.72f, 0.36f, 0.92f)));
-		button.AddThemeFontSizeOverride("font_size", 16);
-		button.AddThemeColorOverride("font_color", new Color(0.96f, 0.94f, 0.88f, 1f));
+		AddCrispButtonText(button, text, 16, new Color(0.96f, 0.94f, 0.88f, 1f));
 		button.Pressed += action;
 		return button;
 	}
@@ -443,9 +673,12 @@ internal static class HextechRuneConfigMenuHooks
 
 	private static void ApplyRuneIconState(RuneIconBinding binding, bool enabled)
 	{
-		binding.Root.Modulate = enabled
+		binding.Holder.Modulate = enabled
 			? Colors.White
-			: new Color(0.42f, 0.44f, 0.48f, 0.5f);
+			: new Color(0.34f, 0.36f, 0.4f, 0.44f);
+		binding.Title.Modulate = enabled
+			? Colors.White
+			: new Color(0.6f, 0.64f, 0.72f, 0.58f);
 	}
 
 	private static void ToggleRune(string id, RuneIconBinding binding, HashSet<string> pendingDisabledIds, Label summary)
@@ -460,7 +693,21 @@ internal static class HextechRuneConfigMenuHooks
 		}
 
 		ApplyRuneIconState(binding, !pendingDisabledIds.Contains(id));
+		PlayRuneToggleFeedback(binding.Root);
 		UpdateSummary(summary, pendingDisabledIds);
+	}
+
+	private static void PlayRuneToggleFeedback(Control root)
+	{
+		if (!GodotObject.IsInstanceValid(root))
+		{
+			return;
+		}
+
+		root.PivotOffset = root.Size * 0.5f;
+		Tween tween = root.CreateTween();
+		tween.TweenProperty(root, "scale", Vector2.One * 1.06f, 0.055f);
+		tween.TweenProperty(root, "scale", Vector2.One, 0.085f);
 	}
 
 	private static void AttachRelicHoverTips(Control holder, RelicModel relic)
@@ -538,21 +785,71 @@ internal static class HextechRuneConfigMenuHooks
 		int total = configurableIds.Count;
 		int disabled = pendingDisabledIds.Count(configurableIds.Contains);
 		int enabled = Math.Max(0, total - disabled);
-		summary.Text = string.Format(L("HEXTECH_CONFIG_SUMMARY"), enabled, total);
+		SetLabelText(summary, string.Format(L("HEXTECH_CONFIG_SUMMARY"), enabled, total));
 	}
 
 	private static Label CreateLabel(string text, int fontSize, Color color)
 	{
-		Label label = new()
+		MegaLabel label = new()
 		{
-			Text = text,
-			MouseFilter = Control.MouseFilterEnum.Ignore
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			MinFontSize = fontSize,
+			MaxFontSize = fontSize
 		};
+		ApplyDefaultMegaLabelTheme(label);
 		label.AddThemeFontSizeOverride("font_size", fontSize);
-		label.AddThemeColorOverride("font_color", color);
+		label.Modulate = color;
+		label.AddThemeColorOverride("font_color", Colors.White);
 		label.AddThemeColorOverride("font_outline_color", new Color(0f, 0f, 0f, 0.68f));
 		label.AddThemeConstantOverride("outline_size", 2);
+		label.SetTextAutoSize(text);
 		return label;
+	}
+
+	private static void SetLabelText(Label label, string text)
+	{
+		if (label is MegaLabel megaLabel)
+		{
+			megaLabel.SetTextAutoSize(text);
+			return;
+		}
+
+		label.Text = text;
+	}
+
+	private static void ApplyDefaultMegaLabelTheme(MegaLabel label)
+	{
+		Font font = label.GetThemeDefaultFont();
+		if (font != null)
+		{
+			label.AddThemeFontOverride("font", font);
+		}
+
+		int fontSize = label.GetThemeDefaultFontSize();
+		if (fontSize > 0)
+		{
+			label.AddThemeFontSizeOverride("font_size", fontSize);
+		}
+	}
+
+	private static void AddCrispButtonText(Button button, string text, int fontSize, Color fontColor)
+	{
+		MegaLabel label = new()
+		{
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			MinFontSize = fontSize,
+			MaxFontSize = fontSize
+		};
+		label.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		ApplyDefaultMegaLabelTheme(label);
+		label.AddThemeFontSizeOverride("font_size", fontSize);
+		label.AddThemeColorOverride("font_color", fontColor);
+		label.AddThemeColorOverride("font_outline_color", new Color(0f, 0f, 0f, 0.62f));
+		label.AddThemeConstantOverride("outline_size", 2);
+		label.SetTextAutoSize(text);
+		button.AddChild(label);
 	}
 
 	private static StyleBoxFlat CreateButtonStyle(Color background, Color border)
@@ -659,31 +956,20 @@ internal static class HextechRuneConfigMenuHooks
 		string PoolKey,
 		string TagKey);
 
+	private sealed record RuneConfigLoadTarget(
+		RuneConfigEntry Entry,
+		Container Grid);
+
+	private sealed record RuneConfigOverlayState(
+		IReadOnlyList<RuneConfigLoadTarget> LoadTargets,
+		HashSet<string> PendingDisabledIds,
+		List<RuneIconBinding> IconBindings,
+		Label Summary);
+
 	private sealed record RuneIconBinding(
 		string Id,
-		Control Root);
+		Control Root,
+		Control Holder,
+		Label Title);
 
-	private sealed partial class RuneConfigOverlay : Control
-	{
-		public override void _Input(InputEvent @event)
-		{
-			if (!IsCancelInput(@event))
-			{
-				return;
-			}
-
-			GetViewport()?.SetInputAsHandled();
-			QueueFree();
-		}
-
-		private static bool IsCancelInput(InputEvent @event)
-		{
-			if (@event.IsActionPressed("ui_cancel"))
-			{
-				return true;
-			}
-
-			return @event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape };
-		}
-	}
 }

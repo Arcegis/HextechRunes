@@ -1,4 +1,5 @@
 using Godot;
+using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 
@@ -63,14 +64,20 @@ internal sealed partial class HextechRuneSelectionScreen
 		};
 		pill.AddThemeStyleboxOverride("panel", CreatePillStyle(GetAccentColor()));
 
-		Label label = new()
+		MegaLabel label = new()
 		{
 			MouseFilter = MouseFilterEnum.Ignore,
-			Text = text,
-			HorizontalAlignment = HorizontalAlignment.Center
+			HorizontalAlignment = HorizontalAlignment.Center,
+			MinFontSize = 14,
+			MaxFontSize = 14
 		};
+		ApplyDefaultMegaLabelTheme(label);
 		label.AddThemeFontSizeOverride("font_size", 14);
-		label.AddThemeColorOverride("font_color", new Color(0.08f, 0.09f, 0.11f, 0.92f));
+		Color textColor = new(0.08f, 0.09f, 0.11f, 0.96f);
+		label.AddThemeColorOverride("font_color", textColor);
+		label.AddThemeColorOverride("font_outline_color", textColor);
+		label.AddThemeConstantOverride("outline_size", 1);
+		label.SetTextAutoSize(text);
 		pill.AddChild(label);
 		return pill;
 	}

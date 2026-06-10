@@ -88,6 +88,21 @@ internal static partial class HextechCatalog
 		return AllRuneTypes.Contains(runeType) && !DisabledPlayerRuneTypes.Contains(runeType);
 	}
 
+	public static bool IsPlayerRuneTypeVisibleInCollection(Type runeType)
+	{
+		if (!AllRuneTypes.Contains(runeType))
+		{
+			return false;
+		}
+
+		if (IsPlayerRuneTypeConfigurable(runeType))
+		{
+			return HextechRuneConfiguration.IsPlayerRuneEnabled(ModelDb.GetId(runeType).Entry);
+		}
+
+		return IsPlayerRuneTypeVisible(runeType);
+	}
+
 	public static IReadOnlyList<Type> GetGenericSelectableRuneTypes()
 	{
 		return GetAllSelectableRuneTypes()
@@ -98,7 +113,7 @@ internal static partial class HextechCatalog
 	public static IReadOnlyList<Type> GetGenericVisibleRuneTypes()
 	{
 		return AllRuneTypes
-			.Where(IsPlayerRuneTypeVisible)
+			.Where(IsPlayerRuneTypeVisibleInCollection)
 			.Where(static type => !CharacterSpecificRuneTypes.Contains(type))
 			.ToArray();
 	}

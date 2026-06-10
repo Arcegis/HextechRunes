@@ -152,7 +152,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		Color accent = GetAccentColor();
 		Button button = new()
 		{
-			Text = text,
+			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,
 			MouseDefaultCursorShape = CursorShape.PointingHand,
 			CustomMinimumSize = new Vector2(136f, 42f)
@@ -162,6 +162,27 @@ internal sealed partial class HextechRuneSelectionScreen
 		button.AddThemeStyleboxOverride("pressed", CreateRerollStyle(new Color(0.07f, 0.09f, 0.13f, 0.86f), accent.Lightened(0.12f)));
 		button.AddThemeStyleboxOverride("focus", CreateRerollStyle(new Color(0.1f, 0.13f, 0.18f, 0.82f), accent));
 		button.AddThemeStyleboxOverride("disabled", CreateRerollStyle(new Color(0.08f, 0.09f, 0.12f, 0.56f), accent.Darkened(0.35f)));
+		AddCrispButtonText(button, text, 17, new Color(0.94f, 0.92f, 0.86f, 1f));
 		return button;
+	}
+
+	private void AddCrispButtonText(Button button, string text, int fontSize, Color fontColor)
+	{
+		MegaLabel label = new()
+		{
+			MouseFilter = MouseFilterEnum.Ignore,
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			MinFontSize = fontSize,
+			MaxFontSize = fontSize
+		};
+		label.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		ApplyDefaultMegaLabelTheme(label);
+		label.AddThemeFontSizeOverride("font_size", fontSize);
+		label.AddThemeColorOverride("font_color", fontColor);
+		label.AddThemeColorOverride("font_outline_color", new Color(0f, 0f, 0f, 0.62f));
+		label.AddThemeConstantOverride("outline_size", 2);
+		label.SetTextAutoSize(text);
+		button.AddChild(label);
 	}
 }

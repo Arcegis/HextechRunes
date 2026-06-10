@@ -44,7 +44,7 @@ internal static partial class HextechCatalog
 				$"CHARACTER.{pool.LocalizationKey}",
 				pool.RuneTypes
 					.Select(static (type, index) => new IndexedRuneType(type, index))
-					.Where(static rune => !DisabledPlayerRuneTypes.Contains(rune.Type))
+					.Where(static rune => IsPlayerRuneTypeVisibleInCollection(rune.Type))
 					.OrderBy(static rune => GetPlayerRuneRaritySortOrder(rune.Type))
 					.ThenBy(static rune => rune.Index)
 					.Select(static rune => ModelDb.GetById<RelicModel>(ModelDb.GetId(rune.Type)))
@@ -70,7 +70,7 @@ internal static partial class HextechCatalog
 	public static IReadOnlyList<RelicModel> GetCanonicalVisibleCustomRelics()
 	{
 		return AllCustomRelicTypes
-			.Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeVisible(type))
+			.Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeVisibleInCollection(type))
 			.Select(static type => TryGetCanonicalVisibleCustomRelic(type, out RelicModel? relic) ? relic : null)
 			.OfType<RelicModel>()
 			.ToArray();
@@ -108,7 +108,7 @@ internal static partial class HextechCatalog
 			List<RelicModel> group = new();
 			foreach (Type runeType in runeTypes)
 			{
-				if (DisabledPlayerRuneTypes.Contains(runeType))
+				if (!IsPlayerRuneTypeVisibleInCollection(runeType))
 				{
 					continue;
 				}

@@ -84,6 +84,10 @@ internal static partial class CollectionHooks
 		typeof(UnlockState),
 		typeof(HashSet<RelicModel>));
 
+	private static readonly MethodInfo? CollectionClearRelicsMethod = TryGetMethod(typeof(NRelicCollection), "ClearRelics", BindingFlags.Instance | BindingFlags.NonPublic);
+
+	private static readonly MethodInfo? CollectionLoadRelicsMethod = TryGetMethod(typeof(NRelicCollection), "LoadRelics", BindingFlags.Instance | BindingFlags.NonPublic);
+
 	private static string? _starterHeaderTemplate;
 
 	private static bool _loggedFlatFallback;
@@ -138,6 +142,62 @@ internal static partial class CollectionHooks
 
 		AddHextechSubcategory(__instance, collection, seenRelics, allUnlockedRelics);
 		AddForgeSubcategory(__instance, collection, seenRelics, allUnlockedRelics);
+	}
+
+	public static void RefreshOpenRelicCollections()
+	{
+		if (CollectionClearRelicsMethod == null || CollectionLoadRelicsMethod == null)
+		{
+			return;
+		}
+
+		Node? root = NGame.Instance?.GetTree()?.Root;
+		if (root == null || !GodotObject.IsInstanceValid(root))
+		{
+			return;
+		}
+
+		int refreshed = 0;
+		foreach (NRelicCollection collection in EnumerateNodes<NRelicCollection>(root))
+		{
+			if (!GodotObject.IsInstanceValid(collection) || !collection.IsInsideTree())
+			{
+				continue;
+			}
+
+			try
+			{
+				CollectionClearRelicsMethod.Invoke(collection, null);
+				CollectionLoadRelicsMethod.Invoke(collection, null);
+				refreshed++;
+			}
+			catch (Exception ex)
+			{
+				Log.Warn($"[{ModInfo.Id}][RuneConfig] Failed to refresh relic collection after config save: {ex.GetType().Name}: {ex.Message}", 2);
+			}
+		}
+
+		if (refreshed > 0)
+		{
+			Log.Info($"[{ModInfo.Id}][RuneConfig] Refreshed {refreshed} relic collection screen(s) after config save.");
+		}
+	}
+
+	private static IEnumerable<TNode> EnumerateNodes<TNode>(Node node)
+		where TNode : Node
+	{
+		if (node is TNode match)
+		{
+			yield return match;
+		}
+
+		foreach (Node child in node.GetChildren())
+		{
+			foreach (TNode descendant in EnumerateNodes<TNode>(child))
+			{
+				yield return descendant;
+			}
+		}
 	}
 
 }
