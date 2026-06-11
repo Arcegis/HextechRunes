@@ -53,7 +53,7 @@ public sealed class LethalTempoRune : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!IsOwnedCard(cardPlay.Card) || !cardPlay.Card.Tags.Contains(CardTag.Shiv) || Owner == null || Owner.Creature.IsDead)
+		if (!IsOwnedCard(cardPlay.Card) || !HextechKnifeHelper.IsShivLike(cardPlay.Card, Owner) || Owner == null || Owner.Creature.IsDead)
 		{
 			return;
 		}

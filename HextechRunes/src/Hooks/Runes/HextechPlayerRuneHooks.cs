@@ -171,6 +171,70 @@ internal static partial class HextechPlayerRuneHooks
 		return false;
 	}
 
+	private static bool RainbowOnPlayPrefix(Rainbow __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!RainbowUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = RainbowUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
+	private static bool ShivCreateOneInHandPrefix(Player owner, CombatState combatState, ref Task<CardModel?> __result)
+	{
+		if (owner.GetRelic<BigKnifeRune>() == null)
+		{
+			return true;
+		}
+
+		__result = HextechKnifeHelper.CreateOneBigKnifeBladeInHand(owner, combatState);
+		return false;
+	}
+
+	private static bool ShivCreateManyInHandPrefix(Player owner, int count, CombatState combatState, ref Task<IEnumerable<CardModel>> __result)
+	{
+		if (owner.GetRelic<BigKnifeRune>() == null)
+		{
+			return true;
+		}
+
+		__result = HextechKnifeHelper.CreateBigKnifeBladesInHand(owner, count, combatState);
+		return false;
+	}
+
+	private static void CardPileCmdAddGeneratedCardsToCombatPrefix(ref IEnumerable<CardModel> cards)
+	{
+		List<CardModel> originals = cards.ToList();
+		if (originals.Count == 0)
+		{
+			return;
+		}
+
+		List<CardModel>? rewritten = null;
+		for (int i = 0; i < originals.Count; i++)
+		{
+			CardModel card = originals[i];
+			if (!HextechKnifeHelper.TryCreateBigKnifeReplacement(card, out CardModel replacement))
+			{
+				rewritten?.Add(card);
+				continue;
+			}
+
+			if (rewritten == null)
+			{
+				rewritten = originals.Take(i).ToList();
+			}
+			rewritten.Add(replacement);
+		}
+
+		if (rewritten != null)
+		{
+			cards = rewritten;
+		}
+	}
+
 	private static void CardResolveEnergyXValuePostfix(CardModel __instance, ref int __result)
 	{
 		WhirlwindUpgradeRune.TryDoubleResolvedX(__instance, ref __result);
@@ -178,13 +242,14 @@ internal static partial class HextechPlayerRuneHooks
 
 	private static void CardTagsPostfix(CardModel __instance, ref IEnumerable<CardTag> __result)
 	{
-		if (__result.Contains(CardTag.Strike))
+		Player? owner = TryGetMutableCardOwner(__instance);
+		if (!__result.Contains(CardTag.Shiv) && HextechKnifeHelper.ShouldTreatSovereignBladeAsShiv(__instance, owner))
 		{
-			return;
+			__result = __result.Append(CardTag.Shiv);
 		}
 
-		Player? owner = TryGetMutableCardOwner(__instance);
-		if (owner?.GetRelic<DeviantCognitionRune>() == null
+		if (__result.Contains(CardTag.Strike)
+			|| owner?.GetRelic<DeviantCognitionRune>() == null
 			|| !IllusoryWeaponRune.IsAttackForEffects(__instance, owner))
 		{
 			return;

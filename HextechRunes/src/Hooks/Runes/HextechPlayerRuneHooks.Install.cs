@@ -31,7 +31,8 @@ internal static partial class HextechPlayerRuneHooks
 
 	private static void InstallCardIdentityRuneHooks(Harmony harmony)
 	{
-		TryInstallRuneHook<DeviantCognitionRune>("deviant cognition card tags", () => InstallDeviantCognitionHooks(harmony));
+		TryInstallSharedCardTagHooks(harmony);
+		TryInstallRuneHook<BigKnifeRune>("big knife generated shiv replacement", () => InstallBigKnifeHooks(harmony));
 	}
 
 	private static void InstallFlyingKickRuneHooks(Harmony harmony)
@@ -58,13 +59,46 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<VoltaicUpgradeRune>("voltaic upgraded play", () => InstallVoltaicUpgradeHooks(harmony));
 		TryInstallRuneHook<GrandFinaleUpgradeRune>("grand finale upgraded play", () => InstallGrandFinaleUpgradeHooks(harmony));
 		TryInstallRuneHook<VoidFormUpgradeRune>("void form upgraded play", () => InstallVoidFormUpgradeHooks(harmony));
+		TryInstallRuneHook<RainbowUpgradeRune>("rainbow upgraded play", () => InstallRainbowUpgradeHooks(harmony));
 	}
 
-	private static void InstallDeviantCognitionHooks(Harmony harmony)
+	private static void TryInstallSharedCardTagHooks(Harmony harmony)
+	{
+		try
+		{
+			InstallCardTagHooks(harmony);
+		}
+		catch (Exception ex)
+		{
+			HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed<DeviantCognitionRune>("card tags", ex);
+			HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed<BigKnifeRune>("card tags", ex);
+		}
+	}
+
+	private static void InstallCardTagHooks(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), "get_Tags", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CardTagsPostfix)));
+	}
+
+	private static void InstallBigKnifeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Shiv), nameof(Shiv.CreateInHand), BindingFlags.Public | BindingFlags.Static, typeof(Player), typeof(CombatState)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(ShivCreateOneInHandPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(Shiv), nameof(Shiv.CreateInHand), BindingFlags.Public | BindingFlags.Static, typeof(Player), typeof(int), typeof(CombatState)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(ShivCreateManyInHandPrefix)));
+#if STS2_104_OR_NEWER
+		harmony.Patch(
+			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.AddGeneratedCardsToCombat), BindingFlags.Public | BindingFlags.Static, typeof(IEnumerable<CardModel>), typeof(PileType), typeof(Player), typeof(CardPilePosition)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CardPileCmdAddGeneratedCardsToCombatPrefix)));
+#else
+		harmony.Patch(
+			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.AddGeneratedCardsToCombat), BindingFlags.Public | BindingFlags.Static, typeof(IEnumerable<CardModel>), typeof(PileType), typeof(bool), typeof(CardPilePosition)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CardPileCmdAddGeneratedCardsToCombatPrefix)));
+#endif
 	}
 
 	private static void InstallFlyingKickDescriptionHooks(Harmony harmony)
@@ -182,6 +216,13 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(VoidForm), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(VoidFormOnPlayPrefix)));
+	}
+
+	private static void InstallRainbowUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Rainbow), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(RainbowOnPlayPrefix)));
 	}
 
 	private static void TryInstallCombatHookGroup(string label, Action install)
