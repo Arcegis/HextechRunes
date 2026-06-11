@@ -100,7 +100,7 @@ public sealed class UpgradeForge : HextechForgeBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new CardsVar(1)
+		new CardsVar(2)
 	];
 
 	public override Task AfterObtained()
@@ -143,7 +143,7 @@ public sealed class FocusForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<FocusPower>(1m)
+		new PowerVar<FocusPower>(2m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -211,7 +211,7 @@ public sealed class NecrobinderForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new SummonVar(4m)
+		new SummonVar(6m)
 	];
 
 	public override bool IsAvailableForPlayer(Player player)
@@ -243,7 +243,7 @@ public sealed class SilverStarsForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new StarsVar(3)
+		new StarsVar(2)
 	];
 
 	public override bool IsAvailableForPlayer(Player player)

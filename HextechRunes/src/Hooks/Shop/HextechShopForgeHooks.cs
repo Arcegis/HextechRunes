@@ -17,7 +17,6 @@ namespace HextechRunes;
 
 internal static class HextechShopForgeHooks
 {
-	private const int RandomForgeShopFirstCost = 125;
 	private const int RandomForgeShopRegularCost = 250;
 	private const float CardRemovalRandomForgeOffsetY = 60f;
 
@@ -160,7 +159,7 @@ internal static class HextechShopForgeHooks
 		Player player = inventory.Player;
 		int cost = TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null
 			? entry.Cost
-			: RandomForgeShopFirstCost;
+			: RandomForgeShopRegularCost;
 
 		if (!HextechForgeGrantHelper.TryCreateRandomForgeChoice(player, player.PlayerRng.Shops, out List<RelicModel> options))
 		{
@@ -229,7 +228,7 @@ internal static class HextechShopForgeHooks
 
 	private static int GetRandomForgeShopBaseCost(RandomForgeShopRelic shopRelic)
 	{
-		return shopRelic.PurchaseCount == 0 ? RandomForgeShopFirstCost : RandomForgeShopRegularCost;
+		return RandomForgeShopRegularCost;
 	}
 
 	private static void UpdateInventoryEntries(MerchantInventory inventory)

@@ -10,7 +10,6 @@ internal static class HextechForgeRegistry
 		Forge<DexterityForge>(HextechRarityTier.Silver),
 		Forge<SilverPlatingForge>(HextechRarityTier.Silver),
 		Forge<UpgradeForge>(HextechRarityTier.Silver),
-		Forge<FocusForge>(HextechRarityTier.Silver),
 		Forge<LifeForge>(HextechRarityTier.Silver),
 		Forge<PreparedForge>(HextechRarityTier.Silver),
 		Forge<NecrobinderForge>(HextechRarityTier.Silver),
@@ -38,6 +37,7 @@ internal static class HextechForgeRegistry
 		Forge<BufferForge>(HextechRarityTier.Prismatic),
 		Forge<SlipperyForge>(HextechRarityTier.Prismatic),
 		Forge<PrismaticArtifactForge>(HextechRarityTier.Prismatic),
+		Forge<FocusForge>(HextechRarityTier.Prismatic),
 		Forge<FortuneForge>(HextechRarityTier.Prismatic)
 	];
 
