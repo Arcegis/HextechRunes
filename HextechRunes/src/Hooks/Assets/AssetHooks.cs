@@ -123,6 +123,12 @@ internal static class AssetHooks
 	private static bool TryGetHextechPowerTexture(PowerModel self, out Texture2D? texture)
 	{
 		texture = null;
+		if (self is HextechPlayerSlowPower)
+		{
+			texture = ModelDb.Power<SlowPower>().Icon;
+			return texture != null;
+		}
+
 		string? path = self switch
 		{
 			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",

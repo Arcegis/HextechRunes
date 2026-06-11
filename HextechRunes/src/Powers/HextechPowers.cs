@@ -143,6 +143,71 @@ public sealed class HextechAttackReplayPower : PowerModel
 	}
 }
 
+public sealed class HextechPlayerSlowPower : HextechPowerBase
+{
+	private int _cardsPlayedThisTurn;
+
+	public int SavedCardsPlayedThisTurn
+	{
+		get => _cardsPlayedThisTurn;
+		set => _cardsPlayedThisTurn = Math.Max(0, value);
+	}
+
+	public override PowerType Type => Amount < 0m ? PowerType.Buff : PowerType.Debuff;
+
+	public override PowerStackType StackType => PowerStackType.Counter;
+
+	public override bool AllowNegative => true;
+
+	public override int DisplayAmount => (int)decimal.Round(Amount * _cardsPlayedThisTurn, 0, MidpointRounding.AwayFromZero);
+
+	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
+	{
+		if (side == Owner.Side)
+		{
+			SavedCardsPlayedThisTurn = 0;
+			InvokeDisplayAmountChanged();
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	{
+		if (cardPlay.IsAutoPlay
+			|| !cardPlay.IsFirstInSeries
+			|| cardPlay.Card.Owner?.Creature != Owner)
+		{
+			return Task.CompletedTask;
+		}
+
+		SavedCardsPlayedThisTurn++;
+		InvokeDisplayAmountChanged();
+		return Task.CompletedTask;
+	}
+
+	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		if (target != Owner || Amount == 0m || _cardsPlayedThisTurn <= 0 || (props & ValueProp.Unpowered) != 0)
+		{
+			return 1m;
+		}
+
+		decimal multiplier = 1m + Amount * _cardsPlayedThisTurn / 100m;
+		return Math.Max(0m, multiplier);
+	}
+
+	public override Task AfterModifyingDamageAmount(CardModel? cardSource)
+	{
+		if (_cardsPlayedThisTurn > 0 && Amount != 0m)
+		{
+			Flash();
+		}
+
+		return Task.CompletedTask;
+	}
+}
+
 public sealed class HextechTemporarySlowPower : HextechPowerBase, ITemporaryPower
 {
 	private bool _shouldIgnoreNextInstance;
