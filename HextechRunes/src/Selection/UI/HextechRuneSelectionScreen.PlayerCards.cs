@@ -13,7 +13,8 @@ internal sealed partial class HextechRuneSelectionScreen
 		{
 			Name = $"Slot_{slotIndex}",
 			CustomMinimumSize = PlayerRuneCardSize,
-			MouseFilter = MouseFilterEnum.Ignore
+			MouseFilter = MouseFilterEnum.Ignore,
+			SizeFlagsVertical = SizeFlags.ShrinkCenter
 		};
 
 		Button button = CreateCardButton(relic);

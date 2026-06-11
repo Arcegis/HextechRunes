@@ -33,6 +33,7 @@ internal static partial class HextechPlayerRuneHooks
 	{
 		TryInstallSharedCardTagHooks(harmony);
 		TryInstallRuneHook<BigKnifeRune>("big knife generated shiv replacement", () => InstallBigKnifeHooks(harmony));
+		TryInstallRuneHook<IllusoryWeaponRune>("illusory weapon attack counters", () => InstallIllusoryWeaponHooks(harmony));
 	}
 
 	private static void InstallFlyingKickRuneHooks(Harmony harmony)
@@ -90,6 +91,12 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(Shiv), nameof(Shiv.CreateInHand), BindingFlags.Public | BindingFlags.Static, typeof(Player), typeof(int), typeof(CombatState)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(ShivCreateManyInHandPrefix)));
+		harmony.Patch(
+			RequireMethod(typeof(SovereignBlade), "get_TargetType", BindingFlags.Instance | BindingFlags.Public),
+			postfix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(SovereignBladeTargetTypePostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(SovereignBlade), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(SovereignBladeOnPlayPrefix)));
 #if STS2_104_OR_NEWER
 		harmony.Patch(
 			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.AddGeneratedCardsToCombat), BindingFlags.Public | BindingFlags.Static, typeof(IEnumerable<CardModel>), typeof(PileType), typeof(Player), typeof(CardPilePosition)),

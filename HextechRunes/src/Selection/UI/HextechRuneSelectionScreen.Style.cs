@@ -20,21 +20,32 @@ namespace HextechRunes;
 
 internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScreen, IScreenContext
 {
-	private static string DetermineRarityKey(IReadOnlyList<RelicModel> relics)
+	private static string DetermineRarityKey(IReadOnlyList<RelicModel> relics, HextechSelectionMetadataMode metadataMode)
 	{
 		if (relics.Count == 0)
 		{
 			return "GOLD";
 		}
 
-		Type? relicType = HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Silver).FirstOrDefault(type => ModelDb.GetId(type) == (relics[0].CanonicalInstance?.Id ?? relics[0].Id));
-		if (relicType != null)
+		if (metadataMode == HextechSelectionMetadataMode.Forge
+			&& HextechCatalog.TryGetForgeRarity(relics[0], out HextechRarityTier forgeRarity))
 		{
-			return "SILVER";
+			return GetRarityKey(forgeRarity);
 		}
 
-		relicType = HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic).FirstOrDefault(type => ModelDb.GetId(type) == (relics[0].CanonicalInstance?.Id ?? relics[0].Id));
-		return relicType != null ? "PRISMATIC" : "GOLD";
+		return HextechCatalog.TryGetPlayerRuneRarity(relics[0], out HextechRarityTier runeRarity)
+			? GetRarityKey(runeRarity)
+			: "GOLD";
+	}
+
+	private static string GetRarityKey(HextechRarityTier rarity)
+	{
+		return rarity switch
+		{
+			HextechRarityTier.Silver => "SILVER",
+			HextechRarityTier.Prismatic => "PRISMATIC",
+			_ => "GOLD"
+		};
 	}
 
 	private Color GetAccentColor()

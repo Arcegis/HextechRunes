@@ -37,11 +37,16 @@ internal sealed partial class HextechMayhemModifier
 		ResetCombatTracking();
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
+	public override async Task AfterCombatVictory(CombatRoom room)
 	{
-		return HextechRelicBase.IsNetworkMultiplayerRun()
-			? ApplySharedCombatVictoryRunes(room)
-			: Task.CompletedTask;
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterCombatVictory(context, room));
+
+		if (HextechRelicBase.IsNetworkMultiplayerRun())
+		{
+			await ApplySharedCombatVictoryRunes(room);
+		}
 	}
 
 	private async Task ApplySharedCombatVictoryRunes(CombatRoom room)

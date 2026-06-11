@@ -24,6 +24,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<DizzySpinningRune>(MonsterHexKind.DizzySpinning, HextechRarityTier.Silver),
 		Monster<BrutalForceRune>(MonsterHexKind.BrutalForce, HextechRarityTier.Silver),
 		Monster<ZealotRune>(MonsterHexKind.Zealot, HextechRarityTier.Silver),
+		Monster<SwiftAndSafeRune>(MonsterHexKind.SwiftAndSafe, HextechRarityTier.Silver),
 
 		Monster<SturdyRune>(MonsterHexKind.Sturdy, HextechRarityTier.Gold),
 		Monster<DawnbringersResolveRune>(MonsterHexKind.DawnbringersResolve, HextechRarityTier.Gold),
@@ -52,6 +53,10 @@ internal static class HextechMonsterHexRegistry
 		Monster<TanksShieldRune>(MonsterHexKind.TanksShield, HextechRarityTier.Gold),
 		Monster<ScaredStiffRune>(MonsterHexKind.ScaredStiff, HextechRarityTier.Gold),
 		Monster<AncientWineRune>(MonsterHexKind.AncientWine, HextechRarityTier.Gold),
+		Monster<PorcupineRune>(MonsterHexKind.Porcupine, HextechRarityTier.Gold),
+		Monster<MonarchsGazeRune>(MonsterHexKind.MonarchsGaze, HextechRarityTier.Gold),
+		Monster<OmegaRune>(MonsterHexKind.Omega, HextechRarityTier.Gold),
+		Monster<ManipulateRealityRune>(MonsterHexKind.ManipulateReality, HextechRarityTier.Gold),
 
 		Monster<CourageOfColossusRune>(MonsterHexKind.CourageOfColossus, HextechRarityTier.Prismatic),
 		Monster<GlassCannonRune>(MonsterHexKind.GlassCannon, HextechRarityTier.Prismatic),
@@ -84,7 +89,12 @@ internal static class HextechMonsterHexRegistry
 		Monster<GhostFormRune>(MonsterHexKind.GhostForm, HextechRarityTier.Prismatic),
 		Monster<SerpentsFangRune>(MonsterHexKind.SerpentsFang, HextechRarityTier.Prismatic),
 		Monster<PandorasBoxRune>(MonsterHexKind.PandorasBox, HextechRarityTier.Prismatic),
-		Monster<ForbiddenGrimoireRune>(MonsterHexKind.ForbiddenGrimoire, HextechRarityTier.Prismatic)
+		Monster<ForbiddenGrimoireRune>(MonsterHexKind.ForbiddenGrimoire, HextechRarityTier.Prismatic),
+		Monster<TezcatarasMercyRune>(MonsterHexKind.TezcatarasMercy, HextechRarityTier.Prismatic),
+		Monster<ArcanePunchRune>(MonsterHexKind.ArcanePunch, HextechRarityTier.Prismatic),
+		Monster<SymphonyOfWarRune>(MonsterHexKind.SymphonyOfWar, HextechRarityTier.Prismatic),
+		Monster<MysteryRune>(MonsterHexKind.Mystery, HextechRarityTier.Prismatic),
+		Monster<MindOverMatterRune>(MonsterHexKind.MindOverMatter, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

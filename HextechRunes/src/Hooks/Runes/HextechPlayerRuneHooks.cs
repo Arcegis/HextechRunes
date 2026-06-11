@@ -204,7 +204,53 @@ internal static partial class HextechPlayerRuneHooks
 		return false;
 	}
 
-	private static void CardPileCmdAddGeneratedCardsToCombatPrefix(ref IEnumerable<CardModel> cards)
+	private static void SovereignBladeTargetTypePostfix(SovereignBlade __instance, ref TargetType __result)
+	{
+		if (HextechKnifeHelper.ShouldFanOfKnivesAffectSovereignBlade(__instance))
+		{
+			__result = TargetType.AllEnemies;
+		}
+	}
+
+	private static bool SovereignBladeOnPlayPrefix(SovereignBlade __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!HextechKnifeHelper.ShouldFanOfKnivesAffectSovereignBlade(__instance) || __instance.CombatState == null)
+		{
+			return true;
+		}
+
+		__result = PlayFanOfKnivesSovereignBlade(choiceContext, __instance);
+		return false;
+	}
+
+	private static async Task PlayFanOfKnivesSovereignBlade(PlayerChoiceContext choiceContext, SovereignBlade card)
+	{
+		CombatState? combatState = card.CombatState;
+		if (combatState == null)
+		{
+			return;
+		}
+
+		var attack = DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
+			.FromCard(card)
+			.WithHitCount(card.DynamicVars.Repeat.IntValue)
+			.WithAttackerAnim("Cast", card.Owner.Character.AttackAnimDelay)
+			.WithAttackerFx(null, "event:/sfx/characters/regent/regent_sovereign_blade")
+			.TargetingAllOpponents(combatState)
+			.WithHitFx("vfx/vfx_giant_horizontal_slash", null, "slash_attack.mp3");
+
+		await attack.Execute(choiceContext);
+		if (card.Owner.Creature.GetPower<ParryPower>() is { } parryPower)
+		{
+			await parryPower.AfterSovereignBladePlayed(card.Owner.Creature, attack.Results);
+		}
+	}
+
+#if STS2_104_OR_NEWER
+	private static void CardPileCmdAddGeneratedCardsToCombatPrefix(ref IEnumerable<CardModel> cards, Player? creator)
+#else
+	private static void CardPileCmdAddGeneratedCardsToCombatPrefix(ref IEnumerable<CardModel> cards, bool addedByPlayer)
+#endif
 	{
 		List<CardModel> originals = cards.ToList();
 		if (originals.Count == 0)
@@ -212,6 +258,9 @@ internal static partial class HextechPlayerRuneHooks
 			return;
 		}
 
+#if STS2_104_OR_NEWER
+		bool addedByPlayer = creator != null;
+#endif
 		List<CardModel>? rewritten = null;
 		for (int i = 0; i < originals.Count; i++)
 		{
@@ -229,9 +278,70 @@ internal static partial class HextechPlayerRuneHooks
 			rewritten.Add(replacement);
 		}
 
-		if (rewritten != null)
+		List<CardModel>? realityRewritten = TryApplyEnemyManipulateRealityStatusDoubling(rewritten ?? originals, addedByPlayer);
+		if (realityRewritten != null)
+		{
+			cards = realityRewritten;
+		}
+		else if (rewritten != null)
 		{
 			cards = rewritten;
+		}
+	}
+
+	private static List<CardModel>? TryApplyEnemyManipulateRealityStatusDoubling(IReadOnlyList<CardModel> cards, bool addedByPlayer)
+	{
+		if (addedByPlayer)
+		{
+			return null;
+		}
+
+		List<CardModel>? rewritten = null;
+		for (int i = 0; i < cards.Count; i++)
+		{
+			CardModel card = cards[i];
+			if (!ShouldDoubleEnemyGeneratedStatusCard(card))
+			{
+				rewritten?.Add(card);
+				continue;
+			}
+
+			rewritten ??= cards.Take(i).ToList();
+			rewritten.Add(card);
+			if (TryCreateManipulateRealityStatusCopy(card, out CardModel copy))
+			{
+				rewritten.Add(copy);
+			}
+		}
+
+		return rewritten;
+	}
+
+	private static bool ShouldDoubleEnemyGeneratedStatusCard(CardModel card)
+	{
+		return card.Type == CardType.Status
+			&& card.Owner?.Creature.Side == CombatSide.Player
+			&& card.Owner.Creature.CombatState?.RunState == card.Owner.RunState
+			&& card.Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()?.HasActiveMonsterHex(MonsterHexKind.ManipulateReality) == true;
+	}
+
+	private static bool TryCreateManipulateRealityStatusCopy(CardModel card, out CardModel copy)
+	{
+		copy = null!;
+		try
+		{
+			if (card.Owner?.Creature.CombatState is not HextechCombatState combatState)
+			{
+				return false;
+			}
+
+			copy = combatState.CloneCard(card);
+			return true;
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to duplicate enemy generated status card for Manipulate Reality: card={card.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
+			return false;
 		}
 	}
 

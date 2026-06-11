@@ -29,24 +29,31 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 			return;
 		}
 
-		Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
-			Owner,
-			combatState,
-			"illusory-weapon",
-			combatState.RoundNumber.ToString(),
-			CombatManager.Instance.History.Entries.Count().ToString(),
-			cardPlay.Card.Id.Entry);
-		if (target == null)
+		try
 		{
-			return;
-		}
+			Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
+				Owner,
+				combatState,
+				"illusory-weapon",
+				combatState.RoundNumber.ToString(),
+				CombatManager.Instance.History.Entries.Count().ToString(),
+				cardPlay.Card.Id.Entry);
+			if (target == null)
+			{
+				return;
+			}
 
-		Flash([target]);
-		await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
-			.FromCard(cardPlay.Card)
-			.Targeting(target)
-			.WithNoAttackerAnim()
-			.Execute(choiceContext);
+			Flash([target]);
+			await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
+				.FromCard(cardPlay.Card)
+				.Targeting(target)
+				.WithNoAttackerAnim()
+				.Execute(choiceContext);
+		}
+		finally
+		{
+			HextechPlayerRuneHooks.ClearIllusoryWeaponPendingPenNib(Owner, cardPlay.Card);
+		}
 	}
 
 	internal static bool ShouldTreatSkillAsAttack(Player? owner)

@@ -104,7 +104,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			_monsterHexKind = monsterHexKind;
 		}
 		_monsterHexRelic = CreateMonsterHexRelic(_monsterHexKind) ?? monsterHexRelic;
-		_rarityKey = DetermineRarityKey(relics);
+		_rarityKey = DetermineRarityKey(relics, metadataMode);
 		Name = nameof(HextechRuneSelectionScreen);
 		SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 		MouseFilter = MouseFilterEnum.Stop;

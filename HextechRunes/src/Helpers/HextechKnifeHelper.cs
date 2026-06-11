@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 
 namespace HextechRunes;
@@ -27,6 +28,22 @@ internal static class HextechKnifeHelper
 	public static bool ShouldTreatSovereignBladeAsShiv(CardModel card, Player? owner)
 	{
 		return card is SovereignBlade && owner?.GetRelic<BigKnifeRune>() != null;
+	}
+
+	public static bool ShouldFanOfKnivesAffectSovereignBlade(SovereignBlade card)
+	{
+		Player? owner;
+		try
+		{
+			owner = card.Owner;
+		}
+		catch
+		{
+			return false;
+		}
+
+		return ShouldTreatSovereignBladeAsShiv(card, owner)
+			&& owner.Creature.HasPower<FanOfKnivesPower>();
 	}
 
 	public static bool TryCreateBigKnifeReplacement(CardModel card, out CardModel replacement)

@@ -15,6 +15,7 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HextechActiveMonsterHexCache _activeMonsterHexCache = new();
 	private int _hexCountRecoveryBaseline;
 	private int _monsterHexStrengthTierFloor;
+	private int _enemyTezcatarasMercyCombatCounter;
 	private bool _hostUsesBetterMultiplayerScaling;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -101,6 +102,13 @@ internal sealed partial class HextechMayhemModifier
 	{
 		get => _combatTracking.Serialize();
 		set => _combatTracking.Restore(value);
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedEnemyTezcatarasMercyCombatCounter
+	{
+		get => _enemyTezcatarasMercyCombatCounter;
+		set => _enemyTezcatarasMercyCombatCounter = Math.Max(0, value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]

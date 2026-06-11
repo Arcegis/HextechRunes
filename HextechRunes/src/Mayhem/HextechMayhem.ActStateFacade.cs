@@ -86,6 +86,7 @@ internal sealed partial class HextechMayhemModifier
 	{
 		_hexCountRecoveryBaseline = 0;
 		_monsterHexStrengthTierFloor = 0;
+		_enemyTezcatarasMercyCombatCounter = 0;
 		_actState.Reset();
 		_choiceHistory.Reset();
 		ResetCombatTracking();
@@ -96,6 +97,7 @@ internal sealed partial class HextechMayhemModifier
 	{
 		_hexCountRecoveryBaseline = HextechMayhemActRecovery.GetMinimumPlayerHexCount(RunState);
 		_monsterHexStrengthTierFloor = 3;
+		_enemyTezcatarasMercyCombatCounter = 0;
 		_actState.ResetForEndlessLoop();
 		_choiceHistory.Reset();
 		ResetCombatTracking();
@@ -108,6 +110,7 @@ internal sealed partial class HextechMayhemModifier
 	{
 		_hexCountRecoveryBaseline = 0;
 		_monsterHexStrengthTierFloor = 0;
+		_enemyTezcatarasMercyCombatCounter = 0;
 		_actState.DebugSetOnlyMonsterHex(actIndex, hex, rarity);
 		_choiceHistory.Reset();
 
@@ -158,5 +161,17 @@ internal sealed partial class HextechMayhemModifier
 	private void InvalidateActiveMonsterHexCache()
 	{
 		_activeMonsterHexCache.Invalidate();
+	}
+
+	internal bool IncrementEnemyTezcatarasMercyCombatCounter(int interval)
+	{
+		_enemyTezcatarasMercyCombatCounter++;
+		if (_enemyTezcatarasMercyCombatCounter < interval)
+		{
+			return false;
+		}
+
+		_enemyTezcatarasMercyCombatCounter = 0;
+		return true;
 	}
 }
