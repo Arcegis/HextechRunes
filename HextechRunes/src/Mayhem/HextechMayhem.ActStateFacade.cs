@@ -144,9 +144,14 @@ internal sealed partial class HextechMayhemModifier
 
 	public int GetMonsterHexStrengthTier(MonsterHexKind hex)
 	{
+		return GetMonsterHexStrengthTierForAct(hex, RunState.CurrentActIndex);
+	}
+
+	public int GetMonsterHexStrengthTierForAct(MonsterHexKind hex, int actIndex)
+	{
 		_ = hex;
-		// Enemy hex strength tracks the current act, even for hexes obtained in earlier acts.
-		int actStrengthTier = Math.Clamp(RunState.CurrentActIndex + 1, 1, 3);
+		// Enemy hex strength tracks the active act, even for hexes obtained in earlier acts.
+		int actStrengthTier = Math.Clamp(actIndex + 1, 1, 3);
 		return Math.Max(actStrengthTier, _monsterHexStrengthTierFloor);
 	}
 

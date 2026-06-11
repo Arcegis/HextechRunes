@@ -7,6 +7,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<uint, int> CourageProcsThisTurn = new();
 	public readonly Dictionary<uint, int> BloodPactProcsThisTurn = new();
 	public readonly Dictionary<string, int> PlayerRuneProcsThisTurn = new();
+	public readonly Dictionary<string, int> PlayerRuneProcsThisCombat = new();
 	public readonly Dictionary<uint, int> BloodArmorHpLossThisPlayerTurn = new();
 	public readonly Dictionary<uint, int> ClownCollegeProcsThisTurn = new();
 	public readonly HashSet<uint> EscapePlanTriggered = new();

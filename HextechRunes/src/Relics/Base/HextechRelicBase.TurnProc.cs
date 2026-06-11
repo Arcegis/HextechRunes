@@ -124,6 +124,22 @@ public abstract partial class HextechRelicBase
 		return true;
 	}
 
+	protected int ConsumeCombatProcOrdinal(string procKey, ref int localCount)
+	{
+		if (ShouldUseNetworkCombatHistory()
+			&& Owner != null
+			&& Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+		{
+			int ordinal = modifier.ConsumePlayerRuneProcInCombat(Owner, procKey);
+			localCount = ordinal + 1;
+			return ordinal;
+		}
+
+		int localOrdinal = localCount;
+		localCount++;
+		return localOrdinal;
+	}
+
 	protected void FlashDeferred(IEnumerable<Creature>? targets = null)
 	{
 		Creature[] targetArray = targets?.ToArray() ?? Array.Empty<Creature>();

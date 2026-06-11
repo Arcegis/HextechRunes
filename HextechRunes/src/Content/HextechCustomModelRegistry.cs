@@ -2,6 +2,11 @@ namespace HextechRunes;
 
 internal static class HextechCustomModelRegistry
 {
+	internal static IReadOnlyList<Type> EventRelicTypes { get; } =
+	[
+		typeof(GoldStarRelic)
+	];
+
 	internal static IReadOnlyList<Type> ShopOnlyRelicTypes { get; } =
 	[
 		typeof(RandomForgeShopRelic)

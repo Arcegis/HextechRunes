@@ -27,7 +27,7 @@ public sealed class CrackTheEggRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DamageVar(6m, ValueProp.Unpowered)
+		new DamageVar(9m, ValueProp.Unpowered)
 	];
 
 	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)

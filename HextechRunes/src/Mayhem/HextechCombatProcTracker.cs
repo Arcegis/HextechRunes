@@ -64,6 +64,14 @@ internal static class HextechCombatProcTracker
 		return true;
 	}
 
+	public static int ConsumePlayerRuneProcInCombat(HextechMayhemCombatTrackingState tracking, Player player, string procKey)
+	{
+		string key = GetPlayerRuneProcKey(player, procKey);
+		int current = tracking.PlayerRuneProcsThisCombat.GetValueOrDefault(key, 0);
+		tracking.PlayerRuneProcsThisCombat[key] = current + 1;
+		return current;
+	}
+
 	public static bool TrackPlayerAttackCardPlayedThisTurn(HextechMayhemCombatTrackingState tracking, CardPlay cardPlay)
 	{
 		if (!cardPlay.IsFirstInSeries

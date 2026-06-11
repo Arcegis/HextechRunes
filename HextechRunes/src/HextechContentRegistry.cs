@@ -62,6 +62,8 @@ internal static class HextechContentRegistry
 
 	internal static IReadOnlyList<Type> ShopOnlyRelicTypes => HextechCustomModelRegistry.ShopOnlyRelicTypes;
 
+	internal static IReadOnlyList<Type> EventRelicTypes => HextechCustomModelRegistry.EventRelicTypes;
+
 	internal static IReadOnlyList<Type> CustomCardTypes => HextechCustomModelRegistry.CustomCardTypes;
 
 	private static RegistryLookups BuildRegistryLookups()

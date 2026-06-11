@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -12,10 +13,10 @@ public sealed class DoubleExistenceRune : HextechRelicBase
 		return IsSilentPlayer(player);
 	}
 
-	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
+	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (player != Owner
-			|| Owner == null
+		if (Owner == null
+			|| side != Owner.Creature.Side
 			|| Owner.Creature.IsDead)
 		{
 			return;

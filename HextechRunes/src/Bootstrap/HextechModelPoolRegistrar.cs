@@ -19,12 +19,14 @@ internal static class HextechModelPoolRegistrar
 	internal static void RegisterModels()
 	{
 		IReadOnlyList<Type> customRelicTypes = HextechModelTypeIdentity.Distinct(HextechCatalog.GetAllCustomRelicTypes());
+		IReadOnlyList<Type> eventRelicTypes = HextechModelTypeIdentity.Distinct(HextechContentRegistry.EventRelicTypes);
 		IReadOnlyList<Type> customCardTypes = HextechModelTypeIdentity.Distinct(HextechCatalog.GetAllCustomCardTypes());
 		bool useMobileFirstModelRegistrationWorkaround = ShouldUseMobileFirstModelRegistrationWorkaround();
 
 		if (useMobileFirstModelRegistrationWorkaround)
 		{
 			QueueMobileFirstModelRegistrationWorkaround(typeof(SharedRelicPool), customRelicTypes);
+			QueueMobileFirstModelRegistrationWorkaround(typeof(EventRelicPool), eventRelicTypes);
 			QueueMobileFirstModelRegistrationWorkaround(typeof(TokenCardPool), customCardTypes);
 		}
 
@@ -33,12 +35,18 @@ internal static class HextechModelPoolRegistrar
 			TryAddModelToPool(typeof(SharedRelicPool), runeType);
 		}
 
+		foreach (Type relicType in eventRelicTypes)
+		{
+			TryAddModelToPool(typeof(EventRelicPool), relicType);
+		}
+
 		foreach (Type cardType in customCardTypes)
 		{
 			TryAddModelToPool(typeof(TokenCardPool), cardType);
 		}
 
 		CleanupDuplicatePoolRegistrations(typeof(SharedRelicPool), customRelicTypes);
+		CleanupDuplicatePoolRegistrations(typeof(EventRelicPool), eventRelicTypes);
 		CleanupDuplicatePoolRegistrations(typeof(TokenCardPool), customCardTypes);
 	}
 
