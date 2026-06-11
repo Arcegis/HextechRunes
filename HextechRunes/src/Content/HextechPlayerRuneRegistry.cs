@@ -127,6 +127,8 @@ internal static class HextechPlayerRuneRegistry
         Rune<DivineInterventionRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<SonataRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<ArchmageRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
+        Rune<NatureIsHealingRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
+        Rune<PorcupineRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<SnailFormRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<ColorDiscoveryRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<OmegaRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
