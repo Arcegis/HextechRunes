@@ -93,7 +93,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
-	private static async Task<PlayerChoiceSynchronizer?> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
+	internal static async Task<PlayerChoiceSynchronizer?> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
 	{
 		for (int i = 0; i < 60; i++)
 		{
@@ -108,7 +108,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		return runManager.PlayerChoiceSynchronizer;
 	}
 
-	private static bool IsLocalPlayer(RunManager runManager, Player player)
+	internal static bool IsLocalPlayer(RunManager runManager, Player player)
 	{
 		return player.NetId != 0UL && player.NetId == runManager.NetService.NetId;
 	}

@@ -49,8 +49,16 @@ internal sealed partial class HextechRuneSelectionScreen
 			Alignment = BoxContainer.AlignmentMode.Center
 		};
 		row.AddThemeConstantOverride("separation", 6);
-		row.AddChild(CreatePlayerPoolPill(relic));
-		row.AddChild(CreatePlayerTagPill(relic));
+		if (_metadataMode == HextechSelectionMetadataMode.Forge)
+		{
+			row.AddChild(CreateTextPill(new LocString(LocTable, "HEXTECH_POOL.FORGE").GetRawText()));
+			row.AddChild(CreateRarityPill());
+		}
+		else
+		{
+			row.AddChild(CreatePlayerPoolPill(relic));
+			row.AddChild(CreatePlayerTagPill(relic));
+		}
 		pillCenter.AddChild(row);
 		wrapper.AddChild(pillCenter);
 		return wrapper;

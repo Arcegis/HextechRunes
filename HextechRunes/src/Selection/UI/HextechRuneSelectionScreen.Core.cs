@@ -31,6 +31,12 @@ internal sealed class HextechEnemyHexAdjustmentOptions
 	public Action<HextechRuneSelectionScreen>? ScreenCreated { get; init; }
 }
 
+internal enum HextechSelectionMetadataMode
+{
+	PlayerRune,
+	Forge
+}
+
 internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScreen, IScreenContext
 {
 	private readonly TaskCompletionSource<IEnumerable<RelicModel>> _completionSource = new();
@@ -38,6 +44,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private readonly Func<MonsterHexKind?, int, MonsterHexKind?>? _enemyHexRerollFunc;
 	private readonly Action<MonsterHexKind?, bool, int>? _enemyHexChanged;
 	private readonly string? _titleOverride;
+	private readonly HextechSelectionMetadataMode _metadataMode;
 	private List<RelicModel> _relics;
 	private MonsterHexKind? _monsterHexKind;
 	private MonsterHexKind? _monsterHexBeforeRemoval;
@@ -81,13 +88,15 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc,
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions,
-		string? titleOverride)
+		string? titleOverride,
+		HextechSelectionMetadataMode metadataMode)
 	{
 		_relics = relics.ToList();
 		_rerollFunc = rerollFunc;
 		_enemyHexRerollFunc = enemyHexOptions?.RerollFunc;
 		_enemyHexChanged = enemyHexOptions?.Changed;
 		_titleOverride = titleOverride;
+		_metadataMode = metadataMode;
 		_enemyHexControlsEnabled = enemyHexOptions?.ControlsEnabled == true || enemyHexOptions?.RerollFunc != null;
 		_monsterHexKind = enemyHexOptions?.InitialHex;
 		if (_monsterHexKind == null && monsterHexRelic != null && MonsterHexCatalog.TryGetMonsterHexKind(monsterHexRelic, out MonsterHexKind monsterHexKind))
@@ -110,10 +119,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc = null,
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null,
-		string? titleOverride = null)
+		string? titleOverride = null,
+		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune)
 	{
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count}");
-		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions, titleOverride);
+		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions, titleOverride, metadataMode);
 	}
 
 	public override void _ExitTree()

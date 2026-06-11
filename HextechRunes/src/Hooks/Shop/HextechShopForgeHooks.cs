@@ -162,13 +162,19 @@ internal static class HextechShopForgeHooks
 			? entry.Cost
 			: RandomForgeShopFirstCost;
 
-		if (!HextechForgeGrantHelper.TryCreateRandomForge(player, player.PlayerRng.Shops, out RelicModel? forge) || forge == null)
+		if (!HextechForgeGrantHelper.TryCreateRandomForgeChoice(player, player.PlayerRng.Shops, out List<RelicModel> options))
 		{
 #if STS2_104_OR_NEWER
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
 #else
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureForbidden);
 #endif
+			return (false, 0);
+		}
+
+		RelicModel? forge = await HextechForgeSelectionCoordinator.SelectForge(player, options, "shop");
+		if (forge == null)
+		{
 			return (false, 0);
 		}
 
@@ -183,9 +189,7 @@ internal static class HextechShopForgeHooks
 			.BoughtRelics
 			.Add(forge.Id);
 
-		SaveManager.Instance.MarkRelicAsSeen(forge);
-		await RelicCmd.Obtain(forge, player);
-		RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(forge);
+		await HextechForgeGrantHelper.ObtainSelectedForge(player, forge, syncObtainedRelic: true);
 		if (shopRelic != null)
 		{
 			shopRelic.IncrementPurchaseCount();
