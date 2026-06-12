@@ -1,12 +1,17 @@
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HextechRunes;
 
 public sealed class CosplayRune : HextechRelicBase
 {
+	internal const string InnateMarkerSavedPropertyName = "SavedCosplayInnateMarker";
+
 	private static readonly Type[] RelicTypes =
 	[
 		typeof(Lantern)
@@ -14,11 +19,18 @@ public sealed class CosplayRune : HextechRelicBase
 
 	public override bool HasUponPickupEffect => true;
 
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	private int SavedCosplayInnateMarker
+	{
+		get => 0;
+		set { }
+	}
+
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
 		HoverTipFactory.FromCard<FeelNoPain>(),
 		HoverTipFactory.FromCard<Juggernaut>(),
-		HoverTipFactory.FromCard<Fuel>(),
+		HoverTipFactory.FromCard<Stoke>(),
 		HoverTipFactory.FromCard<BattleTrance>(),
 		HoverTipFactory.FromKeyword(CardKeyword.Innate),
 		.. HoverTipFactory.FromRelic<Lantern>()
@@ -34,7 +46,7 @@ public sealed class CosplayRune : HextechRelicBase
 		Flash();
 		await AddInnateCard<FeelNoPain>();
 		await AddInnateCard<Juggernaut>();
-		await AddInnateCard<Fuel>();
+		await AddInnateCard<Stoke>();
 		await AddInnateCard<BattleTrance>();
 		await RelicBundleGrantHelper.GrantRelics(Owner, RelicTypes);
 	}
@@ -44,10 +56,28 @@ public sealed class CosplayRune : HextechRelicBase
 	{
 		return AddCardCopiesToDeckOrHand<TCard>(1, static card =>
 		{
-			if (!card.Keywords.Contains(CardKeyword.Innate))
-			{
-				card.AddKeyword(CardKeyword.Innate);
-			}
+			ApplyPersistentInnate(card);
 		});
+	}
+
+	public override Task AfterCardEnteredCombat(CardModel card)
+	{
+		if (Owner == null || card.Owner != Owner)
+		{
+			return Task.CompletedTask;
+		}
+
+		if (CosplayInnateKeywordPersistence.IsTracked(card.DeckVersion))
+		{
+			CosplayInnateKeywordPersistence.Restore(card);
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private static void ApplyPersistentInnate(CardModel card)
+	{
+		CosplayInnateKeywordPersistence.Track(card);
+		CardCmd.ApplyKeyword(card, CardKeyword.Innate);
 	}
 }

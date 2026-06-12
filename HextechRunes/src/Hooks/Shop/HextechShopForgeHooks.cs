@@ -161,7 +161,8 @@ internal static class HextechShopForgeHooks
 			? entry.Cost
 			: RandomForgeShopRegularCost;
 
-		if (!HextechForgeGrantHelper.TryCreateRandomForgeChoice(player, player.PlayerRng.Shops, out List<RelicModel> options))
+		int purchaseOrdinal = shopRelic?.PurchaseCount ?? 0;
+		if (!HextechForgeGrantHelper.TryCreateStableShopForgeChoice(player, purchaseOrdinal, out List<RelicModel> options))
 		{
 #if STS2_104_OR_NEWER
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
@@ -171,7 +172,7 @@ internal static class HextechShopForgeHooks
 			return (false, 0);
 		}
 
-		RelicModel? forge = await HextechForgeSelectionCoordinator.SelectForge(player, options, "shop");
+		RelicModel? forge = await HextechForgeSelectionCoordinator.SelectForge(player, options, "shop", syncMultiplayerChoice: false);
 		if (forge == null)
 		{
 			return (false, 0);

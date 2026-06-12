@@ -15,7 +15,7 @@ internal static class HextechForgeSelectionCoordinator
 {
 	private const string LocTable = "relic_collection";
 
-	public static async Task<RelicModel?> SelectForge(Player player, IReadOnlyList<RelicModel> options, string context)
+	public static async Task<RelicModel?> SelectForge(Player player, IReadOnlyList<RelicModel> options, string context, bool syncMultiplayerChoice = true)
 	{
 		if (options.Count == 0)
 		{
@@ -29,6 +29,17 @@ internal static class HextechForgeSelectionCoordinator
 		if (gameType is NetGameType.Singleplayer or NetGameType.None)
 		{
 			return await SelectLocalForge(player, options, context);
+		}
+
+		if (!syncMultiplayerChoice)
+		{
+			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player) || HextechAiTeammateCompat.ShouldAutoSelectRune(player))
+			{
+				return await SelectLocalForge(player, options, context);
+			}
+
+			Log.Warn($"[{ModInfo.Id}][ForgeChoice] Unsynced forge selection ignored for remote player={player.NetId} context={context}");
+			return null;
 		}
 
 		PlayerChoiceSynchronizer? synchronizer = await HextechRuneSelectionCoordinator.WaitForPlayerChoiceSynchronizerAsync(runManager);

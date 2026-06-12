@@ -1,7 +1,9 @@
 using Godot;
+using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes;
@@ -25,7 +27,11 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 	public override Task BeforeCombatStart()
 	{
 		StopTimer();
-		StartTimer();
+		if (!IsNetworkMultiplayer())
+		{
+			StartTimer();
+		}
+
 		return Task.CompletedTask;
 	}
 
@@ -33,6 +39,17 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 	{
 		StopTimer();
 		return Task.CompletedTask;
+	}
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (!IsNetworkMultiplayer() || player != Owner || !ShouldHeal())
+		{
+			return;
+		}
+
+		Flash();
+		await HealOwner();
 	}
 
 	private void StartTimer()
@@ -94,7 +111,7 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 			}
 
 			Flash();
-			await CreatureCmd.Heal(Owner!.Creature, DynamicVars.Heal.BaseValue);
+			await HealOwner();
 		}
 		catch (Exception ex)
 		{
@@ -113,5 +130,10 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 			&& Owner.RunState.CurrentRoom is CombatRoom
 			&& Owner.Creature.CombatState != null
 			&& !Owner.Creature.IsDead;
+	}
+
+	private Task HealOwner()
+	{
+		return CreatureCmd.Heal(Owner!.Creature, DynamicVars.Heal.BaseValue);
 	}
 }

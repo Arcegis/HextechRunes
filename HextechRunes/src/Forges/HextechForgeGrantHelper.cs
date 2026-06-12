@@ -136,6 +136,11 @@ internal static class HextechForgeGrantHelper
 		return TryCreateRandomForgeChoice(player, rarity, rng, out options);
 	}
 
+	internal static bool TryCreateStableShopForgeChoice(Player player, int purchaseOrdinal, out List<RelicModel> options)
+	{
+		return TryCreateStableRandomForgeChoice(player, "shop-random-forge", purchaseOrdinal, out options);
+	}
+
 	private static bool TryCreateStableRandomForge(Player player, string source, int ordinal, out RelicModel? forge)
 	{
 		HextechRarityTier rarity = RollStableForgeRarity(player, source, ordinal);
