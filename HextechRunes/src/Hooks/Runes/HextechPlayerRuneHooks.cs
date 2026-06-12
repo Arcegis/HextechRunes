@@ -214,7 +214,7 @@ internal static partial class HextechPlayerRuneHooks
 
 	private static bool SovereignBladeOnPlayPrefix(SovereignBlade __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 	{
-		if (!HextechKnifeHelper.ShouldFanOfKnivesAffectSovereignBlade(__instance) || __instance.CombatState == null)
+		if (!HextechKnifeHelper.ShouldFanOfKnivesAffectSovereignBlade(__instance) || __instance.CombatState is not CombatState)
 		{
 			return true;
 		}
@@ -225,8 +225,7 @@ internal static partial class HextechPlayerRuneHooks
 
 	private static async Task PlayFanOfKnivesSovereignBlade(PlayerChoiceContext choiceContext, SovereignBlade card)
 	{
-		CombatState? combatState = card.CombatState;
-		if (combatState == null)
+		if (card.CombatState is not CombatState combatState)
 		{
 			return;
 		}
@@ -240,10 +239,12 @@ internal static partial class HextechPlayerRuneHooks
 			.WithHitFx("vfx/vfx_giant_horizontal_slash", null, "slash_attack.mp3");
 
 		await attack.Execute(choiceContext);
+#if !STS2_107_OR_NEWER
 		if (card.Owner.Creature.GetPower<ParryPower>() is { } parryPower)
 		{
 			await parryPower.AfterSovereignBladePlayed(card.Owner.Creature, attack.Results);
 		}
+#endif
 	}
 
 #if STS2_104_OR_NEWER

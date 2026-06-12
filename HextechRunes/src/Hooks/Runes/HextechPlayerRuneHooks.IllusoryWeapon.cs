@@ -82,11 +82,11 @@ internal static partial class HextechPlayerRuneHooks
 
 	private static decimal CountFinisherAttackCardsPlayedThisTurn(CardModel card, Creature? _)
 	{
-		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
-			card.Owner,
-			card.CombatState,
-			firstInSeriesOnly: false,
-			includeAutoPlay: true);
+			return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
+				card.Owner,
+				card.CombatState as CombatState,
+				firstInSeriesOnly: false,
+				includeAutoPlay: true);
 	}
 
 	private static bool NunchakuAfterCardPlayedPrefix(Nunchaku __instance, CardPlay cardPlay, ref Task __result)

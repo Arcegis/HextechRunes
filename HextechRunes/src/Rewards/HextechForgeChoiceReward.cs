@@ -18,7 +18,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 	public HextechForgeChoiceReward(IReadOnlyList<RelicModel> options, Player player)
 		: base(player)
 	{
-		_options = options.Select(static relic => relic.ToMutable()).ToList();
+		_options = options.Select(CreateMutableOption).ToList();
 	}
 
 	protected override RewardType RewardType => RewardType.Relic;
@@ -86,5 +86,11 @@ internal sealed class HextechForgeChoiceReward : Reward
 			.Take(Math.Max(0, save.OptionCount))
 			.ToList();
 		return new HextechForgeChoiceReward(options, player);
+	}
+
+	private static RelicModel CreateMutableOption(RelicModel relic)
+	{
+		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		return ModelDb.GetById<RelicModel>(id).ToMutable();
 	}
 }
