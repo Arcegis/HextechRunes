@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
@@ -178,10 +179,19 @@ internal static class HextechShopForgeHooks
 			return (false, 0);
 		}
 
+		if (!CanContinueSynchronizedPurchase())
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge purchase cancelled because multiplayer service is disconnected.");
+			return (false, 0);
+		}
+
 		if (!ignoreCost)
 		{
 			await PlayerCmd.LoseGold(cost, player, GoldLossType.Spent);
-			RunManager.Instance.RewardSynchronizer.SyncLocalGoldLost(cost);
+			if (CanSyncMultiplayerReward())
+			{
+				RunManager.Instance.RewardSynchronizer.SyncLocalGoldLost(cost);
+			}
 		}
 
 		player.RunState.CurrentMapPointHistoryEntry?
@@ -196,6 +206,18 @@ internal static class HextechShopForgeHooks
 			entry.OnMerchantInventoryUpdated();
 		}
 		return (true, ignoreCost ? 0 : cost);
+	}
+
+	private static bool CanContinueSynchronizedPurchase()
+	{
+		INetGameService netService = RunManager.Instance.NetService;
+		return netService.Type is not (NetGameType.Host or NetGameType.Client) || netService.IsConnected;
+	}
+
+	private static bool CanSyncMultiplayerReward()
+	{
+		INetGameService netService = RunManager.Instance.NetService;
+		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
 	}
 
 	private static bool IsRandomForgeEntry(MerchantEntry entry)

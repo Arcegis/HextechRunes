@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -21,6 +22,7 @@ using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rewards;
@@ -120,7 +122,15 @@ internal static class HextechForgeGrantHelper
 		await RelicCmd.Obtain(forge, player);
 		if (syncObtainedRelic)
 		{
-			RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(forge);
+			INetGameService netService = RunManager.Instance.NetService;
+			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
+			{
+				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(forge);
+			}
+			else if (netService.Type is NetGameType.Host or NetGameType.Client)
+			{
+				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
+			}
 		}
 	}
 

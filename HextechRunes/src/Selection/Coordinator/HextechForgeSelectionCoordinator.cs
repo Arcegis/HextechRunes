@@ -58,8 +58,25 @@ internal static class HextechForgeSelectionCoordinator
 		if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
 		{
 			RelicModel? selected = await SelectLocalForge(player, options, context);
-			selected ??= options[0];
+			if (selected == null)
+			{
+				Log.Info($"[{ModInfo.Id}][ForgeChoice] Local selection aborted: player={player.NetId} choiceId={choiceId} context={context}");
+				return null;
+			}
+
 			int selectedIndex = IndexOfRelic(options, selected);
+			if (selectedIndex < 0)
+			{
+				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Local selection not in option set: player={player.NetId} context={context}");
+				return null;
+			}
+
+			if (!runManager.NetService.IsConnected)
+			{
+				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Local selection ignored because multiplayer service is disconnected: player={player.NetId} context={context}");
+				return null;
+			}
+
 			synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options));
 			Log.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={choiceId} index={selectedIndex} context={context}");
 			return selected;
@@ -68,6 +85,12 @@ internal static class HextechForgeSelectionCoordinator
 		if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
 		{
 			int selectedIndex = PickAiForgeIndex(player, options, context);
+			if (!runManager.NetService.IsConnected)
+			{
+				Log.Warn($"[{ModInfo.Id}][ForgeChoice][AITeammateCompat] Auto-selection ignored because multiplayer service is disconnected: player={player.NetId} context={context}");
+				return null;
+			}
+
 			synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options));
 			return selectedIndex >= 0 && selectedIndex < options.Count ? options[selectedIndex] : options[0];
 		}
