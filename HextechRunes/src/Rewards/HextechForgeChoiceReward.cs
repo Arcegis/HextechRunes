@@ -29,7 +29,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 
 	public override bool IsPopulated => _options.Count > 0;
 
-	protected override string IconPath => ImageHelper.GetImagePath("ui/reward_screen/reward_icon_relic.png");
+	protected override string IconPath => GetForgeRewardIconPath();
 
 #if STS2_105_OR_NEWER
 	public override void Populate()
@@ -92,5 +92,13 @@ internal sealed class HextechForgeChoiceReward : Reward
 	{
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
 		return ModelDb.GetById<RelicModel>(id).ToMutable();
+	}
+
+	private string GetForgeRewardIconPath()
+	{
+		RelicModel? firstOption = _options.FirstOrDefault();
+		return firstOption != null && HextechCatalog.TryGetForgeRarity(firstOption, out HextechRarityTier rarity)
+			? HextechAssets.GetForgeIconPath(rarity)
+			: ImageHelper.GetImagePath("ui/reward_screen/reward_icon_relic.png");
 	}
 }

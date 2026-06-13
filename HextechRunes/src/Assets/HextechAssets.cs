@@ -58,14 +58,7 @@ internal static class HextechAssets
 
         if (HextechCatalog.TryGetForgeRarity(relic, out HextechRarityTier forgeRarity))
         {
-            string iconStem = forgeRarity switch
-            {
-                HextechRarityTier.Silver => "silverForge",
-                HextechRarityTier.Gold => "goldForge",
-                HextechRarityTier.Prismatic => "prismaticForge",
-                _ => "silverForge"
-            };
-            return $"res://{ModInfo.Id}/images/relics/{iconStem}.png";
+            return GetForgeIconPath(forgeRarity);
         }
 
         if (HextechCatalog.IsHextechShopRelic(relic))
@@ -74,6 +67,18 @@ internal static class HextechAssets
         }
 
         return null;
+    }
+
+    public static string GetForgeIconPath(HextechRarityTier rarity)
+    {
+        string iconStem = rarity switch
+        {
+            HextechRarityTier.Silver => "silverForge",
+            HextechRarityTier.Gold => "goldForge",
+            HextechRarityTier.Prismatic => "prismaticForge",
+            _ => "silverForge"
+        };
+        return $"res://{ModInfo.Id}/images/relics/{iconStem}.png";
     }
 
     internal static string ToImageFileStem(string entry)

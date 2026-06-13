@@ -9,8 +9,9 @@ public sealed class SnailFormRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("InitialSlow", 1m),
-		new DynamicVar("TurnStartSlow", -50m)
+		new DynamicVar("InitialSlow", -100m),
+		new DynamicVar("TurnStartSlow", -100m),
+		new DynamicVar("CardSlowGain", HextechPlayerSlowPower.CardPlaySlowIncrease)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>

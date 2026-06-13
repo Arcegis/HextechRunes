@@ -145,6 +145,7 @@ public sealed class HextechAttackReplayPower : PowerModel
 
 public sealed class HextechPlayerSlowPower : HextechPowerBase
 {
+	internal const decimal CardPlaySlowIncrease = 10m;
 	private int _cardsPlayedThisTurn;
 
 	public int SavedCardsPlayedThisTurn
@@ -159,47 +160,43 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 
 	public override bool AllowNegative => true;
 
-	public override int DisplayAmount => (int)decimal.Round(Amount * _cardsPlayedThisTurn, 0, MidpointRounding.AwayFromZero);
+	public override int DisplayAmount => (int)decimal.Round(Amount, 0, MidpointRounding.AwayFromZero);
 
 	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (side == Owner.Side)
 		{
 			SavedCardsPlayedThisTurn = 0;
-			InvokeDisplayAmountChanged();
 		}
 
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (cardPlay.IsAutoPlay
-			|| !cardPlay.IsFirstInSeries
-			|| cardPlay.Card.Owner?.Creature != Owner)
+		if (cardPlay.Card.Owner?.Creature != Owner)
 		{
-			return Task.CompletedTask;
+			return;
 		}
 
 		SavedCardsPlayedThisTurn++;
-		InvokeDisplayAmountChanged();
-		return Task.CompletedTask;
+		await HextechPowerCmdCompat.Apply<HextechPlayerSlowPower>(Owner, CardPlaySlowIncrease, Owner, cardPlay.Card, silent: true);
 	}
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (target != Owner || Amount == 0m || _cardsPlayedThisTurn <= 0 || (props & ValueProp.Unpowered) != 0)
+		if (target != Owner || Amount == 0m || (props & ValueProp.Unpowered) != 0)
 		{
 			return 1m;
 		}
 
-		decimal multiplier = 1m + Amount * _cardsPlayedThisTurn / 100m;
+		decimal multiplier = 1m + Amount / 100m;
 		return Math.Max(0m, multiplier);
 	}
 
 	public override Task AfterModifyingDamageAmount(CardModel? cardSource)
 	{
-		if (_cardsPlayedThisTurn > 0 && Amount != 0m)
+		if (Amount != 0m)
 		{
 			Flash();
 		}
