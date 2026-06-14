@@ -49,7 +49,7 @@ public sealed class PandorasBoxRune : HextechRelicBase
 		Flash();
 		await HextechRuneGrantHelper.ReplaceOwnedHextechRunesWithRandomRunes(
 			player,
-			HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic),
+			HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Prismatic),
 			new HashSet<ModelId> { ModelDb.GetId<PandorasBoxRune>() });
 	}
 }

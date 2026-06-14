@@ -15,6 +15,6 @@ public sealed class TransmutePrismaticRune : HextechRelicBase
 
 		Player player = Owner;
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Prismatic), 1);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Prismatic), 1);
 	}
 }

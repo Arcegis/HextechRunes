@@ -187,7 +187,7 @@ internal static class HextechRunePoolBuilder
 		return pool;
 	}
 
-	private static bool ShouldApplyPlayerRuneConfiguration(Player player)
+	internal static bool ShouldApplyPlayerRuneConfiguration(Player player)
 	{
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
