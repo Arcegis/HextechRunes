@@ -45,6 +45,7 @@ internal sealed class CombatTrackingSnapshot
 	public Dictionary<ulong, int> PlayerCardsDrawnThisCombat { get; set; } = new();
 	public Dictionary<ulong, int> SwiftAndSafePlayerCardsDrawnThisCombat { get; set; } = new();
 	public Dictionary<uint, int> EnemyPorcupineTemporaryThornsThisTurn { get; set; } = new();
+	public Dictionary<uint, int> EnemyPorcupineTriggersThisTurn { get; set; } = new();
 	public List<ulong> VakuuControlledPlayersThisCombat { get; set; } = [];
 	public List<ulong> EightPennyGatePlayersTriggeredThisTurn { get; set; } = [];
 	public List<ulong> EightPennyGatePlayersTriggeredSecondThisTurn { get; set; } = [];

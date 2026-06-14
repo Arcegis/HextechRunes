@@ -11,7 +11,15 @@ internal sealed class PorcupineEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int thorns = context.TierValue(Kind, 1, 2, 3);
+		int maxTriggers = context.TierValue(Kind, 2, 3, 3);
+		int triggers = context.Tracking.EnemyPorcupineTriggersThisTurn.GetValueOrDefault(combatId, 0);
+		if (triggers >= maxTriggers)
+		{
+			return;
+		}
+
+		context.Tracking.EnemyPorcupineTriggersThisTurn[combatId] = triggers + 1;
+		int thorns = context.TierValue(Kind, 1, 1, 2);
 		context.Tracking.EnemyPorcupineTemporaryThornsThisTurn[combatId] =
 			context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.GetValueOrDefault(combatId, 0) + thorns;
 		await PowerCmd.Apply<ThornsPower>(target, thorns, target, cardSource);
@@ -19,25 +27,30 @@ internal sealed class PorcupineEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task BeforeTurnEnd(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, CombatRoom? combatRoom)
 	{
-		if (combatRoom == null || context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.Count == 0)
+		if (combatRoom == null)
 		{
+			context.Tracking.EnemyPorcupineTriggersThisTurn.Clear();
 			return;
 		}
 
-		foreach ((uint combatId, int thorns) in context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.ToArray())
+		if (context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.Count > 0)
 		{
-			if (thorns <= 0)
+			foreach ((uint combatId, int thorns) in context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.ToArray())
 			{
-				continue;
-			}
+				if (thorns <= 0)
+				{
+					continue;
+				}
 
-			Creature? enemy = combatRoom.CombatState.Enemies.FirstOrDefault(creature => creature.CombatId == combatId);
-			if (enemy is { IsAlive: true })
-			{
-				await PowerCmd.Apply<ThornsPower>(enemy, -thorns, enemy, null);
+				Creature? enemy = combatRoom.CombatState.Enemies.FirstOrDefault(creature => creature.CombatId == combatId);
+				if (enemy is { IsAlive: true })
+				{
+					await PowerCmd.Apply<ThornsPower>(enemy, -thorns, enemy, null);
+				}
 			}
 		}
 
 		context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		context.Tracking.EnemyPorcupineTriggersThisTurn.Clear();
 	}
 }

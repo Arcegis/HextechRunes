@@ -45,6 +45,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
 	public readonly Dictionary<ulong, int> SwiftAndSafePlayerCardsDrawnThisCombat = new();
 	public readonly Dictionary<uint, int> EnemyPorcupineTemporaryThornsThisTurn = new();
+	public readonly Dictionary<uint, int> EnemyPorcupineTriggersThisTurn = new();
 	public readonly HashSet<ulong> VakuuControlledPlayersThisCombat = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredSecondThisTurn = new();
@@ -73,6 +74,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
 		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
 		EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		EnemyPorcupineTriggersThisTurn.Clear();
 		ArcanePunchPlayerAttackCardsPlayed = 0;
 	}
 
@@ -82,6 +84,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
 		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
 		EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		EnemyPorcupineTriggersThisTurn.Clear();
 		ArcanePunchPlayerAttackCardsPlayed = 0;
 	}
 
@@ -97,6 +100,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		BloodArmorHpLossThisPlayerTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
 		EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		EnemyPorcupineTriggersThisTurn.Clear();
 		DevilsDanceTriggeredThisTurn.Clear();
 		FinalFormTriggeredThisTurn.Clear();
 		MonsterDebuffActionProcKeysThisTurn.Clear();

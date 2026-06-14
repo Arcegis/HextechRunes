@@ -157,6 +157,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<StatsOnStatsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
         Rune<LifeFlowRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 1, tagKey: "EXHAUST"),
         Rune<RekindleRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 4, tagKey: "EXHAUST"),
+        Rune<CorruptedBranchRune>(HextechRarityTier.Gold, tagKey: "EXHAUST"),
         Rune<TrickLicenseRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 2, tagKey: "TRICK"),
         Rune<GalacticGiftRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 1, tagKey: "STARLIGHT"),
         Rune<SomethingFromNothingRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 2, tagKey: "VOID"),
