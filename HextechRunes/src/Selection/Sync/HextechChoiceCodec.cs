@@ -6,9 +6,8 @@ namespace HextechRunes;
 internal readonly record struct EnemyHexAdjustmentPayload(
 	int ActIndex,
 	int Sequence,
-	MonsterHexKind? MonsterHex,
-	bool Removed,
-	int RerollCount,
+	IReadOnlyList<MonsterHexKind?> MonsterHexes,
+	IReadOnlyList<int> RerollCounts,
 	bool IsFinal);
 
 internal static class HextechChoiceCodec
@@ -19,17 +18,41 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindActSelectionApplied = 3;
 	private const int ChoiceKindEnemyHexAdjustment = 4;
 	private const int ChoiceKindForgeSelection = 5;
+	private const int EnemyHexAdjustmentListVersion = -2;
 
-	public static PlayerChoiceResult CreateActRoll(int actIndex, HextechRarityTier rarity, MonsterHexKind monsterHex, bool hostUsesBetterMultiplayerScaling)
+	public static PlayerChoiceResult CreateActRoll(
+		int actIndex,
+		HextechRarityTier rarity,
+		MonsterHexKind? monsterHex,
+		bool hostUsesBetterMultiplayerScaling,
+		IReadOnlyList<int> enemyHexCountsByAct)
 	{
-		return PlayerChoiceResult.FromIndexes([ Magic, ChoiceKindActRoll, actIndex, (int)rarity, (int)monsterHex, hostUsesBetterMultiplayerScaling ? 1 : 0 ]);
+		List<int> payload =
+		[
+			Magic,
+			ChoiceKindActRoll,
+			actIndex,
+			(int)rarity,
+			monsterHex.HasValue ? (int)monsterHex.Value : -1,
+			hostUsesBetterMultiplayerScaling ? 1 : 0
+		];
+		int[] normalizedCounts = NormalizeEnemyHexCountsByAct(enemyHexCountsByAct);
+		payload.AddRange(normalizedCounts);
+		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
-	public static bool TryDecodeActRoll(PlayerChoiceResult result, int expectedActIndex, out HextechRarityTier rarity, out MonsterHexKind monsterHex, out bool hostUsesBetterMultiplayerScaling)
+	public static bool TryDecodeActRoll(
+		PlayerChoiceResult result,
+		int expectedActIndex,
+		out HextechRarityTier rarity,
+		out MonsterHexKind? monsterHex,
+		out bool hostUsesBetterMultiplayerScaling,
+		out int[] enemyHexCountsByAct)
 	{
 		rarity = default;
-		monsterHex = default;
+		monsterHex = null;
 		hostUsesBetterMultiplayerScaling = false;
+		enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
 		if (!TryGetIndexPayload(result, out List<int> payload)
 			|| payload.Count < 5
 			|| payload[0] != Magic
@@ -39,15 +62,45 @@ internal static class HextechChoiceCodec
 			return false;
 		}
 
-		if (!Enum.IsDefined(typeof(HextechRarityTier), payload[3]) || !Enum.IsDefined(typeof(MonsterHexKind), payload[4]))
+		if (!Enum.IsDefined(typeof(HextechRarityTier), payload[3]))
 		{
 			return false;
 		}
 
+		if (payload[4] >= 0)
+		{
+			if (!Enum.IsDefined(typeof(MonsterHexKind), payload[4]))
+			{
+				return false;
+			}
+
+			monsterHex = (MonsterHexKind)payload[4];
+		}
+
 		rarity = (HextechRarityTier)payload[3];
-		monsterHex = (MonsterHexKind)payload[4];
 		hostUsesBetterMultiplayerScaling = payload.Count >= 6 && payload[5] != 0;
+		if (payload.Count >= 9)
+		{
+			enemyHexCountsByAct = NormalizeEnemyHexCountsByAct(payload.Skip(6).Take(3).ToArray());
+		}
+
 		return true;
+	}
+
+	private static int[] NormalizeEnemyHexCountsByAct(IReadOnlyList<int>? counts)
+	{
+		int[] normalized = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
+		if (counts == null)
+		{
+			return normalized;
+		}
+
+		for (int i = 0; i < Math.Min(normalized.Length, counts.Count); i++)
+		{
+			normalized[i] = HextechRuneConfiguration.ClampEnemyHexCount(counts[i]);
+		}
+
+		return normalized;
 	}
 
 	private static readonly Lazy<IReadOnlyList<ModelId>> PlayerRuneIdsByOrdinal = new(
@@ -276,24 +329,27 @@ internal static class HextechChoiceCodec
 
 	public static PlayerChoiceResult CreateEnemyHexAdjustment(EnemyHexAdjustmentPayload payload)
 	{
-		return PlayerChoiceResult.FromIndexes(
+		List<int> indexes =
 		[
 			Magic,
 			ChoiceKindEnemyHexAdjustment,
 			payload.ActIndex,
 			payload.Sequence,
-			payload.Removed ? 1 : 0,
-			payload.MonsterHex.HasValue ? (int)payload.MonsterHex.Value : -1,
-			payload.RerollCount,
-			payload.IsFinal ? 1 : 0
-		]);
+			EnemyHexAdjustmentListVersion,
+			payload.IsFinal ? 1 : 0,
+			payload.MonsterHexes.Count
+		];
+		indexes.AddRange(payload.MonsterHexes.Select(static hex => hex.HasValue ? (int)hex.Value : -1));
+		indexes.Add(payload.RerollCounts.Count);
+		indexes.AddRange(payload.RerollCounts.Select(static count => Math.Max(0, count)));
+		return PlayerChoiceResult.FromIndexes(indexes);
 	}
 
 	public static bool TryDecodeEnemyHexAdjustment(PlayerChoiceResult result, int expectedActIndex, out EnemyHexAdjustmentPayload payload)
 	{
 		payload = default;
 		if (!TryGetIndexPayload(result, out List<int> indexes)
-			|| indexes.Count < 8
+			|| indexes.Count < 6
 			|| indexes[0] != Magic
 			|| indexes[1] != ChoiceKindEnemyHexAdjustment
 			|| indexes[2] != expectedActIndex)
@@ -301,6 +357,63 @@ internal static class HextechChoiceCodec
 			return false;
 		}
 
+		if (indexes.Count < 7 || indexes[4] != EnemyHexAdjustmentListVersion)
+		{
+			return indexes.Count >= 8 && TryDecodeLegacyEnemyHexAdjustment(indexes, out payload);
+		}
+
+		bool isFinal = indexes[5] != 0;
+		int hexCount = Math.Max(0, indexes[6]);
+		int cursor = 7;
+		if (indexes.Count < cursor + hexCount + 1)
+		{
+			return false;
+		}
+
+		List<MonsterHexKind?> monsterHexes = new(hexCount);
+		for (int i = 0; i < hexCount; i++)
+		{
+			int rawHex = indexes[cursor + i];
+			if (rawHex < 0)
+			{
+				monsterHexes.Add(null);
+				continue;
+			}
+
+			if (!Enum.IsDefined(typeof(MonsterHexKind), rawHex))
+			{
+				return false;
+			}
+
+			monsterHexes.Add((MonsterHexKind)rawHex);
+		}
+
+		cursor += hexCount;
+		int rerollCount = Math.Max(0, indexes[cursor]);
+		cursor++;
+		if (indexes.Count < cursor + rerollCount)
+		{
+			return false;
+		}
+
+		List<int> rerollCounts = indexes.Skip(cursor).Take(rerollCount).Select(static count => Math.Max(0, count)).ToList();
+		while (rerollCounts.Count < monsterHexes.Count)
+		{
+			rerollCounts.Add(0);
+		}
+
+		payload = new EnemyHexAdjustmentPayload(
+			indexes[2],
+			Math.Max(0, indexes[3]),
+			monsterHexes,
+			rerollCounts,
+			isFinal);
+		return true;
+	}
+
+	private static bool TryDecodeLegacyEnemyHexAdjustment(IReadOnlyList<int> indexes, out EnemyHexAdjustmentPayload payload)
+	{
+		payload = default;
 		MonsterHexKind? monsterHex = null;
 		if (indexes[5] >= 0)
 		{
@@ -315,9 +428,8 @@ internal static class HextechChoiceCodec
 		payload = new EnemyHexAdjustmentPayload(
 			indexes[2],
 			Math.Max(0, indexes[3]),
-			monsterHex,
-			indexes[4] != 0,
-			Math.Max(0, indexes[6]),
+			[ indexes[4] != 0 ? null : monsterHex ],
+			[ Math.Max(0, indexes[6]) ],
 			indexes[7] != 0);
 		return true;
 	}

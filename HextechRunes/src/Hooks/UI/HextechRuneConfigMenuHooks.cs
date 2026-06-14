@@ -6,11 +6,13 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using MegaCrit.Sts2.Core.Runs;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -243,6 +245,10 @@ internal static class HextechRuneConfigMenuHooks
 		title.HorizontalAlignment = HorizontalAlignment.Center;
 		content.AddChild(title);
 
+		int[] pendingEnemyHexCounts = HextechRuneConfiguration.GetEnemyHexCountsByAct();
+		List<EnemyHexCountBinding> enemyHexCountBindings = [];
+		content.AddChild(CreateEnemyHexCountSection(pendingEnemyHexCounts, enemyHexCountBindings, IsEnemyHexCountConfigReadOnly()));
+
 		Label description = CreateLabel(L("HEXTECH_CONFIG_DESCRIPTION"), 16, new Color(0.82f, 0.86f, 0.92f, 0.92f));
 		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 		content.AddChild(description);
@@ -252,7 +258,7 @@ internal static class HextechRuneConfigMenuHooks
 		List<RuneIconBinding> iconBindings = [];
 		List<RuneConfigLoadTarget> loadTargets = [];
 		Label summary = CreateLabel(string.Empty, 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
-		content.AddChild(CreateToolbar(overlay, entries, pendingDisabledIds, iconBindings, summary));
+		content.AddChild(CreateToolbar(overlay, entries, pendingDisabledIds, pendingEnemyHexCounts, enemyHexCountBindings, iconBindings, summary));
 		content.AddChild(summary);
 
 		ScrollContainer scroll = new()
@@ -324,10 +330,122 @@ internal static class HextechRuneConfigMenuHooks
 		return new Vector2(width, height);
 	}
 
+	private static Control CreateEnemyHexCountSection(int[] pendingCounts, List<EnemyHexCountBinding> countBindings, bool readOnly)
+	{
+		VBoxContainer section = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		section.AddThemeConstantOverride("separation", 8);
+
+		Label title = CreateSectionHeader(L("HEXTECH_ENEMY_COUNT_TITLE"));
+		section.AddChild(title);
+
+		Label description = CreateLabel(
+			L(readOnly ? "HEXTECH_ENEMY_COUNT_CLIENT_READONLY" : "HEXTECH_ENEMY_COUNT_DESCRIPTION"),
+			14,
+			new Color(0.78f, 0.84f, 0.9f, 0.9f));
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		section.AddChild(description);
+
+		HBoxContainer row = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddThemeConstantOverride("separation", 18);
+		section.AddChild(row);
+
+		row.AddChild(CreateEnemyHexCountStepper(L("HEXTECH_ENEMY_COUNT_ACT1"), 0, pendingCounts, countBindings, readOnly));
+		row.AddChild(CreateEnemyHexCountStepper(L("HEXTECH_ENEMY_COUNT_ACT2"), 1, pendingCounts, countBindings, readOnly));
+		row.AddChild(CreateEnemyHexCountStepper(L("HEXTECH_ENEMY_COUNT_ACT3"), 2, pendingCounts, countBindings, readOnly));
+		return section;
+	}
+
+	private static Control CreateEnemyHexCountStepper(string labelText, int actIndex, int[] pendingCounts, List<EnemyHexCountBinding> countBindings, bool readOnly)
+	{
+		VBoxContainer root = new()
+		{
+			CustomMinimumSize = new Vector2(190f, 70f),
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		root.AddThemeConstantOverride("separation", 5);
+
+		Label label = CreateLabel(labelText, 15, new Color(0.92f, 0.9f, 0.78f, 0.96f));
+		label.HorizontalAlignment = HorizontalAlignment.Center;
+		root.AddChild(label);
+
+		HBoxContainer controls = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		controls.AddThemeConstantOverride("separation", 8);
+		root.AddChild(controls);
+
+		Label number = CreateLabel(pendingCounts[actIndex].ToString(), 18, new Color(0.98f, 0.98f, 0.94f, 1f));
+		number.HorizontalAlignment = HorizontalAlignment.Center;
+		number.VerticalAlignment = VerticalAlignment.Center;
+		number.CustomMinimumSize = new Vector2(42f, 34f);
+		countBindings.Add(new EnemyHexCountBinding(actIndex, number));
+
+		Button minus = CreateStepButton("-", readOnly);
+		Button plus = CreateStepButton("+", readOnly);
+		minus.Pressed += () =>
+		{
+			pendingCounts[actIndex] = HextechRuneConfiguration.ClampEnemyHexCount(pendingCounts[actIndex] - 1);
+			SetLabelText(number, pendingCounts[actIndex].ToString());
+		};
+		plus.Pressed += () =>
+		{
+			pendingCounts[actIndex] = HextechRuneConfiguration.ClampEnemyHexCount(pendingCounts[actIndex] + 1);
+			SetLabelText(number, pendingCounts[actIndex].ToString());
+		};
+
+		controls.AddChild(minus);
+		controls.AddChild(number);
+		controls.AddChild(plus);
+		return root;
+	}
+
+	private static Button CreateStepButton(string text, bool disabled)
+	{
+		Button button = new()
+		{
+			Text = string.Empty,
+			CustomMinimumSize = new Vector2(38f, 34f),
+			MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+			Disabled = disabled
+		};
+		button.AddThemeStyleboxOverride("normal", CreateButtonStyle(new Color(0.1f, 0.12f, 0.17f, 0.9f), new Color(0.46f, 0.55f, 0.68f, 0.78f)));
+		button.AddThemeStyleboxOverride("hover", CreateButtonStyle(new Color(0.13f, 0.16f, 0.22f, 0.95f), new Color(0.88f, 0.72f, 0.36f, 0.92f)));
+		button.AddThemeStyleboxOverride("pressed", CreateButtonStyle(new Color(0.07f, 0.09f, 0.13f, 0.98f), new Color(0.88f, 0.62f, 0.28f, 0.92f)));
+		button.AddThemeStyleboxOverride("disabled", CreateButtonStyle(new Color(0.08f, 0.09f, 0.12f, 0.56f), new Color(0.32f, 0.36f, 0.44f, 0.58f)));
+		AddCrispButtonText(button, text, 18, disabled ? new Color(0.62f, 0.66f, 0.72f, 0.82f) : new Color(0.96f, 0.94f, 0.88f, 1f));
+		return button;
+	}
+
+	private static bool IsEnemyHexCountConfigReadOnly()
+	{
+		try
+		{
+			return RunManager.Instance?.NetService.Type == NetGameType.Client;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
 	private static Control CreateToolbar(
 		Control overlay,
 		IReadOnlyList<RuneConfigEntry> entries,
 		HashSet<string> pendingDisabledIds,
+		int[] pendingEnemyHexCounts,
+		IReadOnlyList<EnemyHexCountBinding> enemyHexCountBindings,
 		IReadOnlyList<RuneIconBinding> iconBindings,
 		Label summary)
 	{
@@ -358,14 +476,22 @@ internal static class HextechRuneConfigMenuHooks
 		{
 			pendingDisabledIds.Clear();
 			pendingDisabledIds.UnionWith(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds());
+			int[] defaultEnemyHexCounts = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
+			for (int i = 0; i < Math.Min(pendingEnemyHexCounts.Length, defaultEnemyHexCounts.Length); i++)
+			{
+				pendingEnemyHexCounts[i] = defaultEnemyHexCounts[i];
+			}
+
+			UpdateEnemyHexCountLabels(enemyHexCountBindings, pendingEnemyHexCounts);
 			UpdateAllRuneIcons(iconBindings, pendingDisabledIds);
 			UpdateSummary(summary, pendingDisabledIds);
 		}));
 		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_SAVE_CLOSE"), () =>
 		{
 			HextechRuneConfiguration.SaveDisabledPlayerRuneIds(pendingDisabledIds);
+			HextechRuneConfiguration.SaveEnemyHexCountsByAct(pendingEnemyHexCounts);
 			CollectionHooks.RefreshOpenRelicCollections();
-			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved player rune config: disabled={pendingDisabledIds.Count}");
+			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved player rune config: disabled={pendingDisabledIds.Count} enemyCounts={string.Join(",", pendingEnemyHexCounts)}");
 			overlay.QueueFree();
 		}));
 		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay)));
@@ -671,6 +797,17 @@ internal static class HextechRuneConfigMenuHooks
 		}
 	}
 
+	private static void UpdateEnemyHexCountLabels(IReadOnlyList<EnemyHexCountBinding> bindings, IReadOnlyList<int> pendingEnemyHexCounts)
+	{
+		foreach (EnemyHexCountBinding binding in bindings)
+		{
+			if (binding.ActIndex >= 0 && binding.ActIndex < pendingEnemyHexCounts.Count)
+			{
+				SetLabelText(binding.Number, pendingEnemyHexCounts[binding.ActIndex].ToString());
+			}
+		}
+	}
+
 	private static void ApplyRuneIconState(RuneIconBinding binding, bool enabled)
 	{
 		binding.Holder.Modulate = enabled
@@ -959,6 +1096,10 @@ internal static class HextechRuneConfigMenuHooks
 	private sealed record RuneConfigLoadTarget(
 		RuneConfigEntry Entry,
 		Container Grid);
+
+	private sealed record EnemyHexCountBinding(
+		int ActIndex,
+		Label Number);
 
 	private sealed record RuneConfigOverlayState(
 		IReadOnlyList<RuneConfigLoadTarget> LoadTargets,

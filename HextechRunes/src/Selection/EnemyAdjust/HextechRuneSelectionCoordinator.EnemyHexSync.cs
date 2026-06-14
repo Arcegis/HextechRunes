@@ -15,7 +15,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		RunState runState,
 		PlayerChoiceSynchronizer synchronizer,
 		int actIndex,
-		MonsterHexKind? initialMonsterHex)
+		IReadOnlyList<MonsterHexKind> initialMonsterHexes)
 	{
 		Player? authorityPlayer = GetActRollAuthorityPlayer(runManager, runState);
 		if (authorityPlayer == null)
@@ -26,7 +26,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		uint choiceId = synchronizer.ReserveChoiceId(authorityPlayer);
 		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync: reserved act={actIndex} authority={authorityPlayer.NetId} choiceId={choiceId}");
-		return new EnemyHexAdjustmentSyncContext(synchronizer, authorityPlayer, choiceId, actIndex, initialMonsterHex);
+		return new EnemyHexAdjustmentSyncContext(synchronizer, authorityPlayer, choiceId, actIndex, initialMonsterHexes);
 	}
 
 	private static HextechEnemyHexAdjustmentOptions? CreateEnemyHexAdjustmentOptionsForSelection(
@@ -35,12 +35,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		RunState runState,
 		int actIndex,
 		HextechRarityTier rarity,
-		MonsterHexKind? initialMonsterHex,
+		IReadOnlyList<MonsterHexKind> initialMonsterHexes,
 		IReadOnlySet<ModelId> enemyRerollExcludedIds,
 		EnemyHexAdjustmentSyncContext? syncContext,
 		PendingRuneSelection selection)
 	{
-		if (!selection.IsLocal)
+		if (!selection.IsLocal || (syncContext == null && initialMonsterHexes.Count == 0))
 		{
 			return null;
 		}
@@ -48,13 +48,20 @@ internal static partial class HextechRuneSelectionCoordinator
 		bool isAuthorityLocal = syncContext != null && IsLocalPlayer(runManager, syncContext.AuthorityPlayer);
 		return new HextechEnemyHexAdjustmentOptions
 		{
-			InitialHex = syncContext?.CurrentMonsterHex ?? initialMonsterHex,
+			InitialHexes = syncContext?.CurrentMonsterHexes ?? initialMonsterHexes,
 			ControlsEnabled = isAuthorityLocal,
 			RerollFunc = isAuthorityLocal
-				? (currentHex, rerollOrdinal) => RerollEnemyHexForAct(modifier, rarity, runState, actIndex, currentHex, rerollOrdinal, enemyRerollExcludedIds)
+				? (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(
+					modifier,
+					rarity,
+					runState,
+					actIndex,
+					GetMonsterHexSlot(currentHexes, slotIndex),
+					rerollOrdinal,
+					CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex))
 				: null,
 			Changed = isAuthorityLocal && syncContext != null
-				? (monsterHex, removed, rerollCount) => SendEnemyHexAdjustment(syncContext, monsterHex, removed, rerollCount, isFinal: false)
+				? (monsterHexes, rerollCounts) => SendEnemyHexAdjustment(syncContext, monsterHexes, rerollCounts, isFinal: false)
 				: null,
 			ScreenCreated = !isAuthorityLocal && syncContext != null
 				? screen => syncContext.RemoteReceiveTask = ReceiveEnemyHexAdjustments(syncContext, runState, screen)
@@ -71,7 +78,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (IsLocalPlayer(runManager, syncContext.AuthorityPlayer))
 		{
-			SendEnemyHexAdjustment(syncContext, screen.CurrentMonsterHex, screen.EnemyHexRemoved, screen.EnemyHexRerollCount, isFinal: true);
+			SendEnemyHexAdjustment(syncContext, screen.CurrentMonsterHexSlots, screen.EnemyHexRerollCounts, isFinal: true);
 			return;
 		}
 
@@ -83,9 +90,8 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static void SendEnemyHexAdjustment(
 		EnemyHexAdjustmentSyncContext syncContext,
-		MonsterHexKind? monsterHex,
-		bool removed,
-		int rerollCount,
+		IReadOnlyList<MonsterHexKind?> monsterHexes,
+		IReadOnlyList<int> rerollCounts,
 		bool isFinal)
 	{
 		if (syncContext.FinalSent)
@@ -93,18 +99,18 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		syncContext.CurrentMonsterHex = removed ? null : monsterHex;
-		syncContext.Removed = removed;
-		syncContext.RerollCount = rerollCount;
+		syncContext.CurrentMonsterHexSlots.Clear();
+		syncContext.CurrentMonsterHexSlots.AddRange(monsterHexes);
+		syncContext.RerollCounts.Clear();
+		syncContext.RerollCounts.AddRange(rerollCounts.Select(static count => Math.Max(0, count)));
 		EnemyHexAdjustmentPayload payload = new(
 			syncContext.ActIndex,
 			syncContext.Sequence,
-			monsterHex,
-			removed,
-			rerollCount,
+			syncContext.CurrentMonsterHexSlots.ToArray(),
+			syncContext.RerollCounts.ToArray(),
 			isFinal);
 		syncContext.Synchronizer.SyncLocalChoice(syncContext.AuthorityPlayer, syncContext.NextChoiceId, HextechChoiceCodec.CreateEnemyHexAdjustment(payload));
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} seq={syncContext.Sequence} removed={removed} hex={monsterHex} rerolls={rerollCount} final={isFinal}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} seq={syncContext.Sequence} hexes={string.Join(",", syncContext.CurrentMonsterHexSlots.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", syncContext.RerollCounts)} final={isFinal}");
 		if (isFinal)
 		{
 			syncContext.FinalSent = true;
@@ -132,12 +138,13 @@ internal static partial class HextechRuneSelectionCoordinator
 				return;
 			}
 
-			syncContext.CurrentMonsterHex = payload.Removed ? null : payload.MonsterHex;
-			syncContext.Removed = payload.Removed;
-			syncContext.RerollCount = payload.RerollCount;
+			syncContext.CurrentMonsterHexSlots.Clear();
+			syncContext.CurrentMonsterHexSlots.AddRange(payload.MonsterHexes);
+			syncContext.RerollCounts.Clear();
+			syncContext.RerollCounts.AddRange(payload.RerollCounts.Select(static count => Math.Max(0, count)));
 			syncContext.Sequence = payload.Sequence + 1;
-			screen.ApplyEnemyHexAdjustment(payload.MonsterHex, payload.Removed, payload.RerollCount);
-			Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} removed={payload.Removed} hex={payload.MonsterHex} rerolls={payload.RerollCount} final={payload.IsFinal}");
+			screen.ApplyEnemyHexAdjustment(payload.MonsterHexes, payload.RerollCounts);
+			Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} hexes={string.Join(",", payload.MonsterHexes.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", payload.RerollCounts)} final={payload.IsFinal}");
 			if (payload.IsFinal)
 			{
 				return;

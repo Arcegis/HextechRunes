@@ -22,11 +22,13 @@ internal sealed class HextechEnemyHexAdjustmentOptions
 {
 	public MonsterHexKind? InitialHex { get; init; }
 
+	public IReadOnlyList<MonsterHexKind> InitialHexes { get; init; } = [];
+
 	public bool ControlsEnabled { get; init; }
 
-	public Func<MonsterHexKind?, int, MonsterHexKind?>? RerollFunc { get; init; }
+	public Func<IReadOnlyList<MonsterHexKind?>, int, int, MonsterHexKind?>? RerollFunc { get; init; }
 
-	public Action<MonsterHexKind?, bool, int>? Changed { get; init; }
+	public Action<IReadOnlyList<MonsterHexKind?>, IReadOnlyList<int>>? Changed { get; init; }
 
 	public Action<HextechRuneSelectionScreen>? ScreenCreated { get; init; }
 }
@@ -41,14 +43,14 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 {
 	private readonly TaskCompletionSource<IEnumerable<RelicModel>> _completionSource = new();
 	private readonly Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? _rerollFunc;
-	private readonly Func<MonsterHexKind?, int, MonsterHexKind?>? _enemyHexRerollFunc;
-	private readonly Action<MonsterHexKind?, bool, int>? _enemyHexChanged;
+	private readonly Func<IReadOnlyList<MonsterHexKind?>, int, int, MonsterHexKind?>? _enemyHexRerollFunc;
+	private readonly Action<IReadOnlyList<MonsterHexKind?>, IReadOnlyList<int>>? _enemyHexChanged;
 	private readonly string? _titleOverride;
 	private readonly HextechSelectionMetadataMode _metadataMode;
 	private List<RelicModel> _relics;
-	private MonsterHexKind? _monsterHexKind;
-	private MonsterHexKind? _monsterHexBeforeRemoval;
-	private RelicModel? _monsterHexRelic;
+	private readonly List<MonsterHexKind?> _monsterHexKinds = [];
+	private readonly List<MonsterHexKind?> _monsterHexBeforeRemoval = [];
+	private readonly List<int> _enemyHexRerollCounts = [];
 	private readonly string _rarityKey;
 	private readonly List<Button> _holders = new();
 	private readonly List<Button> _rerollButtons = new();
@@ -59,8 +61,6 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private VBoxContainer? _enemyPreviewHost;
 	private MegaLabel? _statusLabel;
 	private bool _choiceLocked;
-	private bool _enemyHexRemoved;
-	private int _enemyHexRerollCount;
 	private bool _blockMapUntilDismissed;
 	private bool _restoreAfterMapReopenQueued;
 	private bool _closed;
@@ -77,11 +77,27 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public IReadOnlyList<int> RerollHistory => _rerollHistory;
 
-	public MonsterHexKind? CurrentMonsterHex => _enemyHexRemoved ? null : _monsterHexKind;
+	public MonsterHexKind? CurrentMonsterHex
+	{
+		get
+		{
+			IReadOnlyList<MonsterHexKind> currentMonsterHexes = CurrentMonsterHexes;
+			return currentMonsterHexes.Count > 0 ? currentMonsterHexes[0] : null;
+		}
+	}
 
-	public bool EnemyHexRemoved => _enemyHexRemoved;
+	public IReadOnlyList<MonsterHexKind> CurrentMonsterHexes => _monsterHexKinds
+		.Where(static hex => hex.HasValue)
+		.Select(static hex => hex!.Value)
+		.ToArray();
 
-	public int EnemyHexRerollCount => _enemyHexRerollCount;
+	public IReadOnlyList<MonsterHexKind?> CurrentMonsterHexSlots => _monsterHexKinds.ToArray();
+
+	public bool EnemyHexRemoved => _monsterHexKinds.Count > 0 && _monsterHexKinds.All(static hex => !hex.HasValue);
+
+	public IReadOnlyList<int> EnemyHexRerollCounts => _enemyHexRerollCounts.ToArray();
+
+	public int EnemyHexRerollCount => _enemyHexRerollCounts.Sum();
 
 	private HextechRuneSelectionScreen(
 		IReadOnlyList<RelicModel> relics,
@@ -98,12 +114,21 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_titleOverride = titleOverride;
 		_metadataMode = metadataMode;
 		_enemyHexControlsEnabled = enemyHexOptions?.ControlsEnabled == true || enemyHexOptions?.RerollFunc != null;
-		_monsterHexKind = enemyHexOptions?.InitialHex;
-		if (_monsterHexKind == null && monsterHexRelic != null && MonsterHexCatalog.TryGetMonsterHexKind(monsterHexRelic, out MonsterHexKind monsterHexKind))
+		List<MonsterHexKind> initialMonsterHexes = enemyHexOptions?.InitialHexes?.ToList() ?? [];
+		if (initialMonsterHexes.Count == 0 && enemyHexOptions?.InitialHex is { } initialHex)
 		{
-			_monsterHexKind = monsterHexKind;
+			initialMonsterHexes.Add(initialHex);
 		}
-		_monsterHexRelic = CreateMonsterHexRelic(_monsterHexKind) ?? monsterHexRelic;
+		if (initialMonsterHexes.Count == 0 && monsterHexRelic != null && MonsterHexCatalog.TryGetMonsterHexKind(monsterHexRelic, out MonsterHexKind monsterHexKind))
+		{
+			initialMonsterHexes.Add(monsterHexKind);
+		}
+		foreach (MonsterHexKind monsterHex in initialMonsterHexes)
+		{
+			_monsterHexKinds.Add(monsterHex);
+			_monsterHexBeforeRemoval.Add(null);
+			_enemyHexRerollCounts.Add(0);
+		}
 		_rarityKey = DetermineRarityKey(relics, metadataMode);
 		Name = nameof(HextechRuneSelectionScreen);
 		SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);

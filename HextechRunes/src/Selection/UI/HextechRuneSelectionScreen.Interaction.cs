@@ -71,46 +71,50 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		RebuildCards();
 	}
 
-	private void OnEnemyHexRerollPressed()
+	private void OnEnemyHexRerollPressed(int slotIndex)
 	{
-		if (_choiceLocked || _enemyHexRemoved || _enemyHexRerollFunc == null)
+		if (_choiceLocked || _enemyHexRerollFunc == null || slotIndex < 0 || slotIndex >= _monsterHexKinds.Count)
 		{
 			return;
 		}
 
-		MonsterHexKind? rerolled = _enemyHexRerollFunc(_monsterHexKind, _enemyHexRerollCount);
-		if (rerolled == null || rerolled == _monsterHexKind)
+		MonsterHexKind? currentHex = _monsterHexKinds[slotIndex];
+		if (!currentHex.HasValue)
 		{
 			return;
 		}
 
-		_monsterHexKind = rerolled;
-		_monsterHexRelic = CreateMonsterHexRelic(rerolled);
-		_enemyHexRerollCount++;
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRerollPressed: hex={rerolled} count={_enemyHexRerollCount}");
+		MonsterHexKind? rerolled = _enemyHexRerollFunc(_monsterHexKinds.ToArray(), slotIndex, _enemyHexRerollCounts[slotIndex]);
+		if (rerolled == null || rerolled == currentHex)
+		{
+			return;
+		}
+
+		_monsterHexKinds[slotIndex] = rerolled;
+		_enemyHexRerollCounts[slotIndex]++;
+		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRerollPressed: slot={slotIndex} hex={rerolled} count={_enemyHexRerollCounts[slotIndex]}");
 		NotifyEnemyHexChanged();
 		RebuildEnemyPreview();
 	}
 
-	private void OnEnemyHexRemovePressed()
+	private void OnEnemyHexRemovePressed(int slotIndex)
 	{
-		if (_choiceLocked)
+		if (_choiceLocked || slotIndex < 0 || slotIndex >= _monsterHexKinds.Count)
 		{
 			return;
 		}
 
-		if (_enemyHexRemoved)
+		if (!_monsterHexKinds[slotIndex].HasValue)
 		{
-			_enemyHexRemoved = false;
-			_monsterHexKind = _monsterHexBeforeRemoval ?? _monsterHexKind;
-			_monsterHexRelic = CreateMonsterHexRelic(_monsterHexKind);
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: undo hex={_monsterHexKind}");
+			_monsterHexKinds[slotIndex] = _monsterHexBeforeRemoval[slotIndex];
+			_monsterHexBeforeRemoval[slotIndex] = null;
+			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: undo slot={slotIndex} hex={_monsterHexKinds[slotIndex]}");
 		}
 		else
 		{
-			_monsterHexBeforeRemoval = _monsterHexKind;
-			_enemyHexRemoved = true;
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: remove previous={_monsterHexBeforeRemoval}");
+			_monsterHexBeforeRemoval[slotIndex] = _monsterHexKinds[slotIndex];
+			_monsterHexKinds[slotIndex] = null;
+			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: remove slot={slotIndex} previous={_monsterHexBeforeRemoval[slotIndex]}");
 		}
 
 		NotifyEnemyHexChanged();
@@ -119,26 +123,28 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public void ApplyEnemyHexAdjustment(MonsterHexKind? monsterHex, bool removed, int rerollCount)
 	{
-		_enemyHexRemoved = removed;
-		_enemyHexRerollCount = Math.Max(0, rerollCount);
-		if (!removed || monsterHex.HasValue)
+		ApplyEnemyHexAdjustment([ removed ? null : monsterHex ], [ rerollCount ]);
+	}
+
+	public void ApplyEnemyHexAdjustment(IReadOnlyList<MonsterHexKind?> monsterHexes, IReadOnlyList<int> rerollCounts)
+	{
+		_monsterHexKinds.Clear();
+		_monsterHexBeforeRemoval.Clear();
+		_enemyHexRerollCounts.Clear();
+		for (int i = 0; i < monsterHexes.Count; i++)
 		{
-			_monsterHexKind = monsterHex;
-			_monsterHexRelic = CreateMonsterHexRelic(monsterHex);
+			_monsterHexKinds.Add(monsterHexes[i]);
+			_monsterHexBeforeRemoval.Add(null);
+			_enemyHexRerollCounts.Add(i < rerollCounts.Count ? Math.Max(0, rerollCounts[i]) : 0);
 		}
 
-		if (removed && monsterHex.HasValue)
-		{
-			_monsterHexBeforeRemoval = monsterHex;
-		}
-
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.ApplyEnemyHexAdjustment: removed={removed} hex={monsterHex} count={_enemyHexRerollCount}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.ApplyEnemyHexAdjustment: slots={string.Join(",", _monsterHexKinds.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", _enemyHexRerollCounts)}");
 		RebuildEnemyPreview();
 	}
 
 	private void NotifyEnemyHexChanged()
 	{
-		_enemyHexChanged?.Invoke(CurrentMonsterHex, _enemyHexRemoved, _enemyHexRerollCount);
+		_enemyHexChanged?.Invoke(_monsterHexKinds.ToArray(), _enemyHexRerollCounts.ToArray());
 	}
 
 	public async Task<IEnumerable<RelicModel>> RelicsSelected(bool removeOverlay = true)

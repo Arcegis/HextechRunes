@@ -13,23 +13,31 @@ internal static partial class HextechRuneSelectionCoordinator
 		IReadOnlyList<RelicModel> FinalOptions,
 		int RerollCount,
 		MonsterHexKind? FinalMonsterHex,
-		HextechRuneSelectionScreen? BlockingScreen = null);
+		IReadOnlyList<MonsterHexKind>? FinalMonsterHexes = null,
+		HextechRuneSelectionScreen? BlockingScreen = null)
+	{
+		public IReadOnlyList<MonsterHexKind> ResolvedMonsterHexes => FinalMonsterHexes
+			?? (FinalMonsterHex.HasValue ? [ FinalMonsterHex.Value ] : []);
+	}
 
 	private sealed class EnemyHexAdjustmentSyncContext(
 		PlayerChoiceSynchronizer synchronizer,
 		Player authorityPlayer,
 		uint initialChoiceId,
 		int actIndex,
-		MonsterHexKind? initialMonsterHex)
+		IReadOnlyList<MonsterHexKind> initialMonsterHexes)
 	{
 		public PlayerChoiceSynchronizer Synchronizer { get; } = synchronizer;
 		public Player AuthorityPlayer { get; } = authorityPlayer;
 		public uint NextChoiceId { get; set; } = initialChoiceId;
 		public int ActIndex { get; } = actIndex;
 		public int Sequence { get; set; }
-		public MonsterHexKind? CurrentMonsterHex { get; set; } = initialMonsterHex;
-		public bool Removed { get; set; }
-		public int RerollCount { get; set; }
+		public List<MonsterHexKind?> CurrentMonsterHexSlots { get; } = initialMonsterHexes.Select(static hex => (MonsterHexKind?)hex).ToList();
+		public List<int> RerollCounts { get; } = initialMonsterHexes.Select(static _ => 0).ToList();
+		public IReadOnlyList<MonsterHexKind> CurrentMonsterHexes => CurrentMonsterHexSlots
+			.Where(static hex => hex.HasValue)
+			.Select(static hex => hex!.Value)
+			.ToArray();
 		public bool FinalSent { get; set; }
 		public Task? RemoteReceiveTask { get; set; }
 	}

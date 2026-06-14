@@ -13,6 +13,7 @@ internal sealed partial class HextechMayhemModifier
 	private readonly HextechMayhemCombatTrackingState _combatTracking = new();
 	private readonly HextechMayhemChoiceHistoryState _choiceHistory = new();
 	private readonly HextechActiveMonsterHexCache _activeMonsterHexCache = new();
+	private int[] _enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
 	private int _hexCountRecoveryBaseline;
 	private int _monsterHexStrengthTierFloor;
 	private int _enemyTezcatarasMercyCombatCounter;
@@ -36,6 +37,17 @@ internal sealed partial class HextechMayhemModifier
 		set
 		{
 			_actState.SavedMonsterHexByAct = value;
+			InvalidateActiveMonsterHexCache();
+		}
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public string SavedMonsterHexesByActJson
+	{
+		get => _actState.SavedMonsterHexesByActJson;
+		set
+		{
+			_actState.SavedMonsterHexesByActJson = value;
 			InvalidateActiveMonsterHexCache();
 		}
 	}
@@ -67,6 +79,13 @@ internal sealed partial class HextechMayhemModifier
 	{
 		get => _actState.SavedMapLengthReducedActs;
 		set => _actState.SavedMapLengthReducedActs = value;
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int[] SavedEnemyHexCountsByAct
+	{
+		get => _enemyHexCountsByAct.ToArray();
+		set => _enemyHexCountsByAct = NormalizeEnemyHexCountsByAct(value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]

@@ -9,7 +9,12 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 2;
+	private const int CurrentConfigVersion = 4;
+	private const int EnemyHexActCount = 3;
+	private const int MinEnemyHexCount = 0;
+	private const int MaxEnemyHexCount = 6;
+	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 1, 1 ];
+	private static readonly int[] LegacyEnemyHexCountsDefault = [ 1, 2, 3 ];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -36,6 +41,15 @@ internal static class HextechRuneConfiguration
 	public static void Initialize()
 	{
 		EnsureLoaded();
+	}
+
+	public static int[] GetEnemyHexCountsByAct()
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			return NormalizeEnemyHexCounts(_config.EnemyHexCountsByAct);
+		}
 	}
 
 	public static bool IsPlayerRuneEnabled(RelicModel relic)
@@ -76,6 +90,17 @@ internal static class HextechRuneConfiguration
 		{
 			_config.ConfigVersion = CurrentConfigVersion;
 			_config.DisabledPlayerRuneIds = NormalizeConfigDisabledIds(disabledIds);
+			SaveConfig(_config);
+		}
+	}
+
+	public static void SaveEnemyHexCountsByAct(IReadOnlyList<int> counts)
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			_config.ConfigVersion = CurrentConfigVersion;
+			_config.EnemyHexCountsByAct = NormalizeEnemyHexCounts(counts);
 			SaveConfig(_config);
 		}
 	}
@@ -126,13 +151,17 @@ internal static class HextechRuneConfiguration
 		return new RuneConfig
 		{
 			ConfigVersion = CurrentConfigVersion,
-			DisabledPlayerRuneIds = GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal)
+			DisabledPlayerRuneIds = GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal),
+			EnemyHexCountsByAct = NormalizeEnemyHexCounts(null)
 		};
 	}
 
 	private static RuneConfig NormalizeLoadedConfig(RuneConfig config)
 	{
 		HashSet<string> disabledIds = NormalizeConfigDisabledIds(config.DisabledPlayerRuneIds);
+		bool shouldMigrateLegacyEnemyHexDefault =
+			config.ConfigVersion < CurrentConfigVersion
+			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, LegacyEnemyHexCountsDefault);
 		if (config.ConfigVersion < CurrentConfigVersion)
 		{
 			disabledIds.UnionWith(GetDefaultDisabledPlayerRuneIds());
@@ -140,7 +169,54 @@ internal static class HextechRuneConfiguration
 
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
+		config.EnemyHexCountsByAct = shouldMigrateLegacyEnemyHexDefault
+			? NormalizeEnemyHexCounts(null)
+			: NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
 		return config;
+	}
+
+	public static int[] GetDefaultEnemyHexCountsByAct()
+	{
+		return NormalizeEnemyHexCounts(null);
+	}
+
+	public static int ClampEnemyHexCount(int count)
+	{
+		return Math.Clamp(count, MinEnemyHexCount, MaxEnemyHexCount);
+	}
+
+	private static int[] NormalizeEnemyHexCounts(IReadOnlyList<int>? counts)
+	{
+		int[] normalized = DefaultEnemyHexCountsByAct.ToArray();
+		if (counts == null)
+		{
+			return normalized;
+		}
+
+		for (int i = 0; i < Math.Min(EnemyHexActCount, counts.Count); i++)
+		{
+			normalized[i] = ClampEnemyHexCount(counts[i]);
+		}
+
+		return normalized;
+	}
+
+	private static bool IsEnemyHexCountsEqual(IReadOnlyList<int>? counts, IReadOnlyList<int> expected)
+	{
+		if (counts == null || counts.Count < expected.Count)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < expected.Count; i++)
+		{
+			if (counts[i] != expected[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)
@@ -206,5 +282,8 @@ internal static class HextechRuneConfiguration
 
 		[JsonPropertyName("disabled_player_rune_ids")]
 		public HashSet<string> DisabledPlayerRuneIds { get; set; } = new(StringComparer.Ordinal);
+
+		[JsonPropertyName("enemy_hex_counts_by_act")]
+		public int[]? EnemyHexCountsByAct { get; set; }
 	}
 }

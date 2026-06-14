@@ -86,10 +86,11 @@ internal static partial class HextechRuneSelectionCoordinator
 				RemoveRunesFromGrabBags(player);
 			}
 
-			(HextechRarityTier rarity, MonsterHexKind monsterHex) = await ResolveActRoll(runState, modifier, actIndex);
+			(HextechRarityTier rarity, MonsterHexKind? monsterHex) = await ResolveActRoll(runState, modifier, actIndex);
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
-			MonsterHexKind? finalMonsterHex = monsterHex;
+			IReadOnlyList<MonsterHexKind> finalMonsterHexes = ResolveMonsterHexesForAct(modifier, rarity, runState, actIndex, monsterHex);
+			MonsterHexKind? finalMonsterHex = FirstMonsterHexOrNull(finalMonsterHexes);
 			RelicModel? monsterHexRelic = CreateMonsterHexRelic(finalMonsterHex);
 
 			NetGameType gameType = RunManager.Instance.NetService.Type;
@@ -97,7 +98,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			{
 				foreach (Player player in runState.Players)
 				{
-					HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, monsterHexRelic);
+					HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, finalMonsterHexes);
 					List<RelicModel> options = BuildSelectableRunesForRarity(
 						player,
 						rarity,
@@ -106,23 +107,34 @@ internal static partial class HextechRuneSelectionCoordinator
 						useEndlessTagWindow: modifier.IsEndlessLoopActive);
 					HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
 					Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection options: player={player.NetId} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+					HextechEnemyHexAdjustmentOptions? enemyHexOptions = finalMonsterHexes.Count > 0
+						? new HextechEnemyHexAdjustmentOptions
+						{
+							InitialHexes = finalMonsterHexes,
+							ControlsEnabled = true,
+							RerollFunc = (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(
+								modifier,
+								rarity,
+								runState,
+								actIndex,
+								GetMonsterHexSlot(currentHexes, slotIndex),
+								rerollOrdinal,
+								CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex))
+						}
+						: null;
 					RuneSelectionResult selection = await SelectRune(
 						modifier,
 						player,
 						options,
 						monsterHexRelic,
-						new HextechEnemyHexAdjustmentOptions
-						{
-							InitialHex = finalMonsterHex,
-							ControlsEnabled = true,
-							RerollFunc = (currentHex, rerollOrdinal) => RerollEnemyHexForAct(modifier, rarity, runState, actIndex, currentHex, rerollOrdinal, enemyRerollExcludedIds)
-						});
+						enemyHexOptions);
 					if (!IsCurrentRun(runState))
 					{
 						Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection returned for stale run");
 						return;
 					}
-					finalMonsterHex = selection.FinalMonsterHex;
+					finalMonsterHexes = selection.ResolvedMonsterHexes;
+					finalMonsterHex = FirstMonsterHexOrNull(finalMonsterHexes);
 					monsterHexRelic = CreateMonsterHexRelic(finalMonsterHex);
 					RelicModel selected = selection.SelectedRelic ?? options[0];
 					HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount);
@@ -132,7 +144,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			else
 			{
-				finalMonsterHex = await SelectRunesForAllPlayersMultiplayer(runState, modifier, actIndex, rarity, finalMonsterHex, monsterHexRelic);
+				finalMonsterHexes = await SelectRunesForAllPlayersMultiplayer(runState, modifier, actIndex, rarity, finalMonsterHexes, monsterHexRelic);
 			}
 			if (!IsCurrentRun(runState))
 			{
@@ -140,14 +152,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				return;
 			}
 
-			if (finalMonsterHex.HasValue)
-			{
-				modifier.SetMonsterHexForAct(actIndex, finalMonsterHex.Value);
-			}
-			else
-			{
-				modifier.ClearMonsterHexForAct(actIndex);
-			}
+			modifier.SetMonsterHexesForAct(actIndex, finalMonsterHexes);
 			modifier.SetActResolved(actIndex, true);
 			modifier.ApplyMapModifiersToCurrentAct(nameof(HandleActSelection));
 			HextechEnemyUi.Refresh(modifier);

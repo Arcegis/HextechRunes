@@ -85,11 +85,15 @@ internal static partial class HextechTelemetry
 
 		for (int actIndex = 0; actIndex < 3; actIndex++)
 		{
-			MonsterHexKind? hex = modifier.GetMonsterHexForAct(actIndex);
 			HextechRarityTier? rarity = modifier.GetRarityForAct(actIndex);
-			if (hex.HasValue && rarity.HasValue)
+			if (!rarity.HasValue)
 			{
-				payloads.Add(new MonsterHexTelemetry(actIndex, rarity.Value.ToString(), hex.Value.ToString()));
+				continue;
+			}
+
+			foreach (MonsterHexKind hex in modifier.GetMonsterHexesForAct(actIndex))
+			{
+				payloads.Add(new MonsterHexTelemetry(actIndex, rarity.Value.ToString(), hex.ToString()));
 			}
 		}
 

@@ -80,7 +80,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		title.SetTextAutoSize(_titleOverride ?? new LocString(LocTable, "HEXTECH_SELECTION_TITLE").GetRawText());
 		root.AddChild(title);
 
-		if (_monsterHexRelic != null || _enemyHexControlsEnabled)
+		if (_monsterHexKinds.Count > 0 || _enemyHexControlsEnabled)
 		{
 			_enemyPreviewHost = new VBoxContainer()
 			{

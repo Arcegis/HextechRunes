@@ -77,6 +77,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		return excludedIds;
 	}
 
+	private static HashSet<ModelId> CreateBaseExcludedIds(HextechMayhemModifier modifier, Player player, IEnumerable<MonsterHexKind> monsterHexes)
+	{
+		HashSet<ModelId> excludedIds = modifier.GetSeenPlayerRuneIds(player);
+		AddMonsterHexIconIds(excludedIds, monsterHexes);
+		return excludedIds;
+	}
+
 	private static HashSet<ModelId> CreateSeenOptionIds(IEnumerable<RelicModel> options, RelicModel? monsterHexRelic, IEnumerable<ModelId>? alreadySeenIds = null)
 	{
 		HashSet<ModelId> seenOptionIds = options
@@ -95,10 +102,45 @@ internal static partial class HextechRuneSelectionCoordinator
 		return seenOptionIds;
 	}
 
+	private static void AddMonsterHexIconIds(HashSet<ModelId> ids, IEnumerable<MonsterHexKind>? monsterHexes)
+	{
+		if (monsterHexes == null)
+		{
+			return;
+		}
+
+		foreach (MonsterHexKind monsterHex in monsterHexes)
+		{
+			ids.Add(GetMonsterHexIconRelicId(monsterHex));
+		}
+	}
+
 	private static RelicModel? CreateMonsterHexRelic(MonsterHexKind? monsterHex)
 	{
 		return monsterHex.HasValue
 			? MonsterHexCatalog.GetIconRelicForMonsterHex(monsterHex.Value).ToMutable()
+			: null;
+	}
+
+	private static MonsterHexKind? FirstMonsterHexOrNull(IEnumerable<MonsterHexKind>? monsterHexes)
+	{
+		if (monsterHexes == null)
+		{
+			return null;
+		}
+
+		foreach (MonsterHexKind monsterHex in monsterHexes)
+		{
+			return monsterHex;
+		}
+
+		return null;
+	}
+
+	private static MonsterHexKind? GetMonsterHexSlot(IReadOnlyList<MonsterHexKind?> monsterHexes, int slotIndex)
+	{
+		return slotIndex >= 0 && slotIndex < monsterHexes.Count
+			? monsterHexes[slotIndex]
 			: null;
 	}
 
@@ -107,6 +149,20 @@ internal static partial class HextechRuneSelectionCoordinator
 		return options
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
 			.ToHashSet();
+	}
+
+	private static HashSet<ModelId> CreateEnemyHexRerollExcludedIds(IReadOnlySet<ModelId> baseExcludedIds, IReadOnlyList<MonsterHexKind?> currentMonsterHexes, int rerollSlotIndex)
+	{
+		HashSet<ModelId> excludedIds = baseExcludedIds.ToHashSet();
+		for (int i = 0; i < currentMonsterHexes.Count; i++)
+		{
+			if (i != rerollSlotIndex && currentMonsterHexes[i].HasValue)
+			{
+				excludedIds.Add(GetMonsterHexIconRelicId(currentMonsterHexes[i]!.Value));
+			}
+		}
+
+		return excludedIds;
 	}
 
 	private static void MarkRelicsSeen(IEnumerable<RelicModel> relics)

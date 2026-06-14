@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
 using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
+	public int[] EnemyHexCountsByAct => _enemyHexCountsByAct.ToArray();
+
 	public bool IsActResolved(int actIndex)
 	{
 		return _actState.IsResolved(actIndex);
@@ -55,9 +59,20 @@ internal sealed partial class HextechMayhemModifier
 		return _actState.GetMonsterHex(actIndex);
 	}
 
+	public IReadOnlyList<MonsterHexKind> GetMonsterHexesForAct(int actIndex)
+	{
+		return _actState.GetMonsterHexes(actIndex);
+	}
+
 	public void SetMonsterHexForAct(int actIndex, MonsterHexKind hex)
 	{
 		_actState.SetMonsterHex(actIndex, hex);
+		InvalidateActiveMonsterHexCache();
+	}
+
+	public void SetMonsterHexesForAct(int actIndex, IEnumerable<MonsterHexKind> hexes)
+	{
+		_actState.SetMonsterHexes(actIndex, hexes);
 		InvalidateActiveMonsterHexCache();
 	}
 
@@ -72,6 +87,11 @@ internal sealed partial class HextechMayhemModifier
 		return _activeMonsterHexCache.Get(_actState, RunState.CurrentActIndex, ShouldRecoverMonsterHexInCombat);
 	}
 
+	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexesBeforeAct(int actIndex)
+	{
+		return _actState.GetActiveMonsterHexesBeforeAct(actIndex);
+	}
+
 	public IReadOnlyList<MonsterHexKind> GetKnownMonsterHexes()
 	{
 		return _actState.GetKnownMonsterHexes();
@@ -84,6 +104,7 @@ internal sealed partial class HextechMayhemModifier
 
 	public void ResetForNewRun()
 	{
+		_enemyHexCountsByAct = CreateNewRunEnemyHexCountsByActSnapshot();
 		_hexCountRecoveryBaseline = 0;
 		_monsterHexStrengthTierFloor = 0;
 		_enemyTezcatarasMercyCombatCounter = 0;
@@ -91,6 +112,7 @@ internal sealed partial class HextechMayhemModifier
 		_choiceHistory.Reset();
 		ResetCombatTracking();
 		InvalidateActiveMonsterHexCache();
+		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: enemyCounts={string.Join(",", _enemyHexCountsByAct)}");
 	}
 
 	public void ResetForEndlessLoop(string reason)
@@ -102,12 +124,13 @@ internal sealed partial class HextechMayhemModifier
 		_choiceHistory.Reset();
 		ResetCombatTracking();
 		InvalidateActiveMonsterHexCache();
-		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} enemyCounts={string.Join(",", _enemyHexCountsByAct)} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
 		HextechRunLifecycleHooks.HandleEndlessLoopReset(this, reason);
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
+		_enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
 		_hexCountRecoveryBaseline = 0;
 		_monsterHexStrengthTierFloor = 0;
 		_enemyTezcatarasMercyCombatCounter = 0;
@@ -158,9 +181,52 @@ internal sealed partial class HextechMayhemModifier
 		return Math.Max(actStrengthTier, _monsterHexStrengthTierFloor);
 	}
 
+	public int GetEnemyHexCountForAct(int actIndex)
+	{
+		int slot = IsEndlessLoopActive ? 2 : Math.Clamp(actIndex, 0, _enemyHexCountsByAct.Length - 1);
+		return _enemyHexCountsByAct[slot];
+	}
+
+	public void SetEnemyHexCountsByActSnapshot(IReadOnlyList<int> counts, string reason)
+	{
+		_enemyHexCountsByAct = NormalizeEnemyHexCountsByAct(counts);
+		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexCountsByAct snapshot set: reason={reason} counts={string.Join(",", _enemyHexCountsByAct)}");
+	}
+
 	private void InvalidateActiveMonsterHexCache()
 	{
 		_activeMonsterHexCache.Invalidate();
+	}
+
+	private static int[] CreateNewRunEnemyHexCountsByActSnapshot()
+	{
+		try
+		{
+			NetGameType gameType = RunManager.Instance.NetService.Type;
+			return gameType == NetGameType.Client
+				? HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct()
+				: HextechRuneConfiguration.GetEnemyHexCountsByAct();
+		}
+		catch
+		{
+			return HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
+		}
+	}
+
+	private static int[] NormalizeEnemyHexCountsByAct(IReadOnlyList<int>? counts)
+	{
+		int[] normalized = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
+		if (counts == null)
+		{
+			return normalized;
+		}
+
+		for (int i = 0; i < Math.Min(normalized.Length, counts.Count); i++)
+		{
+			normalized[i] = HextechRuneConfiguration.ClampEnemyHexCount(counts[i]);
+		}
+
+		return normalized;
 	}
 
 	internal bool IncrementEnemyTezcatarasMercyCombatCounter(int interval)
