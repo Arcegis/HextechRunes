@@ -10,7 +10,7 @@ internal sealed partial class HextechRuneSelectionScreen
 	private Control CreateEnemyPreview()
 	{
 		int rowCount = Math.Max(1, _monsterHexKinds.Count);
-		float panelHeight = Math.Min(330f, Math.Max(148f, 28f + rowCount * 76f));
+		float panelHeight = Math.Min(330f, Math.Max(104f, 28f + rowCount * 76f));
 		PanelContainer panel = new()
 		{
 			Name = "EnemyPreviewPanel",

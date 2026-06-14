@@ -18,6 +18,7 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindActSelectionApplied = 3;
 	private const int ChoiceKindEnemyHexAdjustment = 4;
 	private const int ChoiceKindForgeSelection = 5;
+	private const int ChoiceKindRandomRuneGrant = 6;
 	private const int EnemyHexAdjustmentListVersion = -2;
 
 	public static PlayerChoiceResult CreateActRoll(
@@ -212,6 +213,58 @@ internal static class HextechChoiceCodec
 		}
 
 		id = ids[ordinal];
+		return true;
+	}
+
+	public static PlayerChoiceResult CreateRandomRuneGrant(IReadOnlyList<ModelId> runeIds)
+	{
+		List<int> payload = [ Magic, ChoiceKindRandomRuneGrant, runeIds.Count ];
+		foreach (ModelId id in runeIds)
+		{
+			if (!PlayerRuneOrdinalById.Value.TryGetValue(id, out int ordinal))
+			{
+				return PlayerChoiceResult.FromIndexes([ Magic, ChoiceKindRandomRuneGrant, 0 ]);
+			}
+
+			payload.Add(ordinal);
+		}
+
+		return PlayerChoiceResult.FromIndexes(payload);
+	}
+
+	public static bool IsRandomRuneGrant(PlayerChoiceResult result)
+	{
+		return TryDecodeRandomRuneGrant(result, out _);
+	}
+
+	public static bool TryDecodeRandomRuneGrant(PlayerChoiceResult result, out List<ModelId> runeIds)
+	{
+		runeIds = [];
+		if (!TryGetIndexPayload(result, out List<int> payload)
+			|| payload.Count < 3
+			|| payload[0] != Magic
+			|| payload[1] != ChoiceKindRandomRuneGrant)
+		{
+			return false;
+		}
+
+		int count = Math.Max(0, payload[2]);
+		if (payload.Count < 3 + count)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < count; i++)
+		{
+			if (!TryGetRuneIdForOrdinal(payload[3 + i], out ModelId id))
+			{
+				runeIds.Clear();
+				return false;
+			}
+
+			runeIds.Add(id);
+		}
+
 		return true;
 	}
 
