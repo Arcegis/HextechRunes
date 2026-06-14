@@ -46,7 +46,10 @@ internal sealed class HextechForgeChoiceReward : Reward
 
 	protected override async Task<bool> OnSelect()
 	{
-		RelicModel? selected = await HextechForgeSelectionCoordinator.SelectForge(Player, _options, "reward");
+		// RewardSynchronizer already broadcasts the obtained forge. Reserving a
+		// PlayerChoiceSynchronizer id here is unsafe because reward OnSelect runs
+		// only on the choosing client, which desyncs vanilla choice counters.
+		RelicModel? selected = await HextechForgeSelectionCoordinator.SelectForge(Player, _options, "reward", syncMultiplayerChoice: false);
 		if (selected == null)
 		{
 			return false;
