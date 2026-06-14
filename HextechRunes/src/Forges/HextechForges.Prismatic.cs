@@ -129,7 +129,7 @@ public sealed class RegenForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<RegenPower>(5m)
+		new PowerVar<RegenPower>(4m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>

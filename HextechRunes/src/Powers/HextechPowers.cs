@@ -24,7 +24,27 @@ public sealed class HextechBurnPower : HextechPowerBase
 
 	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (side != Owner.Side || Amount <= 0 || !Owner.IsAlive)
+		if (Owner.Side == CombatSide.Player || side != Owner.Side)
+		{
+			return;
+		}
+
+		await ResolveBurn(new ThrowingPlayerChoiceContext(), blockable: false);
+	}
+
+	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
+	{
+		if (Owner.Side != CombatSide.Player || side != Owner.Side)
+		{
+			return;
+		}
+
+		await ResolveBurn(choiceContext, blockable: true);
+	}
+
+	private async Task ResolveBurn(PlayerChoiceContext choiceContext, bool blockable)
+	{
+		if (Amount <= 0 || !Owner.IsAlive)
 		{
 			return;
 		}
@@ -37,7 +57,13 @@ public sealed class HextechBurnPower : HextechPowerBase
 		try
 		{
 			_resolveDepth++;
-			await CreatureCmd.Damage(new ThrowingPlayerChoiceContext(), Owner, hpLoss, ValueProp.Unblockable | ValueProp.Unpowered, null, null);
+			ValueProp valueProps = ValueProp.Unpowered;
+			if (!blockable)
+			{
+				valueProps |= ValueProp.Unblockable;
+			}
+
+			await CreatureCmd.Damage(choiceContext, Owner, hpLoss, valueProps, null, null);
 		}
 		finally
 		{
@@ -140,6 +166,68 @@ public sealed class HextechAttackReplayPower : PowerModel
 		return Amount > 0m
 			&& card.Owner?.Creature == Owner
 			&& IllusoryWeaponRune.IsAttackForEffects(card, card.Owner);
+	}
+}
+
+public sealed class HextechPlayerSlowPower : HextechPowerBase
+{
+	internal const decimal CardPlaySlowIncrease = 10m;
+	private int _cardsPlayedThisTurn;
+
+	public int SavedCardsPlayedThisTurn
+	{
+		get => _cardsPlayedThisTurn;
+		set => _cardsPlayedThisTurn = Math.Max(0, value);
+	}
+
+	public override PowerType Type => Amount < 0m ? PowerType.Buff : PowerType.Debuff;
+
+	public override PowerStackType StackType => PowerStackType.Counter;
+
+	public override bool AllowNegative => true;
+
+	public override int DisplayAmount => (int)decimal.Round(Amount, 0, MidpointRounding.AwayFromZero);
+
+	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
+	{
+		if (side == Owner.Side)
+		{
+			SavedCardsPlayedThisTurn = 0;
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	{
+		if (cardPlay.Card.Owner?.Creature != Owner)
+		{
+			return;
+		}
+
+		SavedCardsPlayedThisTurn++;
+		await HextechPowerCmdCompat.Apply<HextechPlayerSlowPower>(Owner, CardPlaySlowIncrease, Owner, cardPlay.Card, silent: true);
+	}
+
+	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		if (target != Owner || Amount == 0m || (props & ValueProp.Unpowered) != 0)
+		{
+			return 1m;
+		}
+
+		decimal multiplier = 1m + Amount / 100m;
+		return Math.Max(0m, multiplier);
+	}
+
+	public override Task AfterModifyingDamageAmount(CardModel? cardSource)
+	{
+		if (Amount != 0m)
+		{
+			Flash();
+		}
+
+		return Task.CompletedTask;
 	}
 }
 

@@ -17,7 +17,7 @@ internal sealed partial class HextechMayhemModifier
 
     private async Task ApplyMonsterCombatStartHexes(CombatRoom room)
     {
-        IReadOnlyList<Creature> enemies = GetAliveEnemies(room.CombatState);
+        IReadOnlyList<Creature> enemies = HextechCombatCreatureHelper.GetAliveEnemies(room.CombatState);
         if (enemies.Count == 0)
         {
             return;
@@ -41,25 +41,21 @@ internal sealed partial class HextechMayhemModifier
         Creature enemy,
         CombatRoom room)
     {
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            await effect.ApplyCombatStartToEnemy(context, enemy, room);
-        }
+        await HextechEnemyHexDispatcher.ForEachActive(
+            this,
+            (effect, context) => effect.ApplyCombatStartToEnemy(context, enemy, room));
     }
 
     private async Task ApplyCombatStartPlayerDebuffHexes(CombatRoom room)
     {
-        IReadOnlyList<Creature> players = GetAlivePlayerSideCreatures(room.CombatState);
+        IReadOnlyList<Creature> players = HextechCombatCreatureHelper.GetAlivePlayerSideCreatures(room.CombatState);
         if (players.Count == 0)
         {
             return;
         }
 
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            await effect.ApplyCombatStartPlayerDebuffs(context, room, players);
-        }
+        await HextechEnemyHexDispatcher.ForEachActive(
+            this,
+            (effect, context) => effect.ApplyCombatStartPlayerDebuffs(context, room, players));
     }
 }

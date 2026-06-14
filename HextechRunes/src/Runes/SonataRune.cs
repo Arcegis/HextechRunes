@@ -38,8 +38,7 @@ public sealed class SonataRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new CardsVar(1),
-		new EnergyVar(1),
+		new CardsVar(2),
 		new HealVar(1m),
 		new BlockVar(2m, ValueProp.Unpowered)
 	];
@@ -82,20 +81,5 @@ public sealed class SonataRune : HextechRelicBase
 			await CreatureCmd.Heal(combatPlayer.Creature, DynamicVars.Heal.BaseValue);
 			await CreatureCmd.GainBlock(combatPlayer.Creature, DynamicVars.Block, null);
 		}
-	}
-
-	public override Task AfterEnergyResetLate(Player player)
-	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| player.Creature.IsDead
-			|| player.Creature.CombatState is not HextechCombatState combatState
-			|| !ReferenceEquals(Owner.Creature.CombatState, combatState)
-			|| combatState.RoundNumber % 2 != 1)
-		{
-			return Task.CompletedTask;
-		}
-
-		return PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, player);
 	}
 }

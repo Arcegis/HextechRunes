@@ -25,8 +25,10 @@ public static class ModEntry
 			}
 
 			HextechModelBootstrap.Install();
+			HextechRuneConfiguration.Initialize();
 			HextechTelemetry.Initialize();
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
+			TryInstallOptionalHookGroup("model id serialization warning compatibility", () => HextechModelIdSerializationWarningHooks.Install(harmony));
 			HextechMultiplayerCompatibilityHooks.Install(harmony);
 			HextechMobileModelRegistrationHooks.Install(harmony);
 			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
@@ -40,11 +42,13 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
 			AssetHooks.Install(harmony);
 			TryInstallOptionalHookGroup("relic collection", () => CollectionHooks.Install(harmony));
-			TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
-			TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
-			TryInstallOptionalHookGroup("enemy hex top bar hover", () => HextechEnemyUi.Install(harmony));
-			TryInstallOptionalHookGroup("relic UI safety", () => HextechUiSafetyHooks.Install(harmony));
+				TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
+				TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
+				TryInstallOptionalHookGroup("enemy tezcataras mercy wax relics", () => HextechEnemyTezcatarasMercyHooks.Install(harmony));
+				TryInstallOptionalHookGroup("enemy hex top bar hover", () => HextechEnemyUi.Install(harmony));
+				TryInstallOptionalHookGroup("relic UI safety", () => HextechUiSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("player stats hover", () => HextechPlayerStatsHoverHooks.Install(harmony));
+			TryInstallOptionalHookGroup("rune configuration menu", () => HextechRuneConfigMenuHooks.Install(harmony));
 			TryInstallOptionalHookGroup("reward serialization safety", () => HextechRewardSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("relic visibility toggle", () => HextechRelicVisibilityHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));

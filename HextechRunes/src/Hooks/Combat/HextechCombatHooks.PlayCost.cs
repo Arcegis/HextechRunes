@@ -9,10 +9,17 @@ using MegaCrit.Sts2.Core.Models.Cards;
 
 namespace HextechRunes;
 
+internal readonly record struct HextechCardPlayResourceSpend(decimal Energy, decimal Stars)
+{
+	public bool HasAny => Energy > 0m || Stars > 0m;
+}
+
 internal static partial class HextechCombatHooks
 {
 	private static readonly Dictionary<CardModel, Stack<int>> ActivePlayEnergyValues = new();
 	private static readonly Dictionary<CardModel, int> PendingManualPlayEnergyValues = new();
+	private static readonly Dictionary<CardModel, Stack<HextechCardPlayResourceSpend>> ActivePlayResourceSpends = new();
+	private static readonly Dictionary<CardModel, HextechCardPlayResourceSpend> PendingManualPlayResourceSpends = new();
 
 	internal static bool TryGetActivePlayEnergyValue(CardModel? card, out decimal energyValue)
 	{
@@ -38,16 +45,49 @@ internal static partial class HextechCombatHooks
 			: card.EnergyCost.GetAmountToSpend();
 	}
 
+	internal static HextechCardPlayResourceSpend GetResourceSpendForCurrentCardPlay(CardModel card)
+	{
+		if (ActivePlayResourceSpends.TryGetValue(card, out Stack<HextechCardPlayResourceSpend>? resourceSpends)
+			&& resourceSpends.Count > 0)
+		{
+			return resourceSpends.Peek();
+		}
+
+		return CaptureResourceSpend(card);
+	}
+
 	private static bool CardSpendResourcesPrefix(CardModel __instance, ref Task<ValueTuple<int, int>> __result)
 	{
 		PendingManualPlayEnergyValues[__instance] = __instance.EnergyCost.GetAmountToSpend();
+		HextechCardPlayResourceSpend resourceSpend = CaptureResourceSpend(__instance);
 		if (!StardustUpgradeRune.ShouldPreserveStars(__instance))
 		{
+			PendingManualPlayResourceSpends[__instance] = resourceSpend;
 			return true;
 		}
 
+		PendingManualPlayResourceSpends[__instance] = resourceSpend with { Stars = 0m };
 		__result = SpendResourcesPreservingStars(__instance);
 		return false;
+	}
+
+	private static HextechCardPlayResourceSpend CaptureResourceSpend(CardModel card)
+	{
+		int energyToSpend = card.EnergyCost.GetAmountToSpend();
+		int starsToSpend = card.Owner == null ? 0 : Math.Max(0, card.GetStarCostWithModifiers());
+		if (card.Owner?.PlayerCombatState == null || card.CombatState == null)
+		{
+			return new HextechCardPlayResourceSpend(Math.Max(0, energyToSpend), starsToSpend);
+		}
+
+		int currentEnergy = card.Owner.PlayerCombatState.Energy;
+		if (energyToSpend > currentEnergy && Hook.ShouldPayExcessEnergyCostWithStars(card.CombatState, card.Owner))
+		{
+			starsToSpend += (energyToSpend - currentEnergy) * 2;
+			energyToSpend = currentEnergy;
+		}
+
+		return new HextechCardPlayResourceSpend(Math.Max(0, energyToSpend), Math.Max(0, starsToSpend));
 	}
 
 	private static async Task<ValueTuple<int, int>> SpendResourcesPreservingStars(CardModel card)
@@ -89,7 +129,16 @@ internal static partial class HextechCombatHooks
 			energyValue = pendingEnergyValue;
 		}
 
+		HextechCardPlayResourceSpend resourceSpend = new(
+			Math.Max(0, resources.EnergySpent),
+			Math.Max(0, resources.StarsSpent));
+		if (PendingManualPlayResourceSpends.Remove(__instance, out HextechCardPlayResourceSpend pendingResourceSpend))
+		{
+			resourceSpend = pendingResourceSpend;
+		}
+
 		PushActivePlayEnergyValue(__instance, energyValue);
+		PushActivePlayResourceSpend(__instance, resourceSpend);
 	}
 
 	private static void CardOnPlayWrapperPostfix(CardModel __instance, PlayerChoiceContext choiceContext, ref Task __result)
@@ -108,6 +157,17 @@ internal static partial class HextechCombatHooks
 		energyValues.Push(Math.Max(0, energyValue));
 	}
 
+	private static void PushActivePlayResourceSpend(CardModel card, HextechCardPlayResourceSpend resourceSpend)
+	{
+		if (!ActivePlayResourceSpends.TryGetValue(card, out Stack<HextechCardPlayResourceSpend>? resourceSpends))
+		{
+			resourceSpends = new Stack<HextechCardPlayResourceSpend>();
+			ActivePlayResourceSpends[card] = resourceSpends;
+		}
+
+		resourceSpends.Push(resourceSpend);
+	}
+
 	private static async Task PopActivePlayEnergyValueWhenDone(CardModel card, PlayerChoiceContext choiceContext, Task task)
 	{
 		try
@@ -118,6 +178,7 @@ internal static partial class HextechCombatHooks
 		finally
 		{
 			PopActivePlayEnergyValue(card);
+			PopActivePlayResourceSpend(card);
 		}
 	}
 
@@ -167,6 +228,20 @@ internal static partial class HextechCombatHooks
 		if (energyValues.Count == 0)
 		{
 			ActivePlayEnergyValues.Remove(card);
+		}
+	}
+
+	private static void PopActivePlayResourceSpend(CardModel card)
+	{
+		if (!ActivePlayResourceSpends.TryGetValue(card, out Stack<HextechCardPlayResourceSpend>? resourceSpends) || resourceSpends.Count == 0)
+		{
+			return;
+		}
+
+		resourceSpends.Pop();
+		if (resourceSpends.Count == 0)
+		{
+			ActivePlayResourceSpends.Remove(card);
 		}
 	}
 }

@@ -13,7 +13,7 @@ internal sealed class AstralBodyEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
 	{
-		if (HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.AstralBodyApplied, creature, replayOneShotPowers))
+		if (HextechCombatProcTracker.TryMarkPersistentHexApplied(context.Tracking.AstralBodyApplied, creature, replayOneShotPowers))
 		{
 			await HextechMayhemModifier.EnsureMonsterMaxHpBonus(creature, context.TierValue(Kind, 0.20m, 0.30m, 0.40m), maxHpBaseOverride);
 		}

@@ -180,6 +180,11 @@ internal abstract class HextechEnemyHexEffect
 		return Task.CompletedTask;
 	}
 
+	internal virtual Task AfterCombatVictory(HextechEnemyHexContext context, CombatRoom room)
+	{
+		return Task.CompletedTask;
+	}
+
 	internal virtual bool TryModifyRewards(HextechEnemyHexContext context, Player player, List<Reward> rewards, AbstractRoom? room)
 	{
 		return false;

@@ -6,7 +6,7 @@ internal sealed class CourageOfColossusEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task AfterCourageTrigger(HextechEnemyHexContext context, Creature source)
 	{
-		if (HextechMayhemModifier.TryConsumeLimitedProc(context.Tracking.CourageProcsThisTurn, source, 1))
+		if (HextechCombatProcTracker.TryConsumeLimitedProc(context.Tracking.CourageProcsThisTurn, source, 1))
 		{
 			int plating = Math.Max(1, (int)Math.Floor(source.MaxHp * HextechMayhemModifier.CourageOfColossusPlatingPercent));
 			await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(source, plating, source, null);

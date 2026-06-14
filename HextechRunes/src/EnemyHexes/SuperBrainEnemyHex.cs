@@ -8,7 +8,7 @@ internal sealed class SuperBrainEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
 	{
-		if (!HextechMayhemModifier.TryMarkPersistentHexApplied(context.Tracking.SuperBrainApplied, creature, replayOneShotPowers))
+		if (!HextechCombatProcTracker.TryMarkPersistentHexApplied(context.Tracking.SuperBrainApplied, creature, replayOneShotPowers))
 		{
 			return;
 		}

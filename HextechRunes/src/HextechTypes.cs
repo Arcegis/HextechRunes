@@ -85,5 +85,15 @@ internal enum MonsterHexKind
     SerpentsFang = 73,
     PandorasBox = 74,
     ForbiddenGrimoire = 75,
-    AncientWine = 76
+    AncientWine = 76,
+    Porcupine = 77,
+    MonarchsGaze = 78,
+    SwiftAndSafe = 79,
+    TezcatarasMercy = 80,
+    ArcanePunch = 81,
+    SymphonyOfWar = 82,
+    Mystery = 83,
+    MindOverMatter = 84,
+    Omega = 85,
+    ManipulateReality = 86
 }

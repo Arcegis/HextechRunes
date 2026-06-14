@@ -18,6 +18,11 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier)
 		return modifier.GetMonsterHexStrengthTier(kind);
 	}
 
+	internal int GetStrengthTierForAct(MonsterHexKind kind, int actIndex)
+	{
+		return modifier.GetMonsterHexStrengthTierForAct(kind, actIndex);
+	}
+
 	internal int TierValue(MonsterHexKind kind, int tier1, int tier2, int tier3)
 	{
 		return GetStrengthTier(kind) switch
@@ -38,14 +43,24 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier)
 		};
 	}
 
+	internal int TierValueForAct(MonsterHexKind kind, int actIndex, int tier1, int tier2, int tier3)
+	{
+		return GetStrengthTierForAct(kind, actIndex) switch
+		{
+			<= 1 => tier1,
+			2 => tier2,
+			_ => tier3
+		};
+	}
+
 	internal IReadOnlyList<Creature> GetAliveEnemies(HextechCombatState combatState)
 	{
-		return HextechMayhemModifier.GetAliveEnemies(combatState);
+		return HextechCombatCreatureHelper.GetAliveEnemies(combatState);
 	}
 
 	internal IReadOnlyList<Creature> GetAlivePlayerSideCreatures(HextechCombatState combatState)
 	{
-		return HextechMayhemModifier.GetAlivePlayerSideCreatures(combatState);
+		return HextechCombatCreatureHelper.GetAlivePlayerSideCreatures(combatState);
 	}
 
 	internal Task RunGroupedPlayerDebuffBurst(Func<Task> action)

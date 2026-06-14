@@ -64,7 +64,8 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Shiv>()
+		HoverTipFactory.FromCard<Shiv>(),
+		HoverTipFactory.FromCard<SovereignBlade>()
 	];
 
 	public override bool IsAvailableForPlayer(Player player)
@@ -137,7 +138,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 		}
 
 		Flash();
-		await AddCardCopiesToCombatHand<Shiv>(rewards * DynamicVars.Cards.IntValue);
+		await AddShivRewardCards(rewards * DynamicVars.Cards.IntValue);
 	}
 
 	private bool IsCountedShivPlay(CardPlay cardPlay)
@@ -145,7 +146,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 		return cardPlay.IsFirstInSeries
 			&& !cardPlay.IsAutoPlay
 			&& cardPlay.Card.Owner == Owner
-			&& cardPlay.Card.Tags.Contains(CardTag.Shiv);
+			&& HextechKnifeHelper.IsShivLike(cardPlay.Card, Owner);
 	}
 
 	private int CountOwnedShivCardsPlayedFromHistory()
@@ -162,7 +163,18 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 				entry.CardPlay.IsFirstInSeries
 				&& !entry.CardPlay.IsAutoPlay
 				&& entry.CardPlay.Card.Owner?.NetId == ownerId
-				&& entry.CardPlay.Card.Tags.Contains(CardTag.Shiv));
+				&& HextechKnifeHelper.IsShivLike(entry.CardPlay.Card, Owner));
+	}
+
+	private async Task AddShivRewardCards(int count)
+	{
+		if (Owner?.GetRelic<BigKnifeRune>() != null)
+		{
+			await AddCardCopiesToCombatHand<SovereignBlade>(count, HextechKnifeHelper.ConfigureBigKnifeBlade);
+			return;
+		}
+
+		await AddCardCopiesToCombatHand<Shiv>(count);
 	}
 
 	private int GetShivsPlayedThisCombat()

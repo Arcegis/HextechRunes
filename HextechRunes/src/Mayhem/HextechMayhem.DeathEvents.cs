@@ -11,11 +11,9 @@ internal sealed partial class HextechMayhemModifier
 {
 	public override async Task BeforeDeath(Creature creature)
 	{
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.BeforeDeath(context, creature);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.BeforeDeath(context, creature));
 	}
 
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
@@ -27,10 +25,8 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		HextechEnemyHexContext context = new(this);
-		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-		{
-			await effect.AfterDeath(context, choiceContext, target, combatState);
-		}
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterDeath(context, choiceContext, target, combatState));
 	}
 }

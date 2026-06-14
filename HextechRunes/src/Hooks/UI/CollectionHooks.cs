@@ -16,7 +16,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static class CollectionHooks
+internal static partial class CollectionHooks
 {
 	private readonly record struct SubcategoryHeaderText(string ZhHeader, string ZhBody, string EnHeader, string EnBody);
 
@@ -84,6 +84,10 @@ internal static class CollectionHooks
 		typeof(UnlockState),
 		typeof(HashSet<RelicModel>));
 
+	private static readonly MethodInfo? CollectionClearRelicsMethod = TryGetMethod(typeof(NRelicCollection), "ClearRelics", BindingFlags.Instance | BindingFlags.NonPublic);
+
+	private static readonly MethodInfo? CollectionLoadRelicsMethod = TryGetMethod(typeof(NRelicCollection), "LoadRelics", BindingFlags.Instance | BindingFlags.NonPublic);
+
 	private static string? _starterHeaderTemplate;
 
 	private static bool _loggedFlatFallback;
@@ -140,297 +144,59 @@ internal static class CollectionHooks
 		AddForgeSubcategory(__instance, collection, seenRelics, allUnlockedRelics);
 	}
 
-	private static void AddFlatFallbackRelics(NRelicCollectionCategory self, NRelicCollection collection)
+	public static void RefreshOpenRelicCollections()
 	{
-		if (collection.Relics.Any(IsHextechCollectionRelic))
+		if (CollectionClearRelicsMethod == null || CollectionLoadRelicsMethod == null)
 		{
 			return;
 		}
 
-		if (RelicsContainerField?.GetValue(self) is not GridContainer relicsContainer)
+		Node? root = NGame.Instance?.GetTree()?.Root;
+		if (root == null || !GodotObject.IsInstanceValid(root))
 		{
-			if (!_loggedMissingFallbackContainer)
+			return;
+		}
+
+		int refreshed = 0;
+		foreach (NRelicCollection collection in EnumerateNodes<NRelicCollection>(root))
+		{
+			if (!GodotObject.IsInstanceValid(collection) || !collection.IsInsideTree())
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Relic collection flat fallback skipped: starter relic grid is unavailable.");
-				_loggedMissingFallbackContainer = true;
+				continue;
 			}
 
-			return;
+			try
+			{
+				CollectionClearRelicsMethod.Invoke(collection, null);
+				CollectionLoadRelicsMethod.Invoke(collection, null);
+				refreshed++;
+			}
+			catch (Exception ex)
+			{
+				Log.Warn($"[{ModInfo.Id}][RuneConfig] Failed to refresh relic collection after config save: {ex.GetType().Name}: {ex.Message}", 2);
+			}
 		}
 
-		List<RelicModel> relics = GetFlatFallbackRelics();
-		if (relics.Count == 0)
+		if (refreshed > 0)
 		{
-			return;
-		}
-
-		collection.AddRelics(relics);
-		foreach (RelicModel relic in relics)
-		{
-			NRelicCollectionEntry entry = NRelicCollectionEntry.Create(relic, ModelVisibility.Visible);
-			relicsContainer.AddChild(entry);
-			entry.Connect(
-				NClickableControl.SignalName.Released,
-				Callable.From<NRelicCollectionEntry>(entry => OpenFallbackRelic(collection, entry)));
-		}
-
-		if (!_loggedFlatFallback)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Added {relics.Count} Hextech relics to the starter relic collection grid through the mobile fallback.");
-			_loggedFlatFallback = true;
+			Log.Info($"[{ModInfo.Id}][RuneConfig] Refreshed {refreshed} relic collection screen(s) after config save.");
 		}
 	}
 
-	private static List<RelicModel> GetFlatFallbackRelics()
+	private static IEnumerable<TNode> EnumerateNodes<TNode>(Node node)
+		where TNode : Node
 	{
-		return HextechCatalog.GetCanonicalGenericVisibleRunes()
-			.Concat(HextechCatalog.GetCharacterRuneGroups().SelectMany(static group => group.Relics))
-			.Concat(HextechCatalog.GetCanonicalForges())
-			.Distinct()
-			.ToList();
-	}
-
-	private static bool IsHextechCollectionRelic(RelicModel relic)
-	{
-		return HextechCatalog.IsHextechRelic(relic) || HextechCatalog.IsHextechForgeRelic(relic);
-	}
-
-	private static void OpenFallbackRelic(NRelicCollection collection, NRelicCollectionEntry entry)
-	{
-		if (NGame.Instance == null)
+		if (node is TNode match)
 		{
-			return;
+			yield return match;
 		}
 
-		NGame.Instance.GetInspectRelicScreen().Open(collection.Relics, entry.relic);
-		collection.SetLastFocusedRelic(entry);
-	}
-
-	private static void AddHextechSubcategory(
-		NRelicCollectionCategory self,
-		NRelicCollection collection,
-		HashSet<RelicModel> seenRelics,
-		HashSet<RelicModel> allUnlockedRelics)
-	{
-		if (collection.Relics.Any(HextechCatalog.IsHextechRelic))
+		foreach (Node child in node.GetChildren())
 		{
-			return;
-		}
-
-		IReadOnlyList<RelicModel> genericRunes = HextechCatalog.GetCanonicalGenericVisibleRunes();
-		IReadOnlyList<HextechCatalog.RuneSeriesGroup> characterGroups = HextechCatalog.GetCharacterRuneGroups();
-		HashSet<RelicModel> visibleHextechRelics = genericRunes
-			.Concat(characterGroups.SelectMany(static group => group.Relics))
-			.ToHashSet();
-		HashSet<RelicModel> seenWithHextech = seenRelics.Concat(visibleHextechRelics).ToHashSet();
-		HashSet<RelicModel> unlockedWithHextech = allUnlockedRelics.Concat(visibleHextechRelics).ToHashSet();
-
-		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
-			self,
-			collection,
-			HextechAssets.HextechSubcategoryKey,
-			genericRunes,
-			seenWithHextech,
-			unlockedWithHextech);
-		ApplyCustomHeaderText(
-			subCategory,
-			HextechAssets.HextechSubcategoryKey,
-			HextechHeaderZh,
-			HextechHeaderZhBody,
-			HextechHeaderEn,
-			HextechHeaderEnBody);
-
-		NRelicCollectionCategory? firstCharacterSubcategory = null;
-		foreach (HextechCatalog.RuneSeriesGroup group in characterGroups)
-		{
-			NRelicCollectionCategory? characterSubcategory = AddCharacterRuneSubcategory(
-				subCategory,
-				collection,
-				group,
-				seenWithHextech,
-				unlockedWithHextech);
-			firstCharacterSubcategory ??= characterSubcategory;
-		}
-
-		if (firstCharacterSubcategory != null)
-		{
-			InsertSpacingBeforeCharacterPools(subCategory, firstCharacterSubcategory);
-		}
-	}
-
-	private static void AddForgeSubcategory(
-		NRelicCollectionCategory self,
-		NRelicCollection collection,
-		HashSet<RelicModel> seenRelics,
-		HashSet<RelicModel> allUnlockedRelics)
-	{
-		if (collection.Relics.Any(HextechCatalog.IsHextechForgeRelic))
-		{
-			return;
-		}
-
-		HashSet<RelicModel> visibleForgeRelics = HextechCatalog.GetCanonicalForges().ToHashSet();
-		HashSet<RelicModel> seenWithForges = seenRelics.Concat(visibleForgeRelics).ToHashSet();
-		HashSet<RelicModel> unlockedWithForges = allUnlockedRelics.Concat(visibleForgeRelics).ToHashSet();
-
-		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
-			self,
-			collection,
-			HextechAssets.ForgeSubcategoryKey,
-			HextechCatalog.GetCanonicalForges(),
-			seenWithForges,
-			unlockedWithForges);
-		ApplyCustomHeaderText(
-			subCategory,
-			HextechAssets.ForgeSubcategoryKey,
-			ForgeHeaderZh,
-			ForgeHeaderZhBody,
-			ForgeHeaderEn,
-			ForgeHeaderEnBody);
-	}
-
-	private static NRelicCollectionCategory? AddCharacterRuneSubcategory(
-		NRelicCollectionCategory hextechCategory,
-		NRelicCollection collection,
-		HextechCatalog.RuneSeriesGroup group,
-		HashSet<RelicModel> seenRelics,
-		HashSet<RelicModel> allUnlockedRelics)
-	{
-		if (group.Relics.Count == 0)
-		{
-			return null;
-		}
-
-		string localizationKey = $"HEXTECH_{group.LocalizationKey}";
-		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
-			hextechCategory,
-			collection,
-			localizationKey,
-			group.Relics,
-			seenRelics,
-			allUnlockedRelics);
-		if (CharacterHeaderTexts.TryGetValue(group.LocalizationKey, out SubcategoryHeaderText text))
-		{
-			ApplyCustomHeaderText(subCategory, localizationKey, text.ZhHeader, text.ZhBody, text.EnHeader, text.EnBody);
-		}
-
-		return subCategory;
-	}
-
-	private static NRelicCollectionCategory CreateAndLoadSubcategory(
-		NRelicCollectionCategory parent,
-		NRelicCollection collection,
-		string localizationKey,
-		IEnumerable<RelicModel> relics,
-		HashSet<RelicModel> seenRelics,
-		HashSet<RelicModel> allUnlockedRelics)
-	{
-		List<NRelicCollectionCategory> subCategories = GetSubCategories(parent);
-		NRelicCollectionCategory subCategory = (NRelicCollectionCategory)CreateForSubcategoryMethod!.Invoke(parent, null)!;
-		int insertIndex = ((Control)HeaderLabelField!.GetValue(parent)!).GetIndex() + subCategories.Count + 1;
-		subCategories.Add(subCategory);
-		parent.AddChild(subCategory);
-		parent.MoveChild(subCategory, insertIndex);
-
-		LoadSubcategoryMethod!.Invoke(
-			subCategory,
-			[
-				collection,
-				new LocString("relic_collection", localizationKey),
-				relics,
-				seenRelics,
-				allUnlockedRelics
-			]);
-
-		return subCategory;
-	}
-
-	private static void InsertSpacingBeforeCharacterPools(
-		NRelicCollectionCategory hextechCategory,
-		NRelicCollectionCategory firstCharacterSubcategory)
-	{
-		Control spacer = new()
-		{
-			Name = "HextechGenericToCharacterPoolSpacer",
-			CustomMinimumSize = new Vector2(0f, GenericToCharacterPoolSpacing),
-			MouseFilter = Control.MouseFilterEnum.Ignore
-		};
-		hextechCategory.AddChild(spacer);
-		hextechCategory.MoveChild(spacer, firstCharacterSubcategory.GetIndex());
-	}
-
-	private static void ApplyCustomHeaderText(
-		NRelicCollectionCategory subCategory,
-		string localizationKey,
-		string zhHeader,
-		string zhBody,
-		string enHeader,
-		string enBody)
-	{
-		if (HeaderLabelField!.GetValue(subCategory) is not MegaRichTextLabel headerLabel)
-		{
-			return;
-		}
-
-		string fallback = new LocString("relic_collection", localizationKey).GetRawText();
-		headerLabel.SetTextAutoSize(FormatLikeStarterHeader(_starterHeaderTemplate, fallback, zhHeader, zhBody, enHeader, enBody));
-	}
-
-	private static string FormatLikeStarterHeader(
-		string? starterTemplate,
-		string fallback,
-		string zhHeader,
-		string zhBody,
-		string enHeader,
-		string enBody)
-	{
-		if (string.IsNullOrWhiteSpace(starterTemplate))
-		{
-			return fallback;
-		}
-
-		string formatted = starterTemplate
-			.Replace(StarterHeaderZh, zhHeader)
-			.Replace(StarterHeaderZhBody, zhBody)
-			.Replace(StarterHeaderEn, enHeader)
-			.Replace(StarterHeaderEnBody, enBody);
-
-		return formatted == starterTemplate ? fallback : formatted;
-	}
-
-	private static List<NRelicCollectionCategory> GetSubCategories(NRelicCollectionCategory category)
-	{
-		return (List<NRelicCollectionCategory>)SubCategoriesField!.GetValue(category)!;
-	}
-
-	private static bool CanUseSubcategoryHooks()
-	{
-		return HeaderLabelField != null
-			&& SubCategoriesField != null
-			&& CreateForSubcategoryMethod != null
-			&& LoadSubcategoryMethod != null;
-	}
-
-	private static IEnumerable<string> GetMissingSubcategoryDependencies()
-	{
-		if (HeaderLabelField == null)
-		{
-			yield return "NRelicCollectionCategory._headerLabel";
-		}
-
-		if (SubCategoriesField == null)
-		{
-			yield return "NRelicCollectionCategory._subCategories";
-		}
-
-		if (CreateForSubcategoryMethod == null)
-		{
-			yield return "NRelicCollectionCategory.CreateForSubcategory";
-		}
-
-		if (LoadSubcategoryMethod == null)
-		{
-			yield return "NRelicCollectionCategory.LoadSubcategory";
+			foreach (TNode descendant in EnumerateNodes<TNode>(child))
+			{
+				yield return descendant;
+			}
 		}
 	}
 

@@ -54,7 +54,7 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		foreach (Creature enemy in GetAliveEnemies(combatState))
+		foreach (Creature enemy in HextechCombatCreatureHelper.GetAliveEnemies(combatState))
 		{
 			await TryApplyDeferredBossStartHexes(enemy, room);
 		}

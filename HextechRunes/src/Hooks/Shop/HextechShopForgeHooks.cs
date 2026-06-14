@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
@@ -17,7 +18,6 @@ namespace HextechRunes;
 
 internal static class HextechShopForgeHooks
 {
-	private const int RandomForgeShopFirstCost = 125;
 	private const int RandomForgeShopRegularCost = 250;
 	private const float CardRemovalRandomForgeOffsetY = 60f;
 
@@ -160,9 +160,10 @@ internal static class HextechShopForgeHooks
 		Player player = inventory.Player;
 		int cost = TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null
 			? entry.Cost
-			: RandomForgeShopFirstCost;
+			: RandomForgeShopRegularCost;
 
-		if (!HextechForgeGrantHelper.TryCreateRandomForge(player, player.PlayerRng.Shops, out RelicModel? forge) || forge == null)
+		int purchaseOrdinal = shopRelic?.PurchaseCount ?? 0;
+		if (!HextechForgeGrantHelper.TryCreateStableShopForgeChoice(player, purchaseOrdinal, out List<RelicModel> options))
 		{
 #if STS2_104_OR_NEWER
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
@@ -172,10 +173,25 @@ internal static class HextechShopForgeHooks
 			return (false, 0);
 		}
 
+		RelicModel? forge = await HextechForgeSelectionCoordinator.SelectForge(player, options, "shop", syncMultiplayerChoice: false);
+		if (forge == null)
+		{
+			return (false, 0);
+		}
+
+		if (!CanContinueSynchronizedPurchase())
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge purchase cancelled because multiplayer service is disconnected.");
+			return (false, 0);
+		}
+
 		if (!ignoreCost)
 		{
 			await PlayerCmd.LoseGold(cost, player, GoldLossType.Spent);
-			RunManager.Instance.RewardSynchronizer.SyncLocalGoldLost(cost);
+			if (CanSyncMultiplayerReward())
+			{
+				RunManager.Instance.RewardSynchronizer.SyncLocalGoldLost(cost);
+			}
 		}
 
 		player.RunState.CurrentMapPointHistoryEntry?
@@ -183,15 +199,25 @@ internal static class HextechShopForgeHooks
 			.BoughtRelics
 			.Add(forge.Id);
 
-		SaveManager.Instance.MarkRelicAsSeen(forge);
-		await RelicCmd.Obtain(forge, player);
-		RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(forge);
+		await HextechForgeGrantHelper.ObtainSelectedForge(player, forge, syncObtainedRelic: true);
 		if (shopRelic != null)
 		{
 			shopRelic.IncrementPurchaseCount();
 			entry.OnMerchantInventoryUpdated();
 		}
 		return (true, ignoreCost ? 0 : cost);
+	}
+
+	private static bool CanContinueSynchronizedPurchase()
+	{
+		INetGameService netService = RunManager.Instance.NetService;
+		return netService.Type is not (NetGameType.Host or NetGameType.Client) || netService.IsConnected;
+	}
+
+	private static bool CanSyncMultiplayerReward()
+	{
+		INetGameService netService = RunManager.Instance.NetService;
+		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
 	}
 
 	private static bool IsRandomForgeEntry(MerchantEntry entry)
@@ -225,7 +251,7 @@ internal static class HextechShopForgeHooks
 
 	private static int GetRandomForgeShopBaseCost(RandomForgeShopRelic shopRelic)
 	{
-		return shopRelic.PurchaseCount == 0 ? RandomForgeShopFirstCost : RandomForgeShopRegularCost;
+		return RandomForgeShopRegularCost;
 	}
 
 	private static void UpdateInventoryEntries(MerchantInventory inventory)

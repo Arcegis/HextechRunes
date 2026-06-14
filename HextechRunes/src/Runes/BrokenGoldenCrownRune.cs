@@ -11,7 +11,6 @@ public sealed class BrokenGoldenCrownRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("RewardOptionsLost", 2m),
-		new CardsVar(1),
 		new EnergyVar(1)
 	];
 
@@ -35,11 +34,6 @@ public sealed class BrokenGoldenCrownRune : HextechRelicBase
 
 		Flash();
 		return true;
-	}
-
-	public override decimal ModifyHandDraw(Player player, decimal count)
-	{
-		return player == Owner ? count + DynamicVars.Cards.BaseValue : count;
 	}
 
 	public override Task AfterEnergyResetLate(Player player)

@@ -12,21 +12,33 @@ internal static class HextechMapLengthReducer
 
 	internal static ActMap ReduceNodeLengthByOne(IRunState runState, ActMap map, MapCoord? currentCoord)
 	{
-		if (map is ShortenedActMap || IsSpecialMap(map))
+		return ReduceNodeLength(runState, map, currentCoord, rowsToRemove: 1);
+	}
+
+	internal static ActMap ReduceNodeLength(IRunState runState, ActMap map, MapCoord? currentCoord, int rowsToRemove)
+	{
+		if (rowsToRemove <= 0 || IsSpecialMap(map))
 		{
 			return map;
 		}
 
-		int searchStartRow = currentCoord.HasValue ? currentCoord.Value.row + 2 : 1;
-		if (!TryFindSafeRowToRemove(map, searchStartRow, out int rowToRemove))
+		ActMap modifiedMap = map;
+		int appliedRows = 0;
+		for (int i = 0; i < rowsToRemove; i++)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble map shrink skipped: no safe removable row. map={map.GetType().Name} rows={map.GetRowCount()} current={DescribeCoord(currentCoord)}");
-			return map;
+			int searchStartRow = currentCoord.HasValue ? currentCoord.Value.row + 2 : 1;
+			if (!TryFindSafeRowToRemove(modifiedMap, searchStartRow, out int rowToRemove))
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble map shrink skipped: no safe removable row. map={modifiedMap.GetType().Name} rows={modifiedMap.GetRowCount()} current={DescribeCoord(currentCoord)} requested={rowsToRemove} applied={appliedRows}");
+				break;
+			}
+
+			modifiedMap = new ShortenedActMap(modifiedMap, rowToRemove);
+			AdjustSpoilsMapCoords(runState, modifiedMap, rowToRemove);
+			appliedRows++;
 		}
 
-		ActMap shortenedMap = new ShortenedActMap(map, rowToRemove);
-		AdjustSpoilsMapCoords(runState, shortenedMap, rowToRemove);
-		return shortenedMap;
+		return modifiedMap;
 	}
 
 	private static bool IsSpecialMap(ActMap map)

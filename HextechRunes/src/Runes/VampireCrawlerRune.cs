@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 
@@ -14,12 +15,7 @@ public sealed class VampireCrawlerRune : HextechRelicBase
 		}
 
 		CardModel copy = combatState.CloneCard(cardPlay.Card);
-		await HextechCardGeneration.AddGeneratedCardToCombat(
-			copy,
-			PileType.Discard,
-			addedByPlayer: true,
-			CardPilePosition.Bottom,
-			previewNonHandAdds: false);
+		await CardPileCmd.Add(copy, PileType.Discard, CardPilePosition.Bottom, this);
 		Flash();
 	}
 

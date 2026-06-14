@@ -18,18 +18,16 @@ internal sealed partial class HextechMayhemModifier
     {
         CombatRoom? combatRoom = RunState.CurrentRoom as CombatRoom;
 
-        HextechEnemyHexContext context = new(this);
-        foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
-        {
-            await effect.BeforeTurnEnd(context, choiceContext, side, combatRoom);
-        }
+        await HextechEnemyHexDispatcher.ForEachActive(
+            this,
+            (effect, context) => effect.BeforeTurnEnd(context, choiceContext, side, combatRoom));
 
         if (side == CombatSide.Player)
         {
             _combatTracking.PreparePlayerSideTurnEnd();
             if (combatRoom != null)
             {
-                RefreshPlayerAttackCostDoublingPreviews(GetAlivePlayerSideCreatures(combatRoom.CombatState));
+                RefreshPlayerAttackCostDoublingPreviews(HextechCombatCreatureHelper.GetAlivePlayerSideCreatures(combatRoom.CombatState));
             }
         }
     }

@@ -7,7 +7,7 @@ internal sealed class TormentorEnemyHex : HextechEnemyHexEffect
 	internal override async Task AfterMonsterDebuffApplied(HextechEnemyHexContext context, PowerModel power, decimal amount, Creature target, Creature source, CardModel? cardSource)
 	{
 		if (context.Tracking.HandlingMonsterTormentorBurn
-			|| !HextechMayhemModifier.TryConsumeLimitedProc(context.Tracking.TormentorProcsThisTurn, source, 5))
+			|| !HextechCombatProcTracker.TryConsumeLimitedProc(context.Tracking.TormentorProcsThisTurn, source, 5))
 		{
 			return;
 		}

@@ -15,6 +15,6 @@ public sealed class TransmuteChaosRune : HextechRelicBase
 
 		Player player = Owner;
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetAllSelectableRuneTypes(), 2);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetAllConfigurableRuneTypes(), 2);
 	}
 }

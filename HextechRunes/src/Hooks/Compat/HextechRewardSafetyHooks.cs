@@ -45,6 +45,13 @@ internal static class HextechRewardSafetyHooks
 				save.Source,
 				save.RarityOdds);
 			__result = new GenesisUpgradedCardReward(options, save.OptionCount, player);
+			return;
+		}
+
+		if (save.CustomDescriptionEncounterSourceId == ModelDb.GetId<RandomForgeShopRelic>()
+			&& save.CardPoolIds.Count > 0)
+		{
+			__result = HextechForgeChoiceReward.FromSavedReward(save, player);
 		}
 	}
 }

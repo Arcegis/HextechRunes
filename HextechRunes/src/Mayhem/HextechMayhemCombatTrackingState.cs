@@ -2,16 +2,12 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemCombatTrackingState
 {
-	[System.AttributeUsage(System.AttributeTargets.Field)]
-	private sealed class CombatTrackingTransientAttribute : System.Attribute
-	{
-	}
-
 	public readonly Dictionary<uint, int> SlapProcsThisTurn = new();
 	public readonly Dictionary<uint, int> TormentorProcsThisTurn = new();
 	public readonly Dictionary<uint, int> CourageProcsThisTurn = new();
 	public readonly Dictionary<uint, int> BloodPactProcsThisTurn = new();
 	public readonly Dictionary<string, int> PlayerRuneProcsThisTurn = new();
+	public readonly Dictionary<string, int> PlayerRuneProcsThisCombat = new();
 	public readonly Dictionary<uint, int> BloodArmorHpLossThisPlayerTurn = new();
 	public readonly Dictionary<uint, int> ClownCollegeProcsThisTurn = new();
 	public readonly HashSet<uint> EscapePlanTriggered = new();
@@ -47,9 +43,13 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> MountainSoulDamagedSinceLastTurn = new();
 	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn = new();
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
+	public readonly Dictionary<ulong, int> SwiftAndSafePlayerCardsDrawnThisCombat = new();
+	public readonly Dictionary<uint, int> EnemyPorcupineTemporaryThornsThisTurn = new();
+	public readonly Dictionary<uint, int> EnemyPorcupineTriggersThisTurn = new();
 	public readonly HashSet<ulong> VakuuControlledPlayersThisCombat = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredSecondThisTurn = new();
+	public int ArcanePunchPlayerAttackCardsPlayed;
 	[CombatTrackingTransient]
 	public readonly HashSet<string> MonsterDebuffActionProcKeysThisTurn = new();
 	[CombatTrackingTransient]
@@ -73,6 +73,9 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		ClownCollegeProcsThisTurn.Clear();
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
 		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
+		EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		EnemyPorcupineTriggersThisTurn.Clear();
+		ArcanePunchPlayerAttackCardsPlayed = 0;
 	}
 
 	public void PreparePlayerSideTurnEnd()
@@ -80,6 +83,9 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		PlayerAttackCardsPlayedThisTurn.Clear();
 		EightPennyGatePlayersTriggeredThisTurn.Clear();
 		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
+		EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		EnemyPorcupineTriggersThisTurn.Clear();
+		ArcanePunchPlayerAttackCardsPlayed = 0;
 	}
 
 	public void PrepareEnemySideTurnStart()
@@ -93,6 +99,8 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		PlayerRuneProcsThisTurn.Clear();
 		BloodArmorHpLossThisPlayerTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
+		EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		EnemyPorcupineTriggersThisTurn.Clear();
 		DevilsDanceTriggeredThisTurn.Clear();
 		FinalFormTriggeredThisTurn.Clear();
 		MonsterDebuffActionProcKeysThisTurn.Clear();

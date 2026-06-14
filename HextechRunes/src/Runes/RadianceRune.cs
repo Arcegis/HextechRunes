@@ -59,6 +59,7 @@ public sealed class RadianceRune : HextechRelicBase
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.TotalDamage <= 0m
+			|| IsUnsafeTurnStartAutomaticDamage(props, cardSource)
 			|| !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;
@@ -95,5 +96,13 @@ public sealed class RadianceRune : HextechRelicBase
 	{
 		_triggeredThisTurn = false;
 		UpdateTurnScopedStateIdentity(combatState);
+	}
+
+	private bool IsUnsafeTurnStartAutomaticDamage(ValueProp props, CardModel? cardSource)
+	{
+		return Owner != null
+			&& cardSource == null
+			&& props.HasFlag(ValueProp.Unpowered)
+			&& !HextechCombatHistoryHelper.HasOwnedCardPlayedThisTurn(Owner, Owner.Creature.CombatState);
 	}
 }
