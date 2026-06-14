@@ -196,7 +196,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		return pool;
 	}
 
-	private static IReadOnlyList<MonsterHexKind> ResolveMonsterHexesForAct(
+	private static IReadOnlyList<MonsterHexKind> ResolveNewMonsterHexesForAct(
 		HextechMayhemModifier modifier,
 		HextechRarityTier rarity,
 		RunState runState,
@@ -204,14 +204,11 @@ internal static partial class HextechRuneSelectionCoordinator
 		MonsterHexKind? primaryMonsterHex)
 	{
 		int newEnemyHexCount = modifier.GetEnemyHexCountForAct(actIndex);
-		List<MonsterHexKind> resolved = [];
+		List<MonsterHexKind> resolvedNewHexes = [];
 		HashSet<MonsterHexKind> seen = [];
 		foreach (MonsterHexKind hex in modifier.GetActiveMonsterHexesBeforeAct(actIndex))
 		{
-			if (seen.Add(hex))
-			{
-				resolved.Add(hex);
-			}
+			seen.Add(hex);
 		}
 
 		int addedThisAct = 0;
@@ -219,7 +216,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			&& addedThisAct < newEnemyHexCount
 			&& seen.Add(primaryMonsterHex.Value))
 		{
-			resolved.Add(primaryMonsterHex.Value);
+			resolvedNewHexes.Add(primaryMonsterHex.Value);
 			addedThisAct++;
 		}
 
@@ -228,19 +225,42 @@ internal static partial class HextechRuneSelectionCoordinator
 		for (int ordinal = 0; addedThisAct < newEnemyHexCount; ordinal++)
 		{
 			MonsterHexKind? extraHex = isMultiplayer
-				? ChooseStableMonsterHexForAct(modifier, rarity, runState, actIndex, resolved, ordinal + 1)
-				: ChooseMonsterHexForAct(modifier, rarity, runState, resolved);
+				? ChooseStableMonsterHexForAct(modifier, rarity, runState, actIndex, seen, ordinal + 1)
+				: ChooseMonsterHexForAct(modifier, rarity, runState, seen);
 			if (!extraHex.HasValue || !seen.Add(extraHex.Value))
 			{
 				break;
 			}
 
-			resolved.Add(extraHex.Value);
+			resolvedNewHexes.Add(extraHex.Value);
 			addedThisAct++;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveMonsterHexesForAct: act={actIndex} newCount={newEnemyHexCount} previous={resolved.Count - addedThisAct} primary={primaryMonsterHex} resolved={string.Join(",", resolved)}");
-		return resolved;
+		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveNewMonsterHexesForAct: act={actIndex} newCount={newEnemyHexCount} previous={seen.Count - addedThisAct} primary={primaryMonsterHex} newHexes={string.Join(",", resolvedNewHexes)}");
+		return resolvedNewHexes;
+	}
+
+	private static IReadOnlyList<MonsterHexKind> CombineMonsterHexes(IEnumerable<MonsterHexKind> previousHexes, IEnumerable<MonsterHexKind> newHexes)
+	{
+		List<MonsterHexKind> combined = [];
+		HashSet<MonsterHexKind> seen = [];
+		foreach (MonsterHexKind hex in previousHexes)
+		{
+			if (seen.Add(hex))
+			{
+				combined.Add(hex);
+			}
+		}
+
+		foreach (MonsterHexKind hex in newHexes)
+		{
+			if (seen.Add(hex))
+			{
+				combined.Add(hex);
+			}
+		}
+
+		return combined;
 	}
 
 	private static MonsterHexKind? RerollEnemyHexForAct(

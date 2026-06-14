@@ -25,23 +25,26 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechMayhemModifier modifier,
 		int actIndex,
 		HextechRarityTier rarity,
-		IReadOnlyList<MonsterHexKind> initialMonsterHexes,
+		IReadOnlyList<MonsterHexKind> previousMonsterHexes,
+		IReadOnlyList<MonsterHexKind> initialNewMonsterHexes,
 		RelicModel? monsterHexRelic)
 	{
 		RunManager runManager = RunManager.Instance;
+		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
 		if (HextechAiTeammateCompat.IsLoopbackHostSession()
 			&& runState.Players.Any(static player => HextechAiTeammateCompat.IsAiPlayer(player)))
 		{
-			return await SelectRunesForAllPlayersAiTeammateHostControlled(runState, modifier, actIndex, rarity, initialMonsterHexes, monsterHexRelic);
+			return await SelectRunesForAllPlayersAiTeammateHostControlled(runState, modifier, actIndex, rarity, previousMonsterHexes, initialNewMonsterHexes, monsterHexRelic);
 		}
 
 		PlayerChoiceSynchronizer? synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
 		if (synchronizer == null)
 		{
-			List<MonsterHexKind> fallbackMonsterHexes = initialMonsterHexes.ToList();
+			List<MonsterHexKind> fallbackNewMonsterHexes = initialNewMonsterHexes.ToList();
+			IReadOnlyList<MonsterHexKind> fallbackActiveMonsterHexes = initialActiveMonsterHexes;
 			foreach (Player player in runState.Players)
 			{
-				HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, fallbackMonsterHexes);
+				HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, fallbackActiveMonsterHexes);
 				List<RelicModel> options = BuildStableSelectableRunesForRarity(
 					player,
 					rarity,
@@ -49,19 +52,22 @@ internal static partial class HextechRuneSelectionCoordinator
 					excludedIds,
 					useEndlessTagWindow: modifier.IsEndlessLoopActive);
 				HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
-				HextechEnemyHexAdjustmentOptions? enemyHexOptions = fallbackMonsterHexes.Count > 0
+				HextechEnemyHexAdjustmentOptions? enemyHexOptions = fallbackActiveMonsterHexes.Count > 0
 					? new HextechEnemyHexAdjustmentOptions
 					{
-						InitialHexes = fallbackMonsterHexes,
-						ControlsEnabled = runManager.NetService.Type == NetGameType.Host && IsLocalPlayer(runManager, player),
-						RerollFunc = (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(
-							modifier,
-							rarity,
-							runState,
-							actIndex,
-							GetMonsterHexSlot(currentHexes, slotIndex),
-							rerollOrdinal,
-							CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex))
+						InitialHexes = fallbackNewMonsterHexes,
+						ExcludedHexes = fallbackActiveMonsterHexes,
+						ControlsEnabled = fallbackNewMonsterHexes.Count > 0 && runManager.NetService.Type == NetGameType.Host && IsLocalPlayer(runManager, player),
+						RerollFunc = fallbackNewMonsterHexes.Count > 0
+							? (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(
+								modifier,
+								rarity,
+								runState,
+								actIndex,
+								GetMonsterHexSlot(currentHexes, slotIndex),
+								rerollOrdinal,
+								CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex))
+							: null
 					}
 					: null;
 				RuneSelectionResult selection = await SelectRune(
@@ -70,24 +76,25 @@ internal static partial class HextechRuneSelectionCoordinator
 					options,
 					monsterHexRelic,
 					enemyHexOptions);
-				fallbackMonsterHexes = selection.ResolvedMonsterHexes.ToList();
-				monsterHexRelic = CreateMonsterHexRelic(FirstMonsterHexOrNull(fallbackMonsterHexes));
+				fallbackNewMonsterHexes = selection.ResolvedMonsterHexes.ToList();
+				fallbackActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, fallbackNewMonsterHexes);
+				monsterHexRelic = CreateMonsterHexRelic(FirstMonsterHexOrNull(fallbackNewMonsterHexes));
 				RelicModel selected = selection.SelectedRelic ?? options[0];
 				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount);
 				await RelicCmd.Obtain(selected, player);
 			}
 
-			return fallbackMonsterHexes;
+			return fallbackActiveMonsterHexes;
 		}
 
-		EnemyHexAdjustmentSyncContext? enemyHexSync = initialMonsterHexes.Count > 0
-			? CreateEnemyHexAdjustmentSyncContext(runManager, runState, synchronizer, actIndex, initialMonsterHexes)
+		EnemyHexAdjustmentSyncContext? enemyHexSync = initialNewMonsterHexes.Count > 0
+			? CreateEnemyHexAdjustmentSyncContext(runManager, runState, synchronizer, actIndex, initialNewMonsterHexes)
 			: null;
 		HashSet<ModelId> enemyRerollExcludedIdsForAllPlayers = new();
 		List<PendingRuneSelection> pendingSelections = [];
 		foreach (Player player in runState.Players)
 		{
-			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, initialMonsterHexes);
+			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player, initialActiveMonsterHexes);
 			List<RelicModel> options = BuildStableSelectableRunesForRarity(
 				player,
 				rarity,
@@ -118,7 +125,8 @@ internal static partial class HextechRuneSelectionCoordinator
 						runState,
 						actIndex,
 						rarity,
-						initialMonsterHexes,
+						initialActiveMonsterHexes,
+						initialNewMonsterHexes,
 						enemyRerollExcludedIdsForAllPlayers,
 						enemyHexSync,
 						selection),
@@ -141,7 +149,9 @@ internal static partial class HextechRuneSelectionCoordinator
 				await RelicCmd.Obtain(selectedRelic, selection.Player);
 			}
 
-			return enemyHexSync != null ? enemyHexSync.CurrentMonsterHexes : initialMonsterHexes;
+			return enemyHexSync != null
+				? CombineMonsterHexes(previousMonsterHexes, enemyHexSync.CurrentMonsterHexes)
+				: initialActiveMonsterHexes;
 		}
 		finally
 		{

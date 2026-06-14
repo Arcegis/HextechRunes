@@ -24,7 +24,27 @@ public sealed class HextechBurnPower : HextechPowerBase
 
 	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (side != Owner.Side || Amount <= 0 || !Owner.IsAlive)
+		if (Owner.Side == CombatSide.Player || side != Owner.Side)
+		{
+			return;
+		}
+
+		await ResolveBurn(new ThrowingPlayerChoiceContext(), blockable: false);
+	}
+
+	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
+	{
+		if (Owner.Side != CombatSide.Player || side != Owner.Side)
+		{
+			return;
+		}
+
+		await ResolveBurn(choiceContext, blockable: true);
+	}
+
+	private async Task ResolveBurn(PlayerChoiceContext choiceContext, bool blockable)
+	{
+		if (Amount <= 0 || !Owner.IsAlive)
 		{
 			return;
 		}
@@ -37,7 +57,13 @@ public sealed class HextechBurnPower : HextechPowerBase
 		try
 		{
 			_resolveDepth++;
-			await CreatureCmd.Damage(new ThrowingPlayerChoiceContext(), Owner, hpLoss, ValueProp.Unblockable | ValueProp.Unpowered, null, null);
+			ValueProp valueProps = ValueProp.Unpowered;
+			if (!blockable)
+			{
+				valueProps |= ValueProp.Unblockable;
+			}
+
+			await CreatureCmd.Damage(choiceContext, Owner, hpLoss, valueProps, null, null);
 		}
 		finally
 		{

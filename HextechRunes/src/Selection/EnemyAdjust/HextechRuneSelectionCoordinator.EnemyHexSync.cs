@@ -35,12 +35,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		RunState runState,
 		int actIndex,
 		HextechRarityTier rarity,
-		IReadOnlyList<MonsterHexKind> initialMonsterHexes,
+		IReadOnlyList<MonsterHexKind> activeMonsterHexes,
+		IReadOnlyList<MonsterHexKind> initialNewMonsterHexes,
 		IReadOnlySet<ModelId> enemyRerollExcludedIds,
 		EnemyHexAdjustmentSyncContext? syncContext,
 		PendingRuneSelection selection)
 	{
-		if (!selection.IsLocal || (syncContext == null && initialMonsterHexes.Count == 0))
+		if (!selection.IsLocal || (syncContext == null && activeMonsterHexes.Count == 0))
 		{
 			return null;
 		}
@@ -48,7 +49,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		bool isAuthorityLocal = syncContext != null && IsLocalPlayer(runManager, syncContext.AuthorityPlayer);
 		return new HextechEnemyHexAdjustmentOptions
 		{
-			InitialHexes = syncContext?.CurrentMonsterHexes ?? initialMonsterHexes,
+			InitialHexes = syncContext?.CurrentMonsterHexes ?? initialNewMonsterHexes,
+			ExcludedHexes = activeMonsterHexes,
 			ControlsEnabled = isAuthorityLocal,
 			RerollFunc = isAuthorityLocal
 				? (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(

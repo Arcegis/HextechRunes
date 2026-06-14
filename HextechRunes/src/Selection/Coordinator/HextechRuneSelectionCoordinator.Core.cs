@@ -89,9 +89,11 @@ internal static partial class HextechRuneSelectionCoordinator
 			(HextechRarityTier rarity, MonsterHexKind? monsterHex) = await ResolveActRoll(runState, modifier, actIndex);
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
-			IReadOnlyList<MonsterHexKind> finalMonsterHexes = ResolveMonsterHexesForAct(modifier, rarity, runState, actIndex, monsterHex);
-			MonsterHexKind? finalMonsterHex = FirstMonsterHexOrNull(finalMonsterHexes);
-			RelicModel? monsterHexRelic = CreateMonsterHexRelic(finalMonsterHex);
+			IReadOnlyList<MonsterHexKind> previousMonsterHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
+			IReadOnlyList<MonsterHexKind> newMonsterHexes = ResolveNewMonsterHexesForAct(modifier, rarity, runState, actIndex, monsterHex);
+			IReadOnlyList<MonsterHexKind> finalMonsterHexes = CombineMonsterHexes(previousMonsterHexes, newMonsterHexes);
+			MonsterHexKind? visibleMonsterHex = FirstMonsterHexOrNull(newMonsterHexes);
+			RelicModel? monsterHexRelic = CreateMonsterHexRelic(visibleMonsterHex);
 
 			NetGameType gameType = RunManager.Instance.NetService.Type;
 			if (gameType is NetGameType.Singleplayer or NetGameType.None)
@@ -110,16 +112,19 @@ internal static partial class HextechRuneSelectionCoordinator
 					HextechEnemyHexAdjustmentOptions? enemyHexOptions = finalMonsterHexes.Count > 0
 						? new HextechEnemyHexAdjustmentOptions
 						{
-							InitialHexes = finalMonsterHexes,
-							ControlsEnabled = true,
-							RerollFunc = (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(
-								modifier,
-								rarity,
-								runState,
-								actIndex,
-								GetMonsterHexSlot(currentHexes, slotIndex),
-								rerollOrdinal,
-								CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex))
+							InitialHexes = newMonsterHexes,
+							ExcludedHexes = finalMonsterHexes,
+							ControlsEnabled = newMonsterHexes.Count > 0,
+							RerollFunc = newMonsterHexes.Count > 0
+								? (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(
+									modifier,
+									rarity,
+									runState,
+									actIndex,
+									GetMonsterHexSlot(currentHexes, slotIndex),
+									rerollOrdinal,
+									CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex))
+								: null
 						}
 						: null;
 					RuneSelectionResult selection = await SelectRune(
@@ -133,9 +138,10 @@ internal static partial class HextechRuneSelectionCoordinator
 						Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection returned for stale run");
 						return;
 					}
-					finalMonsterHexes = selection.ResolvedMonsterHexes;
-					finalMonsterHex = FirstMonsterHexOrNull(finalMonsterHexes);
-					monsterHexRelic = CreateMonsterHexRelic(finalMonsterHex);
+					newMonsterHexes = selection.ResolvedMonsterHexes;
+					finalMonsterHexes = CombineMonsterHexes(previousMonsterHexes, newMonsterHexes);
+					visibleMonsterHex = FirstMonsterHexOrNull(newMonsterHexes);
+					monsterHexRelic = CreateMonsterHexRelic(visibleMonsterHex);
 					RelicModel selected = selection.SelectedRelic ?? options[0];
 					HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount);
 					await RelicCmd.Obtain(selected, player);
@@ -144,7 +150,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			else
 			{
-				finalMonsterHexes = await SelectRunesForAllPlayersMultiplayer(runState, modifier, actIndex, rarity, finalMonsterHexes, monsterHexRelic);
+				finalMonsterHexes = await SelectRunesForAllPlayersMultiplayer(runState, modifier, actIndex, rarity, previousMonsterHexes, newMonsterHexes, monsterHexRelic);
 			}
 			if (!IsCurrentRun(runState))
 			{

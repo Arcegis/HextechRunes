@@ -31,7 +31,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			MarkRelicsSeen(options);
 			modifier.RecordSeenPlayerRunes(player, options);
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
-			AddMonsterHexIconIds(seenOptionIds, enemyHexOptions?.InitialHexes);
+			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
 			HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 				options,
 				monsterHexRelic,
@@ -56,7 +56,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			MarkRelicsSeen(options);
 			modifier.RecordSeenPlayerRunes(player, options);
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
-			AddMonsterHexIconIds(seenOptionIds, enemyHexOptions?.InitialHexes);
+			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
 			HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 				options,
 				monsterHexRelic,
@@ -103,7 +103,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			MarkRelicsSeen(selection.Options);
 			modifier.RecordSeenPlayerRunes(selection.Player, selection.Options);
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(selection.Options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(selection.Player));
-			AddMonsterHexIconIds(seenOptionIds, enemyHexOptions?.InitialHexes);
+			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
 			HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 				selection.Options,
 				monsterHexRelic,
@@ -181,7 +181,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		MarkRelicsSeen(options);
 		modifier.RecordSeenPlayerRunes(player, options);
 		HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
-		AddMonsterHexIconIds(seenOptionIds, enemyHexOptions?.InitialHexes);
+		AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
 		HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 			options,
 			monsterHexRelic,
@@ -249,6 +249,18 @@ internal static partial class HextechRuneSelectionCoordinator
 		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)}");
 		RelicModel? selectedRelic = selectedIndex >= 0 && selectedIndex < currentOptions.Count ? currentOptions[selectedIndex] : null;
 		return new RuneSelectionResult(selectedRelic, currentOptions.ToList(), rerollHistory.Count, null);
+	}
+
+	private static IEnumerable<MonsterHexKind>? GetEnemyHexesExcludedFromPlayerRerolls(HextechEnemyHexAdjustmentOptions? enemyHexOptions)
+	{
+		if (enemyHexOptions == null)
+		{
+			return null;
+		}
+
+		return enemyHexOptions.ExcludedHexes.Count > 0
+			? enemyHexOptions.ExcludedHexes
+			: enemyHexOptions.InitialHexes;
 	}
 
 	private static bool TryCreateSyncedRuneOptions(Player player, IReadOnlyList<ModelId> optionIds, out List<RelicModel> options)
