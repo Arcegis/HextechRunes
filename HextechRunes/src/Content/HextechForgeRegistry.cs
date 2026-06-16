@@ -11,22 +11,28 @@ internal static class HextechForgeRegistry
 		Forge<SilverPlatingForge>(HextechRarityTier.Silver),
 		Forge<UpgradeForge>(HextechRarityTier.Silver),
 		Forge<LifeForge>(HextechRarityTier.Silver),
+		Forge<PocketForge>(HextechRarityTier.Silver),
 		Forge<PreparedForge>(HextechRarityTier.Silver),
 		Forge<NecrobinderForge>(HextechRarityTier.Silver),
 		Forge<SilverStarsForge>(HextechRarityTier.Silver),
 		Forge<SilverOrbForge>(HextechRarityTier.Silver),
+		Forge<DoomForge>(HextechRarityTier.Silver),
+		Forge<ForgingForge>(HextechRarityTier.Silver),
 
 		Forge<ConstitutionForge>(HextechRarityTier.Gold),
 		Forge<DisasterForge>(HextechRarityTier.Gold),
 		Forge<GoldLifeForge>(HextechRarityTier.Gold),
 		Forge<GoldFocusForge>(HextechRarityTier.Gold),
 		Forge<DrawForge>(HextechRarityTier.Gold),
+		Forge<RecoveryForge>(HextechRarityTier.Gold),
 		Forge<GoldUpgradeForge>(HextechRarityTier.Gold),
 		Forge<StarsForge>(HextechRarityTier.Gold),
 		Forge<OrbSlotForge>(HextechRarityTier.Gold),
 		Forge<PlatingForge>(HextechRarityTier.Gold),
 		Forge<ThornsForge>(HextechRarityTier.Gold),
 		Forge<ArtifactForge>(HextechRarityTier.Gold),
+		Forge<VenomForge>(HextechRarityTier.Gold),
+		Forge<ShrinkForge>(HextechRarityTier.Gold),
 
 		Forge<PrismaticLifeForge>(HextechRarityTier.Prismatic),
 		Forge<AttackForge>(HextechRarityTier.Prismatic),
@@ -38,7 +44,8 @@ internal static class HextechForgeRegistry
 		Forge<SlipperyForge>(HextechRarityTier.Prismatic),
 		Forge<PrismaticArtifactForge>(HextechRarityTier.Prismatic),
 		Forge<FocusForge>(HextechRarityTier.Prismatic),
-		Forge<FortuneForge>(HextechRarityTier.Prismatic)
+		Forge<FortuneForge>(HextechRarityTier.Prismatic),
+		Forge<VoidForge>(HextechRarityTier.Prismatic)
 	];
 
 	private static ForgeRegistration Forge<TForge>(HextechRarityTier rarity)

@@ -189,6 +189,28 @@ public sealed class LifeForge : HextechForgeBase
 	}
 }
 
+public sealed class PocketForge : HextechForgeBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("PotionSlots", 1m)
+	];
+
+	public override Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		Owner.AddToMaxPotionCount(Math.Max(0, DynamicVars["PotionSlots"].IntValue));
+		return Task.CompletedTask;
+	}
+}
+
 public sealed class PreparedForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -267,7 +289,7 @@ public sealed class SilverOrbForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("OrbCount", 1m)
+		new DynamicVar("OrbCount", 2m)
 	];
 
 	public override bool IsAvailableForPlayer(Player player)
@@ -289,5 +311,57 @@ public sealed class SilverOrbForge : HextechForgeBase
 			OrbModel orb = HextechStableRandom.CreateOrb((RunState)Owner.RunState, Owner, "silver-orb-forge", i, combatState.RoundNumber);
 			await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, Owner);
 		}
+	}
+}
+
+public sealed class DoomForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<DoomPower>(2m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<DoomPower>()
+	];
+
+	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
+	{
+		if (Owner == null
+			|| Owner.Creature.IsDead
+			|| target.Side != CombatSide.Enemy
+			|| result.UnblockedDamage <= 0
+			|| !IsDamageFromOwner(dealer, cardSource))
+		{
+			return;
+		}
+
+		Flash([target]);
+		await PowerCmd.Apply<DoomPower>(target, Stacked(DynamicVars["DoomPower"].BaseValue), Owner.Creature, cardSource);
+	}
+}
+
+public sealed class ForgingForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new ForgeVar("ForgeAmount", 5)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsRegentPlayer(player);
+	}
+
+	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
+	{
+		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsRegentOwner)
+		{
+			return;
+		}
+
+		Flash();
+		await ForgeCmd.Forge(Stacked(DynamicVars["ForgeAmount"].BaseValue), Owner, this);
 	}
 }

@@ -267,3 +267,22 @@ public sealed class FortuneForge : HextechForgeBase
 		return PlayerCmd.GainGold(DynamicVars.Gold.BaseValue, Owner);
 	}
 }
+
+public sealed class VoidForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<VoidFormPower>(1m)
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<VoidFormPower>(Owner.Creature, Stacked(DynamicVars["VoidFormPower"].BaseValue), Owner.Creature, null);
+	}
+}
