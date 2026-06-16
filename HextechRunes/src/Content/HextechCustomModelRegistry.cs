@@ -21,6 +21,7 @@ internal static class HextechCustomModelRegistry
 		typeof(AllInCard),
 		typeof(WhiteHoleCard),
 		typeof(SearingAttackCard),
+		typeof(ReprogramCard),
 		typeof(OstyWishCard),
 		typeof(OceanDragonSoulCard),
 		typeof(InfernalDragonSoulCard),

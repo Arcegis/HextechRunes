@@ -1,0 +1,85 @@
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Enchantments;
+
+namespace HextechRunes;
+
+public sealed class InkshadowRune : HextechRelicBase
+{
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<Shiv>(),
+		HoverTipFactory.FromCard<SovereignBlade>(),
+		.. HoverTipFactory.FromEnchantment<Inky>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsSilentPlayer(player);
+	}
+
+	internal static bool TryApplyForOwner(CardModel? card, Player? owner, bool flash = true)
+	{
+		return owner?.GetRelic<InkshadowRune>() is InkshadowRune rune
+			&& rune.TryApplyInkshadow(card, flash);
+	}
+
+#if STS2_104_OR_NEWER
+	public override Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
+#else
+	public override Task AfterCardGeneratedForCombat(CardModel card, bool addedByPlayer)
+#endif
+	{
+		TryApplyInkshadow(card);
+		return Task.CompletedTask;
+	}
+
+	public override Task AfterCardEnteredCombat(CardModel card)
+	{
+		TryApplyInkshadow(card, flash: false);
+		return Task.CompletedTask;
+	}
+
+	public override bool TryModifyCardBeingAddedToDeck(CardModel card, out CardModel? newCard)
+	{
+		newCard = null;
+		if (!TryApplyInkshadow(card))
+		{
+			return false;
+		}
+
+		newCard = card;
+		return true;
+	}
+
+	private bool TryApplyInkshadow(CardModel? card, bool flash = true)
+	{
+		if (Owner == null
+			|| card == null
+			|| card.Owner != Owner
+			|| !HextechKnifeHelper.IsShivLike(card, Owner)
+			|| card.Enchantment is Inky
+			|| card.Enchantment != null)
+		{
+			return false;
+		}
+
+		Inky enchantment = (Inky)ModelDb.Enchantment<Inky>().ToMutable();
+		if (!enchantment.CanEnchant(card))
+		{
+			return false;
+		}
+
+		CardCmd.Enchant(enchantment, card, 1m);
+		if (flash)
+		{
+			Flash();
+		}
+
+		return true;
+	}
+}

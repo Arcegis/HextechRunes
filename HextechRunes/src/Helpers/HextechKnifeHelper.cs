@@ -88,6 +88,7 @@ internal static class HextechKnifeHelper
 		{
 			card.AddKeyword(CardKeyword.Exhaust);
 		}
+		InkshadowRune.TryApplyForOwner(card, card.Owner);
 		card.InvokeEnergyCostChanged();
 	}
 
