@@ -171,7 +171,7 @@ public sealed class HextechAttackReplayPower : PowerModel
 
 public sealed class HextechPlayerSlowPower : HextechPowerBase
 {
-	internal const decimal CardPlaySlowIncrease = 10m;
+	internal const decimal CardPlaySlowIncrease = 9m;
 	private int _cardsPlayedThisTurn;
 
 	public int SavedCardsPlayedThisTurn

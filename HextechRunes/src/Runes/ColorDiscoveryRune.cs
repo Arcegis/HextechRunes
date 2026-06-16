@@ -3,7 +3,6 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
@@ -11,6 +10,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HextechRunes;
 
@@ -18,6 +18,20 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 {
 	private ModelId _pendingRewardCardId = ModelId.none;
 	private bool _offeredThisCombat;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public ModelId SavedPendingRewardCardId
+	{
+		get => _pendingRewardCardId;
+		set => _pendingRewardCardId = value;
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public bool SavedOfferedThisCombat
+	{
+		get => _offeredThisCombat;
+		set => _offeredThisCombat = value;
+	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -27,14 +41,14 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		_offeredThisCombat = false;
-		_pendingRewardCardId = ModelId.none;
+		SavedOfferedThisCombat = false;
+		SavedPendingRewardCardId = ModelId.none;
 		return Task.CompletedTask;
 	}
 
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
-		if (_offeredThisCombat
+		if (SavedOfferedThisCombat
 			|| player != Owner
 			|| Owner == null
 			|| Owner.Creature.IsDead
@@ -44,7 +58,7 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 			return;
 		}
 
-		_offeredThisCombat = true;
+		SavedOfferedThisCombat = true;
 		IEnumerable<CardModel> selected = await CardSelectCmd.FromSimpleGrid(
 			choiceContext,
 			options,
@@ -56,39 +70,24 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 			return;
 		}
 
-		_pendingRewardCardId = card.CanonicalInstance?.Id ?? card.Id;
+		SavedPendingRewardCardId = card.CanonicalInstance?.Id ?? card.Id;
 		card.SetToFreeThisCombat();
 
 		Flash();
 		await HextechCardGeneration.AddGeneratedCardToCombat(card, PileType.Hand, addedByPlayer: true);
 	}
 
-	public override bool TryModifyCardRewardOptionsLate(
-		Player player,
-		List<CardCreationResult> cardRewardOptions,
-		CardCreationOptions creationOptions)
+	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		if (player != Owner || _pendingRewardCardId.Equals(ModelId.none))
+		if (Owner == null || Owner.Creature.IsDead || SavedPendingRewardCardId.Equals(ModelId.none))
 		{
-			return false;
+			return Task.CompletedTask;
 		}
 
-		CardModel canonicalCard = ModelDb.GetById<CardModel>(_pendingRewardCardId);
-		CardCreationOptions options = new CardCreationOptions(
-				[canonicalCard],
-				creationOptions.Source,
-				CardRarityOddsType.Uniform)
-			.WithFlags(creationOptions.Flags | CardCreationFlags.NoModifyHooks);
-		CardCreationResult? result = CardFactory.CreateForReward(player, 1, options).FirstOrDefault();
-		if (result == null)
-		{
-			return false;
-		}
-
-		cardRewardOptions.Add(result);
-		_pendingRewardCardId = ModelId.none;
+		room.AddExtraReward(Owner, new ColorDiscoveryCardReward(SavedPendingRewardCardId, Owner));
+		SavedPendingRewardCardId = ModelId.none;
 		Flash();
-		return true;
+		return Task.CompletedTask;
 	}
 
 	private IEnumerable<CardModel> PickOptions(HextechCombatState combatState)

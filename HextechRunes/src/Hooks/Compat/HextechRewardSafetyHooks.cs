@@ -48,6 +48,22 @@ internal static class HextechRewardSafetyHooks
 			return;
 		}
 
+		if (save.RewardType == RewardType.Card
+			&& save.CustomDescriptionEncounterSourceId == ModelDb.GetId<ColorDiscoveryRune>()
+			&& save.PredeterminedModelId != ModelId.none)
+		{
+			__result = ColorDiscoveryCardReward.FromSavedReward(save, player);
+			return;
+		}
+
+		if (save.RewardType == RewardType.SpecialCard
+			&& save.PredeterminedModelId == ModelDb.GetId<ColorDiscoveryRune>()
+			&& save.SpecialCard != null)
+		{
+			__result = ColorDiscoveryCardReward.FromSavedSpecialCardReward(save, __result, player);
+			return;
+		}
+
 		if (save.CustomDescriptionEncounterSourceId == ModelDb.GetId<RandomForgeShopRelic>()
 			&& save.CardPoolIds.Count > 0)
 		{

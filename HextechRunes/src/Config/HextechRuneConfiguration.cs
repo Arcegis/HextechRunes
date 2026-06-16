@@ -9,12 +9,17 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 4;
+	private const int CurrentConfigVersion = 5;
 	private const int EnemyHexActCount = 3;
 	private const int MinEnemyHexCount = 0;
 	private const int MaxEnemyHexCount = 6;
 	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 1, 1 ];
 	private static readonly int[] LegacyEnemyHexCountsDefault = [ 1, 2, 3 ];
+	private static readonly Type[] Version5DefaultDisabledRuneTypes =
+	[
+		typeof(DemonFormUpgradeRune),
+		typeof(TyrannyUpgradeRune)
+	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -158,13 +163,18 @@ internal static class HextechRuneConfiguration
 
 	private static RuneConfig NormalizeLoadedConfig(RuneConfig config)
 	{
+		int previousConfigVersion = config.ConfigVersion;
 		HashSet<string> disabledIds = NormalizeConfigDisabledIds(config.DisabledPlayerRuneIds);
 		bool shouldMigrateLegacyEnemyHexDefault =
-			config.ConfigVersion < CurrentConfigVersion
+			previousConfigVersion < CurrentConfigVersion
 			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, LegacyEnemyHexCountsDefault);
-		if (config.ConfigVersion < CurrentConfigVersion)
+		if (previousConfigVersion < 4)
 		{
 			disabledIds.UnionWith(GetDefaultDisabledPlayerRuneIds());
+		}
+		else if (previousConfigVersion < 5)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version5DefaultDisabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;
@@ -225,6 +235,18 @@ internal static class HextechRuneConfiguration
 			.Select(static id => id.Entry)
 			.ToHashSet(StringComparer.Ordinal);
 		return NormalizeIds(ids)
+			.Where(configurableIds.Contains)
+			.ToHashSet(StringComparer.Ordinal);
+	}
+
+	private static HashSet<string> GetPlayerRuneIds(IEnumerable<Type> runeTypes)
+	{
+		HashSet<string> configurableIds = HextechCatalog.GetConfigurablePlayerRuneIds()
+			.Select(static id => id.Entry)
+			.ToHashSet(StringComparer.Ordinal);
+		return runeTypes
+			.Select(ModelDb.GetId)
+			.Select(static id => id.Entry)
 			.Where(configurableIds.Contains)
 			.ToHashSet(StringComparer.Ordinal);
 	}
