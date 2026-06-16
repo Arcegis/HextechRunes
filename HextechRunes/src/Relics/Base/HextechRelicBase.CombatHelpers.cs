@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -74,6 +75,28 @@ public abstract partial class HextechRelicBase
 	protected bool IsDamageFromOwner(Creature? dealer, CardModel? cardSource)
 	{
 		return HextechCombatHistoryHelper.IsDamageFromOwner(Owner, dealer, cardSource);
+	}
+
+	protected bool IsPotionUseOwnedByOrTargetingOwner(PotionModel? potion, Creature? target)
+	{
+		if (Owner == null)
+		{
+			return false;
+		}
+
+		if (target == Owner.Creature)
+		{
+			return true;
+		}
+
+		try
+		{
+			return potion?.Owner == Owner;
+		}
+		catch (InvalidOperationException)
+		{
+			return false;
+		}
 	}
 
 	protected bool TryGetOwnedEnemyDebuffTarget(PowerModel power, decimal amount, Creature? applier, out Creature? target)

@@ -170,6 +170,86 @@ internal static class ThoughtOverwriteKeywordPersistenceHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), nameof(CardModel.FromSerializable), BindingFlags.Static | BindingFlags.Public, typeof(SerializableCard)),
 			postfix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardFromSerializablePostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.DowngradeInternal), BindingFlags.Instance | BindingFlags.Public),
+			prefix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPrefix)),
+			postfix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.FinalizeUpgradeInternal), BindingFlags.Instance | BindingFlags.Public),
+			prefix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPrefix)),
+			postfix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPostfix)));
+	}
+
+	private readonly struct KeywordPersistenceSnapshot
+	{
+		private readonly bool _thoughtOverwrite;
+		private readonly bool _curtainCall;
+		private readonly bool _cosplayInnate;
+		private readonly bool _corruptedBranchInnate;
+
+		private KeywordPersistenceSnapshot(
+			bool thoughtOverwrite,
+			bool curtainCall,
+			bool cosplayInnate,
+			bool corruptedBranchInnate)
+		{
+			_thoughtOverwrite = thoughtOverwrite;
+			_curtainCall = curtainCall;
+			_cosplayInnate = cosplayInnate;
+			_corruptedBranchInnate = corruptedBranchInnate;
+		}
+
+		public static KeywordPersistenceSnapshot Capture(CardModel? card)
+		{
+			if (card == null)
+			{
+				return default;
+			}
+
+			return new KeywordPersistenceSnapshot(
+				ThoughtOverwriteKeywordPersistence.ShouldPersist(card),
+				CurtainCallKeywordPersistence.ShouldPersist(card),
+				CosplayInnateKeywordPersistence.ShouldPersist(card),
+				CorruptedBranchInnateKeywordPersistence.ShouldPersist(card));
+		}
+
+		public void Restore(CardModel? card)
+		{
+			if (card == null)
+			{
+				return;
+			}
+
+			if (_thoughtOverwrite)
+			{
+				ThoughtOverwriteKeywordPersistence.Restore(card);
+			}
+
+			if (_curtainCall)
+			{
+				CurtainCallKeywordPersistence.Restore(card);
+			}
+
+			if (_cosplayInnate)
+			{
+				CosplayInnateKeywordPersistence.Restore(card);
+			}
+
+			if (_corruptedBranchInnate)
+			{
+				CorruptedBranchInnateKeywordPersistence.Restore(card);
+			}
+		}
+	}
+
+	private static void CardKeywordRebuildPrefix(CardModel __instance, out KeywordPersistenceSnapshot __state)
+	{
+		__state = KeywordPersistenceSnapshot.Capture(__instance);
+	}
+
+	private static void CardKeywordRebuildPostfix(CardModel __instance, KeywordPersistenceSnapshot __state)
+	{
+		__state.Restore(__instance);
 	}
 
 	private static void CardToSerializablePostfix(CardModel __instance, SerializableCard __result)
