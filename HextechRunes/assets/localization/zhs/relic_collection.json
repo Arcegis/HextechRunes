@@ -21,6 +21,8 @@
   "HEXTECH_ENEMY_COUNT_ACT3": "第三幕+",
   "HEXTECH_CONFIG_DESCRIPTION": "点击遗物图标切换启用或禁用；触屏长按可查看说明。禁用的玩家海克斯不会出现在你的海克斯选择中。联机时每名玩家使用各自配置过滤自己的刷新池。",
   "HEXTECH_CONFIG_SUMMARY": "当前启用 {0}/{1} 个可抽取玩家海克斯。",
+  "HEXTECH_CONFIG_SHOW_HELP": "显示说明",
+  "HEXTECH_CONFIG_HIDE_HELP": "收起说明",
   "HEXTECH_CONFIG_ENABLE_ALL": "全部启用",
   "HEXTECH_CONFIG_DISABLE_ALL": "全部禁用",
   "HEXTECH_CONFIG_RESET": "恢复默认",

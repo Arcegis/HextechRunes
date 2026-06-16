@@ -23,6 +23,7 @@ public sealed class RainbowUpgradeRune : CardUpgradeRuneBase<Rainbow>
 		HoverTipFactory.FromOrb<LightningOrb>(),
 		HoverTipFactory.FromOrb<FrostOrb>(),
 		HoverTipFactory.FromOrb<DarkOrb>(),
+		HoverTipFactory.FromOrb<GlassOrb>(),
 		HoverTipFactory.FromOrb<PlasmaOrb>()
 	];
 
@@ -56,6 +57,7 @@ public sealed class RainbowUpgradeRune : CardUpgradeRuneBase<Rainbow>
 		await OrbCmd.Channel<LightningOrb>(choiceContext, card.Owner);
 		await OrbCmd.Channel<FrostOrb>(choiceContext, card.Owner);
 		await OrbCmd.Channel<DarkOrb>(choiceContext, card.Owner);
+		await OrbCmd.Channel<GlassOrb>(choiceContext, card.Owner);
 		await OrbCmd.Channel<PlasmaOrb>(choiceContext, card.Owner);
 	}
 }

@@ -151,6 +151,25 @@ public sealed class DrawForge : HextechForgeBase
 	}
 }
 
+public sealed class RecoveryForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new HealVar(1m)
+	];
+
+	public override Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (Owner == null || player != Owner || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash([Owner.Creature]);
+		return CreatureCmd.Heal(Owner.Creature, Stacked(DynamicVars.Heal.BaseValue));
+	}
+}
+
 public sealed class GoldUpgradeForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;
@@ -220,7 +239,7 @@ public sealed class OrbSlotForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("OrbSlots", 1m)
+		new DynamicVar("OrbSlots", 2m)
 	];
 
 	public override bool IsAvailableForPlayer(Player player)
@@ -237,6 +256,62 @@ public sealed class OrbSlotForge : HextechForgeBase
 
 		Flash();
 		await OrbCmd.AddSlots(Owner, Math.Max(0, FloorToInt(Stacked(DynamicVars["OrbSlots"].BaseValue))));
+	}
+}
+
+public sealed class VenomForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<EnvenomPower>(1m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<PoisonPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<EnvenomPower>(Owner.Creature, Stacked(DynamicVars["EnvenomPower"].BaseValue), Owner.Creature, null);
+	}
+}
+
+public sealed class ShrinkForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<ShrinkPower>(2m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<ShrinkPower>()
+	];
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		{
+			return;
+		}
+
+		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies
+			.Where(static enemy => enemy.IsAlive)
+			.ToList();
+		if (enemies.Count == 0)
+		{
+			return;
+		}
+
+		Flash(enemies);
+		await PowerCmd.Apply<ShrinkPower>(enemies, Stacked(DynamicVars["ShrinkPower"].BaseValue), Owner.Creature, null);
 	}
 }
 

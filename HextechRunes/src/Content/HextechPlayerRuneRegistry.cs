@@ -71,7 +71,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<BloodlettingUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 15, tagKey: "BLOODLETTING"),
         Rune<BattleTranceUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 16, tagKey: "RESOURCE"),
         Rune<JuggernautUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 18, tagKey: "OUTPUT"),
-        Rune<DemonFormUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 20, tagKey: "SURVIVAL"),
+        Rune<DemonFormUpgradeRune>(HextechRarityTier.Silver, flags: PlayerRuneFlags.Disabled, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 20, tagKey: "SURVIVAL"),
         Rune<ExposeUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 18, tagKey: "COMPREHENSIVE"),
         Rune<DecayRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 21, tagKey: "OUTPUT"),
         Rune<HiddenGemUpgradeRune>(HextechRarityTier.Silver, tagKey: "COMPREHENSIVE"),
@@ -97,7 +97,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<AutomationUpgradeRune>(HextechRarityTier.Silver, tagKey: "RESOURCE"),
         Rune<DualcastUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 22, tagKey: "ORB"),
         Rune<KnowThyPlaceUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 15, tagKey: "COMPREHENSIVE"),
-        Rune<TyrannyUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 18, tagKey: "VOID"),
+        Rune<TyrannyUpgradeRune>(HextechRarityTier.Silver, flags: PlayerRuneFlags.Disabled, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 18, tagKey: "VOID"),
         Rune<VoidFormUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 19, tagKey: "RESOURCE"),
         Rune<MentalShieldRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
         Rune<PacifistRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
@@ -106,6 +106,12 @@ internal static class HextechPlayerRuneRegistry
         Rune<BrutalForceRune>(HextechRarityTier.Silver, tagKey: "OUTPUT"),
         Rune<TransmuteGoldRune>(HextechRarityTier.Silver, tagKey: "RANDOM"),
         Rune<UniversalScopeRune>(HextechRarityTier.Silver, tagKey: "RESOURCE"),
+        Rune<DullBladeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 22, tagKey: "BLOODLETTING"),
+        Rune<ShriekUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 23, tagKey: "COMPREHENSIVE"),
+        Rune<DeadwoodRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 28, tagKey: "VOID"),
+        Rune<BoneBreakUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 29, tagKey: "SUMMON"),
+        Rune<UndyingUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 30, tagKey: "VOID"),
+        Rune<ReprogramRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 24, tagKey: "COMPREHENSIVE"),
 
         Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
         Rune<TranscendentEvilRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.ThirdActExcluded, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 3, tagKey: "STACKING"),
@@ -157,7 +163,6 @@ internal static class HextechPlayerRuneRegistry
         Rune<StatsOnStatsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
         Rune<LifeFlowRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 1, tagKey: "EXHAUST"),
         Rune<RekindleRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 4, tagKey: "EXHAUST"),
-        Rune<CorruptedBranchRune>(HextechRarityTier.Gold, tagKey: "EXHAUST"),
         Rune<TrickLicenseRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 2, tagKey: "TRICK"),
         Rune<GalacticGiftRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 1, tagKey: "STARLIGHT"),
         Rune<SomethingFromNothingRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 2, tagKey: "VOID"),
@@ -220,6 +225,12 @@ internal static class HextechPlayerRuneRegistry
         Rune<ShrinkRayRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<TransmutePrismaticRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
         Rune<MoreUniversalScopeRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
+        Rune<SnakebiteUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 24, tagKey: "POISON"),
+        Rune<InkshadowRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 25, tagKey: "SHIV"),
+        Rune<SkyDrillUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 21, tagKey: "OUTPUT"),
+        Rune<ChargeUpRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
+        Rune<AutoPatrolRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 31, tagKey: "SUMMON"),
+        Rune<DeathHarvestRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
 
         Rune<EurekaRune>(HextechRarityTier.Prismatic, tagKey: "RESOURCE"),
         Rune<InfiniteLoopRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.ThirdActExcluded, tagKey: "STACKING"),
@@ -234,6 +245,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<FeelTheBurnRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
         Rune<MikaelsBlessingRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
         Rune<EarthAwakensRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
+        Rune<CorruptedBranchRune>(HextechRarityTier.Prismatic, tagKey: "EXHAUST"),
         Rune<SymphonyOfWarRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
         Rune<UnmovableMountainRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),
         Rune<MysteryRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
@@ -313,7 +325,8 @@ internal static class HextechPlayerRuneRegistry
         Rune<RegretRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),
         Rune<ReforgedHelmetRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 19, tagKey: "OUTPUT"),
         Rune<MostUniversalScopeRune>(HextechRarityTier.Prismatic, tagKey: "RESOURCE"),
-        Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic, tagKey: "RANDOM")
+        Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic, tagKey: "RANDOM"),
+        Rune<ExtremeSpeedRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 26, tagKey: "RESOURCE")
 	];
 
 	private static PlayerRuneRegistration Rune<TRune>(

@@ -21,6 +21,8 @@
   "HEXTECH_ENEMY_COUNT_ACT3": "Act 3+",
   "HEXTECH_CONFIG_DESCRIPTION": "Click a relic icon to enable or disable it; touch and hold to inspect it. Disabled player Hextech runes will not appear in your rune choices. In multiplayer, each player filters their own refresh pool with their own config.",
   "HEXTECH_CONFIG_SUMMARY": "{0}/{1} selectable player Hextech runes are currently enabled.",
+  "HEXTECH_CONFIG_SHOW_HELP": "Show Help",
+  "HEXTECH_CONFIG_HIDE_HELP": "Hide Help",
   "HEXTECH_CONFIG_ENABLE_ALL": "Enable All",
   "HEXTECH_CONFIG_DISABLE_ALL": "Disable All",
   "HEXTECH_CONFIG_RESET": "Reset",

@@ -1,0 +1,75 @@
+using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
+
+namespace HextechRunes;
+
+public sealed class ExtremeSpeedRune : HextechRelicBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("MaxHpLoss", 5m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromCard<Adrenaline>()
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsSilentPlayer(player);
+	}
+
+	public override async Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return;
+		}
+
+		List<CardModel> transformableCards = Owner.Deck.Cards
+			.Where(static card => card.IsTransformable)
+			.ToList();
+		if (transformableCards.Count == 0)
+		{
+			return;
+		}
+
+		IEnumerable<CardModel> selected = await CardSelectCmd.FromDeckGeneric(
+			Owner,
+			new CardSelectorPrefs(CardSelectorPrefs.TransformSelectionPrompt, 0, transformableCards.Count)
+			{
+				Cancelable = true,
+				RequireManualConfirmation = true
+			},
+			static card => card.IsTransformable);
+
+		List<CardTransformation> transformations = selected
+			.Select(card => CardTransformUpgradeHelper.CreateFixedReplacementTransformation(
+				card,
+				Owner.RunState.CreateCard<Adrenaline>(Owner)))
+			.ToList();
+		if (transformations.Count == 0)
+		{
+			return;
+		}
+
+		Flash();
+		await CardCmd.Transform(transformations, null, CardPreviewStyle.GridLayout);
+		await CreatureCmd.LoseMaxHp(
+			new BlockingPlayerChoiceContext(),
+			Owner.Creature,
+			transformations.Count * DynamicVars["MaxHpLoss"].BaseValue,
+			isFromCard: false);
+	}
+}

@@ -20,6 +20,9 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindForgeSelection = 5;
 	private const int ChoiceKindRandomRuneGrant = 6;
 	private const int EnemyHexAdjustmentListVersion = -2;
+	private const int StableModelIdListVersion = -3;
+	private const int MaxStableModelIdCount = 64;
+	private const int MaxStableModelIdLength = 128;
 
 	public static PlayerChoiceResult CreateActRoll(
 		int actIndex,
@@ -118,11 +121,7 @@ internal static class HextechChoiceCodec
 	{
 		List<int> payload = [ Magic, ChoiceKindRuneSelection, selectedIndex, rerollHistory.Count ];
 		payload.AddRange(rerollHistory);
-		if (TryEncodeRuneOptionOrdinals(finalOptions, out List<int> optionOrdinals))
-		{
-			payload.Add(optionOrdinals.Count);
-			payload.AddRange(optionOrdinals);
-		}
+		AppendStableModelIdList(payload, finalOptions.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
 
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
@@ -162,6 +161,11 @@ internal static class HextechChoiceCodec
 		if (payload.Count <= cursor)
 		{
 			return true;
+		}
+
+		if (payload[cursor] == StableModelIdListVersion)
+		{
+			return TryDecodeStableModelIdList(payload, cursor, out finalOptionIds, out _);
 		}
 
 		int optionCount = Math.Max(0, payload[cursor]);
@@ -218,17 +222,8 @@ internal static class HextechChoiceCodec
 
 	public static PlayerChoiceResult CreateRandomRuneGrant(IReadOnlyList<ModelId> runeIds)
 	{
-		List<int> payload = [ Magic, ChoiceKindRandomRuneGrant, runeIds.Count ];
-		foreach (ModelId id in runeIds)
-		{
-			if (!PlayerRuneOrdinalById.Value.TryGetValue(id, out int ordinal))
-			{
-				return PlayerChoiceResult.FromIndexes([ Magic, ChoiceKindRandomRuneGrant, 0 ]);
-			}
-
-			payload.Add(ordinal);
-		}
-
+		List<int> payload = [ Magic, ChoiceKindRandomRuneGrant ];
+		AppendStableModelIdList(payload, runeIds);
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
@@ -246,6 +241,11 @@ internal static class HextechChoiceCodec
 			|| payload[1] != ChoiceKindRandomRuneGrant)
 		{
 			return false;
+		}
+
+		if (payload[2] == StableModelIdListVersion)
+		{
+			return TryDecodeStableModelIdList(payload, 2, out runeIds, out _);
 		}
 
 		int count = Math.Max(0, payload[2]);
@@ -282,11 +282,7 @@ internal static class HextechChoiceCodec
 	public static PlayerChoiceResult CreateForgeSelection(int selectedIndex, IReadOnlyList<RelicModel> options)
 	{
 		List<int> payload = [ Magic, ChoiceKindForgeSelection, selectedIndex ];
-		if (TryEncodeForgeOptionOrdinals(options, out List<int> optionOrdinals))
-		{
-			payload.Add(optionOrdinals.Count);
-			payload.AddRange(optionOrdinals);
-		}
+		AppendStableModelIdList(payload, options.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
 
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
@@ -312,6 +308,11 @@ internal static class HextechChoiceCodec
 		if (payload.Count <= 3)
 		{
 			return true;
+		}
+
+		if (payload[3] == StableModelIdListVersion)
+		{
+			return TryDecodeStableModelIdList(payload, 3, out optionIds, out _);
 		}
 
 		int optionCount = Math.Max(0, payload[3]);
@@ -362,6 +363,85 @@ internal static class HextechChoiceCodec
 		}
 
 		id = ids[ordinal];
+		return true;
+	}
+
+	private static void AppendStableModelIdList(List<int> payload, IEnumerable<ModelId> modelIds)
+	{
+		ModelId[] ids = modelIds.ToArray();
+		payload.Add(StableModelIdListVersion);
+		payload.Add(ids.Length);
+		foreach (ModelId id in ids)
+		{
+			string serialized = id.ToString();
+			payload.Add(serialized.Length);
+			foreach (char ch in serialized)
+			{
+				payload.Add(ch);
+			}
+		}
+	}
+
+	private static bool TryDecodeStableModelIdList(List<int> payload, int cursor, out List<ModelId> modelIds, out int nextCursor)
+	{
+		modelIds = [];
+		nextCursor = cursor;
+		if (payload.Count <= cursor || payload[cursor] != StableModelIdListVersion)
+		{
+			return false;
+		}
+
+		cursor++;
+		if (payload.Count <= cursor)
+		{
+			return false;
+		}
+
+		int count = payload[cursor++];
+		if (count < 0 || count > MaxStableModelIdCount)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < count; i++)
+		{
+			if (payload.Count <= cursor)
+			{
+				return false;
+			}
+
+			int length = payload[cursor++];
+			if (length < 0 || length > MaxStableModelIdLength || payload.Count < cursor + length)
+			{
+				return false;
+			}
+
+			char[] chars = new char[length];
+			for (int j = 0; j < length; j++)
+			{
+				int value = payload[cursor + j];
+				if (value < char.MinValue || value > char.MaxValue)
+				{
+					return false;
+				}
+
+				chars[j] = (char)value;
+			}
+
+			try
+			{
+				modelIds.Add(ModelId.Deserialize(new string(chars)));
+			}
+			catch
+			{
+				modelIds.Clear();
+				return false;
+			}
+
+			cursor += length;
+		}
+
+		nextCursor = cursor;
 		return true;
 	}
 

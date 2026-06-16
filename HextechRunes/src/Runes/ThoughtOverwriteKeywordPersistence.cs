@@ -160,6 +160,44 @@ internal static class CorruptedBranchInnateKeywordPersistence
 	}
 }
 
+internal static class UndyingEtherealKeywordPersistence
+{
+	private static readonly ConditionalWeakTable<CardModel, Marker> TrackedCards = new();
+
+	private sealed class Marker
+	{
+	}
+
+	public static void Track(CardModel? card)
+	{
+		if (card == null)
+		{
+			return;
+		}
+
+		TrackedCards.GetValue(card, static _ => new Marker());
+	}
+
+	public static bool IsTracked(CardModel? card)
+	{
+		return card != null && TrackedCards.TryGetValue(card, out _);
+	}
+
+	public static void Restore(CardModel card)
+	{
+		Track(card);
+		if (!card.Keywords.Contains(CardKeyword.Ethereal))
+		{
+			card.AddKeyword(CardKeyword.Ethereal);
+		}
+	}
+
+	public static bool ShouldPersist(CardModel card)
+	{
+		return IsTracked(card) || IsTracked(card.DeckVersion);
+	}
+}
+
 internal static class ThoughtOverwriteKeywordPersistenceHooks
 {
 	public static void Install(Harmony harmony)
@@ -170,6 +208,95 @@ internal static class ThoughtOverwriteKeywordPersistenceHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), nameof(CardModel.FromSerializable), BindingFlags.Static | BindingFlags.Public, typeof(SerializableCard)),
 			postfix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardFromSerializablePostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.DowngradeInternal), BindingFlags.Instance | BindingFlags.Public),
+			prefix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPrefix)),
+			postfix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.FinalizeUpgradeInternal), BindingFlags.Instance | BindingFlags.Public),
+			prefix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPrefix)),
+			postfix: new HarmonyMethod(typeof(ThoughtOverwriteKeywordPersistenceHooks), nameof(CardKeywordRebuildPostfix)));
+	}
+
+	private readonly struct KeywordPersistenceSnapshot
+	{
+		private readonly bool _thoughtOverwrite;
+		private readonly bool _curtainCall;
+		private readonly bool _cosplayInnate;
+		private readonly bool _corruptedBranchInnate;
+		private readonly bool _undyingEthereal;
+
+		private KeywordPersistenceSnapshot(
+			bool thoughtOverwrite,
+			bool curtainCall,
+			bool cosplayInnate,
+			bool corruptedBranchInnate,
+			bool undyingEthereal)
+		{
+			_thoughtOverwrite = thoughtOverwrite;
+			_curtainCall = curtainCall;
+			_cosplayInnate = cosplayInnate;
+			_corruptedBranchInnate = corruptedBranchInnate;
+			_undyingEthereal = undyingEthereal;
+		}
+
+		public static KeywordPersistenceSnapshot Capture(CardModel? card)
+		{
+			if (card == null)
+			{
+				return default;
+			}
+
+			return new KeywordPersistenceSnapshot(
+				ThoughtOverwriteKeywordPersistence.ShouldPersist(card),
+				CurtainCallKeywordPersistence.ShouldPersist(card),
+				CosplayInnateKeywordPersistence.ShouldPersist(card),
+				CorruptedBranchInnateKeywordPersistence.ShouldPersist(card),
+				UndyingEtherealKeywordPersistence.ShouldPersist(card));
+		}
+
+		public void Restore(CardModel? card)
+		{
+			if (card == null)
+			{
+				return;
+			}
+
+			if (_thoughtOverwrite)
+			{
+				ThoughtOverwriteKeywordPersistence.Restore(card);
+			}
+
+			if (_curtainCall)
+			{
+				CurtainCallKeywordPersistence.Restore(card);
+			}
+
+			if (_cosplayInnate)
+			{
+				CosplayInnateKeywordPersistence.Restore(card);
+			}
+
+			if (_corruptedBranchInnate)
+			{
+				CorruptedBranchInnateKeywordPersistence.Restore(card);
+			}
+
+			if (_undyingEthereal)
+			{
+				UndyingEtherealKeywordPersistence.Restore(card);
+			}
+		}
+	}
+
+	private static void CardKeywordRebuildPrefix(CardModel __instance, out KeywordPersistenceSnapshot __state)
+	{
+		__state = KeywordPersistenceSnapshot.Capture(__instance);
+	}
+
+	private static void CardKeywordRebuildPostfix(CardModel __instance, KeywordPersistenceSnapshot __state)
+	{
+		__state.Restore(__instance);
 	}
 
 	private static void CardToSerializablePostfix(CardModel __instance, SerializableCard __result)
@@ -193,6 +320,11 @@ internal static class ThoughtOverwriteKeywordPersistenceHooks
 		{
 			AddMarker(__result, CorruptedBranchRune.InnateMarkerSavedPropertyName);
 		}
+
+		if (UndyingEtherealKeywordPersistence.ShouldPersist(__instance))
+		{
+			AddMarker(__result, UndyingUpgradeRune.EtherealMarkerSavedPropertyName);
+		}
 	}
 
 	private static void CardFromSerializablePostfix(SerializableCard save, CardModel __result)
@@ -215,6 +347,11 @@ internal static class ThoughtOverwriteKeywordPersistenceHooks
 		if (HasMarker(save.Props, CorruptedBranchRune.InnateMarkerSavedPropertyName))
 		{
 			CorruptedBranchInnateKeywordPersistence.Restore(__result);
+		}
+
+		if (HasMarker(save.Props, UndyingUpgradeRune.EtherealMarkerSavedPropertyName))
+		{
+			UndyingEtherealKeywordPersistence.Restore(__result);
 		}
 	}
 

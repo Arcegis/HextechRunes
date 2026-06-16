@@ -159,9 +159,19 @@ internal static class HextechForgeSelectionCoordinator
 			return fallbackOptions[0];
 		}
 
-		IReadOnlyList<RelicModel> finalOptions = optionIds.Count > 0
-			? optionIds.Select(id => ModelDb.GetById<RelicModel>(id).ToMutable()).ToList()
-			: fallbackOptions;
+		IReadOnlyList<RelicModel> finalOptions = fallbackOptions;
+		if (optionIds.Count > 0)
+		{
+			try
+			{
+				finalOptions = optionIds.Select(id => ModelDb.GetById<RelicModel>(id).ToMutable()).ToList();
+			}
+			catch (Exception ex)
+			{
+				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Failed to load synced option model; falling back to local options: player={player.NetId} context={context} error={ex.Message}");
+			}
+		}
+
 		if (selectedIndex < 0 || selectedIndex >= finalOptions.Count)
 		{
 			Log.Warn($"[{ModInfo.Id}][ForgeChoice] Invalid selected index: player={player.NetId} index={selectedIndex} count={finalOptions.Count} context={context}");

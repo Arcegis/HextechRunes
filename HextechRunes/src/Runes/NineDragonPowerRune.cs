@@ -65,7 +65,7 @@ public sealed class NineDragonPowerRune : HextechRelicBase
 
 	public override async Task AfterPotionUsed(PotionModel potion, Creature? target)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner == null || Owner.Creature.IsDead || !IsPotionUseOwnedByOrTargetingOwner(potion, target))
 		{
 			return;
 		}
