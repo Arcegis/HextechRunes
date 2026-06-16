@@ -337,7 +337,21 @@
     "MOST_UNIVERSAL_SCOPE_RUNE": "最万用的瞄准镜",
     "STARLIGHT_SPARKLE_RUNE": "星光闪闪",
     "COSPLAY_RUNE": "COSPLAY",
-    "GOLD_STAR_RELIC": "金星"
+    "GOLD_STAR_RELIC": "金星",
+    "CORRUPTED_BRANCH_RUNE": "腐化树枝",
+    "DULL_BLADE_RUNE": "钝刀片",
+    "SHRIEK_UPGRADE_RUNE": "升级：尖啸",
+    "SNAKEBITE_UPGRADE_RUNE": "升级：蛇咬",
+    "INKSHADOW_RUNE": "墨影",
+    "EXTREME_SPEED_RUNE": "极限速度",
+    "SKY_DRILL_UPGRADE_RUNE": "升级：天际钻头",
+    "CHARGE_UP_RUNE": "蓄能",
+    "DEADWOOD_RUNE": "枯木",
+    "BONE_BREAK_UPGRADE_RUNE": "升级：碎骨",
+    "UNDYING_UPGRADE_RUNE": "升级：不死",
+    "AUTO_PATROL_RUNE": "自动巡逻",
+    "REPROGRAM_RUNE": "重编程",
+    "DEATH_HARVEST_RUNE": "死亡收割"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",

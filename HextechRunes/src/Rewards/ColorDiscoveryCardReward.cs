@@ -96,8 +96,11 @@ internal sealed class ColorDiscoveryCardReward : CardReward
 		CardRarityOddsType rarityOdds)
 	{
 		CardModel canonicalCard = ModelDb.GetById<CardModel>(cardId);
-		return new CardCreationOptions([canonicalCard], source, rarityOdds)
-			.WithFlags(CardCreationFlags.IsCardReward);
+		CardCreationOptions options = new([canonicalCard], source, rarityOdds);
+#if STS2_105_OR_NEWER
+		options.WithFlags(CardCreationFlags.IsCardReward);
+#endif
+		return options;
 	}
 
 	private CardModel? GetCurrentRewardCard()
