@@ -139,8 +139,6 @@ internal static partial class HextechRuneSelectionCoordinator
 				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, selection.Player, selectedResult.FinalOptions, selectedRelic, selectedResult.RerollCount);
 			}
 
-			await SynchronizeActSelectionApplied(runState, synchronizer, actIndex);
-
 			for (int i = 0; i < pendingSelections.Count; i++)
 			{
 				PendingRuneSelection selection = pendingSelections[i];
@@ -148,6 +146,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				RelicModel selectedRelic = selectedResult.SelectedRelic ?? selectedResult.FinalOptions.FirstOrDefault() ?? selection.Options[0];
 				await RelicCmd.Obtain(selectedRelic, selection.Player);
 			}
+
+			await SynchronizeActSelectionApplied(runState, synchronizer, actIndex);
 
 			return enemyHexSync != null
 				? CombineMonsterHexes(previousMonsterHexes, enemyHexSync.CurrentMonsterHexes)
