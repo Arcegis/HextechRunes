@@ -52,6 +52,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
 		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
+		IReadOnlySet<string> localDisabledPlayerRuneIds = HextechRuneConfiguration.GetDisabledPlayerRuneIds();
 
 		HextechRarityTier? savedRarity = modifier.GetRarityForAct(actIndex);
 		HextechRarityTier? forcedRarity = HextechCustomRunModifierHooks.GetForcedRarity(runState);
@@ -80,6 +81,11 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (gameType is NetGameType.Singleplayer or NetGameType.None or NetGameType.Replay)
 		{
+			if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"local act-roll act={actIndex}");
+			}
+
 			modifier.HostUsesBetterMultiplayerScaling = false;
 			return (localRarity, localMonsterHex);
 		}
@@ -89,7 +95,16 @@ internal static partial class HextechRuneSelectionCoordinator
 		if (synchronizer == null || authorityPlayer == null)
 		{
 			modifier.HostUsesBetterMultiplayerScaling = gameType == NetGameType.Host && HextechMultiplayerScalingCompat.IsBetterMultiplayerScalingLoaded();
-			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: falling back to local roll act={actIndex} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} synchronizer={synchronizer != null} authority={authorityPlayer?.NetId}");
+			if (gameType == NetGameType.Host && !modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"host fallback act-roll act={actIndex}");
+			}
+			else if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot([], $"client fallback act-roll act={actIndex}");
+			}
+
+			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: falling back to local roll act={actIndex} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} synchronizer={synchronizer != null} authority={authorityPlayer?.NetId}");
 			return (localRarity, localMonsterHex);
 		}
 
@@ -98,8 +113,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			bool hostUsesExternalScaling = HextechMultiplayerScalingCompat.IsBetterMultiplayerScalingLoaded();
 			modifier.HostUsesBetterMultiplayerScaling = hostUsesExternalScaling;
-			synchronizer.SyncLocalChoice(authorityPlayer, choiceId, HextechChoiceCodec.CreateActRoll(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling, modifier.EnemyHexCountsByAct));
-			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} betterMultiplayerScaling={hostUsesExternalScaling}");
+			if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"host act-roll act={actIndex}");
+			}
+
+			synchronizer.SyncLocalChoice(authorityPlayer, choiceId, HextechChoiceCodec.CreateActRoll(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling, modifier.EnemyHexCountsByAct, modifier.PlayerRuneConfigDisabledIds));
+			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} betterMultiplayerScaling={hostUsesExternalScaling}");
 			return (localRarity, localMonsterHex);
 		}
 
@@ -108,9 +128,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			runState,
 			authorityPlayer,
 			choiceId,
-			result => HextechChoiceCodec.TryDecodeActRoll(result, actIndex, out _, out _, out _, out _),
+			result => HextechChoiceCodec.TryDecodeActRoll(result, actIndex, out _, out _, out _, out _, out _),
 			$"act-roll act={actIndex}");
-		if (!HextechChoiceCodec.TryDecodeActRoll(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind? syncedMonsterHex, out bool syncedHostUsesExternalScaling, out int[] syncedEnemyHexCountsByAct))
+		if (!HextechChoiceCodec.TryDecodeActRoll(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind? syncedMonsterHex, out bool syncedHostUsesExternalScaling, out int[] syncedEnemyHexCountsByAct, out HashSet<string> syncedDisabledPlayerRuneIds))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: malformed host payload act={actIndex}; using local rarity={localRarity} monsterHex={localMonsterHex}");
 			return (localRarity, localMonsterHex);
@@ -118,8 +138,9 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		modifier.SetRarityForAct(actIndex, syncedRarity);
 		modifier.SetEnemyHexCountsByActSnapshot(syncedEnemyHexCountsByAct, $"host act-roll act={actIndex}");
+		modifier.SetPlayerRuneConfigDisabledIdsSnapshot(syncedDisabledPlayerRuneIds, $"host act-roll act={actIndex}");
 		modifier.HostUsesBetterMultiplayerScaling = syncedHostUsesExternalScaling;
-		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} betterMultiplayerScaling={syncedHostUsesExternalScaling} localRarity={localRarity} localMonsterHex={localMonsterHex}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} betterMultiplayerScaling={syncedHostUsesExternalScaling} localRarity={localRarity} localMonsterHex={localMonsterHex}");
 		return (syncedRarity, syncedMonsterHex);
 	}
 

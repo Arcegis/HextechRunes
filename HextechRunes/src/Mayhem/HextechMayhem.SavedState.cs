@@ -89,6 +89,13 @@ internal sealed partial class HextechMayhemModifier
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public string SavedPlayerRuneConfigDisabledIdsJson
+	{
+		get => SerializePlayerRuneConfigDisabledIds();
+		set => RestorePlayerRuneConfigDisabledIds(value);
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedTelemetryChoicesJson
 	{
 		get => _choiceHistory.SavedTelemetryChoicesJson;

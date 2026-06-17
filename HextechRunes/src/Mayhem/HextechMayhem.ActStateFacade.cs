@@ -105,6 +105,7 @@ internal sealed partial class HextechMayhemModifier
 	public void ResetForNewRun()
 	{
 		_enemyHexCountsByAct = CreateNewRunEnemyHexCountsByActSnapshot();
+		InitializePlayerRuneConfigDisabledIdsSnapshotForNewRun("new run");
 		_hexCountRecoveryBaseline = 0;
 		_monsterHexStrengthTierFloor = 0;
 		_enemyTezcatarasMercyCombatCounter = 0;
@@ -112,7 +113,7 @@ internal sealed partial class HextechMayhemModifier
 		_choiceHistory.Reset();
 		ResetCombatTracking();
 		InvalidateActiveMonsterHexCache();
-		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: enemyCounts={string.Join(",", _enemyHexCountsByAct)}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: enemyCounts={string.Join(",", _enemyHexCountsByAct)} playerConfigDisabled={PlayerRuneConfigDisabledIds.Count}");
 	}
 
 	public void ResetForEndlessLoop(string reason)
@@ -131,6 +132,7 @@ internal sealed partial class HextechMayhemModifier
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
 		_enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
+		SetPlayerRuneConfigDisabledIdsSnapshot(HextechRuneConfiguration.GetDisabledPlayerRuneIds(), "debug set monster hex");
 		_hexCountRecoveryBaseline = 0;
 		_monsterHexStrengthTierFloor = 0;
 		_enemyTezcatarasMercyCombatCounter = 0;

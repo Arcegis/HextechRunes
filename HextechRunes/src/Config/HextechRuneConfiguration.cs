@@ -81,6 +81,15 @@ internal static class HextechRuneConfiguration
 		}
 	}
 
+	internal static HashSet<string> NormalizeDisabledPlayerRuneIds(IEnumerable<string>? ids)
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			return NormalizeConfigDisabledIds(ids);
+		}
+	}
+
 	public static IReadOnlySet<string> GetDefaultDisabledPlayerRuneIds()
 	{
 		return HextechCatalog.GetDefaultDisabledPlayerRuneIds()

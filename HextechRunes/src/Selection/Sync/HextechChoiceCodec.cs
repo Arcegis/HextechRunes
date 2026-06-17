@@ -21,6 +21,9 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindRandomRuneGrant = 6;
 	private const int EnemyHexAdjustmentListVersion = -2;
 	private const int StableModelIdListVersion = -3;
+	private const int PlayerRuneConfigBitsetVersion = -4;
+	private const int PlayerRuneConfigBitsPerWord = 30;
+	private const int MaxPlayerRuneConfigBitsetWords = 64;
 	private const int MaxStableModelIdCount = 64;
 	private const int MaxStableModelIdLength = 128;
 
@@ -29,7 +32,8 @@ internal static class HextechChoiceCodec
 		HextechRarityTier rarity,
 		MonsterHexKind? monsterHex,
 		bool hostUsesBetterMultiplayerScaling,
-		IReadOnlyList<int> enemyHexCountsByAct)
+		IReadOnlyList<int> enemyHexCountsByAct,
+		IReadOnlySet<string> disabledPlayerRuneIds)
 	{
 		List<int> payload =
 		[
@@ -42,6 +46,7 @@ internal static class HextechChoiceCodec
 		];
 		int[] normalizedCounts = NormalizeEnemyHexCountsByAct(enemyHexCountsByAct);
 		payload.AddRange(normalizedCounts);
+		AppendDisabledPlayerRuneConfig(payload, disabledPlayerRuneIds);
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
@@ -51,12 +56,14 @@ internal static class HextechChoiceCodec
 		out HextechRarityTier rarity,
 		out MonsterHexKind? monsterHex,
 		out bool hostUsesBetterMultiplayerScaling,
-		out int[] enemyHexCountsByAct)
+		out int[] enemyHexCountsByAct,
+		out HashSet<string> disabledPlayerRuneIds)
 	{
 		rarity = default;
 		monsterHex = null;
 		hostUsesBetterMultiplayerScaling = false;
 		enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
+		disabledPlayerRuneIds = [];
 		if (!TryGetIndexPayload(result, out List<int> payload)
 			|| payload.Count < 5
 			|| payload[0] != Magic
@@ -86,6 +93,66 @@ internal static class HextechChoiceCodec
 		if (payload.Count >= 9)
 		{
 			enemyHexCountsByAct = NormalizeEnemyHexCountsByAct(payload.Skip(6).Take(3).ToArray());
+			return TryDecodeDisabledPlayerRuneConfig(payload, 9, out disabledPlayerRuneIds);
+		}
+
+		return true;
+	}
+
+	private static void AppendDisabledPlayerRuneConfig(List<int> payload, IReadOnlySet<string> disabledPlayerRuneIds)
+	{
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		int wordCount = (ids.Count + PlayerRuneConfigBitsPerWord - 1) / PlayerRuneConfigBitsPerWord;
+		int[] words = new int[wordCount];
+		for (int i = 0; i < ids.Count; i++)
+		{
+			if (!disabledPlayerRuneIds.Contains(ids[i].Entry))
+			{
+				continue;
+			}
+
+			words[i / PlayerRuneConfigBitsPerWord] |= 1 << (i % PlayerRuneConfigBitsPerWord);
+		}
+
+		payload.Add(PlayerRuneConfigBitsetVersion);
+		payload.Add(wordCount);
+		payload.AddRange(words);
+	}
+
+	private static bool TryDecodeDisabledPlayerRuneConfig(List<int> payload, int cursor, out HashSet<string> disabledPlayerRuneIds)
+	{
+		disabledPlayerRuneIds = [];
+		if (payload.Count <= cursor)
+		{
+			return true;
+		}
+
+		if (payload[cursor] != PlayerRuneConfigBitsetVersion)
+		{
+			return true;
+		}
+
+		cursor++;
+		if (payload.Count <= cursor)
+		{
+			return false;
+		}
+
+		int wordCount = payload[cursor++];
+		if (wordCount < 0 || wordCount > MaxPlayerRuneConfigBitsetWords || payload.Count < cursor + wordCount)
+		{
+			return false;
+		}
+
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		for (int i = 0; i < ids.Count; i++)
+		{
+			int wordIndex = i / PlayerRuneConfigBitsPerWord;
+			int bitIndex = i % PlayerRuneConfigBitsPerWord;
+			if (wordIndex < wordCount && (payload[cursor + wordIndex] & (1 << bitIndex)) != 0)
+			{
+				disabledPlayerRuneIds.Add(ids[i].Entry);
+			}
 		}
 
 		return true;
