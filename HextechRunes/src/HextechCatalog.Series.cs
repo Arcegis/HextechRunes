@@ -161,21 +161,6 @@ internal static partial class HextechCatalog
 
 	private static int GetPlayerRuneRaritySortOrder(Type type)
 	{
-		if (SilverRuneTypes.Contains(type))
-		{
-			return 0;
-		}
-
-		if (GoldRuneTypes.Contains(type))
-		{
-			return 1;
-		}
-
-		if (PrismaticRuneTypes.Contains(type))
-		{
-			return 2;
-		}
-
-		return 3;
+		return PlayerRuneMetadata.GetRaritySortOrder(type);
 	}
 }

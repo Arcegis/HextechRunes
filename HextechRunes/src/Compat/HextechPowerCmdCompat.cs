@@ -1,11 +1,41 @@
+using System.Reflection;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static class HextechPowerCmdCompat
 {
+	private const BindingFlags PublicStatic = BindingFlags.Public | BindingFlags.Static;
+
+	public static MethodInfo RequireModifyAmountMethod()
+	{
+#if STS2_104_OR_NEWER
+		return RequireMethod(
+			typeof(MegaCrit.Sts2.Core.Commands.PowerCmd),
+			nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.ModifyAmount),
+			PublicStatic,
+			typeof(PlayerChoiceContext),
+			typeof(PowerModel),
+			typeof(decimal),
+			typeof(Creature),
+			typeof(CardModel),
+			typeof(bool));
+#else
+		return RequireMethod(
+			typeof(MegaCrit.Sts2.Core.Commands.PowerCmd),
+			nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.ModifyAmount),
+			PublicStatic,
+			typeof(PowerModel),
+			typeof(decimal),
+			typeof(Creature),
+			typeof(CardModel),
+			typeof(bool));
+#endif
+	}
+
 	public static Task<IReadOnlyList<T>> Apply<T>(
 		IEnumerable<Creature> targets,
 		decimal amount,
@@ -43,6 +73,33 @@ internal static class HextechPowerCmdCompat
 #if STS2_104_OR_NEWER
 		return MegaCrit.Sts2.Core.Commands.PowerCmd.Apply<T>(
 			new BlockingPlayerChoiceContext(),
+			target,
+			amount,
+			applier,
+			cardSource,
+			silent);
+#else
+		return MegaCrit.Sts2.Core.Commands.PowerCmd.Apply<T>(
+			target,
+			amount,
+			applier,
+			cardSource,
+			silent);
+#endif
+	}
+
+	public static Task<T?> Apply<T>(
+		object? choiceContext,
+		Creature target,
+		decimal amount,
+		Creature? applier,
+		CardModel? cardSource,
+		bool silent = false)
+		where T : PowerModel
+	{
+#if STS2_104_OR_NEWER
+		return MegaCrit.Sts2.Core.Commands.PowerCmd.Apply<T>(
+			choiceContext as PlayerChoiceContext ?? new BlockingPlayerChoiceContext(),
 			target,
 			amount,
 			applier,

@@ -20,12 +20,9 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindForgeSelection = 5;
 	private const int ChoiceKindRandomRuneGrant = 6;
 	private const int EnemyHexAdjustmentListVersion = -2;
-	private const int StableModelIdListVersion = -3;
 	private const int PlayerRuneConfigBitsetVersion = -4;
 	private const int PlayerRuneConfigBitsPerWord = 30;
 	private const int MaxPlayerRuneConfigBitsetWords = 64;
-	private const int MaxStableModelIdCount = 64;
-	private const int MaxStableModelIdLength = 128;
 
 	public static PlayerChoiceResult CreateActRoll(
 		int actIndex,
@@ -44,7 +41,7 @@ internal static class HextechChoiceCodec
 			monsterHex.HasValue ? (int)monsterHex.Value : -1,
 			hostUsesBetterMultiplayerScaling ? 1 : 0
 		];
-		int[] normalizedCounts = NormalizeEnemyHexCountsByAct(enemyHexCountsByAct);
+		int[] normalizedCounts = HextechEnemyHexCountState.Normalize(enemyHexCountsByAct);
 		payload.AddRange(normalizedCounts);
 		AppendDisabledPlayerRuneConfig(payload, disabledPlayerRuneIds);
 		return PlayerChoiceResult.FromIndexes(payload);
@@ -92,7 +89,7 @@ internal static class HextechChoiceCodec
 		hostUsesBetterMultiplayerScaling = payload.Count >= 6 && payload[5] != 0;
 		if (payload.Count >= 9)
 		{
-			enemyHexCountsByAct = NormalizeEnemyHexCountsByAct(payload.Skip(6).Take(3).ToArray());
+			enemyHexCountsByAct = HextechEnemyHexCountState.Normalize(payload.Skip(6).Take(3).ToArray());
 			return TryDecodeDisabledPlayerRuneConfig(payload, 9, out disabledPlayerRuneIds);
 		}
 
@@ -158,37 +155,16 @@ internal static class HextechChoiceCodec
 		return true;
 	}
 
-	private static int[] NormalizeEnemyHexCountsByAct(IReadOnlyList<int>? counts)
-	{
-		int[] normalized = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
-		if (counts == null)
-		{
-			return normalized;
-		}
-
-		for (int i = 0; i < Math.Min(normalized.Length, counts.Count); i++)
-		{
-			normalized[i] = HextechRuneConfiguration.ClampEnemyHexCount(counts[i]);
-		}
-
-		return normalized;
-	}
-
 	private static readonly Lazy<IReadOnlyList<ModelId>> PlayerRuneIdsByOrdinal = new(
 		() => HextechCatalog.GetConfigurablePlayerRuneIds()
 			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
 			.ToArray());
 
-	private static readonly Lazy<IReadOnlyDictionary<ModelId, int>> PlayerRuneOrdinalById = new(
-		() => PlayerRuneIdsByOrdinal.Value
-			.Select(static (id, index) => (id, index))
-			.ToDictionary(static item => item.id, static item => item.index));
-
 	public static PlayerChoiceResult CreateRuneSelection(int selectedIndex, IReadOnlyList<int> rerollHistory, IReadOnlyList<RelicModel> finalOptions)
 	{
 		List<int> payload = [ Magic, ChoiceKindRuneSelection, selectedIndex, rerollHistory.Count ];
 		payload.AddRange(rerollHistory);
-		AppendStableModelIdList(payload, finalOptions.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
+		HextechStableModelIdListCodec.Append(payload, finalOptions.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
 
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
@@ -230,9 +206,9 @@ internal static class HextechChoiceCodec
 			return true;
 		}
 
-		if (payload[cursor] == StableModelIdListVersion)
+		if (payload[cursor] == HextechStableModelIdListCodec.Version)
 		{
-			return TryDecodeStableModelIdList(payload, cursor, out finalOptionIds, out _);
+			return HextechStableModelIdListCodec.TryDecode(payload, cursor, out finalOptionIds, out _);
 		}
 
 		int optionCount = Math.Max(0, payload[cursor]);
@@ -256,24 +232,6 @@ internal static class HextechChoiceCodec
 		return true;
 	}
 
-	private static bool TryEncodeRuneOptionOrdinals(IReadOnlyList<RelicModel> finalOptions, out List<int> optionOrdinals)
-	{
-		optionOrdinals = new(finalOptions.Count);
-		foreach (RelicModel relic in finalOptions)
-		{
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-			if (!PlayerRuneOrdinalById.Value.TryGetValue(id, out int ordinal))
-			{
-				optionOrdinals.Clear();
-				return false;
-			}
-
-			optionOrdinals.Add(ordinal);
-		}
-
-		return true;
-	}
-
 	private static bool TryGetRuneIdForOrdinal(int ordinal, out ModelId id)
 	{
 		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
@@ -290,7 +248,7 @@ internal static class HextechChoiceCodec
 	public static PlayerChoiceResult CreateRandomRuneGrant(IReadOnlyList<ModelId> runeIds)
 	{
 		List<int> payload = [ Magic, ChoiceKindRandomRuneGrant ];
-		AppendStableModelIdList(payload, runeIds);
+		HextechStableModelIdListCodec.Append(payload, runeIds);
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
@@ -310,9 +268,9 @@ internal static class HextechChoiceCodec
 			return false;
 		}
 
-		if (payload[2] == StableModelIdListVersion)
+		if (payload[2] == HextechStableModelIdListCodec.Version)
 		{
-			return TryDecodeStableModelIdList(payload, 2, out runeIds, out _);
+			return HextechStableModelIdListCodec.TryDecode(payload, 2, out runeIds, out _);
 		}
 
 		int count = Math.Max(0, payload[2]);
@@ -341,15 +299,10 @@ internal static class HextechChoiceCodec
 			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
 			.ToArray());
 
-	private static readonly Lazy<IReadOnlyDictionary<ModelId, int>> ForgeOrdinalById = new(
-		() => ForgeIdsByOrdinal.Value
-			.Select(static (id, index) => (id, index))
-			.ToDictionary(static item => item.id, static item => item.index));
-
 	public static PlayerChoiceResult CreateForgeSelection(int selectedIndex, IReadOnlyList<RelicModel> options)
 	{
 		List<int> payload = [ Magic, ChoiceKindForgeSelection, selectedIndex ];
-		AppendStableModelIdList(payload, options.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
+		HextechStableModelIdListCodec.Append(payload, options.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
 
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
@@ -377,9 +330,9 @@ internal static class HextechChoiceCodec
 			return true;
 		}
 
-		if (payload[3] == StableModelIdListVersion)
+		if (payload[3] == HextechStableModelIdListCodec.Version)
 		{
-			return TryDecodeStableModelIdList(payload, 3, out optionIds, out _);
+			return HextechStableModelIdListCodec.TryDecode(payload, 3, out optionIds, out _);
 		}
 
 		int optionCount = Math.Max(0, payload[3]);
@@ -402,24 +355,6 @@ internal static class HextechChoiceCodec
 		return true;
 	}
 
-	private static bool TryEncodeForgeOptionOrdinals(IReadOnlyList<RelicModel> options, out List<int> optionOrdinals)
-	{
-		optionOrdinals = new(options.Count);
-		foreach (RelicModel relic in options)
-		{
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-			if (!ForgeOrdinalById.Value.TryGetValue(id, out int ordinal))
-			{
-				optionOrdinals.Clear();
-				return false;
-			}
-
-			optionOrdinals.Add(ordinal);
-		}
-
-		return true;
-	}
-
 	private static bool TryGetForgeIdForOrdinal(int ordinal, out ModelId id)
 	{
 		IReadOnlyList<ModelId> ids = ForgeIdsByOrdinal.Value;
@@ -430,85 +365,6 @@ internal static class HextechChoiceCodec
 		}
 
 		id = ids[ordinal];
-		return true;
-	}
-
-	private static void AppendStableModelIdList(List<int> payload, IEnumerable<ModelId> modelIds)
-	{
-		ModelId[] ids = modelIds.ToArray();
-		payload.Add(StableModelIdListVersion);
-		payload.Add(ids.Length);
-		foreach (ModelId id in ids)
-		{
-			string serialized = id.ToString();
-			payload.Add(serialized.Length);
-			foreach (char ch in serialized)
-			{
-				payload.Add(ch);
-			}
-		}
-	}
-
-	private static bool TryDecodeStableModelIdList(List<int> payload, int cursor, out List<ModelId> modelIds, out int nextCursor)
-	{
-		modelIds = [];
-		nextCursor = cursor;
-		if (payload.Count <= cursor || payload[cursor] != StableModelIdListVersion)
-		{
-			return false;
-		}
-
-		cursor++;
-		if (payload.Count <= cursor)
-		{
-			return false;
-		}
-
-		int count = payload[cursor++];
-		if (count < 0 || count > MaxStableModelIdCount)
-		{
-			return false;
-		}
-
-		for (int i = 0; i < count; i++)
-		{
-			if (payload.Count <= cursor)
-			{
-				return false;
-			}
-
-			int length = payload[cursor++];
-			if (length < 0 || length > MaxStableModelIdLength || payload.Count < cursor + length)
-			{
-				return false;
-			}
-
-			char[] chars = new char[length];
-			for (int j = 0; j < length; j++)
-			{
-				int value = payload[cursor + j];
-				if (value < char.MinValue || value > char.MaxValue)
-				{
-					return false;
-				}
-
-				chars[j] = (char)value;
-			}
-
-			try
-			{
-				modelIds.Add(ModelId.Deserialize(new string(chars)));
-			}
-			catch
-			{
-				modelIds.Clear();
-				return false;
-			}
-
-			cursor += length;
-		}
-
-		nextCursor = cursor;
 		return true;
 	}
 

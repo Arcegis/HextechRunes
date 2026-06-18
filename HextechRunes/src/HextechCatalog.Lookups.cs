@@ -17,7 +17,7 @@ internal static partial class HextechCatalog
 	private static readonly Lazy<IReadOnlyDictionary<ModelId, string>> PlayerRuneTagKeyById = new(BuildPlayerRuneTagKeyById);
 
 	private static readonly Lazy<IReadOnlySet<ModelId>> AttributeConversionExclusiveRuneIds =
-		new(() => ToModelIdSet(AttributeConversionExclusiveRuneTypes));
+		new(() => ToModelIdSet(PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive]));
 
 	public static bool IsHextechRelic(RelicModel? relic)
 	{
@@ -81,13 +81,13 @@ internal static partial class HextechCatalog
 		return ForgeRarityById.Value.TryGetValue(id, out rarity);
 	}
 
-		public static string GetPlayerRuneTagKey(RelicModel relic)
-		{
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-			return PlayerRuneTagKeyById.Value.TryGetValue(id, out string? tagKey)
-				? tagKey
-				: HextechPlayerRuneRegistry.DefaultTagKey;
-		}
+	public static string GetPlayerRuneTagKey(RelicModel relic)
+	{
+		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		return PlayerRuneTagKeyById.Value.TryGetValue(id, out string? tagKey)
+			? tagKey
+			: HextechPlayerRuneRegistry.DefaultTagKey;
+	}
 
 	public static IReadOnlySet<ModelId> GetMutuallyExclusivePlayerRuneIds(IEnumerable<ModelId> ownedIds)
 	{
@@ -123,9 +123,11 @@ internal static partial class HextechCatalog
 	private static IReadOnlyDictionary<ModelId, HextechRarityTier> BuildPlayerRuneRarityById()
 	{
 		Dictionary<ModelId, HextechRarityTier> byId = new();
-		AddRarityEntries(byId, SilverRuneTypes, HextechRarityTier.Silver);
-		AddRarityEntries(byId, GoldRuneTypes, HextechRarityTier.Gold);
-		AddRarityEntries(byId, PrismaticRuneTypes, HextechRarityTier.Prismatic);
+		foreach (PlayerRuneRegistration registration in PlayerRuneMetadata.Registrations)
+		{
+			byId[ModelDb.GetId(registration.Type)] = registration.Rarity;
+		}
+
 		return byId;
 	}
 
@@ -138,13 +140,13 @@ internal static partial class HextechCatalog
 		return byId;
 	}
 
-		private static IReadOnlyDictionary<ModelId, string> BuildPlayerRuneTagKeyById()
+	private static IReadOnlyDictionary<ModelId, string> BuildPlayerRuneTagKeyById()
+	{
+		Dictionary<ModelId, string> byId = new();
+		foreach (PlayerRuneRegistration registration in PlayerRuneMetadata.Registrations)
 		{
-			Dictionary<ModelId, string> byId = new();
-			foreach (KeyValuePair<Type, string> entry in HextechContentRegistry.PlayerRuneTagKeys)
-			{
-				byId[ModelDb.GetId(entry.Key)] = entry.Value;
-			}
+			byId[ModelDb.GetId(registration.Type)] = registration.TagKey;
+		}
 
 		return byId;
 	}

@@ -17,13 +17,11 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	private static bool _handlingActSelection;
-	private static RunState? _handlingActSelectionRunState;
+	private static readonly HextechActSelectionGate ActSelectionGate = new();
 
 	public static void ResetActSelectionState()
 	{
-		_handlingActSelection = false;
-		_handlingActSelectionRunState = null;
+		ActSelectionGate.Reset();
 	}
 
 	public static Task HandleActStarted(HextechMayhemModifier modifier)
@@ -39,23 +37,19 @@ internal static partial class HextechRuneSelectionCoordinator
 			HextechEnemyUi.Refresh(modifier);
 		}
 
-		if (_handlingActSelection
-			&& _handlingActSelectionRunState != null
-			&& !ReferenceEquals(_handlingActSelectionRunState, runState))
+		if (ActSelectionGate.ResetIfStaleRun(runState))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: clearing stale handling state for previous run");
-			ResetActSelectionState();
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsActResolved(actIndex)} handling={_handlingActSelection}");
-		if (_handlingActSelection || !IsCurrentRun(runState) || actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex))
+		Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsActResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
+		if (ActSelectionGate.IsHandling || !IsCurrentRun(runState) || actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex))
 		{
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skip");
 			return;
 		}
 
-		_handlingActSelection = true;
-		_handlingActSelectionRunState = runState;
+		ActSelectionGate.Enter(runState);
 		bool reopenMapAfterSelection = false;
 		try
 		{
@@ -181,10 +175,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				NMapScreen.Instance.Open();
 			}
 
-			if (ReferenceEquals(_handlingActSelectionRunState, runState))
-			{
-				ResetActSelectionState();
-			}
+			ActSelectionGate.ExitIfCurrent(runState);
 			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection exit: act={actIndex}");
 		}
 	}

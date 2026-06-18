@@ -12,11 +12,13 @@ internal static partial class HextechCatalog
 
 	private readonly record struct CharacterRunePool(string LocalizationKey, IReadOnlyList<Type> RuneTypes);
 
-	private static readonly IReadOnlyList<Type> SilverRuneTypes = HextechContentRegistry.SilverRuneTypes;
+	private static readonly PlayerRuneMetadataCatalog PlayerRuneMetadata = HextechContentRegistry.PlayerRuneMetadata;
 
-	private static readonly IReadOnlyList<Type> GoldRuneTypes = HextechContentRegistry.GoldRuneTypes;
+	private static readonly IReadOnlyList<Type> SilverRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Silver];
 
-	private static readonly IReadOnlyList<Type> PrismaticRuneTypes = HextechContentRegistry.PrismaticRuneTypes;
+	private static readonly IReadOnlyList<Type> GoldRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Gold];
+
+	private static readonly IReadOnlyList<Type> PrismaticRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Prismatic];
 
 	private static readonly IReadOnlyList<Type> SilverForgeTypes = HextechContentRegistry.SilverForgeTypes;
 
@@ -26,30 +28,21 @@ internal static partial class HextechCatalog
 
 	private static readonly IReadOnlyList<Type> ShopOnlyRelicTypes = HextechContentRegistry.ShopOnlyRelicTypes;
 
-	private static readonly IReadOnlySet<Type> DisabledPlayerRuneTypes = HextechContentRegistry.DisabledPlayerRuneTypes;
-
-	private static readonly IReadOnlySet<Type> SelectionExcludedPlayerRuneTypes = HextechContentRegistry.SelectionExcludedPlayerRuneTypes;
-
 	private static readonly IReadOnlyList<CharacterRunePool> CharacterRunePools =
 	[
-		new("IRONCLAD", HextechContentRegistry.IroncladRuneTypes),
-		new("SILENT", HextechContentRegistry.SilentRuneTypes),
-		new("REGENT", HextechContentRegistry.RegentRuneTypes),
-		new("DEFECT", HextechContentRegistry.DefectRuneTypes),
-		new("NECROBINDER", HextechContentRegistry.NecrobinderRuneTypes)
+		new("IRONCLAD", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Ironclad]),
+		new("SILENT", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Silent]),
+		new("REGENT", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Regent]),
+		new("DEFECT", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Defect]),
+		new("NECROBINDER", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Necrobinder])
 	];
 
-	private static readonly IReadOnlySet<Type> CharacterSpecificRuneTypes = CharacterRunePools
-		.SelectMany(static pool => pool.RuneTypes)
-		.ToHashSet();
+	private static readonly IReadOnlySet<Type> CharacterSpecificRuneTypes = PlayerRuneMetadata.GetCharacterSpecificTypes();
 
-	private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes = HextechContentRegistry.AttributeConversionExclusiveRuneTypes;
+	private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
+		PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive];
 
-	private static readonly IReadOnlySet<Type> FirstActExcludedRuneTypes = HextechContentRegistry.FirstActExcludedRuneTypes;
-
-	private static readonly IReadOnlySet<Type> ThirdActExcludedRuneTypes = HextechContentRegistry.ThirdActExcludedRuneTypes;
-
-	private static readonly IReadOnlyList<Type> AllRuneTypes = HextechContentRegistry.AllRuneTypes;
+	private static readonly IReadOnlyList<Type> AllRuneTypes = PlayerRuneMetadata.AllTypes;
 
 	private static readonly IReadOnlyList<Type> AllForgeTypes = HextechContentRegistry.AllForgeTypes;
 
@@ -75,17 +68,17 @@ internal static partial class HextechCatalog
 
 	public static bool IsPlayerRuneTypeSelectable(Type runeType)
 	{
-		return IsPlayerRuneTypeVisible(runeType) && !SelectionExcludedPlayerRuneTypes.Contains(runeType);
+		return PlayerRuneMetadata.IsSelectable(runeType);
 	}
 
 	public static bool IsPlayerRuneTypeConfigurable(Type runeType)
 	{
-		return AllRuneTypes.Contains(runeType) && !SelectionExcludedPlayerRuneTypes.Contains(runeType);
+		return PlayerRuneMetadata.IsConfigurable(runeType);
 	}
 
 	public static bool IsPlayerRuneTypeVisible(Type runeType)
 	{
-		return AllRuneTypes.Contains(runeType) && !DisabledPlayerRuneTypes.Contains(runeType);
+		return PlayerRuneMetadata.IsVisible(runeType);
 	}
 
 	public static bool IsPlayerRuneTypeVisibleInCollection(Type runeType)
@@ -143,26 +136,12 @@ internal static partial class HextechCatalog
 
 	public static IReadOnlyList<Type> GetPlayerRuneTypesForRarity(HextechRarityTier rarity)
 	{
-		IReadOnlyList<Type> runeTypes = rarity switch
-		{
-			HextechRarityTier.Silver => SilverRuneTypes,
-			HextechRarityTier.Gold => GoldRuneTypes,
-			HextechRarityTier.Prismatic => PrismaticRuneTypes,
-			_ => Array.Empty<Type>()
-		};
-		return runeTypes.Where(IsPlayerRuneTypeSelectable).ToArray();
+		return PlayerRuneMetadata.GetSelectableTypesForRarity(rarity);
 	}
 
 	public static IReadOnlyList<Type> GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier rarity)
 	{
-		IReadOnlyList<Type> runeTypes = rarity switch
-		{
-			HextechRarityTier.Silver => SilverRuneTypes,
-			HextechRarityTier.Gold => GoldRuneTypes,
-			HextechRarityTier.Prismatic => PrismaticRuneTypes,
-			_ => Array.Empty<Type>()
-		};
-		return runeTypes.Where(IsPlayerRuneTypeConfigurable).ToArray();
+		return PlayerRuneMetadata.GetConfigurableTypesForRarity(rarity);
 	}
 
 	public static IReadOnlySet<ModelId> GetConfigurablePlayerRuneIds()
@@ -174,7 +153,7 @@ internal static partial class HextechCatalog
 
 	public static IReadOnlySet<ModelId> GetDefaultDisabledPlayerRuneIds()
 	{
-		return DisabledPlayerRuneTypes
+		return PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.Disabled]
 			.Where(IsPlayerRuneTypeConfigurable)
 			.Select(ModelDb.GetId)
 			.ToHashSet();
@@ -200,8 +179,8 @@ internal static partial class HextechCatalog
 	{
 		return actIndex switch
 		{
-			0 => !FirstActExcludedRuneTypes.Contains(runeType),
-			2 => IsEndlessModeLoaded() || !ThirdActExcludedRuneTypes.Contains(runeType),
+			0 => !PlayerRuneMetadata.HasFlag(runeType, PlayerRuneFlags.FirstActExcluded),
+			2 => IsEndlessModeLoaded() || !PlayerRuneMetadata.HasFlag(runeType, PlayerRuneFlags.ThirdActExcluded),
 			_ => true
 		};
 	}

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
@@ -11,9 +10,7 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	private HashSet<string>? _playerRuneConfigDisabledIds;
-
-	internal bool HasPlayerRuneConfigDisabledIdsSnapshot => _playerRuneConfigDisabledIds != null;
+	internal bool HasPlayerRuneConfigDisabledIdsSnapshot => _runContext.PlayerRuneConfig.HasSnapshot;
 
 	internal IReadOnlySet<string> PlayerRuneConfigDisabledIds => GetPlayerRuneConfigDisabledIdsForPool();
 
@@ -32,36 +29,31 @@ internal sealed partial class HextechMayhemModifier
 
 	internal void InitializePlayerRuneConfigDisabledIdsSnapshotForNewRun(string reason)
 	{
-		_playerRuneConfigDisabledIds = CreateNewRunPlayerRuneConfigDisabledIdsSnapshot();
-		Log.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot initialized: reason={reason} disabled={_playerRuneConfigDisabledIds.Count}");
+		_runContext.PlayerRuneConfig.Set(CreateNewRunPlayerRuneConfigDisabledIdsSnapshot());
+		Log.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot initialized: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
 	}
 
 	internal void SetPlayerRuneConfigDisabledIdsSnapshot(IEnumerable<string>? disabledIds, string reason)
 	{
-		_playerRuneConfigDisabledIds = HextechRuneConfiguration.NormalizeDisabledPlayerRuneIds(disabledIds);
-		Log.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot set: reason={reason} disabled={_playerRuneConfigDisabledIds.Count}");
+		_runContext.PlayerRuneConfig.Set(disabledIds);
+		Log.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot set: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
 	}
 
 	private HashSet<string> GetPlayerRuneConfigDisabledIdsForPool()
 	{
-		if (_playerRuneConfigDisabledIds != null)
-		{
-			return _playerRuneConfigDisabledIds.ToHashSet(StringComparer.Ordinal);
-		}
-
+		bool isClient = false;
 		try
 		{
-			if (RunManager.Instance.NetService.Type == NetGameType.Client)
-			{
-				return new HashSet<string>(StringComparer.Ordinal);
-			}
+			isClient = RunManager.Instance.NetService.Type == NetGameType.Client;
 		}
 		catch
 		{
 			// Fall back to local config outside a fully initialized multiplayer run.
 		}
 
-		return HextechRuneConfiguration.GetDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal);
+		return _runContext.PlayerRuneConfig.GetDisabledIdsForPool(
+			isClient,
+			HextechRuneConfiguration.GetDisabledPlayerRuneIds());
 	}
 
 	private static HashSet<string> CreateNewRunPlayerRuneConfigDisabledIdsSnapshot()
@@ -80,34 +72,14 @@ internal sealed partial class HextechMayhemModifier
 
 	private string SerializePlayerRuneConfigDisabledIds()
 	{
-		if (_playerRuneConfigDisabledIds == null)
-		{
-			return "";
-		}
-
-		string[] ids = _playerRuneConfigDisabledIds
-			.OrderBy(static id => id, StringComparer.Ordinal)
-			.ToArray();
-		return JsonSerializer.Serialize(ids, HextechTelemetry.JsonOptions);
+		return _runContext.PlayerRuneConfig.Serialize();
 	}
 
 	private void RestorePlayerRuneConfigDisabledIds(string json)
 	{
-		if (string.IsNullOrWhiteSpace(json))
+		if (!_runContext.PlayerRuneConfig.TryRestore(json, out string? errorMessage))
 		{
-			_playerRuneConfigDisabledIds = null;
-			return;
-		}
-
-		try
-		{
-			string[]? ids = JsonSerializer.Deserialize<string[]>(json, HextechTelemetry.JsonOptions);
-			_playerRuneConfigDisabledIds = HextechRuneConfiguration.NormalizeDisabledPlayerRuneIds(ids);
-		}
-		catch (Exception ex)
-		{
-			_playerRuneConfigDisabledIds = null;
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Player rune config snapshot restore failed; using runtime fallback: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Player rune config snapshot restore failed; using runtime fallback: {errorMessage}", 2);
 		}
 	}
 }

@@ -36,6 +36,12 @@ internal static class HextechContentRegistry
 
 	internal static IReadOnlyDictionary<Type, string> PlayerRuneTagKeys => Lookups.PlayerRuneTagKeys;
 
+	internal static PlayerRuneMetadataCatalog PlayerRuneMetadata => Lookups.PlayerRuneMetadata;
+
+	internal static ForgeMetadataCatalog ForgeMetadata => Lookups.ForgeMetadata;
+
+	internal static MonsterHexMetadataCatalog MonsterHexMetadata => Lookups.MonsterHexMetadata;
+
 	internal static IReadOnlySet<Type> FirstActExcludedRuneTypes => Lookups.FirstActExcludedRuneTypes;
 
 	internal static IReadOnlySet<Type> ThirdActExcludedRuneTypes => Lookups.ThirdActExcludedRuneTypes;
@@ -77,62 +83,47 @@ internal static class HextechContentRegistry
 
 	private sealed class RegistryLookups
 	{
-		public RegistryLookups(
-			IReadOnlyList<PlayerRuneRegistration> runeRegistrations,
-			IReadOnlyList<ForgeRegistration> forgeRegistrations,
-			IReadOnlyList<MonsterHexRegistration> monsterHexRegistrations,
-			IReadOnlyList<Type> shopOnlyRelicTypes)
-		{
-			SilverRuneTypes = RuneTypesForRarity(runeRegistrations, HextechRarityTier.Silver);
-			GoldRuneTypes = RuneTypesForRarity(runeRegistrations, HextechRarityTier.Gold);
-			PrismaticRuneTypes = RuneTypesForRarity(runeRegistrations, HextechRarityTier.Prismatic);
-			SilverForgeTypes = ForgeTypesForRarity(forgeRegistrations, HextechRarityTier.Silver);
-			GoldForgeTypes = ForgeTypesForRarity(forgeRegistrations, HextechRarityTier.Gold);
-			PrismaticForgeTypes = ForgeTypesForRarity(forgeRegistrations, HextechRarityTier.Prismatic);
-			DisabledPlayerRuneTypes = RuneTypesWithFlag(runeRegistrations, PlayerRuneFlags.Disabled).ToHashSet();
-			SelectionExcludedPlayerRuneTypes = RuneTypesWithFlag(runeRegistrations, PlayerRuneFlags.SelectionExcluded).ToHashSet();
-			IroncladRuneTypes = RuneTypesForCharacter(runeRegistrations, PlayerRuneCharacterPool.Ironclad);
-			SilentRuneTypes = RuneTypesForCharacter(runeRegistrations, PlayerRuneCharacterPool.Silent);
-			RegentRuneTypes = RuneTypesForCharacter(runeRegistrations, PlayerRuneCharacterPool.Regent);
-			DefectRuneTypes = RuneTypesForCharacter(runeRegistrations, PlayerRuneCharacterPool.Defect);
-			NecrobinderRuneTypes = RuneTypesForCharacter(runeRegistrations, PlayerRuneCharacterPool.Necrobinder);
-			AttributeConversionExclusiveRuneTypes = RuneTypesWithFlag(runeRegistrations, PlayerRuneFlags.AttributeConversionExclusive);
-			PlayerRuneTagKeys = runeRegistrations
-				.ToDictionary(static registration => registration.Type, static registration => registration.TagKey);
-			FirstActExcludedRuneTypes = RuneTypesWithFlag(runeRegistrations, PlayerRuneFlags.FirstActExcluded).ToHashSet();
-			ThirdActExcludedRuneTypes = RuneTypesWithFlag(runeRegistrations, PlayerRuneFlags.ThirdActExcluded).ToHashSet();
-			DisabledMonsterHexes = monsterHexRegistrations
-				.Where(static registration => registration.Disabled)
-				.Select(static registration => registration.Kind)
-				.ToHashSet();
-			MonsterHexesWithBurnHoverTip = monsterHexRegistrations
-				.Where(static registration => registration.HasBurnHoverTip)
-				.Select(static registration => registration.Kind)
-				.ToHashSet();
-			MonsterHexIconRelicTypes = monsterHexRegistrations
-				.ToDictionary(static registration => registration.Kind, static registration => registration.IconRelicType);
-			AllMonsterHexKinds = monsterHexRegistrations
-				.Select(static registration => registration.Kind)
-				.ToHashSet();
-			SilverMonsterHexes = MonsterHexesForRarity(monsterHexRegistrations, HextechRarityTier.Silver);
-			GoldMonsterHexes = MonsterHexesForRarity(monsterHexRegistrations, HextechRarityTier.Gold);
-			PrismaticMonsterHexes = MonsterHexesForRarity(monsterHexRegistrations, HextechRarityTier.Prismatic);
-			AllRuneTypes = SilverRuneTypes
-				.Concat(GoldRuneTypes)
-				.Concat(PrismaticRuneTypes)
-				.Distinct()
-				.ToArray();
-			AllForgeTypes = SilverForgeTypes
-				.Concat(GoldForgeTypes)
-				.Concat(PrismaticForgeTypes)
-				.Distinct()
-				.ToArray();
-			AllCustomRelicTypes = AllRuneTypes
-				.Concat(AllForgeTypes)
-				.Concat(shopOnlyRelicTypes)
-				.Distinct()
-				.ToArray();
-		}
+			public RegistryLookups(
+				IReadOnlyList<PlayerRuneRegistration> runeRegistrations,
+				IReadOnlyList<ForgeRegistration> forgeRegistrations,
+				IReadOnlyList<MonsterHexRegistration> monsterHexRegistrations,
+				IReadOnlyList<Type> shopOnlyRelicTypes)
+			{
+				PlayerRuneMetadata = new PlayerRuneMetadataCatalog(runeRegistrations);
+				ForgeMetadata = new ForgeMetadataCatalog(forgeRegistrations);
+				MonsterHexMetadata = new MonsterHexMetadataCatalog(monsterHexRegistrations);
+				SilverRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Silver];
+				GoldRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Gold];
+				PrismaticRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Prismatic];
+				SilverForgeTypes = ForgeMetadata.TypesByRarity[HextechRarityTier.Silver];
+				GoldForgeTypes = ForgeMetadata.TypesByRarity[HextechRarityTier.Gold];
+				PrismaticForgeTypes = ForgeMetadata.TypesByRarity[HextechRarityTier.Prismatic];
+				DisabledPlayerRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.Disabled].ToHashSet();
+				SelectionExcludedPlayerRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.SelectionExcluded].ToHashSet();
+				IroncladRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Ironclad];
+				SilentRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Silent];
+				RegentRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Regent];
+				DefectRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Defect];
+				NecrobinderRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Necrobinder];
+				AttributeConversionExclusiveRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive];
+				PlayerRuneTagKeys = PlayerRuneMetadata.TagKeys;
+				FirstActExcludedRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.FirstActExcluded].ToHashSet();
+				ThirdActExcludedRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.ThirdActExcluded].ToHashSet();
+				DisabledMonsterHexes = MonsterHexMetadata.DisabledKinds;
+				MonsterHexesWithBurnHoverTip = MonsterHexMetadata.BurnHoverTipKinds;
+				MonsterHexIconRelicTypes = MonsterHexMetadata.IconRelicTypes;
+				AllMonsterHexKinds = MonsterHexMetadata.AllKinds;
+				SilverMonsterHexes = MonsterHexMetadata.EnabledKindsByRarity[HextechRarityTier.Silver];
+				GoldMonsterHexes = MonsterHexMetadata.EnabledKindsByRarity[HextechRarityTier.Gold];
+				PrismaticMonsterHexes = MonsterHexMetadata.EnabledKindsByRarity[HextechRarityTier.Prismatic];
+				AllRuneTypes = PlayerRuneMetadata.AllTypes;
+				AllForgeTypes = ForgeMetadata.AllTypes;
+				AllCustomRelicTypes = AllRuneTypes
+					.Concat(AllForgeTypes)
+					.Concat(shopOnlyRelicTypes)
+					.Distinct()
+					.ToArray();
+			}
 
 		public IReadOnlyList<Type> SilverRuneTypes { get; }
 		public IReadOnlyList<Type> GoldRuneTypes { get; }
@@ -143,64 +134,26 @@ internal static class HextechContentRegistry
 		public IReadOnlySet<Type> DisabledPlayerRuneTypes { get; }
 		public IReadOnlySet<Type> SelectionExcludedPlayerRuneTypes { get; }
 		public IReadOnlyList<Type> IroncladRuneTypes { get; }
-		public IReadOnlyList<Type> SilentRuneTypes { get; }
-		public IReadOnlyList<Type> RegentRuneTypes { get; }
-		public IReadOnlyList<Type> DefectRuneTypes { get; }
-		public IReadOnlyList<Type> NecrobinderRuneTypes { get; }
-		public IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes { get; }
-		public IReadOnlyDictionary<Type, string> PlayerRuneTagKeys { get; }
-		public IReadOnlySet<Type> FirstActExcludedRuneTypes { get; }
-		public IReadOnlySet<Type> ThirdActExcludedRuneTypes { get; }
-		public IReadOnlySet<MonsterHexKind> DisabledMonsterHexes { get; }
-		public IReadOnlySet<MonsterHexKind> MonsterHexesWithBurnHoverTip { get; }
-		public IReadOnlyDictionary<MonsterHexKind, Type> MonsterHexIconRelicTypes { get; }
+			public IReadOnlyList<Type> SilentRuneTypes { get; }
+			public IReadOnlyList<Type> RegentRuneTypes { get; }
+			public IReadOnlyList<Type> DefectRuneTypes { get; }
+			public IReadOnlyList<Type> NecrobinderRuneTypes { get; }
+			public IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes { get; }
+			public IReadOnlyDictionary<Type, string> PlayerRuneTagKeys { get; }
+			public PlayerRuneMetadataCatalog PlayerRuneMetadata { get; }
+			public ForgeMetadataCatalog ForgeMetadata { get; }
+			public MonsterHexMetadataCatalog MonsterHexMetadata { get; }
+			public IReadOnlySet<Type> FirstActExcludedRuneTypes { get; }
+			public IReadOnlySet<Type> ThirdActExcludedRuneTypes { get; }
+			public IReadOnlySet<MonsterHexKind> DisabledMonsterHexes { get; }
+			public IReadOnlySet<MonsterHexKind> MonsterHexesWithBurnHoverTip { get; }
+			public IReadOnlyDictionary<MonsterHexKind, Type> MonsterHexIconRelicTypes { get; }
 		public IReadOnlySet<MonsterHexKind> AllMonsterHexKinds { get; }
-		public IReadOnlyList<MonsterHexKind> SilverMonsterHexes { get; }
-		public IReadOnlyList<MonsterHexKind> GoldMonsterHexes { get; }
-		public IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes { get; }
-		public IReadOnlyList<Type> AllRuneTypes { get; }
-		public IReadOnlyList<Type> AllForgeTypes { get; }
-		public IReadOnlyList<Type> AllCustomRelicTypes { get; }
-
-		private static IReadOnlyList<Type> RuneTypesForRarity(IReadOnlyList<PlayerRuneRegistration> registrations, HextechRarityTier rarity)
-		{
-			return registrations
-				.Where(registration => registration.Rarity == rarity)
-				.Select(static registration => registration.Type)
-				.ToArray();
-		}
-
-		private static IReadOnlyList<Type> ForgeTypesForRarity(IReadOnlyList<ForgeRegistration> registrations, HextechRarityTier rarity)
-		{
-			return registrations
-				.Where(registration => registration.Rarity == rarity)
-				.Select(static registration => registration.Type)
-				.ToArray();
-		}
-
-		private static IReadOnlyList<Type> RuneTypesForCharacter(IReadOnlyList<PlayerRuneRegistration> registrations, PlayerRuneCharacterPool characterPool)
-		{
-			return registrations
-				.Where(registration => registration.CharacterPool == characterPool)
-				.OrderBy(static registration => registration.CharacterOrder)
-				.Select(static registration => registration.Type)
-				.ToArray();
-		}
-
-		private static IReadOnlyList<Type> RuneTypesWithFlag(IReadOnlyList<PlayerRuneRegistration> registrations, PlayerRuneFlags flag)
-		{
-			return registrations
-				.Where(registration => (registration.Flags & flag) != 0)
-				.Select(static registration => registration.Type)
-				.ToArray();
-		}
-
-		private static IReadOnlyList<MonsterHexKind> MonsterHexesForRarity(IReadOnlyList<MonsterHexRegistration> registrations, HextechRarityTier rarity)
-		{
-			return registrations
-				.Where(registration => registration.Rarity == rarity && !registration.Disabled)
-				.Select(static registration => registration.Kind)
-				.ToArray();
+			public IReadOnlyList<MonsterHexKind> SilverMonsterHexes { get; }
+			public IReadOnlyList<MonsterHexKind> GoldMonsterHexes { get; }
+			public IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes { get; }
+			public IReadOnlyList<Type> AllRuneTypes { get; }
+			public IReadOnlyList<Type> AllForgeTypes { get; }
+			public IReadOnlyList<Type> AllCustomRelicTypes { get; }
 		}
 	}
-}

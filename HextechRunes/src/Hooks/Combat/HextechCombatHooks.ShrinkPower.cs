@@ -1,11 +1,9 @@
-using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -13,32 +11,9 @@ internal static partial class HextechCombatHooks
 {
 	private static void InstallShrinkPowerCompatibilityHooks(Harmony harmony)
 	{
-#if STS2_104_OR_NEWER
 		harmony.Patch(
-			RequireMethod(
-				typeof(MegaCrit.Sts2.Core.Commands.PowerCmd),
-				nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.ModifyAmount),
-				BindingFlags.Public | BindingFlags.Static,
-				typeof(PlayerChoiceContext),
-				typeof(PowerModel),
-				typeof(decimal),
-				typeof(Creature),
-				typeof(CardModel),
-				typeof(bool)),
+			HextechPowerCmdCompat.RequireModifyAmountMethod(),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ShrinkPowerModifyAmountPrefix)));
-#else
-		harmony.Patch(
-			RequireMethod(
-				typeof(MegaCrit.Sts2.Core.Commands.PowerCmd),
-				nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.ModifyAmount),
-				BindingFlags.Public | BindingFlags.Static,
-				typeof(PowerModel),
-				typeof(decimal),
-				typeof(Creature),
-				typeof(CardModel),
-				typeof(bool)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ShrinkPowerModifyAmountPrefix)));
-#endif
 	}
 
 	private static bool ShrinkPowerModifyAmountPrefix(
@@ -57,10 +32,13 @@ internal static partial class HextechCombatHooks
 			return true;
 		}
 
-		__result = ReplaceTemporaryShrinkWithPermanent(
+		object? effectiveChoiceContext = null;
 #if STS2_104_OR_NEWER
-			choiceContext,
+		effectiveChoiceContext = choiceContext;
 #endif
+
+		__result = ReplaceTemporaryShrinkWithPermanent(
+			effectiveChoiceContext,
 			power,
 			offset,
 			applier,
@@ -80,9 +58,7 @@ internal static partial class HextechCombatHooks
 	}
 
 	private static async Task<int> ReplaceTemporaryShrinkWithPermanent(
-#if STS2_104_OR_NEWER
-		PlayerChoiceContext choiceContext,
-#endif
+		object? choiceContext,
 		PowerModel temporaryShrink,
 		decimal permanentOffset,
 		Creature? applier,
@@ -90,23 +66,14 @@ internal static partial class HextechCombatHooks
 		bool silent)
 	{
 		Creature owner = temporaryShrink.Owner;
-		await MegaCrit.Sts2.Core.Commands.PowerCmd.Remove(temporaryShrink);
-#if STS2_104_OR_NEWER
-		ShrinkPower? permanentShrink = await MegaCrit.Sts2.Core.Commands.PowerCmd.Apply<ShrinkPower>(
+		await HextechPowerCmdCompat.Remove(temporaryShrink);
+		ShrinkPower? permanentShrink = await HextechPowerCmdCompat.Apply<ShrinkPower>(
 			choiceContext,
 			owner,
 			permanentOffset,
 			applier,
 			cardSource,
 			silent);
-#else
-		ShrinkPower? permanentShrink = await MegaCrit.Sts2.Core.Commands.PowerCmd.Apply<ShrinkPower>(
-			owner,
-			permanentOffset,
-			applier,
-			cardSource,
-			silent);
-#endif
 		return permanentShrink?.Amount ?? 0;
 	}
 }

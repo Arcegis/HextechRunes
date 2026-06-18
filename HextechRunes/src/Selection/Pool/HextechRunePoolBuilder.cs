@@ -234,6 +234,11 @@ internal static class HextechRunePoolBuilder
 	internal static IReadOnlyList<HextechRarityTier> GetEnabledPlayerRuneRarities(RunState runState)
 	{
 		IReadOnlySet<string> disabledIds = GetEffectiveDisabledPlayerRuneIds(runState);
+		return GetEnabledPlayerRuneRaritiesForDisabledIds(disabledIds);
+	}
+
+	internal static IReadOnlyList<HextechRarityTier> GetEnabledPlayerRuneRaritiesForDisabledIds(IReadOnlySet<string> disabledIds)
+	{
 		HextechRarityTier[] enabledRarities = Enum.GetValues<HextechRarityTier>()
 			.Where(rarity => HasEnabledConfigurablePlayerRuneForRarity(rarity, disabledIds))
 			.ToArray();
