@@ -332,6 +332,7 @@ public sealed class DoomForge : HextechForgeBase
 			|| Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0
+			|| HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse
 			|| !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;
