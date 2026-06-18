@@ -17,13 +17,19 @@ internal static partial class HextechRuneSelectionCoordinator
 		List<Task> pendingAcks = [];
 		foreach (Player player in runState.Players)
 		{
-			uint choiceId = synchronizer.ReserveChoiceId(player);
-			if (IsLocalPlayer(runManager, player))
-			{
-				synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateActSelectionApplied(actIndex));
-				Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} player={player.NetId} choiceId={choiceId}");
-				continue;
-			}
+				uint choiceId = synchronizer.ReserveChoiceId(player);
+				if (IsLocalPlayer(runManager, player))
+				{
+					if (TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateActSelectionApplied(actIndex), $"act-selection-applied act={actIndex}", out uint sentChoiceId))
+					{
+						Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} player={player.NetId} choiceId={sentChoiceId}");
+					}
+					else
+					{
+						Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local failed: act={actIndex} player={player.NetId} choiceId={choiceId}");
+					}
+					continue;
+				}
 
 			if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
 			{
