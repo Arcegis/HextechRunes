@@ -33,24 +33,47 @@ internal sealed class PorcupineEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		if (context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.Count > 0)
-		{
-			foreach ((uint combatId, int thorns) in context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.ToArray())
-			{
-				if (thorns <= 0)
-				{
-					continue;
-				}
+		await RemoveTemporaryThorns(context, combatRoom.CombatState.Enemies);
+	}
 
-				Creature? enemy = combatRoom.CombatState.Enemies.FirstOrDefault(creature => creature.CombatId == combatId);
-				if (enemy is { IsAlive: true })
-				{
-					await PowerCmd.Apply<ThornsPower>(enemy, -thorns, enemy, null);
-				}
+	internal override async Task BeforeSideTurnStart(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
+	{
+		await RemoveTemporaryThorns(context, combatState.Enemies);
+	}
+
+	private static async Task RemoveTemporaryThorns(HextechEnemyHexContext context, IReadOnlyList<Creature> enemies)
+	{
+		foreach ((uint combatId, int thorns) in GetTemporaryThornsToRemove(context.Tracking))
+		{
+			Creature? enemy = enemies.FirstOrDefault(creature => creature.CombatId == combatId);
+			if (enemy is { IsAlive: true })
+			{
+				await PowerCmd.Apply<ThornsPower>(enemy, -thorns, enemy, null);
 			}
 		}
 
 		context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.Clear();
 		context.Tracking.EnemyPorcupineTriggersThisTurn.Clear();
+	}
+
+	internal static IReadOnlyList<(uint CombatId, int Thorns)> GetTemporaryThornsToRemove(HextechMayhemCombatTrackingState tracking)
+	{
+		if (tracking.EnemyPorcupineTemporaryThornsThisTurn.Count == 0)
+		{
+			return [];
+		}
+
+		List<(uint CombatId, int Thorns)> result = new();
+		foreach ((uint combatId, int thorns) in tracking.EnemyPorcupineTemporaryThornsThisTurn)
+		{
+			if (thorns <= 0)
+			{
+				continue;
+			}
+
+			result.Add((combatId, thorns));
+		}
+
+		return result;
 	}
 }

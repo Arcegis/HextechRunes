@@ -54,6 +54,7 @@ internal static class Program
 			new(nameof(MonsterHexMetadataHasUniqueKinds), MonsterHexMetadataHasUniqueKinds),
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
+			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
 			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks)
@@ -683,6 +684,20 @@ internal static class Program
 		Expect(metadata.TryGetRegistration(disabled.Kind, out MonsterHexRegistration decoded), "disabled monster hex registration should decode");
 		Equal(disabled.IconRelicType, decoded.IconRelicType, "disabled monster hex icon relic type");
 		Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
+	}
+
+	private static void PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		tracking.EnemyPorcupineTemporaryThornsThisTurn[101] = 2;
+		tracking.EnemyPorcupineTemporaryThornsThisTurn[102] = 0;
+		tracking.EnemyPorcupineTemporaryThornsThisTurn[103] = -1;
+
+		IReadOnlyList<(uint CombatId, int Thorns)> removal = PorcupineEnemyHex.GetTemporaryThornsToRemove(tracking);
+
+		Equal(1, removal.Count, "porcupine temporary thorns removal count");
+		Equal(101u, removal[0].CombatId, "porcupine temporary thorns removal target");
+		Equal(2, removal[0].Thorns, "porcupine temporary thorns removal amount");
 	}
 
 	private static void MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack()
