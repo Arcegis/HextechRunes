@@ -183,7 +183,10 @@ internal static class HextechRunePoolBuilder
 				return !disabledIds.Contains(id.Entry);
 			})
 			.ToList();
-		if (configuredPool.Count > 0 || pool.Count == 0)
+		bool hasAnyEnabledRarity = Enum.GetValues<HextechRarityTier>()
+			.Any(enabledRarity => HasEnabledConfigurablePlayerRuneForRarity(enabledRarity, disabledIds));
+		bool rarityDisabledByConfig = hasAnyEnabledRarity && !HasEnabledConfigurablePlayerRuneForRarity(rarity, disabledIds);
+		if (configuredPool.Count > 0 || pool.Count == 0 || rarityDisabledByConfig)
 		{
 			return configuredPool;
 		}
@@ -226,6 +229,25 @@ internal static class HextechRunePoolBuilder
 		}
 
 		return HextechRuneConfiguration.GetDisabledPlayerRuneIds();
+	}
+
+	internal static IReadOnlyList<HextechRarityTier> GetEnabledPlayerRuneRarities(RunState runState)
+	{
+		IReadOnlySet<string> disabledIds = GetEffectiveDisabledPlayerRuneIds(runState);
+		HextechRarityTier[] enabledRarities = Enum.GetValues<HextechRarityTier>()
+			.Where(rarity => HasEnabledConfigurablePlayerRuneForRarity(rarity, disabledIds))
+			.ToArray();
+
+		return enabledRarities.Length > 0
+			? enabledRarities
+			: Enum.GetValues<HextechRarityTier>();
+	}
+
+	private static bool HasEnabledConfigurablePlayerRuneForRarity(HextechRarityTier rarity, IReadOnlySet<string> disabledIds)
+	{
+		return HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity)
+			.Where(HextechRuntimeRuneCompatibility.IsPlayerRuneAvailableForCurrentRuntime)
+			.Any(type => !disabledIds.Contains(ModelDb.GetId(type).Entry));
 	}
 
 	private static List<RelicModel> PickStableWeightedDistinct(
