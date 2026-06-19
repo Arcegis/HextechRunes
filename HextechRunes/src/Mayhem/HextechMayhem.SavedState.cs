@@ -9,15 +9,35 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	private readonly HextechMayhemActState _actState = new();
-	private readonly HextechMayhemCombatTrackingState _combatTracking = new();
-	private readonly HextechMayhemChoiceHistoryState _choiceHistory = new();
-	private readonly HextechActiveMonsterHexCache _activeMonsterHexCache = new();
-	private int[] _enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
-	private int _hexCountRecoveryBaseline;
-	private int _monsterHexStrengthTierFloor;
-	private int _enemyTezcatarasMercyCombatCounter;
-	private bool _hostUsesBetterMultiplayerScaling;
+	private readonly HextechMayhemRunContext _runContext = new();
+	private HextechMayhemActState _actState => _runContext.ActState;
+	private HextechMayhemCombatTrackingState _combatTracking => _runContext.CombatTracking;
+	private HextechMayhemChoiceHistoryState _choiceHistory => _runContext.ChoiceHistory;
+	private HextechActiveMonsterHexCache _activeMonsterHexCache => _runContext.ActiveMonsterHexCache;
+	private HextechEnemyHexCountState _enemyHexCounts => _runContext.EnemyHexCounts;
+	private int _hexCountRecoveryBaseline
+	{
+		get => _runContext.HexCountRecoveryBaseline;
+		set => _runContext.HexCountRecoveryBaseline = value;
+	}
+
+	private int _monsterHexStrengthTierFloor
+	{
+		get => _runContext.MonsterHexStrengthTierFloor;
+		set => _runContext.MonsterHexStrengthTierFloor = value;
+	}
+
+	private int _enemyTezcatarasMercyCombatCounter
+	{
+		get => _runContext.EnemyTezcatarasMercyCombatCounter;
+		set => _runContext.EnemyTezcatarasMercyCombatCounter = value;
+	}
+
+	private bool _hostUsesBetterMultiplayerScaling
+	{
+		get => _runContext.HostUsesBetterMultiplayerScaling;
+		set => _runContext.HostUsesBetterMultiplayerScaling = value;
+	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedRarityByAct
@@ -84,8 +104,15 @@ internal sealed partial class HextechMayhemModifier
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedEnemyHexCountsByAct
 	{
-		get => _enemyHexCountsByAct.ToArray();
-		set => _enemyHexCountsByAct = NormalizeEnemyHexCountsByAct(value);
+		get => _enemyHexCounts.Snapshot;
+		set => _enemyHexCounts.Set(value);
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public string SavedPlayerRuneConfigDisabledIdsJson
+	{
+		get => SerializePlayerRuneConfigDisabledIds();
+		set => RestorePlayerRuneConfigDisabledIds(value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]

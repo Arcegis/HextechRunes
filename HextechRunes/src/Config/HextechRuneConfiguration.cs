@@ -81,6 +81,15 @@ internal static class HextechRuneConfiguration
 		}
 	}
 
+	internal static HashSet<string> NormalizeDisabledPlayerRuneIds(IEnumerable<string>? ids)
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			return NormalizeConfigDisabledIds(ids);
+		}
+	}
+
 	public static IReadOnlySet<string> GetDefaultDisabledPlayerRuneIds()
 	{
 		return HextechCatalog.GetDefaultDisabledPlayerRuneIds()
@@ -231,34 +240,12 @@ internal static class HextechRuneConfiguration
 
 	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)
 	{
-		HashSet<string> configurableIds = HextechCatalog.GetConfigurablePlayerRuneIds()
-			.Select(static id => id.Entry)
-			.ToHashSet(StringComparer.Ordinal);
-		return NormalizeIds(ids)
-			.Where(configurableIds.Contains)
-			.ToHashSet(StringComparer.Ordinal);
+		return HextechPlayerRuneConfigIds.Normalize(ids);
 	}
 
 	private static HashSet<string> GetPlayerRuneIds(IEnumerable<Type> runeTypes)
 	{
-		HashSet<string> configurableIds = HextechCatalog.GetConfigurablePlayerRuneIds()
-			.Select(static id => id.Entry)
-			.ToHashSet(StringComparer.Ordinal);
-		return runeTypes
-			.Select(ModelDb.GetId)
-			.Select(static id => id.Entry)
-			.Where(configurableIds.Contains)
-			.ToHashSet(StringComparer.Ordinal);
-	}
-
-	private static HashSet<string> NormalizeIds(IEnumerable<string>? ids)
-	{
-		return (ids ?? [])
-			.Where(static id => !string.IsNullOrWhiteSpace(id))
-			.Select(static id => id.Trim())
-			.Distinct(StringComparer.Ordinal)
-			.OrderBy(static id => id, StringComparer.Ordinal)
-			.ToHashSet(StringComparer.Ordinal);
+		return HextechPlayerRuneConfigIds.FromTypes(runeTypes);
 	}
 
 	private static void SaveConfig(RuneConfig config)

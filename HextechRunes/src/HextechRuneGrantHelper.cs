@@ -83,14 +83,18 @@ internal static class HextechRuneGrantHelper
 
 		uint choiceId = synchronizer.ReserveChoiceId(player);
 		RunState runState = (RunState)player.RunState;
-		if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
-		{
-			List<ModelId> selectedIds = SelectRandomRuneIds(player, candidateTypes, count, blockedIds);
-			synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateRandomRuneGrant(selectedIds));
-			Log.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local: player={player.NetId} choiceId={choiceId} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
-			await ObtainRuneIds(player, selectedIds);
-			return true;
-		}
+			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
+			{
+				List<ModelId> selectedIds = SelectRandomRuneIds(player, candidateTypes, count, blockedIds);
+				if (!HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateRandomRuneGrant(selectedIds), "random-rune-grant", out uint sentChoiceId))
+				{
+					Log.Warn($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local failed: player={player.NetId} choiceId={choiceId}");
+				}
+
+				Log.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
+				await ObtainRuneIds(player, selectedIds);
+				return true;
+			}
 
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(
 			synchronizer,
@@ -161,6 +165,9 @@ internal static class HextechRuneGrantHelper
 		IReadOnlySet<ModelId> selectedIds)
 	{
 		bool applyConfiguration = HextechRunePoolBuilder.ShouldApplyPlayerRuneConfiguration(player);
+		IReadOnlySet<string> disabledIds = applyConfiguration
+			? HextechRunePoolBuilder.GetEffectiveDisabledPlayerRuneIds((RunState)player.RunState)
+			: new HashSet<string>(StringComparer.Ordinal);
 		HashSet<ModelId> ownedAndSelectedIds = player.Relics
 			.Where(HextechCatalog.IsHextechRelic)
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
@@ -177,7 +184,7 @@ internal static class HextechRuneGrantHelper
 			.Where(type => applyConfiguration
 				? HextechCatalog.IsPlayerRuneTypeConfigurable(type)
 				: HextechCatalog.IsPlayerRuneTypeSelectable(type))
-			.Where(type => !applyConfiguration || HextechRuneConfiguration.IsPlayerRuneEnabled(ModelDb.GetId(type).Entry))
+			.Where(type => !applyConfiguration || !disabledIds.Contains(ModelDb.GetId(type).Entry))
 			.Where(type => !ExcludedRewardRuneTypes.Contains(type))
 			.Where(type => !unavailableIds.Contains(ModelDb.GetId(type)))
 			.Where(type =>

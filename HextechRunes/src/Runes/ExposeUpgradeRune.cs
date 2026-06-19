@@ -27,7 +27,8 @@ public sealed class ExposeUpgradeRune : CardUpgradeRuneBase<Expose>
 		}
 
 		List<PowerModel> buffs = cardPlay.Target.Powers
-			.Where(static power => power.GetTypeForAmount(power.Amount) == PowerType.Buff)
+			.Where(static power => power.GetTypeForAmount(power.Amount) == PowerType.Buff
+				&& !HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power))
 			.ToList();
 		if (buffs.Count == 0)
 		{

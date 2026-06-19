@@ -33,6 +33,13 @@ internal static class HextechMonsterInteractionPolicy
 
 	public static bool ShouldIgnoreMonsterSelfBuff(PowerModel power)
 	{
-		return power is SandpitPower;
+		return IsStructuralMonsterBuff(power);
+	}
+
+	public static bool IsStructuralMonsterBuff(PowerModel power)
+	{
+		return power is SandpitPower
+			or ReattachPower
+			or AdaptablePower;
 	}
 }

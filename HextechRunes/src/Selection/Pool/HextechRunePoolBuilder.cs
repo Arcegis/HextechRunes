@@ -36,7 +36,7 @@ internal static class HextechRunePoolBuilder
 				&& (excludedIds == null || !excludedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)))
 			.ToList();
 
-		return applyConfiguration ? ApplyPlayerRuneConfiguration(pool, rarity) : pool;
+		return applyConfiguration ? ApplyPlayerRuneConfiguration(pool, rarity, runState) : pool;
 	}
 
 	public static List<RelicModel> BuildSelectableRunesForRarity(
@@ -168,17 +168,25 @@ internal static class HextechRunePoolBuilder
 		return HextechRarityTier.Gold;
 	}
 
-	private static List<RelicModel> ApplyPlayerRuneConfiguration(List<RelicModel> pool, HextechRarityTier rarity)
+	private static List<RelicModel> ApplyPlayerRuneConfiguration(List<RelicModel> pool, HextechRarityTier rarity, RunState runState)
 	{
-		if (!HextechRuneConfiguration.HasDisabledPlayerRunes)
+		IReadOnlySet<string> disabledIds = GetEffectiveDisabledPlayerRuneIds(runState);
+		if (disabledIds.Count == 0)
 		{
 			return pool;
 		}
 
 		List<RelicModel> configuredPool = pool
-			.Where(HextechRuneConfiguration.IsPlayerRuneEnabled)
+			.Where(relic =>
+			{
+				ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+				return !disabledIds.Contains(id.Entry);
+			})
 			.ToList();
-		if (configuredPool.Count > 0 || pool.Count == 0)
+		bool hasAnyEnabledRarity = Enum.GetValues<HextechRarityTier>()
+			.Any(enabledRarity => HasEnabledConfigurablePlayerRuneForRarity(enabledRarity, disabledIds));
+		bool rarityDisabledByConfig = hasAnyEnabledRarity && !HasEnabledConfigurablePlayerRuneForRarity(rarity, disabledIds);
+		if (configuredPool.Count > 0 || pool.Count == 0 || rarityDisabledByConfig)
 		{
 			return configuredPool;
 		}
@@ -192,12 +200,59 @@ internal static class HextechRunePoolBuilder
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
 		if (gameType is NetGameType.Singleplayer or NetGameType.None
+			or NetGameType.Host or NetGameType.Client
 			|| HextechAiTeammateCompat.IsLoopbackHostSession())
 		{
 			return true;
 		}
 
-		return player.NetId != 0UL && player.NetId == runManager.NetService.NetId;
+		return false;
+	}
+
+	internal static IReadOnlySet<string> GetEffectiveDisabledPlayerRuneIds(RunState runState)
+	{
+		if (runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+		{
+			return modifier.PlayerRuneConfigDisabledIds;
+		}
+
+		try
+		{
+			if (RunManager.Instance.NetService.Type == NetGameType.Client)
+			{
+				return new HashSet<string>(StringComparer.Ordinal);
+			}
+		}
+		catch
+		{
+			// Fall back to local configuration outside a fully initialized multiplayer run.
+		}
+
+		return HextechRuneConfiguration.GetDisabledPlayerRuneIds();
+	}
+
+	internal static IReadOnlyList<HextechRarityTier> GetEnabledPlayerRuneRarities(RunState runState)
+	{
+		IReadOnlySet<string> disabledIds = GetEffectiveDisabledPlayerRuneIds(runState);
+		return GetEnabledPlayerRuneRaritiesForDisabledIds(disabledIds);
+	}
+
+	internal static IReadOnlyList<HextechRarityTier> GetEnabledPlayerRuneRaritiesForDisabledIds(IReadOnlySet<string> disabledIds)
+	{
+		HextechRarityTier[] enabledRarities = Enum.GetValues<HextechRarityTier>()
+			.Where(rarity => HasEnabledConfigurablePlayerRuneForRarity(rarity, disabledIds))
+			.ToArray();
+
+		return enabledRarities.Length > 0
+			? enabledRarities
+			: Enum.GetValues<HextechRarityTier>();
+	}
+
+	private static bool HasEnabledConfigurablePlayerRuneForRarity(HextechRarityTier rarity, IReadOnlySet<string> disabledIds)
+	{
+		return HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity)
+			.Where(HextechRuntimeRuneCompatibility.IsPlayerRuneAvailableForCurrentRuntime)
+			.Any(type => !disabledIds.Contains(ModelDb.GetId(type).Entry));
 	}
 
 	private static List<RelicModel> PickStableWeightedDistinct(

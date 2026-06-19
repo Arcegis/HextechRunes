@@ -45,5 +45,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	private const int FirstActSilverWeight = 20;
 	private const int FirstActGoldWeight = 50;
 	private const int FirstActPrismaticWeight = 30;
-	private const int ActSelectionAppliedAckTimeoutFrames = 600;
+	private const int ActSelectionAppliedAckTimeoutFrames = 1800;
+	private const int RemoteRuneChoiceTimeoutFrames = 36000;
+	private const int EnemyHexAdjustmentTimeoutFrames = 36000;
 }

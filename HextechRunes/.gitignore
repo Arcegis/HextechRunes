@@ -3,4 +3,6 @@
 dist/
 src/bin/
 src/obj/
+tests/**/bin/
+tests/**/obj/
 versioned-dll-backups/

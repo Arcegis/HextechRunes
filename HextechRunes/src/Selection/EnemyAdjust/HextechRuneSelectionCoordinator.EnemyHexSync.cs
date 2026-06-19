@@ -90,7 +90,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
-	private static void SendEnemyHexAdjustment(
+	private static bool SendEnemyHexAdjustment(
 		EnemyHexAdjustmentSyncContext syncContext,
 		IReadOnlyList<MonsterHexKind?> monsterHexes,
 		IReadOnlyList<int> rerollCounts,
@@ -98,42 +98,58 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		if (syncContext.FinalSent)
 		{
-			return;
+			return true;
 		}
 
-		syncContext.CurrentMonsterHexSlots.Clear();
-		syncContext.CurrentMonsterHexSlots.AddRange(monsterHexes);
-		syncContext.RerollCounts.Clear();
-		syncContext.RerollCounts.AddRange(rerollCounts.Select(static count => Math.Max(0, count)));
+		List<MonsterHexKind?> nextMonsterHexes = monsterHexes.ToList();
+		List<int> nextRerollCounts = rerollCounts.Select(static count => Math.Max(0, count)).ToList();
 		EnemyHexAdjustmentPayload payload = new(
 			syncContext.ActIndex,
 			syncContext.Sequence,
-			syncContext.CurrentMonsterHexSlots.ToArray(),
-			syncContext.RerollCounts.ToArray(),
+			nextMonsterHexes.ToArray(),
+			nextRerollCounts.ToArray(),
 			isFinal);
-		syncContext.Synchronizer.SyncLocalChoice(syncContext.AuthorityPlayer, syncContext.NextChoiceId, HextechChoiceCodec.CreateEnemyHexAdjustment(payload));
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} seq={syncContext.Sequence} hexes={string.Join(",", syncContext.CurrentMonsterHexSlots.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", syncContext.RerollCounts)} final={isFinal}");
+		if (!TrySyncLocalHextechChoice(syncContext.Synchronizer, syncContext.AuthorityPlayer, syncContext.NextChoiceId, HextechChoiceCodec.CreateEnemyHexAdjustment(payload), $"enemy-hex-adjustment act={syncContext.ActIndex}", out uint sentChoiceId))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send failed: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} seq={syncContext.Sequence} final={isFinal}");
+			return false;
+		}
+
+		syncContext.CurrentMonsterHexSlots.Clear();
+		syncContext.CurrentMonsterHexSlots.AddRange(nextMonsterHexes);
+		syncContext.RerollCounts.Clear();
+		syncContext.RerollCounts.AddRange(nextRerollCounts);
+		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={sentChoiceId} seq={syncContext.Sequence} hexes={string.Join(",", syncContext.CurrentMonsterHexSlots.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", syncContext.RerollCounts)} final={isFinal}");
 		if (isFinal)
 		{
 			syncContext.FinalSent = true;
-			return;
+			return true;
 		}
 
 		syncContext.Sequence++;
 		syncContext.NextChoiceId = syncContext.Synchronizer.ReserveChoiceId(syncContext.AuthorityPlayer);
+		return true;
 	}
 
 	private static async Task ReceiveEnemyHexAdjustments(EnemyHexAdjustmentSyncContext syncContext, RunState runState, HextechRuneSelectionScreen screen)
 	{
 		while (screen.IsInsideTree())
 		{
-			(PlayerChoiceResult result, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+			(PlayerChoiceResult result, uint receivedChoiceId)? received = await TryWaitForRemoteHextechChoice(
 				syncContext.Synchronizer,
 				runState,
 				syncContext.AuthorityPlayer,
 				syncContext.NextChoiceId,
 				choice => HextechChoiceCodec.TryDecodeEnemyHexAdjustment(choice, syncContext.ActIndex, out _),
-				$"enemy-hex-adjustment act={syncContext.ActIndex}");
+				$"enemy-hex-adjustment act={syncContext.ActIndex}",
+				EnemyHexAdjustmentTimeoutFrames);
+			if (!received.HasValue)
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync timeout: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId}");
+				return;
+			}
+
+			(PlayerChoiceResult result, uint receivedChoiceId) = received.Value;
 			if (!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, syncContext.ActIndex, out EnemyHexAdjustmentPayload payload))
 			{
 				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync malformed: act={syncContext.ActIndex} choiceId={receivedChoiceId}");

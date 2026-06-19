@@ -17,34 +17,34 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	private static HextechRarityTier RollRandomRarity(HextechMayhemModifier modifier, int actIndex, RunState runState)
+	private static HextechRarityTier RollRandomRarity(HextechMayhemModifier modifier, int actIndex, RunState runState, IReadOnlyList<HextechRarityTier> enabledRarities)
 	{
 		if (actIndex == 0)
 		{
-			return RollWeightedRarity(runState, FirstActSilverWeight, FirstActGoldWeight, FirstActPrismaticWeight, deterministic: false, actIndex);
+			return RollWeightedRarity(runState, FirstActSilverWeight, FirstActGoldWeight, FirstActPrismaticWeight, deterministic: false, actIndex, enabledRarities);
 		}
 
 		if (actIndex == 1 && modifier.GetRarityForAct(0) == HextechRarityTier.Silver)
 		{
-			return RollWeightedRarity(runState, 0, 1, 1, deterministic: false, actIndex);
+			return RollWeightedRarity(runState, 0, 1, 1, deterministic: false, actIndex, enabledRarities);
 		}
 
-		return (HextechRarityTier)runState.Rng.Niche.NextInt(3);
+		return RollUniformRarity(runState, deterministic: false, actIndex, enabledRarities);
 	}
 
-	private static HextechRarityTier RollStableRarity(HextechMayhemModifier modifier, int actIndex, RunState runState)
+	private static HextechRarityTier RollStableRarity(HextechMayhemModifier modifier, int actIndex, RunState runState, IReadOnlyList<HextechRarityTier> enabledRarities)
 	{
 		if (actIndex == 0)
 		{
-			return RollWeightedRarity(runState, FirstActSilverWeight, FirstActGoldWeight, FirstActPrismaticWeight, deterministic: true, actIndex);
+			return RollWeightedRarity(runState, FirstActSilverWeight, FirstActGoldWeight, FirstActPrismaticWeight, deterministic: true, actIndex, enabledRarities);
 		}
 
 		if (actIndex == 1 && modifier.GetRarityForAct(0) == HextechRarityTier.Silver)
 		{
-			return RollWeightedRarity(runState, 0, 1, 1, deterministic: true, actIndex);
+			return RollWeightedRarity(runState, 0, 1, 1, deterministic: true, actIndex, enabledRarities);
 		}
 
-		return (HextechRarityTier)HextechStableRandom.Index(runState, 3, "act-roll-rarity", actIndex.ToString());
+		return RollUniformRarity(runState, deterministic: true, actIndex, enabledRarities);
 	}
 
 	private static async Task<(HextechRarityTier Rarity, MonsterHexKind? MonsterHex)> ResolveActRoll(RunState runState, HextechMayhemModifier modifier, int actIndex)
@@ -52,16 +52,29 @@ internal static partial class HextechRuneSelectionCoordinator
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
 		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
+		IReadOnlySet<string> localDisabledPlayerRuneIds = HextechRuneConfiguration.GetDisabledPlayerRuneIds();
 
 		HextechRarityTier? savedRarity = modifier.GetRarityForAct(actIndex);
 		HextechRarityTier? forcedRarity = HextechCustomRunModifierHooks.GetForcedRarity(runState);
+		IReadOnlyList<HextechRarityTier> enabledRarities = HextechRunePoolBuilder.GetEnabledPlayerRuneRarities(runState);
+		HextechRarityTier? effectiveForcedRarity = forcedRarity.HasValue && enabledRarities.Contains(forcedRarity.Value)
+			? forcedRarity
+			: null;
 		HextechRarityTier localRarity = savedRarity
-			?? forcedRarity
-			?? (isMultiplayer ? RollStableRarity(modifier, actIndex, runState) : RollRandomRarity(modifier, actIndex, runState));
+			?? effectiveForcedRarity
+			?? (isMultiplayer ? RollStableRarity(modifier, actIndex, runState, enabledRarities) : RollRandomRarity(modifier, actIndex, runState, enabledRarities));
 		modifier.SetRarityForAct(actIndex, localRarity);
-		if (!savedRarity.HasValue && forcedRarity.HasValue)
+		if (!savedRarity.HasValue && effectiveForcedRarity.HasValue)
 		{
 			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll forced rarity: act={actIndex} rarity={localRarity}");
+		}
+		else if (!savedRarity.HasValue && forcedRarity.HasValue)
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll ignored disabled forced rarity: act={actIndex} forced={forcedRarity} enabled={string.Join(",", enabledRarities)} rarity={localRarity}");
+		}
+		else if (!savedRarity.HasValue && enabledRarities.Count < Enum.GetValues<HextechRarityTier>().Length)
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll rarity pool filtered by player rune config: act={actIndex} enabled={string.Join(",", enabledRarities)} rarity={localRarity}");
 		}
 
 		IReadOnlyList<MonsterHexKind> previousHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
@@ -80,6 +93,11 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (gameType is NetGameType.Singleplayer or NetGameType.None or NetGameType.Replay)
 		{
+			if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"local act-roll act={actIndex}");
+			}
+
 			modifier.HostUsesBetterMultiplayerScaling = false;
 			return (localRarity, localMonsterHex);
 		}
@@ -89,7 +107,16 @@ internal static partial class HextechRuneSelectionCoordinator
 		if (synchronizer == null || authorityPlayer == null)
 		{
 			modifier.HostUsesBetterMultiplayerScaling = gameType == NetGameType.Host && HextechMultiplayerScalingCompat.IsBetterMultiplayerScalingLoaded();
-			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: falling back to local roll act={actIndex} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} synchronizer={synchronizer != null} authority={authorityPlayer?.NetId}");
+			if (gameType == NetGameType.Host && !modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"host fallback act-roll act={actIndex}");
+			}
+			else if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot([], $"client fallback act-roll act={actIndex}");
+			}
+
+			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: falling back to local roll act={actIndex} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} synchronizer={synchronizer != null} authority={authorityPlayer?.NetId}");
 			return (localRarity, localMonsterHex);
 		}
 
@@ -98,19 +125,28 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			bool hostUsesExternalScaling = HextechMultiplayerScalingCompat.IsBetterMultiplayerScalingLoaded();
 			modifier.HostUsesBetterMultiplayerScaling = hostUsesExternalScaling;
-			synchronizer.SyncLocalChoice(authorityPlayer, choiceId, HextechChoiceCodec.CreateActRoll(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling, modifier.EnemyHexCountsByAct));
-			Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} betterMultiplayerScaling={hostUsesExternalScaling}");
-			return (localRarity, localMonsterHex);
-		}
+			if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"host act-roll act={actIndex}");
+			}
+
+				if (!TrySyncLocalHextechChoice(synchronizer, authorityPlayer, choiceId, HextechChoiceCodec.CreateActRoll(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling, modifier.EnemyHexCountsByAct, modifier.PlayerRuneConfigDisabledIds), $"act-roll act={actIndex}", out uint sentChoiceId))
+				{
+					Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync failed: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId}");
+				}
+
+				Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync: act={actIndex} choiceId={sentChoiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} betterMultiplayerScaling={hostUsesExternalScaling}");
+				return (localRarity, localMonsterHex);
+			}
 
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
 			runState,
 			authorityPlayer,
 			choiceId,
-			result => HextechChoiceCodec.TryDecodeActRoll(result, actIndex, out _, out _, out _, out _),
+			result => HextechChoiceCodec.TryDecodeActRoll(result, actIndex, out _, out _, out _, out _, out _),
 			$"act-roll act={actIndex}");
-		if (!HextechChoiceCodec.TryDecodeActRoll(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind? syncedMonsterHex, out bool syncedHostUsesExternalScaling, out int[] syncedEnemyHexCountsByAct))
+		if (!HextechChoiceCodec.TryDecodeActRoll(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind? syncedMonsterHex, out bool syncedHostUsesExternalScaling, out int[] syncedEnemyHexCountsByAct, out HashSet<string> syncedDisabledPlayerRuneIds))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll: malformed host payload act={actIndex}; using local rarity={localRarity} monsterHex={localMonsterHex}");
 			return (localRarity, localMonsterHex);
@@ -118,8 +154,9 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		modifier.SetRarityForAct(actIndex, syncedRarity);
 		modifier.SetEnemyHexCountsByActSnapshot(syncedEnemyHexCountsByAct, $"host act-roll act={actIndex}");
+		modifier.SetPlayerRuneConfigDisabledIdsSnapshot(syncedDisabledPlayerRuneIds, $"host act-roll act={actIndex}");
 		modifier.HostUsesBetterMultiplayerScaling = syncedHostUsesExternalScaling;
-		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} betterMultiplayerScaling={syncedHostUsesExternalScaling} localRarity={localRarity} localMonsterHex={localMonsterHex}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} betterMultiplayerScaling={syncedHostUsesExternalScaling} localRarity={localRarity} localMonsterHex={localMonsterHex}");
 		return (syncedRarity, syncedMonsterHex);
 	}
 
@@ -133,35 +170,64 @@ internal static partial class HextechRuneSelectionCoordinator
 		return runState.Players.FirstOrDefault();
 	}
 
-	private static HextechRarityTier RollWeightedRarity(RunState runState, int silverWeight, int goldWeight, int prismaticWeight, bool deterministic, int actIndex)
+	private static HextechRarityTier RollWeightedRarity(
+		RunState runState,
+		int silverWeight,
+		int goldWeight,
+		int prismaticWeight,
+		bool deterministic,
+		int actIndex,
+		IReadOnlyList<HextechRarityTier> enabledRarities)
 	{
-		int totalWeight = silverWeight + goldWeight + prismaticWeight;
+		HextechRarityWeights weights = HextechRarityRollResolver.ApplyEnabledRarities(
+			silverWeight,
+			goldWeight,
+			prismaticWeight,
+			enabledRarities);
+		if (weights.Total <= 0)
+		{
+			return RollUniformRarity(runState, deterministic, actIndex, enabledRarities);
+		}
+
 		int roll = deterministic
-			? HextechStableRandom.Index(runState, totalWeight, "act-roll-weighted-rarity", actIndex.ToString(), silverWeight.ToString(), goldWeight.ToString(), prismaticWeight.ToString())
-			: runState.Rng.Niche.NextInt(totalWeight);
-		if (roll < silverWeight)
+			? HextechStableRandom.Index(runState, weights.Total, "act-roll-weighted-rarity", actIndex.ToString(), weights.Silver.ToString(), weights.Gold.ToString(), weights.Prismatic.ToString())
+			: runState.Rng.Niche.NextInt(weights.Total);
+		return HextechRarityRollResolver.ResolveWeighted(weights, roll);
+	}
+
+	private static HextechRarityTier RollUniformRarity(RunState runState, bool deterministic, int actIndex, IReadOnlyList<HextechRarityTier> enabledRarities)
+	{
+		HextechRarityTier[] orderedRarities = HextechRarityRollResolver.GetUniformRarityOrder(enabledRarities);
+
+		if (HextechRarityRollResolver.HasAllRarities(orderedRarities))
 		{
-			return HextechRarityTier.Silver;
+			int roll = deterministic
+				? HextechStableRandom.Index(runState, 3, "act-roll-rarity", actIndex.ToString())
+				: runState.Rng.Niche.NextInt(3);
+			return HextechRarityRollResolver.ResolveUniform(orderedRarities, roll);
 		}
 
-		roll -= silverWeight;
-		if (roll < goldWeight)
-		{
-			return HextechRarityTier.Gold;
-		}
-
-		return HextechRarityTier.Prismatic;
+		int index = deterministic
+			? HextechStableRandom.Index(
+				runState,
+				orderedRarities.Length,
+				"act-roll-rarity",
+				actIndex.ToString(),
+				"enabled",
+				string.Join(",", orderedRarities.Select(static rarity => ((int)rarity).ToString()).OrderBy(static value => value, StringComparer.Ordinal)))
+			: runState.Rng.Niche.NextInt(orderedRarities.Length);
+		return orderedRarities[index];
 	}
 
 	private static MonsterHexKind? ChooseMonsterHexForAct(HextechMayhemModifier modifier, HextechRarityTier rarity, RunState runState, IEnumerable<MonsterHexKind>? extraExcludedHexes = null)
 	{
-		List<MonsterHexKind> pool = BuildMonsterHexPoolForAct(modifier, rarity, extraExcludedHexes);
+		IReadOnlyList<MonsterHexKind> pool = HextechMonsterHexRoller.BuildActPool(rarity, modifier.GetKnownMonsterHexes(), extraExcludedHexes);
 		return pool.Count > 0 ? pool[runState.Rng.Niche.NextInt(pool.Count)] : null;
 	}
 
 	private static MonsterHexKind? ChooseStableMonsterHexForAct(HextechMayhemModifier modifier, HextechRarityTier rarity, RunState runState, int actIndex, IEnumerable<MonsterHexKind>? extraExcludedHexes = null, int ordinal = 0)
 	{
-		List<MonsterHexKind> pool = BuildMonsterHexPoolForAct(modifier, rarity, extraExcludedHexes);
+		IReadOnlyList<MonsterHexKind> pool = HextechMonsterHexRoller.BuildActPool(rarity, modifier.GetKnownMonsterHexes(), extraExcludedHexes);
 		if (pool.Count == 0)
 		{
 			return null;
@@ -177,25 +243,6 @@ internal static partial class HextechRuneSelectionCoordinator
 			string.Join(",", pool.Select(static kind => ((int)kind).ToString()).OrderBy(static key => key, StringComparer.Ordinal)))];
 	}
 
-	private static List<MonsterHexKind> BuildMonsterHexPoolForAct(HextechMayhemModifier modifier, HextechRarityTier rarity, IEnumerable<MonsterHexKind>? extraExcludedHexes = null)
-	{
-		HashSet<MonsterHexKind> alreadyChosen = modifier.GetKnownMonsterHexes().ToHashSet();
-		if (extraExcludedHexes != null)
-		{
-			alreadyChosen.UnionWith(extraExcludedHexes);
-		}
-
-		List<MonsterHexKind> pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
-			.Where(kind => !alreadyChosen.Contains(kind))
-			.ToList();
-		if (pool.Count == 0)
-		{
-			pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity).ToList();
-		}
-
-		return pool;
-	}
-
 	private static IReadOnlyList<MonsterHexKind> ResolveNewMonsterHexesForAct(
 		HextechMayhemModifier modifier,
 		HextechRarityTier rarity,
@@ -204,63 +251,25 @@ internal static partial class HextechRuneSelectionCoordinator
 		MonsterHexKind? primaryMonsterHex)
 	{
 		int newEnemyHexCount = modifier.GetEnemyHexCountForAct(actIndex);
-		List<MonsterHexKind> resolvedNewHexes = [];
-		HashSet<MonsterHexKind> seen = [];
-		foreach (MonsterHexKind hex in modifier.GetActiveMonsterHexesBeforeAct(actIndex))
-		{
-			seen.Add(hex);
-		}
-
-		int addedThisAct = 0;
-		if (primaryMonsterHex.HasValue
-			&& addedThisAct < newEnemyHexCount
-			&& seen.Add(primaryMonsterHex.Value))
-		{
-			resolvedNewHexes.Add(primaryMonsterHex.Value);
-			addedThisAct++;
-		}
+		IReadOnlyList<MonsterHexKind> previousHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
 
 		NetGameType gameType = RunManager.Instance.NetService.Type;
 		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
-		for (int ordinal = 0; addedThisAct < newEnemyHexCount; ordinal++)
-		{
-			MonsterHexKind? extraHex = isMultiplayer
-				? ChooseStableMonsterHexForAct(modifier, rarity, runState, actIndex, seen, ordinal + 1)
-				: ChooseMonsterHexForAct(modifier, rarity, runState, seen);
-			if (!extraHex.HasValue || !seen.Add(extraHex.Value))
-			{
-				break;
-			}
+		IReadOnlyList<MonsterHexKind> resolvedNewHexes = HextechMonsterHexRoller.ResolveNewMonsterHexes(
+			newEnemyHexCount,
+			previousHexes,
+			primaryMonsterHex,
+			(excludedHexes, ordinal) => isMultiplayer
+				? ChooseStableMonsterHexForAct(modifier, rarity, runState, actIndex, excludedHexes, ordinal)
+				: ChooseMonsterHexForAct(modifier, rarity, runState, excludedHexes));
 
-			resolvedNewHexes.Add(extraHex.Value);
-			addedThisAct++;
-		}
-
-		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveNewMonsterHexesForAct: act={actIndex} newCount={newEnemyHexCount} previous={seen.Count - addedThisAct} primary={primaryMonsterHex} newHexes={string.Join(",", resolvedNewHexes)}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] ResolveNewMonsterHexesForAct: act={actIndex} newCount={newEnemyHexCount} previous={previousHexes.Count} primary={primaryMonsterHex} newHexes={string.Join(",", resolvedNewHexes)}");
 		return resolvedNewHexes;
 	}
 
 	private static IReadOnlyList<MonsterHexKind> CombineMonsterHexes(IEnumerable<MonsterHexKind> previousHexes, IEnumerable<MonsterHexKind> newHexes)
 	{
-		List<MonsterHexKind> combined = [];
-		HashSet<MonsterHexKind> seen = [];
-		foreach (MonsterHexKind hex in previousHexes)
-		{
-			if (seen.Add(hex))
-			{
-				combined.Add(hex);
-			}
-		}
-
-		foreach (MonsterHexKind hex in newHexes)
-		{
-			if (seen.Add(hex))
-			{
-				combined.Add(hex);
-			}
-		}
-
-		return combined;
+		return HextechMonsterHexRoller.CombineActiveHexes(previousHexes, newHexes);
 	}
 
 	private static MonsterHexKind? RerollEnemyHexForAct(
@@ -272,31 +281,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		int rerollOrdinal,
 		IReadOnlySet<ModelId> excludedIconRelicIds)
 	{
-		HashSet<MonsterHexKind> alreadyChosen = modifier.GetKnownMonsterHexes()
-			.Where(kind => kind != currentHex)
-			.ToHashSet();
-		List<MonsterHexKind> pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
-			.Where(kind => kind != currentHex)
-			.Where(kind => !alreadyChosen.Contains(kind))
-			.Where(kind => !excludedIconRelicIds.Contains(GetMonsterHexIconRelicId(kind)))
-			.ToList();
-		if (pool.Count == 0)
-		{
-			pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
-				.Where(kind => kind != currentHex)
-				.Where(kind => !alreadyChosen.Contains(kind))
-				.ToList();
-		}
-		if (pool.Count == 0)
-		{
-			pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity)
-				.Where(kind => kind != currentHex)
-				.ToList();
-		}
-		if (pool.Count == 0)
-		{
-			pool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity).ToList();
-		}
+		IReadOnlyList<MonsterHexKind> pool = HextechMonsterHexRoller.BuildRerollPool(
+			rarity,
+			modifier.GetKnownMonsterHexes(),
+			currentHex,
+			excludedIconRelicIds,
+			GetMonsterHexIconRelicId);
 		if (pool.Count == 0)
 		{
 			return currentHex;

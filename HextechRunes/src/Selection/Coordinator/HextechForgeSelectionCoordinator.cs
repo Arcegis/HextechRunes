@@ -77,10 +77,14 @@ internal static class HextechForgeSelectionCoordinator
 				return null;
 			}
 
-			synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options));
-			Log.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={choiceId} index={selectedIndex} context={context}");
-			return selected;
-		}
+				if (!HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options), $"forge-choice {context}", out uint sentChoiceId))
+				{
+					Log.Warn($"[{ModInfo.Id}][ForgeChoice] Sync local failed: player={player.NetId} choiceId={choiceId} index={selectedIndex} context={context}");
+				}
+
+				Log.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={sentChoiceId} index={selectedIndex} context={context}");
+				return selected;
+			}
 
 		if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
 		{
@@ -91,9 +95,9 @@ internal static class HextechForgeSelectionCoordinator
 				return null;
 			}
 
-			synchronizer.SyncLocalChoice(player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options));
-			return selectedIndex >= 0 && selectedIndex < options.Count ? options[selectedIndex] : options[0];
-		}
+				HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options), $"forge-choice-ai {context}", out _);
+				return selectedIndex >= 0 && selectedIndex < options.Count ? options[selectedIndex] : options[0];
+			}
 
 		Log.Info($"[{ModInfo.Id}][ForgeChoice] Wait remote: player={player.NetId} choiceId={choiceId} context={context}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(

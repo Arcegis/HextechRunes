@@ -9,7 +9,7 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	public int[] EnemyHexCountsByAct => _enemyHexCountsByAct.ToArray();
+	public int[] EnemyHexCountsByAct => _enemyHexCounts.Snapshot;
 
 	public bool IsActResolved(int actIndex)
 	{
@@ -104,41 +104,22 @@ internal sealed partial class HextechMayhemModifier
 
 	public void ResetForNewRun()
 	{
-		_enemyHexCountsByAct = CreateNewRunEnemyHexCountsByActSnapshot();
-		_hexCountRecoveryBaseline = 0;
-		_monsterHexStrengthTierFloor = 0;
-		_enemyTezcatarasMercyCombatCounter = 0;
-		_actState.Reset();
-		_choiceHistory.Reset();
-		ResetCombatTracking();
-		InvalidateActiveMonsterHexCache();
-		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: enemyCounts={string.Join(",", _enemyHexCountsByAct)}");
+		_runContext.ResetForNewRun(CreateNewRunEnemyHexCountsByActSnapshot());
+		InitializePlayerRuneConfigDisabledIdsSnapshotForNewRun("new run");
+		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: enemyCounts={string.Join(",", EnemyHexCountsByAct)} playerConfigDisabled={PlayerRuneConfigDisabledIds.Count}");
 	}
 
 	public void ResetForEndlessLoop(string reason)
 	{
-		_hexCountRecoveryBaseline = HextechMayhemActRecovery.GetMinimumPlayerHexCount(RunState);
-		_monsterHexStrengthTierFloor = 3;
-		_enemyTezcatarasMercyCombatCounter = 0;
-		_actState.ResetForEndlessLoop();
-		_choiceHistory.Reset();
-		ResetCombatTracking();
-		InvalidateActiveMonsterHexCache();
-		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} enemyCounts={string.Join(",", _enemyHexCountsByAct)} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
+		_runContext.ResetForEndlessLoop(HextechMayhemActRecovery.GetMinimumPlayerHexCount(RunState));
+		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} enemyCounts={string.Join(",", EnemyHexCountsByAct)} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
 		HextechRunLifecycleHooks.HandleEndlessLoopReset(this, reason);
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
-		_enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
-		_hexCountRecoveryBaseline = 0;
-		_monsterHexStrengthTierFloor = 0;
-		_enemyTezcatarasMercyCombatCounter = 0;
-		_actState.DebugSetOnlyMonsterHex(actIndex, hex, rarity);
-		_choiceHistory.Reset();
-
-		ResetCombatTracking();
-		InvalidateActiveMonsterHexCache();
+		_runContext.ResetForDebugMonsterHex(actIndex, hex, rarity);
+		SetPlayerRuneConfigDisabledIdsSnapshot(HextechRuneConfiguration.GetDisabledPlayerRuneIds(), "debug set monster hex");
 	}
 
 	public bool DebugAddMonsterHex(MonsterHexKind hex)
@@ -183,14 +164,13 @@ internal sealed partial class HextechMayhemModifier
 
 	public int GetEnemyHexCountForAct(int actIndex)
 	{
-		int slot = IsEndlessLoopActive ? 2 : Math.Clamp(actIndex, 0, _enemyHexCountsByAct.Length - 1);
-		return _enemyHexCountsByAct[slot];
+		return _enemyHexCounts.GetForAct(actIndex, IsEndlessLoopActive);
 	}
 
 	public void SetEnemyHexCountsByActSnapshot(IReadOnlyList<int> counts, string reason)
 	{
-		_enemyHexCountsByAct = NormalizeEnemyHexCountsByAct(counts);
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexCountsByAct snapshot set: reason={reason} counts={string.Join(",", _enemyHexCountsByAct)}");
+		_enemyHexCounts.Set(counts);
+		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexCountsByAct snapshot set: reason={reason} counts={string.Join(",", EnemyHexCountsByAct)}");
 	}
 
 	private void InvalidateActiveMonsterHexCache()
@@ -211,22 +191,6 @@ internal sealed partial class HextechMayhemModifier
 		{
 			return HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
 		}
-	}
-
-	private static int[] NormalizeEnemyHexCountsByAct(IReadOnlyList<int>? counts)
-	{
-		int[] normalized = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
-		if (counts == null)
-		{
-			return normalized;
-		}
-
-		for (int i = 0; i < Math.Min(normalized.Length, counts.Count); i++)
-		{
-			normalized[i] = HextechRuneConfiguration.ClampEnemyHexCount(counts[i]);
-		}
-
-		return normalized;
 	}
 
 	internal bool IncrementEnemyTezcatarasMercyCombatCounter(int interval)
