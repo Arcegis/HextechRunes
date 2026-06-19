@@ -86,17 +86,39 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static async Task WaitForFramesOrRunChangeAsync(RunState runState, int frameCount)
 	{
-		for (int i = 0; i < frameCount && IsCurrentRun(runState); i++)
+		TimeSpan timeout = GetNetworkChoiceTimeoutDuration(frameCount);
+		if (timeout <= TimeSpan.Zero)
 		{
+			return;
+		}
+
+		DateTimeOffset deadline = DateTimeOffset.UtcNow + timeout;
+		while (IsCurrentRun(runState) && DateTimeOffset.UtcNow < deadline)
+		{
+			// Multiplayer timer mods can accelerate process frames; keep network choice
+			// fallbacks on wall time so clients do not resolve different selection state.
 			if (NGame.Instance?.IsInsideTree() == true)
 			{
 				await NGame.Instance.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
 			}
 			else
 			{
-				await Task.Yield();
+				TimeSpan remaining = deadline - DateTimeOffset.UtcNow;
+				if (remaining <= TimeSpan.Zero)
+				{
+					return;
+				}
+
+				await Task.Delay(remaining < TimeSpan.FromMilliseconds(16) ? remaining : TimeSpan.FromMilliseconds(16));
 			}
 		}
+	}
+
+	internal static TimeSpan GetNetworkChoiceTimeoutDuration(int frameCount)
+	{
+		return frameCount <= 0
+			? TimeSpan.Zero
+			: TimeSpan.FromSeconds(frameCount / 60.0d);
 	}
 
 	internal static async Task<PlayerChoiceSynchronizer?> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
