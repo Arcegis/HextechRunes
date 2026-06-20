@@ -77,6 +77,11 @@ internal static class HextechPlayerCoefficientHelper
 			multiplier *= goldenSpatulaRune.SustainMultiplier;
 		}
 
+		if (player.GetRelic<AnthonyBiasRune>() is AnthonyBiasRune anthonyBiasRune)
+		{
+			multiplier *= anthonyBiasRune.SustainMultiplier;
+		}
+
 		if (player.GetRelic<NineDragonPowerRune>() is NineDragonPowerRune nineDragonPowerRune)
 		{
 			multiplier *= nineDragonPowerRune.SustainMultiplier;
