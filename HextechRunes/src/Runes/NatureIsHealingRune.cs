@@ -20,7 +20,7 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("IntervalSeconds", 15m),
+		new DynamicVar("IntervalSeconds", 10m),
 		new HealVar(1m)
 	];
 

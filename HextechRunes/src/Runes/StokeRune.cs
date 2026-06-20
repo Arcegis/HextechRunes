@@ -40,11 +40,16 @@ internal sealed class StokeRestSiteOption : RestSiteOption
 
 	public override IEnumerable<string> AssetPaths => [IconPath];
 
-	public override bool IsEnabled => GetRemovableCardCount(Owner) >= 1;
+#if STS2_104_OR_NEWER
+	public override bool IsEnabled => CanRemoveCard;
+#endif
 
 	public StokeRestSiteOption(Player owner)
 		: base(owner)
 	{
+#if !STS2_104_OR_NEWER
+		IsEnabled = CanRemoveCard;
+#endif
 		EnsureIconAlias();
 	}
 
@@ -70,6 +75,8 @@ internal sealed class StokeRestSiteOption : RestSiteOption
 	{
 		return PileType.Deck.GetPile(player).Cards.Count(static card => card.IsRemovable);
 	}
+
+	private bool CanRemoveCard => GetRemovableCardCount(Owner) >= 1;
 
 	private static void EnsureIconAlias()
 	{

@@ -55,8 +55,8 @@ public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVicto
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("HpGainPercent", 0.05m),
-		new DynamicVar("ScalePercent", 5m)
+		new DynamicVar("HpGainPercent", 0.06m),
+		new DynamicVar("ScalePercent", 6m)
 	];
 
 	internal float BodyScaleDelta => _stacks * (float)(DynamicVars["ScalePercent"].BaseValue / 100m);

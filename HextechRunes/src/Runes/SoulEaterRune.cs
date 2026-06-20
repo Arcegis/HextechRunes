@@ -38,9 +38,7 @@ public sealed class SoulEaterRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("NormalMaxHpGain", 1m),
-		new DynamicVar("EliteMaxHpGain", 3m),
-		new DynamicVar("BossMaxHpGain", 5m)
+		new DynamicVar("MaxHpGainPercent", 0.05m)
 	];
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -68,7 +66,7 @@ public sealed class SoulEaterRune : HextechRelicBase
 			return;
 		}
 
-		int hpGain = GetMaxHpGainForCurrentRoom();
+		int hpGain = Math.Max(1, FloorToInt(target.MaxHp * DynamicVars["MaxHpGainPercent"].BaseValue));
 		if (hpGain <= 0)
 		{
 			return;
@@ -76,15 +74,5 @@ public sealed class SoulEaterRune : HextechRelicBase
 
 		Flash();
 		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
-	}
-
-	private int GetMaxHpGainForCurrentRoom()
-	{
-		return Owner?.RunState.CurrentRoom switch
-		{
-			CombatRoom { RoomType: RoomType.Boss } => DynamicVars["BossMaxHpGain"].IntValue,
-			CombatRoom { RoomType: RoomType.Elite } => DynamicVars["EliteMaxHpGain"].IntValue,
-			_ => DynamicVars["NormalMaxHpGain"].IntValue
-		};
 	}
 }

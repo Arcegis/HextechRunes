@@ -39,6 +39,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	private bool _triggeredThisTurn;
 	private HextechCombatState? _turnStateCombat;
 	private int _turnStateRoundNumber = -1;
+	private CardModel? _damageReducedCard;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
@@ -55,20 +56,21 @@ public sealed class FanTheHammerRune : HextechRelicBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("NormalReplays", 1m),
-		new DynamicVar("EliteReplays", 2m),
-		new DynamicVar("BossReplays", 2m)
+		new DynamicVar("Replays", 3m),
+		new DynamicVar("DamageMultiplier", 0.25m)
 	];
 
 	public override Task BeforeCombatStart()
 	{
 		ResetTurnState();
+		ClearDamageReducedCard();
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
 		ResetTurnState();
+		ClearDamageReducedCard();
 		return Task.CompletedTask;
 	}
 
@@ -111,6 +113,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 			if (TryConsumeTurnProc(nameof(FanTheHammerRune), ref _triggeredThisTurn))
 			{
 				UpdateTurnStateIdentity();
+				TrackDamageReducedCard(card);
 				Flash();
 			}
 		}
@@ -118,19 +121,42 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
+	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		if (Owner == null
+			|| cardSource is not CardModel card
+			|| card != _damageReducedCard
+			|| card.Owner != Owner
+			|| dealer != Owner.Creature
+			|| !IsOwnedAttack(card)
+			|| (props & ValueProp.Unpowered) != 0)
+		{
+			return 1m;
+		}
+
+		return DynamicVars["DamageMultiplier"].BaseValue;
+	}
+
 	private int GetReplayCount()
 	{
-		if (Owner?.RunState.CurrentRoom is CombatRoom { RoomType: RoomType.Boss })
+		return DynamicVars["Replays"].IntValue;
+	}
+
+	private void TrackDamageReducedCard(CardModel card)
+	{
+		ClearDamageReducedCard();
+		_damageReducedCard = card;
+		card.Played += ClearDamageReducedCard;
+	}
+
+	private void ClearDamageReducedCard()
+	{
+		if (_damageReducedCard is CardModel card)
 		{
-			return DynamicVars["BossReplays"].IntValue;
+			card.Played -= ClearDamageReducedCard;
 		}
 
-		if (Owner?.RunState.CurrentRoom is CombatRoom { RoomType: RoomType.Elite })
-		{
-			return DynamicVars["EliteReplays"].IntValue;
-		}
-
-		return DynamicVars["NormalReplays"].IntValue;
+		_damageReducedCard = null;
 	}
 
 	private void ResetTurnState(HextechCombatState? combatState = null)

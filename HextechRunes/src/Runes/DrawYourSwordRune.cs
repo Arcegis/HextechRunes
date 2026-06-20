@@ -34,71 +34,75 @@ using MegaCrit.Sts2.Core.Models.Monsters;
 
 namespace HextechRunes;
 
-public sealed class DrawYourSwordRune : HextechRelicBase
+public sealed class DrawYourSwordRune : AttributeConversionRelicBase
 {
-	private readonly Queue<decimal> _pendingEnergyConversions = new();
-
-	public override bool HasUponPickupEffect => true;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
-		[
-				new DynamicVar("HpGainPercent", 0.3m)
-			];
+	[
+		new PowerVar<FocusPower>(1m)
+	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
+		HoverTipFactory.FromOrb<LightningOrb>(),
 		HoverTipFactory.FromPower<StrengthPower>(),
 		HoverTipFactory.FromPower<DexterityPower>(),
 		HoverTipFactory.FromPower<FocusPower>()
 	];
 
-	public override Task BeforeCombatStart()
+	public override bool IsAvailableForPlayer(Player player)
 	{
-		_pendingEnergyConversions.Clear();
-		return Task.CompletedTask;
+		return IsDefectPlayer(player);
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room)
+	internal bool ShouldConvertChanneledOrb(Player player)
 	{
-		_pendingEnergyConversions.Clear();
-		return Task.CompletedTask;
+		return player == Owner
+			&& Owner != null
+			&& IsDefectOwner
+			&& !Owner.Creature.IsDead
+			&& CombatManager.Instance?.IsOverOrEnding != true
+			&& player.PlayerCombatState != null;
 	}
 
-	public override async Task AfterObtained()
+	internal async Task ConvertChanneledOrbToFocus(PlayerChoiceContext choiceContext, OrbModel orb, Player player)
 	{
-		if (Owner == null)
+		if (!ShouldConvertChanneledOrb(player))
 		{
 			return;
 		}
 
-		int hpGain = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["HpGainPercent"].BaseValue));
-		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
-	}
-
-	public override decimal ModifyEnergyGain(Player player, decimal amount)
-	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0m)
+		choiceContext.PushModel(orb);
+		try
 		{
-			return amount;
+			Flash();
+			await PowerCmd.Apply<FocusPower>(Owner!.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
 		}
-
-		_pendingEnergyConversions.Enqueue(amount);
-		return 0m;
-	}
-
-	public override async Task AfterModifyingEnergyGain()
-	{
-		if (!_pendingEnergyConversions.TryDequeue(out decimal amount)
-			|| Owner == null
-			|| Owner.Creature.IsDead
-			|| amount <= 0m)
+		finally
 		{
-			return;
+			choiceContext.PopModel(orb);
 		}
-
-		Flash();
-		await PowerCmd.Apply<StrengthPower>(Owner.Creature, amount, Owner.Creature, null);
-		await PowerCmd.Apply<DexterityPower>(Owner.Creature, amount, Owner.Creature, null);
-		await PowerCmd.Apply<FocusPower>(Owner.Creature, amount, Owner.Creature, null);
 	}
+
+	protected override bool ShouldConvert(PowerModel canonicalPower)
+	{
+		return IsDefectOwner && !HasConflictingFocusConverter && canonicalPower is FocusPower;
+	}
+
+	protected override bool ShouldConvertAppliedPower(PowerModel power)
+	{
+		return IsDefectOwner && !HasConflictingFocusConverter && power is FocusPower;
+	}
+
+	protected override async Task ApplyConvertedPower(decimal amount, Creature? applier, CardModel? cardSource)
+	{
+		await PowerCmd.Apply<StrengthPower>(Owner!.Creature, amount, applier, cardSource);
+		await PowerCmd.Apply<DexterityPower>(Owner.Creature, amount, applier, cardSource);
+	}
+
+	protected override Task RevertOriginalPower(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+	{
+		return PowerCmd.Apply<FocusPower>(Owner!.Creature, -amount, applier, cardSource);
+	}
+
+	private bool HasConflictingFocusConverter => Owner?.GetRelic<DexterityStrengthToFocusRune>() != null;
 }
