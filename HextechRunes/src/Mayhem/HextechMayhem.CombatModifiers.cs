@@ -44,6 +44,19 @@ internal sealed partial class HextechMayhemModifier
             (effect, context, multiplier) => multiplier * effect.ModifyBlockMultiplicative(context, target, block, props, cardSource, cardPlay));
     }
 
+    public override decimal ModifyHpLostAfterOsty(Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+    {
+        if (target.CombatState?.RunState != RunState)
+        {
+            return amount;
+        }
+
+        return HextechEnemyHexDispatcher.Transform(
+            this,
+            amount,
+            (effect, context, current) => effect.ModifyHpLostAfterOsty(context, target, current, props, dealer, cardSource));
+    }
+
     public override decimal ModifyHandDraw(Player player, decimal count)
     {
         return HextechEnemyHexDispatcher.Transform(
@@ -57,6 +70,13 @@ internal sealed partial class HextechMayhemModifier
         return HextechEnemyHexDispatcher.All(
             this,
             (effect, context) => effect.ShouldFlush(context, player));
+    }
+
+    public override bool ShouldEtherealTrigger(CardModel card)
+    {
+        return HextechEnemyHexDispatcher.All(
+            this,
+            (effect, context) => effect.ShouldEtherealTrigger(context, card));
     }
 
     public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)

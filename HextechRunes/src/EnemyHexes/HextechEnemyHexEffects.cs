@@ -23,6 +23,7 @@ internal static class HextechEnemyHexEffects
 			new BrutalForceEnemyHex(),
 			new ZealotEnemyHex(),
 			new SwiftAndSafeEnemyHex(),
+			new BloodIdolEnemyHex(),
 			new SturdyEnemyHex(),
 			new DawnbringersResolveEnemyHex(),
 			new ShrinkRayEnemyHex(),
@@ -52,6 +53,8 @@ internal static class HextechEnemyHexEffects
 			new MonarchsGazeEnemyHex(),
 			new OmegaEnemyHex(),
 			new ManipulateRealityEnemyHex(),
+			new NatureIsHealingEnemyHex(),
+			new ArchmageEnemyHex(),
 			new ScaredStiffEnemyHex(),
 			new AncientWineEnemyHex(),
 			new CourageOfColossusEnemyHex(),
@@ -90,7 +93,12 @@ internal static class HextechEnemyHexEffects
 			new ArcanePunchEnemyHex(),
 			new SymphonyOfWarEnemyHex(),
 			new MysteryEnemyHex(),
-			new MindOverMatterEnemyHex()
+			new MindOverMatterEnemyHex(),
+			new CompensationEnemyHex(),
+			new OminousPactEnemyHex(),
+			new SolidTimeEnemyHex(),
+			new ForgottenSoulEnemyHex(),
+			new CerberusEnemyHex()
 		]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

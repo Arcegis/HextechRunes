@@ -9,7 +9,7 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 6;
+	private const int CurrentConfigVersion = 7;
 	private const int EnemyHexActCount = 3;
 	private const int MinEnemyHexCount = 0;
 	private const int MaxEnemyHexCount = 6;
@@ -29,6 +29,10 @@ internal static class HextechRuneConfiguration
 		typeof(CosplayRune),
 		typeof(OtterAndFriendsRune),
 		typeof(RegretRune)
+	];
+	private static readonly Type[] Version7DefaultDisabledRuneTypes =
+	[
+		typeof(CrackTheEggRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -198,6 +202,10 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 6)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version6DefaultDisabledRuneTypes));
+		}
+		if (previousConfigVersion < 7)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version7DefaultDisabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;

@@ -27,12 +27,22 @@ internal abstract class HextechEnemyHexEffect
 		return amount;
 	}
 
+	internal virtual decimal ModifyHpLostAfterOsty(HextechEnemyHexContext context, Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return amount;
+	}
+
 	internal virtual decimal ModifyHandDraw(HextechEnemyHexContext context, Player player, decimal count)
 	{
 		return count;
 	}
 
 	internal virtual bool ShouldFlush(HextechEnemyHexContext context, Player player)
+	{
+		return true;
+	}
+
+	internal virtual bool ShouldEtherealTrigger(HextechEnemyHexContext context, CardModel card)
 	{
 		return true;
 	}
@@ -135,6 +145,11 @@ internal abstract class HextechEnemyHexEffect
 		return Task.CompletedTask;
 	}
 
+	internal virtual Task AfterEnemyDamageReceivedAny(HextechEnemyHexContext context, Creature target, DamageResult result, Creature? dealer, CardModel? cardSource)
+	{
+		return Task.CompletedTask;
+	}
+
 	internal virtual Task AfterEnemyHealthThreshold(HextechEnemyHexContext context, Creature target, uint combatId)
 	{
 		return Task.CompletedTask;
@@ -185,7 +200,22 @@ internal abstract class HextechEnemyHexEffect
 		return Task.CompletedTask;
 	}
 
+	internal virtual Task AfterCombatEnd(HextechEnemyHexContext context, CombatRoom room)
+	{
+		return Task.CompletedTask;
+	}
+
 	internal virtual bool TryModifyRewards(HextechEnemyHexContext context, Player player, List<Reward> rewards, AbstractRoom? room)
+	{
+		return false;
+	}
+
+	internal virtual Task AfterGoldGained(HextechEnemyHexContext context, Player player)
+	{
+		return Task.CompletedTask;
+	}
+
+	internal virtual bool ShouldAllowSelectingMoreCardRewards(HextechEnemyHexContext context, Player player, CardReward cardReward)
 	{
 		return false;
 	}

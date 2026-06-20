@@ -101,7 +101,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<VoidFormUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 19, tagKey: "RESOURCE"),
         Rune<MentalShieldRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
         Rune<PacifistRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
-        Rune<CrackTheEggRune>(HextechRarityTier.Silver, tagKey: "SURVIVAL"),
+        Rune<CrackTheEggRune>(HextechRarityTier.Silver, flags: PlayerRuneFlags.Disabled, tagKey: "SURVIVAL"),
         Rune<KakaRune>(HextechRarityTier.Silver, tagKey: "OUTPUT"),
         Rune<BrutalForceRune>(HextechRarityTier.Silver, tagKey: "OUTPUT"),
         Rune<TransmuteGoldRune>(HextechRarityTier.Silver, tagKey: "RANDOM"),

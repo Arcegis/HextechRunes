@@ -95,5 +95,13 @@ internal enum MonsterHexKind
     Mystery = 83,
     MindOverMatter = 84,
     Omega = 85,
-    ManipulateReality = 86
+    ManipulateReality = 86,
+    Compensation = 87,
+    OminousPact = 88,
+    SolidTime = 89,
+    ForgottenSoul = 90,
+    Cerberus = 91,
+    NatureIsHealing = 92,
+    Archmage = 93,
+    BloodIdol = 94
 }
