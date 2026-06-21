@@ -1,6 +1,8 @@
 {
   "title": "海克斯大乱斗",
-  "description": "在第1、2、3幕开始时选择海克斯符文，获得白银、黄金或棱彩阶的构筑改造；同一幕的敌人也会获得对应稀有度的敌方海克斯。包含专属图鉴分类、敌方海克斯顶部提示、中英文文本与联机同步支持。",
+  "updateTitle": false,
+  "description": "[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
+  "updateDescription": false,
   "visibility": "public",
   "changeNote": "0.7.6 联机热修：修复海克斯选择结算 ACK 超时后可能提前推进地图流程，从而导致下一场战斗多人状态不同步的问题。",
   "tags": [

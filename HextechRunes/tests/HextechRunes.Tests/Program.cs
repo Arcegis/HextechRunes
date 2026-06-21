@@ -1,3 +1,4 @@
+using System.Reflection;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
@@ -34,6 +35,8 @@ internal static class Program
 			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
 			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
+			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
+			new(nameof(DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights), DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
 			new(nameof(EnemyHexCountStateNormalizesMissingAndOutOfRangeValues), EnemyHexCountStateNormalizesMissingAndOutOfRangeValues),
@@ -58,7 +61,9 @@ internal static class Program
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
+			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(CompensationReplacementDoomGuardScopesAsyncWork), CompensationReplacementDoomGuardScopesAsyncWork),
+			new(nameof(CompensationReplacementDoomSuppressesSleightOfFleshResponse), CompensationReplacementDoomSuppressesSleightOfFleshResponse),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
@@ -337,6 +342,37 @@ internal static class Program
 		Equal(1, HextechRunePoolBuilder.SelectWeightedIndex(weights, 249), "second slot end");
 		Equal(2, HextechRunePoolBuilder.SelectWeightedIndex(weights, 250), "third slot start");
 		Equal(2, HextechRunePoolBuilder.SelectWeightedIndex(weights, 999), "overflow clamps to last slot");
+	}
+
+	private static void DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune()
+	{
+		HextechForgeRarityWeights weights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
+			new HextechForgeRarityWeights(65, 25, 10),
+			hasDiceManiac: false);
+
+		Equal(65, weights.Silver, "silver weight");
+		Equal(25, weights.Gold, "gold weight");
+		Equal(10, weights.Prismatic, "prismatic weight");
+		Equal(100, weights.Total, "total weight");
+	}
+
+	private static void DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights()
+	{
+		HextechForgeRarityWeights defaultWeights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
+			new HextechForgeRarityWeights(65, 25, 10),
+			hasDiceManiac: true);
+		Equal(65, defaultWeights.Silver, "default silver weight");
+		Equal(50, defaultWeights.Gold, "default gold weight");
+		Equal(20, defaultWeights.Prismatic, "default prismatic weight");
+		Equal(135, defaultWeights.Total, "default total weight");
+
+		HextechForgeRarityWeights customWeights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
+			new HextechForgeRarityWeights(10, 20, 30),
+			hasDiceManiac: true);
+		Equal(10, customWeights.Silver, "custom silver weight");
+		Equal(40, customWeights.Gold, "custom gold weight");
+		Equal(60, customWeights.Prismatic, "custom prismatic weight");
+		Equal(110, customWeights.Total, "custom total weight");
 	}
 
 	private static void ActSelectionGatePreventsReentryAndClearsCurrentRun()
@@ -729,6 +765,25 @@ internal static class Program
 		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should reset after guarded work");
 	}
 
+	private static void CompensationReplacementDoomSuppressesSleightOfFleshResponse()
+	{
+		Expect(
+			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true),
+			"sleight response should not be suppressed outside compensation replacement doom");
+
+		bool suppressedInsideGuard = false;
+		HextechCombatHooks.RunWithCompensationReplacementDoomGuard(() =>
+		{
+			suppressedInsideGuard = HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement doom");
+		Expect(
+			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(false),
+			"sleight response should not be suppressed when the power change would not trigger sleight");
+	}
+
 	private static void PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
@@ -832,6 +887,29 @@ internal static class Program
 		Expect(!HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should not be registered initially");
 		HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests");
 		Expect(HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should be registered");
+	}
+
+	private static void IllusoryWeaponPenNibPrefixesCanReturnSkippedTask()
+	{
+		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPrefix");
+		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibAfterCardPlayedPrefix");
+	}
+
+	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string methodName)
+	{
+		MethodInfo? method = typeof(HextechPlayerRuneHooks).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+		if (method == null)
+		{
+			throw new InvalidOperationException($"{methodName} should exist");
+		}
+
+		ParameterInfo? resultParameter = method.GetParameters().SingleOrDefault(static parameter => parameter.Name == "__result");
+		if (resultParameter == null)
+		{
+			throw new InvalidOperationException($"{methodName} should expose Harmony __result");
+		}
+
+		Equal(typeof(Task).MakeByRefType(), resultParameter.ParameterType, $"{methodName} __result type");
 	}
 
 	private sealed class ExternalRegistrationTestRune : HextechRelicBase

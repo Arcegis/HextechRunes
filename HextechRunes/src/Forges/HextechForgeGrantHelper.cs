@@ -34,6 +34,11 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 
+internal readonly record struct HextechForgeRarityWeights(int Silver, int Gold, int Prismatic)
+{
+	public int Total => Silver + Gold + Prismatic;
+}
+
 public sealed class RandomForgeShopRelic : HextechRelicBase
 {
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -146,13 +151,13 @@ internal static class HextechForgeGrantHelper
 
 	internal static bool TryCreateRandomForge(Player player, Rng rng, out RelicModel? forge)
 	{
-		HextechRarityTier rarity = RollForgeRarity(rng);
+		HextechRarityTier rarity = RollForgeRarity(player, rng);
 		return TryCreateRandomForge(player, rarity, rng, out forge);
 	}
 
 	internal static bool TryCreateRandomForgeChoice(Player player, Rng rng, out List<RelicModel> options)
 	{
-		HextechRarityTier rarity = RollForgeRarity(rng);
+		HextechRarityTier rarity = RollForgeRarity(player, rng);
 		return TryCreateRandomForgeChoice(player, rarity, rng, out options);
 	}
 
@@ -310,20 +315,30 @@ internal static class HextechForgeGrantHelper
 			.ToList();
 	}
 
-	private static HextechRarityTier RollForgeRarity(Rng rng)
+	internal static HextechForgeRarityWeights ApplyDiceManiacForgeRarityModifier(HextechForgeRarityWeights weights, bool hasDiceManiac)
 	{
-		int roll = rng.NextInt(100);
-		if (roll < 65)
+		weights = NormalizeForgeRarityWeights(weights);
+		if (!hasDiceManiac)
+		{
+			return weights;
+		}
+
+		return weights with
+		{
+			Gold = weights.Gold * DiceManiacRune.ForgeRarityMultiplier,
+			Prismatic = weights.Prismatic * DiceManiacRune.ForgeRarityMultiplier
+		};
+	}
+
+	private static HextechRarityTier RollForgeRarity(Player player, Rng rng)
+	{
+		HextechForgeRarityWeights weights = GetModifiedForgeRarityWeights(player, 65, 25, 10);
+		if (weights.Total <= 0)
 		{
 			return HextechRarityTier.Silver;
 		}
 
-		if (roll < 90)
-		{
-			return HextechRarityTier.Gold;
-		}
-
-		return HextechRarityTier.Prismatic;
+		return ResolveForgeRarity(weights, rng.NextInt(weights.Total));
 	}
 
 	private static HextechRarityTier RollStableForgeRarity(Player player, string source, int ordinal)
@@ -339,32 +354,52 @@ internal static class HextechForgeGrantHelper
 		int goldWeight,
 		int prismaticWeight)
 	{
-		silverWeight = Math.Max(0, silverWeight);
-		goldWeight = Math.Max(0, goldWeight);
-		prismaticWeight = Math.Max(0, prismaticWeight);
-		int totalWeight = silverWeight + goldWeight + prismaticWeight;
-		if (totalWeight <= 0)
+		HextechForgeRarityWeights weights = GetModifiedForgeRarityWeights(player, silverWeight, goldWeight, prismaticWeight);
+		if (weights.Total <= 0)
 		{
 			return HextechRarityTier.Silver;
 		}
 
 		int roll = HextechStableRandom.Index(
 			(RunState)player.RunState,
-			totalWeight,
+			weights.Total,
 			source,
 			"forge-rarity",
 			HextechStableRandom.PlayerKey(player),
 			ordinal.ToString(),
 			player.Relics.Count.ToString(),
-			silverWeight.ToString(),
-			goldWeight.ToString(),
-			prismaticWeight.ToString());
-		if (roll < silverWeight)
+			weights.Silver.ToString(),
+			weights.Gold.ToString(),
+			weights.Prismatic.ToString());
+		return ResolveForgeRarity(weights, roll);
+	}
+
+	private static HextechForgeRarityWeights GetModifiedForgeRarityWeights(
+		Player player,
+		int silverWeight,
+		int goldWeight,
+		int prismaticWeight)
+	{
+		HextechForgeRarityWeights weights = new(silverWeight, goldWeight, prismaticWeight);
+		return ApplyDiceManiacForgeRarityModifier(weights, player.GetRelic<DiceManiacRune>() != null);
+	}
+
+	private static HextechForgeRarityWeights NormalizeForgeRarityWeights(HextechForgeRarityWeights weights)
+	{
+		return new HextechForgeRarityWeights(
+			Math.Max(0, weights.Silver),
+			Math.Max(0, weights.Gold),
+			Math.Max(0, weights.Prismatic));
+	}
+
+	private static HextechRarityTier ResolveForgeRarity(HextechForgeRarityWeights weights, int roll)
+	{
+		if (roll < weights.Silver)
 		{
 			return HextechRarityTier.Silver;
 		}
 
-		if (roll < silverWeight + goldWeight)
+		if (roll < weights.Silver + weights.Gold)
 		{
 			return HextechRarityTier.Gold;
 		}
