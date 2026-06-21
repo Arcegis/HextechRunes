@@ -23,12 +23,8 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version6DefaultDisabledRuneTypes =
 	[
 		typeof(NeowsGrudgeRune),
-		typeof(StarlightSparkleRune),
 		typeof(AnthonyBiasRune),
-		typeof(CuttingEdgeAlchemistRune),
-		typeof(CosplayRune),
-		typeof(OtterAndFriendsRune),
-		typeof(RegretRune)
+		typeof(CuttingEdgeAlchemistRune)
 	];
 	private static readonly Type[] Version7DefaultDisabledRuneTypes =
 	[

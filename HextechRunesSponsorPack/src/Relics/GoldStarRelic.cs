@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rewards;
@@ -14,7 +15,7 @@ public sealed class GoldStarRelic : RelicModel, IHextechSharedCombatVictoryRune
 	private const int NormalMonsterMinGold = 10;
 	private const int NormalMonsterMaxGold = 20;
 	private const int CardRewardOptionCount = 3;
-	private const string RelicIconPath = "res://HextechRunes/images/relics/goldStarRelic.png";
+	private const string RelicIconPath = "res://HextechRunesSponsorPack/images/relics/goldStarRelic.png";
 
 	public sealed override RelicRarity Rarity => RelicRarity.Event;
 

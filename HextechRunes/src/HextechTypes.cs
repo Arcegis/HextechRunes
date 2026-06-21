@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-internal enum HextechRarityTier
+public enum HextechRarityTier
 {
     Silver = 0,
     Gold = 1,

@@ -7,6 +7,11 @@ namespace HextechRunes;
 
 internal static class HextechSavedPropertyBootstrap
 {
+	internal static void InjectModelType(Type type)
+	{
+		SavedPropertiesTypeCache.InjectTypeIntoCache(type);
+	}
+
 	internal static void InjectCaches()
 	{
 		foreach (Type type in HextechModelTypeIdentity.Distinct(HextechCatalog.GetAllCustomRelicTypes()))

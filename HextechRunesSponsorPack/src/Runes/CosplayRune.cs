@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves;
@@ -10,8 +11,6 @@ namespace HextechRunes;
 
 public sealed class CosplayRune : HextechRelicBase
 {
-	internal const string InnateMarkerSavedPropertyName = "SavedCosplayInnateMarker";
-
 	private static readonly Type[] RelicTypes =
 	[
 		typeof(Lantern)
@@ -67,9 +66,9 @@ public sealed class CosplayRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		if (CosplayInnateKeywordPersistence.IsTracked(card.DeckVersion))
+		if (HextechRunesApi.IsPersistentInnateTracked(card.DeckVersion))
 		{
-			CosplayInnateKeywordPersistence.Restore(card);
+			HextechRunesApi.RestorePersistentInnate(card);
 		}
 
 		return Task.CompletedTask;
@@ -77,7 +76,7 @@ public sealed class CosplayRune : HextechRelicBase
 
 	private static void ApplyPersistentInnate(CardModel card)
 	{
-		CosplayInnateKeywordPersistence.Track(card);
+		HextechRunesApi.TrackPersistentInnate(card);
 		CardCmd.ApplyKeyword(card, CardKeyword.Innate);
 	}
 }

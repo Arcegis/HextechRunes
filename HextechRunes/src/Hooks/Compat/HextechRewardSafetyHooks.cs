@@ -1,11 +1,16 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.CardRewardAlternatives;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.Entities.Rewards;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
@@ -15,8 +20,14 @@ namespace HextechRunes;
 
 internal static class HextechRewardSafetyHooks
 {
+	private const string PaelsWingSacrificeAlternativeId = "SACRIFICE";
+	private static readonly ConditionalWeakTable<CardReward, CardRewardCompatibilityState> CardRewardStates = new();
+
 	public static void Install(Harmony harmony)
 	{
+		harmony.Patch(
+			RequireMethod(typeof(CardRewardAlternative), nameof(CardRewardAlternative.Generate), BindingFlags.Public | BindingFlags.Static, typeof(CardReward)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardAlternativeGeneratePrefix)));
 		harmony.Patch(
 			RequireMethod(typeof(Reward), nameof(Reward.FromSerializable), BindingFlags.Public | BindingFlags.Static, typeof(SerializableReward), typeof(Player)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardFromSerializablePostfix)));
@@ -51,6 +62,149 @@ internal static class HextechRewardSafetyHooks
 			RequireMethod(typeof(PlayerCmd), nameof(PlayerCmd.GainGold), BindingFlags.Public | BindingFlags.Static, typeof(decimal), typeof(Player), typeof(bool)),
 			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PlayerCmdGainGoldPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PlayerCmdGainGoldPostfix)));
+	}
+
+	private static bool CardRewardAlternativeGeneratePrefix(CardReward cardReward, ref IReadOnlyList<CardRewardAlternative> __result)
+	{
+		__result = GenerateCardRewardAlternativesWithoutVanillaLimit(cardReward);
+		return false;
+	}
+
+	private static IReadOnlyList<CardRewardAlternative> GenerateCardRewardAlternativesWithoutVanillaLimit(CardReward cardReward)
+	{
+		List<CardRewardAlternative> alternatives = [];
+		if (cardReward.CanSkip)
+		{
+			alternatives.Add(new CardRewardAlternative("Skip", PostAlternateCardRewardAction.EndSelectionAndDoNotCompleteReward));
+		}
+
+		if (cardReward.CanReroll)
+		{
+			alternatives.Add(CreateDriftwoodRerollAlternative(cardReward));
+		}
+		else if (GetRemainingDriftwoodRerolls(cardReward) > 0)
+		{
+			alternatives.Add(CreateDriftwoodRerollAlternative(cardReward));
+		}
+
+		Hook.ModifyCardRewardAlternatives(cardReward.Player.RunState, cardReward.Player, cardReward, alternatives);
+		IReadOnlyList<CardRewardAlternative> normalized = NormalizeCardRewardAlternativesForCompatibility(alternatives);
+		CardRewardCompatibilityState state = CardRewardStates.GetOrCreateValue(cardReward);
+		state.Alternatives.Clear();
+		state.Alternatives.AddRange(normalized);
+		return state.Alternatives;
+	}
+
+	private static CardRewardAlternative CreateDriftwoodRerollAlternative(CardReward cardReward)
+	{
+		return new CardRewardAlternative("REROLL", () =>
+		{
+			ConsumeDriftwoodReroll(cardReward);
+			cardReward.Reroll();
+			return Task.CompletedTask;
+		}, PostAlternateCardRewardAction.DoNothing);
+	}
+
+	private static int GetRemainingDriftwoodRerolls(CardReward cardReward)
+	{
+		if (CardRewardStates.TryGetValue(cardReward, out CardRewardCompatibilityState? state)
+			&& state.RemainingDriftwoodRerolls.HasValue)
+		{
+			return Math.Max(0, state.RemainingDriftwoodRerolls.Value);
+		}
+
+		if (!cardReward.CanReroll)
+		{
+			return 0;
+		}
+
+		int driftwoodCount = CountOwnedDriftwood(cardReward.Player);
+		if (driftwoodCount <= 0)
+		{
+			return 0;
+		}
+
+		state = CardRewardStates.GetOrCreateValue(cardReward);
+		state.RemainingDriftwoodRerolls = driftwoodCount;
+		return driftwoodCount;
+	}
+
+	private static void ConsumeDriftwoodReroll(CardReward cardReward)
+	{
+		int remaining = GetRemainingDriftwoodRerolls(cardReward);
+		if (remaining <= 0)
+		{
+			return;
+		}
+
+		CardRewardCompatibilityState state = CardRewardStates.GetOrCreateValue(cardReward);
+		state.RemainingDriftwoodRerolls = remaining - 1;
+	}
+
+	private static int CountOwnedDriftwood(Player player)
+	{
+		return player.Relics.Count(static relic => relic is Driftwood);
+	}
+
+	internal static IReadOnlyList<CardRewardAlternative> NormalizeCardRewardAlternativesForCompatibility(
+		IReadOnlyList<CardRewardAlternative> alternatives)
+	{
+		CardRewardAlternative[] sacrificeAlternatives = alternatives
+			.Where(static alternative => IsPaelsWingSacrificeAlternative(alternative))
+			.ToArray();
+
+		if (sacrificeAlternatives.Length <= 1)
+		{
+			return alternatives;
+		}
+
+		List<CardRewardAlternative> normalized = new(alternatives.Count - sacrificeAlternatives.Length + 1);
+		bool addedMergedSacrifice = false;
+		foreach (CardRewardAlternative alternative in alternatives)
+		{
+			if (!IsPaelsWingSacrificeAlternative(alternative))
+			{
+				normalized.Add(alternative);
+				continue;
+			}
+
+			if (addedMergedSacrifice)
+			{
+				continue;
+			}
+
+			normalized.Add(CreateMergedPaelsWingSacrificeAlternative(sacrificeAlternatives));
+			addedMergedSacrifice = true;
+		}
+
+		return normalized;
+	}
+
+	private static bool IsPaelsWingSacrificeAlternative(CardRewardAlternative alternative)
+	{
+		return string.Equals(alternative.OptionId, PaelsWingSacrificeAlternativeId, StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static CardRewardAlternative CreateMergedPaelsWingSacrificeAlternative(
+		IReadOnlyList<CardRewardAlternative> sacrificeAlternatives)
+	{
+		return new CardRewardAlternative(
+			PaelsWingSacrificeAlternativeId,
+			async () =>
+			{
+				foreach (CardRewardAlternative alternative in sacrificeAlternatives)
+				{
+					await alternative.OnSelect();
+				}
+			},
+			PostAlternateCardRewardAction.EndSelectionAndCompleteReward);
+	}
+
+	private sealed class CardRewardCompatibilityState
+	{
+		public List<CardRewardAlternative> Alternatives { get; } = [];
+
+		public int? RemainingDriftwoodRerolls { get; set; }
 	}
 
 	private static void RewardSelectUnsynchronizedPrefix(out object? __state)

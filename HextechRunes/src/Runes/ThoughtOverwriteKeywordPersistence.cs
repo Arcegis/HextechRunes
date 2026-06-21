@@ -313,7 +313,7 @@ internal static class ThoughtOverwriteKeywordPersistenceHooks
 
 		if (CosplayInnateKeywordPersistence.ShouldPersist(__instance))
 		{
-			AddMarker(__result, CosplayRune.InnateMarkerSavedPropertyName);
+			AddMarker(__result, HextechRunesApi.PersistentInnateMarkerSavedPropertyName);
 		}
 
 		if (CorruptedBranchInnateKeywordPersistence.ShouldPersist(__instance))
@@ -339,7 +339,7 @@ internal static class ThoughtOverwriteKeywordPersistenceHooks
 			CurtainCallKeywordPersistence.Restore(__result);
 		}
 
-		if (HasMarker(save.Props, CosplayRune.InnateMarkerSavedPropertyName))
+		if (HasMarker(save.Props, HextechRunesApi.PersistentInnateMarkerSavedPropertyName))
 		{
 			CosplayInnateKeywordPersistence.Restore(__result);
 		}

@@ -2,9 +2,29 @@ namespace HextechRunes;
 
 internal static class HextechContentRegistry
 {
-	private static readonly Lazy<RegistryLookups> LazyLookups = new(BuildRegistryLookups);
+	private static readonly object LookupsLock = new();
+	private static RegistryLookups? _lookups;
+	private static int _lookupsVersion = -1;
 
-	private static RegistryLookups Lookups => LazyLookups.Value;
+	internal static int Version => HextechExternalContentRegistry.Version;
+
+	private static RegistryLookups Lookups
+	{
+		get
+		{
+			int version = Version;
+			lock (LookupsLock)
+			{
+				if (_lookups == null || _lookupsVersion != version)
+				{
+					_lookups = BuildRegistryLookups();
+					_lookupsVersion = version;
+				}
+
+				return _lookups;
+			}
+		}
+	}
 
 	internal static IReadOnlyList<Type> SilverRuneTypes => Lookups.SilverRuneTypes;
 
@@ -68,14 +88,19 @@ internal static class HextechContentRegistry
 
 	internal static IReadOnlyList<Type> ShopOnlyRelicTypes => HextechCustomModelRegistry.ShopOnlyRelicTypes;
 
-	internal static IReadOnlyList<Type> EventRelicTypes => HextechCustomModelRegistry.EventRelicTypes;
+	internal static IReadOnlyList<Type> EventRelicTypes =>
+		HextechCustomModelRegistry.EventRelicTypes
+			.Concat(HextechExternalContentRegistry.GetEventRelicTypes())
+			.ToArray();
 
 	internal static IReadOnlyList<Type> CustomCardTypes => HextechCustomModelRegistry.CustomCardTypes;
 
 	private static RegistryLookups BuildRegistryLookups()
 	{
 		return new RegistryLookups(
-			HextechPlayerRuneRegistry.Registrations,
+			HextechPlayerRuneRegistry.Registrations
+				.Concat(HextechExternalContentRegistry.GetPlayerRuneRegistrations())
+				.ToArray(),
 			HextechForgeRegistry.Registrations,
 			HextechMonsterHexRegistry.Registrations,
 			HextechCustomModelRegistry.ShopOnlyRelicTypes);

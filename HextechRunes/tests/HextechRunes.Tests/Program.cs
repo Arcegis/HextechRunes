@@ -1,4 +1,5 @@
 using HextechRunes;
+using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -61,7 +62,9 @@ internal static class Program
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
-			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks)
+			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks),
+			new(nameof(ExternalPlayerRuneRegistrationUpdatesCatalog), ExternalPlayerRuneRegistrationUpdatesCatalog),
+			new(nameof(ExternalEventRelicRegistrationUpdatesRegistry), ExternalEventRelicRegistrationUpdatesRegistry)
 		];
 
 		int failed = 0;
@@ -807,6 +810,37 @@ internal static class Program
 			new HashSet<ModelId>(),
 			TestMonsterHexIconId);
 		SequenceEqual(rarityPool.Where(hex => hex != currentHex), fallbackPool, "reroll pool should fall back to non-current rarity pool when known exclusions exhaust it");
+	}
+
+	private static void ExternalPlayerRuneRegistrationUpdatesCatalog()
+	{
+		Type runeType = typeof(ExternalRegistrationTestRune);
+		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should not be visible before registration");
+		HextechRunesApi.RegisterPlayerRune<ExternalRegistrationTestRune>(
+			HextechRarityTier.Gold,
+			tagKey: "COMPREHENSIVE",
+			assetModId: "HextechRunes.Tests");
+		Expect(HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should be visible after registration");
+		Expect(HextechCatalog.IsPlayerRuneTypeConfigurable(runeType), "external rune should be configurable after registration");
+		Expect(HextechCatalog.IsPlayerRuneTypeSelectable(runeType), "external rune should be selectable after registration");
+		Expect(HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Gold).Contains(runeType), "external rune should enter rarity pool");
+	}
+
+	private static void ExternalEventRelicRegistrationUpdatesRegistry()
+	{
+		Type relicType = typeof(ExternalRegistrationEventRelic);
+		Expect(!HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should not be registered initially");
+		HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests");
+		Expect(HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should be registered");
+	}
+
+	private sealed class ExternalRegistrationTestRune : HextechRelicBase
+	{
+	}
+
+	private sealed class ExternalRegistrationEventRelic : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
 	}
 
 	private static (HextechRarityTier Rarity, IReadOnlyList<MonsterHexKind> Pool) GetMonsterHexPoolWithMinimum(int minimumCount)

@@ -27,6 +27,13 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
+		if (IsSelectionConfirmGuardActive())
+		{
+			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: ignored early selection relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
+			GetViewport()?.SetInputAsHandled();
+			return;
+		}
+
 		_choiceLocked = true;
 		foreach (Button holder in _holders)
 		{
@@ -41,6 +48,23 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		PlayRuneSelectSfx(relic);
 		GetViewport()?.SetInputAsHandled();
 		_completionSource.TrySetResult([relic]);
+	}
+
+	private void EnsureSelectionConfirmGuardStarted()
+	{
+		if (_selectionConfirmGuardStarted)
+		{
+			return;
+		}
+
+		_selectionConfirmGuardStarted = true;
+		_selectionConfirmGuardEndsAtMsec = Time.GetTicksMsec() + SelectionConfirmGuardDurationMsec;
+	}
+
+	private bool IsSelectionConfirmGuardActive()
+	{
+		EnsureSelectionConfirmGuardStarted();
+		return Time.GetTicksMsec() < _selectionConfirmGuardEndsAtMsec;
 	}
 
 	private void OnRerollPressed(int slotIndex)
@@ -226,6 +250,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	public void AfterOverlayOpened()
 	{
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayOpened");
+		EnsureSelectionConfirmGuardStarted();
 		Modulate = Colors.White;
 		Visible = true;
 		TryGrabOverlayFocus();
@@ -252,6 +277,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public void AfterOverlayShown()
 	{
+		EnsureSelectionConfirmGuardStarted();
 		Visible = true;
 		TryGrabOverlayFocus();
 	}

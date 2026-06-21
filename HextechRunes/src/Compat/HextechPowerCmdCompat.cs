@@ -6,7 +6,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static class HextechPowerCmdCompat
+public static class HextechPowerCmdCompat
 {
 	private const BindingFlags PublicStatic = BindingFlags.Public | BindingFlags.Static;
 

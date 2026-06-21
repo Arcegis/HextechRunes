@@ -4,7 +4,7 @@ namespace HextechRunes;
 
 public abstract partial class HextechRelicBase
 {
-	internal static bool IsNetworkMultiplayerRun()
+	public static bool IsNetworkMultiplayerRun()
 	{
 		return HextechPlayerContextHelper.IsNetworkMultiplayerRun();
 	}

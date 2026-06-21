@@ -66,6 +66,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private bool _blockMapUntilDismissed;
 	private bool _restoreAfterMapReopenQueued;
 	private bool _closed;
+	private bool _selectionConfirmGuardStarted;
+	private ulong _selectionConfirmGuardEndsAtMsec;
 
 	public NetScreenType ScreenType => NetScreenType.Rewards;
 

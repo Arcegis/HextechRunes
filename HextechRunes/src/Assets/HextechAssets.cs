@@ -57,7 +57,8 @@ internal static class HextechAssets
         if (HextechCatalog.IsHextechRelic(relic))
         {
             ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-            return $"res://{ModInfo.Id}/images/relics/{ToImageFileStem(id.Entry)}.png";
+            string assetModId = HextechExternalContentRegistry.GetAssetModId(id) ?? ModInfo.Id;
+            return $"res://{assetModId}/images/relics/{ToImageFileStem(id.Entry)}.png";
         }
 
         if (HextechCatalog.TryGetForgeRarity(relic, out HextechRarityTier forgeRarity))

@@ -21,33 +21,20 @@ internal static class HextechModelPoolRegistrar
 		IReadOnlyList<Type> customRelicTypes = HextechModelTypeIdentity.Distinct(HextechCatalog.GetAllCustomRelicTypes());
 		IReadOnlyList<Type> eventRelicTypes = HextechModelTypeIdentity.Distinct(HextechContentRegistry.EventRelicTypes);
 		IReadOnlyList<Type> customCardTypes = HextechModelTypeIdentity.Distinct(HextechCatalog.GetAllCustomCardTypes());
-		bool useMobileFirstModelRegistrationWorkaround = ShouldUseMobileFirstModelRegistrationWorkaround();
 
-		if (useMobileFirstModelRegistrationWorkaround)
-		{
-			QueueMobileFirstModelRegistrationWorkaround(typeof(SharedRelicPool), customRelicTypes);
-			QueueMobileFirstModelRegistrationWorkaround(typeof(EventRelicPool), eventRelicTypes);
-			QueueMobileFirstModelRegistrationWorkaround(typeof(TokenCardPool), customCardTypes);
-		}
+		RegisterModelsInPool(typeof(SharedRelicPool), customRelicTypes);
+		RegisterModelsInPool(typeof(EventRelicPool), eventRelicTypes);
+		RegisterModelsInPool(typeof(TokenCardPool), customCardTypes);
+	}
 
-		foreach (Type runeType in customRelicTypes)
-		{
-			TryAddModelToPool(typeof(SharedRelicPool), runeType);
-		}
+	internal static void RegisterPlayerRuneModels(IEnumerable<Type> runeTypes)
+	{
+		RegisterModelsInPool(typeof(SharedRelicPool), HextechModelTypeIdentity.Distinct(runeTypes));
+	}
 
-		foreach (Type relicType in eventRelicTypes)
-		{
-			TryAddModelToPool(typeof(EventRelicPool), relicType);
-		}
-
-		foreach (Type cardType in customCardTypes)
-		{
-			TryAddModelToPool(typeof(TokenCardPool), cardType);
-		}
-
-		CleanupDuplicatePoolRegistrations(typeof(SharedRelicPool), customRelicTypes);
-		CleanupDuplicatePoolRegistrations(typeof(EventRelicPool), eventRelicTypes);
-		CleanupDuplicatePoolRegistrations(typeof(TokenCardPool), customCardTypes);
+	internal static void RegisterEventRelicModels(IEnumerable<Type> relicTypes)
+	{
+		RegisterModelsInPool(typeof(EventRelicPool), HextechModelTypeIdentity.Distinct(relicTypes));
 	}
 
 	internal static void CleanupMobileFirstModelRegistrationWorkaround()
@@ -74,6 +61,21 @@ internal static class HextechModelPoolRegistrar
 		}
 
 		ModHelper.AddModelToPool(poolType, modelType);
+	}
+
+	private static void RegisterModelsInPool(Type poolType, IReadOnlyList<Type> modelTypes)
+	{
+		if (ShouldUseMobileFirstModelRegistrationWorkaround())
+		{
+			QueueMobileFirstModelRegistrationWorkaround(poolType, modelTypes);
+		}
+
+		foreach (Type modelType in modelTypes)
+		{
+			TryAddModelToPool(poolType, modelType);
+		}
+
+		CleanupDuplicatePoolRegistrations(poolType, modelTypes);
 	}
 
 	private static bool IsModelAlreadyQueuedForPool(Type poolType, Type modelType)
