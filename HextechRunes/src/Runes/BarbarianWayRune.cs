@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -29,8 +30,24 @@ public sealed class BarbarianWayRune : HextechRelicBase
 			return;
 		}
 
-		List<CardTransformation> transformations = Owner.Deck.Cards
-			.Where(static card => card.IsBasicStrikeOrDefend && card.Type == CardType.Attack && card.IsTransformable)
+		List<CardModel> transformableCards = Owner.Deck.Cards
+			.Where(CanTransformToClaw)
+			.ToList();
+		if (transformableCards.Count == 0)
+		{
+			return;
+		}
+
+		IEnumerable<CardModel> selected = await CardSelectCmd.FromDeckGeneric(
+			Owner,
+			new CardSelectorPrefs(CardSelectorPrefs.TransformSelectionPrompt, 0, transformableCards.Count)
+			{
+				Cancelable = true,
+				RequireManualConfirmation = true
+			},
+			CanTransformToClaw);
+
+		List<CardTransformation> transformations = selected
 			.Select(card => CardTransformUpgradeHelper.CreateFixedReplacementTransformation(
 				card,
 				Owner.RunState.CreateCard<Claw>(Owner)))
@@ -42,5 +59,10 @@ public sealed class BarbarianWayRune : HextechRelicBase
 
 		Flash();
 		await CardCmd.Transform(transformations, null, CardPreviewStyle.GridLayout);
+	}
+
+	private static bool CanTransformToClaw(CardModel card)
+	{
+		return card.Type == CardType.Attack && card.IsTransformable;
 	}
 }
