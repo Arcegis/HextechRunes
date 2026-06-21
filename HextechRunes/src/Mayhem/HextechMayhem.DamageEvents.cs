@@ -17,6 +17,13 @@ internal sealed partial class HextechMayhemModifier
 {
 	public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
+		if (target.Side == CombatSide.Enemy && target.CombatState?.RunState == RunState)
+		{
+			await HextechEnemyHexDispatcher.ForEachActive(
+				this,
+				(effect, context) => effect.AfterEnemyDamageReceivedAny(context, target, result, dealer, cardSource));
+		}
+
 		if (!TryGetDamagedEnemy(target, result, out uint combatId))
 		{
 			return;

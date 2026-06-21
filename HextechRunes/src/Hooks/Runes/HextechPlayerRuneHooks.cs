@@ -405,6 +405,18 @@ internal static partial class HextechPlayerRuneHooks
 		return false;
 	}
 
+	private static bool OrbChannelPrefix(PlayerChoiceContext choiceContext, OrbModel orb, Player player, ref Task __result)
+	{
+		if (player.GetRelic<DrawYourSwordRune>() is not DrawYourSwordRune rune
+			|| !rune.ShouldConvertChanneledOrb(player))
+		{
+			return true;
+		}
+
+		__result = rune.ConvertChanneledOrbToFocus(choiceContext, orb, player);
+		return false;
+	}
+
 	private static bool OrbTweenLayoutPrefix(NOrbManager __instance)
 	{
 		if (!TryGetOrbLayoutState(__instance, out List<NOrb> orbs, out int capacity)

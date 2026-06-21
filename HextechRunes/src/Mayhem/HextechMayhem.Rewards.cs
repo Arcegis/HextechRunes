@@ -22,6 +22,20 @@ internal sealed partial class HextechMayhemModifier
 			(effect, context) => effect.TryModifyRewards(context, player, rewards, room));
 	}
 
+	public override Task AfterGoldGained(Player player)
+	{
+		return HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterGoldGained(context, player));
+	}
+
+	public override bool ShouldAllowSelectingMoreCardRewards(Player player, CardReward cardReward)
+	{
+		return HextechEnemyHexDispatcher.AnyModified(
+			this,
+			(effect, context) => effect.ShouldAllowSelectingMoreCardRewards(context, player, cardReward));
+	}
+
 	public override CardCreationOptions ModifyCardRewardCreationOptions(Player player, CardCreationOptions options)
 	{
 		return HextechEnemyHexDispatcher.Transform(

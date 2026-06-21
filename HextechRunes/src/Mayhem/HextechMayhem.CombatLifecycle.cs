@@ -33,6 +33,10 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterCombatEnd(CombatRoom room)
 	{
+		await HextechEnemyHexDispatcher.ForEachActive(
+			this,
+			(effect, context) => effect.AfterCombatEnd(context, room));
+
 		await HextechGoldrendSync.ApplyPendingCombatGoldLosses(RunState);
 		ResetCombatTracking();
 	}

@@ -31,6 +31,8 @@ internal sealed class HextechForgeChoiceReward : Reward
 
 	protected override string IconPath => GetForgeRewardIconPath();
 
+	internal ModelId ClaimedForgeId { get; private set; } = ModelId.none;
+
 #if STS2_105_OR_NEWER
 	public override void Populate()
 	{
@@ -55,6 +57,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 			return false;
 		}
 
+		ClaimedForgeId = selected.CanonicalInstance?.Id ?? selected.Id;
 		await HextechForgeGrantHelper.ObtainSelectedForge(Player, selected, syncObtainedRelic: true);
 		Log.Info($"[{ModInfo.Id}][ForgeChoiceReward] Obtained selected forge: player={Player.NetId} relic={(selected.CanonicalInstance?.Id ?? selected.Id).Entry}");
 		return true;

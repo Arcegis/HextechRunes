@@ -25,6 +25,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<BrutalForceRune>(MonsterHexKind.BrutalForce, HextechRarityTier.Silver),
 		Monster<ZealotRune>(MonsterHexKind.Zealot, HextechRarityTier.Silver),
 		Monster<SwiftAndSafeRune>(MonsterHexKind.SwiftAndSafe, HextechRarityTier.Silver),
+		Monster<BloodIdolRune>(MonsterHexKind.BloodIdol, HextechRarityTier.Silver),
 
 		Monster<SturdyRune>(MonsterHexKind.Sturdy, HextechRarityTier.Gold),
 		Monster<DawnbringersResolveRune>(MonsterHexKind.DawnbringersResolve, HextechRarityTier.Gold),
@@ -57,6 +58,8 @@ internal static class HextechMonsterHexRegistry
 		Monster<MonarchsGazeRune>(MonsterHexKind.MonarchsGaze, HextechRarityTier.Gold),
 		Monster<OmegaRune>(MonsterHexKind.Omega, HextechRarityTier.Gold),
 		Monster<ManipulateRealityRune>(MonsterHexKind.ManipulateReality, HextechRarityTier.Gold),
+		Monster<NatureIsHealingRune>(MonsterHexKind.NatureIsHealing, HextechRarityTier.Gold),
+		Monster<ArchmageRune>(MonsterHexKind.Archmage, HextechRarityTier.Gold),
 
 		Monster<CourageOfColossusRune>(MonsterHexKind.CourageOfColossus, HextechRarityTier.Prismatic),
 		Monster<GlassCannonRune>(MonsterHexKind.GlassCannon, HextechRarityTier.Prismatic),
@@ -94,7 +97,12 @@ internal static class HextechMonsterHexRegistry
 		Monster<ArcanePunchRune>(MonsterHexKind.ArcanePunch, HextechRarityTier.Prismatic),
 		Monster<SymphonyOfWarRune>(MonsterHexKind.SymphonyOfWar, HextechRarityTier.Prismatic),
 		Monster<MysteryRune>(MonsterHexKind.Mystery, HextechRarityTier.Prismatic),
-		Monster<MindOverMatterRune>(MonsterHexKind.MindOverMatter, HextechRarityTier.Prismatic)
+		Monster<MindOverMatterRune>(MonsterHexKind.MindOverMatter, HextechRarityTier.Prismatic),
+		Monster<CompensationRune>(MonsterHexKind.Compensation, HextechRarityTier.Prismatic),
+		Monster<OminousPactRune>(MonsterHexKind.OminousPact, HextechRarityTier.Prismatic),
+		Monster<SolidTimeRune>(MonsterHexKind.SolidTime, HextechRarityTier.Prismatic),
+		Monster<ForgottenSoulRune>(MonsterHexKind.ForgottenSoul, HextechRarityTier.Prismatic),
+		Monster<CerberusRune>(MonsterHexKind.Cerberus, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

@@ -5,6 +5,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using static HextechRunes.HextechHookReflection;
@@ -26,6 +27,7 @@ internal static class AssetHooks
 		MethodInfo getPowerIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.Icon));
 		MethodInfo getPowerBigIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.BigIcon));
 		MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
+		MethodInfo getEnchantmentIcon = RequireGetter(typeof(EnchantmentModel), nameof(EnchantmentModel.Icon));
 
 		harmony.Patch(getRelicIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicIconPostfix)));
 		harmony.Patch(getRelicIconOutline, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicIconOutlinePostfix)));
@@ -41,6 +43,7 @@ internal static class AssetHooks
 		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerIconPostfix)));
 		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
 		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
+		harmony.Patch(getEnchantmentIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(EnchantmentIconPostfix)));
 	}
 
 	private static void CardPortraitPostfix(CardModel __instance, ref Texture2D __result)
@@ -48,6 +51,14 @@ internal static class AssetHooks
 		if (TryGetHextechCardTexture(__instance, out Texture2D? texture))
 		{
 			__result = texture!;
+		}
+	}
+
+	private static void EnchantmentIconPostfix(EnchantmentModel __instance, ref CompressedTexture2D __result)
+	{
+		if (__instance is UniversalSpiral)
+		{
+			__result = ModelDb.Enchantment<Spiral>().Icon;
 		}
 	}
 
@@ -164,6 +175,7 @@ internal static class AssetHooks
 			MountainDragonSoulCard => HextechAssets.MountainDragonSoulCardPortraitPath,
 			ChemtechDragonSoulCard => HextechAssets.ChemtechDragonSoulCardPortraitPath,
 			CloudDragonSoulCard => HextechAssets.CloudDragonSoulCardPortraitPath,
+			MikaelsBlessingCard => HextechAssets.MikaelsBlessingCardPortraitPath,
 			_ => null
 		};
 		if (path == null)

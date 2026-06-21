@@ -126,8 +126,8 @@
 我方	BackToBasicsRune	回归基本功	标签=综合
 我方	DrawYourSwordRune	亮出你的剑	标签=综合
 #我方	FeelTheBurnRune	感受燃烧	标签=综合
-#我方	MikaelsBlessingRune	米凯尔的祝福	标签=综合
-我方	EarthAwakensRune	大地苏醒	标签=输出
+我方	MikaelsBlessingRune	米凯尔的祝福	标签=综合
+#我方	EarthAwakensRune	大地苏醒	标签=输出
 我方	SymphonyOfWarRune	战争交响乐	标签=输出
 我方	UnmovableMountainRune	不动如山	标签=生存
 我方	MysteryRune	？？？	标签=综合
@@ -193,6 +193,7 @@
 我方	DiceManiacRune	掷骰狂人	标签=随机
 我方	BreadSandwichRune	面包三明治	标签=综合
 我方	TransmuteChaosRune	质变：混沌	标签=随机
+我方	DoubleVisionRune	复视	标签=综合
 
 [我方 / 铁甲战士]
 我方	BloodPactRune	歃血	标签=放血
@@ -242,6 +243,7 @@
 我方	SerpentFormUpgradeRune	升级：群蛇形态	标签=输出
 我方	BigKnifeRune	大号匕首	标签=小刀
 我方	ShriekUpgradeRune	升级：尖啸	标签=综合
+我方	NowYouSeeMeRune	再也不见	标签=状态
 我方	SnakebiteUpgradeRune	升级：蛇咬	标签=中毒
 我方	InkshadowRune	墨影	标签=小刀
 我方	ExtremeSpeedRune	极限速度	标签=运转
@@ -268,6 +270,8 @@
 我方	TriPrismRune	三棱镜	标签=无色
 我方	VenerateUpgradeRune	升级：崇拜	标签=辉星
 我方	SkyDrillUpgradeRune	升级：天际钻头	标签=输出
+我方	TrinityRune	三位一体	标签=辉星
+我方	CrashLandingUpgradeRune	升级：迫降	标签=输出
 
 [我方 / 故障机器人]
 我方	DexterityStrengthToFocusRune	敏捷力量转集中	标签=产球

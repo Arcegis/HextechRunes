@@ -9,7 +9,7 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 5;
+	private const int CurrentConfigVersion = 8;
 	private const int EnemyHexActCount = 3;
 	private const int MinEnemyHexCount = 0;
 	private const int MaxEnemyHexCount = 6;
@@ -19,6 +19,28 @@ internal static class HextechRuneConfiguration
 	[
 		typeof(DemonFormUpgradeRune),
 		typeof(TyrannyUpgradeRune)
+	];
+	private static readonly Type[] Version6DefaultDisabledRuneTypes =
+	[
+		typeof(NeowsGrudgeRune),
+		typeof(StarlightSparkleRune),
+		typeof(AnthonyBiasRune),
+		typeof(CuttingEdgeAlchemistRune),
+		typeof(CosplayRune),
+		typeof(OtterAndFriendsRune),
+		typeof(RegretRune)
+	];
+	private static readonly Type[] Version7DefaultDisabledRuneTypes =
+	[
+		typeof(CrackTheEggRune)
+	];
+	private static readonly Type[] Version8DefaultDisabledRuneTypes =
+	[
+		typeof(EarthAwakensRune)
+	];
+	private static readonly Type[] Version8DefaultEnabledRuneTypes =
+	[
+		typeof(MikaelsBlessingRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -184,6 +206,19 @@ internal static class HextechRuneConfiguration
 		else if (previousConfigVersion < 5)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version5DefaultDisabledRuneTypes));
+		}
+		if (previousConfigVersion < 6)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version6DefaultDisabledRuneTypes));
+		}
+		if (previousConfigVersion < 7)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version7DefaultDisabledRuneTypes));
+		}
+		if (previousConfigVersion < 8)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version8DefaultEnabledRuneTypes));
+			disabledIds.UnionWith(GetPlayerRuneIds(Version8DefaultDisabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;
