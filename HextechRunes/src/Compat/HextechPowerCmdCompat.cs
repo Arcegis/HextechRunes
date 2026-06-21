@@ -153,4 +153,9 @@ internal static class HextechPowerCmdCompat
 	{
 		return MegaCrit.Sts2.Core.Commands.PowerCmd.Remove(power);
 	}
+
+	public static Task Decrement(PowerModel power)
+	{
+		return MegaCrit.Sts2.Core.Commands.PowerCmd.Decrement(power);
+	}
 }

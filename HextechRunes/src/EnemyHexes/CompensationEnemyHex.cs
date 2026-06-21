@@ -48,7 +48,8 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 			return amount;
 		}
 
-		EnqueuePendingCompensation(commandId, target, doom, dealer, cardSource);
+		bool shouldConsumeSlippery = target.GetPowerAmount<SlipperyPower>() > 0m;
+		EnqueuePendingCompensation(commandId, target, doom, dealer, cardSource, shouldConsumeSlippery);
 		return 0m;
 	}
 
@@ -61,7 +62,13 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 
 		PendingCompensation compensation = pending!;
-		await PowerCmd.Apply<DoomPower>(target, compensation.Amount, compensation.Dealer ?? target, compensation.CardSource);
+		if (compensation.ShouldConsumeSlippery && target.GetPower<SlipperyPower>() is SlipperyPower slippery)
+		{
+			await PowerCmd.Decrement(slippery);
+		}
+
+		await HextechCombatHooks.RunWithCompensationReplacementDoomGuard(
+			() => PowerCmd.Apply<DoomPower>(target, compensation.Amount, compensation.Dealer ?? target, compensation.CardSource));
 	}
 
 	internal static void ClearPendingCompensations(long commandId)
@@ -78,7 +85,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 	}
 
-	private void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource)
+	private void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource, bool shouldConsumeSlippery)
 	{
 		for (int i = _pendingCompensations.Count - 1; i >= 0; i--)
 		{
@@ -89,14 +96,15 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 				{
 					Amount = pending.Amount + amount,
 					Dealer = dealer ?? pending.Dealer,
-					CardSource = cardSource ?? pending.CardSource
+					CardSource = cardSource ?? pending.CardSource,
+					ShouldConsumeSlippery = pending.ShouldConsumeSlippery || shouldConsumeSlippery
 				};
 				EffectsWithPendingCompensation.Add(this);
 				return;
 			}
 		}
 
-		_pendingCompensations.Add(new PendingCompensation(commandId, target, amount, dealer, cardSource));
+		_pendingCompensations.Add(new PendingCompensation(commandId, target, amount, dealer, cardSource, shouldConsumeSlippery));
 		EffectsWithPendingCompensation.Add(this);
 	}
 
@@ -139,5 +147,5 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 	}
 
-	private sealed record PendingCompensation(long CommandId, Creature Target, decimal Amount, Creature? Dealer, CardModel? CardSource);
+	private sealed record PendingCompensation(long CommandId, Creature Target, decimal Amount, Creature? Dealer, CardModel? CardSource, bool ShouldConsumeSlippery);
 }

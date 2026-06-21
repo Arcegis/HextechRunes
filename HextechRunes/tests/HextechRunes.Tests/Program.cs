@@ -57,6 +57,7 @@ internal static class Program
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
+			new(nameof(CompensationReplacementDoomGuardScopesAsyncWork), CompensationReplacementDoomGuardScopesAsyncWork),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
@@ -702,6 +703,27 @@ internal static class Program
 		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new AdaptablePower()), "adaptable power should be structural");
 		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new SandpitPower()), "sandpit power should be structural");
 		Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new StrengthPower()), "ordinary strength should not be structural");
+	}
+
+	private static void CompensationReplacementDoomGuardScopesAsyncWork()
+	{
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should start inactive");
+		TaskCompletionSource gate = new();
+		bool sawActiveBeforeAwait = false;
+		bool sawActiveAfterAwait = false;
+		Task guarded = HextechCombatHooks.RunWithCompensationReplacementDoomGuard(async () =>
+		{
+			sawActiveBeforeAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+			await gate.Task;
+			sawActiveAfterAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+		});
+
+		Expect(sawActiveBeforeAwait, "compensation doom guard should be active before guarded work awaits");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should not leak to caller context");
+		gate.SetResult();
+		guarded.GetAwaiter().GetResult();
+		Expect(sawActiveAfterAwait, "compensation doom guard should remain active after await inside guarded work");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should reset after guarded work");
 	}
 
 	private static void PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries()
