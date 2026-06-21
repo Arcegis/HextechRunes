@@ -6,7 +6,7 @@
     <RootNamespace>HextechRunes.Tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <HextechSts2Target Condition="'$(HextechSts2Target)' == ''">0.103.3</HextechSts2Target>
+    <HextechSts2Target Condition="'$(HextechSts2Target)' == ''">0.107.1</HextechSts2Target>
     <GameDataDir Condition="'$(GameDataDir)' == ''">$(MSBuildThisFileDirectory)../../versioned-dll-backups/$(HextechSts2Target)/game-refs</GameDataDir>
   </PropertyGroup>
 

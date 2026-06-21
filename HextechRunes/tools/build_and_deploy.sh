@@ -26,7 +26,7 @@ REFS_106="$ROOT/versioned-dll-backups/0.106.1/game-refs"
 REFS_1070="$ROOT/versioned-dll-backups/0.107.0/game-refs"
 REFS_1071="$ROOT/versioned-dll-backups/0.107.1/game-refs"
 GAME_RELEASE_INFO="$GAME_APP/Contents/Resources/release_info.json"
-DEFAULT_STS2_TARGET="0.103.3"
+DEFAULT_STS2_TARGET="0.107.1"
 HEXTECH_DEPLOY="${HEXTECH_DEPLOY:-1}"
 
 major_minor_version() {

@@ -164,6 +164,7 @@ internal static class AssetHooks
 			MountainDragonSoulCard => HextechAssets.MountainDragonSoulCardPortraitPath,
 			ChemtechDragonSoulCard => HextechAssets.ChemtechDragonSoulCardPortraitPath,
 			CloudDragonSoulCard => HextechAssets.CloudDragonSoulCardPortraitPath,
+			MikaelsBlessingCard => HextechAssets.MikaelsBlessingCardPortraitPath,
 			_ => null
 		};
 		if (path == null)

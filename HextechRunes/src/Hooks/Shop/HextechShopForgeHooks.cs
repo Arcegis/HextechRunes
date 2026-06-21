@@ -64,6 +64,11 @@ internal static class HextechShopForgeHooks
 			"random forge shop layout",
 			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantInventoryInitializePrefix)),
 			postfix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantInventoryInitializePostfix)));
+		TryPatch(
+			harmony,
+			() => RequireMethod(typeof(NMerchantRelic), "OnSuccessfulPurchase", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PurchaseStatus), typeof(MerchantEntry)),
+			"random forge purchase animation",
+			prefix: new HarmonyMethod(typeof(HextechShopForgeHooks), nameof(MerchantRelicSuccessfulPurchasePrefix)));
 	}
 
 	private static bool TryPatch(Harmony harmony, Func<MethodInfo> resolveTarget, string label, HarmonyMethod? prefix = null, HarmonyMethod? postfix = null)
@@ -141,6 +146,18 @@ internal static class HextechShopForgeHooks
 	private static bool MerchantRelicRestockPrefix(MerchantRelicEntry __instance)
 	{
 		return !IsRandomForgeEntry(__instance);
+	}
+
+	private static bool MerchantRelicSuccessfulPurchasePrefix(NMerchantRelic __instance)
+	{
+		if (!IsRandomForgeEntry(__instance.Entry))
+		{
+			return true;
+		}
+
+		__instance.Entry.OnMerchantInventoryUpdated();
+		Log.Info($"[{ModInfo.Id}][Mayhem] Skipped merchant relic inventory animation for random forge placeholder.");
+		return false;
 	}
 
 	private static void InstallRandomForgeEntry(MerchantInventory inventory, Player player)
