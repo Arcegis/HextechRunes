@@ -22,16 +22,43 @@ internal static class HextechRewardSafetyHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardOnSelectPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(SpecialCardReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(SpecialCardRewardOnSelectPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.Add), BindingFlags.Public | BindingFlags.Static, typeof(CardModel), typeof(PileType), typeof(CardPilePosition), typeof(AbstractModel), typeof(bool)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardPileAddPostfix)));
 	}
 
 	private static void CardRewardOnSelectPostfix(CardReward __instance, ref Task<bool> __result)
 	{
-		if (!ShouldApplyForbiddenGrimoire(__instance))
+		Task<bool> result = __result;
+		if (ShouldApplyForbiddenGrimoire(__instance))
+		{
+			result = CompleteForbiddenGrimoireCardRewardAsync(__instance, result);
+		}
+
+		if (DoubleVisionRune.ShouldDuplicateCardReward(__instance))
+		{
+			result = DoubleVisionRune.CompleteCardRewardAsync(__instance, result);
+		}
+
+		__result = result;
+	}
+
+	private static void SpecialCardRewardOnSelectPostfix(SpecialCardReward __instance, ref Task<bool> __result)
+	{
+		if (__instance.Player.GetRelic<DoubleVisionRune>() == null)
 		{
 			return;
 		}
 
-		__result = CompleteForbiddenGrimoireCardRewardAsync(__instance, __result);
+		__result = DoubleVisionRune.CompleteSpecialCardRewardAsync(__instance, __result);
+	}
+
+	private static void CardPileAddPostfix(CardModel card, PileType newPileType, AbstractModel? clonedBy, ref Task<CardPileAddResult> __result)
+	{
+		DoubleVisionRune.TrackCardPileAdd(card, newPileType, clonedBy, ref __result);
 	}
 
 	private static async Task<bool> CompleteForbiddenGrimoireCardRewardAsync(CardReward reward, Task<bool> originalTask)

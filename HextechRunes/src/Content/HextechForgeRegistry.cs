@@ -26,6 +26,7 @@ internal static class HextechForgeRegistry
 		Forge<DrawForge>(HextechRarityTier.Gold),
 		Forge<RecoveryForge>(HextechRarityTier.Gold),
 		Forge<GoldUpgradeForge>(HextechRarityTier.Gold),
+		Forge<GlamForge>(HextechRarityTier.Gold),
 		Forge<StarsForge>(HextechRarityTier.Gold),
 		Forge<OrbSlotForge>(HextechRarityTier.Gold),
 		Forge<PlatingForge>(HextechRarityTier.Gold),
@@ -45,6 +46,7 @@ internal static class HextechForgeRegistry
 		Forge<PrismaticArtifactForge>(HextechRarityTier.Prismatic),
 		Forge<FocusForge>(HextechRarityTier.Prismatic),
 		Forge<FortuneForge>(HextechRarityTier.Prismatic),
+		Forge<SpiralForge>(HextechRarityTier.Prismatic),
 		Forge<VoidForge>(HextechRarityTier.Prismatic)
 	];
 

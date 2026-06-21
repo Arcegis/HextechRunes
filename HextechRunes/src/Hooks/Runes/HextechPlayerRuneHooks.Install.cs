@@ -62,6 +62,7 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<GrandFinaleUpgradeRune>("grand finale upgraded play", () => InstallGrandFinaleUpgradeHooks(harmony));
 		TryInstallRuneHook<VoidFormUpgradeRune>("void form upgraded play", () => InstallVoidFormUpgradeHooks(harmony));
 		TryInstallRuneHook<RainbowUpgradeRune>("rainbow upgraded play", () => InstallRainbowUpgradeHooks(harmony));
+		TryInstallRuneHook<CrashLandingUpgradeRune>("crash landing upgraded play", () => InstallCrashLandingUpgradeHooks(harmony));
 	}
 
 	private static void TryInstallSharedCardTagHooks(Harmony harmony)
@@ -238,6 +239,13 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(Rainbow), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(RainbowOnPlayPrefix)));
+	}
+
+	private static void InstallCrashLandingUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(CrashLanding), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CrashLandingOnPlayPrefix)));
 	}
 
 	private static void TryInstallCombatHookGroup(string label, Action install)

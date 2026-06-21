@@ -193,6 +193,7 @@
 我方	DiceManiacRune	掷骰狂人	标签=随机
 我方	BreadSandwichRune	面包三明治	标签=综合
 我方	TransmuteChaosRune	质变：混沌	标签=随机
+我方	DoubleVisionRune	复视	标签=综合
 
 [我方 / 铁甲战士]
 我方	BloodPactRune	歃血	标签=放血
@@ -270,6 +271,7 @@
 我方	VenerateUpgradeRune	升级：崇拜	标签=辉星
 我方	SkyDrillUpgradeRune	升级：天际钻头	标签=输出
 我方	TrinityRune	三位一体	标签=辉星
+我方	CrashLandingUpgradeRune	升级：迫降	标签=输出
 
 [我方 / 故障机器人]
 我方	DexterityStrengthToFocusRune	敏捷力量转集中	标签=产球

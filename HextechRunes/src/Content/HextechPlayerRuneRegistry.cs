@@ -233,6 +233,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<InkshadowRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 25, tagKey: "SHIV"),
         Rune<SkyDrillUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 21, tagKey: "OUTPUT"),
         Rune<TrinityRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 22, tagKey: "STARLIGHT"),
+        Rune<CrashLandingUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 23, tagKey: "OUTPUT"),
         Rune<ChargeUpRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
         Rune<AutoPatrolRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 31, tagKey: "SUMMON"),
         Rune<DeathHarvestRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
@@ -331,6 +332,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<ReforgedHelmetRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 19, tagKey: "OUTPUT"),
         Rune<MostUniversalScopeRune>(HextechRarityTier.Prismatic, tagKey: "RESOURCE"),
         Rune<TransmuteChaosRune>(HextechRarityTier.Prismatic, tagKey: "RANDOM"),
+        Rune<DoubleVisionRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<ExtremeSpeedRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 26, tagKey: "RESOURCE")
 	];
 
