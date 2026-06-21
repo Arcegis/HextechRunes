@@ -119,18 +119,28 @@ internal static class HextechForgeGrantHelper
 	public static async Task ObtainSelectedForge(Player player, RelicModel forge, bool syncObtainedRelic)
 	{
 		SaveManager.Instance.MarkRelicAsSeen(forge);
-		await RelicCmd.Obtain(forge, player);
+		bool syncedBeforePickup = false;
 		if (syncObtainedRelic)
 		{
 			INetGameService netService = RunManager.Instance.NetService;
 			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
 			{
-				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(forge);
+				// Enchantment forges open a nested deck choice during pickup; remote clients must know about the forge first.
+				ModelId forgeId = forge.CanonicalInstance?.Id ?? forge.Id;
+				RelicModel syncCopy = ModelDb.GetById<RelicModel>(forgeId).ToMutable();
+				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(syncCopy);
+				syncedBeforePickup = true;
 			}
 			else if (netService.Type is NetGameType.Host or NetGameType.Client)
 			{
 				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
 			}
+		}
+
+		await RelicCmd.Obtain(forge, player);
+		if (syncedBeforePickup)
+		{
+			Log.Info($"[{ModInfo.Id}][ForgeChoice] Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
 		}
 	}
 

@@ -3,6 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
@@ -20,6 +21,10 @@ internal static class HextechRewardSafetyHooks
 			RequireMethod(typeof(Reward), nameof(Reward.FromSerializable), BindingFlags.Public | BindingFlags.Static, typeof(SerializableReward), typeof(Player)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardFromSerializablePostfix)));
 		harmony.Patch(
+			RequireMethod(typeof(Reward), nameof(Reward.SelectUnsynchronized), BindingFlags.Instance | BindingFlags.Public),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardSelectUnsynchronizedPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardSelectUnsynchronizedPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(CardReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
 			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardOnSelectPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardOnSelectPostfix)));
@@ -34,6 +39,28 @@ internal static class HextechRewardSafetyHooks
 		harmony.Patch(
 			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.Add), BindingFlags.Public | BindingFlags.Static, typeof(CardModel), typeof(PileType), typeof(CardPilePosition), typeof(AbstractModel), typeof(bool)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardPileAddPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(RelicCmd), nameof(RelicCmd.Obtain), BindingFlags.Public | BindingFlags.Static, typeof(RelicModel), typeof(Player), typeof(int)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicCmdObtainPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicCmdObtainPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(PotionCmd), nameof(PotionCmd.TryToProcure), BindingFlags.Public | BindingFlags.Static, typeof(PotionModel), typeof(Player), typeof(int)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PotionCmdTryToProcurePrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PotionCmdTryToProcurePostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(PlayerCmd), nameof(PlayerCmd.GainGold), BindingFlags.Public | BindingFlags.Static, typeof(decimal), typeof(Player), typeof(bool)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PlayerCmdGainGoldPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PlayerCmdGainGoldPostfix)));
+	}
+
+	private static void RewardSelectUnsynchronizedPrefix(out object? __state)
+	{
+		__state = DoubleVisionRune.BeginRewardCommandSuppression();
+	}
+
+	private static void RewardSelectUnsynchronizedPostfix(object? __state)
+	{
+		DoubleVisionRune.CompleteRewardCommandSuppression(__state);
 	}
 
 	private static void CardRewardOnSelectPrefix(CardReward __instance, out object? __state)
@@ -75,6 +102,36 @@ internal static class HextechRewardSafetyHooks
 	private static void CardPileAddPostfix(CardModel card, PileType newPileType, AbstractModel? clonedBy, ref Task<CardPileAddResult> __result)
 	{
 		DoubleVisionRune.TrackCardPileAdd(card, newPileType, clonedBy, ref __result);
+	}
+
+	private static void RelicCmdObtainPrefix(Player player, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginDirectRelicReward(player);
+	}
+
+	private static void RelicCmdObtainPostfix(object? __state, ref Task<RelicModel> __result)
+	{
+		__result = DoubleVisionRune.CompleteDirectRelicRewardAsync(__result, __state);
+	}
+
+	private static void PotionCmdTryToProcurePrefix(Player player, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginDirectPotionReward(player);
+	}
+
+	private static void PotionCmdTryToProcurePostfix(object? __state, ref Task<PotionProcureResult> __result)
+	{
+		__result = DoubleVisionRune.CompleteDirectPotionRewardAsync(__result, __state);
+	}
+
+	private static void PlayerCmdGainGoldPrefix(decimal amount, Player player, bool wasStolenBack, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginDirectGoldReward(player, amount, wasStolenBack);
+	}
+
+	private static void PlayerCmdGainGoldPostfix(object? __state, ref Task __result)
+	{
+		__result = DoubleVisionRune.CompleteDirectGoldRewardAsync(__result, __state);
 	}
 
 	private static async Task<bool> CompleteForbiddenGrimoireCardRewardAsync(CardReward reward, Task<bool> originalTask)

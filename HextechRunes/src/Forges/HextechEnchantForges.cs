@@ -10,11 +10,13 @@ namespace HextechRunes;
 public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 	where TEnchantment : EnchantmentModel
 {
+	private const int EnchantmentAmount = 1;
+
 	public override bool HasUponPickupEffect => true;
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		.. HoverTipFactory.FromEnchantment<TEnchantment>()
+		.. HoverTipFactory.FromEnchantment<TEnchantment>(EnchantmentAmount)
 	];
 
 	public override async Task AfterObtained()
@@ -24,19 +26,18 @@ public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 			return;
 		}
 
-		EnchantmentModel enchantment = ModelDb.Enchantment<TEnchantment>().ToMutable();
-		CardModel? selected = (await CardSelectCmd.FromDeckForEnchantment(
+		EnchantmentModel canonicalEnchantment = ModelDb.Enchantment<TEnchantment>();
+		IEnumerable<CardModel> selectedCards = await CardSelectCmd.FromDeckForEnchantment(
 			Owner,
-			enchantment,
-			1,
-			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, 1))).FirstOrDefault();
-		if (selected == null)
+			canonicalEnchantment,
+			EnchantmentAmount,
+			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, EnchantmentAmount));
+		foreach (CardModel selected in selectedCards)
 		{
-			return;
+			Flash();
+			CardCmd.Enchant(canonicalEnchantment.ToMutable(), selected, EnchantmentAmount);
+			CardCmd.Preview(selected);
 		}
-
-		Flash();
-		CardCmd.Enchant(enchantment, selected, 1);
 	}
 }
 
