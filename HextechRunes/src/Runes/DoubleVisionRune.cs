@@ -36,25 +36,48 @@ public sealed class DoubleVisionRune : HextechRelicBase
 			case HextechForgeChoiceReward forgeReward:
 				await DuplicateForgeReward(player, forgeReward);
 				break;
-			case RelicReward relicReward:
-				await DuplicateRelicReward(player, relicReward);
-				break;
 		}
 	}
 
-	internal static bool ShouldDuplicateCardReward(CardReward reward)
+	internal static object? BeginCardRewardTracking(Player player)
 	{
-		return GetActiveRunes(reward.Player).Count > 0;
+		IReadOnlyList<DoubleVisionRune> runes = GetActiveRunes(player);
+		if (runes.Count == 0)
+		{
+			return null;
+		}
+
+		CardRewardTracker? previousTracker = CurrentCardRewardTracker.Value;
+		CardRewardTrackingScope scope = new(player, runes, previousTracker);
+		CurrentCardRewardTracker.Value = scope.Tracker;
+		return scope;
 	}
 
-	internal static async Task<bool> CompleteCardRewardAsync(CardReward reward, Task<bool> originalTask)
+	internal static Task<bool> CompleteCardRewardAsync(Task<bool> originalTask, object? trackingState)
 	{
-		return await CompleteCardRewardAddTrackingAsync(reward.Player, originalTask);
+		if (trackingState is not CardRewardTrackingScope scope)
+		{
+			return originalTask;
+		}
+
+		CurrentCardRewardTracker.Value = scope.PreviousTracker;
+		return CompleteCardRewardAddTrackingAsync(originalTask, scope);
 	}
 
-	internal static async Task<bool> CompleteSpecialCardRewardAsync(SpecialCardReward reward, Task<bool> originalTask)
+	internal static object? CaptureRewardDuplicationState(Player player)
 	{
-		return await CompleteCardRewardAddTrackingAsync(reward.Player, originalTask);
+		IReadOnlyList<DoubleVisionRune> runes = GetActiveRunes(player);
+		return runes.Count == 0 ? null : new RewardDuplicationScope(runes);
+	}
+
+	internal static Task<bool> CompleteRelicRewardAsync(RelicReward reward, Task<bool> originalTask, object? duplicationState)
+	{
+		if (duplicationState is not RewardDuplicationScope scope)
+		{
+			return originalTask;
+		}
+
+		return CompleteRelicRewardAsync(reward, originalTask, scope);
 	}
 
 	internal static void TrackCardPileAdd(CardModel card, PileType newPileType, AbstractModel? clonedBy, ref Task<CardPileAddResult> resultTask)
@@ -71,35 +94,34 @@ public sealed class DoubleVisionRune : HextechRelicBase
 		resultTask = TrackCardPileAddAsync(resultTask, tracker);
 	}
 
-	private static async Task<bool> CompleteCardRewardAddTrackingAsync(Player player, Task<bool> originalTask)
+	private static async Task<bool> CompleteCardRewardAddTrackingAsync(Task<bool> originalTask, CardRewardTrackingScope scope)
 	{
-		IReadOnlyList<DoubleVisionRune> runes = GetActiveRunes(player);
-		if (runes.Count == 0)
-		{
-			return await originalTask;
-		}
+		bool rewardComplete = await originalTask;
 
-		CardRewardTracker? previousTracker = CurrentCardRewardTracker.Value;
-		CardRewardTracker tracker = new(player);
-		CurrentCardRewardTracker.Value = tracker;
-		bool rewardComplete;
-		try
-		{
-			rewardComplete = await originalTask;
-		}
-		finally
-		{
-			CurrentCardRewardTracker.Value = previousTracker;
-		}
-
-		if (!rewardComplete || tracker.AddedCards.Count == 0)
+		if (!rewardComplete || scope.Tracker.AddedCards.Count == 0)
 		{
 			return rewardComplete;
 		}
 
-		foreach (DoubleVisionRune rune in runes)
+		foreach (DoubleVisionRune rune in scope.Runes)
 		{
-			await rune.DuplicateRewardCards(tracker.AddedCards);
+			await rune.DuplicateRewardCards(scope.Tracker.AddedCards);
+		}
+
+		return rewardComplete;
+	}
+
+	private static async Task<bool> CompleteRelicRewardAsync(RelicReward reward, Task<bool> originalTask, RewardDuplicationScope scope)
+	{
+		bool rewardComplete = await originalTask;
+		if (!rewardComplete || reward.ClaimedRelic == null)
+		{
+			return rewardComplete;
+		}
+
+		foreach (DoubleVisionRune rune in scope.Runes)
+		{
+			await rune.DuplicateRelicReward(reward.Player, reward);
 		}
 
 		return rewardComplete;
@@ -310,5 +332,29 @@ public sealed class DoubleVisionRune : HextechRelicBase
 		public Player Player { get; }
 
 		public List<CardModel> AddedCards { get; } = [];
+	}
+
+	private class RewardDuplicationScope
+	{
+		public RewardDuplicationScope(IReadOnlyList<DoubleVisionRune> runes)
+		{
+			Runes = runes;
+		}
+
+		public IReadOnlyList<DoubleVisionRune> Runes { get; }
+	}
+
+	private sealed class CardRewardTrackingScope : RewardDuplicationScope
+	{
+		public CardRewardTrackingScope(Player player, IReadOnlyList<DoubleVisionRune> runes, CardRewardTracker? previousTracker)
+			: base(runes)
+		{
+			Tracker = new CardRewardTracker(player);
+			PreviousTracker = previousTracker;
+		}
+
+		public CardRewardTracker Tracker { get; }
+
+		public CardRewardTracker? PreviousTracker { get; }
 	}
 }

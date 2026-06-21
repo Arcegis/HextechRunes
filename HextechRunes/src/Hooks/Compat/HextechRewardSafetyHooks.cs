@@ -21,16 +21,27 @@ internal static class HextechRewardSafetyHooks
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardFromSerializablePostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(CardReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardOnSelectPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardOnSelectPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(SpecialCardReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(SpecialCardRewardOnSelectPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(SpecialCardRewardOnSelectPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(RelicReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicRewardOnSelectPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicRewardOnSelectPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.Add), BindingFlags.Public | BindingFlags.Static, typeof(CardModel), typeof(PileType), typeof(CardPilePosition), typeof(AbstractModel), typeof(bool)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardPileAddPostfix)));
 	}
 
-	private static void CardRewardOnSelectPostfix(CardReward __instance, ref Task<bool> __result)
+	private static void CardRewardOnSelectPrefix(CardReward __instance, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginCardRewardTracking(__instance.Player);
+	}
+
+	private static void CardRewardOnSelectPostfix(CardReward __instance, object? __state, ref Task<bool> __result)
 	{
 		Task<bool> result = __result;
 		if (ShouldApplyForbiddenGrimoire(__instance))
@@ -38,22 +49,27 @@ internal static class HextechRewardSafetyHooks
 			result = CompleteForbiddenGrimoireCardRewardAsync(__instance, result);
 		}
 
-		if (DoubleVisionRune.ShouldDuplicateCardReward(__instance))
-		{
-			result = DoubleVisionRune.CompleteCardRewardAsync(__instance, result);
-		}
-
-		__result = result;
+		__result = DoubleVisionRune.CompleteCardRewardAsync(result, __state);
 	}
 
-	private static void SpecialCardRewardOnSelectPostfix(SpecialCardReward __instance, ref Task<bool> __result)
+	private static void SpecialCardRewardOnSelectPrefix(SpecialCardReward __instance, out object? __state)
 	{
-		if (__instance.Player.GetRelic<DoubleVisionRune>() == null)
-		{
-			return;
-		}
+		__state = DoubleVisionRune.BeginCardRewardTracking(__instance.Player);
+	}
 
-		__result = DoubleVisionRune.CompleteSpecialCardRewardAsync(__instance, __result);
+	private static void SpecialCardRewardOnSelectPostfix(object? __state, ref Task<bool> __result)
+	{
+		__result = DoubleVisionRune.CompleteCardRewardAsync(__result, __state);
+	}
+
+	private static void RelicRewardOnSelectPrefix(RelicReward __instance, out object? __state)
+	{
+		__state = DoubleVisionRune.CaptureRewardDuplicationState(__instance.Player);
+	}
+
+	private static void RelicRewardOnSelectPostfix(RelicReward __instance, object? __state, ref Task<bool> __result)
+	{
+		__result = DoubleVisionRune.CompleteRelicRewardAsync(__instance, __result, __state);
 	}
 
 	private static void CardPileAddPostfix(CardModel card, PileType newPileType, AbstractModel? clonedBy, ref Task<CardPileAddResult> __result)
