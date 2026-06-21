@@ -242,6 +242,7 @@
 我方	SerpentFormUpgradeRune	升级：群蛇形态	标签=输出
 我方	BigKnifeRune	大号匕首	标签=小刀
 我方	ShriekUpgradeRune	升级：尖啸	标签=综合
+我方	NowYouSeeMeRune	再也不见	标签=状态
 我方	SnakebiteUpgradeRune	升级：蛇咬	标签=中毒
 我方	InkshadowRune	墨影	标签=小刀
 我方	ExtremeSpeedRune	极限速度	标签=运转
@@ -268,6 +269,7 @@
 我方	TriPrismRune	三棱镜	标签=无色
 我方	VenerateUpgradeRune	升级：崇拜	标签=辉星
 我方	SkyDrillUpgradeRune	升级：天际钻头	标签=输出
+我方	TrinityRune	三位一体	标签=辉星
 
 [我方 / 故障机器人]
 我方	DexterityStrengthToFocusRune	敏捷力量转集中	标签=产球
