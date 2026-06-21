@@ -15,7 +15,7 @@ internal static class HextechForgeStackingHooks
 	{
 		harmony.Patch(
 			RequireMethod(typeof(RelicCmd), nameof(RelicCmd.Obtain), BindingFlags.Public | BindingFlags.Static, typeof(RelicModel), typeof(Player), typeof(int)),
-			prefix: new HarmonyMethod(typeof(HextechForgeStackingHooks), nameof(ObtainPrefix)));
+			prefix: new HarmonyMethod(typeof(HextechForgeStackingHooks), nameof(ObtainPrefix)) { priority = Priority.Low });
 	}
 
 	private static bool ObtainPrefix(RelicModel relic, Player player, ref Task<RelicModel> __result)

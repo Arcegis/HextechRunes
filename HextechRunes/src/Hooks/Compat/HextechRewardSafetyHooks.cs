@@ -41,7 +41,7 @@ internal static class HextechRewardSafetyHooks
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardPileAddPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(RelicCmd), nameof(RelicCmd.Obtain), BindingFlags.Public | BindingFlags.Static, typeof(RelicModel), typeof(Player), typeof(int)),
-			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicCmdObtainPrefix)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicCmdObtainPrefix)) { priority = Priority.High },
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicCmdObtainPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(PotionCmd), nameof(PotionCmd.TryToProcure), BindingFlags.Public | BindingFlags.Static, typeof(PotionModel), typeof(Player), typeof(int)),

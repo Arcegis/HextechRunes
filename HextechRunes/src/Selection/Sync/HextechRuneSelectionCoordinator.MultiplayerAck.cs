@@ -1,4 +1,5 @@
 using Godot;
+using System.Threading;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -47,16 +48,19 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} remoteCount={pendingAcks.Count}");
 		Task allAcks = Task.WhenAll(pendingAcks);
-		Task timeout = WaitForFramesOrRunChangeAsync(runState, ActSelectionAppliedAckTimeoutFrames);
-		if (await Task.WhenAny(allAcks, timeout) == allAcks)
+		using CancellationTokenSource interruptedWaitCancellation = new();
+		Task interrupted = WaitForRunChangeOrMultiplayerDisconnectAsync(runState, interruptedWaitCancellation.Token);
+		if (await Task.WhenAny(allAcks, interrupted) == allAcks)
 		{
+			interruptedWaitCancellation.Cancel();
+			await interrupted;
 			await allAcks;
 			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex}");
 			return;
 		}
 
 		int completed = pendingAcks.Count(static task => task.IsCompletedSuccessfully);
-		Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied timeout: act={actIndex} completed={completed}/{pendingAcks.Count}; continuing to avoid blocking map flow");
+		Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied interrupted: act={actIndex} completed={completed}/{pendingAcks.Count} runActive={IsCurrentRun(runState)} connected={IsMultiplayerConnected()}; continuing because run changed or multiplayer disconnected");
 	}
 
 	private static async Task WaitForRemoteActSelectionApplied(PlayerChoiceSynchronizer synchronizer, RunState runState, Player player, uint choiceId, int actIndex)
@@ -112,6 +116,34 @@ internal static partial class HextechRuneSelectionCoordinator
 				await Task.Delay(remaining < TimeSpan.FromMilliseconds(16) ? remaining : TimeSpan.FromMilliseconds(16));
 			}
 		}
+	}
+
+	private static async Task WaitForRunChangeOrMultiplayerDisconnectAsync(RunState runState, CancellationToken cancellationToken)
+	{
+		while (!cancellationToken.IsCancellationRequested && IsCurrentRun(runState) && IsMultiplayerConnected())
+		{
+			if (NGame.Instance?.IsInsideTree() == true)
+			{
+				await NGame.Instance.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
+			}
+			else
+			{
+				try
+				{
+					await Task.Delay(TimeSpan.FromMilliseconds(16), cancellationToken);
+				}
+				catch (OperationCanceledException)
+				{
+					return;
+				}
+			}
+		}
+	}
+
+	private static bool IsMultiplayerConnected()
+	{
+		INetGameService netService = RunManager.Instance.NetService;
+		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
 	}
 
 	internal static TimeSpan GetNetworkChoiceTimeoutDuration(int frameCount)
