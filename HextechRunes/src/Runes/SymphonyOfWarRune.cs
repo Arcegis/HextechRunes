@@ -38,7 +38,7 @@ public sealed class SymphonyOfWarRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<SerpentFormPower>(3m),
+		new PowerVar<SerpentFormPower>(4m),
 		new PowerVar<DemonFormPower>(1m)
 	];
 

@@ -25,6 +25,6 @@ public sealed class ReprogramRune : HextechRelicBase
 		}
 
 		Flash();
-		await AddCardCopiesToDeckOrHand<ReprogramCard>(1);
+		await AddCardCopiesToDeckOrHand<ReprogramCard>(2);
 	}
 }
