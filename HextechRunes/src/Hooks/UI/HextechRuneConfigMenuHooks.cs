@@ -26,13 +26,17 @@ internal static class HextechRuneConfigMenuHooks
 	private const int NativeDuplicateFlags = 14;
 	private const int OverlayZIndex = 1000;
 	private const int HoverTipZIndex = 2000;
-	private const int RuneConfigColumns = 7;
+	private const int RuneConfigColumns = 8;
 	private const float ConfigRuneHolderScale = 1.3f;
-	private const float RuneConfigCellWidth = 118f;
-	private const float RuneConfigCellHeight = 146f;
-	private const float RuneConfigIconLayerHeight = 104f;
+	private const float RuneConfigCellWidth = 108f;
+	private const float RuneConfigCellHeight = 136f;
+	private const float RuneConfigIconLayerHeight = 96f;
 	private const float RuneConfigDragThreshold = 12f;
 	private const float RuneConfigLongPressSeconds = 0.35f;
+	private const float StepRepeatInitialDelaySeconds = 0.35f;
+	private const float StepRepeatIntervalSeconds = 0.075f;
+	private const float StepRepeatFastIntervalSeconds = 0.035f;
+	private const int StepRepeatFastAfterTicks = 10;
 	private const int RuneConfigIconsPerFrame = 12;
 	private const float CompactConfigHeightThreshold = 820f;
 	private static readonly FieldInfo? MainMenuButtonLocStringField = TryGetField(typeof(NMainMenuTextButton), "_locString");
@@ -272,10 +276,52 @@ internal static class HextechRuneConfigMenuHooks
 		List<RuneIconBinding> enemyIconBindings = [];
 		List<RuneIconBinding> forgeIconBindings = [];
 		List<RuneConfigLoadTarget> loadTargets = [];
+		int selectedPageIndex = 0;
 		Label summary = CreateLabel(string.Empty, compactLayout ? 15 : 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
-		Action updateSummary = () => UpdateSummary(summary, pendingDisabledPlayerIds, pendingDisabledMonsterHexIds, pendingDisabledForgeIds);
-		content.AddChild(CreateConfigToolbar(
-			overlay,
+		Action updateSummary = () => UpdateSummary(summary, selectedPageIndex, pendingDisabledPlayerIds, pendingDisabledMonsterHexIds, pendingDisabledForgeIds);
+
+		Control countsPage = CreateCountsPage(pendingPlayerHexCounts, pendingEnemyHexCounts, numericBindings, compactLayout);
+		Control runePoolPage = CreateRunePoolPage(playerEntries, pendingDisabledPlayerIds, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, compactLayout);
+		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pendingDisabledForgeIds, loadTargets, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
+		Control detailsPage = CreateDetailsPage(
+			pendingFirstActRuneWeights,
+			pendingNormalRuneWeights,
+			pendingSecondActAfterSilverWeights,
+			pendingForgeWeights,
+			pendingForgePrice,
+			numericBindings,
+			compactLayout);
+		Control[] pageArray = [ countsPage, runePoolPage, forgePoolPage, detailsPage ];
+
+		HBoxContainer tabs = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		tabs.AddThemeConstantOverride("separation", compactLayout ? 6 : 10);
+		content.AddChild(tabs);
+
+		List<Button> tabButtons = [];
+		Action<int>? updatePageActions = null;
+		Action<int> selectPage = pageIndex =>
+		{
+			selectedPageIndex = pageIndex;
+			for (int i = 0; i < pageArray.Length; i++)
+			{
+				pageArray[i].Visible = i == pageIndex;
+			}
+
+			UpdateTabButtonStates(tabButtons, pageIndex, compactLayout);
+			updatePageActions?.Invoke(pageIndex);
+			updateSummary();
+		};
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_COUNTS"), () => selectPage(0), compactLayout);
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_RUNE_POOLS"), () => selectPage(1), compactLayout);
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_FORGES"), () => selectPage(2), compactLayout);
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_DETAILS"), () => selectPage(3), compactLayout);
+
+		content.AddChild(CreateConfigPageActions(
 			playerEntries,
 			enemyEntries,
 			forgeEntries,
@@ -293,19 +339,11 @@ internal static class HextechRuneConfigMenuHooks
 			playerIconBindings,
 			enemyIconBindings,
 			forgeIconBindings,
-			summary,
 			updateSummary,
-			compactLayout));
+			() => selectedPageIndex,
+			compactLayout,
+			out updatePageActions));
 		content.AddChild(summary);
-
-		HBoxContainer tabs = new()
-		{
-			Alignment = BoxContainer.AlignmentMode.Center,
-			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-			MouseFilter = Control.MouseFilterEnum.Pass
-		};
-		tabs.AddThemeConstantOverride("separation", compactLayout ? 6 : 10);
-		content.AddChild(tabs);
 
 		ScrollContainer scroll = new()
 		{
@@ -321,30 +359,27 @@ internal static class HextechRuneConfigMenuHooks
 		scroll.AddChild(pages);
 		content.AddChild(scroll);
 
-		Control countsPage = CreateCountsPage(pendingPlayerHexCounts, pendingEnemyHexCounts, numericBindings, compactLayout);
-		Control runePoolPage = CreateRunePoolPage(playerEntries, pendingDisabledPlayerIds, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, compactLayout);
-		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pendingDisabledForgeIds, loadTargets, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
-		Control detailsPage = CreateDetailsPage(
+		content.AddChild(CreateConfigFooter(
+			overlay,
+			pendingPlayerHexCounts,
+			pendingEnemyHexCounts,
+			pendingDisabledPlayerIds,
+			pendingDisabledMonsterHexIds,
+			pendingDisabledForgeIds,
 			pendingFirstActRuneWeights,
 			pendingNormalRuneWeights,
 			pendingSecondActAfterSilverWeights,
 			pendingForgeWeights,
 			pendingForgePrice,
-			numericBindings,
-			compactLayout);
-		Control[] pageArray = [ countsPage, runePoolPage, forgePoolPage, detailsPage ];
+			compactLayout));
+
 		foreach (Control page in pageArray)
 		{
 			page.Visible = false;
 			pages.AddChild(page);
 		}
 
-		pageArray[0].Visible = true;
-		tabs.AddChild(CreateTabButton(L("HEXTECH_CONFIG_TAB_COUNTS"), pageArray, 0, compactLayout));
-		tabs.AddChild(CreateTabButton(L("HEXTECH_CONFIG_TAB_RUNE_POOLS"), pageArray, 1, compactLayout));
-		tabs.AddChild(CreateTabButton(L("HEXTECH_CONFIG_TAB_FORGES"), pageArray, 2, compactLayout));
-		tabs.AddChild(CreateTabButton(L("HEXTECH_CONFIG_TAB_DETAILS"), pageArray, 3, compactLayout));
-
+		selectPage(0);
 		updateSummary();
 		state = new RuneConfigOverlayState(
 			loadTargets,
@@ -612,16 +647,16 @@ internal static class HextechRuneConfigMenuHooks
 
 		Button minus = CreateStepButton("-", false, compactLayout);
 		Button plus = CreateStepButton("+", false, compactLayout);
-		minus.Pressed += () =>
+		AttachRepeatingStep(minus, () =>
 		{
 			setValue(getValue() - step);
 			SetLabelText(number, getValue().ToString());
-		};
-		plus.Pressed += () =>
+		});
+		AttachRepeatingStep(plus, () =>
 		{
 			setValue(getValue() + step);
 			SetLabelText(number, getValue().ToString());
-		};
+		});
 
 		controls.AddChild(minus);
 		controls.AddChild(number);
@@ -629,21 +664,49 @@ internal static class HextechRuneConfigMenuHooks
 		return root;
 	}
 
-	private static Button CreateTabButton(string text, IReadOnlyList<Control> pages, int pageIndex, bool compactLayout)
+	private static void AddConfigTab(HBoxContainer tabs, List<Button> tabButtons, string text, Action action, bool compactLayout)
 	{
-		Button button = CreateActionButton(text, () =>
-		{
-			for (int i = 0; i < pages.Count; i++)
-			{
-				pages[i].Visible = i == pageIndex;
-			}
-		}, compactLayout);
+		Button button = CreateTabButton(text, action, compactLayout);
+		tabButtons.Add(button);
+		tabs.AddChild(button);
+	}
+
+	private static Button CreateTabButton(string text, Action action, bool compactLayout)
+	{
+		Button button = CreateActionButton(text, action, compactLayout);
 		button.CustomMinimumSize = compactLayout ? new Vector2(108f, 32f) : new Vector2(150f, 36f);
 		return button;
 	}
 
-	private static Control CreateConfigToolbar(
-		Control overlay,
+	private static void UpdateTabButtonStates(IReadOnlyList<Button> tabButtons, int selectedIndex, bool compactLayout)
+	{
+		for (int i = 0; i < tabButtons.Count; i++)
+		{
+			ApplyTabButtonState(tabButtons[i], i == selectedIndex, compactLayout);
+		}
+	}
+
+	private static void ApplyTabButtonState(Button button, bool active, bool compactLayout)
+	{
+		Color normalBackground = active
+			? new Color(0.18f, 0.21f, 0.28f, 0.98f)
+			: new Color(0.1f, 0.12f, 0.17f, 0.9f);
+		Color normalBorder = active
+			? new Color(0.95f, 0.74f, 0.34f, 0.98f)
+			: new Color(0.46f, 0.55f, 0.68f, 0.78f);
+		button.AddThemeStyleboxOverride("normal", CreateButtonStyle(normalBackground, normalBorder));
+		button.AddThemeStyleboxOverride("hover", CreateButtonStyle(new Color(0.16f, 0.19f, 0.26f, 0.98f), new Color(0.96f, 0.78f, 0.38f, 0.96f)));
+		button.AddThemeStyleboxOverride("pressed", CreateButtonStyle(new Color(0.09f, 0.11f, 0.16f, 0.98f), new Color(0.88f, 0.62f, 0.28f, 0.92f)));
+		button.AddThemeStyleboxOverride("focus", CreateButtonStyle(new Color(0.16f, 0.19f, 0.26f, 0.98f), new Color(0.96f, 0.78f, 0.38f, 0.96f)));
+		if (button.GetChildCount() > 0 && button.GetChild(0) is Label label)
+		{
+			label.Modulate = active
+				? new Color(1f, 0.94f, 0.78f, 1f)
+				: new Color(0.96f, 0.94f, 0.88f, 1f);
+		}
+	}
+
+	private static Control CreateConfigPageActions(
 		IReadOnlyList<RuneConfigEntry> playerEntries,
 		IReadOnlyList<RuneConfigEntry> enemyEntries,
 		IReadOnlyList<RuneConfigEntry> forgeEntries,
@@ -661,9 +724,10 @@ internal static class HextechRuneConfigMenuHooks
 		IReadOnlyList<RuneIconBinding> playerIconBindings,
 		IReadOnlyList<RuneIconBinding> enemyIconBindings,
 		IReadOnlyList<RuneIconBinding> forgeIconBindings,
-		Label summary,
 		Action updateSummary,
-		bool compactLayout)
+		Func<int> getPageIndex,
+		bool compactLayout,
+		out Action<int> updatePageActions)
 	{
 		HBoxContainer toolbar = new()
 		{
@@ -672,26 +736,44 @@ internal static class HextechRuneConfigMenuHooks
 		};
 		toolbar.AddThemeConstantOverride("separation", compactLayout ? 7 : 12);
 
-		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_ENABLE_ALL"), () =>
+		Button enableAll = CreateActionButton(L("HEXTECH_CONFIG_ENABLE_ALL"), () =>
 		{
-			pendingDisabledPlayerIds.Clear();
-			pendingDisabledMonsterHexIds.Clear();
-			pendingDisabledForgeIds.Clear();
-			UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
-			UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
-			UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+			switch (getPageIndex())
+			{
+				case 1:
+					pendingDisabledPlayerIds.Clear();
+					pendingDisabledMonsterHexIds.Clear();
+					UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
+					UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
+					break;
+				case 2:
+					pendingDisabledForgeIds.Clear();
+					UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+					break;
+			}
+
 			updateSummary();
-		}, compactLayout));
-		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_DISABLE_ALL"), () =>
+		}, compactLayout);
+		Button disableAll = CreateActionButton(L("HEXTECH_CONFIG_DISABLE_ALL"), () =>
 		{
-			ReplaceDisabledIds(pendingDisabledPlayerIds, playerEntries);
-			ReplaceDisabledIds(pendingDisabledMonsterHexIds, enemyEntries);
-			ReplaceDisabledIds(pendingDisabledForgeIds, forgeEntries);
-			UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
-			UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
-			UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+			switch (getPageIndex())
+			{
+				case 1:
+					ReplaceDisabledIds(pendingDisabledPlayerIds, playerEntries);
+					ReplaceDisabledIds(pendingDisabledMonsterHexIds, enemyEntries);
+					UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
+					UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
+					break;
+				case 2:
+					ReplaceDisabledIds(pendingDisabledForgeIds, forgeEntries);
+					UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+					break;
+			}
+
 			updateSummary();
-		}, compactLayout));
+		}, compactLayout);
+		toolbar.AddChild(enableAll);
+		toolbar.AddChild(disableAll);
 		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_RESET"), () =>
 		{
 			HextechRunConfigurationSnapshot defaults = HextechRuneConfiguration.GetDefaultSnapshot();
@@ -714,7 +796,37 @@ internal static class HextechRuneConfigMenuHooks
 			UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
 			updateSummary();
 		}, compactLayout));
-		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_SAVE_CLOSE"), () =>
+
+		updatePageActions = pageIndex =>
+		{
+			bool showPoolBulkActions = pageIndex is 1 or 2;
+			enableAll.Visible = showPoolBulkActions;
+			disableAll.Visible = showPoolBulkActions;
+		};
+		return toolbar;
+	}
+
+	private static Control CreateConfigFooter(
+		Control overlay,
+		int[] pendingPlayerHexCounts,
+		int[] pendingEnemyHexCounts,
+		HashSet<string> pendingDisabledPlayerIds,
+		HashSet<string> pendingDisabledMonsterHexIds,
+		HashSet<string> pendingDisabledForgeIds,
+		int[] pendingFirstActRuneWeights,
+		int[] pendingNormalRuneWeights,
+		int[] pendingSecondActAfterSilverWeights,
+		int[] pendingForgeWeights,
+		int[] pendingForgePrice,
+		bool compactLayout)
+	{
+		HBoxContainer footer = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+		};
+		footer.AddThemeConstantOverride("separation", compactLayout ? 7 : 12);
+		footer.AddChild(CreateActionButton(L("HEXTECH_CONFIG_SAVE_CLOSE"), () =>
 		{
 			HextechRuneConfiguration.SaveSnapshot(new HextechRunConfigurationSnapshot(
 				pendingPlayerHexCounts,
@@ -731,8 +843,8 @@ internal static class HextechRuneConfigMenuHooks
 			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} forgePrice={pendingForgePrice[0]}");
 			overlay.QueueFree();
 		}, compactLayout));
-		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout));
-		return toolbar;
+		footer.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout));
+		return footer;
 	}
 
 	private static void ReplaceDisabledIds(HashSet<string> target, IEnumerable<RuneConfigEntry> entries)
@@ -761,8 +873,8 @@ internal static class HextechRuneConfigMenuHooks
 			? Math.Max(320f, windowWidth * 0.96f)
 			: Mathf.Clamp(windowWidth * 0.9f, 760f, 1080f);
 		float height = windowHeight < CompactConfigHeightThreshold
-			? Math.Max(420f, windowHeight * 0.96f)
-			: Mathf.Clamp(windowHeight * 0.88f, 620f, 760f);
+			? Math.Max(440f, windowHeight * 0.98f)
+			: Mathf.Clamp(windowHeight * 0.92f, 660f, 840f);
 		return new Vector2(width, height);
 	}
 
@@ -840,16 +952,16 @@ internal static class HextechRuneConfigMenuHooks
 
 		Button minus = CreateStepButton("-", readOnly, compactLayout);
 		Button plus = CreateStepButton("+", readOnly, compactLayout);
-		minus.Pressed += () =>
+		AttachRepeatingStep(minus, () =>
 		{
 			pendingCounts[actIndex] = HextechRuneConfiguration.ClampEnemyHexCount(pendingCounts[actIndex] - 1);
 			SetLabelText(number, pendingCounts[actIndex].ToString());
-		};
-		plus.Pressed += () =>
+		});
+		AttachRepeatingStep(plus, () =>
 		{
 			pendingCounts[actIndex] = HextechRuneConfiguration.ClampEnemyHexCount(pendingCounts[actIndex] + 1);
 			SetLabelText(number, pendingCounts[actIndex].ToString());
-		};
+		});
 
 		controls.AddChild(minus);
 		controls.AddChild(number);
@@ -872,6 +984,56 @@ internal static class HextechRuneConfigMenuHooks
 		button.AddThemeStyleboxOverride("disabled", CreateButtonStyle(new Color(0.08f, 0.09f, 0.12f, 0.56f), new Color(0.32f, 0.36f, 0.44f, 0.58f)));
 		AddCrispButtonText(button, text, compactLayout ? 17 : 18, disabled ? new Color(0.62f, 0.66f, 0.72f, 0.82f) : new Color(0.96f, 0.94f, 0.88f, 1f));
 		return button;
+	}
+
+	private static void AttachRepeatingStep(Button button, Action action)
+	{
+		int pressToken = 0;
+
+		button.ButtonDown += () =>
+		{
+			if (button.Disabled)
+			{
+				return;
+			}
+
+			pressToken++;
+			int currentToken = pressToken;
+			action();
+			_ = RepeatStepAsync(button, currentToken, () => pressToken == currentToken, action);
+		};
+		button.ButtonUp += () => pressToken++;
+		button.TreeExiting += () => pressToken++;
+	}
+
+	private static async Task RepeatStepAsync(Button button, int token, Func<bool> tokenIsCurrent, Action action)
+	{
+		if (!GodotObject.IsInstanceValid(button) || !button.IsInsideTree())
+		{
+			return;
+		}
+
+		SceneTree tree = button.GetTree();
+		if (tree == null)
+		{
+			return;
+		}
+
+		await button.ToSignal(tree.CreateTimer(StepRepeatInitialDelaySeconds), "timeout");
+		int repeatCount = 0;
+		while (GodotObject.IsInstanceValid(button)
+			&& button.IsInsideTree()
+			&& button.ButtonPressed
+			&& !button.Disabled
+			&& tokenIsCurrent())
+		{
+			action();
+			repeatCount++;
+			float interval = repeatCount >= StepRepeatFastAfterTicks
+				? StepRepeatFastIntervalSeconds
+				: StepRepeatIntervalSeconds;
+			await button.ToSignal(tree.CreateTimer(interval), "timeout");
+		}
 	}
 
 	private static bool IsEnemyHexCountConfigReadOnly()
@@ -999,7 +1161,7 @@ internal static class HextechRuneConfigMenuHooks
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
-		grid.AddThemeConstantOverride("separation", compactLayout ? 10 : 14);
+		grid.AddThemeConstantOverride("separation", compactLayout ? 5 : 7);
 		return grid;
 	}
 
@@ -1010,7 +1172,7 @@ internal static class HextechRuneConfigMenuHooks
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
-		row.AddThemeConstantOverride("separation", compactLayout ? 10 : 14);
+		row.AddThemeConstantOverride("separation", compactLayout ? 6 : 8);
 		return row;
 	}
 
@@ -1062,7 +1224,7 @@ internal static class HextechRuneConfigMenuHooks
 		RuneIconBinding binding = new(entry.Id, root, holder, title);
 		ApplyRuneIconState(binding, !pendingDisabledIds.Contains(entry.Id));
 		AttachRuneToggleInput(root, entry, binding, pendingDisabledIds, updateSummary);
-		AttachRelicHoverTips(root, entry.Relic);
+		AttachRelicHoverTips(root, entry.Relic, GetEnemyHexKind(entry));
 		return binding;
 	}
 
@@ -1192,7 +1354,7 @@ internal static class HextechRuneConfigMenuHooks
 			if (touch)
 			{
 				int currentToken = pointerToken;
-				_ = ShowTouchHoverTipAfterDelay(root, entry.Relic, currentToken, () => pointerToken == currentToken && pointerPressed && !pointerDragged, () => longPressShown = true);
+				_ = ShowTouchHoverTipAfterDelay(root, entry.Relic, GetEnemyHexKind(entry), currentToken, () => pointerToken == currentToken && pointerPressed && !pointerDragged, () => longPressShown = true);
 			}
 		}
 
@@ -1233,6 +1395,7 @@ internal static class HextechRuneConfigMenuHooks
 	private static async Task ShowTouchHoverTipAfterDelay(
 		Control holder,
 		RelicModel relic,
+		MonsterHexKind? monsterHex,
 		int token,
 		Func<bool> shouldShow,
 		Action onShown)
@@ -1254,7 +1417,7 @@ internal static class HextechRuneConfigMenuHooks
 			return;
 		}
 
-		ShowRelicHoverTips(holder, relic);
+		ShowRelicHoverTips(holder, relic, monsterHex);
 		onShown();
 		holder.GetViewport()?.SetInputAsHandled();
 	}
@@ -1334,17 +1497,20 @@ internal static class HextechRuneConfigMenuHooks
 		tween.TweenProperty(root, "scale", Vector2.One, 0.085f);
 	}
 
-	private static void AttachRelicHoverTips(Control holder, RelicModel relic)
+	private static void AttachRelicHoverTips(Control holder, RelicModel relic, MonsterHexKind? monsterHex = null)
 	{
-		holder.MouseEntered += () => ShowRelicHoverTips(holder, relic);
+		holder.MouseEntered += () => ShowRelicHoverTips(holder, relic, monsterHex);
 		holder.MouseExited += () => NHoverTipSet.Remove(holder);
 		holder.TreeExiting += () => NHoverTipSet.Remove(holder);
 	}
 
-	private static void ShowRelicHoverTips(Control holder, RelicModel relic)
+	private static void ShowRelicHoverTips(Control holder, RelicModel relic, MonsterHexKind? monsterHex = null)
 	{
 		NHoverTipSet.Remove(holder);
-		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, relic.HoverTips, HoverTip.GetHoverTipAlignment(holder));
+		IEnumerable<IHoverTip> hoverTips = monsterHex.HasValue
+			? MonsterHexCatalog.GetEnemyHexHoverTips(monsterHex.Value)
+			: relic.HoverTips;
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, hoverTips, HoverTip.GetHoverTipAlignment(holder));
 		if (hoverTipSet == null)
 		{
 			return;
@@ -1353,6 +1519,13 @@ internal static class HextechRuneConfigMenuHooks
 		hoverTipSet.ZIndex = HoverTipZIndex;
 		hoverTipSet.ZAsRelative = false;
 		hoverTipSet.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
+	}
+
+	private static MonsterHexKind? GetEnemyHexKind(RuneConfigEntry entry)
+	{
+		return entry.PoolKey == "ENEMY" && Enum.TryParse(entry.Id, out MonsterHexKind monsterHex)
+			? monsterHex
+			: null;
 	}
 
 	private static List<RuneConfigEntry> BuildRuneEntries()
@@ -1467,6 +1640,7 @@ internal static class HextechRuneConfigMenuHooks
 
 	private static void UpdateSummary(
 		Label summary,
+		int pageIndex,
 		IReadOnlySet<string> pendingDisabledPlayerIds,
 		IReadOnlySet<string> pendingDisabledMonsterHexIds,
 		IReadOnlySet<string> pendingDisabledForgeIds)
@@ -1485,12 +1659,19 @@ internal static class HextechRuneConfigMenuHooks
 		int forgeTotal = HextechCatalog.GetAllForgeTypes().Count;
 		int forgeDisabled = pendingDisabledForgeIds.Count;
 		int forgeEnabled = Math.Max(0, forgeTotal - forgeDisabled);
-		SetLabelText(summary, string.Format(L("HEXTECH_CONFIG_SUMMARY"), playerEnabled, playerTotal, enemyEnabled, enemyTotal, forgeEnabled, forgeTotal));
+		string text = pageIndex switch
+		{
+			1 => $"{L("HEXTECH_PLAYER_POOL_TITLE")} {playerEnabled}/{playerTotal}  |  {L("HEXTECH_ENEMY_POOL_TITLE")} {enemyEnabled}/{enemyTotal}",
+			2 => $"{L("HEXTECH_CONFIG_TAB_FORGES")} {forgeEnabled}/{forgeTotal}",
+			_ => string.Empty
+		};
+		summary.Visible = text.Length > 0;
+		SetLabelText(summary, text);
 	}
 
 	private static void UpdateSummary(Label summary, IReadOnlySet<string> pendingDisabledIds)
 	{
-		UpdateSummary(summary, pendingDisabledIds, new HashSet<string>(StringComparer.Ordinal), new HashSet<string>(StringComparer.Ordinal));
+		UpdateSummary(summary, 1, pendingDisabledIds, new HashSet<string>(StringComparer.Ordinal), new HashSet<string>(StringComparer.Ordinal));
 	}
 
 	private static Label CreateLabel(string text, int fontSize, Color color)

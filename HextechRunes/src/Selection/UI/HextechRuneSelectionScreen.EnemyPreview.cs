@@ -88,7 +88,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		{
 			TextureRect enemyTexture = CreateRelicTexture(monsterHexRelic, 54f);
 			iconBox.AddChild(enemyTexture);
-			AttachRelicHoverTips(enemyTexture, monsterHexRelic);
+			AttachRelicHoverTips(enemyTexture, monsterHexRelic, monsterHex);
 		}
 		else
 		{
