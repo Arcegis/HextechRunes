@@ -67,7 +67,6 @@ internal static class HextechEnemyHexEffects
 		new GoldrendEnemyHex(),
 		new FeelTheBurnEnemyHex(),
 		new BackToBasicsEnemyHex(),
-		new DrawYourSwordEnemyHex(),
 		new MadScientistEnemyHex(),
 		new FeyMagicEnemyHex(),
 		new FinalFormEnemyHex(),
@@ -99,7 +98,8 @@ internal static class HextechEnemyHexEffects
 			new SolidTimeEnemyHex(),
 			new ForgottenSoulEnemyHex(),
 			new CerberusEnemyHex(),
-			new OmniDragonSoulEnemyHex()
+			new OmniDragonSoulEnemyHex(),
+			new BlankCheckEnemyHex()
 		]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

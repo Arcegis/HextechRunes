@@ -975,7 +975,6 @@
   "goldrendRune.enemyDescription": "Gana [blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]% más de daño. Siempre que inflijas daño desbloqueado, haz que el jugador pierda [blue]20[/blue] Gold.",
   "feelTheBurnRune.enemyDescription": "Cuando el daño te sitúa por debajo del [blue]50%[/blue] de tu PV máximos, al comienzo del siguiente turno todos los jugadores obtienen [blue]1[/blue] turno de [gold]Debilidad[/gold] y [gold]Vulnerabilidad[/gold], y [blue]3[/blue]/[blue]4[/blue]/[blue]5[/blue] [gold]Quemar[/gold]. Una vez por combate.",
   "backToBasicsRune.enemyDescription": "Los jugadores no pueden jugar cartas que cuesten [blue]3[/blue] o más.",
-  "drawYourSwordRune.enemyDescription": "Gana [blue]40%[/blue] más daño. Al comienzo del combate, gana [gold]Imbalanced[/gold].",
   "madScientistRune.enemyDescription": "Pierde [blue]30[/blue]/[blue]20[/blue]/[blue]10[/blue]% PV máximos. Siempre que recibas daño, agrega [blue]1[/blue] [gold]Desorientación[/gold] a la pila de descarte del jugador.",
   "feyMagicRune.enemyDescription": "Siempre que infliges daño desbloqueado, el jugador gana [blue]1[/blue] turno de [gold]No Draw[/gold].",
   "finalFormRune.enemyDescription": "Siempre que inflijas daño desbloqueado, obtienes un bloqueo equivalente al [blue]10[/blue]/[blue]15[/blue]/[blue]20[/blue]% de tu PV máximos. Se activa como máximo una vez por turno.",
@@ -2307,5 +2306,12 @@
   "cardInspectionRune.description": "Al comienzo de tu turno, en vez de robar cartas automáticamente, elige esa cantidad de cartas de tu pila de robo y ponlas en tu mano.",
   "CARD_INSPECTION_RUNE.description": "Al comienzo de tu turno, en vez de robar cartas automáticamente, elige esa cantidad de cartas de tu pila de robo y ponlas en tu mano.",
   "cardInspectionRune.flavor": "La carta superior era solo una sugerencia. Lee el mazo por tu cuenta.",
-  "CARD_INSPECTION_RUNE.flavor": "La carta superior era solo una sugerencia. Lee el mazo por tu cuenta."
+  "CARD_INSPECTION_RUNE.flavor": "La carta superior era solo una sugerencia. Lee el mazo por tu cuenta.",
+  "blankCheckRune.title": "Cheque en blanco",
+  "BLANK_CHECK_RUNE.title": "Cheque en blanco",
+  "blankCheckRune.description": "Al comienzo de tu turno, obtienes [blue]1[/blue] carta incolora aleatoria. Tus cartas incoloras cuestan [blue]0[/blue], pero se [gold]agotan[/gold] después de jugarlas.",
+  "BLANK_CHECK_RUNE.description": "Al comienzo de tu turno, obtienes [blue]1[/blue] carta incolora aleatoria. Tus cartas incoloras cuestan [blue]0[/blue], pero se [gold]agotan[/gold] después de jugarlas.",
+  "blankCheckRune.flavor": "El importe está en blanco. El precio está escrito al dorso.",
+  "BLANK_CHECK_RUNE.flavor": "El importe está en blanco. El precio está escrito al dorso.",
+  "blankCheckRune.enemyDescription": "Al comienzo del turno del jugador, añade [gold]Etérea[/gold] al azar a [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] cartas de su mano que no tengan [gold]Etérea[/gold]."
 }

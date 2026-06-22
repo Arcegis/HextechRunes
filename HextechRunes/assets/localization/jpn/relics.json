@@ -975,7 +975,6 @@
   "goldrendRune.enemyDescription": "[blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]% 多くのダメージを獲得します。ブロックされていないダメージを与えるたびに、プレイヤーは [blue]20[/blue] ゴールドを失います。",
   "feelTheBurnRune.enemyDescription": "ダメージが最大 HP の [blue]50%[/blue]を下回ると、次のターンの開始時に、すべてのプレイヤーは [blue]1[/blue] ターンの [gold]脱力[/gold]と [gold]弱体[/gold]を獲得します。 [blue]3[/blue]/[blue]4[/blue]/[blue]5[/blue] [gold]火傷[/gold]。戦闘ごとに 1 回。",
   "backToBasicsRune.enemyDescription": "プレイヤーはコストが [blue]3[/blue] 以上のカードをプレイできません。",
-  "drawYourSwordRune.enemyDescription": "[blue]40%[/blue] の追加ダメージを獲得します。戦闘開始時に、[gold]Imbalance[/gold]を獲得します。",
   "madScientistRune.enemyDescription": "[blue]30[/blue]/[blue]20[/blue]/[blue]10[/blue]% 最大 HPを失う。自分がダメージを受けるたびに、[blue]1[/blue] [gold]めまい[/gold]をプレイヤーの捨て札に追加します。",
   "feyMagicRune.enemyDescription": "ブロックされていないダメージを与えるたびに、プレイヤーは [blue]1[/blue] ターンの [gold]ノードロー[/gold]を獲得します。",
   "finalFormRune.enemyDescription": "ブロックされていないダメージを与えるたびに、最大 HP の [blue]10[/blue]/[blue]15[/blue]/[blue]20[/blue]%に等しいブロックを獲得します。最大でも1ターンに1回発動する。",
@@ -2307,5 +2306,12 @@
   "cardInspectionRune.description": "自分のターン開始時、自動でカードを引く代わりに、その枚数だけ山札からカードを選び、手札に加えます。",
   "CARD_INSPECTION_RUNE.description": "自分のターン開始時、自動でカードを引く代わりに、その枚数だけ山札からカードを選び、手札に加えます。",
   "cardInspectionRune.flavor": "一番上のカードは提案に過ぎません。デッキは自分で読みます。",
-  "CARD_INSPECTION_RUNE.flavor": "一番上のカードは提案に過ぎません。デッキは自分で読みます。"
+  "CARD_INSPECTION_RUNE.flavor": "一番上のカードは提案に過ぎません。デッキは自分で読みます。",
+  "blankCheckRune.title": "白紙小切手",
+  "BLANK_CHECK_RUNE.title": "白紙小切手",
+  "blankCheckRune.description": "ターン開始時、ランダムな無色カードを[blue]1[/blue]枚獲得します。あなたの無色カードのコストは[blue]0[/blue]になりますが、プレイ後に[gold]廃棄[/gold]されます。",
+  "BLANK_CHECK_RUNE.description": "ターン開始時、ランダムな無色カードを[blue]1[/blue]枚獲得します。あなたの無色カードのコストは[blue]0[/blue]になりますが、プレイ後に[gold]廃棄[/gold]されます。",
+  "blankCheckRune.flavor": "金額は空欄、代償は裏面に書かれています。",
+  "BLANK_CHECK_RUNE.flavor": "金額は空欄、代償は裏面に書かれています。",
+  "blankCheckRune.enemyDescription": "プレイヤーのターン開始時、手札にある[gold]エセリアル[/gold]を持たないカード[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]枚にランダムで[gold]エセリアル[/gold]を付与します。"
 }

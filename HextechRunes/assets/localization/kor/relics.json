@@ -975,7 +975,6 @@
   "goldrendRune.enemyDescription": "주는 피해가 [blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]% 증가합니다. 방어도를 무시한 피해를 줄 때마다 플레이어가 [blue]20[/blue] 골드를 잃게 만듭니다.",
   "feelTheBurnRune.enemyDescription": "피해를 입어 체력이 최대 체력의 [blue]50%[/blue] 미만이 되면, 다음 턴 시작 시 모든 플레이어가 [blue]1[/blue] 턴 동안 [gold]약화[/gold]와 [gold]취약[/gold]을 얻고 [gold]점화[/gold]를 [blue]3[/blue]/[blue]4[/blue]/[blue]5[/blue] 얻습니다. 전투당 1회 발동합니다.",
   "backToBasicsRune.enemyDescription": "플레이어는 비용이 [blue]3[/blue] 이상인 카드를 플레이할 수 없습니다.",
-  "drawYourSwordRune.enemyDescription": "주는 피해가 [blue]40%[/blue] 증가합니다. 전투 시작 시 [gold]불균형[/gold]을 얻습니다.",
   "madScientistRune.enemyDescription": "최대 체력을 [blue]30[/blue]/[blue]20[/blue]/[blue]10[/blue]% 잃습니다. 피해를 입을 때마다 플레이어의 버린 패에 [gold]어지러움[/gold]을 [blue]1[/blue]장 추가합니다.",
   "feyMagicRune.enemyDescription": "방어도를 무시한 피해를 줄 때마다 플레이어가 [blue]1[/blue] 턴 동안 [gold]뽑기 불가[/gold]를 얻습니다.",
   "finalFormRune.enemyDescription": "방어도를 무시한 피해를 줄 때마다 최대 체력의 [blue]10[/blue]/[blue]15[/blue]/[blue]20[/blue]%만큼 방어도를 얻습니다. 턴당 최대 1번 발동합니다.",
@@ -2307,5 +2306,12 @@
   "cardInspectionRune.description": "당신의 턴 시작 시 카드를 자동으로 뽑지 않습니다. 대신 그 수만큼 뽑을 카드 더미에서 카드를 선택해 손으로 가져옵니다.",
   "CARD_INSPECTION_RUNE.description": "당신의 턴 시작 시 카드를 자동으로 뽑지 않습니다. 대신 그 수만큼 뽑을 카드 더미에서 카드를 선택해 손으로 가져옵니다.",
   "cardInspectionRune.flavor": "맨 위의 카드는 제안일 뿐입니다. 덱은 직접 읽으십시오.",
-  "CARD_INSPECTION_RUNE.flavor": "맨 위의 카드는 제안일 뿐입니다. 덱은 직접 읽으십시오."
+  "CARD_INSPECTION_RUNE.flavor": "맨 위의 카드는 제안일 뿐입니다. 덱은 직접 읽으십시오.",
+  "blankCheckRune.title": "백지 수표",
+  "BLANK_CHECK_RUNE.title": "백지 수표",
+  "blankCheckRune.description": "당신의 턴 시작 시 무작위 무색 카드 [blue]1[/blue]장을 얻습니다. 당신의 무색 카드는 비용이 [blue]0[/blue]이 되지만, 사용 후 [gold]소멸[/gold]합니다.",
+  "BLANK_CHECK_RUNE.description": "당신의 턴 시작 시 무작위 무색 카드 [blue]1[/blue]장을 얻습니다. 당신의 무색 카드는 비용이 [blue]0[/blue]이 되지만, 사용 후 [gold]소멸[/gold]합니다.",
+  "blankCheckRune.flavor": "금액은 비어 있고, 대가는 뒷면에 적혀 있습니다.",
+  "BLANK_CHECK_RUNE.flavor": "금액은 비어 있고, 대가는 뒷면에 적혀 있습니다.",
+  "blankCheckRune.enemyDescription": "플레이어의 턴 시작 시 손에 있는 [gold]소멸성[/gold]이 없는 카드 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]장에 무작위로 [gold]소멸성[/gold]을 부여합니다."
 }

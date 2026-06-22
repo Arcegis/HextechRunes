@@ -976,7 +976,6 @@
   "goldrendRune.enemyDescription": "获得[blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]%伤害加成。每次造成未被格挡的伤害时，使玩家失去[blue]20[/blue]金币。",
   "feelTheBurnRune.enemyDescription": "当你受伤后生命值降到最大生命值的[blue]50%[/blue]以下时，在下个回合开始时对所有玩家施加[blue]1[/blue]回合的[gold]虚弱[/gold]和[gold]易伤[/gold]，并施加[blue]3[/blue]/[blue]4[/blue]/[blue]5[/blue]层[gold]灼烧[/gold]。每场战斗仅限一次。",
   "backToBasicsRune.enemyDescription": "玩家无法打出[blue]3[/blue]费及以上的卡牌。",
-  "drawYourSwordRune.enemyDescription": "获得[blue]40%[/blue]伤害加成。战斗开始时，获得[gold]失衡[/gold]。",
   "madScientistRune.enemyDescription": "减少[blue]30[/blue]/[blue]20[/blue]/[blue]10[/blue]%最大生命值。受到伤害时，将[blue]1[/blue]张[gold]眩晕[/gold]加入玩家的弃牌堆。",
   "feyMagicRune.enemyDescription": "当你造成未被格挡的伤害时，使玩家获得[blue]1[/blue]回合的[gold]不可抽牌[/gold]。",
   "finalFormRune.enemyDescription": "当你造成未被格挡的伤害时，获得等同于自身最大生命值[blue]10[/blue]/[blue]15[/blue]/[blue]20[/blue]%的格挡。每回合最多触发一次。",
@@ -2307,5 +2306,12 @@
   "cardInspectionRune.description": "回合开始时，你不再自动抽牌，改为从抽牌堆中选择对应数量的卡牌加入手牌。",
   "CARD_INSPECTION_RUNE.description": "回合开始时，你不再自动抽牌，改为从抽牌堆中选择对应数量的卡牌加入手牌。",
   "cardInspectionRune.flavor": "顶牌只是建议，牌堆才是答案。",
-  "CARD_INSPECTION_RUNE.flavor": "顶牌只是建议，牌堆才是答案。"
+  "CARD_INSPECTION_RUNE.flavor": "顶牌只是建议，牌堆才是答案。",
+  "blankCheckRune.title": "空白支票",
+  "BLANK_CHECK_RUNE.title": "空白支票",
+  "blankCheckRune.description": "回合开始时，获得[blue]1[/blue]张随机无色牌。你的无色牌变为[blue]0[/blue]费，但打出后会[gold]消耗[/gold]。",
+  "BLANK_CHECK_RUNE.description": "回合开始时，获得[blue]1[/blue]张随机无色牌。你的无色牌变为[blue]0[/blue]费，但打出后会[gold]消耗[/gold]。",
+  "blankCheckRune.flavor": "金额留空，代价写在背面。",
+  "BLANK_CHECK_RUNE.flavor": "金额留空，代价写在背面。",
+  "blankCheckRune.enemyDescription": "玩家回合开始时，随机为其手牌中[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]张没有[gold]虚无[/gold]的牌添加[gold]虚无[/gold]词条。"
 }

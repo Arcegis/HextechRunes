@@ -796,14 +796,24 @@ internal static class Program
 	private static void MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		MonsterHexRegistration disabled = metadata.Registrations.First(static registration => registration.Disabled);
+		MonsterHexRegistration[] disabledRegistrations = metadata.Registrations
+			.Where(static registration => registration.Disabled)
+			.ToArray();
+		if (disabledRegistrations.Length == 0)
+		{
+			Expect(metadata.DisabledKinds.Count == 0, "no disabled monster hexes should leave disabled set empty");
+			Expect(!metadata.EnabledKindsByRarity.Values.Any(kinds => kinds.Any(kind => metadata.DisabledKinds.Contains(kind))), "rarity pools should not contain disabled monster hexes");
+			Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
+			return;
+		}
 
-		Expect(metadata.AllKinds.Contains(disabled.Kind), "disabled monster hex should stay in all-kinds set");
-		Expect(metadata.DisabledKinds.Contains(disabled.Kind), "disabled monster hex should stay in disabled set");
-		Expect(!metadata.IsEnabled(disabled.Kind), "disabled monster hex should not be enabled");
-		Expect(!metadata.EnabledKindsByRarity[disabled.Rarity].Contains(disabled.Kind), "disabled monster hex should not appear in rarity pool");
-		Expect(metadata.TryGetRegistration(disabled.Kind, out MonsterHexRegistration decoded), "disabled monster hex registration should decode");
-		Equal(disabled.IconRelicType, decoded.IconRelicType, "disabled monster hex icon relic type");
+		MonsterHexRegistration disabledRegistration = disabledRegistrations[0];
+		Expect(metadata.AllKinds.Contains(disabledRegistration.Kind), "disabled monster hex should stay in all-kinds set");
+		Expect(metadata.DisabledKinds.Contains(disabledRegistration.Kind), "disabled monster hex should stay in disabled set");
+		Expect(!metadata.IsEnabled(disabledRegistration.Kind), "disabled monster hex should not be enabled");
+		Expect(!metadata.EnabledKindsByRarity[disabledRegistration.Rarity].Contains(disabledRegistration.Kind), "disabled monster hex should not appear in rarity pool");
+		Expect(metadata.TryGetRegistration(disabledRegistration.Kind, out MonsterHexRegistration decoded), "disabled monster hex registration should decode");
+		Equal(disabledRegistration.IconRelicType, decoded.IconRelicType, "disabled monster hex icon relic type");
 		Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
 	}
 

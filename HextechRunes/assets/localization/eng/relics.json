@@ -975,7 +975,6 @@
   "goldrendRune.enemyDescription": "Gain [blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]% more damage. Whenever you deal unblocked damage, make the player lose [blue]20[/blue] Gold.",
   "feelTheBurnRune.enemyDescription": "When damage drops you below [blue]50%[/blue] of your Max HP, then at the start of the next turn all players gain [blue]1[/blue] turn of [gold]Weak[/gold] and [gold]Vulnerable[/gold], and [blue]3[/blue]/[blue]4[/blue]/[blue]5[/blue] [gold]Burn[/gold]. Once per combat.",
   "backToBasicsRune.enemyDescription": "Players cannot play cards that cost [blue]3[/blue] or more.",
-  "drawYourSwordRune.enemyDescription": "Gain [blue]40%[/blue] more damage. At the start of combat, gain [gold]Imbalanced[/gold].",
   "madScientistRune.enemyDescription": "Lose [blue]30[/blue]/[blue]20[/blue]/[blue]10[/blue]% Max HP. Whenever you take damage, add [blue]1[/blue] [gold]Dazed[/gold] to the player's discard pile.",
   "feyMagicRune.enemyDescription": "Whenever you deal unblocked damage, the player gains [blue]1[/blue] turn of [gold]No Draw[/gold].",
   "finalFormRune.enemyDescription": "Whenever you deal unblocked damage, gain Block equal to [blue]10[/blue]/[blue]15[/blue]/[blue]20[/blue]% of your Max HP. Triggers at most once per turn.",
@@ -2307,5 +2306,12 @@
   "cardInspectionRune.description": "At the start of your turn, instead of automatically drawing cards, choose that many cards from your draw pile and put them into your hand.",
   "CARD_INSPECTION_RUNE.description": "At the start of your turn, instead of automatically drawing cards, choose that many cards from your draw pile and put them into your hand.",
   "cardInspectionRune.flavor": "The top card was only a suggestion. Read the deck yourself.",
-  "CARD_INSPECTION_RUNE.flavor": "The top card was only a suggestion. Read the deck yourself."
+  "CARD_INSPECTION_RUNE.flavor": "The top card was only a suggestion. Read the deck yourself.",
+  "blankCheckRune.title": "Blank Check",
+  "BLANK_CHECK_RUNE.title": "Blank Check",
+  "blankCheckRune.description": "At the start of your turn, gain [blue]1[/blue] random Colorless card. Your Colorless cards cost [blue]0[/blue], but [gold]Exhaust[/gold] after being played.",
+  "BLANK_CHECK_RUNE.description": "At the start of your turn, gain [blue]1[/blue] random Colorless card. Your Colorless cards cost [blue]0[/blue], but [gold]Exhaust[/gold] after being played.",
+  "blankCheckRune.flavor": "The amount is blank. The price is written on the back.",
+  "BLANK_CHECK_RUNE.flavor": "The amount is blank. The price is written on the back.",
+  "blankCheckRune.enemyDescription": "At the start of the player's turn, randomly add [gold]Ethereal[/gold] to [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] cards in their hand that do not already have [gold]Ethereal[/gold]."
 }

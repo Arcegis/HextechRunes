@@ -42,7 +42,6 @@ internal enum MonsterHexKind
     Loop = 30,
     ServantMaster = 31,
     BackToBasics = 32,
-    DrawYourSword = 33,
     MadScientist = 34,
     FirstAidKit = 35,
     SpeedDemon = 36,
@@ -104,5 +103,6 @@ internal enum MonsterHexKind
     NatureIsHealing = 92,
     Archmage = 93,
     BloodIdol = 94,
-    OmniDragonSoul = 95
+    OmniDragonSoul = 95,
+    BlankCheck = 96
 }

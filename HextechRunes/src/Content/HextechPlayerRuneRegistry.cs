@@ -330,6 +330,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<BigKnifeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 22, tagKey: "SHIV"),
         Rune<VenerateUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 17, tagKey: "STARLIGHT"),
         Rune<EchoRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 24, tagKey: "RESOURCE"),
+        Rune<BlankCheckRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 25, tagKey: "COLORLESS"),
         Rune<SolidTimeRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<ReforgedHelmetRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 19, tagKey: "OUTPUT"),
         Rune<MostUniversalScopeRune>(HextechRarityTier.Prismatic, tagKey: "RESOURCE"),
