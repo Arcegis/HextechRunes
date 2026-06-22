@@ -333,9 +333,9 @@ internal static class HextechChoiceCodec
 			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
 			.ToArray());
 
-	public static PlayerChoiceResult CreateRuneSelection(int selectedIndex, IReadOnlyList<int> rerollHistory, IReadOnlyList<RelicModel> finalOptions)
+	public static PlayerChoiceResult CreateRuneSelection(int actIndex, int choiceOrdinal, int selectedIndex, IReadOnlyList<int> rerollHistory, IReadOnlyList<RelicModel> finalOptions)
 	{
-		List<int> payload = [ Magic, ChoiceKindRuneSelection, selectedIndex, rerollHistory.Count ];
+		List<int> payload = [ Magic, ChoiceKindRuneSelection, actIndex, choiceOrdinal, selectedIndex, rerollHistory.Count ];
 		payload.AddRange(rerollHistory);
 		HextechStableModelIdListCodec.Append(payload, finalOptions.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
 
@@ -344,36 +344,54 @@ internal static class HextechChoiceCodec
 
 	public static bool IsRuneSelection(PlayerChoiceResult result)
 	{
-		return TryDecodeRuneSelection(result, out _, out _, out _);
+		return TryGetIndexPayload(result, out List<int> payload)
+			&& payload.Count >= 2
+			&& payload[0] == Magic
+			&& payload[1] == ChoiceKindRuneSelection;
 	}
 
-	public static bool TryDecodeRuneSelection(PlayerChoiceResult result, out int selectedIndex, out List<int> rerollHistory)
+	public static bool IsRuneSelection(PlayerChoiceResult result, int expectedActIndex, int expectedChoiceOrdinal)
 	{
-		return TryDecodeRuneSelection(result, out selectedIndex, out rerollHistory, out _);
+		return TryDecodeRuneSelection(result, expectedActIndex, expectedChoiceOrdinal, out _, out _, out _);
 	}
 
-	public static bool TryDecodeRuneSelection(PlayerChoiceResult result, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> finalOptionIds)
+	public static bool TryDecodeRuneSelection(
+		PlayerChoiceResult result,
+		int expectedActIndex,
+		int expectedChoiceOrdinal,
+		out int selectedIndex,
+		out List<int> rerollHistory,
+		out List<ModelId> finalOptionIds)
 	{
 		selectedIndex = -1;
 		rerollHistory = [];
 		finalOptionIds = [];
 		if (!TryGetIndexPayload(result, out List<int> payload)
-			|| payload.Count < 4
+			|| payload.Count < 6
 			|| payload[0] != Magic
-			|| payload[1] != ChoiceKindRuneSelection)
+			|| payload[1] != ChoiceKindRuneSelection
+			|| payload[2] != expectedActIndex
+			|| payload[3] != expectedChoiceOrdinal)
 		{
 			return false;
 		}
 
-		selectedIndex = payload[2];
-		int rerollCount = Math.Max(0, payload[3]);
-		if (payload.Count < rerollCount + 4)
+		selectedIndex = payload[4];
+		int rerollCount = Math.Max(0, payload[5]);
+		const int headerCount = 6;
+		if (payload.Count < rerollCount + headerCount)
 		{
 			return false;
 		}
 
-		rerollHistory = payload.Skip(4).Take(rerollCount).ToList();
-		int cursor = rerollCount + 4;
+		rerollHistory = payload.Skip(headerCount).Take(rerollCount).ToList();
+		int cursor = rerollCount + headerCount;
+		return TryDecodeRuneSelectionFinalOptions(payload, cursor, out finalOptionIds);
+	}
+
+	private static bool TryDecodeRuneSelectionFinalOptions(List<int> payload, int cursor, out List<ModelId> finalOptionIds)
+	{
+		finalOptionIds = [];
 		if (payload.Count <= cursor)
 		{
 			return true;
@@ -541,19 +559,20 @@ internal static class HextechChoiceCodec
 		return true;
 	}
 
-	public static PlayerChoiceResult CreateActSelectionApplied(int actIndex)
+	public static PlayerChoiceResult CreateActSelectionApplied(int actIndex, int choiceOrdinal)
 	{
-		return PlayerChoiceResult.FromIndexes([ Magic, ChoiceKindActSelectionApplied, actIndex, 1 ]);
+		return PlayerChoiceResult.FromIndexes([ Magic, ChoiceKindActSelectionApplied, actIndex, choiceOrdinal, 1 ]);
 	}
 
-	public static bool TryDecodeActSelectionApplied(PlayerChoiceResult result, int expectedActIndex)
+	public static bool TryDecodeActSelectionApplied(PlayerChoiceResult result, int expectedActIndex, int expectedChoiceOrdinal)
 	{
 		return TryGetIndexPayload(result, out List<int> payload)
-			&& payload.Count >= 4
+			&& payload.Count >= 5
 			&& payload[0] == Magic
 			&& payload[1] == ChoiceKindActSelectionApplied
 			&& payload[2] == expectedActIndex
-			&& payload[3] == 1;
+			&& payload[3] == expectedChoiceOrdinal
+			&& payload[4] == 1;
 	}
 
 	public static PlayerChoiceResult CreateEnemyHexAdjustment(EnemyHexAdjustmentPayload payload)

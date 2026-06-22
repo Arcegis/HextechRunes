@@ -9,7 +9,7 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 9;
+	private const int CurrentConfigVersion = 11;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
 	private const int MaxActHexCount = 6;
@@ -19,8 +19,9 @@ internal static class HextechRuneConfiguration
 	private const int MaxRandomForgeShopPrice = 9999;
 	private const int DefaultRandomForgeShopPrice = 250;
 	private static readonly int[] DefaultPlayerHexCountsByAct = [ 1, 1, 1 ];
-	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 1, 1 ];
+	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 2, 3 ];
 	private static readonly int[] LegacyEnemyHexCountsDefault = [ 1, 2, 3 ];
+	private static readonly int[] Version9EnemyHexCountsDefault = [ 1, 1, 1 ];
 	private static readonly HextechRarityWeights DefaultFirstActRuneRarityWeights = new(20, 50, 30);
 	private static readonly HextechRarityWeights DefaultNormalRuneRarityWeights = new(1, 1, 1);
 	private static readonly HextechRarityWeights DefaultSecondActAfterSilverRuneRarityWeights = new(0, 1, 1);
@@ -47,6 +48,10 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version8DefaultEnabledRuneTypes =
 	[
 		typeof(MikaelsBlessingRune)
+	];
+	private static readonly Type[] Version11DefaultDisabledRuneTypes =
+	[
+		typeof(HappyAccidentRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -305,6 +310,9 @@ internal static class HextechRuneConfiguration
 		bool shouldMigrateLegacyEnemyHexDefault =
 			previousConfigVersion < CurrentConfigVersion
 			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, LegacyEnemyHexCountsDefault);
+		bool shouldMigrateVersion9EnemyHexDefault =
+			previousConfigVersion < 10
+			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, Version9EnemyHexCountsDefault);
 		if (previousConfigVersion < 4)
 		{
 			disabledIds.UnionWith(GetDefaultDisabledPlayerRuneIds());
@@ -326,11 +334,15 @@ internal static class HextechRuneConfiguration
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version8DefaultEnabledRuneTypes));
 			disabledIds.UnionWith(GetPlayerRuneIds(Version8DefaultDisabledRuneTypes));
 		}
+		if (previousConfigVersion < 11)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version11DefaultDisabledRuneTypes));
+		}
 
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
-		config.EnemyHexCountsByAct = shouldMigrateLegacyEnemyHexDefault
+		config.EnemyHexCountsByAct = shouldMigrateLegacyEnemyHexDefault || shouldMigrateVersion9EnemyHexDefault
 			? NormalizeEnemyHexCounts(null)
 			: NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
 		config.DisabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);

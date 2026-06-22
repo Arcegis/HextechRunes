@@ -134,6 +134,8 @@ internal static partial class HextechRuneSelectionCoordinator
 						RuneSelectionResult selection = await SelectRune(
 							modifier,
 							player,
+							actIndex,
+							choiceOrdinal,
 							options,
 							monsterHexRelic,
 							enemyHexOptions);

@@ -74,6 +74,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				RuneSelectionResult selection = await SelectRune(
 					modifier,
 					player,
+					actIndex,
+					choiceOrdinal,
 					options,
 					monsterHexRelic,
 					enemyHexOptions);
@@ -108,7 +110,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			uint choiceId = synchronizer.ReserveChoiceId(player);
 			pendingSelections.Add(new PendingRuneSelection(player, options, choiceId, IsLocalPlayer(runManager, player)));
-			Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice pending: player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice pending: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
 		}
 
 		RuneSelectionResult[] selectedRelics = [];
@@ -119,6 +121,8 @@ internal static partial class HextechRuneSelectionCoordinator
 					modifier,
 					selection,
 					synchronizer,
+					actIndex,
+					choiceOrdinal,
 					monsterHexRelic,
 					CreateEnemyHexAdjustmentOptionsForSelection(
 						modifier,
@@ -148,7 +152,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				await RelicCmd.Obtain(selectedRelic, selection.Player);
 			}
 
-			await SynchronizeActSelectionApplied(runState, synchronizer, actIndex);
+			await SynchronizeActSelectionApplied(runState, synchronizer, actIndex, choiceOrdinal);
 
 			return enemyHexSync != null
 				? CombineMonsterHexes(previousMonsterHexes, enemyHexSync.CurrentMonsterHexes)

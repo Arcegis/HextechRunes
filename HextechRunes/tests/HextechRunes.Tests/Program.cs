@@ -12,6 +12,7 @@ internal static class Program
 {
 	private const int Magic = 0x48585452; // HXTR
 	private const int ChoiceKindActRoll = 1;
+	private const int ChoiceKindRuneSelection = 2;
 	private const int ChoiceKindActSelectionApplied = 3;
 	private const int ChoiceKindEnemyHexAdjustment = 4;
 	private const int ChoiceKindRandomRuneGrant = 6;
@@ -23,7 +24,9 @@ internal static class Program
 		TestCase[] tests =
 		[
 			new(nameof(ActRollRoundTripKeepsHostSnapshot), ActRollRoundTripKeepsHostSnapshot),
-			new(nameof(ActSelectionAppliedRejectsWrongAct), ActSelectionAppliedRejectsWrongAct),
+			new(nameof(RuneSelectionRoundTripRequiresMatchingActAndOrdinal), RuneSelectionRoundTripRequiresMatchingActAndOrdinal),
+			new(nameof(RuneSelectionRejectsWrongActOrOrdinal), RuneSelectionRejectsWrongActOrOrdinal),
+			new(nameof(ActSelectionAppliedRejectsWrongActOrOrdinal), ActSelectionAppliedRejectsWrongActOrOrdinal),
 			new(nameof(EnemyHexAdjustmentRoundTripKeepsAllSlots), EnemyHexAdjustmentRoundTripKeepsAllSlots),
 			new(nameof(EnemyHexAdjustmentRejectsInvalidHex), EnemyHexAdjustmentRejectsInvalidHex),
 			new(nameof(LegacyEnemyHexAdjustmentStillDecodes), LegacyEnemyHexAdjustmentStillDecodes),
@@ -151,15 +154,53 @@ internal static class Program
 		Expect(!HextechChoiceCodec.TryDecodeActRoll(result, 0, out _, out _, out _, out _, out _), "wrong act should be rejected");
 	}
 
-	private static void ActSelectionAppliedRejectsWrongAct()
+	private static void RuneSelectionRoundTripRequiresMatchingActAndOrdinal()
 	{
-		PlayerChoiceResult result = HextechChoiceCodec.CreateActSelectionApplied(2);
+		RelicModel[] finalOptions = CreateRuneSelectionTestOptions(3);
+		ModelId[] finalOptionIds = finalOptions
+			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.ToArray();
+		PlayerChoiceResult result = HextechChoiceCodec.CreateRuneSelection(
+			actIndex: 1,
+			choiceOrdinal: 2,
+			selectedIndex: 1,
+			rerollHistory: [ 2, 0 ],
+			finalOptions);
 
-		Expect(HextechChoiceCodec.TryDecodeActSelectionApplied(result, 2), "matching act should decode");
-		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(result, 1), "wrong act should be rejected");
+		Expect(HextechChoiceCodec.IsRuneSelection(result), "rune selection kind predicate should decode");
+		Expect(HextechChoiceCodec.IsRuneSelection(result, 1, 2), "matching rune selection act and ordinal should decode");
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> decodedFinalOptionIds), "matching rune selection should decode");
+		Equal(1, selectedIndex, "selected index");
+		SequenceEqual(new[] { 2, 0 }, rerollHistory, "reroll history");
+		SequenceEqual(finalOptionIds, decodedFinalOptionIds, "final option ids");
+	}
 
-		PlayerChoiceResult malformed = PlayerChoiceResult.FromIndexes(new List<int> { Magic, ChoiceKindActSelectionApplied, 2, 0 });
-		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(malformed, 2), "missing applied flag should be rejected");
+	private static void RuneSelectionRejectsWrongActOrOrdinal()
+	{
+		PlayerChoiceResult result = HextechChoiceCodec.CreateRuneSelection(
+			actIndex: 1,
+			choiceOrdinal: 2,
+			selectedIndex: 0,
+			rerollHistory: [],
+			CreateRuneSelectionTestOptions(3));
+
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 0, 2, out _, out _, out _), "wrong rune selection act should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 1, out _, out _, out _), "wrong rune selection ordinal should be rejected");
+
+		PlayerChoiceResult malformed = PlayerChoiceResult.FromIndexes(new List<int> { Magic, ChoiceKindRuneSelection, 1, 2, 0, 2, 0 });
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(malformed, 1, 2, out _, out _, out _), "malformed rune selection should be rejected");
+	}
+
+	private static void ActSelectionAppliedRejectsWrongActOrOrdinal()
+	{
+		PlayerChoiceResult result = HextechChoiceCodec.CreateActSelectionApplied(2, 3);
+
+		Expect(HextechChoiceCodec.TryDecodeActSelectionApplied(result, 2, 3), "matching act and ordinal should decode");
+		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(result, 1, 3), "wrong act should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(result, 2, 2), "wrong ordinal should be rejected");
+
+		PlayerChoiceResult malformed = PlayerChoiceResult.FromIndexes(new List<int> { Magic, ChoiceKindActSelectionApplied, 2, 3, 0 });
+		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(malformed, 2, 3), "missing applied flag should be rejected");
 	}
 
 	private static void EnemyHexAdjustmentRoundTripKeepsAllSlots()
@@ -434,8 +475,9 @@ internal static class Program
 
 	private static void EnemyHexCountStateNormalizesMissingAndOutOfRangeValues()
 	{
-		SequenceEqual(new[] { 1, 1, 1 }, HextechEnemyHexCountState.Normalize(null), "null count snapshot");
-		SequenceEqual(new[] { 0, 6, 1 }, HextechEnemyHexCountState.Normalize([ -1, 7 ]), "partial clamped count snapshot");
+		SequenceEqual(new[] { 1, 1, 1 }, HextechPlayerHexCountState.Normalize(null), "null player count snapshot");
+		SequenceEqual(new[] { 1, 2, 3 }, HextechEnemyHexCountState.Normalize(null), "null enemy count snapshot");
+		SequenceEqual(new[] { 0, 6, 3 }, HextechEnemyHexCountState.Normalize([ -1, 7 ]), "partial clamped enemy count snapshot");
 
 		HextechEnemyHexCountState state = new();
 		state.Set([ 2, 3, 4, 5 ]);
@@ -563,7 +605,7 @@ internal static class Program
 
 		context.ResetForDebugMonsterHex(2, MonsterHexKind.PandorasBox, HextechRarityTier.Prismatic);
 
-		SequenceEqual(new[] { 1, 1, 1 }, context.EnemyHexCounts.Snapshot, "debug reset enemy count snapshot");
+		SequenceEqual(new[] { 1, 2, 3 }, context.EnemyHexCounts.Snapshot, "debug reset enemy count snapshot");
 		Equal(0, context.HexCountRecoveryBaseline, "debug reset recovery baseline");
 		Equal(0, context.MonsterHexStrengthTierFloor, "debug reset strength floor");
 		Equal(0, context.EnemyTezcatarasMercyCombatCounter, "debug reset tezcataras counter");
@@ -984,6 +1026,21 @@ internal static class Program
 		private int PersistentCounter { get; set; } = 7;
 	}
 
+	private sealed class RuneSelectionTestRelicA : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
+	private sealed class RuneSelectionTestRelicB : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
+	private sealed class RuneSelectionTestRelicC : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
 	private static (HextechRarityTier Rarity, IReadOnlyList<MonsterHexKind> Pool) GetMonsterHexPoolWithMinimum(int minimumCount)
 	{
 		foreach (HextechRarityTier rarity in Enum.GetValues<HextechRarityTier>())
@@ -996,6 +1053,17 @@ internal static class Program
 		}
 
 		throw new InvalidOperationException($"no monster hex rarity pool has at least {minimumCount} entries");
+	}
+
+	private static RelicModel[] CreateRuneSelectionTestOptions(int count)
+	{
+		RelicModel[] options =
+		[
+			new RuneSelectionTestRelicA(),
+			new RuneSelectionTestRelicB(),
+			new RuneSelectionTestRelicC()
+		];
+		return options.Take(count).ToArray();
 	}
 
 	private static ModelId TestMonsterHexIconId(MonsterHexKind kind)

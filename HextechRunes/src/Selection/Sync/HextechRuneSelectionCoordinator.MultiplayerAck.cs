@@ -12,33 +12,39 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	private static async Task SynchronizeActSelectionApplied(RunState runState, PlayerChoiceSynchronizer synchronizer, int actIndex)
+	private static async Task SynchronizeActSelectionApplied(RunState runState, PlayerChoiceSynchronizer synchronizer, int actIndex, int choiceOrdinal)
 	{
 		RunManager runManager = RunManager.Instance;
 		List<Task> pendingAcks = [];
 		foreach (Player player in runState.Players)
 		{
-				uint choiceId = synchronizer.ReserveChoiceId(player);
-				if (IsLocalPlayer(runManager, player))
-				{
-					if (TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateActSelectionApplied(actIndex), $"act-selection-applied act={actIndex}", out uint sentChoiceId))
-					{
-						Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} player={player.NetId} choiceId={sentChoiceId}");
-					}
-					else
-					{
-						Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local failed: act={actIndex} player={player.NetId} choiceId={choiceId}");
-					}
-					continue;
-				}
-
-			if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
+			uint choiceId = synchronizer.ReserveChoiceId(player);
+			if (IsLocalPlayer(runManager, player))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied AI auto-ack: act={actIndex} player={player.NetId} choiceId={choiceId}");
+				if (TrySyncLocalHextechChoice(
+					synchronizer,
+					player,
+					choiceId,
+					HextechChoiceCodec.CreateActSelectionApplied(actIndex, choiceOrdinal),
+					$"act-selection-applied act={actIndex} ordinal={choiceOrdinal}",
+					out uint sentChoiceId))
+				{
+					Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={sentChoiceId}");
+				}
+				else
+				{
+					Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local failed: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
+				}
 				continue;
 			}
 
-			pendingAcks.Add(WaitForRemoteActSelectionApplied(synchronizer, runState, player, choiceId, actIndex));
+			if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
+			{
+				Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied AI auto-ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
+				continue;
+			}
+
+			pendingAcks.Add(WaitForRemoteActSelectionApplied(synchronizer, runState, player, choiceId, actIndex, choiceOrdinal));
 		}
 
 		if (pendingAcks.Count == 0)
@@ -46,7 +52,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} remoteCount={pendingAcks.Count}");
+		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} ordinal={choiceOrdinal} remoteCount={pendingAcks.Count}");
 		Task allAcks = Task.WhenAll(pendingAcks);
 		using CancellationTokenSource interruptedWaitCancellation = new();
 		Task interrupted = WaitForRunChangeOrMultiplayerDisconnectAsync(runState, interruptedWaitCancellation.Token);
@@ -55,15 +61,15 @@ internal static partial class HextechRuneSelectionCoordinator
 			interruptedWaitCancellation.Cancel();
 			await interrupted;
 			await allAcks;
-			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex} ordinal={choiceOrdinal}");
 			return;
 		}
 
 		int completed = pendingAcks.Count(static task => task.IsCompletedSuccessfully);
-		Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied interrupted: act={actIndex} completed={completed}/{pendingAcks.Count} runActive={IsCurrentRun(runState)} connected={IsMultiplayerConnected()}; continuing because run changed or multiplayer disconnected");
+		Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied interrupted: act={actIndex} ordinal={choiceOrdinal} completed={completed}/{pendingAcks.Count} runActive={IsCurrentRun(runState)} connected={IsMultiplayerConnected()}; continuing because run changed or multiplayer disconnected");
 	}
 
-	private static async Task WaitForRemoteActSelectionApplied(PlayerChoiceSynchronizer synchronizer, RunState runState, Player player, uint choiceId, int actIndex)
+	private static async Task WaitForRemoteActSelectionApplied(PlayerChoiceSynchronizer synchronizer, RunState runState, Player player, uint choiceId, int actIndex, int choiceOrdinal)
 	{
 		try
 		{
@@ -72,19 +78,19 @@ internal static partial class HextechRuneSelectionCoordinator
 				runState,
 				player,
 				choiceId,
-				result => HextechChoiceCodec.TryDecodeActSelectionApplied(result, actIndex),
-				$"act-selection-applied act={actIndex}");
-			if (!HextechChoiceCodec.TryDecodeActSelectionApplied(remoteAck, actIndex))
+				result => HextechChoiceCodec.TryDecodeActSelectionApplied(result, actIndex, choiceOrdinal),
+				$"act-selection-applied act={actIndex} ordinal={choiceOrdinal}");
+			if (!HextechChoiceCodec.TryDecodeActSelectionApplied(remoteAck, actIndex, choiceOrdinal))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied malformed ack: act={actIndex} player={player.NetId} choiceId={choiceId}");
+				Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied malformed ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
 				return;
 			}
 
-			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} player={player.NetId} choiceId={receivedChoiceId}");
+			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied wait failed: act={actIndex} player={player.NetId} choiceId={choiceId} error={ex}");
+			Log.Warn($"[{ModInfo.Id}][Mayhem] ActSelectionApplied wait failed: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} error={ex}");
 		}
 	}
 

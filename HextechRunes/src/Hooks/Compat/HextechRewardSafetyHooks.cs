@@ -346,17 +346,6 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		if (save.RewardType == RewardType.Card
-			&& save.CustomDescriptionEncounterSourceId == ModelDb.GetId<GenesisRune>())
-		{
-			CardCreationOptions options = new(
-				save.CardPoolIds.Select(ModelDb.GetById<CardPoolModel>),
-				save.Source,
-				save.RarityOdds);
-			__result = new GenesisUpgradedCardReward(options, save.OptionCount, player);
-			return;
-		}
-
-		if (save.RewardType == RewardType.Card
 			&& save.CustomDescriptionEncounterSourceId == ModelDb.GetId<ColorDiscoveryRune>()
 			&& save.PredeterminedModelId != ModelId.none)
 		{
