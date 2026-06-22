@@ -2,11 +2,40 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Godot;
 using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 
 namespace HextechRunes;
 
 internal static partial class HextechRelicVisibilityHooks
 {
+	private const bool DefaultShowHiddenRelicsToggle = false;
+
+	internal static bool GetShowHiddenRelicsToggle()
+	{
+		return _config.ShowHiddenRelicsToggle;
+	}
+
+	internal static bool GetDefaultShowHiddenRelicsToggle()
+	{
+		return DefaultShowHiddenRelicsToggle;
+	}
+
+	internal static void SetShowHiddenRelicsToggle(bool showToggle)
+	{
+		_config.ShowHiddenRelicsToggle = showToggle;
+		SaveConfig(_config);
+
+		NGlobalUi? globalUi = NRun.Instance?.GlobalUi;
+		if (globalUi != null && GodotObject.IsInstanceValid(globalUi))
+		{
+			InstallToggle(globalUi);
+			ApplyHiddenState(globalUi.RelicInventory);
+		}
+
+		Log.Info($"[{ModInfo.Id}][Mayhem] show_hidden_relics_toggle={showToggle}.");
+	}
+
 	private static ModUiConfig LoadOrCreateConfig()
 	{
 		string configPath = GetConfigPath();
@@ -72,6 +101,9 @@ internal static partial class HextechRelicVisibilityHooks
 
 	private sealed class ModUiConfig
 	{
+		[JsonPropertyName("show_hidden_relics_toggle")]
+		public bool ShowHiddenRelicsToggle { get; set; } = DefaultShowHiddenRelicsToggle;
+
 		[JsonPropertyName("hide_relics")]
 		public bool HideRelics { get; set; }
 	}

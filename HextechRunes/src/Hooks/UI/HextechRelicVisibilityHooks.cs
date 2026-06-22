@@ -145,11 +145,17 @@ internal static partial class HextechRelicVisibilityHooks
 
 	private static bool NRelicInventoryHolderDoFlashPrefix()
 	{
-		return !_config.HideRelics;
+		return !_config.ShowHiddenRelicsToggle || !_config.HideRelics;
 	}
 
 	private static void InstallToggle(NGlobalUi globalUi)
 	{
+		if (!_config.ShowHiddenRelicsToggle)
+		{
+			RemoveToggleRoot(globalUi);
+			return;
+		}
+
 		Control? root = FindToggleRoot(globalUi);
 		Button? button = root?.GetNodeOrNull<Button>($"{ToggleColumnNodeName}/{ToggleBoxNodeName}/{ToggleButtonNodeName}");
 		if (root == null || !GodotObject.IsInstanceValid(root) || button == null || !GodotObject.IsInstanceValid(button))
@@ -188,6 +194,15 @@ internal static partial class HextechRelicVisibilityHooks
 		Log.Info($"[{ModInfo.Id}][Mayhem] hide_relics={hideRelics}.");
 	}
 
+	private static void RemoveToggleRoot(NGlobalUi globalUi)
+	{
+		if (FindToggleRoot(globalUi) is { } root && GodotObject.IsInstanceValid(root))
+		{
+			root.GetParent()?.RemoveChild(root);
+			root.QueueFree();
+		}
+	}
+
 	private static void ApplyHiddenState(NRelicInventory? inventory)
 	{
 		if (inventory == null || !GodotObject.IsInstanceValid(inventory))
@@ -195,7 +210,7 @@ internal static partial class HextechRelicVisibilityHooks
 			return;
 		}
 
-		bool showRelics = !_config.HideRelics;
+		bool showRelics = !_config.ShowHiddenRelicsToggle || !_config.HideRelics;
 		foreach (NRelicInventoryHolder holder in inventory.RelicNodes)
 		{
 			if (holder == null || !GodotObject.IsInstanceValid(holder))
