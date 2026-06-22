@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Relics;
 
@@ -55,6 +56,45 @@ public static class HextechRunesApi
 		HextechExternalContentRegistry.RegisterEventRelic(relicType, assetModId);
 		HextechSavedPropertyBootstrap.InjectModelType(relicType);
 		HextechModelPoolRegistrar.RegisterEventRelicModels([ relicType ]);
+	}
+
+	public static void RegisterForge<TForge>(HextechRarityTier rarity, string? assetModId = null)
+		where TForge : HextechForgeBase
+	{
+		RegisterForge(typeof(TForge), rarity, assetModId);
+	}
+
+	public static void RegisterForge(Type forgeType, HextechRarityTier rarity, string? assetModId = null)
+	{
+		if (forgeType.IsAbstract || !typeof(HextechForgeBase).IsAssignableFrom(forgeType))
+		{
+			throw new ArgumentException($"Forge type must be a concrete {nameof(HextechForgeBase)}: {forgeType.FullName}", nameof(forgeType));
+		}
+
+		HextechExternalContentRegistry.RegisterForge(new ForgeRegistration(forgeType, rarity), assetModId);
+		HextechSavedPropertyBootstrap.InjectModelType(forgeType);
+		HextechModelPoolRegistrar.RegisterForgeModels([ forgeType ]);
+	}
+
+	public static void RegisterEnchantmentIcon<TEnchantment>(string iconPath)
+		where TEnchantment : EnchantmentModel
+	{
+		RegisterEnchantmentIcon(typeof(TEnchantment), iconPath);
+	}
+
+	public static void RegisterEnchantmentIcon(Type enchantmentType, string iconPath)
+	{
+		if (enchantmentType.IsAbstract || !typeof(EnchantmentModel).IsAssignableFrom(enchantmentType))
+		{
+			throw new ArgumentException($"Enchantment type must be a concrete {nameof(EnchantmentModel)}: {enchantmentType.FullName}", nameof(enchantmentType));
+		}
+		if (string.IsNullOrWhiteSpace(iconPath))
+		{
+			throw new ArgumentException("Enchantment icon path must not be empty.", nameof(iconPath));
+		}
+
+		HextechExternalContentRegistry.RegisterEnchantmentIcon(enchantmentType, iconPath);
+		HextechSavedPropertyBootstrap.InjectModelType(enchantmentType);
 	}
 
 	public static void TrackPersistentInnate(CardModel? card)

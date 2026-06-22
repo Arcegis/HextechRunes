@@ -314,6 +314,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<UpgradeRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<OmniDragonSoulRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<ShoulderVakuRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
+        Rune<CardInspectionRune>(HextechRarityTier.Prismatic, tagKey: "DRAW"),
         Rune<PrimitiveMadnessRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
         Rune<ThoughtOverwriteRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 17, tagKey: "VOID"),
         Rune<DoubleExistenceRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 13, tagKey: "RESOURCE"),

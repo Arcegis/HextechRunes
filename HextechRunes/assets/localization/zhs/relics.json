@@ -2306,5 +2306,11 @@
   "doubleVisionRune.description": "当你获得卡牌、金币、药水或遗物奖励时，额外获得一份相同奖励。",
   "DOUBLE_VISION_RUNE.description": "当你获得卡牌、金币、药水或遗物奖励时，额外获得一份相同奖励。",
   "doubleVisionRune.flavor": "赞助者物品：爱来自家庭美满爱笑小光头。",
-  "DOUBLE_VISION_RUNE.flavor": "赞助者物品：爱来自家庭美满爱笑小光头。"
+  "DOUBLE_VISION_RUNE.flavor": "赞助者物品：爱来自家庭美满爱笑小光头。",
+  "cardInspectionRune.title": "验牌",
+  "CARD_INSPECTION_RUNE.title": "验牌",
+  "cardInspectionRune.description": "回合开始时，你不再自动抽牌，改为从抽牌堆中选择对应数量的卡牌加入手牌。",
+  "CARD_INSPECTION_RUNE.description": "回合开始时，你不再自动抽牌，改为从抽牌堆中选择对应数量的卡牌加入手牌。",
+  "cardInspectionRune.flavor": "顶牌只是建议，牌堆才是答案。",
+  "CARD_INSPECTION_RUNE.flavor": "顶牌只是建议，牌堆才是答案。"
 }

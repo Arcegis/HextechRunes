@@ -28,6 +28,10 @@ public static class ModEntry
 
 	private static void RegisterContent()
 	{
+		HextechRunesApi.RegisterEnchantmentIcon<Evolution>($"res://{ModInfo.Id}/images/enchantments/evolution.png");
+		HextechRunesApi.RegisterForge<EnchantmentForge>(HextechRarityTier.Gold, ModInfo.Id);
+		HextechRunesApi.RegisterForge<EvolutionForge>(HextechRarityTier.Prismatic, ModInfo.Id);
+		HextechRunesApi.RegisterForge<MysticForge>(HextechRarityTier.Prismatic, ModInfo.Id);
 		HextechRunesApi.RegisterPlayerRune<StarlightSparkleRune>(
 			HextechRarityTier.Gold,
 			tagKey: "COMPREHENSIVE",

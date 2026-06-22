@@ -15,6 +15,7 @@ namespace HextechRunes;
 internal static class AssetHooks
 {
 	private static readonly Dictionary<string, Texture2D> TextureCache = new();
+	private static readonly Dictionary<string, CompressedTexture2D> CompressedTextureCache = new();
 
 	private static readonly FieldInfo? NRelicModelField = TryGetField(typeof(NRelic), "_model");
 
@@ -56,6 +57,14 @@ internal static class AssetHooks
 
 	private static void EnchantmentIconPostfix(EnchantmentModel __instance, ref CompressedTexture2D __result)
 	{
+		ModelId id = __instance.CanonicalInstance?.Id ?? __instance.Id;
+		if (HextechExternalContentRegistry.GetEnchantmentIconPath(id) is { } iconPath
+			&& LoadCompressedTexture(iconPath) is { } texture)
+		{
+			__result = texture;
+			return;
+		}
+
 		if (__instance is UniversalSpiral)
 		{
 			__result = ModelDb.Enchantment<Spiral>().Icon;
@@ -225,6 +234,19 @@ internal static class AssetHooks
 		texture.ResourcePath = path;
 		TextureCache[path] = texture;
 		return texture;
+	}
+
+	private static CompressedTexture2D? LoadCompressedTexture(string path)
+	{
+		if (ResourceLoader.Load<CompressedTexture2D>(path) is CompressedTexture2D loadedTexture)
+		{
+			CompressedTextureCache[path] = loadedTexture;
+			return loadedTexture;
+		}
+
+		return CompressedTextureCache.TryGetValue(path, out CompressedTexture2D? cachedTexture)
+			? cachedTexture
+			: null;
 	}
 
 }

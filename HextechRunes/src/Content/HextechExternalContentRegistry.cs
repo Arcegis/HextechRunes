@@ -6,8 +6,10 @@ internal static class HextechExternalContentRegistry
 {
 	private static readonly object SyncRoot = new();
 	private static readonly List<PlayerRuneRegistration> PlayerRuneRegistrations = new();
+	private static readonly List<ForgeRegistration> ForgeRegistrations = new();
 	private static readonly List<Type> EventRelicTypes = new();
 	private static readonly Dictionary<ModelId, string> AssetModIdsByModelId = new();
+	private static readonly Dictionary<ModelId, string> EnchantmentIconPathsByModelId = new();
 	private static int _version;
 
 	internal static int Version
@@ -53,6 +55,31 @@ internal static class HextechExternalContentRegistry
 		}
 	}
 
+	internal static void RegisterForge(ForgeRegistration registration, string? assetModId)
+	{
+		lock (SyncRoot)
+		{
+			if (!ForgeRegistrations.Any(existing => HextechModelTypeIdentity.IsSame(existing.Type, registration.Type)))
+			{
+				ForgeRegistrations.Add(registration);
+				StoreAssetModId(registration.Type, assetModId);
+				_version++;
+				return;
+			}
+
+			StoreAssetModId(registration.Type, assetModId);
+		}
+	}
+
+	internal static void RegisterEnchantmentIcon(Type enchantmentType, string iconPath)
+	{
+		lock (SyncRoot)
+		{
+			EnchantmentIconPathsByModelId[ModelDb.GetId(enchantmentType)] = iconPath;
+			_version++;
+		}
+	}
+
 	internal static IReadOnlyList<PlayerRuneRegistration> GetPlayerRuneRegistrations()
 	{
 		lock (SyncRoot)
@@ -69,12 +96,30 @@ internal static class HextechExternalContentRegistry
 		}
 	}
 
+	internal static IReadOnlyList<ForgeRegistration> GetForgeRegistrations()
+	{
+		lock (SyncRoot)
+		{
+			return ForgeRegistrations.ToArray();
+		}
+	}
+
 	internal static string? GetAssetModId(ModelId id)
 	{
 		lock (SyncRoot)
 		{
 			return AssetModIdsByModelId.TryGetValue(id, out string? modId)
 				? modId
+					: null;
+		}
+	}
+
+	internal static string? GetEnchantmentIconPath(ModelId id)
+	{
+		lock (SyncRoot)
+		{
+			return EnchantmentIconPathsByModelId.TryGetValue(id, out string? path)
+				? path
 				: null;
 		}
 	}

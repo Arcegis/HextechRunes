@@ -12,6 +12,13 @@ MOD_DIR="$GAME_APP/Contents/MacOS/mods/$FILE_STEM"
 BUILD_OUT="$ROOT/src/bin/Release/net9.0"
 PROJECT_PATH="$ROOT/src/$FILE_STEM.csproj"
 PACK_TOOL_PROJECT="$ROOT/../HextechRunes/tools"
+IMPORT_PROJECT="$ROOT/.build/import_project"
+DEFAULT_GODOT_EDITOR="$ROOT/../.tools/godot-4.5.1/Godot_mono.app/Contents/MacOS/Godot"
+if [[ -z "${GODOT_EDITOR:-}" && -x "$DEFAULT_GODOT_EDITOR" ]]; then
+  GODOT_EDITOR="$DEFAULT_GODOT_EDITOR"
+else
+  GODOT_EDITOR="${GODOT_EDITOR:-/opt/homebrew/bin/godot}"
+fi
 REFS_ROOT="${HEXTECH_SPONSOR_REFS_ROOT:-$ROOT/../HextechRunes/versioned-dll-backups}"
 REFS_1071="$REFS_ROOT/0.107.1/game-refs"
 REFS_1070="$REFS_ROOT/0.107.0/game-refs"
@@ -22,6 +29,10 @@ GAME_RELEASE_INFO="$GAME_APP/Contents/Resources/release_info.json"
 DEFAULT_STS2_TARGET="0.107.1"
 HEXTECH_SPONSOR_DEPLOY="${HEXTECH_SPONSOR_DEPLOY:-1}"
 
+major_minor_version() {
+  sed -E 's/^([0-9]+[.][0-9]+).*/\1/' <<< "$1"
+}
+
 clean_macos_metadata() {
   local target="$1"
   [[ -d "$target" ]] || return 0
@@ -31,7 +42,15 @@ clean_macos_metadata() {
   find "$target" -name "._*" -type f -delete
 }
 
-rm -rf "$ROOT/src/bin" "$ROOT/src/obj" "$ROOT/dist"
+GAME_GODOT_VERSION="$("$GAME_BIN" --version 2>/dev/null | head -n 1)"
+IMPORT_GODOT_VERSION="$("$GODOT_EDITOR" --version 2>/dev/null | head -n 1)"
+if [[ -n "$GAME_GODOT_VERSION" && -n "$IMPORT_GODOT_VERSION" \
+  && "$(major_minor_version "$GAME_GODOT_VERSION")" != "$(major_minor_version "$IMPORT_GODOT_VERSION")" ]]; then
+  print -u2 "Warning: asset import Godot version ($IMPORT_GODOT_VERSION) differs from game runtime ($GAME_GODOT_VERSION)."
+  print -u2 "Set GODOT_EDITOR to a matching 4.5.x editor if texture compatibility regresses."
+fi
+
+rm -rf "$ROOT/src/bin" "$ROOT/src/obj" "$ROOT/dist" "$ROOT/.build"
 
 CURRENT_GAME_VERSION=""
 if [[ -f "$GAME_RELEASE_INFO" ]]; then
@@ -99,13 +118,23 @@ echo "Building $FILE_STEM for STS2 $HEXTECH_SPONSOR_STS2_TARGET using $TARGET_RE
   -p:GameDataDir="$TARGET_REFS"
 
 mkdir -p "$ROOT/dist"
+mkdir -p "$IMPORT_PROJECT/$FILE_STEM"
+cp "$PACK_TOOL_PROJECT/project.godot" "$IMPORT_PROJECT/project.godot"
+rsync -a --exclude "$FILE_STEM.json" "$ROOT/assets/" "$IMPORT_PROJECT/$FILE_STEM/"
+clean_macos_metadata "$IMPORT_PROJECT"
+
+"$GODOT_EDITOR" --headless \
+  --path "$IMPORT_PROJECT" \
+  --import
+
 cp "$MANIFEST_SRC" "$ROOT/dist/$FILE_STEM.json"
 
 "$GAME_BIN" --headless \
   --path "$PACK_TOOL_PROJECT" \
   -s res://pack_mod.gd -- \
   "$MANIFEST_SRC" \
-  "$ROOT/dist/$FILE_STEM.pck"
+  "$ROOT/dist/$FILE_STEM.pck" \
+  "$IMPORT_PROJECT"
 
 MAIN_DLL="$BUILD_OUT/$FILE_STEM.dll"
 if [[ ! -f "$MAIN_DLL" ]]; then

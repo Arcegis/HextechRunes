@@ -32,6 +32,11 @@ internal static class HextechModelPoolRegistrar
 		RegisterModelsInPool(typeof(SharedRelicPool), HextechModelTypeIdentity.Distinct(runeTypes));
 	}
 
+	internal static void RegisterForgeModels(IEnumerable<Type> forgeTypes)
+	{
+		RegisterModelsInPool(typeof(SharedRelicPool), HextechModelTypeIdentity.Distinct(forgeTypes));
+	}
+
 	internal static void RegisterEventRelicModels(IEnumerable<Type> relicTypes)
 	{
 		RegisterModelsInPool(typeof(EventRelicPool), HextechModelTypeIdentity.Distinct(relicTypes));

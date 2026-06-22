@@ -2306,5 +2306,11 @@
   "doubleVisionRune.description": "Cuando tomas una carta, Oro, poción o recompensa de reliquia, obtienes una copia adicional de esa misma recompensa.",
   "DOUBLE_VISION_RUNE.description": "Cuando tomas una carta, Oro, poción o recompensa de reliquia, obtienes una copia adicional de esa misma recompensa.",
   "doubleVisionRune.flavor": "Artículo patrocinado: Amor de una familia feliz y una cabecita calva sonriente.",
-  "DOUBLE_VISION_RUNE.flavor": "Artículo patrocinado: Amor de una familia feliz y una cabecita calva sonriente."
+  "DOUBLE_VISION_RUNE.flavor": "Artículo patrocinado: Amor de una familia feliz y una cabecita calva sonriente.",
+  "cardInspectionRune.title": "Inspección de cartas",
+  "CARD_INSPECTION_RUNE.title": "Inspección de cartas",
+  "cardInspectionRune.description": "Al comienzo de tu turno, en vez de robar cartas automáticamente, elige esa cantidad de cartas de tu pila de robo y ponlas en tu mano.",
+  "CARD_INSPECTION_RUNE.description": "Al comienzo de tu turno, en vez de robar cartas automáticamente, elige esa cantidad de cartas de tu pila de robo y ponlas en tu mano.",
+  "cardInspectionRune.flavor": "La carta superior era solo una sugerencia. Lee el mazo por tu cuenta.",
+  "CARD_INSPECTION_RUNE.flavor": "La carta superior era solo una sugerencia. Lee el mazo por tu cuenta."
 }

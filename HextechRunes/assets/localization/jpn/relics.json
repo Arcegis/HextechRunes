@@ -2306,5 +2306,11 @@
   "doubleVisionRune.description": "カード、ゴールド、ポーション、またはレリックの報酬を獲得すると、同じ報酬の追加コピーを 1 つ獲得します。",
   "DOUBLE_VISION_RUNE.description": "カード、ゴールド、ポーション、またはレリックの報酬を獲得すると、同じ報酬の追加コピーを 1 つ獲得します。",
   "doubleVisionRune.flavor": "スポンサーアイテム: 幸せな家族からの愛と笑顔の小さなハゲ頭。",
-  "DOUBLE_VISION_RUNE.flavor": "スポンサーアイテム: 幸せな家族からの愛と笑顔の小さなハゲ頭。"
+  "DOUBLE_VISION_RUNE.flavor": "スポンサーアイテム: 幸せな家族からの愛と笑顔の小さなハゲ頭。",
+  "cardInspectionRune.title": "カード検査",
+  "CARD_INSPECTION_RUNE.title": "カード検査",
+  "cardInspectionRune.description": "自分のターン開始時、自動でカードを引く代わりに、その枚数だけ山札からカードを選び、手札に加えます。",
+  "CARD_INSPECTION_RUNE.description": "自分のターン開始時、自動でカードを引く代わりに、その枚数だけ山札からカードを選び、手札に加えます。",
+  "cardInspectionRune.flavor": "一番上のカードは提案に過ぎません。デッキは自分で読みます。",
+  "CARD_INSPECTION_RUNE.flavor": "一番上のカードは提案に過ぎません。デッキは自分で読みます。"
 }

@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HextechRunes.Tests;
 
@@ -69,7 +70,9 @@ internal static class Program
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
 			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks),
 			new(nameof(ExternalPlayerRuneRegistrationUpdatesCatalog), ExternalPlayerRuneRegistrationUpdatesCatalog),
-			new(nameof(ExternalEventRelicRegistrationUpdatesRegistry), ExternalEventRelicRegistrationUpdatesRegistry)
+			new(nameof(ExternalEventRelicRegistrationUpdatesRegistry), ExternalEventRelicRegistrationUpdatesRegistry),
+			new(nameof(ExternalForgeRegistrationUpdatesCatalog), ExternalForgeRegistrationUpdatesCatalog),
+			new(nameof(ExternalEnchantmentIconRegistrationTracksPath), ExternalEnchantmentIconRegistrationTracksPath)
 		];
 
 		int failed = 0;
@@ -889,6 +892,30 @@ internal static class Program
 		Expect(HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should be registered");
 	}
 
+	private static void ExternalForgeRegistrationUpdatesCatalog()
+	{
+		Type forgeType = typeof(ExternalRegistrationForge);
+		Expect(!HextechContentRegistry.AllForgeTypes.Contains(forgeType), "external forge should not be registered initially");
+		HextechRunesApi.RegisterForge<ExternalRegistrationForge>(HextechRarityTier.Prismatic, "HextechRunes.Tests");
+		Expect(HextechContentRegistry.AllForgeTypes.Contains(forgeType), "external forge should enter all forge types");
+		Expect(HextechContentRegistry.PrismaticForgeTypes.Contains(forgeType), "external forge should enter prismatic pool");
+		Expect(HextechCatalog.GetForgeTypesForRarity(HextechRarityTier.Prismatic).Contains(forgeType), "external forge should enter catalog rarity pool");
+	}
+
+	private static void ExternalEnchantmentIconRegistrationTracksPath()
+	{
+		ModelId id = ModelDb.GetId<ExternalRegistrationEnchantment>();
+		const string iconPath = "res://HextechRunes.Tests/images/enchantments/externalRegistrationEnchantment.png";
+		Expect(HextechExternalContentRegistry.GetEnchantmentIconPath(id) == null, "external enchantment icon should not be registered initially");
+		HextechRunesApi.RegisterEnchantmentIcon<ExternalRegistrationEnchantment>(iconPath);
+		Equal(iconPath, HextechExternalContentRegistry.GetEnchantmentIconPath(id), "external enchantment icon path");
+
+		SavedProperties? props = SavedProperties.FromInternal(new ExternalRegistrationEnchantment(), id);
+		Expect(
+			props?.ints?.Any(static property => property.name == "PersistentCounter" && property.value == 7) == true,
+			"external enchantment saved property should be registered");
+	}
+
 	private static void IllusoryWeaponPenNibPrefixesCanReturnSkippedTask()
 	{
 		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPrefix");
@@ -919,6 +946,16 @@ internal static class Program
 	private sealed class ExternalRegistrationEventRelic : RelicModel
 	{
 		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
+	private sealed class ExternalRegistrationForge : HextechForgeBase
+	{
+	}
+
+	private sealed class ExternalRegistrationEnchantment : EnchantmentModel
+	{
+		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+		private int PersistentCounter { get; set; } = 7;
 	}
 
 	private static (HextechRarityTier Rarity, IReadOnlyList<MonsterHexKind> Pool) GetMonsterHexPoolWithMinimum(int minimumCount)

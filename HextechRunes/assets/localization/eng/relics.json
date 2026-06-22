@@ -2306,5 +2306,11 @@
   "doubleVisionRune.description": "When you take a card, gold, potion, or relic reward, gain one additional copy of that same reward.",
   "DOUBLE_VISION_RUNE.description": "When you take a card, gold, potion, or relic reward, gain one additional copy of that same reward.",
   "doubleVisionRune.flavor": "Sponsor item: Love from a happy family and a smiling little bald head.",
-  "DOUBLE_VISION_RUNE.flavor": "Sponsor item: Love from a happy family and a smiling little bald head."
+  "DOUBLE_VISION_RUNE.flavor": "Sponsor item: Love from a happy family and a smiling little bald head.",
+  "cardInspectionRune.title": "Card Inspection",
+  "CARD_INSPECTION_RUNE.title": "Card Inspection",
+  "cardInspectionRune.description": "At the start of your turn, instead of automatically drawing cards, choose that many cards from your draw pile and put them into your hand.",
+  "CARD_INSPECTION_RUNE.description": "At the start of your turn, instead of automatically drawing cards, choose that many cards from your draw pile and put them into your hand.",
+  "cardInspectionRune.flavor": "The top card was only a suggestion. Read the deck yourself.",
+  "CARD_INSPECTION_RUNE.flavor": "The top card was only a suggestion. Read the deck yourself."
 }
