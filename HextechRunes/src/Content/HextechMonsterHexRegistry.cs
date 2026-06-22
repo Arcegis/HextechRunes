@@ -102,7 +102,8 @@ internal static class HextechMonsterHexRegistry
 		Monster<OminousPactRune>(MonsterHexKind.OminousPact, HextechRarityTier.Prismatic),
 		Monster<SolidTimeRune>(MonsterHexKind.SolidTime, HextechRarityTier.Prismatic),
 		Monster<ForgottenSoulRune>(MonsterHexKind.ForgottenSoul, HextechRarityTier.Prismatic),
-		Monster<CerberusRune>(MonsterHexKind.Cerberus, HextechRarityTier.Prismatic)
+		Monster<CerberusRune>(MonsterHexKind.Cerberus, HextechRarityTier.Prismatic),
+		Monster<OmniDragonSoulRune>(MonsterHexKind.OmniDragonSoul, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

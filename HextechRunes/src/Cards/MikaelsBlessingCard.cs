@@ -43,17 +43,21 @@ public sealed class MikaelsBlessingCard : CardModel
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
+		List<Creature> affectedCreatures = Owner.RunState.Players
+			.Select(static player => player.Creature)
+			.Where(static creature => !creature.IsDead)
+			.ToList();
+		foreach (Creature creature in affectedCreatures)
+		{
+			HextechMikaelsBlessingVfx.Play(creature);
+		}
+
 		int healAmount = Math.Max(1, (int)Math.Floor(Owner.Creature.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
 		await CreatureCmd.Heal(Owner.Creature, healAmount);
 
-		foreach (var player in Owner.RunState.Players)
+		foreach (Creature creature in affectedCreatures)
 		{
-			if (player.Creature.IsDead)
-			{
-				continue;
-			}
-
-			List<PowerModel> negativePowers = player.Creature.Powers
+			List<PowerModel> negativePowers = creature.Powers
 				.Where(static power => power.GetTypeForAmount(power.Amount) == PowerType.Debuff)
 				.ToList();
 			foreach (PowerModel power in negativePowers)

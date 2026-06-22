@@ -103,5 +103,6 @@ internal enum MonsterHexKind
     Cerberus = 91,
     NatureIsHealing = 92,
     Archmage = 93,
-    BloodIdol = 94
+    BloodIdol = 94,
+    OmniDragonSoul = 95
 }

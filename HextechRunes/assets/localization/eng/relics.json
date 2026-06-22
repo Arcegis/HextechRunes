@@ -1027,6 +1027,7 @@
   "solidTimeRune.enemyDescription": "Whenever a player plays a Power, they lose [blue]1[/blue] Energy.",
   "forgottenSoulRune.enemyDescription": "Status and Curse cards with [gold]Exhaust[/gold] or [gold]Ethereal[/gold] do not exhaust when played or at end of turn.",
   "cerberusRune.enemyDescription": "At the start of the enemy turn, enemies gain [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Vigor[/gold].",
+  "omniDragonSoulRune.enemyDescription": "At the start of the enemy turn, randomly apply [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Weak[/gold], [gold]Frail[/gold], or [gold]Vulnerable[/gold] to all players.",
   "natureIsHealingRune.enemyDescription": "During combat, all enemies heal [blue]1[/blue] HP every [blue]15[/blue]/[blue]10[/blue]/[blue]5[/blue] seconds.",
   "archmageRune.enemyDescription": "Whenever a player plays a Skill, there is a [blue]33%[/blue] chance to increase the cost of [blue]1[/blue] random card in their hand by [blue]1[/blue] this turn.",
   "bloodIdolRune.enemyDescription": "Whenever a player gains Gold, they lose [blue]1[/blue] HP.",

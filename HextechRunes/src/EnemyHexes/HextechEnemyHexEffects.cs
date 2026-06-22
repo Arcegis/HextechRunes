@@ -98,7 +98,8 @@ internal static class HextechEnemyHexEffects
 			new OminousPactEnemyHex(),
 			new SolidTimeEnemyHex(),
 			new ForgottenSoulEnemyHex(),
-			new CerberusEnemyHex()
+			new CerberusEnemyHex(),
+			new OmniDragonSoulEnemyHex()
 		]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

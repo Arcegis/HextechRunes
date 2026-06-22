@@ -1027,6 +1027,7 @@
   "solidTimeRune.enemyDescription": "プレイヤーがパワーをプレイするたびに、[blue]1[/blue] エナジーを失います。",
   "forgottenSoulRune.enemyDescription": "[gold]廃棄[/gold] または [gold]エセリアル[/gold]を持つステータスカードと呪いカードは、プレイ時またはターン終了時に消耗しません。",
   "cerberusRune.enemyDescription": "敵のターンの開始時に、敵は [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Vigor[/gold]を獲得します。",
+  "omniDragonSoulRune.enemyDescription": "敵のターン開始時、すべてのプレイヤーにランダムで [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] の [gold]脱力[/gold]、[gold]脆弱[/gold]、または [gold]弱体[/gold]を付与します。",
   "natureIsHealingRune.enemyDescription": "戦闘中、すべての敵は [blue]15[/blue]/[blue]10[/blue]/[blue]5[/blue] 秒ごとに [blue]1[/blue] HPを回復します。",
   "archmageRune.enemyDescription": "プレイヤーがスキルをプレイするたびに、[blue]33%[/blue] の確率で、このターンに手札の [blue]1[/blue] ランダムカードのコストが [blue]1[/blue] 増加します。",
   "bloodIdolRune.enemyDescription": "プレイヤーがゴールドを獲得するたびに、[blue]1[/blue] HPを失います。",

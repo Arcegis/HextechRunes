@@ -60,6 +60,8 @@ internal static class HextechAssets
 
     public const string HandOfBaronAuraSmokePath = "res://HextechRunes/images/effects/srx_infernal_smoke_trail.png";
 
+    public const string MikaelsBlessingAoeRunePath = "res://HextechRunes/images/effects/milio_base_r_aoe_rune.png";
+
     public static string? TryGetCustomRelicIconPath(RelicModel relic)
     {
         if (HextechCatalog.IsHextechRelic(relic))

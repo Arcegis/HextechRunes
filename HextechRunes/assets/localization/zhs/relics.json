@@ -1027,6 +1027,7 @@
   "solidTimeRune.enemyDescription": "玩家打出能力牌时，失去[blue]1[/blue]点能量。",
   "forgottenSoulRune.enemyDescription": "带有[gold]消耗[/gold]或[gold]虚无[/gold]词条的状态牌和诅咒牌不会因打出或回合结束而消耗。",
   "cerberusRune.enemyDescription": "敌人回合开始时，获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点[gold]活力[/gold]。",
+  "omniDragonSoulRune.enemyDescription": "敌人回合开始时，随机给予所有玩家[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]虚弱[/gold]、[gold]脆弱[/gold]或[gold]易伤[/gold]。",
   "natureIsHealingRune.enemyDescription": "战斗中，所有敌人每[blue]15[/blue]/[blue]10[/blue]/[blue]5[/blue]秒回复[blue]1[/blue]点生命。",
   "archmageRune.enemyDescription": "玩家每打出[blue]1[/blue]张技能牌，就有[blue]33%[/blue]概率使其手牌中[blue]1[/blue]张随机牌本回合费用增加[blue]1[/blue]。",
   "bloodIdolRune.enemyDescription": "玩家每当获得金币时，失去[blue]1[/blue]点生命。",

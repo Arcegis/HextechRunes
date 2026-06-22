@@ -1027,6 +1027,7 @@
   "solidTimeRune.enemyDescription": "Cada vez que un jugador juega un Poder, pierde [blue]1[/blue] Energía.",
   "forgottenSoulRune.enemyDescription": "Las cartas de estado y maldición con [gold]Agotamiento[/gold] o [gold]Etérea[/gold] no se agotan cuando se juegan o al final del turno.",
   "cerberusRune.enemyDescription": "Al comienzo del turno enemigo, los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Vigor[/gold].",
+  "omniDragonSoulRune.enemyDescription": "Al comienzo del turno enemigo, aplica aleatoriamente [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Débil[/gold], [gold]Frágil[/gold] o [gold]Vulnerable[/gold] a todos los jugadores.",
   "natureIsHealingRune.enemyDescription": "Durante el combate, todos los enemigos curan [blue]1[/blue] PV cada [blue]15[/blue]/[blue]10[/blue]/[blue]5[/blue] segundos.",
   "archmageRune.enemyDescription": "Siempre que un jugador juega una habilidad, existe una probabilidad de [blue]33%[/blue] de aumentar el costo de [blue]1[/blue] carta aleatoria en su mano en [blue]1[/blue] este turno.",
   "bloodIdolRune.enemyDescription": "Cada vez que un jugador gana Oro, pierde [blue]1[/blue] PV.",
