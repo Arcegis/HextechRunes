@@ -1,0 +1,5 @@
+{
+  "OPTION_STOKE.name": "ストーク",
+  "OPTION_STOKE.description": "[blue]1[/blue] カードをデッキから取り除く。",
+  "OPTION_STOKE.descriptionDisabled": "取り外し可能なカードがありません。"
+}

@@ -1,0 +1,5 @@
+{
+  "OPTION_STOKE.name": "avivar",
+  "OPTION_STOKE.description": "Elimina la carta [blue]1[/blue] de tu mazo.",
+  "OPTION_STOKE.descriptionDisabled": "No tienes cartas que se puedan retirar."
+}

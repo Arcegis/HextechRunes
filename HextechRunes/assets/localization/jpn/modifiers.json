@@ -1,0 +1,10 @@
+{
+  "HEXTECH_MAYHEM.title": "ヘクステック・メイヘム",
+  "HEXTECH_MAYHEM.description": "アクト [blue]1[/blue]、[blue]2[/blue]、および [blue]3[/blue] の開始時に、ヘクステックルーンを選択し、そのアクトのモンスターに同じレアリティのヘクステックボーナスを与えます。",
+  "HEXTECH_SILVER_RUN.title": "シルバーラン",
+  "HEXTECH_SILVER_RUN.description": "このランで更新されるヘクステックルーンはすべてシルバー階です。",
+  "HEXTECH_GOLD_RUN.title": "ゴールドラン",
+  "HEXTECH_GOLD_RUN.description": "このランで更新されるヘクステックルーンはすべてゴールド階です。",
+  "HEXTECH_PRISMATIC_RUN.title": "プリズムラン",
+  "HEXTECH_PRISMATIC_RUN.description": "このランで更新されるヘクステックルーンはすべてプリズム階です。"
+}
