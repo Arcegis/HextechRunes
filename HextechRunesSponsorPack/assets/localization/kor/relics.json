@@ -76,5 +76,11 @@
   "arcaneRoyallyApprovedChoiceRelic.description": "방금 선택한 카드에 [gold]왕실 인증[/gold]을 부여합니다.",
   "ARCANE_ROYALLY_APPROVED_CHOICE_RELIC.description": "방금 선택한 카드에 [gold]왕실 인증[/gold]을 부여합니다.",
   "arcaneRoyallyApprovedChoiceRelic.flavor": "부여를 선택합니다.",
-  "ARCANE_ROYALLY_APPROVED_CHOICE_RELIC.flavor": "부여를 선택합니다."
+  "ARCANE_ROYALLY_APPROVED_CHOICE_RELIC.flavor": "부여를 선택합니다.",
+  "desperateFinaleRune.title": "절망의 피날레",
+  "DESPERATE_FINALE_RUNE.title": "절망의 피날레",
+  "desperateFinaleRune.description": "[gold]예언의 투영[/gold]을 얻습니다. [gold]최후의 합창[/gold]을 처치할 때마다 피해, 방어도, 회복량이 [blue]20%[/blue] 증가하고 추가 [gold]예언의 투영[/gold]을 [blue]1[/blue]개 얻습니다. 새로운 [gold]예언의 투영[/gold]이 소환하는 [gold]최후의 합창[/gold]은 최대 체력이 [blue]300[/blue] 증가합니다.",
+  "DESPERATE_FINALE_RUNE.description": "[gold]예언의 투영[/gold]을 얻습니다. [gold]최후의 합창[/gold]을 처치할 때마다 피해, 방어도, 회복량이 [blue]20%[/blue] 증가하고 추가 [gold]예언의 투영[/gold]을 [blue]1[/blue]개 얻습니다. 새로운 [gold]예언의 투영[/gold]이 소환하는 [gold]최후의 합창[/gold]은 최대 체력이 [blue]300[/blue] 증가합니다.",
+  "desperateFinaleRune.flavor": "후원자 콜라보 아이템: 피날레는 끝나지 않았습니다. 다음 메아리를 더 깊은 절망으로 밀어 넣을 뿐입니다.",
+  "DESPERATE_FINALE_RUNE.flavor": "후원자 콜라보 아이템: 피날레는 끝나지 않았습니다. 다음 메아리를 더 깊은 절망으로 밀어 넣을 뿐입니다."
 }

@@ -76,5 +76,11 @@
   "arcaneRoyallyApprovedChoiceRelic.description": "为刚才选择的牌添加[gold]王室认证[/gold]。",
   "ARCANE_ROYALLY_APPROVED_CHOICE_RELIC.description": "为刚才选择的牌添加[gold]王室认证[/gold]。",
   "arcaneRoyallyApprovedChoiceRelic.flavor": "选择一种附魔。",
-  "ARCANE_ROYALLY_APPROVED_CHOICE_RELIC.flavor": "选择一种附魔。"
+  "ARCANE_ROYALLY_APPROVED_CHOICE_RELIC.flavor": "选择一种附魔。",
+  "desperateFinaleRune.title": "绝望终曲",
+  "DESPERATE_FINALE_RUNE.title": "绝望终曲",
+  "desperateFinaleRune.description": "获得[gold]预言显像[/gold]。每当你击杀[gold]终曲合声[/gold]时，获得[blue]20%[/blue]伤害、格挡与治疗加成，并获得[blue]1[/blue]个额外的[gold]预言显像[/gold]。由新的[gold]预言显像[/gold]召唤出的[gold]终曲合声[/gold]最大生命增加[blue]300[/blue]点。",
+  "DESPERATE_FINALE_RUNE.description": "获得[gold]预言显像[/gold]。每当你击杀[gold]终曲合声[/gold]时，获得[blue]20%[/blue]伤害、格挡与治疗加成，并获得[blue]1[/blue]个额外的[gold]预言显像[/gold]。由新的[gold]预言显像[/gold]召唤出的[gold]终曲合声[/gold]最大生命增加[blue]300[/blue]点。",
+  "desperateFinaleRune.flavor": "赞助者联动物品：终曲尚未落幕，只是把下一次回响推向更深的绝望。",
+  "DESPERATE_FINALE_RUNE.flavor": "赞助者联动物品：终曲尚未落幕，只是把下一次回响推向更深的绝望。"
 }

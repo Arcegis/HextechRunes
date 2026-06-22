@@ -87,6 +87,23 @@ internal static class HextechPlayerCoefficientHelper
 			multiplier *= nineDragonPowerRune.SustainMultiplier;
 		}
 
+		foreach (RelicModel relic in player.Relics)
+		{
+			if (relic is not IHextechHealingMultiplierProvider provider)
+			{
+				continue;
+			}
+
+			try
+			{
+				multiplier *= provider.ModifyHealingMultiplicative(player, player.Creature, 1m);
+			}
+			catch
+			{
+				// Hover text should never break the top bar because one relic needs combat-only context.
+			}
+		}
+
 		return multiplier;
 	}
 

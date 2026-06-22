@@ -50,6 +50,19 @@ public static class ModEntry
 			HextechRarityTier.Prismatic,
 			tagKey: "SURVIVAL",
 			assetModId: ModInfo.Id);
+		if (IntegratedStrategyEventsBridge.IsAvailable)
+		{
+			HextechRunesApi.RegisterPlayerRune<DesperateFinaleRune>(
+				HextechRarityTier.Prismatic,
+				tagKey: "COMPREHENSIVE",
+				assetModId: ModInfo.Id);
+			Log.Info($"[{ModInfo.Id}] Registered IntegratedStrategyEvents soft-collab rune content.");
+		}
+		else
+		{
+			Log.Info($"[{ModInfo.Id}] IntegratedStrategyEvents not loaded; skipping soft-collab rune content.");
+		}
+
 		HextechRunesApi.RegisterEventRelic<GoldStarRelic>(ModInfo.Id);
 	}
 }

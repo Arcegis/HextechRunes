@@ -1,5 +1,6 @@
 using System.Reflection;
 using HextechRunes;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
@@ -66,6 +67,7 @@ internal static class Program
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
+			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
 			new(nameof(CompensationReplacementDoomGuardScopesAsyncWork), CompensationReplacementDoomGuardScopesAsyncWork),
 			new(nameof(CompensationReplacementDoomSuppressesSleightOfFleshResponse), CompensationReplacementDoomSuppressesSleightOfFleshResponse),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
@@ -998,6 +1000,16 @@ internal static class Program
 	{
 		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPrefix");
 		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibAfterCardPlayedPrefix");
+	}
+
+	private static void AttackCommandCompatibilityRestoresNullExecuteResult()
+	{
+		AttackCommand command = new(1m);
+		AttackCommand result = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult<AttackCommand>(null!), command).GetAwaiter().GetResult();
+		Expect(ReferenceEquals(command, result), "null AttackCommand.Execute result should fall back to command instance");
+
+		AttackCommand completed = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult(command), new AttackCommand(2m)).GetAwaiter().GetResult();
+		Expect(ReferenceEquals(command, completed), "non-null AttackCommand.Execute result should be preserved");
 	}
 
 	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string methodName)
