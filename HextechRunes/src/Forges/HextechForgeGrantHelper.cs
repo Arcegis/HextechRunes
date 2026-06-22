@@ -82,6 +82,30 @@ internal static class HextechForgeGrantHelper
 		}
 	}
 
+	public static async Task ObtainRandomForges(
+		Player player,
+		HextechRarityTier rarity,
+		int count,
+		Func<Type, bool> forgeTypePredicate,
+		string source)
+	{
+		for (int i = 0; i < count; i++)
+		{
+			if (!TryCreateStableRandomForgeChoice(player, rarity, source, i, forgeTypePredicate, out List<RelicModel> options))
+			{
+				return;
+			}
+
+			RelicModel? selected = await HextechForgeSelectionCoordinator.SelectForge(player, options, $"{source}:{i}");
+			if (selected == null)
+			{
+				return;
+			}
+
+			await ObtainSelectedForge(player, selected, syncObtainedRelic: false);
+		}
+	}
+
 	public static bool AddRandomForgeReward(Player player, CombatRoom room)
 	{
 		if (!TryCreateStableRandomForgeChoice(player, "combat-random-forge-reward", 0, out List<RelicModel> options))
@@ -252,6 +276,38 @@ internal static class HextechForgeGrantHelper
 			HextechStableRandom.TypeModelKey,
 			source,
 			"forge-choice",
+			HextechStableRandom.PlayerKey(player),
+			ordinal.ToString(),
+			((int)rarity).ToString(),
+			player.Relics.Count.ToString());
+		options = forgeTypes
+			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)).ToMutable())
+			.ToList();
+		return options.Count > 0;
+	}
+
+	private static bool TryCreateStableRandomForgeChoice(
+		Player player,
+		HextechRarityTier rarity,
+		string source,
+		int ordinal,
+		Func<Type, bool> forgeTypePredicate,
+		out List<RelicModel> options)
+	{
+		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity).Where(forgeTypePredicate));
+		if (pool.Count == 0)
+		{
+			options = [];
+			return false;
+		}
+
+		List<Type> forgeTypes = HextechStableRandom.PickDistinct(
+			pool,
+			Math.Min(3, pool.Count),
+			(RunState)player.RunState,
+			HextechStableRandom.TypeModelKey,
+			source,
+			"filtered-forge-choice",
 			HextechStableRandom.PlayerKey(player),
 			ordinal.ToString(),
 			((int)rarity).ToString(),

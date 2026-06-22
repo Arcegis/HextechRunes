@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Entities.Players;
 
 namespace HextechRunes;
 
@@ -74,6 +75,23 @@ public static class HextechRunesApi
 		HextechExternalContentRegistry.RegisterForge(new ForgeRegistration(forgeType, rarity), assetModId);
 		HextechSavedPropertyBootstrap.InjectModelType(forgeType);
 		HextechModelPoolRegistrar.RegisterForgeModels([ forgeType ]);
+	}
+
+	public static Task ObtainRandomForges(
+		Player player,
+		HextechRarityTier rarity,
+		int count,
+		Func<Type, bool> forgeTypePredicate,
+		string source)
+	{
+		ArgumentNullException.ThrowIfNull(player);
+		ArgumentNullException.ThrowIfNull(forgeTypePredicate);
+		if (string.IsNullOrWhiteSpace(source))
+		{
+			throw new ArgumentException("Random forge source must not be empty.", nameof(source));
+		}
+
+		return HextechForgeGrantHelper.ObtainRandomForges(player, rarity, count, forgeTypePredicate, source);
 	}
 
 	public static void RegisterEnchantmentIcon<TEnchantment>(string iconPath)

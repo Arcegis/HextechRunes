@@ -28,7 +28,9 @@ public static class ModEntry
 
 	private static void RegisterContent()
 	{
+		BuiltInRepeatableEnchantments.Initialize();
 		HextechRunesApi.RegisterEnchantmentIcon<Evolution>($"res://{ModInfo.Id}/images/enchantments/evolution.png");
+		HextechRunesApi.RegisterEnchantmentIcon<SponsorCompositeEnchantment>($"res://{ModInfo.Id}/images/relics/enchantmentMasterRune.png");
 		HextechRunesApi.RegisterForge<BasicForge>(HextechRarityTier.Gold, ModInfo.Id);
 		HextechRunesApi.RegisterForge<EnchantmentForge>(HextechRarityTier.Gold, ModInfo.Id);
 		HextechRunesApi.RegisterForge<ArcaneForge>(HextechRarityTier.Prismatic, ModInfo.Id);
@@ -49,6 +51,10 @@ public static class ModEntry
 		HextechRunesApi.RegisterPlayerRune<RegretRune>(
 			HextechRarityTier.Prismatic,
 			tagKey: "SURVIVAL",
+			assetModId: ModInfo.Id);
+		HextechRunesApi.RegisterPlayerRune<EnchantmentMasterRune>(
+			HextechRarityTier.Prismatic,
+			tagKey: "COMPREHENSIVE",
 			assetModId: ModInfo.Id);
 		if (IntegratedStrategyEventsBridge.IsAvailable)
 		{
