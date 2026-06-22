@@ -52,6 +52,14 @@ internal static class HextechAssets
 
     public const string CloudDragonSoulPowerIconPath = "res://HextechRunes/images/powers/cloudDragonSoulPower.png";
 
+    public const string HandOfBaronAuraRunePath = "res://HextechRunes/images/effects/jungle_buff_baron.png";
+
+    public const string HandOfBaronAuraRingPath = "res://HextechRunes/images/effects/ring_soft_02.png";
+
+    public const string HandOfBaronAuraDiscPath = "res://HextechRunes/images/effects/disc32.ha_crepe.png";
+
+    public const string HandOfBaronAuraSmokePath = "res://HextechRunes/images/effects/srx_infernal_smoke_trail.png";
+
     public static string? TryGetCustomRelicIconPath(RelicModel relic)
     {
         if (HextechCatalog.IsHextechRelic(relic))

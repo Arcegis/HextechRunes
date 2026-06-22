@@ -25,5 +25,5 @@ internal sealed partial class HextechRuneSelectionScreen
 	private const float PlayerRerollButtonBottomInset = 38f;
 	private const float RerollButtonSfxVolumeScale = 0.42f;
 	private const float SelectSfxVolumeScale = 0.40f;
-	private const ulong SelectionConfirmGuardDurationMsec = 2000;
+	private const ulong SelectionConfirmGuardDurationMsec = 1000;
 }
