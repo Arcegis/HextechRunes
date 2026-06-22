@@ -14,6 +14,7 @@ internal sealed partial class HextechMayhemModifier
 	private HextechMayhemCombatTrackingState _combatTracking => _runContext.CombatTracking;
 	private HextechMayhemChoiceHistoryState _choiceHistory => _runContext.ChoiceHistory;
 	private HextechActiveMonsterHexCache _activeMonsterHexCache => _runContext.ActiveMonsterHexCache;
+	private HextechPlayerHexCountState _playerHexCounts => _runContext.PlayerHexCounts;
 	private HextechEnemyHexCountState _enemyHexCounts => _runContext.EnemyHexCounts;
 	private int _hexCountRecoveryBaseline
 	{
@@ -102,10 +103,24 @@ internal sealed partial class HextechMayhemModifier
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int[] SavedPlayerHexCountsByAct
+	{
+		get => _playerHexCounts.Snapshot;
+		set => _playerHexCounts.Set(value);
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedEnemyHexCountsByAct
 	{
 		get => _enemyHexCounts.Snapshot;
 		set => _enemyHexCounts.Set(value);
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public string SavedHextechRunConfigurationSnapshotJson
+	{
+		get => SerializeRunConfigurationSnapshot();
+		set => RestoreRunConfigurationSnapshot(value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]

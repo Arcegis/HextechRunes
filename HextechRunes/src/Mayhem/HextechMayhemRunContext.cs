@@ -6,8 +6,10 @@ internal sealed class HextechMayhemRunContext
 	public HextechMayhemCombatTrackingState CombatTracking { get; } = new();
 	public HextechMayhemChoiceHistoryState ChoiceHistory { get; } = new();
 	public HextechActiveMonsterHexCache ActiveMonsterHexCache { get; } = new();
+	public HextechPlayerHexCountState PlayerHexCounts { get; } = new();
 	public HextechEnemyHexCountState EnemyHexCounts { get; } = new();
 	public HextechPlayerRuneConfigSnapshotState PlayerRuneConfig { get; } = new();
+	public HextechRunConfigurationSnapshot? RunConfigurationSnapshot { get; set; }
 	public int HexCountRecoveryBaseline { get; set; }
 	public int MonsterHexStrengthTierFloor { get; set; }
 	public int EnemyTezcatarasMercyCombatCounter { get; set; }
@@ -15,8 +17,9 @@ internal sealed class HextechMayhemRunContext
 
 	public bool IsEndlessLoopActive => MonsterHexStrengthTierFloor >= 3;
 
-	public void ResetForNewRun(IReadOnlyList<int> enemyHexCountsByAct)
+	public void ResetForNewRun(IReadOnlyList<int> playerHexCountsByAct, IReadOnlyList<int> enemyHexCountsByAct)
 	{
+		PlayerHexCounts.Set(playerHexCountsByAct);
 		EnemyHexCounts.Set(enemyHexCountsByAct);
 		ResetProgressState(hexCountRecoveryBaseline: 0, monsterHexStrengthTierFloor: 0);
 		ActState.Reset();
@@ -36,6 +39,7 @@ internal sealed class HextechMayhemRunContext
 
 	public void ResetForDebugMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
+		PlayerHexCounts.ResetToDefault();
 		EnemyHexCounts.ResetToDefault();
 		ResetProgressState(hexCountRecoveryBaseline: 0, monsterHexStrengthTierFloor: 0);
 		ActState.DebugSetOnlyMonsterHex(actIndex, hex, rarity);

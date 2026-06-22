@@ -27,14 +27,15 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechRarityTier rarity,
 		IReadOnlyList<MonsterHexKind> previousMonsterHexes,
 		IReadOnlyList<MonsterHexKind> initialNewMonsterHexes,
-		RelicModel? monsterHexRelic)
+		RelicModel? monsterHexRelic,
+		int choiceOrdinal)
 	{
 		RunManager runManager = RunManager.Instance;
 		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
 		if (HextechAiTeammateCompat.IsLoopbackHostSession()
 			&& runState.Players.Any(static player => HextechAiTeammateCompat.IsAiPlayer(player)))
 		{
-			return await SelectRunesForAllPlayersAiTeammateHostControlled(runState, modifier, actIndex, rarity, previousMonsterHexes, initialNewMonsterHexes, monsterHexRelic);
+			return await SelectRunesForAllPlayersAiTeammateHostControlled(runState, modifier, actIndex, rarity, previousMonsterHexes, initialNewMonsterHexes, monsterHexRelic, choiceOrdinal);
 		}
 
 		PlayerChoiceSynchronizer? synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
@@ -80,7 +81,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				fallbackActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, fallbackNewMonsterHexes);
 				monsterHexRelic = CreateMonsterHexRelic(FirstMonsterHexOrNull(fallbackNewMonsterHexes));
 				RelicModel selected = selection.SelectedRelic ?? options[0];
-				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount);
+				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount, choiceOrdinal);
 				await RelicCmd.Obtain(selected, player);
 			}
 
@@ -136,7 +137,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				PendingRuneSelection selection = pendingSelections[i];
 				RuneSelectionResult selectedResult = selectedRelics[i];
 				RelicModel selectedRelic = selectedResult.SelectedRelic ?? selectedResult.FinalOptions.FirstOrDefault() ?? selection.Options[0];
-				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, selection.Player, selectedResult.FinalOptions, selectedRelic, selectedResult.RerollCount);
+				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, selection.Player, selectedResult.FinalOptions, selectedRelic, selectedResult.RerollCount, choiceOrdinal);
 			}
 
 			for (int i = 0; i < pendingSelections.Count; i++)

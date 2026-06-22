@@ -15,7 +15,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechRarityTier rarity,
 		IReadOnlyList<MonsterHexKind> previousMonsterHexes,
 		IReadOnlyList<MonsterHexKind> initialNewMonsterHexes,
-		RelicModel? monsterHexRelic)
+		RelicModel? monsterHexRelic,
+		int choiceOrdinal)
 	{
 		Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled rune selection started: act={actIndex}");
 		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
@@ -96,7 +97,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			finalActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, finalNewMonsterHexes);
 			currentMonsterHexRelic = CreateMonsterHexRelic(FirstMonsterHexOrNull(finalNewMonsterHexes));
 			RelicModel selectedRelic = selection.SelectedRelic ?? options[0];
-			HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selectedRelic, selection.RerollCount);
+			HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selectedRelic, selection.RerollCount, choiceOrdinal);
 			await RelicCmd.Obtain(selectedRelic, player);
 			Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled obtained: player={player.NetId} ai={isAiPlayer} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
 		}

@@ -268,7 +268,20 @@ internal static class HextechShopForgeHooks
 
 	private static int GetRandomForgeShopBaseCost(RandomForgeShopRelic shopRelic)
 	{
-		return RandomForgeShopRegularCost;
+		try
+		{
+			if (shopRelic.Owner?.RunState is RunState runState
+				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			{
+				return modifier.RandomForgeShopPrice;
+			}
+		}
+		catch
+		{
+			// Fall back to local configuration when the placeholder relic has no run context.
+		}
+
+		return HextechRuneConfiguration.GetSnapshot().RandomForgeShopPrice;
 	}
 
 	private static void UpdateInventoryEntries(MerchantInventory inventory)

@@ -310,7 +310,9 @@ internal static class HextechForgeGrantHelper
 
 	private static List<Type> BuildAvailableForgePool(Player player, IEnumerable<Type> candidateTypes)
 	{
+		IReadOnlySet<string> disabledForgeIds = GetEffectiveDisabledForgeIds(player);
 		return candidateTypes
+			.Where(type => !disabledForgeIds.Contains(ModelDb.GetId(type).Entry))
 			.Where(type => HextechCatalog.IsAvailableForPlayer(ModelDb.GetById<RelicModel>(ModelDb.GetId(type)), player))
 			.ToList();
 	}
@@ -332,7 +334,8 @@ internal static class HextechForgeGrantHelper
 
 	private static HextechRarityTier RollForgeRarity(Player player, Rng rng)
 	{
-		HextechForgeRarityWeights weights = GetModifiedForgeRarityWeights(player, 65, 25, 10);
+		HextechForgeRarityWeights baseWeights = GetBaseForgeRarityWeights(player);
+		HextechForgeRarityWeights weights = GetModifiedForgeRarityWeights(player, baseWeights.Silver, baseWeights.Gold, baseWeights.Prismatic);
 		if (weights.Total <= 0)
 		{
 			return HextechRarityTier.Silver;
@@ -343,7 +346,8 @@ internal static class HextechForgeGrantHelper
 
 	private static HextechRarityTier RollStableForgeRarity(Player player, string source, int ordinal)
 	{
-		return RollStableForgeRarity(player, source, ordinal, 65, 25, 10);
+		HextechForgeRarityWeights baseWeights = GetBaseForgeRarityWeights(player);
+		return RollStableForgeRarity(player, source, ordinal, baseWeights.Silver, baseWeights.Gold, baseWeights.Prismatic);
 	}
 
 	private static HextechRarityTier RollStableForgeRarity(
@@ -382,6 +386,42 @@ internal static class HextechForgeGrantHelper
 	{
 		HextechForgeRarityWeights weights = new(silverWeight, goldWeight, prismaticWeight);
 		return ApplyDiceManiacForgeRarityModifier(weights, player.GetRelic<DiceManiacRune>() != null);
+	}
+
+	private static HextechForgeRarityWeights GetBaseForgeRarityWeights(Player player)
+	{
+		try
+		{
+			if (player.RunState is RunState runState
+				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			{
+				return modifier.ForgeRarityWeights;
+			}
+		}
+		catch
+		{
+			// Fall back to local configuration when no run state is available yet.
+		}
+
+		return HextechRuneConfiguration.GetSnapshot().ForgeRarityWeights;
+	}
+
+	private static IReadOnlySet<string> GetEffectiveDisabledForgeIds(Player player)
+	{
+		try
+		{
+			if (player.RunState is RunState runState
+				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			{
+				return modifier.DisabledForgeIdsForPool;
+			}
+		}
+		catch
+		{
+			// Fall back to local configuration when no run state is available yet.
+		}
+
+		return HextechRuneConfiguration.GetDisabledForgeIds();
 	}
 
 	private static HextechForgeRarityWeights NormalizeForgeRarityWeights(HextechForgeRarityWeights weights)

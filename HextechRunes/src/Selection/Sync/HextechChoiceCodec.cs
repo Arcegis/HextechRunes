@@ -21,8 +21,10 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindRandomRuneGrant = 6;
 	private const int EnemyHexAdjustmentListVersion = -2;
 	private const int PlayerRuneConfigBitsetVersion = -4;
+	private const int RunConfigurationSnapshotVersion = -5;
 	private const int PlayerRuneConfigBitsPerWord = 30;
 	private const int MaxPlayerRuneConfigBitsetWords = 64;
+	private const int MaxDisabledMonsterHexes = 128;
 
 	public static PlayerChoiceResult CreateActRoll(
 		int actIndex,
@@ -30,8 +32,14 @@ internal static class HextechChoiceCodec
 		MonsterHexKind? monsterHex,
 		bool hostUsesBetterMultiplayerScaling,
 		IReadOnlyList<int> enemyHexCountsByAct,
-		IReadOnlySet<string> disabledPlayerRuneIds)
+		IReadOnlySet<string> disabledPlayerRuneIds,
+		HextechRunConfigurationSnapshot runConfigurationSnapshot)
 	{
+		HextechRunConfigurationSnapshot normalizedSnapshot = HextechRuneConfiguration.NormalizeSnapshot(runConfigurationSnapshot with
+		{
+			EnemyHexCountsByAct = enemyHexCountsByAct.ToArray(),
+			DisabledPlayerRuneIds = disabledPlayerRuneIds.ToHashSet(StringComparer.Ordinal)
+		});
 		List<int> payload =
 		[
 			Magic,
@@ -44,6 +52,7 @@ internal static class HextechChoiceCodec
 		int[] normalizedCounts = HextechEnemyHexCountState.Normalize(enemyHexCountsByAct);
 		payload.AddRange(normalizedCounts);
 		AppendDisabledPlayerRuneConfig(payload, disabledPlayerRuneIds);
+		AppendRunConfigurationSnapshot(payload, normalizedSnapshot);
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
@@ -56,11 +65,33 @@ internal static class HextechChoiceCodec
 		out int[] enemyHexCountsByAct,
 		out HashSet<string> disabledPlayerRuneIds)
 	{
+		return TryDecodeActRoll(
+			result,
+			expectedActIndex,
+			out rarity,
+			out monsterHex,
+			out hostUsesBetterMultiplayerScaling,
+			out enemyHexCountsByAct,
+			out disabledPlayerRuneIds,
+			out _);
+	}
+
+	public static bool TryDecodeActRoll(
+		PlayerChoiceResult result,
+		int expectedActIndex,
+		out HextechRarityTier rarity,
+		out MonsterHexKind? monsterHex,
+		out bool hostUsesBetterMultiplayerScaling,
+		out int[] enemyHexCountsByAct,
+		out HashSet<string> disabledPlayerRuneIds,
+		out HextechRunConfigurationSnapshot runConfigurationSnapshot)
+	{
 		rarity = default;
 		monsterHex = null;
 		hostUsesBetterMultiplayerScaling = false;
 		enemyHexCountsByAct = HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
 		disabledPlayerRuneIds = [];
+		runConfigurationSnapshot = HextechRuneConfiguration.GetDefaultSnapshot();
 		if (!TryGetIndexPayload(result, out List<int> payload)
 			|| payload.Count < 5
 			|| payload[0] != Magic
@@ -90,7 +121,17 @@ internal static class HextechChoiceCodec
 		if (payload.Count >= 9)
 		{
 			enemyHexCountsByAct = HextechEnemyHexCountState.Normalize(payload.Skip(6).Take(3).ToArray());
-			return TryDecodeDisabledPlayerRuneConfig(payload, 9, out disabledPlayerRuneIds);
+			if (!TryDecodeDisabledPlayerRuneConfig(payload, 9, out disabledPlayerRuneIds, out int nextCursor))
+			{
+				return false;
+			}
+
+			runConfigurationSnapshot = HextechRuneConfiguration.NormalizeSnapshot(runConfigurationSnapshot with
+			{
+				EnemyHexCountsByAct = enemyHexCountsByAct,
+				DisabledPlayerRuneIds = disabledPlayerRuneIds
+			});
+			return TryDecodeRunConfigurationSnapshot(payload, nextCursor, runConfigurationSnapshot, out runConfigurationSnapshot);
 		}
 
 		return true;
@@ -116,9 +157,10 @@ internal static class HextechChoiceCodec
 		payload.AddRange(words);
 	}
 
-	private static bool TryDecodeDisabledPlayerRuneConfig(List<int> payload, int cursor, out HashSet<string> disabledPlayerRuneIds)
+	private static bool TryDecodeDisabledPlayerRuneConfig(List<int> payload, int cursor, out HashSet<string> disabledPlayerRuneIds, out int nextCursor)
 	{
 		disabledPlayerRuneIds = [];
+		nextCursor = cursor;
 		if (payload.Count <= cursor)
 		{
 			return true;
@@ -152,7 +194,138 @@ internal static class HextechChoiceCodec
 			}
 		}
 
+		nextCursor = cursor + wordCount;
 		return true;
+	}
+
+	private static void AppendRunConfigurationSnapshot(List<int> payload, HextechRunConfigurationSnapshot snapshot)
+	{
+		payload.Add(RunConfigurationSnapshotVersion);
+		payload.AddRange(HextechPlayerHexCountState.Normalize(snapshot.PlayerHexCountsByAct));
+		payload.AddRange(HextechEnemyHexCountState.Normalize(snapshot.EnemyHexCountsByAct));
+		AppendRarityWeights(payload, snapshot.FirstActRuneRarityWeights);
+		AppendRarityWeights(payload, snapshot.NormalRuneRarityWeights);
+		AppendRarityWeights(payload, snapshot.SecondActAfterSilverRuneRarityWeights);
+		AppendForgeRarityWeights(payload, snapshot.ForgeRarityWeights);
+		payload.Add(HextechRuneConfiguration.ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice));
+
+		MonsterHexKind[] disabledMonsterHexes = snapshot.DisabledMonsterHexIds
+			.Select(static id => Enum.TryParse(id, out MonsterHexKind kind) ? (MonsterHexKind?)kind : null)
+			.Where(static kind => kind.HasValue)
+			.Select(static kind => kind!.Value)
+			.OrderBy(static kind => (int)kind)
+			.ToArray();
+		payload.Add(disabledMonsterHexes.Length);
+		payload.AddRange(disabledMonsterHexes.Select(static kind => (int)kind));
+
+		HextechStableModelIdListCodec.Append(
+			payload,
+			snapshot.DisabledForgeIds
+				.Select(static entry => new ModelId(ModInfo.Id, entry))
+				.OrderBy(static id => id.Entry, StringComparer.Ordinal));
+	}
+
+	private static bool TryDecodeRunConfigurationSnapshot(
+		List<int> payload,
+		int cursor,
+		HextechRunConfigurationSnapshot fallback,
+		out HextechRunConfigurationSnapshot snapshot)
+	{
+		snapshot = fallback;
+		if (payload.Count <= cursor)
+		{
+			return true;
+		}
+
+		if (payload[cursor] != RunConfigurationSnapshotVersion)
+		{
+			return true;
+		}
+
+		cursor++;
+		const int fixedIntCount = 3 + 3 + 3 + 3 + 3 + 3 + 1;
+		if (payload.Count < cursor + fixedIntCount)
+		{
+			return false;
+		}
+
+		int[] playerHexCounts = HextechPlayerHexCountState.Normalize(payload.Skip(cursor).Take(3).ToArray());
+		cursor += 3;
+		int[] enemyHexCounts = HextechEnemyHexCountState.Normalize(payload.Skip(cursor).Take(3).ToArray());
+		cursor += 3;
+		HextechRarityWeights firstActWeights = ReadRarityWeights(payload, ref cursor);
+		HextechRarityWeights normalWeights = ReadRarityWeights(payload, ref cursor);
+		HextechRarityWeights secondActAfterSilverWeights = ReadRarityWeights(payload, ref cursor);
+		HextechForgeRarityWeights forgeWeights = ReadForgeRarityWeights(payload, ref cursor);
+		int forgePrice = payload[cursor++];
+
+		if (payload.Count <= cursor)
+		{
+			return false;
+		}
+
+		int disabledMonsterHexCount = payload[cursor++];
+		if (disabledMonsterHexCount < 0 || disabledMonsterHexCount > MaxDisabledMonsterHexes || payload.Count < cursor + disabledMonsterHexCount)
+		{
+			return false;
+		}
+
+		HashSet<string> disabledMonsterHexIds = [];
+		for (int i = 0; i < disabledMonsterHexCount; i++)
+		{
+			int value = payload[cursor + i];
+			if (Enum.IsDefined(typeof(MonsterHexKind), value))
+			{
+				disabledMonsterHexIds.Add(((MonsterHexKind)value).ToString());
+			}
+		}
+
+		cursor += disabledMonsterHexCount;
+		if (!HextechStableModelIdListCodec.TryDecode(payload, cursor, out List<ModelId> disabledForgeIds, out _))
+		{
+			return false;
+		}
+
+		snapshot = HextechRuneConfiguration.NormalizeSnapshot(new HextechRunConfigurationSnapshot(
+			playerHexCounts,
+			enemyHexCounts,
+			fallback.DisabledPlayerRuneIds,
+			disabledMonsterHexIds,
+			disabledForgeIds.Select(static id => id.Entry).ToHashSet(StringComparer.Ordinal),
+			firstActWeights,
+			normalWeights,
+			secondActAfterSilverWeights,
+			forgeWeights,
+			forgePrice));
+		return true;
+	}
+
+	private static void AppendRarityWeights(List<int> payload, HextechRarityWeights weights)
+	{
+		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Silver));
+		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Gold));
+		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Prismatic));
+	}
+
+	private static void AppendForgeRarityWeights(List<int> payload, HextechForgeRarityWeights weights)
+	{
+		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Silver));
+		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Gold));
+		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Prismatic));
+	}
+
+	private static HextechRarityWeights ReadRarityWeights(List<int> payload, ref int cursor)
+	{
+		HextechRarityWeights weights = new(payload[cursor], payload[cursor + 1], payload[cursor + 2]);
+		cursor += 3;
+		return weights;
+	}
+
+	private static HextechForgeRarityWeights ReadForgeRarityWeights(List<int> payload, ref int cursor)
+	{
+		HextechForgeRarityWeights weights = new(payload[cursor], payload[cursor + 1], payload[cursor + 2]);
+		cursor += 3;
+		return weights;
 	}
 
 	private static readonly Lazy<IReadOnlyList<ModelId>> PlayerRuneIdsByOrdinal = new(

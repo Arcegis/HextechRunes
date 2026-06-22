@@ -100,6 +100,24 @@ internal static class Program
 			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
 			.First();
 		HashSet<string> disabledIds = [ disabledRune.Entry ];
+		string disabledForgeId = HextechCatalog.GetAllForgeTypes()
+			.Select(ModelDb.GetId)
+			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
+			.First()
+			.Entry;
+		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot() with
+		{
+			PlayerHexCountsByAct = [ 2, 0, 8 ],
+			EnemyHexCountsByAct = [ -1, 7, 3 ],
+			DisabledPlayerRuneIds = disabledIds,
+			DisabledMonsterHexIds = [ MonsterHexKind.FrostWraith.ToString() ],
+			DisabledForgeIds = [ disabledForgeId ],
+			FirstActRuneRarityWeights = new HextechRarityWeights(1, 2, 3),
+			NormalRuneRarityWeights = new HextechRarityWeights(4, 5, 6),
+			SecondActAfterSilverRuneRarityWeights = new HextechRarityWeights(0, 7, 8),
+			ForgeRarityWeights = new HextechForgeRarityWeights(9, 10, 11),
+			RandomForgeShopPrice = 123
+		};
 
 		PlayerChoiceResult result = HextechChoiceCodec.CreateActRoll(
 			actIndex: 1,
@@ -107,7 +125,8 @@ internal static class Program
 			monsterHex: MonsterHexKind.ShrinkRay,
 			hostUsesBetterMultiplayerScaling: true,
 			enemyHexCountsByAct: [ -1, 7, 3 ],
-			disabledPlayerRuneIds: disabledIds);
+			disabledPlayerRuneIds: disabledIds,
+			runConfigurationSnapshot: snapshot);
 
 		Expect(HextechChoiceCodec.TryDecodeActRoll(
 			result,
@@ -116,13 +135,19 @@ internal static class Program
 			out MonsterHexKind? monsterHex,
 			out bool hostUsesBetterMultiplayerScaling,
 			out int[] enemyHexCountsByAct,
-			out HashSet<string> decodedDisabledIds), "act roll should decode");
+			out HashSet<string> decodedDisabledIds,
+			out HextechRunConfigurationSnapshot decodedSnapshot), "act roll should decode");
 
 		Equal(HextechRarityTier.Gold, rarity, "rarity");
 		Equal(MonsterHexKind.ShrinkRay, monsterHex, "monster hex");
 		Equal(true, hostUsesBetterMultiplayerScaling, "host scaling flag");
 		SequenceEqual(new[] { 0, 6, 3 }, enemyHexCountsByAct, "enemy count snapshot");
 		Expect(decodedDisabledIds.Contains(disabledRune.Entry), "disabled player rune id should round-trip");
+		SequenceEqual(new[] { 2, 0, 6 }, decodedSnapshot.PlayerHexCountsByAct, "player count snapshot");
+		SetEqual([ MonsterHexKind.FrostWraith.ToString() ], decodedSnapshot.DisabledMonsterHexIds, "disabled monster hex ids");
+		SetEqual([ disabledForgeId ], decodedSnapshot.DisabledForgeIds, "disabled forge ids");
+		Equal(123, decodedSnapshot.RandomForgeShopPrice, "forge shop price");
+		Equal(10, decodedSnapshot.ForgeRarityWeights.Gold, "forge rarity weight");
 		Expect(!HextechChoiceCodec.TryDecodeActRoll(result, 0, out _, out _, out _, out _, out _), "wrong act should be rejected");
 	}
 
@@ -492,8 +517,9 @@ internal static class Program
 		context.EnemyTezcatarasMercyCombatCounter = 4;
 		context.HostUsesBetterMultiplayerScaling = true;
 
-		context.ResetForNewRun([ 2, 7, -1 ]);
+		context.ResetForNewRun([ 7, -1, 2 ], [ 2, 7, -1 ]);
 
+		SequenceEqual(new[] { 6, 0, 2 }, context.PlayerHexCounts.Snapshot, "new-run player count snapshot");
 		SequenceEqual(new[] { 2, 6, 0 }, context.EnemyHexCounts.Snapshot, "new-run enemy count snapshot");
 		Equal(0, context.HexCountRecoveryBaseline, "new-run recovery baseline");
 		Equal(0, context.MonsterHexStrengthTierFloor, "new-run strength floor");

@@ -51,7 +51,10 @@ internal sealed class HextechMayhemChoiceHistoryState
 	public void RecordTelemetryChoice(HextechTelemetry.RuneChoiceRecord record)
 	{
 		List<HextechTelemetry.RuneChoiceRecord> records = GetTelemetryChoiceRecords().ToList();
-		records.RemoveAll(existing => existing.ActIndex == record.ActIndex && existing.PlayerSlot == record.PlayerSlot);
+		records.RemoveAll(existing =>
+			existing.ActIndex == record.ActIndex
+			&& existing.PlayerSlot == record.PlayerSlot
+			&& existing.ChoiceOrdinal == record.ChoiceOrdinal);
 		records.Add(record);
 		_telemetryChoicesJson = JsonSerializer.Serialize(records, HextechTelemetry.JsonOptions);
 	}

@@ -7,9 +7,10 @@ internal static class HextechMonsterHexRoller
 	public static IReadOnlyList<MonsterHexKind> BuildActPool(
 		HextechRarityTier rarity,
 		IEnumerable<MonsterHexKind>? knownHexes,
-		IEnumerable<MonsterHexKind>? extraExcludedHexes = null)
+		IEnumerable<MonsterHexKind>? extraExcludedHexes = null,
+		IReadOnlySet<string>? disabledMonsterHexIds = null)
 	{
-		IReadOnlyList<MonsterHexKind> rarityPool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity);
+		IReadOnlyList<MonsterHexKind> rarityPool = ApplyConfig(MonsterHexCatalog.GetMonsterHexesForRarity(rarity), disabledMonsterHexIds);
 		HashSet<MonsterHexKind> excluded = ToSet(knownHexes);
 		if (extraExcludedHexes != null)
 		{
@@ -71,9 +72,10 @@ internal static class HextechMonsterHexRoller
 		IEnumerable<MonsterHexKind> knownHexes,
 		MonsterHexKind? currentHex,
 		IReadOnlySet<ModelId> excludedIconRelicIds,
-		Func<MonsterHexKind, ModelId> getIconRelicId)
+		Func<MonsterHexKind, ModelId> getIconRelicId,
+		IReadOnlySet<string>? disabledMonsterHexIds = null)
 	{
-		IReadOnlyList<MonsterHexKind> rarityPool = MonsterHexCatalog.GetMonsterHexesForRarity(rarity);
+		IReadOnlyList<MonsterHexKind> rarityPool = ApplyConfig(MonsterHexCatalog.GetMonsterHexesForRarity(rarity), disabledMonsterHexIds);
 		HashSet<MonsterHexKind> alreadyChosen = knownHexes
 			.Where(kind => kind != currentHex)
 			.ToHashSet();
@@ -106,6 +108,21 @@ internal static class HextechMonsterHexRoller
 	private static HashSet<MonsterHexKind> ToSet(IEnumerable<MonsterHexKind>? hexes)
 	{
 		return hexes?.ToHashSet() ?? [];
+	}
+
+	private static IReadOnlyList<MonsterHexKind> ApplyConfig(
+		IReadOnlyList<MonsterHexKind> rarityPool,
+		IReadOnlySet<string>? disabledMonsterHexIds)
+	{
+		if (disabledMonsterHexIds == null || disabledMonsterHexIds.Count == 0)
+		{
+			return rarityPool;
+		}
+
+		List<MonsterHexKind> configuredPool = rarityPool
+			.Where(kind => !disabledMonsterHexIds.Contains(kind.ToString()))
+			.ToList();
+		return configuredPool.Count > 0 ? configuredPool : [];
 	}
 
 	private static void AddUnique(
