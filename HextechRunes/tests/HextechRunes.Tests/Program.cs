@@ -2,12 +2,14 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Commands.Builders;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Saves.Runs;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes.Tests;
 
@@ -72,6 +74,7 @@ internal static class Program
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
 			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
+			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
@@ -884,6 +887,25 @@ internal static class Program
 		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(5m), "five damage replacement poison");
 		Equal(2, CompensationEnemyHex.CalculateReplacementPoison(6m), "six damage replacement poison");
 		Equal(333, CompensationEnemyHex.CalculateReplacementPoison(999m), "large damage replacement poison");
+	}
+
+	private static void EnemyCompensationSkipsPoisonDamageSignature()
+	{
+		Expect(
+			CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, null),
+			"unblockable unpowered damage without dealer or card should match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable, null, null),
+			"missing unpowered flag should not match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unpowered, null, null),
+			"missing unblockable flag should not match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature)), null),
+			"damage with dealer should not match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, UninitializedCard<SovereignBlade>()),
+			"damage with card source should not match poison damage signature");
 	}
 
 	private static void ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless()

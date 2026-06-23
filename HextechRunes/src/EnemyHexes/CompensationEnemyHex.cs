@@ -31,6 +31,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		if (target.Side != CombatSide.Enemy
 			|| target.CombatState?.RunState != context.RunState
 			|| target.IsDead
+			|| ShouldSkipDamageReplacement(target, props, dealer, cardSource)
 			|| amount <= 0m)
 		{
 			return amount;
@@ -89,6 +90,20 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		return damage <= 0m
 			? 0
 			: Math.Max(1, (int)Math.Min(Math.Floor(damage / 3m), 999999999m));
+	}
+
+	internal static bool ShouldSkipDamageReplacement(Creature target, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return IsPoisonDamageSignature(props, dealer, cardSource)
+			&& target.GetPowerAmount<PoisonPower>() > 0m;
+	}
+
+	internal static bool IsPoisonDamageSignature(ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return dealer == null
+			&& cardSource == null
+			&& (props & ValueProp.Unblockable) != 0
+			&& (props & ValueProp.Unpowered) != 0;
 	}
 
 	private void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource, bool shouldConsumeSlippery)

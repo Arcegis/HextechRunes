@@ -4,7 +4,7 @@
   "description": "[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "0.8.0热修：\n修复了SteamDeck的兼容问题；\n调整敌方的代偿海克斯以规避递归问题；\n修复了玩家获得多个尘封魔典时卡死的问题；\n在配置页新增了玩家/敌方的海克斯重随次数配置；\n优化了我方达弗的陈酿和星辉牌的表现（没有改敌方的效果）；\n把隐藏遗物勾选框拓展为了隐藏UI勾选框，在多人模式下会隐藏队友的头像和血条；",
+  "changeNote": "0.8.0热修：修复敌方代偿会将中毒伤害递归转换为中毒层数的问题。",
   "tags": [
     "Gameplay",
     "Modifiers",
