@@ -1021,7 +1021,7 @@
   "mindOverMatterRune.enemyDescription": "플레이어 턴 시작 시 무작위 카드 [blue]1[/blue]장을 그 플레이어의 손패에 추가합니다. 추가된 카드의 비용이 [blue]1[/blue] 증가합니다.",
   "omegaRune.enemyDescription": "4턴 시작 시 모든 플레이어에게 [gold]붕괴[/gold]를 [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] 부여합니다.",
   "manipulateRealityRune.enemyDescription": "적이 전투 중 플레이어의 카드 더미에 추가하는 상태 카드 수가 두 배가 됩니다.",
-  "compensationRune.enemyDescription": "적이 방어도를 무시한 피해를 받을 때, 그 피해를 같은 양의 [gold]파멸[/gold]로 전환합니다.",
+  "compensationRune.enemyDescription": "적이 방어도를 무시한 피해를 받을 때, 그 피해를 피해량의 [blue]1/3[/blue](내림, 최소 [blue]1[/blue])만큼 [gold]중독[/gold]으로 전환합니다.",
   "ominousPactRune.enemyDescription": "적이 방어도를 무시한 피해를 줄 때마다, 피해를 받은 플레이어가 그만큼 추가 [gold]파멸[/gold]을 얻습니다.",
   "solidTimeRune.enemyDescription": "플레이어가 파워 카드를 플레이할 때 [blue]1[/blue] 에너지를 잃습니다.",
   "forgottenSoulRune.enemyDescription": "[gold]소멸[/gold] 또는 [gold]휘발성[/gold] 키워드가 있는 상태이상 및 저주 카드는 플레이하거나 턴 종료 시 소멸되지 않습니다.",

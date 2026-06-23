@@ -98,11 +98,6 @@ public sealed class BlankCheckRune : HextechRelicBase
 
 	private bool ShouldAffectColorlessCard(CardModel card)
 	{
-		return card.Owner == Owner && IsColorlessCard(card);
-	}
-
-	private static bool IsColorlessCard(CardModel card)
-	{
-		return card.Pool is ColorlessCardPool || card.VisualCardPool is ColorlessCardPool;
+		return card.Owner == Owner && HextechColorlessCardHelper.IsColorlessCard(card);
 	}
 }

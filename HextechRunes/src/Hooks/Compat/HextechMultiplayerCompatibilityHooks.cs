@@ -24,11 +24,14 @@ internal static class HextechMultiplayerCompatibilityHooks
 			return;
 		}
 
+		bool installedAny = false;
 		MethodInfo? modListMethod = AccessTools.Method(typeof(ModManager), nameof(ModManager.GetGameplayRelevantModNameList));
 		if (modListMethod != null)
 		{
-			harmony.Patch(
+			installedAny |= TryPatch(
+				harmony,
 				modListMethod,
+				"gameplay mod list signature",
 				postfix: new HarmonyMethod(typeof(HextechMultiplayerCompatibilityHooks), nameof(GetGameplayRelevantModNameListPostfix)));
 		}
 		else
@@ -36,9 +39,13 @@ internal static class HextechMultiplayerCompatibilityHooks
 			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Could not patch gameplay mod list; multiplayer build signature checks are unavailable.");
 		}
 
-		TryPatchPacketFinalizer(harmony, typeof(NetHostGameService), nameof(NetHostGameService.OnPacketReceived), nameof(NetHostGameServiceOnPacketReceivedFinalizer));
-		TryPatchPacketFinalizer(harmony, typeof(NetClientGameService), nameof(NetClientGameService.OnPacketReceived), nameof(NetClientGameServiceOnPacketReceivedFinalizer));
+		installedAny |= TryPatchPacketFinalizer(harmony, typeof(NetHostGameService), nameof(NetHostGameService.OnPacketReceived), nameof(NetHostGameServiceOnPacketReceivedFinalizer));
+		installedAny |= TryPatchPacketFinalizer(harmony, typeof(NetClientGameService), nameof(NetClientGameService.OnPacketReceived), nameof(NetClientGameServiceOnPacketReceivedFinalizer));
 		_installed = true;
+		if (!installedAny)
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] No multiplayer compatibility hooks were installed. The mod will continue to load, but multiplayer mismatch diagnostics may be unavailable on this platform.");
+		}
 	}
 
 	private static void GetGameplayRelevantModNameListPostfix(ref List<string>? __result)
@@ -117,18 +124,34 @@ internal static class HextechMultiplayerCompatibilityHooks
 		return false;
 	}
 
-	private static void TryPatchPacketFinalizer(Harmony harmony, Type type, string methodName, string finalizerName)
+	private static bool TryPatchPacketFinalizer(Harmony harmony, Type type, string methodName, string finalizerName)
 	{
 		MethodInfo? target = AccessTools.Method(type, methodName);
 		if (target == null)
 		{
 			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Could not patch {type.Name}.{methodName}; protocol mismatch fail-safe is unavailable.");
-			return;
+			return false;
 		}
 
-		harmony.Patch(
+		return TryPatch(
+			harmony,
 			target,
+			$"{type.Name}.{methodName} protocol mismatch fail-safe",
 			finalizer: new HarmonyMethod(typeof(HextechMultiplayerCompatibilityHooks), finalizerName));
+	}
+
+	private static bool TryPatch(Harmony harmony, MethodBase target, string label, HarmonyMethod? prefix = null, HarmonyMethod? postfix = null, HarmonyMethod? finalizer = null)
+	{
+		try
+		{
+			harmony.Patch(target, prefix, postfix, finalizer: finalizer);
+			return true;
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Skipped {label}: {ex.GetType().Name}: {ex.Message}");
+			return false;
+		}
 	}
 
 	private static string GetNetworkSignature()
