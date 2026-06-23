@@ -8,14 +8,26 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HextechRunes;
 
-internal static partial class HextechCombatHooks
-{
-	private static bool DrawPrefix(PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw, ref Task<IEnumerable<CardModel>> __result)
+	internal static partial class HextechCombatHooks
 	{
-		NoNonsenseRune? noNonsenseRune = player.GetRelic<NoNonsenseRune>();
-		if (noNonsenseRune == null || fromHandDraw || count <= 0m || player.Creature.CombatState == null)
+		private static bool DrawPrefix(PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw, ref Task<IEnumerable<CardModel>> __result)
 		{
-			return true;
+			CardInspectionRune? cardInspectionRune = player.GetRelic<CardInspectionRune>();
+			if (cardInspectionRune != null && fromHandDraw && count > 0m && player.Creature.CombatState != null)
+			{
+				cardInspectionRune.Flash();
+				__result = HextechSelectedDrawHelper.DrawSelectedFromDrawPile(
+					choiceContext,
+					player,
+					(int)Math.Ceiling(count),
+					fromHandDraw: true);
+				return false;
+			}
+
+			NoNonsenseRune? noNonsenseRune = player.GetRelic<NoNonsenseRune>();
+			if (noNonsenseRune == null || fromHandDraw || count <= 0m || player.Creature.CombatState == null)
+			{
+				return true;
 		}
 
 		int drawsPrevented = (int)Math.Ceiling(count);

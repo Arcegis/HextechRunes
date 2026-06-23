@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-internal enum HextechRarityTier
+public enum HextechRarityTier
 {
     Silver = 0,
     Gold = 1,
@@ -42,7 +42,6 @@ internal enum MonsterHexKind
     Loop = 30,
     ServantMaster = 31,
     BackToBasics = 32,
-    DrawYourSword = 33,
     MadScientist = 34,
     FirstAidKit = 35,
     SpeedDemon = 36,
@@ -103,5 +102,7 @@ internal enum MonsterHexKind
     Cerberus = 91,
     NatureIsHealing = 92,
     Archmage = 93,
-    BloodIdol = 94
+    BloodIdol = 94,
+    OmniDragonSoul = 95,
+    BlankCheck = 96
 }

@@ -43,7 +43,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		uint initialChoiceId,
 		Func<PlayerChoiceResult, bool> isExpected,
 		string context,
-		int? timeoutFrames)
+		int? timeoutFrames,
+		Func<bool>? shouldContinueAfterTimeout = null)
 	{
 		uint choiceId = initialChoiceId;
 		int skipped = 0;
@@ -59,6 +60,12 @@ internal static partial class HextechRuneSelectionCoordinator
 				timeoutFrames);
 			if (!remote.HasValue)
 			{
+				if (shouldContinueAfterTimeout?.Invoke() == true)
+				{
+					Log.Warn($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: still waiting context={context} player={player.NetId} choiceId={choiceId} skipped={skipped}");
+					continue;
+				}
+
 				Log.Warn($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: timeout context={context} player={player.NetId} choiceId={choiceId} skipped={skipped}");
 				return null;
 			}

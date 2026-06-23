@@ -185,7 +185,7 @@ internal static partial class HextechPlayerRuneHooks
 		await CreatureCmd.GainBlock(ornamentalFan.Owner.Creature, ornamentalFan.DynamicVars.Block, null);
 	}
 
-	private static bool PenNibBeforeCardPlayedPrefix(PenNib __instance, CardPlay cardPlay)
+	private static bool PenNibBeforeCardPlayedPrefix(PenNib __instance, CardPlay cardPlay, ref Task __result)
 	{
 		if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner))
 		{
@@ -197,10 +197,11 @@ internal static partial class HextechPlayerRuneHooks
 		{
 			SetPenNibAttackToDouble(__instance, cardPlay.Card);
 		}
+		__result = Task.CompletedTask;
 		return false;
 	}
 
-	private static bool PenNibAfterCardPlayedPrefix(PenNib __instance, CardPlay cardPlay)
+	private static bool PenNibAfterCardPlayedPrefix(PenNib __instance, CardPlay cardPlay, ref Task __result)
 	{
 		if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner)
 			|| !IsPenNibTracking(__instance, cardPlay.Card))
@@ -208,6 +209,7 @@ internal static partial class HextechPlayerRuneHooks
 			return true;
 		}
 
+		__result = Task.CompletedTask;
 		return false;
 	}
 

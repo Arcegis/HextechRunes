@@ -4,16 +4,22 @@ namespace HextechRunes;
 
 internal static class HextechPlayerRuneConfigIds
 {
-	public static HashSet<string> Normalize(IEnumerable<string>? ids)
+	public static HashSet<string> Normalize(IEnumerable<string>? ids, bool preserveUnknownIds = true)
 	{
 		HashSet<string> configurableIds = HextechCatalog.GetConfigurablePlayerRuneIds()
 			.Select(static id => id.Entry)
 			.ToHashSet(StringComparer.Ordinal);
-		return (ids ?? [])
+		IEnumerable<string> normalized = (ids ?? [])
 			.Where(static id => !string.IsNullOrWhiteSpace(id))
 			.Select(static id => id.Trim())
-			.Distinct(StringComparer.Ordinal)
-			.Where(configurableIds.Contains)
+			.Distinct(StringComparer.Ordinal);
+
+		if (!preserveUnknownIds)
+		{
+			normalized = normalized.Where(configurableIds.Contains);
+		}
+
+		return normalized
 			.OrderBy(static id => id, StringComparer.Ordinal)
 			.ToHashSet(StringComparer.Ordinal);
 	}
@@ -22,6 +28,7 @@ internal static class HextechPlayerRuneConfigIds
 	{
 		return Normalize(runeTypes
 			.Select(ModelDb.GetId)
-			.Select(static id => id.Entry));
+			.Select(static id => id.Entry),
+			preserveUnknownIds: false);
 	}
 }

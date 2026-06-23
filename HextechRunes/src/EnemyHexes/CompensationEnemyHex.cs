@@ -31,6 +31,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		if (target.Side != CombatSide.Enemy
 			|| target.CombatState?.RunState != context.RunState
 			|| target.IsDead
+			|| ShouldSkipDamageReplacement(target, props, dealer, cardSource)
 			|| amount <= 0m)
 		{
 			return amount;
@@ -42,13 +43,14 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 			return amount;
 		}
 
-		int doom = Math.Min((int)Math.Floor(amount), 999999999);
-		if (doom <= 0)
+		int poison = CalculateReplacementPoison(amount);
+		if (poison <= 0)
 		{
 			return amount;
 		}
 
-		EnqueuePendingCompensation(commandId, target, doom, dealer, cardSource);
+		bool shouldConsumeSlippery = target.GetPowerAmount<SlipperyPower>() > 0m;
+		EnqueuePendingCompensation(commandId, target, poison, dealer, cardSource, shouldConsumeSlippery);
 		return 0m;
 	}
 
@@ -61,7 +63,12 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 
 		PendingCompensation compensation = pending!;
-		await PowerCmd.Apply<DoomPower>(target, compensation.Amount, compensation.Dealer ?? target, compensation.CardSource);
+		if (compensation.ShouldConsumeSlippery && target.GetPower<SlipperyPower>() is SlipperyPower slippery)
+		{
+			await PowerCmd.Decrement(slippery);
+		}
+
+		await PowerCmd.Apply<PoisonPower>(target, compensation.Amount, compensation.Dealer ?? target, compensation.CardSource);
 	}
 
 	internal static void ClearPendingCompensations(long commandId)
@@ -78,7 +85,28 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 	}
 
-	private void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource)
+	internal static int CalculateReplacementPoison(decimal damage)
+	{
+		return damage <= 0m
+			? 0
+			: Math.Max(1, (int)Math.Min(Math.Floor(damage / 3m), 999999999m));
+	}
+
+	internal static bool ShouldSkipDamageReplacement(Creature target, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return IsPoisonDamageSignature(props, dealer, cardSource)
+			&& target.GetPowerAmount<PoisonPower>() > 0m;
+	}
+
+	internal static bool IsPoisonDamageSignature(ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return dealer == null
+			&& cardSource == null
+			&& (props & ValueProp.Unblockable) != 0
+			&& (props & ValueProp.Unpowered) != 0;
+	}
+
+	private void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource, bool shouldConsumeSlippery)
 	{
 		for (int i = _pendingCompensations.Count - 1; i >= 0; i--)
 		{
@@ -89,14 +117,15 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 				{
 					Amount = pending.Amount + amount,
 					Dealer = dealer ?? pending.Dealer,
-					CardSource = cardSource ?? pending.CardSource
+					CardSource = cardSource ?? pending.CardSource,
+					ShouldConsumeSlippery = pending.ShouldConsumeSlippery || shouldConsumeSlippery
 				};
 				EffectsWithPendingCompensation.Add(this);
 				return;
 			}
 		}
 
-		_pendingCompensations.Add(new PendingCompensation(commandId, target, amount, dealer, cardSource));
+		_pendingCompensations.Add(new PendingCompensation(commandId, target, amount, dealer, cardSource, shouldConsumeSlippery));
 		EffectsWithPendingCompensation.Add(this);
 	}
 
@@ -139,5 +168,5 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 	}
 
-	private sealed record PendingCompensation(long CommandId, Creature Target, decimal Amount, Creature? Dealer, CardModel? CardSource);
+	private sealed record PendingCompensation(long CommandId, Creature Target, decimal Amount, Creature? Dealer, CardModel? CardSource, bool ShouldConsumeSlippery);
 }

@@ -28,7 +28,8 @@ internal sealed partial class HextechMayhemModifier
 			RunState,
 			_actState,
 			_choiceHistory,
-			_hexCountRecoveryBaseline);
+			_hexCountRecoveryBaseline,
+			PlayerHexCountsByAct);
 		if (recovery.Changed)
 		{
 			InvalidateActiveMonsterHexCache();
@@ -104,9 +105,10 @@ internal sealed partial class HextechMayhemModifier
 
 	public void ResetForNewRun()
 	{
-		_runContext.ResetForNewRun(CreateNewRunEnemyHexCountsByActSnapshot());
-		InitializePlayerRuneConfigDisabledIdsSnapshotForNewRun("new run");
-		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: enemyCounts={string.Join(",", EnemyHexCountsByAct)} playerConfigDisabled={PlayerRuneConfigDisabledIds.Count}");
+		HextechRunConfigurationSnapshot snapshot = CreateNewRunConfigurationSnapshot();
+		_runContext.ResetForNewRun(snapshot.PlayerHexCountsByAct, snapshot.EnemyHexCountsByAct);
+		SetRunConfigurationSnapshot(snapshot, "new run");
+		Log.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: playerCounts={string.Join(",", PlayerHexCountsByAct)} enemyCounts={string.Join(",", EnemyHexCountsByAct)} playerConfigDisabled={PlayerRuneConfigDisabledIds.Count}");
 	}
 
 	public void ResetForEndlessLoop(string reason)
@@ -119,7 +121,7 @@ internal sealed partial class HextechMayhemModifier
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
 	{
 		_runContext.ResetForDebugMonsterHex(actIndex, hex, rarity);
-		SetPlayerRuneConfigDisabledIdsSnapshot(HextechRuneConfiguration.GetDisabledPlayerRuneIds(), "debug set monster hex");
+		SetRunConfigurationSnapshot(HextechRuneConfiguration.GetSnapshot(), "debug set monster hex");
 	}
 
 	public bool DebugAddMonsterHex(MonsterHexKind hex)
@@ -176,21 +178,6 @@ internal sealed partial class HextechMayhemModifier
 	private void InvalidateActiveMonsterHexCache()
 	{
 		_activeMonsterHexCache.Invalidate();
-	}
-
-	private static int[] CreateNewRunEnemyHexCountsByActSnapshot()
-	{
-		try
-		{
-			NetGameType gameType = RunManager.Instance.NetService.Type;
-			return gameType == NetGameType.Client
-				? HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct()
-				: HextechRuneConfiguration.GetEnemyHexCountsByAct();
-		}
-		catch
-		{
-			return HextechRuneConfiguration.GetDefaultEnemyHexCountsByAct();
-		}
 	}
 
 	internal bool IncrementEnemyTezcatarasMercyCombatCounter(int interval)

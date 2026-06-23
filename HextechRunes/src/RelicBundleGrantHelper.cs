@@ -6,7 +6,7 @@ using MegaCrit.Sts2.Core.Saves;
 
 namespace HextechRunes;
 
-internal static class RelicBundleGrantHelper
+public static class RelicBundleGrantHelper
 {
 	public static async Task GrantRelics(Player player, IEnumerable<Type> relicTypes)
 	{

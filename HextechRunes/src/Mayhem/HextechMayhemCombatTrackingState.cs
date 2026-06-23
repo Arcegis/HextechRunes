@@ -28,7 +28,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> ThornmailApplied = new();
 	public readonly HashSet<uint> SuperBrainApplied = new();
 	public readonly HashSet<uint> AstralBodyApplied = new();
-	public readonly HashSet<uint> DrawYourSwordApplied = new();
 	public readonly HashSet<uint> MadScientistApplied = new();
 	public readonly HashSet<uint> UnmovableMountainApplied = new();
 	public readonly HashSet<uint> GoldenSpatulaApplied = new();

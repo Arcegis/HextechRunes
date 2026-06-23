@@ -26,13 +26,20 @@ internal static class HextechRuneConfigMenuHooks
 	private const int NativeDuplicateFlags = 14;
 	private const int OverlayZIndex = 1000;
 	private const int HoverTipZIndex = 2000;
-	private const int RuneConfigColumns = 7;
+	private const int RuneConfigColumns = 8;
+	private const string BaseConfigSourceKey = "0:HextechRunes";
+	private const string ExternalConfigSourcePrefix = "1:";
+	private const string SponsorPackModId = "HextechRunesSponsorPack";
 	private const float ConfigRuneHolderScale = 1.3f;
-	private const float RuneConfigCellWidth = 118f;
-	private const float RuneConfigCellHeight = 146f;
-	private const float RuneConfigIconLayerHeight = 104f;
+	private const float RuneConfigCellWidth = 108f;
+	private const float RuneConfigCellHeight = 136f;
+	private const float RuneConfigIconLayerHeight = 96f;
 	private const float RuneConfigDragThreshold = 12f;
 	private const float RuneConfigLongPressSeconds = 0.35f;
+	private const float StepRepeatInitialDelaySeconds = 0.35f;
+	private const float StepRepeatIntervalSeconds = 0.075f;
+	private const float StepRepeatFastIntervalSeconds = 0.035f;
+	private const int StepRepeatFastAfterTicks = 10;
 	private const int RuneConfigIconsPerFrame = 12;
 	private const float CompactConfigHeightThreshold = 820f;
 	private static readonly FieldInfo? MainMenuButtonLocStringField = TryGetField(typeof(NMainMenuTextButton), "_locString");
@@ -143,7 +150,7 @@ internal static class HextechRuneConfigMenuHooks
 		Control control = configButton;
 		control.MouseFilter = Control.MouseFilterEnum.Stop;
 		control.FocusMode = Control.FocusModeEnum.All;
-		control.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
+		control.MouseDefaultCursorShape = ((Control)template).MouseDefaultCursorShape;
 		control.SizeFlagsHorizontal = template.SizeFlagsHorizontal;
 		control.SizeFlagsVertical = template.SizeFlagsVertical;
 		control.CustomMinimumSize = template.CustomMinimumSize;
@@ -247,28 +254,108 @@ internal static class HextechRuneConfigMenuHooks
 		title.HorizontalAlignment = HorizontalAlignment.Center;
 		content.AddChild(title);
 
-		int[] pendingEnemyHexCounts = HextechRuneConfiguration.GetEnemyHexCountsByAct();
-		List<EnemyHexCountBinding> enemyHexCountBindings = [];
-		bool enemyHexCountReadOnly = IsEnemyHexCountConfigReadOnly();
-		content.AddChild(CreateEnemyHexCountSection(pendingEnemyHexCounts, enemyHexCountBindings, enemyHexCountReadOnly, compactLayout));
+		HextechRunConfigurationSnapshot pendingSnapshot = HextechRuneConfiguration.GetSnapshot();
+		int[] pendingPlayerHexCounts = pendingSnapshot.PlayerHexCountsByAct.ToArray();
+		int[] pendingEnemyHexCounts = pendingSnapshot.EnemyHexCountsByAct.ToArray();
+		int[] pendingPlayerRuneRerollLimit = [ pendingSnapshot.PlayerRuneRerollLimit ];
+		int[] pendingMonsterHexRerollLimit = [ pendingSnapshot.MonsterHexRerollLimit ];
+		HashSet<string> pendingDisabledPlayerIds = pendingSnapshot.DisabledPlayerRuneIds.ToHashSet(StringComparer.Ordinal);
+		HashSet<string> pendingDisabledMonsterHexIds = pendingSnapshot.DisabledMonsterHexIds.ToHashSet(StringComparer.Ordinal);
+		HashSet<string> pendingDisabledForgeIds = pendingSnapshot.DisabledForgeIds.ToHashSet(StringComparer.Ordinal);
+		int[] pendingFirstActRuneWeights = ToWeightArray(pendingSnapshot.FirstActRuneRarityWeights);
+		int[] pendingNormalRuneWeights = ToWeightArray(pendingSnapshot.NormalRuneRarityWeights);
+		int[] pendingSecondActAfterSilverWeights = ToWeightArray(pendingSnapshot.SecondActAfterSilverRuneRarityWeights);
+		int[] pendingForgeWeights = ToWeightArray(pendingSnapshot.ForgeRarityWeights);
+		int[] pendingForgePrice = [ pendingSnapshot.RandomForgeShopPrice ];
+		bool[] pendingShowHiddenRelicsToggle = [ HextechRelicVisibilityHooks.GetShowHiddenRelicsToggle() ];
+		List<NumericValueBinding> numericBindings = [];
+		List<BooleanValueBinding> booleanBindings = [];
+		bool configReadOnly = IsEnemyHexCountConfigReadOnly();
 
-		if (compactLayout)
-		{
-			content.AddChild(CreateCompactHelpSection(enemyHexCountReadOnly));
-		}
-		else
-		{
-			Label description = CreateLabel(L("HEXTECH_CONFIG_DESCRIPTION"), 16, new Color(0.82f, 0.86f, 0.92f, 0.92f));
-			description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-			content.AddChild(description);
-		}
+		Label description = CreateLabel(L(configReadOnly ? "HEXTECH_CONFIG_CLIENT_READONLY" : "HEXTECH_CONFIG_DESCRIPTION"), compactLayout ? 13 : 16, new Color(0.82f, 0.86f, 0.92f, 0.92f));
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		content.AddChild(description);
 
-		List<RuneConfigEntry> entries = BuildRuneEntries();
-		HashSet<string> pendingDisabledIds = HextechRuneConfiguration.GetDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal);
-		List<RuneIconBinding> iconBindings = [];
+		List<RuneConfigEntry> playerEntries = BuildRuneEntries();
+		List<RuneConfigEntry> enemyEntries = BuildEnemyHexEntries();
+		List<RuneConfigEntry> forgeEntries = BuildForgeEntries();
+		List<RuneIconBinding> playerIconBindings = [];
+		List<RuneIconBinding> enemyIconBindings = [];
+		List<RuneIconBinding> forgeIconBindings = [];
 		List<RuneConfigLoadTarget> loadTargets = [];
+		int selectedPageIndex = 0;
 		Label summary = CreateLabel(string.Empty, compactLayout ? 15 : 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
-		content.AddChild(CreateToolbar(overlay, entries, pendingDisabledIds, pendingEnemyHexCounts, enemyHexCountBindings, iconBindings, summary, compactLayout));
+		Action updateSummary = () => UpdateSummary(summary, selectedPageIndex, pendingDisabledPlayerIds, pendingDisabledMonsterHexIds, pendingDisabledForgeIds);
+
+		Control countsPage = CreateSelectionPage(pendingPlayerHexCounts, pendingEnemyHexCounts, pendingPlayerRuneRerollLimit, pendingMonsterHexRerollLimit, numericBindings, compactLayout);
+		Control runePoolPage = CreateRunePoolPage(playerEntries, pendingDisabledPlayerIds, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, compactLayout);
+		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pendingDisabledForgeIds, loadTargets, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
+		Control detailsPage = CreateDetailsPage(
+			pendingFirstActRuneWeights,
+			pendingNormalRuneWeights,
+			pendingSecondActAfterSilverWeights,
+			pendingForgeWeights,
+			pendingForgePrice,
+			pendingShowHiddenRelicsToggle,
+			numericBindings,
+			booleanBindings,
+			compactLayout);
+		Control[] pageArray = [ countsPage, runePoolPage, forgePoolPage, detailsPage ];
+
+		HBoxContainer tabs = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		tabs.AddThemeConstantOverride("separation", compactLayout ? 6 : 10);
+		content.AddChild(tabs);
+
+		List<Button> tabButtons = [];
+		Action<int>? updatePageActions = null;
+		Action<int> selectPage = pageIndex =>
+		{
+			selectedPageIndex = pageIndex;
+			for (int i = 0; i < pageArray.Length; i++)
+			{
+				pageArray[i].Visible = i == pageIndex;
+			}
+
+			UpdateTabButtonStates(tabButtons, pageIndex, compactLayout);
+			updatePageActions?.Invoke(pageIndex);
+			updateSummary();
+		};
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_COUNTS"), () => selectPage(0), compactLayout);
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_RUNE_POOLS"), () => selectPage(1), compactLayout);
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_FORGES"), () => selectPage(2), compactLayout);
+		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_DETAILS"), () => selectPage(3), compactLayout);
+
+		content.AddChild(CreateConfigPageActions(
+			playerEntries,
+			enemyEntries,
+			forgeEntries,
+			pendingDisabledPlayerIds,
+			pendingDisabledMonsterHexIds,
+			pendingDisabledForgeIds,
+			pendingPlayerHexCounts,
+			pendingEnemyHexCounts,
+			pendingPlayerRuneRerollLimit,
+			pendingMonsterHexRerollLimit,
+			pendingFirstActRuneWeights,
+			pendingNormalRuneWeights,
+			pendingSecondActAfterSilverWeights,
+			pendingForgeWeights,
+			pendingForgePrice,
+			pendingShowHiddenRelicsToggle,
+			numericBindings,
+			booleanBindings,
+			playerIconBindings,
+			enemyIconBindings,
+			forgeIconBindings,
+			updateSummary,
+			() => selectedPageIndex,
+			compactLayout,
+			out updatePageActions));
 		content.AddChild(summary);
 
 		ScrollContainer scroll = new()
@@ -277,53 +364,684 @@ internal static class HextechRuneConfigMenuHooks
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseFilter = Control.MouseFilterEnum.Stop
 		};
-		VBoxContainer list = new()
+		VBoxContainer pages = new()
 		{
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
 		};
-		list.AddThemeConstantOverride("separation", compactLayout ? 12 : 16);
-		scroll.AddChild(list);
+		pages.AddThemeConstantOverride("separation", compactLayout ? 12 : 16);
+		scroll.AddChild(pages);
 		content.AddChild(scroll);
 
+		content.AddChild(CreateConfigFooter(
+			overlay,
+			pendingPlayerHexCounts,
+			pendingEnemyHexCounts,
+			pendingDisabledPlayerIds,
+			pendingDisabledMonsterHexIds,
+			pendingDisabledForgeIds,
+			pendingFirstActRuneWeights,
+			pendingNormalRuneWeights,
+			pendingSecondActAfterSilverWeights,
+			pendingForgeWeights,
+			pendingForgePrice,
+			pendingPlayerRuneRerollLimit,
+			pendingMonsterHexRerollLimit,
+			pendingShowHiddenRelicsToggle,
+			compactLayout));
+
+		foreach (Control page in pageArray)
+		{
+			page.Visible = false;
+			pages.AddChild(page);
+		}
+
+		selectPage(0);
+		updateSummary();
+		state = new RuneConfigOverlayState(
+			loadTargets,
+			pendingDisabledPlayerIds,
+			pendingDisabledMonsterHexIds,
+			pendingDisabledForgeIds,
+			playerIconBindings,
+			enemyIconBindings,
+			forgeIconBindings,
+			updateSummary);
+		return overlay;
+	}
+
+	private static int[] ToWeightArray(HextechRarityWeights weights)
+	{
+		return [ weights.Silver, weights.Gold, weights.Prismatic ];
+	}
+
+	private static int[] ToWeightArray(HextechForgeRarityWeights weights)
+	{
+		return [ weights.Silver, weights.Gold, weights.Prismatic ];
+	}
+
+	private static HextechRarityWeights ToRarityWeights(IReadOnlyList<int> weights)
+	{
+		return new HextechRarityWeights(
+			weights.Count > 0 ? weights[0] : 0,
+			weights.Count > 1 ? weights[1] : 0,
+			weights.Count > 2 ? weights[2] : 0);
+	}
+
+	private static HextechForgeRarityWeights ToForgeRarityWeights(IReadOnlyList<int> weights)
+	{
+		return new HextechForgeRarityWeights(
+			weights.Count > 0 ? weights[0] : 0,
+			weights.Count > 1 ? weights[1] : 0,
+			weights.Count > 2 ? weights[2] : 0);
+	}
+
+	private static Control CreateSelectionPage(
+		int[] pendingPlayerHexCounts,
+		int[] pendingEnemyHexCounts,
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
+		List<NumericValueBinding> numericBindings,
+		bool compactLayout)
+	{
+		VBoxContainer page = CreatePageContainer(compactLayout);
+		page.AddChild(CreateActCountSection(
+			L("HEXTECH_PLAYER_COUNT_TITLE"),
+			L("HEXTECH_PLAYER_COUNT_DESCRIPTION"),
+			pendingPlayerHexCounts,
+			HextechRuneConfiguration.ClampPlayerHexCount,
+			numericBindings,
+			compactLayout));
+		page.AddChild(CreateActCountSection(
+			L("HEXTECH_ENEMY_COUNT_TITLE"),
+			L("HEXTECH_ENEMY_COUNT_DESCRIPTION"),
+			pendingEnemyHexCounts,
+			HextechRuneConfiguration.ClampEnemyHexCount,
+			numericBindings,
+			compactLayout));
+		page.AddChild(CreateRerollLimitSection(
+			pendingPlayerRuneRerollLimit,
+			pendingMonsterHexRerollLimit,
+			numericBindings,
+			compactLayout));
+		return page;
+	}
+
+	private static VBoxContainer CreatePageContainer(bool compactLayout)
+	{
+		VBoxContainer page = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		page.AddThemeConstantOverride("separation", compactLayout ? 12 : 16);
+		return page;
+	}
+
+	private static Control CreateActCountSection(
+		string titleText,
+		string descriptionText,
+		int[] counts,
+		Func<int, int> clamp,
+		List<NumericValueBinding> numericBindings,
+		bool compactLayout)
+	{
+		VBoxContainer section = CreatePageContainer(compactLayout);
+		section.AddChild(CreateSectionHeader(titleText, compactLayout ? 18 : 20));
+		Label description = CreateLabel(descriptionText, compactLayout ? 13 : 14, new Color(0.78f, 0.84f, 0.9f, 0.9f));
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		section.AddChild(description);
+
+		HBoxContainer row = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddThemeConstantOverride("separation", compactLayout ? 10 : 18);
+		section.AddChild(row);
+		row.AddChild(CreateNumericStepper(L("HEXTECH_ENEMY_COUNT_ACT1"), () => counts[0], value => counts[0] = clamp(value), numericBindings, compactLayout));
+		row.AddChild(CreateNumericStepper(L("HEXTECH_ENEMY_COUNT_ACT2"), () => counts[1], value => counts[1] = clamp(value), numericBindings, compactLayout));
+		row.AddChild(CreateNumericStepper(L("HEXTECH_ENEMY_COUNT_ACT3"), () => counts[2], value => counts[2] = clamp(value), numericBindings, compactLayout));
+		return section;
+	}
+
+	private static Control CreateRerollLimitSection(
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
+		List<NumericValueBinding> numericBindings,
+		bool compactLayout)
+	{
+		VBoxContainer section = CreatePageContainer(compactLayout);
+		section.AddChild(CreateSectionHeader(L("HEXTECH_REROLL_LIMIT_TITLE"), compactLayout ? 18 : 20));
+		Label description = CreateLabel(L("HEXTECH_REROLL_LIMIT_DESCRIPTION"), compactLayout ? 13 : 14, new Color(0.78f, 0.84f, 0.9f, 0.9f));
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		section.AddChild(description);
+
+		HBoxContainer row = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddThemeConstantOverride("separation", compactLayout ? 10 : 18);
+		section.AddChild(row);
+		row.AddChild(CreateRerollLimitStepper(
+			L("HEXTECH_PLAYER_REROLL_LIMIT_LABEL"),
+			() => pendingPlayerRuneRerollLimit[0],
+			value => pendingPlayerRuneRerollLimit[0] = HextechRuneConfiguration.ClampRerollLimit(value),
+			numericBindings,
+			compactLayout));
+		row.AddChild(CreateRerollLimitStepper(
+			L("HEXTECH_MONSTER_REROLL_LIMIT_LABEL"),
+			() => pendingMonsterHexRerollLimit[0],
+			value => pendingMonsterHexRerollLimit[0] = HextechRuneConfiguration.ClampRerollLimit(value),
+			numericBindings,
+			compactLayout));
+		return section;
+	}
+
+	private static Control CreateRunePoolPage(
+		IReadOnlyList<RuneConfigEntry> playerEntries,
+		HashSet<string> pendingDisabledPlayerIds,
+		IReadOnlyList<RuneConfigEntry> enemyEntries,
+		HashSet<string> pendingDisabledMonsterHexIds,
+		List<RuneConfigLoadTarget> loadTargets,
+		bool compactLayout)
+	{
+		VBoxContainer page = CreatePageContainer(compactLayout);
+		page.AddChild(CreateSectionHeader(L("HEXTECH_PLAYER_POOL_TITLE"), compactLayout ? 18 : 20));
+		AddIconPoolEntries(page, playerEntries, pendingDisabledPlayerIds, loadTargets, compactLayout);
+		page.AddChild(CreateSectionHeader(L("HEXTECH_ENEMY_POOL_TITLE"), compactLayout ? 18 : 20));
+		AddIconPoolEntries(page, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, compactLayout);
+		return page;
+	}
+
+	private static Control CreateIconPoolPage(
+		IReadOnlyList<RuneConfigEntry> entries,
+		HashSet<string> pendingDisabledIds,
+		List<RuneConfigLoadTarget> loadTargets,
+		string title,
+		bool compactLayout)
+	{
+		VBoxContainer page = CreatePageContainer(compactLayout);
+		page.AddChild(CreateSectionHeader(title, compactLayout ? 18 : 20));
+		AddIconPoolEntries(page, entries, pendingDisabledIds, loadTargets, compactLayout);
+		return page;
+	}
+
+	private static void AddIconPoolEntries(
+		VBoxContainer page,
+		IReadOnlyList<RuneConfigEntry> entries,
+		HashSet<string> pendingDisabledIds,
+		List<RuneConfigLoadTarget> loadTargets,
+		bool compactLayout)
+	{
 		foreach (IGrouping<int, RuneConfigEntry> rarityGroup in entries.GroupBy(static entry => entry.RarityOrder))
 		{
-			list.AddChild(CreateSectionHeader(rarityGroup.First().RarityText, compactLayout ? 18 : 20));
-			VBoxContainer grid = CreateRuneGrid(compactLayout);
-			list.AddChild(grid);
-
-			HBoxContainer? currentRow = null;
-			int column = 0;
-			foreach (RuneConfigEntry entry in rarityGroup)
+			page.AddChild(CreateSectionHeader(rarityGroup.First().RarityText, compactLayout ? 16 : 18));
+			List<IGrouping<string, RuneConfigEntry>> sourceGroups = rarityGroup
+				.GroupBy(static entry => entry.SourceKey)
+				.ToList();
+			foreach (IGrouping<string, RuneConfigEntry> sourceGroup in sourceGroups)
 			{
-				if (column == 0)
+				if (sourceGroups.Count > 1)
 				{
-					currentRow = CreateRuneRow(compactLayout);
-					grid.AddChild(currentRow);
+					page.AddChild(CreateSourceHeader(sourceGroup.First().SourceText, compactLayout));
 				}
 
-				CenterContainer slot = CreateRuneSlot();
-				currentRow?.AddChild(slot);
-				loadTargets.Add(new RuneConfigLoadTarget(entry, slot));
+				VBoxContainer grid = CreateRuneGrid(compactLayout);
+				page.AddChild(grid);
 
-				column++;
-				if (column == RuneConfigColumns)
+				HBoxContainer? currentRow = null;
+				int column = 0;
+				foreach (RuneConfigEntry entry in sourceGroup)
 				{
-					column = 0;
+					if (column == 0)
+					{
+						currentRow = CreateRuneRow(compactLayout);
+						grid.AddChild(currentRow);
+					}
+
+					CenterContainer slot = CreateRuneSlot();
+					currentRow?.AddChild(slot);
+					loadTargets.Add(new RuneConfigLoadTarget(entry, slot, pendingDisabledIds));
+
+					column++;
+					if (column == RuneConfigColumns)
+					{
+						column = 0;
+					}
 				}
-			}
 
-			if (currentRow != null && column > 0)
-			{
-				for (; column < RuneConfigColumns; column++)
+				if (currentRow != null && column > 0)
 				{
-					currentRow.AddChild(CreateRuneSlot());
+					for (; column < RuneConfigColumns; column++)
+					{
+						currentRow.AddChild(CreateRuneSlot());
+					}
 				}
 			}
 		}
+	}
 
-		UpdateSummary(summary, pendingDisabledIds);
-		state = new RuneConfigOverlayState(loadTargets, pendingDisabledIds, iconBindings, summary);
-		return overlay;
+	private static Control CreateDetailsPage(
+		int[] pendingFirstActRuneWeights,
+		int[] pendingNormalRuneWeights,
+		int[] pendingSecondActAfterSilverWeights,
+		int[] pendingForgeWeights,
+		int[] pendingForgePrice,
+		bool[] pendingShowHiddenRelicsToggle,
+		List<NumericValueBinding> numericBindings,
+		List<BooleanValueBinding> booleanBindings,
+		bool compactLayout)
+	{
+		VBoxContainer page = CreatePageContainer(compactLayout);
+		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, booleanBindings, compactLayout));
+		page.AddChild(CreatePriceSection(pendingForgePrice, numericBindings, compactLayout));
+		page.AddChild(CreateWeightSection(L("HEXTECH_FIRST_ACT_RUNE_RARITY_TITLE"), pendingFirstActRuneWeights, numericBindings, compactLayout));
+		page.AddChild(CreateWeightSection(L("HEXTECH_NORMAL_RUNE_RARITY_TITLE"), pendingNormalRuneWeights, numericBindings, compactLayout));
+		page.AddChild(CreateWeightSection(L("HEXTECH_AFTER_SILVER_RUNE_RARITY_TITLE"), pendingSecondActAfterSilverWeights, numericBindings, compactLayout));
+		page.AddChild(CreateWeightSection(L("HEXTECH_FORGE_RARITY_TITLE"), pendingForgeWeights, numericBindings, compactLayout));
+		return page;
+	}
+
+	private static Control CreateMiscUiSection(bool[] pendingShowHiddenRelicsToggle, List<BooleanValueBinding> booleanBindings, bool compactLayout)
+	{
+		VBoxContainer section = CreatePageContainer(compactLayout);
+		section.AddChild(CreateSectionHeader(L("HEXTECH_MISC_UI_TITLE"), compactLayout ? 18 : 20));
+		section.AddChild(CreateBooleanOption(
+			L("HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_TITLE"),
+			L("HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION"),
+			() => pendingShowHiddenRelicsToggle[0],
+			value => pendingShowHiddenRelicsToggle[0] = value,
+			booleanBindings,
+			compactLayout));
+		return section;
+	}
+
+	private static Control CreateBooleanOption(
+		string titleText,
+		string descriptionText,
+		Func<bool> getValue,
+		Action<bool> setValue,
+		List<BooleanValueBinding> booleanBindings,
+		bool compactLayout)
+	{
+		HBoxContainer row = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddThemeConstantOverride("separation", compactLayout ? 8 : 12);
+
+		CheckBox checkBox = new()
+		{
+			Text = string.Empty,
+			ButtonPressed = getValue(),
+			CustomMinimumSize = compactLayout ? new Vector2(36f, 36f) : new Vector2(42f, 42f),
+			MouseDefaultCursorShape = Control.CursorShape.PointingHand,
+			FocusMode = Control.FocusModeEnum.All
+		};
+		checkBox.Toggled += value => setValue(value);
+		booleanBindings.Add(new BooleanValueBinding(getValue, checkBox));
+		row.AddChild(checkBox);
+
+		VBoxContainer textColumn = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		textColumn.AddThemeConstantOverride("separation", compactLayout ? 2 : 4);
+		Label title = CreateLabel(titleText, compactLayout ? 14 : 16, new Color(0.96f, 0.92f, 0.78f, 0.98f));
+		title.HorizontalAlignment = HorizontalAlignment.Left;
+		textColumn.AddChild(title);
+		Label description = CreateLabel(descriptionText, compactLayout ? 12 : 13, new Color(0.78f, 0.84f, 0.9f, 0.88f));
+		description.HorizontalAlignment = HorizontalAlignment.Left;
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		textColumn.AddChild(description);
+		row.AddChild(textColumn);
+
+		row.GuiInput += inputEvent =>
+		{
+			if (inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
+			{
+				checkBox.ButtonPressed = !checkBox.ButtonPressed;
+				row.GetViewport()?.SetInputAsHandled();
+			}
+		};
+		return row;
+	}
+
+	private static Control CreatePriceSection(int[] price, List<NumericValueBinding> numericBindings, bool compactLayout)
+	{
+		VBoxContainer section = CreatePageContainer(compactLayout);
+		section.AddChild(CreateSectionHeader(L("HEXTECH_FORGE_PRICE_TITLE"), compactLayout ? 18 : 20));
+		HBoxContainer row = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddChild(CreateNumericStepper(
+			L("HEXTECH_FORGE_PRICE_LABEL"),
+			() => price[0],
+			value => price[0] = HextechRuneConfiguration.ClampRandomForgeShopPrice(value),
+			numericBindings,
+			compactLayout,
+			step: 10));
+		section.AddChild(row);
+		return section;
+	}
+
+	private static Control CreateWeightSection(string title, int[] weights, List<NumericValueBinding> numericBindings, bool compactLayout)
+	{
+		VBoxContainer section = CreatePageContainer(compactLayout);
+		section.AddChild(CreateSectionHeader(title, compactLayout ? 18 : 20));
+		HBoxContainer row = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddThemeConstantOverride("separation", compactLayout ? 10 : 18);
+		section.AddChild(row);
+		row.AddChild(CreateNumericStepper(L("HEXTECH_RARITY_SILVER"), () => weights[0], value => weights[0] = HextechRuneConfiguration.ClampRarityWeight(value), numericBindings, compactLayout));
+		row.AddChild(CreateNumericStepper(L("HEXTECH_RARITY_GOLD"), () => weights[1], value => weights[1] = HextechRuneConfiguration.ClampRarityWeight(value), numericBindings, compactLayout));
+		row.AddChild(CreateNumericStepper(L("HEXTECH_RARITY_PRISMATIC"), () => weights[2], value => weights[2] = HextechRuneConfiguration.ClampRarityWeight(value), numericBindings, compactLayout));
+		return section;
+	}
+
+	private static Control CreateNumericStepper(
+		string labelText,
+		Func<int> getValue,
+		Action<int> setValue,
+		List<NumericValueBinding> numericBindings,
+		bool compactLayout,
+		int step = 1,
+		Func<string>? getDisplayText = null,
+		Func<int, int, int>? stepValue = null)
+	{
+		VBoxContainer root = new()
+		{
+			CustomMinimumSize = compactLayout ? new Vector2(150f, 58f) : new Vector2(190f, 70f),
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		root.AddThemeConstantOverride("separation", compactLayout ? 3 : 5);
+
+		Label label = CreateLabel(labelText, compactLayout ? 13 : 15, new Color(0.92f, 0.9f, 0.78f, 0.96f));
+		label.HorizontalAlignment = HorizontalAlignment.Center;
+		root.AddChild(label);
+
+		HBoxContainer controls = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		controls.AddThemeConstantOverride("separation", compactLayout ? 6 : 8);
+		root.AddChild(controls);
+
+		string GetDisplay() => getDisplayText?.Invoke() ?? getValue().ToString();
+		Label number = CreateLabel(GetDisplay(), compactLayout ? 17 : 18, new Color(0.98f, 0.98f, 0.94f, 1f));
+		number.HorizontalAlignment = HorizontalAlignment.Center;
+		number.VerticalAlignment = VerticalAlignment.Center;
+		number.CustomMinimumSize = compactLayout ? new Vector2(44f, 32f) : new Vector2(54f, 34f);
+		numericBindings.Add(new NumericValueBinding(GetDisplay, number));
+
+		Button minus = CreateStepButton("-", false, compactLayout);
+		Button plus = CreateStepButton("+", false, compactLayout);
+		AttachRepeatingStep(minus, () =>
+		{
+			setValue(stepValue?.Invoke(getValue(), -step) ?? getValue() - step);
+			SetLabelText(number, GetDisplay());
+		});
+		AttachRepeatingStep(plus, () =>
+		{
+			setValue(stepValue?.Invoke(getValue(), step) ?? getValue() + step);
+			SetLabelText(number, GetDisplay());
+		});
+
+		controls.AddChild(minus);
+		controls.AddChild(number);
+		controls.AddChild(plus);
+		return root;
+	}
+
+	private static Control CreateRerollLimitStepper(
+		string labelText,
+		Func<int> getValue,
+		Action<int> setValue,
+		List<NumericValueBinding> numericBindings,
+		bool compactLayout)
+	{
+		return CreateNumericStepper(
+			labelText,
+			getValue,
+			setValue,
+			numericBindings,
+			compactLayout,
+			getDisplayText: () => FormatRerollLimit(getValue()),
+			stepValue: static (current, delta) => HextechRuneConfiguration.StepRerollLimit(current, delta));
+	}
+
+	private static string FormatRerollLimit(int value)
+	{
+		return HextechRuneConfiguration.ClampRerollLimit(value) == HextechRuneConfiguration.InfiniteRerollLimit
+			? L("HEXTECH_REROLL_LIMIT_INFINITE")
+			: HextechRuneConfiguration.ClampRerollLimit(value).ToString();
+	}
+
+	private static void AddConfigTab(HBoxContainer tabs, List<Button> tabButtons, string text, Action action, bool compactLayout)
+	{
+		Button button = CreateTabButton(text, action, compactLayout);
+		tabButtons.Add(button);
+		tabs.AddChild(button);
+	}
+
+	private static Button CreateTabButton(string text, Action action, bool compactLayout)
+	{
+		Button button = CreateActionButton(text, action, compactLayout);
+		button.CustomMinimumSize = compactLayout ? new Vector2(108f, 32f) : new Vector2(150f, 36f);
+		return button;
+	}
+
+	private static void UpdateTabButtonStates(IReadOnlyList<Button> tabButtons, int selectedIndex, bool compactLayout)
+	{
+		for (int i = 0; i < tabButtons.Count; i++)
+		{
+			ApplyTabButtonState(tabButtons[i], i == selectedIndex, compactLayout);
+		}
+	}
+
+	private static void ApplyTabButtonState(Button button, bool active, bool compactLayout)
+	{
+		Color normalBackground = active
+			? new Color(0.18f, 0.21f, 0.28f, 0.98f)
+			: new Color(0.1f, 0.12f, 0.17f, 0.9f);
+		Color normalBorder = active
+			? new Color(0.95f, 0.74f, 0.34f, 0.98f)
+			: new Color(0.46f, 0.55f, 0.68f, 0.78f);
+		button.AddThemeStyleboxOverride("normal", CreateButtonStyle(normalBackground, normalBorder));
+		button.AddThemeStyleboxOverride("hover", CreateButtonStyle(new Color(0.16f, 0.19f, 0.26f, 0.98f), new Color(0.96f, 0.78f, 0.38f, 0.96f)));
+		button.AddThemeStyleboxOverride("pressed", CreateButtonStyle(new Color(0.09f, 0.11f, 0.16f, 0.98f), new Color(0.88f, 0.62f, 0.28f, 0.92f)));
+		button.AddThemeStyleboxOverride("focus", CreateButtonStyle(new Color(0.16f, 0.19f, 0.26f, 0.98f), new Color(0.96f, 0.78f, 0.38f, 0.96f)));
+		if (button.GetChildCount() > 0 && button.GetChild(0) is Label label)
+		{
+			label.Modulate = active
+				? new Color(1f, 0.94f, 0.78f, 1f)
+				: new Color(0.96f, 0.94f, 0.88f, 1f);
+		}
+	}
+
+	private static Control CreateConfigPageActions(
+		IReadOnlyList<RuneConfigEntry> playerEntries,
+		IReadOnlyList<RuneConfigEntry> enemyEntries,
+		IReadOnlyList<RuneConfigEntry> forgeEntries,
+		HashSet<string> pendingDisabledPlayerIds,
+		HashSet<string> pendingDisabledMonsterHexIds,
+		HashSet<string> pendingDisabledForgeIds,
+		int[] pendingPlayerHexCounts,
+		int[] pendingEnemyHexCounts,
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
+		int[] pendingFirstActRuneWeights,
+		int[] pendingNormalRuneWeights,
+		int[] pendingSecondActAfterSilverWeights,
+		int[] pendingForgeWeights,
+		int[] pendingForgePrice,
+		bool[] pendingShowHiddenRelicsToggle,
+		IReadOnlyList<NumericValueBinding> numericBindings,
+		IReadOnlyList<BooleanValueBinding> booleanBindings,
+		IReadOnlyList<RuneIconBinding> playerIconBindings,
+		IReadOnlyList<RuneIconBinding> enemyIconBindings,
+		IReadOnlyList<RuneIconBinding> forgeIconBindings,
+		Action updateSummary,
+		Func<int> getPageIndex,
+		bool compactLayout,
+		out Action<int> updatePageActions)
+	{
+		HBoxContainer toolbar = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+		};
+		toolbar.AddThemeConstantOverride("separation", compactLayout ? 7 : 12);
+
+		Button enableAll = CreateActionButton(L("HEXTECH_CONFIG_ENABLE_ALL"), () =>
+		{
+			switch (getPageIndex())
+			{
+				case 1:
+					pendingDisabledPlayerIds.Clear();
+					pendingDisabledMonsterHexIds.Clear();
+					UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
+					UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
+					break;
+				case 2:
+					pendingDisabledForgeIds.Clear();
+					UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+					break;
+			}
+
+			updateSummary();
+		}, compactLayout);
+		Button disableAll = CreateActionButton(L("HEXTECH_CONFIG_DISABLE_ALL"), () =>
+		{
+			switch (getPageIndex())
+			{
+				case 1:
+					ReplaceDisabledIds(pendingDisabledPlayerIds, playerEntries);
+					ReplaceDisabledIds(pendingDisabledMonsterHexIds, enemyEntries);
+					UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
+					UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
+					break;
+				case 2:
+					ReplaceDisabledIds(pendingDisabledForgeIds, forgeEntries);
+					UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+					break;
+			}
+
+			updateSummary();
+		}, compactLayout);
+		toolbar.AddChild(enableAll);
+		toolbar.AddChild(disableAll);
+		toolbar.AddChild(CreateActionButton(L("HEXTECH_CONFIG_RESET"), () =>
+		{
+			HextechRunConfigurationSnapshot defaults = HextechRuneConfiguration.GetDefaultSnapshot();
+			CopyArray(defaults.PlayerHexCountsByAct, pendingPlayerHexCounts);
+			CopyArray(defaults.EnemyHexCountsByAct, pendingEnemyHexCounts);
+			pendingPlayerRuneRerollLimit[0] = defaults.PlayerRuneRerollLimit;
+			pendingMonsterHexRerollLimit[0] = defaults.MonsterHexRerollLimit;
+			CopyArray(ToWeightArray(defaults.FirstActRuneRarityWeights), pendingFirstActRuneWeights);
+			CopyArray(ToWeightArray(defaults.NormalRuneRarityWeights), pendingNormalRuneWeights);
+			CopyArray(ToWeightArray(defaults.SecondActAfterSilverRuneRarityWeights), pendingSecondActAfterSilverWeights);
+			CopyArray(ToWeightArray(defaults.ForgeRarityWeights), pendingForgeWeights);
+			pendingForgePrice[0] = defaults.RandomForgeShopPrice;
+			pendingShowHiddenRelicsToggle[0] = HextechRelicVisibilityHooks.GetDefaultShowHiddenRelicsToggle();
+			pendingDisabledPlayerIds.Clear();
+			pendingDisabledPlayerIds.UnionWith(defaults.DisabledPlayerRuneIds);
+			pendingDisabledMonsterHexIds.Clear();
+			pendingDisabledMonsterHexIds.UnionWith(defaults.DisabledMonsterHexIds);
+			pendingDisabledForgeIds.Clear();
+			pendingDisabledForgeIds.UnionWith(defaults.DisabledForgeIds);
+			UpdateNumericLabels(numericBindings);
+			UpdateBooleanToggles(booleanBindings);
+			UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
+			UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
+			UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+			updateSummary();
+		}, compactLayout));
+
+		updatePageActions = pageIndex =>
+		{
+			bool showPoolBulkActions = pageIndex is 1 or 2;
+			enableAll.Visible = showPoolBulkActions;
+			disableAll.Visible = showPoolBulkActions;
+		};
+		return toolbar;
+	}
+
+	private static Control CreateConfigFooter(
+		Control overlay,
+		int[] pendingPlayerHexCounts,
+		int[] pendingEnemyHexCounts,
+		HashSet<string> pendingDisabledPlayerIds,
+		HashSet<string> pendingDisabledMonsterHexIds,
+		HashSet<string> pendingDisabledForgeIds,
+		int[] pendingFirstActRuneWeights,
+		int[] pendingNormalRuneWeights,
+		int[] pendingSecondActAfterSilverWeights,
+		int[] pendingForgeWeights,
+		int[] pendingForgePrice,
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
+		bool[] pendingShowHiddenRelicsToggle,
+		bool compactLayout)
+	{
+		HBoxContainer footer = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+		};
+		footer.AddThemeConstantOverride("separation", compactLayout ? 7 : 12);
+		footer.AddChild(CreateActionButton(L("HEXTECH_CONFIG_SAVE_CLOSE"), () =>
+		{
+			HextechRuneConfiguration.SaveSnapshot(new HextechRunConfigurationSnapshot(
+				pendingPlayerHexCounts,
+				pendingEnemyHexCounts,
+				pendingPlayerRuneRerollLimit[0],
+				pendingMonsterHexRerollLimit[0],
+				pendingDisabledPlayerIds,
+				pendingDisabledMonsterHexIds,
+				pendingDisabledForgeIds,
+				ToRarityWeights(pendingFirstActRuneWeights),
+				ToRarityWeights(pendingNormalRuneWeights),
+				ToRarityWeights(pendingSecondActAfterSilverWeights),
+				ToForgeRarityWeights(pendingForgeWeights),
+				pendingForgePrice[0]));
+			HextechRelicVisibilityHooks.SetShowHiddenRelicsToggle(pendingShowHiddenRelicsToggle[0]);
+			CollectionHooks.RefreshOpenRelicCollections();
+			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]}");
+			overlay.QueueFree();
+		}, compactLayout));
+		footer.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout));
+		return footer;
+	}
+
+	private static void ReplaceDisabledIds(HashSet<string> target, IEnumerable<RuneConfigEntry> entries)
+	{
+		target.Clear();
+		foreach (RuneConfigEntry entry in entries)
+		{
+			target.Add(entry.Id);
+		}
+	}
+
+	private static void CopyArray(IReadOnlyList<int> source, int[] target)
+	{
+		for (int i = 0; i < Math.Min(source.Count, target.Length); i++)
+		{
+			target[i] = source[i];
+		}
 	}
 
 	private static Vector2 GetResponsivePanelSize()
@@ -335,8 +1053,8 @@ internal static class HextechRuneConfigMenuHooks
 			? Math.Max(320f, windowWidth * 0.96f)
 			: Mathf.Clamp(windowWidth * 0.9f, 760f, 1080f);
 		float height = windowHeight < CompactConfigHeightThreshold
-			? Math.Max(420f, windowHeight * 0.96f)
-			: Mathf.Clamp(windowHeight * 0.88f, 620f, 760f);
+			? Math.Max(440f, windowHeight * 0.98f)
+			: Mathf.Clamp(windowHeight * 0.92f, 660f, 840f);
 		return new Vector2(width, height);
 	}
 
@@ -414,16 +1132,16 @@ internal static class HextechRuneConfigMenuHooks
 
 		Button minus = CreateStepButton("-", readOnly, compactLayout);
 		Button plus = CreateStepButton("+", readOnly, compactLayout);
-		minus.Pressed += () =>
+		AttachRepeatingStep(minus, () =>
 		{
 			pendingCounts[actIndex] = HextechRuneConfiguration.ClampEnemyHexCount(pendingCounts[actIndex] - 1);
 			SetLabelText(number, pendingCounts[actIndex].ToString());
-		};
-		plus.Pressed += () =>
+		});
+		AttachRepeatingStep(plus, () =>
 		{
 			pendingCounts[actIndex] = HextechRuneConfiguration.ClampEnemyHexCount(pendingCounts[actIndex] + 1);
 			SetLabelText(number, pendingCounts[actIndex].ToString());
-		};
+		});
 
 		controls.AddChild(minus);
 		controls.AddChild(number);
@@ -446,6 +1164,56 @@ internal static class HextechRuneConfigMenuHooks
 		button.AddThemeStyleboxOverride("disabled", CreateButtonStyle(new Color(0.08f, 0.09f, 0.12f, 0.56f), new Color(0.32f, 0.36f, 0.44f, 0.58f)));
 		AddCrispButtonText(button, text, compactLayout ? 17 : 18, disabled ? new Color(0.62f, 0.66f, 0.72f, 0.82f) : new Color(0.96f, 0.94f, 0.88f, 1f));
 		return button;
+	}
+
+	private static void AttachRepeatingStep(Button button, Action action)
+	{
+		int pressToken = 0;
+
+		button.ButtonDown += () =>
+		{
+			if (button.Disabled)
+			{
+				return;
+			}
+
+			pressToken++;
+			int currentToken = pressToken;
+			action();
+			_ = RepeatStepAsync(button, currentToken, () => pressToken == currentToken, action);
+		};
+		button.ButtonUp += () => pressToken++;
+		button.TreeExiting += () => pressToken++;
+	}
+
+	private static async Task RepeatStepAsync(Button button, int token, Func<bool> tokenIsCurrent, Action action)
+	{
+		if (!GodotObject.IsInstanceValid(button) || !button.IsInsideTree())
+		{
+			return;
+		}
+
+		SceneTree tree = button.GetTree();
+		if (tree == null)
+		{
+			return;
+		}
+
+		await button.ToSignal(tree.CreateTimer(StepRepeatInitialDelaySeconds), "timeout");
+		int repeatCount = 0;
+		while (GodotObject.IsInstanceValid(button)
+			&& button.IsInsideTree()
+			&& button.ButtonPressed
+			&& !button.Disabled
+			&& tokenIsCurrent())
+		{
+			action();
+			repeatCount++;
+			float interval = repeatCount >= StepRepeatFastAfterTicks
+				? StepRepeatFastIntervalSeconds
+				: StepRepeatIntervalSeconds;
+			await button.ToSignal(tree.CreateTimer(interval), "timeout");
+		}
 	}
 
 	private static bool IsEnemyHexCountConfigReadOnly()
@@ -566,6 +1334,13 @@ internal static class HextechRuneConfigMenuHooks
 		return label;
 	}
 
+	private static Label CreateSourceHeader(string text, bool compactLayout)
+	{
+		Label label = CreateLabel(text, compactLayout ? 14 : 15, new Color(0.68f, 0.82f, 0.98f, 0.92f));
+		label.CustomMinimumSize = new Vector2(0f, compactLayout ? 18f : 22f);
+		return label;
+	}
+
 	private static VBoxContainer CreateRuneGrid(bool compactLayout)
 	{
 		VBoxContainer grid = new()
@@ -573,7 +1348,7 @@ internal static class HextechRuneConfigMenuHooks
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
-		grid.AddThemeConstantOverride("separation", compactLayout ? 10 : 14);
+		grid.AddThemeConstantOverride("separation", compactLayout ? 5 : 7);
 		return grid;
 	}
 
@@ -584,7 +1359,7 @@ internal static class HextechRuneConfigMenuHooks
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
-		row.AddThemeConstantOverride("separation", compactLayout ? 10 : 14);
+		row.AddThemeConstantOverride("separation", compactLayout ? 6 : 8);
 		return row;
 	}
 
@@ -598,7 +1373,7 @@ internal static class HextechRuneConfigMenuHooks
 		};
 	}
 
-	private static RuneIconBinding CreateRuneIcon(RuneConfigEntry entry, HashSet<string> pendingDisabledIds, Label summary)
+	private static RuneIconBinding CreateRuneIcon(RuneConfigEntry entry, HashSet<string> pendingDisabledIds, Action updateSummary)
 	{
 		VBoxContainer root = new()
 		{
@@ -635,8 +1410,8 @@ internal static class HextechRuneConfigMenuHooks
 
 		RuneIconBinding binding = new(entry.Id, root, holder, title);
 		ApplyRuneIconState(binding, !pendingDisabledIds.Contains(entry.Id));
-		AttachRuneToggleInput(root, entry, binding, pendingDisabledIds, summary);
-		AttachRelicHoverTips(root, entry.Relic);
+		AttachRuneToggleInput(root, entry, binding, pendingDisabledIds, updateSummary);
+		AttachRelicHoverTips(root, entry.Relic, GetEnemyHexKind(entry));
 		return binding;
 	}
 
@@ -668,8 +1443,19 @@ internal static class HextechRuneConfigMenuHooks
 				return;
 			}
 
-			RuneIconBinding binding = CreateRuneIcon(target.Entry, state.PendingDisabledIds, state.Summary);
-			state.IconBindings.Add(binding);
+			RuneIconBinding binding = CreateRuneIcon(target.Entry, target.PendingDisabledIds, state.UpdateSummary);
+			if (ReferenceEquals(target.PendingDisabledIds, state.PendingDisabledPlayerIds))
+			{
+				state.PlayerIconBindings.Add(binding);
+			}
+			else if (ReferenceEquals(target.PendingDisabledIds, state.PendingDisabledMonsterHexIds))
+			{
+				state.EnemyIconBindings.Add(binding);
+			}
+			else
+			{
+				state.ForgeIconBindings.Add(binding);
+			}
 			target.Grid.AddChild(binding.Root);
 
 			loadedThisFrame++;
@@ -704,7 +1490,7 @@ internal static class HextechRuneConfigMenuHooks
 		RuneConfigEntry entry,
 		RuneIconBinding binding,
 		HashSet<string> pendingDisabledIds,
-		Label summary)
+		Action updateSummary)
 	{
 		bool pointerPressed = false;
 		bool pointerDragged = false;
@@ -755,7 +1541,7 @@ internal static class HextechRuneConfigMenuHooks
 			if (touch)
 			{
 				int currentToken = pointerToken;
-				_ = ShowTouchHoverTipAfterDelay(root, entry.Relic, currentToken, () => pointerToken == currentToken && pointerPressed && !pointerDragged, () => longPressShown = true);
+				_ = ShowTouchHoverTipAfterDelay(root, entry.Relic, GetEnemyHexKind(entry), currentToken, () => pointerToken == currentToken && pointerPressed && !pointerDragged, () => longPressShown = true);
 			}
 		}
 
@@ -782,7 +1568,7 @@ internal static class HextechRuneConfigMenuHooks
 			if (!pointerDragged && !longPressShown)
 			{
 				root.GetViewport()?.SetInputAsHandled();
-				ToggleRune(entry.Id, binding, pendingDisabledIds, summary);
+				ToggleRune(entry.Id, binding, pendingDisabledIds, updateSummary);
 			}
 			else if (longPressShown)
 			{
@@ -796,6 +1582,7 @@ internal static class HextechRuneConfigMenuHooks
 	private static async Task ShowTouchHoverTipAfterDelay(
 		Control holder,
 		RelicModel relic,
+		MonsterHexKind? monsterHex,
 		int token,
 		Func<bool> shouldShow,
 		Action onShown)
@@ -817,7 +1604,7 @@ internal static class HextechRuneConfigMenuHooks
 			return;
 		}
 
-		ShowRelicHoverTips(holder, relic);
+		ShowRelicHoverTips(holder, relic, monsterHex);
 		onShown();
 		holder.GetViewport()?.SetInputAsHandled();
 	}
@@ -868,7 +1655,7 @@ internal static class HextechRuneConfigMenuHooks
 			: new Color(0.6f, 0.64f, 0.72f, 0.58f);
 	}
 
-	private static void ToggleRune(string id, RuneIconBinding binding, HashSet<string> pendingDisabledIds, Label summary)
+	private static void ToggleRune(string id, RuneIconBinding binding, HashSet<string> pendingDisabledIds, Action updateSummary)
 	{
 		if (pendingDisabledIds.Contains(id))
 		{
@@ -881,7 +1668,7 @@ internal static class HextechRuneConfigMenuHooks
 
 		ApplyRuneIconState(binding, !pendingDisabledIds.Contains(id));
 		PlayRuneToggleFeedback(binding.Root);
-		UpdateSummary(summary, pendingDisabledIds);
+		updateSummary();
 	}
 
 	private static void PlayRuneToggleFeedback(Control root)
@@ -897,17 +1684,20 @@ internal static class HextechRuneConfigMenuHooks
 		tween.TweenProperty(root, "scale", Vector2.One, 0.085f);
 	}
 
-	private static void AttachRelicHoverTips(Control holder, RelicModel relic)
+	private static void AttachRelicHoverTips(Control holder, RelicModel relic, MonsterHexKind? monsterHex = null)
 	{
-		holder.MouseEntered += () => ShowRelicHoverTips(holder, relic);
+		holder.MouseEntered += () => ShowRelicHoverTips(holder, relic, monsterHex);
 		holder.MouseExited += () => NHoverTipSet.Remove(holder);
 		holder.TreeExiting += () => NHoverTipSet.Remove(holder);
 	}
 
-	private static void ShowRelicHoverTips(Control holder, RelicModel relic)
+	private static void ShowRelicHoverTips(Control holder, RelicModel relic, MonsterHexKind? monsterHex = null)
 	{
 		NHoverTipSet.Remove(holder);
-		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, relic.HoverTips, HoverTip.GetHoverTipAlignment(holder));
+		IEnumerable<IHoverTip> hoverTips = monsterHex.HasValue
+			? MonsterHexCatalog.GetEnemyHexHoverTips(monsterHex.Value)
+			: relic.HoverTips;
+		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(holder, hoverTips, HoverTip.GetHoverTipAlignment(holder));
 		if (hoverTipSet == null)
 		{
 			return;
@@ -916,6 +1706,13 @@ internal static class HextechRuneConfigMenuHooks
 		hoverTipSet.ZIndex = HoverTipZIndex;
 		hoverTipSet.ZAsRelative = false;
 		hoverTipSet.SetAlignment(holder, HoverTip.GetHoverTipAlignment(holder));
+	}
+
+	private static MonsterHexKind? GetEnemyHexKind(RuneConfigEntry entry)
+	{
+		return entry.PoolKey == "ENEMY" && Enum.TryParse(entry.Id, out MonsterHexKind monsterHex)
+			? monsterHex
+			: null;
 	}
 
 	private static List<RuneConfigEntry> BuildRuneEntries()
@@ -929,24 +1726,116 @@ internal static class HextechRuneConfigMenuHooks
 			string rarityKey = rarity.ToString().ToUpperInvariant();
 			string poolKey = HextechCatalog.GetPlayerRunePoolKey(relic);
 			string tagKey = HextechCatalog.GetPlayerRuneTagKey(relic);
-				entries.Add(new RuneConfigEntry(
-					id.Entry,
-					relic,
-					relic.Title.GetFormattedText(),
-					new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
-					new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText(),
+			string sourceKey = GetConfigSourceKey(id);
+			string sourceText = GetConfigSourceText(id);
+			entries.Add(new RuneConfigEntry(
+				id.Entry,
+				relic,
+				relic.Title.GetFormattedText(),
+				new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
+				new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText(),
 				new LocString(LocTable, "HEXTECH_TAG." + tagKey).GetRawText(),
 				(int)rarity,
 				poolKey,
-				tagKey));
+				tagKey,
+				sourceKey,
+				sourceText));
 		}
 
 		return entries
 			.OrderBy(static entry => entry.RarityOrder)
+			.ThenBy(static entry => entry.SourceKey, StringComparer.Ordinal)
 			.ThenBy(static entry => entry.PoolKey, StringComparer.Ordinal)
 			.ThenBy(static entry => entry.TagKey, StringComparer.Ordinal)
 			.ThenBy(static entry => entry.Title, StringComparer.CurrentCulture)
 			.ToList();
+	}
+
+	private static List<RuneConfigEntry> BuildEnemyHexEntries()
+	{
+		List<RuneConfigEntry> entries = [];
+		foreach (MonsterHexKind kind in Enum.GetValues<HextechRarityTier>()
+			.SelectMany(MonsterHexCatalog.GetMonsterHexesForRarity))
+		{
+			RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(kind);
+			HextechRarityTier rarity = MonsterHexCatalog.GetMonsterHexRarity(kind);
+			string rarityKey = rarity.ToString().ToUpperInvariant();
+			entries.Add(new RuneConfigEntry(
+				kind.ToString(),
+				relic,
+				relic.Title.GetFormattedText(),
+				new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
+				L("HEXTECH_ENEMY_POOL_TITLE"),
+				string.Empty,
+				(int)rarity,
+				"ENEMY",
+				kind.ToString(),
+				BaseConfigSourceKey,
+				L("HEXTECH_CONFIG_SOURCE_BASE")));
+		}
+
+		return entries
+			.OrderBy(static entry => entry.RarityOrder)
+			.ThenBy(static entry => entry.Title, StringComparer.CurrentCulture)
+			.ToList();
+	}
+
+	private static List<RuneConfigEntry> BuildForgeEntries()
+	{
+		List<RuneConfigEntry> entries = [];
+		foreach (Type forgeType in HextechCatalog.GetAllForgeTypes())
+		{
+			RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(forgeType));
+			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			HextechRarityTier rarity = HextechCatalog.TryGetForgeRarity(relic, out HextechRarityTier resolvedRarity)
+				? resolvedRarity
+				: HextechRarityTier.Gold;
+			string rarityKey = rarity.ToString().ToUpperInvariant();
+			string sourceKey = GetConfigSourceKey(id);
+			string sourceText = GetConfigSourceText(id);
+			entries.Add(new RuneConfigEntry(
+				id.Entry,
+				relic,
+				relic.Title.GetFormattedText(),
+				new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
+				L("HEXTECH_CONFIG_TAB_FORGES"),
+				string.Empty,
+				(int)rarity,
+				"FORGE",
+				forgeType.Name,
+				sourceKey,
+				sourceText));
+		}
+
+		return entries
+			.OrderBy(static entry => entry.RarityOrder)
+			.ThenBy(static entry => entry.SourceKey, StringComparer.Ordinal)
+			.ThenBy(static entry => entry.Title, StringComparer.CurrentCulture)
+			.ToList();
+	}
+
+	private static string GetConfigSourceKey(ModelId id)
+	{
+		string? assetModId = HextechExternalContentRegistry.GetAssetModId(id);
+		return string.IsNullOrWhiteSpace(assetModId) || string.Equals(assetModId, ModInfo.Id, StringComparison.Ordinal)
+			? BaseConfigSourceKey
+			: ExternalConfigSourcePrefix + assetModId;
+	}
+
+	private static string GetConfigSourceText(ModelId id)
+	{
+		string? assetModId = HextechExternalContentRegistry.GetAssetModId(id);
+		if (string.IsNullOrWhiteSpace(assetModId) || string.Equals(assetModId, ModInfo.Id, StringComparison.Ordinal))
+		{
+			return L("HEXTECH_CONFIG_SOURCE_BASE");
+		}
+
+		if (string.Equals(assetModId, SponsorPackModId, StringComparison.Ordinal))
+		{
+			return L("HEXTECH_CONFIG_SOURCE_EXTRA_PACK");
+		}
+
+		return string.Format(L("HEXTECH_CONFIG_SOURCE_EXTERNAL"), assetModId);
 	}
 
 	private static HextechRarityTier GetRuneRarity(Type runeType)
@@ -964,15 +1853,60 @@ internal static class HextechRuneConfigMenuHooks
 		return HextechRarityTier.Gold;
 	}
 
-	private static void UpdateSummary(Label summary, IReadOnlySet<string> pendingDisabledIds)
+	private static void UpdateNumericLabels(IReadOnlyList<NumericValueBinding> bindings)
+	{
+		foreach (NumericValueBinding binding in bindings)
+		{
+			SetLabelText(binding.Number, binding.GetText());
+		}
+	}
+
+	private static void UpdateBooleanToggles(IReadOnlyList<BooleanValueBinding> bindings)
+	{
+		foreach (BooleanValueBinding binding in bindings)
+		{
+			binding.Toggle.SetPressedNoSignal(binding.GetValue());
+		}
+	}
+
+	private static void UpdateSummary(
+		Label summary,
+		int pageIndex,
+		IReadOnlySet<string> pendingDisabledPlayerIds,
+		IReadOnlySet<string> pendingDisabledMonsterHexIds,
+		IReadOnlySet<string> pendingDisabledForgeIds)
 	{
 		HashSet<string> configurableIds = HextechCatalog.GetConfigurablePlayerRuneIds()
 			.Select(static id => id.Entry)
 			.ToHashSet(StringComparer.Ordinal);
-		int total = configurableIds.Count;
-		int disabled = pendingDisabledIds.Count(configurableIds.Contains);
-		int enabled = Math.Max(0, total - disabled);
-		SetLabelText(summary, string.Format(L("HEXTECH_CONFIG_SUMMARY"), enabled, total));
+		int playerTotal = configurableIds.Count;
+		int playerDisabled = pendingDisabledPlayerIds.Count(configurableIds.Contains);
+		int playerEnabled = Math.Max(0, playerTotal - playerDisabled);
+		int enemyTotal = Enum.GetValues<HextechRarityTier>()
+			.SelectMany(MonsterHexCatalog.GetMonsterHexesForRarity)
+			.Count();
+		int enemyDisabled = pendingDisabledMonsterHexIds.Count;
+		int enemyEnabled = Math.Max(0, enemyTotal - enemyDisabled);
+		HashSet<string> forgeIds = HextechCatalog.GetAllForgeTypes()
+			.Select(ModelDb.GetId)
+			.Select(static id => id.Entry)
+			.ToHashSet(StringComparer.Ordinal);
+		int forgeTotal = forgeIds.Count;
+		int forgeDisabled = pendingDisabledForgeIds.Count(forgeIds.Contains);
+		int forgeEnabled = Math.Max(0, forgeTotal - forgeDisabled);
+		string text = pageIndex switch
+		{
+			1 => $"{L("HEXTECH_PLAYER_POOL_TITLE")} {playerEnabled}/{playerTotal}  |  {L("HEXTECH_ENEMY_POOL_TITLE")} {enemyEnabled}/{enemyTotal}",
+			2 => $"{L("HEXTECH_CONFIG_TAB_FORGES")} {forgeEnabled}/{forgeTotal}",
+			_ => string.Empty
+		};
+		summary.Visible = text.Length > 0;
+		SetLabelText(summary, text);
+	}
+
+	private static void UpdateSummary(Label summary, IReadOnlySet<string> pendingDisabledIds)
+	{
+		UpdateSummary(summary, 1, pendingDisabledIds, new HashSet<string>(StringComparer.Ordinal), new HashSet<string>(StringComparer.Ordinal));
 	}
 
 	private static Label CreateLabel(string text, int fontSize, Color color)
@@ -1152,11 +2086,14 @@ internal static class HextechRuneConfigMenuHooks
 		string TagText,
 		int RarityOrder,
 		string PoolKey,
-		string TagKey);
+		string TagKey,
+		string SourceKey,
+		string SourceText);
 
 	private sealed record RuneConfigLoadTarget(
 		RuneConfigEntry Entry,
-		Container Grid);
+		Container Grid,
+		HashSet<string> PendingDisabledIds);
 
 	private sealed record EnemyHexCountBinding(
 		int ActIndex,
@@ -1164,14 +2101,26 @@ internal static class HextechRuneConfigMenuHooks
 
 	private sealed record RuneConfigOverlayState(
 		IReadOnlyList<RuneConfigLoadTarget> LoadTargets,
-		HashSet<string> PendingDisabledIds,
-		List<RuneIconBinding> IconBindings,
-		Label Summary);
+		HashSet<string> PendingDisabledPlayerIds,
+		HashSet<string> PendingDisabledMonsterHexIds,
+		HashSet<string> PendingDisabledForgeIds,
+		List<RuneIconBinding> PlayerIconBindings,
+		List<RuneIconBinding> EnemyIconBindings,
+		List<RuneIconBinding> ForgeIconBindings,
+		Action UpdateSummary);
 
 	private sealed record RuneIconBinding(
 		string Id,
 		Control Root,
 		Control Holder,
 		Label Title);
+
+	private sealed record NumericValueBinding(
+		Func<string> GetText,
+		Label Number);
+
+	private sealed record BooleanValueBinding(
+		Func<bool> GetValue,
+		BaseButton Toggle);
 
 }

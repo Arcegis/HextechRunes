@@ -16,7 +16,6 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Orbs;
@@ -59,11 +58,6 @@ public sealed class FlawlessRune : HextechRelicBase
 
 	private static bool ShouldCountCard(CardModel card)
 	{
-		return IsColorlessCard(card) || HextechRegentGeneratedCardHelper.IsAllowedGeneratedCard(card);
-	}
-
-	private static bool IsColorlessCard(CardModel card)
-	{
-		return card.Pool is ColorlessCardPool || card.VisualCardPool is ColorlessCardPool;
+		return HextechColorlessCardHelper.IsColorlessCard(card);
 	}
 }

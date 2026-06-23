@@ -57,7 +57,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("Replays", 3m),
-		new DynamicVar("DamageMultiplier", 0.25m)
+		new DynamicVar("DamageMultiplier", 0.35m)
 	];
 
 	public override Task BeforeCombatStart()

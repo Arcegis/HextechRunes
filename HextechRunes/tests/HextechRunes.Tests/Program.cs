@@ -1,7 +1,15 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using HextechRunes;
+using MegaCrit.Sts2.Core.Commands.Builders;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Saves.Runs;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes.Tests;
 
@@ -9,6 +17,7 @@ internal static class Program
 {
 	private const int Magic = 0x48585452; // HXTR
 	private const int ChoiceKindActRoll = 1;
+	private const int ChoiceKindRuneSelection = 2;
 	private const int ChoiceKindActSelectionApplied = 3;
 	private const int ChoiceKindEnemyHexAdjustment = 4;
 	private const int ChoiceKindRandomRuneGrant = 6;
@@ -20,12 +29,15 @@ internal static class Program
 		TestCase[] tests =
 		[
 			new(nameof(ActRollRoundTripKeepsHostSnapshot), ActRollRoundTripKeepsHostSnapshot),
-			new(nameof(ActSelectionAppliedRejectsWrongAct), ActSelectionAppliedRejectsWrongAct),
+			new(nameof(RuneSelectionRoundTripRequiresMatchingActAndOrdinal), RuneSelectionRoundTripRequiresMatchingActAndOrdinal),
+			new(nameof(RuneSelectionRejectsWrongActOrOrdinal), RuneSelectionRejectsWrongActOrOrdinal),
+			new(nameof(ActSelectionAppliedRejectsWrongActOrOrdinal), ActSelectionAppliedRejectsWrongActOrOrdinal),
 			new(nameof(EnemyHexAdjustmentRoundTripKeepsAllSlots), EnemyHexAdjustmentRoundTripKeepsAllSlots),
 			new(nameof(EnemyHexAdjustmentRejectsInvalidHex), EnemyHexAdjustmentRejectsInvalidHex),
 			new(nameof(LegacyEnemyHexAdjustmentStillDecodes), LegacyEnemyHexAdjustmentStillDecodes),
 			new(nameof(RandomRuneGrantRoundTripKeepsStableModelIds), RandomRuneGrantRoundTripKeepsStableModelIds),
 			new(nameof(RandomRuneGrantRejectsMalformedStableModelIdList), RandomRuneGrantRejectsMalformedStableModelIdList),
+			new(nameof(RelicOptionSelectionRoundTripRequiresMatchingOptions), RelicOptionSelectionRoundTripRequiresMatchingOptions),
 			new(nameof(StableModelIdListCodecRoundTripsFromNonzeroCursor), StableModelIdListCodecRoundTripsFromNonzeroCursor),
 			new(nameof(StableModelIdListCodecRejectsMalformedLength), StableModelIdListCodecRejectsMalformedLength),
 			new(nameof(PlayerRuneRarityConfigExcludesFullyDisabledTier), PlayerRuneRarityConfigExcludesFullyDisabledTier),
@@ -33,8 +45,15 @@ internal static class Program
 			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
 			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
+			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
+			new(nameof(DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights), DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights),
+			new(nameof(StableRandomSequentialFloorsAvoidExcessClustering), StableRandomSequentialFloorsAvoidExcessClustering),
+			new(nameof(StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle), StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle),
+			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
+			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
+			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
 			new(nameof(EnemyHexCountStateNormalizesMissingAndOutOfRangeValues), EnemyHexCountStateNormalizesMissingAndOutOfRangeValues),
 			new(nameof(EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct), EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct),
 			new(nameof(PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot), PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot),
@@ -57,10 +76,22 @@ internal static class Program
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
+			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
+			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
+			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
+			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
+			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
+			new(nameof(CompensationReplacementDoomGuardScopesAsyncWork), CompensationReplacementDoomGuardScopesAsyncWork),
+			new(nameof(CompensationReplacementDoomSuppressesSleightOfFleshResponse), CompensationReplacementDoomSuppressesSleightOfFleshResponse),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
-			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks)
+			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks),
+			new(nameof(ExternalConfigDisabledIdsPreserveUnloadedContent), ExternalConfigDisabledIdsPreserveUnloadedContent),
+			new(nameof(ExternalPlayerRuneRegistrationUpdatesCatalog), ExternalPlayerRuneRegistrationUpdatesCatalog),
+			new(nameof(ExternalEventRelicRegistrationUpdatesRegistry), ExternalEventRelicRegistrationUpdatesRegistry),
+			new(nameof(ExternalForgeRegistrationUpdatesCatalog), ExternalForgeRegistrationUpdatesCatalog),
+			new(nameof(ExternalEnchantmentIconRegistrationTracksPath), ExternalEnchantmentIconRegistrationTracksPath)
 		];
 
 		int failed = 0;
@@ -88,6 +119,26 @@ internal static class Program
 			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
 			.First();
 		HashSet<string> disabledIds = [ disabledRune.Entry ];
+		string disabledForgeId = HextechCatalog.GetAllForgeTypes()
+			.Select(ModelDb.GetId)
+			.OrderBy(static id => id.Entry, StringComparer.Ordinal)
+			.First()
+			.Entry;
+		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot() with
+		{
+			PlayerHexCountsByAct = [ 2, 0, 8 ],
+			EnemyHexCountsByAct = [ -1, 7, 3 ],
+			DisabledPlayerRuneIds = disabledIds,
+			DisabledMonsterHexIds = [ MonsterHexKind.FrostWraith.ToString() ],
+			DisabledForgeIds = [ disabledForgeId ],
+			FirstActRuneRarityWeights = new HextechRarityWeights(1, 2, 3),
+			NormalRuneRarityWeights = new HextechRarityWeights(4, 5, 6),
+			SecondActAfterSilverRuneRarityWeights = new HextechRarityWeights(0, 7, 8),
+			ForgeRarityWeights = new HextechForgeRarityWeights(9, 10, 11),
+			RandomForgeShopPrice = 123,
+			PlayerRuneRerollLimit = 8,
+			MonsterHexRerollLimit = HextechRuneConfiguration.InfiniteRerollLimit
+		};
 
 		PlayerChoiceResult result = HextechChoiceCodec.CreateActRoll(
 			actIndex: 1,
@@ -95,7 +146,8 @@ internal static class Program
 			monsterHex: MonsterHexKind.ShrinkRay,
 			hostUsesBetterMultiplayerScaling: true,
 			enemyHexCountsByAct: [ -1, 7, 3 ],
-			disabledPlayerRuneIds: disabledIds);
+			disabledPlayerRuneIds: disabledIds,
+			runConfigurationSnapshot: snapshot);
 
 		Expect(HextechChoiceCodec.TryDecodeActRoll(
 			result,
@@ -104,25 +156,71 @@ internal static class Program
 			out MonsterHexKind? monsterHex,
 			out bool hostUsesBetterMultiplayerScaling,
 			out int[] enemyHexCountsByAct,
-			out HashSet<string> decodedDisabledIds), "act roll should decode");
+			out HashSet<string> decodedDisabledIds,
+			out HextechRunConfigurationSnapshot decodedSnapshot), "act roll should decode");
 
 		Equal(HextechRarityTier.Gold, rarity, "rarity");
 		Equal(MonsterHexKind.ShrinkRay, monsterHex, "monster hex");
 		Equal(true, hostUsesBetterMultiplayerScaling, "host scaling flag");
 		SequenceEqual(new[] { 0, 6, 3 }, enemyHexCountsByAct, "enemy count snapshot");
 		Expect(decodedDisabledIds.Contains(disabledRune.Entry), "disabled player rune id should round-trip");
+		SequenceEqual(new[] { 2, 0, 6 }, decodedSnapshot.PlayerHexCountsByAct, "player count snapshot");
+		SetEqual([ MonsterHexKind.FrostWraith.ToString() ], decodedSnapshot.DisabledMonsterHexIds, "disabled monster hex ids");
+		SetEqual([ disabledForgeId ], decodedSnapshot.DisabledForgeIds, "disabled forge ids");
+		Equal(123, decodedSnapshot.RandomForgeShopPrice, "forge shop price");
+		Equal(8, decodedSnapshot.PlayerRuneRerollLimit, "player reroll limit");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, decodedSnapshot.MonsterHexRerollLimit, "monster reroll limit");
+		Equal(10, decodedSnapshot.ForgeRarityWeights.Gold, "forge rarity weight");
 		Expect(!HextechChoiceCodec.TryDecodeActRoll(result, 0, out _, out _, out _, out _, out _), "wrong act should be rejected");
 	}
 
-	private static void ActSelectionAppliedRejectsWrongAct()
+	private static void RuneSelectionRoundTripRequiresMatchingActAndOrdinal()
 	{
-		PlayerChoiceResult result = HextechChoiceCodec.CreateActSelectionApplied(2);
+		RelicModel[] finalOptions = CreateRuneSelectionTestOptions(3);
+		ModelId[] finalOptionIds = finalOptions
+			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.ToArray();
+		PlayerChoiceResult result = HextechChoiceCodec.CreateRuneSelection(
+			actIndex: 1,
+			choiceOrdinal: 2,
+			selectedIndex: 1,
+			rerollHistory: [ 2, 0 ],
+			finalOptions);
 
-		Expect(HextechChoiceCodec.TryDecodeActSelectionApplied(result, 2), "matching act should decode");
-		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(result, 1), "wrong act should be rejected");
+		Expect(HextechChoiceCodec.IsRuneSelection(result), "rune selection kind predicate should decode");
+		Expect(HextechChoiceCodec.IsRuneSelection(result, 1, 2), "matching rune selection act and ordinal should decode");
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> decodedFinalOptionIds), "matching rune selection should decode");
+		Equal(1, selectedIndex, "selected index");
+		SequenceEqual(new[] { 2, 0 }, rerollHistory, "reroll history");
+		SequenceEqual(finalOptionIds, decodedFinalOptionIds, "final option ids");
+	}
 
-		PlayerChoiceResult malformed = PlayerChoiceResult.FromIndexes(new List<int> { Magic, ChoiceKindActSelectionApplied, 2, 0 });
-		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(malformed, 2), "missing applied flag should be rejected");
+	private static void RuneSelectionRejectsWrongActOrOrdinal()
+	{
+		PlayerChoiceResult result = HextechChoiceCodec.CreateRuneSelection(
+			actIndex: 1,
+			choiceOrdinal: 2,
+			selectedIndex: 0,
+			rerollHistory: [],
+			CreateRuneSelectionTestOptions(3));
+
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 0, 2, out _, out _, out _), "wrong rune selection act should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 1, out _, out _, out _), "wrong rune selection ordinal should be rejected");
+
+		PlayerChoiceResult malformed = PlayerChoiceResult.FromIndexes(new List<int> { Magic, ChoiceKindRuneSelection, 1, 2, 0, 2, 0 });
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(malformed, 1, 2, out _, out _, out _), "malformed rune selection should be rejected");
+	}
+
+	private static void ActSelectionAppliedRejectsWrongActOrOrdinal()
+	{
+		PlayerChoiceResult result = HextechChoiceCodec.CreateActSelectionApplied(2, 3);
+
+		Expect(HextechChoiceCodec.TryDecodeActSelectionApplied(result, 2, 3), "matching act and ordinal should decode");
+		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(result, 1, 3), "wrong act should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(result, 2, 2), "wrong ordinal should be rejected");
+
+		PlayerChoiceResult malformed = PlayerChoiceResult.FromIndexes(new List<int> { Magic, ChoiceKindActSelectionApplied, 2, 3, 0 });
+		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(malformed, 2, 3), "missing applied flag should be rejected");
 	}
 
 	private static void EnemyHexAdjustmentRoundTripKeepsAllSlots()
@@ -232,6 +330,22 @@ internal static class Program
 		Expect(!HextechChoiceCodec.TryDecodeRandomRuneGrant(badSerializedId, out _), "malformed model id should be rejected");
 	}
 
+	private static void RelicOptionSelectionRoundTripRequiresMatchingOptions()
+	{
+		RelicModel[] options = CreateRuneSelectionTestOptions(2);
+		ModelId[] optionIds = options
+			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.ToArray();
+		PlayerChoiceResult result = HextechChoiceCodec.CreateRelicOptionSelection(1, options);
+
+		Expect(HextechChoiceCodec.IsRelicOptionSelection(result, options), "matching relic option selection should be expected");
+		Expect(HextechChoiceCodec.TryDecodeRelicOptionSelection(result, out int selectedIndex, out List<ModelId> decodedOptionIds), "relic option selection should decode");
+		Equal(1, selectedIndex, "selected relic option index");
+		SequenceEqual(optionIds, decodedOptionIds, "relic option ids");
+		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, options.Reverse().ToArray()), "reordered relic options should not be expected");
+		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, CreateRuneSelectionTestOptions(3)), "different relic option count should not be expected");
+	}
+
 	private static void NetworkChoiceTimeoutUsesNominalWallClockSeconds()
 	{
 		Equal(TimeSpan.Zero, HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(0), "zero timeout");
@@ -335,6 +449,143 @@ internal static class Program
 		Equal(2, HextechRunePoolBuilder.SelectWeightedIndex(weights, 999), "overflow clamps to last slot");
 	}
 
+	private static void DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune()
+	{
+		HextechForgeRarityWeights weights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
+			new HextechForgeRarityWeights(65, 25, 10),
+			hasDiceManiac: false);
+
+		Equal(65, weights.Silver, "silver weight");
+		Equal(25, weights.Gold, "gold weight");
+		Equal(10, weights.Prismatic, "prismatic weight");
+		Equal(100, weights.Total, "total weight");
+	}
+
+	private static void DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights()
+	{
+		HextechForgeRarityWeights defaultWeights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
+			new HextechForgeRarityWeights(65, 25, 10),
+			hasDiceManiac: true);
+		Equal(65, defaultWeights.Silver, "default silver weight");
+		Equal(50, defaultWeights.Gold, "default gold weight");
+		Equal(20, defaultWeights.Prismatic, "default prismatic weight");
+		Equal(135, defaultWeights.Total, "default total weight");
+
+		HextechForgeRarityWeights customWeights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
+			new HextechForgeRarityWeights(10, 20, 30),
+			hasDiceManiac: true);
+		Equal(10, customWeights.Silver, "custom silver weight");
+		Equal(40, customWeights.Gold, "custom gold weight");
+		Equal(60, customWeights.Prismatic, "custom prismatic weight");
+		Equal(110, customWeights.Total, "custom total weight");
+	}
+
+	private static void StableRandomSequentialFloorsAvoidExcessClustering()
+	{
+		const int seedCount = 2048;
+		const int floorCount = 24;
+		double[] hitRates = new double[seedCount];
+		double lagX = 0;
+		double lagY = 0;
+		double lagXX = 0;
+		double lagYY = 0;
+		double lagXY = 0;
+		int lagPairs = 0;
+
+		for (int seedIndex = 0; seedIndex < seedCount; seedIndex++)
+		{
+			string seed = $"TEST-SEED-{seedIndex:00000}";
+			int hits = 0;
+			int previousHit = -1;
+			for (int floor = 1; floor <= floorCount; floor++)
+			{
+				int roll = HextechStableRandom.IndexFromRawParts(
+					100,
+					seed,
+					"|act:",
+					"0",
+					"|floor:",
+					floor.ToString(),
+					"|",
+					"dice-maniac-forge-reward",
+					"|",
+					"0:1",
+					"|",
+					"7");
+				int hit = roll < 50 ? 1 : 0;
+				hits += hit;
+				if (previousHit >= 0)
+				{
+					lagX += previousHit;
+					lagY += hit;
+					lagXX += previousHit * previousHit;
+					lagYY += hit * hit;
+					lagXY += previousHit * hit;
+					lagPairs++;
+				}
+
+				previousHit = hit;
+			}
+
+			hitRates[seedIndex] = (double)hits / floorCount;
+		}
+
+		double mean = hitRates.Average();
+		double variance = hitRates.Select(rate => (rate - mean) * (rate - mean)).Average();
+		double stdev = Math.Sqrt(variance);
+		double lagMeanX = lagX / lagPairs;
+		double lagMeanY = lagY / lagPairs;
+		double lagVarianceX = lagXX / lagPairs - lagMeanX * lagMeanX;
+		double lagVarianceY = lagYY / lagPairs - lagMeanY * lagMeanY;
+		double lagCorrelation = (lagXY / lagPairs - lagMeanX * lagMeanY) / Math.Sqrt(lagVarianceX * lagVarianceY);
+
+		Expect(mean is > 0.48 and < 0.52, $"stable random 50% mean should stay unbiased, got {mean:F4}");
+		Expect(stdev < 0.11, $"stable random sequential floor stdev should not show excess clustering, got {stdev:F4}");
+		Expect(Math.Abs(lagCorrelation) < 0.02, $"stable random lag-1 correlation should stay near zero, got {lagCorrelation:F4}");
+	}
+
+	private static void StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle()
+	{
+		int[] circleTargets = Enumerable.Range(0, 8)
+			.Select(historyCount => HextechStableRandom.IndexFromRawParts(
+				4,
+				"TEST-SEED",
+				"|act:",
+				"0",
+				"|floor:",
+				"12",
+				"|",
+				"circle-of-death-target",
+				"|",
+				"0:1",
+				"|",
+				"1",
+				"|",
+				"12",
+				"|",
+				historyCount.ToString()))
+			.ToArray();
+
+		int[] miseryTargets = Enumerable.Range(1, 8)
+			.Select(roundNumber => HextechStableRandom.IndexFromRawParts(
+				4,
+				"TEST-SEED",
+				"|act:",
+				"0",
+				"|floor:",
+				"12",
+				"|",
+				"misery-target",
+				"|",
+				"0:1",
+				"|",
+				roundNumber.ToString()))
+			.ToArray();
+
+		Expect(!IsModuloStepCycle(circleTargets, 4), $"circle-of-death target sequence should not be a fixed modulo cycle: [{string.Join(", ", circleTargets)}]");
+		Expect(!IsModuloStepCycle(miseryTargets, 4), $"misery target sequence should not be a fixed modulo cycle: [{string.Join(", ", miseryTargets)}]");
+	}
+
 	private static void ActSelectionGatePreventsReentryAndClearsCurrentRun()
 	{
 		HextechActSelectionGate gate = new();
@@ -366,12 +617,46 @@ internal static class Program
 
 	private static void EnemyHexCountStateNormalizesMissingAndOutOfRangeValues()
 	{
-		SequenceEqual(new[] { 1, 1, 1 }, HextechEnemyHexCountState.Normalize(null), "null count snapshot");
-		SequenceEqual(new[] { 0, 6, 1 }, HextechEnemyHexCountState.Normalize([ -1, 7 ]), "partial clamped count snapshot");
+		SequenceEqual(new[] { 1, 1, 1 }, HextechPlayerHexCountState.Normalize(null), "null player count snapshot");
+		SequenceEqual(new[] { 1, 2, 3 }, HextechEnemyHexCountState.Normalize(null), "null enemy count snapshot");
+		SequenceEqual(new[] { 0, 6, 3 }, HextechEnemyHexCountState.Normalize([ -1, 7 ]), "partial clamped enemy count snapshot");
 
 		HextechEnemyHexCountState state = new();
 		state.Set([ 2, 3, 4, 5 ]);
 		SequenceEqual(new[] { 2, 3, 4 }, state.Snapshot, "state should keep exactly three normalized act counts");
+	}
+
+	private static void RunConfigurationDefaultSnapshotUsesExpectedActCounts()
+	{
+		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
+		SequenceEqual(new[] { 1, 1, 1 }, snapshot.PlayerHexCountsByAct, "default player act counts");
+		SequenceEqual(new[] { 1, 2, 3 }, snapshot.EnemyHexCountsByAct, "default enemy act counts");
+		Equal(1, snapshot.PlayerRuneRerollLimit, "default player reroll limit");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, snapshot.MonsterHexRerollLimit, "default monster reroll limit");
+	}
+
+	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
+	{
+		Equal(0, HextechRuneConfiguration.StepRerollLimit(0, -1), "zero stays zero on decrement");
+		Equal(1, HextechRuneConfiguration.StepRerollLimit(0, 1), "zero increments to one");
+		Equal(9, HextechRuneConfiguration.StepRerollLimit(8, 1), "eight increments to nine");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, HextechRuneConfiguration.StepRerollLimit(9, 1), "nine increments to infinite");
+		Equal(9, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, -1), "infinite decrements to nine");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, 1), "infinite stays infinite on increment");
+		Equal(9, HextechRuneConfiguration.ClampRerollLimit(99), "finite values clamp to nine");
+	}
+
+	private static void RandomForgeShopRelicUpdatesDisplayedPrice()
+	{
+		RandomForgeShopRelic relic = new();
+
+		Equal(HextechRuneConfiguration.GetDefaultRandomForgeShopPrice(), relic.DynamicVars["Price"].IntValue, "default displayed forge price");
+		relic.SetDisplayedPrice(777);
+		Equal(777, relic.DynamicVars["Price"].IntValue, "updated displayed forge price");
+		relic.SetDisplayedPrice(99999);
+		Equal(9999, relic.DynamicVars["Price"].IntValue, "displayed forge price clamps to config maximum");
+		relic.SetDisplayedPrice(-12);
+		Equal(0, relic.DynamicVars["Price"].IntValue, "displayed forge price clamps to config minimum");
 	}
 
 	private static void EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct()
@@ -449,8 +734,9 @@ internal static class Program
 		context.EnemyTezcatarasMercyCombatCounter = 4;
 		context.HostUsesBetterMultiplayerScaling = true;
 
-		context.ResetForNewRun([ 2, 7, -1 ]);
+		context.ResetForNewRun([ 7, -1, 2 ], [ 2, 7, -1 ]);
 
+		SequenceEqual(new[] { 6, 0, 2 }, context.PlayerHexCounts.Snapshot, "new-run player count snapshot");
 		SequenceEqual(new[] { 2, 6, 0 }, context.EnemyHexCounts.Snapshot, "new-run enemy count snapshot");
 		Equal(0, context.HexCountRecoveryBaseline, "new-run recovery baseline");
 		Equal(0, context.MonsterHexStrengthTierFloor, "new-run strength floor");
@@ -494,7 +780,7 @@ internal static class Program
 
 		context.ResetForDebugMonsterHex(2, MonsterHexKind.PandorasBox, HextechRarityTier.Prismatic);
 
-		SequenceEqual(new[] { 1, 1, 1 }, context.EnemyHexCounts.Snapshot, "debug reset enemy count snapshot");
+		SequenceEqual(new[] { 1, 2, 3 }, context.EnemyHexCounts.Snapshot, "debug reset enemy count snapshot");
 		Equal(0, context.HexCountRecoveryBaseline, "debug reset recovery baseline");
 		Equal(0, context.MonsterHexStrengthTierFloor, "debug reset strength floor");
 		Equal(0, context.EnemyTezcatarasMercyCombatCounter, "debug reset tezcataras counter");
@@ -685,14 +971,24 @@ internal static class Program
 	private static void MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		MonsterHexRegistration disabled = metadata.Registrations.First(static registration => registration.Disabled);
+		MonsterHexRegistration[] disabledRegistrations = metadata.Registrations
+			.Where(static registration => registration.Disabled)
+			.ToArray();
+		if (disabledRegistrations.Length == 0)
+		{
+			Expect(metadata.DisabledKinds.Count == 0, "no disabled monster hexes should leave disabled set empty");
+			Expect(!metadata.EnabledKindsByRarity.Values.Any(kinds => kinds.Any(kind => metadata.DisabledKinds.Contains(kind))), "rarity pools should not contain disabled monster hexes");
+			Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
+			return;
+		}
 
-		Expect(metadata.AllKinds.Contains(disabled.Kind), "disabled monster hex should stay in all-kinds set");
-		Expect(metadata.DisabledKinds.Contains(disabled.Kind), "disabled monster hex should stay in disabled set");
-		Expect(!metadata.IsEnabled(disabled.Kind), "disabled monster hex should not be enabled");
-		Expect(!metadata.EnabledKindsByRarity[disabled.Rarity].Contains(disabled.Kind), "disabled monster hex should not appear in rarity pool");
-		Expect(metadata.TryGetRegistration(disabled.Kind, out MonsterHexRegistration decoded), "disabled monster hex registration should decode");
-		Equal(disabled.IconRelicType, decoded.IconRelicType, "disabled monster hex icon relic type");
+		MonsterHexRegistration disabledRegistration = disabledRegistrations[0];
+		Expect(metadata.AllKinds.Contains(disabledRegistration.Kind), "disabled monster hex should stay in all-kinds set");
+		Expect(metadata.DisabledKinds.Contains(disabledRegistration.Kind), "disabled monster hex should stay in disabled set");
+		Expect(!metadata.IsEnabled(disabledRegistration.Kind), "disabled monster hex should not be enabled");
+		Expect(!metadata.EnabledKindsByRarity[disabledRegistration.Rarity].Contains(disabledRegistration.Kind), "disabled monster hex should not appear in rarity pool");
+		Expect(metadata.TryGetRegistration(disabledRegistration.Kind, out MonsterHexRegistration decoded), "disabled monster hex registration should decode");
+		Equal(disabledRegistration.IconRelicType, decoded.IconRelicType, "disabled monster hex icon relic type");
 		Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
 	}
 
@@ -702,6 +998,89 @@ internal static class Program
 		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new AdaptablePower()), "adaptable power should be structural");
 		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new SandpitPower()), "sandpit power should be structural");
 		Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new StrengthPower()), "ordinary strength should not be structural");
+	}
+
+	private static void EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum()
+	{
+		Equal(0, CompensationEnemyHex.CalculateReplacementPoison(0m), "zero damage replacement poison");
+		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(1m), "one damage replacement poison");
+		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(2m), "two damage replacement poison");
+		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(3m), "three damage replacement poison");
+		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(5m), "five damage replacement poison");
+		Equal(2, CompensationEnemyHex.CalculateReplacementPoison(6m), "six damage replacement poison");
+		Equal(333, CompensationEnemyHex.CalculateReplacementPoison(999m), "large damage replacement poison");
+	}
+
+	private static void EnemyCompensationSkipsPoisonDamageSignature()
+	{
+		Expect(
+			CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, null),
+			"unblockable unpowered damage without dealer or card should match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable, null, null),
+			"missing unpowered flag should not match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unpowered, null, null),
+			"missing unblockable flag should not match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature)), null),
+			"damage with dealer should not match poison damage signature");
+		Expect(
+			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, UninitializedCard<SovereignBlade>()),
+			"damage with card source should not match poison damage signature");
+	}
+
+	private static void ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless()
+	{
+		Expect(HextechColorlessCardHelper.IsColorlessCard(UninitializedCard<SovereignBlade>()), "sovereign blade should count as colorless");
+		Expect(HextechColorlessCardHelper.IsColorlessCard(UninitializedCard<MinionStrike>()), "minion strike should count as colorless");
+		Expect(HextechColorlessCardHelper.IsColorlessCard(UninitializedCard<MinionDiveBomb>()), "minion dive bomb should count as colorless");
+		Expect(HextechColorlessCardHelper.IsColorlessCard(UninitializedCard<MinionSacrifice>()), "minion sacrifice should count as colorless");
+	}
+
+	private static T UninitializedCard<T>() where T : CardModel
+	{
+		return (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
+	}
+
+	private static void CompensationReplacementDoomGuardScopesAsyncWork()
+	{
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should start inactive");
+		TaskCompletionSource gate = new();
+		bool sawActiveBeforeAwait = false;
+		bool sawActiveAfterAwait = false;
+		Task guarded = HextechCombatHooks.RunWithCompensationReplacementDoomGuard(async () =>
+		{
+			sawActiveBeforeAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+			await gate.Task;
+			sawActiveAfterAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+		});
+
+		Expect(sawActiveBeforeAwait, "compensation doom guard should be active before guarded work awaits");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should not leak to caller context");
+		gate.SetResult();
+		guarded.GetAwaiter().GetResult();
+		Expect(sawActiveAfterAwait, "compensation doom guard should remain active after await inside guarded work");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should reset after guarded work");
+	}
+
+	private static void CompensationReplacementDoomSuppressesSleightOfFleshResponse()
+	{
+		Expect(
+			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true),
+			"sleight response should not be suppressed outside compensation replacement doom");
+
+		bool suppressedInsideGuard = false;
+		HextechCombatHooks.RunWithCompensationReplacementDoomGuard(() =>
+		{
+			suppressedInsideGuard = HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement doom");
+		Expect(
+			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(false),
+			"sleight response should not be suppressed when the power change would not trigger sleight");
 	}
 
 	private static void PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries()
@@ -787,6 +1166,138 @@ internal static class Program
 		SequenceEqual(rarityPool.Where(hex => hex != currentHex), fallbackPool, "reroll pool should fall back to non-current rarity pool when known exclusions exhaust it");
 	}
 
+	private static void ExternalPlayerRuneRegistrationUpdatesCatalog()
+	{
+		Type runeType = typeof(ExternalRegistrationTestRune);
+		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should not be visible before registration");
+		HextechRunesApi.RegisterPlayerRune<ExternalRegistrationTestRune>(
+			HextechRarityTier.Gold,
+			tagKey: "COMPREHENSIVE",
+			assetModId: "HextechRunes.Tests");
+		Expect(HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should be visible after registration");
+		Expect(HextechCatalog.IsPlayerRuneTypeConfigurable(runeType), "external rune should be configurable after registration");
+		Expect(HextechCatalog.IsPlayerRuneTypeSelectable(runeType), "external rune should be selectable after registration");
+		Expect(HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Gold).Contains(runeType), "external rune should enter rarity pool");
+		Expect(HextechCatalog.GetAllConfigurableRuneTypes().Contains(runeType), "external rune should enter configurable rune type pool");
+		Expect(HextechCatalog.GetConfigurablePlayerRuneIds().Contains(ModelDb.GetId(runeType)), "external rune should enter configurable rune id pool");
+	}
+
+	private static void ExternalEventRelicRegistrationUpdatesRegistry()
+	{
+		Type relicType = typeof(ExternalRegistrationEventRelic);
+		Expect(!HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should not be registered initially");
+		HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests");
+		Expect(HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should be registered");
+	}
+
+	private static void ExternalForgeRegistrationUpdatesCatalog()
+	{
+		Type forgeType = typeof(ExternalRegistrationForge);
+		Expect(!HextechContentRegistry.AllForgeTypes.Contains(forgeType), "external forge should not be registered initially");
+		HextechRunesApi.RegisterForge<ExternalRegistrationForge>(HextechRarityTier.Prismatic, "HextechRunes.Tests");
+		Expect(HextechContentRegistry.AllForgeTypes.Contains(forgeType), "external forge should enter all forge types");
+		Expect(HextechContentRegistry.PrismaticForgeTypes.Contains(forgeType), "external forge should enter prismatic pool");
+		Expect(HextechCatalog.GetForgeTypesForRarity(HextechRarityTier.Prismatic).Contains(forgeType), "external forge should enter catalog rarity pool");
+		string forgeId = ModelDb.GetId(forgeType).Entry;
+		Expect(HextechRuneConfiguration.NormalizeDisabledForgeIds([ forgeId ]).Contains(forgeId), "external forge should be accepted by disabled forge config");
+	}
+
+	private static void ExternalConfigDisabledIdsPreserveUnloadedContent()
+	{
+		const string unloadedRuneId = "ExternalMod.UnloadedRune";
+		const string unloadedForgeId = "ExternalMod.UnloadedForge";
+
+		SetEqual(
+			[ unloadedRuneId ],
+			HextechPlayerRuneConfigIds.Normalize([ unloadedRuneId, unloadedRuneId, " " ]),
+			"unloaded external rune disabled id should be preserved");
+		SetEqual(
+			[ unloadedForgeId ],
+			HextechRuneConfiguration.NormalizeDisabledForgeIds([ unloadedForgeId, unloadedForgeId, " " ]),
+			"unloaded external forge disabled id should be preserved");
+	}
+
+	private static void ExternalEnchantmentIconRegistrationTracksPath()
+	{
+		ModelId id = ModelDb.GetId<ExternalRegistrationEnchantment>();
+		const string iconPath = "res://HextechRunes.Tests/images/enchantments/externalRegistrationEnchantment.png";
+		Expect(HextechExternalContentRegistry.GetEnchantmentIconPath(id) == null, "external enchantment icon should not be registered initially");
+		HextechRunesApi.RegisterEnchantmentIcon<ExternalRegistrationEnchantment>(iconPath);
+		Equal(iconPath, HextechExternalContentRegistry.GetEnchantmentIconPath(id), "external enchantment icon path");
+
+		SavedProperties? props = SavedProperties.FromInternal(new ExternalRegistrationEnchantment(), id);
+		Expect(
+			props?.ints?.Any(static property => property.name == "PersistentCounter" && property.value == 7) == true,
+			"external enchantment saved property should be registered");
+	}
+
+	private static void IllusoryWeaponPenNibPrefixesCanReturnSkippedTask()
+	{
+		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPrefix");
+		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibAfterCardPlayedPrefix");
+	}
+
+	private static void AttackCommandCompatibilityRestoresNullExecuteResult()
+	{
+		AttackCommand command = new(1m);
+		AttackCommand result = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult<AttackCommand>(null!), command).GetAwaiter().GetResult();
+		Expect(ReferenceEquals(command, result), "null AttackCommand.Execute result should fall back to command instance");
+
+		AttackCommand completed = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult(command), new AttackCommand(2m)).GetAwaiter().GetResult();
+		Expect(ReferenceEquals(command, completed), "non-null AttackCommand.Execute result should be preserved");
+	}
+
+	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string methodName)
+	{
+		MethodInfo? method = typeof(HextechPlayerRuneHooks).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+		if (method == null)
+		{
+			throw new InvalidOperationException($"{methodName} should exist");
+		}
+
+		ParameterInfo? resultParameter = method.GetParameters().SingleOrDefault(static parameter => parameter.Name == "__result");
+		if (resultParameter == null)
+		{
+			throw new InvalidOperationException($"{methodName} should expose Harmony __result");
+		}
+
+		Equal(typeof(Task).MakeByRefType(), resultParameter.ParameterType, $"{methodName} __result type");
+	}
+
+	private sealed class ExternalRegistrationTestRune : HextechRelicBase
+	{
+	}
+
+	private sealed class ExternalRegistrationEventRelic : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
+	private sealed class ExternalRegistrationForge : HextechForgeBase
+	{
+	}
+
+	private sealed class ExternalRegistrationEnchantment : EnchantmentModel
+	{
+		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+		private int PersistentCounter { get; set; } = 7;
+	}
+
+	private sealed class RuneSelectionTestRelicA : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
+	private sealed class RuneSelectionTestRelicB : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
+	private sealed class RuneSelectionTestRelicC : RelicModel
+	{
+		public sealed override RelicRarity Rarity => RelicRarity.Event;
+	}
+
 	private static (HextechRarityTier Rarity, IReadOnlyList<MonsterHexKind> Pool) GetMonsterHexPoolWithMinimum(int minimumCount)
 	{
 		foreach (HextechRarityTier rarity in Enum.GetValues<HextechRarityTier>())
@@ -799,6 +1310,17 @@ internal static class Program
 		}
 
 		throw new InvalidOperationException($"no monster hex rarity pool has at least {minimumCount} entries");
+	}
+
+	private static RelicModel[] CreateRuneSelectionTestOptions(int count)
+	{
+		RelicModel[] options =
+		[
+			new RuneSelectionTestRelicA(),
+			new RuneSelectionTestRelicB(),
+			new RuneSelectionTestRelicC()
+		];
+		return options.Take(count).ToArray();
 	}
 
 	private static ModelId TestMonsterHexIconId(MonsterHexKind kind)
@@ -840,6 +1362,31 @@ internal static class Program
 		{
 			throw new InvalidOperationException($"{label}: expected [{string.Join(", ", expectedSet)}], got [{string.Join(", ", actualSet)}]");
 		}
+	}
+
+	private static bool IsModuloStepCycle(IReadOnlyList<int> values, int modulo)
+	{
+		if (values.Count < 3)
+		{
+			return false;
+		}
+
+		int step = PositiveModulo(values[1] - values[0], modulo);
+		for (int i = 2; i < values.Count; i++)
+		{
+			if (PositiveModulo(values[i] - values[i - 1], modulo) != step)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private static int PositiveModulo(int value, int modulo)
+	{
+		int result = value % modulo;
+		return result < 0 ? result + modulo : result;
 	}
 
 	private readonly record struct TestCase(string Name, Action Run);

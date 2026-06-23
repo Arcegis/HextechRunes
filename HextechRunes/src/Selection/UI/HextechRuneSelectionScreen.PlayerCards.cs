@@ -131,7 +131,7 @@ internal sealed partial class HextechRuneSelectionScreen
 
 	private Button CreateRerollButton(int slotIndex)
 	{
-		bool alreadyRerolled = _rerolledSlots.ElementAtOrDefault(slotIndex);
+		bool rerollLimitReached = IsPlayerRuneRerollLimitReached(slotIndex);
 		Button button = new()
 		{
 			Name = $"RerollButton_{slotIndex}",
@@ -139,7 +139,7 @@ internal sealed partial class HextechRuneSelectionScreen
 			FocusMode = FocusModeEnum.All,
 			MouseDefaultCursorShape = CursorShape.PointingHand,
 			CustomMinimumSize = PlayerRerollButtonSize,
-			Disabled = alreadyRerolled
+			Disabled = rerollLimitReached
 		};
 		StyleBoxFlat transparentStyle = CreateRerollStyle(new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, 0f));
 		transparentStyle.SetBorderWidthAll(0);
@@ -161,7 +161,7 @@ internal sealed partial class HextechRuneSelectionScreen
 			SelfModulate = Colors.White
 		};
 		icon.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-		ApplyRerollButtonVisualState(button, icon, alreadyRerolled, hovered: false);
+		ApplyRerollButtonVisualState(button, icon, rerollLimitReached, hovered: false);
 		if (icon.Texture == null)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.CreateRerollButton: failed to load reroll button texture path={RerollButtonTexturePath}");
@@ -171,12 +171,12 @@ internal sealed partial class HextechRuneSelectionScreen
 		button.MouseEntered += () =>
 		{
 			hovered = true;
-			ApplyRerollButtonVisualState(button, icon, alreadyRerolled, hovered);
+			ApplyRerollButtonVisualState(button, icon, rerollLimitReached, hovered);
 		};
 		button.MouseExited += () =>
 		{
 			hovered = false;
-			ApplyRerollButtonVisualState(button, icon, alreadyRerolled, hovered);
+			ApplyRerollButtonVisualState(button, icon, rerollLimitReached, hovered);
 		};
 		button.Pressed += () =>
 		{

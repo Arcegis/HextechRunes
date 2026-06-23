@@ -10,7 +10,8 @@ internal static class HextechMayhemActRecovery
 		RunState runState,
 		HextechMayhemActState actState,
 		HextechMayhemChoiceHistoryState choiceHistory,
-		int hexCountRecoveryBaseline)
+		int hexCountRecoveryBaseline,
+		IReadOnlyList<int> playerHexCountsByAct)
 	{
 		int currentActIndex = Math.Min(runState.CurrentActIndex, actState.ActCount - 1);
 		if (currentActIndex < 0 || runState.Players.Count == 0)
@@ -18,12 +19,13 @@ internal static class HextechMayhemActRecovery
 			return HextechMayhemActRecoveryResult.None;
 		}
 
-		int telemetryRecoverThroughAct = GetHighestActResolvedByTelemetryChoices(runState, actState, choiceHistory, currentActIndex);
+		int telemetryRecoverThroughAct = GetHighestActResolvedByTelemetryChoices(runState, actState, choiceHistory, currentActIndex, playerHexCountsByAct);
 		int countRecoverThroughAct = GetHighestActResolvedByPlayerRuneCounts(
 			runState,
 			actState,
 			currentActIndex == 0 ? 0 : currentActIndex - 1,
-			hexCountRecoveryBaseline);
+			hexCountRecoveryBaseline,
+			playerHexCountsByAct);
 		int recoverThroughAct = Math.Max(telemetryRecoverThroughAct, countRecoverThroughAct);
 		if (recoverThroughAct < 0)
 		{
@@ -35,7 +37,7 @@ internal static class HextechMayhemActRecovery
 		{
 			changed |= actState.TryMarkResolved(actIndex);
 
-			if (TryInferRarityForAct(runState, actState, choiceHistory, hexCountRecoveryBaseline, actIndex, out HextechRarityTier rarity))
+			if (TryInferRarityForAct(runState, actState, choiceHistory, hexCountRecoveryBaseline, playerHexCountsByAct, actIndex, out HextechRarityTier rarity))
 			{
 				changed |= actState.TrySetRarityIfMissing(actIndex, rarity);
 			}
@@ -73,7 +75,8 @@ internal static class HextechMayhemActRecovery
 		RunState runState,
 		HextechMayhemActState actState,
 		HextechMayhemChoiceHistoryState choiceHistory,
-		int maxActIndex)
+		int maxActIndex,
+		IReadOnlyList<int> playerHexCountsByAct)
 	{
 		int lastActIndex = actState.LastActIndexFor(maxActIndex);
 		if (lastActIndex < 0 || runState.Players.Count == 0)
@@ -90,14 +93,20 @@ internal static class HextechMayhemActRecovery
 		int highest = -1;
 		for (int actIndex = 0; actIndex <= lastActIndex; actIndex++)
 		{
-			HashSet<int> playerSlots = records
+			int requiredChoices = GetPlayerHexCountForAct(playerHexCountsByAct, actIndex);
+			if (requiredChoices <= 0)
+			{
+				break;
+			}
+
+			Dictionary<int, int> choicesByPlayerSlot = records
 				.Where(record => record.ActIndex == actIndex)
-				.Select(static record => record.PlayerSlot)
-				.ToHashSet();
+				.GroupBy(static record => record.PlayerSlot)
+				.ToDictionary(static group => group.Key, static group => group.Count());
 			bool allPlayersRecorded = true;
 			for (int playerSlot = 0; playerSlot < runState.Players.Count; playerSlot++)
 			{
-				if (!playerSlots.Contains(playerSlot))
+				if (!choicesByPlayerSlot.TryGetValue(playerSlot, out int recordedChoices) || recordedChoices < requiredChoices)
 				{
 					allPlayersRecorded = false;
 					break;
@@ -119,7 +128,8 @@ internal static class HextechMayhemActRecovery
 		RunState runState,
 		HextechMayhemActState actState,
 		int maxActIndex,
-		int hexCountRecoveryBaseline)
+		int hexCountRecoveryBaseline,
+		IReadOnlyList<int> playerHexCountsByAct)
 	{
 		int lastActIndex = actState.LastActIndexFor(maxActIndex);
 		if (lastActIndex < 0)
@@ -134,7 +144,25 @@ internal static class HextechMayhemActRecovery
 			return -1;
 		}
 
-		return Math.Min(lastActIndex, loopHexCount - 1);
+		int cumulativeRequired = 0;
+		int highest = -1;
+		for (int actIndex = 0; actIndex <= lastActIndex; actIndex++)
+		{
+			cumulativeRequired += GetPlayerHexCountForAct(playerHexCountsByAct, actIndex);
+			if (cumulativeRequired <= 0)
+			{
+				break;
+			}
+
+			if (loopHexCount < cumulativeRequired)
+			{
+				break;
+			}
+
+			highest = actIndex;
+		}
+
+		return highest;
 	}
 
 	private static bool TryInferRarityForAct(
@@ -142,12 +170,13 @@ internal static class HextechMayhemActRecovery
 		HextechMayhemActState actState,
 		HextechMayhemChoiceHistoryState choiceHistory,
 		int hexCountRecoveryBaseline,
+		IReadOnlyList<int> playerHexCountsByAct,
 		int actIndex,
 		out HextechRarityTier rarity)
 	{
 		_ = actState;
 		return TryInferRarityForActFromTelemetryChoices(choiceHistory, actIndex, out rarity)
-			|| TryInferRarityForActFromPlayerRelics(runState, hexCountRecoveryBaseline, actIndex, out rarity);
+			|| TryInferRarityForActFromPlayerRelics(runState, hexCountRecoveryBaseline, playerHexCountsByAct, actIndex, out rarity);
 	}
 
 	private static bool TryInferRarityForActFromTelemetryChoices(
@@ -170,14 +199,28 @@ internal static class HextechMayhemActRecovery
 	private static bool TryInferRarityForActFromPlayerRelics(
 		RunState runState,
 		int hexCountRecoveryBaseline,
+		IReadOnlyList<int> playerHexCountsByAct,
 		int actIndex,
 		out HextechRarityTier rarity)
 	{
+		int actHexCount = GetPlayerHexCountForAct(playerHexCountsByAct, actIndex);
+		if (actHexCount <= 0)
+		{
+			rarity = default;
+			return false;
+		}
+
+		int relicOffset = hexCountRecoveryBaseline;
+		for (int previousAct = 0; previousAct < actIndex; previousAct++)
+		{
+			relicOffset += GetPlayerHexCountForAct(playerHexCountsByAct, previousAct);
+		}
+
 		foreach (Player player in runState.Players)
 		{
 			RelicModel? relic = player.Relics
 				.Where(HextechCatalog.IsHextechRelic)
-				.ElementAtOrDefault(hexCountRecoveryBaseline + actIndex);
+				.ElementAtOrDefault(relicOffset);
 			if (HextechCatalog.TryGetPlayerRuneRarity(relic, out rarity))
 			{
 				return true;
@@ -186,6 +229,13 @@ internal static class HextechMayhemActRecovery
 
 		rarity = default;
 		return false;
+	}
+
+	private static int GetPlayerHexCountForAct(IReadOnlyList<int> playerHexCountsByAct, int actIndex)
+	{
+		int[] normalized = HextechPlayerHexCountState.Normalize(playerHexCountsByAct);
+		int slot = Math.Clamp(actIndex, 0, normalized.Length - 1);
+		return normalized[slot];
 	}
 }
 

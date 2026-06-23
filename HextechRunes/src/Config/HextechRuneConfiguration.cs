@@ -9,12 +9,28 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 8;
-	private const int EnemyHexActCount = 3;
-	private const int MinEnemyHexCount = 0;
-	private const int MaxEnemyHexCount = 6;
-	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 1, 1 ];
+	private const int CurrentConfigVersion = 12;
+	private const int HexActCount = 3;
+	private const int MinActHexCount = 0;
+	private const int MaxActHexCount = 6;
+	public const int InfiniteRerollLimit = -1;
+	private const int MinFiniteRerollLimit = 0;
+	private const int MaxFiniteRerollLimit = 9;
+	private const int MinRarityWeight = 0;
+	private const int MaxRarityWeight = 999;
+	private const int MinRandomForgeShopPrice = 0;
+	private const int MaxRandomForgeShopPrice = 9999;
+	private const int DefaultRandomForgeShopPrice = 250;
+	private static readonly int[] DefaultPlayerHexCountsByAct = [ 1, 1, 1 ];
+	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 2, 3 ];
+	private const int DefaultPlayerRuneRerollLimit = 1;
+	private const int DefaultMonsterHexRerollLimit = InfiniteRerollLimit;
 	private static readonly int[] LegacyEnemyHexCountsDefault = [ 1, 2, 3 ];
+	private static readonly int[] Version9EnemyHexCountsDefault = [ 1, 1, 1 ];
+	private static readonly HextechRarityWeights DefaultFirstActRuneRarityWeights = new(20, 50, 30);
+	private static readonly HextechRarityWeights DefaultNormalRuneRarityWeights = new(1, 1, 1);
+	private static readonly HextechRarityWeights DefaultSecondActAfterSilverRuneRarityWeights = new(0, 1, 1);
+	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
 	private static readonly Type[] Version5DefaultDisabledRuneTypes =
 	[
 		typeof(DemonFormUpgradeRune),
@@ -23,12 +39,8 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version6DefaultDisabledRuneTypes =
 	[
 		typeof(NeowsGrudgeRune),
-		typeof(StarlightSparkleRune),
 		typeof(AnthonyBiasRune),
-		typeof(CuttingEdgeAlchemistRune),
-		typeof(CosplayRune),
-		typeof(OtterAndFriendsRune),
-		typeof(RegretRune)
+		typeof(CuttingEdgeAlchemistRune)
 	];
 	private static readonly Type[] Version7DefaultDisabledRuneTypes =
 	[
@@ -41,6 +53,10 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version8DefaultEnabledRuneTypes =
 	[
 		typeof(MikaelsBlessingRune)
+	];
+	private static readonly Type[] Version11DefaultDisabledRuneTypes =
+	[
+		typeof(HappyAccidentRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -79,6 +95,15 @@ internal static class HextechRuneConfiguration
 		}
 	}
 
+	public static int[] GetPlayerHexCountsByAct()
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			return NormalizePlayerHexCounts(_config.PlayerHexCountsByAct);
+		}
+	}
+
 	public static bool IsPlayerRuneEnabled(RelicModel relic)
 	{
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
@@ -103,13 +128,63 @@ internal static class HextechRuneConfiguration
 		}
 	}
 
-	internal static HashSet<string> NormalizeDisabledPlayerRuneIds(IEnumerable<string>? ids)
+	public static IReadOnlySet<string> GetDisabledMonsterHexIds()
 	{
 		EnsureLoaded();
 		lock (SyncRoot)
 		{
-			return NormalizeConfigDisabledIds(ids);
+			return NormalizeDisabledMonsterHexIds(_config.DisabledMonsterHexIds);
 		}
+	}
+
+	public static IReadOnlySet<string> GetDisabledForgeIds()
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			return NormalizeDisabledForgeIds(_config.DisabledForgeIds);
+		}
+	}
+
+	public static HextechRunConfigurationSnapshot GetSnapshot()
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			return NormalizeSnapshot(new HextechRunConfigurationSnapshot(
+				_config.PlayerHexCountsByAct ?? DefaultPlayerHexCountsByAct,
+				_config.EnemyHexCountsByAct ?? DefaultEnemyHexCountsByAct,
+				_config.PlayerRuneRerollLimit,
+				_config.MonsterHexRerollLimit,
+				_config.DisabledPlayerRuneIds,
+				_config.DisabledMonsterHexIds,
+				_config.DisabledForgeIds,
+				ToRarityWeights(_config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
+				ToRarityWeights(_config.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
+				ToRarityWeights(_config.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
+				ToForgeRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
+				_config.RandomForgeShopPrice));
+		}
+	}
+
+	internal static HashSet<string> NormalizeDisabledPlayerRuneIds(IEnumerable<string>? ids)
+	{
+		return NormalizeConfigDisabledIds(ids);
+	}
+
+	internal static HashSet<string> NormalizeDisabledMonsterHexIds(IEnumerable<string>? ids)
+	{
+		HashSet<string> validIds = HextechContentRegistry.MonsterHexMetadata.EnabledKindsByRarity
+			.Values
+			.SelectMany(static kinds => kinds)
+			.Select(static kind => kind.ToString())
+			.ToHashSet(StringComparer.Ordinal);
+		return NormalizeStringIds(ids, validIds);
+	}
+
+	internal static HashSet<string> NormalizeDisabledForgeIds(IEnumerable<string>? ids)
+	{
+		return NormalizeConfigStringIds(ids);
 	}
 
 	public static IReadOnlySet<string> GetDefaultDisabledPlayerRuneIds()
@@ -117,6 +192,16 @@ internal static class HextechRuneConfiguration
 		return HextechCatalog.GetDefaultDisabledPlayerRuneIds()
 			.Select(static id => id.Entry)
 			.ToHashSet(StringComparer.Ordinal);
+	}
+
+	public static IReadOnlySet<string> GetDefaultDisabledMonsterHexIds()
+	{
+		return new HashSet<string>(StringComparer.Ordinal);
+	}
+
+	public static IReadOnlySet<string> GetDefaultDisabledForgeIds()
+	{
+		return new HashSet<string>(StringComparer.Ordinal);
 	}
 
 	public static void SaveDisabledPlayerRuneIds(IEnumerable<string> disabledIds)
@@ -137,6 +222,29 @@ internal static class HextechRuneConfiguration
 		{
 			_config.ConfigVersion = CurrentConfigVersion;
 			_config.EnemyHexCountsByAct = NormalizeEnemyHexCounts(counts);
+			SaveConfig(_config);
+		}
+	}
+
+	public static void SaveSnapshot(HextechRunConfigurationSnapshot snapshot)
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			HextechRunConfigurationSnapshot normalized = NormalizeSnapshot(snapshot);
+			_config.ConfigVersion = CurrentConfigVersion;
+			_config.PlayerHexCountsByAct = normalized.PlayerHexCountsByAct;
+			_config.EnemyHexCountsByAct = normalized.EnemyHexCountsByAct;
+			_config.PlayerRuneRerollLimit = normalized.PlayerRuneRerollLimit;
+			_config.MonsterHexRerollLimit = normalized.MonsterHexRerollLimit;
+			_config.DisabledPlayerRuneIds = normalized.DisabledPlayerRuneIds;
+			_config.DisabledMonsterHexIds = normalized.DisabledMonsterHexIds;
+			_config.DisabledForgeIds = normalized.DisabledForgeIds;
+			_config.FirstActRuneRarityWeights = FromRarityWeights(normalized.FirstActRuneRarityWeights);
+			_config.NormalRuneRarityWeights = FromRarityWeights(normalized.NormalRuneRarityWeights);
+			_config.SecondActAfterSilverRuneRarityWeights = FromRarityWeights(normalized.SecondActAfterSilverRuneRarityWeights);
+			_config.ForgeRarityWeights = FromForgeRarityWeights(normalized.ForgeRarityWeights);
+			_config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
 			SaveConfig(_config);
 		}
 	}
@@ -188,7 +296,17 @@ internal static class HextechRuneConfiguration
 		{
 			ConfigVersion = CurrentConfigVersion,
 			DisabledPlayerRuneIds = GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal),
-			EnemyHexCountsByAct = NormalizeEnemyHexCounts(null)
+			PlayerHexCountsByAct = NormalizePlayerHexCounts(null),
+			EnemyHexCountsByAct = NormalizeEnemyHexCounts(null),
+			PlayerRuneRerollLimit = DefaultPlayerRuneRerollLimit,
+			MonsterHexRerollLimit = DefaultMonsterHexRerollLimit,
+			DisabledMonsterHexIds = GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
+			DisabledForgeIds = GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
+			FirstActRuneRarityWeights = FromRarityWeights(DefaultFirstActRuneRarityWeights),
+			NormalRuneRarityWeights = FromRarityWeights(DefaultNormalRuneRarityWeights),
+			SecondActAfterSilverRuneRarityWeights = FromRarityWeights(DefaultSecondActAfterSilverRuneRarityWeights),
+			ForgeRarityWeights = FromForgeRarityWeights(DefaultForgeRarityWeights),
+			RandomForgeShopPrice = DefaultRandomForgeShopPrice
 		};
 	}
 
@@ -199,6 +317,9 @@ internal static class HextechRuneConfiguration
 		bool shouldMigrateLegacyEnemyHexDefault =
 			previousConfigVersion < CurrentConfigVersion
 			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, LegacyEnemyHexCountsDefault);
+		bool shouldMigrateVersion9EnemyHexDefault =
+			previousConfigVersion < 10
+			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, Version9EnemyHexCountsDefault);
 		if (previousConfigVersion < 4)
 		{
 			disabledIds.UnionWith(GetDefaultDisabledPlayerRuneIds());
@@ -220,13 +341,40 @@ internal static class HextechRuneConfiguration
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version8DefaultEnabledRuneTypes));
 			disabledIds.UnionWith(GetPlayerRuneIds(Version8DefaultDisabledRuneTypes));
 		}
+		if (previousConfigVersion < 11)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version11DefaultDisabledRuneTypes));
+		}
 
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
-		config.EnemyHexCountsByAct = shouldMigrateLegacyEnemyHexDefault
+		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
+		config.EnemyHexCountsByAct = shouldMigrateLegacyEnemyHexDefault || shouldMigrateVersion9EnemyHexDefault
 			? NormalizeEnemyHexCounts(null)
 			: NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
+		config.PlayerRuneRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultPlayerRuneRerollLimit : config.PlayerRuneRerollLimit);
+		config.MonsterHexRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultMonsterHexRerollLimit : config.MonsterHexRerollLimit);
+		config.DisabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);
+		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
+		config.FirstActRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
+			ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
+			DefaultFirstActRuneRarityWeights));
+		config.NormalRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
+			ToRarityWeights(config.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
+			DefaultNormalRuneRarityWeights));
+		config.SecondActAfterSilverRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
+			ToRarityWeights(config.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
+			DefaultSecondActAfterSilverRuneRarityWeights));
+		config.ForgeRarityWeights = FromForgeRarityWeights(NormalizeForgeRarityWeights(
+			ToForgeRarityWeights(config.ForgeRarityWeights, DefaultForgeRarityWeights),
+			DefaultForgeRarityWeights));
+		config.RandomForgeShopPrice = ClampRandomForgeShopPrice(config.RandomForgeShopPrice);
 		return config;
+	}
+
+	public static int[] GetDefaultPlayerHexCountsByAct()
+	{
+		return NormalizePlayerHexCounts(null);
 	}
 
 	public static int[] GetDefaultEnemyHexCountsByAct()
@@ -236,20 +384,164 @@ internal static class HextechRuneConfiguration
 
 	public static int ClampEnemyHexCount(int count)
 	{
-		return Math.Clamp(count, MinEnemyHexCount, MaxEnemyHexCount);
+		return ClampActHexCount(count);
+	}
+
+	public static int ClampPlayerHexCount(int count)
+	{
+		return ClampActHexCount(count);
+	}
+
+	public static int ClampActHexCount(int count)
+	{
+		return Math.Clamp(count, MinActHexCount, MaxActHexCount);
+	}
+
+	public static int ClampRerollLimit(int limit)
+	{
+		return limit == InfiniteRerollLimit
+			? InfiniteRerollLimit
+			: Math.Clamp(limit, MinFiniteRerollLimit, MaxFiniteRerollLimit);
+	}
+
+	public static int StepRerollLimit(int current, int delta)
+	{
+		current = ClampRerollLimit(current);
+		if (delta > 0)
+		{
+			return current == InfiniteRerollLimit || current >= MaxFiniteRerollLimit
+				? InfiniteRerollLimit
+				: current + 1;
+		}
+
+		if (delta < 0)
+		{
+			return current == InfiniteRerollLimit
+				? MaxFiniteRerollLimit
+				: Math.Max(MinFiniteRerollLimit, current - 1);
+		}
+
+		return current;
+	}
+
+	public static int GetDefaultPlayerRuneRerollLimit()
+	{
+		return DefaultPlayerRuneRerollLimit;
+	}
+
+	public static int GetDefaultMonsterHexRerollLimit()
+	{
+		return DefaultMonsterHexRerollLimit;
+	}
+
+	public static int ClampRarityWeight(int weight)
+	{
+		return Math.Clamp(weight, MinRarityWeight, MaxRarityWeight);
+	}
+
+	public static int ClampRandomForgeShopPrice(int price)
+	{
+		return Math.Clamp(price, MinRandomForgeShopPrice, MaxRandomForgeShopPrice);
+	}
+
+	public static HextechRarityWeights GetDefaultFirstActRuneRarityWeights()
+	{
+		return DefaultFirstActRuneRarityWeights;
+	}
+
+	public static HextechRarityWeights GetDefaultNormalRuneRarityWeights()
+	{
+		return DefaultNormalRuneRarityWeights;
+	}
+
+	public static HextechRarityWeights GetDefaultSecondActAfterSilverRuneRarityWeights()
+	{
+		return DefaultSecondActAfterSilverRuneRarityWeights;
+	}
+
+	public static HextechForgeRarityWeights GetDefaultForgeRarityWeights()
+	{
+		return DefaultForgeRarityWeights;
+	}
+
+	public static int GetDefaultRandomForgeShopPrice()
+	{
+		return DefaultRandomForgeShopPrice;
+	}
+
+	internal static HextechRunConfigurationSnapshot GetDefaultSnapshot()
+	{
+		return NormalizeSnapshot(new HextechRunConfigurationSnapshot(
+			DefaultPlayerHexCountsByAct,
+			DefaultEnemyHexCountsByAct,
+			DefaultPlayerRuneRerollLimit,
+			DefaultMonsterHexRerollLimit,
+			GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal),
+			GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
+			GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
+			DefaultFirstActRuneRarityWeights,
+			DefaultNormalRuneRarityWeights,
+			DefaultSecondActAfterSilverRuneRarityWeights,
+			DefaultForgeRarityWeights,
+			DefaultRandomForgeShopPrice));
+	}
+
+	internal static HextechRunConfigurationSnapshot NormalizeSnapshot(HextechRunConfigurationSnapshot snapshot)
+	{
+		return new HextechRunConfigurationSnapshot(
+			NormalizePlayerHexCounts(snapshot.PlayerHexCountsByAct),
+			NormalizeEnemyHexCounts(snapshot.EnemyHexCountsByAct),
+			ClampRerollLimit(snapshot.PlayerRuneRerollLimit),
+			ClampRerollLimit(snapshot.MonsterHexRerollLimit),
+			NormalizeDisabledPlayerRuneIds(snapshot.DisabledPlayerRuneIds),
+			NormalizeDisabledMonsterHexIds(snapshot.DisabledMonsterHexIds),
+			NormalizeDisabledForgeIds(snapshot.DisabledForgeIds),
+			NormalizeRarityWeights(snapshot.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
+			NormalizeRarityWeights(snapshot.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
+			NormalizeRarityWeights(snapshot.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
+			NormalizeForgeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
+			ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice));
+	}
+
+	internal static HextechRarityWeights NormalizeRarityWeights(HextechRarityWeights weights, HextechRarityWeights fallback)
+	{
+		HextechRarityWeights normalized = new(
+			ClampRarityWeight(weights.Silver),
+			ClampRarityWeight(weights.Gold),
+			ClampRarityWeight(weights.Prismatic));
+		return normalized.Total > 0 ? normalized : fallback;
+	}
+
+	internal static HextechForgeRarityWeights NormalizeForgeRarityWeights(HextechForgeRarityWeights weights, HextechForgeRarityWeights fallback)
+	{
+		HextechForgeRarityWeights normalized = new(
+			ClampRarityWeight(weights.Silver),
+			ClampRarityWeight(weights.Gold),
+			ClampRarityWeight(weights.Prismatic));
+		return normalized.Total > 0 ? normalized : fallback;
+	}
+
+	internal static int[] NormalizePlayerHexCounts(IReadOnlyList<int>? counts)
+	{
+		return NormalizeActHexCounts(counts, DefaultPlayerHexCountsByAct);
 	}
 
 	private static int[] NormalizeEnemyHexCounts(IReadOnlyList<int>? counts)
 	{
-		int[] normalized = DefaultEnemyHexCountsByAct.ToArray();
+		return NormalizeActHexCounts(counts, DefaultEnemyHexCountsByAct);
+	}
+
+	private static int[] NormalizeActHexCounts(IReadOnlyList<int>? counts, IReadOnlyList<int> defaults)
+	{
+		int[] normalized = defaults.ToArray();
 		if (counts == null)
 		{
 			return normalized;
 		}
 
-		for (int i = 0; i < Math.Min(EnemyHexActCount, counts.Count); i++)
+		for (int i = 0; i < Math.Min(HexActCount, counts.Count); i++)
 		{
-			normalized[i] = ClampEnemyHexCount(counts[i]);
+			normalized[i] = ClampActHexCount(counts[i]);
 		}
 
 		return normalized;
@@ -278,9 +570,64 @@ internal static class HextechRuneConfiguration
 		return HextechPlayerRuneConfigIds.Normalize(ids);
 	}
 
+	private static HashSet<string> NormalizeStringIds(IEnumerable<string>? ids, IReadOnlySet<string> validIds)
+	{
+		return (ids ?? [])
+			.Where(static id => !string.IsNullOrWhiteSpace(id))
+			.Select(static id => id.Trim())
+			.Distinct(StringComparer.Ordinal)
+			.Where(validIds.Contains)
+			.OrderBy(static id => id, StringComparer.Ordinal)
+			.ToHashSet(StringComparer.Ordinal);
+	}
+
+	private static HashSet<string> NormalizeConfigStringIds(IEnumerable<string>? ids)
+	{
+		return (ids ?? [])
+			.Where(static id => !string.IsNullOrWhiteSpace(id))
+			.Select(static id => id.Trim())
+			.Distinct(StringComparer.Ordinal)
+			.OrderBy(static id => id, StringComparer.Ordinal)
+			.ToHashSet(StringComparer.Ordinal);
+	}
+
 	private static HashSet<string> GetPlayerRuneIds(IEnumerable<Type> runeTypes)
 	{
 		return HextechPlayerRuneConfigIds.FromTypes(runeTypes);
+	}
+
+	private static HextechRarityWeights ToRarityWeights(RarityWeightConfig? config, HextechRarityWeights fallback)
+	{
+		return config == null
+			? fallback
+			: new HextechRarityWeights(config.Silver, config.Gold, config.Prismatic);
+	}
+
+	private static HextechForgeRarityWeights ToForgeRarityWeights(RarityWeightConfig? config, HextechForgeRarityWeights fallback)
+	{
+		return config == null
+			? fallback
+			: new HextechForgeRarityWeights(config.Silver, config.Gold, config.Prismatic);
+	}
+
+	private static RarityWeightConfig FromRarityWeights(HextechRarityWeights weights)
+	{
+		return new RarityWeightConfig
+		{
+			Silver = weights.Silver,
+			Gold = weights.Gold,
+			Prismatic = weights.Prismatic
+		};
+	}
+
+	private static RarityWeightConfig FromForgeRarityWeights(HextechForgeRarityWeights weights)
+	{
+		return new RarityWeightConfig
+		{
+			Silver = weights.Silver,
+			Gold = weights.Gold,
+			Prismatic = weights.Prismatic
+		};
 	}
 
 	private static void SaveConfig(RuneConfig config)
@@ -327,7 +674,49 @@ internal static class HextechRuneConfiguration
 		[JsonPropertyName("disabled_player_rune_ids")]
 		public HashSet<string> DisabledPlayerRuneIds { get; set; } = new(StringComparer.Ordinal);
 
+		[JsonPropertyName("player_hex_counts_by_act")]
+		public int[]? PlayerHexCountsByAct { get; set; }
+
 		[JsonPropertyName("enemy_hex_counts_by_act")]
 		public int[]? EnemyHexCountsByAct { get; set; }
+
+		[JsonPropertyName("player_rune_reroll_limit")]
+		public int PlayerRuneRerollLimit { get; set; } = DefaultPlayerRuneRerollLimit;
+
+		[JsonPropertyName("monster_hex_reroll_limit")]
+		public int MonsterHexRerollLimit { get; set; } = DefaultMonsterHexRerollLimit;
+
+		[JsonPropertyName("disabled_monster_hex_ids")]
+		public HashSet<string> DisabledMonsterHexIds { get; set; } = new(StringComparer.Ordinal);
+
+		[JsonPropertyName("disabled_forge_ids")]
+		public HashSet<string> DisabledForgeIds { get; set; } = new(StringComparer.Ordinal);
+
+		[JsonPropertyName("first_act_rune_rarity_weights")]
+		public RarityWeightConfig? FirstActRuneRarityWeights { get; set; }
+
+		[JsonPropertyName("normal_rune_rarity_weights")]
+		public RarityWeightConfig? NormalRuneRarityWeights { get; set; }
+
+		[JsonPropertyName("second_act_after_silver_rune_rarity_weights")]
+		public RarityWeightConfig? SecondActAfterSilverRuneRarityWeights { get; set; }
+
+		[JsonPropertyName("forge_rarity_weights")]
+		public RarityWeightConfig? ForgeRarityWeights { get; set; }
+
+		[JsonPropertyName("random_forge_shop_price")]
+		public int RandomForgeShopPrice { get; set; } = DefaultRandomForgeShopPrice;
+	}
+
+	private sealed class RarityWeightConfig
+	{
+		[JsonPropertyName("silver")]
+		public int Silver { get; set; }
+
+		[JsonPropertyName("gold")]
+		public int Gold { get; set; }
+
+		[JsonPropertyName("prismatic")]
+		public int Prismatic { get; set; }
 	}
 }

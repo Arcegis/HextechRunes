@@ -1,10 +1,16 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.CardRewardAlternatives;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.Entities.Rewards;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
@@ -14,23 +20,209 @@ namespace HextechRunes;
 
 internal static class HextechRewardSafetyHooks
 {
+	private const string PaelsWingSacrificeAlternativeId = "SACRIFICE";
+	private static readonly ConditionalWeakTable<CardReward, CardRewardCompatibilityState> CardRewardStates = new();
+
 	public static void Install(Harmony harmony)
 	{
+		harmony.Patch(
+			RequireMethod(typeof(CardRewardAlternative), nameof(CardRewardAlternative.Generate), BindingFlags.Public | BindingFlags.Static, typeof(CardReward)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardAlternativeGeneratePrefix)));
 		harmony.Patch(
 			RequireMethod(typeof(Reward), nameof(Reward.FromSerializable), BindingFlags.Public | BindingFlags.Static, typeof(SerializableReward), typeof(Player)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardFromSerializablePostfix)));
 		harmony.Patch(
+			RequireMethod(typeof(Reward), nameof(Reward.SelectUnsynchronized), BindingFlags.Instance | BindingFlags.Public),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardSelectUnsynchronizedPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RewardSelectUnsynchronizedPostfix)));
+		harmony.Patch(
 			RequireMethod(typeof(CardReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardOnSelectPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardRewardOnSelectPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(SpecialCardReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(SpecialCardRewardOnSelectPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(SpecialCardRewardOnSelectPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(RelicReward), "OnSelect", BindingFlags.Instance | BindingFlags.NonPublic),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicRewardOnSelectPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicRewardOnSelectPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.Add), BindingFlags.Public | BindingFlags.Static, typeof(CardModel), typeof(PileType), typeof(CardPilePosition), typeof(AbstractModel), typeof(bool)),
 			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(CardPileAddPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(RelicCmd), nameof(RelicCmd.Obtain), BindingFlags.Public | BindingFlags.Static, typeof(RelicModel), typeof(Player), typeof(int)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicCmdObtainPrefix)) { priority = Priority.High },
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(RelicCmdObtainPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(PotionCmd), nameof(PotionCmd.TryToProcure), BindingFlags.Public | BindingFlags.Static, typeof(PotionModel), typeof(Player), typeof(int)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PotionCmdTryToProcurePrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PotionCmdTryToProcurePostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(PlayerCmd), nameof(PlayerCmd.GainGold), BindingFlags.Public | BindingFlags.Static, typeof(decimal), typeof(Player), typeof(bool)),
+			prefix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PlayerCmdGainGoldPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechRewardSafetyHooks), nameof(PlayerCmdGainGoldPostfix)));
 	}
 
-	private static void CardRewardOnSelectPostfix(CardReward __instance, ref Task<bool> __result)
+	private static bool CardRewardAlternativeGeneratePrefix(CardReward cardReward, ref IReadOnlyList<CardRewardAlternative> __result)
+	{
+		__result = GenerateCardRewardAlternativesWithoutVanillaLimit(cardReward);
+		return false;
+	}
+
+	private static IReadOnlyList<CardRewardAlternative> GenerateCardRewardAlternativesWithoutVanillaLimit(CardReward cardReward)
+	{
+		List<CardRewardAlternative> alternatives = [];
+		if (cardReward.CanSkip)
+		{
+			alternatives.Add(new CardRewardAlternative("Skip", PostAlternateCardRewardAction.EndSelectionAndDoNotCompleteReward));
+		}
+
+		if (cardReward.CanReroll)
+		{
+			alternatives.Add(CreateDriftwoodRerollAlternative(cardReward));
+		}
+		else if (GetRemainingDriftwoodRerolls(cardReward) > 0)
+		{
+			alternatives.Add(CreateDriftwoodRerollAlternative(cardReward));
+		}
+
+		Hook.ModifyCardRewardAlternatives(cardReward.Player.RunState, cardReward.Player, cardReward, alternatives);
+		IReadOnlyList<CardRewardAlternative> normalized = NormalizeCardRewardAlternativesForCompatibility(alternatives);
+		CardRewardCompatibilityState state = CardRewardStates.GetOrCreateValue(cardReward);
+		state.Alternatives.Clear();
+		state.Alternatives.AddRange(normalized);
+		return state.Alternatives;
+	}
+
+	private static CardRewardAlternative CreateDriftwoodRerollAlternative(CardReward cardReward)
+	{
+		return new CardRewardAlternative("REROLL", () =>
+		{
+			ConsumeDriftwoodReroll(cardReward);
+			cardReward.Reroll();
+			return Task.CompletedTask;
+		}, PostAlternateCardRewardAction.DoNothing);
+	}
+
+	private static int GetRemainingDriftwoodRerolls(CardReward cardReward)
+	{
+		if (CardRewardStates.TryGetValue(cardReward, out CardRewardCompatibilityState? state)
+			&& state.RemainingDriftwoodRerolls.HasValue)
+		{
+			return Math.Max(0, state.RemainingDriftwoodRerolls.Value);
+		}
+
+		if (!cardReward.CanReroll)
+		{
+			return 0;
+		}
+
+		int driftwoodCount = CountOwnedDriftwood(cardReward.Player);
+		if (driftwoodCount <= 0)
+		{
+			return 0;
+		}
+
+		state = CardRewardStates.GetOrCreateValue(cardReward);
+		state.RemainingDriftwoodRerolls = driftwoodCount;
+		return driftwoodCount;
+	}
+
+	private static void ConsumeDriftwoodReroll(CardReward cardReward)
+	{
+		int remaining = GetRemainingDriftwoodRerolls(cardReward);
+		if (remaining <= 0)
+		{
+			return;
+		}
+
+		CardRewardCompatibilityState state = CardRewardStates.GetOrCreateValue(cardReward);
+		state.RemainingDriftwoodRerolls = remaining - 1;
+	}
+
+	private static int CountOwnedDriftwood(Player player)
+	{
+		return player.Relics.Count(static relic => relic is Driftwood);
+	}
+
+	internal static IReadOnlyList<CardRewardAlternative> NormalizeCardRewardAlternativesForCompatibility(
+		IReadOnlyList<CardRewardAlternative> alternatives)
+	{
+		CardRewardAlternative[] sacrificeAlternatives = alternatives
+			.Where(static alternative => IsPaelsWingSacrificeAlternative(alternative))
+			.ToArray();
+
+		if (sacrificeAlternatives.Length <= 1)
+		{
+			return alternatives;
+		}
+
+		List<CardRewardAlternative> normalized = new(alternatives.Count - sacrificeAlternatives.Length + 1);
+		bool addedMergedSacrifice = false;
+		foreach (CardRewardAlternative alternative in alternatives)
+		{
+			if (!IsPaelsWingSacrificeAlternative(alternative))
+			{
+				normalized.Add(alternative);
+				continue;
+			}
+
+			if (addedMergedSacrifice)
+			{
+				continue;
+			}
+
+			normalized.Add(CreateMergedPaelsWingSacrificeAlternative(sacrificeAlternatives));
+			addedMergedSacrifice = true;
+		}
+
+		return normalized;
+	}
+
+	private static bool IsPaelsWingSacrificeAlternative(CardRewardAlternative alternative)
+	{
+		return string.Equals(alternative.OptionId, PaelsWingSacrificeAlternativeId, StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static CardRewardAlternative CreateMergedPaelsWingSacrificeAlternative(
+		IReadOnlyList<CardRewardAlternative> sacrificeAlternatives)
+	{
+		return new CardRewardAlternative(
+			PaelsWingSacrificeAlternativeId,
+			async () =>
+			{
+				foreach (CardRewardAlternative alternative in sacrificeAlternatives)
+				{
+					await alternative.OnSelect();
+				}
+			},
+			PostAlternateCardRewardAction.EndSelectionAndCompleteReward);
+	}
+
+	private sealed class CardRewardCompatibilityState
+	{
+		public List<CardRewardAlternative> Alternatives { get; } = [];
+
+		public int? RemainingDriftwoodRerolls { get; set; }
+	}
+
+	private static void RewardSelectUnsynchronizedPrefix(out object? __state)
+	{
+		__state = DoubleVisionRune.BeginRewardCommandSuppression();
+	}
+
+	private static void RewardSelectUnsynchronizedPostfix(object? __state)
+	{
+		DoubleVisionRune.CompleteRewardCommandSuppression(__state);
+	}
+
+	private static void CardRewardOnSelectPrefix(CardReward __instance, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginCardRewardTracking(__instance.Player);
+	}
+
+	private static void CardRewardOnSelectPostfix(CardReward __instance, object? __state, ref Task<bool> __result)
 	{
 		Task<bool> result = __result;
 		if (ShouldApplyForbiddenGrimoire(__instance))
@@ -38,27 +230,62 @@ internal static class HextechRewardSafetyHooks
 			result = CompleteForbiddenGrimoireCardRewardAsync(__instance, result);
 		}
 
-		if (DoubleVisionRune.ShouldDuplicateCardReward(__instance))
-		{
-			result = DoubleVisionRune.CompleteCardRewardAsync(__instance, result);
-		}
-
-		__result = result;
+		__result = DoubleVisionRune.CompleteCardRewardAsync(result, __state);
 	}
 
-	private static void SpecialCardRewardOnSelectPostfix(SpecialCardReward __instance, ref Task<bool> __result)
+	private static void SpecialCardRewardOnSelectPrefix(SpecialCardReward __instance, out object? __state)
 	{
-		if (__instance.Player.GetRelic<DoubleVisionRune>() == null)
-		{
-			return;
-		}
+		__state = DoubleVisionRune.BeginCardRewardTracking(__instance.Player);
+	}
 
-		__result = DoubleVisionRune.CompleteSpecialCardRewardAsync(__instance, __result);
+	private static void SpecialCardRewardOnSelectPostfix(object? __state, ref Task<bool> __result)
+	{
+		__result = DoubleVisionRune.CompleteCardRewardAsync(__result, __state);
+	}
+
+	private static void RelicRewardOnSelectPrefix(RelicReward __instance, out object? __state)
+	{
+		__state = DoubleVisionRune.CaptureRewardDuplicationState(__instance.Player);
+	}
+
+	private static void RelicRewardOnSelectPostfix(RelicReward __instance, object? __state, ref Task<bool> __result)
+	{
+		__result = DoubleVisionRune.CompleteRelicRewardAsync(__instance, __result, __state);
 	}
 
 	private static void CardPileAddPostfix(CardModel card, PileType newPileType, AbstractModel? clonedBy, ref Task<CardPileAddResult> __result)
 	{
 		DoubleVisionRune.TrackCardPileAdd(card, newPileType, clonedBy, ref __result);
+	}
+
+	private static void RelicCmdObtainPrefix(Player player, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginDirectRelicReward(player);
+	}
+
+	private static void RelicCmdObtainPostfix(object? __state, ref Task<RelicModel> __result)
+	{
+		__result = DoubleVisionRune.CompleteDirectRelicRewardAsync(__result, __state);
+	}
+
+	private static void PotionCmdTryToProcurePrefix(Player player, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginDirectPotionReward(player);
+	}
+
+	private static void PotionCmdTryToProcurePostfix(object? __state, ref Task<PotionProcureResult> __result)
+	{
+		__result = DoubleVisionRune.CompleteDirectPotionRewardAsync(__result, __state);
+	}
+
+	private static void PlayerCmdGainGoldPrefix(decimal amount, Player player, bool wasStolenBack, out object? __state)
+	{
+		__state = DoubleVisionRune.BeginDirectGoldReward(player, amount, wasStolenBack);
+	}
+
+	private static void PlayerCmdGainGoldPostfix(object? __state, ref Task __result)
+	{
+		__result = DoubleVisionRune.CompleteDirectGoldRewardAsync(__result, __state);
 	}
 
 	private static async Task<bool> CompleteForbiddenGrimoireCardRewardAsync(CardReward reward, Task<bool> originalTask)
@@ -115,17 +342,6 @@ internal static class HextechRewardSafetyHooks
 		{
 			RelicModel relic = ModelDb.GetById<RelicModel>(save.PredeterminedModelId).ToMutable();
 			__result = new HextechWaxRelicReward(relic, player);
-			return;
-		}
-
-		if (save.RewardType == RewardType.Card
-			&& save.CustomDescriptionEncounterSourceId == ModelDb.GetId<GenesisRune>())
-		{
-			CardCreationOptions options = new(
-				save.CardPoolIds.Select(ModelDb.GetById<CardPoolModel>),
-				save.Source,
-				save.RarityOdds);
-			__result = new GenesisUpgradedCardReward(options, save.OptionCount, player);
 			return;
 		}
 

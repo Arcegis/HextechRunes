@@ -36,12 +36,18 @@ namespace HextechRunes;
 
 public sealed class BloodPactRune : HextechRelicBase
 {
-	private bool _triggeredThisTurn;
+	private int _pendingTemporaryStrength;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	private int SavedPendingTemporaryStrength
+	{
+		get => _pendingTemporaryStrength;
+		set => _pendingTemporaryStrength = Math.Max(0, value);
+	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<StrengthPower>(1m),
-		new DynamicVar("MaxProcsPerTurn", 1m)
+		new PowerVar<StrengthPower>(1m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -56,56 +62,41 @@ public sealed class BloodPactRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		ResetTurnState(null);
+		_pendingTemporaryStrength = 0;
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		ResetTurnState(null);
+		_pendingTemporaryStrength = 0;
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
+	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner != null && side == Owner.Creature.Side)
+		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead || _pendingTemporaryStrength <= 0)
 		{
-			ResetTurnState(combatState);
+			return;
 		}
 
-		return Task.CompletedTask;
+		decimal strength = _pendingTemporaryStrength * DynamicVars.Strength.BaseValue;
+		_pendingTemporaryStrength = 0;
+		Flash();
+		await PowerCmd.Apply<HextechBloodPactTemporaryStrengthPower>(Owner.Creature, strength, Owner.Creature, null);
 	}
 
-	public override async Task AfterCurrentHpChanged(Creature creature, decimal delta)
+	public override Task AfterCurrentHpChanged(Creature creature, decimal delta)
 	{
-		EnsureTurnScopedStateCurrent(ResetTurnState);
 		if (Owner == null
-			|| HasTurnProcTriggered(nameof(BloodPactRune), _triggeredThisTurn)
 			|| creature != Owner.Creature
 			|| delta >= 0m
-			|| Owner.Creature.IsDead
-			|| !HextechSts2Compat.IsPartOfPlayerTurn(Owner))
+			|| Owner.Creature.IsDead)
 		{
-			return;
-		}
-
-		if (!TryConsumeTurnProc(nameof(BloodPactRune), ref _triggeredThisTurn))
-		{
-			return;
+			return Task.CompletedTask;
 		}
 
 		Flash();
-		await PowerCmd.Apply<StrengthPower>(Owner.Creature, DynamicVars.Strength.BaseValue, Owner.Creature, null);
-	}
-
-	private void ResetTurnState()
-	{
-		ResetTurnState(null);
-	}
-
-	private void ResetTurnState(HextechCombatState? combatState)
-	{
-		_triggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
+		_pendingTemporaryStrength++;
+		return Task.CompletedTask;
 	}
 }

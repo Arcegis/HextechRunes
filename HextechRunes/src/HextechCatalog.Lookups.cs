@@ -4,20 +4,9 @@ namespace HextechRunes;
 
 internal static partial class HextechCatalog
 {
-	private static readonly Lazy<IReadOnlySet<ModelId>> RuneIds = new(() => ToModelIdSet(AllRuneTypes));
-
-	private static readonly Lazy<IReadOnlySet<ModelId>> ForgeIds = new(() => ToModelIdSet(AllForgeTypes));
-
-	private static readonly Lazy<IReadOnlySet<ModelId>> ShopOnlyRelicIds = new(() => ToModelIdSet(ShopOnlyRelicTypes));
-
-	private static readonly Lazy<IReadOnlyDictionary<ModelId, HextechRarityTier>> PlayerRuneRarityById = new(BuildPlayerRuneRarityById);
-
-	private static readonly Lazy<IReadOnlyDictionary<ModelId, HextechRarityTier>> ForgeRarityById = new(BuildForgeRarityById);
-
-	private static readonly Lazy<IReadOnlyDictionary<ModelId, string>> PlayerRuneTagKeyById = new(BuildPlayerRuneTagKeyById);
-
-	private static readonly Lazy<IReadOnlySet<ModelId>> AttributeConversionExclusiveRuneIds =
-		new(() => ToModelIdSet(PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive]));
+	private static readonly object ModelIdLookupLock = new();
+	private static ModelIdLookupCache? _modelIdLookupCache;
+	private static int _modelIdLookupCacheVersion = -1;
 
 	public static bool IsHextechRelic(RelicModel? relic)
 	{
@@ -27,7 +16,7 @@ internal static partial class HextechCatalog
 		}
 
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-		return RuneIds.Value.Contains(id);
+		return ModelIdLookups.RuneIds.Contains(id);
 	}
 
 	public static bool IsHextechForgeRelic(RelicModel? relic)
@@ -38,7 +27,7 @@ internal static partial class HextechCatalog
 		}
 
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-		return ForgeIds.Value.Contains(id);
+		return ModelIdLookups.ForgeIds.Contains(id);
 	}
 
 	public static bool IsHextechShopRelic(RelicModel? relic)
@@ -49,7 +38,7 @@ internal static partial class HextechCatalog
 		}
 
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-		return ShopOnlyRelicIds.Value.Contains(id);
+		return ModelIdLookups.ShopOnlyRelicIds.Contains(id);
 	}
 
 	public static bool IsHextechCustomRelic(RelicModel? relic)
@@ -66,7 +55,7 @@ internal static partial class HextechCatalog
 		}
 
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-		return PlayerRuneRarityById.Value.TryGetValue(id, out rarity);
+		return ModelIdLookups.PlayerRuneRarityById.TryGetValue(id, out rarity);
 	}
 
 	public static bool TryGetForgeRarity(RelicModel? relic, out HextechRarityTier rarity)
@@ -78,13 +67,13 @@ internal static partial class HextechCatalog
 		}
 
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-		return ForgeRarityById.Value.TryGetValue(id, out rarity);
+		return ModelIdLookups.ForgeRarityById.TryGetValue(id, out rarity);
 	}
 
 	public static string GetPlayerRuneTagKey(RelicModel relic)
 	{
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-		return PlayerRuneTagKeyById.Value.TryGetValue(id, out string? tagKey)
+		return ModelIdLookups.PlayerRuneTagKeyById.TryGetValue(id, out string? tagKey)
 			? tagKey
 			: HextechPlayerRuneRegistry.DefaultTagKey;
 	}
@@ -112,7 +101,37 @@ internal static partial class HextechCatalog
 
 	private static bool IsAttributeConversionExclusiveRuneId(ModelId id)
 	{
-		return AttributeConversionExclusiveRuneIds.Value.Contains(id);
+		return ModelIdLookups.AttributeConversionExclusiveRuneIds.Contains(id);
+	}
+
+	private static ModelIdLookupCache ModelIdLookups
+	{
+		get
+		{
+			int version = HextechContentRegistry.Version;
+			lock (ModelIdLookupLock)
+			{
+				if (_modelIdLookupCache == null || _modelIdLookupCacheVersion != version)
+				{
+					_modelIdLookupCache = BuildModelIdLookupCache();
+					_modelIdLookupCacheVersion = version;
+				}
+
+				return _modelIdLookupCache;
+			}
+		}
+	}
+
+	private static ModelIdLookupCache BuildModelIdLookupCache()
+	{
+		return new ModelIdLookupCache(
+			ToModelIdSet(AllRuneTypes),
+			ToModelIdSet(AllForgeTypes),
+			ToModelIdSet(ShopOnlyRelicTypes),
+			BuildPlayerRuneRarityById(),
+			BuildForgeRarityById(),
+			BuildPlayerRuneTagKeyById(),
+			ToModelIdSet(PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive]));
 	}
 
 	private static IReadOnlySet<ModelId> ToModelIdSet(IEnumerable<Type> modelTypes)
@@ -158,4 +177,13 @@ internal static partial class HextechCatalog
 			byId[ModelDb.GetId(modelType)] = rarity;
 		}
 	}
+
+	private sealed record ModelIdLookupCache(
+		IReadOnlySet<ModelId> RuneIds,
+		IReadOnlySet<ModelId> ForgeIds,
+		IReadOnlySet<ModelId> ShopOnlyRelicIds,
+		IReadOnlyDictionary<ModelId, HextechRarityTier> PlayerRuneRarityById,
+		IReadOnlyDictionary<ModelId, HextechRarityTier> ForgeRarityById,
+		IReadOnlyDictionary<ModelId, string> PlayerRuneTagKeyById,
+		IReadOnlySet<ModelId> AttributeConversionExclusiveRuneIds);
 }

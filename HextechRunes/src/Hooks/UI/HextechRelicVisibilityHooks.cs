@@ -40,6 +40,7 @@ internal static partial class HextechRelicVisibilityHooks
 	};
 
 	private static bool _installed;
+	private static bool _multiplayerStateHiddenByToggle;
 	private static NDrawPileButton? _drawPileAnchor;
 	private static ModUiConfig _config = new();
 
@@ -89,7 +90,7 @@ internal static partial class HextechRelicVisibilityHooks
 			prefix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryHolderDoFlashPrefix)));
 
 		_installed = true;
-		Log.Info($"[{ModInfo.Id}][Mayhem] Relic visibility toggle loaded: hide_relics={_config.HideRelics}.");
+		Log.Info($"[{ModInfo.Id}][Mayhem] UI visibility toggle loaded: hide_ui={_config.HideRelics}.");
 	}
 
 	private static void NGlobalUiInitializePostfix(NGlobalUi __instance)
@@ -97,7 +98,7 @@ internal static partial class HextechRelicVisibilityHooks
 		try
 		{
 			InstallToggle(__instance);
-			ApplyHiddenState(__instance.RelicInventory);
+			ApplyHiddenState(__instance);
 		}
 		catch (Exception ex)
 		{
@@ -117,7 +118,7 @@ internal static partial class HextechRelicVisibilityHooks
 			}
 
 			InstallToggle(globalUi);
-			ApplyHiddenState(globalUi.RelicInventory);
+			ApplyHiddenState(globalUi);
 		}
 		catch (Exception ex)
 		{
@@ -145,11 +146,17 @@ internal static partial class HextechRelicVisibilityHooks
 
 	private static bool NRelicInventoryHolderDoFlashPrefix()
 	{
-		return !_config.HideRelics;
+		return !ShouldHideUi();
 	}
 
 	private static void InstallToggle(NGlobalUi globalUi)
 	{
+		if (!_config.ShowHiddenRelicsToggle)
+		{
+			RemoveToggleRoot(globalUi);
+			return;
+		}
+
 		Control? root = FindToggleRoot(globalUi);
 		Button? button = root?.GetNodeOrNull<Button>($"{ToggleColumnNodeName}/{ToggleBoxNodeName}/{ToggleButtonNodeName}");
 		if (root == null || !GodotObject.IsInstanceValid(root) || button == null || !GodotObject.IsInstanceValid(button))
@@ -174,18 +181,27 @@ internal static partial class HextechRelicVisibilityHooks
 		Callable.From(() => PositionToggleRoot(root)).CallDeferred();
 	}
 
-	private static void OnToggleChanged(bool hideRelics)
+	private static void OnToggleChanged(bool hideUi)
 	{
-		_config.HideRelics = hideRelics;
+		_config.HideRelics = hideUi;
 		SaveConfig(_config);
 		NGlobalUi? globalUi = NRun.Instance?.GlobalUi;
 		if (globalUi?.GetNodeOrNull<Control>(ToggleRootNodeName) is { } root && GodotObject.IsInstanceValid(root))
 		{
-			UpdateToggleVisualState(root, hideRelics);
+			UpdateToggleVisualState(root, hideUi);
 		}
 
-		ApplyHiddenState(globalUi?.RelicInventory);
-		Log.Info($"[{ModInfo.Id}][Mayhem] hide_relics={hideRelics}.");
+		ApplyHiddenState(globalUi);
+		Log.Info($"[{ModInfo.Id}][Mayhem] hide_ui={hideUi}.");
+	}
+
+	private static void RemoveToggleRoot(NGlobalUi globalUi)
+	{
+		if (FindToggleRoot(globalUi) is { } root && GodotObject.IsInstanceValid(root))
+		{
+			root.GetParent()?.RemoveChild(root);
+			root.QueueFree();
+		}
 	}
 
 	private static void ApplyHiddenState(NRelicInventory? inventory)
@@ -195,7 +211,7 @@ internal static partial class HextechRelicVisibilityHooks
 			return;
 		}
 
-		bool showRelics = !_config.HideRelics;
+		bool showRelics = !ShouldHideUi();
 		foreach (NRelicInventoryHolder holder in inventory.RelicNodes)
 		{
 			if (holder == null || !GodotObject.IsInstanceValid(holder))
@@ -207,4 +223,39 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 	}
 
+	private static void ApplyHiddenState(NGlobalUi? globalUi)
+	{
+		if (globalUi == null || !GodotObject.IsInstanceValid(globalUi))
+		{
+			return;
+		}
+
+		ApplyHiddenState(globalUi.RelicInventory);
+		ApplyMultiplayerStateVisibility(globalUi);
+	}
+
+	private static void ApplyMultiplayerStateVisibility(NGlobalUi globalUi)
+	{
+		if (globalUi.MultiplayerPlayerContainer == null
+			|| !GodotObject.IsInstanceValid(globalUi.MultiplayerPlayerContainer))
+		{
+			return;
+		}
+
+		if (ShouldHideUi())
+		{
+			globalUi.MultiplayerPlayerContainer.HideImmediately();
+			_multiplayerStateHiddenByToggle = true;
+		}
+		else if (_multiplayerStateHiddenByToggle)
+		{
+			globalUi.MultiplayerPlayerContainer.ShowImmediately();
+			_multiplayerStateHiddenByToggle = false;
+		}
+	}
+
+	private static bool ShouldHideUi()
+	{
+		return _config.ShowHiddenRelicsToggle && _config.HideRelics;
+	}
 }

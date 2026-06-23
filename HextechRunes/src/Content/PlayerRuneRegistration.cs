@@ -1,7 +1,7 @@
 namespace HextechRunes;
 
 [Flags]
-internal enum PlayerRuneFlags
+public enum PlayerRuneFlags
 {
 	None = 0,
 	Disabled = 1,
@@ -11,7 +11,7 @@ internal enum PlayerRuneFlags
 	SelectionExcluded = 16
 }
 
-internal enum PlayerRuneCharacterPool
+public enum PlayerRuneCharacterPool
 {
 	Ironclad,
 	Silent,
@@ -20,10 +20,10 @@ internal enum PlayerRuneCharacterPool
 	Necrobinder
 }
 
-internal readonly record struct PlayerRuneRegistration(
+public readonly record struct PlayerRuneRegistration(
 	Type Type,
 	HextechRarityTier Rarity,
 	PlayerRuneFlags Flags = PlayerRuneFlags.None,
 	PlayerRuneCharacterPool? CharacterPool = null,
 	int CharacterOrder = 0,
-	string TagKey = HextechPlayerRuneRegistry.DefaultTagKey);
+	string TagKey = "COMPREHENSIVE");

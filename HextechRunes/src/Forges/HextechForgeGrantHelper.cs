@@ -34,8 +34,15 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 
+internal readonly record struct HextechForgeRarityWeights(int Silver, int Gold, int Prismatic)
+{
+	public int Total => Silver + Gold + Prismatic;
+}
+
 public sealed class RandomForgeShopRelic : HextechRelicBase
 {
+	private const string PriceVarName = "Price";
+
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedPurchaseCount
 	{
@@ -45,9 +52,19 @@ public sealed class RandomForgeShopRelic : HextechRelicBase
 
 	public int PurchaseCount { get; private set; }
 
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar(PriceVarName, HextechRuneConfiguration.GetDefaultRandomForgeShopPrice())
+	];
+
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return false;
+	}
+
+	public void SetDisplayedPrice(int price)
+	{
+		DynamicVars[PriceVarName].BaseValue = HextechRuneConfiguration.ClampRandomForgeShopPrice(price);
 	}
 
 	public void IncrementPurchaseCount()
@@ -68,6 +85,30 @@ internal static class HextechForgeGrantHelper
 			}
 
 			RelicModel? selected = await HextechForgeSelectionCoordinator.SelectForge(player, options, $"obtain-random-forges:{i}");
+			if (selected == null)
+			{
+				return;
+			}
+
+			await ObtainSelectedForge(player, selected, syncObtainedRelic: false);
+		}
+	}
+
+	public static async Task ObtainRandomForges(
+		Player player,
+		HextechRarityTier rarity,
+		int count,
+		Func<Type, bool> forgeTypePredicate,
+		string source)
+	{
+		for (int i = 0; i < count; i++)
+		{
+			if (!TryCreateStableRandomForgeChoice(player, rarity, source, i, forgeTypePredicate, out List<RelicModel> options))
+			{
+				return;
+			}
+
+			RelicModel? selected = await HextechForgeSelectionCoordinator.SelectForge(player, options, $"{source}:{i}");
 			if (selected == null)
 			{
 				return;
@@ -119,30 +160,40 @@ internal static class HextechForgeGrantHelper
 	public static async Task ObtainSelectedForge(Player player, RelicModel forge, bool syncObtainedRelic)
 	{
 		SaveManager.Instance.MarkRelicAsSeen(forge);
-		await RelicCmd.Obtain(forge, player);
+		bool syncedBeforePickup = false;
 		if (syncObtainedRelic)
 		{
 			INetGameService netService = RunManager.Instance.NetService;
 			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
 			{
-				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(forge);
+				// Enchantment forges open a nested deck choice during pickup; remote clients must know about the forge first.
+				ModelId forgeId = forge.CanonicalInstance?.Id ?? forge.Id;
+				RelicModel syncCopy = ModelDb.GetById<RelicModel>(forgeId).ToMutable();
+				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(syncCopy);
+				syncedBeforePickup = true;
 			}
 			else if (netService.Type is NetGameType.Host or NetGameType.Client)
 			{
 				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
 			}
 		}
+
+		await RelicCmd.Obtain(forge, player);
+		if (syncedBeforePickup)
+		{
+			Log.Info($"[{ModInfo.Id}][ForgeChoice] Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
+		}
 	}
 
 	internal static bool TryCreateRandomForge(Player player, Rng rng, out RelicModel? forge)
 	{
-		HextechRarityTier rarity = RollForgeRarity(rng);
+		HextechRarityTier rarity = RollForgeRarity(player, rng);
 		return TryCreateRandomForge(player, rarity, rng, out forge);
 	}
 
 	internal static bool TryCreateRandomForgeChoice(Player player, Rng rng, out List<RelicModel> options)
 	{
-		HextechRarityTier rarity = RollForgeRarity(rng);
+		HextechRarityTier rarity = RollForgeRarity(player, rng);
 		return TryCreateRandomForgeChoice(player, rarity, rng, out options);
 	}
 
@@ -247,6 +298,38 @@ internal static class HextechForgeGrantHelper
 		return options.Count > 0;
 	}
 
+	private static bool TryCreateStableRandomForgeChoice(
+		Player player,
+		HextechRarityTier rarity,
+		string source,
+		int ordinal,
+		Func<Type, bool> forgeTypePredicate,
+		out List<RelicModel> options)
+	{
+		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity).Where(forgeTypePredicate));
+		if (pool.Count == 0)
+		{
+			options = [];
+			return false;
+		}
+
+		List<Type> forgeTypes = HextechStableRandom.PickDistinct(
+			pool,
+			Math.Min(3, pool.Count),
+			(RunState)player.RunState,
+			HextechStableRandom.TypeModelKey,
+			source,
+			"filtered-forge-choice",
+			HextechStableRandom.PlayerKey(player),
+			ordinal.ToString(),
+			((int)rarity).ToString(),
+			player.Relics.Count.ToString());
+		options = forgeTypes
+			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)).ToMutable())
+			.ToList();
+		return options.Count > 0;
+	}
+
 	private static bool TryCreateRandomForge(Player player, HextechRarityTier rarity, Rng rng, out RelicModel? forge)
 	{
 		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
@@ -295,30 +378,44 @@ internal static class HextechForgeGrantHelper
 
 	private static List<Type> BuildAvailableForgePool(Player player, IEnumerable<Type> candidateTypes)
 	{
+		IReadOnlySet<string> disabledForgeIds = GetEffectiveDisabledForgeIds(player);
 		return candidateTypes
+			.Where(type => !disabledForgeIds.Contains(ModelDb.GetId(type).Entry))
 			.Where(type => HextechCatalog.IsAvailableForPlayer(ModelDb.GetById<RelicModel>(ModelDb.GetId(type)), player))
 			.ToList();
 	}
 
-	private static HextechRarityTier RollForgeRarity(Rng rng)
+	internal static HextechForgeRarityWeights ApplyDiceManiacForgeRarityModifier(HextechForgeRarityWeights weights, bool hasDiceManiac)
 	{
-		int roll = rng.NextInt(100);
-		if (roll < 65)
+		weights = NormalizeForgeRarityWeights(weights);
+		if (!hasDiceManiac)
+		{
+			return weights;
+		}
+
+		return weights with
+		{
+			Gold = weights.Gold * DiceManiacRune.ForgeRarityMultiplier,
+			Prismatic = weights.Prismatic * DiceManiacRune.ForgeRarityMultiplier
+		};
+	}
+
+	private static HextechRarityTier RollForgeRarity(Player player, Rng rng)
+	{
+		HextechForgeRarityWeights baseWeights = GetBaseForgeRarityWeights(player);
+		HextechForgeRarityWeights weights = GetModifiedForgeRarityWeights(player, baseWeights.Silver, baseWeights.Gold, baseWeights.Prismatic);
+		if (weights.Total <= 0)
 		{
 			return HextechRarityTier.Silver;
 		}
 
-		if (roll < 90)
-		{
-			return HextechRarityTier.Gold;
-		}
-
-		return HextechRarityTier.Prismatic;
+		return ResolveForgeRarity(weights, rng.NextInt(weights.Total));
 	}
 
 	private static HextechRarityTier RollStableForgeRarity(Player player, string source, int ordinal)
 	{
-		return RollStableForgeRarity(player, source, ordinal, 65, 25, 10);
+		HextechForgeRarityWeights baseWeights = GetBaseForgeRarityWeights(player);
+		return RollStableForgeRarity(player, source, ordinal, baseWeights.Silver, baseWeights.Gold, baseWeights.Prismatic);
 	}
 
 	private static HextechRarityTier RollStableForgeRarity(
@@ -329,32 +426,88 @@ internal static class HextechForgeGrantHelper
 		int goldWeight,
 		int prismaticWeight)
 	{
-		silverWeight = Math.Max(0, silverWeight);
-		goldWeight = Math.Max(0, goldWeight);
-		prismaticWeight = Math.Max(0, prismaticWeight);
-		int totalWeight = silverWeight + goldWeight + prismaticWeight;
-		if (totalWeight <= 0)
+		HextechForgeRarityWeights weights = GetModifiedForgeRarityWeights(player, silverWeight, goldWeight, prismaticWeight);
+		if (weights.Total <= 0)
 		{
 			return HextechRarityTier.Silver;
 		}
 
 		int roll = HextechStableRandom.Index(
 			(RunState)player.RunState,
-			totalWeight,
+			weights.Total,
 			source,
 			"forge-rarity",
 			HextechStableRandom.PlayerKey(player),
 			ordinal.ToString(),
 			player.Relics.Count.ToString(),
-			silverWeight.ToString(),
-			goldWeight.ToString(),
-			prismaticWeight.ToString());
-		if (roll < silverWeight)
+			weights.Silver.ToString(),
+			weights.Gold.ToString(),
+			weights.Prismatic.ToString());
+		return ResolveForgeRarity(weights, roll);
+	}
+
+	private static HextechForgeRarityWeights GetModifiedForgeRarityWeights(
+		Player player,
+		int silverWeight,
+		int goldWeight,
+		int prismaticWeight)
+	{
+		HextechForgeRarityWeights weights = new(silverWeight, goldWeight, prismaticWeight);
+		return ApplyDiceManiacForgeRarityModifier(weights, player.GetRelic<DiceManiacRune>() != null);
+	}
+
+	private static HextechForgeRarityWeights GetBaseForgeRarityWeights(Player player)
+	{
+		try
+		{
+			if (player.RunState is RunState runState
+				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			{
+				return modifier.ForgeRarityWeights;
+			}
+		}
+		catch
+		{
+			// Fall back to local configuration when no run state is available yet.
+		}
+
+		return HextechRuneConfiguration.GetSnapshot().ForgeRarityWeights;
+	}
+
+	private static IReadOnlySet<string> GetEffectiveDisabledForgeIds(Player player)
+	{
+		try
+		{
+			if (player.RunState is RunState runState
+				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			{
+				return modifier.DisabledForgeIdsForPool;
+			}
+		}
+		catch
+		{
+			// Fall back to local configuration when no run state is available yet.
+		}
+
+		return HextechRuneConfiguration.GetDisabledForgeIds();
+	}
+
+	private static HextechForgeRarityWeights NormalizeForgeRarityWeights(HextechForgeRarityWeights weights)
+	{
+		return new HextechForgeRarityWeights(
+			Math.Max(0, weights.Silver),
+			Math.Max(0, weights.Gold),
+			Math.Max(0, weights.Prismatic));
+	}
+
+	private static HextechRarityTier ResolveForgeRarity(HextechForgeRarityWeights weights, int roll)
+	{
+		if (roll < weights.Silver)
 		{
 			return HextechRarityTier.Silver;
 		}
 
-		if (roll < silverWeight + goldWeight)
+		if (roll < weights.Silver + weights.Gold)
 		{
 			return HextechRarityTier.Gold;
 		}

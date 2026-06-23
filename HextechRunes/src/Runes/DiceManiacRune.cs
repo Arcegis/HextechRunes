@@ -9,8 +9,9 @@ namespace HextechRunes;
 public sealed class DiceManiacRune : HextechRelicBase, IHextechSharedCombatVictoryRune
 {
 	private const int SilverForgeWeight = 65;
-	private const int GoldForgeWeight = 25 * 2;
-	private const int PrismaticForgeWeight = 10 * 2;
+	private const int GoldForgeWeight = 25;
+	private const int PrismaticForgeWeight = 10;
+	internal const int ForgeRarityMultiplier = 2;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[

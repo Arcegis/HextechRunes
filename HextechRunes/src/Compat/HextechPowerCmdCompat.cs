@@ -6,7 +6,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static class HextechPowerCmdCompat
+public static class HextechPowerCmdCompat
 {
 	private const BindingFlags PublicStatic = BindingFlags.Public | BindingFlags.Static;
 
@@ -152,5 +152,10 @@ internal static class HextechPowerCmdCompat
 	public static Task Remove(PowerModel power)
 	{
 		return MegaCrit.Sts2.Core.Commands.PowerCmd.Remove(power);
+	}
+
+	public static Task Decrement(PowerModel power)
+	{
+		return MegaCrit.Sts2.Core.Commands.PowerCmd.Decrement(power);
 	}
 }

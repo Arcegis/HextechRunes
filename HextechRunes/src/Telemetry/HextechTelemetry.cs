@@ -39,7 +39,8 @@ internal static partial class HextechTelemetry
 		Player player,
 		IReadOnlyList<RelicModel> options,
 		RelicModel selected,
-		int rerollCount)
+		int rerollCount,
+		int choiceOrdinal = 0)
 	{
 		try
 		{
@@ -53,6 +54,7 @@ internal static partial class HextechTelemetry
 			RuneChoiceRecord record = new(
 				actIndex,
 				playerSlot,
+				Math.Max(0, choiceOrdinal),
 				rarity.ToString(),
 				options.Select(GetRelicId).ToArray(),
 				GetRelicId(selected),

@@ -52,12 +52,23 @@ internal static class HextechAssets
 
     public const string CloudDragonSoulPowerIconPath = "res://HextechRunes/images/powers/cloudDragonSoulPower.png";
 
+    public const string HandOfBaronAuraRunePath = "res://HextechRunes/images/effects/jungle_buff_baron.png";
+
+    public const string HandOfBaronAuraRingPath = "res://HextechRunes/images/effects/ring_soft_02.png";
+
+    public const string HandOfBaronAuraDiscPath = "res://HextechRunes/images/effects/disc32.ha_crepe.png";
+
+    public const string HandOfBaronAuraSmokePath = "res://HextechRunes/images/effects/srx_infernal_smoke_trail.png";
+
+    public const string MikaelsBlessingAoeRunePath = "res://HextechRunes/images/effects/milio_base_r_aoe_rune.png";
+
     public static string? TryGetCustomRelicIconPath(RelicModel relic)
     {
         if (HextechCatalog.IsHextechRelic(relic))
         {
             ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
-            return $"res://{ModInfo.Id}/images/relics/{ToImageFileStem(id.Entry)}.png";
+            string assetModId = HextechExternalContentRegistry.GetAssetModId(id) ?? ModInfo.Id;
+            return $"res://{assetModId}/images/relics/{ToImageFileStem(id.Entry)}.png";
         }
 
         if (HextechCatalog.TryGetForgeRarity(relic, out HextechRarityTier forgeRarity))

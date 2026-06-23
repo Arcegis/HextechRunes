@@ -28,7 +28,6 @@ internal sealed class CombatTrackingSnapshot
 	public List<uint> ThornmailApplied { get; set; } = [];
 	public List<uint> SuperBrainApplied { get; set; } = [];
 	public List<uint> AstralBodyApplied { get; set; } = [];
-	public List<uint> DrawYourSwordApplied { get; set; } = [];
 	public List<uint> MadScientistApplied { get; set; } = [];
 	public List<uint> UnmovableMountainApplied { get; set; } = [];
 	public List<uint> GoldenSpatulaApplied { get; set; } = [];

@@ -5,6 +5,7 @@ internal static partial class HextechTelemetry
 	public sealed record RuneChoiceRecord(
 		int ActIndex,
 		int PlayerSlot,
+		int ChoiceOrdinal,
 		string Rarity,
 		IReadOnlyList<string> Options,
 		string? Selected,

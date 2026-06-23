@@ -92,6 +92,11 @@ internal static class MonsterHexCatalog
 			return [mainTip, HoverTipFactory.FromPower<HextechBurnPower>()];
 		}
 
+		if (hex == MonsterHexKind.Compensation)
+		{
+			return [mainTip, HoverTipFactory.FromPower<PoisonPower>()];
+		}
+
 		return [mainTip];
 	}
 

@@ -11,7 +11,7 @@ internal sealed class PorcupineEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int maxTriggers = context.TierValue(Kind, 2, 3, 3);
+		int maxTriggers = context.TierValue(Kind, 1, 2, 2);
 		int triggers = context.Tracking.EnemyPorcupineTriggersThisTurn.GetValueOrDefault(combatId, 0);
 		if (triggers >= maxTriggers)
 		{

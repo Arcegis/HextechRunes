@@ -12,23 +12,23 @@ internal static partial class HextechCatalog
 
 	private readonly record struct CharacterRunePool(string LocalizationKey, IReadOnlyList<Type> RuneTypes);
 
-	private static readonly PlayerRuneMetadataCatalog PlayerRuneMetadata = HextechContentRegistry.PlayerRuneMetadata;
+	private static PlayerRuneMetadataCatalog PlayerRuneMetadata => HextechContentRegistry.PlayerRuneMetadata;
 
-	private static readonly IReadOnlyList<Type> SilverRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Silver];
+	private static IReadOnlyList<Type> SilverRuneTypes => PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Silver];
 
-	private static readonly IReadOnlyList<Type> GoldRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Gold];
+	private static IReadOnlyList<Type> GoldRuneTypes => PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Gold];
 
-	private static readonly IReadOnlyList<Type> PrismaticRuneTypes = PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Prismatic];
+	private static IReadOnlyList<Type> PrismaticRuneTypes => PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Prismatic];
 
-	private static readonly IReadOnlyList<Type> SilverForgeTypes = HextechContentRegistry.SilverForgeTypes;
+	private static IReadOnlyList<Type> SilverForgeTypes => HextechContentRegistry.SilverForgeTypes;
 
-	private static readonly IReadOnlyList<Type> GoldForgeTypes = HextechContentRegistry.GoldForgeTypes;
+	private static IReadOnlyList<Type> GoldForgeTypes => HextechContentRegistry.GoldForgeTypes;
 
-	private static readonly IReadOnlyList<Type> PrismaticForgeTypes = HextechContentRegistry.PrismaticForgeTypes;
+	private static IReadOnlyList<Type> PrismaticForgeTypes => HextechContentRegistry.PrismaticForgeTypes;
 
-	private static readonly IReadOnlyList<Type> ShopOnlyRelicTypes = HextechContentRegistry.ShopOnlyRelicTypes;
+	private static IReadOnlyList<Type> ShopOnlyRelicTypes => HextechContentRegistry.ShopOnlyRelicTypes;
 
-	private static readonly IReadOnlyList<CharacterRunePool> CharacterRunePools =
+	private static IReadOnlyList<CharacterRunePool> CharacterRunePools =>
 	[
 		new("IRONCLAD", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Ironclad]),
 		new("SILENT", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Silent]),
@@ -37,18 +37,18 @@ internal static partial class HextechCatalog
 		new("NECROBINDER", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Necrobinder])
 	];
 
-	private static readonly IReadOnlySet<Type> CharacterSpecificRuneTypes = PlayerRuneMetadata.GetCharacterSpecificTypes();
+	private static IReadOnlySet<Type> CharacterSpecificRuneTypes => PlayerRuneMetadata.GetCharacterSpecificTypes();
 
-	private static readonly IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =
+	private static IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =>
 		PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive];
 
-	private static readonly IReadOnlyList<Type> AllRuneTypes = PlayerRuneMetadata.AllTypes;
+	private static IReadOnlyList<Type> AllRuneTypes => PlayerRuneMetadata.AllTypes;
 
-	private static readonly IReadOnlyList<Type> AllForgeTypes = HextechContentRegistry.AllForgeTypes;
+	private static IReadOnlyList<Type> AllForgeTypes => HextechContentRegistry.AllForgeTypes;
 
-	private static readonly IReadOnlyList<Type> AllCustomRelicTypes = HextechContentRegistry.AllCustomRelicTypes;
+	private static IReadOnlyList<Type> AllCustomRelicTypes => HextechContentRegistry.AllCustomRelicTypes;
 
-	private static readonly IReadOnlyList<Type> CustomCardTypes = HextechContentRegistry.CustomCardTypes;
+	private static IReadOnlyList<Type> CustomCardTypes => HextechContentRegistry.CustomCardTypes;
 
 	public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
 

@@ -150,9 +150,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		_holders.Clear();
 		_rerollButtons.Clear();
-		while (_rerolledSlots.Count < _relics.Count)
+		while (_playerRuneRerollCounts.Count < _relics.Count)
 		{
-			_rerolledSlots.Add(false);
+			_playerRuneRerollCounts.Add(0);
 		}
 
 		for (int i = 0; i < _relics.Count; i++)

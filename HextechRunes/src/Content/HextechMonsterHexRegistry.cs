@@ -71,7 +71,6 @@ internal static class HextechMonsterHexRegistry
 		Monster<GoldrendRune>(MonsterHexKind.Goldrend, HextechRarityTier.Prismatic),
 		Monster<FeelTheBurnRune>(MonsterHexKind.FeelTheBurn, HextechRarityTier.Prismatic, hasBurnHoverTip: true),
 		Monster<BackToBasicsRune>(MonsterHexKind.BackToBasics, HextechRarityTier.Prismatic),
-		Monster<DrawYourSwordRune>(MonsterHexKind.DrawYourSword, HextechRarityTier.Prismatic, disabled: true),
 		Monster<MadScientistRune>(MonsterHexKind.MadScientist, HextechRarityTier.Prismatic),
 		Monster<FeyMagicRune>(MonsterHexKind.FeyMagic, HextechRarityTier.Prismatic),
 		Monster<FinalFormRune>(MonsterHexKind.FinalForm, HextechRarityTier.Prismatic),
@@ -102,7 +101,9 @@ internal static class HextechMonsterHexRegistry
 		Monster<OminousPactRune>(MonsterHexKind.OminousPact, HextechRarityTier.Prismatic),
 		Monster<SolidTimeRune>(MonsterHexKind.SolidTime, HextechRarityTier.Prismatic),
 		Monster<ForgottenSoulRune>(MonsterHexKind.ForgottenSoul, HextechRarityTier.Prismatic),
-		Monster<CerberusRune>(MonsterHexKind.Cerberus, HextechRarityTier.Prismatic)
+		Monster<CerberusRune>(MonsterHexKind.Cerberus, HextechRarityTier.Prismatic),
+		Monster<OmniDragonSoulRune>(MonsterHexKind.OmniDragonSoul, HextechRarityTier.Prismatic),
+		Monster<BlankCheckRune>(MonsterHexKind.BlankCheck, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

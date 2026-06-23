@@ -14,6 +14,7 @@ internal sealed class MikaelsBlessingEnemyHex : HextechEnemyHexEffect
 		context.Tracking.MikaelsBlessingTriggers[combatId] = context.Tracking.MikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) + 1;
 		decimal healPercent = context.TierValue(Kind, 0.10m, 0.25m, 0.40m);
 		int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * healPercent));
+		HextechMikaelsBlessingVfx.Play(target);
 		await CreatureCmd.Heal(target, heal);
 
 		List<PowerModel> negativePowers = target.Powers

@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HextechRunes;
 
-internal interface IHextechSharedCombatVictoryRune
+public interface IHextechSharedCombatVictoryRune
 {
 	Task ApplySharedCombatVictory(CombatRoom room);
 }

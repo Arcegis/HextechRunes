@@ -74,7 +74,7 @@ internal static class HextechStableRandom
 			Add(ref hash, part);
 		}
 
-		return hash;
+		return FinalizeHash(hash);
 	}
 
 	public static T Pick<T>(IEnumerable<T> candidates, RunState runState, Func<T, string> keySelector, params string?[] saltParts)
@@ -198,7 +198,20 @@ internal static class HextechStableRandom
 			Add(ref hash, part ?? "");
 		}
 
-		return hash;
+		return FinalizeHash(hash);
+	}
+
+	private static ulong FinalizeHash(ulong hash)
+	{
+		unchecked
+		{
+			hash ^= hash >> 33;
+			hash *= 0xff51afd7ed558ccdUL;
+			hash ^= hash >> 33;
+			hash *= 0xc4ceb9fe1a85ec53UL;
+			hash ^= hash >> 33;
+			return hash;
+		}
 	}
 
 	private static string?[] AppendSalt(string?[] saltParts, params string?[] extra)
