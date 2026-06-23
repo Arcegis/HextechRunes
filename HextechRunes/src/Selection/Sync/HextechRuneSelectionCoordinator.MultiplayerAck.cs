@@ -1,5 +1,6 @@
 using Godot;
 using System.Threading;
+using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -176,6 +177,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	internal static bool IsLocalPlayer(RunManager runManager, Player player)
 	{
-		return player.NetId != 0UL && player.NetId == runManager.NetService.NetId;
+		return LocalContext.IsMe(player)
+			|| (player.NetId != 0UL && player.NetId == runManager.NetService.NetId);
 	}
 }

@@ -97,7 +97,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			choiceId,
 			result => HextechChoiceCodec.IsRuneSelection(result, actIndex, choiceOrdinal),
 			context,
-			RemoteRuneChoiceTimeoutFrames);
+			RemoteRuneChoicePollFrames,
+			() => ShouldKeepWaitingForRemoteRuneChoice((RunState)player.RunState));
 		if (!received.HasValue)
 		{
 			return CreateRemoteRuneChoiceFallback(modifier, player, options, context, choiceId);
@@ -164,7 +165,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			selection.ChoiceId,
 			result => HextechChoiceCodec.IsRuneSelection(result, actIndex, choiceOrdinal),
 			context,
-			RemoteRuneChoiceTimeoutFrames);
+			RemoteRuneChoicePollFrames,
+			() => ShouldKeepWaitingForRemoteRuneChoice((RunState)selection.Player.RunState));
 		if (!received.HasValue)
 		{
 			return CreateRemoteRuneChoiceFallback(modifier, selection.Player, selection.Options, context, selection.ChoiceId);
@@ -173,6 +175,11 @@ internal static partial class HextechRuneSelectionCoordinator
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = received.Value;
 		Log.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={receivedChoiceId}");
 		return ResolveRemoteRuneChoice(modifier, selection.Player, actIndex, choiceOrdinal, selection.Options, remoteChoice, monsterHexRelic);
+	}
+
+	private static bool ShouldKeepWaitingForRemoteRuneChoice(RunState runState)
+	{
+		return IsCurrentRun(runState) && IsMultiplayerConnected();
 	}
 
 	private static async Task<HextechRuneSelectionScreen> CreateRuneSelectionScreenAsync(

@@ -47,6 +47,9 @@ internal static class Program
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
 			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
 			new(nameof(DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights), DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights),
+			new(nameof(StableRandomSequentialFloorsAvoidExcessClustering), StableRandomSequentialFloorsAvoidExcessClustering),
+			new(nameof(StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle), StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle),
+			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
 			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
@@ -477,6 +480,112 @@ internal static class Program
 		Equal(110, customWeights.Total, "custom total weight");
 	}
 
+	private static void StableRandomSequentialFloorsAvoidExcessClustering()
+	{
+		const int seedCount = 2048;
+		const int floorCount = 24;
+		double[] hitRates = new double[seedCount];
+		double lagX = 0;
+		double lagY = 0;
+		double lagXX = 0;
+		double lagYY = 0;
+		double lagXY = 0;
+		int lagPairs = 0;
+
+		for (int seedIndex = 0; seedIndex < seedCount; seedIndex++)
+		{
+			string seed = $"TEST-SEED-{seedIndex:00000}";
+			int hits = 0;
+			int previousHit = -1;
+			for (int floor = 1; floor <= floorCount; floor++)
+			{
+				int roll = HextechStableRandom.IndexFromRawParts(
+					100,
+					seed,
+					"|act:",
+					"0",
+					"|floor:",
+					floor.ToString(),
+					"|",
+					"dice-maniac-forge-reward",
+					"|",
+					"0:1",
+					"|",
+					"7");
+				int hit = roll < 50 ? 1 : 0;
+				hits += hit;
+				if (previousHit >= 0)
+				{
+					lagX += previousHit;
+					lagY += hit;
+					lagXX += previousHit * previousHit;
+					lagYY += hit * hit;
+					lagXY += previousHit * hit;
+					lagPairs++;
+				}
+
+				previousHit = hit;
+			}
+
+			hitRates[seedIndex] = (double)hits / floorCount;
+		}
+
+		double mean = hitRates.Average();
+		double variance = hitRates.Select(rate => (rate - mean) * (rate - mean)).Average();
+		double stdev = Math.Sqrt(variance);
+		double lagMeanX = lagX / lagPairs;
+		double lagMeanY = lagY / lagPairs;
+		double lagVarianceX = lagXX / lagPairs - lagMeanX * lagMeanX;
+		double lagVarianceY = lagYY / lagPairs - lagMeanY * lagMeanY;
+		double lagCorrelation = (lagXY / lagPairs - lagMeanX * lagMeanY) / Math.Sqrt(lagVarianceX * lagVarianceY);
+
+		Expect(mean is > 0.48 and < 0.52, $"stable random 50% mean should stay unbiased, got {mean:F4}");
+		Expect(stdev < 0.11, $"stable random sequential floor stdev should not show excess clustering, got {stdev:F4}");
+		Expect(Math.Abs(lagCorrelation) < 0.02, $"stable random lag-1 correlation should stay near zero, got {lagCorrelation:F4}");
+	}
+
+	private static void StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle()
+	{
+		int[] circleTargets = Enumerable.Range(0, 8)
+			.Select(historyCount => HextechStableRandom.IndexFromRawParts(
+				4,
+				"TEST-SEED",
+				"|act:",
+				"0",
+				"|floor:",
+				"12",
+				"|",
+				"circle-of-death-target",
+				"|",
+				"0:1",
+				"|",
+				"1",
+				"|",
+				"12",
+				"|",
+				historyCount.ToString()))
+			.ToArray();
+
+		int[] miseryTargets = Enumerable.Range(1, 8)
+			.Select(roundNumber => HextechStableRandom.IndexFromRawParts(
+				4,
+				"TEST-SEED",
+				"|act:",
+				"0",
+				"|floor:",
+				"12",
+				"|",
+				"misery-target",
+				"|",
+				"0:1",
+				"|",
+				roundNumber.ToString()))
+			.ToArray();
+
+		Expect(!IsModuloStepCycle(circleTargets, 4), $"circle-of-death target sequence should not be a fixed modulo cycle: [{string.Join(", ", circleTargets)}]");
+		Expect(!IsModuloStepCycle(miseryTargets, 4), $"misery target sequence should not be a fixed modulo cycle: [{string.Join(", ", miseryTargets)}]");
+	}
+
 	private static void ActSelectionGatePreventsReentryAndClearsCurrentRun()
 	{
 		HextechActSelectionGate gate = new();
@@ -535,6 +644,19 @@ internal static class Program
 		Equal(9, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, -1), "infinite decrements to nine");
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, 1), "infinite stays infinite on increment");
 		Equal(9, HextechRuneConfiguration.ClampRerollLimit(99), "finite values clamp to nine");
+	}
+
+	private static void RandomForgeShopRelicUpdatesDisplayedPrice()
+	{
+		RandomForgeShopRelic relic = new();
+
+		Equal(HextechRuneConfiguration.GetDefaultRandomForgeShopPrice(), relic.DynamicVars["Price"].IntValue, "default displayed forge price");
+		relic.SetDisplayedPrice(777);
+		Equal(777, relic.DynamicVars["Price"].IntValue, "updated displayed forge price");
+		relic.SetDisplayedPrice(99999);
+		Equal(9999, relic.DynamicVars["Price"].IntValue, "displayed forge price clamps to config maximum");
+		relic.SetDisplayedPrice(-12);
+		Equal(0, relic.DynamicVars["Price"].IntValue, "displayed forge price clamps to config minimum");
 	}
 
 	private static void EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct()
@@ -1240,6 +1362,31 @@ internal static class Program
 		{
 			throw new InvalidOperationException($"{label}: expected [{string.Join(", ", expectedSet)}], got [{string.Join(", ", actualSet)}]");
 		}
+	}
+
+	private static bool IsModuloStepCycle(IReadOnlyList<int> values, int modulo)
+	{
+		if (values.Count < 3)
+		{
+			return false;
+		}
+
+		int step = PositiveModulo(values[1] - values[0], modulo);
+		for (int i = 2; i < values.Count; i++)
+		{
+			if (PositiveModulo(values[i] - values[i - 1], modulo) != step)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private static int PositiveModulo(int value, int modulo)
+	{
+		int result = value % modulo;
+		return result < 0 ? result + modulo : result;
 	}
 
 	private readonly record struct TestCase(string Name, Action Run);

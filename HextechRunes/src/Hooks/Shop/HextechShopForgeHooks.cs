@@ -95,6 +95,7 @@ internal static class HextechShopForgeHooks
 	{
 		if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null)
 		{
+			HextechForgeShopPriceHelper.RefreshRandomForgeShopRelic(shopRelic, shopRelic.Owner?.RunState as RunState);
 			result = GetRandomForgeShopBaseCost(shopRelic);
 		}
 	}
@@ -167,7 +168,9 @@ internal static class HextechShopForgeHooks
 			return;
 		}
 
-		MerchantRelicEntry entry = new(ModelDb.Relic<RandomForgeShopRelic>().ToMutable(), player);
+		RandomForgeShopRelic shopRelic = (RandomForgeShopRelic)ModelDb.Relic<RandomForgeShopRelic>().ToMutable();
+		HextechForgeShopPriceHelper.RefreshRandomForgeShopRelic(shopRelic, player.RunState as RunState);
+		MerchantRelicEntry entry = new(shopRelic, player);
 		entry.PurchaseCompleted += (_, _) => UpdateInventoryEntries(inventory);
 		inventory.AddRelicEntry(entry);
 	}
@@ -175,6 +178,11 @@ internal static class HextechShopForgeHooks
 	private static async Task<(bool, int)> PurchaseRandomForge(MerchantRelicEntry entry, MerchantInventory inventory, bool ignoreCost)
 	{
 		Player player = inventory.Player;
+		if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? activeShopRelic) && activeShopRelic != null)
+		{
+			HextechForgeShopPriceHelper.RefreshRandomForgeShopRelic(activeShopRelic, player.RunState as RunState);
+		}
+
 		int cost = TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null
 			? entry.Cost
 			: RandomForgeShopRegularCost;
@@ -268,26 +276,18 @@ internal static class HextechShopForgeHooks
 
 	private static int GetRandomForgeShopBaseCost(RandomForgeShopRelic shopRelic)
 	{
-		try
-		{
-			if (shopRelic.Owner?.RunState is RunState runState
-				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
-			{
-				return modifier.RandomForgeShopPrice;
-			}
-		}
-		catch
-		{
-			// Fall back to local configuration when the placeholder relic has no run context.
-		}
-
-		return HextechRuneConfiguration.GetSnapshot().RandomForgeShopPrice;
+		return HextechForgeShopPriceHelper.GetRandomForgeShopPriceFor(shopRelic.Owner?.RunState as RunState);
 	}
 
 	private static void UpdateInventoryEntries(MerchantInventory inventory)
 	{
 		foreach (MerchantEntry entry in inventory.AllEntries)
 		{
+			if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic) && shopRelic != null)
+			{
+				HextechForgeShopPriceHelper.RefreshRandomForgeShopRelic(shopRelic, inventory.Player.RunState as RunState);
+			}
+
 			entry.OnMerchantInventoryUpdated();
 		}
 	}
