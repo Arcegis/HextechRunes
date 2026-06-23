@@ -19,6 +19,7 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindEnemyHexAdjustment = 4;
 	private const int ChoiceKindForgeSelection = 5;
 	private const int ChoiceKindRandomRuneGrant = 6;
+	private const int ChoiceKindRelicOptionSelection = 7;
 	private const int EnemyHexAdjustmentListVersion = -2;
 	private const int PlayerRuneConfigBitsetVersion = -4;
 	private const int RunConfigurationSnapshotVersion = -5;
@@ -544,6 +545,51 @@ internal static class HextechChoiceCodec
 		}
 
 		return true;
+	}
+
+	public static PlayerChoiceResult CreateRelicOptionSelection(int selectedIndex, IReadOnlyList<RelicModel> options)
+	{
+		List<int> payload = [ Magic, ChoiceKindRelicOptionSelection, selectedIndex ];
+		HextechStableModelIdListCodec.Append(payload, options.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
+
+		return PlayerChoiceResult.FromIndexes(payload);
+	}
+
+	public static bool IsRelicOptionSelection(PlayerChoiceResult result, IReadOnlyList<RelicModel> expectedOptions)
+	{
+		if (!TryDecodeRelicOptionSelection(result, out _, out List<ModelId> optionIds)
+			|| optionIds.Count != expectedOptions.Count)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < expectedOptions.Count; i++)
+		{
+			ModelId expectedId = expectedOptions[i].CanonicalInstance?.Id ?? expectedOptions[i].Id;
+			if (optionIds[i] != expectedId)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public static bool TryDecodeRelicOptionSelection(PlayerChoiceResult result, out int selectedIndex, out List<ModelId> optionIds)
+	{
+		selectedIndex = -1;
+		optionIds = [];
+		if (!TryGetIndexPayload(result, out List<int> payload)
+			|| payload.Count < 4
+			|| payload[0] != Magic
+			|| payload[1] != ChoiceKindRelicOptionSelection
+			|| payload[3] != HextechStableModelIdListCodec.Version)
+		{
+			return false;
+		}
+
+		selectedIndex = payload[2];
+		return HextechStableModelIdListCodec.TryDecode(payload, 3, out optionIds, out _);
 	}
 
 	private static bool TryGetForgeIdForOrdinal(int ordinal, out ModelId id)

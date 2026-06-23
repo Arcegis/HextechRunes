@@ -94,6 +94,22 @@ public static class HextechRunesApi
 		return HextechForgeGrantHelper.ObtainRandomForges(player, rarity, count, forgeTypePredicate, source);
 	}
 
+	public static Task<RelicModel?> SelectRelicOption(
+		Player player,
+		IReadOnlyList<RelicModel> options,
+		string context,
+		bool syncMultiplayerChoice = true)
+	{
+		ArgumentNullException.ThrowIfNull(player);
+		ArgumentNullException.ThrowIfNull(options);
+		if (string.IsNullOrWhiteSpace(context))
+		{
+			throw new ArgumentException("Relic option selection context must not be empty.", nameof(context));
+		}
+
+		return HextechRelicOptionSelectionCoordinator.SelectRelicOption(player, options, context, syncMultiplayerChoice);
+	}
+
 	public static void RegisterEnchantmentIcon<TEnchantment>(string iconPath)
 		where TEnchantment : EnchantmentModel
 	{

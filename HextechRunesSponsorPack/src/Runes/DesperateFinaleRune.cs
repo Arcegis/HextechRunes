@@ -17,6 +17,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 	private readonly HashSet<uint> _ownerKilledChoraleCombatIds = [];
 	private readonly HashSet<uint> _rewardedChoraleCombatIds = [];
 	private readonly List<int> _pendingProjectionChoraleHp = [];
+	private bool _pendingFinalChoraleRewards;
 	private int _stacks;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -37,6 +38,12 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
 
 	private decimal BonusMultiplier => 1m + _stacks * DynamicVars["BonusPercent"].BaseValue / 100m;
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		_ = player;
+		return IntegratedStrategyEventsBridge.IsAvailable;
+	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -121,15 +128,28 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 
 		SavedFinalChoraleKills++;
 		_pendingProjectionChoraleHp.Add(Math.Max(1, target.MaxHp + DynamicVars["ChoraleHpBonus"].IntValue));
+		_pendingFinalChoraleRewards = true;
 		Flash([Owner.Creature]);
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterCombatEnd(CombatRoom room)
+	public override Task AfterCombatEnd(CombatRoom room)
 	{
 		_ = room;
+		_ownerKilledChoraleCombatIds.Clear();
+		_rewardedChoraleCombatIds.Clear();
+		return Task.CompletedTask;
+	}
+
+	public override async Task AfterCombatVictory(CombatRoom room)
+	{
 		if (Owner != null && _pendingProjectionChoraleHp.Count > 0)
 		{
+			if (_pendingFinalChoraleRewards)
+			{
+				IntegratedStrategyEventsBridge.AddFinalChoraleRewardsIfMissing(room);
+			}
+
 			foreach (int choraleHp in _pendingProjectionChoraleHp)
 			{
 				await IntegratedStrategyEventsBridge.ObtainProphecyProjection(Owner, choraleHp);
@@ -139,5 +159,6 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		_ownerKilledChoraleCombatIds.Clear();
 		_rewardedChoraleCombatIds.Clear();
 		_pendingProjectionChoraleHp.Clear();
+		_pendingFinalChoraleRewards = false;
 	}
 }

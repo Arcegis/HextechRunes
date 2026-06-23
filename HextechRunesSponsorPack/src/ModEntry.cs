@@ -21,6 +21,7 @@ public static class ModEntry
 			}
 
 			RegisterContent();
+			IntegratedStrategyEventsCompatibilityHooks.Install();
 			_initialized = true;
 			Log.Info($"[{ModInfo.Id}] Loaded and registered HextechRunes sponsor-pack content.");
 		}
@@ -56,19 +57,15 @@ public static class ModEntry
 			HextechRarityTier.Prismatic,
 			tagKey: "COMPREHENSIVE",
 			assetModId: ModInfo.Id);
-		if (IntegratedStrategyEventsBridge.IsAvailable)
-		{
-			HextechRunesApi.RegisterPlayerRune<DesperateFinaleRune>(
-				HextechRarityTier.Prismatic,
-				tagKey: "COMPREHENSIVE",
-				assetModId: ModInfo.Id);
-			Log.Info($"[{ModInfo.Id}] Registered IntegratedStrategyEvents soft-collab rune content.");
-		}
-		else
-		{
-			Log.Info($"[{ModInfo.Id}] IntegratedStrategyEvents not loaded; skipping soft-collab rune content.");
-		}
+		HextechRunesApi.RegisterPlayerRune<DesperateFinaleRune>(
+			HextechRarityTier.Prismatic,
+			tagKey: "COMPREHENSIVE",
+			assetModId: ModInfo.Id);
+		Log.Info($"[{ModInfo.Id}] Registered IntegratedStrategyEvents soft-collab rune content with runtime availability gating.");
 
 		HextechRunesApi.RegisterEventRelic<GoldStarRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<ArcaneCloneChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<ArcaneSoulsPowerChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<ArcaneRoyallyApprovedChoiceRelic>(ModInfo.Id);
 	}
 }

@@ -50,7 +50,7 @@ internal sealed class SingularityAIEnemyHex : HextechEnemyHexEffect
 					card,
 					PileType.Draw,
 					addedByPlayer: false,
-					position: CardPilePosition.Bottom);
+					position: CardPilePosition.Random);
 			}
 		}
 	}

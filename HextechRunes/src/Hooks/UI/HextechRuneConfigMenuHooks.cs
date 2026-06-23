@@ -27,6 +27,9 @@ internal static class HextechRuneConfigMenuHooks
 	private const int OverlayZIndex = 1000;
 	private const int HoverTipZIndex = 2000;
 	private const int RuneConfigColumns = 8;
+	private const string BaseConfigSourceKey = "0:HextechRunes";
+	private const string ExternalConfigSourcePrefix = "1:";
+	private const string SponsorPackModId = "HextechRunesSponsorPack";
 	private const float ConfigRuneHolderScale = 1.3f;
 	private const float RuneConfigCellWidth = 108f;
 	private const float RuneConfigCellHeight = 136f;
@@ -528,35 +531,46 @@ internal static class HextechRuneConfigMenuHooks
 		foreach (IGrouping<int, RuneConfigEntry> rarityGroup in entries.GroupBy(static entry => entry.RarityOrder))
 		{
 			page.AddChild(CreateSectionHeader(rarityGroup.First().RarityText, compactLayout ? 16 : 18));
-			VBoxContainer grid = CreateRuneGrid(compactLayout);
-			page.AddChild(grid);
-
-			HBoxContainer? currentRow = null;
-			int column = 0;
-			foreach (RuneConfigEntry entry in rarityGroup)
+			List<IGrouping<string, RuneConfigEntry>> sourceGroups = rarityGroup
+				.GroupBy(static entry => entry.SourceKey)
+				.ToList();
+			foreach (IGrouping<string, RuneConfigEntry> sourceGroup in sourceGroups)
 			{
-				if (column == 0)
+				if (sourceGroups.Count > 1)
 				{
-					currentRow = CreateRuneRow(compactLayout);
-					grid.AddChild(currentRow);
+					page.AddChild(CreateSourceHeader(sourceGroup.First().SourceText, compactLayout));
 				}
 
-				CenterContainer slot = CreateRuneSlot();
-				currentRow?.AddChild(slot);
-				loadTargets.Add(new RuneConfigLoadTarget(entry, slot, pendingDisabledIds));
+				VBoxContainer grid = CreateRuneGrid(compactLayout);
+				page.AddChild(grid);
 
-				column++;
-				if (column == RuneConfigColumns)
+				HBoxContainer? currentRow = null;
+				int column = 0;
+				foreach (RuneConfigEntry entry in sourceGroup)
 				{
-					column = 0;
+					if (column == 0)
+					{
+						currentRow = CreateRuneRow(compactLayout);
+						grid.AddChild(currentRow);
+					}
+
+					CenterContainer slot = CreateRuneSlot();
+					currentRow?.AddChild(slot);
+					loadTargets.Add(new RuneConfigLoadTarget(entry, slot, pendingDisabledIds));
+
+					column++;
+					if (column == RuneConfigColumns)
+					{
+						column = 0;
+					}
 				}
-			}
 
-			if (currentRow != null && column > 0)
-			{
-				for (; column < RuneConfigColumns; column++)
+				if (currentRow != null && column > 0)
 				{
-					currentRow.AddChild(CreateRuneSlot());
+					for (; column < RuneConfigColumns; column++)
+					{
+						currentRow.AddChild(CreateRuneSlot());
+					}
 				}
 			}
 		}
@@ -1237,6 +1251,13 @@ internal static class HextechRuneConfigMenuHooks
 		return label;
 	}
 
+	private static Label CreateSourceHeader(string text, bool compactLayout)
+	{
+		Label label = CreateLabel(text, compactLayout ? 14 : 15, new Color(0.68f, 0.82f, 0.98f, 0.92f));
+		label.CustomMinimumSize = new Vector2(0f, compactLayout ? 18f : 22f);
+		return label;
+	}
+
 	private static VBoxContainer CreateRuneGrid(bool compactLayout)
 	{
 		VBoxContainer grid = new()
@@ -1622,20 +1643,25 @@ internal static class HextechRuneConfigMenuHooks
 			string rarityKey = rarity.ToString().ToUpperInvariant();
 			string poolKey = HextechCatalog.GetPlayerRunePoolKey(relic);
 			string tagKey = HextechCatalog.GetPlayerRuneTagKey(relic);
-				entries.Add(new RuneConfigEntry(
-					id.Entry,
-					relic,
-					relic.Title.GetFormattedText(),
-					new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
-					new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText(),
+			string sourceKey = GetConfigSourceKey(id);
+			string sourceText = GetConfigSourceText(id);
+			entries.Add(new RuneConfigEntry(
+				id.Entry,
+				relic,
+				relic.Title.GetFormattedText(),
+				new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
+				new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText(),
 				new LocString(LocTable, "HEXTECH_TAG." + tagKey).GetRawText(),
 				(int)rarity,
 				poolKey,
-				tagKey));
+				tagKey,
+				sourceKey,
+				sourceText));
 		}
 
 		return entries
 			.OrderBy(static entry => entry.RarityOrder)
+			.ThenBy(static entry => entry.SourceKey, StringComparer.Ordinal)
 			.ThenBy(static entry => entry.PoolKey, StringComparer.Ordinal)
 			.ThenBy(static entry => entry.TagKey, StringComparer.Ordinal)
 			.ThenBy(static entry => entry.Title, StringComparer.CurrentCulture)
@@ -1660,7 +1686,9 @@ internal static class HextechRuneConfigMenuHooks
 				string.Empty,
 				(int)rarity,
 				"ENEMY",
-				kind.ToString()));
+				kind.ToString(),
+				BaseConfigSourceKey,
+				L("HEXTECH_CONFIG_SOURCE_BASE")));
 		}
 
 		return entries
@@ -1680,6 +1708,8 @@ internal static class HextechRuneConfigMenuHooks
 				? resolvedRarity
 				: HextechRarityTier.Gold;
 			string rarityKey = rarity.ToString().ToUpperInvariant();
+			string sourceKey = GetConfigSourceKey(id);
+			string sourceText = GetConfigSourceText(id);
 			entries.Add(new RuneConfigEntry(
 				id.Entry,
 				relic,
@@ -1689,13 +1719,40 @@ internal static class HextechRuneConfigMenuHooks
 				string.Empty,
 				(int)rarity,
 				"FORGE",
-				forgeType.Name));
+				forgeType.Name,
+				sourceKey,
+				sourceText));
 		}
 
 		return entries
 			.OrderBy(static entry => entry.RarityOrder)
+			.ThenBy(static entry => entry.SourceKey, StringComparer.Ordinal)
 			.ThenBy(static entry => entry.Title, StringComparer.CurrentCulture)
 			.ToList();
+	}
+
+	private static string GetConfigSourceKey(ModelId id)
+	{
+		string? assetModId = HextechExternalContentRegistry.GetAssetModId(id);
+		return string.IsNullOrWhiteSpace(assetModId) || string.Equals(assetModId, ModInfo.Id, StringComparison.Ordinal)
+			? BaseConfigSourceKey
+			: ExternalConfigSourcePrefix + assetModId;
+	}
+
+	private static string GetConfigSourceText(ModelId id)
+	{
+		string? assetModId = HextechExternalContentRegistry.GetAssetModId(id);
+		if (string.IsNullOrWhiteSpace(assetModId) || string.Equals(assetModId, ModInfo.Id, StringComparison.Ordinal))
+		{
+			return L("HEXTECH_CONFIG_SOURCE_BASE");
+		}
+
+		if (string.Equals(assetModId, SponsorPackModId, StringComparison.Ordinal))
+		{
+			return L("HEXTECH_CONFIG_SOURCE_EXTRA_PACK");
+		}
+
+		return string.Format(L("HEXTECH_CONFIG_SOURCE_EXTERNAL"), assetModId);
 	}
 
 	private static HextechRarityTier GetRuneRarity(Type runeType)
@@ -1747,8 +1804,12 @@ internal static class HextechRuneConfigMenuHooks
 			.Count();
 		int enemyDisabled = pendingDisabledMonsterHexIds.Count;
 		int enemyEnabled = Math.Max(0, enemyTotal - enemyDisabled);
-		int forgeTotal = HextechCatalog.GetAllForgeTypes().Count;
-		int forgeDisabled = pendingDisabledForgeIds.Count;
+		HashSet<string> forgeIds = HextechCatalog.GetAllForgeTypes()
+			.Select(ModelDb.GetId)
+			.Select(static id => id.Entry)
+			.ToHashSet(StringComparer.Ordinal);
+		int forgeTotal = forgeIds.Count;
+		int forgeDisabled = pendingDisabledForgeIds.Count(forgeIds.Contains);
 		int forgeEnabled = Math.Max(0, forgeTotal - forgeDisabled);
 		string text = pageIndex switch
 		{
@@ -1942,7 +2003,9 @@ internal static class HextechRuneConfigMenuHooks
 		string TagText,
 		int RarityOrder,
 		string PoolKey,
-		string TagKey);
+		string TagKey,
+		string SourceKey,
+		string SourceText);
 
 	private sealed record RuneConfigLoadTarget(
 		RuneConfigEntry Entry,

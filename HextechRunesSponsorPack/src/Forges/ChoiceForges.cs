@@ -1,8 +1,11 @@
 using HextechRunes;
+using System.Reflection;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Enchantments;
@@ -28,7 +31,7 @@ public sealed class BasicForge : HextechForgeBase
 		}
 
 		IReadOnlyList<RelicModel> choiceRelics = CreateChoiceRelics();
-		RelicModel? selected = await RelicSelectCmd.FromChooseARelicScreen(Owner, choiceRelics);
+		RelicModel? selected = await HextechRunesApi.SelectRelicOption(Owner, choiceRelics, "basic-forge-relic-choice");
 		if (selected == null)
 		{
 			return;
@@ -42,8 +45,8 @@ public sealed class BasicForge : HextechForgeBase
 	{
 		return
 		[
-			ModelDb.Relic<PaelsClaw>().ToMutable(),
-			ModelDb.Relic<NutritiousSoup>().ToMutable()
+			ModelDb.Relic<PaelsClaw>(),
+			ModelDb.Relic<NutritiousSoup>()
 		];
 	}
 }
@@ -54,12 +57,28 @@ public sealed class ArcaneForge : HextechForgeBase
 
 	private static readonly IReadOnlyList<ArcaneEnchantmentOption> EnchantmentOptions =
 	[
-		ArcaneEnchantmentOption.For<Clone>(() => new ArcaneCloneChoiceRelic()),
-		ArcaneEnchantmentOption.For<SoulsPower>(() => new ArcaneSoulsPowerChoiceRelic()),
-		ArcaneEnchantmentOption.For<RoyallyApproved>(() => new ArcaneRoyallyApprovedChoiceRelic())
+		ArcaneEnchantmentOption.For<Clone>(() => ModelDb.Relic<ArcaneCloneChoiceRelic>()),
+		ArcaneEnchantmentOption.For<SoulsPower>(() => ModelDb.Relic<ArcaneSoulsPowerChoiceRelic>()),
+		ArcaneEnchantmentOption.For<RoyallyApproved>(() => ModelDb.Relic<ArcaneRoyallyApprovedChoiceRelic>())
 	];
 
 	public override bool HasUponPickupEffect => true;
+
+	public override bool TryModifyRestSiteOptions(Player player, ICollection<RestSiteOption> options)
+	{
+		if (Owner == null || player != Owner || options.Any(static option => option.OptionId == "CLONE"))
+		{
+			return false;
+		}
+
+		if (!Owner.Deck.Cards.Any(HasCloneEnchantment))
+		{
+			return false;
+		}
+
+		options.Add(new CloneRestSiteOption(player));
+		return true;
+	}
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
@@ -86,7 +105,7 @@ public sealed class ArcaneForge : HextechForgeBase
 			}
 
 			IReadOnlyList<RelicModel> choiceRelics = options.Select(static option => option.CreateChoiceRelic()).ToArray();
-			RelicModel? selectedRelic = await RelicSelectCmd.FromChooseARelicScreen(Owner, choiceRelics);
+			RelicModel? selectedRelic = await HextechRunesApi.SelectRelicOption(Owner, choiceRelics, $"arcane-forge-enchantment-choice card={(selectedCard.CanonicalInstance?.Id ?? selectedCard.Id).Entry}");
 			if (selectedRelic == null)
 			{
 				continue;
@@ -115,6 +134,30 @@ public sealed class ArcaneForge : HextechForgeBase
 		return EnchantmentOptions
 			.Where(option => option.CreateCanonical().CanEnchant(card))
 			.ToArray();
+	}
+
+	private static bool HasCloneEnchantment(CardModel card)
+	{
+		return card.Enchantment is Clone
+			|| card.Enchantment is SponsorCompositeEnchantment composite && composite.ContainsEnchantmentType(typeof(Clone))
+			|| HasExternalRepeatableCloneEnchantment(card);
+	}
+
+	private static bool HasExternalRepeatableCloneEnchantment(CardModel card)
+	{
+		EnchantmentModel? enchantment = card.Enchantment;
+		if (enchantment == null || enchantment.GetType().FullName != "RepeatableEnchantments.RepeatableCompositeEnchantment")
+		{
+			return false;
+		}
+
+		MethodInfo? containsMethod = enchantment.GetType().GetMethod(
+			"ContainsEnchantmentType",
+			BindingFlags.Instance | BindingFlags.Public,
+			null,
+			[ typeof(Type) ],
+			null);
+		return containsMethod?.Invoke(enchantment, [ typeof(Clone) ]) is true;
 	}
 
 	private static int IndexOfRelic(IReadOnlyList<RelicModel> options, RelicModel selected)

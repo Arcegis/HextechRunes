@@ -177,11 +177,7 @@ internal static class HextechRuneConfiguration
 
 	internal static HashSet<string> NormalizeDisabledForgeIds(IEnumerable<string>? ids)
 	{
-		HashSet<string> validIds = HextechCatalog.GetAllForgeTypes()
-			.Select(ModelDb.GetId)
-			.Select(static id => id.Entry)
-			.ToHashSet(StringComparer.Ordinal);
-		return NormalizeStringIds(ids, validIds);
+		return NormalizeConfigStringIds(ids);
 	}
 
 	public static IReadOnlySet<string> GetDefaultDisabledPlayerRuneIds()
@@ -527,6 +523,16 @@ internal static class HextechRuneConfiguration
 			.Select(static id => id.Trim())
 			.Distinct(StringComparer.Ordinal)
 			.Where(validIds.Contains)
+			.OrderBy(static id => id, StringComparer.Ordinal)
+			.ToHashSet(StringComparer.Ordinal);
+	}
+
+	private static HashSet<string> NormalizeConfigStringIds(IEnumerable<string>? ids)
+	{
+		return (ids ?? [])
+			.Where(static id => !string.IsNullOrWhiteSpace(id))
+			.Select(static id => id.Trim())
+			.Distinct(StringComparer.Ordinal)
 			.OrderBy(static id => id, StringComparer.Ordinal)
 			.ToHashSet(StringComparer.Ordinal);
 	}
