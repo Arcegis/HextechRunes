@@ -3,6 +3,8 @@ namespace HextechRunes;
 internal sealed record HextechRunConfigurationSnapshot(
 	int[] PlayerHexCountsByAct,
 	int[] EnemyHexCountsByAct,
+	int PlayerRuneRerollLimit,
+	int MonsterHexRerollLimit,
 	HashSet<string> DisabledPlayerRuneIds,
 	HashSet<string> DisabledMonsterHexIds,
 	HashSet<string> DisabledForgeIds,

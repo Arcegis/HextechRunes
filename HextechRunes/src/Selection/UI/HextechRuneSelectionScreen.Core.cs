@@ -30,6 +30,8 @@ internal sealed class HextechEnemyHexAdjustmentOptions
 
 	public Func<IReadOnlyList<MonsterHexKind?>, int, int, MonsterHexKind?>? RerollFunc { get; init; }
 
+	public int RerollLimit { get; init; } = HextechRuneConfiguration.GetDefaultMonsterHexRerollLimit();
+
 	public Action<IReadOnlyList<MonsterHexKind?>, IReadOnlyList<int>>? Changed { get; init; }
 
 	public Action<HextechRuneSelectionScreen>? ScreenCreated { get; init; }
@@ -47,6 +49,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private readonly Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? _rerollFunc;
 	private readonly Func<IReadOnlyList<MonsterHexKind?>, int, int, MonsterHexKind?>? _enemyHexRerollFunc;
 	private readonly Action<IReadOnlyList<MonsterHexKind?>, IReadOnlyList<int>>? _enemyHexChanged;
+	private readonly int _playerRuneRerollLimit;
+	private readonly int _enemyHexRerollLimit;
 	private readonly string? _titleOverride;
 	private readonly HextechSelectionMetadataMode _metadataMode;
 	private List<RelicModel> _relics;
@@ -56,7 +60,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private readonly string _rarityKey;
 	private readonly List<Button> _holders = new();
 	private readonly List<Button> _rerollButtons = new();
-	private readonly List<bool> _rerolledSlots = new();
+	private readonly List<int> _playerRuneRerollCounts = new();
 	private readonly List<int> _rerollHistory = new();
 	private readonly bool _enemyHexControlsEnabled;
 	private HBoxContainer? _cardsRow;
@@ -108,6 +112,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc,
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions,
+		int playerRuneRerollLimit,
 		string? titleOverride,
 		HextechSelectionMetadataMode metadataMode)
 	{
@@ -115,6 +120,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_rerollFunc = rerollFunc;
 		_enemyHexRerollFunc = enemyHexOptions?.RerollFunc;
 		_enemyHexChanged = enemyHexOptions?.Changed;
+		_playerRuneRerollLimit = HextechRuneConfiguration.ClampRerollLimit(playerRuneRerollLimit);
+		_enemyHexRerollLimit = HextechRuneConfiguration.ClampRerollLimit(enemyHexOptions?.RerollLimit ?? HextechRuneConfiguration.GetDefaultMonsterHexRerollLimit());
 		_titleOverride = titleOverride;
 		_metadataMode = metadataMode;
 		_enemyHexControlsEnabled = enemyHexOptions?.ControlsEnabled == true || enemyHexOptions?.RerollFunc != null;
@@ -148,11 +155,12 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc = null,
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null,
+		int playerRuneRerollLimit = 1,
 		string? titleOverride = null,
 		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune)
 	{
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count}");
-		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions, titleOverride, metadataMode);
+		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions, playerRuneRerollLimit, titleOverride, metadataMode);
 	}
 
 	public override void _ExitTree()

@@ -40,7 +40,7 @@ internal static partial class HextechRelicVisibilityHooks
 		Label label = new()
 		{
 			Name = ToggleLabelNodeName,
-			Text = "隐藏遗物",
+			Text = "隐藏 UI",
 			CustomMinimumSize = new Vector2(ToggleRootSize.X, 16f),
 			HorizontalAlignment = HorizontalAlignment.Center,
 			VerticalAlignment = VerticalAlignment.Center,
@@ -73,7 +73,7 @@ internal static partial class HextechRelicVisibilityHooks
 			ToggleMode = true,
 			Flat = true,
 			Text = string.Empty,
-			TooltipText = "只隐藏顶部遗物图标，不会禁用遗物效果。",
+			TooltipText = "隐藏遗物栏和联机玩家状态条，不会禁用任何效果。",
 			MouseFilter = Control.MouseFilterEnum.Stop,
 			FocusMode = Control.FocusModeEnum.All
 		};

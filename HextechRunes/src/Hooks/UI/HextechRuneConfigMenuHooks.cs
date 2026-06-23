@@ -257,6 +257,8 @@ internal static class HextechRuneConfigMenuHooks
 		HextechRunConfigurationSnapshot pendingSnapshot = HextechRuneConfiguration.GetSnapshot();
 		int[] pendingPlayerHexCounts = pendingSnapshot.PlayerHexCountsByAct.ToArray();
 		int[] pendingEnemyHexCounts = pendingSnapshot.EnemyHexCountsByAct.ToArray();
+		int[] pendingPlayerRuneRerollLimit = [ pendingSnapshot.PlayerRuneRerollLimit ];
+		int[] pendingMonsterHexRerollLimit = [ pendingSnapshot.MonsterHexRerollLimit ];
 		HashSet<string> pendingDisabledPlayerIds = pendingSnapshot.DisabledPlayerRuneIds.ToHashSet(StringComparer.Ordinal);
 		HashSet<string> pendingDisabledMonsterHexIds = pendingSnapshot.DisabledMonsterHexIds.ToHashSet(StringComparer.Ordinal);
 		HashSet<string> pendingDisabledForgeIds = pendingSnapshot.DisabledForgeIds.ToHashSet(StringComparer.Ordinal);
@@ -285,7 +287,7 @@ internal static class HextechRuneConfigMenuHooks
 		Label summary = CreateLabel(string.Empty, compactLayout ? 15 : 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
 		Action updateSummary = () => UpdateSummary(summary, selectedPageIndex, pendingDisabledPlayerIds, pendingDisabledMonsterHexIds, pendingDisabledForgeIds);
 
-		Control countsPage = CreateCountsPage(pendingPlayerHexCounts, pendingEnemyHexCounts, numericBindings, compactLayout);
+		Control countsPage = CreateSelectionPage(pendingPlayerHexCounts, pendingEnemyHexCounts, pendingPlayerRuneRerollLimit, pendingMonsterHexRerollLimit, numericBindings, compactLayout);
 		Control runePoolPage = CreateRunePoolPage(playerEntries, pendingDisabledPlayerIds, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, compactLayout);
 		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pendingDisabledForgeIds, loadTargets, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
 		Control detailsPage = CreateDetailsPage(
@@ -337,6 +339,8 @@ internal static class HextechRuneConfigMenuHooks
 			pendingDisabledForgeIds,
 			pendingPlayerHexCounts,
 			pendingEnemyHexCounts,
+			pendingPlayerRuneRerollLimit,
+			pendingMonsterHexRerollLimit,
 			pendingFirstActRuneWeights,
 			pendingNormalRuneWeights,
 			pendingSecondActAfterSilverWeights,
@@ -380,6 +384,8 @@ internal static class HextechRuneConfigMenuHooks
 			pendingSecondActAfterSilverWeights,
 			pendingForgeWeights,
 			pendingForgePrice,
+			pendingPlayerRuneRerollLimit,
+			pendingMonsterHexRerollLimit,
 			pendingShowHiddenRelicsToggle,
 			compactLayout));
 
@@ -429,9 +435,11 @@ internal static class HextechRuneConfigMenuHooks
 			weights.Count > 2 ? weights[2] : 0);
 	}
 
-	private static Control CreateCountsPage(
+	private static Control CreateSelectionPage(
 		int[] pendingPlayerHexCounts,
 		int[] pendingEnemyHexCounts,
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
 		List<NumericValueBinding> numericBindings,
 		bool compactLayout)
 	{
@@ -448,6 +456,11 @@ internal static class HextechRuneConfigMenuHooks
 			L("HEXTECH_ENEMY_COUNT_DESCRIPTION"),
 			pendingEnemyHexCounts,
 			HextechRuneConfiguration.ClampEnemyHexCount,
+			numericBindings,
+			compactLayout));
+		page.AddChild(CreateRerollLimitSection(
+			pendingPlayerRuneRerollLimit,
+			pendingMonsterHexRerollLimit,
 			numericBindings,
 			compactLayout));
 		return page;
@@ -489,6 +502,41 @@ internal static class HextechRuneConfigMenuHooks
 		row.AddChild(CreateNumericStepper(L("HEXTECH_ENEMY_COUNT_ACT1"), () => counts[0], value => counts[0] = clamp(value), numericBindings, compactLayout));
 		row.AddChild(CreateNumericStepper(L("HEXTECH_ENEMY_COUNT_ACT2"), () => counts[1], value => counts[1] = clamp(value), numericBindings, compactLayout));
 		row.AddChild(CreateNumericStepper(L("HEXTECH_ENEMY_COUNT_ACT3"), () => counts[2], value => counts[2] = clamp(value), numericBindings, compactLayout));
+		return section;
+	}
+
+	private static Control CreateRerollLimitSection(
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
+		List<NumericValueBinding> numericBindings,
+		bool compactLayout)
+	{
+		VBoxContainer section = CreatePageContainer(compactLayout);
+		section.AddChild(CreateSectionHeader(L("HEXTECH_REROLL_LIMIT_TITLE"), compactLayout ? 18 : 20));
+		Label description = CreateLabel(L("HEXTECH_REROLL_LIMIT_DESCRIPTION"), compactLayout ? 13 : 14, new Color(0.78f, 0.84f, 0.9f, 0.9f));
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		section.AddChild(description);
+
+		HBoxContainer row = new()
+		{
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			MouseFilter = Control.MouseFilterEnum.Pass
+		};
+		row.AddThemeConstantOverride("separation", compactLayout ? 10 : 18);
+		section.AddChild(row);
+		row.AddChild(CreateRerollLimitStepper(
+			L("HEXTECH_PLAYER_REROLL_LIMIT_LABEL"),
+			() => pendingPlayerRuneRerollLimit[0],
+			value => pendingPlayerRuneRerollLimit[0] = HextechRuneConfiguration.ClampRerollLimit(value),
+			numericBindings,
+			compactLayout));
+		row.AddChild(CreateRerollLimitStepper(
+			L("HEXTECH_MONSTER_REROLL_LIMIT_LABEL"),
+			() => pendingMonsterHexRerollLimit[0],
+			value => pendingMonsterHexRerollLimit[0] = HextechRuneConfiguration.ClampRerollLimit(value),
+			numericBindings,
+			compactLayout));
 		return section;
 	}
 
@@ -708,7 +756,9 @@ internal static class HextechRuneConfigMenuHooks
 		Action<int> setValue,
 		List<NumericValueBinding> numericBindings,
 		bool compactLayout,
-		int step = 1)
+		int step = 1,
+		Func<string>? getDisplayText = null,
+		Func<int, int, int>? stepValue = null)
 	{
 		VBoxContainer root = new()
 		{
@@ -730,29 +780,54 @@ internal static class HextechRuneConfigMenuHooks
 		controls.AddThemeConstantOverride("separation", compactLayout ? 6 : 8);
 		root.AddChild(controls);
 
-		Label number = CreateLabel(getValue().ToString(), compactLayout ? 17 : 18, new Color(0.98f, 0.98f, 0.94f, 1f));
+		string GetDisplay() => getDisplayText?.Invoke() ?? getValue().ToString();
+		Label number = CreateLabel(GetDisplay(), compactLayout ? 17 : 18, new Color(0.98f, 0.98f, 0.94f, 1f));
 		number.HorizontalAlignment = HorizontalAlignment.Center;
 		number.VerticalAlignment = VerticalAlignment.Center;
 		number.CustomMinimumSize = compactLayout ? new Vector2(44f, 32f) : new Vector2(54f, 34f);
-		numericBindings.Add(new NumericValueBinding(() => getValue().ToString(), number));
+		numericBindings.Add(new NumericValueBinding(GetDisplay, number));
 
 		Button minus = CreateStepButton("-", false, compactLayout);
 		Button plus = CreateStepButton("+", false, compactLayout);
 		AttachRepeatingStep(minus, () =>
 		{
-			setValue(getValue() - step);
-			SetLabelText(number, getValue().ToString());
+			setValue(stepValue?.Invoke(getValue(), -step) ?? getValue() - step);
+			SetLabelText(number, GetDisplay());
 		});
 		AttachRepeatingStep(plus, () =>
 		{
-			setValue(getValue() + step);
-			SetLabelText(number, getValue().ToString());
+			setValue(stepValue?.Invoke(getValue(), step) ?? getValue() + step);
+			SetLabelText(number, GetDisplay());
 		});
 
 		controls.AddChild(minus);
 		controls.AddChild(number);
 		controls.AddChild(plus);
 		return root;
+	}
+
+	private static Control CreateRerollLimitStepper(
+		string labelText,
+		Func<int> getValue,
+		Action<int> setValue,
+		List<NumericValueBinding> numericBindings,
+		bool compactLayout)
+	{
+		return CreateNumericStepper(
+			labelText,
+			getValue,
+			setValue,
+			numericBindings,
+			compactLayout,
+			getDisplayText: () => FormatRerollLimit(getValue()),
+			stepValue: static (current, delta) => HextechRuneConfiguration.StepRerollLimit(current, delta));
+	}
+
+	private static string FormatRerollLimit(int value)
+	{
+		return HextechRuneConfiguration.ClampRerollLimit(value) == HextechRuneConfiguration.InfiniteRerollLimit
+			? L("HEXTECH_REROLL_LIMIT_INFINITE")
+			: HextechRuneConfiguration.ClampRerollLimit(value).ToString();
 	}
 
 	private static void AddConfigTab(HBoxContainer tabs, List<Button> tabButtons, string text, Action action, bool compactLayout)
@@ -806,6 +881,8 @@ internal static class HextechRuneConfigMenuHooks
 		HashSet<string> pendingDisabledForgeIds,
 		int[] pendingPlayerHexCounts,
 		int[] pendingEnemyHexCounts,
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
 		int[] pendingFirstActRuneWeights,
 		int[] pendingNormalRuneWeights,
 		int[] pendingSecondActAfterSilverWeights,
@@ -872,6 +949,8 @@ internal static class HextechRuneConfigMenuHooks
 			HextechRunConfigurationSnapshot defaults = HextechRuneConfiguration.GetDefaultSnapshot();
 			CopyArray(defaults.PlayerHexCountsByAct, pendingPlayerHexCounts);
 			CopyArray(defaults.EnemyHexCountsByAct, pendingEnemyHexCounts);
+			pendingPlayerRuneRerollLimit[0] = defaults.PlayerRuneRerollLimit;
+			pendingMonsterHexRerollLimit[0] = defaults.MonsterHexRerollLimit;
 			CopyArray(ToWeightArray(defaults.FirstActRuneRarityWeights), pendingFirstActRuneWeights);
 			CopyArray(ToWeightArray(defaults.NormalRuneRarityWeights), pendingNormalRuneWeights);
 			CopyArray(ToWeightArray(defaults.SecondActAfterSilverRuneRarityWeights), pendingSecondActAfterSilverWeights);
@@ -913,6 +992,8 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingSecondActAfterSilverWeights,
 		int[] pendingForgeWeights,
 		int[] pendingForgePrice,
+		int[] pendingPlayerRuneRerollLimit,
+		int[] pendingMonsterHexRerollLimit,
 		bool[] pendingShowHiddenRelicsToggle,
 		bool compactLayout)
 	{
@@ -927,6 +1008,8 @@ internal static class HextechRuneConfigMenuHooks
 			HextechRuneConfiguration.SaveSnapshot(new HextechRunConfigurationSnapshot(
 				pendingPlayerHexCounts,
 				pendingEnemyHexCounts,
+				pendingPlayerRuneRerollLimit[0],
+				pendingMonsterHexRerollLimit[0],
 				pendingDisabledPlayerIds,
 				pendingDisabledMonsterHexIds,
 				pendingDisabledForgeIds,
@@ -937,7 +1020,7 @@ internal static class HextechRuneConfigMenuHooks
 				pendingForgePrice[0]));
 			HextechRelicVisibilityHooks.SetShowHiddenRelicsToggle(pendingShowHiddenRelicsToggle[0]);
 			CollectionHooks.RefreshOpenRelicCollections();
-			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} forgePrice={pendingForgePrice[0]} showHiddenRelicsToggle={pendingShowHiddenRelicsToggle[0]}");
+			Log.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]}");
 			overlay.QueueFree();
 		}, compactLayout));
 		footer.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout));

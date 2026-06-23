@@ -48,6 +48,7 @@ internal static class Program
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
 			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
+			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
 			new(nameof(EnemyHexCountStateNormalizesMissingAndOutOfRangeValues), EnemyHexCountStateNormalizesMissingAndOutOfRangeValues),
 			new(nameof(EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct), EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct),
 			new(nameof(PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot), PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot),
@@ -128,7 +129,9 @@ internal static class Program
 			NormalRuneRarityWeights = new HextechRarityWeights(4, 5, 6),
 			SecondActAfterSilverRuneRarityWeights = new HextechRarityWeights(0, 7, 8),
 			ForgeRarityWeights = new HextechForgeRarityWeights(9, 10, 11),
-			RandomForgeShopPrice = 123
+			RandomForgeShopPrice = 123,
+			PlayerRuneRerollLimit = 8,
+			MonsterHexRerollLimit = HextechRuneConfiguration.InfiniteRerollLimit
 		};
 
 		PlayerChoiceResult result = HextechChoiceCodec.CreateActRoll(
@@ -159,6 +162,8 @@ internal static class Program
 		SetEqual([ MonsterHexKind.FrostWraith.ToString() ], decodedSnapshot.DisabledMonsterHexIds, "disabled monster hex ids");
 		SetEqual([ disabledForgeId ], decodedSnapshot.DisabledForgeIds, "disabled forge ids");
 		Equal(123, decodedSnapshot.RandomForgeShopPrice, "forge shop price");
+		Equal(8, decodedSnapshot.PlayerRuneRerollLimit, "player reroll limit");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, decodedSnapshot.MonsterHexRerollLimit, "monster reroll limit");
 		Equal(10, decodedSnapshot.ForgeRarityWeights.Gold, "forge rarity weight");
 		Expect(!HextechChoiceCodec.TryDecodeActRoll(result, 0, out _, out _, out _, out _, out _), "wrong act should be rejected");
 	}
@@ -514,6 +519,19 @@ internal static class Program
 		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
 		SequenceEqual(new[] { 1, 1, 1 }, snapshot.PlayerHexCountsByAct, "default player act counts");
 		SequenceEqual(new[] { 1, 2, 3 }, snapshot.EnemyHexCountsByAct, "default enemy act counts");
+		Equal(1, snapshot.PlayerRuneRerollLimit, "default player reroll limit");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, snapshot.MonsterHexRerollLimit, "default monster reroll limit");
+	}
+
+	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
+	{
+		Equal(0, HextechRuneConfiguration.StepRerollLimit(0, -1), "zero stays zero on decrement");
+		Equal(1, HextechRuneConfiguration.StepRerollLimit(0, 1), "zero increments to one");
+		Equal(9, HextechRuneConfiguration.StepRerollLimit(8, 1), "eight increments to nine");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, HextechRuneConfiguration.StepRerollLimit(9, 1), "nine increments to infinite");
+		Equal(9, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, -1), "infinite decrements to nine");
+		Equal(HextechRuneConfiguration.InfiniteRerollLimit, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, 1), "infinite stays infinite on increment");
+		Equal(9, HextechRuneConfiguration.ClampRerollLimit(99), "finite values clamp to nine");
 	}
 
 	private static void EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct()

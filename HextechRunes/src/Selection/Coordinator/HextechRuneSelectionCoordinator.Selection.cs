@@ -39,7 +39,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				options,
 				monsterHexRelic,
 				(relics, slotIndex, _) => RerollSingleOptionAndTrack(modifier, player, relics, slotIndex, seenOptionIds),
-				enemyHexOptions);
+				enemyHexOptions,
+				modifier.PlayerRuneRerollLimit);
 			RelicModel? selectedRelic = (await screen.RelicsSelected()).FirstOrDefault();
 			return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes);
 		}
@@ -64,7 +65,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				options,
 				monsterHexRelic,
 				(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, player, relics, slotIndex, rerollOrdinal, seenOptionIds),
-				enemyHexOptions);
+				enemyHexOptions,
+				modifier.PlayerRuneRerollLimit);
 			RelicModel? selectedRelic = (await screen.RelicsSelected()).FirstOrDefault();
 			if (TrySyncLocalHextechChoice(synchronizer, player, choiceId, CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, selectedRelic), context, out uint sentChoiceId))
 			{
@@ -127,7 +129,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				selection.Options,
 				monsterHexRelic,
 				(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, selection.Player, relics, slotIndex, rerollOrdinal, seenOptionIds),
-				enemyHexOptions);
+				enemyHexOptions,
+				modifier.PlayerRuneRerollLimit);
 			RelicModel? selectedRelic = (await screen.RelicsSelected(removeOverlay: false)).FirstOrDefault();
 			if (TrySyncLocalHextechChoice(synchronizer, selection.Player, selection.ChoiceId, CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, selectedRelic), context, out uint sentChoiceId))
 			{
@@ -177,6 +180,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc = null,
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null,
+		int playerRuneRerollLimit = 1,
 		string? titleOverride = null)
 	{
 		for (int i = 0; i < 60; i++)
@@ -189,7 +193,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			await Task.Yield();
 		}
 
-		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(relics, monsterHexRelic, rerollFunc, enemyHexOptions, titleOverride);
+		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(relics, monsterHexRelic, rerollFunc, enemyHexOptions, playerRuneRerollLimit, titleOverride);
 		if (NOverlayStack.Instance == null)
 		{
 			throw new InvalidOperationException("NOverlayStack is not available for rune selection.");
@@ -221,6 +225,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				? (relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, player, relics, slotIndex, rerollOrdinal, seenOptionIds)
 				: (relics, slotIndex, _) => RerollSingleOptionAndTrack(modifier, player, relics, slotIndex, seenOptionIds),
 			enemyHexOptions,
+			modifier.PlayerRuneRerollLimit,
 			titleOverride);
 		RelicModel? selectedRelic = (await screen.RelicsSelected(removeOverlay)).FirstOrDefault();
 		return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes, removeOverlay ? null : screen);

@@ -58,6 +58,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					{
 						InitialHexes = fallbackNewMonsterHexes,
 						ExcludedHexes = fallbackActiveMonsterHexes,
+						RerollLimit = modifier.MonsterHexRerollLimit,
 						ControlsEnabled = fallbackNewMonsterHexes.Count > 0 && runManager.NetService.Type == NetGameType.Host && IsLocalPlayer(runManager, player),
 						RerollFunc = fallbackNewMonsterHexes.Count > 0
 							? (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(

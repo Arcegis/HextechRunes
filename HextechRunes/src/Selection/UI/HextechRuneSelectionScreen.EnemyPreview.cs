@@ -165,7 +165,7 @@ internal sealed partial class HextechRuneSelectionScreen
 			row.AddChild(actionRow);
 
 			Button rerollButton = CreateEnemyHexActionButton(new LocString(LocTable, "HEXTECH_REROLL").GetRawText(), 104f);
-			rerollButton.Disabled = !monsterHex.HasValue || _enemyHexRerollFunc == null;
+			rerollButton.Disabled = !monsterHex.HasValue || _enemyHexRerollFunc == null || IsEnemyHexRerollLimitReached(slotIndex);
 			rerollButton.Pressed += () => OnEnemyHexRerollPressed(slotIndex);
 			actionRow.AddChild(rerollButton);
 

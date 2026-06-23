@@ -51,6 +51,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			InitialHexes = syncContext?.CurrentMonsterHexes ?? initialNewMonsterHexes,
 			ExcludedHexes = activeMonsterHexes,
+			RerollLimit = modifier.MonsterHexRerollLimit,
 			ControlsEnabled = isAuthorityLocal,
 			RerollFunc = isAuthorityLocal
 				? (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(

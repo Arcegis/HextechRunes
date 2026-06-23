@@ -9,10 +9,13 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 11;
+	private const int CurrentConfigVersion = 12;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
 	private const int MaxActHexCount = 6;
+	public const int InfiniteRerollLimit = -1;
+	private const int MinFiniteRerollLimit = 0;
+	private const int MaxFiniteRerollLimit = 9;
 	private const int MinRarityWeight = 0;
 	private const int MaxRarityWeight = 999;
 	private const int MinRandomForgeShopPrice = 0;
@@ -20,6 +23,8 @@ internal static class HextechRuneConfiguration
 	private const int DefaultRandomForgeShopPrice = 250;
 	private static readonly int[] DefaultPlayerHexCountsByAct = [ 1, 1, 1 ];
 	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 2, 3 ];
+	private const int DefaultPlayerRuneRerollLimit = 1;
+	private const int DefaultMonsterHexRerollLimit = InfiniteRerollLimit;
 	private static readonly int[] LegacyEnemyHexCountsDefault = [ 1, 2, 3 ];
 	private static readonly int[] Version9EnemyHexCountsDefault = [ 1, 1, 1 ];
 	private static readonly HextechRarityWeights DefaultFirstActRuneRarityWeights = new(20, 50, 30);
@@ -149,6 +154,8 @@ internal static class HextechRuneConfiguration
 			return NormalizeSnapshot(new HextechRunConfigurationSnapshot(
 				_config.PlayerHexCountsByAct ?? DefaultPlayerHexCountsByAct,
 				_config.EnemyHexCountsByAct ?? DefaultEnemyHexCountsByAct,
+				_config.PlayerRuneRerollLimit,
+				_config.MonsterHexRerollLimit,
 				_config.DisabledPlayerRuneIds,
 				_config.DisabledMonsterHexIds,
 				_config.DisabledForgeIds,
@@ -228,6 +235,8 @@ internal static class HextechRuneConfiguration
 			_config.ConfigVersion = CurrentConfigVersion;
 			_config.PlayerHexCountsByAct = normalized.PlayerHexCountsByAct;
 			_config.EnemyHexCountsByAct = normalized.EnemyHexCountsByAct;
+			_config.PlayerRuneRerollLimit = normalized.PlayerRuneRerollLimit;
+			_config.MonsterHexRerollLimit = normalized.MonsterHexRerollLimit;
 			_config.DisabledPlayerRuneIds = normalized.DisabledPlayerRuneIds;
 			_config.DisabledMonsterHexIds = normalized.DisabledMonsterHexIds;
 			_config.DisabledForgeIds = normalized.DisabledForgeIds;
@@ -289,6 +298,8 @@ internal static class HextechRuneConfiguration
 			DisabledPlayerRuneIds = GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal),
 			PlayerHexCountsByAct = NormalizePlayerHexCounts(null),
 			EnemyHexCountsByAct = NormalizeEnemyHexCounts(null),
+			PlayerRuneRerollLimit = DefaultPlayerRuneRerollLimit,
+			MonsterHexRerollLimit = DefaultMonsterHexRerollLimit,
 			DisabledMonsterHexIds = GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
 			DisabledForgeIds = GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
 			FirstActRuneRarityWeights = FromRarityWeights(DefaultFirstActRuneRarityWeights),
@@ -341,6 +352,8 @@ internal static class HextechRuneConfiguration
 		config.EnemyHexCountsByAct = shouldMigrateLegacyEnemyHexDefault || shouldMigrateVersion9EnemyHexDefault
 			? NormalizeEnemyHexCounts(null)
 			: NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
+		config.PlayerRuneRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultPlayerRuneRerollLimit : config.PlayerRuneRerollLimit);
+		config.MonsterHexRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultMonsterHexRerollLimit : config.MonsterHexRerollLimit);
 		config.DisabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);
 		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
 		config.FirstActRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
@@ -384,6 +397,43 @@ internal static class HextechRuneConfiguration
 		return Math.Clamp(count, MinActHexCount, MaxActHexCount);
 	}
 
+	public static int ClampRerollLimit(int limit)
+	{
+		return limit == InfiniteRerollLimit
+			? InfiniteRerollLimit
+			: Math.Clamp(limit, MinFiniteRerollLimit, MaxFiniteRerollLimit);
+	}
+
+	public static int StepRerollLimit(int current, int delta)
+	{
+		current = ClampRerollLimit(current);
+		if (delta > 0)
+		{
+			return current == InfiniteRerollLimit || current >= MaxFiniteRerollLimit
+				? InfiniteRerollLimit
+				: current + 1;
+		}
+
+		if (delta < 0)
+		{
+			return current == InfiniteRerollLimit
+				? MaxFiniteRerollLimit
+				: Math.Max(MinFiniteRerollLimit, current - 1);
+		}
+
+		return current;
+	}
+
+	public static int GetDefaultPlayerRuneRerollLimit()
+	{
+		return DefaultPlayerRuneRerollLimit;
+	}
+
+	public static int GetDefaultMonsterHexRerollLimit()
+	{
+		return DefaultMonsterHexRerollLimit;
+	}
+
 	public static int ClampRarityWeight(int weight)
 	{
 		return Math.Clamp(weight, MinRarityWeight, MaxRarityWeight);
@@ -424,6 +474,8 @@ internal static class HextechRuneConfiguration
 		return NormalizeSnapshot(new HextechRunConfigurationSnapshot(
 			DefaultPlayerHexCountsByAct,
 			DefaultEnemyHexCountsByAct,
+			DefaultPlayerRuneRerollLimit,
+			DefaultMonsterHexRerollLimit,
 			GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal),
 			GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
 			GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
@@ -439,6 +491,8 @@ internal static class HextechRuneConfiguration
 		return new HextechRunConfigurationSnapshot(
 			NormalizePlayerHexCounts(snapshot.PlayerHexCountsByAct),
 			NormalizeEnemyHexCounts(snapshot.EnemyHexCountsByAct),
+			ClampRerollLimit(snapshot.PlayerRuneRerollLimit),
+			ClampRerollLimit(snapshot.MonsterHexRerollLimit),
 			NormalizeDisabledPlayerRuneIds(snapshot.DisabledPlayerRuneIds),
 			NormalizeDisabledMonsterHexIds(snapshot.DisabledMonsterHexIds),
 			NormalizeDisabledForgeIds(snapshot.DisabledForgeIds),
@@ -625,6 +679,12 @@ internal static class HextechRuneConfiguration
 
 		[JsonPropertyName("enemy_hex_counts_by_act")]
 		public int[]? EnemyHexCountsByAct { get; set; }
+
+		[JsonPropertyName("player_rune_reroll_limit")]
+		public int PlayerRuneRerollLimit { get; set; } = DefaultPlayerRuneRerollLimit;
+
+		[JsonPropertyName("monster_hex_reroll_limit")]
+		public int MonsterHexRerollLimit { get; set; } = DefaultMonsterHexRerollLimit;
 
 		[JsonPropertyName("disabled_monster_hex_ids")]
 		public HashSet<string> DisabledMonsterHexIds { get; set; } = new(StringComparer.Ordinal);

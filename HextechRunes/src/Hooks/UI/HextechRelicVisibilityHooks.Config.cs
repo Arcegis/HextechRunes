@@ -30,10 +30,10 @@ internal static partial class HextechRelicVisibilityHooks
 		if (globalUi != null && GodotObject.IsInstanceValid(globalUi))
 		{
 			InstallToggle(globalUi);
-			ApplyHiddenState(globalUi.RelicInventory);
+			ApplyHiddenState(globalUi);
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] show_hidden_relics_toggle={showToggle}.");
+		Log.Info($"[{ModInfo.Id}][Mayhem] show_hidden_ui_toggle={showToggle}.");
 	}
 
 	private static ModUiConfig LoadOrCreateConfig()

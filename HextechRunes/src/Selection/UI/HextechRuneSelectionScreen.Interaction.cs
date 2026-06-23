@@ -69,7 +69,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private void OnRerollPressed(int slotIndex)
 	{
-		if (_choiceLocked || _rerollFunc == null || _rerolledSlots.ElementAtOrDefault(slotIndex))
+		if (_choiceLocked || _rerollFunc == null || IsPlayerRuneRerollLimitReached(slotIndex))
 		{
 			return;
 		}
@@ -90,14 +90,14 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: slot={slotIndex} old={oldRelic} new={newRelic}");
 		PlayRerollSfx();
 		_relics = rerolled.ToList();
-		_rerolledSlots[slotIndex] = true;
+		_playerRuneRerollCounts[slotIndex]++;
 		_rerollHistory.Add(slotIndex);
 		RebuildCards();
 	}
 
 	private void OnEnemyHexRerollPressed(int slotIndex)
 	{
-		if (_choiceLocked || _enemyHexRerollFunc == null || slotIndex < 0 || slotIndex >= _monsterHexKinds.Count)
+		if (_choiceLocked || _enemyHexRerollFunc == null || slotIndex < 0 || slotIndex >= _monsterHexKinds.Count || IsEnemyHexRerollLimitReached(slotIndex))
 		{
 			return;
 		}
@@ -169,6 +169,31 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private void NotifyEnemyHexChanged()
 	{
 		_enemyHexChanged?.Invoke(_monsterHexKinds.ToArray(), _enemyHexRerollCounts.ToArray());
+	}
+
+	private bool IsPlayerRuneRerollLimitReached(int slotIndex)
+	{
+		return IsRerollLimitReached(_playerRuneRerollLimit, GetPlayerRuneRerollCount(slotIndex));
+	}
+
+	private int GetPlayerRuneRerollCount(int slotIndex)
+	{
+		return slotIndex >= 0 && slotIndex < _playerRuneRerollCounts.Count
+			? _playerRuneRerollCounts[slotIndex]
+			: 0;
+	}
+
+	private bool IsEnemyHexRerollLimitReached(int slotIndex)
+	{
+		int count = slotIndex >= 0 && slotIndex < _enemyHexRerollCounts.Count
+			? _enemyHexRerollCounts[slotIndex]
+			: 0;
+		return IsRerollLimitReached(_enemyHexRerollLimit, count);
+	}
+
+	private static bool IsRerollLimitReached(int limit, int count)
+	{
+		return limit != HextechRuneConfiguration.InfiniteRerollLimit && count >= limit;
 	}
 
 	public async Task<IEnumerable<RelicModel>> RelicsSelected(bool removeOverlay = true)

@@ -22,7 +22,8 @@ internal static class HextechChoiceCodec
 	private const int ChoiceKindRelicOptionSelection = 7;
 	private const int EnemyHexAdjustmentListVersion = -2;
 	private const int PlayerRuneConfigBitsetVersion = -4;
-	private const int RunConfigurationSnapshotVersion = -5;
+	private const int LegacyRunConfigurationSnapshotVersion = -5;
+	private const int RunConfigurationSnapshotVersion = -6;
 	private const int PlayerRuneConfigBitsPerWord = 30;
 	private const int MaxPlayerRuneConfigBitsetWords = 64;
 	private const int MaxDisabledMonsterHexes = 128;
@@ -204,6 +205,8 @@ internal static class HextechChoiceCodec
 		payload.Add(RunConfigurationSnapshotVersion);
 		payload.AddRange(HextechPlayerHexCountState.Normalize(snapshot.PlayerHexCountsByAct));
 		payload.AddRange(HextechEnemyHexCountState.Normalize(snapshot.EnemyHexCountsByAct));
+		payload.Add(HextechRuneConfiguration.ClampRerollLimit(snapshot.PlayerRuneRerollLimit));
+		payload.Add(HextechRuneConfiguration.ClampRerollLimit(snapshot.MonsterHexRerollLimit));
 		AppendRarityWeights(payload, snapshot.FirstActRuneRarityWeights);
 		AppendRarityWeights(payload, snapshot.NormalRuneRarityWeights);
 		AppendRarityWeights(payload, snapshot.SecondActAfterSilverRuneRarityWeights);
@@ -238,13 +241,16 @@ internal static class HextechChoiceCodec
 			return true;
 		}
 
-		if (payload[cursor] != RunConfigurationSnapshotVersion)
+		int snapshotVersion = payload[cursor];
+		if (snapshotVersion != RunConfigurationSnapshotVersion && snapshotVersion != LegacyRunConfigurationSnapshotVersion)
 		{
 			return true;
 		}
 
 		cursor++;
-		const int fixedIntCount = 3 + 3 + 3 + 3 + 3 + 3 + 1;
+		int fixedIntCount = snapshotVersion == RunConfigurationSnapshotVersion
+			? 3 + 3 + 2 + 3 + 3 + 3 + 3 + 1
+			: 3 + 3 + 3 + 3 + 3 + 3 + 1;
 		if (payload.Count < cursor + fixedIntCount)
 		{
 			return false;
@@ -254,6 +260,14 @@ internal static class HextechChoiceCodec
 		cursor += 3;
 		int[] enemyHexCounts = HextechEnemyHexCountState.Normalize(payload.Skip(cursor).Take(3).ToArray());
 		cursor += 3;
+		int playerRuneRerollLimit = fallback.PlayerRuneRerollLimit;
+		int monsterHexRerollLimit = fallback.MonsterHexRerollLimit;
+		if (snapshotVersion == RunConfigurationSnapshotVersion)
+		{
+			playerRuneRerollLimit = HextechRuneConfiguration.ClampRerollLimit(payload[cursor++]);
+			monsterHexRerollLimit = HextechRuneConfiguration.ClampRerollLimit(payload[cursor++]);
+		}
+
 		HextechRarityWeights firstActWeights = ReadRarityWeights(payload, ref cursor);
 		HextechRarityWeights normalWeights = ReadRarityWeights(payload, ref cursor);
 		HextechRarityWeights secondActAfterSilverWeights = ReadRarityWeights(payload, ref cursor);
@@ -290,6 +304,8 @@ internal static class HextechChoiceCodec
 		snapshot = HextechRuneConfiguration.NormalizeSnapshot(new HextechRunConfigurationSnapshot(
 			playerHexCounts,
 			enemyHexCounts,
+			playerRuneRerollLimit,
+			monsterHexRerollLimit,
 			fallback.DisabledPlayerRuneIds,
 			disabledMonsterHexIds,
 			disabledForgeIds.Select(static id => id.Entry).ToHashSet(StringComparer.Ordinal),

@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
@@ -388,11 +389,60 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	private async Task DuplicateObtainedRelic(Player player, RelicModel sourceRelic)
 	{
+		if (sourceRelic is DustyTome dustyTome)
+		{
+			await DuplicateDustyTomeAncientCard(player, dustyTome);
+			return;
+		}
+
 		RelicModel copy = ModelDb.GetById<RelicModel>(sourceRelic.CanonicalInstance?.Id ?? sourceRelic.Id).ToMutable();
 		RelicModel obtained = await RunWithCommandDuplicationSuppressed(
 			() => RelicCmd.Obtain(copy, player));
 		Flash();
 		TrySyncObtainedRelic(obtained);
+	}
+
+	private async Task DuplicateDustyTomeAncientCard(Player player, DustyTome sourceTome)
+	{
+		if (!TryResolveDustyTomeAncientCard(player, sourceTome, out ModelId ancientCardId))
+		{
+			Log.Warn($"[{ModInfo.Id}][DoubleVision] Failed to resolve Dusty Tome ancient card for duplicated reward.");
+			return;
+		}
+
+		CardModel card = player.RunState.CreateCard(ModelDb.GetById<CardModel>(ancientCardId), player);
+		CardCmd.Upgrade(card);
+		CardPileAddResult result = await RunWithCommandDuplicationSuppressed(
+			() => CardPileCmd.Add(card, PileType.Deck, clonedBy: this));
+		if (!result.success)
+		{
+			return;
+		}
+
+		SaveManager.Instance.MarkCardAsSeen(result.cardAdded);
+		TrySyncObtainedCard(result.cardAdded);
+		Flash();
+		CardCmd.PreviewCardPileAdd(result, 2f);
+	}
+
+	private static bool TryResolveDustyTomeAncientCard(Player player, DustyTome sourceTome, out ModelId ancientCardId)
+	{
+		if (sourceTome.AncientCard is { } sourceAncientCard)
+		{
+			ancientCardId = sourceAncientCard;
+			return true;
+		}
+
+		DustyTome fallback = (DustyTome)ModelDb.Relic<DustyTome>().ToMutable();
+		fallback.SetupForPlayer(player);
+		if (fallback.AncientCard is { } fallbackAncientCard)
+		{
+			ancientCardId = fallbackAncientCard;
+			return true;
+		}
+
+		ancientCardId = ModelId.none;
+		return false;
 	}
 
 	private async Task DuplicateForgeReward(Player player, HextechForgeChoiceReward reward)

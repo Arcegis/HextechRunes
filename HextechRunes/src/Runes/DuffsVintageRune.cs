@@ -43,7 +43,7 @@ public sealed class DuffsVintageRune : HextechRelicBase
 		}
 
 		List<CardModel> cards = PileType.Hand.GetPile(Owner).Cards
-			.Where(static card => !card.EnergyCost.CostsX)
+			.Where(CanReduceCost)
 			.ToList();
 		if (cards.Count == 0)
 		{
@@ -53,11 +53,25 @@ public sealed class DuffsVintageRune : HextechRelicBase
 		Flash();
 		foreach (CardModel card in cards)
 		{
-			int currentCostBeforeGlobalModifiers = card.EnergyCost.GetWithModifiers(CostModifiers.Local);
-			int nextCost = Math.Max(0, currentCostBeforeGlobalModifiers - DynamicVars["CostReduction"].IntValue);
-			card.EnergyCost.SetUntilPlayed(nextCost, reduceOnly: true);
+			int reduction = DynamicVars["CostReduction"].IntValue;
+			if (!card.EnergyCost.CostsX)
+			{
+				int currentCostBeforeGlobalModifiers = card.EnergyCost.GetWithModifiers(CostModifiers.Local);
+				int nextCost = Math.Max(0, currentCostBeforeGlobalModifiers - reduction);
+				card.EnergyCost.SetUntilPlayed(nextCost, reduceOnly: true);
+			}
+
+			if (!card.HasStarCostX && card.CurrentStarCost > 0)
+			{
+				card.SetStarCostUntilPlayed(Math.Max(0, card.CurrentStarCost - reduction));
+			}
 		}
 
 		return Task.CompletedTask;
+	}
+
+	private static bool CanReduceCost(CardModel card)
+	{
+		return !card.EnergyCost.CostsX || (!card.HasStarCostX && card.CurrentStarCost > 0);
 	}
 }
