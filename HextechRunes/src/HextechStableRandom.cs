@@ -60,10 +60,8 @@ internal static class HextechStableRandom
 			runState.TotalFloor.ToString(),
 			"|round:",
 			roundNumber.ToString(),
-			"|slot:",
-			runState.GetPlayerSlotIndex(player).ToString(),
-			"|net:",
-			player.NetId.ToString());
+			"|player:",
+			PlayerKey(player));
 	}
 
 	public static ulong HashRaw(params string?[] parts)
@@ -151,7 +149,14 @@ internal static class HextechStableRandom
 	{
 		RunState runState = (RunState)player.RunState;
 		int slot = runState.GetPlayerSlotIndex(player);
-		return $"{slot}:{player.NetId}";
+		return PlayerIdentityKey(slot, player.NetId);
+	}
+
+	internal static string PlayerIdentityKey(int slot, ulong netId)
+	{
+		return netId != 0UL
+			? $"net:{netId}"
+			: $"slot:{slot}";
 	}
 
 	public static string CardKey(CardModel card)
