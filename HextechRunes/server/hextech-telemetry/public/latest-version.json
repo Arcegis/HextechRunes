@@ -269,6 +269,20 @@
         "pckBytes": 13723624,
         "manifestBytes": 485
       }
+    },
+    {
+      "modVersion": "0.8.0",
+      "gameVersion": "0.107.1",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-06-24T07:32:04Z",
+      "dllSha256": "ff8e49396977e0104853da0b8f747df6ff230886ce8c51847ee044052632c2d9",
+      "pckSha256": "a7f36a311d6f7b7909fd89744dc3bb878cf593ef195a1d36020ed0096cb62e30",
+      "manifestSha256": "5e32feb1e2b84de01cc68e6abe8e6b60f1ef831cf23a00c990902b87da52a28d",
+      "artifactSizes": {
+        "dllBytes": 1582592,
+        "pckBytes": 13836340,
+        "manifestBytes": 485
+      }
     }
   ]
 }
