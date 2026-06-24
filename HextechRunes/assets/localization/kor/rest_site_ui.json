@@ -1,5 +1,5 @@
 {
-  "OPTION_STOKE.name": "불 지피기",
+  "OPTION_STOKE.name": "화력 증폭",
   "OPTION_STOKE.description": "덱에서 카드 [blue]1[/blue]장을 제거합니다.",
   "OPTION_STOKE.descriptionDisabled": "제거할 수 있는 카드가 없습니다."
 }
