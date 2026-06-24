@@ -54,6 +54,7 @@ internal static class Program
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
 			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
+			new(nameof(RunConfigurationDefaultSnapshotDisablesRiskyContent), RunConfigurationDefaultSnapshotDisablesRiskyContent),
 			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
 			new(nameof(EnemyHexCountStateNormalizesMissingAndOutOfRangeValues), EnemyHexCountStateNormalizesMissingAndOutOfRangeValues),
 			new(nameof(EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct), EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct),
@@ -81,6 +82,7 @@ internal static class Program
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
 			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
 			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
+			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
@@ -720,6 +722,18 @@ internal static class Program
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, snapshot.MonsterHexRerollLimit, "default monster reroll limit");
 	}
 
+	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()
+	{
+		string corruptedBranchId = ModelDb.GetId<CorruptedBranchRune>().Entry;
+		string doomForgeId = ModelDb.GetId<DoomForge>().Entry;
+		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
+
+		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(corruptedBranchId), "default player rune ids should disable corrupted branch");
+		Expect(snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "default snapshot should disable corrupted branch");
+		Expect(HextechRuneConfiguration.GetDefaultDisabledForgeIds().Contains(doomForgeId), "default forge ids should disable doom forge");
+		Expect(snapshot.DisabledForgeIds.Contains(doomForgeId), "default snapshot should disable doom forge");
+	}
+
 	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
 	{
 		Equal(0, HextechRuneConfiguration.StepRerollLimit(0, -1), "zero stays zero on decrement");
@@ -1113,6 +1127,27 @@ internal static class Program
 		Expect(
 			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, UninitializedCard<SovereignBlade>()),
 			"damage with card source should not match poison damage signature");
+	}
+
+	private static void EnemyCompensationSkipsOutbreakPoisonResponse()
+	{
+		Creature target = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
+		Creature dealer = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
+
+		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should start inactive");
+		Expect(
+			!CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null),
+			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
+
+		bool skippedInsideGuard = false;
+		HextechCombatHooks.RunWithOutbreakPowerPoisonResponseGuard(() =>
+		{
+			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+		Expect(skippedInsideGuard, "outbreak poison response damage should skip compensation replacement");
+		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should reset after guarded work");
 	}
 
 	private static void ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless()

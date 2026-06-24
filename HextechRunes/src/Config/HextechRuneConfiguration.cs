@@ -9,7 +9,7 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 12;
+	private const int CurrentConfigVersion = 13;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
 	private const int MaxActHexCount = 6;
@@ -57,6 +57,14 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version11DefaultDisabledRuneTypes =
 	[
 		typeof(HappyAccidentRune)
+	];
+	private static readonly Type[] Version13DefaultDisabledRuneTypes =
+	[
+		typeof(CorruptedBranchRune)
+	];
+	private static readonly Type[] Version13DefaultDisabledForgeTypes =
+	[
+		typeof(DoomForge)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -201,7 +209,7 @@ internal static class HextechRuneConfiguration
 
 	public static IReadOnlySet<string> GetDefaultDisabledForgeIds()
 	{
-		return new HashSet<string>(StringComparer.Ordinal);
+		return GetForgeIds(Version13DefaultDisabledForgeTypes);
 	}
 
 	public static void SaveDisabledPlayerRuneIds(IEnumerable<string> disabledIds)
@@ -345,6 +353,10 @@ internal static class HextechRuneConfiguration
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version11DefaultDisabledRuneTypes));
 		}
+		if (previousConfigVersion < 13)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version13DefaultDisabledRuneTypes));
+		}
 
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
@@ -355,7 +367,12 @@ internal static class HextechRuneConfiguration
 		config.PlayerRuneRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultPlayerRuneRerollLimit : config.PlayerRuneRerollLimit);
 		config.MonsterHexRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultMonsterHexRerollLimit : config.MonsterHexRerollLimit);
 		config.DisabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);
-		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
+		HashSet<string> disabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
+		if (previousConfigVersion < 13)
+		{
+			disabledForgeIds.UnionWith(GetForgeIds(Version13DefaultDisabledForgeTypes));
+		}
+		config.DisabledForgeIds = disabledForgeIds;
 		config.FirstActRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
 			ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
 			DefaultFirstActRuneRarityWeights));
@@ -594,6 +611,13 @@ internal static class HextechRuneConfiguration
 	private static HashSet<string> GetPlayerRuneIds(IEnumerable<Type> runeTypes)
 	{
 		return HextechPlayerRuneConfigIds.FromTypes(runeTypes);
+	}
+
+	private static HashSet<string> GetForgeIds(IEnumerable<Type> forgeTypes)
+	{
+		return forgeTypes
+			.Select(static type => ModelDb.GetId(type).Entry)
+			.ToHashSet(StringComparer.Ordinal);
 	}
 
 	private static HextechRarityWeights ToRarityWeights(RarityWeightConfig? config, HextechRarityWeights fallback)

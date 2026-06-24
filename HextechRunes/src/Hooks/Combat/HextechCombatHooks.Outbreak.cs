@@ -99,6 +99,19 @@ internal static partial class HextechCombatHooks
 		return wouldRespond && IsApplyingCompensationReplacementDoom;
 	}
 
+	internal static async Task RunWithOutbreakPowerPoisonResponseGuard(Func<Task> action)
+	{
+		OutbreakPowerPoisonResponseDepth.Value++;
+		try
+		{
+			await action();
+		}
+		finally
+		{
+			OutbreakPowerPoisonResponseDepth.Value = Math.Max(0, OutbreakPowerPoisonResponseDepth.Value - 1);
+		}
+	}
+
 	internal static async Task RunWithCompensationReplacementDoomGuard(Func<Task> action)
 	{
 		CompensationReplacementDoomDepth.Value++;

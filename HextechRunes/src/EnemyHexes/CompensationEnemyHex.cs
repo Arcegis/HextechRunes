@@ -100,8 +100,9 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 	internal static bool ShouldSkipDamageReplacement(Creature target, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return IsPoisonDamageSignature(props, dealer, cardSource)
-			&& target.GetPowerAmount<PoisonPower>() > 0m;
+		return HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse
+			|| (IsPoisonDamageSignature(props, dealer, cardSource)
+				&& target.GetPowerAmount<PoisonPower>() > 0m);
 	}
 
 	internal static bool IsPoisonDamageSignature(ValueProp props, Creature? dealer, CardModel? cardSource)
