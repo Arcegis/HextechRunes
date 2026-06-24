@@ -12,6 +12,8 @@ namespace HextechRunes;
 
 public sealed class SerpentFormUpgradeRune : CardUpgradeRuneBase<SerpentForm>
 {
+	private int _drawDamageTargetsThisCombat;
+
 	protected override bool IsAvailableForCharacter(Player player)
 	{
 		return IsSilentPlayer(player);
@@ -30,12 +32,13 @@ public sealed class SerpentFormUpgradeRune : CardUpgradeRuneBase<SerpentForm>
 			return;
 		}
 
+		int targetOrdinal = ConsumeCombatProcOrdinal(nameof(SerpentFormUpgradeRune), ref _drawDamageTargetsThisCombat);
 		Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
 			Owner,
 			combatState,
 			"serpent-form-upgrade",
 			combatState.RoundNumber.ToString(),
-			CombatManager.Instance.History.Entries.Count().ToString(),
+			targetOrdinal.ToString(),
 			card.Id.Entry);
 		if (target == null)
 		{

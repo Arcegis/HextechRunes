@@ -36,6 +36,8 @@ namespace HextechRunes;
 
 public sealed class HappyAccidentRune : HextechRelicBase
 {
+	private int _statusOrbsThisCombat;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("OrbCount", 1m),
@@ -75,11 +77,12 @@ public sealed class HappyAccidentRune : HextechRelicBase
 		PlayerChoiceContext choiceContext = new BlockingPlayerChoiceContext();
 		for (int i = 0; i < DynamicVars["OrbCount"].IntValue; i++)
 		{
+			int orbOrdinal = ConsumeCombatProcOrdinal(nameof(HappyAccidentRune), ref _statusOrbsThisCombat);
 			OrbModel orb = HextechStableRandom.CreateOrb(
 				(RunState)Owner.RunState,
 				Owner,
 				"happy-accident-status-orb",
-				CombatManager.Instance.History.Entries.Count() + i,
+				orbOrdinal,
 				Owner.Creature.CombatState.RoundNumber);
 			await OrbCmd.Channel(choiceContext, orb, Owner);
 		}

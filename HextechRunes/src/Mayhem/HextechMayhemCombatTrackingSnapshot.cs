@@ -8,6 +8,7 @@ internal sealed class CombatTrackingSnapshot
 	public Dictionary<uint, int> BloodPactProcsThisTurn { get; set; } = new();
 	public Dictionary<string, int> PlayerRuneProcsThisTurn { get; set; } = new();
 	public Dictionary<string, int> PlayerRuneProcsThisCombat { get; set; } = new();
+	public Dictionary<string, int> GlobalProcsThisCombat { get; set; } = new();
 	public Dictionary<uint, int> BloodArmorHpLossThisPlayerTurn { get; set; } = new();
 	public Dictionary<uint, int> ClownCollegeProcsThisTurn { get; set; } = new();
 	public List<uint> EscapePlanTriggered { get; set; } = [];

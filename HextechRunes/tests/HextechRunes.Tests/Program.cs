@@ -59,9 +59,11 @@ internal static class Program
 			new(nameof(EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct), EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct),
 			new(nameof(PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot), PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot),
 			new(nameof(PlayerRuneConfigSnapshotStateSnapshotOverridesLocalFallback), PlayerRuneConfigSnapshotStateSnapshotOverridesLocalFallback),
-			new(nameof(PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData), PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData),
-			new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
-			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
+				new(nameof(PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData), PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData),
+				new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
+				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
+				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
+				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
 			new(nameof(PlayerRuneMetadataHasUniqueTypes), PlayerRuneMetadataHasUniqueTypes),
@@ -353,6 +355,80 @@ internal static class Program
 		Equal(TimeSpan.Zero, HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(0), "zero timeout");
 		Equal(TimeSpan.FromSeconds(10), HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(600), "ack timeout");
 		Equal(TimeSpan.FromMinutes(10), HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(36000), "selection timeout");
+	}
+
+	private static void CombatTrackingPerTurnProcLimitsResetOncePerRound()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		tracking.SlapProcsThisTurn[1] = 1;
+		tracking.TormentorProcsThisTurn[2] = 1;
+		tracking.CourageProcsThisTurn[3] = 1;
+		tracking.BloodPactProcsThisTurn[4] = 1;
+		tracking.PlayerRuneProcsThisTurn["player:rune"] = 1;
+		tracking.ClownCollegeProcsThisTurn[5] = 1;
+		tracking.DevilsDanceTriggeredThisTurn.Add(6);
+		tracking.FinalFormTriggeredThisTurn.Add(7);
+		tracking.EnemyPorcupineTriggersThisTurn[8] = 1;
+		tracking.EightPennyGatePlayersTriggeredThisTurn.Add(9);
+		tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Add(10);
+		tracking.MonsterDebuffActionProcKeysThisTurn.Add("debuff-action");
+
+		tracking.PreparePlayerSideTurnEnd();
+
+		Equal(1, tracking.ClownCollegeProcsThisTurn.Count, "player side end should keep clown college round proc count");
+		Equal(1, tracking.EnemyPorcupineTriggersThisTurn.Count, "player side end should keep porcupine round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "player side end should keep eight penny gate first round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "player side end should keep eight penny gate second round proc count");
+
+		tracking.PrepareEnemySideTurnStart();
+
+		Equal(1, tracking.SlapProcsThisTurn.Count, "enemy side start should keep slap round proc count");
+		Equal(1, tracking.TormentorProcsThisTurn.Count, "enemy side start should keep tormentor round proc count");
+		Equal(1, tracking.CourageProcsThisTurn.Count, "enemy side start should keep courage round proc count");
+		Equal(1, tracking.BloodPactProcsThisTurn.Count, "enemy side start should keep blood pact round proc count");
+		Equal(1, tracking.PlayerRuneProcsThisTurn.Count, "enemy side start should keep player rune round proc count");
+		Equal(1, tracking.ClownCollegeProcsThisTurn.Count, "enemy side start should keep clown college round proc count");
+		Equal(1, tracking.DevilsDanceTriggeredThisTurn.Count, "enemy side start should keep devil's dance round proc count");
+		Equal(1, tracking.FinalFormTriggeredThisTurn.Count, "enemy side start should keep final form round proc count");
+		Equal(1, tracking.EnemyPorcupineTriggersThisTurn.Count, "enemy side start should keep porcupine round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "enemy side start should keep eight penny gate first round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "enemy side start should keep eight penny gate second round proc count");
+		Equal(1, tracking.MonsterDebuffActionProcKeysThisTurn.Count, "enemy side start should keep monster debuff round guard");
+
+		tracking.PreparePlayerSideTurnStart();
+
+		Equal(0, tracking.SlapProcsThisTurn.Count, "player side start should reset slap round proc count");
+		Equal(0, tracking.TormentorProcsThisTurn.Count, "player side start should reset tormentor round proc count");
+		Equal(0, tracking.CourageProcsThisTurn.Count, "player side start should reset courage round proc count");
+		Equal(0, tracking.BloodPactProcsThisTurn.Count, "player side start should reset blood pact round proc count");
+		Equal(0, tracking.PlayerRuneProcsThisTurn.Count, "player side start should reset player rune round proc count");
+		Equal(0, tracking.ClownCollegeProcsThisTurn.Count, "player side start should reset clown college round proc count");
+		Equal(0, tracking.DevilsDanceTriggeredThisTurn.Count, "player side start should reset devil's dance round proc count");
+		Equal(0, tracking.FinalFormTriggeredThisTurn.Count, "player side start should reset final form round proc count");
+		Equal(0, tracking.EnemyPorcupineTriggersThisTurn.Count, "player side start should reset porcupine round proc count");
+		Equal(0, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "player side start should reset eight penny gate first round proc count");
+		Equal(0, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "player side start should reset eight penny gate second round proc count");
+		Equal(0, tracking.MonsterDebuffActionProcKeysThisTurn.Count, "player side start should reset monster debuff round guard");
+	}
+
+	private static void CombatTrackingGlobalProcOrdinalsSerializeAndReset()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		Equal(0, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy-archmage:net:1"), "first global proc ordinal");
+		Equal(1, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy-archmage:net:1"), "second global proc ordinal");
+
+		string serialized = tracking.Serialize();
+		HextechMayhemCombatTrackingState restored = new();
+		restored.Restore(serialized);
+
+		Equal(2, restored.GlobalProcsThisCombat["enemy-archmage:net:1"], "global proc count should restore");
+		Equal(2, HextechCombatProcTracker.ConsumeGlobalProcInCombat(restored, "enemy-archmage:net:1"), "restored next global proc ordinal");
+
+		restored.PreparePlayerSideTurnStart();
+		Equal(3, restored.GlobalProcsThisCombat["enemy-archmage:net:1"], "global proc count should persist across turn reset");
+
+		restored.Reset();
+		Equal(0, restored.GlobalProcsThisCombat.Count, "global proc count should clear on combat tracking reset");
 	}
 
 	private static void StableModelIdListCodecRoundTripsFromNonzeroCursor()

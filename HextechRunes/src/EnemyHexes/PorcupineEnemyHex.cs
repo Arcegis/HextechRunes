@@ -53,7 +53,6 @@ internal sealed class PorcupineEnemyHex : HextechEnemyHexEffect
 		}
 
 		context.Tracking.EnemyPorcupineTemporaryThornsThisTurn.Clear();
-		context.Tracking.EnemyPorcupineTriggersThisTurn.Clear();
 	}
 
 	internal static IReadOnlyList<(uint CombatId, int Thorns)> GetTemporaryThornsToRemove(HextechMayhemCombatTrackingState tracking)

@@ -23,7 +23,7 @@ public sealed class BodySlamUpgradeRune : CardUpgradeRuneBase<BodySlam>
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (!IsBodySlam(cardSource) || !IsDamageFromOwner(dealer, cardSource))
+		if (!IsBodySlam(cardSource) || !IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{
 			return 1m;
 		}

@@ -60,7 +60,7 @@ public sealed class GlassCannonRune : HextechRelicBase
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (!IsDamageFromOwner(dealer, cardSource))
+		if (!IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{
 			return 1m;
 		}

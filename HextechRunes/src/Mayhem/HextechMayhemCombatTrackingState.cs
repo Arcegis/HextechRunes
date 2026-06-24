@@ -8,6 +8,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<uint, int> BloodPactProcsThisTurn = new();
 	public readonly Dictionary<string, int> PlayerRuneProcsThisTurn = new();
 	public readonly Dictionary<string, int> PlayerRuneProcsThisCombat = new();
+	public readonly Dictionary<string, int> GlobalProcsThisCombat = new();
 	public readonly Dictionary<uint, int> BloodArmorHpLossThisPlayerTurn = new();
 	public readonly Dictionary<uint, int> ClownCollegeProcsThisTurn = new();
 	public readonly HashSet<uint> EscapePlanTriggered = new();
@@ -66,31 +67,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public void PreparePlayerSideTurnStart()
 	{
 		PlayerAttackCardsPlayedThisTurn.Clear();
-		BloodPactProcsThisTurn.Clear();
-		PlayerRuneProcsThisTurn.Clear();
-		BloodArmorHpLossThisPlayerTurn.Clear();
-		ClownCollegeProcsThisTurn.Clear();
-		EightPennyGatePlayersTriggeredThisTurn.Clear();
-		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
-		EnemyPorcupineTemporaryThornsThisTurn.Clear();
-		EnemyPorcupineTriggersThisTurn.Clear();
-		ArcanePunchPlayerAttackCardsPlayed = 0;
-	}
-
-	public void PreparePlayerSideTurnEnd()
-	{
-		PlayerAttackCardsPlayedThisTurn.Clear();
-		EightPennyGatePlayersTriggeredThisTurn.Clear();
-		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
-		EnemyPorcupineTemporaryThornsThisTurn.Clear();
-		EnemyPorcupineTriggersThisTurn.Clear();
-		ArcanePunchPlayerAttackCardsPlayed = 0;
-	}
-
-	public void PrepareEnemySideTurnStart()
-	{
-		EnemyProtectiveVeilTurnCounter++;
-		PlayerAttackCardsPlayedThisTurn.Clear();
 		SlapProcsThisTurn.Clear();
 		TormentorProcsThisTurn.Clear();
 		CourageProcsThisTurn.Clear();
@@ -98,11 +74,29 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		PlayerRuneProcsThisTurn.Clear();
 		BloodArmorHpLossThisPlayerTurn.Clear();
 		ClownCollegeProcsThisTurn.Clear();
+		EightPennyGatePlayersTriggeredThisTurn.Clear();
+		EightPennyGatePlayersTriggeredSecondThisTurn.Clear();
 		EnemyPorcupineTemporaryThornsThisTurn.Clear();
 		EnemyPorcupineTriggersThisTurn.Clear();
 		DevilsDanceTriggeredThisTurn.Clear();
 		FinalFormTriggeredThisTurn.Clear();
 		MonsterDebuffActionProcKeysThisTurn.Clear();
+		ArcanePunchPlayerAttackCardsPlayed = 0;
+	}
+
+	public void PreparePlayerSideTurnEnd()
+	{
+		PlayerAttackCardsPlayedThisTurn.Clear();
+		EnemyPorcupineTemporaryThornsThisTurn.Clear();
+		ArcanePunchPlayerAttackCardsPlayed = 0;
+	}
+
+	public void PrepareEnemySideTurnStart()
+	{
+		EnemyProtectiveVeilTurnCounter++;
+		PlayerAttackCardsPlayedThisTurn.Clear();
+		BloodArmorHpLossThisPlayerTurn.Clear();
+		EnemyPorcupineTemporaryThornsThisTurn.Clear();
 	}
 
 	public void Reset()

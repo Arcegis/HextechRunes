@@ -1,10 +1,14 @@
 using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
-using MegaCrit.Sts2.Core.Random;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -60,14 +64,33 @@ internal static class VakuuTurnController
 
 	private static Creature? GetTarget(Player owner, CardModel card, HextechCombatState combatState)
 	{
-		Rng combatTargets = owner.RunState.Rng.CombatTargets;
 		return card.TargetType switch
 		{
 			TargetType.AnyEnemy => combatState.HittableEnemies.FirstOrDefault(),
-			TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where(creature =>
-				creature is { IsAlive: true, IsPlayer: true } && creature != owner.Creature)),
+			TargetType.AnyAlly => PickStableAllyTarget(owner, card, combatState),
 			TargetType.AnyPlayer => owner.Creature,
 			_ => null
 		};
+	}
+
+	private static Creature? PickStableAllyTarget(Player owner, CardModel card, HextechCombatState combatState)
+	{
+		List<Creature> candidates = combatState.Allies
+			.Where(creature => creature is { IsAlive: true, IsPlayer: true } && creature != owner.Creature)
+			.ToList();
+		if (candidates.Count == 0)
+		{
+			return null;
+		}
+
+		int index = HextechStableRandom.Index(
+			(RunState)owner.RunState,
+			candidates.Count,
+			"vakuu-controlled-ally-target",
+			HextechStableRandom.PlayerKey(owner),
+			combatState.RoundNumber.ToString(),
+			HextechStableRandom.CardActionKey(card),
+			string.Join(",", candidates.Select(static creature => creature.CombatId?.ToString() ?? "none")));
+		return candidates[index];
 	}
 }

@@ -65,6 +65,6 @@ public sealed class OverflowRune : HextechRelicBase
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return IsOwnerOrPet(dealer) || cardSource?.Owner == Owner ? 2m : 1m;
+		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? 2m : 1m;
 	}
 }

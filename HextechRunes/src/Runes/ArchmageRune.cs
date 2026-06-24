@@ -9,6 +9,8 @@ namespace HextechRunes;
 
 public sealed class ArchmageRune : HextechRelicBase
 {
+	private int _freeCardRollsThisCombat;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("ChancePercent", 33m)
@@ -19,8 +21,8 @@ public sealed class ArchmageRune : HextechRelicBase
 		if (Owner == null
 			|| !CombatManager.Instance.IsInProgress
 			|| !IsOwnedSkill(cardPlay.Card)
-			|| !RollTrigger(cardPlay.Card)
-			|| PickCardToMakeFree(cardPlay.Card) is not CardModel card)
+			|| !RollTrigger(cardPlay.Card, out int rollOrdinal)
+			|| PickCardToMakeFree(cardPlay.Card, rollOrdinal) is not CardModel card)
 		{
 			return Task.CompletedTask;
 		}
@@ -30,19 +32,26 @@ public sealed class ArchmageRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	private bool RollTrigger(CardModel sourceCard)
+	private bool RollTrigger(CardModel sourceCard, out int rollOrdinal)
 	{
-		return Owner != null && HextechStableRandom.PercentChance(
+		rollOrdinal = -1;
+		if (Owner == null)
+		{
+			return false;
+		}
+
+		rollOrdinal = ConsumeCombatProcOrdinal(nameof(ArchmageRune), ref _freeCardRollsThisCombat);
+		return HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
 			DynamicVars["ChancePercent"].IntValue,
 			"archmage-free-card",
 			HextechStableRandom.PlayerKey(Owner),
 			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
-			CombatManager.Instance.History.Entries.Count().ToString(),
+			rollOrdinal.ToString(),
 			HextechStableRandom.CardKey(sourceCard));
 	}
 
-	private CardModel? PickCardToMakeFree(CardModel sourceCard)
+	private CardModel? PickCardToMakeFree(CardModel sourceCard, int rollOrdinal)
 	{
 		if (Owner == null)
 		{
@@ -55,22 +64,25 @@ public sealed class ArchmageRune : HextechRelicBase
 					.Where(static card => (card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
 						&& card.CostsEnergyOrStars(includeGlobalModifiers: true))
 					.ToList(),
-				sourceCard,
-				"base-cost")
-			?? PickFromCandidates(
-				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
-				sourceCard,
-				"global-cost")
+					sourceCard,
+					rollOrdinal,
+					"base-cost")
+				?? PickFromCandidates(
+					handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
+					sourceCard,
+					rollOrdinal,
+					"global-cost")
 			?? PickFromCandidates(
 				handCards
 					.Where(static card => card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
 					.ToList(),
-				sourceCard,
-				"base-any")
-			?? PickFromCandidates(handCards.ToList(), sourceCard, "any");
+					sourceCard,
+					rollOrdinal,
+					"base-any")
+				?? PickFromCandidates(handCards.ToList(), sourceCard, rollOrdinal, "any");
 	}
 
-	private CardModel? PickFromCandidates(IReadOnlyList<CardModel> candidates, CardModel sourceCard, string tier)
+	private CardModel? PickFromCandidates(IReadOnlyList<CardModel> candidates, CardModel sourceCard, int rollOrdinal, string tier)
 	{
 		if (Owner == null || candidates.Count == 0)
 		{
@@ -80,11 +92,11 @@ public sealed class ArchmageRune : HextechRelicBase
 		int index = HextechStableRandom.Index(
 			(RunState)Owner.RunState,
 			candidates.Count,
-			"archmage-pick-card",
-			HextechStableRandom.PlayerKey(Owner),
-			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
-			CombatManager.Instance.History.Entries.Count().ToString(),
-			HextechStableRandom.CardKey(sourceCard),
+				"archmage-pick-card",
+				HextechStableRandom.PlayerKey(Owner),
+				Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+				rollOrdinal.ToString(),
+				HextechStableRandom.CardKey(sourceCard),
 			tier,
 			HextechStableRandom.CardPileKey(candidates));
 		return candidates[index];

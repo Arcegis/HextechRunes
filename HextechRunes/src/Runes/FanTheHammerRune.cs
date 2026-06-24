@@ -129,6 +129,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 			|| card.Owner != Owner
 			|| dealer != Owner.Creature
 			|| !IsOwnedAttack(card)
+			|| target?.Side == CombatSide.Player
 			|| (props & ValueProp.Unpowered) != 0)
 		{
 			return 1m;
