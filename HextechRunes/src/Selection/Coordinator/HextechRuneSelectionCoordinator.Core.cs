@@ -42,10 +42,10 @@ internal static partial class HextechRuneSelectionCoordinator
 			Log.Warn($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: clearing stale handling state for previous run");
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsActResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsActResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
 		if (ActSelectionGate.IsHandling || !IsCurrentRun(runState) || actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skip");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skip");
 			return;
 		}
 
@@ -60,14 +60,14 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			if (NMapScreen.Instance?.IsOpen == true && NGame.Instance != null)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: closing map before showing selection overlay");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: closing map before showing selection overlay");
 				NMapScreen.Instance.Close(animateOut: false);
 				reopenMapAfterSelection = true;
 				await NGame.Instance.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
 			}
 			if (!IsCurrentRun(runState))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run is no longer current");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run is no longer current");
 				return;
 			}
 			if (!await WaitForSelectionBlockingOverlaysToClear(runState, actIndex, "before-selection"))
@@ -81,8 +81,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			(HextechRarityTier rarity, MonsterHexKind? monsterHex) = await ResolveActRoll(runState, modifier, actIndex);
-			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
-			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
 			IReadOnlyList<MonsterHexKind> previousMonsterHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
 			IReadOnlyList<MonsterHexKind> newMonsterHexes = ResolveNewMonsterHexesForAct(modifier, rarity, runState, actIndex, monsterHex);
 			IReadOnlyList<MonsterHexKind> finalMonsterHexes = CombineMonsterHexes(previousMonsterHexes, newMonsterHexes);
@@ -112,7 +112,7 @@ internal static partial class HextechRuneSelectionCoordinator
 						}
 
 						HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
-						Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection options: player={player.NetId} ordinal={choiceOrdinal} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+						HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection options: player={player.NetId} ordinal={choiceOrdinal} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
 						HextechEnemyHexAdjustmentOptions? enemyHexOptions = allowEnemyHexAdjustment && finalMonsterHexes.Count > 0
 							? new HextechEnemyHexAdjustmentOptions
 							{
@@ -142,7 +142,7 @@ internal static partial class HextechRuneSelectionCoordinator
 							enemyHexOptions);
 						if (!IsCurrentRun(runState))
 						{
-							Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection returned for stale run");
+							HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection returned for stale run");
 							return;
 						}
 
@@ -157,7 +157,7 @@ internal static partial class HextechRuneSelectionCoordinator
 						RelicModel selected = selection.SelectedRelic ?? options[0];
 						HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount, choiceOrdinal);
 						await RelicCmd.Obtain(selected, player);
-						Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection obtained: player={player.NetId} ordinal={choiceOrdinal} relic={(selected.CanonicalInstance?.Id ?? selected.Id).Entry}");
+						HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection obtained: player={player.NetId} ordinal={choiceOrdinal} relic={(selected.CanonicalInstance?.Id ?? selected.Id).Entry}");
 					}
 				}
 				else
@@ -184,11 +184,11 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			if (playerHexCount <= 0)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skipped player choices: act={actIndex} configuredPlayerHexCount={playerHexCount}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skipped player choices: act={actIndex} configuredPlayerHexCount={playerHexCount}");
 			}
 			if (!IsCurrentRun(runState))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run changed before resolving act");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run changed before resolving act");
 				return;
 			}
 
@@ -198,11 +198,11 @@ internal static partial class HextechRuneSelectionCoordinator
 			HextechEnemyUi.Refresh(modifier);
 			await modifier.ApplyToCurrentEnemiesIfNeeded();
 			await PersistActSelection(runState, actIndex);
-			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection resolved: act={actIndex}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection resolved: act={actIndex}");
 		}
 		catch (OperationCanceledException)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection overlay closed before choice act={actIndex}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection overlay closed before choice act={actIndex}");
 		}
 		finally
 		{
@@ -211,12 +211,12 @@ internal static partial class HextechRuneSelectionCoordinator
 				&& NMapScreen.Instance != null
 				&& !NMapScreen.Instance.IsOpen)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: reopening map after selection overlay");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: reopening map after selection overlay");
 				NMapScreen.Instance.Open();
 			}
 
 			ActSelectionGate.ExitIfCurrent(runState);
-			Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection exit: act={actIndex}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection exit: act={actIndex}");
 		}
 	}
 
@@ -232,13 +232,13 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			if (frame % 120 == 0)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection waiting: act={actIndex} reason={reason} topOverlay={overlayName} frame={frame}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection waiting: act={actIndex} reason={reason} topOverlay={overlayName} frame={frame}");
 			}
 
 			await WaitOneFrame();
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run changed while waiting for overlays act={actIndex} reason={reason}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run changed while waiting for overlays act={actIndex} reason={reason}");
 		return false;
 	}
 
@@ -276,7 +276,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			await SaveManager.Instance.SaveRun(null!, saveProgress: false);
-			Log.Info($"[{ModInfo.Id}][Mayhem] PersistActSelection: saved current run after resolving act={actIndex}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] PersistActSelection: saved current run after resolving act={actIndex}");
 		}
 		catch (Exception ex)
 		{

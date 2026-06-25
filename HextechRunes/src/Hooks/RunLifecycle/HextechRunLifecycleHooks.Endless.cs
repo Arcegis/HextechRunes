@@ -29,7 +29,7 @@ internal static partial class HextechRunLifecycleHooks
 			{
 				if (frame % 120 == 0)
 				{
-					Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection waiting for act transition: reason={reason} frame={frame} act={actIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+					HextechLog.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection waiting for act transition: reason={reason} frame={frame} act={actIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 				}
 
 				await WaitOneFrame();
@@ -38,26 +38,26 @@ internal static partial class HextechRunLifecycleHooks
 
 			if (modifier.IsActResolved(actIndex))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection skipped: act0 already resolved reason={reason} frame={frame}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection skipped: act0 already resolved reason={reason} frame={frame}");
 				return;
 			}
 
 			if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection deferred to ancient event proceed reason={reason} frame={frame} {DescribeCurrentEventState(runState)}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection deferred to ancient event proceed reason={reason} frame={frame} {DescribeCurrentEventState(runState)}");
 				return;
 			}
 
 			if (runState.CurrentRoom != null || NMapScreen.Instance?.IsOpen == true)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection starting: reason={reason} frame={frame} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection starting: reason={reason} frame={frame} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 				await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
 				return;
 			}
 
 			if (roomReadyFrames % 120 == 0)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection waiting for room: reason={reason} frame={frame} readyFrame={roomReadyFrames} act={actIndex} room=null mapOpen={NMapScreen.Instance?.IsOpen == true}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Endless loop selection waiting for room: reason={reason} frame={frame} readyFrame={roomReadyFrames} act={actIndex} room=null mapOpen={NMapScreen.Instance?.IsOpen == true}");
 			}
 
 			roomReadyFrames++;

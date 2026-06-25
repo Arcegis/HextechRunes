@@ -51,6 +51,6 @@ internal static class HextechCombatCreatureHelper
 
 		CombatManager.Instance.RemoveCreature(enemy);
 		combatState.RemoveCreature(enemy);
-		Log.Info($"[{ModInfo.Id}][Mayhem] Removed retained dead enemy after unsafe PainfulStabs cleanup: id={enemy.CombatId?.ToString() ?? "none"} model={enemy.ModelId.Entry}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Removed retained dead enemy after unsafe PainfulStabs cleanup: id={enemy.CombatId?.ToString() ?? "none"} model={enemy.ModelId.Entry}");
 	}
 }

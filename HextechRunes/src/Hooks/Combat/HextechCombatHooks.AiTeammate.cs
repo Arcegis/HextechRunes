@@ -34,12 +34,12 @@ internal static partial class HextechCombatHooks
 			CardModel? card = (await CardSelectCmd.FromDeckForRemoval(owner, prefs)).FirstOrDefault();
 			if (card == null)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Forbidden Grimoire AI removal skipped: player={owner.NetId} no removable card.");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Forbidden Grimoire AI removal skipped: player={owner.NetId} no removable card.");
 				return;
 			}
 
 			await CardPileCmd.RemoveFromDeck(card);
-			Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Forbidden Grimoire removed AI card: player={owner.NetId} card={card.Id.Entry}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Forbidden Grimoire removed AI card: player={owner.NetId} card={card.Id.Entry}");
 		}
 	}
 }

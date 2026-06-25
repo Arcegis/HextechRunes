@@ -157,7 +157,7 @@ internal static class HextechShopForgeHooks
 		}
 
 		__instance.Entry.OnMerchantInventoryUpdated();
-		Log.Info($"[{ModInfo.Id}][Mayhem] Skipped merchant relic inventory animation for random forge placeholder.");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Skipped merchant relic inventory animation for random forge placeholder.");
 		return false;
 	}
 

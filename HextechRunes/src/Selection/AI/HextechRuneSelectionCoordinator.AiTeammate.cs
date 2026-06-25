@@ -18,7 +18,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		RelicModel? monsterHexRelic,
 		int choiceOrdinal)
 	{
-		Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled rune selection started: act={actIndex}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled rune selection started: act={actIndex}");
 		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
 		List<(Player Player, List<RelicModel> Options)> selections = [];
 		HashSet<ModelId> enemyRerollExcludedIdsForAllPlayers = new();
@@ -33,7 +33,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				useEndlessTagWindow: modifier.IsEndlessLoopActive);
 			enemyRerollExcludedIdsForAllPlayers.UnionWith(CreateEnemyHexRerollExcludedIds(options));
 			selections.Add((player, options));
-			Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled options: player={player.NetId} ai={HextechAiTeammateCompat.IsAiPlayer(player)} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled options: player={player.NetId} ai={HextechAiTeammateCompat.IsAiPlayer(player)} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
 		}
 
 		List<MonsterHexKind> finalNewMonsterHexes = initialNewMonsterHexes.ToList();
@@ -85,7 +85,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					: null);
 			if (!IsCurrentRun(runState))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled selection abort: stale run player={player.NetId}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled selection abort: stale run player={player.NetId}");
 				return finalActiveMonsterHexes;
 			}
 
@@ -100,10 +100,10 @@ internal static partial class HextechRuneSelectionCoordinator
 			RelicModel selectedRelic = selection.SelectedRelic ?? options[0];
 			HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selectedRelic, selection.RerollCount, choiceOrdinal);
 			await RelicCmd.Obtain(selectedRelic, player);
-			Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled obtained: player={player.NetId} ai={isAiPlayer} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled obtained: player={player.NetId} ai={isAiPlayer} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled rune selection complete: act={actIndex} newMonsterHexes={string.Join(",", finalNewMonsterHexes)} activeMonsterHexes={string.Join(",", finalActiveMonsterHexes)}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Host-controlled rune selection complete: act={actIndex} newMonsterHexes={string.Join(",", finalNewMonsterHexes)} activeMonsterHexes={string.Join(",", finalActiveMonsterHexes)}");
 		return finalActiveMonsterHexes;
 	}
 }

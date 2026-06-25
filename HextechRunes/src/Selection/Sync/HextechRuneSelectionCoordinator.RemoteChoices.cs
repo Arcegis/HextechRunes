@@ -76,7 +76,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			{
 				if (skipped > 0 || receivedChoiceId != choiceId)
 				{
-					Log.Info($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: accepted context={context} player={player.NetId} expectedChoiceId={choiceId} receivedChoiceId={receivedChoiceId} skipped={skipped}");
+					HextechLog.Info($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: accepted context={context} player={player.NetId} expectedChoiceId={choiceId} receivedChoiceId={receivedChoiceId} skipped={skipped}");
 				}
 
 				return (remoteChoice, receivedChoiceId);
@@ -145,13 +145,13 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		if (TryTakeBufferedExpectedRemoteChoice(synchronizer, runState, player, isExpected, out PlayerChoiceResult expectedBufferedResult, out uint expectedBufferedChoiceId))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed expected buffered choice context={context} player={player.NetId} choiceId={expectedBufferedChoiceId}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed expected buffered choice context={context} player={player.NetId} choiceId={expectedBufferedChoiceId}");
 			return (expectedBufferedResult, expectedBufferedChoiceId);
 		}
 
 		if (TryTakeBufferedRemoteChoice(synchronizer, player, choiceId, out NetPlayerChoiceResult bufferedResult))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed buffered choice context={context} player={player.NetId} choiceId={choiceId}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed buffered choice context={context} player={player.NetId} choiceId={choiceId}");
 			return (PlayerChoiceResult.FromNetData(player, runState, bufferedResult), choiceId);
 		}
 
@@ -174,13 +174,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			if (TryTakeBufferedExpectedRemoteChoice(synchronizer, runState, player, isExpected, out PlayerChoiceResult lateExpectedBufferedResult, out uint lateExpectedBufferedChoiceId))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed late expected buffered choice context={context} player={player.NetId} choiceId={lateExpectedBufferedChoiceId}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed late expected buffered choice context={context} player={player.NetId} choiceId={lateExpectedBufferedChoiceId}");
 				return (lateExpectedBufferedResult, lateExpectedBufferedChoiceId);
 			}
 
 			if (TryTakeBufferedRemoteChoice(synchronizer, player, choiceId, out NetPlayerChoiceResult lateBufferedResult))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed late buffered choice context={context} player={player.NetId} choiceId={choiceId}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed late buffered choice context={context} player={player.NetId} choiceId={choiceId}");
 				return (PlayerChoiceResult.FromNetData(player, runState, lateBufferedResult), choiceId);
 			}
 
@@ -196,7 +196,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			(uint receivedChoiceId, NetPlayerChoiceResult result) = await waitTask;
 			TryTakeBufferedRemoteChoice(synchronizer, player, receivedChoiceId, out _);
-			Log.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: received choice context={context} player={player.NetId} expectedChoiceId={choiceId} receivedChoiceId={receivedChoiceId}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: received choice context={context} player={player.NetId} expectedChoiceId={choiceId} receivedChoiceId={receivedChoiceId}");
 			return (PlayerChoiceResult.FromNetData(player, runState, result), receivedChoiceId);
 		}
 		finally

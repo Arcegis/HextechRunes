@@ -60,7 +60,7 @@ internal static class HextechForgeSelectionCoordinator
 			RelicModel? selected = await SelectLocalForge(player, options, context);
 			if (selected == null)
 			{
-				Log.Info($"[{ModInfo.Id}][ForgeChoice] Local selection aborted: player={player.NetId} choiceId={choiceId} context={context}");
+				HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Local selection aborted: player={player.NetId} choiceId={choiceId} context={context}");
 				return null;
 			}
 
@@ -82,7 +82,7 @@ internal static class HextechForgeSelectionCoordinator
 					Log.Warn($"[{ModInfo.Id}][ForgeChoice] Sync local failed: player={player.NetId} choiceId={choiceId} index={selectedIndex} context={context}");
 				}
 
-				Log.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={sentChoiceId} index={selectedIndex} context={context}");
+				HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={sentChoiceId} index={selectedIndex} context={context}");
 				return selected;
 			}
 
@@ -99,7 +99,7 @@ internal static class HextechForgeSelectionCoordinator
 				return selectedIndex >= 0 && selectedIndex < options.Count ? options[selectedIndex] : options[0];
 			}
 
-		Log.Info($"[{ModInfo.Id}][ForgeChoice] Wait remote: player={player.NetId} choiceId={choiceId} context={context}");
+		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Wait remote: player={player.NetId} choiceId={choiceId} context={context}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(
 			synchronizer,
 			(RunState)player.RunState,
@@ -107,7 +107,7 @@ internal static class HextechForgeSelectionCoordinator
 			choiceId,
 			HextechChoiceCodec.IsForgeSelection,
 			$"forge-choice {context}");
-		Log.Info($"[{ModInfo.Id}][ForgeChoice] Remote received: player={player.NetId} choiceId={receivedChoiceId} context={context}");
+		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Remote received: player={player.NetId} choiceId={receivedChoiceId} context={context}");
 		return ResolveRemoteForgeChoice(player, options, remoteChoice, context);
 	}
 
@@ -117,12 +117,12 @@ internal static class HextechForgeSelectionCoordinator
 		{
 			HextechRuneSelectionScreen screen = await CreateForgeSelectionScreenAsync(options);
 			RelicModel? selected = (await screen.RelicsSelected()).FirstOrDefault();
-			Log.Info($"[{ModInfo.Id}][ForgeChoice] Local selected: player={player.NetId} relic={(selected?.CanonicalInstance?.Id ?? selected?.Id)?.Entry ?? "null"} context={context}");
+			HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Local selected: player={player.NetId} relic={(selected?.CanonicalInstance?.Id ?? selected?.Id)?.Entry ?? "null"} context={context}");
 			return selected;
 		}
 		catch (OperationCanceledException)
 		{
-			Log.Info($"[{ModInfo.Id}][ForgeChoice] Selection cancelled: player={player.NetId} context={context}");
+			HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Selection cancelled: player={player.NetId} context={context}");
 			return null;
 		}
 	}
@@ -214,7 +214,7 @@ internal static class HextechForgeSelectionCoordinator
 			HextechStableRandom.PlayerKey(player),
 			context,
 			player.Relics.Count.ToString());
-		Log.Info($"[{ModInfo.Id}][ForgeChoice][AITeammateCompat] Auto-selected forge: player={player.NetId} index={selectedIndex} relic={(options[selectedIndex].CanonicalInstance?.Id ?? options[selectedIndex].Id).Entry}");
+		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice][AITeammateCompat] Auto-selected forge: player={player.NetId} index={selectedIndex} relic={(options[selectedIndex].CanonicalInstance?.Id ?? options[selectedIndex].Id).Entry}");
 		return selectedIndex;
 	}
 

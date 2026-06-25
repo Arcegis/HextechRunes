@@ -162,7 +162,7 @@ internal static class HextechAiTeammateCompat
 			((RunState)player.RunState).CurrentActIndex.ToString(),
 			optionKey);
 		RelicModel selectedRelic = options[selectedIndex];
-		Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Auto-selected rune for AI player={player.NetId} index={selectedIndex} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Auto-selected rune for AI player={player.NetId} index={selectedIndex} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
 		return selectedIndex;
 	}
 

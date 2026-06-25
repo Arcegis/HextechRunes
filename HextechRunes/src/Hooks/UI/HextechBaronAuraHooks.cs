@@ -23,7 +23,7 @@ internal static class HextechBaronAuraHooks
 		harmony.Patch(
 			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
 			postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CreatureReadyPostfix)));
-		Log.Info($"[{ModInfo.Id}][BaronAura] Hooks installed.");
+		HextechLog.Info($"[{ModInfo.Id}][BaronAura] Hooks installed.");
 	}
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
@@ -146,7 +146,7 @@ internal sealed class HandOfBaronAuraVisual
 		_ringLayer = TryCreateLayer(_root, "SoftRing", HextechAssets.HandOfBaronAuraRingPath, new Color(0.86f, 0.42f, 1f, 0.28f), 3);
 		_runeLayer = CreateLayer(_root, "BaronRune", runeTexture, new Color(1f, 0.35f, 1f, 0.78f), 4);
 		UpdateTransform();
-		Log.Info($"[{ModInfo.Id}][BaronAura] Attached node={_root.GetPath()} parent={parent.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"} hasRune={ShouldShow(_creature)}.");
+		HextechLog.Info($"[{ModInfo.Id}][BaronAura] Attached node={_root.GetPath()} parent={parent.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"} hasRune={ShouldShow(_creature)}.");
 		return true;
 	}
 
@@ -171,7 +171,7 @@ internal sealed class HandOfBaronAuraVisual
 				_root.Visible = visible;
 				if (visible != _lastVisible)
 				{
-					Log.Info($"[{ModInfo.Id}][BaronAura] Visibility changed: visible={visible} node={_root.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"}.");
+					HextechLog.Info($"[{ModInfo.Id}][BaronAura] Visibility changed: visible={visible} node={_root.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"}.");
 					_lastVisible = visible;
 				}
 

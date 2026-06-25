@@ -91,7 +91,7 @@ internal static class HextechRuneGrantHelper
 					Log.Warn($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local failed: player={player.NetId} choiceId={choiceId}");
 				}
 
-				Log.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
 				await ObtainRuneIds(player, selectedIds);
 				return true;
 			}
@@ -109,7 +109,7 @@ internal static class HextechRuneGrantHelper
 			return false;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant remote received: player={player.NetId} choiceId={receivedChoiceId} ids={string.Join(",", syncedIds.Select(static id => id.Entry))}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant remote received: player={player.NetId} choiceId={receivedChoiceId} ids={string.Join(",", syncedIds.Select(static id => id.Entry))}");
 		await ObtainRuneIds(player, syncedIds);
 		return true;
 	}

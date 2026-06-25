@@ -55,7 +55,7 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		if (GetMayhemModifier(runState) is HextechMayhemModifier existing)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: existing state preserved {existing.DescribeActState()}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: existing state preserved {existing.DescribeActState()}");
 			return existing;
 		}
 
@@ -63,7 +63,7 @@ internal static partial class HextechRunLifecycleHooks
 		modifier.ResetForNewRun();
 		modifier.OnRunLoaded(runState);
 		runState.AddModifierDebug(modifier);
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: added");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: added");
 		return modifier;
 	}
 

@@ -35,7 +35,7 @@ internal static partial class HextechRunLifecycleHooks
 		HextechEnemyUi.HideMayhemModifierBadge();
 		SubscribeRoomEnteredIfNeeded();
 		SubscribeRoomExitedIfNeeded();
-		Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
 		RunsInsideStartRunOrig.Add(runState);
 	}
 
@@ -56,7 +56,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		HextechMayhemModifier modifier = EnsureMayhemModifier(runState);
-			Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour end: currentRoom={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} {DescribeCurrentEventState(runState)}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour end: currentRoom={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} {DescribeCurrentEventState(runState)}");
 			HextechEnemyUi.HideMayhemModifierBadge();
 			HextechEnemyUi.Refresh(modifier);
 			if (!modifier.IsActResolved(runState.CurrentActIndex)
@@ -64,11 +64,11 @@ internal static partial class HextechRunLifecycleHooks
 		{
 			if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: deferring act{runState.CurrentActIndex} selection until ancient event finishes {DescribeCurrentEventState(runState)}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: deferring act{runState.CurrentActIndex} selection until ancient event finishes {DescribeCurrentEventState(runState)}");
 			}
 			else
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: selecting act{runState.CurrentActIndex} hex immediately after StartRun");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: selecting act{runState.CurrentActIndex} hex immediately after StartRun");
 				await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
 			}
 		}

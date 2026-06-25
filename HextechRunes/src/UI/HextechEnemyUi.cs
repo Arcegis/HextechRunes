@@ -51,7 +51,7 @@ internal static class HextechEnemyUi
 		Control? container = GetModifiersContainer();
 		if (container == null)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: no modifiers container");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: no modifiers container");
 			return;
 		}
 
@@ -62,10 +62,10 @@ internal static class HextechEnemyUi
 		{
 			RemoveAllEnemyHexStrips(container);
 			UpdateContainerVisibility(container);
-			Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: no active enemy hexes");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: no active enemy hexes");
 			return;
 		}
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: active={string.Join(",", activeHexes)}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: active={string.Join(",", activeHexes)}");
 
 		HBoxContainer strip = GetOrCreateStrip(container);
 		if (!IsStripCurrent(strip, activeHexes))
@@ -99,7 +99,7 @@ internal static class HextechEnemyUi
 		Control? container = GetModifiersContainer();
 		if (container == null)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.HideMayhemModifierBadge: no modifiers container");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.HideMayhemModifierBadge: no modifiers container");
 			return;
 		}
 
@@ -109,7 +109,7 @@ internal static class HextechEnemyUi
 				&& TopBarModifierModelField != null
 				&& TopBarModifierModelField.GetValue(topBarModifier) is HextechMayhemModifier)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.HideMayhemModifierBadge: removed top bar modifier badge");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.HideMayhemModifierBadge: removed top bar modifier badge");
 				topBarModifier.QueueFree();
 			}
 		}

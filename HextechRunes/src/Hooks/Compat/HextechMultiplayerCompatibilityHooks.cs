@@ -216,7 +216,7 @@ internal static class HextechMultiplayerCompatibilityHooks
 		}
 
 		_cachedNetworkSignature = string.Join("|", signatures);
-		Log.Info($"[{ModInfo.Id}][MultiplayerCompat] Network compatibility signature: {_cachedNetworkSignature}");
+		HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] Network compatibility signature: {_cachedNetworkSignature}");
 		return _cachedNetworkSignature;
 	}
 

@@ -58,7 +58,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		HextechEnemyUi.HideMayhemModifierBadge();
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh skipped: reason={reason} no current run after {frameBudget} frames");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh skipped: reason={reason} no current run after {frameBudget} frames");
 	}
 
 	private static async Task RefreshEnemyUiForRunWhenReady(RunState runState, string reason, int frameBudget)
@@ -74,7 +74,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		HextechEnemyUi.HideMayhemModifierBadge();
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh skipped: reason={reason} topbar/modifier not ready after {frameBudget} frames");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh skipped: reason={reason} topbar/modifier not ready after {frameBudget} frames");
 	}
 
 	private static bool TryRefreshEnemyUiForRun(RunState runState, string reason, int frame)
@@ -101,7 +101,7 @@ internal static partial class HextechRunLifecycleHooks
 		bool recovered = !modifier.IsActResolved(runState.CurrentActIndex)
 			&& modifier.TryRecoverResolvedActsFromPlayerRelics(reason);
 		HextechEnemyUi.Refresh(modifier);
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh: reason={reason} frame={frame} recovered={recovered} actIndex={runState.CurrentActIndex} {modifier.DescribeActState()}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh: reason={reason} frame={frame} recovered={recovered} actIndex={runState.CurrentActIndex} {modifier.DescribeActState()}");
 		return true;
 	}
 }

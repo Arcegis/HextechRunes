@@ -82,14 +82,14 @@ internal static partial class HextechUpdateChecker
 		{
 			if (attempt is 1 or MaxNoticeAttachAttempts || attempt % 10 == 0)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] Update checker UI waiting for vanilla mod status label: attempt={attempt} root={DescribeNode(searchRoot)}.");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update checker UI waiting for vanilla mod status label: attempt={attempt} root={DescribeNode(searchRoot)}.");
 			}
 
 			return false;
 		}
 
 		ShowNotice(searchRoot, template, noticeHost);
-		Log.Info($"[{ModInfo.Id}][Mayhem] Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
 		return true;
 	}
 

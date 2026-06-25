@@ -72,7 +72,7 @@ internal static partial class HextechUpdateChecker
 		string text = CompareVersions(normalizedLatest, currentVersion) > 0
 			? $"海克斯大乱斗模组有新版{normalizedLatest}，当前版本为{currentVersion}"
 			: $"海克斯大乱斗模组为最新版{currentVersion}";
-		Log.Info($"[{ModInfo.Id}][Mayhem] Update check succeeded: latest={normalizedLatest}, current={currentVersion}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update check succeeded: latest={normalizedLatest}, current={currentVersion}");
 		return new UpdateCheckResult(text, true);
 	}
 

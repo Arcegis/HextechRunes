@@ -42,7 +42,7 @@ internal static class HextechModelIdSerializationWarningHooks
 		if (!_loggedSuppression)
 		{
 			_loggedSuppression = true;
-			Log.Info($"[{ModInfo.Id}][MultiplayerCompat] Suppressed false-positive ModelIdSerializationCache self-compare warning for {typeFullName}.");
+			HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] Suppressed false-positive ModelIdSerializationCache self-compare warning for {typeFullName}.");
 		}
 
 		return false;

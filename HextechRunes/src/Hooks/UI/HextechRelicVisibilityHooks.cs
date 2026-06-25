@@ -90,7 +90,7 @@ internal static partial class HextechRelicVisibilityHooks
 			prefix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryHolderDoFlashPrefix)));
 
 		_installed = true;
-		Log.Info($"[{ModInfo.Id}][Mayhem] UI visibility toggle loaded: hide_ui={_config.HideRelics}.");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] UI visibility toggle loaded: hide_ui={_config.HideRelics}.");
 	}
 
 	private static void NGlobalUiInitializePostfix(NGlobalUi __instance)
@@ -192,7 +192,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 
 		ApplyHiddenState(globalUi);
-		Log.Info($"[{ModInfo.Id}][Mayhem] hide_ui={hideUi}.");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] hide_ui={hideUi}.");
 	}
 
 	private static void RemoveToggleRoot(NGlobalUi globalUi)

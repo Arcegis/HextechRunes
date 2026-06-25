@@ -37,7 +37,7 @@ internal sealed partial class HextechMayhemModifier
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to refresh map screen after map modifiers: {ex.Message}");
 		}
-		Log.Info($"[{ModInfo.Id}][Mayhem] Applied map modifiers to current act: reason={reason} act={runState.CurrentActIndex} activeHexes={string.Join(",", GetActiveMonsterHexes())}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Applied map modifiers to current act: reason={reason} act={runState.CurrentActIndex} activeHexes={string.Join(",", GetActiveMonsterHexes())}");
 	}
 
 	private ActMap ApplyMapModifiers(ActMap map, IRunState runState, int actIndex)
