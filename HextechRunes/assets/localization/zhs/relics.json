@@ -1013,7 +1013,7 @@
   "tankEngineRune.enemyDescription": "每回合开始时，敌人获得[blue]5%[/blue]的最大生命值，并使自身体型增大[blue]5%[/blue]。每回合最多获得[blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]点最大生命值。",
   "shrinkEngineRune.enemyDescription": "敌人回合开始时，自身体型缩小[blue]2%[/blue]。玩家回合开始时，如果自身当前没有[gold]滑溜[/gold]，则获得[blue]1[/blue]层[gold]滑溜[/gold]。",
   "getExcitedRune.enemyDescription": "场上有队友死亡时，敌人获得[blue]1[/blue]点力量和[blue]1[/blue]层[gold]疼痛戳刺[/gold]。",
-  "twiceThriceRune.enemyDescription": "玩家每回合打出的第三张攻击牌费用翻倍，回合结束后重置计数。",
+  "twiceThriceRune.enemyDescription": "玩家每打出的第三张攻击牌费用翻倍，回合结束后重置计数。",
   "loopRune.enemyDescription": "玩家每回合少抽[blue]0[/blue]/[blue]1[/blue]/[blue]1[/blue]张牌。",
   "servantMasterRune.enemyDescription": "爪牙单位在生成时获得[gold]幻象[/gold]。",
   "cuttingEdgeAlchemistRune.enemyDescription": "玩家战后掉落的药水最高为普通品质。",

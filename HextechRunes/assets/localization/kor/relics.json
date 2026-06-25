@@ -1013,7 +1013,7 @@
   "tankEngineRune.enemyDescription": "적이 매 턴 시작 시 최대 체력을 [blue]5%[/blue] 얻고 크기가 [blue]5%[/blue] 증가합니다. 매 턴 최대 [blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]의 최대 체력을 얻습니다.",
   "shrinkEngineRune.enemyDescription": "적 턴 시작 시 적의 크기가 [blue]2%[/blue] 감소합니다. 플레이어 턴 시작 시 적에게 [gold]미끄러움[/gold]이 없다면 [gold]미끄러움[/gold]을 [blue]1[/blue] 얻습니다.",
   "getExcitedRune.enemyDescription": "아군이 죽을 때마다 적이 [gold]근력[/gold]을 [blue]1[/blue], [gold]고통스러운 찌르기[/gold]를 [blue]1[/blue] 얻습니다.",
-  "twiceThriceRune.enemyDescription": "플레이어가 매 턴 세 번째로 플레이하는 공격 카드의 비용이 두 배가 됩니다. 이 카운트는 턴 종료 시 초기화됩니다.",
+  "twiceThriceRune.enemyDescription": "플레이어가 매 세 번째로 플레이하는 공격 카드의 비용이 두 배가 됩니다. 이 카운트는 턴 종료 시 초기화됩니다.",
   "loopRune.enemyDescription": "플레이어는 매 턴 카드를 [blue]0[/blue]/[blue]1[/blue]/[blue]1[/blue]장 적게 뽑습니다.",
   "servantMasterRune.enemyDescription": "하수인 유닛이 생성될 때 [gold]환영[/gold]을 얻습니다.",
   "divineInterventionRune.enemyDescription": "매 [blue]4[/blue] 턴마다 모든 적이 [gold]영체화[/gold]를 [blue]1[/blue] 얻습니다.",
