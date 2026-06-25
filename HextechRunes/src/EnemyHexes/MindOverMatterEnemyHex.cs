@@ -34,7 +34,8 @@ internal sealed class MindOverMatterEnemyHex : HextechEnemyHexEffect
 		CardModel card = combatState.CreateCard(canonicalCard, player);
 		if (!card.EnergyCost.CostsX)
 		{
-			card.EnergyCost.SetUntilPlayed(card.EnergyCost.GetAmountToSpend() + 1, reduceOnly: false);
+			int costIncrease = context.TierValue(Kind, 1, 2, 2);
+			card.EnergyCost.SetUntilPlayed(card.EnergyCost.GetAmountToSpend() + costIncrease, reduceOnly: false);
 		}
 
 		await HextechCardGeneration.AddGeneratedCardToCombat(card, PileType.Hand, addedByPlayer: false);

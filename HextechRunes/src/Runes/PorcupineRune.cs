@@ -16,8 +16,7 @@ public sealed class PorcupineRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("AttackThorns", 1m),
-		new DynamicVar("UnblockedThorns", 2m)
+		new DynamicVar("AttackThorns", 2m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -43,10 +42,6 @@ public sealed class PorcupineRune : HextechRelicBase
 		}
 
 		decimal thorns = DynamicVars["AttackThorns"].BaseValue;
-		if (result.UnblockedDamage > 0m)
-		{
-			thorns += DynamicVars["UnblockedThorns"].BaseValue;
-		}
 
 		Flash();
 		await PowerCmd.Apply<ThornsPower>(Owner.Creature, thorns, Owner.Creature, null);

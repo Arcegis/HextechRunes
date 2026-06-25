@@ -1072,7 +1072,7 @@
   "arcanePunchRune.enemyDescription": "プレイヤーがプレイする [blue]2[/blue]/[blue]1[/blue]/[blue]1[/blue] 攻撃カードごとに、すべての敵は [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]活力[/gold]を獲得します。",
   "symphonyOfWarRune.enemyDescription": "戦闘開始時に、すべての敵は[blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Ritual[/gold]を獲得します。",
   "mysteryRune.enemyDescription": "プレイヤーのターンの開始時に、そのプレイヤーの手札にある [blue]1[/blue] のランダムなカードを変換します。",
-  "mindOverMatterRune.enemyDescription": "プレイヤーのターンの開始時に、[blue]1[/blue] のランダムなカードをそのプレイヤーの手札に追加します。追加されたカードのコストは [blue]1[/blue] 高くなります。",
+  "mindOverMatterRune.enemyDescription": "プレイヤーのターンの開始時に、[blue]1[/blue] のランダムなカードをそのプレイヤーの手札に追加します。追加されたカードのコストは [blue]1[/blue]/[blue]2[/blue]/[blue]2[/blue] 高くなります。",
   "omegaRune.enemyDescription": "ターン 4 の開始時に、[blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Disintegration[/gold]をすべてのプレイヤーに適用します。",
   "manipulateRealityRune.enemyDescription": "敵がプレイヤーの戦闘パイルに追加するステータスカードは 2 倍になります。",
   "compensationRune.enemyDescription": "敵がブロックされていないダメージを受ける場合、そのダメージをダメージ量の[blue]1/3[/blue]（切り捨て、最低[blue]1[/blue]）に等しい[gold]毒[/gold]に変換します。",
@@ -2099,7 +2099,7 @@
   "NATURE_IS_HEALING_RUNE.flavor": "傷口に呼吸をさせれば、緑が傷口を塞いでくれます。",
   "porcupineRune.title": "ヤマアラシ",
   "PORCUPINE_RUNE.title": "ヤマアラシ",
-  "porcupineRune.description": "攻撃されると、[blue]1[/blue] [gold]Thorns[/gold]を獲得します。ブロックされていないダメージを受けると、[blue]2[/blue] の追加の [gold]Thorns[/gold]を獲得します。",
+  "porcupineRune.description": "攻撃されると、[blue]2[/blue] [gold]Thorns[/gold]を獲得します。",
   "PORCUPINE_RUNE.description": "攻撃されると、[blue]1[/blue] [gold]Thorns[/gold]を獲得します。ブロックされていないダメージを受けると、[blue]2[/blue] の追加の [gold]Thorns[/gold]を獲得します。",
   "porcupineRune.flavor": "触れないでください。スパイクに礼儀を書いてあります。",
   "PORCUPINE_RUNE.flavor": "触れないでください。スパイクに礼儀を書いてあります。",
@@ -2367,5 +2367,5 @@
   "BLANK_CHECK_RUNE.description": "ターン開始時、ランダムな無色カードを[blue]1[/blue]枚獲得します。あなたの無色カードのコストは[blue]0[/blue]になりますが、プレイ後に[gold]廃棄[/gold]されます。",
   "blankCheckRune.flavor": "金額は空欄、代償は裏面に書かれています。",
   "BLANK_CHECK_RUNE.flavor": "金額は空欄、代償は裏面に書かれています。",
-  "blankCheckRune.enemyDescription": "プレイヤーのターン開始時、手札にある[gold]エセリアル[/gold]を持たないカード[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]枚にランダムで[gold]エセリアル[/gold]を付与します。"
+  "blankCheckRune.enemyDescription": "カードをプレイした後、そのカードはこの戦闘の間[gold]エセリアル[/gold]を得ます。"
 }

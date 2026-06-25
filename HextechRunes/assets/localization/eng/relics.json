@@ -1072,7 +1072,7 @@
   "arcanePunchRune.enemyDescription": "For every [blue]2[/blue]/[blue]1[/blue]/[blue]1[/blue] Attack cards players play, all enemies gain [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Vigor[/gold].",
   "symphonyOfWarRune.enemyDescription": "At the start of combat, all enemies gain [blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Ritual[/gold].",
   "mysteryRune.enemyDescription": "At the start of the player turn, transform [blue]1[/blue] random card in that player's hand.",
-  "mindOverMatterRune.enemyDescription": "At the start of the player turn, add [blue]1[/blue] random card to that player's hand. The added card costs [blue]1[/blue] more.",
+  "mindOverMatterRune.enemyDescription": "At the start of the player turn, add [blue]1[/blue] random card to that player's hand. The added card costs [blue]1[/blue]/[blue]2[/blue]/[blue]2[/blue] more.",
   "omegaRune.enemyDescription": "At the start of turn 4, apply [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Disintegration[/gold] to all players.",
   "manipulateRealityRune.enemyDescription": "Status cards enemies add to players' combat piles are doubled.",
   "compensationRune.enemyDescription": "When an enemy would take unblocked damage, convert it into [gold]Poison[/gold] equal to [blue]1/3[/blue] of that damage, rounded down (minimum [blue]1[/blue]).",
@@ -2099,7 +2099,7 @@
   "NATURE_IS_HEALING_RUNE.flavor": "Let the wound breathe, and the green will close it.",
   "porcupineRune.title": "Porcupine",
   "PORCUPINE_RUNE.title": "Porcupine",
-  "porcupineRune.description": "When attacked, gain [blue]1[/blue] [gold]Thorns[/gold]. When you take unblocked damage, gain [blue]2[/blue] additional [gold]Thorns[/gold].",
+  "porcupineRune.description": "When attacked, gain [blue]2[/blue] [gold]Thorns[/gold].",
   "PORCUPINE_RUNE.description": "When attacked, gain [blue]1[/blue] [gold]Thorns[/gold]. When you take unblocked damage, gain [blue]2[/blue] additional [gold]Thorns[/gold].",
   "porcupineRune.flavor": "Do not touch. It has written courtesy in spikes.",
   "PORCUPINE_RUNE.flavor": "Do not touch. It has written courtesy in spikes.",
@@ -2367,5 +2367,5 @@
   "BLANK_CHECK_RUNE.description": "At the start of your turn, gain [blue]1[/blue] random Colorless card. Your Colorless cards cost [blue]0[/blue], but [gold]Exhaust[/gold] after being played.",
   "blankCheckRune.flavor": "The amount is blank. The price is written on the back.",
   "BLANK_CHECK_RUNE.flavor": "The amount is blank. The price is written on the back.",
-  "blankCheckRune.enemyDescription": "At the start of the player's turn, randomly add [gold]Ethereal[/gold] to [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] cards in their hand that do not already have [gold]Ethereal[/gold]."
+  "blankCheckRune.enemyDescription": "After you play a card, that card gains [gold]Ethereal[/gold] for the rest of combat."
 }

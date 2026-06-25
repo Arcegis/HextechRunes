@@ -1072,7 +1072,7 @@
   "arcanePunchRune.enemyDescription": "玩家每打出[blue]2[/blue]/[blue]1[/blue]/[blue]1[/blue]张攻击牌，所有敌人获得[blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue]点[gold]活力[/gold]。",
   "symphonyOfWarRune.enemyDescription": "战斗开始时，所有敌人获得[blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue]层[gold]仪式[/gold]。",
   "mysteryRune.enemyDescription": "玩家回合开始时，随机变化其手牌中的[blue]1[/blue]张牌。",
-  "mindOverMatterRune.enemyDescription": "玩家回合开始时，将[blue]1[/blue]张随机牌加入其手牌。添加的牌耗能增加[blue]1[/blue]。",
+  "mindOverMatterRune.enemyDescription": "玩家回合开始时，将[blue]1[/blue]张随机牌加入其手牌。添加的牌耗能增加[blue]1[/blue]/[blue]2[/blue]/[blue]2[/blue]。",
   "omegaRune.enemyDescription": "第四回合开始时，为所有玩家施加[blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue]层[gold]瓦解[/gold]。",
   "manipulateRealityRune.enemyDescription": "敌人在战斗中向玩家牌堆加入的状态牌数量翻倍。",
   "compensationRune.enemyDescription": "敌人受到未被格挡的伤害时，将该伤害转化为其[blue]1/3[/blue]（向下取整，至少[blue]1[/blue]层）的[gold]中毒[/gold]。",
@@ -2099,7 +2099,7 @@
   "NATURE_IS_HEALING_RUNE.flavor": "让伤口跟着呼吸，草木会替你合上。",
   "porcupineRune.title": "豪猪",
   "PORCUPINE_RUNE.title": "豪猪",
-  "porcupineRune.description": "受到攻击时，获得[blue]1[/blue]层[gold]荆棘[/gold]。受到未被格挡的伤害时，额外获得[blue]2[/blue]层[gold]荆棘[/gold]。",
+  "porcupineRune.description": "受到攻击时，获得[blue]2[/blue]层[gold]荆棘[/gold]。",
   "PORCUPINE_RUNE.description": "受到攻击时，获得[blue]1[/blue]层[gold]荆棘[/gold]。受到未被格挡的伤害时，额外获得[blue]2[/blue]层[gold]荆棘[/gold]。",
   "porcupineRune.flavor": "别碰。它已经把礼貌写成了刺。",
   "PORCUPINE_RUNE.flavor": "别碰。它已经把礼貌写成了刺。",
@@ -2367,5 +2367,5 @@
   "BLANK_CHECK_RUNE.description": "回合开始时，获得[blue]1[/blue]张随机无色牌。你的无色牌变为[blue]0[/blue]费，但打出后会[gold]消耗[/gold]。",
   "blankCheckRune.flavor": "金额留空，代价写在背面。",
   "BLANK_CHECK_RUNE.flavor": "金额留空，代价写在背面。",
-  "blankCheckRune.enemyDescription": "玩家回合开始时，随机为其手牌中[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]张没有[gold]虚无[/gold]的牌添加[gold]虚无[/gold]词条。"
+  "blankCheckRune.enemyDescription": "打出卡牌后，该卡牌会在本场战斗中被添加[gold]虚无[/gold]词条。"
 }

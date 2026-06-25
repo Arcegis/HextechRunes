@@ -1072,7 +1072,7 @@
   "arcanePunchRune.enemyDescription": "Para cada [blue]2[/blue]/[blue]1[/blue]/[blue]1[/blue] cartas de Ataque que os jogadores jogarem, todos os inimigos ganham [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] de [gold]Vigor[/gold].",
   "symphonyOfWarRune.enemyDescription": "No início do combate, todos os inimigos ganham [blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue] de [gold]Ritual[/gold].",
   "mysteryRune.enemyDescription": "No início do turno do jogador, transforme [blue]1[/blue] carta aleatória na mão daquele jogador.",
-  "mindOverMatterRune.enemyDescription": "No início do turno do jogador, adicione [blue]1[/blue] carta aleatória à mão daquele jogador. A carta adicionada custa [blue]1[/blue] a mais.",
+  "mindOverMatterRune.enemyDescription": "No início do turno do jogador, adicione [blue]1[/blue] carta aleatória à mão daquele jogador. A carta adicionada custa [blue]1[/blue]/[blue]2[/blue]/[blue]2[/blue] a mais.",
   "omegaRune.enemyDescription": "No início do turno 4, aplique [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] de [gold]Desintegração[/gold] a todos os jogadores.",
   "manipulateRealityRune.enemyDescription": "Cartas de Status que os inimigos adicionam às pilhas de combate dos jogadores são dobradas.",
   "compensationRune.enemyDescription": "Quando um inimigo fosse sofrer dano não bloqueado, converta-o em [gold]Veneno[/gold] igual a [blue]1/3[/blue] daquele dano, arredondado para baixo (mínimo [blue]1[/blue]).",
@@ -2099,7 +2099,7 @@
   "NATURE_IS_HEALING_RUNE.flavor": "Deixe a ferida respirar, e o verde irá fechá-la.",
   "porcupineRune.title": "Porco-Espinho",
   "PORCUPINE_RUNE.title": "Porco-Espinho",
-  "porcupineRune.description": "Quando for atacado, ganhe [blue]1[/blue] [gold]Espinhos[/gold]. Quando sofrer dano não bloqueado, ganhe [blue]2[/blue] [gold]Espinhos[/gold] adicionais.",
+  "porcupineRune.description": "Quando for atacado, ganhe [blue]2[/blue] [gold]Espinhos[/gold].",
   "PORCUPINE_RUNE.description": "Quando for atacado, ganhe [blue]1[/blue] de [gold]Espinhos[/gold]. Quando sofrer dano não bloqueado, ganhe [blue]2[/blue] de [gold]Espinhos[/gold] adicionais.",
   "porcupineRune.flavor": "Não toque. Ele escreveu a cortesia em espinhos.",
   "PORCUPINE_RUNE.flavor": "Não toque. Ele escreveu a cortesia em espinhos.",
@@ -2367,5 +2367,5 @@
   "BLANK_CHECK_RUNE.description": "No início do seu turno, ganhe [blue]1[/blue] carta Incolor aleatória. Suas cartas Incolores custam [blue]0[/blue], mas são [gold]Exauridas[/gold] após serem jogadas.",
   "blankCheckRune.flavor": "O valor está em branco. O preço está escrito no verso.",
   "BLANK_CHECK_RUNE.flavor": "O valor está em branco. O preço está escrito no verso.",
-  "blankCheckRune.enemyDescription": "No início do turno do jogador, adicione aleatoriamente [gold]Etéreo[/gold] a [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] cartas na mão dele que já não possuam [gold]Etéreo[/gold]."
+  "blankCheckRune.enemyDescription": "Depois de jogar uma carta, essa carta ganha [gold]Etéreo[/gold] pelo resto do combate."
 }

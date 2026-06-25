@@ -1072,7 +1072,7 @@
   "arcanePunchRune.enemyDescription": "Por cada [blue]2[/blue]/[blue]1[/blue]/[blue]1[/blue] cartas de ataque que juegan los jugadores, todos los enemigos obtienen [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Vigor[/gold].",
   "symphonyOfWarRune.enemyDescription": "Al comienzo del combate, todos los enemigos obtienen [blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Ritual[/gold].",
   "mysteryRune.enemyDescription": "Al comienzo del turno del jugador, transforma [blue]1[/blue] carta aleatoria en la mano de ese jugador.",
-  "mindOverMatterRune.enemyDescription": "Al comienzo del turno del jugador, agrega [blue]1[/blue] carta aleatoria a la mano de ese jugador. La carta agregada cuesta [blue]1[/blue] más.",
+  "mindOverMatterRune.enemyDescription": "Al comienzo del turno del jugador, agrega [blue]1[/blue] carta aleatoria a la mano de ese jugador. La carta agregada cuesta [blue]1[/blue]/[blue]2[/blue]/[blue]2[/blue] más.",
   "omegaRune.enemyDescription": "Al comienzo del turno 4, aplica [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Disintegration[/gold] a todos los jugadores.",
   "manipulateRealityRune.enemyDescription": "Las cartas de estado que los enemigos añaden a las pilas de combate de los jugadores se duplican.",
   "compensationRune.enemyDescription": "Cuando un enemigo reciba daño desbloqueado, convierte ese daño en [gold]Veneno[/gold] igual a [blue]1/3[/blue] de ese daño, redondeado hacia abajo (mínimo [blue]1[/blue]).",
@@ -2099,7 +2099,7 @@
   "NATURE_IS_HEALING_RUNE.flavor": "Deja que la herida respire y el verde la cerrará.",
   "porcupineRune.title": "puercoespín",
   "PORCUPINE_RUNE.title": "puercoespín",
-  "porcupineRune.description": "Cuando te atacan, obtienes [blue]1[/blue] [gold]Thorns[/gold]. Cuando recibes daño desbloqueado, obtienes [blue]2[/blue] [gold]Thorns[/gold] adicionales.",
+  "porcupineRune.description": "Cuando te atacan, obtienes [blue]2[/blue] [gold]Thorns[/gold].",
   "PORCUPINE_RUNE.description": "Cuando te atacan, obtienes [blue]1[/blue] [gold]Thorns[/gold]. Cuando recibes daño desbloqueado, obtienes [blue]2[/blue] [gold]Thorns[/gold] adicionales.",
   "porcupineRune.flavor": "No tocar. Tiene escrito cortesía en púas.",
   "PORCUPINE_RUNE.flavor": "No tocar. Tiene escrito cortesía en púas.",
@@ -2367,5 +2367,5 @@
   "BLANK_CHECK_RUNE.description": "Al comienzo de tu turno, obtienes [blue]1[/blue] carta incolora aleatoria. Tus cartas incoloras cuestan [blue]0[/blue], pero se [gold]agotan[/gold] después de jugarlas.",
   "blankCheckRune.flavor": "El importe está en blanco. El precio está escrito al dorso.",
   "BLANK_CHECK_RUNE.flavor": "El importe está en blanco. El precio está escrito al dorso.",
-  "blankCheckRune.enemyDescription": "Al comienzo del turno del jugador, añade [gold]Etérea[/gold] al azar a [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] cartas de su mano que no tengan [gold]Etérea[/gold]."
+  "blankCheckRune.enemyDescription": "Después de jugar una carta, esa carta gana [gold]Etérea[/gold] durante el resto del combate."
 }
