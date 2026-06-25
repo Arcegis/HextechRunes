@@ -69,7 +69,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<CantTouchThisRune>(MonsterHexKind.CantTouchThis, HextechRarityTier.Prismatic),
 		Monster<MasterOfDualityRune>(MonsterHexKind.MasterOfDuality, HextechRarityTier.Prismatic),
 		Monster<GoldrendRune>(MonsterHexKind.Goldrend, HextechRarityTier.Prismatic),
-		Monster<FeelTheBurnRune>(MonsterHexKind.FeelTheBurn, HextechRarityTier.Prismatic, hasBurnHoverTip: true),
+		Monster<FeelTheBurnRune>(MonsterHexKind.FeelTheBurn, HextechRarityTier.Prismatic, disabled: true, hasBurnHoverTip: true),
 		Monster<BackToBasicsRune>(MonsterHexKind.BackToBasics, HextechRarityTier.Prismatic),
 		Monster<MadScientistRune>(MonsterHexKind.MadScientist, HextechRarityTier.Prismatic),
 		Monster<FeyMagicRune>(MonsterHexKind.FeyMagic, HextechRarityTier.Prismatic),
