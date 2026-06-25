@@ -70,6 +70,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private bool _blockMapUntilDismissed;
 	private bool _restoreAfterMapReopenQueued;
 	private bool _closed;
+	private bool _mapPreviewActive;
+	private bool _mapButtonForceEnabled;
+	private MegaLabel? _mapPreviewHint;
 	private bool _selectionConfirmGuardStarted;
 	private ulong _selectionConfirmGuardEndsAtMsec;
 
@@ -165,6 +168,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public override void _ExitTree()
 	{
+		EndMapPreview(restoreOverlay: false);
+		RestoreMapButtonState();
+		_mapPreviewHint?.QueueFree();
+		_mapPreviewHint = null;
 		_completionSource.TrySetResult(Array.Empty<RelicModel>());
 		base._ExitTree();
 	}
