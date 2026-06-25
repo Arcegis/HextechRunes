@@ -395,6 +395,13 @@ public sealed class DoubleVisionRune : HextechRelicBase
 			return;
 		}
 
+		// 复视不对 Orobas 先古遗物「古老牙齿」「欧洛巴斯之触」生效（不复制它们）：
+		// 它们的获得/转化流程不适合被复制（古老牙齿重复获得会因牌组无可转化牌而卡死）。
+		if (sourceRelic is ArchaicTooth or TouchOfOrobas)
+		{
+			return;
+		}
+
 		RelicModel copy = ModelDb.GetById<RelicModel>(sourceRelic.CanonicalInstance?.Id ?? sourceRelic.Id).ToMutable();
 		RelicModel obtained = await RunWithCommandDuplicationSuppressed(
 			() => RelicCmd.Obtain(copy, player));
