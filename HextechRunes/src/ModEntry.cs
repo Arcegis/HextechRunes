@@ -36,7 +36,6 @@ public static class ModEntry
 			HextechRunLifecycleHooks.Install(harmony);
 			HextechCombatHooks.Install(harmony);
 			HextechEnemyPowerScalingHooks.Install(harmony);
-			TryInstallOptionalHookGroup("round damage/block/heal to nearest", () => HextechRoundingHooks.Install(harmony));
 			TryInstallOptionalHookGroup("artifact encounter compatibility", () => HextechArtifactCompatibilityHooks.Install(harmony));
 			TryInstallOptionalHookGroup("encounter compatibility", () => HextechEncounterCompatibilityHooks.Install(harmony));
 			HextechUpdateChecker.Install(harmony);
