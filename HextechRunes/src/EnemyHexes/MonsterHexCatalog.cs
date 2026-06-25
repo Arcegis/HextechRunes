@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -60,13 +61,39 @@ internal static class MonsterHexCatalog
 		return MonsterHexByIconRelicId.Value.TryGetValue(id, out hex);
 	}
 
+	/// <summary>
+	/// 联机时会按玩家数（×N）放大的敌方 hex 层数：仅 mod 强制 ×玩家数 的 Slippery/Artifact。
+	/// 每项是描述里的变量占位名 + 单人基数；联机时填 base×玩家数、单人填 base，让选择/hover 描述显示实际层数。
+	/// 注意：SwiftAndSafe 的人工制品走裸 PowerCmd.Apply、不被缩放，故不在此列。
+	/// </summary>
+	private static readonly IReadOnlyDictionary<MonsterHexKind, (string Var, int Base)[]> PlayerCountScaledStacks =
+		new Dictionary<MonsterHexKind, (string, int)[]>
+		{
+			[MonsterHexKind.Repulsor] = new[] { ("Stacks1", 1), ("Stacks2", 2), ("Stacks3", 3) },
+			[MonsterHexKind.ClownCollege] = new[] { ("Stacks", 1) },
+			[MonsterHexKind.CantTouchThis] = new[] { ("Stacks", 1) },
+			[MonsterHexKind.ShrinkEngine] = new[] { ("Stacks", 1) },
+			[MonsterHexKind.ProtectiveVeil] = new[] { ("Stacks1", 1), ("Stacks2", 2), ("Stacks3", 3) },
+			[MonsterHexKind.HailToTheKing] = new[] { ("Stacks", 3) },
+		};
+
 	public static string GetEnemyHexDescriptionFormatted(MonsterHexKind hex)
 	{
 		RelicModel relic = GetIconRelicForMonsterHex(hex);
 		string localizationKey = GetEnemyHexDescriptionKey(relic);
 		try
 		{
-			return new LocString("relics", localizationKey).GetFormattedText();
+			LocString locString = new("relics", localizationKey);
+			if (PlayerCountScaledStacks.TryGetValue(hex, out (string Var, int Base)[]? scaledStacks))
+			{
+				int playerCount = GetScalingPlayerCount();
+				foreach ((string varName, int baseValue) in scaledStacks)
+				{
+					locString.Add(varName, baseValue * playerCount);
+				}
+			}
+
+			return locString.GetFormattedText();
 		}
 		catch (Exception ex)
 		{
@@ -110,6 +137,28 @@ internal static class MonsterHexCatalog
 	{
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
 		return HextechAssets.ToImageFileStem(id.Entry) + ".enemyDescription";
+	}
+
+	/// <summary>
+	/// 用于描述显示的玩家数：单人（或非联机/取不到状态）为 1，联机时取本局玩家数并夹到 [1,16]，
+	/// 与 <c>HextechEnemyPowerScalingHooks.MultiplyByPlayerCount</c> 的实际缩放保持一致。
+	/// </summary>
+	private static int GetScalingPlayerCount()
+	{
+		try
+		{
+			if (!HextechPlayerContextHelper.IsNetworkMultiplayerRun())
+			{
+				return 1;
+			}
+
+			int count = RunManager.Instance.DebugOnlyGetState() is RunState runState ? runState.Players.Count : 1;
+			return Math.Clamp(count, 1, 16);
+		}
+		catch
+		{
+			return 1;
+		}
 	}
 
 	private static IReadOnlyDictionary<MonsterHexKind, HextechRarityTier> BuildRarityByMonsterHex()
