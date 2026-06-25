@@ -74,7 +74,8 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 
 		Creature applier = compensation.Dealer is { IsAlive: true } ? compensation.Dealer : target;
-		await PowerCmd.Apply<PoisonPower>(target, compensation.Amount, applier, compensation.CardSource);
+		await HextechCombatHooks.RunWithCompensationReplacementGuard(
+			() => PowerCmd.Apply<PoisonPower>(target, compensation.Amount, applier, compensation.CardSource));
 	}
 
 	internal static void ClearPendingCompensations(long commandId)

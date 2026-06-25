@@ -88,8 +88,8 @@ internal static class Program
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
 			new(nameof(MultiplayerCompatibilityEntryChangesWithBuildSignature), MultiplayerCompatibilityEntryChangesWithBuildSignature),
 			new(nameof(MultiplayerGameplaySignatureExcludesRuntimeSavedProperties), MultiplayerGameplaySignatureExcludesRuntimeSavedProperties),
-			new(nameof(CompensationReplacementDoomGuardScopesAsyncWork), CompensationReplacementDoomGuardScopesAsyncWork),
-			new(nameof(CompensationReplacementDoomSuppressesSleightOfFleshResponse), CompensationReplacementDoomSuppressesSleightOfFleshResponse),
+			new(nameof(CompensationReplacementGuardScopesAsyncWork), CompensationReplacementGuardScopesAsyncWork),
+			new(nameof(CompensationReplacementSuppressesSleightOfFleshResponse), CompensationReplacementSuppressesSleightOfFleshResponse),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
@@ -1164,41 +1164,41 @@ internal static class Program
 		return (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
 	}
 
-	private static void CompensationReplacementDoomGuardScopesAsyncWork()
+	private static void CompensationReplacementGuardScopesAsyncWork()
 	{
-		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should start inactive");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should start inactive");
 		TaskCompletionSource gate = new();
 		bool sawActiveBeforeAwait = false;
 		bool sawActiveAfterAwait = false;
-		Task guarded = HextechCombatHooks.RunWithCompensationReplacementDoomGuard(async () =>
+		Task guarded = HextechCombatHooks.RunWithCompensationReplacementGuard(async () =>
 		{
-			sawActiveBeforeAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+			sawActiveBeforeAwait = HextechCombatHooks.IsApplyingCompensationReplacement;
 			await gate.Task;
-			sawActiveAfterAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+			sawActiveAfterAwait = HextechCombatHooks.IsApplyingCompensationReplacement;
 		});
 
-		Expect(sawActiveBeforeAwait, "compensation doom guard should be active before guarded work awaits");
-		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should not leak to caller context");
+		Expect(sawActiveBeforeAwait, "compensation replacement guard should be active before guarded work awaits");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should not leak to caller context");
 		gate.SetResult();
 		guarded.GetAwaiter().GetResult();
-		Expect(sawActiveAfterAwait, "compensation doom guard should remain active after await inside guarded work");
-		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should reset after guarded work");
+		Expect(sawActiveAfterAwait, "compensation replacement guard should remain active after await inside guarded work");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should reset after guarded work");
 	}
 
-	private static void CompensationReplacementDoomSuppressesSleightOfFleshResponse()
+	private static void CompensationReplacementSuppressesSleightOfFleshResponse()
 	{
 		Expect(
 			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true),
-			"sleight response should not be suppressed outside compensation replacement doom");
+			"sleight response should not be suppressed outside compensation replacement");
 
 		bool suppressedInsideGuard = false;
-		HextechCombatHooks.RunWithCompensationReplacementDoomGuard(() =>
+		HextechCombatHooks.RunWithCompensationReplacementGuard(() =>
 		{
 			suppressedInsideGuard = HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true);
 			return Task.CompletedTask;
 		}).GetAwaiter().GetResult();
 
-		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement doom");
+		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement");
 		Expect(
 			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(false),
 			"sleight response should not be suppressed when the power change would not trigger sleight");

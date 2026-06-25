@@ -88,7 +88,8 @@ public sealed class CompensationRune : HextechRelicBase
 
 		PendingCompensation compensation = pending!;
 		Flash();
-		await PowerCmd.Apply<DoomPower>(Owner.Creature, compensation.Amount, compensation.Dealer ?? Owner.Creature, compensation.CardSource);
+		await HextechCombatHooks.RunWithCompensationReplacementGuard(
+			() => PowerCmd.Apply<DoomPower>(Owner.Creature, compensation.Amount, compensation.Dealer ?? Owner.Creature, compensation.CardSource));
 	}
 
 	internal static void ClearPendingCompensations(long commandId)

@@ -9,11 +9,11 @@ internal static partial class HextechCombatHooks
 {
 	private static readonly AsyncLocal<int> OutbreakPowerPoisonResponseDepth = new();
 	private static readonly AsyncLocal<int> SleightOfFleshPowerDebuffResponseDepth = new();
-	private static readonly AsyncLocal<int> CompensationReplacementDoomDepth = new();
+	private static readonly AsyncLocal<int> CompensationReplacementDepth = new();
 
 	internal static bool IsResolvingOutbreakPowerPoisonResponse => OutbreakPowerPoisonResponseDepth.Value > 0;
 	internal static bool IsResolvingSleightOfFleshPowerDebuffResponse => SleightOfFleshPowerDebuffResponseDepth.Value > 0;
-	internal static bool IsApplyingCompensationReplacementDoom => CompensationReplacementDoomDepth.Value > 0;
+	internal static bool IsApplyingCompensationReplacement => CompensationReplacementDepth.Value > 0;
 
 	private static void OutbreakPowerAfterPowerAmountChangedPrefix(OutbreakPower __instance, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource, out bool __state)
 	{
@@ -96,7 +96,7 @@ internal static partial class HextechCombatHooks
 
 	internal static bool ShouldSuppressSleightOfFleshPowerDebuffResponse(bool wouldRespond)
 	{
-		return wouldRespond && IsApplyingCompensationReplacementDoom;
+		return wouldRespond && IsApplyingCompensationReplacement;
 	}
 
 	internal static async Task RunWithOutbreakPowerPoisonResponseGuard(Func<Task> action)
@@ -112,16 +112,16 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-	internal static async Task RunWithCompensationReplacementDoomGuard(Func<Task> action)
+	internal static async Task RunWithCompensationReplacementGuard(Func<Task> action)
 	{
-		CompensationReplacementDoomDepth.Value++;
+		CompensationReplacementDepth.Value++;
 		try
 		{
 			await action();
 		}
 		finally
 		{
-			CompensationReplacementDoomDepth.Value = Math.Max(0, CompensationReplacementDoomDepth.Value - 1);
+			CompensationReplacementDepth.Value = Math.Max(0, CompensationReplacementDepth.Value - 1);
 		}
 	}
 }
