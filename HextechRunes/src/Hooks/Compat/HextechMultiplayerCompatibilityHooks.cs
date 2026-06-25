@@ -80,7 +80,7 @@ internal static class HextechMultiplayerCompatibilityHooks
 		entries[index] = BuildGameplayCompatibilityEntry(
 			mod.manifest.id ?? modId,
 			mod.manifest.version ?? "unknown",
-			BuildModNetworkSignature(mod));
+			BuildGameplayModNetworkSignature(mod));
 	}
 
 	private static bool TryGetLoadedMod(string modId, out Mod? result)
@@ -202,7 +202,7 @@ internal static class HextechMultiplayerCompatibilityHooks
 		{
 			if (TryGetLoadedMod(modId, out Mod? mod) && mod != null)
 			{
-				signatures.Add(BuildModNetworkSignature(mod));
+				signatures.Add(BuildDiagnosticModNetworkSignature(mod));
 			}
 		}
 
@@ -220,18 +220,29 @@ internal static class HextechMultiplayerCompatibilityHooks
 		return _cachedNetworkSignature;
 	}
 
-	private static string BuildModNetworkSignature(Mod mod)
+	private static string BuildGameplayModNetworkSignature(Mod mod)
+	{
+		return BuildModNetworkSignature(mod, includeSavedProperties: false);
+	}
+
+	private static string BuildDiagnosticModNetworkSignature(Mod mod)
+	{
+		string modId = mod.manifest?.id ?? "unknown";
+		bool includeSavedProperties = string.Equals(modId, ModInfo.Id, StringComparison.Ordinal);
+		return BuildModNetworkSignature(mod, includeSavedProperties);
+	}
+
+	private static string BuildModNetworkSignature(Mod mod, bool includeSavedProperties)
 	{
 		string modId = mod.manifest?.id ?? "unknown";
 		string version = mod.manifest?.version ?? "unknown";
 		string dllPath = Path.Combine(mod.path, $"{modId}.dll");
 		string pckPath = Path.Combine(mod.path, $"{modId}.pck");
 		string manifestPath = Path.Combine(mod.path, $"{modId}.json");
-		bool includeSavedProperties = string.Equals(modId, ModInfo.Id, StringComparison.Ordinal);
 		return BuildModNetworkSignature(modId, version, dllPath, pckPath, manifestPath, includeSavedProperties);
 	}
 
-	private static string BuildModNetworkSignature(string modId, string version, string? dllPath, string pckPath, string manifestPath, bool includeSavedProperties)
+	internal static string BuildModNetworkSignature(string modId, string version, string? dllPath, string pckPath, string manifestPath, bool includeSavedProperties)
 	{
 		string signature = $"id={modId};version={version};target={ModInfo.TargetGameVersion};dll={ShortFileHash(dllPath)};pck={ShortFileHash(pckPath)};manifest={ShortFileHash(manifestPath)}";
 		return includeSavedProperties

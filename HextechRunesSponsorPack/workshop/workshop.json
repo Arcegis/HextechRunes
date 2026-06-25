@@ -4,7 +4,7 @@
   "description": "为《海克斯大乱斗》启用部分风格更独立的赞助者物品内容。需要同时安装海克斯大乱斗本体。",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "0.8.0：修复绝望终曲的终曲合声生命与奖励结算，并更新封面。",
+  "changeNote": "同步更新至本体版本 0.8.1。",
   "tags": [
     "Gameplay",
     "Modifiers",

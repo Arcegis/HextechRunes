@@ -87,6 +87,7 @@ internal static class Program
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
 			new(nameof(MultiplayerCompatibilityEntryChangesWithBuildSignature), MultiplayerCompatibilityEntryChangesWithBuildSignature),
+			new(nameof(MultiplayerGameplaySignatureExcludesRuntimeSavedProperties), MultiplayerGameplaySignatureExcludesRuntimeSavedProperties),
 			new(nameof(CompensationReplacementDoomGuardScopesAsyncWork), CompensationReplacementDoomGuardScopesAsyncWork),
 			new(nameof(CompensationReplacementDoomSuppressesSleightOfFleshResponse), CompensationReplacementDoomSuppressesSleightOfFleshResponse),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
@@ -1374,6 +1375,28 @@ internal static class Program
 		Expect(left.StartsWith("HextechRunes-0.8.0+hexsig:", StringComparison.Ordinal), "compatibility entry should keep readable id and version");
 		Expect(right.StartsWith("HextechRunes-0.8.0+hexsig:", StringComparison.Ordinal), "compatibility entry should keep readable id and version for changed build");
 		Expect(!string.Equals(left, right, StringComparison.Ordinal), "different build signatures must not compare as the same multiplayer mod entry");
+	}
+
+	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
+	{
+		string gameplaySignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
+			"HextechRunes",
+			"0.8.1",
+			null,
+			"",
+			"",
+			includeSavedProperties: false);
+		string diagnosticSignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
+			"HextechRunes",
+			"0.8.1",
+			null,
+			"",
+			"",
+			includeSavedProperties: true);
+
+		Expect(!gameplaySignature.Contains("savedProps=", StringComparison.Ordinal), "gameplay signature must not include runtime SavedProperties state");
+		Expect(diagnosticSignature.Contains("savedProps=", StringComparison.Ordinal), "diagnostic signature should still include SavedProperties state");
+		Expect(!string.Equals(gameplaySignature, diagnosticSignature, StringComparison.Ordinal), "diagnostic signature should remain more detailed than gameplay signature");
 	}
 
 	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string methodName)
