@@ -99,7 +99,13 @@ internal static class HextechEnemyHexEffects
 			new ForgottenSoulEnemyHex(),
 			new CerberusEnemyHex(),
 			new OmniDragonSoulEnemyHex(),
-			new BlankCheckEnemyHex()
+			new BlankCheckEnemyHex(),
+			new CorrosionEnemyHex(),
+			new BrutalityEnemyHex(),
+			new JudicatorEnemyHex(),
+			new SoulEaterEnemyHex(),
+			new DeathHarvestEnemyHex(),
+			new GiantSlayerEnemyHex()
 		]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

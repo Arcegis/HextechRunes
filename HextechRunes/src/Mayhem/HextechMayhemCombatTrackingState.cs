@@ -5,6 +5,8 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly Dictionary<uint, int> SlapProcsThisTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
+	public readonly Dictionary<uint, int> CorrosionProcsThisTurn = new();
+	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly Dictionary<uint, int> TormentorProcsThisTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly Dictionary<uint, int> CourageProcsThisTurn = new();

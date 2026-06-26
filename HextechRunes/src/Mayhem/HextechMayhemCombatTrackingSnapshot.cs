@@ -3,6 +3,7 @@ namespace HextechRunes;
 internal sealed class CombatTrackingSnapshot
 {
 	public Dictionary<uint, int> SlapProcsThisTurn { get; set; } = new();
+	public Dictionary<uint, int> CorrosionProcsThisTurn { get; set; } = new();
 	public Dictionary<uint, int> TormentorProcsThisTurn { get; set; } = new();
 	public Dictionary<uint, int> CourageProcsThisTurn { get; set; } = new();
 	public Dictionary<uint, int> BloodPactProcsThisTurn { get; set; } = new();
