@@ -231,5 +231,28 @@ internal static partial class HextechCombatHooks
 				typeof(CardModel)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
+		harmony.Patch(
+			RequireMethod(
+				typeof(SlipperyPower),
+				nameof(SlipperyPower.ModifyHpLostAfterOsty),
+				BindingFlags.Instance | BindingFlags.Public,
+				typeof(Creature),
+				typeof(decimal),
+				typeof(ValueProp),
+				typeof(Creature),
+				typeof(CardModel)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SlipperyModifyHpLostAfterOstyPostfix)));
+		harmony.Patch(
+			RequireMethod(
+				typeof(SlipperyPower),
+				nameof(SlipperyPower.AfterDamageReceived),
+				BindingFlags.Instance | BindingFlags.Public,
+				typeof(PlayerChoiceContext),
+				typeof(Creature),
+				typeof(DamageResult),
+				typeof(ValueProp),
+				typeof(Creature),
+				typeof(CardModel)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SlipperyAfterDamageReceivedPostfix)));
 	}
 }
