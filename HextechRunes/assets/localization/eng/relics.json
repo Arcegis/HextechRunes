@@ -984,6 +984,7 @@
   "soulEaterRune.enemyDescription": "When another enemy dies, this enemy heals [blue]10%[/blue] of its max HP.",
   "deathHarvestRune.enemyDescription": "Unblocked damage the enemy deals to you heals it for [blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue] of that amount.",
   "giantSlayerRune.enemyDescription": "The enemy shrinks. For every [blue]6[/blue] max HP you have above the enemy, it deals [blue]1%[/blue] more damage to you, up to [blue]100%[/blue].",
+  "dualWieldRune.enemyDescription": "The enemy's damage per hit is halved (rounded up), and its number of hits is doubled.",
   "frostWraithRune.enemyDescription": "Every [blue]4[/blue] turns, all players gain [blue]1[/blue] turn of [gold]Borrowed Time[/gold].",
   "escapePlanRune.enemyDescription": "When damage drops the enemy below [blue]50%[/blue] of its Max HP, then at the start of the next turn it gains Block equal to [blue]60%[/blue] of its Max HP and gains [blue]1[/blue] turn of [gold]Shrink[/gold]. Once per combat.",
   "heavyHitterRune.enemyDescription": "The enemy gains [blue]1%[/blue] more damage for every [blue]10[/blue] Max HP it has, up to [blue]30%[/blue].",

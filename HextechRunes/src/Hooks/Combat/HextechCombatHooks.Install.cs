@@ -214,6 +214,7 @@ internal static partial class HextechCombatHooks
 	{
 		harmony.Patch(
 			RequireMethod(typeof(AttackCommand), nameof(AttackCommand.Execute), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DualWieldAttackCommandExecutePrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(AttackCommandExecutePostfix))
 			{
 				priority = Priority.Last

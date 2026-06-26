@@ -984,6 +984,7 @@
   "soulEaterRune.enemyDescription": "场上有其它敌人死亡时，该敌人回复其[blue]10%[/blue]最大生命值。",
   "deathHarvestRune.enemyDescription": "敌人对你造成的未被格挡的伤害，会为其回复等量[blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue]的生命值。",
   "giantSlayerRune.enemyDescription": "敌人体型缩小。你的最大生命值每比敌人高[blue]6[/blue]点，它对你的伤害就提高[blue]1%[/blue]，最多提高[blue]100%[/blue]。",
+  "dualWieldRune.enemyDescription": "敌人攻击的每段伤害减半（向上取整），攻击段数加倍。",
   "escapePlanRune.enemyDescription": "当敌人受伤后生命值降到最大生命值的[blue]50%[/blue]以下时，在下个回合开始时获得等同于最大生命值[blue]60%[/blue]的格挡，并获得[blue]1[/blue]回合的[gold]缩小[/gold]。每场战斗仅限一次。",
   "heavyHitterRune.enemyDescription": "敌人每有[blue]10[/blue]点最大生命值，就获得[blue]1%[/blue]伤害加成。最多获得[blue]30%[/blue]伤害加成。",
   "bigStrengthRune.enemyDescription": "获得[blue]20%[/blue]伤害加成。",

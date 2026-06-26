@@ -105,7 +105,8 @@ internal static class HextechEnemyHexEffects
 			new JudicatorEnemyHex(),
 			new SoulEaterEnemyHex(),
 			new DeathHarvestEnemyHex(),
-			new GiantSlayerEnemyHex()
+			new GiantSlayerEnemyHex(),
+			new DualWieldEnemyHex()
 		]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

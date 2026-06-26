@@ -110,5 +110,6 @@ internal enum MonsterHexKind
     Judicator = 99,
     SoulEater = 100,
     DeathHarvest = 101,
-    GiantSlayer = 102
+    GiantSlayer = 102,
+    DualWield = 103
 }

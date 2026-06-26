@@ -984,6 +984,7 @@
   "soulEaterRune.enemyDescription": "他の敵が死亡したとき、この敵は最大HPの[blue]10%[/blue]を回復する。",
   "deathHarvestRune.enemyDescription": "敵があなたに与えた非ブロックダメージの[blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue]を、その敵が回復する。",
   "giantSlayerRune.enemyDescription": "敵の体が小さくなる。あなたの最大HPが敵より[blue]6[/blue]高いごとに、敵のダメージが[blue]1%[/blue]増加する（最大[blue]100%[/blue]）。",
+  "dualWieldRune.enemyDescription": "敵の攻撃の1段あたりのダメージが半分（切り上げ）になり、攻撃の段数が2倍になる。",
   "frostWraithRune.enemyDescription": "[blue]4[/blue] ターンごとに、すべてのプレイヤーは [blue]1[/blue] ターンの [gold]借用時間[/gold]を獲得します。",
   "escapePlanRune.enemyDescription": "敵はダメージによって最大 HP の [blue]50%[/blue]を下回ると、次のターンの開始時に最大 HP の [blue]60%[/blue]に等しいブロックを獲得し、[gold]Shrink[/gold] の [blue]1[/blue] ターンを獲得します。戦闘ごとに 1 回。",
   "heavyHitterRune.enemyDescription": "敵は最大 [blue]10[/blue] の最大 HP ごとに [blue]1%[/blue] のダメージが増加し、最大 [blue]30%[/blue]になります。",
