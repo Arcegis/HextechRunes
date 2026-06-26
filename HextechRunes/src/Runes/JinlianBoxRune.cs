@@ -50,12 +50,18 @@ public sealed class JinlianBoxRune : HextechRelicBase
 			return;
 		}
 
-		List<CardTransformation> transformations = Owner.Deck.Cards
+		List<CardModel> transformableBasics = Owner.Deck.Cards
 			.Where(static card => card.IsTransformable && card.IsBasicStrikeOrDefend)
-			.Select(card => CardTransformUpgradeHelper.CreateRandomOptionTransformation(
+			.ToList();
+		List<CardTransformation> transformations = transformableBasics
+			.Select((card, index) => CardTransformUpgradeHelper.CreateStableOptionTransformation(
 				card,
 				rareOptions,
-				Owner.RunState.Rng.CombatCardSelection))
+				(RunState)Owner.RunState,
+				"jinlian-box-rare-transform",
+				index,
+				HextechStableRandom.PlayerKey(Owner),
+				HextechStableRandom.CardPileKey(transformableBasics)))
 			.ToList();
 		if (transformations.Count == 0)
 		{

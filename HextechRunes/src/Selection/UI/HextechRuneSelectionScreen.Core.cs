@@ -70,6 +70,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private bool _blockMapUntilDismissed;
 	private bool _restoreAfterMapReopenQueued;
 	private bool _closed;
+	private bool _mapPreviewActive;
+	private bool _mapButtonForceEnabled;
+	private MegaLabel? _mapPreviewHint;
 	private bool _selectionConfirmGuardStarted;
 	private ulong _selectionConfirmGuardEndsAtMsec;
 
@@ -159,12 +162,16 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		string? titleOverride = null,
 		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune)
 	{
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count}");
 		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions, playerRuneRerollLimit, titleOverride, metadataMode);
 	}
 
 	public override void _ExitTree()
 	{
+		EndMapPreview(restoreOverlay: false);
+		RestoreMapButtonState();
+		_mapPreviewHint?.QueueFree();
+		_mapPreviewHint = null;
 		_completionSource.TrySetResult(Array.Empty<RelicModel>());
 		base._ExitTree();
 	}

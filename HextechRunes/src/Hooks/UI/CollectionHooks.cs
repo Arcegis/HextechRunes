@@ -179,7 +179,7 @@ internal static partial class CollectionHooks
 
 		if (refreshed > 0)
 		{
-			Log.Info($"[{ModInfo.Id}][RuneConfig] Refreshed {refreshed} relic collection screen(s) after config save.");
+			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Refreshed {refreshed} relic collection screen(s) after config save.");
 		}
 	}
 

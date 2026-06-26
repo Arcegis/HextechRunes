@@ -36,6 +36,8 @@ namespace HextechRunes;
 
 public sealed class CircleOfDeathRune : HextechRelicBase
 {
+	private int _sustainDamageTargetsThisCombat;
+
 	public Task HandleSustainGained(decimal amount)
 	{
 		if (Owner == null ||
@@ -61,6 +63,7 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
+		int targetOrdinal = ConsumeCombatProcOrdinal(nameof(CircleOfDeathRune), ref _sustainDamageTargetsThisCombat);
 		Creature target = enemies[HextechStableRandom.Index(
 			(RunState)Owner.RunState,
 			enemies.Count,
@@ -68,7 +71,7 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 			HextechStableRandom.PlayerKey(Owner),
 			Owner.Creature.CombatState.RoundNumber.ToString(),
 			damage.ToString(),
-			CombatManager.Instance.History.Entries.Count().ToString())];
+			targetOrdinal.ToString())];
 		Flash([target]);
 		return CreatureCmd.Damage(new BlockingPlayerChoiceContext(), target, damage, ValueProp.Unpowered, Owner.Creature, null);
 	}

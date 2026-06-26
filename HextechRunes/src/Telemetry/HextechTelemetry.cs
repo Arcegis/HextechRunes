@@ -79,14 +79,14 @@ internal static partial class HextechTelemetry
 
 			if (serializableRun.RunTime < MinRunTimeForUploadSeconds)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] Telemetry upload skipped for short run runTime={serializableRun.RunTime}s");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Telemetry upload skipped for short run runTime={serializableRun.RunTime}s");
 				return;
 			}
 
 			NetGameType gameType = RunManager.Instance.NetService.Type;
 			if (gameType is NetGameType.Client or NetGameType.Replay)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] Telemetry upload skipped for netMode={gameType}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Telemetry upload skipped for netMode={gameType}");
 				return;
 			}
 

@@ -22,11 +22,11 @@ internal sealed partial class HextechMayhemModifier
 
 		if (ShouldDeferImmediateActSelection(RunState.CurrentRoom))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: deferring act selection until room/event flow is stable actIndex={actIndex} currentRoom={RunState.CurrentRoom?.GetType().Name ?? "null"}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: deferring act selection until room/event flow is stable actIndex={actIndex} currentRoom={RunState.CurrentRoom?.GetType().Name ?? "null"}");
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: resolving act selection before first room actIndex={actIndex}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: resolving act selection before first room actIndex={actIndex}");
 		await HextechRuneSelectionCoordinator.HandleActSelection(RunState, this);
 	}
 
@@ -49,7 +49,7 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] BeforeRoomEntered: resolving pending act selection before room={room.GetType().Name} actIndex={actIndex}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] BeforeRoomEntered: resolving pending act selection before room={room.GetType().Name} actIndex={actIndex}");
 		await HextechRuneSelectionCoordinator.HandleActSelection(RunState, this);
 	}
 

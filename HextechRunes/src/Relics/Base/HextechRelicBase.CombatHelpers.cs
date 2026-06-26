@@ -77,6 +77,12 @@ public abstract partial class HextechRelicBase
 		return HextechCombatHistoryHelper.IsDamageFromOwner(Owner, dealer, cardSource);
 	}
 
+	protected bool IsDamageFromOwnerToEnemyOrPreview(Creature? target, Creature? dealer, CardModel? cardSource)
+	{
+		return (target == null || target.Side == CombatSide.Enemy)
+			&& IsDamageFromOwner(dealer, cardSource);
+	}
+
 	protected bool IsPotionUseOwnedByOrTargetingOwner(PotionModel? potion, Creature? target)
 	{
 		if (Owner == null)

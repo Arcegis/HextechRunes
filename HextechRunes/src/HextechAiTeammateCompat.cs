@@ -151,9 +151,18 @@ internal static class HextechAiTeammateCompat
 			return -1;
 		}
 
-		int selectedIndex = Random.Shared.Next(options.Count);
+		string optionKey = string.Join(",", options
+			.Select(static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry)
+			.OrderBy(static id => id, StringComparer.Ordinal));
+		int selectedIndex = HextechStableRandom.Index(
+			(RunState)player.RunState,
+			options.Count,
+			"ai-teammate-rune-auto-select",
+			HextechStableRandom.PlayerKey(player),
+			((RunState)player.RunState).CurrentActIndex.ToString(),
+			optionKey);
 		RelicModel selectedRelic = options[selectedIndex];
-		Log.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Auto-selected rune for AI player={player.NetId} index={selectedIndex} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem][AITeammateCompat] Auto-selected rune for AI player={player.NetId} index={selectedIndex} relic={(selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry}");
 		return selectedIndex;
 	}
 

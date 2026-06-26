@@ -229,6 +229,79 @@ public sealed class PreparedForge : HextechForgeBase
 	}
 }
 
+public sealed class FireworksForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DamageVar(6m, ValueProp.Unpowered)
+	];
+
+	public override async Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		{
+			return;
+		}
+
+		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies
+			.Where(static enemy => enemy.IsAlive)
+			.ToList();
+		if (enemies.Count == 0)
+		{
+			return;
+		}
+
+		Flash(enemies);
+		foreach (Creature enemy in enemies)
+		{
+			await CreatureCmd.Damage(new BlockingPlayerChoiceContext(), enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
+		}
+	}
+}
+
+public sealed class VigorForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<VigorPower>(4m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<VigorPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<VigorPower>(Owner.Creature, Stacked(DynamicVars["VigorPower"].BaseValue), Owner.Creature, null);
+	}
+}
+
+public sealed class BlockForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new BlockVar(2m, ValueProp.Unpowered)
+	];
+
+	public override Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (Owner == null || player != Owner || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash([Owner.Creature]);
+		return CreatureCmd.GainBlock(Owner.Creature, Stacked(DynamicVars.Block.BaseValue), ValueProp.Unpowered, null);
+	}
+}
+
 public sealed class NecrobinderForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>

@@ -14,6 +14,9 @@ namespace HextechRunes;
 
 internal static class HextechMultiplayerCompatibilityHooks
 {
+	private const string SponsorPackModId = "HextechRunesSponsorPack";
+	private static readonly string[] NetworkCheckedModIds = [ ModInfo.Id, SponsorPackModId ];
+
 	private static bool _installed;
 	private static string? _cachedNetworkSignature;
 
@@ -55,17 +58,50 @@ internal static class HextechMultiplayerCompatibilityHooks
 			return;
 		}
 
-		string signedEntry = $"{ModInfo.Id}-{ModInfo.Version}";
-		for (int i = 0; i < __result.Count; i++)
+		foreach (string modId in NetworkCheckedModIds)
 		{
-			if (__result[i].StartsWith($"{ModInfo.Id}-", StringComparison.Ordinal))
+			ReplaceGameplayRelevantEntry(__result, modId);
+		}
+	}
+
+	private static void ReplaceGameplayRelevantEntry(List<string> entries, string modId)
+	{
+		int index = entries.FindIndex(entry => entry.StartsWith($"{modId}-", StringComparison.Ordinal));
+		if (index < 0)
+		{
+			return;
+		}
+
+		if (!TryGetLoadedMod(modId, out Mod? mod) || mod?.manifest == null)
+		{
+			return;
+		}
+
+		entries[index] = BuildGameplayCompatibilityEntry(
+			mod.manifest.id ?? modId,
+			mod.manifest.version ?? "unknown",
+			BuildGameplayModNetworkSignature(mod));
+	}
+
+	private static bool TryGetLoadedMod(string modId, out Mod? result)
+	{
+		foreach (Mod mod in ModManager.GetLoadedMods())
+		{
+			if (string.Equals(mod.manifest?.id, modId, StringComparison.Ordinal))
 			{
-				__result[i] = signedEntry;
-				return;
+				result = mod;
+				return true;
 			}
 		}
 
-		__result.Add(signedEntry);
+		result = null;
+		return false;
+	}
+
+	internal static string BuildGameplayCompatibilityEntry(string modId, string version, string networkSignature)
+	{
+		string signatureHash = ShortHash(ComputeSha256(Encoding.UTF8.GetBytes(networkSignature)));
+		return $"{modId}-{version}+hexsig:{signatureHash}";
 	}
 
 	private static Exception? NetHostGameServiceOnPacketReceivedFinalizer(Exception? __exception, NetHostGameService __instance, ulong senderId)
@@ -161,14 +197,57 @@ internal static class HextechMultiplayerCompatibilityHooks
 			return _cachedNetworkSignature;
 		}
 
-		string? dllPath = Assembly.GetExecutingAssembly().Location;
-		string? modDir = string.IsNullOrWhiteSpace(dllPath) ? null : Path.GetDirectoryName(dllPath);
-		string pckPath = modDir == null ? string.Empty : Path.Combine(modDir, $"{ModInfo.Id}.pck");
-		string manifestPath = modDir == null ? string.Empty : Path.Combine(modDir, $"{ModInfo.Id}.json");
-		string savedPropertiesSignature = BuildSavedPropertiesSignature();
-		_cachedNetworkSignature = $"target={ModInfo.TargetGameVersion};dll={ShortFileHash(dllPath)};pck={ShortFileHash(pckPath)};manifest={ShortFileHash(manifestPath)};savedProps={savedPropertiesSignature}";
-		Log.Info($"[{ModInfo.Id}][MultiplayerCompat] Network compatibility signature: {_cachedNetworkSignature}");
+		List<string> signatures = [];
+		foreach (string modId in NetworkCheckedModIds)
+		{
+			if (TryGetLoadedMod(modId, out Mod? mod) && mod != null)
+			{
+				signatures.Add(BuildDiagnosticModNetworkSignature(mod));
+			}
+		}
+
+		if (signatures.Count == 0)
+		{
+			string? dllPath = Assembly.GetExecutingAssembly().Location;
+			string? modDir = string.IsNullOrWhiteSpace(dllPath) ? null : Path.GetDirectoryName(dllPath);
+			string pckPath = modDir == null ? string.Empty : Path.Combine(modDir, $"{ModInfo.Id}.pck");
+			string manifestPath = modDir == null ? string.Empty : Path.Combine(modDir, $"{ModInfo.Id}.json");
+			signatures.Add(BuildModNetworkSignature(ModInfo.Id, ModInfo.Version, dllPath, pckPath, manifestPath, includeSavedProperties: true));
+		}
+
+		_cachedNetworkSignature = string.Join("|", signatures);
+		HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] Network compatibility signature: {_cachedNetworkSignature}");
 		return _cachedNetworkSignature;
+	}
+
+	private static string BuildGameplayModNetworkSignature(Mod mod)
+	{
+		return BuildModNetworkSignature(mod, includeSavedProperties: false);
+	}
+
+	private static string BuildDiagnosticModNetworkSignature(Mod mod)
+	{
+		string modId = mod.manifest?.id ?? "unknown";
+		bool includeSavedProperties = string.Equals(modId, ModInfo.Id, StringComparison.Ordinal);
+		return BuildModNetworkSignature(mod, includeSavedProperties);
+	}
+
+	private static string BuildModNetworkSignature(Mod mod, bool includeSavedProperties)
+	{
+		string modId = mod.manifest?.id ?? "unknown";
+		string version = mod.manifest?.version ?? "unknown";
+		string dllPath = Path.Combine(mod.path, $"{modId}.dll");
+		string pckPath = Path.Combine(mod.path, $"{modId}.pck");
+		string manifestPath = Path.Combine(mod.path, $"{modId}.json");
+		return BuildModNetworkSignature(modId, version, dllPath, pckPath, manifestPath, includeSavedProperties);
+	}
+
+	internal static string BuildModNetworkSignature(string modId, string version, string? dllPath, string pckPath, string manifestPath, bool includeSavedProperties)
+	{
+		string signature = $"id={modId};version={version};target={ModInfo.TargetGameVersion};dll={ShortFileHash(dllPath)};pck={ShortFileHash(pckPath)};manifest={ShortFileHash(manifestPath)}";
+		return includeSavedProperties
+			? $"{signature};savedProps={BuildSavedPropertiesSignature()}"
+			: signature;
 	}
 
 	private static string BuildSavedPropertiesSignature()

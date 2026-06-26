@@ -42,7 +42,7 @@ internal sealed partial class HextechMayhemModifier
 		}
 
 		_combatTracking.TestSubjectPhaseStartApplied[combatId] = respawns;
-		Log.Info($"[{ModInfo.Id}][Mayhem] Reapplying boss start hexes after TestSubject revive: combatId={combatId} respawns={respawns}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Reapplying boss start hexes after TestSubject revive: combatId={combatId} respawns={respawns}");
 		await ApplyBossStartHexesToEnemy(osty, room);
 		HextechEnemyUi.Refresh(this);
 	}
@@ -77,7 +77,7 @@ internal sealed partial class HextechMayhemModifier
 			return false;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] Applying deferred boss start hexes to Doormaker: combatId={combatId} maxHp={creature.MaxHp}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Applying deferred boss start hexes to Doormaker: combatId={combatId} maxHp={creature.MaxHp}");
 		await ApplyBossStartHexesToEnemy(creature, room);
 		return true;
 	}

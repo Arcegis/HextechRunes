@@ -61,7 +61,7 @@ internal static class HextechModelPoolRegistrar
 	{
 		if (IsModelAlreadyQueuedForPool(poolType, modelType) && !IsMobileFirstModelWorkaroundDuplicate(poolType, modelType))
 		{
-			Log.Info($"[{ModInfo.Id}] Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
+			HextechLog.Info($"[{ModInfo.Id}] Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
 			return;
 		}
 
@@ -190,7 +190,7 @@ internal static class HextechModelPoolRegistrar
 
 				if (removed > 0)
 				{
-					Log.Info($"[{ModInfo.Id}] Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
+					HextechLog.Info($"[{ModInfo.Id}] Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
 				}
 
 				return;

@@ -63,12 +63,19 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		}
 
 		PendingCompensation compensation = pending!;
+		if (!CanApplyPendingCompensation(context, target, compensation))
+		{
+			return;
+		}
+
 		if (compensation.ShouldConsumeSlippery && target.GetPower<SlipperyPower>() is SlipperyPower slippery)
 		{
 			await PowerCmd.Decrement(slippery);
 		}
 
-		await PowerCmd.Apply<PoisonPower>(target, compensation.Amount, compensation.Dealer ?? target, compensation.CardSource);
+		Creature applier = compensation.Dealer is { IsAlive: true } ? compensation.Dealer : target;
+		await HextechCombatHooks.RunWithCompensationReplacementGuard(
+			() => PowerCmd.Apply<PoisonPower>(target, compensation.Amount, applier, compensation.CardSource));
 	}
 
 	internal static void ClearPendingCompensations(long commandId)
@@ -94,8 +101,9 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 	internal static bool ShouldSkipDamageReplacement(Creature target, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return IsPoisonDamageSignature(props, dealer, cardSource)
-			&& target.GetPowerAmount<PoisonPower>() > 0m;
+		return HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse
+			|| (IsPoisonDamageSignature(props, dealer, cardSource)
+				&& target.GetPowerAmount<PoisonPower>() > 0m);
 	}
 
 	internal static bool IsPoisonDamageSignature(ValueProp props, Creature? dealer, CardModel? cardSource)
@@ -146,6 +154,13 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 		pending = null;
 		return false;
+	}
+
+	private static bool CanApplyPendingCompensation(HextechEnemyHexContext context, Creature target, PendingCompensation compensation)
+	{
+		return compensation.Amount > 0m
+			&& target.IsAlive
+			&& target.CombatState?.RunState == context.RunState;
 	}
 
 	private void ClearPendingCompensationsForCommand(long commandId)

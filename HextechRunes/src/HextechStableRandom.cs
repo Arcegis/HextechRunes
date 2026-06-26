@@ -1,7 +1,8 @@
-using System.Runtime.CompilerServices;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Orbs;
@@ -60,10 +61,8 @@ internal static class HextechStableRandom
 			runState.TotalFloor.ToString(),
 			"|round:",
 			roundNumber.ToString(),
-			"|slot:",
-			runState.GetPlayerSlotIndex(player).ToString(),
-			"|net:",
-			player.NetId.ToString());
+			"|player:",
+			PlayerKey(player));
 	}
 
 	public static ulong HashRaw(params string?[] parts)
@@ -151,7 +150,14 @@ internal static class HextechStableRandom
 	{
 		RunState runState = (RunState)player.RunState;
 		int slot = runState.GetPlayerSlotIndex(player);
-		return $"{slot}:{player.NetId}";
+		return PlayerIdentityKey(slot, player.NetId);
+	}
+
+	internal static string PlayerIdentityKey(int slot, ulong netId)
+	{
+		return netId != 0UL
+			? $"net:{netId}"
+			: $"slot:{slot}";
 	}
 
 	public static string CardKey(CardModel card)
@@ -164,6 +170,24 @@ internal static class HextechStableRandom
 		return potion.Id.Entry;
 	}
 
+	public static string CardActionKey(CardModel? card)
+	{
+		if (card == null)
+		{
+			return "none";
+		}
+
+		return string.Join(":",
+			CardKey(card),
+			card.Owner == null ? "owner:none" : PlayerKey(card.Owner),
+			"play",
+			GetSafeInt(() => card.CurrentPlayIndex).ToString(),
+			"target",
+			GetSafeCreatureKey(() => card.CurrentTarget),
+			"pile",
+			GetSafePileKey(card));
+	}
+
 	public static string TypeModelKey(Type type)
 	{
 		return ModelDb.GetId(type).Entry;
@@ -172,16 +196,6 @@ internal static class HextechStableRandom
 	public static string CardPileKey(IEnumerable<CardModel> cards)
 	{
 		return string.Join(",", cards.Select(CardKey));
-	}
-
-	public static int InstanceHash(object instance)
-	{
-		return RuntimeHelpers.GetHashCode(instance);
-	}
-
-	public static string InstanceKey(object? instance)
-	{
-		return instance == null ? "none" : InstanceHash(instance).ToString();
 	}
 
 	private static ulong Hash(RunState runState, IEnumerable<string?> saltParts)
@@ -220,6 +234,60 @@ internal static class HextechStableRandom
 		Array.Copy(saltParts, result, saltParts.Length);
 		Array.Copy(extra, 0, result, saltParts.Length, extra.Length);
 		return result;
+	}
+
+	private static int GetSafeInt(Func<int> valueFactory)
+	{
+		try
+		{
+			return valueFactory();
+		}
+		catch (InvalidOperationException)
+		{
+			return -1;
+		}
+	}
+
+	private static string GetSafeCreatureKey(Func<Creature?> valueFactory)
+	{
+		try
+		{
+			Creature? creature = valueFactory();
+			return creature?.CombatId?.ToString() ?? "none";
+		}
+		catch (InvalidOperationException)
+		{
+			return "none";
+		}
+	}
+
+	private static string GetSafePileKey(CardModel card)
+	{
+		try
+		{
+			CardPile? pile = card.Pile;
+			if (pile == null)
+			{
+				return "none";
+			}
+
+			IReadOnlyList<CardModel> cards = pile.Cards;
+			int index = -1;
+			for (int i = 0; i < cards.Count; i++)
+			{
+				if (ReferenceEquals(cards[i], card))
+				{
+					index = i;
+					break;
+				}
+			}
+
+			return $"{pile.Type}:{index}";
+		}
+		catch (InvalidOperationException)
+		{
+			return "none";
+		}
 	}
 
 	private static void Add(ref ulong hash, string? value)

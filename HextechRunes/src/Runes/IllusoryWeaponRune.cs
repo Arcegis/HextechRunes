@@ -14,6 +14,8 @@ namespace HextechRunes;
 
 public sealed class IllusoryWeaponRune : HextechRelicBase
 {
+	private int _damageTargetsThisCombat;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DamageVar(2m, ValueProp.Move)
@@ -31,12 +33,13 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 
 		try
 		{
+			int targetOrdinal = ConsumeCombatProcOrdinal(nameof(IllusoryWeaponRune), ref _damageTargetsThisCombat);
 			Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
 				Owner,
 				combatState,
 				"illusory-weapon",
 				combatState.RoundNumber.ToString(),
-				CombatManager.Instance.History.Entries.Count().ToString(),
+				targetOrdinal.ToString(),
 				cardPlay.Card.Id.Entry);
 			if (target == null)
 			{

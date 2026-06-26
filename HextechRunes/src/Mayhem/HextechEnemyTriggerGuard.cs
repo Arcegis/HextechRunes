@@ -52,7 +52,7 @@ internal static class HextechEnemyTriggerGuard
 			return false;
 		}
 
-		string actionKey = $"{applier.CombatId.Value}:{HextechStableRandom.InstanceHash(cardSource)}:{powerTypeName}:{amount}";
+		string actionKey = $"{applier.CombatId.Value}:{HextechStableRandom.CardActionKey(cardSource)}:{powerTypeName}:{amount}";
 		return !tracking.MonsterDebuffActionProcKeysThisTurn.Add(actionKey);
 	}
 
@@ -68,7 +68,7 @@ internal static class HextechEnemyTriggerGuard
 			target.CurrentHp.ToString(CultureInfo.InvariantCulture),
 			result.UnblockedDamage.ToString(CultureInfo.InvariantCulture),
 			dealer?.CombatId?.ToString() ?? "none",
-			HextechStableRandom.InstanceKey(cardSource));
+			HextechStableRandom.CardActionKey(cardSource));
 		bool suppress = key == tracking.LastEnemyThresholdTriggerKey;
 		tracking.LastEnemyThresholdTriggerKey = key;
 		return suppress;

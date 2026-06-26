@@ -30,13 +30,13 @@ internal sealed partial class HextechMayhemModifier
 	internal void InitializePlayerRuneConfigDisabledIdsSnapshotForNewRun(string reason)
 	{
 		_runContext.PlayerRuneConfig.Set(CreateNewRunPlayerRuneConfigDisabledIdsSnapshot());
-		Log.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot initialized: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot initialized: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
 	}
 
 	internal void SetPlayerRuneConfigDisabledIdsSnapshot(IEnumerable<string>? disabledIds, string reason)
 	{
 		_runContext.PlayerRuneConfig.Set(disabledIds);
-		Log.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot set: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot set: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
 	}
 
 	private HashSet<string> GetPlayerRuneConfigDisabledIdsForPool()

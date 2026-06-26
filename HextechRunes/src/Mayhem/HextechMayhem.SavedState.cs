@@ -44,55 +44,35 @@ internal sealed partial class HextechMayhemModifier
 	public int[] SavedRarityByAct
 	{
 		get => _actState.SavedRarityByAct;
-		set
-		{
-			_actState.SavedRarityByAct = value;
-			InvalidateActiveMonsterHexCache();
-		}
+		set => _actState.SavedRarityByAct = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedMonsterHexByAct
 	{
 		get => _actState.SavedMonsterHexByAct;
-		set
-		{
-			_actState.SavedMonsterHexByAct = value;
-			InvalidateActiveMonsterHexCache();
-		}
+		set => _actState.SavedMonsterHexByAct = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedMonsterHexesByActJson
 	{
 		get => _actState.SavedMonsterHexesByActJson;
-		set
-		{
-			_actState.SavedMonsterHexesByActJson = value;
-			InvalidateActiveMonsterHexCache();
-		}
+		set => _actState.SavedMonsterHexesByActJson = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedCarriedMonsterHexes
 	{
 		get => _actState.SavedCarriedMonsterHexes;
-		set
-		{
-			_actState.SavedCarriedMonsterHexes = value;
-			InvalidateActiveMonsterHexCache();
-		}
+		set => _actState.SavedCarriedMonsterHexes = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedResolvedActs
 	{
 		get => _actState.SavedResolvedActs;
-		set
-		{
-			_actState.SavedResolvedActs = value;
-			InvalidateActiveMonsterHexCache();
-		}
+		set => _actState.SavedResolvedActs = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -191,7 +171,7 @@ internal sealed partial class HextechMayhemModifier
 
 	internal HextechMayhemCombatTrackingState CombatTracking => _combatTracking;
 
-	internal bool IsEndlessLoopActive => _monsterHexStrengthTierFloor >= 3;
+	internal bool IsEndlessLoopActive => _runContext.IsEndlessLoopActive;
 
 	internal bool HostUsesBetterMultiplayerScaling
 	{

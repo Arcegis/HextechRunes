@@ -3,11 +3,14 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
 public sealed class HiddenGemUpgradeRune : CardUpgradeRuneBase<HiddenGem>
 {
+	private int _upgradedPlaysThisCombat;
+
 	protected override bool IsAvailableForCharacter(Player player)
 	{
 		return true;
@@ -42,14 +45,25 @@ public sealed class HiddenGemUpgradeRune : CardUpgradeRuneBase<HiddenGem>
 			.Where(static candidate => candidate.Type is CardType.Attack or CardType.Skill or CardType.Power)
 			.ToList();
 		IEnumerable<CardModel> pool = preferred.Count == 0 ? candidates : preferred;
-		CardModel? selected = card.Owner.RunState.Rng.CombatCardSelection.NextItem(pool);
-		if (selected == null)
+		HiddenGemUpgradeRune? rune = card.Owner.GetRelic<HiddenGemUpgradeRune>();
+		if (rune == null)
 		{
 			return;
 		}
 
+		int ordinal = rune.ConsumeCombatProcOrdinal(nameof(HiddenGemUpgradeRune), ref rune._upgradedPlaysThisCombat);
+		CardModel selected = HextechStableRandom.Pick(
+			pool,
+			(RunState)card.Owner.RunState,
+			HextechStableRandom.CardKey,
+			"hidden-gem-upgrade-play",
+			HextechStableRandom.PlayerKey(card.Owner),
+			card.Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			ordinal.ToString(),
+			HextechStableRandom.CardKey(card),
+			HextechStableRandom.CardPileKey(drawCards));
 		selected.BaseReplayCount += card.DynamicVars["Replay"].IntValue;
-		card.Owner.GetRelic<HiddenGemUpgradeRune>()?.Flash();
+		rune.Flash();
 		CardCmd.Preview(selected);
 	}
 }

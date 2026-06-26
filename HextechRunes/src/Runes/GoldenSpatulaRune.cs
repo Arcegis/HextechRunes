@@ -88,7 +88,7 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return IsDamageFromOwner(dealer, cardSource) ? StackMultiplier : 1m;
+		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? StackMultiplier : 1m;
 	}
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)

@@ -63,7 +63,7 @@ public sealed class AttackForge : HextechForgeBase
 
 	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return IsDamageFromOwner(dealer, cardSource) ? StackedMultiplier(DynamicVars["DamageMultiplier"].BaseValue) : 1m;
+		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? StackedMultiplier(DynamicVars["DamageMultiplier"].BaseValue) : 1m;
 	}
 }
 

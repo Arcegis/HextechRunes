@@ -170,6 +170,36 @@ public sealed class RecoveryForge : HextechForgeBase
 	}
 }
 
+public sealed class HourglassForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DamageVar(4m, ValueProp.Unpowered)
+	];
+
+	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (Owner == null || player != Owner || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		{
+			return;
+		}
+
+		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies
+			.Where(static enemy => enemy.IsAlive)
+			.ToList();
+		if (enemies.Count == 0)
+		{
+			return;
+		}
+
+		Flash(enemies);
+		foreach (Creature enemy in enemies)
+		{
+			await CreatureCmd.Damage(choiceContext, enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
+		}
+	}
+}
+
 public sealed class GoldUpgradeForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;
@@ -208,6 +238,57 @@ public sealed class GoldUpgradeForge : HextechForgeBase
 		}
 
 		return Task.CompletedTask;
+	}
+}
+
+public sealed class SummonForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new SummonVar(2m)
+	];
+
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return IsNecrobinderPlayer(player);
+	}
+
+	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (player != Owner
+			|| Owner == null
+			|| Owner.Creature.IsDead
+			|| !IsNecrobinderPlayer(player))
+		{
+			return;
+		}
+
+		Flash();
+		await OstyCmd.Summon(choiceContext, player, Stacked(DynamicVars.Summon.BaseValue), this);
+	}
+}
+
+public sealed class FleshForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<SleightOfFleshPower>(4m)
+	];
+
+	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+	[
+		HoverTipFactory.FromPower<SleightOfFleshPower>()
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<SleightOfFleshPower>(Owner.Creature, Stacked(DynamicVars["SleightOfFleshPower"].BaseValue), Owner.Creature, null);
 	}
 }
 

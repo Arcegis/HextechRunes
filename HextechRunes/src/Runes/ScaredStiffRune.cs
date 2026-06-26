@@ -26,6 +26,7 @@ namespace HextechRunes;
 public sealed class ScaredStiffRune : HextechRelicBase
 {
 	private bool _autoPlaying;
+	private int _autoPlayTargetsThisCombat;
 
 	public override bool IsAvailableForPlayer(Player player)
 	{
@@ -57,19 +58,20 @@ public sealed class ScaredStiffRune : HextechRelicBase
 				if (card.Pile?.Type != PileType.Hand)
 				{
 					continue;
-				}
+					}
 
-				card.ExhaustOnNextPlay = true;
-				HextechCombatState? combatState = Owner.Creature.CombatState;
-				Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
-					Owner,
-					combatState,
-					"scared-stiff",
-					combatState?.RoundNumber.ToString() ?? "-1",
-					i.ToString(),
-					CombatManager.Instance.History.Entries.Count().ToString());
-				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);
-			}
+					card.ExhaustOnNextPlay = true;
+					HextechCombatState? combatState = Owner.Creature.CombatState;
+					int targetOrdinal = ConsumeCombatProcOrdinal(nameof(ScaredStiffRune), ref _autoPlayTargetsThisCombat);
+					Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
+						Owner,
+						combatState,
+						"scared-stiff",
+						combatState?.RoundNumber.ToString() ?? "-1",
+						i.ToString(),
+						targetOrdinal.ToString());
+					await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);
+				}
 		}
 		finally
 		{

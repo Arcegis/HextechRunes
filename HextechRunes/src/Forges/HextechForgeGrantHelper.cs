@@ -181,7 +181,7 @@ internal static class HextechForgeGrantHelper
 		await RelicCmd.Obtain(forge, player);
 		if (syncedBeforePickup)
 		{
-			Log.Info($"[{ModInfo.Id}][ForgeChoice] Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
+			HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
 		}
 	}
 

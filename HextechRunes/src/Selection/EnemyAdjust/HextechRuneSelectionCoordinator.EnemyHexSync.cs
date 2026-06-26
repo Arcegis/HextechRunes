@@ -25,7 +25,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		uint choiceId = synchronizer.ReserveChoiceId(authorityPlayer);
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync: reserved act={actIndex} authority={authorityPlayer.NetId} choiceId={choiceId}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync: reserved act={actIndex} authority={authorityPlayer.NetId} choiceId={choiceId}");
 		return new EnemyHexAdjustmentSyncContext(synchronizer, authorityPlayer, choiceId, actIndex, initialMonsterHexes);
 	}
 
@@ -120,7 +120,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		syncContext.CurrentMonsterHexSlots.AddRange(nextMonsterHexes);
 		syncContext.RerollCounts.Clear();
 		syncContext.RerollCounts.AddRange(nextRerollCounts);
-		Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={sentChoiceId} seq={syncContext.Sequence} hexes={string.Join(",", syncContext.CurrentMonsterHexSlots.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", syncContext.RerollCounts)} final={isFinal}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={sentChoiceId} seq={syncContext.Sequence} hexes={string.Join(",", syncContext.CurrentMonsterHexSlots.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", syncContext.RerollCounts)} final={isFinal}");
 		if (isFinal)
 		{
 			syncContext.FinalSent = true;
@@ -163,7 +163,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			syncContext.RerollCounts.AddRange(payload.RerollCounts.Select(static count => Math.Max(0, count)));
 			syncContext.Sequence = payload.Sequence + 1;
 			screen.ApplyEnemyHexAdjustment(payload.MonsterHexes, payload.RerollCounts);
-			Log.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} hexes={string.Join(",", payload.MonsterHexes.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", payload.RerollCounts)} final={payload.IsFinal}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} hexes={string.Join(",", payload.MonsterHexes.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", payload.RerollCounts)} final={payload.IsFinal}");
 			if (payload.IsFinal)
 			{
 				return;

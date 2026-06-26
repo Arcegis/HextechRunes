@@ -73,7 +73,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			seenOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);
 			modifier.RecordSeenPlayerRunes(player, [ rerolled[slotIndex] ]);
-			Log.Info($"[{ModInfo.Id}][Mayhem] RerollSingleOptionMultiplayer: player={player.NetId} slot={slotIndex} ordinal={rerollOrdinal} relic={rerolledId.Entry}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RerollSingleOptionMultiplayer: player={player.NetId} slot={slotIndex} ordinal={rerollOrdinal} relic={rerolledId.Entry}");
 		}
 
 		return rerolled;
@@ -130,9 +130,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			"|act:",
 			runState.CurrentActIndex.ToString(),
 			"|player:",
-			runState.GetPlayerSlotIndex(player).ToString(),
-			"|net:",
-			player.NetId.ToString(),
+			HextechStableRandom.PlayerKey(player),
 			"|rarity:",
 			((int)rarity).ToString(),
 			"|slot:",

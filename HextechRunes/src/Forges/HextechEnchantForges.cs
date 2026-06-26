@@ -10,7 +10,7 @@ namespace HextechRunes;
 public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 	where TEnchantment : EnchantmentModel
 {
-	private const int EnchantmentAmount = 1;
+	protected virtual int EnchantmentAmount => 1;
 
 	public override bool HasUponPickupEffect => true;
 
@@ -42,6 +42,19 @@ public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 }
 
 public sealed class GlamForge : EnchantmentForgeBase<Glam>
+{
+}
+
+public sealed class SwiftForge : EnchantmentForgeBase<Swift>
+{
+}
+
+public sealed class MomentumForge : EnchantmentForgeBase<Momentum>
+{
+	protected override int EnchantmentAmount => 3;
+}
+
+public sealed class EmbersForge : EnchantmentForgeBase<TezcatarasEmber>
 {
 }
 

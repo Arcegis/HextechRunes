@@ -20,7 +20,7 @@ public static class ModEntry
 		{
 			if (_initialized)
 			{
-				Log.Info($"[{ModInfo.Id}] Initialization already completed; skipping duplicate call.");
+				HextechLog.Info($"[{ModInfo.Id}] Initialization already completed; skipping duplicate call.");
 				return;
 			}
 
@@ -52,8 +52,10 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("reward serialization safety", () => HextechRewardSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("relic visibility toggle", () => HextechRelicVisibilityHooks.Install(harmony));
 			TryInstallOptionalHookGroup("hand of baron aura visual", () => HextechBaronAuraHooks.Install(harmony));
+			TryInstallOptionalHookGroup("burn health bar prediction", () => HextechBurnHealthBarHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
 			_initialized = true;
+			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控。
 			Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
 		}
 	}

@@ -30,7 +30,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					$"act-selection-applied act={actIndex} ordinal={choiceOrdinal}",
 					out uint sentChoiceId))
 				{
-					Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={sentChoiceId}");
+					HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={sentChoiceId}");
 				}
 				else
 				{
@@ -41,7 +41,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied AI auto-ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied AI auto-ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
 				continue;
 			}
 
@@ -53,7 +53,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} ordinal={choiceOrdinal} remoteCount={pendingAcks.Count}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} ordinal={choiceOrdinal} remoteCount={pendingAcks.Count}");
 		Task allAcks = Task.WhenAll(pendingAcks);
 		using CancellationTokenSource interruptedWaitCancellation = new();
 		Task interrupted = WaitForRunChangeOrMultiplayerDisconnectAsync(runState, interruptedWaitCancellation.Token);
@@ -62,7 +62,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			interruptedWaitCancellation.Cancel();
 			await interrupted;
 			await allAcks;
-			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex} ordinal={choiceOrdinal}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex} ordinal={choiceOrdinal}");
 			return;
 		}
 
@@ -87,7 +87,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				return;
 			}
 
-			Log.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
 		}
 		catch (Exception ex)
 		{

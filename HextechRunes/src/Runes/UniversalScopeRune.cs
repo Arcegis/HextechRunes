@@ -9,6 +9,8 @@ namespace HextechRunes;
 
 public abstract class UniversalScopeRuneBase : HextechRelicBase
 {
+	private int _refundRollsThisCombat;
+
 	protected abstract int ChancePercent { get; }
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -27,7 +29,8 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 			return;
 		}
 
-		if (!RollTrigger(cardPlay))
+		int rollOrdinal = ConsumeCombatProcOrdinal(GetType().Name, ref _refundRollsThisCombat);
+		if (!RollTrigger(cardPlay, rollOrdinal))
 		{
 			return;
 		}
@@ -50,7 +53,7 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 		}
 	}
 
-	private bool RollTrigger(CardPlay cardPlay)
+	private bool RollTrigger(CardPlay cardPlay, int rollOrdinal)
 	{
 		if (Owner == null)
 		{
@@ -60,12 +63,12 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 		return HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
 			DynamicVars["ChancePercent"].IntValue,
-			"universal-scope-refund",
-			GetType().Name,
-			HextechStableRandom.PlayerKey(Owner),
-			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
-			CombatManager.Instance.History.Entries.Count().ToString(),
-			HextechStableRandom.CardKey(cardPlay.Card));
+				"universal-scope-refund",
+				GetType().Name,
+				HextechStableRandom.PlayerKey(Owner),
+				Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+				rollOrdinal.ToString(),
+				HextechStableRandom.CardKey(cardPlay.Card));
 	}
 }
 

@@ -307,7 +307,7 @@ internal static class HextechRewardSafetyHooks
 			CardPileAddResult result = await CardPileCmd.Add(card, PileType.Deck);
 			if (result.success)
 			{
-				Log.Info($"[{ModInfo.Id}][EnemyForbiddenGrimoire] Forced unpicked card reward: player={reward.Player.NetId} card={result.cardAdded.Id.Entry}");
+				HextechLog.Info($"[{ModInfo.Id}][EnemyForbiddenGrimoire] Forced unpicked card reward: player={reward.Player.NetId} card={result.cardAdded.Id.Entry}");
 			}
 			else
 			{

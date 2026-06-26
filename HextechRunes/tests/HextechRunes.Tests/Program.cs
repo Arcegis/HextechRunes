@@ -47,20 +47,24 @@ internal static class Program
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
 			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
 			new(nameof(DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights), DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights),
+			new(nameof(StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot), StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot),
 			new(nameof(StableRandomSequentialFloorsAvoidExcessClustering), StableRandomSequentialFloorsAvoidExcessClustering),
 			new(nameof(StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle), StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle),
 			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
 			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
+			new(nameof(RunConfigurationDefaultSnapshotDisablesRiskyContent), RunConfigurationDefaultSnapshotDisablesRiskyContent),
 			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
 			new(nameof(EnemyHexCountStateNormalizesMissingAndOutOfRangeValues), EnemyHexCountStateNormalizesMissingAndOutOfRangeValues),
 			new(nameof(EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct), EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct),
 			new(nameof(PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot), PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot),
 			new(nameof(PlayerRuneConfigSnapshotStateSnapshotOverridesLocalFallback), PlayerRuneConfigSnapshotStateSnapshotOverridesLocalFallback),
-			new(nameof(PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData), PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData),
-			new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
-			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
+				new(nameof(PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData), PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData),
+				new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
+				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
+				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
+				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
 			new(nameof(PlayerRuneMetadataHasUniqueTypes), PlayerRuneMetadataHasUniqueTypes),
@@ -78,11 +82,14 @@ internal static class Program
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
 			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
 			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
+			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
-			new(nameof(CompensationReplacementDoomGuardScopesAsyncWork), CompensationReplacementDoomGuardScopesAsyncWork),
-			new(nameof(CompensationReplacementDoomSuppressesSleightOfFleshResponse), CompensationReplacementDoomSuppressesSleightOfFleshResponse),
+			new(nameof(MultiplayerCompatibilityEntryChangesWithBuildSignature), MultiplayerCompatibilityEntryChangesWithBuildSignature),
+			new(nameof(MultiplayerGameplaySignatureExcludesRuntimeSavedProperties), MultiplayerGameplaySignatureExcludesRuntimeSavedProperties),
+			new(nameof(CompensationReplacementGuardScopesAsyncWork), CompensationReplacementGuardScopesAsyncWork),
+			new(nameof(CompensationReplacementSuppressesSleightOfFleshResponse), CompensationReplacementSuppressesSleightOfFleshResponse),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
@@ -353,6 +360,80 @@ internal static class Program
 		Equal(TimeSpan.FromMinutes(10), HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(36000), "selection timeout");
 	}
 
+	private static void CombatTrackingPerTurnProcLimitsResetOncePerRound()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		tracking.SlapProcsThisTurn[1] = 1;
+		tracking.TormentorProcsThisTurn[2] = 1;
+		tracking.CourageProcsThisTurn[3] = 1;
+		tracking.BloodPactProcsThisTurn[4] = 1;
+		tracking.PlayerRuneProcsThisTurn["player:rune"] = 1;
+		tracking.ClownCollegeProcsThisTurn[5] = 1;
+		tracking.DevilsDanceTriggeredThisTurn.Add(6);
+		tracking.FinalFormTriggeredThisTurn.Add(7);
+		tracking.EnemyPorcupineTriggersThisTurn[8] = 1;
+		tracking.EightPennyGatePlayersTriggeredThisTurn.Add(9);
+		tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Add(10);
+		tracking.MonsterDebuffActionProcKeysThisTurn.Add("debuff-action");
+
+		tracking.PreparePlayerSideTurnEnd();
+
+		Equal(1, tracking.ClownCollegeProcsThisTurn.Count, "player side end should keep clown college round proc count");
+		Equal(1, tracking.EnemyPorcupineTriggersThisTurn.Count, "player side end should keep porcupine round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "player side end should keep eight penny gate first round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "player side end should keep eight penny gate second round proc count");
+
+		tracking.PrepareEnemySideTurnStart();
+
+		Equal(1, tracking.SlapProcsThisTurn.Count, "enemy side start should keep slap round proc count");
+		Equal(1, tracking.TormentorProcsThisTurn.Count, "enemy side start should keep tormentor round proc count");
+		Equal(1, tracking.CourageProcsThisTurn.Count, "enemy side start should keep courage round proc count");
+		Equal(1, tracking.BloodPactProcsThisTurn.Count, "enemy side start should keep blood pact round proc count");
+		Equal(1, tracking.PlayerRuneProcsThisTurn.Count, "enemy side start should keep player rune round proc count");
+		Equal(1, tracking.ClownCollegeProcsThisTurn.Count, "enemy side start should keep clown college round proc count");
+		Equal(1, tracking.DevilsDanceTriggeredThisTurn.Count, "enemy side start should keep devil's dance round proc count");
+		Equal(1, tracking.FinalFormTriggeredThisTurn.Count, "enemy side start should keep final form round proc count");
+		Equal(1, tracking.EnemyPorcupineTriggersThisTurn.Count, "enemy side start should keep porcupine round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "enemy side start should keep eight penny gate first round proc count");
+		Equal(1, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "enemy side start should keep eight penny gate second round proc count");
+		Equal(1, tracking.MonsterDebuffActionProcKeysThisTurn.Count, "enemy side start should keep monster debuff round guard");
+
+		tracking.PreparePlayerSideTurnStart();
+
+		Equal(0, tracking.SlapProcsThisTurn.Count, "player side start should reset slap round proc count");
+		Equal(0, tracking.TormentorProcsThisTurn.Count, "player side start should reset tormentor round proc count");
+		Equal(0, tracking.CourageProcsThisTurn.Count, "player side start should reset courage round proc count");
+		Equal(0, tracking.BloodPactProcsThisTurn.Count, "player side start should reset blood pact round proc count");
+		Equal(0, tracking.PlayerRuneProcsThisTurn.Count, "player side start should reset player rune round proc count");
+		Equal(0, tracking.ClownCollegeProcsThisTurn.Count, "player side start should reset clown college round proc count");
+		Equal(0, tracking.DevilsDanceTriggeredThisTurn.Count, "player side start should reset devil's dance round proc count");
+		Equal(0, tracking.FinalFormTriggeredThisTurn.Count, "player side start should reset final form round proc count");
+		Equal(0, tracking.EnemyPorcupineTriggersThisTurn.Count, "player side start should reset porcupine round proc count");
+		Equal(0, tracking.EightPennyGatePlayersTriggeredThisTurn.Count, "player side start should reset eight penny gate first round proc count");
+		Equal(0, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "player side start should reset eight penny gate second round proc count");
+		Equal(0, tracking.MonsterDebuffActionProcKeysThisTurn.Count, "player side start should reset monster debuff round guard");
+	}
+
+	private static void CombatTrackingGlobalProcOrdinalsSerializeAndReset()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		Equal(0, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy-archmage:net:1"), "first global proc ordinal");
+		Equal(1, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy-archmage:net:1"), "second global proc ordinal");
+
+		string serialized = tracking.Serialize();
+		HextechMayhemCombatTrackingState restored = new();
+		restored.Restore(serialized);
+
+		Equal(2, restored.GlobalProcsThisCombat["enemy-archmage:net:1"], "global proc count should restore");
+		Equal(2, HextechCombatProcTracker.ConsumeGlobalProcInCombat(restored, "enemy-archmage:net:1"), "restored next global proc ordinal");
+
+		restored.PreparePlayerSideTurnStart();
+		Equal(3, restored.GlobalProcsThisCombat["enemy-archmage:net:1"], "global proc count should persist across turn reset");
+
+		restored.Reset();
+		Equal(0, restored.GlobalProcsThisCombat.Count, "global proc count should clear on combat tracking reset");
+	}
+
 	private static void StableModelIdListCodecRoundTripsFromNonzeroCursor()
 	{
 		ModelId[] source =
@@ -478,6 +559,13 @@ internal static class Program
 		Equal(40, customWeights.Gold, "custom gold weight");
 		Equal(60, customWeights.Prismatic, "custom prismatic weight");
 		Equal(110, customWeights.Total, "custom total weight");
+	}
+
+	private static void StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot()
+	{
+		Equal("net:123456789", HextechStableRandom.PlayerIdentityKey(0, 123456789UL), "host-local slot");
+		Equal("net:123456789", HextechStableRandom.PlayerIdentityKey(1, 123456789UL), "client-local slot");
+		Equal("slot:2", HextechStableRandom.PlayerIdentityKey(2, 0UL), "local fallback");
 	}
 
 	private static void StableRandomSequentialFloorsAvoidExcessClustering()
@@ -633,6 +721,18 @@ internal static class Program
 		SequenceEqual(new[] { 1, 2, 3 }, snapshot.EnemyHexCountsByAct, "default enemy act counts");
 		Equal(1, snapshot.PlayerRuneRerollLimit, "default player reroll limit");
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, snapshot.MonsterHexRerollLimit, "default monster reroll limit");
+	}
+
+	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()
+	{
+		string corruptedBranchId = ModelDb.GetId<CorruptedBranchRune>().Entry;
+		string doomForgeId = ModelDb.GetId<DoomForge>().Entry;
+		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
+
+		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(corruptedBranchId), "default player rune ids should disable corrupted branch");
+		Expect(snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "default snapshot should disable corrupted branch");
+		Expect(HextechRuneConfiguration.GetDefaultDisabledForgeIds().Contains(doomForgeId), "default forge ids should disable doom forge");
+		Expect(snapshot.DisabledForgeIds.Contains(doomForgeId), "default snapshot should disable doom forge");
 	}
 
 	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
@@ -1030,6 +1130,27 @@ internal static class Program
 			"damage with card source should not match poison damage signature");
 	}
 
+	private static void EnemyCompensationSkipsOutbreakPoisonResponse()
+	{
+		Creature target = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
+		Creature dealer = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
+
+		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should start inactive");
+		Expect(
+			!CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null),
+			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
+
+		bool skippedInsideGuard = false;
+		HextechCombatHooks.RunWithOutbreakPowerPoisonResponseGuard(() =>
+		{
+			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+		Expect(skippedInsideGuard, "outbreak poison response damage should skip compensation replacement");
+		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should reset after guarded work");
+	}
+
 	private static void ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless()
 	{
 		Expect(HextechColorlessCardHelper.IsColorlessCard(UninitializedCard<SovereignBlade>()), "sovereign blade should count as colorless");
@@ -1043,41 +1164,41 @@ internal static class Program
 		return (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
 	}
 
-	private static void CompensationReplacementDoomGuardScopesAsyncWork()
+	private static void CompensationReplacementGuardScopesAsyncWork()
 	{
-		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should start inactive");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should start inactive");
 		TaskCompletionSource gate = new();
 		bool sawActiveBeforeAwait = false;
 		bool sawActiveAfterAwait = false;
-		Task guarded = HextechCombatHooks.RunWithCompensationReplacementDoomGuard(async () =>
+		Task guarded = HextechCombatHooks.RunWithCompensationReplacementGuard(async () =>
 		{
-			sawActiveBeforeAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+			sawActiveBeforeAwait = HextechCombatHooks.IsApplyingCompensationReplacement;
 			await gate.Task;
-			sawActiveAfterAwait = HextechCombatHooks.IsApplyingCompensationReplacementDoom;
+			sawActiveAfterAwait = HextechCombatHooks.IsApplyingCompensationReplacement;
 		});
 
-		Expect(sawActiveBeforeAwait, "compensation doom guard should be active before guarded work awaits");
-		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should not leak to caller context");
+		Expect(sawActiveBeforeAwait, "compensation replacement guard should be active before guarded work awaits");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should not leak to caller context");
 		gate.SetResult();
 		guarded.GetAwaiter().GetResult();
-		Expect(sawActiveAfterAwait, "compensation doom guard should remain active after await inside guarded work");
-		Expect(!HextechCombatHooks.IsApplyingCompensationReplacementDoom, "compensation doom guard should reset after guarded work");
+		Expect(sawActiveAfterAwait, "compensation replacement guard should remain active after await inside guarded work");
+		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should reset after guarded work");
 	}
 
-	private static void CompensationReplacementDoomSuppressesSleightOfFleshResponse()
+	private static void CompensationReplacementSuppressesSleightOfFleshResponse()
 	{
 		Expect(
 			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true),
-			"sleight response should not be suppressed outside compensation replacement doom");
+			"sleight response should not be suppressed outside compensation replacement");
 
 		bool suppressedInsideGuard = false;
-		HextechCombatHooks.RunWithCompensationReplacementDoomGuard(() =>
+		HextechCombatHooks.RunWithCompensationReplacementGuard(() =>
 		{
 			suppressedInsideGuard = HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true);
 			return Task.CompletedTask;
 		}).GetAwaiter().GetResult();
 
-		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement doom");
+		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement");
 		Expect(
 			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(false),
 			"sleight response should not be suppressed when the power change would not trigger sleight");
@@ -1245,6 +1366,37 @@ internal static class Program
 
 		AttackCommand completed = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult(command), new AttackCommand(2m)).GetAwaiter().GetResult();
 		Expect(ReferenceEquals(command, completed), "non-null AttackCommand.Execute result should be preserved");
+	}
+
+	private static void MultiplayerCompatibilityEntryChangesWithBuildSignature()
+	{
+		string left = HextechMultiplayerCompatibilityHooks.BuildGameplayCompatibilityEntry("HextechRunes", "0.8.0", "dll=aaa;pck=bbb;manifest=ccc");
+		string right = HextechMultiplayerCompatibilityHooks.BuildGameplayCompatibilityEntry("HextechRunes", "0.8.0", "dll=aaa;pck=changed;manifest=ccc");
+		Expect(left.StartsWith("HextechRunes-0.8.0+hexsig:", StringComparison.Ordinal), "compatibility entry should keep readable id and version");
+		Expect(right.StartsWith("HextechRunes-0.8.0+hexsig:", StringComparison.Ordinal), "compatibility entry should keep readable id and version for changed build");
+		Expect(!string.Equals(left, right, StringComparison.Ordinal), "different build signatures must not compare as the same multiplayer mod entry");
+	}
+
+	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
+	{
+		string gameplaySignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
+			"HextechRunes",
+			"0.8.1",
+			null,
+			"",
+			"",
+			includeSavedProperties: false);
+		string diagnosticSignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
+			"HextechRunes",
+			"0.8.1",
+			null,
+			"",
+			"",
+			includeSavedProperties: true);
+
+		Expect(!gameplaySignature.Contains("savedProps=", StringComparison.Ordinal), "gameplay signature must not include runtime SavedProperties state");
+		Expect(diagnosticSignature.Contains("savedProps=", StringComparison.Ordinal), "diagnostic signature should still include SavedProperties state");
+		Expect(!string.Equals(gameplaySignature, diagnosticSignature, StringComparison.Ordinal), "diagnostic signature should remain more detailed than gameplay signature");
 	}
 
 	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string methodName)

@@ -25,7 +25,6 @@ internal sealed class HextechMayhemRunContext
 		ActState.Reset();
 		ChoiceHistory.Reset();
 		ResetCombatTracking();
-		ActiveMonsterHexCache.Invalidate();
 	}
 
 	public void ResetForEndlessLoop(int hexCountRecoveryBaseline)
@@ -34,7 +33,6 @@ internal sealed class HextechMayhemRunContext
 		ActState.ResetForEndlessLoop();
 		ChoiceHistory.Reset();
 		ResetCombatTracking();
-		ActiveMonsterHexCache.Invalidate();
 	}
 
 	public void ResetForDebugMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)
@@ -45,7 +43,6 @@ internal sealed class HextechMayhemRunContext
 		ActState.DebugSetOnlyMonsterHex(actIndex, hex, rarity);
 		ChoiceHistory.Reset();
 		ResetCombatTracking();
-		ActiveMonsterHexCache.Invalidate();
 	}
 
 	public void ResetCombatTracking()

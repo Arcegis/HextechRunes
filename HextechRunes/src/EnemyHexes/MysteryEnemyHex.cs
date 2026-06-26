@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
+
 namespace HextechRunes;
 
 internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
@@ -30,7 +32,18 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 			HextechStableRandom.PlayerKey(player),
 			combatState.RoundNumber.ToString(),
 			HextechStableRandom.CardPileKey(candidates));
-		await CardCmd.TransformToRandom(card, player.RunState.Rng.CombatCardSelection);
+		int transformOrdinal = HextechCombatProcTracker.ConsumeGlobalProcInCombat(
+			context.Tracking,
+			string.Join(":", nameof(MysteryEnemyHex), HextechStableRandom.PlayerKey(player)));
+		await CardTransformUpgradeHelper.TransformToStableRandom(
+			card,
+			(RunState)context.RunState,
+			"enemy-mystery-transform-replacement",
+			transformOrdinal,
+			CardPreviewStyle.HorizontalLayout,
+			HextechStableRandom.PlayerKey(player),
+			combatState.RoundNumber.ToString(),
+			HextechStableRandom.CardPileKey(candidates));
 	}
 
 	private static bool CanTransformToRandomCard(CardModel card)

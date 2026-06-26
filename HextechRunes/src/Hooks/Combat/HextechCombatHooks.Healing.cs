@@ -99,19 +99,24 @@ internal static partial class HextechCombatHooks
 			&& CombatManager.Instance.IsInProgress)
 		{
 			List<Creature> enemies = creature.CombatState.Enemies.Where(static enemy => enemy.IsAlive).ToList();
-			int burnAmount = (int)Math.Floor(amount);
-			if (enemies.Count > 0 && burnAmount > 0)
-			{
-				Creature target = enemies[HextechStableRandom.Index(
-					(RunState)player.RunState,
-					enemies.Count,
-					"holy-fire-heal-target",
-					HextechStableRandom.PlayerKey(player),
-					creature.CombatState.RoundNumber.ToString(),
-					burnAmount.ToString(),
-					CombatManager.Instance.History.Entries.Count().ToString())];
-				await PowerCmd.Apply<HextechBurnPower>(target, burnAmount, player.Creature, null);
-			}
+				int burnAmount = (int)Math.Floor(amount);
+				if (enemies.Count > 0 && burnAmount > 0)
+				{
+					int targetOrdinal = player.RunState.Modifiers
+						.OfType<HextechMayhemModifier>()
+						.LastOrDefault()
+						?.ConsumeGlobalProcInCombat(string.Join(":", nameof(HolyFireRune), HextechStableRandom.PlayerKey(player)))
+						?? 0;
+					Creature target = enemies[HextechStableRandom.Index(
+						(RunState)player.RunState,
+						enemies.Count,
+						"holy-fire-heal-target",
+						HextechStableRandom.PlayerKey(player),
+						creature.CombatState.RoundNumber.ToString(),
+						burnAmount.ToString(),
+						targetOrdinal.ToString())];
+					await PowerCmd.Apply<HextechBurnPower>(target, burnAmount, player.Creature, null);
+				}
 		}
 
 		if (player?.GetRelic<CircleOfDeathRune>() is CircleOfDeathRune circleOfDeathRune

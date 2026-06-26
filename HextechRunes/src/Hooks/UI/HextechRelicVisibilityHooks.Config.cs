@@ -33,7 +33,7 @@ internal static partial class HextechRelicVisibilityHooks
 			ApplyHiddenState(globalUi);
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] show_hidden_ui_toggle={showToggle}.");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] show_hidden_ui_toggle={showToggle}.");
 	}
 
 	private static ModUiConfig LoadOrCreateConfig()

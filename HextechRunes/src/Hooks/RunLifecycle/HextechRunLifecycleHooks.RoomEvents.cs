@@ -56,7 +56,7 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: no run state");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: no run state");
 			return;
 		}
 
@@ -71,17 +71,17 @@ internal static partial class HextechRunLifecycleHooks
 			HextechEnemyUi.Refresh(modifier);
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} actResolved={modifier?.IsActResolved(runState.CurrentActIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} actResolved={modifier?.IsActResolved(runState.CurrentActIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
 		if (runState.CurrentRoom is EventRoom { CanonicalEvent: AncientEventModel ancientEvent }
 			&& modifier != null
 			&& runState.CurrentActIndex is >= 0 and <= 2
 			&& !modifier.IsActResolved(runState.CurrentActIndex))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: pending act selection is deferred until ancient event proceed. act={runState.CurrentActIndex} event={ancientEvent.Id.Entry} {DescribeCurrentEventState(runState)}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: pending act selection is deferred until ancient event proceed. act={runState.CurrentActIndex} event={ancientEvent.Id.Entry} {DescribeCurrentEventState(runState)}");
 		}
 		if (modifier != null && ShouldScheduleActSelectionOnRoomEntered(runState, modifier))
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
 			TaskHelper.RunSafely(HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier));
 		}
 
@@ -98,7 +98,7 @@ internal static partial class HextechRunLifecycleHooks
 		{
 			if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
 			{
-				Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: no run state");
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: no run state");
 				return;
 			}
 
@@ -106,7 +106,7 @@ internal static partial class HextechRunLifecycleHooks
 			IReadOnlyList<MapPointRoomHistoryEntry>? rooms = currentHistory?.Rooms;
 			MapPointRoomHistoryEntry? roomHistory = rooms != null && rooms.Count > 0 ? rooms[^1] : null;
 			string modelEntry = roomHistory?.ModelId?.Entry ?? "null";
-			Log.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: currentRoom={(runState.CurrentRoom?.GetType().Name ?? "null")} lastHistoryRoom={roomHistory?.RoomType} model={modelEntry}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: currentRoom={(runState.CurrentRoom?.GetType().Name ?? "null")} lastHistoryRoom={roomHistory?.RoomType} model={modelEntry}");
 		}
 		catch (Exception ex)
 		{

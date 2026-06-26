@@ -60,14 +60,31 @@ public sealed class DuffsVintageRune : HextechRelicBase
 				int nextCost = Math.Max(0, currentCostBeforeGlobalModifiers - reduction);
 				card.EnergyCost.SetUntilPlayed(nextCost, reduceOnly: true);
 			}
-
-			if (!card.HasStarCostX && card.CurrentStarCost > 0)
-			{
-				card.SetStarCostUntilPlayed(Math.Max(0, card.CurrentStarCost - reduction));
-			}
 		}
 
 		return Task.CompletedTask;
+	}
+
+	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
+	{
+		modifiedCost = originalCost;
+		if (Owner == null
+			|| card.Owner != Owner
+			|| card.HasStarCostX
+			|| originalCost <= 0m
+			|| Owner.Creature.CombatState is not HextechCombatState combatState)
+		{
+			return false;
+		}
+
+		int reduction = Math.Max(0, combatState.RoundNumber - 1) * DynamicVars["CostReduction"].IntValue;
+		if (reduction <= 0)
+		{
+			return false;
+		}
+
+		modifiedCost = Math.Max(0m, originalCost - reduction);
+		return modifiedCost != originalCost;
 	}
 
 	private static bool CanReduceCost(CardModel card)

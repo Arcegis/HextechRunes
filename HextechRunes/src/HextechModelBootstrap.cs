@@ -13,7 +13,7 @@ internal static class HextechModelBootstrap
 		{
 			if (_installed)
 			{
-				Log.Info($"[{ModInfo.Id}] Model bootstrap already installed; skipping duplicate registration.");
+				HextechLog.Info($"[{ModInfo.Id}] Model bootstrap already installed; skipping duplicate registration.");
 				return;
 			}
 

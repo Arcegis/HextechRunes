@@ -99,7 +99,7 @@ internal static class HextechMikaelsBlessingVfx
 			_flashLayer = CreateLayer(_root, "WhiteGreenBurst", discTexture, new Color(0.86f, 1f, 0.88f, 0.78f), 3, additive: true);
 			_waveLayer = CreateLayer(_root, "OuterEmeraldWave", ringTexture, new Color(0.30f, 1f, 0.74f, 0.36f), 4, additive: true);
 			UpdateTransform();
-			Log.Info($"[{ModInfo.Id}][MikaelsBlessingVfx] Burst attached node={_root.GetPath()} parent={_renderParent.GetPath()} creature={_creature.Entity?.ModelId.Entry ?? "<unknown>"}.");
+			HextechLog.Info($"[{ModInfo.Id}][MikaelsBlessingVfx] Burst attached node={_root.GetPath()} parent={_renderParent.GetPath()} creature={_creature.Entity?.ModelId.Entry ?? "<unknown>"}.");
 			return true;
 		}
 

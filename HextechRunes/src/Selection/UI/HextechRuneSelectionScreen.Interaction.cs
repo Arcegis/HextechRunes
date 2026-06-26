@@ -9,7 +9,9 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
+using MegaCrit.Sts2.Core.Nodes.TopBar;
 using MegaCrit.Sts2.Core.Nodes.Screens.Capstones;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -29,7 +31,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		if (IsSelectionConfirmGuardActive())
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: ignored early selection relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: ignored early selection relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
 			GetViewport()?.SetInputAsHandled();
 			return;
 		}
@@ -44,7 +46,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			rerollButton.Disabled = true;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
 		PlayRuneSelectSfx(relic);
 		GetViewport()?.SetInputAsHandled();
 		_completionSource.TrySetResult([relic]);
@@ -87,7 +89,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: slot={slotIndex} old={oldRelic} new={newRelic}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: slot={slotIndex} old={oldRelic} new={newRelic}");
 		PlayRerollSfx();
 		_relics = rerolled.ToList();
 		_playerRuneRerollCounts[slotIndex]++;
@@ -116,7 +118,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		_monsterHexKinds[slotIndex] = rerolled;
 		_enemyHexRerollCounts[slotIndex]++;
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRerollPressed: slot={slotIndex} hex={rerolled} count={_enemyHexRerollCounts[slotIndex]}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRerollPressed: slot={slotIndex} hex={rerolled} count={_enemyHexRerollCounts[slotIndex]}");
 		NotifyEnemyHexChanged();
 		RebuildEnemyPreview();
 	}
@@ -132,13 +134,13 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			_monsterHexKinds[slotIndex] = _monsterHexBeforeRemoval[slotIndex];
 			_monsterHexBeforeRemoval[slotIndex] = null;
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: undo slot={slotIndex} hex={_monsterHexKinds[slotIndex]}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: undo slot={slotIndex} hex={_monsterHexKinds[slotIndex]}");
 		}
 		else
 		{
 			_monsterHexBeforeRemoval[slotIndex] = _monsterHexKinds[slotIndex];
 			_monsterHexKinds[slotIndex] = null;
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: remove slot={slotIndex} previous={_monsterHexBeforeRemoval[slotIndex]}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: remove slot={slotIndex} previous={_monsterHexBeforeRemoval[slotIndex]}");
 		}
 
 		NotifyEnemyHexChanged();
@@ -162,7 +164,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			_enemyHexRerollCounts.Add(i < rerollCounts.Count ? Math.Max(0, rerollCounts[i]) : 0);
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.ApplyEnemyHexAdjustment: slots={string.Join(",", _monsterHexKinds.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", _enemyHexRerollCounts)}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.ApplyEnemyHexAdjustment: slots={string.Join(",", _monsterHexKinds.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", _enemyHexRerollCounts)}");
 		RebuildEnemyPreview();
 	}
 
@@ -199,17 +201,17 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	public async Task<IEnumerable<RelicModel>> RelicsSelected(bool removeOverlay = true)
 	{
 		IEnumerable<RelicModel> result = await _completionSource.Task;
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: begin dismiss mousePressed={Input.IsMouseButtonPressed(MouseButton.Left)}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: begin dismiss mousePressed={Input.IsMouseButtonPressed(MouseButton.Left)}");
 		await WaitForMouseReleaseAsync();
 		if (!removeOverlay)
 		{
 			_blockMapUntilDismissed = true;
 			ShowWaitingForRemotePlayers();
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: keeping overlay until multiplayer sync completes");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: keeping overlay until multiplayer sync completes");
 			return result;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: removing overlay");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: removing overlay");
 		NOverlayStack.Instance?.Remove(this);
 		return result;
 	}
@@ -222,7 +224,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 
 		await WaitForMouseReleaseAsync();
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: removing overlay");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: removing overlay");
 		_blockMapUntilDismissed = false;
 		NOverlayStack.Instance?.Remove(this);
 	}
@@ -274,11 +276,55 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public void AfterOverlayOpened()
 	{
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayOpened");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayOpened");
 		EnsureSelectionConfirmGuardStarted();
+		EnsureMapButtonEnabled();
 		Modulate = Colors.White;
 		Visible = true;
 		TryGrabOverlayFocus();
+	}
+
+	// 第二/三层的海克斯选择发生在「刚进新幕、还没进房间」时，顶栏地图键被游戏置灰禁用，
+	// 玩家点不开地图。选择期间临时点亮它，让上面的只读地图预览能被触发；选择结束时还原。
+	private void EnsureMapButtonEnabled()
+	{
+		if (_closed)
+		{
+			return;
+		}
+
+		NTopBarMapButton? mapButton = GetTopBarMapButton();
+		if (mapButton == null || mapButton.IsEnabled)
+		{
+			return;
+		}
+
+		_mapButtonForceEnabled = true;
+		mapButton.Enable();
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen: temporarily enabled top bar map button for selection map preview");
+	}
+
+	private void RestoreMapButtonState()
+	{
+		if (!_mapButtonForceEnabled)
+		{
+			return;
+		}
+
+		_mapButtonForceEnabled = false;
+		GetTopBarMapButton()?.Disable();
+	}
+
+	private static NTopBarMapButton? GetTopBarMapButton()
+	{
+		try
+		{
+			return NRun.Instance?.GlobalUi?.TopBar?.Map;
+		}
+		catch
+		{
+			return null;
+		}
 	}
 
 	public void AfterOverlayClosed()
@@ -290,10 +336,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		_closed = true;
 		_blockMapUntilDismissed = false;
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed");
 		if (!_choiceLocked)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed: cancelling unresolved selection");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed: cancelling unresolved selection");
 			_completionSource.TrySetCanceled();
 		}
 
@@ -303,6 +349,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	public void AfterOverlayShown()
 	{
 		EnsureSelectionConfirmGuardStarted();
+		// 地图已关、overlay 已被重新显示：清理预览态（恢复行进/移除提示），不重复 ShowOverlays。
+		EndMapPreview(restoreOverlay: false);
+		EnsureMapButtonEnabled();
 		Visible = true;
 		TryGrabOverlayFocus();
 	}
@@ -314,13 +363,117 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayHidden: choiceLocked={_choiceLocked} capstoneOpen={NCapstoneContainer.Instance?.InUse == true} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayHidden: choiceLocked={_choiceLocked} capstoneOpen={NCapstoneContainer.Instance?.InUse == true} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 		Visible = false;
+
+		// 选择尚未完成、且玩家打开了地图 → 进入只读地图预览：禁止行进、显示提示，保留地图打开。
+		// 不强制关闭地图、不触碰选择的 TaskCompletionSource，所以查看地图绝不会跳过海克斯选择。
+		if (!_choiceLocked && !_blockMapUntilDismissed && IsInsideTree() && NMapScreen.Instance?.IsOpen == true)
+		{
+			BeginMapPreview();
+			return;
+		}
+
 		if ((!_choiceLocked || _blockMapUntilDismissed) && !_restoreAfterMapReopenQueued && IsInsideTree())
 		{
 			_restoreAfterMapReopenQueued = true;
 			_ = TaskHelper.RunSafely(RestoreAfterMapReopenAsync());
 		}
+	}
+
+	private void BeginMapPreview()
+	{
+		if (_mapPreviewActive)
+		{
+			return;
+		}
+
+		NMapScreen? map = NMapScreen.Instance;
+		if (map == null)
+		{
+			return;
+		}
+
+		_mapPreviewActive = true;
+		map.SetTravelEnabled(enabled: false);   // 只读：禁止在地图上选节点前进，杜绝靠地图跳过海克斯选择
+		map.Closed += OnMapPreviewClosed;        // 玩家关闭地图后把选择界面恢复回来
+		ShowMapPreviewHint(map);
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.BeginMapPreview: read-only map preview, selection still pending");
+	}
+
+	private void OnMapPreviewClosed()
+	{
+		EndMapPreview(restoreOverlay: true);
+	}
+
+	private void EndMapPreview(bool restoreOverlay)
+	{
+		if (!_mapPreviewActive)
+		{
+			return;
+		}
+
+		_mapPreviewActive = false;
+		NMapScreen? map = NMapScreen.Instance;
+		if (map != null)
+		{
+			map.Closed -= OnMapPreviewClosed;
+			map.SetTravelEnabled(enabled: true);  // 恢复地图行进可用性，供选完后正常选路（地图此刻已关，恢复无即时副作用）
+		}
+
+		HideMapPreviewHint();
+
+		if (!restoreOverlay || _closed || !IsInsideTree())
+		{
+			return;
+		}
+
+		NOverlayStack.Instance?.ShowOverlays();   // 把选择界面重新顶回来
+		Visible = true;
+		TryGrabOverlayFocus();
+	}
+
+	private void ShowMapPreviewHint(NMapScreen map)
+	{
+		if (_mapPreviewHint == null || !GodotObject.IsInstanceValid(_mapPreviewHint))
+		{
+			_mapPreviewHint = BuildMapPreviewHint();
+		}
+
+		if (_mapPreviewHint.GetParent() == null)
+		{
+			map.AddChild(_mapPreviewHint);
+		}
+
+		_mapPreviewHint.Visible = true;
+	}
+
+	private void HideMapPreviewHint()
+	{
+		if (_mapPreviewHint != null && GodotObject.IsInstanceValid(_mapPreviewHint))
+		{
+			_mapPreviewHint.Visible = false;
+		}
+	}
+
+	private MegaLabel BuildMapPreviewHint()
+	{
+		MegaLabel hint = new()
+		{
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			MaxFontSize = 26,
+			MinFontSize = 18,
+			MouseFilter = MouseFilterEnum.Ignore,
+			ZIndex = 4096
+		};
+		ApplyDefaultMegaLabelTheme(hint);
+		hint.SetAnchorsPreset(LayoutPreset.BottomWide);
+		hint.OffsetTop = -96f;
+		hint.OffsetBottom = -44f;
+		hint.SetTextAutoSize(new LocString(LocTable, "HEXTECH_MAP_PREVIEW_HINT").GetRawText());
+		hint.Modulate = new Color(1f, 0.93f, 0.7f, 0.96f);
+		return hint;
 	}
 
 	private async Task RestoreAfterMapReopenAsync()
@@ -342,7 +495,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 				return;
 			}
 
-			Log.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RestoreAfterMapReopen: closing map reopened over blocking selection");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RestoreAfterMapReopen: closing map reopened over blocking selection");
 			NMapScreen.Instance?.Close(animateOut: false);
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 			NOverlayStack.Instance?.ShowOverlays();

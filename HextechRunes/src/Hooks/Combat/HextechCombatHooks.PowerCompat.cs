@@ -54,11 +54,24 @@ internal static partial class HextechCombatHooks
 			CanTransformToRandomCard,
 			entropyPower);
 
-		foreach (CardModel card in selected.ToList())
+		List<CardModel> selectedCards = selected.ToList();
+		for (int i = 0; i < selectedCards.Count; i++)
 		{
+			CardModel card = selectedCards[i];
 			if (CanTransformToRandomCard(card))
 			{
-				await CardCmd.TransformToRandom(card, player.RunState.Rng.CombatCardSelection);
+				await CardTransformUpgradeHelper.TransformToStableRandom(
+					card,
+					(RunState)player.RunState,
+					"entropy-transform-replacement",
+					i,
+					saltParts:
+					[
+						HextechStableRandom.PlayerKey(player),
+						player.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+						entropyPower.Amount.ToString(),
+						HextechStableRandom.CardPileKey(selectedCards)
+					]);
 			}
 		}
 	}

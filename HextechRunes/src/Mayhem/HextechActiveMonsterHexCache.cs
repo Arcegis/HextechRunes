@@ -6,6 +6,7 @@ internal sealed class HextechActiveMonsterHexCache
 	private HashSet<MonsterHexKind>? _activeHexSet;
 	private int _actIndex = int.MinValue;
 	private bool _combatRecovery;
+	private int _version = int.MinValue;
 
 	public IReadOnlyList<MonsterHexKind> Get(
 		HextechMayhemActState actState,
@@ -13,10 +14,12 @@ internal sealed class HextechActiveMonsterHexCache
 		Func<int, bool> shouldRecoverMonsterHexInCombat)
 	{
 		bool combatRecovery = shouldRecoverMonsterHexInCombat(actIndex);
+		int version = actState.Version;
 		if (_activeHexes != null
 			&& _activeHexSet != null
 			&& _actIndex == actIndex
-			&& _combatRecovery == combatRecovery)
+			&& _combatRecovery == combatRecovery
+			&& _version == version)
 		{
 			return _activeHexes;
 		}
@@ -25,6 +28,7 @@ internal sealed class HextechActiveMonsterHexCache
 		_activeHexSet = _activeHexes.ToHashSet();
 		_actIndex = actIndex;
 		_combatRecovery = combatRecovery;
+		_version = version;
 		return _activeHexes;
 	}
 
@@ -36,13 +40,5 @@ internal sealed class HextechActiveMonsterHexCache
 	{
 		_ = Get(actState, actIndex, shouldRecoverMonsterHexInCombat);
 		return _activeHexSet!.Contains(hex);
-	}
-
-	public void Invalidate()
-	{
-		_activeHexes = null;
-		_activeHexSet = null;
-		_actIndex = int.MinValue;
-		_combatRecovery = false;
 	}
 }

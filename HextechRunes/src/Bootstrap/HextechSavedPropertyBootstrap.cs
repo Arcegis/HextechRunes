@@ -57,7 +57,7 @@ internal static class HextechSavedPropertyBootstrap
 		int currentBitSize = SavedPropertiesTypeCache.NetIdBitSize;
 		if (currentBitSize >= targetBitSize)
 		{
-			Log.Info($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize unchanged: bitSize={currentBitSize} propertyNames={propertyNameCount}");
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize unchanged: bitSize={currentBitSize} propertyNames={propertyNameCount}");
 			return;
 		}
 
@@ -69,7 +69,7 @@ internal static class HextechSavedPropertyBootstrap
 		}
 
 		backingField.SetValue(null, targetBitSize);
-		Log.Info($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize updated: old={currentBitSize} new={targetBitSize} propertyNames={propertyNameCount}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize updated: old={currentBitSize} new={targetBitSize} propertyNames={propertyNameCount}");
 	}
 
 	private static int GetRequiredBitSize(int valueCount)

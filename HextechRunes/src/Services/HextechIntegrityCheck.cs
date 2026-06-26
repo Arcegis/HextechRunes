@@ -33,7 +33,7 @@ internal static class HextechIntegrityCheck
 		}
 
 		_loggedOfficialServer = true;
-		Log.Info($"[{ModInfo.Id}][Integrity] Connected to Natsuki official HextechRunes server: endpoint={endpoint} latest={latestVersion} current={ModInfo.Version}");
+		HextechLog.Info($"[{ModInfo.Id}][Integrity] Connected to Natsuki official HextechRunes server: endpoint={endpoint} latest={latestVersion} current={ModInfo.Version}");
 	}
 
 	public static void VerifyOfficialBuild(JsonElement root)
@@ -46,7 +46,7 @@ internal static class HextechIntegrityCheck
 		_loggedOfficialBuildCheck = true;
 		if (!TryReadExpectedBuildHashes(root, out ArtifactHashes expected, out string reason))
 		{
-			Log.Info($"[{ModInfo.Id}][Integrity] Official build fingerprint skipped: version={ModInfo.Version} target={ModInfo.TargetGameVersion} reason={reason}");
+			HextechLog.Info($"[{ModInfo.Id}][Integrity] Official build fingerprint skipped: version={ModInfo.Version} target={ModInfo.TargetGameVersion} reason={reason}");
 			return;
 		}
 
@@ -66,7 +66,7 @@ internal static class HextechIntegrityCheck
 			return;
 		}
 
-		Log.Info($"[{ModInfo.Id}][Integrity] Official build fingerprint OK: version={ModInfo.Version} target={ModInfo.TargetGameVersion} dll={ShortHash(actual.DllSha256)} pck={ShortHash(actual.PckSha256)} manifest={ShortHash(actual.ManifestSha256)}");
+		HextechLog.Info($"[{ModInfo.Id}][Integrity] Official build fingerprint OK: version={ModInfo.Version} target={ModInfo.TargetGameVersion} dll={ShortHash(actual.DllSha256)} pck={ShortHash(actual.PckSha256)} manifest={ShortHash(actual.ManifestSha256)}");
 	}
 
 	private static bool TryReadExpectedBuildHashes(JsonElement root, out ArtifactHashes hashes, out string reason)
