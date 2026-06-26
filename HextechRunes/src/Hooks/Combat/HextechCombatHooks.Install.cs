@@ -254,5 +254,15 @@ internal static partial class HextechCombatHooks
 				typeof(Creature),
 				typeof(CardModel)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SlipperyAfterDamageReceivedPostfix)));
+		harmony.Patch(
+			RequireMethod(
+				typeof(DieForYouPower),
+				nameof(DieForYouPower.ModifyUnblockedDamageTarget),
+				BindingFlags.Instance | BindingFlags.Public,
+				typeof(Creature),
+				typeof(decimal),
+				typeof(ValueProp),
+				typeof(Creature)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DieForYouModifyUnblockedDamageTargetPostfix)));
 	}
 }
