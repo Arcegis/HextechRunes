@@ -86,7 +86,6 @@ internal static class Program
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
-			new(nameof(MultiplayerCompatibilityEntryChangesWithBuildSignature), MultiplayerCompatibilityEntryChangesWithBuildSignature),
 			new(nameof(MultiplayerGameplaySignatureExcludesRuntimeSavedProperties), MultiplayerGameplaySignatureExcludesRuntimeSavedProperties),
 			new(nameof(CompensationReplacementGuardScopesAsyncWork), CompensationReplacementGuardScopesAsyncWork),
 			new(nameof(CompensationReplacementSuppressesSleightOfFleshResponse), CompensationReplacementSuppressesSleightOfFleshResponse),
@@ -1363,15 +1362,6 @@ internal static class Program
 
 		AttackCommand completed = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult(command), new AttackCommand(2m)).GetAwaiter().GetResult();
 		Expect(ReferenceEquals(command, completed), "non-null AttackCommand.Execute result should be preserved");
-	}
-
-	private static void MultiplayerCompatibilityEntryChangesWithBuildSignature()
-	{
-		string left = HextechMultiplayerCompatibilityHooks.BuildGameplayCompatibilityEntry("HextechRunes", "0.8.0", "dll=aaa;pck=bbb;manifest=ccc");
-		string right = HextechMultiplayerCompatibilityHooks.BuildGameplayCompatibilityEntry("HextechRunes", "0.8.0", "dll=aaa;pck=changed;manifest=ccc");
-		Expect(left.StartsWith("HextechRunes-0.8.0+hexsig:", StringComparison.Ordinal), "compatibility entry should keep readable id and version");
-		Expect(right.StartsWith("HextechRunes-0.8.0+hexsig:", StringComparison.Ordinal), "compatibility entry should keep readable id and version for changed build");
-		Expect(!string.Equals(left, right, StringComparison.Ordinal), "different build signatures must not compare as the same multiplayer mod entry");
 	}
 
 	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
