@@ -13,10 +13,25 @@ internal sealed class HextechMayhemActState
 
 	public int ActCount => _resolvedActs.Length;
 
+	// 单调递增的脏标记:任何会改变 GetActiveMonsterHexes 结果的写入都自增它。
+	// HextechActiveMonsterHexCache 比对这个版本号决定是否重算,取代了过去散落在
+	// facade/SavedState 各处的手动 InvalidateActiveMonsterHexCache 调用。
+	// 新增 mutating 方法时记得调用 MarkChanged()。
+	public int Version { get; private set; }
+
+	private void MarkChanged()
+	{
+		Version++;
+	}
+
 	public int[] SavedRarityByAct
 	{
 		get => _rarityByAct;
-		set => _rarityByAct = NormalizeUnknownArray(value);
+		set
+		{
+			_rarityByAct = NormalizeUnknownArray(value);
+			MarkChanged();
+		}
 	}
 
 	public int[] SavedMonsterHexByAct
@@ -24,31 +39,51 @@ internal sealed class HextechMayhemActState
 		get => _monsterHexesByAct
 			.Select(static hexes => hexes.Count > 0 ? (int)hexes[0] : -1)
 			.ToArray();
-		set => MergeLegacyMonsterHexByAct(value);
+		set
+		{
+			MergeLegacyMonsterHexByAct(value);
+			MarkChanged();
+		}
 	}
 
 	public string SavedMonsterHexesByActJson
 	{
 		get => SerializeMonsterHexesByAct();
-		set => RestoreMonsterHexesByAct(value);
+		set
+		{
+			RestoreMonsterHexesByAct(value);
+			MarkChanged();
+		}
 	}
 
 	public int[] SavedCarriedMonsterHexes
 	{
 		get => _carriedMonsterHexes.Select(static hex => (int)hex).ToArray();
-		set => _carriedMonsterHexes = NormalizeMonsterHexList(value);
+		set
+		{
+			_carriedMonsterHexes = NormalizeMonsterHexList(value);
+			MarkChanged();
+		}
 	}
 
 	public int[] SavedResolvedActs
 	{
 		get => _resolvedActs;
-		set => _resolvedActs = NormalizeResolvedArray(value);
+		set
+		{
+			_resolvedActs = NormalizeResolvedArray(value);
+			MarkChanged();
+		}
 	}
 
 	public int[] SavedMapLengthReducedActs
 	{
 		get => _mapLengthReducedActs.OrderBy(static actIndex => actIndex).ToArray();
-		set => _mapLengthReducedActs = NormalizeActIndexSet(value);
+		set
+		{
+			_mapLengthReducedActs = NormalizeActIndexSet(value);
+			MarkChanged();
+		}
 	}
 
 	public bool IsResolved(int actIndex)
@@ -63,6 +98,7 @@ internal sealed class HextechMayhemActState
 		if (slot >= 0)
 		{
 			_resolvedActs[slot] = resolved ? 1 : 0;
+			MarkChanged();
 		}
 	}
 
@@ -75,6 +111,7 @@ internal sealed class HextechMayhemActState
 		}
 
 		_resolvedActs[slot] = 1;
+		MarkChanged();
 		return true;
 	}
 
@@ -86,6 +123,7 @@ internal sealed class HextechMayhemActState
 	public void MarkMapLengthReduced(int actIndex)
 	{
 		_mapLengthReducedActs.Add(ToActSlot(actIndex));
+		MarkChanged();
 	}
 
 	public HextechRarityTier? GetRarity(int actIndex)
@@ -105,6 +143,7 @@ internal sealed class HextechMayhemActState
 		if (slot >= 0)
 		{
 			_rarityByAct[slot] = (int)rarity;
+			MarkChanged();
 		}
 	}
 
@@ -117,6 +156,7 @@ internal sealed class HextechMayhemActState
 		}
 
 		_rarityByAct[slot] = (int)rarity;
+		MarkChanged();
 		return true;
 	}
 
@@ -143,6 +183,7 @@ internal sealed class HextechMayhemActState
 		if (slot >= 0)
 		{
 			_monsterHexesByAct[slot] = NormalizeMonsterHexList(hexes.Select(static hex => (int)hex));
+			MarkChanged();
 		}
 	}
 
@@ -152,6 +193,7 @@ internal sealed class HextechMayhemActState
 		if (slot >= 0)
 		{
 			_monsterHexesByAct[slot].Clear();
+			MarkChanged();
 		}
 	}
 
@@ -163,6 +205,7 @@ internal sealed class HextechMayhemActState
 		}
 
 		_carriedMonsterHexes.Add(hex);
+		MarkChanged();
 		return true;
 	}
 
@@ -172,6 +215,11 @@ internal sealed class HextechMayhemActState
 		foreach (List<MonsterHexKind> hexes in _monsterHexesByAct)
 		{
 			removed |= hexes.RemoveAll(existing => existing == hex) > 0;
+		}
+
+		if (removed)
+		{
+			MarkChanged();
 		}
 
 		return removed;
@@ -238,6 +286,7 @@ internal sealed class HextechMayhemActState
 		_resolvedActs = NewResolvedArray();
 		_mapLengthReducedActs.Clear();
 		_carriedMonsterHexes.Clear();
+		MarkChanged();
 	}
 
 	public void ResetForEndlessLoop()
@@ -247,6 +296,7 @@ internal sealed class HextechMayhemActState
 		_monsterHexesByAct = NewMonsterHexLists();
 		_resolvedActs = NewResolvedArray();
 		_mapLengthReducedActs.Clear();
+		MarkChanged();
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)

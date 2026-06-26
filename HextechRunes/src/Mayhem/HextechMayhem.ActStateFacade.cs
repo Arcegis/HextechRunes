@@ -19,7 +19,6 @@ internal sealed partial class HextechMayhemModifier
 	public void SetActResolved(int actIndex, bool resolved)
 	{
 		_actState.SetResolved(actIndex, resolved);
-		InvalidateActiveMonsterHexCache();
 	}
 
 	public bool TryRecoverResolvedActsFromPlayerRelics(string reason)
@@ -32,7 +31,6 @@ internal sealed partial class HextechMayhemModifier
 			PlayerHexCountsByAct);
 		if (recovery.Changed)
 		{
-			InvalidateActiveMonsterHexCache();
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recovery.RecoverThroughAct} telemetryThrough={recovery.TelemetryRecoverThroughAct} countThrough={recovery.CountRecoverThroughAct} baseline={_hexCountRecoveryBaseline} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
@@ -52,7 +50,6 @@ internal sealed partial class HextechMayhemModifier
 	public void SetRarityForAct(int actIndex, HextechRarityTier rarity)
 	{
 		_actState.SetRarity(actIndex, rarity);
-		InvalidateActiveMonsterHexCache();
 	}
 
 	public MonsterHexKind? GetMonsterHexForAct(int actIndex)
@@ -68,19 +65,16 @@ internal sealed partial class HextechMayhemModifier
 	public void SetMonsterHexForAct(int actIndex, MonsterHexKind hex)
 	{
 		_actState.SetMonsterHex(actIndex, hex);
-		InvalidateActiveMonsterHexCache();
 	}
 
 	public void SetMonsterHexesForAct(int actIndex, IEnumerable<MonsterHexKind> hexes)
 	{
 		_actState.SetMonsterHexes(actIndex, hexes);
-		InvalidateActiveMonsterHexCache();
 	}
 
 	public void ClearMonsterHexForAct(int actIndex)
 	{
 		_actState.ClearMonsterHex(actIndex);
-		InvalidateActiveMonsterHexCache();
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexes()
@@ -126,24 +120,12 @@ internal sealed partial class HextechMayhemModifier
 
 	public bool DebugAddMonsterHex(MonsterHexKind hex)
 	{
-		bool changed = _actState.AddCarriedMonsterHex(hex);
-		if (changed)
-		{
-			InvalidateActiveMonsterHexCache();
-		}
-
-		return changed;
+		return _actState.AddCarriedMonsterHex(hex);
 	}
 
 	public bool DebugRemoveMonsterHex(MonsterHexKind hex)
 	{
-		bool changed = _actState.RemoveMonsterHexEverywhere(hex);
-		if (changed)
-		{
-			InvalidateActiveMonsterHexCache();
-		}
-
-		return changed;
+		return _actState.RemoveMonsterHexEverywhere(hex);
 	}
 
 	public bool HasActiveMonsterHex(MonsterHexKind hex)
@@ -173,11 +155,6 @@ internal sealed partial class HextechMayhemModifier
 	{
 		_enemyHexCounts.Set(counts);
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexCountsByAct snapshot set: reason={reason} counts={string.Join(",", EnemyHexCountsByAct)}");
-	}
-
-	private void InvalidateActiveMonsterHexCache()
-	{
-		_activeMonsterHexCache.Invalidate();
 	}
 
 	internal bool IncrementEnemyTezcatarasMercyCombatCounter(int interval)
