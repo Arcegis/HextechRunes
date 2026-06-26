@@ -870,17 +870,48 @@ internal static class HextechRuneConfigMenuHooks
 		};
 		row.AddThemeConstantOverride("separation", compactLayout ? 8 : 12);
 
-		CheckBox checkBox = new()
+		// 自绘开关(pill):关=深钢灰轨道+旋钮居左,开=金色轨道+旋钮滑到右,圆形旋钮。替代原生 CheckBox
+		// 的默认主题图标,统一到本菜单的深蓝+金视觉语言。轨道颜色由按钮 pressed 态的 stylebox 自动切换,
+		// 旋钮位置由 ApplyVisual 回调驱动(同时覆盖用户点击与"重置默认"的 SetPressedNoSignal 刷新)。
+		float trackW = compactLayout ? 44f : 50f;
+		float trackH = compactLayout ? 24f : 28f;
+		float knobD = trackH - 6f;
+		float knobOffX = 3f;
+		float knobOnX = trackW - knobD - 3f;
+		float knobY = (trackH - knobD) / 2f;
+
+		Button toggle = new()
 		{
+			ToggleMode = true,
 			Text = string.Empty,
 			ButtonPressed = getValue(),
-			CustomMinimumSize = compactLayout ? new Vector2(36f, 36f) : new Vector2(42f, 42f),
+			CustomMinimumSize = new Vector2(trackW, trackH),
 			MouseDefaultCursorShape = Control.CursorShape.PointingHand,
-			FocusMode = Control.FocusModeEnum.All
+			FocusMode = Control.FocusModeEnum.All,
+			SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+			SizeFlagsVertical = Control.SizeFlags.ShrinkBegin
 		};
-		checkBox.Toggled += value => setValue(value);
-		booleanBindings.Add(new BooleanValueBinding(getValue, checkBox));
-		row.AddChild(checkBox);
+		StylePillTrack(toggle, trackH);
+
+		Panel knob = new()
+		{
+			CustomMinimumSize = new Vector2(knobD, knobD),
+			Size = new Vector2(knobD, knobD),
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		knob.AddThemeStyleboxOverride("panel", CreatePillKnobStyle(knobD));
+		toggle.AddChild(knob);
+
+		void ApplyVisual(bool on) => knob.Position = new Vector2(on ? knobOnX : knobOffX, knobY);
+		ApplyVisual(getValue());
+
+		toggle.Toggled += value =>
+		{
+			setValue(value);
+			ApplyVisual(value);
+		};
+		booleanBindings.Add(new BooleanValueBinding(getValue, toggle, ApplyVisual));
+		row.AddChild(toggle);
 
 		VBoxContainer textColumn = new()
 		{
@@ -901,7 +932,7 @@ internal static class HextechRuneConfigMenuHooks
 		{
 			if (inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
 			{
-				checkBox.ButtonPressed = !checkBox.ButtonPressed;
+				toggle.ButtonPressed = !toggle.ButtonPressed;
 				row.GetViewport()?.SetInputAsHandled();
 			}
 		};
@@ -2157,7 +2188,9 @@ internal static class HextechRuneConfigMenuHooks
 	{
 		foreach (BooleanValueBinding binding in bindings)
 		{
-			binding.Toggle.SetPressedNoSignal(binding.GetValue());
+			bool value = binding.GetValue();
+			binding.Toggle.SetPressedNoSignal(value);
+			binding.ApplyVisual?.Invoke(value);
 		}
 	}
 
@@ -2270,6 +2303,55 @@ internal static class HextechRuneConfigMenuHooks
 		label.AddThemeConstantOverride("outline_size", 2);
 		label.SetTextAutoSize(text);
 		button.AddChild(label);
+	}
+
+	private static void StylePillTrack(Button toggle, float trackH)
+	{
+		int radius = (int)(trackH / 2f);
+		// 轨道四态:关(深钢灰)/关悬停(略亮)/开(深金)/开悬停(更亮的金);旋钮颜色另由 panel stylebox 决定。
+		toggle.AddThemeStyleboxOverride("normal", CreatePillTrackStyle(new Color(0.2f, 0.24f, 0.32f, 0.95f), new Color(0.46f, 0.55f, 0.68f, 0.5f), radius));
+		toggle.AddThemeStyleboxOverride("hover", CreatePillTrackStyle(new Color(0.26f, 0.31f, 0.4f, 0.97f), new Color(0.62f, 0.7f, 0.82f, 0.66f), radius));
+		toggle.AddThemeStyleboxOverride("pressed", CreatePillTrackStyle(new Color(0.86f, 0.66f, 0.28f, 0.98f), new Color(0.97f, 0.82f, 0.5f, 1f), radius));
+		toggle.AddThemeStyleboxOverride("hover_pressed", CreatePillTrackStyle(new Color(0.94f, 0.74f, 0.34f, 1f), new Color(1f, 0.9f, 0.6f, 1f), radius));
+		toggle.AddThemeStyleboxOverride("disabled", CreatePillTrackStyle(new Color(0.16f, 0.18f, 0.24f, 0.6f), new Color(0.34f, 0.38f, 0.46f, 0.4f), radius));
+		toggle.AddThemeStyleboxOverride("focus", CreatePillFocusStyle(radius));
+	}
+
+	private static StyleBoxFlat CreatePillTrackStyle(Color background, Color border, int radius)
+	{
+		StyleBoxFlat style = new()
+		{
+			BgColor = background,
+			BorderColor = border
+		};
+		style.SetBorderWidthAll(2);
+		style.SetCornerRadiusAll(radius);
+		return style;
+	}
+
+	private static StyleBoxFlat CreatePillFocusStyle(int radius)
+	{
+		StyleBoxFlat style = new()
+		{
+			BgColor = new Color(0f, 0f, 0f, 0f),
+			BorderColor = new Color(0.96f, 0.82f, 0.5f, 0.95f)
+		};
+		style.SetBorderWidthAll(2);
+		style.SetCornerRadiusAll(radius + 1);
+		return style;
+	}
+
+	private static StyleBoxFlat CreatePillKnobStyle(float diameter)
+	{
+		StyleBoxFlat style = new()
+		{
+			BgColor = new Color(0.97f, 0.95f, 0.88f, 1f),
+			ShadowColor = new Color(0f, 0f, 0f, 0.35f),
+			ShadowSize = 3,
+			ShadowOffset = new Vector2(0f, 1f)
+		};
+		style.SetCornerRadiusAll((int)(diameter / 2f));
+		return style;
 	}
 
 	private static StyleBoxFlat CreateButtonStyle(Color background, Color border)
@@ -2493,6 +2575,7 @@ internal static class HextechRuneConfigMenuHooks
 
 	private sealed record BooleanValueBinding(
 		Func<bool> GetValue,
-		BaseButton Toggle);
+		BaseButton Toggle,
+		Action<bool>? ApplyVisual = null);
 
 }
