@@ -101,7 +101,12 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 	internal static bool ShouldSkipDamageReplacement(Creature target, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
+		// 血肉戏法(Sleight of Flesh)在玩家给敌人施加 debuff 时会对该敌人造成一次伤害。
+		// 这次伤害不能再被代偿吸收转毒,否则「血肉戏法伤害 → 代偿毒(debuff) → 血肉戏法响应 → …」
+		// 会无限递归直至栈溢出。源头切断这条边:代偿在血肉戏法响应期间不替换伤害。
+		// 与「代偿施加毒时抑制血肉戏法响应」(RunWithCompensationReplacementGuard)构成双向防护。
 		return HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse
+			|| HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse
 			|| (IsPoisonDamageSignature(props, dealer, cardSource)
 				&& target.GetPowerAmount<PoisonPower>() > 0m);
 	}

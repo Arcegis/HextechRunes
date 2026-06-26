@@ -83,6 +83,7 @@ internal static class Program
 			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
 			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
 			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
+			new(nameof(EnemyCompensationSkipsSleightOfFleshResponse), EnemyCompensationSkipsSleightOfFleshResponse),
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
@@ -1145,6 +1146,27 @@ internal static class Program
 
 		Expect(skippedInsideGuard, "outbreak poison response damage should skip compensation replacement");
 		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should reset after guarded work");
+	}
+
+	private static void EnemyCompensationSkipsSleightOfFleshResponse()
+	{
+		Creature target = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
+		Creature dealer = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
+
+		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should start inactive");
+		Expect(
+			!CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null),
+			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
+
+		bool skippedInsideGuard = false;
+		HextechCombatHooks.RunWithSleightOfFleshPowerDebuffResponseGuard(() =>
+		{
+			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+		Expect(skippedInsideGuard, "sleight of flesh response damage should skip compensation replacement to avoid the poison recursion stack overflow");
+		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should reset after guarded work");
 	}
 
 	private static void ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless()
