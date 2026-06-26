@@ -4,7 +4,7 @@
   "description": "[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "0.8.1热修：修复联机时 HextechRunes-0.8.1+hexsig 误判导致的 mod mismatch。",
+  "changeNote": "0.8.1热修：\n修复与优化了诸多已知问题：\n1.修复敌方的代偿海克斯与血肉戏法递归的问题；\n2.敌方海克斯的描述文本优化，以明确是敌人的效果；\n3.为灼烧效果添加了血条预测渲染和斩杀提示；\n4.修复了重量级打击手的伤害加成不显示的问题；\n5.优化了敌方接二连三海克斯的描述，以防歧义；\n6.联机时，敌方海克斯的buff层数现在会动态显示；\n7.复视不对\"欧洛巴斯之触\"和\"古老牙齿\"这两个先古遗物生效；\n8.现在选择海克斯的时候可以打开地图查看路线；",
   "tags": [
     "Gameplay",
     "Modifiers",

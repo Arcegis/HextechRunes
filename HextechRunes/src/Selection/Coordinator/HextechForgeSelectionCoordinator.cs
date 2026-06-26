@@ -24,6 +24,18 @@ internal static class HextechForgeSelectionCoordinator
 		}
 
 		MarkRelicsSeen(options);
+
+		// 杂项配置「随机获得锻造器」开启时,跳过三选一界面,直接从同一候选池稳定随机给一个。
+		// 用 HextechStableRandom 基于 RunState 种子决定,所有客户端独立算出同一结果;reward 路径
+		// 又只在选择方执行并经 RewardSynchronizer 广播,因此无需 PlayerChoiceSynchronizer 往返,联机一致。
+		// 配置经 RunConfigurationSnapshot 跟随主机,故双端要么都短路要么都不短路。
+		if (ShouldDirectlyGrantRandomForge(player))
+		{
+			RelicModel directGrant = PickStableRandomForge(player, options, context);
+			HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Random direct grant (choice skipped): player={player.NetId} relic={(directGrant.CanonicalInstance?.Id ?? directGrant.Id).Entry} context={context}");
+			return directGrant;
+		}
+
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
 		if (gameType is NetGameType.Singleplayer or NetGameType.None)
@@ -216,6 +228,36 @@ internal static class HextechForgeSelectionCoordinator
 			player.Relics.Count.ToString());
 		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice][AITeammateCompat] Auto-selected forge: player={player.NetId} index={selectedIndex} relic={(options[selectedIndex].CanonicalInstance?.Id ?? options[selectedIndex].Id).Entry}");
 		return selectedIndex;
+	}
+
+	private static bool ShouldDirectlyGrantRandomForge(Player player)
+	{
+		try
+		{
+			if (player.RunState is RunState runState
+				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			{
+				return modifier.RandomForgeDirectGrant;
+			}
+		}
+		catch
+		{
+			// Fall back to local configuration when no run state is available yet.
+		}
+
+		return HextechRuneConfiguration.GetSnapshot().RandomForgeDirectGrant;
+	}
+
+	private static RelicModel PickStableRandomForge(Player player, IReadOnlyList<RelicModel> options, string context)
+	{
+		int index = HextechStableRandom.Index(
+			(RunState)player.RunState,
+			options.Count,
+			"forge-direct-grant",
+			HextechStableRandom.PlayerKey(player),
+			context,
+			player.Relics.Count.ToString());
+		return options[Math.Clamp(index, 0, options.Count - 1)];
 	}
 
 	private static void MarkRelicsSeen(IReadOnlyList<RelicModel> relics)

@@ -44,6 +44,8 @@
   "HEXTECH_MISC_UI_TITLE": "インターフェース設定",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_TITLE": "UI非表示チェックボックスを表示",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION": "オンにすると、ゲーム中の左下にUI非表示チェックボックスが表示されます。チェックすると、レリック欄とマルチプレイのプレイヤー状態パネルを隠し、左側を操作しやすくします。",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_TITLE": "鍛造器をランダムで獲得",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "オンにすると、鍛造器を獲得する際に3択画面を開かず、ランダムで1つを直接獲得します。マルチプレイではホストの設定に従います。",
   "HEXTECH_FORGE_PRICE_TITLE": "ステータス鍛造器の価格",
   "HEXTECH_FORGE_PRICE_LABEL": "ショップ価格",
   "HEXTECH_FIRST_ACT_RUNE_RARITY_TITLE": "第1幕Hexレアリティ重み",

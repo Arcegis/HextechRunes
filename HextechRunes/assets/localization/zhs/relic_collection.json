@@ -44,6 +44,8 @@
   "HEXTECH_MISC_UI_TITLE": "界面选项",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_TITLE": "显示隐藏 UI 勾选框",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION": "开启后，游戏左下角会出现“隐藏 UI”勾选框；勾选时会隐藏遗物栏和联机玩家状态条，避免左侧 UI 挡住操作。",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_TITLE": "随机获得锻造器",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "开启后，获得锻造器时将随机直接获得一个，而不再弹出三选一界面。联机时跟随主机的设置。",
   "HEXTECH_FORGE_PRICE_TITLE": "属性锻造器价格",
   "HEXTECH_FORGE_PRICE_LABEL": "商店价格",
   "HEXTECH_FIRST_ACT_RUNE_RARITY_TITLE": "第一幕海克斯稀有度权重",
