@@ -32,6 +32,7 @@ public static class ModEntry
 			HextechMultiplayerCompatibilityHooks.Install(harmony);
 			HextechMobileModelRegistrationHooks.Install(harmony);
 			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
+			HextechSelfUpgradeCardStore.Install(harmony);
 			HextechCustomRunModifierHooks.Install(harmony);
 			HextechRunLifecycleHooks.Install(harmony);
 			HextechCombatHooks.Install(harmony);
