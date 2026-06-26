@@ -12,6 +12,9 @@ public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 {
 	protected virtual int EnchantmentAmount => 1;
 
+	// 选牌张数与附魔层数解耦:MomentumForge 要「选 1 张牌附魔动量3」,层数=3 但只选 1 张。
+	protected virtual int EnchantmentCardCount => 1;
+
 	public override bool HasUponPickupEffect => true;
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -30,8 +33,8 @@ public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 		IEnumerable<CardModel> selectedCards = await CardSelectCmd.FromDeckForEnchantment(
 			Owner,
 			canonicalEnchantment,
-			EnchantmentAmount,
-			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, EnchantmentAmount));
+			EnchantmentCardCount,
+			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, EnchantmentCardCount));
 		foreach (CardModel selected in selectedCards)
 		{
 			Flash();

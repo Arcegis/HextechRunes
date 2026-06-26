@@ -129,8 +129,10 @@ internal static partial class HextechCombatHooks
 			energyValue = pendingEnergyValue;
 		}
 
+		// energyValue(来自 EnergyValue/手动捕获)对 X 费牌是本次实付的 X;resources.EnergySpent 对 X 费牌会退化成 1,
+		// 会导致「万用瞄准镜」等返还消耗的符文只返还 1 费。星费仍走精确路径(下方 pending 覆盖)。
 		HextechCardPlayResourceSpend resourceSpend = new(
-			Math.Max(0, resources.EnergySpent),
+			Math.Max(0, energyValue),
 			Math.Max(0, resources.StarsSpent));
 		if (PendingManualPlayResourceSpends.Remove(__instance, out HextechCardPlayResourceSpend pendingResourceSpend))
 		{
