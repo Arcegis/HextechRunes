@@ -20,7 +20,6 @@ internal static class HextechForgeRegistry
 		Forge<NecrobinderForge>(HextechRarityTier.Silver),
 		Forge<SilverStarsForge>(HextechRarityTier.Silver),
 		Forge<SilverOrbForge>(HextechRarityTier.Silver),
-		Forge<DoomForge>(HextechRarityTier.Silver),
 		Forge<ForgingForge>(HextechRarityTier.Silver),
 
 		Forge<ConstitutionForge>(HextechRarityTier.Gold),

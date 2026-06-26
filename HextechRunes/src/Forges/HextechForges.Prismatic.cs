@@ -221,32 +221,6 @@ public sealed class PrismaticArtifactForge : HextechForgeBase
 	}
 }
 
-public sealed class GhostForge : HextechForgeBase
-{
-	public override bool HasUponPickupEffect => true;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new CardsVar(1)
-	];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromCard(ModelDb.Card<Apparition>())
-	];
-
-	public override async Task AfterObtained()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		Flash();
-		await AddCardCopiesToDeckOrHand<Apparition>(DynamicVars.Cards.IntValue);
-	}
-}
-
 public sealed class FortuneForge : HextechForgeBase
 {
 	public override bool HasUponPickupEffect => true;

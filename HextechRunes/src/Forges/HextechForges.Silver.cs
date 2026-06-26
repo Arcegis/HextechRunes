@@ -387,35 +387,6 @@ public sealed class SilverOrbForge : HextechForgeBase
 	}
 }
 
-public sealed class DoomForge : HextechForgeBase
-{
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new PowerVar<DoomPower>(2m)
-	];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromPower<DoomPower>()
-	];
-
-	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
-	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| target.Side != CombatSide.Enemy
-			|| result.UnblockedDamage <= 0
-			|| HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse
-			|| !IsDamageFromOwner(dealer, cardSource))
-		{
-			return;
-		}
-
-		Flash([target]);
-		await PowerCmd.Apply<DoomPower>(target, Stacked(DynamicVars["DoomPower"].BaseValue), Owner.Creature, cardSource);
-	}
-}
-
 public sealed class ForgingForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>

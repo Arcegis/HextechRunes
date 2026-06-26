@@ -726,13 +726,10 @@ internal static class Program
 	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()
 	{
 		string corruptedBranchId = ModelDb.GetId<CorruptedBranchRune>().Entry;
-		string doomForgeId = ModelDb.GetId<DoomForge>().Entry;
 		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
 
 		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(corruptedBranchId), "default player rune ids should disable corrupted branch");
 		Expect(snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "default snapshot should disable corrupted branch");
-		Expect(HextechRuneConfiguration.GetDefaultDisabledForgeIds().Contains(doomForgeId), "default forge ids should disable doom forge");
-		Expect(snapshot.DisabledForgeIds.Contains(doomForgeId), "default snapshot should disable doom forge");
 	}
 
 	private static void RerollLimitConfigUsesZeroToNineThenInfinite()

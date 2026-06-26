@@ -63,10 +63,7 @@ internal static class HextechRuneConfiguration
 	[
 		typeof(CorruptedBranchRune)
 	];
-	private static readonly Type[] Version13DefaultDisabledForgeTypes =
-	[
-		typeof(DoomForge)
-	];
+	private static readonly Type[] Version13DefaultDisabledForgeTypes = [];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
