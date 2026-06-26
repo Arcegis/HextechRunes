@@ -30,6 +30,7 @@ internal static partial class HextechCombatHooks
 		InstallMaxHpHooks(harmony);
 		InstallPowerCompatibilityHooks(harmony);
 		InstallDamageCommandHooks(harmony);
+		InstallDualWieldIntentHooks(harmony);
 		TryInstallRuneHook<NearDeathFeastRune>("near-death feast", () => InstallNearDeathFeastHooks(harmony));
 		HextechPlayerRuneHooks.Install(harmony);
 	}

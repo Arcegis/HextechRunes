@@ -984,7 +984,7 @@
   "soulEaterRune.enemyDescription": "Quando outro inimigo morre, este inimigo recupera [blue]10%[/blue] da vida máxima.",
   "deathHarvestRune.enemyDescription": "O dano não bloqueado que o inimigo causa a você o cura em [blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue] desse valor.",
   "giantSlayerRune.enemyDescription": "O inimigo encolhe. Para cada [blue]6[/blue] de vida máxima que você tem acima do inimigo, ele causa [blue]1%[/blue] mais dano a você, até [blue]100%[/blue].",
-  "dualWieldRune.enemyDescription": "O dano por golpe dos ataques do inimigo é reduzido pela metade (arredondado para cima), e o número de golpes é dobrado.",
+  "dualWieldRune.enemyDescription": "O dano por golpe dos ataques do inimigo é reduzido pela metade, e o número de golpes é dobrado.",
   "frostWraithRune.enemyDescription": "A cada [blue]4[/blue] turnos, todos os jogadores ganham [blue]1[/blue] turno de [gold]Tempo Emprestado[/gold].",
   "escapePlanRune.enemyDescription": "Quando um dano reduz seus PV para menos de [blue]50%[/blue] do seu PV Máx, no início do próximo turno o inimigo ganha Bloqueio igual a [blue]60%[/blue] do seu PV Máx e ganha [blue]1[/blue] turno de [gold]Encolher[/gold]. Uma vez por combate.",
   "heavyHitterRune.enemyDescription": "O inimigo ganha [blue]1%[/blue] a mais de dano para cada [blue]10[/blue] de PV Máx que tiver, até um limite de [blue]30%[/blue].",
