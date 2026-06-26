@@ -159,6 +159,17 @@ internal static class HextechForgeGrantHelper
 
 	public static async Task ObtainSelectedForge(Player player, RelicModel forge, bool syncObtainedRelic)
 	{
+		// 主机权威复核(联机安全网):决不发放被配置禁用的属性锻造器。
+		// 候选池在战斗结束 / 进店那一刻就按当时的有效配置快照(modifier.DisabledForgeIdsForPool)构建,而联机下
+		// 客机要到幕开局 ActRoll 把主机配置同步过来之前,快照都是默认的「空禁用」——这段时间窗里被禁锻造器会混进
+		// 候选并被稳定随机选中。真正「落地获得」(领奖 / 购买完成)通常晚于建池,此刻主机配置多半已同步到位,故在
+		// 这唯一落地点再用最新的有效禁用集兜底校验一次,挡掉任何漏网的被禁锻造器。
+		if (IsForgeDisabledForPlayer(player, forge))
+		{
+			Log.Warn($"[{ModInfo.Id}][ForgeChoice] Blocked obtaining a config-disabled forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}");
+			return;
+		}
+
 		SaveManager.Instance.MarkRelicAsSeen(forge);
 		bool syncedBeforePickup = false;
 		if (syncObtainedRelic)
@@ -472,6 +483,12 @@ internal static class HextechForgeGrantHelper
 		}
 
 		return HextechRuneConfiguration.GetSnapshot().ForgeRarityWeights;
+	}
+
+	internal static bool IsForgeDisabledForPlayer(Player player, RelicModel forge)
+	{
+		string entry = (forge.CanonicalInstance?.Id ?? forge.Id).Entry;
+		return GetEffectiveDisabledForgeIds(player).Contains(entry);
 	}
 
 	private static IReadOnlySet<string> GetEffectiveDisabledForgeIds(Player player)

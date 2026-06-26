@@ -204,6 +204,18 @@ internal static class HextechShopForgeHooks
 			return (false, 0);
 		}
 
+		// 主机权威复核:被配置禁用的锻造器即便因配置同步时序混进了候选,也要在扣钱前挡下,避免客机白花金币又拿到被禁锻造器。
+		if (HextechForgeGrantHelper.IsForgeDisabledForPlayer(player, forge))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Blocked purchasing a config-disabled forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}");
+#if STS2_104_OR_NEWER
+			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
+#else
+			entry.InvokePurchaseFailed(PurchaseStatus.FailureForbidden);
+#endif
+			return (false, 0);
+		}
+
 		if (!CanContinueSynchronizedPurchase())
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge purchase cancelled because multiplayer service is disconnected.");
