@@ -65,7 +65,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		Creature? dealer,
 		CardModel? cardSource)
 	{
-		return IsDamageFromOwner(dealer, cardSource) ? BonusMultiplier : 1m;
+		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? BonusMultiplier : 1m;
 	}
 
 	public override decimal ModifyBlockMultiplicative(

@@ -20,10 +20,14 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
+		// 必须在 series 的最后一次打出后才把牌移回手牌:重放(playCount>1)会让同一张牌在 Play
+		// 牌堆里连续打多次,若在 IsFirstInSeries 就移走,后续重放找不到这张牌会崩溃。
+		// 普通牌 IsFirstInSeries==IsLastInSeries,行为不变。
+		// 不再排除自动打出:地狱狂徒(Hellraiser)抽到牌即自动打出(IsAutoPlay),这些攻击牌
+		// 同样应能被瞄准镜返还;返还到手牌不算抽牌、不会再触发 Hellraiser 自动打,无死循环。
 		if (Owner == null
 			|| Owner.Creature.IsDead
-			|| !cardPlay.IsFirstInSeries
-			|| cardPlay.IsAutoPlay
+			|| !cardPlay.IsLastInSeries
 			|| !IsOwnedAttack(cardPlay.Card))
 		{
 			return;

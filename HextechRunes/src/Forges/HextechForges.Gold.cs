@@ -174,7 +174,7 @@ public sealed class HourglassForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DamageVar(4m, ValueProp.Unpowered)
+		new DamageVar(5m, ValueProp.Unpowered)
 	];
 
 	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
@@ -400,7 +400,7 @@ public sealed class PlatingForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<PlatingPower>(5m)
+		new PowerVar<PlatingPower>(6m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>

@@ -74,7 +74,7 @@ public sealed class SilverPlatingForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<PlatingPower>(3m)
+		new PowerVar<PlatingPower>(4m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -195,7 +195,7 @@ public sealed class PocketForge : HextechForgeBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("PotionSlots", 1m)
+		new DynamicVar("PotionSlots", 2m)
 	];
 
 	public override Task AfterObtained()
@@ -215,7 +215,7 @@ public sealed class PreparedForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new CardsVar(1)
+		new CardsVar(2)
 	];
 
 	public override decimal ModifyHandDraw(Player player, decimal count)
@@ -263,7 +263,7 @@ public sealed class VigorForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<VigorPower>(4m)
+		new PowerVar<VigorPower>(2m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -271,9 +271,9 @@ public sealed class VigorForge : HextechForgeBase
 		HoverTipFactory.FromPower<VigorPower>()
 	];
 
-	public override Task BeforeCombatStart()
+	public override Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner == null || player != Owner || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -287,7 +287,7 @@ public sealed class BlockForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new BlockVar(2m, ValueProp.Unpowered)
+		new BlockVar(3m, ValueProp.Unpowered)
 	];
 
 	public override Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
@@ -387,40 +387,11 @@ public sealed class SilverOrbForge : HextechForgeBase
 	}
 }
 
-public sealed class DoomForge : HextechForgeBase
-{
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new PowerVar<DoomPower>(2m)
-	];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromPower<DoomPower>()
-	];
-
-	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
-	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| target.Side != CombatSide.Enemy
-			|| result.UnblockedDamage <= 0
-			|| HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse
-			|| !IsDamageFromOwner(dealer, cardSource))
-		{
-			return;
-		}
-
-		Flash([target]);
-		await PowerCmd.Apply<DoomPower>(target, Stacked(DynamicVars["DoomPower"].BaseValue), Owner.Creature, cardSource);
-	}
-}
-
 public sealed class ForgingForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new ForgeVar("ForgeAmount", 5)
+		new ForgeVar("ForgeAmount", 8)
 	];
 
 	public override bool IsAvailableForPlayer(Player player)

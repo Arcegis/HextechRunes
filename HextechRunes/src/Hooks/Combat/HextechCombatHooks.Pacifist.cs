@@ -73,6 +73,8 @@ internal static partial class HextechCombatHooks
 			PacifistRune.ClearPendingDoomApplications(commandId);
 			CompensationRune.ClearPendingCompensations(commandId);
 			CompensationEnemyHex.ClearPendingCompensations(commandId);
+			await ConsumeOstyRedirectedSlippery(commandId);
+			ClearSlipperyReductions(commandId);
 		}
 	}
 

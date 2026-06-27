@@ -103,7 +103,15 @@ internal static class HextechMonsterHexRegistry
 		Monster<ForgottenSoulRune>(MonsterHexKind.ForgottenSoul, HextechRarityTier.Prismatic),
 		Monster<CerberusRune>(MonsterHexKind.Cerberus, HextechRarityTier.Prismatic),
 		Monster<OmniDragonSoulRune>(MonsterHexKind.OmniDragonSoul, HextechRarityTier.Prismatic),
-		Monster<BlankCheckRune>(MonsterHexKind.BlankCheck, HextechRarityTier.Prismatic)
+		Monster<BlankCheckRune>(MonsterHexKind.BlankCheck, HextechRarityTier.Prismatic),
+
+		Monster<CorrosionRune>(MonsterHexKind.Corrosion, HextechRarityTier.Silver),
+		Monster<BrutalityRune>(MonsterHexKind.Brutality, HextechRarityTier.Silver),
+		Monster<JudicatorRune>(MonsterHexKind.Judicator, HextechRarityTier.Gold),
+		Monster<SoulEaterRune>(MonsterHexKind.SoulEater, HextechRarityTier.Gold),
+		Monster<DeathHarvestRune>(MonsterHexKind.DeathHarvest, HextechRarityTier.Gold),
+		Monster<GiantSlayerRune>(MonsterHexKind.GiantSlayer, HextechRarityTier.Prismatic),
+		Monster<DualWieldRune>(MonsterHexKind.DualWield, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

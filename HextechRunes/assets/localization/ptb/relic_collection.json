@@ -44,6 +44,8 @@
   "HEXTECH_MISC_UI_TITLE": "Opções de Interface",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_TITLE": "Mostrar caixa de seleção para ocultar a UI",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION": "Quando ativado, uma caixa de seleção para ocultar a interface aparece no canto inferior esquerdo durante o jogo. Quando marcada, ela oculta a barra de relíquias e o painel de estado do jogador no modo multiplayer para manter o lado esquerdo limpo.",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_TITLE": "Forja aleatória direta",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "Quando ativado, ao obter uma forja, uma é concedida aleatoriamente em vez de abrir a tela de três opções. No multiplayer, segue a configuração do anfitrião.",
   "HEXTECH_FORGE_PRICE_TITLE": "Preço do Forjador de Atributos",
   "HEXTECH_FORGE_PRICE_LABEL": "Preço na Loja",
   "HEXTECH_FIRST_ACT_RUNE_RARITY_TITLE": "Pesos de Raridade de Hex do Ato 1",

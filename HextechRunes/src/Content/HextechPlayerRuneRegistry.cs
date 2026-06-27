@@ -114,6 +114,8 @@ internal static class HextechPlayerRuneRegistry
         Rune<DeadwoodRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 28, tagKey: "VOID"),
         Rune<BoneBreakUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 29, tagKey: "SUMMON"),
         Rune<UndyingUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 30, tagKey: "VOID"),
+        Rune<SowUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 32, tagKey: "OUTPUT"),
+        Rune<ReapUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 33, tagKey: "OUTPUT"),
         Rune<ReprogramRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 24, tagKey: "COMPREHENSIVE"),
 
         Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
@@ -204,6 +206,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<ScaredStiffRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 10, tagKey: "EXHAUST"),
         Rune<DeviantCognitionRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 13, tagKey: "OUTPUT"),
         Rune<BashUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 21, tagKey: "OUTPUT"),
+        Rune<IronWaveUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 25, tagKey: "OUTPUT"),
         Rune<CorpseExplosionRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 12, tagKey: "POISON"),
         Rune<SurvivorUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 16, tagKey: "SURVIVAL"),
         Rune<NeutralizeUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 20, tagKey: "OUTPUT"),

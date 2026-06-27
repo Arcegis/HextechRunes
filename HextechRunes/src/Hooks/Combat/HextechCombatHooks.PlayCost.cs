@@ -121,7 +121,7 @@ internal static partial class HextechCombatHooks
 		return new ValueTuple<int, int>(energyToSpend, starsToSpend);
 	}
 
-	private static void CardOnPlayWrapperPrefix(CardModel __instance, ResourceInfo resources)
+	private static void CardOnPlayWrapperPrefix(CardModel __instance, ResourceInfo resources, bool isAutoPlay)
 	{
 		int energyValue = resources.EnergyValue;
 		if (PendingManualPlayEnergyValues.Remove(__instance, out int pendingEnergyValue))
@@ -129,8 +129,12 @@ internal static partial class HextechCombatHooks
 			energyValue = pendingEnergyValue;
 		}
 
+		// 本次实付能量:自动打出(Hellraiser 等)实际花 0 能量(EnergySpent=0),其 EnergyValue 只是名义费用,
+		// 不能用来返还,否则免费打的牌会凭空返还能量。非自动打出的牌用 energyValue:对 X 费牌是实付的 X,
+		// 对普通牌等于费用(EnergySpent 对 X 费牌会退化成 1,故不用它)。星费仍走精确路径(下方 pending 覆盖)。
+		int spentEnergy = isAutoPlay ? Math.Max(0, resources.EnergySpent) : Math.Max(0, energyValue);
 		HextechCardPlayResourceSpend resourceSpend = new(
-			Math.Max(0, resources.EnergySpent),
+			spentEnergy,
 			Math.Max(0, resources.StarsSpent));
 		if (PendingManualPlayResourceSpends.Remove(__instance, out HextechCardPlayResourceSpend pendingResourceSpend))
 		{

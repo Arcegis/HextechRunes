@@ -30,6 +30,7 @@ internal static partial class HextechCombatHooks
 		InstallMaxHpHooks(harmony);
 		InstallPowerCompatibilityHooks(harmony);
 		InstallDamageCommandHooks(harmony);
+		InstallDualWieldIntentHooks(harmony);
 		TryInstallRuneHook<NearDeathFeastRune>("near-death feast", () => InstallNearDeathFeastHooks(harmony));
 		HextechPlayerRuneHooks.Install(harmony);
 	}
@@ -214,6 +215,7 @@ internal static partial class HextechCombatHooks
 	{
 		harmony.Patch(
 			RequireMethod(typeof(AttackCommand), nameof(AttackCommand.Execute), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DualWieldAttackCommandExecutePrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(AttackCommandExecutePostfix))
 			{
 				priority = Priority.Last
@@ -231,5 +233,38 @@ internal static partial class HextechCombatHooks
 				typeof(CardModel)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
+		harmony.Patch(
+			RequireMethod(
+				typeof(SlipperyPower),
+				nameof(SlipperyPower.ModifyHpLostAfterOsty),
+				BindingFlags.Instance | BindingFlags.Public,
+				typeof(Creature),
+				typeof(decimal),
+				typeof(ValueProp),
+				typeof(Creature),
+				typeof(CardModel)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SlipperyModifyHpLostAfterOstyPostfix)));
+		harmony.Patch(
+			RequireMethod(
+				typeof(SlipperyPower),
+				nameof(SlipperyPower.AfterDamageReceived),
+				BindingFlags.Instance | BindingFlags.Public,
+				typeof(PlayerChoiceContext),
+				typeof(Creature),
+				typeof(DamageResult),
+				typeof(ValueProp),
+				typeof(Creature),
+				typeof(CardModel)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SlipperyAfterDamageReceivedPostfix)));
+		harmony.Patch(
+			RequireMethod(
+				typeof(DieForYouPower),
+				nameof(DieForYouPower.ModifyUnblockedDamageTarget),
+				BindingFlags.Instance | BindingFlags.Public,
+				typeof(Creature),
+				typeof(decimal),
+				typeof(ValueProp),
+				typeof(Creature)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DieForYouModifyUnblockedDamageTargetPostfix)));
 	}
 }

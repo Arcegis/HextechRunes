@@ -21,6 +21,7 @@ internal static class HextechRuneConfiguration
 	private const int MinRandomForgeShopPrice = 0;
 	private const int MaxRandomForgeShopPrice = 9999;
 	private const int DefaultRandomForgeShopPrice = 250;
+	private const bool DefaultRandomForgeDirectGrant = false;
 	private static readonly int[] DefaultPlayerHexCountsByAct = [ 1, 1, 1 ];
 	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 2, 3 ];
 	private const int DefaultPlayerRuneRerollLimit = 1;
@@ -62,10 +63,7 @@ internal static class HextechRuneConfiguration
 	[
 		typeof(CorruptedBranchRune)
 	];
-	private static readonly Type[] Version13DefaultDisabledForgeTypes =
-	[
-		typeof(DoomForge)
-	];
+	private static readonly Type[] Version13DefaultDisabledForgeTypes = [];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -171,7 +169,8 @@ internal static class HextechRuneConfiguration
 				ToRarityWeights(_config.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
 				ToRarityWeights(_config.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
 				ToForgeRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
-				_config.RandomForgeShopPrice));
+				_config.RandomForgeShopPrice,
+				_config.RandomForgeDirectGrant));
 		}
 	}
 
@@ -253,6 +252,7 @@ internal static class HextechRuneConfiguration
 			_config.SecondActAfterSilverRuneRarityWeights = FromRarityWeights(normalized.SecondActAfterSilverRuneRarityWeights);
 			_config.ForgeRarityWeights = FromForgeRarityWeights(normalized.ForgeRarityWeights);
 			_config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
+			_config.RandomForgeDirectGrant = normalized.RandomForgeDirectGrant;
 			SaveConfig(_config);
 		}
 	}
@@ -314,7 +314,8 @@ internal static class HextechRuneConfiguration
 			NormalRuneRarityWeights = FromRarityWeights(DefaultNormalRuneRarityWeights),
 			SecondActAfterSilverRuneRarityWeights = FromRarityWeights(DefaultSecondActAfterSilverRuneRarityWeights),
 			ForgeRarityWeights = FromForgeRarityWeights(DefaultForgeRarityWeights),
-			RandomForgeShopPrice = DefaultRandomForgeShopPrice
+			RandomForgeShopPrice = DefaultRandomForgeShopPrice,
+			RandomForgeDirectGrant = DefaultRandomForgeDirectGrant
 		};
 	}
 
@@ -500,7 +501,8 @@ internal static class HextechRuneConfiguration
 			DefaultNormalRuneRarityWeights,
 			DefaultSecondActAfterSilverRuneRarityWeights,
 			DefaultForgeRarityWeights,
-			DefaultRandomForgeShopPrice));
+			DefaultRandomForgeShopPrice,
+			DefaultRandomForgeDirectGrant));
 	}
 
 	internal static HextechRunConfigurationSnapshot NormalizeSnapshot(HextechRunConfigurationSnapshot snapshot)
@@ -517,7 +519,8 @@ internal static class HextechRuneConfiguration
 			NormalizeRarityWeights(snapshot.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
 			NormalizeRarityWeights(snapshot.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
 			NormalizeForgeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
-			ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice));
+			ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice),
+			snapshot.RandomForgeDirectGrant);
 	}
 
 	internal static HextechRarityWeights NormalizeRarityWeights(HextechRarityWeights weights, HextechRarityWeights fallback)
@@ -730,6 +733,9 @@ internal static class HextechRuneConfiguration
 
 		[JsonPropertyName("random_forge_shop_price")]
 		public int RandomForgeShopPrice { get; set; } = DefaultRandomForgeShopPrice;
+
+		[JsonPropertyName("random_forge_direct_grant")]
+		public bool RandomForgeDirectGrant { get; set; } = DefaultRandomForgeDirectGrant;
 	}
 
 	private sealed class RarityWeightConfig

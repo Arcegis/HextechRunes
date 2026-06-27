@@ -124,4 +124,17 @@ internal static partial class HextechCombatHooks
 			CompensationReplacementDepth.Value = Math.Max(0, CompensationReplacementDepth.Value - 1);
 		}
 	}
+
+	internal static async Task RunWithSleightOfFleshPowerDebuffResponseGuard(Func<Task> action)
+	{
+		SleightOfFleshPowerDebuffResponseDepth.Value++;
+		try
+		{
+			await action();
+		}
+		finally
+		{
+			SleightOfFleshPowerDebuffResponseDepth.Value = Math.Max(0, SleightOfFleshPowerDebuffResponseDepth.Value - 1);
+		}
+	}
 }

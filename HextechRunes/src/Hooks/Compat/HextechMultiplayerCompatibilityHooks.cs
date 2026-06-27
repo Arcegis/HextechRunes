@@ -79,8 +79,7 @@ internal static class HextechMultiplayerCompatibilityHooks
 
 		entries[index] = BuildGameplayCompatibilityEntry(
 			mod.manifest.id ?? modId,
-			mod.manifest.version ?? "unknown",
-			BuildGameplayModNetworkSignature(mod));
+			mod.manifest.version ?? "unknown");
 	}
 
 	private static bool TryGetLoadedMod(string modId, out Mod? result)
@@ -98,10 +97,12 @@ internal static class HextechMultiplayerCompatibilityHooks
 		return false;
 	}
 
-	internal static string BuildGameplayCompatibilityEntry(string modId, string version, string networkSignature)
+	internal static string BuildGameplayCompatibilityEntry(string modId, string version)
 	{
-		string signatureHash = ShortHash(ComputeSha256(Encoding.UTF8.GetBytes(networkSignature)));
-		return $"{modId}-{version}+hexsig:{signatureHash}";
+		// 仅用可读的 modId-version 作为联机兼容条目;不再追加 +hexsig:<哈希>(玩家看不懂)。
+		// 区分「同版本号不同构建」改为依赖发布时手动升版本号(如 0.8.1 → 0.8.1hf1)。
+		// 运行时仍由 NetHost/ClientGameService 的 SavedProperties 协议失配 finalizer 兜底断开。
+		return $"{modId}-{version}";
 	}
 
 	private static Exception? NetHostGameServiceOnPacketReceivedFinalizer(Exception? __exception, NetHostGameService __instance, ulong senderId)
@@ -218,11 +219,6 @@ internal static class HextechMultiplayerCompatibilityHooks
 		_cachedNetworkSignature = string.Join("|", signatures);
 		HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] Network compatibility signature: {_cachedNetworkSignature}");
 		return _cachedNetworkSignature;
-	}
-
-	private static string BuildGameplayModNetworkSignature(Mod mod)
-	{
-		return BuildModNetworkSignature(mod, includeSavedProperties: false);
 	}
 
 	private static string BuildDiagnosticModNetworkSignature(Mod mod)

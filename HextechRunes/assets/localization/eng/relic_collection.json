@@ -44,6 +44,8 @@
   "HEXTECH_MISC_UI_TITLE": "Interface Options",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_TITLE": "Show hide-UI checkbox",
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION": "When enabled, a hide-UI checkbox appears in the lower-left corner during gameplay. When checked, it hides the relic bar and multiplayer player state panel to keep the left side clear.",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_TITLE": "Random forge grant",
+  "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "When enabled, gaining a forge grants one at random instead of opening the three-choice screen. In multiplayer this follows the host's setting.",
   "HEXTECH_FORGE_PRICE_TITLE": "Stat Forger Price",
   "HEXTECH_FORGE_PRICE_LABEL": "Shop Price",
   "HEXTECH_FIRST_ACT_RUNE_RARITY_TITLE": "Act 1 Hex Rarity Weights",

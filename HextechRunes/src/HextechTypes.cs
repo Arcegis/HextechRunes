@@ -104,5 +104,12 @@ internal enum MonsterHexKind
     Archmage = 93,
     BloodIdol = 94,
     OmniDragonSoul = 95,
-    BlankCheck = 96
+    BlankCheck = 96,
+    Corrosion = 97,
+    Brutality = 98,
+    Judicator = 99,
+    SoulEater = 100,
+    DeathHarvest = 101,
+    GiantSlayer = 102,
+    DualWield = 103
 }

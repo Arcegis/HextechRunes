@@ -212,6 +212,7 @@ internal static class HextechChoiceCodec
 		AppendRarityWeights(payload, snapshot.SecondActAfterSilverRuneRarityWeights);
 		AppendForgeRarityWeights(payload, snapshot.ForgeRarityWeights);
 		payload.Add(HextechRuneConfiguration.ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice));
+		payload.Add(snapshot.RandomForgeDirectGrant ? 1 : 0);
 
 		MonsterHexKind[] disabledMonsterHexes = snapshot.DisabledMonsterHexIds
 			.Select(static id => Enum.TryParse(id, out MonsterHexKind kind) ? (MonsterHexKind?)kind : null)
@@ -249,7 +250,7 @@ internal static class HextechChoiceCodec
 
 		cursor++;
 		int fixedIntCount = snapshotVersion == RunConfigurationSnapshotVersion
-			? 3 + 3 + 2 + 3 + 3 + 3 + 3 + 1
+			? 3 + 3 + 2 + 3 + 3 + 3 + 3 + 1 + 1
 			: 3 + 3 + 3 + 3 + 3 + 3 + 1;
 		if (payload.Count < cursor + fixedIntCount)
 		{
@@ -273,6 +274,11 @@ internal static class HextechChoiceCodec
 		HextechRarityWeights secondActAfterSilverWeights = ReadRarityWeights(payload, ref cursor);
 		HextechForgeRarityWeights forgeWeights = ReadForgeRarityWeights(payload, ref cursor);
 		int forgePrice = payload[cursor++];
+		bool randomForgeDirectGrant = fallback.RandomForgeDirectGrant;
+		if (snapshotVersion == RunConfigurationSnapshotVersion)
+		{
+			randomForgeDirectGrant = payload[cursor++] != 0;
+		}
 
 		if (payload.Count <= cursor)
 		{
@@ -313,7 +319,8 @@ internal static class HextechChoiceCodec
 			normalWeights,
 			secondActAfterSilverWeights,
 			forgeWeights,
-			forgePrice));
+			forgePrice,
+			randomForgeDirectGrant));
 		return true;
 	}
 

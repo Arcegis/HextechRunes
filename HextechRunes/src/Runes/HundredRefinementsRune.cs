@@ -40,14 +40,34 @@ public sealed class HundredRefinementsRune : HextechRelicBase
 			return false;
 		}
 
+		// 多个「百炼成钢」共用一个锻体按钮:仅由第一个实例添加,点击时同步推进所有实例的计数
+		// (与佩尔之翼把多个牺牲按钮合并成一个同理),而不是每个海克斯各一个按钮、各自计数。
+		if (GetActiveRunes(Owner).FirstOrDefault() != this)
+		{
+			return false;
+		}
+
 		alternatives.Add(new CardRewardAlternative(
 			BodyForgeOptionId,
-			ForgingBodyFromCardReward,
+			ForgeBodyForAllInstances,
 			PostAlternateCardRewardAction.EndSelectionAndCompleteReward));
 		return true;
 	}
 
-	private async Task ForgingBodyFromCardReward()
+	private async Task ForgeBodyForAllInstances()
+	{
+		if (Owner == null)
+		{
+			return;
+		}
+
+		foreach (HundredRefinementsRune rune in GetActiveRunes(Owner))
+		{
+			await rune.ForgeBodyOnce();
+		}
+	}
+
+	private async Task ForgeBodyOnce()
 	{
 		if (Owner == null)
 		{
@@ -63,6 +83,11 @@ public sealed class HundredRefinementsRune : HextechRelicBase
 		}
 
 		await HextechForgeGrantHelper.ObtainRandomForges(Owner, Math.Max(0, DynamicVars["ForgeCount"].IntValue));
+	}
+
+	private static IReadOnlyList<HundredRefinementsRune> GetActiveRunes(Player player)
+	{
+		return player.Relics.OfType<HundredRefinementsRune>().Where(static rune => rune.Owner != null).ToList();
 	}
 
 	private int BodyForgeThreshold => Math.Max(1, DynamicVars["BodyForges"].IntValue);
