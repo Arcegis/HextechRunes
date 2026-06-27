@@ -52,6 +52,12 @@ internal static partial class HextechRuneSelectionCoordinator
 					runState,
 					excludedIds,
 					useEndlessTagWindow: modifier.IsEndlessLoopActive);
+				if (options.Count == 0)
+				{
+					Log.Warn($"[{ModInfo.Id}][Mayhem] No rune options for player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}; skipping this selection (fallback path).", 2);
+					continue;
+				}
+
 				HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
 				HextechEnemyHexAdjustmentOptions? enemyHexOptions = fallbackActiveMonsterHexes.Count > 0
 					? new HextechEnemyHexAdjustmentOptions
@@ -105,6 +111,12 @@ internal static partial class HextechRuneSelectionCoordinator
 				runState,
 				excludedIds,
 				useEndlessTagWindow: modifier.IsEndlessLoopActive);
+			if (options.Count == 0)
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] No rune options for player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}; skipping this selection.", 2);
+				continue;
+			}
+
 			enemyRerollExcludedIdsForAllPlayers.UnionWith(CreateEnemyHexRerollExcludedIds(options));
 			MarkRelicsSeen(options);
 			modifier.RecordSeenPlayerRunes(player, options);
