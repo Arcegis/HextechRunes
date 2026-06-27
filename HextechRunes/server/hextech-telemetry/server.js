@@ -329,9 +329,20 @@ function getRun(record) {
   return record?.payload?.run || {};
 }
 
+function normalizeAggregatedModVersion(version) {
+  // 持久化聚合规则:把四段式热修版本(a.b.c.d，如 0.8.2.1 / 0.5.3.1)始终并入对应的三段式
+  // 基础版本(a.b.c，如 0.8.2 / 0.5.3)再做统计，使热修子版本与其基础版本合并展示。
+  // 带非数字后缀的版本(如 0.8.1hf1)不匹配此规则，保持原样。
+  const match = /^(\d+\.\d+\.\d+)\.\d+$/.exec(version);
+  return match ? match[1] : version;
+}
+
 function getModVersion(record) {
   const version = record?.payload?.modVersion;
-  return typeof version === "string" && version.trim().length > 0 ? version : "(unknown)";
+  if (typeof version !== "string" || version.trim().length === 0) {
+    return "(unknown)";
+  }
+  return normalizeAggregatedModVersion(version.trim());
 }
 
 function normalizeVersionFilter(value) {
