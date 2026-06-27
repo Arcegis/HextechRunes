@@ -47,13 +47,15 @@ internal static class HextechSavedPropertyBootstrap
 
 	private static void EnsureSavedPropertyNetIdBitSize()
 	{
-		const int minimumBitSize = 16;
+		// 兜底:按与游戏 / RitsuLib 一致的公式 CeilToInt(Log2(count)) 把位宽抬到能容纳当前属性数。
+		// 联机一致性的权威设置由 HextechSavedPropertyNetIdHooks 在规范化后统一完成;此处仅保证即便该
+		// 后缀钩子未能安装,本模组单独联机时位宽也够用。不再使用旧的固定下限 16——它与原版 / RitsuLib 的
+		// 公式不一致,会让一端是 16、另一端是 CeilToInt(Log2(count)),造成 net-id 位宽错位而断连。
 		const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
 
 		FieldInfo? mapField = TryGetField(typeof(SavedPropertiesTypeCache), "_netIdToPropertyNameMap", flags);
 		int propertyNameCount = (mapField?.GetValue(null) as System.Collections.ICollection)?.Count ?? 0;
-		int requiredBitSize = GetRequiredBitSize(propertyNameCount);
-		int targetBitSize = Math.Max(minimumBitSize, requiredBitSize);
+		int targetBitSize = HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(propertyNameCount);
 		int currentBitSize = SavedPropertiesTypeCache.NetIdBitSize;
 		if (currentBitSize >= targetBitSize)
 		{
@@ -70,18 +72,5 @@ internal static class HextechSavedPropertyBootstrap
 
 		backingField.SetValue(null, targetBitSize);
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize updated: old={currentBitSize} new={targetBitSize} propertyNames={propertyNameCount}");
-	}
-
-	private static int GetRequiredBitSize(int valueCount)
-	{
-		int maxValue = Math.Max(1, valueCount - 1);
-		int bits = 0;
-		while (maxValue > 0)
-		{
-			bits++;
-			maxValue >>= 1;
-		}
-
-		return bits;
 	}
 }

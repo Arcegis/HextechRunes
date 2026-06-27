@@ -4,7 +4,7 @@
   "description": "[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "海斗0.8.2更新日志：\n新增泰语本地化（AI翻译）；\n新增3个卡牌升级类海克斯，新增7个敌方海克斯；\n杂项里新增“随机获得锻造器”配置项，默认关闭；\n修改部分锻造器效果（主要是加强白银阶锻造器）；\n修复与优化了诸多bug，具体如下：\n1.修复了动量锻造器选牌数的问题；\n2.优化了玩家在拥有多个百炼成钢海克斯时计数的计算方式；\n3.修复了万用瞄准镜+X费牌，万用瞄准镜+地狱狂徒，万用瞄准镜+重放之间的交互；\n4.补全了代偿+血肉戏法的防递归保护；\n5.修复了滑溜+钨合金棍，滑溜+奥斯提的交互；\n6.修正了快中求稳海克斯在多人联机时的表现；\n7.修复了锻造器配置在联机中未遵循主机配置的问题；\n8.优化了部分美术样式；\n9.修复了其他已知问题；",
+  "changeNote": "海斗0.8.2.1更新日志：\n修复了与RitsuLib等会注入自定义存档属性的模组同时使用时，联机有概率报「1014 模组不匹配」并断连的问题。\n原因是自定义属性的联机编号（net-id）此前会受本地模组加载顺序与位宽设置影响，导致两端编号错位；现已改为按内容确定性分配，与加载顺序及房内其它模组无关，两端必然一致。\n注意：本次改动改变了联机指纹，房间内所有玩家都需更新到 0.8.2.1 才能一起联机。",
   "tags": [
     "Gameplay",
     "Modifiers",

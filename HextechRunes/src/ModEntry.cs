@@ -30,6 +30,7 @@ public static class ModEntry
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
 			TryInstallOptionalHookGroup("model id serialization warning compatibility", () => HextechModelIdSerializationWarningHooks.Install(harmony));
 			HextechMultiplayerCompatibilityHooks.Install(harmony);
+			TryInstallOptionalHookGroup("saved-property net-id canonicalization", () => HextechSavedPropertyNetIdHooks.Install(harmony));
 			HextechMobileModelRegistrationHooks.Install(harmony);
 			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechSelfUpgradeCardStore.Install(harmony);
