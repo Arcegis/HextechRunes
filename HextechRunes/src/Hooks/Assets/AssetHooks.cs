@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -45,6 +46,37 @@ internal static class AssetHooks
 		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
 		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
 		harmony.Patch(getEnchantmentIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(EnchantmentIconPostfix)));
+
+		// 自定义休息室选项(目前为「添柴」StokeRestSiteOption)的图标修复。
+		// 基类 RestSiteOption.Icon 从 res://images/ui/rest_site/option_<id>.png 取图,模组无法在该 base-game
+		// 命名空间提供真实资源,旧实现用可被卸载的缓存别名兜底,在联机非持有方会取到 null 并在渲染思考气泡时抛
+		// NotImplementedException —— 该异常发生在同步的 ChooseOption 路径里,导致离开休息室时校验和分叉、客户端被踢。
+		// 这里用前缀直接返回稳定纹理(原版 Stoke 卡牌立绘),保证任何端、任何时机 Icon 都有效。
+		MethodInfo? getRestSiteOptionIcon = AccessTools.PropertyGetter(typeof(RestSiteOption), nameof(RestSiteOption.Icon));
+		if (getRestSiteOptionIcon != null)
+		{
+			harmony.Patch(getRestSiteOptionIcon, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(RestSiteOptionIconPrefix)));
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] RestSiteOption.Icon asset hook skipped: getter not found (custom rest-site option icons may fail to render and could desync multiplayer).");
+		}
+	}
+
+	/// <summary>
+	/// 为自定义休息室选项提供稳定的图标。仅拦截 <see cref="StokeRestSiteOption"/>:返回原版 Stoke 立绘并跳过原版
+	/// 缓存查找(原版查找在该 mod 路径上必然 miss,并可能因 thought bubble 以 null 初始化而抛异常)。
+	/// 其它(原版)选项一律放行原逻辑。解析失败时同样放行,退化为修复前行为,绝不抛出。
+	/// </summary>
+	private static bool RestSiteOptionIconPrefix(RestSiteOption __instance, ref Texture2D __result)
+	{
+		if (__instance is StokeRestSiteOption && StokeRestSiteOption.ResolveIcon() is { } icon)
+		{
+			__result = icon;
+			return false;
+		}
+
+		return true;
 	}
 
 	private static void CardPortraitPostfix(CardModel __instance, ref Texture2D __result)
