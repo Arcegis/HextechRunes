@@ -10,6 +10,7 @@ namespace HextechRunes;
 internal static partial class HextechRelicVisibilityHooks
 {
 	private const bool DefaultShowHiddenRelicsToggle = false;
+	private const bool DefaultShowUpdateNotice = true;
 
 	internal static bool GetShowHiddenRelicsToggle()
 	{
@@ -19,6 +20,23 @@ internal static partial class HextechRelicVisibilityHooks
 	internal static bool GetDefaultShowHiddenRelicsToggle()
 	{
 		return DefaultShowHiddenRelicsToggle;
+	}
+
+	internal static bool GetShowUpdateNotice()
+	{
+		return _config.ShowUpdateNotice;
+	}
+
+	internal static bool GetDefaultShowUpdateNotice()
+	{
+		return DefaultShowUpdateNotice;
+	}
+
+	internal static void SetShowUpdateNotice(bool showNotice)
+	{
+		_config.ShowUpdateNotice = showNotice;
+		SaveConfig(_config);
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] show_update_notice={showNotice}.");
 	}
 
 	internal static void SetShowHiddenRelicsToggle(bool showToggle)
@@ -103,6 +121,9 @@ internal static partial class HextechRelicVisibilityHooks
 	{
 		[JsonPropertyName("show_hidden_relics_toggle")]
 		public bool ShowHiddenRelicsToggle { get; set; } = DefaultShowHiddenRelicsToggle;
+
+		[JsonPropertyName("show_update_notice")]
+		public bool ShowUpdateNotice { get; set; } = DefaultShowUpdateNotice;
 
 		[JsonPropertyName("hide_relics")]
 		public bool HideRelics { get; set; }

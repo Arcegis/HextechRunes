@@ -9,7 +9,7 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 13;
+	private const int CurrentConfigVersion = 14;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
 	private const int MaxActHexCount = 6;
@@ -28,7 +28,9 @@ internal static class HextechRuneConfiguration
 	private const int DefaultMonsterHexRerollLimit = InfiniteRerollLimit;
 	private static readonly int[] LegacyEnemyHexCountsDefault = [ 1, 2, 3 ];
 	private static readonly int[] Version9EnemyHexCountsDefault = [ 1, 1, 1 ];
-	private static readonly HextechRarityWeights DefaultFirstActRuneRarityWeights = new(20, 50, 30);
+	private static readonly HextechRarityWeights DefaultFirstActRuneRarityWeights = new(2, 5, 3);
+	// 配置版本 14 之前的第一幕默认值。比例与新默认 2-5-3 完全相同,仅用于把"从未自定义过"的旧配置迁到新默认。
+	private static readonly HextechRarityWeights Version14LegacyFirstActRuneRarityWeights = new(20, 50, 30);
 	private static readonly HextechRarityWeights DefaultNormalRuneRarityWeights = new(1, 1, 1);
 	private static readonly HextechRarityWeights DefaultSecondActAfterSilverRuneRarityWeights = new(0, 1, 1);
 	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
@@ -374,9 +376,15 @@ internal static class HextechRuneConfiguration
 			disabledForgeIds.UnionWith(GetForgeIds(Version13DefaultDisabledForgeTypes));
 		}
 		config.DisabledForgeIds = disabledForgeIds;
-		config.FirstActRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
-			ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
-			DefaultFirstActRuneRarityWeights));
+		HextechRarityWeights loadedFirstActWeights = ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights);
+		bool shouldMigrateLegacyFirstActWeights =
+			previousConfigVersion < 14
+			&& loadedFirstActWeights.Silver == Version14LegacyFirstActRuneRarityWeights.Silver
+			&& loadedFirstActWeights.Gold == Version14LegacyFirstActRuneRarityWeights.Gold
+			&& loadedFirstActWeights.Prismatic == Version14LegacyFirstActRuneRarityWeights.Prismatic;
+		config.FirstActRuneRarityWeights = FromRarityWeights(shouldMigrateLegacyFirstActWeights
+			? DefaultFirstActRuneRarityWeights
+			: NormalizeRarityWeights(loadedFirstActWeights, DefaultFirstActRuneRarityWeights));
 		config.NormalRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
 			ToRarityWeights(config.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
 			DefaultNormalRuneRarityWeights));

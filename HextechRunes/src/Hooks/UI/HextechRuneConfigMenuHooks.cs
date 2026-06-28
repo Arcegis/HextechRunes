@@ -48,6 +48,7 @@ internal static class HextechRuneConfigMenuHooks
 	private const float PageTransitionSeconds = 0.13f;
 	private const float TabIndicatorSlideSeconds = 0.16f;
 	private const float RuneStateFadeSeconds = 0.12f;
+	private const float ToggleKnobSlideSeconds = 0.17f;
 	private const string ConfigPanelName = "HextechRuneConfigPanel";
 	private const string TabIndicatorName = "HextechRuneConfigTabIndicator";
 	private static readonly FieldInfo? MainMenuButtonLocStringField = TryGetField(typeof(NMainMenuTextButton), "_locString");
@@ -342,6 +343,7 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgeWeights = ToWeightArray(pendingSnapshot.ForgeRarityWeights);
 		int[] pendingForgePrice = [ pendingSnapshot.RandomForgeShopPrice ];
 		bool[] pendingShowHiddenRelicsToggle = [ HextechRelicVisibilityHooks.GetShowHiddenRelicsToggle() ];
+		bool[] pendingShowUpdateNotice = [ HextechRelicVisibilityHooks.GetShowUpdateNotice() ];
 		bool[] pendingRandomForgeDirectGrant = [ pendingSnapshot.RandomForgeDirectGrant ];
 		List<NumericValueBinding> numericBindings = [];
 		List<BooleanValueBinding> booleanBindings = [];
@@ -393,6 +395,7 @@ internal static class HextechRuneConfigMenuHooks
 			pendingForgeWeights,
 			pendingForgePrice,
 			pendingShowHiddenRelicsToggle,
+			pendingShowUpdateNotice,
 			pendingRandomForgeDirectGrant,
 			numericBindings,
 			booleanBindings,
@@ -505,6 +508,7 @@ internal static class HextechRuneConfigMenuHooks
 			pendingForgeWeights,
 			pendingForgePrice,
 			pendingShowHiddenRelicsToggle,
+			pendingShowUpdateNotice,
 			pendingRandomForgeDirectGrant,
 			numericBindings,
 			booleanBindings,
@@ -817,13 +821,14 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgeWeights,
 		int[] pendingForgePrice,
 		bool[] pendingShowHiddenRelicsToggle,
+		bool[] pendingShowUpdateNotice,
 		bool[] pendingRandomForgeDirectGrant,
 		List<NumericValueBinding> numericBindings,
 		List<BooleanValueBinding> booleanBindings,
 		bool compactLayout)
 	{
 		VBoxContainer page = CreatePageContainer(compactLayout);
-		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, pendingRandomForgeDirectGrant, booleanBindings, compactLayout));
+		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, pendingShowUpdateNotice, pendingRandomForgeDirectGrant, booleanBindings, compactLayout));
 		page.AddChild(CreatePriceSection(pendingForgePrice, numericBindings, compactLayout));
 		page.AddChild(CreateWeightMatrixSection(
 			pendingFirstActRuneWeights,
@@ -835,9 +840,16 @@ internal static class HextechRuneConfigMenuHooks
 		return page;
 	}
 
-	private static Control CreateMiscUiSection(bool[] pendingShowHiddenRelicsToggle, bool[] pendingRandomForgeDirectGrant, List<BooleanValueBinding> booleanBindings, bool compactLayout)
+	private static Control CreateMiscUiSection(bool[] pendingShowHiddenRelicsToggle, bool[] pendingShowUpdateNotice, bool[] pendingRandomForgeDirectGrant, List<BooleanValueBinding> booleanBindings, bool compactLayout)
 	{
 		VBoxContainer section = CreateCardSection(L("HEXTECH_MISC_UI_TITLE"), null, compactLayout, out PanelContainer card);
+		section.AddChild(CreateBooleanOption(
+			L("HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_TITLE"),
+			L("HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION"),
+			() => pendingShowUpdateNotice[0],
+			value => pendingShowUpdateNotice[0] = value,
+			booleanBindings,
+			compactLayout));
 		section.AddChild(CreateBooleanOption(
 			L("HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_TITLE"),
 			L("HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION"),
@@ -902,15 +914,52 @@ internal static class HextechRuneConfigMenuHooks
 		knob.AddThemeStyleboxOverride("panel", CreatePillKnobStyle(knobD));
 		toggle.AddChild(knob);
 
-		void ApplyVisual(bool on) => knob.Position = new Vector2(on ? knobOnX : knobOffX, knobY);
-		ApplyVisual(getValue());
+		// 旋钮以中心为锚做缩放回弹;位置另由 ApplyVisual 驱动。
+		knob.PivotOffset = new Vector2(knobD / 2f, knobD / 2f);
+
+		Tween? knobTween = null;
+		void ApplyVisual(bool on, bool animate)
+		{
+			if (!GodotObject.IsInstanceValid(knob))
+			{
+				return;
+			}
+
+			Vector2 target = new(on ? knobOnX : knobOffX, knobY);
+			if (knobTween != null && knobTween.IsValid())
+			{
+				knobTween.Kill();
+			}
+
+			knobTween = null;
+			if (!animate || !knob.IsInsideTree())
+			{
+				// 首次构建(尚未进入场景树)或重置为默认时不做动画,直接落位。
+				knob.Position = target;
+				knob.Scale = Vector2.One;
+				return;
+			}
+
+			// 开关切换:旋钮滑到目标位并带轻微过冲,同时做一次"按压回弹"缩放,手感更明确。
+			knobTween = knob.CreateTween();
+			knobTween.SetParallel(true);
+			knobTween.TweenProperty(knob, "position", target, ToggleKnobSlideSeconds)
+				.SetEase(Tween.EaseType.Out)
+				.SetTrans(Tween.TransitionType.Back);
+			knobTween.TweenProperty(knob, "scale", Vector2.One, ToggleKnobSlideSeconds)
+				.From(new Vector2(0.78f, 0.78f))
+				.SetEase(Tween.EaseType.Out)
+				.SetTrans(Tween.TransitionType.Back);
+		}
+
+		ApplyVisual(getValue(), animate: false);
 
 		toggle.Toggled += value =>
 		{
 			setValue(value);
-			ApplyVisual(value);
+			ApplyVisual(value, animate: true);
 		};
-		booleanBindings.Add(new BooleanValueBinding(getValue, toggle, ApplyVisual));
+		booleanBindings.Add(new BooleanValueBinding(getValue, toggle, value => ApplyVisual(value, animate: true)));
 		row.AddChild(toggle);
 
 		VBoxContainer textColumn = new()
@@ -1338,6 +1387,7 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgeWeights,
 		int[] pendingForgePrice,
 		bool[] pendingShowHiddenRelicsToggle,
+		bool[] pendingShowUpdateNotice,
 		bool[] pendingRandomForgeDirectGrant,
 		IReadOnlyList<NumericValueBinding> numericBindings,
 		IReadOnlyList<BooleanValueBinding> booleanBindings,
@@ -1440,6 +1490,7 @@ internal static class HextechRuneConfigMenuHooks
 					CopyArray(ToWeightArray(defaults.ForgeRarityWeights), pendingForgeWeights);
 					pendingForgePrice[0] = defaults.RandomForgeShopPrice;
 					pendingShowHiddenRelicsToggle[0] = HextechRelicVisibilityHooks.GetDefaultShowHiddenRelicsToggle();
+					pendingShowUpdateNotice[0] = HextechRelicVisibilityHooks.GetDefaultShowUpdateNotice();
 					pendingRandomForgeDirectGrant[0] = defaults.RandomForgeDirectGrant;
 					UpdateNumericLabels(numericBindings);
 					UpdateBooleanToggles(booleanBindings);
@@ -1466,8 +1517,10 @@ internal static class HextechRuneConfigMenuHooks
 				pendingForgePrice[0],
 				pendingRandomForgeDirectGrant[0]));
 			HextechRelicVisibilityHooks.SetShowHiddenRelicsToggle(pendingShowHiddenRelicsToggle[0]);
+			HextechRelicVisibilityHooks.SetShowUpdateNotice(pendingShowUpdateNotice[0]);
+			HextechUpdateChecker.ApplyNoticeVisibility(overlay);
 			CollectionHooks.RefreshOpenRelicCollections();
-			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]} randomForgeDirect={pendingRandomForgeDirectGrant[0]}");
+			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]} showUpdateNotice={pendingShowUpdateNotice[0]} randomForgeDirect={pendingRandomForgeDirectGrant[0]}");
 			CloseOverlayAnimated(overlay);
 		}, compactLayout);
 		Button cancel = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout);
