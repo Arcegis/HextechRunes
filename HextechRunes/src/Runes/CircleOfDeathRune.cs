@@ -73,6 +73,7 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 			damage.ToString(),
 			targetOrdinal.ToString())];
 		Flash([target]);
+		HextechCombatVfx.DeathRingLash(Owner.Creature, target);
 		return CreatureCmd.Damage(new BlockingPlayerChoiceContext(), target, damage, ValueProp.Unpowered, Owner.Creature, null);
 	}
 
