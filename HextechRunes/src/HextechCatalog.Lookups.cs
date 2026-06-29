@@ -7,6 +7,32 @@ internal static partial class HextechCatalog
 	private static readonly object ModelIdLookupLock = new();
 	private static ModelIdLookupCache? _modelIdLookupCache;
 	private static int _modelIdLookupCacheVersion = -1;
+	private static HashSet<ModelId>? _cardUpgradeRuneIds;
+
+	// 单卡升级 rune(CardUpgradeRuneBase<TCard>,受「牌组持有对应卡」门控)的 ModelId 集合,惰性预算。
+	private static HashSet<ModelId> CardUpgradeRuneIds =>
+		_cardUpgradeRuneIds ??= PlayerRuneMetadata.AllTypes
+			.Where(IsCardUpgradeRuneType)
+			.Select(ModelDb.GetId)
+			.ToHashSet();
+
+	public static bool IsCardUpgradeRuneId(ModelId id)
+	{
+		return CardUpgradeRuneIds.Contains(id);
+	}
+
+	private static bool IsCardUpgradeRuneType(Type type)
+	{
+		for (Type? baseType = type.BaseType; baseType != null; baseType = baseType.BaseType)
+		{
+			if (baseType.IsGenericType && baseType.GetGenericTypeDefinition() == typeof(CardUpgradeRuneBase<>))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	public static bool IsHextechRelic(RelicModel? relic)
 	{
