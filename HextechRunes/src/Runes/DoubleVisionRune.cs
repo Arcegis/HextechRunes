@@ -397,7 +397,11 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 		// 复视不对 Orobas 先古遗物「古老牙齿」「欧洛巴斯之触」生效（不复制它们）：
 		// 它们的获得/转化流程不适合被复制（古老牙齿重复获得会因牌组无可转化牌而卡死）。
-		if (sourceRelic is ArchaicTooth or TouchOfOrobas)
+		// 黄金罗盘（GoldenCompass）同样跳过：其 AfterObtained 会 await RunManager.GenerateMap() 重建全图、
+		// 消耗共享 RNG 并改写共享地图。复制会触发第二次 GenerateMap，而联机远端是经两条 fire-and-forget 奖励消息
+		// 异步重算，与持有端的严格顺序不一致 → 两端 State.Map/State.Rng 分叉、随后投票/checksum 报"数据不匹配"。
+		// 先古遗物本就不该被双倍，复制出第二枚黄金罗盘语义上也不成立。
+		if (sourceRelic is ArchaicTooth or TouchOfOrobas or GoldenCompass)
 		{
 			return;
 		}
