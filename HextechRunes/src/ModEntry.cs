@@ -59,6 +59,9 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("burn power flames", () => HextechBurnVisualHooks.Install(harmony));
 			TryInstallOptionalHookGroup("glass cannon health bar lock", () => HextechGlassCannonHealthBarHooks.Install(harmony));
 			TryInstallOptionalHookGroup("burn health bar prediction", () => HextechBurnHealthBarHooks.Install(harmony));
+			TryInstallOptionalHookGroup("neurosurge doom redirect", () => HextechNeurosurgeHooks.Install(harmony));
+			TryInstallOptionalHookGroup("well-laid plans unlimited retain", () => HextechWellLaidPlansHooks.Install(harmony));
+			TryInstallOptionalHookGroup("nightmare dark orb passive", () => HextechNightmareHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
 			_initialized = true;
 			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控。

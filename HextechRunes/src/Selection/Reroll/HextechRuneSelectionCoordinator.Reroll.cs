@@ -36,7 +36,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		RunState runState,
 		IReadOnlyList<RelicModel> currentOptions,
 		int slotIndex,
-		IReadOnlySet<ModelId> seenOptionIds,
+		HashSet<ModelId> seenOptionIds,
 		bool useEndlessTagWindow)
 	{
 		if (slotIndex < 0 || slotIndex >= currentOptions.Count)
@@ -48,13 +48,13 @@ internal static partial class HextechRuneSelectionCoordinator
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
 			.ToHashSet();
 		HashSet<ModelId> excludedIds = new(currentOptionIds);
-		// 单卡升级 rune(deck 门控)豁免出「已见」排除:只要对应卡还在牌组,就一直可重随到。
-		excludedIds.UnionWith(seenOptionIds.Where(static id => !HextechCatalog.IsCardUpgradeRuneId(id)));
+		excludedIds.UnionWith(seenOptionIds);
 		HextechRarityTier rarity = GetRarityForOptions(currentOptions);
 		List<RelicModel> rerolled = BuildSelectableRunesForRarity(player, rarity, runState, excludedIds, useEndlessTagWindow);
-		if (rerolled.Count == 0 && excludedIds.Count > currentOptionIds.Count)
+		if (rerolled.Count == 0 && seenOptionIds.Count > 0)
 		{
-			// 池被「已见」清空:放宽忽略已见(仍排除当前选项),保证重随始终能出新东西。
+			// 池被「已见」清空:重置(清空)已见集,让重随能重新刷到此前见过的符文(仍排除当前选项)。
+			seenOptionIds.Clear();
 			rerolled = BuildSelectableRunesForRarity(player, rarity, runState, currentOptionIds, useEndlessTagWindow);
 		}
 
@@ -88,7 +88,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		IReadOnlyList<RelicModel> currentOptions,
 		int slotIndex,
 		int rerollOrdinal,
-		IReadOnlySet<ModelId> seenOptionIds,
+		HashSet<ModelId> seenOptionIds,
 		bool useEndlessTagWindow)
 	{
 		if (slotIndex < 0 || slotIndex >= currentOptions.Count)
@@ -100,17 +100,17 @@ internal static partial class HextechRuneSelectionCoordinator
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
 			.ToHashSet();
 		HashSet<ModelId> excludedIds = new(currentOptionIds);
-		// 单卡升级 rune(deck 门控)豁免出「已见」排除:只要对应卡还在牌组,就一直可重随到。
-		excludedIds.UnionWith(seenOptionIds.Where(static id => !HextechCatalog.IsCardUpgradeRuneId(id)));
+		excludedIds.UnionWith(seenOptionIds);
 
 		HextechRarityTier rarity = GetRarityForOptions(currentOptions);
 		RunState runState = (RunState)player.RunState;
 		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, excludedIds)
 			.OrderBy(static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry, StringComparer.Ordinal)
 			.ToList();
-		if (pool.Count == 0 && excludedIds.Count > currentOptionIds.Count)
+		if (pool.Count == 0 && seenOptionIds.Count > 0)
 		{
-			// 池被「已见」清空:放宽忽略已见(仍排除当前选项),保证重随始终能出新东西。
+			// 池被「已见」清空:重置(清空)已见集,让重随能重新刷到此前见过的符文(仍排除当前选项)。
+			seenOptionIds.Clear();
 			pool = BuildSelectableRunePool(player, rarity, runState, currentOptionIds)
 				.OrderBy(static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry, StringComparer.Ordinal)
 				.ToList();
