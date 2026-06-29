@@ -14,7 +14,6 @@ internal sealed partial class HextechMayhemModifier
 	{
 		HextechGoldrendSync.ResetCombat();
 		ResetCombatTracking();
-		HextechEnemyUi.Refresh(this);
 		HextechMultiplayerScalingCompat.RefreshHostScalingFlagForLocalHost(this);
 		if (RunState.CurrentRoom is CombatRoom currentCombatRoom)
 		{
@@ -29,6 +28,10 @@ internal sealed partial class HextechMayhemModifier
 		}
 
 		_combatTracking.EnemyProtectiveVeilTurnCounter = 0;
+
+		// R1:纯表现刷新移到所有会进 checksum 的同步写入(HP 归一化/持久 hex/起手 hex)之后,
+		// 保证同步命令先于任何 UI 刷新发出;Refresh 自身已 throw-safe,双重保险。
+		HextechEnemyUi.Refresh(this);
 	}
 
 	public override async Task AfterCombatEnd(CombatRoom room)

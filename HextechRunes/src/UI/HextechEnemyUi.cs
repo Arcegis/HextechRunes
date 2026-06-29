@@ -48,6 +48,20 @@ internal static class HextechEnemyUi
 
 	public static void Refresh(HextechMayhemModifier modifier)
 	{
+		// 纯表现层硬保证:本方法被多个 lockstep 同步钩子(BeforeCombatStart 等)调用,
+		// 任何 UI/资源/节点异常都绝不能冒泡进同步路径——否则单端中断、与另一端命令流分叉被踢。
+		try
+		{
+			RefreshInternal(modifier);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh suppressed (UI-only failure, multiplayer sync protected): {ex}");
+		}
+	}
+
+	private static void RefreshInternal(HextechMayhemModifier modifier)
+	{
 		Control? container = GetModifiersContainer();
 		if (container == null)
 		{
@@ -246,8 +260,16 @@ internal static class HextechEnemyUi
 
 		foreach (MonsterHexKind hex in activeHexes)
 		{
-			Control holder = CreateEnemyHexHolder(hex);
-			strip.AddChild(holder);
+			try
+			{
+				Control holder = CreateEnemyHexHolder(hex);
+				strip.AddChild(holder);
+			}
+			catch (Exception ex)
+			{
+				// 单个图标解析/实例化失败只跳过该图标,不影响其余图标,更不冒泡进同步路径。
+				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyUi: skipped enemy hex icon {hex}: {ex.Message}");
+			}
 		}
 	}
 
