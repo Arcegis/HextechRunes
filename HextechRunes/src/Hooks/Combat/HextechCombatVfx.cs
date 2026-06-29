@@ -104,6 +104,9 @@ internal static class HextechCombatVfx
 	private static readonly Color DeathFlashColor = new(0.62f, 1f, 0.64f);
 	private static readonly Color DivineRingColor = new(1f, 0.9f, 0.55f);
 	private static readonly Color DivineFlashColor = new(1f, 0.97f, 0.82f);
+	// 吞噬灵魂:幽青色亡魂。
+	private static readonly Color SoulColor = new(0.42f, 0.95f, 0.82f);
+	private static readonly Color SoulCoreColor = new(0.78f, 1f, 0.95f);
 
 	private static Texture2D? _glowTexture;
 	private static Texture2D? _ringTexture;
@@ -119,6 +122,12 @@ internal static class HextechCombatVfx
 	{
 		Creature[] snapshot = [.. allies];
 		Callable.From(() => RunDivinePulse(snapshot)).CallDeferred();
+	}
+
+	/// <summary>吞噬灵魂:幽青色亡魂从死亡的敌人身上被抽离、飘向并汇入施法者。</summary>
+	internal static void SoulDrain(Creature source, Creature destination)
+	{
+		Callable.From(() => RunSoulDrain(source, destination)).CallDeferred();
 	}
 
 	private static void RunDeathRingLash(Creature source, Creature target)
@@ -186,6 +195,77 @@ internal static class HextechCombatVfx
 		{
 			Log.Warn($"[{ModInfo.Id}][CombatVfx] Divine pulse failed: {ex.Message}");
 		}
+	}
+
+	private static void RunSoulDrain(Creature source, Creature destination)
+	{
+		try
+		{
+			NCreature? destNode = HextechCreatureNodeRegistry.TryGet(destination);
+			if (destNode == null)
+			{
+				return;
+			}
+
+			Node? parent = destNode.GetParent();
+			if (!GodotObject.IsInstanceValid(parent))
+			{
+				return;
+			}
+
+			Vector2 destPos = CreatureCenter(destNode);
+			float width = CreatureWidth(destNode);
+			NCreature? sourceNode = HextechCreatureNodeRegistry.TryGet(source);
+			Vector2 sourcePos = sourceNode != null ? CreatureCenter(sourceNode) : destPos;
+
+			if (sourceNode != null)
+			{
+				// 亡魂自敌人身上被抽离的一瞬。
+				SpawnFlash(parent!, sourcePos, width * 0.85f, SoulCoreColor, 0.35f, 0.5f);
+			}
+
+			// 主魂飘入你身上,到达时一记吸收闪光与圈;再添两缕错峰拖尾。
+			SpawnSoulWisp(parent!, sourcePos, destPos, width * 0.52f, 0.55f, 0f, SoulColor, () =>
+			{
+				if (GodotObject.IsInstanceValid(parent))
+				{
+					SpawnFlash(parent!, destPos, width * 1.0f, SoulCoreColor, 0.35f, 0.5f);
+					SpawnRing(parent!, destPos, width * 0.2f, width * 1.05f, 0.4f, 0.8f, SoulColor);
+				}
+			});
+			SpawnSoulWisp(parent!, sourcePos, destPos, width * 0.32f, 0.6f, 0.07f, SoulCoreColor, null);
+			SpawnSoulWisp(parent!, sourcePos, destPos, width * 0.28f, 0.62f, 0.13f, SoulColor, null);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][CombatVfx] Soul drain failed: {ex.Message}");
+		}
+	}
+
+	private static void SpawnSoulWisp(Node parent, Vector2 from, Vector2 to, float diameter, float duration, float delay, Color color, Action? onArrival)
+	{
+		Sprite2D wisp = MakeSprite(GetGlowTexture(), color with { A = 0.95f });
+		wisp.TopLevel = true;
+		parent.AddChildSafely(wisp);
+		wisp.GlobalPosition = from;
+		SetSpriteDiameter(wisp, diameter);
+
+		Tween tween = wisp.CreateTween();
+		if (delay > 0f)
+		{
+			tween.TweenInterval(delay);
+		}
+
+		tween.SetParallel(true);
+		tween.TweenProperty(wisp, "global_position", to, duration)
+			.SetEase(Tween.EaseType.Out)
+			.SetTrans(Tween.TransitionType.Sine);
+		tween.TweenProperty(wisp, "modulate:a", 0f, duration).SetEase(Tween.EaseType.In);
+		tween.Chain().TweenCallback(Callable.From(() =>
+		{
+			onArrival?.Invoke();
+			FreeNode(wisp);
+		}));
 	}
 
 	private static Vector2 CreatureCenter(NCreature node)

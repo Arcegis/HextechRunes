@@ -56,6 +56,8 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("hand of baron aura visual", () => HextechBaronAuraHooks.Install(harmony));
 			TryInstallOptionalHookGroup("near-death feast visual", () => HextechNearDeathFeastVisualHooks.Install(harmony));
 			TryInstallOptionalHookGroup("combat vfx dispatch", () => HextechCombatVfxHooks.Install(harmony));
+			TryInstallOptionalHookGroup("burn power flames", () => HextechBurnVisualHooks.Install(harmony));
+			TryInstallOptionalHookGroup("glass cannon health bar lock", () => HextechGlassCannonHealthBarHooks.Install(harmony));
 			TryInstallOptionalHookGroup("burn health bar prediction", () => HextechBurnHealthBarHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
 			_initialized = true;

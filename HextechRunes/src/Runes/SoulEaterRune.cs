@@ -76,6 +76,7 @@ public sealed class SoulEaterRune : HextechRelicBase
 		}
 
 		Flash();
+		HextechCombatVfx.SoulDrain(target, Owner.Creature);
 		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
 	}
 
