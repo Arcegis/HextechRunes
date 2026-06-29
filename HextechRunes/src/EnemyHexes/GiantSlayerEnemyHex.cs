@@ -11,14 +11,14 @@ internal sealed class GiantSlayerEnemyHex : HextechEnemyHexEffect
 			return 1m;
 		}
 
-		// 玩家最大生命每比该敌人高 6 点,敌人对你的伤害 +1%,最多 +100%。
-		int diff = (int)(target.MaxHp - dealer.MaxHp);
-		if (diff <= 0)
+		// 玩家每有 5 点最大生命值,敌人对你的伤害 +1%,最多 +100%。
+		int playerMaxHp = (int)target.MaxHp;
+		if (playerMaxHp <= 0)
 		{
 			return 1m;
 		}
 
-		decimal bonus = Math.Min(1.00m, diff / 6 * 0.01m);
+		decimal bonus = Math.Min(1.00m, playerMaxHp / 5 * 0.01m);
 		return 1m + bonus;
 	}
 

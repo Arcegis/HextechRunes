@@ -11,7 +11,7 @@ internal sealed class NearDeathFeastEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.15m));
+		int heal = Math.Max(1, (int)Math.Floor(target.MaxHp * 0.20m));
 		await CreatureCmd.Heal(target, heal);
 		await PowerCmd.Apply<StrengthPower>(target, context.TierValue(Kind, 1, 2, 3), target, null);
 	}

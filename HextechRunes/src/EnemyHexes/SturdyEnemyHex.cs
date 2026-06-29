@@ -9,8 +9,7 @@ internal sealed class SturdyEnemyHex : HextechEnemyHexEffect
 		foreach (Creature enemy in enemies)
 		{
 			decimal percent = enemy.CurrentHp * 2 < enemy.MaxHp ? 0.04m : 0.02m;
-			int maxHeal = context.TierValue(Kind, 10, 15, 20);
-			int heal = Math.Min(maxHeal, Math.Max(1, (int)Math.Floor(enemy.MaxHp * percent)));
+			int heal = Math.Max(1, (int)Math.Floor(enemy.MaxHp * percent));
 			if (heal > 0)
 			{
 				await CreatureCmd.Heal(enemy, heal);

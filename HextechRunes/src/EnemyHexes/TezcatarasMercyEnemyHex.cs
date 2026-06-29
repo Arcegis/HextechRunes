@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 internal sealed class TezcatarasMercyEnemyHex : HextechEnemyHexEffect
 {
-	private const int CombatInterval = 5;
+	private const int CombatInterval = 4;
 
 	internal override MonsterHexKind Kind => MonsterHexKind.TezcatarasMercy;
 

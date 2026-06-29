@@ -19,8 +19,7 @@ internal sealed class TankEngineEnemyHex : HextechEnemyHexEffect
 				context.Tracking.TankEngineLastAppliedRound[combatId] = currentRound;
 			}
 
-			int maxHpGain = context.TierValue(Kind, 5, 10, 15);
-			int hpGain = Math.Min(maxHpGain, Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m)));
+			int hpGain = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m));
 			await HextechMayhemModifier.GainMonsterMaxHpWithoutHeal(enemy, hpGain);
 			if (enemy.CombatId is uint trackedCombatId)
 			{

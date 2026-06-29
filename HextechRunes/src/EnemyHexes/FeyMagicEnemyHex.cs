@@ -17,6 +17,7 @@ internal sealed class FeyMagicEnemyHex : HextechEnemyHexEffect
 				continue;
 			}
 
+			await PowerCmd.Apply<ShrinkPower>(creature, 1m, source, null);
 			await PowerCmd.Apply<NoDrawPower>(creature, 1m, source, null);
 		}
 	}

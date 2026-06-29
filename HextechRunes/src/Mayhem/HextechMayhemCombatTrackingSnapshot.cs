@@ -43,6 +43,7 @@ internal sealed class CombatTrackingSnapshot
 	public List<uint> MountainSoulHasPreviousTurn { get; set; } = [];
 	public List<uint> MountainSoulDamagedSinceLastTurn { get; set; } = [];
 	public Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn { get; set; } = new();
+	public Dictionary<ulong, int> BackToBasicsCardsPlayedThisTurn { get; set; } = new();
 	public Dictionary<ulong, int> PlayerCardsDrawnThisCombat { get; set; } = new();
 	public Dictionary<ulong, int> SwiftAndSafePlayerCardsDrawnThisCombat { get; set; } = new();
 	public Dictionary<uint, int> EnemyPorcupineTemporaryThornsThisTurn { get; set; } = new();
