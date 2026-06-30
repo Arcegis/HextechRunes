@@ -1,0 +1,10 @@
+{
+  "HEXTECH_MAYHEM.title": "Хаос Хекстека",
+  "HEXTECH_MAYHEM.description": "В начале актов [blue]1[/blue], [blue]2[/blue] и [blue]3[/blue] выберите руны Хекстека и дайте монстрам этого акта бонус Хекстека той же редкости.",
+  "HEXTECH_SILVER_RUN.title": "Серебряный забег",
+  "HEXTECH_SILVER_RUN.description": "Все руны Хекстека, обновлённые за этот забег, имеют серебряный уровень.",
+  "HEXTECH_GOLD_RUN.title": "Золотой забег",
+  "HEXTECH_GOLD_RUN.description": "Все руны Хекстека, обновлённые за этот забег, имеют золотой уровень.",
+  "HEXTECH_PRISMATIC_RUN.title": "Призматический забег",
+  "HEXTECH_PRISMATIC_RUN.description": "Все руны Хекстека, обновлённые за этот забег, имеют призматический уровень."
+}
