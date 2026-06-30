@@ -1,33 +1,28 @@
 using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HextechRunes;
 
+// 蓄能(仅储君) —— 当你花费辉星时,获得相同数值的活力(VigorPower)。
 public sealed class ChargeUpRune : HextechRelicBase
 {
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new PowerVar<VigorPower>(1m)
-	];
-
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
 		HoverTipFactory.FromPower<VigorPower>()
 	];
 
-	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	public override bool IsAvailableForPlayer(Player player) => IsRegentPlayer(player);
+
+	public override Task AfterStarsSpent(int amount, Player spender)
 	{
-		if (Owner == null || Owner.Creature.IsDead || cardPlay.Card.Owner != Owner)
+		if (Owner == null || Owner.Creature.IsDead || spender != Owner || amount <= 0)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
 		Flash([Owner.Creature]);
-		await PowerCmd.Apply<VigorPower>(Owner.Creature, DynamicVars["VigorPower"].BaseValue, Owner.Creature, cardPlay.Card);
+		return PowerCmd.Apply<VigorPower>(Owner.Creature, amount, Owner.Creature, null);
 	}
 }

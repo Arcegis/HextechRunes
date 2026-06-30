@@ -17,7 +17,7 @@ internal sealed class ArcanePunchEnemyHex : HextechEnemyHexEffect
 		}
 
 		int threshold = context.TierValue(Kind, 2, 1, 1);
-		int vigor = context.TierValue(Kind, 1, 1, 2);
+		int tainted = context.TierValue(Kind, 1, 1, 2);
 		context.Tracking.ArcanePunchPlayerAttackCardsPlayed++;
 		if (context.Tracking.ArcanePunchPlayerAttackCardsPlayed < threshold)
 		{
@@ -25,9 +25,10 @@ internal sealed class ArcanePunchEnemyHex : HextechEnemyHexEffect
 		}
 
 		context.Tracking.ArcanePunchPlayerAttackCardsPlayed = 0;
-		foreach (Creature enemy in context.GetAliveEnemies(combatState))
+		Creature player = cardPlay.Card.Owner!.Creature;
+		if (player.IsAlive)
 		{
-			await PowerCmd.Apply<VigorPower>(enemy, vigor, enemy, null);
+			await PowerCmd.Apply<TaintedPower>(player, tainted, player, null);
 		}
 	}
 }

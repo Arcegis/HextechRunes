@@ -159,6 +159,16 @@ internal sealed partial class HextechMayhemModifier
 		set => _hostUsesBetterMultiplayerScaling = value;
 	}
 
+	// 模组总开关的本局冻结值。空字符串=未冻结(默认开启);"True"/"False"=已冻结。
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public string SavedModActiveForRun
+	{
+		get => _runContext.ModActiveForRun?.ToString() ?? string.Empty;
+		set => _runContext.ModActiveForRun = string.IsNullOrEmpty(value)
+			? null
+			: (bool.TryParse(value, out bool parsed) ? parsed : null);
+	}
+
 	public override LocString Title => new("modifiers", "HEXTECH_MAYHEM.title");
 
 	public override LocString Description => new("modifiers", "HEXTECH_MAYHEM.description");

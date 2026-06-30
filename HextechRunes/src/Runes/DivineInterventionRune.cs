@@ -73,6 +73,7 @@ public sealed class DivineInterventionRune : HextechRelicBase
 		}
 
 		Flash(players);
+		HextechCombatVfx.DivinePulse(players);
 		await PowerCmd.Apply<IntangiblePower>(players, DynamicVars["IntangiblePower"].BaseValue, Owner.Creature, null);
 	}
 }

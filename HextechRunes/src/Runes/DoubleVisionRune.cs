@@ -389,6 +389,14 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	private async Task DuplicateObtainedRelic(Player player, RelicModel sourceRelic)
 	{
+		// 复视不再复制海克斯模组自己的符文/遗物(只对原版遗物生效):自定义符文/遗物的获得→转化→联机同步
+		// 流程复杂且对多人敏感,重复获得易引发分叉/卡死(玩家实测黑屏的一类来源)。按需求收窄复视作用域为原版遗物。
+		// 判据用「该类型来自本模组程序集」,自动覆盖全部 HextechRelicBase 符文与 HextechForgeBase 锻造,无需逐个列举。
+		if (sourceRelic.GetType().Assembly == typeof(DoubleVisionRune).Assembly)
+		{
+			return;
+		}
+
 		if (sourceRelic is DustyTome dustyTome)
 		{
 			await DuplicateDustyTomeAncientCard(player, dustyTome);
@@ -397,7 +405,11 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 		// 复视不对 Orobas 先古遗物「古老牙齿」「欧洛巴斯之触」生效（不复制它们）：
 		// 它们的获得/转化流程不适合被复制（古老牙齿重复获得会因牌组无可转化牌而卡死）。
-		if (sourceRelic is ArchaicTooth or TouchOfOrobas)
+		// 黄金罗盘（GoldenCompass）同样跳过：其 AfterObtained 会 await RunManager.GenerateMap() 重建全图、
+		// 消耗共享 RNG 并改写共享地图。复制会触发第二次 GenerateMap，而联机远端是经两条 fire-and-forget 奖励消息
+		// 异步重算，与持有端的严格顺序不一致 → 两端 State.Map/State.Rng 分叉、随后投票/checksum 报"数据不匹配"。
+		// 先古遗物本就不该被双倍，复制出第二枚黄金罗盘语义上也不成立。
+		if (sourceRelic is ArchaicTooth or TouchOfOrobas or GoldenCompass)
 		{
 			return;
 		}
@@ -455,6 +467,17 @@ public sealed class DoubleVisionRune : HextechRelicBase
 	private async Task DuplicateForgeReward(Player player, HextechForgeChoiceReward reward)
 	{
 		if (reward.ClaimedForgeId == ModelId.none)
+		{
+			return;
+		}
+
+		// (B1)附魔锻造的 AfterObtained 会开交互式选牌(FromDeckForEnchantment),必须走「持有者开UI+SyncLocalChoice、
+		// 远端 WaitForRemoteChoice」的选择同步协议(每次选牌都 ReserveChoiceId)。复制份只能在【本地持有者】这一端
+		// 真正开第二次选牌,再靠 ObtainSelectedForge 的 syncObtainedRelic 广播让远端经 RewardSynchronizer 获得这份
+		// 锻造并 WaitForRemoteChoice 回放同一选牌——这是原版 HextechForgeChoiceReward.OnSelect(仅选取端运行)的镜像。
+		// 缺这道本地闸门时,远端也各自跑 ObtainSelectedForge 开自己的选牌→复制份 choiceId 与持有者错位→远端拿到
+		// Index 型结果→AsDeckCards 抛异常(玩家实测黑屏/卡的来源之一)。非本地持有者直接返回,由广播兜底。
+		if (!ShouldDuplicateForPlayer(player))
 		{
 			return;
 		}

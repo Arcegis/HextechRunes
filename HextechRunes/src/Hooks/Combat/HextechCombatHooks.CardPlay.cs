@@ -99,25 +99,29 @@ internal static partial class HextechCombatHooks
 			return false;
 		}
 
-		if (card.EnergyCost.CostsX || GetEnergyCostForCurrentCardPlay(card) < 3m)
-		{
-			return false;
-		}
-
+		// 玩家遗物「回归基本功」:费用 ≥ 3 的牌不可打出。
 		BackToBasicsRune? rune = card.Owner.GetRelic<BackToBasicsRune>();
-		if (rune != null)
+		if (rune != null
+			&& !card.EnergyCost.CostsX
+			&& GetEnergyCostForCurrentCardPlay(card) >= 3m)
 		{
 			preventer = rune;
 			return true;
 		}
 
-		if (card.Owner.Creature.CombatState?.RunState is RunState runState
-			&& card.Owner.Creature.Side == CombatSide.Player
+		// 敌方海克斯「回归基本功」:每回合打出的牌数达到上限后,其余牌不可再打出。
+		if (card.Owner.Creature.Side == CombatSide.Player
+			&& card.Owner.Creature.CombatState?.RunState is RunState runState
 			&& GetMayhemModifier(runState) is HextechMayhemModifier modifier
 			&& modifier.HasActiveMonsterHex(MonsterHexKind.BackToBasics))
 		{
-			preventer = modifier;
-			return true;
+			int limit = BackToBasicsEnemyHex.GetTurnCardLimit(modifier);
+			int played = modifier.CombatTracking.BackToBasicsCardsPlayedThisTurn.GetValueOrDefault(card.Owner.NetId);
+			if (played >= limit)
+			{
+				preventer = modifier;
+				return true;
+			}
 		}
 
 		return false;

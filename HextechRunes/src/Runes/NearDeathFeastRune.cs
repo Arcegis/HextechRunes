@@ -85,6 +85,24 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 			&& rune._nearDeathDebt < GetDeathNegativeHpLimit(creature);
 	}
 
+	/// <summary>
+	/// 纯只读:供特效层轮询「濒死狂宴」是否激活及其强度(负血债务 / 死亡上限,0..1)。
+	/// 不修改任何状态,仅反映已同步的运行状态,各端轮询结果一致。
+	/// </summary>
+	internal static bool TryGetFeastIntensity(Creature creature, out float intensity)
+	{
+		intensity = 0f;
+		NearDeathFeastRune? rune = GetRune(creature);
+		if (rune == null || !rune._nearDeathActive || creature.CurrentHp < 1)
+		{
+			return false;
+		}
+
+		int limit = GetDeathNegativeHpLimit(creature);
+		intensity = limit > 0 ? Math.Clamp(rune._nearDeathDebt / (float)limit, 0f, 1f) : 0f;
+		return true;
+	}
+
 	internal static bool ShouldPreventSustain(Creature creature)
 	{
 		return IsDyingButAlive(creature);

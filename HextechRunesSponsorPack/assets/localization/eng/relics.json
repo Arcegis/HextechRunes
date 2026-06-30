@@ -88,5 +88,11 @@
   "desperateFinaleRune.description": "Gain [gold]Prophecy Projection[/gold]. Whenever you kill [gold]Final Chorale[/gold], gain [blue]20%[/blue] increased damage, block, and healing, then gain [blue]1[/blue] additional [gold]Prophecy Projection[/gold]. [gold]Final Chorale[/gold] summoned by a new [gold]Prophecy Projection[/gold] has [blue]300[/blue] more max HP.",
   "DESPERATE_FINALE_RUNE.description": "Gain [gold]Prophecy Projection[/gold]. Whenever you kill [gold]Final Chorale[/gold], gain [blue]20%[/blue] increased damage, block, and healing, then gain [blue]1[/blue] additional [gold]Prophecy Projection[/gold]. [gold]Final Chorale[/gold] summoned by a new [gold]Prophecy Projection[/gold] has [blue]300[/blue] more max HP.",
   "desperateFinaleRune.flavor": "Sponsor collab item: The finale has not ended; it only pushes the next echo deeper into despair.",
-  "DESPERATE_FINALE_RUNE.flavor": "Sponsor collab item: The finale has not ended; it only pushes the next echo deeper into despair."
+  "DESPERATE_FINALE_RUNE.flavor": "Sponsor collab item: The finale has not ended; it only pushes the next echo deeper into despair.",
+  "believerRune.title": "Believer",
+  "believerRune.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "believerRune.flavor": "Sponsor item: Faith guides every choice.",
+  "BELIEVER_RUNE.title": "Believer",
+  "BELIEVER_RUNE.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "BELIEVER_RUNE.flavor": "Sponsor item: Faith guides every choice."
 }

@@ -15,7 +15,13 @@ internal sealed class PandorasBoxEnemyHex : HextechEnemyHexEffect
 			return options;
 		}
 
-		IEnumerable<CardPoolModel> pools = player.UnlockState.CharacterCardPools.Union(options.CardPools);
-		return options.WithCardPools(pools, options.CardPoolFilter);
+		// 只保留其他角色的卡池(排除玩家自身角色),使奖励「只会包含其他颜色」。
+		ModelId ownerPoolId = player.Character.CardPool.Id;
+		List<CardPoolModel> otherPools = player.UnlockState.CharacterCardPools
+			.Where(pool => !pool.Id.Equals(ownerPoolId))
+			.ToList();
+		return otherPools.Count > 0
+			? options.WithCardPools(otherPools, options.CardPoolFilter)
+			: options;
 	}
 }

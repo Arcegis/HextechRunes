@@ -228,6 +228,10 @@ internal static class HextechChoiceCodec
 			snapshot.DisabledForgeIds
 				.Select(static entry => new ModelId(ModInfo.Id, entry))
 				.OrderBy(static id => id.Entry, StringComparer.Ordinal));
+
+		// 模组总开关:作为尾部可选 int 追加,避免改 snapshot 版本号/定长计数。
+		// 旧 payload 无此尾巴时解码端回退到 fallback(默认开启)。
+		payload.Add(snapshot.ModEnabled ? 1 : 0);
 	}
 
 	private static bool TryDecodeRunConfigurationSnapshot(
@@ -302,9 +306,16 @@ internal static class HextechChoiceCodec
 		}
 
 		cursor += disabledMonsterHexCount;
-		if (!HextechStableModelIdListCodec.TryDecode(payload, cursor, out List<ModelId> disabledForgeIds, out _))
+		if (!HextechStableModelIdListCodec.TryDecode(payload, cursor, out List<ModelId> disabledForgeIds, out int forgeListNextCursor))
 		{
 			return false;
+		}
+
+		// 模组总开关:尾部可选 int。旧 payload 没有这一项时回退到 fallback(默认开启)。
+		bool modEnabled = fallback.ModEnabled;
+		if (payload.Count > forgeListNextCursor)
+		{
+			modEnabled = payload[forgeListNextCursor] != 0;
 		}
 
 		snapshot = HextechRuneConfiguration.NormalizeSnapshot(new HextechRunConfigurationSnapshot(
@@ -320,7 +331,8 @@ internal static class HextechChoiceCodec
 			secondActAfterSilverWeights,
 			forgeWeights,
 			forgePrice,
-			randomForgeDirectGrant));
+			randomForgeDirectGrant,
+			modEnabled));
 		return true;
 	}
 

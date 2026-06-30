@@ -84,7 +84,7 @@ public sealed class FeyMagicRune : HextechRelicBase
 			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.TotalDamage <= 0m
-			|| !IsOwnedNonXCardWithCostAtLeast(cardSource, DynamicVars["MinCost"].BaseValue))
+			|| !IsOwnedCardWithEffectiveCostAtLeast(cardSource, DynamicVars["MinCost"].BaseValue))
 		{
 			return;
 		}

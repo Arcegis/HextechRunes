@@ -88,5 +88,11 @@
   "desperateFinaleRune.description": "获得[gold]预言显像[/gold]。每当你击杀[gold]终曲合声[/gold]时，获得[blue]20%[/blue]伤害、格挡与治疗加成，并获得[blue]1[/blue]个额外的[gold]预言显像[/gold]。由新的[gold]预言显像[/gold]召唤出的[gold]终曲合声[/gold]最大生命增加[blue]300[/blue]点。",
   "DESPERATE_FINALE_RUNE.description": "获得[gold]预言显像[/gold]。每当你击杀[gold]终曲合声[/gold]时，获得[blue]20%[/blue]伤害、格挡与治疗加成，并获得[blue]1[/blue]个额外的[gold]预言显像[/gold]。由新的[gold]预言显像[/gold]召唤出的[gold]终曲合声[/gold]最大生命增加[blue]300[/blue]点。",
   "desperateFinaleRune.flavor": "赞助者联动物品：终曲尚未落幕，只是把下一次回响推向更深的绝望。",
-  "DESPERATE_FINALE_RUNE.flavor": "赞助者联动物品：终曲尚未落幕，只是把下一次回响推向更深的绝望。"
+  "DESPERATE_FINALE_RUNE.flavor": "赞助者联动物品：终曲尚未落幕，只是把下一次回响推向更深的绝望。",
+  "believerRune.title": "信徒",
+  "believerRune.description": "获得时，立即进行一次[gold]神迹[/gold]事件。每击败BOSS获得[blue]6[/blue]点充能、击败精英获得[blue]3[/blue]点充能、击败小怪获得[blue]1[/blue]点充能。充能满[blue]6[/blue]时立即进行一次[gold]神迹[/gold]事件。",
+  "believerRune.flavor": "赞助者物品：信仰指引着每一次抉择。",
+  "BELIEVER_RUNE.title": "信徒",
+  "BELIEVER_RUNE.description": "获得时，立即进行一次[gold]神迹[/gold]事件。每击败BOSS获得[blue]6[/blue]点充能、击败精英获得[blue]3[/blue]点充能、击败小怪获得[blue]1[/blue]点充能。充能满[blue]6[/blue]时立即进行一次[gold]神迹[/gold]事件。",
+  "BELIEVER_RUNE.flavor": "赞助者物品：信仰指引着每一次抉择。"
 }

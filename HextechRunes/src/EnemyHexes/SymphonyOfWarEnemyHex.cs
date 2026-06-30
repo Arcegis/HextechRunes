@@ -7,7 +7,7 @@ internal sealed class SymphonyOfWarEnemyHex : HextechEnemyHexEffect
 	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{
 		int ritual = context.TierValue(Kind, 0, 1, 2);
-		return ritual > 0
+		return ritual > 0 && enemy.IsAlive
 			? PowerCmd.Apply<RitualPower>(enemy, ritual, enemy, null)
 			: Task.CompletedTask;
 	}

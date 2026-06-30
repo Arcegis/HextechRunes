@@ -54,6 +54,8 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> MountainSoulDamagedSinceLastTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.EveryTurnBoundary)]
 	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn = new();
+	[CombatTrackingClear(CombatTrackingClearPhase.EveryTurnBoundary)]
+	public readonly Dictionary<ulong, int> BackToBasicsCardsPlayedThisTurn = new();
 	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
 	public readonly Dictionary<ulong, int> SwiftAndSafePlayerCardsDrawnThisCombat = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.EveryTurnBoundary)]

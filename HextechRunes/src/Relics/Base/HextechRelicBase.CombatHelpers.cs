@@ -59,11 +59,14 @@ public abstract partial class HextechRelicBase
 		return HextechCombatHistoryHelper.CountOwnedCardsDrawn(Owner);
 	}
 
-	protected bool IsOwnedNonXCardWithCostAtLeast(CardModel? card, decimal minimumCost)
+	protected bool IsOwnedCardWithEffectiveCostAtLeast(CardModel? card, decimal minimumCost)
 	{
+		// 含 X 费卡:X 费卡按本次实付的 X(GetEnergyCostForCurrentCardPlay 在打出期间返回实付能量)参与判定,
+		// 不再用 !CostsX 排除。本方法仅由 5 个"费用≥N"符文(终极刷新/终极不可阻挡/最终形态/妖精魔法/碰不到我)共用,
+		// 放开 X 费卡正是期望行为;其它 CostsX 排除逻辑都各自直接判 card.EnergyCost.CostsX,不经本方法。
+		// 实付 X 由同步的打出动作决定,故各端判定一致,不引入联机分叉。
 		return card != null
 			&& card.Owner == Owner
-			&& !card.EnergyCost.CostsX
 			&& HextechCombatHooks.GetEnergyCostForCurrentCardPlay(card) >= minimumCost;
 	}
 

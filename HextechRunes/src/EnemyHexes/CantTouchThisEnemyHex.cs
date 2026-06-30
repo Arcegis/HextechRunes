@@ -8,7 +8,7 @@ internal sealed class CantTouchThisEnemyHex : HextechEnemyHexEffect
 	{
 		if (dealer.IsAlive)
 		{
-			await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(dealer, HextechMayhemModifier.CantTouchThisSlipperyStacks, dealer, null);
+			await HextechEnemyPowerScalingHooks.Apply<BufferPower>(dealer, HextechMayhemModifier.CantTouchThisBufferStacks, dealer, null);
 		}
 	}
 }

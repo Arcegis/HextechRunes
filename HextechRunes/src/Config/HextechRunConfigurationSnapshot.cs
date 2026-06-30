@@ -13,7 +13,8 @@ internal sealed record HextechRunConfigurationSnapshot(
 	HextechRarityWeights SecondActAfterSilverRuneRarityWeights,
 	HextechForgeRarityWeights ForgeRarityWeights,
 	int RandomForgeShopPrice,
-	bool RandomForgeDirectGrant)
+	bool RandomForgeDirectGrant,
+	bool ModEnabled)
 {
 	public HextechRunConfigurationSnapshot Copy()
 	{

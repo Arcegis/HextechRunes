@@ -87,7 +87,7 @@ public sealed class FinalFormRune : HextechRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (HasTurnProcTriggered(nameof(FinalFormRune), _triggeredThisTurn) || Owner == null || !IsOwnedNonXCardWithCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue))
+		if (HasTurnProcTriggered(nameof(FinalFormRune), _triggeredThisTurn) || Owner == null || !IsOwnedCardWithEffectiveCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue))
 		{
 			return;
 		}

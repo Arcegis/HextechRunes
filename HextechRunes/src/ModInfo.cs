@@ -6,7 +6,7 @@ internal static class ModInfo
 
     public const string DisplayName = "海克斯符文";
 
-    public const string Version = "0.8.2";
+    public const string Version = "0.8.3";
 
 #if STS2_107_1
     public const string TargetGameVersion = "0.107.1";

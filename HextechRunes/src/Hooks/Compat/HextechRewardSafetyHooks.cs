@@ -217,20 +217,27 @@ internal static class HextechRewardSafetyHooks
 		DoubleVisionRune.CompleteRewardCommandSuppression(__state);
 	}
 
+	// 承载 OnSelect 前后所需状态:DoubleVision 的追踪 scope + 进入 OnSelect 前的卡数(供禁忌魔典判别是否真选走了卡)。
+	private sealed record CardRewardOnSelectState(object? DoubleVisionScope, int CardCountBeforeSelect);
+
 	private static void CardRewardOnSelectPrefix(CardReward __instance, out object? __state)
 	{
-		__state = DoubleVisionRune.BeginCardRewardTracking(__instance.Player);
+		__state = new CardRewardOnSelectState(
+			DoubleVisionRune.BeginCardRewardTracking(__instance.Player),
+			__instance.Cards.Count());
 	}
 
 	private static void CardRewardOnSelectPostfix(CardReward __instance, object? __state, ref Task<bool> __result)
 	{
+		CardRewardOnSelectState? state = __state as CardRewardOnSelectState;
 		Task<bool> result = __result;
 		if (ShouldApplyForbiddenGrimoire(__instance))
 		{
-			result = CompleteForbiddenGrimoireCardRewardAsync(__instance, result);
+			int cardCountBeforeSelect = state?.CardCountBeforeSelect ?? __instance.Cards.Count();
+			result = CompleteForbiddenGrimoireCardRewardAsync(__instance, result, cardCountBeforeSelect);
 		}
 
-		__result = DoubleVisionRune.CompleteCardRewardAsync(result, __state);
+		__result = DoubleVisionRune.CompleteCardRewardAsync(result, state?.DoubleVisionScope);
 	}
 
 	private static void SpecialCardRewardOnSelectPrefix(SpecialCardReward __instance, out object? __state)
@@ -288,10 +295,20 @@ internal static class HextechRewardSafetyHooks
 		__result = DoubleVisionRune.CompleteDirectGoldRewardAsync(__result, __state);
 	}
 
-	private static async Task<bool> CompleteForbiddenGrimoireCardRewardAsync(CardReward reward, Task<bool> originalTask)
+	private static async Task<bool> CompleteForbiddenGrimoireCardRewardAsync(CardReward reward, Task<bool> originalTask, int cardCountBeforeSelect)
 	{
 		bool rewardComplete = await originalTask;
 		if (!rewardComplete || !ShouldApplyForbiddenGrimoire(reward))
+		{
+			return rewardComplete;
+		}
+
+		// 只在"确实选走了至少一张卡"时才补发其余未选卡。献祭(佩尔之翼)/锻体(百炼成钢)等走
+		// EndSelectionAndCompleteReward 的 alternative 会让 rewardComplete=true 却不从 _cards 移除任何卡
+		// (选前==选后),照旧补发会把整组卡白送。用"卡数减少"判别精确区分:正常选卡(含帽子戏法/Mayhem 多选)
+		// 选后<选前→补发剩余;alternative 选后==选前→不补发。必须用 < 而非 ==(选前-1),否则一次移除多张的
+		// 多选卡会被误判而漏发最后一张。判别只读 reward.Cards 计数(reward 状态、两端一致),不引入联机分叉。
+		if (reward.Cards.Count() >= cardCountBeforeSelect)
 		{
 			return rewardComplete;
 		}
