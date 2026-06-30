@@ -22,6 +22,8 @@ internal static class HextechRuneConfiguration
 	private const int MaxRandomForgeShopPrice = 9999;
 	private const int DefaultRandomForgeShopPrice = 250;
 	private const bool DefaultRandomForgeDirectGrant = false;
+	// 模组总开关默认开启:关闭后本局表现得与原版一致(开局时快照,联机按房主)。
+	private const bool DefaultModEnabled = true;
 	private static readonly int[] DefaultPlayerHexCountsByAct = [ 1, 1, 1 ];
 	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 2, 3 ];
 	private const int DefaultPlayerRuneRerollLimit = 1;
@@ -172,7 +174,8 @@ internal static class HextechRuneConfiguration
 				ToRarityWeights(_config.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
 				ToForgeRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
 				_config.RandomForgeShopPrice,
-				_config.RandomForgeDirectGrant));
+				_config.RandomForgeDirectGrant,
+				_config.ModEnabled));
 		}
 	}
 
@@ -255,8 +258,24 @@ internal static class HextechRuneConfiguration
 			_config.ForgeRarityWeights = FromForgeRarityWeights(normalized.ForgeRarityWeights);
 			_config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
 			_config.RandomForgeDirectGrant = normalized.RandomForgeDirectGrant;
+			_config.ModEnabled = normalized.ModEnabled;
 			SaveConfig(_config);
 		}
+	}
+
+	// 模组总开关的当前(实时)配置值。运行中应优先读「本局冻结快照」,仅在无 run 场景(菜单外/商店初始化兜底)用它。
+	public static bool GetModEnabled()
+	{
+		EnsureLoaded();
+		lock (SyncRoot)
+		{
+			return _config.ModEnabled;
+		}
+	}
+
+	public static bool GetDefaultModEnabled()
+	{
+		return DefaultModEnabled;
 	}
 
 	private static void EnsureLoaded()
@@ -317,7 +336,8 @@ internal static class HextechRuneConfiguration
 			SecondActAfterSilverRuneRarityWeights = FromRarityWeights(DefaultSecondActAfterSilverRuneRarityWeights),
 			ForgeRarityWeights = FromForgeRarityWeights(DefaultForgeRarityWeights),
 			RandomForgeShopPrice = DefaultRandomForgeShopPrice,
-			RandomForgeDirectGrant = DefaultRandomForgeDirectGrant
+			RandomForgeDirectGrant = DefaultRandomForgeDirectGrant,
+			ModEnabled = DefaultModEnabled
 		};
 	}
 
@@ -510,7 +530,8 @@ internal static class HextechRuneConfiguration
 			DefaultSecondActAfterSilverRuneRarityWeights,
 			DefaultForgeRarityWeights,
 			DefaultRandomForgeShopPrice,
-			DefaultRandomForgeDirectGrant));
+			DefaultRandomForgeDirectGrant,
+			DefaultModEnabled));
 	}
 
 	internal static HextechRunConfigurationSnapshot NormalizeSnapshot(HextechRunConfigurationSnapshot snapshot)
@@ -528,7 +549,8 @@ internal static class HextechRuneConfiguration
 			NormalizeRarityWeights(snapshot.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
 			NormalizeForgeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
 			ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice),
-			snapshot.RandomForgeDirectGrant);
+			snapshot.RandomForgeDirectGrant,
+			snapshot.ModEnabled);
 	}
 
 	internal static HextechRarityWeights NormalizeRarityWeights(HextechRarityWeights weights, HextechRarityWeights fallback)
@@ -744,6 +766,9 @@ internal static class HextechRuneConfiguration
 
 		[JsonPropertyName("random_forge_direct_grant")]
 		public bool RandomForgeDirectGrant { get; set; } = DefaultRandomForgeDirectGrant;
+
+		[JsonPropertyName("mod_enabled")]
+		public bool ModEnabled { get; set; } = DefaultModEnabled;
 	}
 
 	private sealed class RarityWeightConfig

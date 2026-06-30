@@ -90,6 +90,18 @@ internal static partial class HextechRuneSelectionCoordinator
 			RelicModel? monsterHexRelic = CreateMonsterHexRelic(visibleMonsterHex);
 			int playerHexCount = modifier.GetPlayerHexCountForAct(actIndex);
 
+			// 模组总开关:在 act-roll(已完成两端握手/房主同步)之后冻结本局值。禁用则不发放任何玩家符文、
+			// 不分配敌方海克斯——本局表现为原版。仍走到下方 SetMonsterHexesForAct(空)+SetActResolved(true) 正常收尾,
+			// 两端对称、不破坏联机同步。
+			if (modifier.FreezeModActiveForRunAndCheckDisabled())
+			{
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: mod disabled for this run; vanilla act={actIndex} (no player runes / enemy hexes)");
+				finalMonsterHexes = [];
+				visibleMonsterHex = null;
+				monsterHexRelic = null;
+				playerHexCount = 0;
+			}
+
 			NetGameType gameType = RunManager.Instance.NetService.Type;
 			for (int choiceOrdinal = 0; choiceOrdinal < playerHexCount; choiceOrdinal++)
 			{

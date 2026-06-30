@@ -163,6 +163,11 @@ internal static class HextechShopForgeHooks
 
 	private static void InstallRandomForgeEntry(MerchantInventory inventory, Player player)
 	{
+		if (!IsModEnabledForRun(player))
+		{
+			return;
+		}
+
 		if (inventory.RelicEntries.Any(IsRandomForgeEntry))
 		{
 			return;
@@ -173,6 +178,15 @@ internal static class HextechShopForgeHooks
 		MerchantRelicEntry entry = new(shopRelic, player);
 		entry.PurchaseCompleted += (_, _) => UpdateInventoryEntries(inventory);
 		inventory.AddRelicEntry(entry);
+	}
+
+	// 模组总开关:商店随机锻造器是无条件注入普通局的少数泄漏点之一,按本局冻结值门控;无 run/modifier 时退回实时配置。
+	private static bool IsModEnabledForRun(Player? player)
+	{
+		HextechMayhemModifier? modifier = (player?.RunState as RunState)?.Modifiers
+			.OfType<HextechMayhemModifier>()
+			.LastOrDefault();
+		return modifier?.IsModActiveForRun ?? HextechRuneConfiguration.GetModEnabled();
 	}
 
 	private static async Task<(bool, int)> PurchaseRandomForge(MerchantRelicEntry entry, MerchantInventory inventory, bool ignoreCost)
