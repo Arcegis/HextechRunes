@@ -88,5 +88,11 @@
   "desperateFinaleRune.description": "Ganhe [gold]Projeção Profética[/gold]. Sempre que você matar [gold]Coral Final[/gold], ganhe [blue]20%[/blue] de aumento de dano, Bloqueio e cura, e então ganhe [blue]1[/blue] [gold]Projeção Profética[/gold] adicional. O [gold]Coral Final[/gold] invocado por uma nova [gold]Projeção Profética[/gold] tem [blue]300[/blue] PV máximos a mais.",
   "DESPERATE_FINALE_RUNE.description": "Ganhe [gold]Projeção Profética[/gold]. Sempre que você matar [gold]Coral Final[/gold], ganhe [blue]20%[/blue] de aumento de dano, Bloqueio e cura, e então ganhe [blue]1[/blue] [gold]Projeção Profética[/gold] adicional. O [gold]Coral Final[/gold] invocado por uma nova [gold]Projeção Profética[/gold] tem [blue]300[/blue] PV máximos a mais.",
   "desperateFinaleRune.flavor": "Item de colaboração do pacote extra: o final ainda não terminou; ele apenas empurra o próximo eco para um desespero mais profundo.",
-  "DESPERATE_FINALE_RUNE.flavor": "Item de colaboração do pacote extra: o final ainda não terminou; ele apenas empurra o próximo eco para um desespero mais profundo."
+  "DESPERATE_FINALE_RUNE.flavor": "Item de colaboração do pacote extra: o final ainda não terminou; ele apenas empurra o próximo eco para um desespero mais profundo.",
+  "believerRune.title": "Believer",
+  "believerRune.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "believerRune.flavor": "Sponsor item: Faith guides every choice.",
+  "BELIEVER_RUNE.title": "Believer",
+  "BELIEVER_RUNE.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "BELIEVER_RUNE.flavor": "Sponsor item: Faith guides every choice."
 }

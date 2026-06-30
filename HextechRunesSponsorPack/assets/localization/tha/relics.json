@@ -88,5 +88,11 @@
   "desperateFinaleRune.description": "ได้รับ [gold]ภาพฉายคำพยากรณ์[/gold] ทุกครั้งที่คุณสังหาร [gold]บทเพลงประสานสุดท้าย[/gold] จะได้รับความเสียหาย บล็อก และการรักษาเพิ่มขึ้น [blue]20%[/blue] จากนั้นได้รับ [blue]1[/blue] [gold]ภาพฉายคำพยากรณ์[/gold] เพิ่มอีก [gold]บทเพลงประสานสุดท้าย[/gold] ที่ถูกอัญเชิญโดย [gold]ภาพฉายคำพยากรณ์[/gold] ใหม่จะมี HP สูงสุดมากขึ้น [blue]300[/blue]",
   "DESPERATE_FINALE_RUNE.description": "ได้รับ [gold]ภาพฉายคำพยากรณ์[/gold] ทุกครั้งที่คุณสังหาร [gold]บทเพลงประสานสุดท้าย[/gold] จะได้รับความเสียหาย บล็อก และการรักษาเพิ่มขึ้น [blue]20%[/blue] จากนั้นได้รับ [blue]1[/blue] [gold]ภาพฉายคำพยากรณ์[/gold] เพิ่มอีก [gold]บทเพลงประสานสุดท้าย[/gold] ที่ถูกอัญเชิญโดย [gold]ภาพฉายคำพยากรณ์[/gold] ใหม่จะมี HP สูงสุดมากขึ้น [blue]300[/blue]",
   "desperateFinaleRune.flavor": "ไอเทมคอลแลบสปอนเซอร์: บทอวสานยังไม่จบ มันเพียงผลักเสียงสะท้อนถัดไปให้ดิ่งลึกลงสู่ความสิ้นหวัง",
-  "DESPERATE_FINALE_RUNE.flavor": "ไอเทมคอลแลบสปอนเซอร์: บทอวสานยังไม่จบ มันเพียงผลักเสียงสะท้อนถัดไปให้ดิ่งลึกลงสู่ความสิ้นหวัง"
+  "DESPERATE_FINALE_RUNE.flavor": "ไอเทมคอลแลบสปอนเซอร์: บทอวสานยังไม่จบ มันเพียงผลักเสียงสะท้อนถัดไปให้ดิ่งลึกลงสู่ความสิ้นหวัง",
+  "believerRune.title": "Believer",
+  "believerRune.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "believerRune.flavor": "Sponsor item: Faith guides every choice.",
+  "BELIEVER_RUNE.title": "Believer",
+  "BELIEVER_RUNE.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "BELIEVER_RUNE.flavor": "Sponsor item: Faith guides every choice."
 }

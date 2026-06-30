@@ -88,5 +88,11 @@
   "desperateFinaleRune.description": "Получает [gold]Проекцию пророчества[/gold]. Каждый раз, когда вы убиваете [gold]Финальный хорал[/gold], получает [blue]20%[/blue] к урону, защите и исцелению, затем получает [blue]1[/blue] дополнительную [gold]Проекцию пророчества[/gold]. [gold]Финальный хорал[/gold], призванный новой [gold]Проекцией пророчества[/gold], имеет на [blue]300[/blue] больше макс. ОЗ.",
   "DESPERATE_FINALE_RUNE.description": "Получает [gold]Проекцию пророчества[/gold]. Каждый раз, когда вы убиваете [gold]Финальный хорал[/gold], получает [blue]20%[/blue] к урону, защите и исцелению, затем получает [blue]1[/blue] дополнительную [gold]Проекцию пророчества[/gold]. [gold]Финальный хорал[/gold], призванный новой [gold]Проекцией пророчества[/gold], имеет на [blue]300[/blue] больше макс. ОЗ.",
   "desperateFinaleRune.flavor": "Спонсорский коллаб-предмет: Финал не окончен — он лишь толкает следующее эхо глубже в отчаяние.",
-  "DESPERATE_FINALE_RUNE.flavor": "Спонсорский коллаб-предмет: Финал не окончен — он лишь толкает следующее эхо глубже в отчаяние."
+  "DESPERATE_FINALE_RUNE.flavor": "Спонсорский коллаб-предмет: Финал не окончен — он лишь толкает следующее эхо глубже в отчаяние.",
+  "believerRune.title": "Believer",
+  "believerRune.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "believerRune.flavor": "Sponsor item: Faith guides every choice.",
+  "BELIEVER_RUNE.title": "Believer",
+  "BELIEVER_RUNE.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "BELIEVER_RUNE.flavor": "Sponsor item: Faith guides every choice."
 }

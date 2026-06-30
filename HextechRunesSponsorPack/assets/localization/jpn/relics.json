@@ -88,5 +88,11 @@
   "desperateFinaleRune.description": "[gold]予言の投影[/gold]を獲得する。[gold]終曲の合唱[/gold]を倒すたび、ダメージ、ブロック、回復量が[blue]20%[/blue]増加し、追加の[gold]予言の投影[/gold]を[blue]1[/blue]個獲得する。新しい[gold]予言の投影[/gold]が召喚する[gold]終曲の合唱[/gold]は最大HPが[blue]300[/blue]増加する。",
   "DESPERATE_FINALE_RUNE.description": "[gold]予言の投影[/gold]を獲得する。[gold]終曲の合唱[/gold]を倒すたび、ダメージ、ブロック、回復量が[blue]20%[/blue]増加し、追加の[gold]予言の投影[/gold]を[blue]1[/blue]個獲得する。新しい[gold]予言の投影[/gold]が召喚する[gold]終曲の合唱[/gold]は最大HPが[blue]300[/blue]増加する。",
   "desperateFinaleRune.flavor": "スポンサーコラボアイテム: フィナーレはまだ終わらず、次の反響をさらに深い絶望へ押し込む。",
-  "DESPERATE_FINALE_RUNE.flavor": "スポンサーコラボアイテム: フィナーレはまだ終わらず、次の反響をさらに深い絶望へ押し込む。"
+  "DESPERATE_FINALE_RUNE.flavor": "スポンサーコラボアイテム: フィナーレはまだ終わらず、次の反響をさらに深い絶望へ押し込む。",
+  "believerRune.title": "Believer",
+  "believerRune.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "believerRune.flavor": "Sponsor item: Faith guides every choice.",
+  "BELIEVER_RUNE.title": "Believer",
+  "BELIEVER_RUNE.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "BELIEVER_RUNE.flavor": "Sponsor item: Faith guides every choice."
 }

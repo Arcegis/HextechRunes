@@ -7,11 +7,5 @@
   "min_game_version": "0.107.1",
   "has_pck": true,
   "has_dll": true,
-  "dependencies": [
-    {
-      "id": "HextechRunes",
-      "min_version": "0.8.1"
-    }
-  ],
   "affects_gameplay": true
 }

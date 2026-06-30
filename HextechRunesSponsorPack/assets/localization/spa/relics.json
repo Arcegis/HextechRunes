@@ -88,5 +88,11 @@
   "desperateFinaleRune.description": "Obtén [gold]Proyección profética[/gold]. Cada vez que mates a [gold]Coral final[/gold], obtén un [blue]20%[/blue] más de daño, bloqueo y curación, y luego obtén [blue]1[/blue] [gold]Proyección profética[/gold] adicional. El [gold]Coral final[/gold] invocado por una nueva [gold]Proyección profética[/gold] tiene [blue]300[/blue] PV máximos más.",
   "DESPERATE_FINALE_RUNE.description": "Obtén [gold]Proyección profética[/gold]. Cada vez que mates a [gold]Coral final[/gold], obtén un [blue]20%[/blue] más de daño, bloqueo y curación, y luego obtén [blue]1[/blue] [gold]Proyección profética[/gold] adicional. El [gold]Coral final[/gold] invocado por una nueva [gold]Proyección profética[/gold] tiene [blue]300[/blue] PV máximos más.",
   "desperateFinaleRune.flavor": "Artículo de colaboración de patrocinador: el final aún no termina; solo empuja el siguiente eco más hondo en la desesperación.",
-  "DESPERATE_FINALE_RUNE.flavor": "Artículo de colaboración de patrocinador: el final aún no termina; solo empuja el siguiente eco más hondo en la desesperación."
+  "DESPERATE_FINALE_RUNE.flavor": "Artículo de colaboración de patrocinador: el final aún no termina; solo empuja el siguiente eco más hondo en la desesperación.",
+  "believerRune.title": "Believer",
+  "believerRune.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "believerRune.flavor": "Sponsor item: Faith guides every choice.",
+  "BELIEVER_RUNE.title": "Believer",
+  "BELIEVER_RUNE.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
+  "BELIEVER_RUNE.flavor": "Sponsor item: Faith guides every choice."
 }
