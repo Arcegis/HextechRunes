@@ -111,9 +111,7 @@
 我方	VampireCrawlerRune	吸血鬼爬行者	标签=综合
 我方	EnlightenmentRune	开悟	标签=运转
 我方	WhiteHoleRune	白洞	标签=运转
-我方	TanksShieldRune	坦克斯之盾	标签=生存
-我方	ChargeUpRune	蓄能	标签=运转
-我方	DeathHarvestRune	死亡收割	标签=生存
+我方	TanksShieldRune	坦克斯之盾	标签=生存我方	DeathHarvestRune	死亡收割	标签=生存
 我方	TransmutePrismaticRune	质变：棱彩阶	标签=随机
 我方	ShrinkRayRune	缩小射线	标签=生存
 我方	EurekaRune	尤里卡	标签=运转
@@ -254,6 +252,7 @@
 我方	WellLaidPlansUpgradeRune	升级：计划妥当	标签=综合
 
 [我方 / 储君]
+我方	ChargeUpRune	蓄能	标签=运转
 我方	SwordIntentRune	剑意	标签=铸剑
 我方	FlawlessRune	无暇	标签=无色
 我方	CondensedRadianceRune	凝辉	标签=辉星

@@ -240,7 +240,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<SkyDrillUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 21, tagKey: "OUTPUT"),
         Rune<TrinityRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 22, tagKey: "STARLIGHT"),
         Rune<CrashLandingUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 23, tagKey: "OUTPUT"),
-        Rune<ChargeUpRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
+        Rune<ChargeUpRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 26, tagKey: "RESOURCE"),
         Rune<AutoPatrolRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 31, tagKey: "SUMMON"),
         Rune<DeathHarvestRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<HundredRefinementsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
