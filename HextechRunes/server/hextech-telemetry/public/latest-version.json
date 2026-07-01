@@ -330,8 +330,8 @@
       "modVersion": "0.8.3",
       "gameVersion": "0.107.1",
       "hashAlgorithm": "SHA-256",
-      "generatedAtUtc": "2026-07-01T14:23:44Z",
-      "dllSha256": "431f39fbaef9a9e87b55c526b277871349157a303d20a61a841d5995e8081d0f",
+      "generatedAtUtc": "2026-07-01T14:40:49Z",
+      "dllSha256": "8eb2834b30b65df9b627ff9d1dee8102ce6831b6ec465cd511803e1dbcada6a7",
       "pckSha256": "55e9fbd2643dbf6ee7f9a1c157015dac9a3b81c5d3943ea5657efeb922da8ba5",
       "manifestSha256": "641a80e31809b5ebad6b513234b0e85136e9eeb486ae276bd6935317f708f253",
       "artifactSizes": {
