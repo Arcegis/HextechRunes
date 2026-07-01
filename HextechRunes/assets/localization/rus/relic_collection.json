@@ -48,6 +48,8 @@
   "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "Когда включено, получение ковки выдаёт случайную вместо открытия экрана выбора из трёх. В сетевой игре это следует настройке хоста.",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_TITLE": "Показывать уведомление об обновлении версии",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "Когда включено, в главном меню в левом нижнем углу отображается уведомление о проверке версии «Хаос Хекстека». Отключите, чтобы скрыть его.",
+  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
+  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
   "HEXTECH_FORGE_PRICE_TITLE": "Цена кузнеца характеристик",
   "HEXTECH_FORGE_PRICE_LABEL": "Цена в магазине",
   "HEXTECH_FIRST_ACT_RUNE_RARITY_TITLE": "Веса редкости гексов в акте 1",

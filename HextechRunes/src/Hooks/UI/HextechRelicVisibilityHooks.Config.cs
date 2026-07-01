@@ -11,6 +11,26 @@ internal static partial class HextechRelicVisibilityHooks
 {
 	private const bool DefaultShowHiddenRelicsToggle = false;
 	private const bool DefaultShowUpdateNotice = true;
+	private const bool DefaultCollapseEnemyHexes = true;
+
+	// 折叠敌方海克斯(纯 UI 偏好,默认开):开=顶栏地图按钮左侧一个折叠按钮,点开在下方弹出敌方海克斯窗口;
+	// 关=旧版行为(敌方海克斯直接平铺在顶栏 modifiers 里)。读取见 HextechEnemyUi。
+	internal static bool GetCollapseEnemyHexes()
+	{
+		return _config.CollapseEnemyHexes;
+	}
+
+	internal static bool GetDefaultCollapseEnemyHexes()
+	{
+		return DefaultCollapseEnemyHexes;
+	}
+
+	internal static void SetCollapseEnemyHexes(bool collapse)
+	{
+		_config.CollapseEnemyHexes = collapse;
+		SaveConfig(_config);
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] collapse_enemy_hexes={collapse}.");
+	}
 
 	internal static bool GetShowHiddenRelicsToggle()
 	{
@@ -124,6 +144,9 @@ internal static partial class HextechRelicVisibilityHooks
 
 		[JsonPropertyName("show_update_notice")]
 		public bool ShowUpdateNotice { get; set; } = DefaultShowUpdateNotice;
+
+		[JsonPropertyName("collapse_enemy_hexes")]
+		public bool CollapseEnemyHexes { get; set; } = DefaultCollapseEnemyHexes;
 
 		[JsonPropertyName("hide_relics")]
 		public bool HideRelics { get; set; }

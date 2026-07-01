@@ -344,6 +344,7 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgePrice = [ pendingSnapshot.RandomForgeShopPrice ];
 		bool[] pendingShowHiddenRelicsToggle = [ HextechRelicVisibilityHooks.GetShowHiddenRelicsToggle() ];
 		bool[] pendingShowUpdateNotice = [ HextechRelicVisibilityHooks.GetShowUpdateNotice() ];
+		bool[] pendingCollapseEnemyHexes = [ HextechRelicVisibilityHooks.GetCollapseEnemyHexes() ];
 		bool[] pendingRandomForgeDirectGrant = [ pendingSnapshot.RandomForgeDirectGrant ];
 		bool[] pendingModEnabled = [ pendingSnapshot.ModEnabled ];
 		List<NumericValueBinding> numericBindings = [];
@@ -397,6 +398,7 @@ internal static class HextechRuneConfigMenuHooks
 			pendingForgePrice,
 			pendingShowHiddenRelicsToggle,
 			pendingShowUpdateNotice,
+			pendingCollapseEnemyHexes,
 			pendingRandomForgeDirectGrant,
 			pendingModEnabled,
 			numericBindings,
@@ -511,6 +513,7 @@ internal static class HextechRuneConfigMenuHooks
 			pendingForgePrice,
 			pendingShowHiddenRelicsToggle,
 			pendingShowUpdateNotice,
+			pendingCollapseEnemyHexes,
 			pendingRandomForgeDirectGrant,
 			pendingModEnabled,
 			numericBindings,
@@ -825,6 +828,7 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgePrice,
 		bool[] pendingShowHiddenRelicsToggle,
 		bool[] pendingShowUpdateNotice,
+		bool[] pendingCollapseEnemyHexes,
 		bool[] pendingRandomForgeDirectGrant,
 		bool[] pendingModEnabled,
 		List<NumericValueBinding> numericBindings,
@@ -832,7 +836,7 @@ internal static class HextechRuneConfigMenuHooks
 		bool compactLayout)
 	{
 		VBoxContainer page = CreatePageContainer(compactLayout);
-		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, pendingShowUpdateNotice, pendingRandomForgeDirectGrant, pendingModEnabled, booleanBindings, compactLayout));
+		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, pendingShowUpdateNotice, pendingCollapseEnemyHexes, pendingRandomForgeDirectGrant, pendingModEnabled, booleanBindings, compactLayout));
 		page.AddChild(CreatePriceSection(pendingForgePrice, numericBindings, compactLayout));
 		page.AddChild(CreateWeightMatrixSection(
 			pendingFirstActRuneWeights,
@@ -844,7 +848,7 @@ internal static class HextechRuneConfigMenuHooks
 		return page;
 	}
 
-	private static Control CreateMiscUiSection(bool[] pendingShowHiddenRelicsToggle, bool[] pendingShowUpdateNotice, bool[] pendingRandomForgeDirectGrant, bool[] pendingModEnabled, List<BooleanValueBinding> booleanBindings, bool compactLayout)
+	private static Control CreateMiscUiSection(bool[] pendingShowHiddenRelicsToggle, bool[] pendingShowUpdateNotice, bool[] pendingCollapseEnemyHexes, bool[] pendingRandomForgeDirectGrant, bool[] pendingModEnabled, List<BooleanValueBinding> booleanBindings, bool compactLayout)
 	{
 		VBoxContainer section = CreateCardSection(L("HEXTECH_MISC_UI_TITLE"), null, compactLayout, out PanelContainer card);
 		section.AddChild(CreateBooleanOption(
@@ -859,6 +863,13 @@ internal static class HextechRuneConfigMenuHooks
 			L("HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION"),
 			() => pendingShowUpdateNotice[0],
 			value => pendingShowUpdateNotice[0] = value,
+			booleanBindings,
+			compactLayout));
+		section.AddChild(CreateBooleanOption(
+			L("HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE"),
+			L("HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION"),
+			() => pendingCollapseEnemyHexes[0],
+			value => pendingCollapseEnemyHexes[0] = value,
 			booleanBindings,
 			compactLayout));
 		section.AddChild(CreateBooleanOption(
@@ -1399,6 +1410,7 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgePrice,
 		bool[] pendingShowHiddenRelicsToggle,
 		bool[] pendingShowUpdateNotice,
+		bool[] pendingCollapseEnemyHexes,
 		bool[] pendingRandomForgeDirectGrant,
 		bool[] pendingModEnabled,
 		IReadOnlyList<NumericValueBinding> numericBindings,
@@ -1503,6 +1515,7 @@ internal static class HextechRuneConfigMenuHooks
 					pendingForgePrice[0] = defaults.RandomForgeShopPrice;
 					pendingShowHiddenRelicsToggle[0] = HextechRelicVisibilityHooks.GetDefaultShowHiddenRelicsToggle();
 					pendingShowUpdateNotice[0] = HextechRelicVisibilityHooks.GetDefaultShowUpdateNotice();
+					pendingCollapseEnemyHexes[0] = HextechRelicVisibilityHooks.GetDefaultCollapseEnemyHexes();
 					pendingRandomForgeDirectGrant[0] = defaults.RandomForgeDirectGrant;
 					pendingModEnabled[0] = defaults.ModEnabled;
 					UpdateNumericLabels(numericBindings);
@@ -1532,6 +1545,7 @@ internal static class HextechRuneConfigMenuHooks
 				pendingModEnabled[0]));
 			HextechRelicVisibilityHooks.SetShowHiddenRelicsToggle(pendingShowHiddenRelicsToggle[0]);
 			HextechRelicVisibilityHooks.SetShowUpdateNotice(pendingShowUpdateNotice[0]);
+			HextechRelicVisibilityHooks.SetCollapseEnemyHexes(pendingCollapseEnemyHexes[0]);
 			HextechUpdateChecker.ApplyNoticeVisibility(overlay);
 			CollectionHooks.RefreshOpenRelicCollections();
 			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]} showUpdateNotice={pendingShowUpdateNotice[0]} randomForgeDirect={pendingRandomForgeDirectGrant[0]} modEnabled={pendingModEnabled[0]}");
