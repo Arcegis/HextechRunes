@@ -217,8 +217,7 @@ internal static class HextechRunePoolBuilder
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
 		if (gameType is NetGameType.Singleplayer or NetGameType.None
-			or NetGameType.Host or NetGameType.Client
-			|| HextechAiTeammateCompat.IsLoopbackHostSession())
+			or NetGameType.Host or NetGameType.Client)
 		{
 			return true;
 		}

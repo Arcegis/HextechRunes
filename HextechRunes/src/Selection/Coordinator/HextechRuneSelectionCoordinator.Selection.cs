@@ -79,16 +79,6 @@ internal static partial class HextechRuneSelectionCoordinator
 			return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes);
 		}
 
-		if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
-		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice AI auto-select: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
-			MarkRelicsSeen(options);
-			modifier.RecordSeenPlayerRunes(player, options);
-			int selectedIndex = HextechAiTeammateCompat.PickRandomRuneIndex(player, options);
-			RelicModel? selectedRelic = selectedIndex >= 0 && selectedIndex < options.Count ? options[selectedIndex] : null;
-			return new RuneSelectionResult(selectedRelic, options.ToList(), 0, null);
-		}
-
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId)? received = await TryWaitForRemoteHextechChoice(
 			synchronizer,
@@ -147,14 +137,6 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes, screen);
-		}
-
-		if (HextechAiTeammateCompat.ShouldAutoSelectRune(selection.Player))
-		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice AI auto-select: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={selection.ChoiceId}");
-			int selectedIndex = HextechAiTeammateCompat.PickRandomRuneIndex(selection.Player, selection.Options);
-			RelicModel? selectedRelic = selectedIndex >= 0 && selectedIndex < selection.Options.Count ? selection.Options[selectedIndex] : null;
-			return new RuneSelectionResult(selectedRelic, selection.Options.ToList(), 0, null);
 		}
 
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={selection.ChoiceId}");

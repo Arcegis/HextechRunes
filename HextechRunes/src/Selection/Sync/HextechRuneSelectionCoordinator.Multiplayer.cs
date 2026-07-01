@@ -32,12 +32,6 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		RunManager runManager = RunManager.Instance;
 		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
-		if (HextechAiTeammateCompat.IsLoopbackHostSession()
-			&& runState.Players.Any(static player => HextechAiTeammateCompat.IsAiPlayer(player)))
-		{
-			return await SelectRunesForAllPlayersAiTeammateHostControlled(runState, modifier, actIndex, rarity, previousMonsterHexes, initialNewMonsterHexes, monsterHexRelic, choiceOrdinal);
-		}
-
 		PlayerChoiceSynchronizer? synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
 		if (synchronizer == null)
 		{
