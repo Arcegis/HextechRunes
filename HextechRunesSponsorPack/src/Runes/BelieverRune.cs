@@ -1,18 +1,18 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
-using MegaCrit.Sts2.Core.Runs;
-using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using SponsorModInfo = HextechRunesSponsorPack.ModInfo;
 
 namespace HextechRunes;
 
-// 信徒(棱彩,仅单人):击败 BOSS+6 / 精英+3 / 小怪+1 充能,满 6 立即触发一次「神迹」事件并扣除 6;
-// 激活(获得)时也立即触发一次神迹。神迹是程序化进入的自定义事件(见 MiracleEvent)。
+// 信徒(棱彩,仅单人):击败 BOSS+6 / 精英+3 / 小怪+1 充能,满 6 排队一次「神迹」;获得时也排队一次。
+//
+// 神迹**不再**在战斗胜利 hook 里直接 EnterRoom —— 那会在战斗胜利流程中途把战斗房连同奖励一起弹掉,导致:
+// 打完 Boss 不自动进下一层(要 SL)、SL 时事件丢失、末战拿到信徒无法结算。改为只记一个存档计数 SavedPendingMiracles,
+// 由 MiracleEventTriggerPatch 在「战斗领奖屏点继续→开图」这个流程空闲的干净交接点安全注入。
+// 计数在那一刻才于内存里消耗(晚于最后一次存档),所以 SL 回到事件中途会落到「计数仍 >0」的存档 → 神迹重现而非消失。
 public sealed class BelieverRune : HextechRelicBase
 {
 	private const int ChargeThreshold = 6;
@@ -27,6 +27,26 @@ public sealed class BelieverRune : HextechRelicBase
 		{
 			_charge = Math.Max(0, value);
 			InvokeDisplayAmountChanged();
+		}
+	}
+
+	// 待触发的「神迹」次数(逐局持久)。由 AfterObtained / 充能满 6 累加,由 MiracleEventTriggerPatch 在干净交接点逐个消耗。
+	private int _pendingMiracles;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedPendingMiracles
+	{
+		get => _pendingMiracles;
+		set => _pendingMiracles = Math.Max(0, value);
+	}
+
+	internal bool HasPendingMiracle => _pendingMiracles > 0;
+
+	internal void ConsumePendingMiracle()
+	{
+		if (_pendingMiracles > 0)
+		{
+			SavedPendingMiracles = _pendingMiracles - 1;
 		}
 	}
 
@@ -59,17 +79,22 @@ public sealed class BelieverRune : HextechRelicBase
 		return !IsNetworkMultiplayerRun();
 	}
 
-	// 激活(获得)时立即触发一次神迹。
-	public override async Task AfterObtained()
+	// 获得(激活)时排队一次神迹,在下一个「战斗领奖→开图」交接点触发。
+	public override Task AfterObtained()
 	{
-		await TriggerMiracle();
+		if (!IsNetworkMultiplayerRun())
+		{
+			SavedPendingMiracles = _pendingMiracles + 1;
+		}
+
+		return Task.CompletedTask;
 	}
 
-	public override async Task AfterCombatVictory(CombatRoom room)
+	public override Task AfterCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead || IsNetworkMultiplayerRun())
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
 		int gain = room.RoomType switch
@@ -85,28 +110,10 @@ public sealed class BelieverRune : HextechRelicBase
 		if (_charge >= ChargeThreshold)
 		{
 			SavedCharge = _charge - ChargeThreshold;
-			await TriggerMiracle();
-		}
-	}
-
-	private async Task TriggerMiracle()
-	{
-		if (Owner == null || IsNetworkMultiplayerRun())
-		{
-			return;
+			// 只排队;真正进事件交给 MiracleEventTriggerPatch(它在干净交接点触发,并守卫末幕 Boss 之后不插事件)。
+			SavedPendingMiracles = _pendingMiracles + 1;
 		}
 
-		try
-		{
-			// 直接传 canonical 事件实例;不要 ToMutable()(EventRoom 内部自行处理,
-			// 否则报 MutableModelException: used in incorrect place)。
-			EventModel miracle = ModelDb.Event<MiracleEvent>();
-			await RunManager.Instance.EnterRoom(new EventRoom(miracle));
-		}
-		catch (Exception ex)
-		{
-			// 中途进入事件房间是已知风险点(战斗后/拾取流程)。失败不得让海克斯崩掉本局,记录后吞掉。
-			Log.Warn($"[{SponsorModInfo.Id}] BelieverRune failed to trigger Miracle event: {ex.GetType().Name}: {ex.Message}", 2);
-		}
+		return Task.CompletedTask;
 	}
 }

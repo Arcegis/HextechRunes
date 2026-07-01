@@ -46,6 +46,7 @@ public sealed class MiracleEvent : EventModel
 		[
 			Choice(root, "SACRIFICE", () => Show($"{category}_SACRIFICE", StrengthOptions(category, sacrifice: true))),
 			Choice(root, "TAKE", () => Show($"{category}_TAKE", StrengthOptions(category, sacrifice: false))),
+			Back(ShowInitial),
 		];
 	}
 
@@ -55,6 +56,7 @@ public sealed class MiracleEvent : EventModel
 		[
 			Choice("GIFT_ROOT", "SACRIFICE", () => Show("GIFT_SACRIFICE", StrengthOptions("GIFT", sacrifice: true))),
 			Choice("GIFT_ROOT", "TAKE", () => ApplyAndFinish("GIFT_TAKE", _ => GainGold(50))),
+			Back(ShowInitial),
 		];
 	}
 
@@ -72,6 +74,7 @@ public sealed class MiracleEvent : EventModel
 			options.Add(new EventOption(this, action, $"{Id.Entry}.pages.{page}.options.T{t}"));
 		}
 
+		options.Add(Back(() => ShowCategoryRoot(category)));
 		return options;
 	}
 
@@ -260,6 +263,22 @@ public sealed class MiracleEvent : EventModel
 	private EventOption Choice(string pageKey, string optionKey, Func<Task> onChosen)
 	{
 		return new EventOption(this, onChosen, $"{Id.Entry}.pages.{pageKey}.options.{optionKey}");
+	}
+
+	// 「返回上一级」选项(每个子页都有,始终可选)。防止进入某分支后所有档位都因条件不满足被锁 → 无可选项 → 死档。
+	// 用共享本地化键 common.BACK(EventOption 自动补 .title/.description)。
+	private EventOption Back(Func<Task> onBack)
+	{
+		return new EventOption(this, onBack, $"{Id.Entry}.common.BACK");
+	}
+
+	private Task ShowInitial() => Show(InitialPage, GenerateInitialOptions());
+
+	private Task ShowCategoryRoot(string category)
+	{
+		return category == "GIFT"
+			? Show("GIFT_ROOT", GiftRootOptions())
+			: Show($"{category}_ROOT", ActionOptions(category));
 	}
 
 	private Task Show(string pageKey, IReadOnlyList<EventOption> options)

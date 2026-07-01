@@ -68,6 +68,7 @@ public static class ModEntry
 		IntegratedStrategyEventsCompatibilityHooks.Install();
 		MiracleEventPortraitPatch.Install();
 		MiracleEventForgePricePatch.Install();
+		MiracleEventTriggerPatch.Install();
 		Log.Info($"[{ModInfo.Id}] Loaded and registered HextechRunes sponsor-pack content.");
 	}
 
