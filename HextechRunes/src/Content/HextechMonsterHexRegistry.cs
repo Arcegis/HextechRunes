@@ -106,7 +106,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<BlankCheckRune>(MonsterHexKind.BlankCheck, HextechRarityTier.Prismatic),
 
 		Monster<CorrosionRune>(MonsterHexKind.Corrosion, HextechRarityTier.Silver),
-		Monster<BrutalityRune>(MonsterHexKind.Brutality, HextechRarityTier.Silver),
+		Monster<BrutalityRune>(MonsterHexKind.Brutality, HextechRarityTier.Silver, disabled: true),
 		Monster<JudicatorRune>(MonsterHexKind.Judicator, HextechRarityTier.Gold),
 		Monster<SoulEaterRune>(MonsterHexKind.SoulEater, HextechRarityTier.Gold),
 		Monster<DeathHarvestRune>(MonsterHexKind.DeathHarvest, HextechRarityTier.Gold),

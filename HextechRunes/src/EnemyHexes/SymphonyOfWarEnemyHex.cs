@@ -4,11 +4,23 @@ internal sealed class SymphonyOfWarEnemyHex : HextechEnemyHexEffect
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.SymphonyOfWar;
 
-	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
+	internal override async Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{
-		int ritual = context.TierValue(Kind, 0, 1, 2);
-		return ritual > 0 && enemy.IsAlive
-			? PowerCmd.Apply<RitualPower>(enemy, ritual, enemy, null)
-			: Task.CompletedTask;
+		if (!enemy.IsAlive)
+		{
+			return;
+		}
+
+		int enrage = context.TierValue(Kind, 0, 0, 1);
+		int painfulStabs = context.TierValue(Kind, 1, 2, 2);
+		if (enrage > 0)
+		{
+			await PowerCmd.Apply<EnragePower>(enemy, enrage, enemy, null);
+		}
+
+		if (painfulStabs > 0)
+		{
+			await PowerCmd.Apply<PainfulStabsPower>(enemy, painfulStabs, enemy, null);
+		}
 	}
 }

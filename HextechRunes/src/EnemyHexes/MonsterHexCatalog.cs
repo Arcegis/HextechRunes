@@ -113,7 +113,7 @@ internal static class MonsterHexCatalog
 	public static IEnumerable<IHoverTip> GetEnemyHexHoverTips(MonsterHexKind hex)
 	{
 		RelicModel relic = GetIconRelicForMonsterHex(hex);
-		HoverTip mainTip = new(relic.Title, GetEnemyHexDescriptionFormatted(hex), GetEnemyHexHoverIcon(relic) ?? relic.Icon);
+		HoverTip mainTip = new(GetEnemyHexTitle(hex, relic), GetEnemyHexDescriptionFormatted(hex), GetEnemyHexHoverIcon(relic) ?? relic.Icon);
 		if (EnemyHexesWithBurnHoverTip.Contains(hex))
 		{
 			return [mainTip, HoverTipFactory.FromPower<HextechBurnPower>()];
@@ -137,6 +137,46 @@ internal static class MonsterHexCatalog
 	{
 		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
 		return HextechAssets.ToImageFileStem(id.Entry) + ".enemyDescription";
+	}
+
+	/// <summary>
+	/// 拥有敌方专属名字的海克斯:显示名不再沿用同名我方 rune 的 Title,而是取 <c>{rune}.enemyTitle</c> loc。
+	/// 图标仍与我方共用;身份(MonsterHexKind 枚举 / 图标 relic id)不受影响。
+	/// </summary>
+	private static readonly IReadOnlySet<MonsterHexKind> EnemyHexRenamedKinds = new HashSet<MonsterHexKind>
+	{
+		MonsterHexKind.ImmortalBone,
+		MonsterHexKind.ScaredStiff,
+		MonsterHexKind.Queen,
+		MonsterHexKind.Misery,
+		MonsterHexKind.GhostForm,
+		MonsterHexKind.SymphonyOfWar,
+	};
+
+	public static LocString GetEnemyHexTitle(MonsterHexKind hex, RelicModel relic)
+	{
+		if (!EnemyHexRenamedKinds.Contains(hex))
+		{
+			return relic.Title;
+		}
+
+		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		string key = HextechAssets.ToImageFileStem(id.Entry) + ".enemyTitle";
+		LocString enemyTitle = new("relics", key);
+		try
+		{
+			string rendered = enemyTitle.GetFormattedText();
+			if (!string.IsNullOrEmpty(rendered) && !rendered.Contains("enemyTitle", StringComparison.Ordinal))
+			{
+				return enemyTitle;
+			}
+		}
+		catch
+		{
+			// 该语言未提供敌方专属标题 → 回退到共用的我方标题(不显示原始 loc key)
+		}
+
+		return relic.Title;
 	}
 
 	/// <summary>
