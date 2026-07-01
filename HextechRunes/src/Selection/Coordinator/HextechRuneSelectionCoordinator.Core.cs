@@ -125,14 +125,16 @@ internal static partial class HextechRuneSelectionCoordinator
 
 						HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
 						HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection options: player={player.NetId} ordinal={choiceOrdinal} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
-						HextechEnemyHexAdjustmentOptions? enemyHexOptions = allowEnemyHexAdjustment && finalMonsterHexes.Count > 0
+						// choiceOrdinal>0(!allowEnemyHexAdjustment):敌方 hex 已在第一次选择时定妥,后续玩家符文选择只读展示
+						// 本幕全部生效的敌方 hex(修复此前退回单个 monsterHexRelic 导致「只显示第一个 + 无重随/移除」),不给控件。
+						HextechEnemyHexAdjustmentOptions? enemyHexOptions = finalMonsterHexes.Count > 0
 							? new HextechEnemyHexAdjustmentOptions
 							{
-								InitialHexes = newMonsterHexes,
+								InitialHexes = allowEnemyHexAdjustment ? newMonsterHexes : finalMonsterHexes,
 								ExcludedHexes = finalMonsterHexes,
 								RerollLimit = modifier.MonsterHexRerollLimit,
-								ControlsEnabled = newMonsterHexes.Count > 0,
-								RerollFunc = newMonsterHexes.Count > 0
+								ControlsEnabled = allowEnemyHexAdjustment && newMonsterHexes.Count > 0,
+								RerollFunc = allowEnemyHexAdjustment && newMonsterHexes.Count > 0
 									? (currentHexes, slotIndex, rerollOrdinal) => RerollEnemyHexForAct(
 										modifier,
 										rarity,
