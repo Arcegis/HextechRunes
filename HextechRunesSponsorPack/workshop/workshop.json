@@ -4,7 +4,7 @@
   "description": "为《海克斯大乱斗》启用部分风格更独立的赞助者物品内容。需要同时安装海克斯大乱斗本体。",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "海斗拓展包0.8.3更新日志：\n适配了羁绊版作为可选的前置；\n添加了赞助者的“信徒”海克斯；\n补充了俄语和泰语的本地化（AI翻译）；",
+  "changeNote": "海斗拓展包0.8.3热修日志：\n尽力修复了“信徒”海克斯的相关错误；",
   "tags": [
     "Gameplay",
     "Modifiers",

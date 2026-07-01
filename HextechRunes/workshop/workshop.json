@@ -4,7 +4,7 @@
   "description": "[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "海斗0.8.3更新日志：\n添加了俄语的本地化（AI翻译）；\n新增了8个玩家海克斯（其中7个是卡牌升级类）；\n部分平衡性调整与海克斯重做；\n在配置页面添加了模组总开关与版本提示开关；\n为部分海克斯和灼烧添加了视觉特效；\n优化了已知问题：\n1.使得复视不再复制海克斯遗物；\n2.优化了我方海克斯的“已见”逻辑，池被清空时重置已见池；\n3.优化了部分海克斯的描述错误；\n4.修复了“单卡强化海克斯虽在牌组里却无限重随也骰不到”的问题；\n5.修复了对于部分模组角色“欧洛巴斯的祝福”无法正常生效的问题；\n6.修复了敌方海克斯“禁忌魔典”在献祭卡牌奖励时也会获得卡牌的问题；\n7.修复了复视海克斯复制双份黄金罗盘时联机不同步的问题；\n8.修复了X费牌无法正常触发“终极XX”系列海克斯的问题；\n9.修复了达弗的陈酿对辉星牌永久减费的问题；\n10.优化了联机稳定性；\n11.可能还有其他修了的我忘列出来了；",
+  "changeNote": "海斗0.8.3热修日志：\n移除了已无用的相关兼容；\n禁用了「自然即是治愈」在联机时的出现；\n修复了复视无法复制商店锻造器的问题；\n修复了奇点AI生成特定能力卡时导致联机不同步的问题；\n修复了配置为多选海克斯时，敌方海克斯仅在第一个海克斯选择时全部显示的问题；",
   "tags": [
     "Gameplay",
     "Modifiers",
