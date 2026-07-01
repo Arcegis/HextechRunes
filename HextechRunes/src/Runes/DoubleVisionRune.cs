@@ -466,23 +466,41 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	private async Task DuplicateForgeReward(Player player, HextechForgeChoiceReward reward)
 	{
-		if (reward.ClaimedForgeId == ModelId.none)
+		await DuplicateForgeById(player, reward.ClaimedForgeId);
+	}
+
+	// 商店购买的属性锻造器不走 AfterRewardTaken/HextechForgeChoiceReward,而直接 RelicCmd.Obtain 又会被
+	// DuplicateObtainedRelic 的「本模组程序集」闸门跳过(锻造器全是本模组类型),因此复视此前复制不到商店锻造器。
+	// 由商店购买流程在成功获得后显式调用本入口,为玩家持有的每个复视各复制一份,复用与锻造奖励完全相同的
+	// ObtainSelectedForge(syncObtainedRelic) 路径。GetActiveRunes 已含「本地持有者」联机闸门(远端由广播兜底)。
+	internal static async Task DuplicatePurchasedForge(Player player, RelicModel forge)
+	{
+		ModelId forgeId = forge.CanonicalInstance?.Id ?? forge.Id;
+		if (forgeId == ModelId.none)
 		{
 			return;
 		}
 
+		foreach (DoubleVisionRune rune in GetActiveRunes(player))
+		{
+			await rune.DuplicateForgeById(player, forgeId);
+		}
+	}
+
+	private async Task DuplicateForgeById(Player player, ModelId forgeId)
+	{
 		// (B1)附魔锻造的 AfterObtained 会开交互式选牌(FromDeckForEnchantment),必须走「持有者开UI+SyncLocalChoice、
 		// 远端 WaitForRemoteChoice」的选择同步协议(每次选牌都 ReserveChoiceId)。复制份只能在【本地持有者】这一端
 		// 真正开第二次选牌,再靠 ObtainSelectedForge 的 syncObtainedRelic 广播让远端经 RewardSynchronizer 获得这份
 		// 锻造并 WaitForRemoteChoice 回放同一选牌——这是原版 HextechForgeChoiceReward.OnSelect(仅选取端运行)的镜像。
 		// 缺这道本地闸门时,远端也各自跑 ObtainSelectedForge 开自己的选牌→复制份 choiceId 与持有者错位→远端拿到
 		// Index 型结果→AsDeckCards 抛异常(玩家实测黑屏/卡的来源之一)。非本地持有者直接返回,由广播兜底。
-		if (!ShouldDuplicateForPlayer(player))
+		if (forgeId == ModelId.none || !ShouldDuplicateForPlayer(player))
 		{
 			return;
 		}
 
-		RelicModel forge = ModelDb.GetById<RelicModel>(reward.ClaimedForgeId).ToMutable();
+		RelicModel forge = ModelDb.GetById<RelicModel>(forgeId).ToMutable();
 		Flash();
 		await RunWithCommandDuplicationSuppressed(
 			() => HextechForgeGrantHelper.ObtainSelectedForge(player, forge, syncObtainedRelic: true));
