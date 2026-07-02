@@ -1,51 +1,24 @@
-using Godot;
-using MegaCrit.Sts2.Core.CardSelection;
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Entities.Potions;
-using MegaCrit.Sts2.Core.Entities.Powers;
-using MegaCrit.Sts2.Core.Entities.Relics;
-using MegaCrit.Sts2.Core.Extensions;
-using MegaCrit.Sts2.Core.Factories;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.CardPools;
-using MegaCrit.Sts2.Core.Models.Cards;
-using MegaCrit.Sts2.Core.Models.Characters;
-using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
-using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
-using MegaCrit.Sts2.Core.Random;
-using MegaCrit.Sts2.Core.Rewards;
-using MegaCrit.Sts2.Core.Rooms;
-using MegaCrit.Sts2.Core.Runs;
-using MegaCrit.Sts2.Core.Saves;
-using MegaCrit.Sts2.Core.Saves.Runs;
-using MegaCrit.Sts2.Core.ValueProps;
-using MegaCrit.Sts2.Core.Models.Monsters;
 
 namespace HextechRunes;
 
+// 0.8.4 重做:战斗开始时获得 100 层致死性和 6 层倒数计时(原 25 致死性+1 死神形态)。
 public sealed class BeginningAndEndRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new PowerVar<LethalityPower>(25m),
-		new PowerVar<ReaperFormPower>(1m)
+		new PowerVar<LethalityPower>(100m),
+		new PowerVar<CountdownPower>(6m)
 	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
 		HoverTipFactory.FromPower<LethalityPower>(),
-		HoverTipFactory.FromPower<ReaperFormPower>()
+		HoverTipFactory.FromPower<CountdownPower>()
 	];
 
 	public override bool IsAvailableForPlayer(Player player)
@@ -62,6 +35,6 @@ public sealed class BeginningAndEndRune : HextechRelicBase
 
 		Flash();
 		await PowerCmd.Apply<LethalityPower>(Owner.Creature, DynamicVars["LethalityPower"].BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<ReaperFormPower>(Owner.Creature, DynamicVars["ReaperFormPower"].BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<CountdownPower>(Owner.Creature, DynamicVars["CountdownPower"].BaseValue, Owner.Creature, null);
 	}
 }

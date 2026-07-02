@@ -1,46 +1,35 @@
 namespace HextechRunes;
 
+// 0.8.4 重做:回合结束时,把每个玩家消耗牌堆里的所有状态牌与诅咒牌移回其弃牌堆
+// (原效果为"状态/诅咒牌不因打出或回合结束而消耗",实现已整体替换)。
 internal sealed class ForgottenSoulEnemyHex : HextechEnemyHexEffect
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.ForgottenSoul;
 
-	internal override bool ShouldEtherealTrigger(HextechEnemyHexContext context, CardModel card)
+	internal override async Task BeforeTurnEnd(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, CombatRoom? combatRoom)
 	{
-		return !CanAffect(context, card) || !card.Keywords.Contains(CardKeyword.Ethereal);
-	}
+		if (side != CombatSide.Player || combatRoom == null)
+		{
+			return;
+		}
 
-	internal override (PileType, CardPilePosition)? ModifyCardPlayResultPileTypeAndPosition(
-		HextechEnemyHexContext context,
-		CardModel card,
-		bool isAutoPlay,
-		ResourceInfo resources,
-		PileType pileType,
-		CardPilePosition position)
-	{
-		return CanAffect(context, card) && pileType == PileType.Exhaust
-			? (PileType.Discard, position)
-			: null;
-	}
+		foreach (Creature playerCreature in context.GetAlivePlayerSideCreatures(combatRoom.CombatState))
+		{
+			Player? player = playerCreature.Player;
+			if (player == null)
+			{
+				continue;
+			}
 
-	internal static bool ShouldPreventPlayExhaust(CardModel card)
-	{
-		return card.Owner?.Creature.Side == CombatSide.Player
-			&& card.Owner.RunState is RunState runState
-			&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is { } modifier
-			&& modifier.HasActiveMonsterHex(MonsterHexKind.ForgottenSoul)
-			&& CanAffect(card);
-	}
+			List<CardModel> cards = PileType.Exhaust.GetPile(player).Cards
+				.Where(static card => card.Type is CardType.Status or CardType.Curse)
+				.ToList();
+			if (cards.Count == 0)
+			{
+				continue;
+			}
 
-	private static bool CanAffect(HextechEnemyHexContext context, CardModel card)
-	{
-		return card.Owner?.Creature.CombatState?.RunState == context.RunState && CanAffect(card);
-	}
-
-	private static bool CanAffect(CardModel card)
-	{
-		return card.Type is CardType.Status or CardType.Curse
-			&& (card.Keywords.Contains(CardKeyword.Exhaust)
-				|| card.Keywords.Contains(CardKeyword.Ethereal)
-				|| card.ExhaustOnNextPlay);
+			await CardPileCmd.Add(cards, PileType.Discard);
+		}
 	}
 }

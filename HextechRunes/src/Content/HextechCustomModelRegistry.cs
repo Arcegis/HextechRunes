@@ -9,6 +9,24 @@ internal static class HextechCustomModelRegistry
 		typeof(RandomForgeShopRelic)
 	];
 
+	// 敌方专属海克斯的图标/文案载体 relic：注册进 ModelDb 但不进任何玩家获取池。
+	// 注意：新增敌方专属 relic 时这里必须同步登记，否则图标路径不被认定（游戏内显示 NOPE）。
+	internal static IReadOnlyList<Type> EnemyHexIconRelicTypes { get; } =
+	[
+		typeof(SkulkingColonyHex),
+		typeof(PhantasmalGardenerHex),
+		typeof(QueenHex),
+		typeof(LagavulinMatriarchHex),
+		typeof(ExoskeletonHex),
+		typeof(TestSubjectHex),
+		typeof(LeafSlimeHex),
+		typeof(ShrinkerBeetleHex),
+		typeof(InkletHex),
+		typeof(PhrogParasiteHex),
+		typeof(VantomHex),
+		typeof(AeonglassHex)
+	];
+
 	internal static IReadOnlyList<Type> CustomCardTypes { get; } =
 	[
 		typeof(ElicitCard),

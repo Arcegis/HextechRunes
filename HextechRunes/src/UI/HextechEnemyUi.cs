@@ -72,6 +72,22 @@ internal static class HextechEnemyUi
 		HideMayhemModifierBadge();
 
 		IReadOnlyList<MonsterHexKind> activeHexes = modifier.GetActiveMonsterHexes();
+
+		// 折叠模式(配置「折叠敌方海克斯」,默认开):敌方海克斯收进顶栏地图按钮左侧的折叠按钮 + 下方展开窗口,
+		// 不再平铺进 modifiers 容器(那正是数量多/药水栏长时会溢出屏幕的旧行为)。
+		if (GetCollapseEnemyHexesConfig())
+		{
+			RemoveAllEnemyHexStrips(container);
+			UpdateContainerVisibility(container);
+			List<IReadOnlyList<MonsterHexKind>> hexRows = BuildHexRowsByAct(modifier);
+			HextechEnemyHexCollapseView.Show(hexRows, ComputeReservedColumns(modifier, hexRows));
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh(collapsed): rows={hexRows.Count} active={string.Join(",", activeHexes)}");
+			return;
+		}
+
+		// 旧版:平铺在顶栏 modifiers 里。先确保折叠按钮/面板已移除,避免两套并存。
+		HextechEnemyHexCollapseView.Remove();
+
 		if (activeHexes.Count == 0)
 		{
 			RemoveAllEnemyHexStrips(container);
@@ -97,6 +113,8 @@ internal static class HextechEnemyUi
 
 	public static void Clear()
 	{
+		HextechEnemyHexCollapseView.Remove();
+
 		Control? container = GetModifiersContainer();
 		if (container == null)
 		{
@@ -106,6 +124,62 @@ internal static class HextechEnemyUi
 		RemoveAllEnemyHexStrips(container);
 		HideMayhemModifierBadge();
 		UpdateContainerVisibility(container);
+	}
+
+	private static bool GetCollapseEnemyHexesConfig()
+	{
+		try
+		{
+			return HextechRelicVisibilityHooks.GetCollapseEnemyHexes();
+		}
+		catch
+		{
+			return HextechRelicVisibilityHooks.GetDefaultCollapseEnemyHexes();
+		}
+	}
+
+	// 折叠面板按「幕」分行:第 N 行 = 第 N 幕**单独新增**的敌方海克斯。GetMonsterHexesForAct 返回的是累积集,
+	// 所以每幕单独 = 该幕累积集 − 上一幕累积集(累积为 append,新增即不在上一幕里的那些)。未到达的幕为空,跳过。
+	private static List<IReadOnlyList<MonsterHexKind>> BuildHexRowsByAct(HextechMayhemModifier modifier)
+	{
+		List<IReadOnlyList<MonsterHexKind>> rows = [];
+		IReadOnlyList<MonsterHexKind> previous = [];
+		int actCount = modifier.EnemyHexCountsByAct.Length;
+		for (int act = 0; act < actCount; act++)
+		{
+			IReadOnlyList<MonsterHexKind> cumulative = modifier.GetMonsterHexesForAct(act);
+			if (cumulative.Count == 0)
+			{
+				continue;
+			}
+
+			List<MonsterHexKind> delta = cumulative.Where(hex => !previous.Contains(hex)).ToList();
+			if (delta.Count > 0)
+			{
+				rows.Add(delta);
+			}
+
+			previous = cumulative;
+		}
+
+		return rows;
+	}
+
+	// 深色底保留列数 = 各幕海克斯数量的最大值(既看配置每幕数量,也兜住实际行长),钳到 [1,6]。
+	private static int ComputeReservedColumns(HextechMayhemModifier modifier, List<IReadOnlyList<MonsterHexKind>> rows)
+	{
+		int max = 1;
+		foreach (int count in modifier.EnemyHexCountsByAct)
+		{
+			max = Math.Max(max, count);
+		}
+
+		foreach (IReadOnlyList<MonsterHexKind> row in rows)
+		{
+			max = Math.Max(max, row.Count);
+		}
+
+		return Math.Clamp(max, 1, 6);
 	}
 
 	public static void HideMayhemModifierBadge()
@@ -290,7 +364,7 @@ internal static class HextechEnemyUi
 		container.Visible = container.GetChildren().Any(static child => !child.IsQueuedForDeletion());
 	}
 
-	private static Control CreateEnemyHexHolder(MonsterHexKind hex)
+	internal static Control CreateEnemyHexHolder(MonsterHexKind hex)
 	{
 		RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(hex).ToMutable();
 		NRelicBasicHolder holder = NRelicBasicHolder.Create(relic)

@@ -251,6 +251,19 @@ internal static class HextechShopForgeHooks
 			.Add(forge.Id);
 
 		await HextechForgeGrantHelper.ObtainSelectedForge(player, forge, syncObtainedRelic: true);
+
+		// 复视复制商店购买的锻造器:商店购买不走锻造奖励(HextechForgeChoiceReward)那条已支持的复制路径,
+		// 且直接 RelicCmd.Obtain 会被复视的「本模组程序集」闸门跳过,故在此显式触发一次(复用锻造奖励同款逻辑)。
+		// 已付费购买不应因复制异常而中断,故防御性兜底;复制份自身走 syncObtainedRelic 广播,联机一致。
+		try
+		{
+			await DoubleVisionRune.DuplicatePurchasedForge(player, forge);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Double Vision failed to duplicate purchased forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}: {ex.GetType().Name}: {ex.Message}");
+		}
+
 		if (shopRelic != null)
 		{
 			shopRelic.IncrementPurchaseCount();

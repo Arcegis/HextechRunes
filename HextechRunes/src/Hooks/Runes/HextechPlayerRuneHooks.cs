@@ -143,28 +143,6 @@ internal static partial class HextechPlayerRuneHooks
 		return false;
 	}
 
-	private static bool VoidFormOnPlayPrefix(VoidForm __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
-	{
-		if (!VoidFormUpgradeRune.ShouldUseUpgradedPlay(__instance))
-		{
-			return true;
-		}
-
-		__result = VoidFormUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
-		return false;
-	}
-
-	private static bool RainbowOnPlayPrefix(Rainbow __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
-	{
-		if (!RainbowUpgradeRune.ShouldUseUpgradedPlay(__instance))
-		{
-			return true;
-		}
-
-		__result = RainbowUpgradeRune.PlayUpgraded(choiceContext, __instance, cardPlay);
-		return false;
-	}
-
 	private static bool ShivCreateOneInHandPrefix(Player owner, CombatState combatState, ref Task<CardModel?> __result)
 	{
 		if (owner.GetRelic<BigKnifeRune>() == null)

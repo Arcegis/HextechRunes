@@ -39,12 +39,6 @@ internal static partial class HextechRuneSelectionCoordinator
 				continue;
 			}
 
-			if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
-			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied AI auto-ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
-				continue;
-			}
-
 			pendingAcks.Add(WaitForRemoteActSelectionApplied(synchronizer, runState, player, choiceId, actIndex, choiceOrdinal));
 		}
 

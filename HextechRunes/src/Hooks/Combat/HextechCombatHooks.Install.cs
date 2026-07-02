@@ -122,9 +122,6 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(EntropyPower), nameof(EntropyPower.AfterPlayerTurnStart), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(Player)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(EntropyAfterPlayerTurnStartPrefix)));
-		harmony.Patch(
-			RequireMethod(typeof(ForbiddenGrimoirePower), nameof(ForbiddenGrimoirePower.AfterCombatEnd), BindingFlags.Public | BindingFlags.Instance, typeof(CombatRoom)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ForbiddenGrimoireAfterCombatEndPrefix)));
 		TryPatchAfterPowerAmountChanged(
 			harmony,
 			typeof(OutbreakPower),

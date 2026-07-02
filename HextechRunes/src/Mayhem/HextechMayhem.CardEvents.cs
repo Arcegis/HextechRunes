@@ -50,22 +50,47 @@ internal sealed partial class HextechMayhemModifier
 			(effect, context) => effect.AfterCardDrawn(context, choiceContext, card, fromHandDraw));
 	}
 
+	// 记录每张能力牌「开始打出时」玩家的 Storm 层数(在该牌 OnPlay 应用/叠加 StormPower 之前记录)。
+	// 用于在 AfterCardPlayedLate 补发闪电时复刻原版 StormPower 的自排除:首次打出雷暴时此刻还没有
+	// StormPower → 不记录 → 不会对雷暴自己发闪电;后续打出雷暴发的也是「打出前」的层数,与原版一致。
+	private readonly Dictionary<CardModel, int> _stormLightningAtCardStart = new();
+
+	public override Task BeforeCardPlayed(CardPlay cardPlay)
+	{
+		Player? owner = cardPlay.Card.Owner;
+		if (owner != null
+			&& cardPlay.Card.Type == CardType.Power
+			&& owner.Creature.CombatState?.RunState == RunState
+			&& owner.Creature.GetPower<StormPower>() is StormPower stormPower)
+		{
+			int lightning = Math.Max(0, (int)Math.Floor((decimal)stormPower.Amount));
+			if (lightning > 0)
+			{
+				_stormLightningAtCardStart[cardPlay.Card] = lightning;
+			}
+		}
+
+		return Task.CompletedTask;
+	}
+
 	public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterCardPlayedLate(context, choiceContext, cardPlay));
 
-		Player? owner = cardPlay.Card.Owner;
-		if (owner == null
-			|| cardPlay.Card.Type != CardType.Power
-			|| owner.Creature.CombatState?.RunState != RunState
-			|| owner.Creature.GetPower<StormPower>() is not StormPower stormPower)
+		// 只对「打出前就已持有 Storm」的能力牌补发闪电;发的是打出前记录的层数(排除雷暴自身首次触发)。
+		if (!_stormLightningAtCardStart.Remove(cardPlay.Card, out int lightningCount) || lightningCount <= 0)
 		{
 			return;
 		}
 
-		int lightningCount = Math.Max(0, (int)Math.Floor((decimal)stormPower.Amount));
+		Player? owner = cardPlay.Card.Owner;
+		if (owner == null || owner.Creature.CombatState?.RunState != RunState)
+		{
+			return;
+		}
+
 		for (int i = 0; i < lightningCount; i++)
 		{
 			OrbModel orb = ModelDb.Orb<LightningOrb>().ToMutable();

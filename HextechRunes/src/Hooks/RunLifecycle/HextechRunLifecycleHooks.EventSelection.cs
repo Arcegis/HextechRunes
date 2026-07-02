@@ -127,26 +127,6 @@ internal static partial class HextechRunLifecycleHooks
 		int finishedCount,
 		out string completionReason)
 	{
-		if (HextechAiTeammateCompat.IsAiTeammateLoopbackRun(runState)
-			&& HextechAiTeammateCompat.TryGetHostPlayerId(out ulong hostPlayerId))
-		{
-			EventModel? hostEvent = events.FirstOrDefault(eventModel => eventModel.Owner?.NetId == hostPlayerId);
-			if (hostEvent != null)
-			{
-				completionReason = "ai-teammate-host-event";
-				return hostEvent.IsFinished;
-			}
-
-			if (finishedCount > 0)
-			{
-				completionReason = "ai-teammate-any-finished-fallback";
-				return true;
-			}
-
-			completionReason = "ai-teammate-waiting-host-event";
-			return false;
-		}
-
 		completionReason = "all-player-events";
 		return events.Count >= runState.Players.Count && finishedCount == events.Count;
 	}

@@ -32,11 +32,13 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 		return IsNecrobinderPlayer(player);
 	}
 
-	public override Task AfterObtained()
+	public override async Task AfterObtained()
 	{
+		// 先走基类补卡(牌组无不死则加入 1 张),再给全部不死(含刚补的)加持久虚无词条。
+		await base.AfterObtained();
 		if (Owner == null)
 		{
-			return Task.CompletedTask;
+			return;
 		}
 
 		List<CardModel> undeaths = Owner.Deck.Cards
@@ -44,7 +46,7 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 			.ToList();
 		if (undeaths.Count == 0)
 		{
-			return Task.CompletedTask;
+			return;
 		}
 
 		Flash();
@@ -52,8 +54,6 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 		{
 			ApplyPersistentEthereal(card);
 		}
-
-		return Task.CompletedTask;
 	}
 
 	public override Task AfterCardEnteredCombat(CardModel card)

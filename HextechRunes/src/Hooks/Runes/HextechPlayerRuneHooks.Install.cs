@@ -60,8 +60,6 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<AutomationUpgradeRune>("automation upgraded draw", () => InstallAutomationUpgradeHooks(harmony));
 		TryInstallRuneHook<VoltaicUpgradeRune>("voltaic upgraded play", () => InstallVoltaicUpgradeHooks(harmony));
 		TryInstallRuneHook<GrandFinaleUpgradeRune>("grand finale upgraded play", () => InstallGrandFinaleUpgradeHooks(harmony));
-		TryInstallRuneHook<VoidFormUpgradeRune>("void form upgraded play", () => InstallVoidFormUpgradeHooks(harmony));
-		TryInstallRuneHook<RainbowUpgradeRune>("rainbow upgraded play", () => InstallRainbowUpgradeHooks(harmony));
 		TryInstallRuneHook<CrashLandingUpgradeRune>("crash landing upgraded play", () => InstallCrashLandingUpgradeHooks(harmony));
 	}
 
@@ -225,20 +223,6 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(GrandFinale), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(GrandFinaleOnPlayPrefix)));
-	}
-
-	private static void InstallVoidFormUpgradeHooks(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(VoidForm), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(VoidFormOnPlayPrefix)));
-	}
-
-	private static void InstallRainbowUpgradeHooks(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(Rainbow), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
-			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(RainbowOnPlayPrefix)));
 	}
 
 	private static void InstallCrashLandingUpgradeHooks(Harmony harmony)

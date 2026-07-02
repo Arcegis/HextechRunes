@@ -389,10 +389,14 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	private async Task DuplicateObtainedRelic(Player player, RelicModel sourceRelic)
 	{
-		// 复视不再复制海克斯模组自己的符文/遗物(只对原版遗物生效):自定义符文/遗物的获得→转化→联机同步
-		// 流程复杂且对多人敏感,重复获得易引发分叉/卡死(玩家实测黑屏的一类来源)。按需求收窄复视作用域为原版遗物。
-		// 判据用「该类型来自本模组程序集」,自动覆盖全部 HextechRelicBase 符文与 HextechForgeBase 锻造,无需逐个列举。
-		if (sourceRelic.GetType().Assembly == typeof(DoubleVisionRune).Assembly)
+		// 复视不复制海克斯模组自己的符文/遗物/锻造(只对原版遗物生效):自定义内容的获得→转化→联机同步流程
+		// 复杂且对多人敏感,重复获得易引发分叉/卡死(玩家实测黑屏的一类来源)。按需求收窄复视作用域为原版遗物。
+		// 判据取并,覆盖本体 + 拓展包(HextechRunesSponsorPack)且不硬引用拓展包程序集:
+		//   ① 继承 HextechRelicBase 的——本体+拓展包的符文、以及 HextechForgeBase 锻造;
+		//   ② 程序集名以 "HextechRunes" 开头的——覆盖拓展包里直接继承 RelicModel 的事件遗物(如 GoldStarRelic)。
+		// 原版遗物程序集名为 "sts2" 且非 HextechRelicBase,故不受影响,复视照常复制。
+		if (sourceRelic is HextechRelicBase
+			|| sourceRelic.GetType().Assembly.GetName().Name?.StartsWith("HextechRunes", StringComparison.Ordinal) == true)
 		{
 			return;
 		}
@@ -466,23 +470,41 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	private async Task DuplicateForgeReward(Player player, HextechForgeChoiceReward reward)
 	{
-		if (reward.ClaimedForgeId == ModelId.none)
+		await DuplicateForgeById(player, reward.ClaimedForgeId);
+	}
+
+	// 商店购买的属性锻造器不走 AfterRewardTaken/HextechForgeChoiceReward,而直接 RelicCmd.Obtain 又会被
+	// DuplicateObtainedRelic 的「本模组程序集」闸门跳过(锻造器全是本模组类型),因此复视此前复制不到商店锻造器。
+	// 由商店购买流程在成功获得后显式调用本入口,为玩家持有的每个复视各复制一份,复用与锻造奖励完全相同的
+	// ObtainSelectedForge(syncObtainedRelic) 路径。GetActiveRunes 已含「本地持有者」联机闸门(远端由广播兜底)。
+	internal static async Task DuplicatePurchasedForge(Player player, RelicModel forge)
+	{
+		ModelId forgeId = forge.CanonicalInstance?.Id ?? forge.Id;
+		if (forgeId == ModelId.none)
 		{
 			return;
 		}
 
+		foreach (DoubleVisionRune rune in GetActiveRunes(player))
+		{
+			await rune.DuplicateForgeById(player, forgeId);
+		}
+	}
+
+	private async Task DuplicateForgeById(Player player, ModelId forgeId)
+	{
 		// (B1)附魔锻造的 AfterObtained 会开交互式选牌(FromDeckForEnchantment),必须走「持有者开UI+SyncLocalChoice、
 		// 远端 WaitForRemoteChoice」的选择同步协议(每次选牌都 ReserveChoiceId)。复制份只能在【本地持有者】这一端
 		// 真正开第二次选牌,再靠 ObtainSelectedForge 的 syncObtainedRelic 广播让远端经 RewardSynchronizer 获得这份
 		// 锻造并 WaitForRemoteChoice 回放同一选牌——这是原版 HextechForgeChoiceReward.OnSelect(仅选取端运行)的镜像。
 		// 缺这道本地闸门时,远端也各自跑 ObtainSelectedForge 开自己的选牌→复制份 choiceId 与持有者错位→远端拿到
 		// Index 型结果→AsDeckCards 抛异常(玩家实测黑屏/卡的来源之一)。非本地持有者直接返回,由广播兜底。
-		if (!ShouldDuplicateForPlayer(player))
+		if (forgeId == ModelId.none || !ShouldDuplicateForPlayer(player))
 		{
 			return;
 		}
 
-		RelicModel forge = ModelDb.GetById<RelicModel>(reward.ClaimedForgeId).ToMutable();
+		RelicModel forge = ModelDb.GetById<RelicModel>(forgeId).ToMutable();
 		Flash();
 		await RunWithCommandDuplicationSuppressed(
 			() => HextechForgeGrantHelper.ObtainSelectedForge(player, forge, syncObtainedRelic: true));

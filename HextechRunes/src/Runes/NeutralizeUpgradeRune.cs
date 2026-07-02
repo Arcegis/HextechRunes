@@ -67,21 +67,11 @@ public sealed class NeutralizeUpgradeRune : CardUpgradeRuneBase<Neutralize>
 					copy.SetToFreeThisTurn();
 					copy.ExhaustOnNextPlay = true;
 					await CardPileCmd.Add(copy, PileType.Hand, CardPilePosition.Top, this, skipVisuals: true);
-					try
-					{
-						await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(
-							choiceContext,
-							copy,
-							enemy,
-							skipCardPileVisuals: true);
-					}
-					finally
-					{
-						if (copy.Pile?.Type == PileType.Hand)
-						{
-							await CardPileCmd.RemoveFromCombat(copy, skipVisuals: true);
-						}
-					}
+					await HextechAutoPlayHelper.AutoPlayTransientCardAndCleanup(
+						choiceContext,
+						copy,
+						enemy,
+						skipCardPileVisuals: true);
 				}
 			}
 		}

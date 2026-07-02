@@ -4,28 +4,14 @@ internal sealed class RepulsorEnemyHex : HextechEnemyHexEffect
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.Repulsor;
 
-	internal override async Task BeforePlayerSideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players)
+	internal override async Task AfterEnemyHealthThreshold(HextechEnemyHexContext context, Creature target, uint combatId)
 	{
-		foreach (uint combatId in context.Tracking.RepulsorPending.ToList())
+		// 立即触发:掉到阈值以下的瞬间就获得滑溜(不再拖到下个回合)。
+		if (!context.Tracking.RepulsorTriggered.Add(combatId))
 		{
-			Creature? creature = combatState.GetCreature(combatId);
-			context.Tracking.RepulsorPending.Remove(combatId);
-			if (creature == null || !creature.IsAlive)
-			{
-				continue;
-			}
-
-			await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(creature, context.TierValue(Kind, 1, 2, 3), creature, null);
-		}
-	}
-
-	internal override Task AfterEnemyHealthThreshold(HextechEnemyHexContext context, Creature target, uint combatId)
-	{
-		if (context.Tracking.RepulsorTriggered.Add(combatId))
-		{
-			context.Tracking.RepulsorPending.Add(combatId);
+			return;
 		}
 
-		return Task.CompletedTask;
+		await HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(target, context.TierValue(Kind, 1, 2, 3), target, null);
 	}
 }

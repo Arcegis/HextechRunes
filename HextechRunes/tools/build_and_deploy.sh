@@ -142,9 +142,19 @@ clean_macos_metadata "$IMPORT_PROJECT"
   --path "$IMPORT_PROJECT" \
   --import
 
+# mods 目录内用"临时文件 + mv"原子替换：cp 原地覆盖会重写同一 inode，
+# 游戏开着时其 PCK 偏移索引仍指向旧布局，读新内容会得到错乱资源(NOPE 贴图)。
+# mv(rename) 让运行中的进程继续持有完整旧文件,新启动才读新文件。
+deploy_atomic() {
+  local src="$1" dst="$2"
+  local tmp="$dst.tmp.$$"
+  cp "$src" "$tmp"
+  mv -f "$tmp" "$dst"
+}
+
 cp "$MANIFEST_SRC" "$ROOT/dist/$FILE_STEM.json"
 if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
-  cp "$ROOT/dist/$FILE_STEM.json" "$MOD_DIR/$FILE_STEM.json"
+  deploy_atomic "$ROOT/dist/$FILE_STEM.json" "$MOD_DIR/$FILE_STEM.json"
 fi
 
 "$GAME_BIN" --headless \
@@ -155,7 +165,7 @@ fi
   "$IMPORT_PROJECT"
 
 if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
-  cp "$ROOT/dist/$FILE_STEM.pck" "$MOD_DIR/$FILE_STEM.pck"
+  deploy_atomic "$ROOT/dist/$FILE_STEM.pck" "$MOD_DIR/$FILE_STEM.pck"
 fi
 
 for dll in "$BUILD_OUT"/*.dll; do
@@ -168,7 +178,7 @@ for dll in "$BUILD_OUT"/*.dll; do
 
   cp "$dll" "$ROOT/dist/$base_name"
   if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
-    cp "$dll" "$MOD_DIR/$base_name"
+    deploy_atomic "$dll" "$MOD_DIR/$base_name"
   fi
 done
 

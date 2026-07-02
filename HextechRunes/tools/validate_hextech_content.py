@@ -183,6 +183,14 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
         if missing:
             fail(errors, f"{locale} relics.json missing enemy descriptions: {', '.join(missing)}")
 
+    # 敌方专属图标 relic（类名 *Hex）必须同时登记在 EnemyHexIconRelicTypes，
+    # 否则图标路径不被 TryGetCustomRelicIconPath 认定，游戏内显示 NOPE。
+    enemy_icon_types = set(extract_type_list(registry_text, "EnemyHexIconRelicTypes"))
+    hex_icon_types = {str(reg["type"]) for reg in monster_regs if str(reg["type"]).endswith("Hex")}
+    missing_icon_types = sorted(hex_icon_types - enemy_icon_types)
+    if missing_icon_types:
+        fail(errors, f"Enemy hex icon relic types missing from EnemyHexIconRelicTypes: {', '.join(missing_icon_types)}")
+
 
 def validate_relic_registry(errors: list[str]) -> None:
     registry_text = registry_source_text()
