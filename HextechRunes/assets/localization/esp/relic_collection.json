@@ -112,5 +112,17 @@
   "HEXTECH_TAG.ORB": "orbe",
   "HEXTECH_TAG.SUMMON": "Invocar",
   "HEXTECH_TAG.VOID": "vacío",
-  "HEXTECH_TAG.DOOM": "Condena"
+  "HEXTECH_TAG.DOOM": "Condena",
+  "HEXTECH_CONFIG_EXPORT_CODE": "Exportar código",
+  "HEXTECH_CONFIG_IMPORT_CODE": "Importar código",
+  "HEXTECH_CONFIG_EXPORT_DONE": "Código de configuración copiado al portapapeles: pégalo para compartirlo.",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "No hay ningún código de configuración válido en el portapapeles.",
+  "HEXTECH_CONFIG_IMPORT_DONE": "Código importado ({0} entradas desconocidas ignoradas). Pulsa \"Guardar y cerrar\" para aplicar.",
+  "HEXTECH_CONFIG_FEATURED": "Configs de la comunidad",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "Cargando configuraciones de la comunidad…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "No se pudieron cargar las configuraciones. Inténtalo más tarde.",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "Aún no hay configuraciones de la comunidad.",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "Aplicar",
+  "HEXTECH_CONFIG_SHARE_TITLE": "Compartir configuración",
+  "HEXTECH_CONFIG_SHARE_HINT": "Exportar copia un código de configuración al portapapeles para compartirlo; Importar lee un código del portapapeles y rellena este menú. Pulsa \"Guardar y cerrar\" para aplicar."
 }

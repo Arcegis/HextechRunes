@@ -112,5 +112,17 @@
   "HEXTECH_TAG.ORB": "Orb",
   "HEXTECH_TAG.SUMMON": "Summon",
   "HEXTECH_TAG.VOID": "Void",
-  "HEXTECH_TAG.DOOM": "Doom"
+  "HEXTECH_TAG.DOOM": "Doom",
+  "HEXTECH_CONFIG_EXPORT_CODE": "Export Code",
+  "HEXTECH_CONFIG_IMPORT_CODE": "Import Code",
+  "HEXTECH_CONFIG_EXPORT_DONE": "Config code copied to clipboard — paste it anywhere to share.",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "No valid config code found in the clipboard.",
+  "HEXTECH_CONFIG_IMPORT_DONE": "Config code imported ({0} unknown entries ignored). Click \"Save & Close\" to apply.",
+  "HEXTECH_CONFIG_FEATURED": "Community Configs",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "Loading community configs…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "Failed to load community configs. Please try again later.",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "No community configs yet.",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "Apply",
+  "HEXTECH_CONFIG_SHARE_TITLE": "Config Sharing",
+  "HEXTECH_CONFIG_SHARE_HINT": "Export copies a config code to your clipboard for sharing; Import reads a code from the clipboard into this menu. Click \"Save & Close\" to apply."
 }

@@ -112,5 +112,17 @@
   "HEXTECH_TAG.ORB": "ลูกแก้ว",
   "HEXTECH_TAG.SUMMON": "อัญเชิญ",
   "HEXTECH_TAG.VOID": "สุญญตา",
-  "HEXTECH_TAG.DOOM": "อายุขัย"
+  "HEXTECH_TAG.DOOM": "อายุขัย",
+  "HEXTECH_CONFIG_EXPORT_CODE": "ส่งออกโค้ดตั้งค่า",
+  "HEXTECH_CONFIG_IMPORT_CODE": "นำเข้าโค้ดตั้งค่า",
+  "HEXTECH_CONFIG_EXPORT_DONE": "คัดลอกโค้ดตั้งค่าไปยังคลิปบอร์ดแล้ว วางเพื่อแชร์ได้เลย",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "ไม่มีโค้ดตั้งค่าที่ถูกต้องในคลิปบอร์ด",
+  "HEXTECH_CONFIG_IMPORT_DONE": "นำเข้าโค้ดตั้งค่าแล้ว (ข้ามรายการที่ไม่รู้จัก {0} รายการ) กด \"บันทึกและปิด\" เพื่อใช้งาน",
+  "HEXTECH_CONFIG_FEATURED": "การตั้งค่าจากชุมชน",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "กำลังโหลดการตั้งค่าจากชุมชน…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "โหลดการตั้งค่าจากชุมชนไม่สำเร็จ โปรดลองใหม่ภายหลัง",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "ยังไม่มีการตั้งค่าจากชุมชน",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "ใช้งาน",
+  "HEXTECH_CONFIG_SHARE_TITLE": "แชร์การตั้งค่า",
+  "HEXTECH_CONFIG_SHARE_HINT": "ส่งออกจะคัดลอกโค้ดตั้งค่าไปยังคลิปบอร์ดเพื่อแชร์ นำเข้าจะอ่านโค้ดจากคลิปบอร์ดมาใส่ในเมนูนี้ กด \"บันทึกและปิด\" เพื่อใช้งาน"
 }

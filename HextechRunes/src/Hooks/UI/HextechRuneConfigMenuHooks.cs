@@ -387,6 +387,8 @@ internal static class HextechRuneConfigMenuHooks
 			}
 		};
 
+		// 分享区(杂项页)按钮的动作在 CreateBottomBar 里才能构建(依赖全部 pending 与 summary),延迟绑定。
+		Action?[] shareActions = new Action?[3];
 		Control countsPage = CreateSelectionPage(pendingPlayerHexCounts, pendingEnemyHexCounts, pendingPlayerRuneRerollLimit, pendingMonsterHexRerollLimit, numericBindings, compactLayout);
 		Control runePoolPage = CreateRunePoolPage(playerEntries, pendingDisabledPlayerIds, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, badgeRefreshers, compactLayout);
 		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pendingDisabledForgeIds, loadTargets, badgeRefreshers, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
@@ -403,6 +405,7 @@ internal static class HextechRuneConfigMenuHooks
 			pendingModEnabled,
 			numericBindings,
 			booleanBindings,
+			shareActions,
 			compactLayout);
 		Control[] pageArray = [ countsPage, runePoolPage, forgePoolPage, detailsPage ];
 
@@ -525,6 +528,7 @@ internal static class HextechRuneConfigMenuHooks
 			updateSummary,
 			() => selectedPageIndex,
 			compactLayout,
+			shareActions,
 			out updatePageActions));
 
 		foreach (Control page in pageArray)
@@ -833,10 +837,12 @@ internal static class HextechRuneConfigMenuHooks
 		bool[] pendingModEnabled,
 		List<NumericValueBinding> numericBindings,
 		List<BooleanValueBinding> booleanBindings,
+		Action?[] shareActions,
 		bool compactLayout)
 	{
 		VBoxContainer page = CreatePageContainer(compactLayout);
 		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, pendingShowUpdateNotice, pendingCollapseEnemyHexes, pendingRandomForgeDirectGrant, pendingModEnabled, booleanBindings, compactLayout));
+		page.AddChild(CreateShareSection(shareActions, compactLayout));
 		page.AddChild(CreatePriceSection(pendingForgePrice, numericBindings, compactLayout));
 		page.AddChild(CreateWeightMatrixSection(
 			pendingFirstActRuneWeights,
@@ -1422,6 +1428,7 @@ internal static class HextechRuneConfigMenuHooks
 		Action updateSummary,
 		Func<int> getPageIndex,
 		bool compactLayout,
+		Action?[] shareActions,
 		out Action<int> updatePageActions)
 	{
 		VBoxContainer bar = new()
@@ -1552,6 +1559,74 @@ internal static class HextechRuneConfigMenuHooks
 			CloseOverlayAnimated(overlay);
 		}, compactLayout);
 		Button cancel = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout);
+
+		// 配置分享码：导出=把当前编辑中的配置(pending 态)编码进剪贴板;导入=从剪贴板解析并填充
+		// pending 态(界面即预览,可继续修改,「取消」可放弃)——真正落盘仍走「保存并关闭」。
+		// 按钮本体放在「杂项」页的分享区(CreateShareSection),这里只填充延迟绑定的动作。
+		shareActions[0] = () =>
+		{
+			string code = HextechConfigShareCodec.Export(new HextechRunConfigurationSnapshot(
+				pendingPlayerHexCounts,
+				pendingEnemyHexCounts,
+				pendingPlayerRuneRerollLimit[0],
+				pendingMonsterHexRerollLimit[0],
+				pendingDisabledPlayerIds,
+				pendingDisabledMonsterHexIds,
+				pendingDisabledForgeIds,
+				ToRarityWeights(pendingFirstActRuneWeights),
+				ToRarityWeights(pendingNormalRuneWeights),
+				ToRarityWeights(pendingSecondActAfterSilverWeights),
+				ToForgeRarityWeights(pendingForgeWeights),
+				pendingForgePrice[0],
+				pendingRandomForgeDirectGrant[0],
+				pendingModEnabled[0]));
+			DisplayServer.ClipboardSet(code);
+			updateSummary();
+			summary.Text = L("HEXTECH_CONFIG_EXPORT_DONE");
+		};
+		// 把分享码/社区配置解析结果填充进 pending 编辑态并刷新全部控件(界面即预览,「取消」可放弃)。
+		Action<HextechConfigShareCodec.ImportPreview> applyPreview = preview =>
+		{
+			HextechRunConfigurationSnapshot imported = preview.Snapshot;
+			CopyArray(imported.PlayerHexCountsByAct, pendingPlayerHexCounts);
+			CopyArray(imported.EnemyHexCountsByAct, pendingEnemyHexCounts);
+			pendingPlayerRuneRerollLimit[0] = imported.PlayerRuneRerollLimit;
+			pendingMonsterHexRerollLimit[0] = imported.MonsterHexRerollLimit;
+			pendingDisabledPlayerIds.Clear();
+			pendingDisabledPlayerIds.UnionWith(imported.DisabledPlayerRuneIds);
+			pendingDisabledMonsterHexIds.Clear();
+			pendingDisabledMonsterHexIds.UnionWith(imported.DisabledMonsterHexIds);
+			pendingDisabledForgeIds.Clear();
+			pendingDisabledForgeIds.UnionWith(imported.DisabledForgeIds);
+			CopyArray(ToWeightArray(imported.FirstActRuneRarityWeights), pendingFirstActRuneWeights);
+			CopyArray(ToWeightArray(imported.NormalRuneRarityWeights), pendingNormalRuneWeights);
+			CopyArray(ToWeightArray(imported.SecondActAfterSilverRuneRarityWeights), pendingSecondActAfterSilverWeights);
+			CopyArray(ToWeightArray(imported.ForgeRarityWeights), pendingForgeWeights);
+			pendingForgePrice[0] = imported.RandomForgeShopPrice;
+			pendingRandomForgeDirectGrant[0] = imported.RandomForgeDirectGrant;
+			// ModEnabled 与 UI 偏好(折叠/隐藏遗物开关等)不随导入改变。
+			UpdateNumericLabels(numericBindings);
+			UpdateBooleanToggles(booleanBindings);
+			UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
+			UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
+			UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+			updateSummary();
+			summary.Text = string.Format(L("HEXTECH_CONFIG_IMPORT_DONE"), preview.IgnoredUnknownCount);
+		};
+
+		shareActions[1] = () =>
+		{
+			HextechConfigShareCodec.ImportPreview? preview = HextechConfigShareCodec.TryParse(DisplayServer.ClipboardGet());
+			if (preview == null)
+			{
+				updateSummary();
+				summary.Text = L("HEXTECH_CONFIG_IMPORT_INVALID");
+				return;
+			}
+
+			applyPreview(preview);
+		};
+		shareActions[2] = () => OpenFeaturedConfigsPanel(overlay, applyPreview, compactLayout);
 
 		// Summary lives on its own centered, wrapping line so its variable width never
 		// drives the panel width. It always reserves a line of height to keep the panel
@@ -2309,6 +2384,208 @@ internal static class HextechRuneConfigMenuHooks
 		// Keep the summary line always present (even when empty) so the bottom bar height
 		// stays constant across pages.
 		SetLabelText(summary, text);
+	}
+
+	// 「杂项」页的配置分享区:导出/导入配置码 + 社区配置入口。动作由 CreateBottomBar 延迟填充。
+	private static Control CreateShareSection(Action?[] shareActions, bool compactLayout)
+	{
+		VBoxContainer section = CreateCardSection(L("HEXTECH_CONFIG_SHARE_TITLE"), null, compactLayout, out PanelContainer card);
+
+		Label hint = CreateLabel(L("HEXTECH_CONFIG_SHARE_HINT"), 12, new Color(0.78f, 0.82f, 0.9f, 0.85f));
+		hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		hint.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		section.AddChild(hint);
+
+		HBoxContainer buttons = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin
+		};
+		buttons.AddThemeConstantOverride("separation", compactLayout ? 8 : 12);
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_EXPORT_CODE"), () => shareActions[0]?.Invoke(), compactLayout));
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_IMPORT_CODE"), () => shareActions[1]?.Invoke(), compactLayout));
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_FEATURED"), () => shareActions[2]?.Invoke(), compactLayout));
+		section.AddChild(buttons);
+
+		return card;
+	}
+
+	// —— 社区精选配置面板：拉取服务器人工审核的配置列表,浏览+一键应用(应用=填充 pending 编辑态)。——
+	private static void OpenFeaturedConfigsPanel(
+		Control overlay,
+		Action<HextechConfigShareCodec.ImportPreview> applyPreview,
+		bool compactLayout)
+	{
+		Control blocker = new()
+		{
+			Name = "HextechFeaturedConfigsBlocker",
+			MouseFilter = Control.MouseFilterEnum.Stop
+		};
+		blocker.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		ColorRect dim = new()
+		{
+			Color = new Color(0f, 0f, 0f, 0.55f),
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		blocker.AddChild(dim);
+
+		PanelContainer panel = new()
+		{
+			CustomMinimumSize = new Vector2(compactLayout ? 480f : 600f, compactLayout ? 430f : 520f)
+		};
+		panel.AddThemeStyleboxOverride("panel", CreatePanelStyle());
+		panel.SetAnchorsPreset(Control.LayoutPreset.Center);
+		panel.GrowHorizontal = Control.GrowDirection.Both;
+		panel.GrowVertical = Control.GrowDirection.Both;
+		blocker.AddChild(panel);
+
+		MarginContainer margin = new();
+		int pad = compactLayout ? 16 : 22;
+		margin.AddThemeConstantOverride("margin_left", pad);
+		margin.AddThemeConstantOverride("margin_right", pad);
+		margin.AddThemeConstantOverride("margin_top", compactLayout ? 12 : 16);
+		margin.AddThemeConstantOverride("margin_bottom", compactLayout ? 12 : 16);
+		panel.AddChild(margin);
+
+		VBoxContainer body = new();
+		body.AddThemeConstantOverride("separation", compactLayout ? 10 : 12);
+		margin.AddChild(body);
+
+		Label title = CreateLabel(L("HEXTECH_CONFIG_FEATURED"), compactLayout ? 17 : 19, new Color(0.95f, 0.87f, 0.62f, 1f));
+		title.HorizontalAlignment = HorizontalAlignment.Center;
+		body.AddChild(title);
+
+		ColorRect hairline = new()
+		{
+			Color = new Color(0.86f, 0.74f, 0.42f, 0.28f),
+			CustomMinimumSize = new Vector2(0f, 1f),
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		body.AddChild(hairline);
+
+		Label status = CreateLabel(L("HEXTECH_CONFIG_FEATURED_LOADING"), 13, new Color(0.82f, 0.86f, 0.94f, 0.9f));
+		status.HorizontalAlignment = HorizontalAlignment.Center;
+		body.AddChild(status);
+
+		ScrollContainer scroll = new()
+		{
+			SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+			HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
+		};
+		VBoxContainer list = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+		};
+		list.AddThemeConstantOverride("separation", compactLayout ? 8 : 10);
+		scroll.AddChild(list);
+		body.AddChild(scroll);
+
+		Button close = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => blocker.QueueFree(), compactLayout);
+		close.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+		body.AddChild(close);
+
+		overlay.AddChild(blocker);
+		_ = PopulateFeaturedConfigsAsync(blocker, list, status, applyPreview, compactLayout);
+	}
+
+	private static async Task PopulateFeaturedConfigsAsync(
+		Control blocker,
+		VBoxContainer list,
+		Label status,
+		Action<HextechConfigShareCodec.ImportPreview> applyPreview,
+		bool compactLayout)
+	{
+		IReadOnlyList<HextechFeaturedConfigs.FeaturedConfigEntry>? entries = await HextechFeaturedConfigs.FetchAsync().ConfigureAwait(false);
+		Callable.From(() =>
+		{
+			if (!GodotObject.IsInstanceValid(blocker) || !GodotObject.IsInstanceValid(list) || !GodotObject.IsInstanceValid(status))
+			{
+				return;
+			}
+
+			if (entries == null)
+			{
+				status.Text = L("HEXTECH_CONFIG_FEATURED_ERROR");
+				return;
+			}
+
+			if (entries.Count == 0)
+			{
+				status.Text = L("HEXTECH_CONFIG_FEATURED_EMPTY");
+				return;
+			}
+
+			status.Visible = false;
+			foreach (HextechFeaturedConfigs.FeaturedConfigEntry entry in entries)
+			{
+				list.AddChild(CreateFeaturedConfigCard(blocker, entry, applyPreview, compactLayout));
+			}
+		}).CallDeferred();
+	}
+
+	private static Control CreateFeaturedConfigCard(
+		Control blocker,
+		HextechFeaturedConfigs.FeaturedConfigEntry entry,
+		Action<HextechConfigShareCodec.ImportPreview> applyPreview,
+		bool compactLayout)
+	{
+		PanelContainer card = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+		};
+		StyleBoxFlat cardStyle = CreateButtonStyle(new Color(0.1f, 0.12f, 0.17f, 0.75f), new Color(0.46f, 0.55f, 0.68f, 0.5f));
+		cardStyle.ContentMarginLeft = compactLayout ? 12f : 14f;
+		cardStyle.ContentMarginRight = compactLayout ? 12f : 14f;
+		cardStyle.ContentMarginTop = compactLayout ? 8f : 10f;
+		cardStyle.ContentMarginBottom = compactLayout ? 8f : 10f;
+		card.AddThemeStyleboxOverride("panel", cardStyle);
+
+		VBoxContainer content = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+		};
+		content.AddThemeConstantOverride("separation", 5);
+		card.AddChild(content);
+
+		HBoxContainer headerRow = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			Alignment = BoxContainer.AlignmentMode.Center
+		};
+		headerRow.AddThemeConstantOverride("separation", 10);
+		Label name = CreateLabel(entry.Name ?? string.Empty, compactLayout ? 14 : 15, new Color(0.96f, 0.9f, 0.7f, 1f));
+		name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		name.VerticalAlignment = VerticalAlignment.Center;
+		headerRow.AddChild(name);
+		if (!string.IsNullOrWhiteSpace(entry.Author))
+		{
+			Label author = CreateLabel(entry.Author!, 12, new Color(0.72f, 0.76f, 0.84f, 0.85f));
+			author.VerticalAlignment = VerticalAlignment.Center;
+			headerRow.AddChild(author);
+		}
+
+		Button apply = CreateActionButton(L("HEXTECH_CONFIG_FEATURED_APPLY"), () =>
+		{
+			HextechConfigShareCodec.ImportPreview? preview = HextechConfigShareCodec.TryParse(entry.Code);
+			if (preview != null)
+			{
+				applyPreview(preview);
+			}
+
+			blocker.QueueFree();
+		}, compactLayout);
+		headerRow.AddChild(apply);
+		content.AddChild(headerRow);
+
+		if (!string.IsNullOrWhiteSpace(entry.Description))
+		{
+			Label description = CreateLabel(entry.Description!, 12, new Color(0.85f, 0.88f, 0.94f, 0.92f));
+			description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+			description.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+			content.AddChild(description);
+		}
+
+		return card;
 	}
 
 	private static Label CreateLabel(string text, int fontSize, Color color)

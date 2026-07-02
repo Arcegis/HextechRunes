@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "updatedAtUtc": "2026-07-02T06:00:00Z",
+  "configs": [
+    {
+      "id": "official-default",
+      "name": "官方示例：全部启用（默认值）",
+      "author": "Natsuki",
+      "description": "所有海克斯与锻造器全部启用，数量、权重与重随次数均为默认值。作为社区配置格式示例。",
+      "code": "HEXCFG1:H4sIAJkGRmoC/6tWKlOyMtRRKigCU7lAShdIpxUoWRmZGgAZ6UpWaYk5xam1AKnAHyYqAAAA"
+    }
+  ]
+}

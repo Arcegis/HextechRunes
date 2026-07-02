@@ -112,5 +112,17 @@
   "HEXTECH_TAG.ORB": "产球",
   "HEXTECH_TAG.SUMMON": "召唤",
   "HEXTECH_TAG.VOID": "虚无",
-  "HEXTECH_TAG.DOOM": "灾厄"
+  "HEXTECH_TAG.DOOM": "灾厄",
+  "HEXTECH_CONFIG_EXPORT_CODE": "导出配置码",
+  "HEXTECH_CONFIG_IMPORT_CODE": "导入配置码",
+  "HEXTECH_CONFIG_EXPORT_DONE": "配置码已复制到剪贴板，粘贴即可分享。",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "剪贴板中没有有效的配置码。",
+  "HEXTECH_CONFIG_IMPORT_DONE": "已导入配置码（忽略 {0} 个未知条目），点击「保存并关闭」后生效。",
+  "HEXTECH_CONFIG_FEATURED": "社区配置",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "正在获取社区配置…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "获取社区配置失败，请稍后再试。",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "暂时还没有社区配置。",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "应用",
+  "HEXTECH_CONFIG_SHARE_TITLE": "配置分享",
+  "HEXTECH_CONFIG_SHARE_HINT": "导出的配置码会复制到剪贴板，发给朋友即可分享；导入会读取剪贴板中的配置码并填入本界面，点击「保存并关闭」后生效。"
 }

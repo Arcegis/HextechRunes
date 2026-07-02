@@ -8,6 +8,7 @@ internal static class HextechServerEndpoints
 	public const string StaticVersionEndpoint = OfficialServerBase + "/latest-version.json";
 	public const string ApiVersionEndpoint = OfficialServerBase + "/api/hextech-runes/latest-version";
 	public const string TelemetryEndpoint = OfficialServerBase + "/api/hextech-runes/run-result";
+	public const string FeaturedConfigsEndpoint = OfficialServerBase + "/featured-configs.json";
 
 	public static bool IsOfficialEndpoint(string endpoint)
 	{

@@ -112,5 +112,17 @@
   "HEXTECH_TAG.ORB": "구체",
   "HEXTECH_TAG.SUMMON": "소환",
   "HEXTECH_TAG.VOID": "공허",
-  "HEXTECH_TAG.DOOM": "종말"
+  "HEXTECH_TAG.DOOM": "종말",
+  "HEXTECH_CONFIG_EXPORT_CODE": "설정 코드 내보내기",
+  "HEXTECH_CONFIG_IMPORT_CODE": "설정 코드 가져오기",
+  "HEXTECH_CONFIG_EXPORT_DONE": "설정 코드가 클립보드에 복사되었습니다. 붙여넣어 공유하세요.",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "클립보드에 유효한 설정 코드가 없습니다.",
+  "HEXTECH_CONFIG_IMPORT_DONE": "설정 코드를 가져왔습니다(알 수 없는 항목 {0}개 무시). \"저장 후 닫기\"를 누르면 적용됩니다.",
+  "HEXTECH_CONFIG_FEATURED": "커뮤니티 설정",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "커뮤니티 설정을 불러오는 중…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "커뮤니티 설정을 불러오지 못했습니다. 나중에 다시 시도하세요.",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "아직 커뮤니티 설정이 없습니다.",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "적용",
+  "HEXTECH_CONFIG_SHARE_TITLE": "설정 공유",
+  "HEXTECH_CONFIG_SHARE_HINT": "내보내기는 설정 코드를 클립보드에 복사해 공유할 수 있게 합니다. 가져오기는 클립보드의 코드를 이 메뉴에 채웁니다. \"저장 후 닫기\"를 누르면 적용됩니다."
 }

@@ -112,5 +112,17 @@
   "HEXTECH_TAG.ORB": "オーブ",
   "HEXTECH_TAG.SUMMON": "召喚",
   "HEXTECH_TAG.VOID": "虚無",
-  "HEXTECH_TAG.DOOM": "破滅"
+  "HEXTECH_TAG.DOOM": "破滅",
+  "HEXTECH_CONFIG_EXPORT_CODE": "設定コードを書き出す",
+  "HEXTECH_CONFIG_IMPORT_CODE": "設定コードを読み込む",
+  "HEXTECH_CONFIG_EXPORT_DONE": "設定コードをクリップボードにコピーしました。貼り付けて共有できます。",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "クリップボードに有効な設定コードがありません。",
+  "HEXTECH_CONFIG_IMPORT_DONE": "設定コードを読み込みました（不明な項目 {0} 件を無視）。「保存して閉じる」で適用されます。",
+  "HEXTECH_CONFIG_FEATURED": "コミュニティ設定",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "コミュニティ設定を取得中…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "コミュニティ設定の取得に失敗しました。後でもう一度お試しください。",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "まだコミュニティ設定はありません。",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "適用",
+  "HEXTECH_CONFIG_SHARE_TITLE": "設定の共有",
+  "HEXTECH_CONFIG_SHARE_HINT": "書き出した設定コードはクリップボードにコピーされ、共有できます。読み込みはクリップボードのコードをこの画面に反映します。「保存して閉じる」で適用されます。"
 }

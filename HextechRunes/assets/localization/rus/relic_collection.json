@@ -110,5 +110,17 @@
   "HEXTECH_TAG.ORB": "Сферы",
   "HEXTECH_TAG.SUMMON": "Призыв",
   "HEXTECH_TAG.VOID": "Бездна",
-  "HEXTECH_TAG.DOOM": "Злой рок"
+  "HEXTECH_TAG.DOOM": "Злой рок",
+  "HEXTECH_CONFIG_EXPORT_CODE": "Экспорт кода",
+  "HEXTECH_CONFIG_IMPORT_CODE": "Импорт кода",
+  "HEXTECH_CONFIG_EXPORT_DONE": "Код конфигурации скопирован в буфер обмена — вставьте, чтобы поделиться.",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "В буфере обмена нет действительного кода конфигурации.",
+  "HEXTECH_CONFIG_IMPORT_DONE": "Код конфигурации импортирован (неизвестных записей пропущено: {0}). Нажмите «Сохранить и закрыть», чтобы применить.",
+  "HEXTECH_CONFIG_FEATURED": "Конфигурации сообщества",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "Загрузка конфигураций сообщества…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "Не удалось загрузить конфигурации. Попробуйте позже.",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "Конфигураций сообщества пока нет.",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "Применить",
+  "HEXTECH_CONFIG_SHARE_TITLE": "Обмен конфигурациями",
+  "HEXTECH_CONFIG_SHARE_HINT": "Экспорт копирует код конфигурации в буфер обмена; импорт читает код из буфера и заполняет это меню. Нажмите «Сохранить и закрыть», чтобы применить."
 }

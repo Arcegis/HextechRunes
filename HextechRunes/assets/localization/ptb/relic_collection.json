@@ -112,5 +112,17 @@
   "HEXTECH_TAG.ORB": "Orbe",
   "HEXTECH_TAG.SUMMON": "Invocação",
   "HEXTECH_TAG.VOID": "Vazio",
-  "HEXTECH_TAG.DOOM": "Ruína"
+  "HEXTECH_TAG.DOOM": "Ruína",
+  "HEXTECH_CONFIG_EXPORT_CODE": "Exportar código",
+  "HEXTECH_CONFIG_IMPORT_CODE": "Importar código",
+  "HEXTECH_CONFIG_EXPORT_DONE": "Código de configuração copiado para a área de transferência — cole para compartilhar.",
+  "HEXTECH_CONFIG_IMPORT_INVALID": "Nenhum código de configuração válido na área de transferência.",
+  "HEXTECH_CONFIG_IMPORT_DONE": "Código importado ({0} entradas desconhecidas ignoradas). Clique em \"Salvar e fechar\" para aplicar.",
+  "HEXTECH_CONFIG_FEATURED": "Configs da comunidade",
+  "HEXTECH_CONFIG_FEATURED_LOADING": "Carregando configurações da comunidade…",
+  "HEXTECH_CONFIG_FEATURED_ERROR": "Falha ao carregar as configurações. Tente novamente mais tarde.",
+  "HEXTECH_CONFIG_FEATURED_EMPTY": "Ainda não há configurações da comunidade.",
+  "HEXTECH_CONFIG_FEATURED_APPLY": "Aplicar",
+  "HEXTECH_CONFIG_SHARE_TITLE": "Compartilhar configuração",
+  "HEXTECH_CONFIG_SHARE_HINT": "Exportar copia um código de configuração para a área de transferência; Importar lê um código da área de transferência para este menu. Clique em \"Salvar e fechar\" para aplicar."
 }
