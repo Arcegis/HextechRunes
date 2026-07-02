@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>海克斯大乱斗 · 社区配置管理</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #0e1117; color: #d8dee9; margin: 0; padding: 24px; }
+  h1 { font-size: 20px; color: #e8c46a; margin: 0 0 16px; }
+  .bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  input, button, select { background: #1a2030; color: #d8dee9; border: 1px solid #3a4560; border-radius: 6px; padding: 6px 10px; font-size: 13px; }
+  button { cursor: pointer; }
+  button:hover { border-color: #e8c46a; }
+  button.danger { color: #ff8a8a; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border-bottom: 1px solid #2a3348; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { color: #9fb0cc; font-weight: 600; position: sticky; top: 0; background: #0e1117; }
+  tr.hidden-row { opacity: 0.45; }
+  tr.reported { background: rgba(255, 120, 80, 0.08); }
+  .code { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 11px; color: #8aa; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 11px; margin-left: 6px; }
+  .tag.hidden { background: #5a2a2a; color: #ffb0b0; }
+  .tag.reports { background: #5a4a1a; color: #ffe08a; }
+  .muted { color: #7a869c; font-size: 12px; }
+  #status { margin-left: auto; color: #8fb573; font-size: 13px; }
+  .bans { margin: 12px 0; font-size: 13px; color: #cf9; }
+</style>
+</head>
+<body>
+<h1>海克斯大乱斗 · 社区配置管理</h1>
+<div class="bar">
+  <input id="token" type="password" placeholder="管理 Token" size="36">
+  <button onclick="saveToken()">登录</button>
+  <button onclick="refresh()">刷新</button>
+  <select id="filter" onchange="render()">
+    <option value="all">全部</option>
+    <option value="visible">仅可见</option>
+    <option value="hidden">仅隐藏</option>
+    <option value="reported">有举报</option>
+  </select>
+  <input id="banInput" placeholder="SteamID64" size="20">
+  <button class="danger" onclick="banSteamId()">封禁该 SteamID</button>
+  <span id="status"></span>
+</div>
+<div class="bans" id="bans"></div>
+<table>
+  <thead><tr>
+    <th>标题</th><th>作者</th><th>SteamID</th><th>赞</th><th>举报</th><th>时间</th><th>配置码</th><th>操作</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<script>
+const API = "/api/hextech-runes/community/admin/";
+let data = { configs: [], bans: [] };
+
+function token() { return localStorage.getItem("hextechAdminToken") || ""; }
+function saveToken() {
+  localStorage.setItem("hextechAdminToken", document.getElementById("token").value.trim());
+  refresh();
+}
+function setStatus(text, ok = true) {
+  const el = document.getElementById("status");
+  el.textContent = text;
+  el.style.color = ok ? "#8fb573" : "#ff8a8a";
+}
+async function call(action, body, method = "POST") {
+  const res = await fetch(API + action, {
+    method,
+    headers: { "x-admin-token": token(), "content-type": "application/json" },
+    body: method === "POST" ? JSON.stringify(body || {}) : undefined
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json.ok === false) {
+    throw new Error(json.error || res.status);
+  }
+  return json;
+}
+async function refresh() {
+  try {
+    data = await call("list", null, "GET");
+    setStatus(`已加载 ${data.configs.length} 条 / 封禁 ${data.bans.length} 人`);
+    render();
+  } catch (error) {
+    setStatus("加载失败：" + error.message, false);
+  }
+}
+function esc(text) {
+  return String(text ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function render() {
+  const filter = document.getElementById("filter").value;
+  const rows = data.configs.filter((c) => {
+    if (filter === "visible") return !c.hidden;
+    if (filter === "hidden") return c.hidden;
+    if (filter === "reported") return (c.reportCount || 0) > 0;
+    return true;
+  }).map((c) => {
+    const tags = (c.hidden ? `<span class="tag hidden">隐藏:${esc(c.hiddenReason || "")}</span>` : "")
+      + ((c.reportCount || 0) > 0 ? `<span class="tag reports">举报×${c.reportCount}</span>` : "");
+    const ops = [
+      c.hidden ? `<button onclick="op('unhide','${c.id}')">恢复</button>` : `<button onclick="op('hide','${c.id}')">隐藏</button>`,
+      `<button onclick="op('feature','${c.id}')">设精选</button>`,
+      `<button onclick="op('unfeature','${c.id}')">取消精选</button>`,
+      `<button class="danger" onclick="if(confirm('永久删除?')) op('remove','${c.id}')">删除</button>`,
+      `<button class="danger" onclick="if(confirm('封禁 ${c.steamId} 并隐藏其全部上传?')) opBan('${c.steamId}')">封作者</button>`,
+      `<button onclick="navigator.clipboard.writeText('${esc(c.code)}')">复制码</button>`
+    ].join(" ");
+    return `<tr class="${c.hidden ? "hidden-row" : ""} ${(c.reportCount || 0) > 0 ? "reported" : ""}">
+      <td>${esc(c.title)}${tags}</td><td>${esc(c.author)}</td>
+      <td class="muted">${esc(c.steamId)}</td><td>${c.likes ?? 0}</td><td>${c.reportCount ?? 0}</td>
+      <td class="muted">${esc((c.createdAt || "").replace("T", " ").slice(0, 16))}</td>
+      <td class="code" title="${esc(c.code)}">${esc(c.code)}</td><td>${ops}</td></tr>`;
+  }).join("");
+  document.getElementById("rows").innerHTML = rows || '<tr><td colspan="8" class="muted">暂无数据</td></tr>';
+  renderBans();
+}
+function renderBans() {
+  const el = document.getElementById("bans");
+  if (!data.bans.length) { el.textContent = ""; return; }
+  el.innerHTML = "封禁列表：" + data.bans.map((id) =>
+    `${esc(id)} <button onclick="op('unban',null,'${esc(id)}')">解封</button>`).join("　");
+}
+async function op(action, id, steamId) {
+  try {
+    await call(action, id ? { id } : { steamId });
+    setStatus("操作成功：" + action);
+    await refresh();
+  } catch (error) {
+    setStatus("操作失败：" + error.message, false);
+  }
+}
+async function opBan(steamId) { return op("ban", null, steamId); }
+function banSteamId() {
+  const value = document.getElementById("banInput").value.trim();
+  if (value) opBan(value);
+}
+document.getElementById("token").value = token();
+if (token()) refresh();
+</script>
+</body>
+</html>
