@@ -1115,7 +1115,7 @@
   "compensationRune.enemyDescription": "Quando um inimigo fosse sofrer dano não bloqueado, converta-o em [gold]Veneno[/gold] igual a [blue]1/3[/blue] daquele dano, arredondado para baixo (mínimo [blue]1[/blue]).",
   "ominousPactRune.enemyDescription": "Sempre que um inimigo causar dano não bloqueado, o jogador atingido ganha essa mesma quantidade de [gold]Ruína[/gold] adicional.",
   "solidTimeRune.enemyDescription": "Sempre que um jogador joga uma carta de Poder, ele ganha [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] de [gold]Galvanização[/gold].",
-  "forgottenSoulRune.enemyDescription": "Cartas de Status e Maldição com [gold]Exaurir[/gold] ou [gold]Etéreo[/gold] não são exauridas quando jogadas ou no final do turno.",
+  "forgottenSoulRune.enemyDescription": "No fim do turno, todas as cartas de Status e Maldição da pilha de [gold]exaustão[/gold] são adicionadas à pilha de descarte do jogador.",
   "cerberusRune.enemyDescription": "No início do turno do jogador, todos os inimigos ganham [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] de [gold]Vigor[/gold].",
   "omniDragonSoulRune.enemyDescription": "No início do turno inimigo, aplique aleatoriamente [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Fraco[/gold], [gold]Frágil[/gold] ou [gold]Vulnerável[/gold] a todos os jogadores.",
   "natureIsHealingRune.enemyDescription": "Durante o combate, todos os inimigos se curam em [blue]1[/blue] de PV a cada [blue]15[/blue]/[blue]10[/blue]/[blue]5[/blue] segundos.",

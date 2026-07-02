@@ -216,11 +216,7 @@ internal static partial class HextechCombatHooks
 
 	private static bool ShouldForceExhaustStuckPlayCard(CardModel card)
 	{
-		if (ForgottenSoulEnemyHex.ShouldPreventPlayExhaust(card))
-		{
-			return false;
-		}
-
+		// (0.8.4 遗忘之魂重做后不再阻止消耗,原 ShouldPreventPlayExhaust 短路已移除。)
 		return card.ExhaustOnNextPlay
 			|| card.Keywords.Contains(CardKeyword.Exhaust)
 			|| card.Owner?.GetRelic<EightPennyGateRune>() != null;

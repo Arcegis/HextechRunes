@@ -1115,7 +1115,7 @@
   "compensationRune.enemyDescription": "Когда враг должен получить незаблокированный урон, преобразуйте его в [gold]Яд[/gold] в размере [blue]1/3[/blue] от этого урона, округляя вниз (минимум [blue]1[/blue]).",
   "ominousPactRune.enemyDescription": "Каждый раз, когда враг наносит незаблокированный урон, поражённый игрок получает столько же дополнительного [gold]Злого рока[/gold].",
   "solidTimeRune.enemyDescription": "Каждый раз, когда игрок разыгрывает карту способности, он получает [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] [gold]Гальванизация[/gold].",
-  "forgottenSoulRune.enemyDescription": "Карты Статуса и Проклятия с [gold]Сжиганием[/gold] или [gold]Эфирностью[/gold] не сжигаются при разыгрывании или в конце хода.",
+  "forgottenSoulRune.enemyDescription": "В конце хода все карты состояний и проклятий из стопки [gold]истощения[/gold] добавляются в стопку сброса игрока.",
   "cerberusRune.enemyDescription": "В начале хода игрока все враги получают [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Ярости[/gold].",
   "omniDragonSoulRune.enemyDescription": "В начале хода врага случайным образом наложите [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Слабости[/gold], [gold]Хрупкости[/gold] или [gold]Уязвимости[/gold] на всех игроков.",
   "natureIsHealingRune.enemyDescription": "Во время боя все враги исцеляют [blue]1[/blue] ОЗ каждые [blue]15[/blue]/[blue]10[/blue]/[blue]5[/blue] секунд.",
