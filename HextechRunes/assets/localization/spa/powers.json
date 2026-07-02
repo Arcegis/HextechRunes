@@ -54,5 +54,11 @@
   "hextechCloudDragonSoulPower.smartDescription": "Roba [blue]{Amount}[/blue] cartas adicionales en cada turno.",
   "HEXTECH_CLOUD_DRAGON_SOUL_POWER.smartDescription": "Roba [blue]{Amount}[/blue] cartas adicionales en cada turno.",
   "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "Siempre que juegues una carta, inflige [blue]3[/blue] de daño a un enemigo aleatorio.",
-  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "Al comienzo de tu turno, gana [blue]1[/blue] [gold]Fuerza[/gold]."
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "Al comienzo de tu turno, gana [blue]1[/blue] [gold]Fuerza[/gold].",
+  "hextechGalvanicPower.title": "Galvanismo",
+  "HEXTECH_GALVANIC_POWER.title": "Galvanismo",
+  "hextechGalvanicPower.description": "Los cartas de Poder obtienen la aflicción [gold]Galvanismo[/gold].",
+  "HEXTECH_GALVANIC_POWER.description": "Los cartas de Poder obtienen la aflicción [gold]Galvanismo[/gold].",
+  "hextechGalvanicPower.smartDescription": "Los cartas de Poder obtienen la aflicción [gold]{AfflictionTitle}[/gold].",
+  "HEXTECH_GALVANIC_POWER.smartDescription": "Los cartas de Poder obtienen la aflicción [gold]{AfflictionTitle}[/gold]."
 }

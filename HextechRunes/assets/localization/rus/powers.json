@@ -54,5 +54,11 @@
   "hextechCloudDragonSoulPower.smartDescription": "Добирает [blue]{Amount}[/blue] дополнительных карт каждый ход.",
   "HEXTECH_CLOUD_DRAGON_SOUL_POWER.smartDescription": "Добирает [blue]{Amount}[/blue] дополнительных карт каждый ход.",
   "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "Когда вы разыгрываете карту, наносит [blue]3[/blue] урона случайному врагу.",
-  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "В начале вашего хода получает [blue]1[/blue] [gold]силы[/gold]."
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "В начале вашего хода получает [blue]1[/blue] [gold]силы[/gold].",
+  "hextechGalvanicPower.title": "Гальванизация",
+  "HEXTECH_GALVANIC_POWER.title": "Гальванизация",
+  "hextechGalvanicPower.description": "Таланты становятся [gold]гальваническими[/gold].",
+  "HEXTECH_GALVANIC_POWER.description": "Таланты становятся [gold]гальваническими[/gold].",
+  "hextechGalvanicPower.smartDescription": "На Таланты накладывается порча [gold]«{AfflictionTitle}»[/gold].",
+  "HEXTECH_GALVANIC_POWER.smartDescription": "На Таланты накладывается порча [gold]«{AfflictionTitle}»[/gold]."
 }

@@ -54,5 +54,11 @@
   "hextechCloudDragonSoulPower.smartDescription": "Compra [blue]{Amount}[/blue] carta(s) extra(s) a cada turno.",
   "HEXTECH_CLOUD_DRAGON_SOUL_POWER.smartDescription": "Compra [blue]{Amount}[/blue] carta(s) extra(s) a cada turno.",
   "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "Sempre que você jogar uma carta, cause [blue]3[/blue] de dano a um inimigo aleatório.",
-  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "No início do seu turno, ganha [blue]1[/blue] de [gold]Força[/gold]."
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "No início do seu turno, ganha [blue]1[/blue] de [gold]Força[/gold].",
+  "hextechGalvanicPower.title": "Galvanização",
+  "HEXTECH_GALVANIC_POWER.title": "Galvanização",
+  "hextechGalvanicPower.description": "Poderes recebem [gold]Galvanização[/gold].",
+  "HEXTECH_GALVANIC_POWER.description": "Poderes recebem [gold]Galvanização[/gold].",
+  "hextechGalvanicPower.smartDescription": "Poderes recebem [gold]{AfflictionTitle}[/gold].",
+  "HEXTECH_GALVANIC_POWER.smartDescription": "Poderes recebem [gold]{AfflictionTitle}[/gold]."
 }

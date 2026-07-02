@@ -1114,7 +1114,7 @@
   "manipulateRealityRune.enemyDescription": "Status cards enemies add to players' combat piles are doubled.",
   "compensationRune.enemyDescription": "When an enemy would take unblocked damage, convert it into [gold]Poison[/gold] equal to [blue]1/3[/blue] of that damage, rounded down (minimum [blue]1[/blue]).",
   "ominousPactRune.enemyDescription": "Whenever an enemy deals unblocked damage, the hit player gains that much additional [gold]Doom[/gold].",
-  "solidTimeRune.enemyDescription": "Whenever a player plays a Power, [gold]Exhaust[/gold] [blue]1[/blue] random card from their hand.",
+  "solidTimeRune.enemyDescription": "Whenever a player plays a Power card, they gain [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] [gold]Galvanic[/gold].",
   "forgottenSoulRune.enemyDescription": "Status and Curse cards with [gold]Exhaust[/gold] or [gold]Ethereal[/gold] do not exhaust when played or at end of turn.",
   "cerberusRune.enemyDescription": "At the start of the player turn, all enemies gain [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Vigor[/gold].",
   "omniDragonSoulRune.enemyDescription": "At the start of the enemy turn, randomly apply [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Weak[/gold], [gold]Frail[/gold], or [gold]Vulnerable[/gold] to all players.",

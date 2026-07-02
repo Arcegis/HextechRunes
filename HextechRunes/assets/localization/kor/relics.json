@@ -1114,7 +1114,7 @@
   "manipulateRealityRune.enemyDescription": "적이 전투 중 플레이어의 카드 더미에 추가하는 상태이상 카드의 수가 2배가 됩니다.",
   "compensationRune.enemyDescription": "적이 막히지 않은 공격 피해를 받을 때, 피해를 받는 대신 피해량의 [blue]1/3[/blue](내림, 최소 [blue]1[/blue])만큼 [gold]중독[/gold]을 얻습니다.",
   "ominousPactRune.enemyDescription": "적이 막히지 않은 공격 피해를 줄 때마다, 피해를 받은 플레이어가 동일한 수치의 [gold]종말[/gold]을 얻습니다.",
-  "solidTimeRune.enemyDescription": "플레이어가 파워 카드를 사용할 때마다 손에서 무작위 카드 [blue]1[/blue]장을 [gold]소멸[/gold]합니다.",
+  "solidTimeRune.enemyDescription": "플레이어가 능력 카드를 사용할 때마다 [gold]전류[/gold]을(를) [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] 얻습니다.",
   "forgottenSoulRune.enemyDescription": "[gold]소멸[/gold] 또는 [gold]휘발성[/gold] 키워드가 있는 상태이상 및 저주 카드는 사용하거나 턴 종료 시, 소멸되지 않습니다.",
   "cerberusRune.enemyDescription": "플레이어 턴 시작 시, 모든 적이 [gold]활력[/gold]을 [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] 얻습니다.",
   "omniDragonSoulRune.enemyDescription": "적 턴 시작 시, 모든 플레이어에게 무작위로 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]약화[/gold], [gold]취약[/gold] 또는 [gold]받는 피해 증가[/gold]를 부여합니다.",

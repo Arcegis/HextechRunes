@@ -28,6 +28,7 @@ internal static class HextechSavedPropertyBootstrap
 		}
 
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechBurnPower));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechGalvanicPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryStrengthPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryDexterityPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechTemporaryStrengthLossPower));

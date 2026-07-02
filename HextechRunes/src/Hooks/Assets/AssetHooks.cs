@@ -181,6 +181,12 @@ internal static class AssetHooks
 			return texture != null;
 		}
 
+		if (self is HextechGalvanicPower)
+		{
+			texture = ModelDb.Power<GalvanicPower>().Icon;
+			return texture != null;
+		}
+
 		string? path = self switch
 		{
 			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",

@@ -54,5 +54,11 @@
   "hextechCloudDragonSoulPower.smartDescription": "매 턴 카드를 [blue]{Amount}[/blue]장 추가로 뽑습니다.",
   "HEXTECH_CLOUD_DRAGON_SOUL_POWER.smartDescription": "매 턴 카드를 [blue]{Amount}[/blue]장 추가로 뽑습니다.",
   "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "카드를 플레이할 때마다 무작위 적에게 [blue]3[/blue]의 피해를 줍니다.",
-  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "턴 시작 시 [gold]힘[/gold]을 [blue]1[/blue] 얻습니다."
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "턴 시작 시 [gold]힘[/gold]을 [blue]1[/blue] 얻습니다.",
+  "hextechGalvanicPower.title": "전류",
+  "HEXTECH_GALVANIC_POWER.title": "전류",
+  "hextechGalvanicPower.description": "파워 카드에 [gold]전기 자극[/gold]의 고난이 부여됩니다.",
+  "HEXTECH_GALVANIC_POWER.description": "파워 카드에 [gold]전기 자극[/gold]의 고난이 부여됩니다.",
+  "hextechGalvanicPower.smartDescription": "파워 카드에 [gold]{AfflictionTitle}[/gold]의 고난이 부여됩니다.",
+  "HEXTECH_GALVANIC_POWER.smartDescription": "파워 카드에 [gold]{AfflictionTitle}[/gold]의 고난이 부여됩니다."
 }

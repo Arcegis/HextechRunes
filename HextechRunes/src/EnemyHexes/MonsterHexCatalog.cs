@@ -124,6 +124,11 @@ internal static class MonsterHexCatalog
 			return [mainTip, HoverTipFactory.FromPower<PoisonPower>()];
 		}
 
+		if (hex == MonsterHexKind.SolidTime)
+		{
+			return [mainTip, HoverTipFactory.FromPower<HextechGalvanicPower>()];
+		}
+
 		return [mainTip];
 	}
 

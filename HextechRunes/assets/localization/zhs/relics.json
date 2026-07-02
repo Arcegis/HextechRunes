@@ -1114,7 +1114,7 @@
   "manipulateRealityRune.enemyDescription": "敌人在战斗中向玩家牌堆加入的状态牌数量翻倍。",
   "compensationRune.enemyDescription": "敌人受到未被格挡的伤害时，将该伤害转化为其[blue]1/3[/blue]（向下取整，至少[blue]1[/blue]层）的[gold]中毒[/gold]。",
   "ominousPactRune.enemyDescription": "当敌人造成未被格挡的伤害时，使受击玩家额外获得等量的[gold]灾厄[/gold]。",
-  "solidTimeRune.enemyDescription": "玩家打出能力牌时，随机[gold]消耗[/gold]其[blue]1[/blue]张手牌。",
+  "solidTimeRune.enemyDescription": "玩家打出能力牌时，获得[blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue]层[gold]流电[/gold]。",
   "forgottenSoulRune.enemyDescription": "带有[gold]消耗[/gold]或[gold]虚无[/gold]词条的状态牌和诅咒牌不会因打出或回合结束而消耗。",
   "cerberusRune.enemyDescription": "玩家回合开始时，所有敌人获得[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]点[gold]活力[/gold]。",
   "omniDragonSoulRune.enemyDescription": "敌人回合开始时，随机给予所有玩家[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]虚弱[/gold]、[gold]脆弱[/gold]或[gold]易伤[/gold]。",

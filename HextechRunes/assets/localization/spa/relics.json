@@ -1114,7 +1114,7 @@
   "manipulateRealityRune.enemyDescription": "Las cartas de estado que los enemigos añaden a las pilas de combate de los jugadores se duplican.",
   "compensationRune.enemyDescription": "Cuando un enemigo reciba daño desbloqueado, convierte ese daño en [gold]Veneno[/gold] igual a [blue]1/3[/blue] de ese daño, redondeado hacia abajo (mínimo [blue]1[/blue]).",
   "ominousPactRune.enemyDescription": "Siempre que un enemigo inflige daño desbloqueado, el jugador golpeado gana esa cantidad adicional de [gold]Condena[/gold].",
-  "solidTimeRune.enemyDescription": "Cada vez que un jugador juega un Poder, [gold]Agota[/gold] [blue]1[/blue] carta al azar de su mano.",
+  "solidTimeRune.enemyDescription": "Siempre que un jugador juega una carta de Poder, gana [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] [gold]Galvanismo[/gold].",
   "forgottenSoulRune.enemyDescription": "Las cartas de estado y maldición con [gold]Agotamiento[/gold] o [gold]Etérea[/gold] no se agotan cuando se juegan o al final del turno.",
   "cerberusRune.enemyDescription": "Al comienzo del turno del jugador, todos los enemigos obtienen [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Vigor[/gold].",
   "omniDragonSoulRune.enemyDescription": "Al comienzo del turno enemigo, aplica aleatoriamente [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Débil[/gold], [gold]Frágil[/gold] o [gold]Vulnerable[/gold] a todos los jugadores.",
