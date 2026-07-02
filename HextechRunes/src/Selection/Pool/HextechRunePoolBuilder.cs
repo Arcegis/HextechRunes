@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
@@ -310,16 +311,45 @@ internal static class HextechRunePoolBuilder
 	private static int GetRuneTagWeight(RelicModel relic, IReadOnlyDictionary<string, int> tagCounts, bool useEndlessTagWindow)
 	{
 		string tagKey = HextechCatalog.GetPlayerRuneTagKey(relic);
-		if (!tagCounts.TryGetValue(tagKey, out int matchingCount) || matchingCount <= 0)
+		int weight = RuneTagBiasBaseWeight;
+		if (tagCounts.TryGetValue(tagKey, out int matchingCount) && matchingCount > 0)
 		{
-			return RuneTagBiasBaseWeight;
+			int bonusPerMatch = useEndlessTagWindow
+				? RuneTagBiasEndlessBonusPerMatch
+				: RuneTagBiasNormalBonusPerMatch;
+			weight += Math.Min(RuneTagBiasMaxBonus, matchingCount * bonusPerMatch);
 		}
 
-		int bonusPerMatch = useEndlessTagWindow
-			? RuneTagBiasEndlessBonusPerMatch
-			: RuneTagBiasNormalBonusPerMatch;
-		int bonus = Math.Min(RuneTagBiasMaxBonus, matchingCount * bonusPerMatch);
-		return RuneTagBiasBaseWeight + bonus;
+		// 升级卡牌类符文(CardUpgradeRuneBase)权重 ×2:52 个升级类被"牌组必须含目标卡"的
+		// 可用性硬门槛(IsAvailableForPlayer)过滤后,实际占池比例极低(约 5%),体感几乎刷不到。
+		// 能进池即代表目标卡已在牌组,加权只会推给用得上的玩家。权重仅依赖 relic 类型与
+		// 两端一致的 tagCounts,联机确定性安全。
+		if (IsCardUpgradeRune(relic))
+		{
+			weight *= CardUpgradeRuneWeightMultiplier;
+		}
+
+		return weight;
+	}
+
+	private const int CardUpgradeRuneWeightMultiplier = 2;
+
+	private static readonly ConcurrentDictionary<Type, bool> CardUpgradeRuneTypeCache = new();
+
+	private static bool IsCardUpgradeRune(RelicModel relic)
+	{
+		return CardUpgradeRuneTypeCache.GetOrAdd(relic.GetType(), static type =>
+		{
+			for (Type? current = type; current != null; current = current.BaseType)
+			{
+				if (current.IsGenericType && current.GetGenericTypeDefinition() == typeof(CardUpgradeRuneBase<>))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		});
 	}
 
 	private static string BuildWeightedPoolKey(IReadOnlyList<RelicModel> pool, IReadOnlyList<int> weights)
