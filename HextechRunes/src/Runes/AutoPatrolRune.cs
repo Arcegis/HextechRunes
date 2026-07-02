@@ -57,21 +57,11 @@ public sealed class AutoPatrolRune : HextechRelicBase
 			card.SetToFreeThisTurn();
 			card.ExhaustOnNextPlay = true;
 			await CardPileCmd.Add(card, PileType.Hand, CardPilePosition.Top, this, skipVisuals: true);
-			try
-			{
-				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(
-					choiceContext,
-					card,
-					target: null,
-					skipCardPileVisuals: true);
-			}
-			finally
-			{
-				if (card.Pile?.Type == PileType.Hand)
-				{
-					await CardPileCmd.RemoveFromCombat(card, skipVisuals: true);
-				}
-			}
+			await HextechAutoPlayHelper.AutoPlayTransientCardAndCleanup(
+				choiceContext,
+				card,
+				target: null,
+				skipCardPileVisuals: true);
 		}
 	}
 }
