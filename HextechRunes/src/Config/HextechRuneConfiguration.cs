@@ -38,11 +38,8 @@ internal static class HextechRuneConfiguration
 	private static readonly HextechRarityWeights DefaultNormalRuneRarityWeights = new(1, 1, 1);
 	private static readonly HextechRarityWeights DefaultSecondActAfterSilverRuneRarityWeights = new(0, 1, 1);
 	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
-	private static readonly Type[] Version5DefaultDisabledRuneTypes =
-	[
-		typeof(DemonFormUpgradeRune),
-		typeof(TyrannyUpgradeRune)
-	];
+	// v5 历史默认禁用的两个符文(恶魔形态/暴政升级)已在 0.8.4 移除;v15 强制重置后该迁移分支也不再可达。
+	private static readonly Type[] Version5DefaultDisabledRuneTypes = [];
 	private static readonly Type[] Version6DefaultDisabledRuneTypes =
 	[
 		typeof(NeowsGrudgeRune),
