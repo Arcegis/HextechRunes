@@ -313,7 +313,6 @@ internal static class HextechPlayerRuneRegistry
         Rune<MiseryRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<GhostFormRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),
         Rune<ForbiddenGrimoireRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
-        Rune<OneLaneBridgeRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
         Rune<OrbSymbiosisRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 11, tagKey: "ORB"),
         Rune<NearDeathFeastRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 8, tagKey: "OUTPUT"),
         Rune<UnsealedThroneRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 12, tagKey: "RESOURCE"),

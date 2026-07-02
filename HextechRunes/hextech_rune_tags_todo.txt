@@ -162,7 +162,6 @@
 我方	MiseryRune	苦楚	标签=综合
 我方	GhostFormRune	幽魂形态	标签=生存
 我方	ForbiddenGrimoireRune	禁忌魔典	标签=综合
-#我方	OneLaneBridgeRune	独木桥	标签=综合
 我方	ForgottenSoulRune	遗忘之魂	标签=综合
 我方	UpgradeRune	神化	标签=综合
 我方	OmniDragonSoulRune	全能龙魂	标签=综合
