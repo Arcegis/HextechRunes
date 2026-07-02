@@ -11,9 +11,9 @@ internal static partial class HextechRelicVisibilityHooks
 {
 	private const bool DefaultShowHiddenRelicsToggle = false;
 	private const bool DefaultShowUpdateNotice = true;
-	private const bool DefaultCollapseEnemyHexes = true;
+	private const bool DefaultCollapseEnemyHexes = false;
 
-	// 折叠敌方海克斯(纯 UI 偏好,默认开):开=顶栏地图按钮左侧一个折叠按钮,点开在下方弹出敌方海克斯窗口;
+	// 折叠敌方海克斯(纯 UI 偏好,默认关):开=顶栏地图按钮左侧一个折叠按钮,点开在下方弹出敌方海克斯窗口;
 	// 关=旧版行为(敌方海克斯直接平铺在顶栏 modifiers 里)。读取见 HextechEnemyUi。
 	internal static bool GetCollapseEnemyHexes()
 	{
