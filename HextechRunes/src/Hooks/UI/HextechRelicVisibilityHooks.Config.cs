@@ -80,7 +80,7 @@ internal static partial class HextechRelicVisibilityHooks
 		Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
 		if (!File.Exists(configPath))
 		{
-			ModUiConfig defaultConfig = new();
+			ModUiConfig defaultConfig = CreateCurrentUiConfig();
 			SaveConfig(defaultConfig);
 			return defaultConfig;
 		}
@@ -89,16 +89,28 @@ internal static partial class HextechRelicVisibilityHooks
 		{
 			ModUiConfig? parsed = JsonSerializer.Deserialize<ModUiConfig>(File.ReadAllText(configPath), JsonOptions);
 			ModUiConfig config = parsed ?? new ModUiConfig();
+			// 0.8.4 一次性强制回默认(与 rune_config 的 v15 重置同批):旧 UI 偏好整体丢弃。
+			if (config.ConfigVersion < CurrentUiConfigVersion)
+			{
+				HextechLog.Info($"[{ModInfo.Id}][Mayhem] UI config version {config.ConfigVersion} < {CurrentUiConfigVersion}; forcing reset to defaults (0.8.4).");
+				config = CreateCurrentUiConfig();
+			}
+
 			SaveConfig(config);
 			return config;
 		}
 		catch (Exception ex)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility config read failed; using defaults: {ex.Message}", 2);
-			ModUiConfig config = new();
+			ModUiConfig config = CreateCurrentUiConfig();
 			SaveConfig(config);
 			return config;
 		}
+	}
+
+	private static ModUiConfig CreateCurrentUiConfig()
+	{
+		return new ModUiConfig { ConfigVersion = CurrentUiConfigVersion };
 	}
 
 	private static void SaveConfig(ModUiConfig config)
@@ -137,8 +149,15 @@ internal static partial class HextechRelicVisibilityHooks
 		return Path.Combine(baseDir, "SlayTheSpire2", ModInfo.Id);
 	}
 
+	private const int CurrentUiConfigVersion = 1;
+
 	private sealed class ModUiConfig
 	{
+		// 默认必须是 0:旧文件无此字段时反序列化保留属性初始值,0 才能触发一次性重置;
+		// 新建/重置的实例由 CreateCurrentUiConfig 显式设为 CurrentUiConfigVersion。
+		[JsonPropertyName("config_version")]
+		public int ConfigVersion { get; set; }
+
 		[JsonPropertyName("show_hidden_relics_toggle")]
 		public bool ShowHiddenRelicsToggle { get; set; } = DefaultShowHiddenRelicsToggle;
 
