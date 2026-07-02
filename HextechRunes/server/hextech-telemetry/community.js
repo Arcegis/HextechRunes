@@ -527,6 +527,46 @@ async function handleAdmin(req, res, action) {
       }
       return sendJson(res, 200, { ok: true });
     }
+    case "featured-get": {
+      const featuredFile = path.join(state.publicDir, "featured-configs.json");
+      try {
+        return sendJson(res, 200, { ok: true, doc: JSON.parse(fs.readFileSync(featuredFile, "utf8")) });
+      } catch {
+        return sendJson(res, 200, { ok: true, doc: { schemaVersion: 1, updatedAtUtc: "", configs: [] } });
+      }
+    }
+    case "featured-save": {
+      // 全量保存精选列表(编辑/排序/增删统一走这里);逐条校验,坏条目直接拒绝整个保存。
+      const configs = payload?.configs;
+      if (!Array.isArray(configs) || configs.length > 50) {
+        return sendJson(res, 400, { ok: false, error: "bad_request" });
+      }
+      const cleaned = [];
+      const usedIds = new Set();
+      for (const item of configs) {
+        const name = typeof item?.name === "string" ? item.name.trim() : "";
+        if (!name || charLength(name) > 40 || !validateCode(item?.code)) {
+          return sendJson(res, 400, { ok: false, error: "bad_entry", entry: name || "(unnamed)" });
+        }
+        let id = typeof item.id === "string" && /^[a-zA-Z0-9_-]{1,32}$/.test(item.id)
+          ? item.id
+          : crypto.randomBytes(8).toString("hex");
+        while (usedIds.has(id)) {
+          id = crypto.randomBytes(8).toString("hex");
+        }
+        usedIds.add(id);
+        cleaned.push({
+          id,
+          name,
+          author: typeof item.author === "string" ? item.author.trim().slice(0, 40) : "",
+          description: typeof item.description === "string" ? item.description.trim().slice(0, 200) : "",
+          code: item.code
+        });
+      }
+      const doc = { schemaVersion: 1, updatedAtUtc: new Date().toISOString(), configs: cleaned };
+      atomicWrite(path.join(state.publicDir, "featured-configs.json"), JSON.stringify(doc, null, 2) + "\n");
+      return sendJson(res, 200, { ok: true, doc });
+    }
     default:
       return sendJson(res, 404, { ok: false, error: "unknown_action" });
   }

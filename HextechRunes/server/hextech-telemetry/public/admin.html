@@ -45,6 +45,22 @@
   <span id="status"></span>
 </div>
 <div class="bans" id="bans"></div>
+
+<h1 style="margin-top:8px">精选配置管理</h1>
+<div class="bar">
+  <button onclick="loadFeatured()">载入精选列表</button>
+  <button onclick="addFeaturedRow()">新增一条</button>
+  <button onclick="saveFeatured()" style="border-color:#8fb573">保存精选列表</button>
+  <span class="muted">编辑/排序/增删后点击保存才会生效（整体覆盖服务器文件）。</span>
+</div>
+<table>
+  <thead><tr>
+    <th style="width:36px">#</th><th>名称</th><th>作者</th><th>描述</th><th>配置码</th><th style="width:220px">操作</th>
+  </tr></thead>
+  <tbody id="featuredRows"></tbody>
+</table>
+
+<h1 style="margin-top:24px">社区配置</h1>
 <table>
   <thead><tr>
     <th>标题</th><th>作者</th><th>SteamID</th><th>赞</th><th>举报</th><th>时间</th><th>配置码</th><th>操作</th>
@@ -127,8 +143,61 @@ async function op(action, id, steamId) {
     await call(action, id ? { id } : { steamId });
     setStatus("操作成功：" + action);
     await refresh();
+    if (action === "feature" || action === "unfeature") await loadFeatured();
   } catch (error) {
     setStatus("操作失败：" + error.message, false);
+  }
+}
+
+// —— 精选配置管理:本地编辑数组,保存时整体提交 ——
+let featured = [];
+async function loadFeatured() {
+  try {
+    const result = await call("featured-get", null, "GET");
+    featured = (result.doc && result.doc.configs) || [];
+    renderFeatured();
+    setStatus(`精选列表已载入（${featured.length} 条）`);
+  } catch (error) {
+    setStatus("精选载入失败：" + error.message, false);
+  }
+}
+function renderFeatured() {
+  const rows = featured.map((c, i) => `<tr>
+    <td>${i + 1}</td>
+    <td><input value="${esc(c.name)}" size="18" maxlength="40" onchange="featured[${i}].name=this.value"></td>
+    <td><input value="${esc(c.author || "")}" size="10" maxlength="40" onchange="featured[${i}].author=this.value"></td>
+    <td><input value="${esc(c.description || "")}" size="30" maxlength="200" onchange="featured[${i}].description=this.value"></td>
+    <td class="code" title="${esc(c.code)}">${esc(c.code)}</td>
+    <td>
+      <button onclick="moveFeatured(${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button onclick="moveFeatured(${i},1)" ${i === featured.length - 1 ? "disabled" : ""}>↓</button>
+      <button onclick="navigator.clipboard.writeText('${esc(c.code)}')">复制码</button>
+      <button class="danger" onclick="featured.splice(${i},1);renderFeatured()">移除</button>
+    </td></tr>`).join("");
+  document.getElementById("featuredRows").innerHTML =
+    rows || '<tr><td colspan="6" class="muted">精选列表为空（点"新增一条"或在下方社区配置里点"设精选"）</td></tr>';
+}
+function moveFeatured(i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= featured.length) return;
+  [featured[i], featured[j]] = [featured[j], featured[i]];
+  renderFeatured();
+}
+function addFeaturedRow() {
+  const code = prompt("粘贴配置码（HEXCFG1:...）：");
+  if (!code) return;
+  if (!code.trim().startsWith("HEXCFG1:")) { setStatus("配置码格式不对", false); return; }
+  featured.push({ name: "未命名配置", author: "", description: "", code: code.trim() });
+  renderFeatured();
+}
+async function saveFeatured() {
+  try {
+    const result = await call("featured-save", { configs: featured });
+    featured = result.doc.configs;
+    renderFeatured();
+    setStatus(`精选列表已保存（${featured.length} 条），立即对玩家生效`);
+  } catch (error) {
+    setStatus("精选保存失败：" + error.message, false);
   }
 }
 async function opBan(steamId) { return op("ban", null, steamId); }
@@ -137,7 +206,7 @@ function banSteamId() {
   if (value) opBan(value);
 }
 document.getElementById("token").value = token();
-if (token()) refresh();
+if (token()) { refresh(); loadFeatured(); }
 </script>
 </body>
 </html>
