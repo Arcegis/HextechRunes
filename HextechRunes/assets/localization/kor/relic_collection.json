@@ -46,7 +46,7 @@
   "HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION": "켜면 게임 중 왼쪽 아래에 UI 숨김 체크박스가 표시됩니다. 체크하면 유물 바와 멀티플레이 플레이어 상태 패널을 숨겨 왼쪽 조작 영역을 확보합니다.",
   "HEXTECH_RANDOM_FORGE_TOGGLE_TITLE": "모루 무작위 획득",
   "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "켜면 모루를 얻을 때 3개 중 하나를 정하는 대신 무작위로 하나를 바로 획득합니다. 멀티플레이에서는 호스트 설정을 따릅니다.",
-  "HEXTECH_MOD_ENABLED_TOGGLE_TITLE": "Enable mod",
+  "HEXTECH_MOD_ENABLED_TOGGLE_TITLE": "모드 활성화",
   "HEXTECH_MOD_ENABLED_TOGGLE_DESCRIPTION": "When off, this mod stops affecting runs starting from your next run, matching the vanilla game (your current run is unaffected). In multiplayer this follows the host's setting.",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_TITLE": "버전 업데이트 안내 표시",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "활성화하면 메인 메뉴 좌측 하단에 Hextech Mayhem 버전 확인 안내가 표시됩니다. 비활성화하면 숨겨집니다.",

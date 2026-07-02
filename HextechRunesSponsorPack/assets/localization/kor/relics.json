@@ -1,8 +1,8 @@
 {
   "otterAndFriendsRune.title": "수달과 친구들",
   "OTTER_AND_FRIENDS_RUNE.title": "수달과 친구들",
-  "otterAndFriendsRune.description": "당신의 턴 시작 시 [gold]너만 믿는다[/gold]를 [blue]1[/blue]장 손으로 가져온 후, 이번 턴 동안 다음 팀 버프 중 하나를 얻습니다: 카드 [blue]2[/blue]장 뽑기, 에너지 [blue]1[/blue] 획득, 또는 [gold]힘[/gold] [blue]2[/blue] 획득 중 하나.",
-  "OTTER_AND_FRIENDS_RUNE.description": "당신의 턴 시작 시 [gold]너만 믿는다[/gold]를 [blue]1[/blue]장 손으로 가져온 후, 이번 턴 동안 다음 팀 버프 중 하나를 얻습니다: 카드 [blue]2[/blue]장 뽑기, 에너지 [blue]1[/blue] 획득, 또는 [gold]힘[/gold] [blue]2[/blue] 획득 중 하나.",
+  "otterAndFriendsRune.description": "턴 시작 시, [gold]너만 믿는다[/gold]를 [blue]1[/blue]장 손으로 가져온 후, 이번 턴 동안 다음 팀 버프 중 하나를 얻습니다: 카드 [blue]2[/blue]장 뽑기, 에너지 [blue]1[/blue] 획득, 또는 [gold]힘[/gold] [blue]2[/blue] 획득 중 하나.",
+  "OTTER_AND_FRIENDS_RUNE.description": "턴 시작 시, [gold]너만 믿는다[/gold]를 [blue]1[/blue]장 손으로 가져온 후, 이번 턴 동안 다음 팀 버프 중 하나를 얻습니다: 카드 [blue]2[/blue]장 뽑기, 에너지 [blue]1[/blue] 획득, 또는 [gold]힘[/gold] [blue]2[/blue] 획득 중 하나.",
   "otterAndFriendsRune.flavor": "스폰서 아이템: 친구들은 차례대로 돕습니다.",
   "OTTER_AND_FRIENDS_RUNE.flavor": "스폰서 아이템: 친구들은 차례대로 돕습니다.",
   "regretRune.title": "운명의 메아리",
@@ -89,10 +89,10 @@
   "DESPERATE_FINALE_RUNE.description": "[gold]예언의 투영[/gold]을 얻습니다. [gold]최후의 합창[/gold]을 처치할 때마다 피해, 방어도, 회복량이 [blue]20%[/blue] 증가하고 추가 [gold]예언의 투영[/gold]을 [blue]1[/blue]개 얻습니다. 새로운 [gold]예언의 투영[/gold]이 소환하는 [gold]최후의 합창[/gold]은 최대 체력이 [blue]300[/blue] 증가합니다.",
   "desperateFinaleRune.flavor": "후원자 콜라보 아이템: 피날레는 끝나지 않았습니다. 다음 메아리를 더 깊은 절망으로 밀어 넣을 뿐입니다.",
   "DESPERATE_FINALE_RUNE.flavor": "후원자 콜라보 아이템: 피날레는 끝나지 않았습니다. 다음 메아리를 더 깊은 절망으로 밀어 넣을 뿐입니다.",
-  "believerRune.title": "Believer",
-  "believerRune.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
-  "believerRune.flavor": "Sponsor item: Faith guides every choice.",
-  "BELIEVER_RUNE.title": "Believer",
-  "BELIEVER_RUNE.description": "When obtained, immediately hold a [gold]Miracle[/gold] event. Defeating a Boss grants [blue]6[/blue] charge, an Elite [blue]3[/blue], a normal enemy [blue]1[/blue]. At [blue]6[/blue] charge, immediately hold a [gold]Miracle[/gold] event.",
-  "BELIEVER_RUNE.flavor": "Sponsor item: Faith guides every choice."
+  "believerRune.title": "신도",
+  "believerRune.description": "획득 즉시 [gold]기적[/gold] 이벤트가 발생합니다. 전투 승리시 보스는 [blue]6[/blue]중첩, 엘리트는 [blue]3[/blue]중첩, 일반 전투는 [blue]1[/blue]중첩을 보상으로 얻습니다. [blue]6[/blue] 중첩을 획득할 때 마다 즉시 [gold]기적[/gold] 이벤트가 발생합니다.",
+  "believerRune.flavor": "후원자 물품: 모든 선택은 신앙을 따르리.",
+  "BELIEVER_RUNE.title": "신도",
+  "BELIEVER_RUNE.description": "획득 즉시 [gold]기적[/gold] 이벤트가 발생합니다. 전투 승리시 보스는 [blue]6[/blue]중첩, 엘리트는 [blue]3[/blue]중첩, 일반 전투는 [blue]1[/blue]중첩을 보상으로 얻습니다. [blue]6[/blue] 중첩을 획득할 때 마다 즉시 [gold]기적[/gold] 이벤트가 발생합니다.",
+  "BELIEVER_RUNE.flavor": "후원자 물품: 모든 선택은 신앙을 따르리."
 }
