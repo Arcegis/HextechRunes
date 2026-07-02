@@ -1,8 +1,8 @@
 namespace HextechRunes;
 
-internal sealed class MiseryEnemyHex : HextechEnemyHexEffect
+internal sealed class LagavulinMatriarchEnemyHex : HextechEnemyHexEffect
 {
-	internal override MonsterHexKind Kind => MonsterHexKind.Misery;
+	internal override MonsterHexKind Kind => MonsterHexKind.LagavulinMatriarch;
 
 	internal override async Task BeforePlayerSideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{

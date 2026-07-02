@@ -2167,7 +2167,7 @@ internal static class HextechRuneConfigMenuHooks
 			entries.Add(new RuneConfigEntry(
 				kind.ToString(),
 				relic,
-				MonsterHexCatalog.GetEnemyHexTitle(kind, relic).GetFormattedText(),
+				relic.Title.GetFormattedText(),
 				new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
 				L("HEXTECH_ENEMY_POOL_TITLE"),
 				string.Empty,

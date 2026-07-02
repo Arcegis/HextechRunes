@@ -1,8 +1,8 @@
 namespace HextechRunes;
 
-internal sealed class ImmortalBoneEnemyHex : HextechEnemyHexEffect
+internal sealed class SkulkingColonyEnemyHex : HextechEnemyHexEffect
 {
-	internal override MonsterHexKind Kind => MonsterHexKind.ImmortalBone;
+	internal override MonsterHexKind Kind => MonsterHexKind.SkulkingColony;
 
 	internal override int PersistentOrder => 110;
 

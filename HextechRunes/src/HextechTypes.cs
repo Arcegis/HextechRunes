@@ -27,7 +27,7 @@ internal enum MonsterHexKind
     CourageOfColossus = 15,
     GlassCannon = 16,
     Goliath = 17,
-    Queen = 18,
+    // 18 旧 Queen 已退役 → Queen = 106（身份独立化），勿复用
     HandOfBaron = 19,
     CantTouchThis = 20,
     MasterOfDuality = 21,
@@ -55,7 +55,7 @@ internal enum MonsterHexKind
     FrostWraith = 44,
     CuttingEdgeAlchemist = 45,
     BloodPact = 46,
-    ImmortalBone = 47,
+    // 47 旧 ImmortalBone 已退役 → SkulkingColony = 104，勿复用
     Doomsday = 48,
     ClownCollege = 49,
     SingularityAI = 50,
@@ -72,15 +72,15 @@ internal enum MonsterHexKind
     JinlianBox = 61,
     MirrorReflection = 62,
     DuffsVintage = 63,
-    Misery = 64,
+    // 64 旧 Misery 已退役 → LagavulinMatriarch = 107，勿复用
     ShoulderVaku = 65,
     Upgrade = 66,
     NearDeathFeast = 67,
     BlueCandleMedkit = 68,
     TanksShield = 69,
     Zealot = 70,
-    ScaredStiff = 71,
-    GhostForm = 72,
+    // 71 旧 ScaredStiff 已退役 → PhantasmalGardener = 105，勿复用
+    // 72 旧 GhostForm 已退役 → Exoskeleton = 108，勿复用
     SerpentsFang = 73,
     PandorasBox = 74,
     ForbiddenGrimoire = 75,
@@ -90,7 +90,7 @@ internal enum MonsterHexKind
     SwiftAndSafe = 79,
     TezcatarasMercy = 80,
     ArcanePunch = 81,
-    SymphonyOfWar = 82,
+    // 82 旧 SymphonyOfWar 已退役 → TestSubject = 109，勿复用
     Mystery = 83,
     MindOverMatter = 84,
     Omega = 85,
@@ -111,5 +111,23 @@ internal enum MonsterHexKind
     SoulEater = 100,
     DeathHarvest = 101,
     GiantSlayer = 102,
-    DualWield = 103
+    DualWield = 103,
+
+    // 以下为"改名敌方海克斯"独立身份化后的新成员（2026-07-02）：
+    // 旧成员借用我方 rune 的名字/图标，仅靠 .enemyTitle loc 改显示名；现改为独立身份。
+    // 旧值(18/47/64/71/72/82)已退役为墓碑,本地持久化经 MonsterHexKindMigration remap 到新值。
+    SkulkingColony = 104,      // 升级：鬼祟珊瑚群（旧 ImmortalBone=47）
+    PhantasmalGardener = 105,  // 升级：花园幽灵鳗（旧 ScaredStiff=71）
+    Queen = 106,               // 升级：女王（旧 Queen=18，名字沿用、值退役换新）
+    LagavulinMatriarch = 107,  // 升级：乐加维林族母（旧 Misery=64）
+    Exoskeleton = 108,         // 升级：外骨骼虫（旧 GhostForm=72）
+    TestSubject = 109,         // 升级：实验体（旧 SymphonyOfWar=82）
+
+    // 2026-07-02 新增的独立敌方海克斯（无对应我方 rune）：
+    LeafSlime = 110,           // 升级：树叶史莱姆（白银）
+    ShrinkerBeetle = 111,      // 升级：缩小甲虫（白银）
+    Inklet = 112,              // 升级：墨宝（白银）
+    PhrogParasite = 113,       // 升级：异蛙寄生虫（黄金）
+    Vantom = 114,              // 升级：墨影幻灵（黄金）
+    Aeonglass = 115            // 升级：永世沙漏（棱彩）
 }

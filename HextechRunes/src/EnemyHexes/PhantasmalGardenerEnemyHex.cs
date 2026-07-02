@@ -1,8 +1,8 @@
 namespace HextechRunes;
 
-internal sealed class ScaredStiffEnemyHex : HextechEnemyHexEffect
+internal sealed class PhantasmalGardenerEnemyHex : HextechEnemyHexEffect
 {
-	internal override MonsterHexKind Kind => MonsterHexKind.ScaredStiff;
+	internal override MonsterHexKind Kind => MonsterHexKind.PhantasmalGardener;
 
 	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{

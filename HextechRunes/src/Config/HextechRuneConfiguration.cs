@@ -191,7 +191,8 @@ internal static class HextechRuneConfiguration
 			.SelectMany(static kinds => kinds)
 			.Select(static kind => kind.ToString())
 			.ToHashSet(StringComparer.Ordinal);
-		return NormalizeStringIds(ids, validIds);
+		// 旧配置里"改名敌方海克斯"的退役枚举名（如 GhostForm）remap 到新身份名再校验。
+		return NormalizeStringIds(ids?.Select(MonsterHexKindMigration.RemapName), validIds);
 	}
 
 	internal static HashSet<string> NormalizeDisabledForgeIds(IEnumerable<string>? ids)

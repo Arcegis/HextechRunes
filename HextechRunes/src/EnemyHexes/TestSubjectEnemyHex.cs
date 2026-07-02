@@ -1,8 +1,8 @@
 namespace HextechRunes;
 
-internal sealed class SymphonyOfWarEnemyHex : HextechEnemyHexEffect
+internal sealed class TestSubjectEnemyHex : HextechEnemyHexEffect
 {
-	internal override MonsterHexKind Kind => MonsterHexKind.SymphonyOfWar;
+	internal override MonsterHexKind Kind => MonsterHexKind.TestSubject;
 
 	internal override async Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{
