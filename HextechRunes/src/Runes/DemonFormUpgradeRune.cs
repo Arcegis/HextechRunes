@@ -1,31 +1,10 @@
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Cards;
 
 namespace HextechRunes;
 
-public sealed class DemonFormUpgradeRune : CardUpgradeRuneBase<DemonForm>
+// 0.8.4 重做:回合结束时,手牌内有DemonForm则自动打出;获得时补卡(基类)。
+public sealed class DemonFormUpgradeRune : PlayFromHandOnTurnEndRuneBase<DemonForm>
 {
-	protected override bool IsAvailableForCharacter(Player player)
-	{
-		return IsIroncladPlayer(player);
-	}
-
-	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
-		{
-			return;
-		}
-
-		decimal heal = Owner.Creature.GetPowerAmount<DemonFormPower>();
-		if (heal <= 0m)
-		{
-			return;
-		}
-
-		Flash();
-		await CreatureCmd.Heal(Owner.Creature, heal);
-	}
+	protected override bool IsAvailableForCharacter(Player player) => IsIroncladPlayer(player);
 }

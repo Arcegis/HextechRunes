@@ -64,6 +64,12 @@ internal static class HextechAssets
 
     public static string? TryGetCustomRelicIconPath(RelicModel relic)
     {
+        if (HextechCatalog.IsHextechEnemyHexIconRelic(relic))
+        {
+            ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+            return $"res://{ModInfo.Id}/images/relics/{ToImageFileStem(id.Entry)}.png";
+        }
+
         if (HextechCatalog.IsHextechRelic(relic))
         {
             ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;

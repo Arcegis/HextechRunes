@@ -45,7 +45,7 @@ internal static class HextechForgeSelectionCoordinator
 
 		if (!syncMultiplayerChoice)
 		{
-			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player) || HextechAiTeammateCompat.ShouldAutoSelectRune(player))
+			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
 			{
 				return await SelectLocalForge(player, options, context);
 			}
@@ -57,7 +57,7 @@ internal static class HextechForgeSelectionCoordinator
 		PlayerChoiceSynchronizer? synchronizer = await HextechRuneSelectionCoordinator.WaitForPlayerChoiceSynchronizerAsync(runManager);
 		if (synchronizer == null)
 		{
-			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player) || HextechAiTeammateCompat.ShouldAutoSelectRune(player))
+			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
 			{
 				return await SelectLocalForge(player, options, context);
 			}
@@ -96,19 +96,6 @@ internal static class HextechForgeSelectionCoordinator
 
 				HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={sentChoiceId} index={selectedIndex} context={context}");
 				return selected;
-			}
-
-		if (HextechAiTeammateCompat.ShouldAutoSelectRune(player))
-		{
-			int selectedIndex = PickAiForgeIndex(player, options, context);
-			if (!runManager.NetService.IsConnected)
-			{
-				Log.Warn($"[{ModInfo.Id}][ForgeChoice][AITeammateCompat] Auto-selection ignored because multiplayer service is disconnected: player={player.NetId} context={context}");
-				return null;
-			}
-
-				HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options), $"forge-choice-ai {context}", out _);
-				return selectedIndex >= 0 && selectedIndex < options.Count ? options[selectedIndex] : options[0];
 			}
 
 		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Wait remote: player={player.NetId} choiceId={choiceId} context={context}");
@@ -215,19 +202,6 @@ internal static class HextechForgeSelectionCoordinator
 		}
 
 		return -1;
-	}
-
-	private static int PickAiForgeIndex(Player player, IReadOnlyList<RelicModel> options, string context)
-	{
-		int selectedIndex = HextechStableRandom.Index(
-			(RunState)player.RunState,
-			options.Count,
-			"ai-forge-choice",
-			HextechStableRandom.PlayerKey(player),
-			context,
-			player.Relics.Count.ToString());
-		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice][AITeammateCompat] Auto-selected forge: player={player.NetId} index={selectedIndex} relic={(options[selectedIndex].CanonicalInstance?.Id ?? options[selectedIndex].Id).Entry}");
-		return selectedIndex;
 	}
 
 	private static bool ShouldDirectlyGrantRandomForge(Player player)

@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
@@ -23,12 +24,20 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 		// 必须在 series 的最后一次打出后才把牌移回手牌:重放(playCount>1)会让同一张牌在 Play
 		// 牌堆里连续打多次,若在 IsFirstInSeries 就移走,后续重放找不到这张牌会崩溃。
 		// 普通牌 IsFirstInSeries==IsLastInSeries,行为不变。
-		// 不再排除自动打出:地狱狂徒(Hellraiser)抽到牌即自动打出(IsAutoPlay),这些攻击牌
-		// 同样应能被瞄准镜返还;返还到手牌不算抽牌、不会再触发 Hellraiser 自动打,无死循环。
+		// 不排除一般的自动打出:地狱狂徒(Hellraiser)抽到牌即自动打出(IsAutoPlay),这些卡组
+		// 攻击牌同样应能被瞄准镜返还;返还到手牌不算抽牌、不会再触发自动打,无死循环。
+		// 但要排除两类"返回手牌后只会卡死"的牌:
+		// 1. Unplayable 牌——无法从手牌手动打出;
+		// 2. 本 mod 的受管临时牌(自动巡逻的扫荡凝视、中和强化的分身等)——打完后由
+		//    AutoPlayTransientCardAndCleanup 强制离场,返还会让模型被移除而手牌 UI 残留
+		//    一张点不动的幽灵牌。两个判定都基于牌的固有属性/两端一致执行的战斗流程,
+		//    联机确定性安全;且在 roll 之前 return,不影响 proc ordinal 计数的两端一致。
 		if (Owner == null
 			|| Owner.Creature.IsDead
 			|| !cardPlay.IsLastInSeries
-			|| !IsOwnedAttack(cardPlay.Card))
+			|| !IsOwnedAttack(cardPlay.Card)
+			|| cardPlay.Card.Keywords.Contains(CardKeyword.Unplayable)
+			|| HextechAutoPlayHelper.IsTransientAutoPlayCard(cardPlay.Card))
 		{
 			return;
 		}

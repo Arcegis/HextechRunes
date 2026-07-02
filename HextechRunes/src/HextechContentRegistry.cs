@@ -88,6 +88,8 @@ internal static class HextechContentRegistry
 
 	internal static IReadOnlyList<Type> ShopOnlyRelicTypes => HextechCustomModelRegistry.ShopOnlyRelicTypes;
 
+	internal static IReadOnlyList<Type> EnemyHexIconRelicTypes => HextechCustomModelRegistry.EnemyHexIconRelicTypes;
+
 	internal static IReadOnlyList<Type> EventRelicTypes =>
 		HextechCustomModelRegistry.EventRelicTypes
 			.Concat(HextechExternalContentRegistry.GetEventRelicTypes())
@@ -105,7 +107,8 @@ internal static class HextechContentRegistry
 					.Concat(HextechExternalContentRegistry.GetForgeRegistrations())
 					.ToArray(),
 				HextechMonsterHexRegistry.Registrations,
-				HextechCustomModelRegistry.ShopOnlyRelicTypes);
+				HextechCustomModelRegistry.ShopOnlyRelicTypes,
+				HextechCustomModelRegistry.EnemyHexIconRelicTypes);
 	}
 
 	private sealed class RegistryLookups
@@ -114,7 +117,8 @@ internal static class HextechContentRegistry
 			IReadOnlyList<PlayerRuneRegistration> runeRegistrations,
 			IReadOnlyList<ForgeRegistration> forgeRegistrations,
 			IReadOnlyList<MonsterHexRegistration> monsterHexRegistrations,
-			IReadOnlyList<Type> shopOnlyRelicTypes)
+			IReadOnlyList<Type> shopOnlyRelicTypes,
+			IReadOnlyList<Type> enemyHexIconRelicTypes)
 		{
 			PlayerRuneMetadata = new PlayerRuneMetadataCatalog(runeRegistrations);
 			ForgeMetadata = new ForgeMetadataCatalog(forgeRegistrations);
@@ -148,6 +152,7 @@ internal static class HextechContentRegistry
 			AllCustomRelicTypes = AllRuneTypes
 				.Concat(AllForgeTypes)
 				.Concat(shopOnlyRelicTypes)
+				.Concat(enemyHexIconRelicTypes)
 				.Distinct()
 				.ToArray();
 		}

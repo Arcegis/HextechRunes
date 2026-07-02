@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
+const community = require("./community");
 
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
@@ -1393,6 +1394,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && url.pathname === "/api/hextech-runes/run-result") {
     return handleIngest(req, res);
   }
+  if (community.handleRequest(req, res, url)) {
+    return;
+  }
   if (req.method === "GET" || req.method === "HEAD") {
     return serveStatic(req, res);
   }
@@ -1413,6 +1417,7 @@ if (!derivedFilesAreCurrent()) {
   scheduleDerivedRebuild(0);
 }
 startPeriodicDerivedRefresh();
+community.init({ dataDir: DATA_DIR, publicDir: PUBLIC_DIR });
 
 server.listen(PORT, HOST, () => {
   console.log(`hextech-runes-telemetry listening on ${HOST}:${PORT}`);

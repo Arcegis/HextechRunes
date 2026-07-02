@@ -16,23 +16,10 @@ internal sealed class SolidTimeEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		List<CardModel> hand = PileType.Hand.GetPile(owner).Cards
-			.Where(card => card != cardPlay.Card)
-			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
-			.ToList();
-		if (hand.Count == 0)
-		{
-			return;
-		}
-
-		CardModel exhausted = HextechStableRandom.Pick(
-			hand,
-			(RunState)context.RunState,
-			HextechStableRandom.CardKey,
-			"enemy-solid-time-exhaust",
-			HextechStableRandom.PlayerKey(owner),
-			combatState.RoundNumber.ToString(),
-			HextechStableRandom.CardPileKey(hand));
-		await CardCmd.Exhaust(choiceContext, exhausted, causedByEthereal: false, skipVisuals: false);
+		await PowerCmd.Apply<HextechGalvanicPower>(
+			owner.Creature,
+			context.TierValue(Kind, 2, 4, 6),
+			null,
+			cardPlay.Card);
 	}
 }

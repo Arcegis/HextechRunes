@@ -1,8 +1,8 @@
 namespace HextechRunes;
 
-internal sealed class GhostFormEnemyHex : HextechEnemyHexEffect
+internal sealed class ExoskeletonEnemyHex : HextechEnemyHexEffect
 {
-	internal override MonsterHexKind Kind => MonsterHexKind.GhostForm;
+	internal override MonsterHexKind Kind => MonsterHexKind.Exoskeleton;
 
 	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{

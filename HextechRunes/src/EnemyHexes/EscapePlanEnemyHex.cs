@@ -6,47 +6,39 @@ internal sealed class EscapePlanEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task BeforePlayerSideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
+		// 兜底:进场时就已低于阈值、没触发过伤害阈值 hook 的敌人,在回合开始时补发一次。
 		foreach (Creature creature in context.GetAliveEnemies(combatState))
 		{
 			if (creature.CombatId == null
 				|| context.Tracking.EscapePlanTriggered.Contains(creature.CombatId.Value)
-				|| context.Tracking.EscapePlanPending.Contains(creature.CombatId.Value)
 				|| creature.CurrentHp >= creature.MaxHp * HextechMayhemModifier.EscapePlanHealthThresholdPercent)
 			{
 				continue;
 			}
 
-			uint combatId = creature.CombatId.Value;
-			context.Tracking.EscapePlanTriggered.Add(combatId);
-			context.Tracking.EscapePlanPending.Add(combatId);
-		}
-
-		foreach (uint combatId in context.Tracking.EscapePlanPending.ToList())
-		{
-			Creature? creature = combatState.GetCreature(combatId);
-			context.Tracking.EscapePlanPending.Remove(combatId);
-			if (creature == null || !creature.IsAlive)
-			{
-				continue;
-			}
-
-			int blockAmount = (int)Math.Floor(creature.MaxHp * HextechMayhemModifier.EscapePlanBlockPercent);
-			if (blockAmount > 0)
-			{
-				await CreatureCmd.GainBlock(creature, blockAmount, ValueProp.Unpowered, null);
-			}
-
-			await PowerCmd.Apply<ShrinkPower>(creature, 1m, creature, null);
+			await ApplyEscapePlan(context, creature);
 		}
 	}
 
 	internal override Task AfterEnemyHealthThreshold(HextechEnemyHexContext context, Creature target, uint combatId)
 	{
-		if (context.Tracking.EscapePlanTriggered.Add(combatId))
+		// 立即触发:掉到阈值以下的瞬间就获得格挡+缩小(不再拖到下个回合)。
+		return ApplyEscapePlan(context, target);
+	}
+
+	private static async Task ApplyEscapePlan(HextechEnemyHexContext context, Creature creature)
+	{
+		if (creature.CombatId == null || !context.Tracking.EscapePlanTriggered.Add(creature.CombatId.Value))
 		{
-			context.Tracking.EscapePlanPending.Add(combatId);
+			return;
 		}
 
-		return Task.CompletedTask;
+		int blockAmount = (int)Math.Floor(creature.MaxHp * HextechMayhemModifier.EscapePlanBlockPercent);
+		if (blockAmount > 0)
+		{
+			await CreatureCmd.GainBlock(creature, blockAmount, ValueProp.Unpowered, null);
+		}
+
+		await PowerCmd.Apply<ShrinkPower>(creature, 1m, creature, null);
 	}
 }

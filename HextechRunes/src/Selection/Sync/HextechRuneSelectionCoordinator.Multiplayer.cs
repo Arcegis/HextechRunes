@@ -32,12 +32,6 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		RunManager runManager = RunManager.Instance;
 		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
-		if (HextechAiTeammateCompat.IsLoopbackHostSession()
-			&& runState.Players.Any(static player => HextechAiTeammateCompat.IsAiPlayer(player)))
-		{
-			return await SelectRunesForAllPlayersAiTeammateHostControlled(runState, modifier, actIndex, rarity, previousMonsterHexes, initialNewMonsterHexes, monsterHexRelic, choiceOrdinal);
-		}
-
 		PlayerChoiceSynchronizer? synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
 		if (synchronizer == null)
 		{
@@ -62,7 +56,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				HextechEnemyHexAdjustmentOptions? enemyHexOptions = fallbackActiveMonsterHexes.Count > 0
 					? new HextechEnemyHexAdjustmentOptions
 					{
-						InitialHexes = fallbackNewMonsterHexes,
+						// 无新 hex 可调整时只读展示本幕全部生效的敌方 hex(修复后续选择只显示第一个)。
+						InitialHexes = fallbackNewMonsterHexes.Count > 0 ? fallbackNewMonsterHexes : fallbackActiveMonsterHexes,
 						ExcludedHexes = fallbackActiveMonsterHexes,
 						RerollLimit = modifier.MonsterHexRerollLimit,
 						ControlsEnabled = fallbackNewMonsterHexes.Count > 0 && runManager.NetService.Type == NetGameType.Host && IsLocalPlayer(runManager, player),

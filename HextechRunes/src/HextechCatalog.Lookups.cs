@@ -41,9 +41,20 @@ internal static partial class HextechCatalog
 		return ModelIdLookups.ShopOnlyRelicIds.Contains(id);
 	}
 
+	public static bool IsHextechEnemyHexIconRelic(RelicModel? relic)
+	{
+		if (relic == null)
+		{
+			return false;
+		}
+
+		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		return ModelIdLookups.EnemyHexIconRelicIds.Contains(id);
+	}
+
 	public static bool IsHextechCustomRelic(RelicModel? relic)
 	{
-		return IsHextechRelic(relic) || IsHextechForgeRelic(relic) || IsHextechShopRelic(relic);
+		return IsHextechRelic(relic) || IsHextechForgeRelic(relic) || IsHextechShopRelic(relic) || IsHextechEnemyHexIconRelic(relic);
 	}
 
 	public static bool TryGetPlayerRuneRarity(RelicModel? relic, out HextechRarityTier rarity)
@@ -128,6 +139,7 @@ internal static partial class HextechCatalog
 			ToModelIdSet(AllRuneTypes),
 			ToModelIdSet(AllForgeTypes),
 			ToModelIdSet(ShopOnlyRelicTypes),
+			ToModelIdSet(HextechContentRegistry.EnemyHexIconRelicTypes),
 			BuildPlayerRuneRarityById(),
 			BuildForgeRarityById(),
 			BuildPlayerRuneTagKeyById(),
@@ -182,6 +194,7 @@ internal static partial class HextechCatalog
 		IReadOnlySet<ModelId> RuneIds,
 		IReadOnlySet<ModelId> ForgeIds,
 		IReadOnlySet<ModelId> ShopOnlyRelicIds,
+		IReadOnlySet<ModelId> EnemyHexIconRelicIds,
 		IReadOnlyDictionary<ModelId, HextechRarityTier> PlayerRuneRarityById,
 		IReadOnlyDictionary<ModelId, HextechRarityTier> ForgeRarityById,
 		IReadOnlyDictionary<ModelId, string> PlayerRuneTagKeyById,

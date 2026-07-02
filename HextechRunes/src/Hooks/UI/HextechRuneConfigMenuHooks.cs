@@ -17,7 +17,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static class HextechRuneConfigMenuHooks
+internal static partial class HextechRuneConfigMenuHooks
 {
 	private const string LocTable = "relic_collection";
 	private const string ButtonName = "HextechRuneConfigButton";
@@ -344,6 +344,7 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgePrice = [ pendingSnapshot.RandomForgeShopPrice ];
 		bool[] pendingShowHiddenRelicsToggle = [ HextechRelicVisibilityHooks.GetShowHiddenRelicsToggle() ];
 		bool[] pendingShowUpdateNotice = [ HextechRelicVisibilityHooks.GetShowUpdateNotice() ];
+		bool[] pendingCollapseEnemyHexes = [ HextechRelicVisibilityHooks.GetCollapseEnemyHexes() ];
 		bool[] pendingRandomForgeDirectGrant = [ pendingSnapshot.RandomForgeDirectGrant ];
 		bool[] pendingModEnabled = [ pendingSnapshot.ModEnabled ];
 		List<NumericValueBinding> numericBindings = [];
@@ -386,6 +387,8 @@ internal static class HextechRuneConfigMenuHooks
 			}
 		};
 
+		// 分享区(杂项页)按钮的动作在 CreateBottomBar 里才能构建(依赖全部 pending 与 summary),延迟绑定。
+		Action?[] shareActions = new Action?[3];
 		Control countsPage = CreateSelectionPage(pendingPlayerHexCounts, pendingEnemyHexCounts, pendingPlayerRuneRerollLimit, pendingMonsterHexRerollLimit, numericBindings, compactLayout);
 		Control runePoolPage = CreateRunePoolPage(playerEntries, pendingDisabledPlayerIds, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, badgeRefreshers, compactLayout);
 		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pendingDisabledForgeIds, loadTargets, badgeRefreshers, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
@@ -397,10 +400,12 @@ internal static class HextechRuneConfigMenuHooks
 			pendingForgePrice,
 			pendingShowHiddenRelicsToggle,
 			pendingShowUpdateNotice,
+			pendingCollapseEnemyHexes,
 			pendingRandomForgeDirectGrant,
 			pendingModEnabled,
 			numericBindings,
 			booleanBindings,
+			shareActions,
 			compactLayout);
 		Control[] pageArray = [ countsPage, runePoolPage, forgePoolPage, detailsPage ];
 
@@ -511,6 +516,7 @@ internal static class HextechRuneConfigMenuHooks
 			pendingForgePrice,
 			pendingShowHiddenRelicsToggle,
 			pendingShowUpdateNotice,
+			pendingCollapseEnemyHexes,
 			pendingRandomForgeDirectGrant,
 			pendingModEnabled,
 			numericBindings,
@@ -522,6 +528,7 @@ internal static class HextechRuneConfigMenuHooks
 			updateSummary,
 			() => selectedPageIndex,
 			compactLayout,
+			shareActions,
 			out updatePageActions));
 
 		foreach (Control page in pageArray)
@@ -825,14 +832,17 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgePrice,
 		bool[] pendingShowHiddenRelicsToggle,
 		bool[] pendingShowUpdateNotice,
+		bool[] pendingCollapseEnemyHexes,
 		bool[] pendingRandomForgeDirectGrant,
 		bool[] pendingModEnabled,
 		List<NumericValueBinding> numericBindings,
 		List<BooleanValueBinding> booleanBindings,
+		Action?[] shareActions,
 		bool compactLayout)
 	{
 		VBoxContainer page = CreatePageContainer(compactLayout);
-		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, pendingShowUpdateNotice, pendingRandomForgeDirectGrant, pendingModEnabled, booleanBindings, compactLayout));
+		page.AddChild(CreateMiscUiSection(pendingShowHiddenRelicsToggle, pendingShowUpdateNotice, pendingCollapseEnemyHexes, pendingRandomForgeDirectGrant, pendingModEnabled, booleanBindings, compactLayout));
+		page.AddChild(CreateShareSection(shareActions, compactLayout));
 		page.AddChild(CreatePriceSection(pendingForgePrice, numericBindings, compactLayout));
 		page.AddChild(CreateWeightMatrixSection(
 			pendingFirstActRuneWeights,
@@ -844,7 +854,7 @@ internal static class HextechRuneConfigMenuHooks
 		return page;
 	}
 
-	private static Control CreateMiscUiSection(bool[] pendingShowHiddenRelicsToggle, bool[] pendingShowUpdateNotice, bool[] pendingRandomForgeDirectGrant, bool[] pendingModEnabled, List<BooleanValueBinding> booleanBindings, bool compactLayout)
+	private static Control CreateMiscUiSection(bool[] pendingShowHiddenRelicsToggle, bool[] pendingShowUpdateNotice, bool[] pendingCollapseEnemyHexes, bool[] pendingRandomForgeDirectGrant, bool[] pendingModEnabled, List<BooleanValueBinding> booleanBindings, bool compactLayout)
 	{
 		VBoxContainer section = CreateCardSection(L("HEXTECH_MISC_UI_TITLE"), null, compactLayout, out PanelContainer card);
 		section.AddChild(CreateBooleanOption(
@@ -859,6 +869,13 @@ internal static class HextechRuneConfigMenuHooks
 			L("HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION"),
 			() => pendingShowUpdateNotice[0],
 			value => pendingShowUpdateNotice[0] = value,
+			booleanBindings,
+			compactLayout));
+		section.AddChild(CreateBooleanOption(
+			L("HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE"),
+			L("HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION"),
+			() => pendingCollapseEnemyHexes[0],
+			value => pendingCollapseEnemyHexes[0] = value,
 			booleanBindings,
 			compactLayout));
 		section.AddChild(CreateBooleanOption(
@@ -1399,6 +1416,7 @@ internal static class HextechRuneConfigMenuHooks
 		int[] pendingForgePrice,
 		bool[] pendingShowHiddenRelicsToggle,
 		bool[] pendingShowUpdateNotice,
+		bool[] pendingCollapseEnemyHexes,
 		bool[] pendingRandomForgeDirectGrant,
 		bool[] pendingModEnabled,
 		IReadOnlyList<NumericValueBinding> numericBindings,
@@ -1410,6 +1428,7 @@ internal static class HextechRuneConfigMenuHooks
 		Action updateSummary,
 		Func<int> getPageIndex,
 		bool compactLayout,
+		Action?[] shareActions,
 		out Action<int> updatePageActions)
 	{
 		VBoxContainer bar = new()
@@ -1503,6 +1522,7 @@ internal static class HextechRuneConfigMenuHooks
 					pendingForgePrice[0] = defaults.RandomForgeShopPrice;
 					pendingShowHiddenRelicsToggle[0] = HextechRelicVisibilityHooks.GetDefaultShowHiddenRelicsToggle();
 					pendingShowUpdateNotice[0] = HextechRelicVisibilityHooks.GetDefaultShowUpdateNotice();
+					pendingCollapseEnemyHexes[0] = HextechRelicVisibilityHooks.GetDefaultCollapseEnemyHexes();
 					pendingRandomForgeDirectGrant[0] = defaults.RandomForgeDirectGrant;
 					pendingModEnabled[0] = defaults.ModEnabled;
 					UpdateNumericLabels(numericBindings);
@@ -1532,12 +1552,82 @@ internal static class HextechRuneConfigMenuHooks
 				pendingModEnabled[0]));
 			HextechRelicVisibilityHooks.SetShowHiddenRelicsToggle(pendingShowHiddenRelicsToggle[0]);
 			HextechRelicVisibilityHooks.SetShowUpdateNotice(pendingShowUpdateNotice[0]);
+			HextechRelicVisibilityHooks.SetCollapseEnemyHexes(pendingCollapseEnemyHexes[0]);
 			HextechUpdateChecker.ApplyNoticeVisibility(overlay);
 			CollectionHooks.RefreshOpenRelicCollections();
 			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]} showUpdateNotice={pendingShowUpdateNotice[0]} randomForgeDirect={pendingRandomForgeDirectGrant[0]} modEnabled={pendingModEnabled[0]}");
 			CloseOverlayAnimated(overlay);
 		}, compactLayout);
 		Button cancel = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout);
+
+		// 配置分享码：导出=把当前编辑中的配置(pending 态)编码进剪贴板;导入=从剪贴板解析并填充
+		// pending 态(界面即预览,可继续修改,「取消」可放弃)——真正落盘仍走「保存并关闭」。
+		// 按钮本体放在「杂项」页的分享区(CreateShareSection),这里只填充延迟绑定的动作。
+		Func<string> buildPendingCode = () => HextechConfigShareCodec.Export(new HextechRunConfigurationSnapshot(
+			pendingPlayerHexCounts,
+			pendingEnemyHexCounts,
+			pendingPlayerRuneRerollLimit[0],
+			pendingMonsterHexRerollLimit[0],
+			pendingDisabledPlayerIds,
+			pendingDisabledMonsterHexIds,
+			pendingDisabledForgeIds,
+			ToRarityWeights(pendingFirstActRuneWeights),
+			ToRarityWeights(pendingNormalRuneWeights),
+			ToRarityWeights(pendingSecondActAfterSilverWeights),
+			ToForgeRarityWeights(pendingForgeWeights),
+			pendingForgePrice[0],
+			pendingRandomForgeDirectGrant[0],
+			pendingModEnabled[0]));
+		shareActions[0] = () =>
+		{
+			string code = buildPendingCode();
+			DisplayServer.ClipboardSet(code);
+			updateSummary();
+			summary.Text = L("HEXTECH_CONFIG_EXPORT_DONE");
+		};
+		// 把分享码/社区配置解析结果填充进 pending 编辑态并刷新全部控件(界面即预览,「取消」可放弃)。
+		Action<HextechConfigShareCodec.ImportPreview> applyPreview = preview =>
+		{
+			HextechRunConfigurationSnapshot imported = preview.Snapshot;
+			CopyArray(imported.PlayerHexCountsByAct, pendingPlayerHexCounts);
+			CopyArray(imported.EnemyHexCountsByAct, pendingEnemyHexCounts);
+			pendingPlayerRuneRerollLimit[0] = imported.PlayerRuneRerollLimit;
+			pendingMonsterHexRerollLimit[0] = imported.MonsterHexRerollLimit;
+			pendingDisabledPlayerIds.Clear();
+			pendingDisabledPlayerIds.UnionWith(imported.DisabledPlayerRuneIds);
+			pendingDisabledMonsterHexIds.Clear();
+			pendingDisabledMonsterHexIds.UnionWith(imported.DisabledMonsterHexIds);
+			pendingDisabledForgeIds.Clear();
+			pendingDisabledForgeIds.UnionWith(imported.DisabledForgeIds);
+			CopyArray(ToWeightArray(imported.FirstActRuneRarityWeights), pendingFirstActRuneWeights);
+			CopyArray(ToWeightArray(imported.NormalRuneRarityWeights), pendingNormalRuneWeights);
+			CopyArray(ToWeightArray(imported.SecondActAfterSilverRuneRarityWeights), pendingSecondActAfterSilverWeights);
+			CopyArray(ToWeightArray(imported.ForgeRarityWeights), pendingForgeWeights);
+			pendingForgePrice[0] = imported.RandomForgeShopPrice;
+			pendingRandomForgeDirectGrant[0] = imported.RandomForgeDirectGrant;
+			// ModEnabled 与 UI 偏好(折叠/隐藏遗物开关等)不随导入改变。
+			UpdateNumericLabels(numericBindings);
+			UpdateBooleanToggles(booleanBindings);
+			UpdateAllRuneIcons(playerIconBindings, pendingDisabledPlayerIds);
+			UpdateAllRuneIcons(enemyIconBindings, pendingDisabledMonsterHexIds);
+			UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
+			updateSummary();
+			summary.Text = string.Format(L("HEXTECH_CONFIG_IMPORT_DONE"), preview.IgnoredUnknownCount);
+		};
+
+		shareActions[1] = () =>
+		{
+			HextechConfigShareCodec.ImportPreview? preview = HextechConfigShareCodec.TryParse(DisplayServer.ClipboardGet());
+			if (preview == null)
+			{
+				updateSummary();
+				summary.Text = L("HEXTECH_CONFIG_IMPORT_INVALID");
+				return;
+			}
+
+			applyPreview(preview);
+		};
+		shareActions[2] = () => OpenCommunityConfigsPanel(overlay, applyPreview, buildPendingCode, compactLayout);
 
 		// Summary lives on its own centered, wrapping line so its variable width never
 		// drives the panel width. It always reserves a line of height to keep the panel
@@ -2295,6 +2385,29 @@ internal static class HextechRuneConfigMenuHooks
 		// Keep the summary line always present (even when empty) so the bottom bar height
 		// stays constant across pages.
 		SetLabelText(summary, text);
+	}
+
+	// 「杂项」页的配置分享区:导出/导入配置码 + 社区配置入口。动作由 CreateBottomBar 延迟填充。
+	private static Control CreateShareSection(Action?[] shareActions, bool compactLayout)
+	{
+		VBoxContainer section = CreateCardSection(L("HEXTECH_CONFIG_SHARE_TITLE"), null, compactLayout, out PanelContainer card);
+
+		Label hint = CreateLabel(L("HEXTECH_CONFIG_SHARE_HINT"), 12, new Color(0.78f, 0.82f, 0.9f, 0.85f));
+		hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		hint.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		section.AddChild(hint);
+
+		HBoxContainer buttons = new()
+		{
+			SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin
+		};
+		buttons.AddThemeConstantOverride("separation", compactLayout ? 8 : 12);
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_EXPORT_CODE"), () => shareActions[0]?.Invoke(), compactLayout));
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_IMPORT_CODE"), () => shareActions[1]?.Invoke(), compactLayout));
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_FEATURED"), () => shareActions[2]?.Invoke(), compactLayout));
+		section.AddChild(buttons);
+
+		return card;
 	}
 
 	private static Label CreateLabel(string text, int fontSize, Color color)

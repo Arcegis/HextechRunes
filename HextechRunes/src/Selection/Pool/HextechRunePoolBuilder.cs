@@ -217,8 +217,7 @@ internal static class HextechRunePoolBuilder
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
 		if (gameType is NetGameType.Singleplayer or NetGameType.None
-			or NetGameType.Host or NetGameType.Client
-			|| HextechAiTeammateCompat.IsLoopbackHostSession())
+			or NetGameType.Host or NetGameType.Client)
 		{
 			return true;
 		}
@@ -311,16 +310,18 @@ internal static class HextechRunePoolBuilder
 	private static int GetRuneTagWeight(RelicModel relic, IReadOnlyDictionary<string, int> tagCounts, bool useEndlessTagWindow)
 	{
 		string tagKey = HextechCatalog.GetPlayerRuneTagKey(relic);
-		if (!tagCounts.TryGetValue(tagKey, out int matchingCount) || matchingCount <= 0)
+		int weight = RuneTagBiasBaseWeight;
+		if (tagCounts.TryGetValue(tagKey, out int matchingCount) && matchingCount > 0)
 		{
-			return RuneTagBiasBaseWeight;
+			int bonusPerMatch = useEndlessTagWindow
+				? RuneTagBiasEndlessBonusPerMatch
+				: RuneTagBiasNormalBonusPerMatch;
+			weight += Math.Min(RuneTagBiasMaxBonus, matchingCount * bonusPerMatch);
 		}
 
-		int bonusPerMatch = useEndlessTagWindow
-			? RuneTagBiasEndlessBonusPerMatch
-			: RuneTagBiasNormalBonusPerMatch;
-		int bonus = Math.Min(RuneTagBiasMaxBonus, matchingCount * bonusPerMatch);
-		return RuneTagBiasBaseWeight + bonus;
+		// (0.8.4 起升级卡牌类符文不再额外加权:刷新门槛已移除、改为获得时补目标卡,
+		// 全量进池后再 ×2 会让升级类淹没三选一。)
+		return weight;
 	}
 
 	private static string BuildWeightedPoolKey(IReadOnlyList<RelicModel> pool, IReadOnlyList<int> weights)

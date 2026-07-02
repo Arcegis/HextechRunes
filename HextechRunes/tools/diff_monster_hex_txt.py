@@ -15,6 +15,12 @@ SUMMARY = os.path.join(ROOT, "hextech_relics_summary.txt")
 
 
 def camel_to_key(cls: str) -> str:
+    # 我方借壳的图标 relic 类名以 Rune 结尾(loc key 为 {SNAKE}_RUNE);
+    # 敌方专属图标 relic 类名以 Hex 结尾(loc key 直接为 {SNAKE},含 HEX 尾缀)。
+    if cls.endswith("Hex"):
+        s = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", cls)
+        s = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", s)
+        return s.upper()
     name = cls[:-4] if cls.endswith("Rune") else cls
     s = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name)
     s = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", s)

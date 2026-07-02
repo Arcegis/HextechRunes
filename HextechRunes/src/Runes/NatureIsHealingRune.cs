@@ -24,6 +24,15 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 		new HealVar(1m)
 	];
 
+	// 联机下禁用:实时(墙钟)回血在 lockstep 多人下无法确定性同步(墙钟各机不同),
+	// 故联机时不把本符文放进玩家可选/发放池——BuildSelectableRunePool 与 BuildObtainableRunePool
+	// 都以 HextechCatalog.IsAvailableForPlayer 为闸门。IsNetworkMultiplayer() 两端一致,池子确定性排除、不引入分叉。
+	// 单机不受影响。敌方侧的对应排除见 HextechMonsterHexRoller.FilterMultiplayerDisabled。
+	public override bool IsAvailableForPlayer(Player player)
+	{
+		return !IsNetworkMultiplayer();
+	}
+
 	public override Task BeforeCombatStart()
 	{
 		StopTimer();

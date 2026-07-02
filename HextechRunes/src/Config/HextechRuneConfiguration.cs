@@ -9,7 +9,9 @@ namespace HextechRunes;
 internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	private const int CurrentConfigVersion = 14;
+	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
+	private const int CurrentConfigVersion = 15;
+	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
 	private const int MaxActHexCount = 6;
@@ -36,11 +38,8 @@ internal static class HextechRuneConfiguration
 	private static readonly HextechRarityWeights DefaultNormalRuneRarityWeights = new(1, 1, 1);
 	private static readonly HextechRarityWeights DefaultSecondActAfterSilverRuneRarityWeights = new(0, 1, 1);
 	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
-	private static readonly Type[] Version5DefaultDisabledRuneTypes =
-	[
-		typeof(DemonFormUpgradeRune),
-		typeof(TyrannyUpgradeRune)
-	];
+	// v5 历史默认禁用的两个符文(恶魔形态/暴政升级)已在 0.8.4 移除;v15 强制重置后该迁移分支也不再可达。
+	private static readonly Type[] Version5DefaultDisabledRuneTypes = [];
 	private static readonly Type[] Version6DefaultDisabledRuneTypes =
 	[
 		typeof(NeowsGrudgeRune),
@@ -191,7 +190,8 @@ internal static class HextechRuneConfiguration
 			.SelectMany(static kinds => kinds)
 			.Select(static kind => kind.ToString())
 			.ToHashSet(StringComparer.Ordinal);
-		return NormalizeStringIds(ids, validIds);
+		// 旧配置里"改名敌方海克斯"的退役枚举名（如 GhostForm）remap 到新身份名再校验。
+		return NormalizeStringIds(ids?.Select(MonsterHexKindMigration.RemapName), validIds);
 	}
 
 	internal static HashSet<string> NormalizeDisabledForgeIds(IEnumerable<string>? ids)
@@ -343,6 +343,13 @@ internal static class HextechRuneConfiguration
 
 	private static RuneConfig NormalizeLoadedConfig(RuneConfig config)
 	{
+		// 0.8.4 一次性强制回默认:旧配置(含用户自定义)整体丢弃,不走增量迁移链。
+		if (config.ConfigVersion < ForceResetBelowConfigVersion)
+		{
+			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Config version {config.ConfigVersion} < {ForceResetBelowConfigVersion}; forcing full reset to defaults (0.8.4).");
+			return CreateDefaultConfig();
+		}
+
 		int previousConfigVersion = config.ConfigVersion;
 		HashSet<string> disabledIds = NormalizeConfigDisabledIds(config.DisabledPlayerRuneIds);
 		bool shouldMigrateLegacyEnemyHexDefault =

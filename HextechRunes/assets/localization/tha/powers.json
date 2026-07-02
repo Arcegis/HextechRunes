@@ -54,5 +54,11 @@
   "hextechCloudDragonSoulPower.smartDescription": "จั่วการ์ดเพิ่ม [blue]{Amount}[/blue] ใบทุกเทิร์น",
   "HEXTECH_CLOUD_DRAGON_SOUL_POWER.smartDescription": "จั่วการ์ดเพิ่ม [blue]{Amount}[/blue] ใบทุกเทิร์น",
   "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "ทุกครั้งที่คุณเล่นการ์ด สร้างความเสียหาย [blue]3[/blue] ใส่ศัตรู 1 ตัวแบบสุ่ม",
-  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "ตอนเริ่มต้นเทิร์น ได้รับ [blue]1[/blue] [gold]ความแข็งแรง[/gold]"
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "ตอนเริ่มต้นเทิร์น ได้รับ [blue]1[/blue] [gold]ความแข็งแรง[/gold]",
+  "hextechGalvanicPower.title": "กัดกร่อน",
+  "HEXTECH_GALVANIC_POWER.title": "กัดกร่อน",
+  "hextechGalvanicPower.description": "การ์ดพลังถูกกัดเซาะด้วย[gold]กัดกร่อน[/gold]",
+  "HEXTECH_GALVANIC_POWER.description": "การ์ดพลังถูกกัดเซาะด้วย[gold]กัดกร่อน[/gold]",
+  "hextechGalvanicPower.smartDescription": "การ์ดพลังถูกกัดเซาะด้วย[gold]{AfflictionTitle}[/gold]",
+  "HEXTECH_GALVANIC_POWER.smartDescription": "การ์ดพลังถูกกัดเซาะด้วย[gold]{AfflictionTitle}[/gold]"
 }

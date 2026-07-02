@@ -54,5 +54,11 @@
   "hextechCloudDragonSoulPower.smartDescription": "毎ターン [blue]{Amount}[/blue] 枚の追加カードを引きます。",
   "HEXTECH_CLOUD_DRAGON_SOUL_POWER.smartDescription": "毎ターン [blue]{Amount}[/blue] 枚の追加カードを引きます。",
   "HEXTECH_RUNE_SERPENT_FORM_PREVIEW.description": "自分がカードをプレイするたび、ランダムな敵に [blue]3[/blue] ダメージを与えます。",
-  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "自分のターンの開始時に、[blue]1[/blue] [gold]筋力[/gold]を獲得します。"
+  "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "自分のターンの開始時に、[blue]1[/blue] [gold]筋力[/gold]を獲得します。",
+  "hextechGalvanicPower.title": "ガルバニック",
+  "HEXTECH_GALVANIC_POWER.title": "ガルバニック",
+  "hextechGalvanicPower.description": "パワーは[gold]ガルバニック[/gold]の影響を受ける。",
+  "HEXTECH_GALVANIC_POWER.description": "パワーは[gold]ガルバニック[/gold]の影響を受ける。",
+  "hextechGalvanicPower.smartDescription": "パワーは[gold]{AfflictionTitle}[/gold]の影響を受けている。",
+  "HEXTECH_GALVANIC_POWER.smartDescription": "パワーは[gold]{AfflictionTitle}[/gold]の影響を受けている。"
 }
