@@ -10,7 +10,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 15;
+	private const int CurrentConfigVersion = 16;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -67,6 +67,11 @@ internal static class HextechRuneConfiguration
 		typeof(CorruptedBranchRune)
 	];
 	private static readonly Type[] Version13DefaultDisabledForgeTypes = [];
+	// 腐化树枝生成分布加权(攻击40/技能20/能力40)后无限风险可控,转为默认启用。
+	private static readonly Type[] Version16DefaultEnabledRuneTypes =
+	[
+		typeof(CorruptedBranchRune)
+	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -386,6 +391,11 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 13)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version13DefaultDisabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 16)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version16DefaultEnabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;

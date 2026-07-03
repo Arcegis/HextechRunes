@@ -259,7 +259,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<FeelTheBurnRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
         Rune<MikaelsBlessingRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<EarthAwakensRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "OUTPUT"),
-        Rune<CorruptedBranchRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, tagKey: "EXHAUST"),
+        Rune<CorruptedBranchRune>(HextechRarityTier.Prismatic, tagKey: "EXHAUST"),
         Rune<SymphonyOfWarRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
         Rune<UnmovableMountainRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),
         Rune<MysteryRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
