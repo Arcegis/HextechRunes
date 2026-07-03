@@ -93,11 +93,18 @@ public sealed class BlankCheckRune : HextechRelicBase
 		PileType pileType,
 		CardPilePosition position)
 	{
-		return ShouldAffectColorlessCard(card) ? (PileType.Exhaust, position) : (pileType, position);
+		// 只改写常规去向(弃牌堆):去向为 None 的是复制品/能力牌等"打出后移出战斗"的卡,
+		// 抢改成消耗堆会把复制品变成滞留的幽灵实体,再被召之即来拉回手牌就是
+		// "空白手牌位"(玩家实报,复制打出君王之剑时触发)。
+		return pileType is PileType.Discard && ShouldAffectColorlessCard(card)
+			? (PileType.Exhaust, position)
+			: (pileType, position);
 	}
 
 	private bool ShouldAffectColorlessCard(CardModel card)
 	{
+		// 有意包含 Token 卡(君王之剑/仆从牌):游戏逻辑上它们不算无色牌,
+		// 但按玩家直觉统一视作无色处理。
 		return card.Owner == Owner && HextechColorlessCardHelper.IsColorlessCard(card);
 	}
 }
