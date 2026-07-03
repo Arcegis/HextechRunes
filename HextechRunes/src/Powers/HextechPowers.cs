@@ -209,7 +209,7 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 		await HextechPowerCmdCompat.Apply<HextechPlayerSlowPower>(Owner, CardPlaySlowIncrease, Owner, cardPlay.Card, silent: true);
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (target != Owner || Amount == 0m || (props & ValueProp.Unpowered) != 0)
 		{

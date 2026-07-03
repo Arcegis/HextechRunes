@@ -49,7 +49,7 @@ public sealed class AstralBodyRune : HextechRelicBase
 		return CreatureCmd.GainMaxHp(Owner!.Creature, DynamicVars.MaxHp.BaseValue);
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (!IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{

@@ -58,7 +58,7 @@ public sealed class BoneBreakUpgradeRune : CardUpgradeRuneBase<BoneShards>
 		Flash(enemies.Append(Owner.Creature));
 		if (enemies.Count > 0)
 		{
-			await CreatureCmd.Damage(context, enemies, bonus, ValueProp.Unpowered, Owner.Creature, cardPlay.Card);
+			await HextechGameApiCompat.Damage(context, enemies, bonus, ValueProp.Unpowered, Owner.Creature, cardPlay.Card);
 		}
 
 		await CreatureCmd.GainBlock(Owner.Creature, bonus, ValueProp.Unpowered, cardPlay);

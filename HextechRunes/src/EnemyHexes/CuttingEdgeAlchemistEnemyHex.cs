@@ -31,7 +31,7 @@ internal sealed class CuttingEdgeAlchemistEnemyHex : HextechEnemyHexEffect
 
 	private static bool TryCreateCommonPotionReward(Player player, RunState runState, int rewardIndex, out PotionReward? reward)
 	{
-		List<PotionModel> candidates = PotionFactory.GetPotionOptions(player, Array.Empty<PotionModel>())
+		List<PotionModel> candidates = HextechGameApiCompat.GetPotionOptions(player)
 			.Where(static potion => potion.Rarity == PotionRarity.Common)
 			.ToList();
 		if (candidates.Count == 0)

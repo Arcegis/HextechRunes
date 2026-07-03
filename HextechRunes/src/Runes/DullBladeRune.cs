@@ -31,7 +31,7 @@ public sealed class DullBladeRune : HextechRelicBase
 
 		int currentHp = Owner.Creature.CurrentHp;
 		Flash([Owner.Creature]);
-		await CreatureCmd.Damage(
+		await HextechGameApiCompat.Damage(
 			choiceContext,
 			Owner.Creature,
 			DynamicVars["HpLoss"].BaseValue,

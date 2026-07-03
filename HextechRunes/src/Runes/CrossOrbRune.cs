@@ -61,7 +61,8 @@ public sealed class CrossOrbRune : HextechRelicBase
 			return;
 		}
 
-		CardCreationOptions creationOptions = new CardCreationOptions(
+		CardCreationOptions creationOptions = HextechGameApiCompat.CreateOptionsFromCards(
+			player,
 			player.Character.CardPool.AllCards
 				.Concat(ModelDb.CardPool<ColorlessCardPool>().AllCards)
 				.Where(static card => card.Rarity != CardRarity.Common && card.CanBeGeneratedByModifiers)
@@ -166,7 +167,8 @@ public sealed class CrossOrbRune : HextechRelicBase
 			return false;
 		}
 
-		CardCreationOptions nonCommonOptions = new CardCreationOptions(
+		CardCreationOptions nonCommonOptions = HextechGameApiCompat.CreateOptionsFromCards(
+				player,
 				candidates,
 				creationOptions.Source,
 				CardRarityOddsType.Uniform)
@@ -196,7 +198,7 @@ public sealed class CrossOrbRune : HextechRelicBase
 
 	private static bool TryCreateNonCommonPotionReward(Player player, int rewardIndex, out PotionReward? reward)
 	{
-		List<PotionModel> candidates = PotionFactory.GetPotionOptions(player, Array.Empty<PotionModel>())
+		List<PotionModel> candidates = HextechGameApiCompat.GetPotionOptions(player)
 			.Where(static potion => potion.Rarity != PotionRarity.Common)
 			.ToList();
 		if (candidates.Count == 0)

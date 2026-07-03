@@ -49,7 +49,8 @@ public sealed class CarefulSelectionRune : HextechRelicBase
 			return false;
 		}
 
-		CardCreationOptions extraOptions = new CardCreationOptions(
+		CardCreationOptions extraOptions = HextechGameApiCompat.CreateOptionsFromCards(
+				player,
 				candidates,
 				creationOptions.Source,
 				GetRarityOddsForAdditionalPool(creationOptions, candidates))

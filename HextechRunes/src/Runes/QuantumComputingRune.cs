@@ -56,7 +56,7 @@ public sealed class QuantumComputingRune : HextechRelicBase
 		foreach (Creature enemy in enemies)
 		{
 			decimal damage = DynamicVars.Damage.BaseValue + Math.Floor(enemy.MaxHp * DynamicVars["DamagePercent"].BaseValue / 100m);
-			IEnumerable<DamageResult> results = await CreatureCmd.Damage(choiceContext, enemy, damage, ValueProp.Unpowered, Owner.Creature, null);
+			IEnumerable<DamageResult> results = await HextechGameApiCompat.Damage(choiceContext, enemy, damage, ValueProp.Unpowered, Owner.Creature, null);
 			totalDamage += results.Sum(static result => result.UnblockedDamage);
 		}
 

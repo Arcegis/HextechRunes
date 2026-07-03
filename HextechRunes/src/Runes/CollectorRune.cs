@@ -59,7 +59,7 @@ public sealed class CollectorRune : HextechRelicBase
 		new DynamicVar("DamageMultiplier", 1.1m)
 	];
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		return target?.Side == CombatSide.Enemy && IsDamageFromOwner(dealer, cardSource)
 			? DynamicVars["DamageMultiplier"].BaseValue

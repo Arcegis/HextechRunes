@@ -43,7 +43,8 @@ public sealed class GoodLuckRune : HextechRelicBase
 			return false;
 		}
 
-		CardCreationOptions rareOptions = new CardCreationOptions(
+		CardCreationOptions rareOptions = HextechGameApiCompat.CreateOptionsFromCards(
+				player,
 				rarePool,
 				creationOptions.Source,
 				CardRarityOddsType.Uniform)

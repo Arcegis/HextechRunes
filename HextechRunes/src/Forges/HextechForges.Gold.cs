@@ -195,7 +195,7 @@ public sealed class HourglassForge : HextechForgeBase
 		Flash(enemies);
 		foreach (Creature enemy in enemies)
 		{
-			await CreatureCmd.Damage(choiceContext, enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
+			await HextechGameApiCompat.Damage(choiceContext, enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
 		}
 	}
 }

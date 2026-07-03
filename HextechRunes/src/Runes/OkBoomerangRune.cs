@@ -63,7 +63,7 @@ public sealed class OkBoomerangRune : HextechRelicBase
 		Flash(enemies);
 		foreach (Creature enemy in enemies)
 		{
-			await CreatureCmd.Damage(
+			await HextechGameApiCompat.Damage(
 				choiceContext,
 				enemy,
 				damage,

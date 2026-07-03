@@ -45,7 +45,7 @@ public sealed class CorpseExplosionRune : HextechRelicBase
 		}
 
 		Flash(enemies);
-		await CreatureCmd.Damage(choiceContext, enemies, target.MaxHp, ValueProp.Unpowered, Owner.Creature, null);
+		await HextechGameApiCompat.Damage(choiceContext, enemies, target.MaxHp, ValueProp.Unpowered, Owner.Creature, null);
 	}
 
 	private static bool IsPoisonDamage(Creature target, ValueProp props, Creature? dealer, CardModel? cardSource)

@@ -46,7 +46,7 @@ public sealed class CrackTheEggRune : HextechRelicBase
 		Flash(enemies);
 		foreach (Creature enemy in enemies)
 		{
-			await CreatureCmd.Damage(choiceContext, enemy, DynamicVars.Damage.BaseValue, ValueProp.Unpowered, Owner.Creature, null);
+			await HextechGameApiCompat.Damage(choiceContext, enemy, DynamicVars.Damage.BaseValue, ValueProp.Unpowered, Owner.Creature, null);
 		}
 	}
 }

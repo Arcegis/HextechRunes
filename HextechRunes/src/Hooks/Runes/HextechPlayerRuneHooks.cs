@@ -192,7 +192,7 @@ internal static partial class HextechPlayerRuneHooks
 		}
 
 		var attack = DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
-			.FromCard(card)
+			.FromCardCompat(card)
 			.WithHitCount(card.DynamicVars.Repeat.IntValue)
 			.WithAttackerAnim("Cast", card.Owner.Character.AttackAnimDelay)
 			.WithAttackerFx(null, "event:/sfx/characters/regent/regent_sovereign_blade")

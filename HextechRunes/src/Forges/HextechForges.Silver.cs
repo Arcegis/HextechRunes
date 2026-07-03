@@ -254,7 +254,7 @@ public sealed class FireworksForge : HextechForgeBase
 		Flash(enemies);
 		foreach (Creature enemy in enemies)
 		{
-			await CreatureCmd.Damage(new BlockingPlayerChoiceContext(), enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
+			await HextechGameApiCompat.Damage(new BlockingPlayerChoiceContext(), enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
 		}
 	}
 }

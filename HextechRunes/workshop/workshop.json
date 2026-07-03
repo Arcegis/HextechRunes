@@ -4,11 +4,13 @@
   "description": "[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "海斗0.8.4更新日志：\n新增了配置分享功能：可一键导出/导入配置码，与好友互换配置；\n新增了社区配置平台：游戏内可浏览精选/热门/最新配置并一键应用，玩家可上传自己的配置、点赞与举报（每个账号最多保留3个上传）；\n新增了6个敌方海克斯：升级：树叶史莱姆、缩小甲虫、墨宝、异蛙寄生虫、墨影幻灵、永世沙漏；\n6个\"升级：XX\"类敌方海克斯改为独立身份，并与新增敌方海克斯一同获得专属图标（共12张）；\n卡牌升级类海克斯全面重做：不再要求牌组内有对应卡牌才会刷新，改为获得时若牌组内没有对应卡牌则赠送1张；\n重做了5个形态系海克斯（虚空/回响/群蛇/恶魔/死神形态）：统一为黄金稀有度，效果改为\"回合结束时，若手牌内有该形态则自动打出\"；\n重做了有始有终：战斗开始时获得100层致死性和6层倒数计时；\n重做了敌方海克斯固态时间：玩家打出能力牌时获得2/4/6层流电（新增玩家侧流电，计为负面效果、仅影响自己的能力牌）；\n重做了敌方海克斯遗忘之魂：回合结束时，将消耗牌堆里的所有状态牌和诅咒牌加入玩家的弃牌堆；\n移除了5个海克斯：独木桥、升级：双重释放、升级：至亮之焰、升级：彩虹、升级：暴政；\n\"折叠敌方海克斯\"开关默认改为关闭；\n本次更新会将所有海克斯配置重置为默认值（可用配置码/社区配置快速恢复）；\n优化了已知问题：\n1.修复了万用瞄准镜与自动巡逻、中和强化等效果交互时，衍生牌卡死在手牌中无法打出的问题；\n2.修复了持有升级：打击/防御时，乱战（顺手的事）第一回合自动打出的打击/防御卡在屏幕中间的问题；\n3.敌方海克斯固态时间、补偿等的悬停提示补充了关联效果说明；\n4.旧存档与旧配置中的改名敌方海克斯会自动迁移到新身份，不会丢失；\n5.可能还有其他修了的我忘列出来了；",
+  "changeNote": "海斗 beta 分支（0.108.0）适配版：内容与正式版当前版本一致（灼烧/神圣干预/吞噬灵魂特效重做、敌方濒死狂宴重做、腐化树枝调整、修复与本地化更新），并完成 0.108.0 的 API 适配（伤害管线、卡牌生成、闪电球等）。正式分支玩家不受影响，将继续收到 0.107.1 版本。",
   "tags": [
     "Gameplay",
     "Modifiers",
     "Relics"
   ],
-  "dependencies": []
+  "dependencies": [],
+  "minBranch": "public-beta",
+  "maxBranch": "public-beta"
 }

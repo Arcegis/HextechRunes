@@ -149,9 +149,17 @@ internal static partial class HextechPlayerRuneHooks
 			typeof(LightningOrb),
 			"ApplyLightningDamage",
 			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+#if STS2_108_OR_NEWER
+			// 0.108.0 起追加 isEvoke 参数。
+			typeof(decimal),
+			typeof(Creature),
+			typeof(PlayerChoiceContext),
+			typeof(bool));
+#else
 			typeof(decimal),
 			typeof(Creature),
 			typeof(PlayerChoiceContext));
+#endif
 		if (lightningApplyDamage == null)
 		{
 			throw new InvalidOperationException("LightningOrb.ApplyLightningDamage was not found in this game build.");

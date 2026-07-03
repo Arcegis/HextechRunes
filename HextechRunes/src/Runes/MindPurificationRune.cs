@@ -64,7 +64,7 @@ public sealed class MindPurificationRune : HextechRelicBase
 		Flash(toDamage.Select(static pair => pair.creature));
 		foreach ((Creature creature, int damage) in toDamage)
 		{
-			await CreatureCmd.Damage(choiceContext, creature, damage, ValueProp.Unpowered, Owner.Creature, null);
+			await HextechGameApiCompat.Damage(choiceContext, creature, damage, ValueProp.Unpowered, Owner.Creature, null);
 		}
 	}
 }

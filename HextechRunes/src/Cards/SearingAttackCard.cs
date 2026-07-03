@@ -36,7 +36,7 @@ public sealed class SearingAttackCard : CardModel
 	{
 		return cardPlay.Target == null
 			? Task.CompletedTask
-			: CreatureCmd.Damage(choiceContext, cardPlay.Target, DynamicVars.Damage, Owner.Creature, this);
+			: HextechGameApiCompat.Damage(choiceContext, cardPlay.Target, DynamicVars.Damage, Owner.Creature, this);
 	}
 
 	protected override void OnUpgrade()

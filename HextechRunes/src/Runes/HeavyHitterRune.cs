@@ -36,7 +36,7 @@ namespace HextechRunes;
 
 public sealed class HeavyHitterRune : HextechRelicBase
 {
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (Owner == null || !IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{

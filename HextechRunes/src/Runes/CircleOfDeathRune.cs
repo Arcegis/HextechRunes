@@ -74,7 +74,7 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 			targetOrdinal.ToString())];
 		Flash([target]);
 		HextechCombatVfx.DeathRingLash(Owner.Creature, target);
-		return CreatureCmd.Damage(new BlockingPlayerChoiceContext(), target, damage, ValueProp.Unpowered, Owner.Creature, null);
+		return HextechGameApiCompat.Damage(new BlockingPlayerChoiceContext(), target, damage, ValueProp.Unpowered, Owner.Creature, null);
 	}
 
 	public override Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)

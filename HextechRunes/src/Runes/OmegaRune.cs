@@ -33,7 +33,7 @@ public sealed class OmegaRune : HextechRelicBase
 		}
 
 		Flash(enemies);
-		await CreatureCmd.Damage(
+		await HextechGameApiCompat.Damage(
 			choiceContext,
 			enemies,
 			DynamicVars["Damage"].BaseValue,
