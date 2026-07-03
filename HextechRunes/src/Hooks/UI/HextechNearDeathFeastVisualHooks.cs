@@ -83,10 +83,11 @@ internal sealed class HextechNearDeathFeastVisual
 	{
 		try
 		{
+			// 我方(带符文的玩家)与敌方(敌方海克斯激活时的所有敌人)都挂:轮询各自的濒死强度。
 			if (!GodotObject.IsInstanceValid(creature)
 				|| !creature.IsNodeReady()
 				|| creature.Hitbox == null
-				|| creature.Entity?.Player == null)
+				|| creature.Entity == null)
 			{
 				return;
 			}
@@ -117,7 +118,8 @@ internal sealed class HextechNearDeathFeastVisual
 		intensity = 0f;
 		return creature.Entity != null
 			&& creature.Entity.IsAlive
-			&& NearDeathFeastRune.TryGetFeastIntensity(creature.Entity, out intensity);
+			&& (NearDeathFeastRune.TryGetFeastIntensity(creature.Entity, out intensity)
+				|| HextechEnemyNearDeath.TryGetFeastIntensity(creature.Entity, out intensity));
 	}
 
 	private bool Start()

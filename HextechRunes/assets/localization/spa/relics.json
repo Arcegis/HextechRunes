@@ -1099,7 +1099,7 @@
   "hastyScribbleRune.enemyDescription": "Reduzca la longitud del nodo del mapa en [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]. No afecta a mapas especiales.",
   "shoulderVakuRune.enemyDescription": "[red]Vaku se hace cargo del [blue]2[/blue]segundo turno de los jugadores.[/red]",
   "upgradeRune.enemyDescription": "Después de que un jugador juegue una carta, baja la categoría de esa carta para este combate.",
-  "nearDeathFeastRune.enemyDescription": "Cuando el daño sitúa al enemigo por debajo del [blue]50%[/blue] de su PV máximos, cura el [blue]20%[/blue] de su PV máximos y gana [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de fuerza. Una vez por combate.",
+  "nearDeathFeastRune.enemyDescription": "Cuando la vida de un enemigo cae a [blue]0[/blue] o menos, entra en estado agonizante: no puede recibir curación ni bloqueo, y gana [blue]1[/blue] de [gold]Fuerza[/gold] por cada [blue]1[/blue] de vida negativa; muere cuando su vida negativa alcanza el [blue]5%[/blue]/[blue]10%[/blue]/[blue]15%[/blue] de su vida máxima.",
   "serpentsFangRune.enemyDescription": "Siempre que el enemigo inflige daño desbloqueado, el jugador gana [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Veneno[/gold].",
   "pandorasBoxRune.enemyDescription": "Las recompensas de las cartas de jugador ahora solo pueden contener cartas de otros colores.",
   "forbiddenGrimoireRune.enemyDescription": "Al reclamar una recompensa de carta, después de elegir la carta [blue]1[/blue], los jugadores se ven obligados a obtener todas las demás cartas no elegidas.",

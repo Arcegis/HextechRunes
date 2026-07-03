@@ -17,7 +17,8 @@ internal sealed class CombatTrackingSnapshot
 	public List<uint> RepulsorTriggered { get; set; } = [];
 	public List<uint> RepulsorPending { get; set; } = [];
 	public List<uint> DawnTriggered { get; set; } = [];
-	public List<uint> NearDeathFeastTriggered { get; set; } = [];
+	public Dictionary<uint, int> NearDeathFeastEnemyDebt { get; set; } = new();
+	public Dictionary<uint, int> NearDeathFeastEnemyStrength { get; set; } = new();
 	public List<uint> SpeedDemonPending { get; set; } = [];
 	public Dictionary<uint, int> DelayedEnemyHealingBlock { get; set; } = new();
 	public List<uint> DevilsDanceTriggeredThisTurn { get; set; } = [];

@@ -1099,7 +1099,7 @@
   "hastyScribbleRune.enemyDescription": "Уменьшите длину узла карты на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]. Не влияет на особые карты.",
   "shoulderVakuRune.enemyDescription": "[red]Ваку забирает [blue]2[/blue]-й ход игроков.[/red]",
   "upgradeRune.enemyDescription": "После того как игрок разыгрывает карту, понизьте уровень этой карты на этот бой.",
-  "nearDeathFeastRune.enemyDescription": "Когда урон опускает врага ниже [blue]50%[/blue] от его макс. ОЗ, он исцеляет [blue]20%[/blue] от своих макс. ОЗ и получает [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] силы. Один раз за бой.",
+  "nearDeathFeastRune.enemyDescription": "Когда ОЗ врага падает до [blue]0[/blue] или ниже, он входит в предсмертное состояние: он не может получать лечение и блок и получает [blue]1[/blue] [gold]силу[/gold] за каждую [blue]1[/blue] единицу отрицательных ОЗ; он умирает, когда отрицательные ОЗ достигают [blue]5%[/blue]/[blue]10%[/blue]/[blue]15%[/blue] от его максимальных ОЗ.",
   "serpentsFangRune.enemyDescription": "Каждый раз, когда враг наносит незаблокированный урон, игрок получает [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Яда[/gold].",
   "pandorasBoxRune.enemyDescription": "Карты-награды игрока теперь могут содержать только карты других цветов.",
   "forbiddenGrimoireRune.enemyDescription": "При получении карты-награды, после выбора [blue]1[/blue] карты, игроки вынуждены получить все остальные невыбранные карты.",

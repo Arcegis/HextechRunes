@@ -305,7 +305,8 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		return creature.Player?.GetRelic<NearDeathFeastRune>();
 	}
 
-	private static DamageResult CreateDamageResult(Creature creature, ValueProp props, int unblockedDamage, bool wasTargetKilled, int overkillDamage)
+	// 供敌方濒死狂宴(HextechEnemyNearDeath)复用同一套反射构造。
+	internal static DamageResult CreateDamageResult(Creature creature, ValueProp props, int unblockedDamage, bool wasTargetKilled, int overkillDamage)
 	{
 		DamageResult result = new(creature, props);
 		object boxed = result;

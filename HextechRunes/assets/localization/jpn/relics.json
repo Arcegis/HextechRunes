@@ -1099,7 +1099,7 @@
   "hastyScribbleRune.enemyDescription": "マップノードの長さを [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] だけ削減します。特殊なマップには影響しません。",
   "shoulderVakuRune.enemyDescription": "[red]Vakuはプレイヤーの [blue]2[/blue] 番目のターンを引き継ぎます。[/red]",
   "upgradeRune.enemyDescription": "プレイヤーがカードをプレイした後、この戦闘でそのカードをダウングレードします。",
-  "nearDeathFeastRune.enemyDescription": "敵はダメージにより最大 HP の [blue]50%[/blue]を下回った場合、最大 HP の [blue]20%[/blue]を回復し、[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] の筋力を獲得します。戦闘ごとに 1 回。",
+  "nearDeathFeastRune.enemyDescription": "敵のHPが[blue]1[/blue]未満になると瀕死状態になる：回復とブロックを得られず、負のHP[blue]1[/blue]につき[gold]筋力[/gold]を[blue]1[/blue]得る。負のHPが最大HPの[blue]5%[/blue]/[blue]10%[/blue]/[blue]15%[/blue]に達すると死亡する。",
   "serpentsFangRune.enemyDescription": "敵はブロックされていないダメージを与えるたびに、プレイヤーは [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]毒[/gold]を獲得します。",
   "pandorasBoxRune.enemyDescription": "プレイヤーカードの報酬は他の色のカードのみを含むようになりました。",
   "forbiddenGrimoireRune.enemyDescription": "カード報酬を請求する場合、[blue]1[/blue] カードを選択した後、プレイヤーは選択されていない他のすべてのカードを取得する必要があります。",

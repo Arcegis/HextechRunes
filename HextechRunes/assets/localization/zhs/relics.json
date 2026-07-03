@@ -1099,7 +1099,7 @@
   "hastyScribbleRune.enemyDescription": "地图节点长度减少[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]。不会影响特殊地图。",
   "shoulderVakuRune.enemyDescription": "[red]瓦库将接管玩家的第[blue]2[/blue]回合。[/red]",
   "upgradeRune.enemyDescription": "玩家打出卡牌后，该卡牌会在本场战斗中被降级。",
-  "nearDeathFeastRune.enemyDescription": "当敌人受伤后生命值降到最大生命值的[blue]50%[/blue]以下时，回复自身最大生命值[blue]20%[/blue]的生命，并获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点[gold]力量[/gold]。每场战斗仅限一次。",
+  "nearDeathFeastRune.enemyDescription": "敌人生命低于[blue]1[/blue]时进入濒死状态：无法获得治疗和格挡，每[blue]1[/blue]点负生命值获得[blue]1[/blue]点[gold]力量[/gold]；负生命值达到最大生命值的[blue]5%[/blue]/[blue]10%[/blue]/[blue]15%[/blue]时死亡。",
   "serpentsFangRune.enemyDescription": "当敌人造成未被格挡的伤害时，使玩家获得[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]层[gold]中毒[/gold]。",
   "pandorasBoxRune.enemyDescription": "玩家的卡牌奖励现在只会包含其他颜色的卡牌。",
   "forbiddenGrimoireRune.enemyDescription": "获得卡牌奖励时，玩家选择[blue]1[/blue]张牌后，会强制获得其他所有未被选择的牌。",

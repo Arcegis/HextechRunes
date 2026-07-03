@@ -1099,7 +1099,7 @@
   "hastyScribbleRune.enemyDescription": "Reduz o tamanho do caminho do mapa em [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]. Não afeta mapas especiais.",
   "shoulderVakuRune.enemyDescription": "[red]Vaku assume o controle do [blue]2[/blue]º turno dos jogadores.[/red]",
   "upgradeRune.enemyDescription": "Após um jogador jogar uma carta, piore aquela carta para este combate.",
-  "nearDeathFeastRune.enemyDescription": "Quando um dano reduz seus PV para menos de [blue]50%[/blue] do seu PV Máx, o inimigo cura [blue]20%[/blue] do seu PV Máx e ganha [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de Força. Uma vez por combate.",
+  "nearDeathFeastRune.enemyDescription": "Quando o HP de um inimigo cai para [blue]0[/blue] ou menos, ele entra em estado agonizante: não pode receber cura nem bloqueio, e ganha [blue]1[/blue] de [gold]Força[/gold] por [blue]1[/blue] de HP negativo; ele morre quando seu HP negativo atinge [blue]5%[/blue]/[blue]10%[/blue]/[blue]15%[/blue] do seu HP máximo.",
   "serpentsFangRune.enemyDescription": "Sempre que o inimigo causa dano não bloqueado, o jogador ganha [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] de [gold]Veneno[/gold].",
   "pandorasBoxRune.enemyDescription": "As recompensas de cartas do jogador agora só podem conter cartas de outras cores.",
   "forbiddenGrimoireRune.enemyDescription": "Ao reivindicar uma recompensa de carta, após escolher [blue]1[/blue] carta, os jogadores são forçados a obter todas as outras cartas não escolhidas.",

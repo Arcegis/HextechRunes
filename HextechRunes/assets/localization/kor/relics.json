@@ -1099,7 +1099,7 @@
   "hastyScribbleRune.enemyDescription": "지도 노드의 길이를 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 줄입니다. 특수 지도에는 영향을 주지 않습니다.",
   "shoulderVakuRune.enemyDescription": "[red]플레이어의 [blue]2[/blue]번째 턴을 바쿠가 대신 플레이합니다.[/red]",
   "upgradeRune.enemyDescription": "플레이어가 카드를 사용한 후, 이번 전투 동안 그 카드를 약화시킵니다.",
-  "nearDeathFeastRune.enemyDescription": "적이 피해를 입어 체력이 최대 체력의 [blue]50%[/blue] 미만이 되면, 최대 체력의 [blue]20%[/blue]를 회복하고 [gold]힘[/gold]을 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 얻습니다. 전투당 1회 발동합니다.",
+  "nearDeathFeastRune.enemyDescription": "적의 체력이 [blue]1[/blue] 미만이 되면 빈사 상태가 됩니다: 회복과 방어도를 얻을 수 없으며, 음수 체력 [blue]1[/blue]당 [gold]힘[/gold]을 [blue]1[/blue] 얻습니다. 음수 체력이 최대 체력의 [blue]5%[/blue]/[blue]10%[/blue]/[blue]15%[/blue]에 도달하면 사망합니다.",
   "serpentsFangRune.enemyDescription": "적이 막히지 않은 공격 피해를 줄 때마다 플레이어에게 [gold]중독[/gold]을 [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] 부여합니다.",
   "pandorasBoxRune.enemyDescription": "이제 플레이어 카드 보상에는 다른 색상의 카드만 포함됩니다.",
   "forbiddenGrimoireRune.enemyDescription": "카드 보상을 받을 때 [blue]1[/blue]장을 선택한 후, 선택하지 않은 다른 모든 카드를 강제로 얻습니다.",

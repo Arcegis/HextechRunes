@@ -15,7 +15,7 @@ internal static partial class HextechCombatHooks
 
 	private static bool HealPrefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 	{
-		if (NearDeathFeastRune.ShouldPreventSustain(creature))
+		if (NearDeathFeastRune.ShouldPreventSustain(creature) || HextechEnemyNearDeath.ShouldPreventSustain(creature))
 		{
 			__state = default;
 			__result = Task.CompletedTask;

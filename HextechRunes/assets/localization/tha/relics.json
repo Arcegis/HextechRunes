@@ -1099,7 +1099,7 @@
   "hastyScribbleRune.enemyDescription": "ลดความยาวเส้นทางบนแผนที่ลง [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] ไม่มีผลกับแผนที่พิเศษ",
   "shoulderVakuRune.enemyDescription": "[red]Vaku ยึดเทิร์นที่ [blue]2[/blue] ของผู้เล่น[/red]",
   "upgradeRune.enemyDescription": "หลังผู้เล่นเล่นการ์ด จะลดระดับการ์ดนั้นตลอดการต่อสู้นี้",
-  "nearDeathFeastRune.enemyDescription": "เมื่อความเสียหายทำให้ศัตรูเหลือ HP ต่ำกว่า [blue]50%[/blue] ของ HP สูงสุด มันจะฟื้นฟู [blue]20%[/blue] ของ HP สูงสุดของมัน และได้รับ [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] ความแข็งแรง หนึ่งครั้งต่อการต่อสู้",
+  "nearDeathFeastRune.enemyDescription": "เมื่อ HP ของศัตรูลดลงเหลือ [blue]0[/blue] หรือต่ำกว่า มันจะเข้าสู่สถานะใกล้ตาย: ไม่สามารถได้รับการฟื้นฟูหรือการ์ด และได้รับ[gold]พลัง[/gold] [blue]1[/blue] หน่วยต่อ HP ติดลบ [blue]1[/blue] หน่วย; มันจะตายเมื่อ HP ติดลบถึง [blue]5%[/blue]/[blue]10%[/blue]/[blue]15%[/blue] ของ HP สูงสุด",
   "serpentsFangRune.enemyDescription": "ทุกครั้งที่ศัตรูสร้างความเสียหายที่ไม่ถูกบล็อก ผู้เล่นจะได้รับ [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]พิษ[/gold]",
   "pandorasBoxRune.enemyDescription": "รางวัลการ์ดของผู้เล่นจะมีเฉพาะการ์ดจากสีอื่นเท่านั้น",
   "forbiddenGrimoireRune.enemyDescription": "เมื่อรับรางวัลการ์ด หลังเลือกการ์ด [blue]1[/blue] ใบ ผู้เล่นจะถูกบังคับให้รับการ์ดอื่นที่ไม่ได้เลือกทั้งหมด",
