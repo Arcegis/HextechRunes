@@ -75,8 +75,9 @@ public sealed class SoulEaterRune : HextechRelicBase
 			return;
 		}
 
+		// 吸魂特效不在这里派发:Hook.AfterDeath 链条会被前面的监听器拖住(非最后一只怪时魂"卡一下"
+		// 才飞出),已移到 NCreature.StartDeathAnim 的 postfix(死亡动画开始瞬间,见 HextechCombatVfxHooks)。
 		Flash();
-		HextechCombatVfx.SoulDrain(target, Owner.Creature);
 		await CreatureCmd.GainMaxHp(Owner.Creature, hpGain);
 	}
 
