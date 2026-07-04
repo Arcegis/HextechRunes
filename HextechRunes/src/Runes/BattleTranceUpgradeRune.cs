@@ -1,7 +1,6 @@
-using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Extensions;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 
@@ -9,39 +8,24 @@ namespace HextechRunes;
 
 public sealed class BattleTranceUpgradeRune : CardUpgradeRuneBase<BattleTrance>
 {
-	private decimal _noDrawBeforePlay;
-	private bool _shouldCleanNoDraw;
-
 	protected override bool IsAvailableForCharacter(Player player)
 	{
 		return IsIroncladPlayer(player);
 	}
 
-	public override Task BeforeCardPlayed(CardPlay cardPlay)
+	/// <summary>
+	/// 从源头阻止战斗专注施加"不可抽牌"(施加量乘 0),而不是施加后再移除:
+	/// 旧做法的中间态(短暂持有 NoDraw)会与其他抽牌类效果产生时序交互 bug。
+	/// 原版 BattleTrance.OnPlay 施加时 cardSource=卡实例,可精确匹配;
+	/// 其他来源的不可抽牌(如敌方效果)不受影响。
+	/// </summary>
+	public override decimal ModifyPowerAmountGivenMultiplicative(PowerModel power, Creature giver, decimal amount, Creature? target, CardModel? cardSource)
 	{
-		_shouldCleanNoDraw = cardPlay.Card.Owner == Owner && cardPlay.Card is BattleTrance;
-		_noDrawBeforePlay = _shouldCleanNoDraw && Owner != null
-			? Owner.Creature.GetPowerAmount<NoDrawPower>()
-			: 0m;
-		return Task.CompletedTask;
-	}
-
-	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
-	{
-		if (!_shouldCleanNoDraw || Owner == null || cardPlay.Card.Owner != Owner || cardPlay.Card is not BattleTrance)
-		{
-			return;
-		}
-
-		_shouldCleanNoDraw = false;
-		NoDrawPower? noDraw = Owner.Creature.GetPower<NoDrawPower>();
-		decimal excess = (noDraw?.Amount ?? 0m) - _noDrawBeforePlay;
-		if (excess <= 0m)
-		{
-			return;
-		}
-
-		Flash();
-		await PowerCmd.Apply<NoDrawPower>(Owner.Creature, -excess, Owner.Creature, cardPlay.Card, silent: true);
+		return power is NoDrawPower
+			&& Owner != null
+			&& giver == Owner.Creature
+			&& cardSource is BattleTrance
+			? 0m
+			: 1m;
 	}
 }

@@ -67,6 +67,16 @@ internal static class HextechPlayerCoefficientHelper
 			multiplier *= protectionForge.SustainMultiplier;
 		}
 
+		if (player.GetRelic<SilverProtectionForge>() is SilverProtectionForge silverProtectionForge)
+		{
+			multiplier *= silverProtectionForge.SustainMultiplier;
+		}
+
+		if (player.GetRelic<GoldProtectionForge>() is GoldProtectionForge goldProtectionForge)
+		{
+			multiplier *= goldProtectionForge.SustainMultiplier;
+		}
+
 		if (player.GetRelic<MoreTheMerrierRune>() is MoreTheMerrierRune moreTheMerrierRune)
 		{
 			multiplier *= moreTheMerrierRune.SustainMultiplier;
