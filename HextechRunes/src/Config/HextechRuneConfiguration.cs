@@ -10,7 +10,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 17;
+	private const int CurrentConfigVersion = 18;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -77,6 +77,11 @@ internal static class HextechRuneConfiguration
 	[
 		typeof(FeelTheBurnRune),
 		typeof(OkBoomerangRune)
+	];
+	// 星界躯体改为百分比生命加成(50%)后强度自洽,转为默认启用。
+	private static readonly Type[] Version18DefaultEnabledRuneTypes =
+	[
+		typeof(AstralBodyRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -407,6 +412,11 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 17)
 		{
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version17DefaultEnabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 18)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version18DefaultEnabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;

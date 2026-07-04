@@ -116,7 +116,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
         Rune<TranscendentEvilRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.ThirdActExcluded, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 3, tagKey: "STACKING"),
         Rune<TankEngineRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.ThirdActExcluded, tagKey: "STACKING"),
-        Rune<AstralBodyRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
+        Rune<AstralBodyRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<AncientWineRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<PiggyBankRune>(HextechRarityTier.Gold, tagKey: "ECONOMY"),
         Rune<OrobasBlessingRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
