@@ -33,6 +33,9 @@ public sealed class OmegaRune : HextechRelicBase
 		}
 
 		Flash(enemies);
+		// 表现:红色预警环+赤红审判光柱(纯表现层);逻辑等待让伤害与光柱落点对齐。
+		HextechCombatVfx.OmegaJudgment(enemies);
+		await Cmd.CustomScaledWait(0.42f, 0.55f);
 		await HextechGameApiCompat.Damage(
 			choiceContext,
 			enemies,

@@ -61,8 +61,15 @@ public sealed class OkBoomerangRune : HextechRelicBase
 		}
 
 		Flash(enemies);
+		// 表现:回旋镖沿弧线依次扫过每个敌人(纯表现层);伤害按镖的到达节奏逐个结算。
+		HextechCombatVfx.BoomerangSweep(Owner.Creature, enemies, Icon);
+		bool first = true;
 		foreach (Creature enemy in enemies)
 		{
+			await Cmd.CustomScaledWait(
+				first ? HextechCombatVfx.BoomerangFirstArrivalSeconds : HextechCombatVfx.BoomerangPerTargetSeconds,
+				first ? HextechCombatVfx.BoomerangFirstArrivalSeconds : HextechCombatVfx.BoomerangPerTargetSeconds);
+			first = false;
 			await HextechGameApiCompat.Damage(
 				choiceContext,
 				enemy,

@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Vfx;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -327,6 +328,323 @@ internal static class HextechCombatVfx
 	internal static void SoulDrain(Creature source, Creature destination, int wispCount)
 	{
 		Callable.From(() => RunSoulDrain(source, destination, wispCount)).CallDeferred();
+	}
+
+	// ---- 回力OK镖:镖沿弧线依次扫过所有敌人再飞回 ----
+	// 逻辑侧用同一组常量安排每敌伤害的等待节奏,让伤害数字与镖的到达对齐。
+	internal const float BoomerangFirstArrivalSeconds = 0.22f;
+	internal const float BoomerangPerTargetSeconds = 0.16f;
+
+	/// <summary>回力OK镖:镖体(符文图标)自施法者掷出,弧线依次命中各敌人后飞回。</summary>
+	internal static void BoomerangSweep(Creature owner, IReadOnlyList<Creature> targets, Texture2D? boomerangTexture)
+	{
+		Creature[] snapshot = [.. targets];
+		Callable.From(() => TaskHelper.RunSafely(RunBoomerangSweep(owner, snapshot, boomerangTexture))).CallDeferred();
+	}
+
+	/// <summary>欧米伽:全场红色预警后,天降赤红审判光柱依次轰击每个敌人。</summary>
+	internal static void OmegaJudgment(IReadOnlyList<Creature> targets)
+	{
+		Creature[] snapshot = [.. targets];
+		Callable.From(() => TaskHelper.RunSafely(RunOmegaJudgment(snapshot))).CallDeferred();
+	}
+
+	/// <summary>
+	/// 飞身踢:处决瞬间的斩击冲击(原版 BigSlash 节点)+目标本体色爆闪;
+	/// 约半秒后一缕绿色治疗光从击杀点弧线流回施法者(与尸体横飞的
+	/// <see cref="FlyingKickCorpseLaunchDriver"/> 时序互补:踢击在前、横飞居中、光流殿后)。
+	/// </summary>
+	internal static void FlyingKickStrike(Creature target, Creature owner)
+	{
+		Callable.From(() => TaskHelper.RunSafely(RunFlyingKickStrike(target, owner))).CallDeferred();
+	}
+
+	private static async Task RunBoomerangSweep(Creature owner, Creature[] targets, Texture2D? boomerangTexture)
+	{
+		try
+		{
+			NCreature? ownerNode = HextechCreatureNodeRegistry.TryGet(owner);
+			if (ownerNode == null || targets.Length == 0)
+			{
+				return;
+			}
+
+			Node? parent = ownerNode.GetParent();
+			if (!GodotObject.IsInstanceValid(parent))
+			{
+				return;
+			}
+
+			// 位置全部快照:飞行途中敌人会被伤害击杀,节点随时失效。
+			Vector2 ownerPos = CreatureCenter(ownerNode);
+			List<Vector2> waypoints = [ownerPos];
+			foreach (Creature target in targets)
+			{
+				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
+				if (node != null)
+				{
+					waypoints.Add(CreatureCenter(node));
+				}
+			}
+
+			waypoints.Add(ownerPos);
+			if (waypoints.Count < 3)
+			{
+				return;
+			}
+
+			float width = CreatureWidth(ownerNode);
+			Sprite2D boomerang = new()
+			{
+				Name = "HextechRunes_Boomerang",
+				Texture = boomerangTexture ?? GetGlowTexture(),
+				Centered = true,
+				Modulate = Colors.White
+			};
+			parent!.AddChildSafely(boomerang);
+			PlaceAboveCreatures(parent, boomerang);
+			boomerang.GlobalPosition = ownerPos;
+			SetSpriteDiameter(boomerang, width * 0.42f);
+
+			Line2D trail = new()
+			{
+				Name = "HextechRunes_BoomerangTrail",
+				Width = width * 0.16f,
+				BeginCapMode = Line2D.LineCapMode.Round,
+				EndCapMode = Line2D.LineCapMode.Round,
+				JointMode = Line2D.LineJointMode.Round,
+				WidthCurve = MakeTrailWidthCurve(),
+				Gradient = new Gradient
+				{
+					Offsets = [0f, 0.6f, 1f],
+					Colors = [new Color(0.62f, 0.9f, 1f, 0.55f), new Color(0.62f, 0.9f, 1f, 0.25f), new Color(0.62f, 0.9f, 1f, 0f)]
+				},
+				Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add }
+			};
+			parent.AddChildSafely(trail);
+			PlaceAboveCreatures(parent, trail);
+
+			SceneTree? tree = boomerang.GetTree();
+			if (tree == null)
+			{
+				FreeNode(boomerang);
+				FreeNode(trail);
+				return;
+			}
+
+			// 逐段贝塞尔飞行:段末命中闪光。转速恒定,拖尾逐帧跟随。
+			for (int segment = 0; segment + 1 < waypoints.Count; segment++)
+			{
+				Vector2 from = waypoints[segment];
+				Vector2 to = waypoints[segment + 1];
+				bool isFirst = segment == 0;
+				bool isReturn = segment == waypoints.Count - 2;
+				float duration = isFirst ? BoomerangFirstArrivalSeconds
+					: isReturn ? 0.3f
+					: BoomerangPerTargetSeconds;
+				Vector2 mid = (from + to) * 0.5f;
+				float liftDirection = isReturn ? 1f : -1f;
+				Vector2 control = mid + new Vector2(0f, liftDirection * Mathf.Max(60f, from.DistanceTo(to) * 0.25f));
+
+				float elapsed = 0f;
+				while (elapsed < duration)
+				{
+					if (!GodotObject.IsInstanceValid(boomerang))
+					{
+						FreeNode(trail);
+						return;
+					}
+
+					float dt = Mathf.Clamp((float)boomerang.GetProcessDeltaTime(), 1f / 240f, 0.05f);
+					elapsed += dt;
+					float t = Mathf.Clamp(elapsed / duration, 0f, 1f);
+					Vector2 position = Bezier(from, control, to, t);
+					boomerang.GlobalPosition = position;
+					boomerang.Rotation += dt * Mathf.Tau * 2.2f;
+					if (GodotObject.IsInstanceValid(trail))
+					{
+						trail.AddPoint(trail.ToLocal(position), 0);
+						if (trail.GetPointCount() > 14)
+						{
+							trail.RemovePoint(trail.GetPointCount() - 1);
+						}
+					}
+
+					await boomerang.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+				}
+
+				if (!isReturn && GodotObject.IsInstanceValid(parent))
+				{
+					SpawnFlash(parent, to, CreatureWidth(ownerNode) * 0.7f, new Color(0.75f, 0.92f, 1f), 0.28f, 0.55f, aboveCreaturesOnly: true);
+				}
+			}
+
+			FreeNode(boomerang);
+			if (GodotObject.IsInstanceValid(trail))
+			{
+				Tween fade = trail.CreateTween();
+				fade.TweenProperty(trail, "modulate:a", 0f, 0.2f);
+				fade.TweenCallback(Callable.From(() => FreeNode(trail)));
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][CombatVfx] Boomerang sweep failed: {ex.Message}");
+		}
+	}
+
+	private static readonly Color OmegaWarnColor = new(1f, 0.22f, 0.16f);
+	private static readonly Color OmegaBeamColor = new(1f, 0.32f, 0.2f);
+	private static readonly Color OmegaFlashColor = new(1f, 0.78f, 0.62f);
+
+	private static async Task RunOmegaJudgment(Creature[] targets)
+	{
+		try
+		{
+			List<(Vector2 Center, Vector2 Bottom, float Width, float Height, Node Parent)> spots = [];
+			foreach (Creature target in targets)
+			{
+				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
+				Node? parent = node?.GetParent();
+				if (node == null || !GodotObject.IsInstanceValid(parent))
+				{
+					continue;
+				}
+
+				Vector2 bottom = node.GetBottomOfHitbox();
+				float height = Mathf.Max(bottom.Y - node.GetTopOfHitbox().Y, 120f);
+				spots.Add((CreatureCenter(node), bottom, CreatureWidth(node), height, parent!));
+			}
+
+			if (spots.Count == 0)
+			{
+				return;
+			}
+
+			// 预警:所有敌人脚下同时亮起红色警戒环。
+			foreach ((Vector2 center, Vector2 bottom, float width, _, Node parent) in spots)
+			{
+				SpawnRing(parent, center, width * 1.2f, width * 0.55f, 0.34f, 0.7f, OmegaWarnColor, aboveCreaturesOnly: true);
+			}
+
+			SceneTree? tree = (spots[0].Parent as Node2D)?.GetTree() ?? (Engine.GetMainLoop() as SceneTree);
+			if (tree == null)
+			{
+				return;
+			}
+
+			await WaitSeconds(tree, 0.3f);
+
+			// 审判:赤红光柱依次砸下,命中爆闪+扩散环。
+			Texture2D? rayTexture = LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
+			foreach ((Vector2 center, Vector2 bottom, float width, float height, Node parent) in spots)
+			{
+				if (rayTexture != null && GodotObject.IsInstanceValid(parent))
+				{
+					SpawnOmegaBeam(parent, bottom, width, height, rayTexture);
+				}
+
+				if (GodotObject.IsInstanceValid(parent))
+				{
+					SpawnFlash(parent, center, width * 1.2f, OmegaFlashColor, 0.3f, 0.75f, aboveCreaturesOnly: true);
+					SpawnRing(parent, center, width * 0.3f, width * 1.35f, 0.4f, 0.85f, OmegaBeamColor, aboveCreaturesOnly: true);
+				}
+
+				await WaitSeconds(tree, 0.06f);
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][CombatVfx] Omega judgment failed: {ex.Message}");
+		}
+	}
+
+	/// <summary>欧米伽的赤红审判光柱:窄而急促(0.08s 闪现全亮,0.3s 收束消退)。</summary>
+	private static void SpawnOmegaBeam(Node parent, Vector2 bottom, float width, float height, Texture2D rayTexture)
+	{
+		float beamHeight = height * 2.4f;
+		Sprite2D beam = new()
+		{
+			Name = "HextechRunes_OmegaBeam",
+			Texture = rayTexture,
+			Centered = true,
+			Modulate = OmegaBeamColor with { A = 0f },
+			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add }
+		};
+		parent.AddChildSafely(beam);
+		PlaceAboveCreatures(parent, beam);
+		beam.GlobalPosition = new Vector2(bottom.X, bottom.Y - beamHeight * 0.5f);
+		Vector2 fullScale = new(width * 0.8f / Math.Max(rayTexture.GetWidth(), 1), beamHeight / Math.Max(rayTexture.GetHeight(), 1));
+		beam.Scale = fullScale;
+
+		Tween tween = beam.CreateTween();
+		tween.TweenProperty(beam, "modulate:a", 1f, 0.08f).SetEase(Tween.EaseType.Out);
+		tween.SetParallel(true);
+		tween.TweenProperty(beam, "modulate:a", 0f, 0.3f).SetEase(Tween.EaseType.In).SetDelay(0.08f);
+		tween.TweenProperty(beam, "scale:x", fullScale.X * 0.25f, 0.3f).SetEase(Tween.EaseType.In).SetDelay(0.08f);
+		tween.Chain().TweenCallback(Callable.From(() => FreeNode(beam)));
+	}
+
+	private static async Task RunFlyingKickStrike(Creature target, Creature owner)
+	{
+		try
+		{
+			NCreature? targetNode = HextechCreatureNodeRegistry.TryGet(target);
+			NCreature? ownerNode = HextechCreatureNodeRegistry.TryGet(owner);
+			if (targetNode == null)
+			{
+				return;
+			}
+
+			Node? parent = targetNode.GetParent();
+			if (!GodotObject.IsInstanceValid(parent))
+			{
+				return;
+			}
+
+			// 击杀点快照:目标马上会被处决并横飞。
+			Vector2 strikePos = CreatureCenter(targetNode);
+			float width = CreatureWidth(targetNode);
+			Color tint = GetSoulTint(target);
+
+			// 踢击:原版大斩击节点 + 目标本体色爆闪。
+			NBigSlashVfx.Create(target);
+			NBigSlashImpactVfx.Create(target);
+			SpawnFlash(parent!, strikePos, width * 1.3f, Brighten(tint), 0.32f, 0.7f, aboveCreaturesOnly: true);
+			SpawnRing(parent!, strikePos, width * 0.35f, width * 1.2f, 0.38f, 0.8f, tint, aboveCreaturesOnly: true);
+
+			// 光流殿后:尸体横飞展开后,一缕治疗绿光从击杀点弧线流回施法者。
+			SceneTree? tree = (parent as Node2D)?.GetTree() ?? (Engine.GetMainLoop() as SceneTree);
+			if (tree == null || ownerNode == null || !GodotObject.IsInstanceValid(ownerNode))
+			{
+				return;
+			}
+
+			await WaitSeconds(tree, 0.5f);
+			if (!GodotObject.IsInstanceValid(parent) || !GodotObject.IsInstanceValid(ownerNode))
+			{
+				return;
+			}
+
+			Color healColor = new(0.45f, 0.95f, 0.5f);
+			Vector2 ownerPos = CreatureCenter(ownerNode);
+			SpawnSoulWisp(parent!, strikePos, ownerPos, width * 0.34f, 0.55f, 0f, -width * 0.7f, healColor, () =>
+			{
+				if (GodotObject.IsInstanceValid(parent) && GodotObject.IsInstanceValid(ownerNode))
+				{
+					SpawnFlash(parent!, ownerPos, width * 0.9f, healColor.Lightened(0.3f), 0.3f, 0.5f, aboveCreaturesOnly: true);
+				}
+			});
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][CombatVfx] Flying kick strike failed: {ex.Message}");
+		}
+	}
+
+	private static async Task WaitSeconds(SceneTree tree, float seconds)
+	{
+		await tree.ToSignal(tree.CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
 	}
 
 	private static void RunDeathRingLash(Creature source, Creature target)
