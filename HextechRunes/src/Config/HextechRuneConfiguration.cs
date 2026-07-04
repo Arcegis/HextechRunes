@@ -10,7 +10,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 20;
+	private const int CurrentConfigVersion = 21;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -94,6 +94,13 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version20DefaultDisabledRuneTypes =
 	[
 		typeof(PiggyBankRune)
+	];
+	// 升级打击/防御(围绕不该保留的牌做增强,遥测垫底)与验牌(每回合选牌拖慢节奏)转为默认禁用。
+	private static readonly Type[] Version21DefaultDisabledRuneTypes =
+	[
+		typeof(StrikeUpgradeRune),
+		typeof(DefendUpgradeRune),
+		typeof(CardInspectionRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -439,6 +446,11 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 20)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version20DefaultDisabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 21)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version21DefaultDisabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;
