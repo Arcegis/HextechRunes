@@ -75,6 +75,7 @@
 我方	LoopRune	循环往复	标签=运转
 我方	OkBoomerangRune	回力OK镖	标签=输出
 我方	DivineInterventionRune	神圣干预	标签=生存
+我方	OurHealingRune	我们的治疗	标签=生存
 我方	SonataRune	咏叹奏鸣	标签=综合
 我方	CuttingEdgeAlchemistRune	尖端炼药师	标签=综合
 我方	DevilsDanceRune	魔鬼之舞	标签=生存

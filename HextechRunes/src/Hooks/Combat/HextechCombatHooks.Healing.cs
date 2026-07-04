@@ -125,6 +125,9 @@ internal static partial class HextechCombatHooks
 		{
 			await circleOfDeathRune.HandleSustainGained(amount);
 		}
+
+		// 我们的治疗(仅联机):队友被治疗后镜像给持有者,战斗内外通吃。
+		await OurHealingRune.MirrorTeammateHeal(creature, amount);
 	}
 
 	private static bool IsSkulkingColony(Creature creature)
