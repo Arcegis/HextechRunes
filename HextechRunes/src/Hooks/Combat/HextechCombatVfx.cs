@@ -364,6 +364,30 @@ internal static class HextechCombatVfx
 		Callable.From(() => TaskHelper.RunSafely(RunFlyingKickStrike(target, owner))).CallDeferred();
 	}
 
+	/// <summary>
+	/// 尸爆术:尸体位置毒绿脓爆,飞溅的毒液弧线泼向每个存活敌人,命中处小型毒溅。
+	/// 位置在调用当下快照(死亡链上节点随时被移除),取不到就退化为目标群中心上方起爆。
+	/// </summary>
+	internal static void CorpseBloomBurst(Creature source, IReadOnlyList<Creature> targets)
+	{
+		NCreature? sourceNode = HextechCreatureNodeRegistry.TryGet(source);
+		Vector2? sourcePos = sourceNode != null && GodotObject.IsInstanceValid(sourceNode)
+			? CreatureCenter(sourceNode)
+			: null;
+		Creature[] snapshot = [.. targets];
+		Callable.From(() => TaskHelper.RunSafely(RunCorpseBloomBurst(sourcePos, snapshot))).CallDeferred();
+	}
+
+	/// <summary>
+	/// 量子计算:蓝紫预警环后量子光柱依次贯穿每个敌人(节拍与逐敌伤害结算对齐),
+	/// 随后每个敌人放出一缕青绿数据流汇回施法者(对应吸血治疗)。
+	/// </summary>
+	internal static void QuantumPulse(Creature owner, IReadOnlyList<Creature> targets)
+	{
+		Creature[] snapshot = [.. targets];
+		Callable.From(() => TaskHelper.RunSafely(RunQuantumPulse(owner, snapshot))).CallDeferred();
+	}
+
 	private static async Task RunBoomerangSweep(Creature owner, Creature[] targets, Texture2D? boomerangTexture, bool roundTrip = false)
 	{
 		try
@@ -577,8 +601,192 @@ internal static class HextechCombatVfx
 		}
 	}
 
+	private static readonly Color PoisonBurstColor = new(0.5f, 0.9f, 0.3f);
+	private static readonly Color QuantumWarnColor = new(0.5f, 0.55f, 1f);
+	private static readonly Color QuantumBeamColor = new(0.58f, 0.5f, 1f);
+	private static readonly Color QuantumFlashColor = new(0.78f, 0.85f, 1f);
+	private static readonly Color QuantumHealColor = new(0.45f, 0.95f, 0.6f);
+
+	private static async Task RunCorpseBloomBurst(Vector2? sourcePos, Creature[] targets)
+	{
+		try
+		{
+			List<(Vector2 Center, float Width, Node Parent)> spots = [];
+			foreach (Creature target in targets)
+			{
+				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
+				Node? parent = node?.GetParent();
+				if (node == null || !GodotObject.IsInstanceValid(parent))
+				{
+					continue;
+				}
+
+				spots.Add((CreatureCenter(node), CreatureWidth(node), parent!));
+			}
+
+			if (spots.Count == 0)
+			{
+				return;
+			}
+
+			Node burstParent = spots[0].Parent;
+			float burstWidth = spots.Max(static spot => spot.Width);
+			// 尸体节点在死亡链上随时被移除:取不到就从目标群中心上方起爆。
+			Vector2 origin = sourcePos ?? new Vector2(
+				spots.Average(static spot => spot.Center.X),
+				spots.Min(static spot => spot.Center.Y) - burstWidth * 0.4f);
+
+			// 脓爆:毒绿爆闪+双层扩散环。
+			SpawnFlash(burstParent, origin, burstWidth * 1.6f, PoisonBurstColor, 0.36f, 0.85f, aboveCreaturesOnly: true);
+			SpawnRing(burstParent, origin, burstWidth * 0.4f, burstWidth * 1.8f, 0.42f, 0.85f, PoisonBurstColor, aboveCreaturesOnly: true);
+			SpawnRing(burstParent, origin, burstWidth * 0.25f, burstWidth * 1.2f, 0.32f, 0.6f, Brighten(PoisonBurstColor), aboveCreaturesOnly: true);
+
+			SceneTree? tree = (burstParent as Node2D)?.GetTree() ?? (Engine.GetMainLoop() as SceneTree);
+			if (tree == null)
+			{
+				return;
+			}
+
+			await WaitSeconds(tree, 0.1f);
+
+			// 毒液飞溅:弧线毒滴逐个泼向存活敌人,命中处小型毒溅。
+			int index = 0;
+			foreach ((Vector2 center, float width, Node parent) in spots)
+			{
+				if (!GodotObject.IsInstanceValid(parent))
+				{
+					continue;
+				}
+
+				Vector2 hitCenter = center;
+				float hitWidth = width;
+				Node hitParent = parent;
+				SpawnSoulWisp(
+					parent,
+					origin,
+					center,
+					width * 0.3f,
+					0.4f,
+					index * 0.05f,
+					-Mathf.Max(70f, origin.DistanceTo(center) * 0.3f),
+					PoisonBurstColor,
+					() =>
+					{
+						if (GodotObject.IsInstanceValid(hitParent))
+						{
+							SpawnFlash(hitParent, hitCenter, hitWidth * 0.8f, PoisonBurstColor, 0.26f, 0.65f, aboveCreaturesOnly: true);
+							SpawnRing(hitParent, hitCenter, hitWidth * 0.2f, hitWidth * 0.8f, 0.3f, 0.6f, PoisonBurstColor, aboveCreaturesOnly: true);
+						}
+					});
+				index++;
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][CombatVfx] Corpse bloom burst failed: {ex.Message}");
+		}
+	}
+
+	private static async Task RunQuantumPulse(Creature owner, Creature[] targets)
+	{
+		try
+		{
+			List<(Vector2 Center, Vector2 Bottom, float Width, float Height, Node Parent)> spots = [];
+			foreach (Creature target in targets)
+			{
+				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
+				Node? parent = node?.GetParent();
+				if (node == null || !GodotObject.IsInstanceValid(parent))
+				{
+					continue;
+				}
+
+				Vector2 bottom = node.GetBottomOfHitbox();
+				float height = Mathf.Max(bottom.Y - node.GetTopOfHitbox().Y, 120f);
+				spots.Add((CreatureCenter(node), bottom, CreatureWidth(node), height, parent!));
+			}
+
+			if (spots.Count == 0)
+			{
+				return;
+			}
+
+			// 预警:蓝紫量子警戒环同时亮起。
+			foreach ((Vector2 center, _, float width, _, Node parent) in spots)
+			{
+				SpawnRing(parent, center, width * 1.2f, width * 0.55f, 0.34f, 0.7f, QuantumWarnColor, aboveCreaturesOnly: true);
+			}
+
+			SceneTree? tree = (spots[0].Parent as Node2D)?.GetTree() ?? (Engine.GetMainLoop() as SceneTree);
+			if (tree == null)
+			{
+				return;
+			}
+
+			await WaitSeconds(tree, 0.3f);
+
+			// 量子光柱逐敌贯穿:0.2s 间隔与逻辑侧逐敌伤害结算的标准尾巴对齐。
+			Texture2D? rayTexture = LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
+			foreach ((Vector2 center, Vector2 bottom, float width, float height, Node parent) in spots)
+			{
+				if (rayTexture != null && GodotObject.IsInstanceValid(parent))
+				{
+					SpawnOmegaBeam(parent, bottom, width, height, rayTexture, QuantumBeamColor);
+				}
+
+				if (GodotObject.IsInstanceValid(parent))
+				{
+					SpawnFlash(parent, center, width * 1.2f, QuantumFlashColor, 0.3f, 0.75f, aboveCreaturesOnly: true);
+					SpawnRing(parent, center, width * 0.3f, width * 1.35f, 0.4f, 0.85f, QuantumBeamColor, aboveCreaturesOnly: true);
+				}
+
+				await WaitSeconds(tree, 0.2f);
+			}
+
+			// 吸血回流:每敌一缕青绿数据流弧线汇回施法者。
+			NCreature? ownerNode = HextechCreatureNodeRegistry.TryGet(owner);
+			if (ownerNode == null || !GodotObject.IsInstanceValid(ownerNode))
+			{
+				return;
+			}
+
+			Vector2 ownerPos = CreatureCenter(ownerNode);
+			int index = 0;
+			foreach ((Vector2 center, _, float width, _, Node parent) in spots)
+			{
+				if (!GodotObject.IsInstanceValid(parent))
+				{
+					continue;
+				}
+
+				Node flashParent = parent;
+				SpawnSoulWisp(
+					parent,
+					center,
+					ownerPos,
+					width * 0.3f,
+					0.5f,
+					index * 0.07f,
+					-width * 0.6f,
+					QuantumHealColor,
+					() =>
+					{
+						if (GodotObject.IsInstanceValid(flashParent))
+						{
+							SpawnFlash(flashParent, ownerPos, width * 0.9f, QuantumHealColor.Lightened(0.3f), 0.3f, 0.5f, aboveCreaturesOnly: true);
+						}
+					});
+				index++;
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][CombatVfx] Quantum pulse failed: {ex.Message}");
+		}
+	}
+
 	/// <summary>欧米伽的赤红审判光柱:窄而急促(0.08s 闪现全亮,0.3s 收束消退)。</summary>
-	private static void SpawnOmegaBeam(Node parent, Vector2 bottom, float width, float height, Texture2D rayTexture)
+	private static void SpawnOmegaBeam(Node parent, Vector2 bottom, float width, float height, Texture2D rayTexture, Color? beamColor = null)
 	{
 		float beamHeight = height * 2.4f;
 		Sprite2D beam = new()
@@ -586,7 +794,7 @@ internal static class HextechCombatVfx
 			Name = "HextechRunes_OmegaBeam",
 			Texture = rayTexture,
 			Centered = true,
-			Modulate = OmegaBeamColor with { A = 0f },
+			Modulate = (beamColor ?? OmegaBeamColor) with { A = 0f },
 			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add }
 		};
 		parent.AddChildSafely(beam);

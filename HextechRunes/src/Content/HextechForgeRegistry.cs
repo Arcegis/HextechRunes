@@ -8,7 +8,6 @@ internal static class HextechForgeRegistry
 	[
 		Forge<StrengthForge>(HextechRarityTier.Silver),
 		Forge<DexterityForge>(HextechRarityTier.Silver),
-		Forge<SilverPlatingForge>(HextechRarityTier.Silver),
 		Forge<UpgradeForge>(HextechRarityTier.Silver),
 		Forge<LifeForge>(HextechRarityTier.Silver),
 		Forge<SilverHpForge>(HextechRarityTier.Silver),
@@ -37,6 +36,7 @@ internal static class HextechForgeRegistry
 		Forge<HourglassForge>(HextechRarityTier.Gold),
 		Forge<GoldUpgradeForge>(HextechRarityTier.Gold),
 		Forge<GlamForge>(HextechRarityTier.Gold),
+		Forge<SoulsPowerForge>(HextechRarityTier.Gold),
 		Forge<MomentumForge>(HextechRarityTier.Gold),
 		Forge<SummonForge>(HextechRarityTier.Gold),
 		Forge<FleshForge>(HextechRarityTier.Gold),

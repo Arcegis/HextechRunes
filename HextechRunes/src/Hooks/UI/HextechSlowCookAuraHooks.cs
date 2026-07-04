@@ -10,53 +10,65 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static class HextechBaronAuraHooks
+internal static class HextechSlowCookAuraHooks
 {
 	public static void Install(Harmony harmony)
 	{
 		harmony.Patch(
 			RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CombatRoomReadyPostfix)));
+			postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CombatRoomReadyPostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-			postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(AddCreaturePostfix)));
+			postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(AddCreaturePostfix)));
 		harmony.Patch(
 			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CreatureReadyPostfix)));
-		HextechLog.Info($"[{ModInfo.Id}][BaronAura] Hooks installed.");
+			postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CreatureReadyPostfix)));
 	}
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
 	{
 		foreach (NCreature creature in __instance.CreatureNodes)
 		{
-			HandOfBaronAuraVisual.TryAttach(creature);
+			SlowCookAuraVisual.TryAttach(creature);
 		}
 	}
 
 	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
 	{
-		HandOfBaronAuraVisual.TryAttach(__instance.GetCreatureNode(creature));
+		SlowCookAuraVisual.TryAttach(__instance.GetCreatureNode(creature));
 	}
 
 	private static void CreatureReadyPostfix(NCreature __instance)
 	{
-		HandOfBaronAuraVisual.TryAttach(__instance);
+		SlowCookAuraVisual.TryAttach(__instance);
 	}
 }
 
-internal sealed class HandOfBaronAuraVisual
+/// <summary>
+/// 慢炖的持续脚底光环:参考 LOL 日炎斗篷的灼烧光环——贴地橙红火盘、
+/// 流动的炼狱烟、反向旋转的火环,外加周期性向外扩散的灼烧脉冲波。
+/// 骨架照抄 <see cref="HandOfBaronAuraVisual"/>(attach/可见性轮询/清理)。
+/// </summary>
+internal sealed class SlowCookAuraVisual
 {
-	private const string NodeName = "HextechRunes_HandOfBaronAura";
-	private const float RuneRotationSpeed = -1.12f;
-	private const float RingRotationSpeed = 0.34f;
-	private const float SmokeRotationSpeed = -0.18f;
-	private const float PulseSpeed = 2.15f;
+	private const string NodeName = "HextechRunes_SlowCookAura";
+	private const float RuneRotationSpeed = 0.55f;
+	private const float RingRotationSpeed = -0.4f;
+	private const float SmokeRotationSpeed = 0.22f;
+	private const float PulseSpeed = 2.4f;
+	// 灼烧脉冲波:周期性从中心扩散的橙红衝击环,模拟日炎的灼烧 tick。
+	private const float BurnWaveInterval = 2.2f;
+	private const float BurnWaveDuration = 0.9f;
 	private const float MinWidth = 180f;
 	private const float MaxWidth = 340f;
 	private const float WidthMultiplier = 0.90f;
 	private const float HeightRatio = 0.36f;
 	private static readonly Vector2 GroundOffset = new(0f, -18f);
+	private static readonly Color EmberDiscColor = new(1f, 0.32f, 0.08f, 0.16f);
+	private static readonly Color InfernoSmokeColor = new(1f, 0.45f, 0.12f, 0.16f);
+	private static readonly Color FlameRingColor = new(1f, 0.6f, 0.18f, 0.3f);
+	private static readonly Color SunfireRuneColor = new(1f, 0.5f, 0.14f, 0.6f);
+	private static readonly Color BurnWaveColor = new(1f, 0.55f, 0.15f);
 	private static readonly HashSet<ulong> ActiveCreatureNodes = [];
 	private static readonly HashSet<string> LoggedMissingTexturePaths = [];
 
@@ -67,10 +79,11 @@ internal sealed class HandOfBaronAuraVisual
 	private AuraLayer? _smokeLayer;
 	private AuraLayer? _ringLayer;
 	private AuraLayer? _runeLayer;
+	private AuraLayer? _waveLayer;
 	private float _time;
-	private bool _lastVisible;
+	private float _waveTime;
 
-	private HandOfBaronAuraVisual(NCreature creature)
+	private SlowCookAuraVisual(NCreature creature)
 	{
 		_creature = creature;
 	}
@@ -93,7 +106,7 @@ internal sealed class HandOfBaronAuraVisual
 				return;
 			}
 
-			HandOfBaronAuraVisual visual = new(creature);
+			SlowCookAuraVisual visual = new(creature);
 			if (!visual.Start())
 			{
 				ActiveCreatureNodes.Remove(creatureInstanceId);
@@ -104,30 +117,24 @@ internal sealed class HandOfBaronAuraVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Could not attach Hand of Baron aura visual: {ex.Message}");
+			Log.Warn($"[{ModInfo.Id}][SlowCookAura] Could not attach aura visual: {ex.Message}");
 		}
 	}
 
 	private static bool ShouldShow(NCreature creature)
 	{
-		return creature.Entity?.Player?.GetRelic<HandOfBaronRune>() != null
+		return creature.Entity?.Player?.GetRelic<SlowCookRune>() != null
 			&& creature.Entity.IsAlive;
 	}
 
 	private bool Start()
 	{
-		Node? parent = ResolveRenderParent();
-		if (parent == null)
+		Node? parent = _creature.GetParent();
+		if (!GodotObject.IsInstanceValid(parent))
 		{
 			return false;
 		}
 		_renderParent = parent;
-
-		Texture2D? runeTexture = LoadTextureOrWarn(HextechAssets.HandOfBaronAuraRunePath);
-		if (runeTexture == null)
-		{
-			return false;
-		}
 
 		_root = new Node2D
 		{
@@ -141,24 +148,13 @@ internal sealed class HandOfBaronAuraVisual
 		parent.AddChildSafely(_root);
 		EnsureRenderOrder();
 
-		_discLayer = TryCreateLayer(_root, "GroundGlow", HextechAssets.HandOfBaronAuraDiscPath, new Color(0.52f, 0.12f, 1f, 0.18f), 0);
-		_smokeLayer = TryCreateClippedLayer(_root, "SoftVioletTrail", HextechAssets.HandOfBaronAuraSmokePath, HextechAssets.HandOfBaronAuraDiscPath, new Color(0.72f, 0.20f, 1f, 0.18f));
-		_ringLayer = TryCreateLayer(_root, "SoftRing", HextechAssets.HandOfBaronAuraRingPath, new Color(0.86f, 0.42f, 1f, 0.28f), 3);
-		_runeLayer = CreateLayer(_root, "BaronRune", runeTexture, new Color(1f, 0.35f, 1f, 0.78f), 4);
+		_discLayer = TryCreateLayer(_root, "EmberDisc", HextechAssets.HandOfBaronAuraDiscPath, EmberDiscColor, additive: true);
+		_smokeLayer = TryCreateClippedLayer(_root, "InfernoSmoke", HextechAssets.HandOfBaronAuraSmokePath, HextechAssets.HandOfBaronAuraDiscPath, InfernoSmokeColor, additive: true);
+		_ringLayer = TryCreateLayer(_root, "FlameRing", HextechAssets.HandOfBaronAuraRingPath, FlameRingColor, additive: true);
+		_runeLayer = TryCreateLayer(_root, "SunfireRune", HextechAssets.SlowCookAuraRunePath, SunfireRuneColor, additive: true);
+		_waveLayer = TryCreateLayer(_root, "BurnWave", HextechAssets.HandOfBaronAuraRingPath, BurnWaveColor with { A = 0f }, additive: true);
 		UpdateTransform();
-		HextechLog.Info($"[{ModInfo.Id}][BaronAura] Attached node={_root.GetPath()} parent={parent.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"} hasRune={ShouldShow(_creature)}.");
-		return true;
-	}
-
-	private Node? ResolveRenderParent()
-	{
-		Node? parent = _creature.GetParent();
-		if (!GodotObject.IsInstanceValid(parent))
-		{
-			return null;
-		}
-
-		return parent;
+		return _discLayer != null || _ringLayer != null;
 	}
 
 	private async Task RunAsync(ulong creatureInstanceId)
@@ -169,18 +165,13 @@ internal sealed class HandOfBaronAuraVisual
 			{
 				bool visible = ShouldShow(_creature);
 				_root.Visible = visible;
-				if (visible != _lastVisible)
-				{
-					HextechLog.Info($"[{ModInfo.Id}][BaronAura] Visibility changed: visible={visible} node={_root.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"}.");
-					_lastVisible = visible;
-				}
-
 				if (visible)
 				{
 					EnsureRenderOrder();
 					float dt = Mathf.Min(Mathf.Max((float)_root.GetProcessDeltaTime(), 1f / 120f), 0.05f);
 					_time = Mathf.PosMod(_time + dt, 3600f);
-					Animate(dt);
+					_waveTime += dt;
+					Animate();
 					UpdateTransform();
 				}
 
@@ -195,7 +186,7 @@ internal sealed class HandOfBaronAuraVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Hand of Baron aura visual stopped after runtime error: {ex.Message}");
+			Log.Warn($"[{ModInfo.Id}][SlowCookAura] Aura visual stopped after runtime error: {ex.Message}");
 		}
 		finally
 		{
@@ -227,14 +218,32 @@ internal sealed class HandOfBaronAuraVisual
 		float height = width * HeightRatio;
 		_root.GlobalPosition = _creature.GetBottomOfHitbox() + GroundOffset;
 
-		ScaleLayer(_discLayer, width * 1.30f, height * 1.24f);
-		ScaleLayer(_smokeLayer, width * 1.20f, height * 0.94f);
-		ScaleLayer(_ringLayer, width * 1.12f, height * 1.05f);
-		ScaleLayer(_runeLayer, width, height);
+		ScaleLayer(_discLayer, width * 1.34f, height * 1.26f);
+		ScaleLayer(_smokeLayer, width * 1.18f, height * 0.92f);
+		ScaleLayer(_ringLayer, width * 1.10f, height * 1.04f);
+		ScaleLayer(_runeLayer, width * 0.96f, height * 0.96f);
+
+		// 灼烧脉冲波:按周期从中心扩散并淡出。
+		float wavePhase = Mathf.PosMod(_waveTime, BurnWaveInterval);
+		if (_waveLayer != null)
+		{
+			if (wavePhase <= BurnWaveDuration)
+			{
+				float progress = wavePhase / BurnWaveDuration;
+				float waveScale = 0.25f + progress * 1.25f;
+				ScaleLayer(_waveLayer, width * waveScale, height * waveScale);
+				_waveLayer.Sprite.Modulate = BurnWaveColor with { A = (1f - progress) * 0.45f };
+			}
+			else
+			{
+				_waveLayer.Sprite.Modulate = BurnWaveColor with { A = 0f };
+			}
+		}
 	}
 
-	private void Animate(float dt)
+	private void Animate()
 	{
+		float dt = Mathf.Min(Mathf.Max((float)(_root?.GetProcessDeltaTime() ?? 0.016), 1f / 120f), 0.05f);
 		if (_runeLayer != null)
 		{
 			_runeLayer.Sprite.Rotation = Mathf.PosMod(_runeLayer.Sprite.Rotation + RuneRotationSpeed * dt, Mathf.Tau);
@@ -250,25 +259,38 @@ internal sealed class HandOfBaronAuraVisual
 			_smokeLayer.Sprite.Rotation = Mathf.PosMod(_smokeLayer.Sprite.Rotation + SmokeRotationSpeed * dt, Mathf.Tau);
 		}
 
+		// 火焰呼吸:透明度随相位起伏,层间相位错开避免同频闪烁。
 		float pulse = 0.5f + 0.5f * MathF.Sin(_time * PulseSpeed);
+		float pulseLate = 0.5f + 0.5f * MathF.Sin(_time * PulseSpeed + 1.3f);
 		if (_discLayer != null)
 		{
-			_discLayer.Sprite.Modulate = new Color(0.52f, 0.12f, 1f, 0.14f + pulse * 0.10f);
+			_discLayer.Sprite.Modulate = EmberDiscColor with { A = 0.12f + pulse * 0.1f };
 		}
 
 		if (_ringLayer != null)
 		{
-			_ringLayer.Sprite.Modulate = new Color(0.86f, 0.42f, 1f, 0.24f + pulse * 0.10f);
+			_ringLayer.Sprite.Modulate = FlameRingColor with { A = 0.24f + pulseLate * 0.14f };
 		}
 
 		if (_smokeLayer != null)
 		{
-			_smokeLayer.Sprite.Modulate = new Color(0.72f, 0.20f, 1f, 0.12f + pulse * 0.10f);
+			_smokeLayer.Sprite.Modulate = InfernoSmokeColor with { A = 0.12f + pulse * 0.1f };
+		}
+
+		if (_runeLayer != null)
+		{
+			_runeLayer.Sprite.Modulate = SunfireRuneColor with { A = 0.48f + pulseLate * 0.18f };
 		}
 	}
 
-	private static AuraLayer CreateLayer(Node2D parent, string name, Texture2D texture, Color modulate, int zIndex, bool additive = false)
+	private static AuraLayer? TryCreateLayer(Node2D parent, string name, string path, Color modulate, bool additive = false)
 	{
+		Texture2D? texture = LoadTextureOrWarn(path);
+		if (texture == null)
+		{
+			return null;
+		}
+
 		Node2D plane = new()
 		{
 			Name = name,
@@ -296,14 +318,19 @@ internal sealed class HandOfBaronAuraVisual
 		return new AuraLayer(plane, sprite);
 	}
 
-	private static AuraLayer? TryCreateLayer(Node2D parent, string name, string path, Color modulate, int zIndex, bool additive = false)
+	private static Texture2D? LoadTextureOrWarn(string path)
 	{
-		Texture2D? texture = LoadTextureOrWarn(path);
-		return texture == null ? null : CreateLayer(parent, name, texture, modulate, zIndex, additive);
+		Texture2D? texture = AssetHooks.LoadUiTexture(path);
+		if (texture == null && LoggedMissingTexturePaths.Add(path))
+		{
+			Log.Warn($"[{ModInfo.Id}][SlowCookAura] Aura texture not found: {path}");
+		}
+
+		return texture;
 	}
 
-	// 长方形纹理(如烟雾拖尾)旋转时会露出方角:套一层圆形裁剪父(按其 alpha 裁子内容),
-	// 纹理放大到覆盖裁剪圆的外接尺寸,旋转全程不露边。缩放基准取裁剪圆纹理。
+	// 长方形纹理(烟雾拖尾)旋转会露方角:套圆形裁剪父(按其 alpha 裁子内容),
+	// 纹理放大覆盖裁剪圆的外接旋转范围,旋转全程不露边;缩放基准取裁剪圆纹理。
 	private static AuraLayer? TryCreateClippedLayer(Node2D parent, string name, string texturePath, string clipPath, Color modulate, bool additive = false)
 	{
 		Texture2D? texture = LoadTextureOrWarn(texturePath);
@@ -338,7 +365,6 @@ internal sealed class HandOfBaronAuraVisual
 			Texture = texture,
 			Centered = true,
 			Modulate = modulate,
-			// 覆盖裁剪圆的外接旋转范围(√2 倍直径),长方形被拉成方形无碍烟雾观感。
 			Scale = new Vector2(
 				clipSize * 1.5f / Math.Max(texture.GetWidth(), 1),
 				clipSize * 1.5f / Math.Max(texture.GetHeight(), 1))
@@ -350,17 +376,6 @@ internal sealed class HandOfBaronAuraVisual
 
 		clip.AddChildSafely(sprite);
 		return new AuraLayer(plane, sprite, clipTexture);
-	}
-
-	private static Texture2D? LoadTextureOrWarn(string path)
-	{
-		Texture2D? texture = AssetHooks.LoadUiTexture(path);
-		if (texture == null && LoggedMissingTexturePaths.Add(path))
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Hand of Baron aura texture not found: {path}");
-		}
-
-		return texture;
 	}
 
 	private static void ScaleLayer(AuraLayer? layer, float width, float height)

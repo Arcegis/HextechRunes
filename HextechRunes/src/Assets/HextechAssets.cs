@@ -66,6 +66,9 @@ internal static class HextechAssets
 
     public const string MikaelsBlessingAoeRunePath = "res://HextechRunes/images/effects/milio_base_r_aoe_rune.png";
 
+    // 慢炖日炎光环的地面纹路层:复用 Milio AOE 圈纹理(橙红 modulate)。
+    public const string SlowCookAuraRunePath = "res://HextechRunes/images/effects/milio_base_r_aoe_rune.png";
+
     public static string? TryGetCustomRelicIconPath(RelicModel relic)
     {
         if (HextechCatalog.IsHextechEnemyHexIconRelic(relic))

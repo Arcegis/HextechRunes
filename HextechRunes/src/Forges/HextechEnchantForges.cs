@@ -53,6 +53,11 @@ public sealed class GlamForge : EnchantmentForgeBase<Glam>
 
 public sealed class SwiftForge : EnchantmentForgeBase<Swift>
 {
+	protected override int EnchantmentAmount => 2;
+}
+
+public sealed class SoulsPowerForge : EnchantmentForgeBase<SoulsPower>
+{
 }
 
 public sealed class MomentumForge : EnchantmentForgeBase<Momentum>
