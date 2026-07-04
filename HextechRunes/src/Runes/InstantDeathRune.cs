@@ -55,6 +55,16 @@ public sealed class InstantDeathRune : HextechRelicBase
 		}
 
 		Flash([creature]);
+
+		// 血肉戏法/疫情响应链内不能同步处决:死亡处理与进行中的 power hook 链
+		// 撞车会卡死游戏(灾厄→血肉戏法反伤→即死达标的链路)。挂账,链退出后补杀。
+		if (HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse
+			|| HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse)
+		{
+			HextechCombatHooks.QueueInstantDeathDoomKill(creature);
+			return;
+		}
+
 		await DoomPower.DoomKill([creature]);
 	}
 }

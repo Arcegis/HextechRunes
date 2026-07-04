@@ -727,11 +727,14 @@ internal static class Program
 
 	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()
 	{
+		// 腐化树枝自配置 v16 起转为默认启用;改用长期默认禁用的逃跑计划做代表。
+		string escapePlanId = ModelDb.GetId<EscapePlanRune>().Entry;
 		string corruptedBranchId = ModelDb.GetId<CorruptedBranchRune>().Entry;
 		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
 
-		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(corruptedBranchId), "default player rune ids should disable corrupted branch");
-		Expect(snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "default snapshot should disable corrupted branch");
+		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(escapePlanId), "default player rune ids should disable escape plan");
+		Expect(snapshot.DisabledPlayerRuneIds.Contains(escapePlanId), "default snapshot should disable escape plan");
+		Expect(!snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "corrupted branch should be enabled by default since config v16");
 	}
 
 	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
