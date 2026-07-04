@@ -129,5 +129,13 @@ internal enum MonsterHexKind
     Inklet = 112,              // 升级：墨宝（白银）
     PhrogParasite = 113,       // 升级：异蛙寄生虫（黄金）
     Vantom = 114,              // 升级：墨影幻灵（黄金）
-    Aeonglass = 115            // 升级：永世沙漏（棱彩）
+    Aeonglass = 115,           // 升级：永世沙漏（棱彩）
+
+    // 2026-07-05 新增的独立敌方海克斯（无对应我方 rune）：
+    TheLost = 116,             // 升级：失落之物（白银）
+    TheForgotten = 117,        // 升级：遗忘之物（白银）
+    SlimedBerserker = 118,     // 升级：史莱姆狂战士（黄金）
+    GlobeHead = 119,           // 升级：电球头（黄金）
+    Myte = 120,                // 升级：异螨（黄金）
+    Byrdonis = 121             // 升级：多尼斯异鸟（棱彩）
 }

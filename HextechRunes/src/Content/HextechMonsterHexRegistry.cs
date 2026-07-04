@@ -118,7 +118,13 @@ internal static class HextechMonsterHexRegistry
 		Monster<InkletHex>(MonsterHexKind.Inklet, HextechRarityTier.Silver),
 		Monster<PhrogParasiteHex>(MonsterHexKind.PhrogParasite, HextechRarityTier.Gold),
 		Monster<VantomHex>(MonsterHexKind.Vantom, HextechRarityTier.Gold),
-		Monster<AeonglassHex>(MonsterHexKind.Aeonglass, HextechRarityTier.Prismatic)
+		Monster<AeonglassHex>(MonsterHexKind.Aeonglass, HextechRarityTier.Prismatic),
+		Monster<TheLostHex>(MonsterHexKind.TheLost, HextechRarityTier.Silver),
+		Monster<TheForgottenHex>(MonsterHexKind.TheForgotten, HextechRarityTier.Silver),
+		Monster<SlimedBerserkerHex>(MonsterHexKind.SlimedBerserker, HextechRarityTier.Gold),
+		Monster<GlobeHeadHex>(MonsterHexKind.GlobeHead, HextechRarityTier.Gold),
+		Monster<MyteHex>(MonsterHexKind.Myte, HextechRarityTier.Gold),
+		Monster<ByrdonisHex>(MonsterHexKind.Byrdonis, HextechRarityTier.Prismatic)
 	];
 
 	private static MonsterHexRegistration Monster<TRelic>(

@@ -112,7 +112,13 @@ internal static class HextechEnemyHexEffects
 			new InkletEnemyHex(),
 			new PhrogParasiteEnemyHex(),
 			new VantomEnemyHex(),
-			new AeonglassEnemyHex()
+			new AeonglassEnemyHex(),
+			new TheLostEnemyHex(),
+			new TheForgottenEnemyHex(),
+			new SlimedBerserkerEnemyHex(),
+			new GlobeHeadEnemyHex(),
+			new MyteEnemyHex(),
+			new ByrdonisEnemyHex()
 		]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)
