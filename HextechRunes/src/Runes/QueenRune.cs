@@ -57,9 +57,18 @@ public sealed class QueenRune : HextechRelicBase
 			return;
 		}
 
+		// 只压制当前生命值最高的敌人:HittableEnemies 顺序两端一致,同血量取靠前者保证联机一致。
+		Creature? target = combatState.HittableEnemies
+			.OrderByDescending(static enemy => enemy.CurrentHp)
+			.FirstOrDefault();
+		if (target == null)
+		{
+			return;
+		}
+
 		Flash();
-		await PowerCmd.Apply<FrailPower>(combatState.HittableEnemies, DynamicVars["FrailPower"].BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<WeakPower>(combatState.HittableEnemies, DynamicVars.Weak.BaseValue, Owner.Creature, null);
-		await PowerCmd.Apply<VulnerablePower>(combatState.HittableEnemies, DynamicVars.Vulnerable.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<FrailPower>(target, DynamicVars["FrailPower"].BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<WeakPower>(target, DynamicVars.Weak.BaseValue, Owner.Creature, null);
+		await PowerCmd.Apply<VulnerablePower>(target, DynamicVars.Vulnerable.BaseValue, Owner.Creature, null);
 	}
 }

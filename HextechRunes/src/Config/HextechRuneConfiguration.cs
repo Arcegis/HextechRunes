@@ -10,7 +10,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 18;
+	private const int CurrentConfigVersion = 19;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -82,6 +82,13 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version18DefaultEnabledRuneTypes =
 	[
 		typeof(AstralBodyRune)
+	];
+	// 设计审查批次:咔咔!(代价先付收益小)/和平主义者(非亡灵自废输出)/佩尔的慵懒(不可读),转为默认禁用。
+	private static readonly Type[] Version19DefaultDisabledRuneTypes =
+	[
+		typeof(KakaRune),
+		typeof(PacifistRune),
+		typeof(SnailFormRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -417,6 +424,11 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 18)
 		{
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version18DefaultEnabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 19)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version19DefaultDisabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;

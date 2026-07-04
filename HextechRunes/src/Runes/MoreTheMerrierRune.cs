@@ -27,7 +27,7 @@ public sealed class MoreTheMerrierRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("PercentPerRelic", 2m)
+		new DynamicVar("PercentPerRelic", 1.5m)
 	];
 
 	public decimal SustainMultiplier => 1m + CountRelics() * DynamicVars["PercentPerRelic"].BaseValue / 100m;
