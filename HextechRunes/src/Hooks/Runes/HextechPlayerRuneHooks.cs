@@ -214,40 +214,51 @@ internal static partial class HextechPlayerRuneHooks
 	private static void CardPileCmdAddGeneratedCardsToCombatPrefix(ref IEnumerable<CardModel> cards, bool addedByPlayer)
 #endif
 	{
-		List<CardModel> originals = cards.ToList();
-		if (originals.Count == 0)
+		// 整体兜底:本 prefix 在"敌人塞状态牌/生成卡进战斗"的必经路径上,任何异常都会让
+		// 整个 AddGeneratedCardsToCombat 调用中断、上层塞牌任务链卡死(游戏卡住)。
+		// 枚举外部传入的 cards(可能已被其他模组的 hook 改写为脆弱的惰性序列)是主要风险点;
+		// 出错时放行原始参数、放弃本次改写(大刀替换/操控现实翻倍),绝不让塞牌流程断掉。
+		try
 		{
-			return;
-		}
+			List<CardModel> originals = cards.ToList();
+			if (originals.Count == 0)
+			{
+				return;
+			}
 
 #if STS2_104_OR_NEWER
-		bool addedByPlayer = creator != null;
+			bool addedByPlayer = creator != null;
 #endif
-		List<CardModel>? rewritten = null;
-		for (int i = 0; i < originals.Count; i++)
-		{
-			CardModel card = originals[i];
-			if (!HextechKnifeHelper.TryCreateBigKnifeReplacement(card, out CardModel replacement))
+			List<CardModel>? rewritten = null;
+			for (int i = 0; i < originals.Count; i++)
 			{
-				rewritten?.Add(card);
-				continue;
+				CardModel card = originals[i];
+				if (!HextechKnifeHelper.TryCreateBigKnifeReplacement(card, out CardModel replacement))
+				{
+					rewritten?.Add(card);
+					continue;
+				}
+
+				if (rewritten == null)
+				{
+					rewritten = originals.Take(i).ToList();
+				}
+				rewritten.Add(replacement);
 			}
 
-			if (rewritten == null)
+			List<CardModel>? realityRewritten = TryApplyEnemyManipulateRealityStatusDoubling(rewritten ?? originals, addedByPlayer);
+			if (realityRewritten != null)
 			{
-				rewritten = originals.Take(i).ToList();
+				cards = realityRewritten;
 			}
-			rewritten.Add(replacement);
+			else if (rewritten != null)
+			{
+				cards = rewritten;
+			}
 		}
-
-		List<CardModel>? realityRewritten = TryApplyEnemyManipulateRealityStatusDoubling(rewritten ?? originals, addedByPlayer);
-		if (realityRewritten != null)
+		catch (Exception ex)
 		{
-			cards = realityRewritten;
-		}
-		else if (rewritten != null)
-		{
-			cards = rewritten;
+			Log.Warn($"[{ModInfo.Id}][Mayhem] AddGeneratedCardsToCombat prefix failed; passing cards through unmodified: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
