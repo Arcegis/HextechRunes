@@ -10,7 +10,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 16;
+	private const int CurrentConfigVersion = 17;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -71,6 +71,12 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version16DefaultEnabledRuneTypes =
 	[
 		typeof(CorruptedBranchRune)
+	];
+	// 感受燃烧/回力OK镖重做为"获得时给卡"(0.8.4 数据驱动重做),转为默认启用。
+	private static readonly Type[] Version17DefaultEnabledRuneTypes =
+	[
+		typeof(FeelTheBurnRune),
+		typeof(OkBoomerangRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -396,6 +402,11 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 16)
 		{
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version16DefaultEnabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 17)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version17DefaultEnabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;

@@ -331,15 +331,20 @@ internal static class HextechCombatVfx
 	}
 
 	// ---- 回力OK镖:镖沿弧线依次扫过所有敌人再飞回 ----
-	// 逻辑侧用同一组常量安排每敌伤害的等待节奏,让伤害数字与镖的到达对齐。
+	// 每敌 0.2s 与 CreatureCmd.Damage 内置的每次结算 0.2s 标准尾巴对齐:
+	// 逻辑侧只需在首击前等待 FirstArrival,之后连续结算即可与镖同步。
 	internal const float BoomerangFirstArrivalSeconds = 0.22f;
-	internal const float BoomerangPerTargetSeconds = 0.16f;
+	internal const float BoomerangPerTargetSeconds = 0.2f;
 
-	/// <summary>回力OK镖:镖体(符文图标)自施法者掷出,弧线依次命中各敌人后飞回。</summary>
-	internal static void BoomerangSweep(Creature owner, IReadOnlyList<Creature> targets, Texture2D? boomerangTexture)
+	/// <summary>
+	/// 回力OK镖:镖体(符文图标)自施法者掷出,弧线依次命中各敌人后飞回。
+	/// <paramref name="roundTrip"/> 为 true 时回程逆序再次扫过每个敌人
+	/// (最远处打个转折返),供"一来一回各结算一次伤害"的卡牌版对齐节奏。
+	/// </summary>
+	internal static void BoomerangSweep(Creature owner, IReadOnlyList<Creature> targets, Texture2D? boomerangTexture, bool roundTrip = false)
 	{
 		Creature[] snapshot = [.. targets];
-		Callable.From(() => TaskHelper.RunSafely(RunBoomerangSweep(owner, snapshot, boomerangTexture))).CallDeferred();
+		Callable.From(() => TaskHelper.RunSafely(RunBoomerangSweep(owner, snapshot, boomerangTexture, roundTrip))).CallDeferred();
 	}
 
 	/// <summary>欧米伽:全场红色预警后,天降赤红审判光柱依次轰击每个敌人。</summary>
@@ -359,7 +364,7 @@ internal static class HextechCombatVfx
 		Callable.From(() => TaskHelper.RunSafely(RunFlyingKickStrike(target, owner))).CallDeferred();
 	}
 
-	private static async Task RunBoomerangSweep(Creature owner, Creature[] targets, Texture2D? boomerangTexture)
+	private static async Task RunBoomerangSweep(Creature owner, Creature[] targets, Texture2D? boomerangTexture, bool roundTrip = false)
 	{
 		try
 		{
@@ -377,13 +382,24 @@ internal static class HextechCombatVfx
 
 			// 位置全部快照:飞行途中敌人会被伤害击杀,节点随时失效。
 			Vector2 ownerPos = CreatureCenter(ownerNode);
-			List<Vector2> waypoints = [ownerPos];
+			List<Vector2> hitPoints = [];
 			foreach (Creature target in targets)
 			{
 				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
 				if (node != null)
 				{
-					waypoints.Add(CreatureCenter(node));
+					hitPoints.Add(CreatureCenter(node));
+				}
+			}
+
+			List<Vector2> waypoints = [ownerPos, .. hitPoints];
+			int outboundSegments = hitPoints.Count;
+			if (roundTrip)
+			{
+				// 回程:在最远敌人处打个转(自身回环段)后逆序再扫一遍。
+				for (int i = hitPoints.Count - 1; i >= 0; i--)
+				{
+					waypoints.Add(hitPoints[i]);
 				}
 			}
 
@@ -439,11 +455,13 @@ internal static class HextechCombatVfx
 				Vector2 to = waypoints[segment + 1];
 				bool isFirst = segment == 0;
 				bool isReturn = segment == waypoints.Count - 2;
+				bool isInbound = segment >= outboundSegments;
 				float duration = isFirst ? BoomerangFirstArrivalSeconds
 					: isReturn ? 0.3f
 					: BoomerangPerTargetSeconds;
 				Vector2 mid = (from + to) * 0.5f;
-				float liftDirection = isReturn ? 1f : -1f;
+				// 回程段(含最远处的折返回环)走下弧,与去程的上弧区分开。
+				float liftDirection = isReturn || isInbound ? 1f : -1f;
 				Vector2 control = mid + new Vector2(0f, liftDirection * Mathf.Max(60f, from.DistanceTo(to) * 0.25f));
 
 				float elapsed = 0f;

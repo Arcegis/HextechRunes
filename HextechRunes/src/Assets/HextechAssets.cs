@@ -22,6 +22,10 @@ internal static class HextechAssets
 
     public const string SearingAttackCardPortraitPath = "res://HextechRunes/images/cards/searingAttackCard.png";
 
+    public const string FeelTheBurnCardPortraitPath = "res://HextechRunes/images/cards/feelTheBurnCard.png";
+
+    public const string OkBoomerangCardPortraitPath = "res://HextechRunes/images/cards/okBoomerangCard.png";
+
     public const string ReprogramCardPortraitPath = "res://HextechRunes/images/cards/reprogramCard.png";
 
     public const string MikaelsBlessingCardPortraitPath = "res://HextechRunes/images/cards/mikaelsBlessingCard.png";
