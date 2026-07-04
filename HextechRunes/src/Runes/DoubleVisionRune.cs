@@ -519,6 +519,16 @@ public sealed class DoubleVisionRune : HextechRelicBase
 			return null;
 		}
 
+		// 事件房间内不触发 Direct 类复制:事件的给予(如兰韦德长者的"1 遗物换 2 遗物")走的
+		// 也是 RelicCmd.Obtain/PotionCmd 等直接命令,但它们是交换/事件效果而非"奖励"。
+		// 在事件的异步选项回调里嵌套复制任务,单机会卡死事件流程(玩家实报"换不了/你遇见了一个bug"),
+		// 联机则因持有端多出的 Obtain+同步与远端袋序错位,产生 aabb/abcd 遗物分叉(玩家实报)。
+		// 战后奖励屏的翻倍走 RelicReward.OnSelect 等 Reward 专用 hook,不受此排除影响。
+		if (player.RunState.CurrentRoom is EventRoom)
+		{
+			return null;
+		}
+
 		IReadOnlyList<DoubleVisionRune> runes = GetActiveRunes(player);
 		if (runes.Count == 0)
 		{
