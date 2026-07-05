@@ -2,6 +2,7 @@ using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Logging;
@@ -65,7 +66,7 @@ internal static partial class HextechRuneConfigMenuHooks
 
 	private static void MainMenuReadyPostfix(NMainMenu __instance)
 	{
-		_ = AttachButtonWhenReadyAsync(__instance);
+		TaskHelper.RunSafely(AttachButtonWhenReadyAsync(__instance));
 	}
 
 	private static async Task AttachButtonWhenReadyAsync(NMainMenu mainMenu)
@@ -208,8 +209,8 @@ internal static partial class HextechRuneConfigMenuHooks
 		RemoveExistingOverlay(root);
 		Control overlay = CreateOverlay(out RuneConfigOverlayState state);
 		root.AddChild(overlay);
-		_ = PopulateRuneIconsAsync(overlay, state);
-		_ = AnimateOverlayInAsync(overlay);
+		TaskHelper.RunSafely(PopulateRuneIconsAsync(overlay, state));
+		TaskHelper.RunSafely(AnimateOverlayInAsync(overlay));
 	}
 
 	private static async Task AnimateOverlayInAsync(Control overlay)
@@ -1747,7 +1748,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			pressToken++;
 			int currentToken = pressToken;
 			action();
-			_ = RepeatStepAsync(button, currentToken, () => pressToken == currentToken, action);
+			TaskHelper.RunSafely(RepeatStepAsync(button, currentToken, () => pressToken == currentToken, action));
 		};
 		button.ButtonUp += () => pressToken++;
 		button.TreeExiting += () => pressToken++;
@@ -2020,7 +2021,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			if (touch)
 			{
 				int currentToken = pointerToken;
-				_ = ShowTouchHoverTipAfterDelay(root, entry.Relic, GetEnemyHexKind(entry), currentToken, () => pointerToken == currentToken && pointerPressed && !pointerDragged, () => longPressShown = true);
+				TaskHelper.RunSafely(ShowTouchHoverTipAfterDelay(root, entry.Relic, GetEnemyHexKind(entry), currentToken, () => pointerToken == currentToken && pointerPressed && !pointerDragged, () => longPressShown = true));
 			}
 		}
 
