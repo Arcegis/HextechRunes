@@ -58,6 +58,7 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<JuggernautUpgradeRune>("juggernaut upgraded block damage", () => InstallJuggernautUpgradeHooks(harmony));
 		TryInstallRuneHook<HiddenGemUpgradeRune>("hidden gem upgraded play", () => InstallHiddenGemUpgradeHooks(harmony));
 		TryInstallRuneHook<AutomationUpgradeRune>("automation upgraded draw", () => InstallAutomationUpgradeHooks(harmony));
+		TryInstallRuneHook<JackpotUpgradeRune>("jackpot upgraded play", () => InstallJackpotUpgradeHooks(harmony));
 		TryInstallRuneHook<VoltaicUpgradeRune>("voltaic upgraded play", () => InstallVoltaicUpgradeHooks(harmony));
 		TryInstallRuneHook<GrandFinaleUpgradeRune>("grand finale upgraded play", () => InstallGrandFinaleUpgradeHooks(harmony));
 		TryInstallRuneHook<CrashLandingUpgradeRune>("crash landing upgraded play", () => InstallCrashLandingUpgradeHooks(harmony));
@@ -224,6 +225,13 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(Voltaic), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(VoltaicOnPlayPrefix)));
+	}
+
+	private static void InstallJackpotUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Jackpot), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(JackpotOnPlayPrefix)));
 	}
 
 	private static void InstallGrandFinaleUpgradeHooks(Harmony harmony)

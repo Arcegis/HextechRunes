@@ -121,6 +121,17 @@ internal static partial class HextechPlayerRuneHooks
 		return false;
 	}
 
+	private static bool JackpotOnPlayPrefix(Jackpot __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
+	{
+		if (!JackpotUpgradeRune.ShouldUseUpgradedPlay(__instance))
+		{
+			return true;
+		}
+
+		__result = JackpotUpgradeRune.OnPlayUpgraded(__instance, choiceContext, cardPlay);
+		return false;
+	}
+
 	private static bool VoltaicOnPlayPrefix(Voltaic __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 	{
 		if (!VoltaicUpgradeRune.ShouldUseUpgradedPlay(__instance))
