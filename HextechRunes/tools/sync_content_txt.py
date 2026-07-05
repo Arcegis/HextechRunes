@@ -64,10 +64,9 @@ TAG_SECTION_ORDER = [
 #            check 时列为“待裁决”不影响退出码。裁决后:采纳 JSON 就删掉对应条目;
 #            采纳 txt 就把 JSON 文案改成 txt 值后再删掉条目。
 # 键: (章节, 品级或 None, 标题) -> txt 保留值。
-PERMANENT_FLAVOR_OVERRIDES: dict[tuple[str, str | None, str], str] = {
-    # 金铲铲敌方专属 flavor(JSON 无 enemy flavor 字段,人工资产)
-    ("敌方海克斯", "棱彩", "金铲铲"): "它不只挖出机会，也顺手把机会锻亮。",
-}
+# 2026-07-05 用户裁决:金铲铲敌方条目改用与玩家侧共用的官方 flavor("它什么都做得到"),
+# 原手工稿弃用,此表清空;以后确需敌方专属人工文案再往这里加。
+PERMANENT_FLAVOR_OVERRIDES: dict[tuple[str, str | None, str], str] = {}
 # 2026-07-05 裁决:22 条分歧全部采纳 JSON(游戏内已发布版本,8 语言译文以其为源;
 # 赞助包体例统一「赞助者物品：」前缀)。以后出现新分歧仍按上方注释的流程往这里收。
 PENDING_FLAVOR_OVERRIDES: dict[tuple[str, str | None, str], str] = {}
