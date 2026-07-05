@@ -50,7 +50,7 @@ rm -f "$ZIP_PATH"
     -x "__MACOSX/*" "*/__MACOSX/*" ".DS_Store" "*/.DS_Store" "._*" "*/._*"
 )
 
-if unzip -l "$ZIP_PATH" | rg -q '(__MACOSX|/[.]_|[.]DS_Store)'; then
+if unzip -l "$ZIP_PATH" | grep -E '(__MACOSX|/[.]_|[.]DS_Store)' >/dev/null; then
   print -u2 "Package still contains macOS metadata: $ZIP_PATH"
   exit 1
 fi
@@ -63,7 +63,7 @@ printf "%s\n" \
   "$FILE_STEM/$FILE_STEM.pck" \
   | LC_ALL=C sort > "$EXPECTED_ENTRIES_FILE"
 unzip -Z1 "$ZIP_PATH" \
-  | rg -v '/$' \
+  | grep -v '/$' \
   | LC_ALL=C sort > "$ACTUAL_ENTRIES_FILE"
 
 if ! diff -u "$EXPECTED_ENTRIES_FILE" "$ACTUAL_ENTRIES_FILE" >&2; then
