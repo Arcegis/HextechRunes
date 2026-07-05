@@ -44,7 +44,7 @@ internal static class HextechGlassCannonHealthBarHooks
 
 	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
 	{
-		HextechGlassCannonHealthBarVisual.TryAttach(__instance.GetCreatureNode(creature));
+		HextechGlassCannonHealthBarVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
 	}
 
 	private static void CreatureReadyPostfix(NCreature __instance)

@@ -35,7 +35,7 @@ internal static class HextechSlowCookAuraHooks
 
 	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
 	{
-		SlowCookAuraVisual.TryAttach(__instance.GetCreatureNode(creature));
+		SlowCookAuraVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
 	}
 
 	private static void CreatureReadyPostfix(NCreature __instance)

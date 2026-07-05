@@ -41,7 +41,7 @@ internal static class HextechNearDeathFeastVisualHooks
 
 	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
 	{
-		HextechNearDeathFeastVisual.TryAttach(__instance.GetCreatureNode(creature));
+		HextechNearDeathFeastVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
 	}
 
 	private static void CreatureReadyPostfix(NCreature __instance)

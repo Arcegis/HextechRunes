@@ -45,7 +45,7 @@ internal static class HextechBurnVisualHooks
 
 	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
 	{
-		HextechBurnVisual.TryAttach(__instance.GetCreatureNode(creature));
+		HextechBurnVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
 	}
 
 	private static void CreatureReadyPostfix(NCreature __instance)

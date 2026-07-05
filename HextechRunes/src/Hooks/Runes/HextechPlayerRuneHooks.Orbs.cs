@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Orbs;
@@ -72,6 +73,20 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 	private static bool OrbTweenLayoutPrefix(NOrbManager __instance)
+	{
+		try
+		{
+			return OrbTweenLayoutPrefixCore(__instance);
+		}
+		catch (Exception ex)
+		{
+			// 纯布局表现层,异常回退原版布局,不能向调用方外泄。
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Orb layout override failed; falling back to vanilla layout: {ex.Message}");
+			return true;
+		}
+	}
+
+	private static bool OrbTweenLayoutPrefixCore(NOrbManager __instance)
 	{
 		if (!TryGetOrbLayoutState(__instance, out List<NOrb> orbs, out int capacity)
 			|| capacity <= OrbLayoutRadiusSoftCapSlots)
