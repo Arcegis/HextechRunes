@@ -61,12 +61,10 @@ public sealed class MiseryRune : HextechRelicBase
 			return;
 		}
 
-		Creature target = enemies[HextechStableRandom.Index(
-			(RunState)Owner.RunState,
-			enemies.Count,
-			"misery-target",
-			HextechStableRandom.PlayerKey(Owner),
-			Owner.Creature.CombatState.RoundNumber.ToString())];
+		// 只吸取当前生命值最高的敌人:HittableEnemies 顺序两端一致,同血量取靠前者保证联机一致。
+		Creature target = enemies
+			.OrderByDescending(static enemy => enemy.CurrentHp)
+			.First();
 		List<Creature> flashTargets = [target, Owner.Creature];
 		FlashDeferred(flashTargets);
 		await PowerCmd.Apply<StrengthPower>(target, DynamicVars.Strength.BaseValue, Owner.Creature, null);

@@ -1,0 +1,74 @@
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.CardPools;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.ValueProps;
+
+namespace HextechRunes;
+
+public sealed class FeelTheBurnCard : CardModel
+{
+	public override CardPoolModel Pool => IsMutable && Owner != null
+		? Owner.Character.CardPool
+		: ModelDb.CardPool<TokenCardPool>();
+
+	public override CardPoolModel VisualCardPool => Pool;
+
+	public override string PortraitPath => HextechAssets.FeelTheBurnCardPortraitPath;
+
+	public override IEnumerable<string> AllPortraitPaths => [PortraitPath];
+
+	public override IEnumerable<CardKeyword> CanonicalKeywords => [CardKeyword.Retain];
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new PowerVar<HextechBurnPower>(5m)
+	];
+
+	public FeelTheBurnCard()
+		: base(0, CardType.Skill, CardRarity.Token, TargetType.AllEnemies, shouldShowInCardLibrary: true)
+	{
+	}
+
+	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	{
+		if (Owner?.Creature.CombatState == null)
+		{
+			return;
+		}
+
+		List<Creature> enemies = Owner.Creature.CombatState.Enemies
+			.Where(static enemy => enemy.IsAlive)
+			.ToList();
+		if (enemies.Count == 0)
+		{
+			return;
+		}
+
+		// 移除全部增益(结构性怪物机制 buff 除外,与升级:暴露同口径)。
+		foreach (Creature enemy in enemies)
+		{
+			List<PowerModel> buffs = enemy.Powers
+				.Where(static power => power.GetTypeForAmount(power.Amount) == PowerType.Buff
+					&& !HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power))
+				.ToList();
+			foreach (PowerModel power in buffs)
+			{
+				await PowerCmd.Remove(power);
+			}
+		}
+
+		await PowerCmd.Apply<HextechBurnPower>(enemies, DynamicVars["HextechBurnPower"].BaseValue, Owner.Creature, this);
+	}
+
+	protected override void OnUpgrade()
+	{
+		DynamicVars["HextechBurnPower"].UpgradeValueBy(5m);
+	}
+}

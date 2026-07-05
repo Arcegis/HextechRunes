@@ -30,10 +30,13 @@ public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 		}
 
 		EnchantmentModel canonicalEnchantment = ModelDb.Enchantment<TEnchantment>();
+		// FromDeckForEnchantment 的第三参是选牌界面的"附魔层数预览"(仅展示),不是选牌张数——
+		// 误传张数(1)会让动量锻造器在选牌屏显示"动量1"(玩家实报);选牌张数由 prefs 第二参控制,
+		// 实际附魔层数由下方 Enchant 决定(动量=3,与预览现已一致)。
 		IEnumerable<CardModel> selectedCards = await CardSelectCmd.FromDeckForEnchantment(
 			Owner,
 			canonicalEnchantment,
-			EnchantmentCardCount,
+			EnchantmentAmount,
 			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, EnchantmentCardCount));
 		foreach (CardModel selected in selectedCards)
 		{
@@ -49,6 +52,11 @@ public sealed class GlamForge : EnchantmentForgeBase<Glam>
 }
 
 public sealed class SwiftForge : EnchantmentForgeBase<Swift>
+{
+	protected override int EnchantmentAmount => 2;
+}
+
+public sealed class SoulsPowerForge : EnchantmentForgeBase<SoulsPower>
 {
 }
 

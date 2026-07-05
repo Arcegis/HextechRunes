@@ -20,7 +20,7 @@ public sealed class AnthonyBiasRune : HextechRelicBase
 		return target == Owner?.Creature ? SustainMultiplier : 1m;
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? SustainMultiplier : 1m;
 	}

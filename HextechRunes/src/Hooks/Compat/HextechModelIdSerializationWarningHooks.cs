@@ -77,13 +77,23 @@ internal static class HextechModelIdSerializationWarningHooks
 			foreach (Mod mod in ModManager.Mods)
 			{
 				if (mod.state != ModLoadState.Loaded
-					|| !string.Equals(mod.manifest?.id, ModInfo.Id, StringComparison.Ordinal)
-					|| mod.assembly == null)
+					|| !string.Equals(mod.manifest?.id, ModInfo.Id, StringComparison.Ordinal))
 				{
 					continue;
 				}
 
-				foreach (Type type in mod.assembly.GetTypes())
+#if STS2_108_OR_NEWER
+				// 0.108.0 起 Mod 支持多程序集:单 assembly 字段改为 assemblies 列表。
+				System.Reflection.Assembly? modAssembly = mod.assemblies.FirstOrDefault();
+#else
+				System.Reflection.Assembly? modAssembly = mod.assembly;
+#endif
+				if (modAssembly == null)
+				{
+					continue;
+				}
+
+				foreach (Type type in modAssembly.GetTypes())
 				{
 					if (!type.IsAbstract
 						&& !type.IsInterface

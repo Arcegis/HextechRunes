@@ -16,7 +16,8 @@ public sealed class EightPennyGateRune : HextechRelicBase
 
 	public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
 	{
-		return ShouldReplayAndExhaust(card) ? (PileType.Exhaust, position) : (pileType, position);
+		// 去向 None(复制品/能力牌)不抢改:改成消耗堆会留下滞留的幽灵实体(空白手牌位问题同源)。
+		return pileType is not PileType.None && ShouldReplayAndExhaust(card) ? (PileType.Exhaust, position) : (pileType, position);
 	}
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)

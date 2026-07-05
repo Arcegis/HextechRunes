@@ -58,6 +58,7 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<JuggernautUpgradeRune>("juggernaut upgraded block damage", () => InstallJuggernautUpgradeHooks(harmony));
 		TryInstallRuneHook<HiddenGemUpgradeRune>("hidden gem upgraded play", () => InstallHiddenGemUpgradeHooks(harmony));
 		TryInstallRuneHook<AutomationUpgradeRune>("automation upgraded draw", () => InstallAutomationUpgradeHooks(harmony));
+		TryInstallRuneHook<JackpotUpgradeRune>("jackpot upgraded play", () => InstallJackpotUpgradeHooks(harmony));
 		TryInstallRuneHook<VoltaicUpgradeRune>("voltaic upgraded play", () => InstallVoltaicUpgradeHooks(harmony));
 		TryInstallRuneHook<GrandFinaleUpgradeRune>("grand finale upgraded play", () => InstallGrandFinaleUpgradeHooks(harmony));
 		TryInstallRuneHook<CrashLandingUpgradeRune>("crash landing upgraded play", () => InstallCrashLandingUpgradeHooks(harmony));
@@ -149,9 +150,17 @@ internal static partial class HextechPlayerRuneHooks
 			typeof(LightningOrb),
 			"ApplyLightningDamage",
 			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+#if STS2_108_OR_NEWER
+			// 0.108.0 起追加 isEvoke 参数。
+			typeof(decimal),
+			typeof(Creature),
+			typeof(PlayerChoiceContext),
+			typeof(bool));
+#else
 			typeof(decimal),
 			typeof(Creature),
 			typeof(PlayerChoiceContext));
+#endif
 		if (lightningApplyDamage == null)
 		{
 			throw new InvalidOperationException("LightningOrb.ApplyLightningDamage was not found in this game build.");
@@ -216,6 +225,13 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(Voltaic), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(VoltaicOnPlayPrefix)));
+	}
+
+	private static void InstallJackpotUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(Jackpot), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(JackpotOnPlayPrefix)));
 	}
 
 	private static void InstallGrandFinaleUpgradeHooks(Harmony harmony)

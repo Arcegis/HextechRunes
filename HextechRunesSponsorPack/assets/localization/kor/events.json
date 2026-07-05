@@ -172,5 +172,9 @@
   "miracleEvent.pages.GIFT_TAKE.resolution": "도박을 하지 않기로 한 당신은 [green]50[/green] 골드를 가져갑니다.",
   "MIRACLE_EVENT.pages.GIFT_TAKE.resolution": "도박을 하지 않기로 한 당신은 [green]50[/green] 골드를 가져갑니다.",
   "miracleEvent.title": "기적",
-  "MIRACLE_EVENT.title": "기적"
+  "MIRACLE_EVENT.title": "기적",
+  "miracleEvent.common.BACK.title": "Go Back",
+  "miracleEvent.common.BACK.description": "Return to the previous choice.",
+  "MIRACLE_EVENT.common.BACK.title": "Go Back",
+  "MIRACLE_EVENT.common.BACK.description": "Return to the previous choice."
 }

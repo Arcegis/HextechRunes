@@ -186,7 +186,7 @@ public sealed class HextechChemtechDragonSoulPower : HextechPowerBase
 			return;
 		}
 
-		List<PotionModel> candidates = PotionFactory.GetPotionOptions(player, Array.Empty<PotionModel>()).ToList();
+		List<PotionModel> candidates = HextechGameApiCompat.GetPotionOptions(player).ToList();
 		if (candidates.Count == 0)
 		{
 			return;

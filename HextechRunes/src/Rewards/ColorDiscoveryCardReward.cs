@@ -96,7 +96,12 @@ internal sealed class ColorDiscoveryCardReward : CardReward
 		CardRarityOddsType rarityOdds)
 	{
 		CardModel canonicalCard = ModelDb.GetById<CardModel>(cardId);
+#if STS2_108_OR_NEWER
+		// 0.108.0 无自定义卡列表构造:用该卡所属池+按 Id 过滤等价表达"只出这张卡"。
+		CardCreationOptions options = new([canonicalCard.Pool], source, rarityOdds, card => card.Id.Equals(cardId));
+#else
 		CardCreationOptions options = new([canonicalCard], source, rarityOdds);
+#endif
 #if STS2_105_OR_NEWER
 		options.WithFlags(CardCreationFlags.IsCardReward);
 #endif

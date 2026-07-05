@@ -36,7 +36,7 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 
 		card.Owner.GetRelic<CrashLandingUpgradeRune>()?.Flash();
 		await DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
-			.FromCard(card)
+			.FromCardCompat(card)
 			.TargetingAllOpponents(combatState)
 			.WithHitFx("vfx/vfx_heavy_blunt", null, "heavy_attack.mp3")
 			.WithHitVfxSpawnedAtBase()

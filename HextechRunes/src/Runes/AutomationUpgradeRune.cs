@@ -3,14 +3,21 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HextechRunes;
 
+/// <summary>
+/// 升级：自动化——触发自动化效果(每抽 10 张的能量结算)时,额外抽 2 张牌。
+/// 原版触发逻辑原样复刻(prefix 替换),仅在触发点追加抽牌;计数器读写走反射
+/// (AutomationPower.Data.cardsLeft 为私有嵌套类型)。
+/// </summary>
 public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 {
+	private const int TriggerThreshold = 10;
+
 	private static readonly Type AutomationDataType = typeof(AutomationPower).GetNestedType("Data", BindingFlags.NonPublic)
 		?? throw new InvalidOperationException("AutomationPower.Data was not found.");
 	private static readonly MethodInfo PowerGetInternalDataMethod = typeof(PowerModel)
@@ -22,6 +29,14 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 		?? throw new InvalidOperationException("PowerModel.InvokeDisplayAmountChanged was not found.");
 	private static readonly FieldInfo AutomationCardsLeftField = AutomationDataType.GetField("cardsLeft", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 		?? throw new InvalidOperationException("AutomationPower.Data.cardsLeft was not found.");
+	private static readonly MethodInfo PowerFlashMethod = typeof(PowerModel)
+		.GetMethod("Flash", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, Type.EmptyTypes)
+		?? throw new InvalidOperationException("PowerModel.Flash was not found.");
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new CardsVar(2)
+	];
 
 	protected override bool IsAvailableForCharacter(Player player)
 	{
@@ -48,18 +63,25 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 		int cardsLeft = Math.Max(0, (int)AutomationCardsLeftField.GetValue(data)! - 1);
 		AutomationCardsLeftField.SetValue(data, cardsLeft);
 		PowerInvokeDisplayAmountChangedMethod.Invoke(power, null);
-		if (cardsLeft > 0
-			|| owner.Creature.IsDead
-			|| owner.Creature.CombatState is not HextechCombatState combatState)
+		if (cardsLeft > 0)
 		{
 			return;
 		}
 
-		AutomationCardsLeftField.SetValue(data, 10);
+		// 原版触发:回能量并重置计数。
+		PowerFlashMethod.Invoke(power, null);
+		await PlayerCmd.GainEnergy(power.Amount, owner);
+		AutomationCardsLeftField.SetValue(data, TriggerThreshold);
 		PowerInvokeDisplayAmountChangedMethod.Invoke(power, null);
 
-		owner.GetRelic<AutomationUpgradeRune>()?.Flash();
-		CardModel fuel = combatState.CreateCard<Fuel>(owner);
-		await HextechCardGeneration.AddGeneratedCardToCombat(fuel, PileType.Hand, addedByPlayer: true);
+		// 符文追加:额外抽 2 张。
+		if (owner.Creature.IsDead || owner.Creature.CombatState == null)
+		{
+			return;
+		}
+
+		AutomationUpgradeRune? rune = owner.GetRelic<AutomationUpgradeRune>();
+		rune?.Flash();
+		await CardPileCmd.Draw(choiceContext, rune?.DynamicVars.Cards.BaseValue ?? 2m, owner, fromHandDraw: false);
 	}
 }

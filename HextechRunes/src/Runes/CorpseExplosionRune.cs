@@ -1,14 +1,10 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
-using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 
@@ -24,14 +20,14 @@ public sealed class CorpseExplosionRune : HextechRelicBase
 		return IsSilentPlayer(player);
 	}
 
-	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
+	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
-		if (Owner == null
+		if (wasRemovalPrevented
+			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
-			|| !result.WasTargetKilled
-			|| !IsPoisonDamage(target, props, dealer, cardSource)
-			|| target.CombatState is not HextechCombatState combatState)
+			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target)
+			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
@@ -45,15 +41,8 @@ public sealed class CorpseExplosionRune : HextechRelicBase
 		}
 
 		Flash(enemies);
-		await CreatureCmd.Damage(choiceContext, enemies, target.MaxHp, ValueProp.Unpowered, Owner.Creature, null);
-	}
-
-	private static bool IsPoisonDamage(Creature target, ValueProp props, Creature? dealer, CardModel? cardSource)
-	{
-		return dealer == null
-			&& cardSource == null
-			&& target.GetPowerAmount<PoisonPower>() > 0m
-			&& (props & ValueProp.Unblockable) != 0
-			&& (props & ValueProp.Unpowered) != 0;
+		// 表现:尸体位置毒绿脓爆,毒液弧线泼向每个存活敌人(纯表现层,中毒立即结算)。
+		HextechCombatVfx.CorpseBloomBurst(target, enemies);
+		await PowerCmd.Apply<PoisonPower>(enemies, target.MaxHp, Owner.Creature, null);
 	}
 }

@@ -47,7 +47,7 @@ public sealed class SkyDrillUpgradeRune : CardUpgradeRuneBase<HeavenlyDrill>
 		Flash();
 		await DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
 			.WithHitCount(extraHits)
-			.FromCard(card)
+			.FromCardCompat(card)
 			.Targeting(target)
 			.WithHitFx("vfx/vfx_giant_horizontal_slash", null, "slash_attack.mp3")
 			.Execute(context);

@@ -79,3 +79,39 @@ public sealed class AeonglassHex : HextechRelicBase
 {
 	public override bool IsAvailableForPlayer(Player player) => false;
 }
+
+/// <summary>升级：失落之物</summary>
+public sealed class TheLostHex : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player) => false;
+}
+
+/// <summary>升级：遗忘之物</summary>
+public sealed class TheForgottenHex : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player) => false;
+}
+
+/// <summary>升级：史莱姆狂战士</summary>
+public sealed class SlimedBerserkerHex : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player) => false;
+}
+
+/// <summary>升级：电球头</summary>
+public sealed class GlobeHeadHex : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player) => false;
+}
+
+/// <summary>升级：异螨</summary>
+public sealed class MyteHex : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player) => false;
+}
+
+/// <summary>升级：多尼斯异鸟</summary>
+public sealed class ByrdonisHex : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player) => false;
+}

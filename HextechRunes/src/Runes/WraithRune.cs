@@ -64,7 +64,7 @@ public sealed class WraithRune : HextechRelicBase
 		await HextechCardGeneration.AddGeneratedCardsToCombat(souls, PileType.Hand, addedByPlayer: true);
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (!IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{

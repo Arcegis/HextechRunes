@@ -68,6 +68,7 @@ public static class ModEntry
 		IntegratedStrategyEventsCompatibilityHooks.Install();
 		MiracleEventPortraitPatch.Install();
 		MiracleEventForgePricePatch.Install();
+		MiracleEventTriggerPatch.Install();
 		Log.Info($"[{ModInfo.Id}] Loaded and registered HextechRunes sponsor-pack content.");
 	}
 
@@ -103,6 +104,10 @@ public static class ModEntry
 		HextechRunesApi.RegisterPlayerRune<RegretRune>(
 			HextechRarityTier.Prismatic,
 			tagKey: "SURVIVAL",
+			assetModId: ModInfo.Id);
+		HextechRunesApi.RegisterPlayerRune<GastritisRune>(
+			HextechRarityTier.Prismatic,
+			tagKey: "OUTPUT",
 			assetModId: ModInfo.Id);
 		HextechRunesApi.RegisterPlayerRune<EnchantmentMasterRune>(
 			HextechRarityTier.Prismatic,

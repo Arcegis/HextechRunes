@@ -109,6 +109,15 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 		await HextechCardGeneration.AddGeneratedCardToCombat(generatedCard, PileType.Hand, addedByPlayer: true);
 	}
 
+	// 生成的卡牌类型权重:攻击 40% / 技能 20% / 能力 40%。技能占比刻意压低——
+	// 消耗型技能会再触发本符文形成滚雪球,均匀分布下太容易无限。
+	private static readonly (CardType Type, int Weight)[] GeneratedTypeWeights =
+	[
+		(CardType.Attack, 40),
+		(CardType.Skill, 20),
+		(CardType.Power, 40)
+	];
+
 	private CardModel? CreateRandomCombatCard(HextechCombatState combatState, CardModel sourceCard)
 	{
 		if (Owner == null)
@@ -127,16 +136,44 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 		}
 
 		int procOrdinal = ConsumeCombatProcOrdinal(nameof(CorruptedBranchRune), ref _generatedCardsThisCombat);
-		CardModel canonicalCard = HextechStableRandom.Pick(
-			pool,
-			(RunState)Owner.RunState,
-			HextechStableRandom.CardKey,
+		string?[] saltParts =
+		[
 			"corrupted-branch-exhaust",
 			HextechStableRandom.PlayerKey(Owner),
 			combatState.RoundNumber.ToString(),
 			procOrdinal.ToString(),
-			HextechStableRandom.CardKey(sourceCard),
-			HextechStableRandom.CardPileKey(pool));
+			HextechStableRandom.CardKey(sourceCard)
+		];
+
+		// 两阶段:先按类型权重滚点(只计池内实际存在的类型),再在该类型子池内均匀抽取。
+		(CardType Type, int Weight)[] presentTypes = GeneratedTypeWeights
+			.Where(entry => pool.Any(card => card.Type == entry.Type))
+			.ToArray();
+		List<CardModel> typedPool = pool;
+		if (presentTypes.Length > 0)
+		{
+			int totalWeight = presentTypes.Sum(static entry => entry.Weight);
+			int roll = HextechStableRandom.Index((RunState)Owner.RunState, totalWeight, [.. saltParts, "card-type"]);
+			CardType chosenType = presentTypes[^1].Type;
+			foreach ((CardType type, int weight) in presentTypes)
+			{
+				if (roll < weight)
+				{
+					chosenType = type;
+					break;
+				}
+
+				roll -= weight;
+			}
+
+			typedPool = pool.Where(card => card.Type == chosenType).ToList();
+		}
+
+		CardModel canonicalCard = HextechStableRandom.Pick(
+			typedPool,
+			(RunState)Owner.RunState,
+			HextechStableRandom.CardKey,
+			[.. saltParts, HextechStableRandom.CardPileKey(typedPool)]);
 
 		return combatState.CreateCard(canonicalCard, Owner);
 	}

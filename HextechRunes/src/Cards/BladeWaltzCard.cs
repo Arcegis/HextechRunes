@@ -74,7 +74,7 @@ public sealed class BladeWaltzCard : CardModel
 			?? throw new InvalidOperationException("Blade Waltz played outside combat.");
 		await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
 			.WithHitCount(DynamicVars["Hits"].IntValue)
-			.FromCard(this)
+			.FromCardCompat(this)
 			.TargetingRandomOpponents(combatState, allowDuplicates: true)
 			.Execute(choiceContext);
 

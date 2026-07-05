@@ -109,6 +109,57 @@ public sealed class GoldLifeForge : HextechForgeBase
 	}
 }
 
+// 血量锻造器:百分比版最大生命(棱彩"生命锻造器"30% 的 1/2),与固定值的生命锻造器并存。
+public sealed class GoldHpForge : HextechForgeBase
+{
+	public override bool HasUponPickupEffect => true;
+
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("MaxHpPercent", 15m)
+	];
+
+	public override Task AfterObtained()
+	{
+		if (Owner == null)
+		{
+			return Task.CompletedTask;
+		}
+
+		int maxHpGain = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["MaxHpPercent"].BaseValue / 100m));
+		Flash();
+		return CreatureCmd.GainMaxHp(Owner.Creature, maxHpGain);
+	}
+}
+
+public sealed class GoldAttackForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("DamageMultiplier", 1.1m)
+	];
+
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	{
+		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? StackedMultiplier(DynamicVars["DamageMultiplier"].BaseValue) : 1m;
+	}
+}
+
+public sealed class GoldProtectionForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new DynamicVar("SustainMultiplier", 1.1m)
+	];
+
+	public decimal SustainMultiplier => StackedMultiplier(DynamicVars["SustainMultiplier"].BaseValue);
+
+	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
+	{
+		return target == Owner?.Creature ? SustainMultiplier : 1m;
+	}
+}
+
 public sealed class GoldFocusForge : HextechForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -195,7 +246,7 @@ public sealed class HourglassForge : HextechForgeBase
 		Flash(enemies);
 		foreach (Creature enemy in enemies)
 		{
-			await CreatureCmd.Damage(choiceContext, enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
+			await HextechGameApiCompat.Damage(choiceContext, enemy, Stacked(DynamicVars.Damage.BaseValue), ValueProp.Unpowered, Owner.Creature, null);
 		}
 	}
 }

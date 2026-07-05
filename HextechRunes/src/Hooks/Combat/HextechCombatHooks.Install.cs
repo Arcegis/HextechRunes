@@ -227,7 +227,13 @@ internal static partial class HextechCombatHooks
 				typeof(decimal),
 				typeof(ValueProp),
 				typeof(Creature),
+#if STS2_108_OR_NEWER
+				// 0.108.0 起该重载追加 CardPlay 参数。
+				typeof(CardModel),
+				typeof(CardPlay)),
+#else
 				typeof(CardModel)),
+#endif
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPrefix)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(ActualDamageCommandPostfix)));
 		harmony.Patch(

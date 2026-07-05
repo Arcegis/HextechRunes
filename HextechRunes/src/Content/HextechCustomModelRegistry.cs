@@ -24,7 +24,13 @@ internal static class HextechCustomModelRegistry
 		typeof(InkletHex),
 		typeof(PhrogParasiteHex),
 		typeof(VantomHex),
-		typeof(AeonglassHex)
+		typeof(AeonglassHex),
+		typeof(TheLostHex),
+		typeof(TheForgottenHex),
+		typeof(SlimedBerserkerHex),
+		typeof(GlobeHeadHex),
+		typeof(MyteHex),
+		typeof(ByrdonisHex)
 	];
 
 	internal static IReadOnlyList<Type> CustomCardTypes { get; } =
@@ -36,6 +42,8 @@ internal static class HextechCustomModelRegistry
 		typeof(AllInCard),
 		typeof(WhiteHoleCard),
 		typeof(SearingAttackCard),
+		typeof(FeelTheBurnCard),
+		typeof(OkBoomerangCard),
 		typeof(ReprogramCard),
 		typeof(MikaelsBlessingCard),
 		typeof(OstyWishCard),

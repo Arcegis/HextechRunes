@@ -46,6 +46,15 @@ def lower_first(value: str) -> str:
     return value[:1].lower() + value[1:]
 
 
+def model_loc_stem(type_name: str) -> str:
+    """复刻运行时键规则:StringHelper.Slugify(类名) 后经 HextechAssets.ToImageFileStem 归一化。
+    连续大写缩写按整段处理,如 SingularityAIRune -> singularityAiRune(而非 singularityAIRune)。"""
+    slug = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", type_name)
+    slug = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", slug)
+    parts = [p for p in slug.lower().split("_") if p]
+    return parts[0] + "".join(p[:1].upper() + p[1:] for p in parts[1:])
+
+
 def extract_enum_values(text: str, enum_name: str) -> list[str]:
     match = re.search(rf"enum\s+{enum_name}\s*\{{(?P<body>.*?)\n\}}", text, re.S)
     if not match:
@@ -177,7 +186,7 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
             relic_type = icon_pairs.get(hex_name)
             if relic_type is None:
                 continue
-            key = f"{lower_first(relic_type)}.enemyDescription"
+            key = f"{model_loc_stem(relic_type)}.enemyDescription"
             if key not in loc:
                 missing.append(key)
         if missing:

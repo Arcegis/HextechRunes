@@ -10,7 +10,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 15;
+	private const int CurrentConfigVersion = 22;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -67,6 +67,46 @@ internal static class HextechRuneConfiguration
 		typeof(CorruptedBranchRune)
 	];
 	private static readonly Type[] Version13DefaultDisabledForgeTypes = [];
+	// 腐化树枝生成分布加权(攻击40/技能20/能力40)后无限风险可控,转为默认启用。
+	private static readonly Type[] Version16DefaultEnabledRuneTypes =
+	[
+		typeof(CorruptedBranchRune)
+	];
+	// 感受燃烧/回力OK镖重做为"获得时给卡"(0.8.4 数据驱动重做),转为默认启用。
+	private static readonly Type[] Version17DefaultEnabledRuneTypes =
+	[
+		typeof(FeelTheBurnRune),
+		typeof(OkBoomerangRune)
+	];
+	// 星界躯体改为百分比生命加成(50%)后强度自洽,转为默认启用。
+	private static readonly Type[] Version18DefaultEnabledRuneTypes =
+	[
+		typeof(AstralBodyRune)
+	];
+	// 设计审查批次:咔咔!(代价先付收益小)/和平主义者(非亡灵自废输出)/佩尔的慵懒(不可读),转为默认禁用。
+	private static readonly Type[] Version19DefaultDisabledRuneTypes =
+	[
+		typeof(KakaRune),
+		typeof(PacifistRune),
+		typeof(SnailFormRune)
+	];
+	// 小猪存钱罐(鼓励挨打赚钱与防御方向相悖)转为默认禁用。
+	private static readonly Type[] Version20DefaultDisabledRuneTypes =
+	[
+		typeof(PiggyBankRune)
+	];
+	// 升级打击/防御(围绕不该保留的牌做增强,遥测垫底)与验牌(每回合选牌拖慢节奏)转为默认禁用。
+	private static readonly Type[] Version21DefaultDisabledRuneTypes =
+	[
+		typeof(StrikeUpgradeRune),
+		typeof(DefendUpgradeRune),
+		typeof(CardInspectionRune)
+	];
+	// 罪恶快感(开局+击杀双重资源滚雪球)转为默认禁用;不退甲胄同期移除(由升级:永恒铠甲承接机制)。
+	private static readonly Type[] Version22DefaultDisabledRuneTypes =
+	[
+		typeof(GetExcitedRune)
+	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -386,6 +426,41 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 13)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version13DefaultDisabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 16)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version16DefaultEnabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 17)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version17DefaultEnabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 18)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version18DefaultEnabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 19)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version19DefaultDisabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 20)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version20DefaultDisabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 21)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version21DefaultDisabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 22)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version22DefaultDisabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;

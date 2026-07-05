@@ -59,7 +59,7 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase, IHextechSharedC
 			return Task.CompletedTask;
 		}
 
-		List<PotionModel> potionOptions = PotionFactory.GetPotionOptions(Owner, Array.Empty<PotionModel>()).ToList();
+		List<PotionModel> potionOptions = HextechGameApiCompat.GetPotionOptions(Owner).ToList();
 		bool added = AddPotionRewards(
 			room,
 			Owner,

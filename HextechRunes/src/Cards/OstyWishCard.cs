@@ -92,7 +92,7 @@ public sealed class OstyWishCard : CardModel
 		IReadOnlyList<Creature> enemies = Owner.Creature.CombatState.HittableEnemies.ToList();
 		foreach (Creature enemy in enemies)
 		{
-			await CreatureCmd.Damage(choiceContext, enemy, DynamicVars.Damage, Owner.Creature, this);
+			await HextechGameApiCompat.Damage(choiceContext, enemy, DynamicVars.Damage, Owner.Creature, this);
 		}
 	}
 

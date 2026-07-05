@@ -48,7 +48,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 
 			Flash([target]);
 			await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
-				.FromCard(cardPlay.Card)
+				.FromCardCompat(cardPlay.Card)
 				.Targeting(target)
 				.WithNoAttackerAnim()
 				.Execute(choiceContext);

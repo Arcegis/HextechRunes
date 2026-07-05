@@ -25,7 +25,9 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> RepulsorTriggered = new();
 	public readonly HashSet<uint> RepulsorPending = new();
 	public readonly HashSet<uint> DawnTriggered = new();
-	public readonly HashSet<uint> NearDeathFeastTriggered = new();
+	// 敌方濒死狂宴:负血债务(含 key=濒死激活中)与已发放的力量层数(差额补给)。
+	public readonly Dictionary<uint, int> NearDeathFeastEnemyDebt = new();
+	public readonly Dictionary<uint, int> NearDeathFeastEnemyStrength = new();
 	public readonly HashSet<uint> SpeedDemonPending = new();
 	public readonly Dictionary<uint, int> DelayedEnemyHealingBlock = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]

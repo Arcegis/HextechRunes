@@ -67,6 +67,16 @@ internal static class HextechPlayerCoefficientHelper
 			multiplier *= protectionForge.SustainMultiplier;
 		}
 
+		if (player.GetRelic<SilverProtectionForge>() is SilverProtectionForge silverProtectionForge)
+		{
+			multiplier *= silverProtectionForge.SustainMultiplier;
+		}
+
+		if (player.GetRelic<GoldProtectionForge>() is GoldProtectionForge goldProtectionForge)
+		{
+			multiplier *= goldProtectionForge.SustainMultiplier;
+		}
+
 		if (player.GetRelic<MoreTheMerrierRune>() is MoreTheMerrierRune moreTheMerrierRune)
 		{
 			multiplier *= moreTheMerrierRune.SustainMultiplier;
@@ -150,7 +160,11 @@ internal static class HextechPlayerCoefficientHelper
 
 		return MultiplyRelicModifiers(
 			player,
+#if STS2_108_OR_NEWER
+			static (relic, owner) => relic.ModifyDamageMultiplicative(null, 1m, ValueProp.Unpowered, owner.Creature, null, null));
+#else
 			static (relic, owner) => relic.ModifyDamageMultiplicative(null, 1m, ValueProp.Unpowered, owner.Creature, null));
+#endif
 	}
 
 	private static decimal GetBlockMultiplier(Player player)

@@ -27,7 +27,7 @@ public sealed class GrandFinaleUpgradeRune : CardUpgradeRuneBase<GrandFinale>
 		}
 
 		await DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
-			.FromCard(card)
+			.FromCardCompat(card)
 			.TargetingAllOpponents(combatState)
 			.WithHitFx(null, null, "blunt_attack.mp3")
 			.Execute(choiceContext);

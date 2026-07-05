@@ -21,7 +21,7 @@ public sealed class BodySlamUpgradeRune : CardUpgradeRuneBase<BodySlam>
 		return IsIroncladPlayer(player);
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (!IsBodySlam(cardSource) || !IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{

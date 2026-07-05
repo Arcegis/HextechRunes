@@ -58,7 +58,8 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 			: Task.CompletedTask;
 	}
 
-	public override decimal ModifyDamageMultiplicative(
+	// 主模组 0.108 适配后基类 ModifyDamageMultiplicative 被 sealed(版本签名转发),子类改写 Compat 变体。
+	public override decimal ModifyDamageMultiplicativeCompat(
 		Creature? target,
 		decimal amount,
 		ValueProp props,

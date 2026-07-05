@@ -121,7 +121,7 @@ public sealed class FanTheHammerRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (Owner == null
 			|| cardSource is not CardModel card

@@ -120,7 +120,15 @@ internal sealed partial class HextechRuneSelectionScreen
 		content.AddChild(CreatePlayerMetadataPills(relic));
 
 		MegaRichTextLabel body = CreateDescriptionLabel();
-		body.SetTextAutoSize(relic.DynamicDescription.GetFormattedText());
+		string descriptionText = relic.DynamicDescription.GetFormattedText();
+		// 附加小字提示(升级类海克斯的补卡说明):换行紧跟正文,小号淡色([gold]卡名由标签着色)。
+		if (relic is IHextechSelectionFooterProvider footerProvider
+			&& footerProvider.GetSelectionFooterText() is { Length: > 0 } footerText)
+		{
+			descriptionText += $"\n[font_size=13][color=#d8d4c090]{footerText}[/color][/font_size]";
+		}
+
+		body.SetTextAutoSize(descriptionText);
 		content.AddChild(body);
 
 		SetMouseFilterIgnoreRecursive(margin);

@@ -69,9 +69,11 @@ public sealed class SummonForthRune : HextechRelicBase
 			return;
 		}
 
+		// 排除 Play 堆:正在打出结算中的剑不能中途拽进手牌(OnPlayWrapper 的收尾还认为它在
+		// Play 堆,被拽走后结算与手牌 UI 各持一份状态,是"空白手牌位"的成因之一)。
 		IReadOnlyList<SovereignBlade> blades = Owner.PlayerCombatState.AllCards
 			.OfType<SovereignBlade>()
-			.Where(static card => card.Pile?.Type != PileType.Hand)
+			.Where(static card => card.Pile?.Type is not PileType.Hand and not PileType.Play)
 			.ToList();
 		if (blades.Count == 0)
 		{

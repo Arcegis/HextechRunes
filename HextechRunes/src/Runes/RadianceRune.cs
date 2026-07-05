@@ -74,7 +74,7 @@ public sealed class RadianceRune : HextechRelicBase
 		{
 			int damage = Math.Max(1, FloorToInt(target.MaxHp * DynamicVars["MaxHpDamagePercent"].BaseValue));
 			Flash([target]);
-			await CreatureCmd.Damage(choiceContext, target, damage, ValueProp.Unpowered, Owner.Creature, cardSource);
+			await HextechGameApiCompat.Damage(choiceContext, target, damage, ValueProp.Unpowered, Owner.Creature, cardSource);
 		}
 		else
 		{

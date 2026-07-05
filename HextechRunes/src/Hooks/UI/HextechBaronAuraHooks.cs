@@ -142,7 +142,7 @@ internal sealed class HandOfBaronAuraVisual
 		EnsureRenderOrder();
 
 		_discLayer = TryCreateLayer(_root, "GroundGlow", HextechAssets.HandOfBaronAuraDiscPath, new Color(0.52f, 0.12f, 1f, 0.18f), 0);
-		_smokeLayer = TryCreateLayer(_root, "SoftVioletTrail", HextechAssets.HandOfBaronAuraSmokePath, new Color(0.72f, 0.20f, 1f, 0.18f), 2);
+		_smokeLayer = TryCreateClippedLayer(_root, "SoftVioletTrail", HextechAssets.HandOfBaronAuraSmokePath, HextechAssets.HandOfBaronAuraDiscPath, new Color(0.72f, 0.20f, 1f, 0.18f));
 		_ringLayer = TryCreateLayer(_root, "SoftRing", HextechAssets.HandOfBaronAuraRingPath, new Color(0.86f, 0.42f, 1f, 0.28f), 3);
 		_runeLayer = CreateLayer(_root, "BaronRune", runeTexture, new Color(1f, 0.35f, 1f, 0.78f), 4);
 		UpdateTransform();
@@ -302,6 +302,56 @@ internal sealed class HandOfBaronAuraVisual
 		return texture == null ? null : CreateLayer(parent, name, texture, modulate, zIndex, additive);
 	}
 
+	// 长方形纹理(如烟雾拖尾)旋转时会露出方角:套一层圆形裁剪父(按其 alpha 裁子内容),
+	// 纹理放大到覆盖裁剪圆的外接尺寸,旋转全程不露边。缩放基准取裁剪圆纹理。
+	private static AuraLayer? TryCreateClippedLayer(Node2D parent, string name, string texturePath, string clipPath, Color modulate, bool additive = false)
+	{
+		Texture2D? texture = LoadTextureOrWarn(texturePath);
+		Texture2D? clipTexture = LoadTextureOrWarn(clipPath);
+		if (texture == null || clipTexture == null)
+		{
+			return null;
+		}
+
+		Node2D plane = new()
+		{
+			Name = name,
+			ZIndex = 0,
+			ZAsRelative = true
+		};
+		parent.AddChildSafely(plane);
+
+		Sprite2D clip = new()
+		{
+			Name = "ClipCircle",
+			Texture = clipTexture,
+			Centered = true,
+			Modulate = Colors.White,
+			ClipChildren = CanvasItem.ClipChildrenMode.Only
+		};
+		plane.AddChildSafely(clip);
+
+		float clipSize = Math.Max(clipTexture.GetWidth(), clipTexture.GetHeight());
+		Sprite2D sprite = new()
+		{
+			Name = "Texture",
+			Texture = texture,
+			Centered = true,
+			Modulate = modulate,
+			// 覆盖裁剪圆的外接旋转范围(√2 倍直径),长方形被拉成方形无碍烟雾观感。
+			Scale = new Vector2(
+				clipSize * 1.5f / Math.Max(texture.GetWidth(), 1),
+				clipSize * 1.5f / Math.Max(texture.GetHeight(), 1))
+		};
+		if (additive)
+		{
+			sprite.Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
+		}
+
+		clip.AddChildSafely(sprite);
+		return new AuraLayer(plane, sprite, clipTexture);
+	}
+
 	private static Texture2D? LoadTextureOrWarn(string path)
 	{
 		Texture2D? texture = AssetHooks.LoadUiTexture(path);
@@ -315,7 +365,7 @@ internal sealed class HandOfBaronAuraVisual
 
 	private static void ScaleLayer(AuraLayer? layer, float width, float height)
 	{
-		Texture2D? texture = layer?.Sprite.Texture;
+		Texture2D? texture = layer?.ScaleBasis ?? layer?.Sprite.Texture;
 		if (layer == null || texture == null)
 		{
 			return;
@@ -324,5 +374,5 @@ internal sealed class HandOfBaronAuraVisual
 		layer.Plane.Scale = new Vector2(width / Math.Max(texture.GetWidth(), 1), height / Math.Max(texture.GetHeight(), 1));
 	}
 
-	private sealed record AuraLayer(Node2D Plane, Sprite2D Sprite);
+	private sealed record AuraLayer(Node2D Plane, Sprite2D Sprite, Texture2D? ScaleBasis = null);
 }

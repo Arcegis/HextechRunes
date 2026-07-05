@@ -40,16 +40,17 @@ public sealed class AstralBodyRune : HextechRelicBase
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new MaxHpVar(50m),
+		new DynamicVar("MaxHpPercent", 50m),
 		new DynamicVar("DamageMultiplier", 0.9m)
 	];
 
 	public override Task AfterObtained()
 	{
-		return CreatureCmd.GainMaxHp(Owner!.Creature, DynamicVars.MaxHp.BaseValue);
+		decimal gain = Math.Max(1m, Math.Floor(Owner!.Creature.MaxHp * DynamicVars["MaxHpPercent"].BaseValue / 100m));
+		return CreatureCmd.GainMaxHp(Owner.Creature, gain);
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (!IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{

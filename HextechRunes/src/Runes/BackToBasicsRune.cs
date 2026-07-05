@@ -48,7 +48,7 @@ public sealed class BackToBasicsRune : HextechRelicBase
 		return target == Owner?.Creature ? 1.4m : 1m;
 	}
 
-	public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? 1.4m : 1m;
 	}

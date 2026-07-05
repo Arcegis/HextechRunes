@@ -22,6 +22,10 @@ internal static class HextechAssets
 
     public const string SearingAttackCardPortraitPath = "res://HextechRunes/images/cards/searingAttackCard.png";
 
+    public const string FeelTheBurnCardPortraitPath = "res://HextechRunes/images/cards/feelTheBurnCard.png";
+
+    public const string OkBoomerangCardPortraitPath = "res://HextechRunes/images/cards/okBoomerangCard.png";
+
     public const string ReprogramCardPortraitPath = "res://HextechRunes/images/cards/reprogramCard.png";
 
     public const string MikaelsBlessingCardPortraitPath = "res://HextechRunes/images/cards/mikaelsBlessingCard.png";
@@ -61,6 +65,9 @@ internal static class HextechAssets
     public const string HandOfBaronAuraSmokePath = "res://HextechRunes/images/effects/srx_infernal_smoke_trail.png";
 
     public const string MikaelsBlessingAoeRunePath = "res://HextechRunes/images/effects/milio_base_r_aoe_rune.png";
+
+    // 慢炖日炎光环的地面纹路层:复用 Milio AOE 圈纹理(橙红 modulate)。
+    public const string SlowCookAuraRunePath = "res://HextechRunes/images/effects/milio_base_r_aoe_rune.png";
 
     public static string? TryGetCustomRelicIconPath(RelicModel relic)
     {

@@ -38,7 +38,7 @@ public sealed class AllInCard : CardModel
 			return;
 		}
 
-		await CreatureCmd.Damage(choiceContext, cardPlay.Target, DynamicVars.Damage, Owner.Creature, this);
+		await HextechGameApiCompat.Damage(choiceContext, cardPlay.Target, DynamicVars.Damage, Owner.Creature, this);
 
 		List<CardModel> nonAttackCards = PileType.Hand.GetPile(Owner).Cards
 			.Where(static card => card.Type != CardType.Attack)

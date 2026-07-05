@@ -18,7 +18,7 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-    public override decimal ModifyDamageMultiplicative(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
+    public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
     {
         if (dealer?.Side != CombatSide.Enemy || dealer.CombatState?.RunState != RunState)
         {

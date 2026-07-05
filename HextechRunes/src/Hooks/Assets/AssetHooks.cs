@@ -3,6 +3,7 @@ using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.RestSite;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -46,6 +47,22 @@ internal static class AssetHooks
 		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
 		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
 		harmony.Patch(getEnchantmentIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(EnchantmentIconPostfix)));
+
+		// HoverTip 是 record struct:其构造里读的 power.Icon 拿到的是原版 NOPE 占位
+		// (AtlasResourceLoader 缺 sprite 时不返回 null 而是占位纹理,get_Icon postfix 覆盖
+		// 不到 struct 构造内联/值语义路径)。在返回 HoverTip 的两个总入口修返回值:
+		// GetDumbHoverTip(遗物/卡牌 ExtraHoverTips 走 FromPower)与 HoverTips(战斗内 smart tip)。
+		MethodInfo? getDumbHoverTip = AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetDumbHoverTip));
+		MethodInfo? getHoverTips = AccessTools.PropertyGetter(typeof(PowerModel), nameof(PowerModel.HoverTips));
+		if (getDumbHoverTip != null && getHoverTips != null)
+		{
+			harmony.Patch(getDumbHoverTip, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(GetDumbHoverTipPostfix)));
+			harmony.Patch(getHoverTips, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerHoverTipsPostfix)));
+		}
+		else
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Power hover tip icon hooks skipped: target methods not found.");
+		}
 
 		// 自定义休息室选项(目前为「添柴」StokeRestSiteOption)的图标修复。
 		// 基类 RestSiteOption.Icon 从 res://images/ui/rest_site/option_<id>.png 取图,模组无法在该 base-game
@@ -157,6 +174,42 @@ internal static class AssetHooks
 		{
 			__result = texture!;
 		}
+	}
+
+	private static readonly FieldInfo? HoverTipIconField = AccessTools.Field(typeof(HoverTip), "<Icon>k__BackingField");
+
+	private static void GetDumbHoverTipPostfix(PowerModel __instance, ref HoverTip __result)
+	{
+		if (HoverTipIconField == null || !TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
+		{
+			return;
+		}
+
+		// record struct:装箱→反射改字段→拆箱赋回。
+		object boxed = __result;
+		HoverTipIconField.SetValue(boxed, texture);
+		__result = (HoverTip)boxed;
+	}
+
+	private static void PowerHoverTipsPostfix(PowerModel __instance, ref IEnumerable<IHoverTip> __result)
+	{
+		if (HoverTipIconField == null || !TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
+		{
+			return;
+		}
+
+		List<IHoverTip> tips = __result as List<IHoverTip> ?? __result.ToList();
+		string ownId = __instance.Id.ToString();
+		foreach (IHoverTip tip in tips)
+		{
+			// 接口引用即装箱实例,SetValue 直接写箱内字段;只修本 power 自己的 tip。
+			if (tip is HoverTip concrete && concrete.Id == ownId)
+			{
+				HoverTipIconField.SetValue(tip, texture);
+			}
+		}
+
+		__result = tips;
 	}
 
 	private static bool TryGetHextechRelicTexture(RelicModel self, out Texture2D? texture)

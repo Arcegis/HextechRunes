@@ -68,7 +68,8 @@ internal sealed class JinlianBoxEnemyHex : HextechEnemyHexEffect
 			return false;
 		}
 
-		CardCreationOptions nonRareOptions = new CardCreationOptions(
+		CardCreationOptions nonRareOptions = HextechGameApiCompat.CreateOptionsFromCards(
+				player,
 				nonRarePool,
 				creationOptions.Source,
 				CardRarityOddsType.Uniform)

@@ -15,7 +15,7 @@ internal static partial class HextechCombatHooks
 
 	private static bool HealPrefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 	{
-		if (NearDeathFeastRune.ShouldPreventSustain(creature))
+		if (NearDeathFeastRune.ShouldPreventSustain(creature) || HextechEnemyNearDeath.ShouldPreventSustain(creature))
 		{
 			__state = default;
 			__result = Task.CompletedTask;
@@ -125,6 +125,9 @@ internal static partial class HextechCombatHooks
 		{
 			await circleOfDeathRune.HandleSustainGained(amount);
 		}
+
+		// 我们的治疗(仅联机):队友被治疗后镜像给持有者,战斗内外通吃。
+		await OurHealingRune.MirrorTeammateHeal(creature, amount);
 	}
 
 	private static bool IsSkulkingColony(Creature creature)

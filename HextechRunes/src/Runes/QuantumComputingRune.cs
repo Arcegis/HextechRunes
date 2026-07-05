@@ -52,11 +52,15 @@ public sealed class QuantumComputingRune : HextechRelicBase
 		}
 
 		Flash(enemies);
+		// 表现:蓝紫量子光柱逐敌贯穿+吸血数据流回流(纯表现层);
+		// 逻辑等待让首柱落点与首敌伤害对齐,后续逐敌结算的标准尾巴与柱间节拍一致。
+		HextechCombatVfx.QuantumPulse(Owner.Creature, enemies);
+		await Cmd.CustomScaledWait(0.42f, 0.55f);
 		int totalDamage = 0;
 		foreach (Creature enemy in enemies)
 		{
 			decimal damage = DynamicVars.Damage.BaseValue + Math.Floor(enemy.MaxHp * DynamicVars["DamagePercent"].BaseValue / 100m);
-			IEnumerable<DamageResult> results = await CreatureCmd.Damage(choiceContext, enemy, damage, ValueProp.Unpowered, Owner.Creature, null);
+			IEnumerable<DamageResult> results = await HextechGameApiCompat.Damage(choiceContext, enemy, damage, ValueProp.Unpowered, Owner.Creature, null);
 			totalDamage += results.Sum(static result => result.UnblockedDamage);
 		}
 

@@ -70,29 +70,54 @@ internal static partial class HextechCombatHooks
 
 	private static bool NearDeathFeastLoseHpInternalPrefix(Creature __instance, decimal amount, ValueProp props, ref DamageResult __result)
 	{
-		if (!NearDeathFeastRune.ShouldInterceptLoseHp(__instance, amount))
+		if (NearDeathFeastRune.ShouldInterceptLoseHp(__instance, amount))
 		{
-			return true;
+			__result = NearDeathFeastRune.LoseHpAllowingDying(__instance, amount, props);
+			return false;
 		}
 
-		__result = NearDeathFeastRune.LoseHpAllowingDying(__instance, amount, props);
-		return false;
+		if (HextechEnemyNearDeath.ShouldInterceptLoseHp(__instance, amount))
+		{
+			__result = HextechEnemyNearDeath.LoseHpAllowingDying(__instance, amount, props);
+			return false;
+		}
+
+		return true;
 	}
 
 	private static bool NearDeathFeastCurrentHpSetterPrefix(Creature __instance, int value)
 	{
-		if (value >= 0 || !NearDeathFeastRune.HasDyingState(__instance))
+		if (value >= 0)
 		{
+			// 敌方转阶段/接续/复活把 HP 设回正值:清掉残留的濒死状态。
+			// 注意只认 >1:濒死维持本身就是把 HP 写成 1(LoseHpAllowingDying 内部的
+			// SetCurrentHpInternal 会走本 setter),按 1 清会把刚记下的负血债务当场抹掉。
+			if (value > 1)
+			{
+				HextechEnemyNearDeath.ClearIfRecovered(__instance, value);
+			}
+
 			return true;
 		}
 
-		NearDeathFeastRune.PreserveNegativeHpAsDyingState(__instance, value);
-		return false;
+		if (NearDeathFeastRune.HasDyingState(__instance))
+		{
+			NearDeathFeastRune.PreserveNegativeHpAsDyingState(__instance, value);
+			return false;
+		}
+
+		if (HextechEnemyNearDeath.HasDyingState(__instance))
+		{
+			HextechEnemyNearDeath.PreserveNegativeHpAsDyingState(__instance, value);
+			return false;
+		}
+
+		return true;
 	}
 
 	private static void NearDeathFeastIsAlivePostfix(Creature __instance, ref bool __result)
 	{
-		if (!__result && NearDeathFeastRune.IsDyingButAlive(__instance))
+		if (!__result && (NearDeathFeastRune.IsDyingButAlive(__instance) || HextechEnemyNearDeath.IsDyingButAlive(__instance)))
 		{
 			__result = true;
 		}
@@ -100,7 +125,7 @@ internal static partial class HextechCombatHooks
 
 	private static void NearDeathFeastIsDeadPostfix(Creature __instance, ref bool __result)
 	{
-		if (__result && NearDeathFeastRune.IsDyingButAlive(__instance))
+		if (__result && (NearDeathFeastRune.IsDyingButAlive(__instance) || HextechEnemyNearDeath.IsDyingButAlive(__instance)))
 		{
 			__result = false;
 		}
@@ -108,7 +133,7 @@ internal static partial class HextechCombatHooks
 
 	private static bool NearDeathFeastGainBlockPrefix(Creature creature, ref Task<decimal> __result)
 	{
-		if (!NearDeathFeastRune.ShouldPreventSustain(creature))
+		if (!NearDeathFeastRune.ShouldPreventSustain(creature) && !HextechEnemyNearDeath.ShouldPreventSustain(creature))
 		{
 			return true;
 		}
@@ -125,6 +150,7 @@ internal static partial class HextechCombatHooks
 	private static void NearDeathFeastKillPrefix(Creature creature)
 	{
 		NearDeathFeastRune.ForceDeathThresholdForKill(creature);
+		HextechEnemyNearDeath.ForceDeathThresholdForKill(creature);
 	}
 
 	private static void NearDeathFeastKillManyPrefix(IReadOnlyCollection<Creature> creatures)
@@ -132,18 +158,22 @@ internal static partial class HextechCombatHooks
 		foreach (Creature creature in creatures)
 		{
 			NearDeathFeastRune.ForceDeathThresholdForKill(creature);
+			HextechEnemyNearDeath.ForceDeathThresholdForKill(creature);
 		}
 	}
 
 	private static void NearDeathFeastHealthBarRefreshTextPostfix(NHealthBar __instance)
 	{
 		if (HealthBarCreatureField?.GetValue(__instance) is not Creature creature
-			|| !NearDeathFeastRune.TryGetDisplayedHp(creature, out int displayedHp)
 			|| HealthBarHpLabelField?.GetValue(__instance) is not MegaLabel hpLabel)
 		{
 			return;
 		}
 
-		hpLabel.SetTextAutoSize($"{displayedHp}/{creature.MaxHp}");
+		if (NearDeathFeastRune.TryGetDisplayedHp(creature, out int displayedHp)
+			|| HextechEnemyNearDeath.TryGetDisplayedHp(creature, out displayedHp))
+		{
+			hpLabel.SetTextAutoSize($"{displayedHp}/{creature.MaxHp}");
+		}
 	}
 }
