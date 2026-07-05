@@ -204,6 +204,8 @@
       border-radius: 12px;
       padding: 16px 18px;
       box-shadow: var(--shadow);
+      min-width: 0;
+      overflow: hidden;
     }
     h2 {
       margin: 0 0 12px;
@@ -262,6 +264,14 @@
     .wr-good { color: var(--green); }
     .wr-mid { color: var(--text); }
     .wr-low { color: var(--red); }
+    .name-clip {
+      display: inline-block;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: bottom;
+    }
 
     /* ---------- 折叠大表 ---------- */
     details.table-panel {
@@ -463,6 +473,14 @@
       const toneClass = tone === "auto" ? (v >= 60 ? "gold" : (v < 45 ? "red" : "")) : (tone || "");
       return `<div class="bar-track"><div class="bar-fill ${toneClass}" style="width:${v}%"></div>` +
         `<div class="bar-label ${wrClass(v)}">${fmtPct(v)}</div></div>`;
+    }
+
+    // 占比条:与胜率语义无关,中性配色;条宽按组内最大值归一化,数字仍显示真实占比。
+    function shareBarCell(value, maxValue) {
+      const v = Math.max(0, Number(value || 0));
+      const width = Math.max(0, Math.min(100, maxValue > 0 ? v / maxValue * 100 : 0));
+      return `<div class="bar-track"><div class="bar-fill" style="width:${width}%"></div>` +
+        `<div class="bar-label">${fmtPct(v)}</div></div>`;
     }
 
     // ---------- 简单分布表 ----------
@@ -704,12 +722,13 @@
 
       const characters = (summary.tables.characters || []).slice(0, 20);
       const charTotal = characters.reduce((s, r) => s + (r.count || 0), 0) || 1;
+      const charMaxShare = Math.max(...characters.map((r) => (r.count || 0) / charTotal * 100), 0);
       renderTable(document.getElementById("characters"), ["角色", "玩家样本", "占比"],
         characters.map((row) => [
-          displayLabel(row),
+          `<span class="name-clip" title="${text(row.id || "")}">${text(displayLabel(row))}</span>`,
           Number(row.count || 0).toLocaleString(),
-          barCell((row.count || 0) / charTotal * 100, "")
-        ]), [2]);
+          shareBarCell((row.count || 0) / charTotal * 100, charMaxShare)
+        ]), [0, 2]);
 
       const playerRuneChoices = Array.isArray(summary.tables.playerRuneChoices) ? summary.tables.playerRuneChoices : [];
       choicesTable.setRows(playerRuneChoices);
