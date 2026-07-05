@@ -1,8 +1,5 @@
-using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models.Relics;
 using static HextechRunes.HextechHookReflection;
 

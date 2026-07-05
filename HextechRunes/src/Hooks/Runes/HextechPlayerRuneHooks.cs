@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 

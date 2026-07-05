@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 // 升级：熔融之拳(仅战士) —— 打出熔融之拳后,在手牌中添加 1 张主宰(Dominate)。

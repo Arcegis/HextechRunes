@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-
 namespace HextechRunes;
 
 public sealed class BigStrengthRune : HextechRelicBase

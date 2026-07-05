@@ -1,6 +1,3 @@
-using System.Reflection;
-using MegaCrit.Sts2.Core.Logging;
-
 namespace HextechRunes;
 
 public sealed partial class SolidTimeRune

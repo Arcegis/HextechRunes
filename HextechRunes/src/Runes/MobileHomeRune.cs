@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;

@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Map;
-using MegaCrit.Sts2.Core.Logging;
 
 namespace HextechRunes;
 

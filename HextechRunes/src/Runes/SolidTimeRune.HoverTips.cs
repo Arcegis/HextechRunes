@@ -1,5 +1,4 @@
 using System.Text;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 
 namespace HextechRunes;

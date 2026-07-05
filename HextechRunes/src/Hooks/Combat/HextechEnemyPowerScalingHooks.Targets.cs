@@ -1,6 +1,4 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.Hooks;
-using MegaCrit.Sts2.Core.Logging;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;

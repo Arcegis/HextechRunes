@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 // 升级：计划妥当(仅猎人) —— 计划妥当(WellLaidPlans)回合结束保留手牌时,可保留任意张(上限改为手牌数)。

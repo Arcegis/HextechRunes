@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace HextechRunes;

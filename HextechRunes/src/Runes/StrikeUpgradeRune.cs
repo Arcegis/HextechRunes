@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 // 升级：打击 —— 打出基础打击(任意角色)后,把它在本场战斗中变化为亮剑(FlashOfSteel)。

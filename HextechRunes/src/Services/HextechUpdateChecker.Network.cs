@@ -1,5 +1,4 @@
 using System.Text.Json;
-using MegaCrit.Sts2.Core.Logging;
 
 namespace HextechRunes;
 

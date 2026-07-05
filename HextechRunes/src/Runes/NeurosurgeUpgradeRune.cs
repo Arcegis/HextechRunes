@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 // 升级：精神过载(仅骨妹) —— 把 Neurosurge 每回合施加的灾厄(DoomPower)从「自身」改为「全体敌人」。

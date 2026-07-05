@@ -1,6 +1,7 @@
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-// 仅 STS2_108_OR_NEWER 分支使用(ColorlessCardPool):0.107.1 下的死码分析看不到,勿删。
+#if STS2_108_OR_NEWER
+// ColorlessCardPool 仅 0.108 分支使用;用 #if 包住让 0.107.1 下的死码分析(IDE0005)不再误删。
 using MegaCrit.Sts2.Core.Models.CardPools;
+#endif
 
 namespace HextechRunes;
 

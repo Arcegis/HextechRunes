@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 // 升级：子程序(仅鸡煲) —— 战斗开始时,不论何处,将所有子程序(Subroutine)放入手牌。

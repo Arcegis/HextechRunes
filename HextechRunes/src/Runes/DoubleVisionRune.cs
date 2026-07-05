@@ -1,6 +1,4 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves;
 

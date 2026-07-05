@@ -1,4 +1,3 @@
-using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Hooks;

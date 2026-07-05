@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Saves.Runs;
-
 namespace HextechRunes;
 
 internal sealed class HextechWaxRelicReward : RelicReward

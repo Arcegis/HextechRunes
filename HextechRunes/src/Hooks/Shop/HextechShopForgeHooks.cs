@@ -1,9 +1,7 @@
-using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Gold;
 using MegaCrit.Sts2.Core.Entities.Merchant;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using CoreHook = MegaCrit.Sts2.Core.Hooks.Hook;
 using static HextechRunes.HextechHookReflection;

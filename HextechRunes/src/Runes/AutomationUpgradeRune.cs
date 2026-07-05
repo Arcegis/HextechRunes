@@ -1,6 +1,3 @@
-using System.Reflection;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-
 namespace HextechRunes;
 
 /// <summary>

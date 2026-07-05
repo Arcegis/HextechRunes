@@ -1,6 +1,4 @@
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Orbs;
 using static HextechRunes.HextechHookReflection;

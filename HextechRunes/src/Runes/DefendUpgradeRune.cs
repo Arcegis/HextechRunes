@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 // 升级：防御 —— 打出基础防御(任意角色)后,把它在本场战斗中变化为妙计(Finesse)。

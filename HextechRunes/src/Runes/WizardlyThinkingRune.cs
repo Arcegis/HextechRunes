@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 public sealed class WizardlyThinkingRune : HextechRelicBase

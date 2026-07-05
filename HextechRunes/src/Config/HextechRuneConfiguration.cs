@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Godot;
-using MegaCrit.Sts2.Core.Logging;
 
 namespace HextechRunes;
 

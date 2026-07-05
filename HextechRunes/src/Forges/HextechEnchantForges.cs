@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.CardSelection;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 
 namespace HextechRunes;

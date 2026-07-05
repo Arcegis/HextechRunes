@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Saves.Runs;
-
 namespace HextechRunes;
 
 public sealed class InfernalConduitRune : HextechRelicBase

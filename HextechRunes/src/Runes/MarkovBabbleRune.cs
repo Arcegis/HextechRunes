@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Entities.Orbs;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 
 namespace HextechRunes;
 

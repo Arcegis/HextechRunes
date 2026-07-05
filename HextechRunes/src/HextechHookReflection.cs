@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace HextechRunes;
 
 internal static class HextechHookReflection

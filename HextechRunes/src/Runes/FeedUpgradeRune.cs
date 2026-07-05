@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.HoverTips;
-
 namespace HextechRunes;
 
 // 升级：狂宴(仅战士) —— 用狂宴(Feed)斩杀敌人时,额外获得 15% 当前最大生命值的最大生命加成。

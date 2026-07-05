@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-
 namespace HextechRunes;
 
 public abstract class UniversalScopeRuneBase : HextechRelicBase

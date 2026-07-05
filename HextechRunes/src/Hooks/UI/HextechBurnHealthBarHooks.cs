@@ -1,8 +1,6 @@
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 
 namespace HextechRunes;

@@ -1,7 +1,5 @@
-using System.Reflection;
 using MegaCrit.Sts2.addons.mega_text;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using static HextechRunes.HextechHookReflection;
 

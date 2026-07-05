@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using MegaCrit.Sts2.Core.Saves.Runs;
-
 namespace HextechRunes;
 
 public sealed class LifeFlowRune : HextechRelicBase

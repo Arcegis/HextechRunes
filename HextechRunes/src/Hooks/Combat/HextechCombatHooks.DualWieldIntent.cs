@@ -1,8 +1,5 @@
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using static HextechRunes.HextechHookReflection;

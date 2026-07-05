@@ -1,7 +1,4 @@
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.sts2.Core.Nodes.TopBar;
 using static HextechRunes.HextechHookReflection;
 
