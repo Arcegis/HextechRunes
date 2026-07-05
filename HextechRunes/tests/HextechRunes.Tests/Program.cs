@@ -64,6 +64,7 @@ internal static class Program
 				new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
 				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
 				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
+			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
 				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
@@ -434,6 +435,40 @@ internal static class Program
 
 		restored.Reset();
 		Equal(0, restored.GlobalProcsThisCombat.Count, "global proc count should clear on combat tracking reset");
+	}
+
+	private static void CombatTrackingSerializationIsCultureInvariant()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		// 大小写混合键：culture 比较排 a<B，ordinal 排 B<a，用来暴露 culture-sensitive 排序。
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:apower");
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:Bpower");
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:co-op");
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:coop");
+
+		System.Globalization.CultureInfo original = System.Globalization.CultureInfo.CurrentCulture;
+		try
+		{
+			List<string> serialized = [];
+			foreach (string culture in new[] { "en-US", "zh-CN", "da-DK", "tr-TR" })
+			{
+				System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo(culture);
+				serialized.Add(tracking.Serialize());
+			}
+
+			for (int i = 1; i < serialized.Count; i++)
+			{
+				Equal(serialized[0], serialized[i], $"combat tracking serialization should be culture invariant (culture #{i})");
+			}
+
+			int upperIndex = serialized[0].IndexOf("Bpower", StringComparison.Ordinal);
+			int lowerIndex = serialized[0].IndexOf("apower", StringComparison.Ordinal);
+			Expect(upperIndex >= 0 && lowerIndex >= 0 && upperIndex < lowerIndex, "combat tracking keys should sort ordinally (B before a)");
+		}
+		finally
+		{
+			System.Globalization.CultureInfo.CurrentCulture = original;
+		}
 	}
 
 	private static void StableModelIdListCodecRoundTripsFromNonzeroCursor()
