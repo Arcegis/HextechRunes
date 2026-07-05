@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
-
 namespace HextechRunes;
 
 // 敌方专属海克斯的图标/标题/描述载体 relic：只作为 MonsterHexIconRelicTypes 的模型，

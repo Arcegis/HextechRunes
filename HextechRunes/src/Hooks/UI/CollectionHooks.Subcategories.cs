@@ -1,6 +1,5 @@
 using Godot;
 using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection;
 
 namespace HextechRunes;

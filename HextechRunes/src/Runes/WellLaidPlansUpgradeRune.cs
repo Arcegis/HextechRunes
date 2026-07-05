@@ -1,6 +1,4 @@
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models.Cards;
 
 namespace HextechRunes;
 

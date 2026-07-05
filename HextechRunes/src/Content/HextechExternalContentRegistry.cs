@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Models;
-
 namespace HextechRunes;
 
 internal static class HextechExternalContentRegistry

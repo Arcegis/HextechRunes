@@ -1,8 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Rewards;
-using MegaCrit.Sts2.Core.Rooms;
-using MegaCrit.Sts2.Core.Runs;
-
 namespace HextechRunes;
 
 internal static class HextechGoldRewardHelper

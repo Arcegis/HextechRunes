@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Models.Cards;
-
 namespace HextechRunes;
 
 internal static partial class HextechPlayerRuneHooks

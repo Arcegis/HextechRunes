@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Models;
-
 namespace HextechRunes;
 
 public sealed class EnlightenmentRune : HextechRelicBase

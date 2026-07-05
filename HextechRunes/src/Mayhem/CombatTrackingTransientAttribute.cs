@@ -1,5 +1,3 @@
-using System;
-
 namespace HextechRunes;
 
 [AttributeUsage(AttributeTargets.Field)]

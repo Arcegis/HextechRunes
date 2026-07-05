@@ -2,7 +2,6 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
-using MegaCrit.Sts2.Core.Models;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;

@@ -1,6 +1,4 @@
-using System.Net.Http;
 using System.Reflection;
-using System.Text.Json;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
