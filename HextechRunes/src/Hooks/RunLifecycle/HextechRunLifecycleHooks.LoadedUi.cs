@@ -1,7 +1,5 @@
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -17,7 +15,16 @@ internal static partial class HextechRunLifecycleHooks
 	private static async Task LoadRunAfterOriginal(Task original, RunState runState)
 	{
 		await original;
-		await RefreshEnemyUiForRunWhenReady(runState, "LoadRun", EnemyUiRefreshFrameBudget);
+
+		// mod 延续体异常不能把原版 LoadRun 任务链打成 faulted。
+		try
+		{
+			await RefreshEnemyUiForRunWhenReady(runState, "LoadRun", EnemyUiRefreshFrameBudget);
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"[{ModInfo.Id}][Mayhem] LoadRun continuation failed: {ex}");
+		}
 	}
 
 	private static void TopBarInitializePostfix(IRunState runState)

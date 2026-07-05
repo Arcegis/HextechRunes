@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Reflection;
 
 namespace HextechRunes;
 
@@ -166,6 +165,13 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 		if (right == null)
 		{
 			return 1;
+		}
+
+		// string 的 IComparable 实现是 culture-sensitive 的，两端 locale 不同会把同一组键排出不同序，
+		// 序列化结果参与联机 checksum，必须走 ordinal。
+		if (left is string leftText && right is string rightText)
+		{
+			return string.CompareOrdinal(leftText, rightText);
 		}
 
 		return left is IComparable comparable

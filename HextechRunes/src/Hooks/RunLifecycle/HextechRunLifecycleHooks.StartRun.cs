@@ -1,7 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Runs;
-
 namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
@@ -15,15 +11,23 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		await original;
 
-		RunState? runState = self.DebugOnlyGetState();
-		if (runState == null)
+		// mod 延续体异常不能把原版任务链打成 faulted(单端中断即联机分叉)。
+		try
 		{
-			return;
-		}
+			RunState? runState = self.DebugOnlyGetState();
+			if (runState == null)
+			{
+				return;
+			}
 
-		foreach (Player player in runState.Players)
+			foreach (Player player in runState.Players)
+			{
+				HextechRuneSelectionCoordinator.RemoveRunesFromGrabBags(player);
+			}
+		}
+		catch (Exception ex)
 		{
-			HextechRuneSelectionCoordinator.RemoveRunesFromGrabBags(player);
+			Log.Error($"[{ModInfo.Id}][Mayhem] FinalizeStartingRelics continuation failed: {ex}");
 		}
 	}
 
@@ -55,22 +59,38 @@ internal static partial class HextechRunLifecycleHooks
 			RunsInsideStartRunOrig.Remove(runState);
 		}
 
-		HextechMayhemModifier modifier = EnsureMayhemModifier(runState);
+		// mod 延续体异常不能把原版 StartRun 任务链打成 faulted(单端中断即联机分叉)。
+		try
+		{
+			HextechMayhemModifier modifier = EnsureMayhemModifier(runState);
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour end: currentRoom={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} {DescribeCurrentEventState(runState)}");
-			HextechEnemyUi.HideMayhemModifierBadge();
-			HextechEnemyUi.Refresh(modifier);
+			try
+			{
+				HextechEnemyUi.HideMayhemModifierBadge();
+				HextechEnemyUi.Refresh(modifier);
+			}
+			catch (Exception ex)
+			{
+				Log.Error($"[{ModInfo.Id}][Mayhem] StartRunDetour UI refresh failed: {ex}");
+			}
+
 			if (!modifier.IsActResolved(runState.CurrentActIndex)
 				&& IsCurrentRun(runState))
+			{
+				if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
+				{
+					HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: deferring act{runState.CurrentActIndex} selection until ancient event finishes {DescribeCurrentEventState(runState)}");
+				}
+				else
+				{
+					HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: selecting act{runState.CurrentActIndex} hex immediately after StartRun");
+					await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
+				}
+			}
+		}
+		catch (Exception ex)
 		{
-			if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
-			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: deferring act{runState.CurrentActIndex} selection until ancient event finishes {DescribeCurrentEventState(runState)}");
-			}
-			else
-			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: selecting act{runState.CurrentActIndex} hex immediately after StartRun");
-				await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
-			}
+			Log.Error($"[{ModInfo.Id}][Mayhem] StartRunDetour continuation failed: {ex}");
 		}
 	}
 }

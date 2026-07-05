@@ -1,10 +1,6 @@
 {
-  "evolution.title": "Evolución",
   "EVOLUTION.title": "Evolución",
-  "evolution.description": "Esta carta gana [gold]Agotar[/gold]. Tras jugar un Ataque, aumenta permanentemente su daño en [blue]2[/blue]. Tras jugar una Habilidad, aumenta permanentemente su Bloqueo en [blue]2[/blue]. Tras jugar un Poder, reduce permanentemente su coste de Energía en [blue]1[/blue].",
   "EVOLUTION.description": "Esta carta gana [gold]Agotar[/gold]. Tras jugar un Ataque, aumenta permanentemente su daño en [blue]2[/blue]. Tras jugar una Habilidad, aumenta permanentemente su Bloqueo en [blue]2[/blue]. Tras jugar un Poder, reduce permanentemente su coste de Energía en [blue]1[/blue].",
-  "sponsorCompositeEnchantment.title": "Encantamientos acumulados",
   "SPONSOR_COMPOSITE_ENCHANTMENT.title": "Encantamientos acumulados",
-  "sponsorCompositeEnchantment.description": "Esta carta tiene varios encantamientos. Consulta abajo las pistas de cada efecto.",
   "SPONSOR_COMPOSITE_ENCHANTMENT.description": "Esta carta tiene varios encantamientos. Consulta abajo las pistas de cada efecto."
 }

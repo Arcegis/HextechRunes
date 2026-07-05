@@ -1,8 +1,4 @@
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Saves.Runs;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -23,6 +19,9 @@ internal static class HextechSavedPropertyNetIdHooks
 
 	private static bool _installed;
 	private static bool _canonicalized;
+
+	/// <summary>规范化是否已发生。此后再注入 SavedProperty 载体会绕过规范排序(见 HextechSavedPropertyBootstrap.InjectModelType 的告警)。</summary>
+	internal static bool IsCanonicalized => _canonicalized;
 
 	public static void Install(Harmony harmony)
 	{
@@ -96,6 +95,10 @@ internal static class HextechSavedPropertyNetIdHooks
 
 			SetNetIdBitSize(HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(canonical.Count));
 			HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] Canonicalized SavedProperty net-id map: vanilla={vanillaNames.Count} total={canonical.Count} bitSize={SavedPropertiesTypeCache.NetIdBitSize}.");
+
+			// 规范化后终检:此刻拓展包/二创包的延迟注册均已完成,扫描所有引用本模组的程序集,
+			// 抓"包侧新增 [SavedProperty] 载体却忘了走 API 注册"的漏项(启动期那次自检看不到包外类型)。
+			HextechSavedPropertyBootstrap.WarnOnUninjectedSavedPropertyCarriers();
 		}
 		catch (Exception ex)
 		{

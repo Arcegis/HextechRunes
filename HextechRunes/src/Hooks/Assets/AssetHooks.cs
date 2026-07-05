@@ -1,14 +1,7 @@
-using System.Collections.Generic;
-using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.RestSite;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Enchantments;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using static HextechRunes.HextechHookReflection;
 
@@ -87,10 +80,17 @@ internal static class AssetHooks
 	/// </summary>
 	private static bool RestSiteOptionIconPrefix(RestSiteOption __instance, ref Texture2D __result)
 	{
-		if (__instance is StokeRestSiteOption && StokeRestSiteOption.ResolveIcon() is { } icon)
+		try
 		{
-			__result = icon;
-			return false;
+			if (__instance is StokeRestSiteOption && StokeRestSiteOption.ResolveIcon() is { } icon)
+			{
+				__result = icon;
+				return false;
+			}
+		}
+		catch (Exception ex)
+		{
+			LogAssetHookFailure(nameof(RestSiteOptionIconPrefix), ex);
 		}
 
 		return true;
@@ -106,17 +106,24 @@ internal static class AssetHooks
 
 	private static void EnchantmentIconPostfix(EnchantmentModel __instance, ref CompressedTexture2D __result)
 	{
-		ModelId id = __instance.CanonicalInstance?.Id ?? __instance.Id;
-		if (HextechExternalContentRegistry.GetEnchantmentIconPath(id) is { } iconPath
-			&& LoadCompressedTexture(iconPath) is { } texture)
+		try
 		{
-			__result = texture;
-			return;
-		}
+			ModelId id = __instance.CanonicalInstance?.Id ?? __instance.Id;
+			if (HextechExternalContentRegistry.GetEnchantmentIconPath(id) is { } iconPath
+				&& LoadCompressedTexture(iconPath) is { } texture)
+			{
+				__result = texture;
+				return;
+			}
 
-		if (__instance is UniversalSpiral)
+			if (__instance is UniversalSpiral)
+			{
+				__result = ModelDb.Enchantment<Spiral>().Icon;
+			}
+		}
+		catch (Exception ex)
 		{
-			__result = ModelDb.Enchantment<Spiral>().Icon;
+			LogAssetHookFailure(nameof(EnchantmentIconPostfix), ex);
 		}
 	}
 
@@ -146,18 +153,26 @@ internal static class AssetHooks
 
 	private static bool NRelicReloadPrefix(NRelic __instance)
 	{
-		if (!__instance.IsNodeReady()
-			|| NRelicModelField == null
-			|| NRelicModelField.GetValue(__instance) is not RelicModel model
-			|| !TryGetHextechRelicTexture(model, out Texture2D? texture))
+		try
 		{
+			if (!__instance.IsNodeReady()
+				|| NRelicModelField == null
+				|| NRelicModelField.GetValue(__instance) is not RelicModel model
+				|| !TryGetHextechRelicTexture(model, out Texture2D? texture))
+			{
+				return true;
+			}
+
+			model.UpdateTexture(__instance.Icon);
+			__instance.Icon.Texture = texture;
+			__instance.Outline.Visible = false;
+			return false;
+		}
+		catch (Exception ex)
+		{
+			LogAssetHookFailure(nameof(NRelicReloadPrefix), ex);
 			return true;
 		}
-
-		model.UpdateTexture(__instance.Icon);
-		__instance.Icon.Texture = texture;
-		__instance.Outline.Visible = false;
-		return false;
 	}
 
 	private static void PowerIconPostfix(PowerModel __instance, ref Texture2D __result)
@@ -180,52 +195,92 @@ internal static class AssetHooks
 
 	private static void GetDumbHoverTipPostfix(PowerModel __instance, ref HoverTip __result)
 	{
-		if (HoverTipIconField == null || !TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
+		try
 		{
-			return;
-		}
+			if (HoverTipIconField == null || !TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
+			{
+				return;
+			}
 
-		// record struct:装箱→反射改字段→拆箱赋回。
-		object boxed = __result;
-		HoverTipIconField.SetValue(boxed, texture);
-		__result = (HoverTip)boxed;
+			// record struct:装箱→反射改字段→拆箱赋回。
+			object boxed = __result;
+			HoverTipIconField.SetValue(boxed, texture);
+			__result = (HoverTip)boxed;
+		}
+		catch (Exception ex)
+		{
+			LogAssetHookFailure(nameof(GetDumbHoverTipPostfix), ex);
+		}
 	}
 
 	private static void PowerHoverTipsPostfix(PowerModel __instance, ref IEnumerable<IHoverTip> __result)
 	{
-		if (HoverTipIconField == null || !TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
+		try
 		{
-			return;
-		}
-
-		List<IHoverTip> tips = __result as List<IHoverTip> ?? __result.ToList();
-		string ownId = __instance.Id.ToString();
-		foreach (IHoverTip tip in tips)
-		{
-			// 接口引用即装箱实例,SetValue 直接写箱内字段;只修本 power 自己的 tip。
-			if (tip is HoverTip concrete && concrete.Id == ownId)
+			if (HoverTipIconField == null || !TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
 			{
-				HoverTipIconField.SetValue(tip, texture);
+				return;
 			}
-		}
 
-		__result = tips;
+			List<IHoverTip> tips = __result as List<IHoverTip> ?? __result.ToList();
+			string ownId = __instance.Id.ToString();
+			foreach (IHoverTip tip in tips)
+			{
+				// 接口引用即装箱实例,SetValue 直接写箱内字段;只修本 power 自己的 tip。
+				if (tip is HoverTip concrete && concrete.Id == ownId)
+				{
+					HoverTipIconField.SetValue(tip, texture);
+				}
+			}
+
+			__result = tips;
+		}
+		catch (Exception ex)
+		{
+			LogAssetHookFailure(nameof(PowerHoverTipsPostfix), ex);
+		}
 	}
 
+	// 以下 TryGet*Texture 助手承诺永不抛出:它们被图标 postfix 直接调用,而这些 getter
+	// 位于联机同步敏感路径(历史上 RestSiteOption.Icon 异常曾致 ChooseOption 校验和分叉)。
 	private static bool TryGetHextechRelicTexture(RelicModel self, out Texture2D? texture)
 	{
 		texture = null;
-		string? path = HextechAssets.TryGetCustomRelicIconPath(self);
-		if (path == null)
+		try
 		{
+			string? path = HextechAssets.TryGetCustomRelicIconPath(self);
+			if (path == null)
+			{
+				return false;
+			}
+
+			texture = LoadPortableTexture(path);
+			return texture != null;
+		}
+		catch (Exception ex)
+		{
+			LogAssetHookFailure(nameof(TryGetHextechRelicTexture), ex);
+			texture = null;
 			return false;
 		}
-
-		texture = LoadPortableTexture(path);
-		return texture != null;
 	}
 
 	private static bool TryGetHextechPowerTexture(PowerModel self, out Texture2D? texture)
+	{
+		texture = null;
+		try
+		{
+			return TryGetHextechPowerTextureCore(self, out texture);
+		}
+		catch (Exception ex)
+		{
+			LogAssetHookFailure(nameof(TryGetHextechPowerTexture), ex);
+			texture = null;
+			return false;
+		}
+	}
+
+	private static bool TryGetHextechPowerTextureCore(PowerModel self, out Texture2D? texture)
 	{
 		texture = null;
 		if (self is HextechPlayerSlowPower)
@@ -264,6 +319,21 @@ internal static class AssetHooks
 	private static bool TryGetHextechCardTexture(CardModel self, out Texture2D? texture)
 	{
 		texture = null;
+		try
+		{
+			return TryGetHextechCardTextureCore(self, out texture);
+		}
+		catch (Exception ex)
+		{
+			LogAssetHookFailure(nameof(TryGetHextechCardTexture), ex);
+			texture = null;
+			return false;
+		}
+	}
+
+	private static bool TryGetHextechCardTextureCore(CardModel self, out Texture2D? texture)
+	{
+		texture = null;
 		string? path = self switch
 		{
 			ElicitCard => HextechAssets.ElicitCardPortraitPath,
@@ -292,6 +362,16 @@ internal static class AssetHooks
 		return LoadPortableTexture(path);
 	}
 
+	private static int _assetHookFailureLogs;
+
+	private static void LogAssetHookFailure(string hook, Exception ex)
+	{
+		if (_assetHookFailureLogs++ < 10)
+		{
+			Log.Error($"[{ModInfo.Id}][Assets] {hook} failed; keeping original result: {ex}");
+		}
+	}
+
 	private static Texture2D? LoadPortableTexture(string path)
 	{
 		if (ResourceLoader.Load<Texture2D>(path) is Texture2D loadedTexture)
@@ -308,6 +388,7 @@ internal static class AssetHooks
 		byte[] bytes = Godot.FileAccess.GetFileAsBytes(path);
 		if (bytes.Length == 0)
 		{
+			WarnTextureMissOnce(path, "file empty or not found");
 			return null;
 		}
 
@@ -317,6 +398,7 @@ internal static class AssetHooks
 			: image.LoadJpgFromBuffer(bytes);
 		if (err != Error.Ok)
 		{
+			WarnTextureMissOnce(path, $"image decode failed: {err}");
 			return null;
 		}
 
@@ -335,9 +417,24 @@ internal static class AssetHooks
 			return loadedTexture;
 		}
 
-		return CompressedTextureCache.TryGetValue(path, out CompressedTexture2D? cachedTexture)
-			? cachedTexture
-			: null;
+		if (CompressedTextureCache.TryGetValue(path, out CompressedTexture2D? cachedTexture))
+		{
+			return cachedTexture;
+		}
+
+		WarnTextureMissOnce(path, "ResourceLoader miss");
+		return null;
+	}
+
+	private static readonly HashSet<string> WarnedTextureMissPaths = new(StringComparer.Ordinal);
+
+	// 加载失败最终表现是静默 NOPE 占位,肉眼难归因;每路径告警一次方便定位打包/命名问题。
+	private static void WarnTextureMissOnce(string path, string reason)
+	{
+		if (WarnedTextureMissPaths.Add(path))
+		{
+			Log.Warn($"[{ModInfo.Id}][Assets] Texture load miss ({reason}): {path}");
+		}
 	}
 
 }

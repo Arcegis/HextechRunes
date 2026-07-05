@@ -1,9 +1,4 @@
 using System.Globalization;
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Extensions;
-using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunes;
 

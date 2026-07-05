@@ -1,5 +1,3 @@
-using System;
-
 namespace HextechRunes;
 
 // 战斗追踪字段的清空时机。一个字段可同时属于多个边界(Flags),由 Prepare* 在对应回合边界

@@ -1,9 +1,5 @@
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models.Monsters;
-using MegaCrit.Sts2.Core.Models.Powers;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;

@@ -1,12 +1,6 @@
-using System.Reflection;
 using MegaCrit.Sts2.addons.mega_text;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.ValueProps;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;

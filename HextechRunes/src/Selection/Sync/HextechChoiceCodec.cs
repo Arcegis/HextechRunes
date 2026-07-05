@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.GameActions;
-using MegaCrit.Sts2.Core.Models;
 
 namespace HextechRunes;
 

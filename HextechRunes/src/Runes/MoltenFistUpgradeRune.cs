@@ -1,10 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Cards;
-
 namespace HextechRunes;
 
 // 升级：熔融之拳(仅战士) —— 打出熔融之拳后,在手牌中添加 1 张主宰(Dominate)。

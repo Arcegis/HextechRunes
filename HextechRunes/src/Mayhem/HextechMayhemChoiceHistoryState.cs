@@ -1,8 +1,4 @@
 using System.Text.Json;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -129,10 +125,13 @@ internal sealed class HextechMayhemChoiceHistoryState
 
 			if (changed)
 			{
+				// 顶层键序也要规范化：Dictionary 插入序依赖"两端见到槽位的顺序相同"这一隐式前提。
 				_seenPlayerRuneIdsJson = JsonSerializer.Serialize(
-					seenBySlot.ToDictionary(
-						static pair => pair.Key.ToString(),
-						static pair => pair.Value.OrderBy(static entry => entry, StringComparer.Ordinal).ToArray()),
+					seenBySlot
+						.OrderBy(static pair => pair.Key)
+						.ToDictionary(
+							static pair => pair.Key.ToString(),
+							static pair => pair.Value.OrderBy(static entry => entry, StringComparer.Ordinal).ToArray()),
 					HextechTelemetry.JsonOptions);
 			}
 		}

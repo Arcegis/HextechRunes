@@ -192,14 +192,20 @@ if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
   clean_macos_metadata "$MOD_DIR"
 fi
 
-python3 "$ROOT/tools/update_latest_version_hashes.py" \
-  --latest-json "$ROOT/server/hextech-telemetry/public/latest-version.json" \
-  --dist "$ROOT/dist" \
-  --mod-id "$FILE_STEM" \
-  --server-name "海克斯大乱斗" \
-  --server-identity "Natsuki.HextechRunes.official" \
-  --game-version "$HEXTECH_STS2_TARGET" \
-  --output-fingerprint "$ROOT/dist/build-fingerprint.json"
+# latest-version.json 指纹更新独立开关:默认开(双分支发布用 HEXTECH_DEPLOY=0 打第二版本包时
+# 也需要写入指纹,所以不能绑 HEXTECH_DEPLOY)。dev 随手构建想保持 git 干净时设 HEXTECH_UPDATE_LATEST=0。
+if [[ "${HEXTECH_UPDATE_LATEST:-1}" != "0" ]]; then
+  python3 "$ROOT/tools/update_latest_version_hashes.py" \
+    --latest-json "$ROOT/server/hextech-telemetry/public/latest-version.json" \
+    --dist "$ROOT/dist" \
+    --mod-id "$FILE_STEM" \
+    --server-name "海克斯大乱斗" \
+    --server-identity "Natsuki.HextechRunes.official" \
+    --game-version "$HEXTECH_STS2_TARGET" \
+    --output-fingerprint "$ROOT/dist/build-fingerprint.json"
+else
+  echo "Skipped latest-version.json fingerprint update (HEXTECH_UPDATE_LATEST=0)."
+fi
 
 if [[ "$HEXTECH_DEPLOY" != "0" ]]; then
   echo "Deployed to $MOD_DIR"

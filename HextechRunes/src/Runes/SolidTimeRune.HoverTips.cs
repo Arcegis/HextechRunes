@@ -1,6 +1,4 @@
 using System.Text;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 
 namespace HextechRunes;

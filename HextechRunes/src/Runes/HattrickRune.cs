@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Rewards;
-
 namespace HextechRunes;
 
 public sealed class HattrickRune : HextechRelicBase

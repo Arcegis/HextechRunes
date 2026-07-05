@@ -1,7 +1,3 @@
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Extensions;
-
 namespace HextechRunes;
 
 internal static partial class HextechCombatHooks

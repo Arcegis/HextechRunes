@@ -1,8 +1,3 @@
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-
 namespace HextechRunes;
 
 public sealed class SnailFormRune : HextechRelicBase

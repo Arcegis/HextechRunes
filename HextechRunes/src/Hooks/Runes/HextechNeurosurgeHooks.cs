@@ -1,11 +1,4 @@
-using System.Linq;
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models.Powers;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;

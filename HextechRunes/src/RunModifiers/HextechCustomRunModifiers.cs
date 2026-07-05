@@ -1,13 +1,9 @@
-using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CustomRun;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.addons.mega_text;
 using static HextechRunes.HextechHookReflection;
 
@@ -42,12 +38,8 @@ public sealed class HextechPrismaticRunModifier : ModifierModel
 
 internal static class HextechCustomRunModifierHooks
 {
-	internal static readonly IReadOnlyList<Type> CustomRarityModifierTypes =
-	[
-		typeof(HextechSilverRunModifier),
-		typeof(HextechGoldRunModifier),
-		typeof(HextechPrismaticRunModifier)
-	];
+	// 清单本体在 Content/HextechCustomModelRegistry(注册表层),此处仅取用。
+	private static IReadOnlyList<Type> CustomRarityModifierTypes => HextechCustomModelRegistry.CustomRarityModifierTypes;
 
 	private static readonly FieldInfo? ModifierTickboxesField = TryGetField(typeof(NCustomRunModifiersList), "_modifierTickboxes");
 	private static readonly FieldInfo? ModifiersContainerField = TryGetField(typeof(NCustomRunModifiersList), "_container");

@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 
 namespace HextechRunes;

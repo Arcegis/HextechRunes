@@ -10,8 +10,19 @@
     <GameDataDir Condition="'$(GameDataDir)' == ''">$(MSBuildThisFileDirectory)../../versioned-dll-backups/$(HextechSts2Target)/game-refs</GameDataDir>
   </PropertyGroup>
 
+  <!-- 测试自身也需要版本符号(如 0.108 起 SavedPropertiesTypeCache 需显式 Init)。 -->
+  <PropertyGroup Condition="'$(HextechSts2Target)' == '0.108.0'">
+    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="../../src/HextechRunes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="saved_property_manifest.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

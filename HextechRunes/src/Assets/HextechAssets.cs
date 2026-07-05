@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Models;
-
 namespace HextechRunes;
 
 internal static class HextechAssets
@@ -44,17 +42,17 @@ internal static class HextechAssets
 
     public const string CloudDragonSoulCardPortraitPath = "res://HextechRunes/images/cards/cloudDragonSoulCard.png";
 
-    public const string OceanDragonSoulPowerIconPath = "res://HextechRunes/images/powers/oceanDragonSoulPower.png";
+    public const string OceanDragonSoulPowerIconPath = "res://HextechRunes/images/powers/hextechOceanDragonSoulPower.png";
 
-    public const string InfernalDragonSoulPowerIconPath = "res://HextechRunes/images/powers/infernalDragonSoulPower.png";
+    public const string InfernalDragonSoulPowerIconPath = "res://HextechRunes/images/powers/hextechInfernalDragonSoulPower.png";
 
     public const string HextechDragonSoulPowerIconPath = "res://HextechRunes/images/powers/hextechDragonSoulPower.png";
 
-    public const string MountainDragonSoulPowerIconPath = "res://HextechRunes/images/powers/mountainDragonSoulPower.png";
+    public const string MountainDragonSoulPowerIconPath = "res://HextechRunes/images/powers/hextechMountainDragonSoulPower.png";
 
-    public const string ChemtechDragonSoulPowerIconPath = "res://HextechRunes/images/powers/chemtechDragonSoulPower.png";
+    public const string ChemtechDragonSoulPowerIconPath = "res://HextechRunes/images/powers/hextechChemtechDragonSoulPower.png";
 
-    public const string CloudDragonSoulPowerIconPath = "res://HextechRunes/images/powers/cloudDragonSoulPower.png";
+    public const string CloudDragonSoulPowerIconPath = "res://HextechRunes/images/powers/hextechCloudDragonSoulPower.png";
 
     public const string HandOfBaronAuraRunePath = "res://HextechRunes/images/effects/jungle_buff_baron.png";
 

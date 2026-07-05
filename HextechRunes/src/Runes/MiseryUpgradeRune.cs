@@ -1,13 +1,3 @@
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Extensions;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Cards;
-using MegaCrit.Sts2.Core.Models.Powers;
-
 namespace HextechRunes;
 
 public sealed class MiseryUpgradeRune : CardUpgradeRuneBase<Misery>
@@ -54,8 +44,8 @@ public sealed class MiseryUpgradeRune : CardUpgradeRuneBase<Misery>
 			foreach (PowerModel debuff in debuffs)
 			{
 #if !STS2_108_OR_NEWER
-				// 0.108.0 起 ITemporaryPower.IgnoreNextInstance 被移除(临时 power 的实例追踪
-				// 疑似改为引擎侧自动处理);beta 期观察复制的临时型 debuff 衰减是否正常。
+				// 0.108.0 起 ITemporaryPower.IgnoreNextInstance 被移除,实例追踪由引擎侧自动处理
+				// (2026-07-05 已在 0.108.0 实机验证:复制临时型 debuff 行为正常)。
 				if (debuff is ITemporaryPower temporaryPower)
 				{
 					temporaryPower.IgnoreNextInstance();

@@ -1,5 +1,6 @@
 using Godot;
 using MegaCrit.Sts2.addons.mega_text;
+using MegaCrit.Sts2.Core.Helpers;
 
 namespace HextechRunes;
 
@@ -149,7 +150,7 @@ internal static partial class HextechRuneConfigMenuHooks
 
 			status.Visible = true;
 			status.Text = L("HEXTECH_CONFIG_FEATURED_LOADING");
-			_ = PopulateCommunityListAsync(blocker, list, status, tab, mySteamId, applyPreview, () => reloadCurrentTab(), compactLayout);
+			TaskHelper.RunSafely(PopulateCommunityListAsync(blocker, list, status, tab, mySteamId, applyPreview, () => reloadCurrentTab(), compactLayout));
 		};
 		reloadCurrentTab = () => selectTab(currentTab);
 

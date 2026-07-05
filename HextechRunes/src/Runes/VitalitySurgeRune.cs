@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-
 namespace HextechRunes;
 
 /// <summary>生机迸发:每 50 点最大生命值每回合多抽 1 张牌;每 100 点每回合额外获得 1 点能量。</summary>

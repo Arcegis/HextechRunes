@@ -1,10 +1,6 @@
-using System.Net.Http;
-using System.Reflection;
-using System.Text.Json;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using static HextechRunes.HextechHookReflection;
 

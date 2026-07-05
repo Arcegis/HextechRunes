@@ -1,8 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using MegaCrit.Sts2.Core.Models;
-
 namespace HextechRunes;
 
 public sealed class UniversalSpiral : EnchantmentModel

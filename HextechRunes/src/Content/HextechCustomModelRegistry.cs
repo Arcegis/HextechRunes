@@ -4,6 +4,15 @@ internal static class HextechCustomModelRegistry
 {
 	internal static IReadOnlyList<Type> EventRelicTypes { get; } = [];
 
+	// 自定义稀有度 run modifier(白银/黄金/棱彩)。内容清单放注册表层,
+	// 供 Bootstrap 的 SavedProperty 注入与 Hooks 的 UI 追加共同消费(避免 Bootstrap 反向依赖 Hooks)。
+	internal static IReadOnlyList<Type> CustomRarityModifierTypes { get; } =
+	[
+		typeof(HextechSilverRunModifier),
+		typeof(HextechGoldRunModifier),
+		typeof(HextechPrismaticRunModifier)
+	];
+
 	internal static IReadOnlyList<Type> ShopOnlyRelicTypes { get; } =
 	[
 		typeof(RandomForgeShopRelic)

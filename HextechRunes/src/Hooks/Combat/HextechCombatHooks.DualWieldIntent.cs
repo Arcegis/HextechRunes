@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Runs;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -58,12 +51,21 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
+	private static int _dualWieldIntentFailureLogs;
+
 	// 头顶意图数字/贴图:把传入的攻击意图替换成「双段」等价意图。
 	private static void NIntentUpdateIntentPrefix(ref AbstractIntent intent, Creature owner)
 	{
-		if (TryCreateDualWieldIntent(intent, owner, out DualWieldAttackIntent? transformed) && transformed != null)
+		try
 		{
-			intent = transformed;
+			if (TryCreateDualWieldIntent(intent, owner, out DualWieldAttackIntent? transformed) && transformed != null)
+			{
+				intent = transformed;
+			}
+		}
+		catch (Exception ex)
+		{
+			LogDualWieldIntentFailure(nameof(NIntentUpdateIntentPrefix), ex);
 		}
 	}
 
@@ -75,14 +77,30 @@ internal static partial class HextechCombatHooks
 		Creature owner,
 		ref HoverTip __result)
 	{
-		if (TryCreateDualWieldIntent(__instance, owner, out DualWieldAttackIntent? transformed) && transformed != null)
+		try
 		{
-			// transformed 自身是 DualWieldAttackIntent,再次进入本 prefix 会被下方类型守卫挡掉,不会递归。
-			__result = transformed.GetHoverTip(targets, owner);
-			return false;
+			if (TryCreateDualWieldIntent(__instance, owner, out DualWieldAttackIntent? transformed) && transformed != null)
+			{
+				// transformed 自身是 DualWieldAttackIntent,再次进入本 prefix 会被下方类型守卫挡掉,不会递归。
+				__result = transformed.GetHoverTip(targets, owner);
+				return false;
+			}
+		}
+		catch (Exception ex)
+		{
+			// prefix 当场跑 DamageCalc→ModifyDamage 链,异常会打断调用方;失败放行原版。
+			LogDualWieldIntentFailure(nameof(AbstractIntentGetHoverTipPrefix), ex);
 		}
 
 		return true;
+	}
+
+	private static void LogDualWieldIntentFailure(string hook, Exception ex)
+	{
+		if (_dualWieldIntentFailureLogs++ < 10)
+		{
+			Log.Error($"[{ModInfo.Id}][Mayhem] {hook} failed; falling back to vanilla intent: {ex}");
+		}
 	}
 
 	// 仅当 owner 是敌人、双刀流生效、且 intent 是尚未转换过的攻击意图时,产出等价的「双段」意图。

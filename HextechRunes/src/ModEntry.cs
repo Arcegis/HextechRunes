@@ -1,7 +1,5 @@
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -24,6 +22,10 @@ public static class ModEntry
 				return;
 			}
 
+			// 注意:以下安装顺序即契约,勿重排——
+			// ① HextechModelBootstrap 必须先于 HextechSavedPropertyNetIdHooks(net-id 规范化的正确性前提:
+			//    规范化时名字集合已是最终集合,这是 1014/ModMismatch 修复的一部分);
+			// ② 全仓库不用 HarmonyPriority,同一目标方法多处 patch 的执行序 = 此处 Install 调用序。
 			HextechModelBootstrap.Install();
 			HextechRuneConfiguration.Initialize();
 			HextechTelemetry.Initialize();
@@ -44,11 +46,11 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
 			AssetHooks.Install(harmony);
 			TryInstallOptionalHookGroup("relic collection", () => CollectionHooks.Install(harmony));
-				TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
-				TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
-				TryInstallOptionalHookGroup("enemy tezcataras mercy wax relics", () => HextechEnemyTezcatarasMercyHooks.Install(harmony));
-				TryInstallOptionalHookGroup("enemy hex top bar hover", () => HextechEnemyUi.Install(harmony));
-				TryInstallOptionalHookGroup("relic UI safety", () => HextechUiSafetyHooks.Install(harmony));
+			TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
+			TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
+			TryInstallOptionalHookGroup("enemy tezcataras mercy wax relics", () => HextechEnemyTezcatarasMercyHooks.Install(harmony));
+			TryInstallOptionalHookGroup("enemy hex top bar hover", () => HextechEnemyUi.Install(harmony));
+			TryInstallOptionalHookGroup("relic UI safety", () => HextechUiSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("player stats hover", () => HextechPlayerStatsHoverHooks.Install(harmony));
 			TryInstallOptionalHookGroup("rune configuration menu", () => HextechRuneConfigMenuHooks.Install(harmony));
 			TryInstallOptionalHookGroup("reward serialization safety", () => HextechRewardSafetyHooks.Install(harmony));

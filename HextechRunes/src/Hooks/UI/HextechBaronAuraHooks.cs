@@ -1,9 +1,6 @@
-using System.Reflection;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using static HextechRunes.HextechHookReflection;
@@ -36,7 +33,7 @@ internal static class HextechBaronAuraHooks
 
 	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
 	{
-		HandOfBaronAuraVisual.TryAttach(__instance.GetCreatureNode(creature));
+		HandOfBaronAuraVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
 	}
 
 	private static void CreatureReadyPostfix(NCreature __instance)

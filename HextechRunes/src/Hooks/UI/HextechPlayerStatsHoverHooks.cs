@@ -1,9 +1,4 @@
-using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.sts2.Core.Nodes.TopBar;
 using static HextechRunes.HextechHookReflection;
 

@@ -1,8 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Godot;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
 
 namespace HextechRunes;
 
@@ -30,43 +28,12 @@ internal static class HextechRuneConfiguration
 	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 2, 3 ];
 	private const int DefaultPlayerRuneRerollLimit = 1;
 	private const int DefaultMonsterHexRerollLimit = InfiniteRerollLimit;
-	private static readonly int[] LegacyEnemyHexCountsDefault = [ 1, 2, 3 ];
-	private static readonly int[] Version9EnemyHexCountsDefault = [ 1, 1, 1 ];
 	private static readonly HextechRarityWeights DefaultFirstActRuneRarityWeights = new(2, 5, 3);
-	// 配置版本 14 之前的第一幕默认值。比例与新默认 2-5-3 完全相同,仅用于把"从未自定义过"的旧配置迁到新默认。
-	private static readonly HextechRarityWeights Version14LegacyFirstActRuneRarityWeights = new(20, 50, 30);
 	private static readonly HextechRarityWeights DefaultNormalRuneRarityWeights = new(1, 1, 1);
 	private static readonly HextechRarityWeights DefaultSecondActAfterSilverRuneRarityWeights = new(0, 1, 1);
 	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
-	// v5 历史默认禁用的两个符文(恶魔形态/暴政升级)已在 0.8.4 移除;v15 强制重置后该迁移分支也不再可达。
-	private static readonly Type[] Version5DefaultDisabledRuneTypes = [];
-	private static readonly Type[] Version6DefaultDisabledRuneTypes =
-	[
-		typeof(NeowsGrudgeRune),
-		typeof(AnthonyBiasRune),
-		typeof(CuttingEdgeAlchemistRune)
-	];
-	private static readonly Type[] Version7DefaultDisabledRuneTypes =
-	[
-		typeof(CrackTheEggRune)
-	];
-	private static readonly Type[] Version8DefaultDisabledRuneTypes =
-	[
-		typeof(EarthAwakensRune)
-	];
-	private static readonly Type[] Version8DefaultEnabledRuneTypes =
-	[
-		typeof(MikaelsBlessingRune)
-	];
-	private static readonly Type[] Version11DefaultDisabledRuneTypes =
-	[
-		typeof(HappyAccidentRune)
-	];
-	private static readonly Type[] Version13DefaultDisabledRuneTypes =
-	[
-		typeof(CorruptedBranchRune)
-	];
-	private static readonly Type[] Version13DefaultDisabledForgeTypes = [];
+	// v4~v14 的历史迁移段与配套数组已删除:v15(0.8.4)强制重置使 ConfigVersion<15 一律整体回默认,
+	// 那些分支永不可达。活跃链从 v16 起。
 	// 腐化树枝生成分布加权(攻击40/技能20/能力40)后无限风险可控,转为默认启用。
 	private static readonly Type[] Version16DefaultEnabledRuneTypes =
 	[
@@ -253,7 +220,7 @@ internal static class HextechRuneConfiguration
 
 	public static IReadOnlySet<string> GetDefaultDisabledForgeIds()
 	{
-		return GetForgeIds(Version13DefaultDisabledForgeTypes);
+		return new HashSet<string>(StringComparer.Ordinal);
 	}
 
 	public static void SaveDisabledPlayerRuneIds(IEnumerable<string> disabledIds)
@@ -392,42 +359,6 @@ internal static class HextechRuneConfiguration
 
 		int previousConfigVersion = config.ConfigVersion;
 		HashSet<string> disabledIds = NormalizeConfigDisabledIds(config.DisabledPlayerRuneIds);
-		bool shouldMigrateLegacyEnemyHexDefault =
-			previousConfigVersion < CurrentConfigVersion
-			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, LegacyEnemyHexCountsDefault);
-		bool shouldMigrateVersion9EnemyHexDefault =
-			previousConfigVersion < 10
-			&& IsEnemyHexCountsEqual(config.EnemyHexCountsByAct, Version9EnemyHexCountsDefault);
-		if (previousConfigVersion < 4)
-		{
-			disabledIds.UnionWith(GetDefaultDisabledPlayerRuneIds());
-		}
-		else if (previousConfigVersion < 5)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version5DefaultDisabledRuneTypes));
-		}
-		if (previousConfigVersion < 6)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version6DefaultDisabledRuneTypes));
-		}
-		if (previousConfigVersion < 7)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version7DefaultDisabledRuneTypes));
-		}
-		if (previousConfigVersion < 8)
-		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version8DefaultEnabledRuneTypes));
-			disabledIds.UnionWith(GetPlayerRuneIds(Version8DefaultDisabledRuneTypes));
-		}
-		if (previousConfigVersion < 11)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version11DefaultDisabledRuneTypes));
-		}
-		if (previousConfigVersion < 13)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version13DefaultDisabledRuneTypes));
-		}
-
 		if (previousConfigVersion < 16)
 		{
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version16DefaultEnabledRuneTypes));
@@ -466,27 +397,14 @@ internal static class HextechRuneConfiguration
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
-		config.EnemyHexCountsByAct = shouldMigrateLegacyEnemyHexDefault || shouldMigrateVersion9EnemyHexDefault
-			? NormalizeEnemyHexCounts(null)
-			: NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
-		config.PlayerRuneRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultPlayerRuneRerollLimit : config.PlayerRuneRerollLimit);
-		config.MonsterHexRerollLimit = ClampRerollLimit(previousConfigVersion < 12 ? DefaultMonsterHexRerollLimit : config.MonsterHexRerollLimit);
+		config.EnemyHexCountsByAct = NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
+		config.PlayerRuneRerollLimit = ClampRerollLimit(config.PlayerRuneRerollLimit);
+		config.MonsterHexRerollLimit = ClampRerollLimit(config.MonsterHexRerollLimit);
 		config.DisabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);
-		HashSet<string> disabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
-		if (previousConfigVersion < 13)
-		{
-			disabledForgeIds.UnionWith(GetForgeIds(Version13DefaultDisabledForgeTypes));
-		}
-		config.DisabledForgeIds = disabledForgeIds;
-		HextechRarityWeights loadedFirstActWeights = ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights);
-		bool shouldMigrateLegacyFirstActWeights =
-			previousConfigVersion < 14
-			&& loadedFirstActWeights.Silver == Version14LegacyFirstActRuneRarityWeights.Silver
-			&& loadedFirstActWeights.Gold == Version14LegacyFirstActRuneRarityWeights.Gold
-			&& loadedFirstActWeights.Prismatic == Version14LegacyFirstActRuneRarityWeights.Prismatic;
-		config.FirstActRuneRarityWeights = FromRarityWeights(shouldMigrateLegacyFirstActWeights
-			? DefaultFirstActRuneRarityWeights
-			: NormalizeRarityWeights(loadedFirstActWeights, DefaultFirstActRuneRarityWeights));
+		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
+		config.FirstActRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
+			ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
+			DefaultFirstActRuneRarityWeights));
 		config.NormalRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
 			ToRarityWeights(config.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
 			DefaultNormalRuneRarityWeights));
@@ -679,22 +597,16 @@ internal static class HextechRuneConfiguration
 		return normalized;
 	}
 
-	private static bool IsEnemyHexCountsEqual(IReadOnlyList<int>? counts, IReadOnlyList<int> expected)
+	// 测试钩子:用真实迁移链跑一份合成配置,返回迁移后的版本号与禁用集(仅 HextechRunes.Tests 使用)。
+	internal static (int ConfigVersion, IReadOnlySet<string> DisabledPlayerRuneIds) MigrateDisabledIdsForTests(int configVersion, IEnumerable<string> disabledIds)
 	{
-		if (counts == null || counts.Count < expected.Count)
+		RuneConfig config = new()
 		{
-			return false;
-		}
-
-		for (int i = 0; i < expected.Count; i++)
-		{
-			if (counts[i] != expected[i])
-			{
-				return false;
-			}
-		}
-
-		return true;
+			ConfigVersion = configVersion,
+			DisabledPlayerRuneIds = disabledIds.ToHashSet(StringComparer.Ordinal)
+		};
+		RuneConfig normalized = NormalizeLoadedConfig(config);
+		return (normalized.ConfigVersion, normalized.DisabledPlayerRuneIds);
 	}
 
 	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)
@@ -726,13 +638,6 @@ internal static class HextechRuneConfiguration
 	private static HashSet<string> GetPlayerRuneIds(IEnumerable<Type> runeTypes)
 	{
 		return HextechPlayerRuneConfigIds.FromTypes(runeTypes);
-	}
-
-	private static HashSet<string> GetForgeIds(IEnumerable<Type> forgeTypes)
-	{
-		return forgeTypes
-			.Select(static type => ModelDb.GetId(type).Entry)
-			.ToHashSet(StringComparer.Ordinal);
 	}
 
 	private static HextechRarityWeights ToRarityWeights(RarityWeightConfig? config, HextechRarityWeights fallback)

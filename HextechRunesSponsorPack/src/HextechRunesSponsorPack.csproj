@@ -7,10 +7,11 @@
     <Nullable>enable</Nullable>
     <GameRoot>/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app</GameRoot>
     <VersionedRefsRoot>$(MSBuildThisFileDirectory)../../HextechRunes/versioned-dll-backups</VersionedRefsRoot>
-    <OfficialGameDataDir>$(VersionedRefsRoot)/0.107.1/game-refs</OfficialGameDataDir>
+    <HextechSponsorSts2Target Condition="'$(HextechSponsorSts2Target)' == ''">0.107.1</HextechSponsorSts2Target>
+    <!-- 引用目录随目标版本联动(此前硬编码 0.107.1:绕过构建脚本直接 dotnet build 0.108 时会 defines/refs 错配,好在必编译失败)。 -->
+    <OfficialGameDataDir>$(VersionedRefsRoot)/$(HextechSponsorSts2Target)/game-refs</OfficialGameDataDir>
     <GameDataDir Condition="'$(GameDataDir)' == '' and Exists('$(OfficialGameDataDir)/sts2.dll')">$(OfficialGameDataDir)</GameDataDir>
     <GameDataDir Condition="'$(GameDataDir)' == ''">$(GameRoot)/Contents/Resources/data_sts2_macos_arm64</GameDataDir>
-    <HextechSponsorSts2Target Condition="'$(HextechSponsorSts2Target)' == ''">0.107.1</HextechSponsorSts2Target>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(HextechSponsorSts2Target)' == '0.104.0'">

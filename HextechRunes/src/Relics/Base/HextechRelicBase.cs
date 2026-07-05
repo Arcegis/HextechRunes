@@ -1,8 +1,6 @@
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
 
@@ -81,12 +79,20 @@ public abstract partial class HextechRelicBase : RelicModel
 
 	public virtual bool IsAvailableForPlayer(Player player) => true;
 
+	private static readonly HashSet<string> WarnedMissingIconPaths = new(StringComparer.Ordinal);
+
 	private string GetResolvedIconPath()
 	{
 		string? customPath = HextechAssets.TryGetCustomRelicIconPath(this);
 		if (!string.IsNullOrEmpty(customPath) && ResourceLoader.Exists(customPath))
 		{
 			return customPath;
+		}
+
+		// 缺图会静默落到原版占位图,肉眼难归因;每路径告警一次,把问题从"玩家看到占位"提前到日志。
+		if (!string.IsNullOrEmpty(customPath) && WarnedMissingIconPaths.Add(customPath))
+		{
+			Log.Warn($"[{ModInfo.Id}][Assets] Relic icon missing, falling back to placeholder: {GetType().Name} -> {customPath}");
 		}
 
 		return PlaceholderIconPath;

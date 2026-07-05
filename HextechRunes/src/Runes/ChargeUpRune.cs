@@ -1,8 +1,3 @@
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models.Powers;
-
 namespace HextechRunes;
 
 // 蓄能(仅储君) —— 当你花费辉星时,获得相同数值的活力(VigorPower)。

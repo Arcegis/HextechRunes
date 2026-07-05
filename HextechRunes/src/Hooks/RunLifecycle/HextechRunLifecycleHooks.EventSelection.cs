@@ -1,8 +1,4 @@
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
-using MegaCrit.Sts2.Core.Rooms;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -27,6 +23,19 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		await original;
 
+		// mod 延续体异常不能把原版 NEventRoom.Proceed 任务链打成 faulted(单端中断即联机分叉)。
+		try
+		{
+			await EventRoomProceedContinuation(state);
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"[{ModInfo.Id}][Mayhem] EventRoomProceed continuation failed: {ex}");
+		}
+	}
+
+	private static async Task EventRoomProceedContinuation(EventRoomProceedState state)
+	{
 		if (!state.ShouldSelectAfterProceed)
 		{
 			return;

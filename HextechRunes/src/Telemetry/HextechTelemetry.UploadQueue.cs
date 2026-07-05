@@ -1,7 +1,5 @@
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using MegaCrit.Sts2.Core.Logging;
 
 namespace HextechRunes;
 

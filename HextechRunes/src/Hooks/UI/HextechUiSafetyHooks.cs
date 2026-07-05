@@ -1,10 +1,8 @@
-using System.Reflection;
 using System.Collections;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Multiplayer;
@@ -36,7 +34,7 @@ internal static class HextechUiSafetyHooks
 		BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 	private static readonly FieldInfo? BeforeResumedAfterPlayerChoiceEventField = TryGetField(
 		typeof(GameAction),
-		"m_BeforeResumedAfterPlayerChoice",
+		"BeforeResumedAfterPlayerChoice",
 		BindingFlags.Instance | BindingFlags.NonPublic);
 
 	private static int _relicAnimationSkipLogs;

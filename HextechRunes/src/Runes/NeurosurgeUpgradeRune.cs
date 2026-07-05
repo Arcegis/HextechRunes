@@ -1,8 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Models.Cards;
-using MegaCrit.Sts2.Core.Models.Powers;
-
 namespace HextechRunes;
 
 // 升级：精神过载(仅骨妹) —— 把 Neurosurge 每回合施加的灾厄(DoomPower)从「自身」改为「全体敌人」。

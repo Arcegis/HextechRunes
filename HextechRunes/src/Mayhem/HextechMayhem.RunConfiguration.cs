@@ -1,7 +1,4 @@
 using System.Text.Json;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Multiplayer.Game;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes;
 
@@ -119,9 +116,56 @@ internal sealed partial class HextechMayhemModifier
 	private string SerializeRunConfigurationSnapshot()
 	{
 		HextechRunConfigurationSnapshot? snapshot = _runContext.RunConfigurationSnapshot;
-		return snapshot == null
-			? ""
-			: JsonSerializer.Serialize(HextechRuneConfiguration.NormalizeSnapshot(snapshot), HextechTelemetry.JsonOptions);
+		if (snapshot == null)
+		{
+			return "";
+		}
+
+		// 该 JSON 进 SavedProperty 参与双端比对，集合字段用排序数组序列化，
+		// 不依赖 HashSet 未文档化的插入序枚举；属性名与原 record 一致，Restore 仍反序列化回原类型。
+		HextechRunConfigurationSnapshot normalized = HextechRuneConfiguration.NormalizeSnapshot(snapshot);
+		return JsonSerializer.Serialize(new RunConfigurationSnapshotJson(normalized), HextechTelemetry.JsonOptions);
+	}
+
+	private sealed record RunConfigurationSnapshotJson(
+		int[] PlayerHexCountsByAct,
+		int[] EnemyHexCountsByAct,
+		int PlayerRuneRerollLimit,
+		int MonsterHexRerollLimit,
+		string[] DisabledPlayerRuneIds,
+		string[] DisabledMonsterHexIds,
+		string[] DisabledForgeIds,
+		HextechRarityWeights FirstActRuneRarityWeights,
+		HextechRarityWeights NormalRuneRarityWeights,
+		HextechRarityWeights SecondActAfterSilverRuneRarityWeights,
+		HextechForgeRarityWeights ForgeRarityWeights,
+		int RandomForgeShopPrice,
+		bool RandomForgeDirectGrant,
+		bool ModEnabled)
+	{
+		public RunConfigurationSnapshotJson(HextechRunConfigurationSnapshot snapshot)
+			: this(
+				snapshot.PlayerHexCountsByAct,
+				snapshot.EnemyHexCountsByAct,
+				snapshot.PlayerRuneRerollLimit,
+				snapshot.MonsterHexRerollLimit,
+				OrderedIds(snapshot.DisabledPlayerRuneIds),
+				OrderedIds(snapshot.DisabledMonsterHexIds),
+				OrderedIds(snapshot.DisabledForgeIds),
+				snapshot.FirstActRuneRarityWeights,
+				snapshot.NormalRuneRarityWeights,
+				snapshot.SecondActAfterSilverRuneRarityWeights,
+				snapshot.ForgeRarityWeights,
+				snapshot.RandomForgeShopPrice,
+				snapshot.RandomForgeDirectGrant,
+				snapshot.ModEnabled)
+		{
+		}
+
+		private static string[] OrderedIds(IEnumerable<string> ids)
+		{
+			return ids.OrderBy(static id => id, StringComparer.Ordinal).ToArray();
+		}
 	}
 
 	private void RestoreRunConfigurationSnapshot(string json)

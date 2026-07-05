@@ -1,5 +1,4 @@
 using System.Linq;
-using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -126,7 +125,7 @@ public sealed class MiracleEvent : EventModel
 		for (int i = 0; i < tier; i++)
 		{
 			await HextechRunesApi.ObtainRandomForges(
-				owner, RandomForgeRarity(), 1, static _ => true, $"{SponsorModInfo.Id}.miracle.forge");
+				owner, RandomForgeRarity(owner, $"forge:{tier}:{i}"), 1, static _ => true, $"{SponsorModInfo.Id}.miracle.forge");
 		}
 	}
 
@@ -157,7 +156,7 @@ public sealed class MiracleEvent : EventModel
 				return;
 			}
 
-			CardModel target = ofTier[(int)(GD.Randi() % (uint)ofTier.Count)];
+			CardModel target = ofTier[StableRoll(owner, ofTier.Count, "miracle.sacrifice", tier.ToString())];
 			await CardPileCmd.RemoveFromDeck(target);
 			await GainGold(tier == 1 ? 25 : tier == 2 ? 50 : 75);
 		}
@@ -179,7 +178,7 @@ public sealed class MiracleEvent : EventModel
 		List<CardModel> pack = [];
 		for (int i = 0; i < 3 && candidates.Count > 0; i++)
 		{
-			int idx = (int)(GD.Randi() % (uint)candidates.Count);
+			int idx = StableRoll(owner, candidates.Count, "miracle.cardpack", tier.ToString(), i.ToString());
 			// 必须 CreateCard 从卡池模板实例化(canonical 不能直接用,否则 CanonicalModelException)。
 			pack.Add(owner.RunState.CreateCard(candidates[idx], owner));
 			candidates.RemoveAt(idx);
@@ -203,10 +202,10 @@ public sealed class MiracleEvent : EventModel
 		await SpendGold(25 * tier);
 		for (int i = 0; i < tier; i++)
 		{
-			int roll = (int)(GD.Randi() % 100);
+			int roll = StableRoll(owner, 100, "miracle.gift", tier.ToString(), i.ToString());
 			if (roll < 10)
 			{
-				await HextechRunesApi.ObtainRandomForges(owner, RandomForgeRarity(), 1, static _ => true, $"{SponsorModInfo.Id}.miracle.gift.forge");
+				await HextechRunesApi.ObtainRandomForges(owner, RandomForgeRarity(owner, $"gift:{tier}:{i}"), 1, static _ => true, $"{SponsorModInfo.Id}.miracle.gift.forge");
 			}
 			else if (roll < 20)
 			{
@@ -222,7 +221,7 @@ public sealed class MiracleEvent : EventModel
 			}
 			else
 			{
-				await GainGold(1 + (int)(GD.Randi() % 100));
+				await GainGold(1 + StableRoll(owner, 100, "miracle.gift.gold", tier.ToString(), i.ToString()));
 			}
 		}
 	}
@@ -230,10 +229,53 @@ public sealed class MiracleEvent : EventModel
 	// ---- 小工具 ----
 
 	// 锻造器稀有度加权随机:65% 白银 / 25% 黄金 / 10% 棱彩(同默认锻造器权重)。
-	private static HextechRarityTier RandomForgeRarity()
+	private static HextechRarityTier RandomForgeRarity(Player owner, string salt)
 	{
-		int r = (int)(GD.Randi() % 100);
+		int r = StableRoll(owner, 100, "miracle.forge.rarity", salt);
 		return r < 65 ? HextechRarityTier.Silver : r < 90 ? HextechRarityTier.Gold : HextechRarityTier.Prismatic;
+	}
+
+	// 事件目前仅单机开放,但写游戏状态的随机一律走运行种子哈希而非 GD.Randi():
+	// 避免日后放开联机或二创移植时留下双端分叉隐患(与主模组 HextechStableRandom 同款算法)。
+	private static int StableRoll(Player owner, int count, params string?[] saltParts)
+	{
+		RunState runState = (RunState)owner.RunState;
+		ulong hash = 14695981039346656037UL;
+		AddHashPart(ref hash, runState.Rng.StringSeed);
+		AddHashPart(ref hash, "|act:");
+		AddHashPart(ref hash, runState.CurrentActIndex.ToString());
+		AddHashPart(ref hash, "|floor:");
+		AddHashPart(ref hash, runState.TotalFloor.ToString());
+		foreach (string? part in saltParts)
+		{
+			AddHashPart(ref hash, "|");
+			AddHashPart(ref hash, part);
+		}
+
+		unchecked
+		{
+			hash ^= hash >> 33;
+			hash *= 0xff51afd7ed558ccdUL;
+			hash ^= hash >> 33;
+			hash *= 0xc4ceb9fe1a85ec53UL;
+			hash ^= hash >> 33;
+		}
+
+		return (int)(hash % (ulong)count);
+	}
+
+	private static void AddHashPart(ref ulong hash, string? value)
+	{
+		if (value == null)
+		{
+			return;
+		}
+
+		foreach (char ch in value)
+		{
+			hash ^= ch;
+			hash *= 1099511628211UL;
+		}
 	}
 
 	private static int GoldAmount(int tier) => tier == 3 ? 400 : 100 * tier;

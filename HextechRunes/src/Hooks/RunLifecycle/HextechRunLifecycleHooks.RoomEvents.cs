@@ -1,7 +1,4 @@
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Rooms;
-using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Runs.History;
 
 namespace HextechRunes;
@@ -54,6 +51,19 @@ internal static partial class HextechRunLifecycleHooks
 
 	private static void OnRoomEntered()
 	{
+		// 挂在 RunManager.RoomEntered 上，异常会中断委托链导致后续订阅者单端不执行（联机分叉），必须整体兜底。
+		try
+		{
+			OnRoomEnteredCore();
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered failed: {ex}");
+		}
+	}
+
+	private static void OnRoomEnteredCore()
+	{
 		if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
 		{
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: no run state");
@@ -68,7 +78,7 @@ internal static partial class HextechRunLifecycleHooks
 
 		if (modifier != null && !modifier.IsActResolved(runState.CurrentActIndex) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(OnRoomEntered)))
 		{
-			HextechEnemyUi.Refresh(modifier);
+			RefreshEnemyUiSafely(modifier);
 		}
 
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} actResolved={modifier?.IsActResolved(runState.CurrentActIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
@@ -85,10 +95,31 @@ internal static partial class HextechRunLifecycleHooks
 			TaskHelper.RunSafely(HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier));
 		}
 
-		HextechEnemyUi.HideMayhemModifierBadge();
+		try
+		{
+			HextechEnemyUi.HideMayhemModifierBadge();
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered badge refresh failed: {ex}");
+		}
+
 		if (modifier != null)
 		{
+			RefreshEnemyUiSafely(modifier);
+		}
+	}
+
+	private static void RefreshEnemyUiSafely(HextechMayhemModifier modifier)
+	{
+		// UI 刷新是纯表现层，失败不能影响后续状态调度。
+		try
+		{
 			HextechEnemyUi.Refresh(modifier);
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered enemy UI refresh failed: {ex}");
 		}
 	}
 

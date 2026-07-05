@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Entities.Creatures;
-
 namespace HextechRunes;
 
 internal static class HextechMonsterSustainHelper

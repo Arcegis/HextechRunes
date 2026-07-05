@@ -358,6 +358,78 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
             fail(errors, f"combat tracking snapshot type mismatch for {field}: expected {expected}, got {snapshot_type}")
 
 
+def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
+    """注册模型的图标 png 必须存在于 assets(缺图运行期只会静默 NOPE 占位,这里提前到构建期报错);
+    同时对 relics 目录做孤儿资源告警。路径规则复刻 HextechAssets.TryGetCustomRelicIconPath。"""
+    relics_dir = REPO_ROOT / "assets" / "images" / "relics"
+    registry_text = registry_source_text()
+
+    expected_stems: set[str] = set()
+    rune_regs = extract_rune_registrations(registry_text)
+    for reg in rune_regs:
+        expected_stems.add(model_loc_stem(str(reg["type"])))
+    for values_list in ("EnemyHexIconRelicTypes", "EventRelicTypes"):
+        for type_name in extract_type_list(registry_text, values_list):
+            expected_stems.add(model_loc_stem(type_name))
+
+    missing = sorted(stem for stem in expected_stems if not (relics_dir / f"{stem}.png").exists())
+    if missing:
+        fail(errors, f"registered relic icon png missing under assets/images/relics: {', '.join(missing)}")
+
+    # 锻造器三档与商店占位图标是共享固定名。
+    for shared in ("silverForge", "goldForge", "prismaticForge"):
+        if not (relics_dir / f"{shared}.png").exists():
+            fail(errors, f"shared forge icon missing: assets/images/relics/{shared}.png")
+        expected_stems.add(shared)
+
+    orphans = sorted(
+        path.name
+        for path in relics_dir.glob("*.png")
+        if path.stem not in expected_stems
+    )
+    if orphans:
+        warnings.append(f"orphan relic icon png (no registered model references them): {', '.join(orphans)}")
+
+    # HextechAssets/AssetHooks 里显式书写的 res:// 路径逐一核对存在性(卡牌立绘/能力图标/特效贴图)。
+    assets_root = REPO_ROOT / "assets"
+    referenced = set()
+    for name in ("HextechAssets.cs", "AssetHooks.cs"):
+        referenced.update(re.findall(r'res://HextechRunes/(images/[^"]+\.(?:png|jpg))', read(source_file_named(name))))
+    missing_refs = sorted(ref for ref in referenced if not (assets_root / ref).exists())
+    if missing_refs:
+        fail(errors, f"hardcoded asset path missing under assets/: {', '.join(missing_refs)}")
+
+
+def validate_localization_key_parity(errors: list[str]) -> None:
+    """9 语言逐文件键集一致性(以 eng 为基准):漏译键会静默回退,这里提前到构建期报出。"""
+    baseline_dir = LOCALIZATION / "eng"
+    if not baseline_dir.exists():
+        fail(errors, "localization baseline directory eng missing")
+        return
+
+    baseline = {
+        path.name: set(json.loads(read(path)).keys())
+        for path in sorted(baseline_dir.glob("*.json"))
+    }
+    for locale_dir in sorted(LOCALIZATION.iterdir()):
+        if not locale_dir.is_dir() or locale_dir.name == "eng":
+            continue
+
+        for file_name, baseline_keys in baseline.items():
+            locale_file = locale_dir / file_name
+            if not locale_file.exists():
+                fail(errors, f"{locale_dir.name} missing localization file {file_name}")
+                continue
+
+            locale_keys = set(json.loads(read(locale_file)).keys())
+            missing = sorted(baseline_keys - locale_keys)
+            extra = sorted(locale_keys - baseline_keys)
+            if missing:
+                fail(errors, f"{locale_dir.name}/{file_name} missing keys vs eng: {', '.join(missing[:8])}{'…' if len(missing) > 8 else ''}")
+            if extra:
+                fail(errors, f"{locale_dir.name}/{file_name} extra keys vs eng: {', '.join(extra[:8])}{'…' if len(extra) > 8 else ''}")
+
+
 def main() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -366,6 +438,8 @@ def main() -> int:
     validate_rune_file_layout(errors)
     validate_enemy_hex_effect_layout(errors)
     validate_combat_tracking_state(errors)
+    validate_icon_assets(errors, warnings)
+    validate_localization_key_parity(errors)
 
     if errors:
         print("Hextech content validation failed:")

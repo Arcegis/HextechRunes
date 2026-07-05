@@ -1,12 +1,7 @@
-using System.Reflection;
 using System.Text;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
@@ -48,7 +43,7 @@ internal static class HextechCombatVfxHooks
 
 	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
 	{
-		HextechCreatureNodeRegistry.Register(__instance.GetCreatureNode(creature));
+		HextechCreatureNodeRegistry.Register(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
 	}
 
 	private static void CreatureReadyPostfix(NCreature __instance)
@@ -105,6 +100,26 @@ internal static class HextechCreatureNodeRegistry
 		if (Nodes.Count > 24)
 		{
 			Prune();
+		}
+	}
+
+	private static int _safeGetFailureLogs;
+
+	/// <summary>AddCreature postfix 专用:GetCreatureNode 在战斗构建/召唤同步链上,异常不能外泄。</summary>
+	internal static NCreature? SafeGetCreatureNode(NCombatRoom room, Creature creature)
+	{
+		try
+		{
+			return room.GetCreatureNode(creature);
+		}
+		catch (Exception ex)
+		{
+			if (_safeGetFailureLogs++ < 5)
+			{
+				Log.Error($"[{ModInfo.Id}][Mayhem] GetCreatureNode failed in AddCreature postfix: {ex}");
+			}
+
+			return null;
 		}
 	}
 

@@ -142,5 +142,7 @@
   "HEXTECH_COMMUNITY_ERR_BANNED": "Этому аккаунту загрузка запрещена.",
   "HEXTECH_COMMUNITY_SUMMARY": "Ваши гексы {0}/{1}\nВражеские гексы {2}/{3}\nВаше кол-во {4}   Врага {5}",
   "HEXTECH_COMMUNITY_TAB_MINE": "Мои",
-  "HEXTECH_COMMUNITY_HIDDEN": "(скрыто)"
+  "HEXTECH_COMMUNITY_HIDDEN": "(скрыто)",
+  "HEXTECH_MOD_ENABLED_TOGGLE_TITLE": "Enable mod",
+  "HEXTECH_MOD_ENABLED_TOGGLE_DESCRIPTION": "When off, this mod stops affecting runs starting from your next run, matching the vanilla game (your current run is unaffected). In multiplayer this follows the host's setting."
 }

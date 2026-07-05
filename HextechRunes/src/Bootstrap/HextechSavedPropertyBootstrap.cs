@@ -1,8 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Saves.Runs;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -11,6 +6,13 @@ internal static class HextechSavedPropertyBootstrap
 {
 	internal static void InjectModelType(Type type)
 	{
+		if (HextechSavedPropertyNetIdHooks.IsCanonicalized)
+		{
+			// 规范化是一次性的(ExecuteEssential 后缀):此后注入的属性名按加载顺序追加、绕过规范排序,
+			// 两端顺序可能错位 → 复刻 1014。二创/外部包必须在游戏启动初始化阶段注册,勿延迟到 run 前。
+			Log.Warn($"[{ModInfo.Id}][Mayhem] SavedProperty 载体 {type.FullName} 在 net-id 规范化之后才注入:其属性按加载顺序追加,联机可能 1014/ModMismatch。请提前到启动初始化阶段注册。");
+		}
+
 		SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 	}
 
@@ -22,7 +24,7 @@ internal static class HextechSavedPropertyBootstrap
 		}
 
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechMayhemModifier));
-		foreach (Type type in HextechCustomRunModifierHooks.CustomRarityModifierTypes)
+		foreach (Type type in HextechCustomModelRegistry.CustomRarityModifierTypes)
 		{
 			SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 		}
@@ -54,7 +56,7 @@ internal static class HextechSavedPropertyBootstrap
 	// 在 GetNetIdForPropertyName 抛 "could not be mapped" → 概率性 1014/ModMismatch。此处只 Log.Warn、绝不抛,
 	// 把"漏登记 rune / 漏加 Power 到手写清单"这类隐患从线上崩提前到启动日志。时机:所有 InjectTypeIntoCache 之后、
 	// 后续规范化只重排不增删名字,故此刻名字集合已是最终集合。
-	private static void WarnOnUninjectedSavedPropertyCarriers()
+	internal static void WarnOnUninjectedSavedPropertyCarriers()
 	{
 		try
 		{
@@ -69,24 +71,27 @@ internal static class HextechSavedPropertyBootstrap
 			HashSet<string> warned = new(StringComparer.Ordinal);
 			const BindingFlags propertyFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-			foreach (System.Type type in Assembly.GetExecutingAssembly().GetTypes())
+			foreach (Assembly assembly in GetAssembliesToAudit())
 			{
-				if (type.IsAbstract || !type.IsClass || !abstractModelType.IsAssignableFrom(type))
+				foreach (System.Type type in GetLoadableTypes(assembly))
 				{
-					continue;
-				}
-
-				foreach (PropertyInfo property in type.GetProperties(propertyFlags))
-				{
-					bool isSavedProperty = property
-						.GetCustomAttributes(inherit: true)
-						.Any(static attr => attr.GetType().Name == "SavedPropertyAttribute");
-					if (!isSavedProperty || registeredNames.Contains(property.Name) || !warned.Add(property.Name))
+					if (type.IsAbstract || !type.IsClass || !abstractModelType.IsAssignableFrom(type))
 					{
 						continue;
 					}
 
-					Log.Warn($"[{ModInfo.Id}][Mayhem] SavedProperty 注入自检:载体 {type.FullName} 的 [SavedProperty] \"{property.Name}\" 未进 net-id 表;联机(反)序列化会抛 \"could not be mapped\" 致 1014/ModMismatch。请把该类型登记进 catalog,或加入 InjectCaches 的注入清单。");
+					foreach (PropertyInfo property in type.GetProperties(propertyFlags))
+					{
+						bool isSavedProperty = property
+							.GetCustomAttributes(inherit: true)
+							.Any(static attr => attr.GetType().Name == "SavedPropertyAttribute");
+						if (!isSavedProperty || registeredNames.Contains(property.Name) || !warned.Add(property.Name))
+						{
+							continue;
+						}
+
+						Log.Warn($"[{ModInfo.Id}][Mayhem] SavedProperty 注入自检:载体 {type.FullName} 的 [SavedProperty] \"{property.Name}\" 未进 net-id 表;联机(反)序列化会抛 \"could not be mapped\" 致 1014/ModMismatch。请把该类型登记进 catalog,或加入 InjectCaches 的注入清单。");
+					}
 				}
 			}
 		}
@@ -94,6 +99,51 @@ internal static class HextechSavedPropertyBootstrap
 		{
 			// 纯诊断:任何反射异常都不得影响模组加载。
 			Log.Warn($"[{ModInfo.Id}][Mayhem] SavedProperty 注入自检跳过: {ex.Message}");
+		}
+	}
+
+	// 自检范围 = 本程序集 + 所有已加载且引用了本程序集的包(拓展包/二创包的载体也要能被抓到)。
+	private static IEnumerable<Assembly> GetAssembliesToAudit()
+	{
+		Assembly self = Assembly.GetExecutingAssembly();
+		yield return self;
+
+		string? selfName = self.GetName().Name;
+		foreach (Assembly assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+		{
+			if (assembly == self || assembly.IsDynamic)
+			{
+				continue;
+			}
+
+			bool referencesSelf = false;
+			try
+			{
+				referencesSelf = assembly
+					.GetReferencedAssemblies()
+					.Any(reference => string.Equals(reference.Name, selfName, StringComparison.Ordinal));
+			}
+			catch (System.Exception)
+			{
+				// 个别程序集的引用表读不出来就跳过,不影响其余扫描。
+			}
+
+			if (referencesSelf)
+			{
+				yield return assembly;
+			}
+		}
+	}
+
+	private static System.Type[] GetLoadableTypes(Assembly assembly)
+	{
+		try
+		{
+			return assembly.GetTypes();
+		}
+		catch (ReflectionTypeLoadException ex)
+		{
+			return ex.Types.Where(static type => type != null).Cast<System.Type>().ToArray();
 		}
 	}
 

@@ -1,16 +1,8 @@
-using System.Reflection;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Gold;
 using MegaCrit.Sts2.Core.Entities.Merchant;
-using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
-using MegaCrit.Sts2.Core.Runs;
-using MegaCrit.Sts2.Core.Saves;
 using CoreHook = MegaCrit.Sts2.Core.Hooks.Hook;
 using static HextechRunes.HextechHookReflection;
 
@@ -180,13 +172,20 @@ internal static class HextechShopForgeHooks
 		inventory.AddRelicEntry(entry);
 	}
 
-	// 模组总开关:商店随机锻造器是无条件注入普通局的少数泄漏点之一,按本局冻结值门控;无 run/modifier 时退回实时配置。
+	// 模组总开关:商店随机锻造器是无条件注入普通局的少数泄漏点之一,按本局冻结值门控。
+	// 无 run/modifier 时:联机局固定 false(实时本地配置在两端可能不同,而这里门控的是
+	// MerchantInventory 模型写入,按本地配置各走一边会库存分叉);单机局退回实时配置。
 	private static bool IsModEnabledForRun(Player? player)
 	{
 		HextechMayhemModifier? modifier = (player?.RunState as RunState)?.Modifiers
 			.OfType<HextechMayhemModifier>()
 			.LastOrDefault();
-		return modifier?.IsModActiveForRun ?? HextechRuneConfiguration.GetModEnabled();
+		if (modifier != null)
+		{
+			return modifier.IsModActiveForRun;
+		}
+
+		return !HextechPlayerContextHelper.IsNetworkMultiplayerRun() && HextechRuneConfiguration.GetModEnabled();
 	}
 
 	private static async Task<(bool, int)> PurchaseRandomForge(MerchantRelicEntry entry, MerchantInventory inventory, bool ignoreCost)

@@ -1,5 +1,3 @@
-using System;
-
 namespace HextechRunes;
 
 internal sealed class HextechActSelectionGate

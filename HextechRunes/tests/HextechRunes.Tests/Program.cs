@@ -26,6 +26,13 @@ internal static class Program
 
 	public static int Main()
 	{
+#if STS2_108_OR_NEWER
+		// 0.108 起 SavedPropertiesTypeCache 未初始化即用会抛;真实游戏由启动流程 Init(),但 Init 又依赖
+		// AssemblyInfo 等更多游戏启动态。测试环境直接置 _initialized 标志,恢复 0.107.1 的无守卫语义。
+		typeof(MegaCrit.Sts2.Core.Saves.Runs.SavedPropertiesTypeCache)
+			.GetField("_initialized", BindingFlags.NonPublic | BindingFlags.Static)
+			?.SetValue(null, true);
+#endif
 		TestCase[] tests =
 		[
 			new(nameof(ActRollRoundTripKeepsHostSnapshot), ActRollRoundTripKeepsHostSnapshot),
@@ -64,6 +71,11 @@ internal static class Program
 				new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
 				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
 				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
+			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
+			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
+			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
+			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
+			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
 				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
@@ -434,6 +446,143 @@ internal static class Program
 
 		restored.Reset();
 		Equal(0, restored.GlobalProcsThisCombat.Count, "global proc count should clear on combat tracking reset");
+	}
+
+	private static void CombatTrackingSerializationIsCultureInvariant()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		// 大小写混合键：culture 比较排 a<B，ordinal 排 B<a，用来暴露 culture-sensitive 排序。
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:apower");
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:Bpower");
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:co-op");
+		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:coop");
+
+		System.Globalization.CultureInfo original = System.Globalization.CultureInfo.CurrentCulture;
+		try
+		{
+			List<string> serialized = [];
+			foreach (string culture in new[] { "en-US", "zh-CN", "da-DK", "tr-TR" })
+			{
+				System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo(culture);
+				serialized.Add(tracking.Serialize());
+			}
+
+			for (int i = 1; i < serialized.Count; i++)
+			{
+				Equal(serialized[0], serialized[i], $"combat tracking serialization should be culture invariant (culture #{i})");
+			}
+
+			int upperIndex = serialized[0].IndexOf("Bpower", StringComparison.Ordinal);
+			int lowerIndex = serialized[0].IndexOf("apower", StringComparison.Ordinal);
+			Expect(upperIndex >= 0 && lowerIndex >= 0 && upperIndex < lowerIndex, "combat tracking keys should sort ordinally (B before a)");
+		}
+		finally
+		{
+			System.Globalization.CultureInfo.CurrentCulture = original;
+		}
+	}
+
+	// v15(0.8.4 出厂)默认禁用集的冻结快照。这是历史事实,不随注册表演进——注册表每次翻转默认启停
+	// 都必须新增迁移链段,链走完应恰好落在当前出厂默认上(由下方测试守护)。
+	private static readonly Type[] Version15FactoryDisabledRuneTypes =
+	[
+		typeof(AdaptiveCapacitorRune),
+		typeof(AdvanceToRetreatRune),
+		typeof(AnthonyBiasRune),
+		typeof(AstralBodyRune),
+		typeof(CorruptedBranchRune),
+		typeof(CrackTheEggRune),
+		typeof(CuttingEdgeAlchemistRune),
+		typeof(DawnbringersResolveRune),
+		typeof(EarthAwakensRune),
+		typeof(EndlessRecoveryRune),
+		typeof(EscapePlanRune),
+		typeof(FeelTheBurnRune),
+		typeof(HappyAccidentRune),
+		typeof(HardBonesRune),
+		typeof(HolyFireRune),
+		typeof(MasterOfDualityRune),
+		typeof(MindPurificationRune),
+		typeof(NeowsGrudgeRune),
+		typeof(NightParadeRune),
+		typeof(NoNonsenseRune),
+		typeof(OkBoomerangRune),
+		typeof(OldIdolRune),
+		typeof(PrimitiveMadnessRune),
+		typeof(RegenerationSuppressionRune),
+		typeof(SuperBrainRune),
+		typeof(SwordFlightRune),
+		typeof(WarmogsSpiritRune),
+		typeof(WarmupExerciseRune)
+	];
+
+	private static void ConfigMigrationForceResetsBelowV15()
+	{
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
+		Equal(22, version, "v14 config should land on current version");
+		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
+	}
+
+	// 「迁移链终点 == 新用户默认」双真值源守护:v15(0.8.4 出厂)默认禁用集是冻结基线,勿随注册表更新。
+	// 若未来翻转某符文默认启停时只改了注册表旗标、忘了加迁移链段,此测试即红。
+	private static void ConfigMigrationV15BaselineReachesCurrentDefault()
+	{
+		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
+		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
+		Equal(22, version, "v15 config should land on current version");
+		SetEqual(
+			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
+			migrated,
+			$"v15 factory defaults + migration chain should equal current factory defaults; migrated:\n{string.Join("\n", migrated.OrderBy(static id => id, StringComparer.Ordinal))}\ncurrent defaults:\n{string.Join("\n", HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal))}");
+	}
+
+	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
+	{
+		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(22, [customId]);
+		Equal(22, version, "current-version config keeps version");
+		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
+	}
+
+	// SavedProperty 属性名集合直接决定联机 net-id 布局(规范化按名排序):任何新增/改名/删除都必须是
+	// 有意为之并同步更新清单文件,否则与线上旧版联机会 1014。此测试把该风险面从线上提前到 CI。
+	private static void SavedPropertyManifestMatchesCheckedInList()
+	{
+		string manifestPath = Path.Combine(AppContext.BaseDirectory, "saved_property_manifest.txt");
+		Expect(File.Exists(manifestPath), $"saved_property_manifest.txt should exist at {manifestPath}");
+
+		string[] expected = File.ReadAllLines(manifestPath)
+			.Select(static line => line.Trim())
+			.Where(static line => line.Length > 0 && !line.StartsWith('#'))
+			.ToArray();
+
+		Type abstractModelType = typeof(AbstractModel);
+		const BindingFlags propertyFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+		HashSet<string> names = new(StringComparer.Ordinal);
+		foreach (Type type in typeof(HextechCatalog).Assembly.GetTypes())
+		{
+			if (type.IsAbstract || !type.IsClass || !abstractModelType.IsAssignableFrom(type))
+			{
+				continue;
+			}
+
+			foreach (PropertyInfo property in type.GetProperties(propertyFlags))
+			{
+				bool isSavedProperty = property
+					.GetCustomAttributes(inherit: true)
+					.Any(static attr => attr.GetType().Name == "SavedPropertyAttribute");
+				if (isSavedProperty)
+				{
+					names.Add(property.Name);
+				}
+			}
+		}
+
+		string[] actual = names.OrderBy(static name => name, StringComparer.Ordinal).ToArray();
+		SequenceEqual(
+			expected,
+			actual,
+			$"SavedProperty manifest drift; actual list:\n{string.Join("\n", actual)}");
 	}
 
 	private static void StableModelIdListCodecRoundTripsFromNonzeroCursor()
