@@ -38,12 +38,8 @@ public sealed class HextechPrismaticRunModifier : ModifierModel
 
 internal static class HextechCustomRunModifierHooks
 {
-	internal static readonly IReadOnlyList<Type> CustomRarityModifierTypes =
-	[
-		typeof(HextechSilverRunModifier),
-		typeof(HextechGoldRunModifier),
-		typeof(HextechPrismaticRunModifier)
-	];
+	// 清单本体在 Content/HextechCustomModelRegistry(注册表层),此处仅取用。
+	private static IReadOnlyList<Type> CustomRarityModifierTypes => HextechCustomModelRegistry.CustomRarityModifierTypes;
 
 	private static readonly FieldInfo? ModifierTickboxesField = TryGetField(typeof(NCustomRunModifiersList), "_modifierTickboxes");
 	private static readonly FieldInfo? ModifiersContainerField = TryGetField(typeof(NCustomRunModifiersList), "_container");
