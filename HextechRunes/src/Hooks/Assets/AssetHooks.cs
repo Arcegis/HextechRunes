@@ -388,6 +388,7 @@ internal static class AssetHooks
 		byte[] bytes = Godot.FileAccess.GetFileAsBytes(path);
 		if (bytes.Length == 0)
 		{
+			WarnTextureMissOnce(path, "file empty or not found");
 			return null;
 		}
 
@@ -397,6 +398,7 @@ internal static class AssetHooks
 			: image.LoadJpgFromBuffer(bytes);
 		if (err != Error.Ok)
 		{
+			WarnTextureMissOnce(path, $"image decode failed: {err}");
 			return null;
 		}
 
@@ -415,9 +417,24 @@ internal static class AssetHooks
 			return loadedTexture;
 		}
 
-		return CompressedTextureCache.TryGetValue(path, out CompressedTexture2D? cachedTexture)
-			? cachedTexture
-			: null;
+		if (CompressedTextureCache.TryGetValue(path, out CompressedTexture2D? cachedTexture))
+		{
+			return cachedTexture;
+		}
+
+		WarnTextureMissOnce(path, "ResourceLoader miss");
+		return null;
+	}
+
+	private static readonly HashSet<string> WarnedTextureMissPaths = new(StringComparer.Ordinal);
+
+	// 加载失败最终表现是静默 NOPE 占位,肉眼难归因;每路径告警一次方便定位打包/命名问题。
+	private static void WarnTextureMissOnce(string path, string reason)
+	{
+		if (WarnedTextureMissPaths.Add(path))
+		{
+			Log.Warn($"[{ModInfo.Id}][Assets] Texture load miss ({reason}): {path}");
+		}
 	}
 
 }
