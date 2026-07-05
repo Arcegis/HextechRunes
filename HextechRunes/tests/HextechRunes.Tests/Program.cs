@@ -66,6 +66,9 @@ internal static class Program
 				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
 			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
 			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
+			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
+			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
+			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
 				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
@@ -470,6 +473,68 @@ internal static class Program
 		{
 			System.Globalization.CultureInfo.CurrentCulture = original;
 		}
+	}
+
+	// v15(0.8.4 出厂)默认禁用集的冻结快照。这是历史事实,不随注册表演进——注册表每次翻转默认启停
+	// 都必须新增迁移链段,链走完应恰好落在当前出厂默认上(由下方测试守护)。
+	private static readonly Type[] Version15FactoryDisabledRuneTypes =
+	[
+		typeof(AdaptiveCapacitorRune),
+		typeof(AdvanceToRetreatRune),
+		typeof(AnthonyBiasRune),
+		typeof(AstralBodyRune),
+		typeof(CorruptedBranchRune),
+		typeof(CrackTheEggRune),
+		typeof(CuttingEdgeAlchemistRune),
+		typeof(DawnbringersResolveRune),
+		typeof(EarthAwakensRune),
+		typeof(EndlessRecoveryRune),
+		typeof(EscapePlanRune),
+		typeof(FeelTheBurnRune),
+		typeof(HappyAccidentRune),
+		typeof(HardBonesRune),
+		typeof(HolyFireRune),
+		typeof(MasterOfDualityRune),
+		typeof(MindPurificationRune),
+		typeof(NeowsGrudgeRune),
+		typeof(NightParadeRune),
+		typeof(NoNonsenseRune),
+		typeof(OkBoomerangRune),
+		typeof(OldIdolRune),
+		typeof(PrimitiveMadnessRune),
+		typeof(RegenerationSuppressionRune),
+		typeof(SuperBrainRune),
+		typeof(SwordFlightRune),
+		typeof(WarmogsSpiritRune),
+		typeof(WarmupExerciseRune)
+	];
+
+	private static void ConfigMigrationForceResetsBelowV15()
+	{
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
+		Equal(22, version, "v14 config should land on current version");
+		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
+	}
+
+	// 「迁移链终点 == 新用户默认」双真值源守护:v15(0.8.4 出厂)默认禁用集是冻结基线,勿随注册表更新。
+	// 若未来翻转某符文默认启停时只改了注册表旗标、忘了加迁移链段,此测试即红。
+	private static void ConfigMigrationV15BaselineReachesCurrentDefault()
+	{
+		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
+		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
+		Equal(22, version, "v15 config should land on current version");
+		SetEqual(
+			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
+			migrated,
+			$"v15 factory defaults + migration chain should equal current factory defaults; migrated:\n{string.Join("\n", migrated.OrderBy(static id => id, StringComparer.Ordinal))}\ncurrent defaults:\n{string.Join("\n", HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal))}");
+	}
+
+	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
+	{
+		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(22, [customId]);
+		Equal(22, version, "current-version config keeps version");
+		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
 	}
 
 	// SavedProperty 属性名集合直接决定联机 net-id 布局(规范化按名排序):任何新增/改名/删除都必须是
