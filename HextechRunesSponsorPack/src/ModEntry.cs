@@ -105,6 +105,10 @@ public static class ModEntry
 			HextechRarityTier.Prismatic,
 			tagKey: "SURVIVAL",
 			assetModId: ModInfo.Id);
+		HextechRunesApi.RegisterPlayerRune<GastritisRune>(
+			HextechRarityTier.Prismatic,
+			tagKey: "OUTPUT",
+			assetModId: ModInfo.Id);
 		HextechRunesApi.RegisterPlayerRune<EnchantmentMasterRune>(
 			HextechRarityTier.Prismatic,
 			tagKey: "COMPREHENSIVE",

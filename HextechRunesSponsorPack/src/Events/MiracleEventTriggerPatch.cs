@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Events;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
@@ -40,7 +42,7 @@ internal static class MiracleEventTriggerPatch
 			}
 
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
-			harmony.Patch(target, prefix: new HarmonyMethod(typeof(MiracleEventTriggerPatch), nameof(Prefix)));
+			harmony.Patch(target, postfix: new HarmonyMethod(typeof(MiracleEventTriggerPatch), nameof(Postfix)));
 			Log.Info($"[{SponsorModInfo.Id}] Miracle trigger patch installed on RunManager.ProceedFromTerminalRewardsScreen.");
 		}
 		catch (Exception ex)
@@ -49,32 +51,41 @@ internal static class MiracleEventTriggerPatch
 		}
 	}
 
-	// 返回 false 跳过原方法(原本只是开图);改为先进神迹,事件离开时由 NEventRoom.Proceed 开图。
-	private static bool Prefix(RunManager __instance, ref Task __result)
+	// 不再拦截原方法:让它完整执行(关领奖屏、开地图——所有原生 UI 收尾照常),
+	// 之后再从"地图已打开"状态 deferred 进神迹,与玩家从地图点进事件房的路径完全同构。
+	// (此前的 prefix 替换版把原方法的 UI 收尾一并跳过:领奖层残留拦截输入/事件选项无法点击。)
+	private static void Postfix(RunManager __instance, ref Task __result)
 	{
+		__result = ChainMiracleAfterProceed(__instance, __result);
+	}
+
+	private static async Task ChainMiracleAfterProceed(RunManager runManager, Task original)
+	{
+		await original;
+
 		try
 		{
 			if (HextechRelicBase.IsNetworkMultiplayerRun())
 			{
-				return true;
+				return;
 			}
 
-			RunState? state = __instance.DebugOnlyGetState();
+			RunState? state = runManager.DebugOnlyGetState();
 			if (state == null || state.CurrentRoomCount != 1)
 			{
-				return true;
+				return;
 			}
 
 			// 只在「战斗领奖→开图」的交接点注入(事件领奖走 NEventRoom.Proceed,不经过这里)。
 			if (state.CurrentRoom is not CombatRoom combatRoom)
 			{
-				return true;
+				return;
 			}
 
 			// 末战守卫(bug:末战拿信徒无法结算):末幕 Boss 之后不插事件,留给 EnterNextAct → WinRun 正常结算。
 			if (combatRoom.RoomType == RoomType.Boss && state.CurrentActIndex >= state.Acts.Count - 1)
 			{
-				return true;
+				return;
 			}
 
 			BelieverRune? believer = state.Players
@@ -83,17 +94,20 @@ internal static class MiracleEventTriggerPatch
 				.FirstOrDefault(static relic => relic.HasPendingMiracle);
 			if (believer == null)
 			{
-				return true;
+				return;
 			}
 
 			believer.ConsumePendingMiracle();
-			__result = EnterMiracle(__instance);
-			return false;
+			// deferred 到下一帧再 EnterRoom:脱离领奖屏 proceed 的协程栈(ExitCurrentRooms 会
+			// 销毁正在跑这段代码的战斗 UI 节点),也让地图打开的收尾先落地。
+			Callable.From(() =>
+			{
+				_ = TaskHelper.RunSafely(EnterMiracle(runManager));
+			}).CallDeferred();
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Miracle trigger prefix error: {ex.GetType().Name}: {ex.Message}", 2);
-			return true;
+			Log.Warn($"[{SponsorModInfo.Id}] Miracle trigger postfix error: {ex.GetType().Name}: {ex.Message}", 2);
 		}
 	}
 
@@ -102,12 +116,15 @@ internal static class MiracleEventTriggerPatch
 		try
 		{
 			EventModel miracle = ModelDb.Event<MiracleEvent>();
-			await runManager.EnterRoom(new EventRoom(miracle));
+			// EnterRoomDebug 即 dev console travel 的完整进房管线:ClearScreens(清掉残留的
+			// 领奖屏/地图屏——裸 EnterRoom 缺这步,残留领奖按钮层会拦截事件选项点击)、
+			// 同步等待、CreateRoom+EnterRoom、FadeIn 过场,与正常进房状态完全一致。
+			await runManager.EnterRoomDebug(RoomType.Event, model: miracle, showTransition: true);
 		}
 		catch (Exception ex)
 		{
 			Log.Warn($"[{SponsorModInfo.Id}] BelieverRune failed to enter Miracle event: {ex.GetType().Name}: {ex.Message}", 2);
-			// 兜底:进事件失败也要开图,避免玩家卡在领奖屏(跳过原方法后地图不会自动打开)。
+			// 兜底:进事件失败时确保地图可用,玩家不至于卡死。
 			try
 			{
 				NMapScreen.Instance?.SetTravelEnabled(true);

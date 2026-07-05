@@ -125,6 +125,12 @@ internal static partial class HextechCatalog
 			}
 		}
 
+		// 外部模组(拓展包)经 HextechRunesApi 注册的符文,池标签显示"拓展包"而非"通用"。
+		if (HextechExternalContentRegistry.GetAssetModId(id) != null)
+		{
+			return "SPONSOR_PACK";
+		}
+
 		return "GENERIC";
 	}
 

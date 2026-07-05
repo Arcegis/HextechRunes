@@ -73,7 +73,12 @@ public sealed class GoldStarRelic : RelicModel, IHextechSharedCombatVictoryRune
 			return;
 		}
 
+		// 0.108.0 起 Roll 去掉 AscensionManager 参数。
+#if STS2_108_OR_NEWER
+		if (Owner.PlayerOdds.PotionReward.Roll(Owner, RoomType.Monster))
+#else
 		if (Owner.PlayerOdds.PotionReward.Roll(Owner, RunManager.Instance.AscensionManager, RoomType.Monster))
+#endif
 		{
 			room.AddExtraReward(Owner, new PotionReward(Owner));
 		}
