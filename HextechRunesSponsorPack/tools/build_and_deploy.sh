@@ -58,7 +58,9 @@ if [[ -f "$GAME_RELEASE_INFO" ]]; then
   CURRENT_GAME_VERSION="$(sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"v([^"]+)".*/\1/p' "$GAME_RELEASE_INFO" | head -n 1)"
 fi
 
-HEXTECH_SPONSOR_STS2_TARGET="${HEXTECH_SPONSOR_STS2_TARGET:-$DEFAULT_STS2_TARGET}"
+# 级联回退:未显式给拓展包目标时,沿用主模组的 HEXTECH_STS2_TARGET(双分支发布流程里两个脚本
+# 常连跑,只设主模组变量时拓展包静默编成默认 0.107.1 曾是漏错版本的通道)。
+HEXTECH_SPONSOR_STS2_TARGET="${HEXTECH_SPONSOR_STS2_TARGET:-${HEXTECH_STS2_TARGET:-$DEFAULT_STS2_TARGET}}"
 case "$HEXTECH_SPONSOR_STS2_TARGET" in
   0.108*)
     HEXTECH_SPONSOR_STS2_TARGET="0.108.0"
@@ -163,12 +165,20 @@ fi
 cp "$MAIN_DLL" "$ROOT/dist/$FILE_STEM.dll"
 clean_macos_metadata "$ROOT/dist"
 
+# mods 目录内用"临时文件 + mv"原子替换(与主模组脚本一致):cp 原地覆盖重写同一 inode,
+# 游戏开着时其 PCK 偏移索引仍指向旧布局,读新内容会得到错乱资源(NOPE 贴图)。
+deploy_atomic() {
+  local src="$1" dst="$2"
+  local tmp="$dst.tmp.$$"
+  cp "$src" "$tmp"
+  mv -f "$tmp" "$dst"
+}
+
 if [[ "$HEXTECH_SPONSOR_DEPLOY" != "0" ]]; then
-  rm -rf "$MOD_DIR"
   mkdir -p "$MOD_DIR"
-  cp "$ROOT/dist/$FILE_STEM.json" "$MOD_DIR/$FILE_STEM.json"
-  cp "$ROOT/dist/$FILE_STEM.pck" "$MOD_DIR/$FILE_STEM.pck"
-  cp "$ROOT/dist/$FILE_STEM.dll" "$MOD_DIR/$FILE_STEM.dll"
+  deploy_atomic "$ROOT/dist/$FILE_STEM.json" "$MOD_DIR/$FILE_STEM.json"
+  deploy_atomic "$ROOT/dist/$FILE_STEM.pck" "$MOD_DIR/$FILE_STEM.pck"
+  deploy_atomic "$ROOT/dist/$FILE_STEM.dll" "$MOD_DIR/$FILE_STEM.dll"
   clean_macos_metadata "$MOD_DIR"
   echo "Deployed to $MOD_DIR"
 else
