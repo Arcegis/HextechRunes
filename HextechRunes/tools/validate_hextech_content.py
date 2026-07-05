@@ -400,6 +400,36 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
         fail(errors, f"hardcoded asset path missing under assets/: {', '.join(missing_refs)}")
 
 
+def validate_localization_key_parity(errors: list[str]) -> None:
+    """9 语言逐文件键集一致性(以 eng 为基准):漏译键会静默回退,这里提前到构建期报出。"""
+    baseline_dir = LOCALIZATION / "eng"
+    if not baseline_dir.exists():
+        fail(errors, "localization baseline directory eng missing")
+        return
+
+    baseline = {
+        path.name: set(json.loads(read(path)).keys())
+        for path in sorted(baseline_dir.glob("*.json"))
+    }
+    for locale_dir in sorted(LOCALIZATION.iterdir()):
+        if not locale_dir.is_dir() or locale_dir.name == "eng":
+            continue
+
+        for file_name, baseline_keys in baseline.items():
+            locale_file = locale_dir / file_name
+            if not locale_file.exists():
+                fail(errors, f"{locale_dir.name} missing localization file {file_name}")
+                continue
+
+            locale_keys = set(json.loads(read(locale_file)).keys())
+            missing = sorted(baseline_keys - locale_keys)
+            extra = sorted(locale_keys - baseline_keys)
+            if missing:
+                fail(errors, f"{locale_dir.name}/{file_name} missing keys vs eng: {', '.join(missing[:8])}{'…' if len(missing) > 8 else ''}")
+            if extra:
+                fail(errors, f"{locale_dir.name}/{file_name} extra keys vs eng: {', '.join(extra[:8])}{'…' if len(extra) > 8 else ''}")
+
+
 def main() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -409,6 +439,7 @@ def main() -> int:
     validate_enemy_hex_effect_layout(errors)
     validate_combat_tracking_state(errors)
     validate_icon_assets(errors, warnings)
+    validate_localization_key_parity(errors)
 
     if errors:
         print("Hextech content validation failed:")
