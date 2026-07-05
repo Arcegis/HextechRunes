@@ -65,6 +65,7 @@ internal static class Program
 				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
 				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
 			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
+			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
 				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
@@ -469,6 +470,47 @@ internal static class Program
 		{
 			System.Globalization.CultureInfo.CurrentCulture = original;
 		}
+	}
+
+	// SavedProperty 属性名集合直接决定联机 net-id 布局(规范化按名排序):任何新增/改名/删除都必须是
+	// 有意为之并同步更新清单文件,否则与线上旧版联机会 1014。此测试把该风险面从线上提前到 CI。
+	private static void SavedPropertyManifestMatchesCheckedInList()
+	{
+		string manifestPath = Path.Combine(AppContext.BaseDirectory, "saved_property_manifest.txt");
+		Expect(File.Exists(manifestPath), $"saved_property_manifest.txt should exist at {manifestPath}");
+
+		string[] expected = File.ReadAllLines(manifestPath)
+			.Select(static line => line.Trim())
+			.Where(static line => line.Length > 0 && !line.StartsWith('#'))
+			.ToArray();
+
+		Type abstractModelType = typeof(AbstractModel);
+		const BindingFlags propertyFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+		HashSet<string> names = new(StringComparer.Ordinal);
+		foreach (Type type in typeof(HextechCatalog).Assembly.GetTypes())
+		{
+			if (type.IsAbstract || !type.IsClass || !abstractModelType.IsAssignableFrom(type))
+			{
+				continue;
+			}
+
+			foreach (PropertyInfo property in type.GetProperties(propertyFlags))
+			{
+				bool isSavedProperty = property
+					.GetCustomAttributes(inherit: true)
+					.Any(static attr => attr.GetType().Name == "SavedPropertyAttribute");
+				if (isSavedProperty)
+				{
+					names.Add(property.Name);
+				}
+			}
+		}
+
+		string[] actual = names.OrderBy(static name => name, StringComparer.Ordinal).ToArray();
+		SequenceEqual(
+			expected,
+			actual,
+			$"SavedProperty manifest drift; actual list:\n{string.Join("\n", actual)}");
 	}
 
 	private static void StableModelIdListCodecRoundTripsFromNonzeroCursor()
