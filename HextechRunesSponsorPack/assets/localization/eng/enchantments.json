@@ -1,10 +1,6 @@
 {
-  "evolution.title": "Evolution",
   "EVOLUTION.title": "Evolution",
-  "evolution.description": "This card gains [gold]Exhaust[/gold]. After an Attack is played, permanently increase its damage by [blue]2[/blue]. After a Skill is played, permanently increase its Block by [blue]2[/blue]. After a Power is played, permanently reduce its Energy cost by [blue]1[/blue].",
   "EVOLUTION.description": "This card gains [gold]Exhaust[/gold]. After an Attack is played, permanently increase its damage by [blue]2[/blue]. After a Skill is played, permanently increase its Block by [blue]2[/blue]. After a Power is played, permanently reduce its Energy cost by [blue]1[/blue].",
-  "sponsorCompositeEnchantment.title": "Stacked Enchantments",
   "SPONSOR_COMPOSITE_ENCHANTMENT.title": "Stacked Enchantments",
-  "sponsorCompositeEnchantment.description": "This card has multiple enchantments. See the tips below for each individual effect.",
   "SPONSOR_COMPOSITE_ENCHANTMENT.description": "This card has multiple enchantments. See the tips below for each individual effect."
 }

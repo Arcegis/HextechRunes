@@ -1,10 +1,6 @@
 {
-  "evolution.title": "Evolução",
   "EVOLUTION.title": "Evolução",
-  "evolution.description": "Esta carta ganha [gold]Exaurir[/gold]. Depois que um Ataque é jogado, aumente permanentemente seu dano em [blue]2[/blue]. Depois que uma Habilidade é jogada, aumente permanentemente seu Bloqueio em [blue]2[/blue]. Depois que um Poder é jogado, reduza permanentemente seu custo de Energia em [blue]1[/blue].",
   "EVOLUTION.description": "Esta carta ganha [gold]Exaurir[/gold]. Depois que um Ataque é jogado, aumente permanentemente seu dano em [blue]2[/blue]. Depois que uma Habilidade é jogada, aumente permanentemente seu Bloqueio em [blue]2[/blue]. Depois que um Poder é jogado, reduza permanentemente seu custo de Energia em [blue]1[/blue].",
-  "sponsorCompositeEnchantment.title": "Encantamentos Empilhados",
   "SPONSOR_COMPOSITE_ENCHANTMENT.title": "Encantamentos Empilhados",
-  "sponsorCompositeEnchantment.description": "Esta carta possui vários encantamentos. Veja as dicas abaixo para cada efeito individual.",
   "SPONSOR_COMPOSITE_ENCHANTMENT.description": "Esta carta possui vários encantamentos. Veja as dicas abaixo para cada efeito individual."
 }

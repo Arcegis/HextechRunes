@@ -1,10 +1,6 @@
 {
-  "evolution.title": "進化",
   "EVOLUTION.title": "進化",
-  "evolution.description": "このカードは[gold]廃棄[/gold]を得る。アタックをプレイした後、そのダメージを永久に[blue]2[/blue]増やす。スキルをプレイした後、そのブロックを永久に[blue]2[/blue]増やす。パワーをプレイした後、そのエナジーコストを永久に[blue]1[/blue]減らす。",
   "EVOLUTION.description": "このカードは[gold]廃棄[/gold]を得る。アタックをプレイした後、そのダメージを永久に[blue]2[/blue]増やす。スキルをプレイした後、そのブロックを永久に[blue]2[/blue]増やす。パワーをプレイした後、そのエナジーコストを永久に[blue]1[/blue]減らす。",
-  "sponsorCompositeEnchantment.title": "複合エンチャント",
   "SPONSOR_COMPOSITE_ENCHANTMENT.title": "複合エンチャント",
-  "sponsorCompositeEnchantment.description": "このカードは複数のエンチャントを持つ。各効果は下のヒントを確認する。",
   "SPONSOR_COMPOSITE_ENCHANTMENT.description": "このカードは複数のエンチャントを持つ。各効果は下のヒントを確認する。"
 }
