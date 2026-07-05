@@ -418,7 +418,26 @@
     "PHROG_PARASITE_HEX": "升级：异蛙寄生虫",
     "VANTOM_HEX": "升级：墨影幻灵",
     "AEONGLASS_HEX": "升级：永世沙漏",
-    "BELIEVER_RUNE": "信徒"
+    "BELIEVER_RUNE": "信徒",
+    "VITALITY_SURGE_RUNE": "生机迸发",
+    "OUR_HEALING_RUNE": "我们的治疗",
+    "BURNING_INTEREST_RUNE": "炽燃利息",
+    "SOULS_POWER_FORGE": "灵魂锻造器",
+    "ETERNAL_ARMOR_UPGRADE_RUNE": "升级：永恒铠甲",
+    "JACKPOT_UPGRADE_RUNE": "升级：大奖",
+    "THE_LOST_HEX": "升级：失落之物",
+    "THE_FORGOTTEN_HEX": "升级：遗忘之物",
+    "SLIMED_BERSERKER_HEX": "升级：史莱姆狂战士",
+    "GLOBE_HEAD_HEX": "升级：电球头",
+    "MYTE_HEX": "升级：异螨",
+    "BYRDONIS_HEX": "升级：多尼斯异鸟",
+    "SILVER_ATTACK_FORGE": "攻击锻造器",
+    "GOLD_ATTACK_FORGE": "攻击锻造器",
+    "SILVER_PROTECTION_FORGE": "防护锻造器",
+    "GOLD_PROTECTION_FORGE": "防护锻造器",
+    "SILVER_HP_FORGE": "血量锻造器",
+    "GOLD_HP_FORGE": "血量锻造器",
+    "GASTRITIS_RUNE": "是胃炎"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",
@@ -535,7 +554,13 @@
     "Inklet": "升级：墨宝",
     "PhrogParasite": "升级：异蛙寄生虫",
     "Vantom": "升级：墨影幻灵",
-    "Aeonglass": "升级：永世沙漏"
+    "Aeonglass": "升级：永世沙漏",
+    "TheLost": "升级：失落之物",
+    "TheForgotten": "升级：遗忘之物",
+    "SlimedBerserker": "升级：史莱姆狂战士",
+    "GlobeHead": "升级：电球头",
+    "Myte": "升级：异螨",
+    "Byrdonis": "升级：多尼斯异鸟"
   },
   "characters": {
     "IRONCLAD": "战士",
