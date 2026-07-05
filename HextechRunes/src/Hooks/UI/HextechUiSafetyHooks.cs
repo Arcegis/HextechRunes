@@ -36,7 +36,7 @@ internal static class HextechUiSafetyHooks
 		BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 	private static readonly FieldInfo? BeforeResumedAfterPlayerChoiceEventField = TryGetField(
 		typeof(GameAction),
-		"m_BeforeResumedAfterPlayerChoice",
+		"BeforeResumedAfterPlayerChoice",
 		BindingFlags.Instance | BindingFlags.NonPublic);
 
 	private static int _relicAnimationSkipLogs;
