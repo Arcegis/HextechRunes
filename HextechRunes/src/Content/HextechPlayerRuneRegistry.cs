@@ -129,6 +129,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<OverflowRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<SturdyRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<LoopRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
+        Rune<VitalitySurgeRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
         Rune<OkBoomerangRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
         Rune<DivineInterventionRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<SonataRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
