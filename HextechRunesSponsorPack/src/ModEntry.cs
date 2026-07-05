@@ -6,6 +6,12 @@ using MegaCrit.Sts2.Core.Modding;
 
 namespace HextechRunesSponsorPack;
 
+// ⚠️ 命名空间冻结约束(勿"规范化"重命名):
+// 本包多数内容类型(Runes/Relics/Events 下 14 个文件)有意声明 `namespace HextechRunes;`,与主模组共享
+// 命名空间以复用其基类/本地化键推导。这些类型的【类名】参与本地化大写 slug 键与 ModelId,
+// 【[SavedProperty] 属性名】参与联机 net-id 表与存档——改任何一个都会破坏存档/联机兼容。
+// 另:主模组的层级不可改为 HextechRunes.Xxx 形式——本包 MiracleEventForgePricePatch 按全名字符串
+// TypeByName("HextechRunes.HextechForgeShopPriceHelper") 查找主模组 internal 类,改层级即静默失效。
 [ModInitializer(nameof(Initialize))]
 public static class ModEntry
 {
