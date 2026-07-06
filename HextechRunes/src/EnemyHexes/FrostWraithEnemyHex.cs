@@ -7,7 +7,11 @@ internal sealed class FrostWraithEnemyHex : HextechEnemyHexEffect
 #if STS2_104_OR_NEWER
 	internal override async Task BeforePlayerSideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
-		if (combatState.RoundNumber > 1 && combatState.RoundNumber % 4 == 0 && players.Count > 0)
+		// 额外回合不推进 RoundNumber 且回合开始 hook 会重入,按回合防重。
+		if (combatState.RoundNumber > 1
+			&& combatState.RoundNumber % 4 == 0
+			&& players.Count > 0
+			&& HextechCombatProcTracker.ConsumeGlobalProcInCombat(context.Tracking, $"round-once:{Kind}:{combatState.RoundNumber}") == 0)
 		{
 			await context.RunGroupedPlayerDebuffBurst(async () =>
 			{

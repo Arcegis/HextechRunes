@@ -1281,7 +1281,7 @@
   "INKLET_HEX.title": "升级：墨宝",
   "INKLET_HEX.description": "战斗开始时，所有敌人获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]滑溜[/gold]。",
   "INKLET_HEX.flavor": "一滴墨足以让整页字迹打滑。",
-  "inkletHex.enemyDescription": "战斗开始时，所有敌人获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]滑溜[/gold]。",
+  "inkletHex.enemyDescription": "战斗开始时，所有敌人获得[blue]{Stacks1}[/blue]/[blue]{Stacks2}[/blue]/[blue]{Stacks3}[/blue]层[gold]滑溜[/gold]。",
   "PHROG_PARASITE_HEX.title": "升级：异蛙寄生虫",
   "PHROG_PARASITE_HEX.description": "敌人每次造成未被格挡的伤害时，将[blue]1[/blue]张[gold]感染[/gold]加入玩家的弃牌堆。",
   "PHROG_PARASITE_HEX.flavor": "蛙只是宿主，痒的是你。",

@@ -1281,7 +1281,7 @@
   "INKLET_HEX.title": "Upgrade: Tintoide",
   "INKLET_HEX.description": "Al comienzo del combate, todos los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Escurridizo[/gold].",
   "INKLET_HEX.flavor": "Una gota de tinta basta para que resbale toda la página.",
-  "inkletHex.enemyDescription": "Al comienzo del combate, todos los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Escurridizo[/gold].",
+  "inkletHex.enemyDescription": "Al comienzo del combate, todos los enemigos obtienen [blue]{Stacks1}[/blue]/[blue]{Stacks2}[/blue]/[blue]{Stacks3}[/blue] [gold]Escurridizo[/gold].",
   "PHROG_PARASITE_HEX.title": "Upgrade: Sapo agusanado",
   "PHROG_PARASITE_HEX.description": "Siempre que el enemigo inflige daño desbloqueado, agrega [blue]1[/blue] [gold]Infección[/gold] a la pila de descarte del jugador.",
   "PHROG_PARASITE_HEX.flavor": "La rana es solo el huésped. La picazón es tuya.",

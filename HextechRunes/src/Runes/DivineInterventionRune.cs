@@ -18,16 +18,28 @@ public sealed class DivineInterventionRune : HextechRelicBase
 		return IsNetworkMultiplayer();
 	}
 
+	// 额外回合不推进 RoundNumber 且回合开始 hook 会重入,周期触发按 RoundNumber 防重。
+	private int _lastProcRound = -1;
+
+	public override Task BeforeCombatStart()
+	{
+		_lastProcRound = -1;
+		return Task.CompletedTask;
+	}
+
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner
 			|| Owner.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RoundNumber <= 1
-			|| combatState.RoundNumber % DynamicVars["TurnsNeeded"].IntValue != 0)
+			|| combatState.RoundNumber % DynamicVars["TurnsNeeded"].IntValue != 0
+			|| _lastProcRound == combatState.RoundNumber)
 		{
 			return;
 		}
+
+		_lastProcRound = combatState.RoundNumber;
 
 		IReadOnlyList<Creature> players = combatState.Players
 			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)

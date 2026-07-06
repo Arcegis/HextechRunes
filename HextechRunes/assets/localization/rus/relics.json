@@ -1281,7 +1281,7 @@
   "INKLET_HEX.title": "Улучшение: Чернильник",
   "INKLET_HEX.description": "В начале боя все враги получают [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Изворотливости[/gold].",
   "INKLET_HEX.flavor": "Одной капли чернил хватит, чтобы вся страница поскользнулась.",
-  "inkletHex.enemyDescription": "В начале боя все враги получают [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Изворотливости[/gold].",
+  "inkletHex.enemyDescription": "В начале боя все враги получают [blue]{Stacks1}[/blue]/[blue]{Stacks2}[/blue]/[blue]{Stacks3}[/blue] [gold]Изворотливости[/gold].",
   "PHROG_PARASITE_HEX.title": "Улучшение: Лягуш-паразит",
   "PHROG_PARASITE_HEX.description": "Каждый раз, когда враг наносит незаблокированный урон, добавьте [blue]1[/blue] [gold]Инфекцию[/gold] в стопку сброса игрока.",
   "PHROG_PARASITE_HEX.flavor": "Лягух — лишь носитель. Чешется у тебя.",

@@ -14,14 +14,26 @@ public sealed class SonataRune : HextechRelicBase
 		return IsNetworkMultiplayer();
 	}
 
+	// 额外回合不推进 RoundNumber 且回合开始 hook 会重入,奇偶效果按 RoundNumber 防重。
+	private int _lastProcRound = -1;
+
+	public override Task BeforeCombatStart()
+	{
+		_lastProcRound = -1;
+		return Task.CompletedTask;
+	}
+
 	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner
 			|| Owner.Creature.IsDead
-			|| player.Creature.CombatState is not HextechCombatState combatState)
+			|| player.Creature.CombatState is not HextechCombatState combatState
+			|| _lastProcRound == combatState.RoundNumber)
 		{
 			return;
 		}
+
+		_lastProcRound = combatState.RoundNumber;
 
 		List<Player> players = combatState.Players
 			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)

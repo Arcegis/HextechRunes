@@ -1281,7 +1281,7 @@
   "INKLET_HEX.title": "Upgrade: Nanquíneo",
   "INKLET_HEX.description": "No início do combate, todos os inimigos ganham [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Escorregadio[/gold].",
   "INKLET_HEX.flavor": "Uma gota de tinta basta para a página inteira escorregar.",
-  "inkletHex.enemyDescription": "No início do combate, todos os inimigos ganham [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Escorregadio[/gold].",
+  "inkletHex.enemyDescription": "No início do combate, todos os inimigos ganham [blue]{Stacks1}[/blue]/[blue]{Stacks2}[/blue]/[blue]{Stacks3}[/blue] de [gold]Escorregadio[/gold].",
   "PHROG_PARASITE_HEX.title": "Upgrade: Sapo Parasitado",
   "PHROG_PARASITE_HEX.description": "Sempre que o inimigo causa dano não bloqueado, adicione [blue]1[/blue] [gold]Infestação[/gold] à pilha de descarte do jogador.",
   "PHROG_PARASITE_HEX.flavor": "O sapo é só o hospedeiro. A coceira é sua.",

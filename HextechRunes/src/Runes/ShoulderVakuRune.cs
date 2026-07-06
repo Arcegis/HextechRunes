@@ -16,10 +16,14 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		new DynamicVar("HealPercent", 5m)
 	];
 
+	// 额外回合不推进 RoundNumber 且回合开始 hook 会重入,奇数回合回血按 RoundNumber 防重。
+	private int _lastHealRound = -1;
+
 	public override Task BeforeCombatStart()
 	{
 		_lastControlledRound = 0;
 		_controllingTurn = false;
+		_lastHealRound = -1;
 		return Task.CompletedTask;
 	}
 
@@ -27,6 +31,7 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	{
 		_lastControlledRound = 0;
 		_controllingTurn = false;
+		_lastHealRound = -1;
 		return Task.CompletedTask;
 	}
 
@@ -42,11 +47,12 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (!IsOddOwnerTurn(player, out _))
+		if (!IsOddOwnerTurn(player, out int round) || _lastHealRound == round)
 		{
 			return;
 		}
 
+		_lastHealRound = round;
 		int heal = Math.Max(1, FloorToInt(Owner!.Creature.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
 		Flash();
 		await CreatureCmd.Heal(Owner.Creature, heal);

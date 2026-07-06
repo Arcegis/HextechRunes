@@ -53,12 +53,27 @@ public sealed class TranscendentEvilRune : HextechRelicBase, IHextechSharedComba
 		return Task.CompletedTask;
 	}
 
+	// 额外回合不推进 RoundNumber 且 side turn start 会重入,按 RoundNumber 防重(否则集中+槽位双发)。
+	private int _lastProcRound = -1;
+
+	public override Task BeforeCombatStart()
+	{
+		_lastProcRound = -1;
+		return Task.CompletedTask;
+	}
+
 	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side || combatState.RoundNumber > 1 || !IsDefectOwner)
+		if (Owner == null
+			|| side != Owner.Creature.Side
+			|| combatState.RoundNumber > 1
+			|| _lastProcRound == combatState.RoundNumber
+			|| !IsDefectOwner)
 		{
 			return;
 		}
+
+		_lastProcRound = combatState.RoundNumber;
 
 		int bonus = FloorToInt(_stacks / DynamicVars["StacksPerBonus"].BaseValue);
 		if (bonus <= 0)

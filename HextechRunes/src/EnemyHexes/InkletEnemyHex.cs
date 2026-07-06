@@ -6,6 +6,7 @@ internal sealed class InkletEnemyHex : HextechEnemyHexEffect
 
 	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{
-		return PowerCmd.Apply<SlipperyPower>(enemy, context.TierValue(Kind, 1, 2, 3), enemy, null);
+		// 走缩放路径:联机按玩家数放大(N/2N/3N),描述侧由 PlayerCountScaledStacks 同步显示。
+		return HextechEnemyPowerScalingHooks.Apply<SlipperyPower>(enemy, context.TierValue(Kind, 1, 2, 3), enemy, null);
 	}
 }

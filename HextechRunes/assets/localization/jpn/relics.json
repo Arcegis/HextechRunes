@@ -1281,7 +1281,7 @@
   "INKLET_HEX.title": "Upgrade: インクレット",
   "INKLET_HEX.description": "戦闘開始時に、すべての敵は [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]スリップ[/gold]を獲得します。",
   "INKLET_HEX.flavor": "一滴の墨で、ページ全体が滑り出す。",
-  "inkletHex.enemyDescription": "戦闘開始時に、すべての敵は [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]スリップ[/gold]を獲得します。",
+  "inkletHex.enemyDescription": "戦闘開始時に、すべての敵は [blue]{Stacks1}[/blue]/[blue]{Stacks2}[/blue]/[blue]{Stacks3}[/blue] [gold]スリップ[/gold]を獲得します。",
   "PHROG_PARASITE_HEX.title": "Upgrade: 寄生キャエル",
   "PHROG_PARASITE_HEX.description": "敵はブロックされていないダメージを与えるたびに、[blue]1[/blue] 枚の[gold]感染[/gold]をプレイヤーの捨て札に追加します。",
   "PHROG_PARASITE_HEX.flavor": "カエルはただの宿主。痒いのはお前だ。",
