@@ -71,6 +71,7 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.ShrinkEngine] = new[] { ("Stacks", 1) },
 			[MonsterHexKind.ProtectiveVeil] = new[] { ("Stacks1", 1), ("Stacks2", 2), ("Stacks3", 3) },
 			[MonsterHexKind.HailToTheKing] = new[] { ("Stacks", 3) },
+			[MonsterHexKind.Inklet] = new[] { ("Stacks1", 1), ("Stacks2", 2), ("Stacks3", 3) },
 		};
 
 	public static string GetEnemyHexDescriptionFormatted(MonsterHexKind hex)

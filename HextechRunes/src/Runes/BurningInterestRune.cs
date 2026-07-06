@@ -62,12 +62,17 @@ public sealed class BurningInterestRune : HextechRelicBase
 		await PowerCmd.Apply<HextechBurnPower>(target, DynamicVars["HextechBurnPower"].BaseValue, Owner.Creature, cardSource);
 	}
 
+	// 演出用"无限血"怪的判定阈值:瀑布兽终幕演出为 999,999,999 血,正常怪(含联机/无尽)远低于此。
+	// 灼烧按当前生命百分比结算,对这类怪一跳就是千万级伤害,计息会瞬间爆炸,直接排除。
+	private const decimal InfiniteHpThreshold = 10_000_000m;
+
 	public override Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| !HextechBurnPower.IsResolvingDamage
-			|| result.TotalDamage <= 0m)
+			|| result.TotalDamage <= 0m
+			|| target.MaxHp >= InfiniteHpThreshold)
 		{
 			return Task.CompletedTask;
 		}

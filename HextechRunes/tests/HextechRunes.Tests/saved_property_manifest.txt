@@ -24,6 +24,7 @@ SavedDeathsThisCombat
 SavedEnemyHexCountsByAct
 SavedEnemyTezcatarasMercyCombatCounter
 SavedExhaustedCardsThisCombat
+SavedFeedBonusGranted
 SavedGeneratedCardsThisCombat
 SavedHasPreviousTurn
 SavedHexCountRecoveryBaseline
@@ -48,6 +49,7 @@ SavedPendingRewardCardId
 SavedPendingTemporaryStrength
 SavedPendingTrigger
 SavedPendingWishAmount
+SavedPercentHpGranted
 SavedPlayerHexCountsByAct
 SavedPlayerRuneConfigDisabledIdsJson
 SavedProcsThisTurn

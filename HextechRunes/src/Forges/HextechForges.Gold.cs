@@ -78,8 +78,19 @@ public sealed class GoldLifeForge : HextechForgeBase
 }
 
 // 血量锻造器:百分比版最大生命(棱彩"生命锻造器"30% 的 1/2),与固定值的生命锻造器并存。
-public sealed class GoldHpForge : HextechForgeBase
+public sealed class GoldHpForge : HextechForgeBase, IHextechPercentHpForge
 {
+	private int _grantedMaxHp;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedPercentHpGranted
+	{
+		get => _grantedMaxHp;
+		set => _grantedMaxHp = Math.Max(0, value);
+	}
+
+	int IHextechPercentHpForge.GrantedPercentHp => _grantedMaxHp;
+
 	public override bool HasUponPickupEffect => true;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -94,7 +105,8 @@ public sealed class GoldHpForge : HextechForgeBase
 			return Task.CompletedTask;
 		}
 
-		int maxHpGain = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["MaxHpPercent"].BaseValue / 100m));
+		int maxHpGain = Math.Max(1, FloorToInt(GetPercentHpBaseline(Owner) * DynamicVars["MaxHpPercent"].BaseValue / 100m));
+		_grantedMaxHp += maxHpGain;
 		Flash();
 		return CreatureCmd.GainMaxHp(Owner.Creature, maxHpGain);
 	}

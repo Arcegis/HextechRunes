@@ -13,8 +13,12 @@ public sealed class FrostWraithRune : HextechRelicBase
 		HoverTipFactory.FromPower<SlowPower>()
 	];
 
+	// 额外回合不推进 RoundNumber 且回合开始 hook 会重入,周期触发按 RoundNumber 防重。
+	private int _lastProcRound = -1;
+
 	public override async Task BeforeCombatStart()
 	{
+		_lastProcRound = -1;
 		if (Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
@@ -29,11 +33,13 @@ public sealed class FrostWraithRune : HextechRelicBase
 			|| Owner.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RoundNumber <= 1
-			|| (combatState.RoundNumber - 1) % DynamicVars["TurnsNeeded"].IntValue != 0)
+			|| (combatState.RoundNumber - 1) % DynamicVars["TurnsNeeded"].IntValue != 0
+			|| _lastProcRound == combatState.RoundNumber)
 		{
 			return;
 		}
 
+		_lastProcRound = combatState.RoundNumber;
 		await ApplySlow(combatState);
 	}
 

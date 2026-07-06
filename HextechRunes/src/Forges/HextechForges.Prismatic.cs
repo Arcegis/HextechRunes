@@ -1,7 +1,18 @@
 namespace HextechRunes;
 
-public sealed class PrismaticLifeForge : HextechForgeBase
+public sealed class PrismaticLifeForge : HextechForgeBase, IHextechPercentHpForge
 {
+	private int _grantedMaxHp;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public int SavedPercentHpGranted
+	{
+		get => _grantedMaxHp;
+		set => _grantedMaxHp = Math.Max(0, value);
+	}
+
+	int IHextechPercentHpForge.GrantedPercentHp => _grantedMaxHp;
+
 	public override bool HasUponPickupEffect => true;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -16,7 +27,8 @@ public sealed class PrismaticLifeForge : HextechForgeBase
 			return Task.CompletedTask;
 		}
 
-		int maxHpGain = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * DynamicVars["MaxHpPercent"].BaseValue / 100m));
+		int maxHpGain = Math.Max(1, FloorToInt(GetPercentHpBaseline(Owner) * DynamicVars["MaxHpPercent"].BaseValue / 100m));
+		_grantedMaxHp += maxHpGain;
 		Flash();
 		return CreatureCmd.GainMaxHp(Owner.Creature, maxHpGain);
 	}

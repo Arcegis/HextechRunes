@@ -3,288 +3,340 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>海克斯符文统计</title>
+  <title>海克斯大乱斗 · 数据观测台</title>
   <style>
     :root {
-      color-scheme: light dark;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #eef2f0;
-      color: #182124;
-      --bg: #eef2f0;
-      --panel: #ffffff;
-      --panel-soft: #f7faf8;
-      --text: #182124;
-      --muted: #657275;
-      --line: #d7dfdc;
-      --line-strong: #bfcac6;
-      --accent: #7c3aed;
-      --accent-soft: #efe8ff;
-      --accent-text: #4c1d95;
-      --shadow: 0 10px 26px rgba(24, 33, 36, 0.08);
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --bg: #0a0f16;
+      --bg-glow-1: rgba(10, 200, 185, 0.05);
+      --bg-glow-2: rgba(200, 170, 110, 0.04);
+      --panel: #101a26;
+      --panel-soft: #0d1520;
+      --panel-raise: #14202e;
+      --text: #dfeef1;
+      --muted: #7d93a3;
+      --line: #1d3040;
+      --line-strong: #2a4358;
+      --teal: #0ac8b9;
+      --teal-soft: rgba(10, 200, 185, 0.12);
+      --teal-line: rgba(10, 200, 185, 0.35);
+      --gold: #c8aa6e;
+      --gold-bright: #f0d492;
+      --gold-soft: rgba(200, 170, 110, 0.12);
+      --red: #e06c6c;
+      --green: #63c78a;
+      --shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
     }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 30px;
-      background: var(--bg);
+      padding: 28px 30px 60px;
+      background:
+        radial-gradient(900px 480px at 12% -8%, var(--bg-glow-1), transparent 60%),
+        radial-gradient(820px 460px at 92% 0%, var(--bg-glow-2), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
-    main {
-      max-width: 1280px;
-      margin: 0 auto;
-    }
+    main { max-width: 1280px; margin: 0 auto; }
+
+    /* ---------- 顶栏 ---------- */
     .dashboard-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: flex-end;
       gap: 24px;
-      margin-bottom: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+    .dashboard-header::after {
+      content: "";
+      position: absolute;
+      left: 0; bottom: -1px;
+      width: 220px; height: 1px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-hex {
+      width: 46px; height: 52px; flex: none;
+      filter: drop-shadow(0 0 10px rgba(10, 200, 185, 0.35));
     }
     h1 {
-      margin: 0 0 6px;
-      font-size: 30px;
-      letter-spacing: 0;
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      background: linear-gradient(120deg, var(--gold-bright), var(--gold) 55%, #9a7f4e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-    h2 {
-      margin: 0 0 12px;
-      font-size: 18px;
+    .subtitle { margin-top: 4px; font-size: 13px; color: var(--muted); letter-spacing: 2px; }
+    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .controls label { color: var(--muted); font-size: 13px; }
+    select, button, input[type="search"] {
+      background: var(--panel-raise);
+      color: var(--text);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .18s, box-shadow .18s;
     }
-    .muted {
-      color: var(--muted);
-      margin-bottom: 18px;
-      line-height: 1.55;
+    select:focus, input[type="search"]:focus { border-color: var(--teal-line); box-shadow: 0 0 0 3px var(--teal-soft); }
+    button {
+      cursor: pointer;
+      border-color: var(--gold);
+      color: var(--gold-bright);
+      background: linear-gradient(180deg, rgba(200,170,110,0.14), rgba(200,170,110,0.05));
     }
+    button:hover:not(:disabled) { box-shadow: 0 0 14px rgba(200, 170, 110, 0.25); }
+    button:disabled { opacity: .55; cursor: wait; }
+    .muted { color: var(--muted); line-height: 1.55; font-size: 13px; }
+    #updated { margin: 14px 0 4px; }
+
+    /* ---------- 统计卡 ---------- */
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 12px;
-      margin: 18px 0 18px;
+      margin: 18px 0;
     }
     .stat {
+      position: relative;
+      background: linear-gradient(180deg, var(--panel-raise), var(--panel-soft));
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      background: var(--panel);
-      box-shadow: var(--shadow);
+      border-radius: 12px;
+      padding: 16px 18px 14px;
+      overflow: hidden;
+      transition: transform .18s, border-color .18s, box-shadow .18s;
+    }
+    .stat:hover { transform: translateY(-2px); border-color: var(--teal-line); box-shadow: 0 8px 24px rgba(10, 200, 185, 0.08); }
+    .stat::before {
+      content: "";
+      position: absolute; inset: 0 auto auto 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, var(--teal), transparent 70%);
+      opacity: .6;
     }
     .stat b {
       display: block;
-      font-size: 24px;
-      margin-bottom: 4px;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--gold-bright);
       font-variant-numeric: tabular-nums;
-      color: var(--accent-text);
+      margin-bottom: 4px;
     }
-    .links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 12px 0 20px;
+    .stat span { font-size: 12.5px; color: var(--muted); letter-spacing: .5px; }
+    .stat.hero b { color: var(--teal); text-shadow: 0 0 18px rgba(10, 200, 185, 0.35); }
+
+    /* ---------- Top 榜单 ---------- */
+    .podium-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin: 8px 0 20px;
     }
-    .links a {
-      display: inline-flex;
-      align-items: center;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 7px 10px;
-      color: inherit;
+    .podium {
       background: var(--panel);
-      text-decoration: none;
-      font-size: 14px;
-    }
-    .links a:hover {
-      border-color: var(--accent);
-      color: var(--accent-text);
-    }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      margin: 0;
-      padding: 12px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
+      border-radius: 12px;
+      padding: 14px 16px;
       box-shadow: var(--shadow);
     }
-    .controls label {
+    .podium h3 {
+      margin: 0 0 10px;
       font-size: 14px;
-      font-weight: 650;
+      letter-spacing: 1px;
+      display: flex; align-items: center; gap: 8px;
     }
-    .controls select,
-    .controls button {
-      min-width: 180px;
+    .podium h3 .dot { width: 8px; height: 8px; border-radius: 2px; transform: rotate(45deg); flex: none; }
+    .podium ol { list-style: none; margin: 0; padding: 0; }
+    .podium li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 2px;
+      border-bottom: 1px dashed var(--line);
+      font-size: 13.5px;
+    }
+    .podium li:last-child { border-bottom: none; }
+    .podium .rank {
+      width: 20px; height: 20px; flex: none;
+      display: grid; place-items: center;
+      font-size: 11px; font-weight: 700;
+      border-radius: 4px;
+      background: var(--panel-raise);
+      color: var(--muted);
       border: 1px solid var(--line-strong);
-      border-radius: 6px;
-      padding: 7px 10px;
+    }
+    .podium li:first-child .rank { background: var(--gold-soft); color: var(--gold-bright); border-color: var(--gold); }
+    .podium .p-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .podium .p-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+    /* ---------- 链接行 ---------- */
+    .links { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 22px; }
+    .links a {
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 12.5px;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
       background: var(--panel-soft);
-      color: inherit;
-      font: inherit;
-      font-size: 14px;
+      transition: border-color .15s, background .15s;
     }
-    .controls button {
-      min-width: 96px;
-      cursor: pointer;
-      font-weight: 650;
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #ffffff;
-    }
-    .controls button:disabled {
-      cursor: wait;
-      opacity: 0.7;
-    }
+    .links a:hover { border-color: var(--teal-line); background: var(--teal-soft); }
+
+    /* ---------- 分布网格 ---------- */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 18px;
-      margin-bottom: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
     }
-    .grid section,
-    .table-panel {
-      border: 1px solid var(--line);
-      border-radius: 8px;
+    section.card {
       background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
       box-shadow: var(--shadow);
-    }
-    .grid section {
-      padding: 16px;
-    }
-    .table-panel {
-      margin-top: 18px;
+      min-width: 0;
       overflow: hidden;
     }
-    .table-panel > summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 16px 18px;
-      cursor: pointer;
-      list-style: none;
+    h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      letter-spacing: 1.5px;
+      color: var(--gold);
+      display: flex; align-items: center; gap: 8px;
+    }
+    h2::before { content: "◆"; font-size: 9px; color: var(--teal); }
+
+    /* ---------- 表格 ---------- */
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th, td { text-align: left; padding: 8px 10px; }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--line-strong);
+      white-space: nowrap;
       user-select: none;
     }
-    .table-panel > summary::-webkit-details-marker {
-      display: none;
-    }
-    .panel-title {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin-right: 10px;
-      font-size: 18px;
-      font-weight: 700;
-    }
-    .panel-meta {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 6px;
-      padding: 3px 8px;
-      background: var(--accent-soft);
-      color: var(--accent-text);
-      font-size: 13px;
-      font-weight: 650;
-    }
-    .summary-chevron {
-      display: inline-flex;
-      width: 28px;
-      height: 28px;
-      align-items: center;
-      justify-content: center;
+    th.sortable { cursor: pointer; }
+    th.sortable:hover { color: var(--teal); }
+    th .arrow { font-size: 10px; margin-left: 3px; color: var(--teal); }
+    td { border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+    tbody tr:nth-child(odd) { background: rgba(255, 255, 255, 0.015); }
+    tbody tr:hover { background: var(--teal-soft); }
+    td.num { text-align: right; }
+    th.num { text-align: right; }
+
+    .bar-cell { position: relative; min-width: 130px; }
+    .bar-track {
+      position: relative;
+      height: 16px;
+      background: var(--panel-soft);
       border: 1px solid var(--line);
-      border-radius: 6px;
-      color: var(--muted);
-      transition: transform 160ms ease;
-    }
-    .table-panel[open] .summary-chevron {
-      transform: rotate(180deg);
-    }
-    .table-shell {
-      overflow-x: auto;
-      border-top: 1px solid var(--line);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--panel);
+      border-radius: 4px;
       overflow: hidden;
     }
-    th, td {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--line);
-      text-align: right;
-      font-size: 13px;
+    .bar-fill {
+      position: absolute; inset: 0 auto 0 0;
+      border-radius: 3px;
+      background: linear-gradient(90deg, rgba(10,200,185,0.65), rgba(10,200,185,0.28));
+    }
+    .bar-fill.gold { background: linear-gradient(90deg, rgba(200,170,110,0.75), rgba(200,170,110,0.3)); }
+    .bar-fill.red { background: linear-gradient(90deg, rgba(224,108,108,0.6), rgba(224,108,108,0.25)); }
+    .bar-label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: flex-end;
+      padding-right: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .wr-hot { color: var(--gold-bright); }
+    .wr-good { color: var(--green); }
+    .wr-mid { color: var(--text); }
+    .wr-low { color: var(--red); }
+    .name-clip {
+      display: inline-block;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
+      vertical-align: bottom;
     }
-    th:first-child, td:first-child {
-      text-align: left;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      white-space: normal;
-      overflow-wrap: anywhere;
-    }
-    th {
-      position: sticky;
-      top: 0;
-      background: var(--panel-soft);
-      font-weight: 650;
-    }
-    tr:last-child td {
-      border-bottom: 0;
-    }
-    .empty {
-      border: 1px solid var(--line);
-      border-radius: 8px;
+
+    /* ---------- 折叠大表 ---------- */
+    details.table-panel {
       background: var(--panel);
-      padding: 16px;
-      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      overflow: hidden;
     }
-    @media (max-width: 720px) {
-      body {
-        padding: 18px;
-      }
-      .dashboard-header {
-        display: block;
-      }
-      .controls {
-        margin-top: 14px;
-      }
-      .controls select,
-      .controls button {
-        flex: 1 1 160px;
-        min-width: 0;
-      }
+    details.table-panel > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      gap: 12px;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        background: #101719;
-        color: #e7ece9;
-        --bg: #101719;
-        --panel: #182023;
-        --panel-soft: #202a2d;
-        --text: #e7ece9;
-        --muted: #9caaa7;
-        --line: #2c3839;
-        --line-strong: #3a4849;
-        --accent: #a78bfa;
-        --accent-soft: #2c2440;
-        --accent-text: #ddd6fe;
-        --shadow: none;
-      }
-      .controls button {
-        background: #7c3aed;
-        border-color: #7c3aed;
-        color: #ffffff;
-      }
-      .stat b {
-        color: var(--accent-text);
-      }
+    details.table-panel > summary::-webkit-details-marker { display: none; }
+    .panel-title { font-size: 15px; font-weight: 600; letter-spacing: 1px; color: var(--gold); }
+    .panel-title::before { content: "◆ "; font-size: 9px; color: var(--teal); }
+    .panel-meta { color: var(--muted); font-size: 12.5px; margin-left: 10px; }
+    .summary-chevron { color: var(--muted); transition: transform .2s; font-size: 15px; }
+    details[open] .summary-chevron { transform: rotate(180deg); }
+    .table-tools { display: flex; gap: 10px; align-items: center; padding: 0 18px 12px; flex-wrap: wrap; }
+    .table-tools input[type="search"] { flex: 1; min-width: 200px; font-size: 13px; padding: 7px 12px; }
+    .table-tools .hint { color: var(--muted); font-size: 12px; }
+    .table-shell { max-height: 560px; overflow: auto; border-top: 1px solid var(--line); }
+    .table-shell thead th { position: sticky; top: 0; background: var(--panel-raise); z-index: 1; }
+
+    /* ---------- 加载动画 ---------- */
+    .hex-spin {
+      display: inline-block;
+      width: 12px; height: 12px;
+      margin-right: 6px;
+      background: var(--teal);
+      clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+      animation: hexspin 1.1s linear infinite;
+      vertical-align: -1px;
+    }
+    @keyframes hexspin { to { transform: rotate(360deg); } }
+
+    footer { margin-top: 34px; text-align: center; color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+    footer .hex-row { letter-spacing: 6px; color: var(--line-strong); margin-bottom: 8px; font-size: 10px; }
+    @media (max-width: 640px) {
+      body { padding: 18px 14px 40px; }
+      .dashboard-header { align-items: flex-start; }
     }
   </style>
 </head>
 <body>
   <main>
     <div class="dashboard-header">
-      <div>
-        <h1>海克斯符文统计</h1>
-        <div class="muted" id="updated" data-generated-at-utc="">正在读取数据...</div>
+      <div class="brand">
+        <svg class="brand-hex" viewBox="0 0 46 52" aria-hidden="true">
+          <polygon points="23,1 44,13.5 44,38.5 23,51 2,38.5 2,13.5" fill="none" stroke="#0ac8b9" stroke-width="1.6"/>
+          <polygon points="23,8 38,16.8 38,35.2 23,44 8,35.2 8,16.8" fill="rgba(10,200,185,0.07)" stroke="#c8aa6e" stroke-width="1.1"/>
+          <circle cx="23" cy="26" r="5.2" fill="none" stroke="#f0d492" stroke-width="1.4"/>
+          <circle cx="23" cy="26" r="1.8" fill="#0ac8b9"/>
+        </svg>
+        <div>
+          <h1>海克斯大乱斗 · 数据观测台</h1>
+          <div class="subtitle">ARAM: MAYHEM TELEMETRY</div>
+        </div>
       </div>
       <div class="controls">
         <label for="versionFilter">统计版本</label>
@@ -294,14 +346,32 @@
         <button id="applyVersion" type="button">应用选择</button>
       </div>
     </div>
+    <div class="muted" id="updated" data-generated-at-utc=""><span class="hex-spin"></span>正在读取数据...</div>
+
     <div class="stats">
-      <div class="stat"><b id="eligibleRuns">0</b>纳入胜率的局数</div>
-      <div class="stat"><b id="rawRuns">0</b>原始唯一局数</div>
-      <div class="stat"><b id="shortRuns">0</b>默认排除的短局</div>
-      <div class="stat"><b id="wins">0</b>胜利局数</div>
-      <div class="stat"><b id="winRate">0%</b>玩家胜率</div>
+      <div class="stat hero"><b id="winRate">0%</b><span>玩家胜率</span></div>
+      <div class="stat"><b id="eligibleRuns">0</b><span>纳入胜率的局数</span></div>
+      <div class="stat"><b id="wins">0</b><span>胜利局数</span></div>
+      <div class="stat"><b id="rawRuns">0</b><span>原始唯一局数</span></div>
+      <div class="stat"><b id="shortRuns">0</b><span>默认排除的短局</span></div>
     </div>
     <div class="muted" id="filterNote"></div>
+
+    <div class="podium-grid" id="podiums" hidden>
+      <div class="podium">
+        <h3><span class="dot" style="background:var(--gold)"></span>最受欢迎（选择率）</h3>
+        <ol id="topPicked"></ol>
+      </div>
+      <div class="podium">
+        <h3><span class="dot" style="background:var(--green)"></span>选择后胜率最高</h3>
+        <ol id="topWin"></ol>
+      </div>
+      <div class="podium">
+        <h3><span class="dot" style="background:var(--red)"></span>选择后胜率最低</h3>
+        <ol id="lowWin"></ol>
+      </div>
+    </div>
+
     <div class="links">
       <a href="/api/hextech-runes/derived/summary.json">summary.json</a>
       <a href="/api/hextech-runes/derived/runs.csv">runs.csv</a>
@@ -311,22 +381,22 @@
     </div>
 
     <div class="grid">
-      <section>
+      <section class="card">
         <h2>版本分布</h2>
         <table id="versions"></table>
       </section>
-      <section>
+      <section class="card">
         <h2>模式分布</h2>
         <table id="netModes"></table>
       </section>
-      <section>
+      <section class="card">
         <h2>角色分布</h2>
         <table id="characters"></table>
       </section>
     </div>
 
     <section>
-      <details class="table-panel" id="choicesPanel">
+      <details class="table-panel" id="choicesPanel" open>
         <summary>
           <span>
             <span class="panel-title">我方海克斯选择率</span>
@@ -334,6 +404,10 @@
           </span>
           <span class="summary-chevron" aria-hidden="true">⌄</span>
         </summary>
+        <div class="table-tools">
+          <input type="search" id="choicesSearch" placeholder="搜索海克斯名称…" autocomplete="off">
+          <span class="hint">点击表头可排序</span>
+        </div>
         <div class="table-shell">
           <table id="choices"></table>
         </div>
@@ -348,17 +422,25 @@
           </span>
           <span class="summary-chevron" aria-hidden="true">⌄</span>
         </summary>
+        <div class="table-tools">
+          <input type="search" id="monsterSearch" placeholder="搜索敌方海克斯名称…" autocomplete="off">
+          <span class="hint">点击表头可排序</span>
+        </div>
         <div class="table-shell">
           <table id="monsterHexes"></table>
         </div>
       </details>
     </section>
+
+    <footer>
+      <div class="hex-row">⬡ ⬡ ⬡</div>
+      海克斯大乱斗（ARAM: Mayhem）· 匿名对局遥测 · 数据仅用于平衡性调整
+    </footer>
   </main>
   <script>
     const API_BASE = window.location.protocol === "file:" ? "http://39.96.216.77" : "";
     const fmtPct = (value) => `${Number(value || 0).toFixed(1)}%`;
-    const limitRows = (rows, limit = 80) => Array.isArray(rows) ? rows.slice(0, limit) : [];
-    const displayLabel = (row) => row && row.name && row.name !== row.id ? `${row.name} (${row.id})` : ((row && row.id) || "");
+    const displayLabel = (row) => row && row.name && row.name !== row.id ? row.name : ((row && row.id) || "");
     let renderRequestId = 0;
     let versionFilterTouched = false;
 
@@ -372,33 +454,166 @@
       }[ch]));
     }
 
-    function apiPath(path) {
-      return `${API_BASE}${path}`;
-    }
+    function apiPath(path) { return `${API_BASE}${path}`; }
 
     function compareVersionsDesc(a, b) {
       return String(b).localeCompare(String(a), undefined, { numeric: true, sensitivity: "base" });
     }
 
-    function renderTable(node, headers, rows) {
-      if (!rows.length) {
-        node.innerHTML = [
-          `<thead><tr>${headers.map((h) => `<th>${text(h)}</th>`).join("")}</tr></thead>`,
-          `<tbody><tr><td colspan="${headers.length}">暂无可显示数据</td></tr></tbody>`
-        ].join("");
-        return;
-      }
-      node.innerHTML = [
-        `<thead><tr>${headers.map((h) => `<th>${text(h)}</th>`).join("")}</tr></thead>`,
-        `<tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${text(cell)}</td>`).join("")}</tr>`).join("")}</tbody>`
-      ].join("");
+    function wrClass(value) {
+      const v = Number(value || 0);
+      if (v >= 60) return "wr-hot";
+      if (v >= 50) return "wr-good";
+      if (v >= 45) return "wr-mid";
+      return "wr-low";
     }
 
-    function renderPanelCount(id, rows) {
-      const node = document.getElementById(id);
-      if (node) {
-        node.textContent = `${Array.isArray(rows) ? rows.length : 0} 条`;
+    function barCell(value, tone) {
+      const v = Math.max(0, Math.min(100, Number(value || 0)));
+      const toneClass = tone === "auto" ? (v >= 60 ? "gold" : (v < 45 ? "red" : "")) : (tone || "");
+      return `<div class="bar-track"><div class="bar-fill ${toneClass}" style="width:${v}%"></div>` +
+        `<div class="bar-label ${wrClass(v)}">${fmtPct(v)}</div></div>`;
+    }
+
+    // 占比条:与胜率语义无关,中性配色;条宽按组内最大值归一化,数字仍显示真实占比。
+    function shareBarCell(value, maxValue) {
+      const v = Math.max(0, Number(value || 0));
+      const width = Math.max(0, Math.min(100, maxValue > 0 ? v / maxValue * 100 : 0));
+      return `<div class="bar-track"><div class="bar-fill" style="width:${width}%"></div>` +
+        `<div class="bar-label">${fmtPct(v)}</div></div>`;
+    }
+
+    // ---------- 简单分布表 ----------
+    function renderTable(node, headers, rows, htmlColumns = []) {
+      const head = `<thead><tr>${headers.map((h, i) => `<th${typeof rows[0]?.[i] === "number" ? ' class="num"' : ""}>${text(h)}</th>`).join("")}</tr></thead>`;
+      if (!rows.length) {
+        node.innerHTML = head + `<tbody><tr><td colspan="${headers.length}">暂无可显示数据</td></tr></tbody>`;
+        return;
       }
+      node.innerHTML = head + `<tbody>${rows.map((row) =>
+        `<tr>${row.map((cell, i) => {
+          const isNum = typeof cell === "number";
+          const content = htmlColumns.includes(i) ? cell : text(cell);
+          return `<td${isNum ? ' class="num"' : (htmlColumns.includes(i) ? ' class="bar-cell"' : "")}>${content}</td>`;
+        }).join("")}</tr>`
+      ).join("")}</tbody>`;
+    }
+
+    // ---------- 可排序可搜索大表 ----------
+    function createInteractiveTable({ tableId, searchId, metaId, columns, defaultSort }) {
+      const state = { rows: [], sortKey: defaultSort.key, sortDesc: defaultSort.desc, query: "" };
+      const table = document.getElementById(tableId);
+      const search = document.getElementById(searchId);
+
+      function visibleRows() {
+        let rows = state.rows;
+        if (state.query) {
+          const q = state.query.toLowerCase();
+          rows = rows.filter((r) => String(r.name || r.id || "").toLowerCase().includes(q) || String(r.id || "").toLowerCase().includes(q));
+        }
+        const col = columns.find((c) => c.key === state.sortKey);
+        const sorted = [...rows].sort((a, b) => {
+          const av = col.value(a), bv = col.value(b);
+          if (typeof av === "number" && typeof bv === "number") return state.sortDesc ? bv - av : av - bv;
+          return state.sortDesc
+            ? String(bv).localeCompare(String(av), "zh-Hans-u-co-pinyin")
+            : String(av).localeCompare(String(bv), "zh-Hans-u-co-pinyin");
+        });
+        return sorted;
+      }
+
+      function render() {
+        const rows = visibleRows();
+        const head = `<thead><tr>${columns.map((c) =>
+          `<th class="sortable${c.numeric ? " num" : ""}" data-key="${c.key}">${text(c.label)}` +
+          (state.sortKey === c.key ? `<span class="arrow">${state.sortDesc ? "▼" : "▲"}</span>` : "") + `</th>`
+        ).join("")}</tr></thead>`;
+        const body = rows.length
+          ? `<tbody>${rows.map((r) => `<tr>${columns.map((c) => {
+              const rendered = c.render ? c.render(r) : text(c.value(r));
+              const cls = c.bar ? ' class="bar-cell"' : (c.numeric ? ' class="num"' : "");
+              return `<td${cls}>${rendered}</td>`;
+            }).join("")}</tr>`).join("")}</tbody>`
+          : `<tbody><tr><td colspan="${columns.length}">没有匹配「${text(state.query)}」的条目</td></tr></tbody>`;
+        table.innerHTML = head + body;
+        const meta = document.getElementById(metaId);
+        if (meta) {
+          meta.textContent = state.query ? `${rows.length} / ${state.rows.length} 条` : `${state.rows.length} 条`;
+        }
+        table.querySelectorAll("th.sortable").forEach((th) => {
+          th.addEventListener("click", () => {
+            const key = th.dataset.key;
+            if (state.sortKey === key) {
+              state.sortDesc = !state.sortDesc;
+            } else {
+              state.sortKey = key;
+              state.sortDesc = true;
+            }
+            render();
+          });
+        });
+      }
+
+      search.addEventListener("input", () => {
+        state.query = search.value.trim();
+        render();
+      });
+
+      return {
+        setRows(rows) {
+          state.rows = Array.isArray(rows) ? rows : [];
+          render();
+        }
+      };
+    }
+
+    const choicesTable = createInteractiveTable({
+      tableId: "choices",
+      searchId: "choicesSearch",
+      metaId: "choicesMeta",
+      defaultSort: { key: "offered", desc: true },
+      columns: [
+        { key: "name", label: "海克斯", value: (r) => displayLabel(r) },
+        { key: "offered", label: "出现", numeric: true, value: (r) => r.offered ?? 0 },
+        { key: "selected", label: "选择", numeric: true, value: (r) => r.selected ?? 0 },
+        { key: "pickRate", label: "选择率", bar: true, value: (r) => r.pickRate ?? 0, render: (r) => barCell(r.pickRate, "") },
+        { key: "selectedWinRate", label: "选择后胜率", bar: true, value: (r) => r.selectedWinRate ?? 0, render: (r) => barCell(r.selectedWinRate, "auto") }
+      ]
+    });
+
+    const monsterTable = createInteractiveTable({
+      tableId: "monsterHexes",
+      searchId: "monsterSearch",
+      metaId: "monsterHexesMeta",
+      defaultSort: { key: "runs", desc: true },
+      columns: [
+        { key: "name", label: "敌方海克斯", value: (r) => displayLabel(r) },
+        { key: "runs", label: "出现局数", numeric: true, value: (r) => r.runs ?? 0 },
+        { key: "monsterWins", label: "敌方胜利", numeric: true, value: (r) => r.monsterWins ?? 0 },
+        { key: "monsterWinRate", label: "敌方胜率", bar: true, value: (r) => r.monsterWinRate ?? 0, render: (r) => barCell(r.monsterWinRate, "red") },
+        { key: "playerWinRate", label: "玩家胜率", bar: true, value: (r) => r.playerWinRate ?? 0, render: (r) => barCell(r.playerWinRate, "auto") }
+      ]
+    });
+
+    // ---------- Top 榜单 ----------
+    function renderPodiums(choices) {
+      const wrap = document.getElementById("podiums");
+      const rows = Array.isArray(choices) ? choices : [];
+      // 样本太少的不进胜率榜,避免噪声霸榜。
+      const minOffered = Math.max(30, Math.floor(rows.reduce((s, r) => s + (r.offered || 0), 0) / Math.max(rows.length, 1) * 0.1));
+      const eligible = rows.filter((r) => (r.offered || 0) >= minOffered && (r.selected || 0) >= 10);
+      if (!eligible.length) { wrap.hidden = true; return; }
+      wrap.hidden = false;
+
+      const fill = (id, list, valueOf) => {
+        document.getElementById(id).innerHTML = list.map((r, i) =>
+          `<li><span class="rank">${i + 1}</span><span class="p-name" title="${text(r.id)}">${text(displayLabel(r))}</span>` +
+          `<span class="p-val ${wrClass(valueOf(r))}">${fmtPct(valueOf(r))}</span></li>`
+        ).join("");
+      };
+      fill("topPicked", [...eligible].sort((a, b) => (b.pickRate || 0) - (a.pickRate || 0)).slice(0, 5), (r) => r.pickRate);
+      fill("topWin", [...eligible].sort((a, b) => (b.selectedWinRate || 0) - (a.selectedWinRate || 0)).slice(0, 5), (r) => r.selectedWinRate);
+      fill("lowWin", [...eligible].sort((a, b) => (a.selectedWinRate || 0) - (b.selectedWinRate || 0)).slice(0, 5), (r) => r.selectedWinRate);
     }
 
     function summaryUrl(version) {
@@ -414,11 +629,7 @@
 
     function setQueryVersion(version) {
       const url = new URL(window.location.href);
-      if (version && version !== "all") {
-        url.searchParams.set("version", version);
-      } else {
-        url.searchParams.set("version", "all");
-      }
+      url.searchParams.set("version", version && version !== "all" ? version : "all");
       window.history.replaceState(null, "", url);
     }
 
@@ -429,13 +640,9 @@
     }
 
     function formatLocalDateTime(value) {
-      if (!value) {
-        return "等待生成统计数据";
-      }
+      if (!value) return "等待生成统计数据";
       const date = new Date(value);
-      if (Number.isNaN(date.getTime())) {
-        return value;
-      }
+      if (Number.isNaN(date.getTime())) return value;
       const pad = (number) => String(number).padStart(2, "0");
       let timeZoneName = "";
       try {
@@ -444,9 +651,7 @@
           const part = formatter.formatToParts(date).find((item) => item.type === "timeZoneName");
           timeZoneName = part ? part.value : "";
         }
-      } catch (error) {
-        timeZoneName = "";
-      }
+      } catch (error) { timeZoneName = ""; }
       if (!timeZoneName) {
         const offsetMinutes = -date.getTimezoneOffset();
         const sign = offsetMinutes >= 0 ? "+" : "-";
@@ -463,16 +668,12 @@
     function renderUpdatedAt(value) {
       const updated = document.getElementById("updated");
       updated.dataset.generatedAtUtc = value || "";
-      updated.textContent = value
-        ? `更新时间：${formatLocalDateTime(value)}`
-        : "等待生成统计数据";
+      updated.textContent = value ? `更新时间：${formatLocalDateTime(value)}` : "等待生成统计数据";
     }
 
     async function fetchJson(url) {
       const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) {
-        throw new Error(`${res.status} ${res.statusText}`);
-      }
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       return res.json();
     }
 
@@ -481,9 +682,7 @@
       const versionRows = Array.isArray(summary.availableVersions) ? summary.availableVersions : summary.tables.versions;
       const versionCounts = new Map(versionRows.map((row) => [row.id, row.count]));
       const versions = new Set(versionRows.map((row) => row.id).filter(Boolean));
-      if (latestVersion) {
-        versions.add(latestVersion);
-      }
+      if (latestVersion) versions.add(latestVersion);
       select.innerHTML = [
         `<option value="all">全部版本</option>`,
         ...[...versions]
@@ -498,79 +697,45 @@
     }
 
     function chooseInitialVersion(queryVersion, latestVersion, allSummary) {
-      if (queryVersion) {
-        return queryVersion;
-      }
+      if (queryVersion) return queryVersion;
       const versionRows = Array.isArray(allSummary.availableVersions) ? allSummary.availableVersions : allSummary.tables.versions;
       const availableVersions = new Set(versionRows.map((row) => row.id).filter(Boolean));
-      if (latestVersion && availableVersions.has(latestVersion)) {
-        return latestVersion;
-      }
+      if (latestVersion && availableVersions.has(latestVersion)) return latestVersion;
       return [...availableVersions].sort(compareVersionsDesc)[0] || latestVersion || "all";
     }
 
     function renderSummary(summary) {
       renderUpdatedAt(summary.generatedAtUtc);
-      document.getElementById("eligibleRuns").textContent = summary.runCount;
-      document.getElementById("rawRuns").textContent = summary.raw.uniqueRuns;
-      document.getElementById("shortRuns").textContent = summary.excludedShortRuns;
-      document.getElementById("wins").textContent = summary.winCount;
+      document.getElementById("eligibleRuns").textContent = Number(summary.runCount || 0).toLocaleString();
+      document.getElementById("rawRuns").textContent = Number(summary.raw.uniqueRuns || 0).toLocaleString();
+      document.getElementById("shortRuns").textContent = Number(summary.excludedShortRuns || 0).toLocaleString();
+      document.getElementById("wins").textContent = Number(summary.winCount || 0).toLocaleString();
       document.getElementById("winRate").textContent = fmtPct(summary.winRate);
       document.getElementById("filterNote").textContent = buildFilterNote(summary);
 
-      renderTable(
-        document.getElementById("versions"),
-        ["版本", "局数"],
-        limitRows(summary.tables.versions, 20).map((row) => [displayLabel(row), row.count])
-      );
-      renderTable(
-        document.getElementById("netModes"),
-        ["模式", "局数"],
-        limitRows(summary.tables.netModes, 20).map((row) => [displayLabel(row), row.count])
-      );
-      renderTable(
-        document.getElementById("characters"),
-        ["角色", "玩家样本"],
-        limitRows(summary.tables.characters, 20).map((row) => [displayLabel(row), row.count])
-      );
-      const playerRuneChoices = Array.isArray(summary.tables.playerRuneChoices) ? summary.tables.playerRuneChoices : [];
-      renderPanelCount("choicesMeta", playerRuneChoices);
-      renderTable(
-        document.getElementById("choices"),
-        ["海克斯", "出现", "选择", "选择率", "选择后胜率"],
-        playerRuneChoices.map((row) => [
-          displayLabel(row),
-          row.offered,
-          row.selected,
-          fmtPct(row.pickRate),
-          fmtPct(row.selectedWinRate)
-        ])
-      );
-      const monsterHexRuns = Array.isArray(summary.tables.monsterHexRuns) ? summary.tables.monsterHexRuns : [];
-      renderPanelCount("monsterHexesMeta", monsterHexRuns);
-      renderTable(
-        document.getElementById("monsterHexes"),
-        ["敌方海克斯", "出现局数", "敌方胜利", "敌方胜率", "玩家胜率"],
-        monsterHexRuns.map((row) => [
-          displayLabel(row),
-          row.runs,
-          row.monsterWins,
-          fmtPct(row.monsterWinRate),
-          fmtPct(row.playerWinRate)
-        ])
-      );
-    }
+      const versionRows = (summary.tables.versions || []).slice(0, 20);
+      renderTable(document.getElementById("versions"), ["版本", "局数"],
+        versionRows.map((row) => [displayLabel(row), Number(row.count || 0).toLocaleString()]));
 
-    async function loadAndRender(version) {
-      const requestId = ++renderRequestId;
-      setLoadingStatus();
-      setApplyButtonBusy(true);
-      const summary = await fetchJson(summaryUrl(version));
-      if (requestId === renderRequestId) {
-        renderSummary(summary);
-        setApplyButtonBusy(false);
-      }
-      return summary;
+      renderTable(document.getElementById("netModes"), ["模式", "局数"],
+        (summary.tables.netModes || []).slice(0, 20).map((row) => [displayLabel(row), Number(row.count || 0).toLocaleString()]));
+
+      const characters = (summary.tables.characters || []).slice(0, 20);
+      const charTotal = characters.reduce((s, r) => s + (r.count || 0), 0) || 1;
+      const charMaxShare = Math.max(...characters.map((r) => (r.count || 0) / charTotal * 100), 0);
+      renderTable(document.getElementById("characters"), ["角色", "玩家样本", "占比"],
+        characters.map((row) => [
+          `<span class="name-clip" title="${text(row.id || "")}">${text(displayLabel(row))}</span>`,
+          Number(row.count || 0).toLocaleString(),
+          shareBarCell((row.count || 0) / charTotal * 100, charMaxShare)
+        ]), [0, 2]);
+
+      const playerRuneChoices = Array.isArray(summary.tables.playerRuneChoices) ? summary.tables.playerRuneChoices : [];
+      choicesTable.setRows(playerRuneChoices);
+      renderPodiums(playerRuneChoices);
+
+      const monsterHexRuns = Array.isArray(summary.tables.monsterHexRuns) ? summary.tables.monsterHexRuns : [];
+      monsterTable.setRows(monsterHexRuns);
     }
 
     async function renderSelectedVersion(version, cachedSummary = null) {
@@ -593,13 +758,11 @@
     }
 
     function bindVersionFilter() {
-      document.getElementById("versionFilter").addEventListener("change", (event) => {
+      document.getElementById("versionFilter").addEventListener("change", () => {
         versionFilterTouched = true;
       });
       document.getElementById("versionFilter").addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          renderSelectedVersion(event.currentTarget.value);
-        }
+        if (event.key === "Enter") renderSelectedVersion(event.currentTarget.value);
       });
       document.getElementById("applyVersion").addEventListener("click", () => {
         renderSelectedVersion(document.getElementById("versionFilter").value);
@@ -615,16 +778,14 @@
     function localizePreRenderedTimestamp() {
       const updated = document.getElementById("updated");
       const generatedAtUtc = updated.dataset.generatedAtUtc;
-      if (generatedAtUtc) {
-        renderUpdatedAt(generatedAtUtc);
-      }
+      if (generatedAtUtc) renderUpdatedAt(generatedAtUtc);
     }
 
     function setLoadingStatus() {
       const updated = document.getElementById("updated");
       const current = updated.textContent.trim();
       if (!current || current === "正在读取数据..." || current.startsWith("读取失败")) {
-        updated.textContent = "正在读取数据...";
+        updated.innerHTML = `<span class="hex-spin"></span>正在读取数据...`;
       }
     }
 

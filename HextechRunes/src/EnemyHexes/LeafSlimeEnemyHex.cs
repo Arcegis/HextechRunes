@@ -8,7 +8,10 @@ internal sealed class LeafSlimeEnemyHex : HextechEnemyHexEffect
 	{
 		// "每过 N 回合"约定（照 DivineIntervention）：N=3/2/1 → RoundNumber % (N+1)。
 		int interval = context.TierValue(Kind, 3, 2, 1) + 1;
-		if (combatState.RoundNumber <= 1 || combatState.RoundNumber % interval != 0)
+		// 额外回合不推进 RoundNumber 且回合开始 hook 会重入,按回合防重。
+		if (combatState.RoundNumber <= 1
+			|| combatState.RoundNumber % interval != 0
+			|| HextechCombatProcTracker.ConsumeGlobalProcInCombat(context.Tracking, $"round-once:{Kind}:{combatState.RoundNumber}") > 0)
 		{
 			return;
 		}

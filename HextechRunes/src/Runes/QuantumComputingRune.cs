@@ -9,6 +9,15 @@ public sealed class QuantumComputingRune : HextechRelicBase
 		new DynamicVar("HealPercent", 10m)
 	];
 
+	// 额外回合不推进 RoundNumber 且回合开始 hook 会重入,周期触发按 RoundNumber 防重。
+	private int _lastProcRound = -1;
+
+	public override Task BeforeCombatStart()
+	{
+		_lastProcRound = -1;
+		return Task.CompletedTask;
+	}
+
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner || Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
@@ -17,10 +26,12 @@ public sealed class QuantumComputingRune : HextechRelicBase
 		}
 
 		int round = Owner.Creature.CombatState.RoundNumber;
-		if (round <= 0 || round % 2 != 0)
+		if (round <= 0 || round % 2 != 0 || _lastProcRound == round)
 		{
 			return;
 		}
+
+		_lastProcRound = round;
 
 		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies.ToList();
 		if (enemies.Count == 0)
