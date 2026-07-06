@@ -1,10 +1,10 @@
 {
-  "title": "海克斯大乱斗 Beta",
+  "title": "ARAM: Mayhem Beta",
   "updateTitle": false,
   "description": "[h1] Beta Edition [/h1]\nThis item only supports the [b]beta branch[/b] of Slay the Spire 2. If you play on the default (public) branch, please subscribe to the Public edition instead:\nhttps://steamcommunity.com/sharedfiles/filedetails/?id=3747501308\n\n[h1] Supported Languages [/h1]\nEnglish\n简体中文\n한국어 (Contributors: 我有幸福症, oatone, Nark)\nEspañol\n日本語\nPortuguês do Brasil (Contributor: floca)\nภาษาไทย\nРусский (Contributor: Dragon enjoyer)\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system inspired by League of Legends to Slay the Spire 2. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 300+ Hextech Runes with a wide variety of effects. On each floor, you choose one random Hextech Rune, while monsters also randomly gain a Hextech of the same rarity — both sides then fight under ever-changing rules.\n\nThe mod also adds character-specific Hextechs, stat forgers, brand-new cards, and statistics feedback, giving every run a different build direction and challenge pacing.\n\n[img]https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png[/img]\n[img]https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp[/img]\n\nIf you enjoy my mod, you can support me on Afdian: https://ifdian.net/a/Lu-Ran\nGithub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": true,
   "visibility": "private",
-  "changeNote": "更新多语言介绍:与 Public 正式版介绍同步,并在最前端加入各语言的 Beta 版说明与 Public 版链接。",
+  "changeNote": "同步各语言标题:与 Public 正式版各语言标题一致并加 Beta 后缀。",
   "tags": [
     "Gameplay",
     "Modifiers",
@@ -23,5 +23,15 @@
     "thai": "descriptions/thai.txt",
     "russian": "descriptions/russian.txt"
   },
-  "skipContent": false
+  "skipContent": false,
+  "localizedTitles": {
+    "english": "ARAM: Mayhem Beta",
+    "schinese": "海克斯大乱斗 Beta",
+    "koreana": "무작위 총력전: 아수라장 Beta",
+    "japanese": "ランダムミッド：メイヘム Beta",
+    "spanish": "ARAM: Caos Beta",
+    "brazilian": "ARAM: Desordem Beta",
+    "thai": "ARAM: Mayhem Beta",
+    "russian": "ARAM: Mayhem Beta"
+  }
 }
