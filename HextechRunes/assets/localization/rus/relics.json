@@ -1319,7 +1319,7 @@
   "BYRDONIS_HEX.flavor": "Граница, очерченная крыльями, твёрже когтей.",
   "byrdonisHex.enemyDescription": "В начале боя все враги получают [blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Хранитель очага[/gold].",
   "VOID_FORM_UPGRADE_RUNE.title": "Улучшение: Облик бездны",
-  "VOID_FORM_UPGRADE_RUNE.description": "В начале каждого боя автоматически разыгрывает все ваши карты [gold]Облик бездны[/gold].",
+  "VOID_FORM_UPGRADE_RUNE.description": "В начале каждого боя автоматически разыгрывает все ваши карты [gold]Облик бездны[/gold]. Разыгранные таким образом Облики бездны не завершают ваш ход.",
   "VOID_FORM_UPGRADE_RUNE.flavor": "Даже в пустоте одна рука продолжает разыгрывать карты.",
   "ECHO_FORM_UPGRADE_RUNE.title": "Улучшение: Облик эхо",
   "ECHO_FORM_UPGRADE_RUNE.description": "В начале каждого боя автоматически разыгрывает все ваши карты [gold]Облик эхо[/gold].",

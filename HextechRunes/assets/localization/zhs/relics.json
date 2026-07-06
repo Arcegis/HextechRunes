@@ -1319,7 +1319,7 @@
   "BYRDONIS_HEX.flavor": "翅膀圈出的地界，比爪子更硬。",
   "byrdonisHex.enemyDescription": "战斗开始时，所有敌人获得[blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue]层[gold]领地意识[/gold]。",
   "VOID_FORM_UPGRADE_RUNE.title": "升级：虚空形态",
-  "VOID_FORM_UPGRADE_RUNE.description": "每场战斗开始时，自动打出你所有的[gold]虚空形态[/gold]。",
+  "VOID_FORM_UPGRADE_RUNE.description": "每场战斗开始时，自动打出你所有的[gold]虚空形态[/gold]。这样打出的虚空形态不会结束你的回合。",
   "VOID_FORM_UPGRADE_RUNE.flavor": "坠入虚空后，你仍留下一只手出牌。",
   "ECHO_FORM_UPGRADE_RUNE.title": "升级：回响形态",
   "ECHO_FORM_UPGRADE_RUNE.description": "每场战斗开始时，自动打出你所有的[gold]回响形态[/gold]。",

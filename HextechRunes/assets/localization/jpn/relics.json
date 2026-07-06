@@ -1319,7 +1319,7 @@
   "BYRDONIS_HEX.flavor": "翼が描く縄張りは、爪より硬い。",
   "byrdonisHex.enemyDescription": "戦闘開始時、すべての敵は[gold]縄張り意識[/gold]を[blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue]獲得する。",
   "VOID_FORM_UPGRADE_RUNE.title": "アップグレード: 虚無フォーム",
-  "VOID_FORM_UPGRADE_RUNE.description": "戦闘開始時、あなたのすべての[gold]虚無化[/gold]を自動的にプレイする。",
+  "VOID_FORM_UPGRADE_RUNE.description": "戦闘開始時、あなたのすべての[gold]虚無化[/gold]を自動的にプレイする。この方法でプレイした虚無化はターンを終了しない。",
   "VOID_FORM_UPGRADE_RUNE.flavor": "虚空に落ちても、片手はまだカードを切っている。",
   "ECHO_FORM_UPGRADE_RUNE.title": "アップグレード: エコーフォーム",
   "ECHO_FORM_UPGRADE_RUNE.description": "戦闘開始時、あなたのすべての[gold]反響化[/gold]を自動的にプレイする。",

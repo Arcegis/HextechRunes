@@ -59,14 +59,18 @@ public abstract class AutoPlayFormsAtCombatStartRuneBase<TCard> : CardUpgradeRun
 		try
 		{
 			Flash();
-			foreach (TCard card in cards)
+			// 压制打出期间的 EndTurn(虚空形态 OnPlay 自带),开局自动打出不吃掉玩家首回合。
+			using (HextechFormAutoPlayHooks.BeginEndTurnSuppression())
 			{
-				if (card.Pile?.Type is not (PileType.Draw or PileType.Hand or PileType.Discard))
+				foreach (TCard card in cards)
 				{
-					continue;
-				}
+					if (card.Pile?.Type is not (PileType.Draw or PileType.Hand or PileType.Discard))
+					{
+						continue;
+					}
 
-				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target: null);
+					await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target: null);
+				}
 			}
 		}
 		finally

@@ -1319,7 +1319,7 @@
   "BYRDONIS_HEX.flavor": "A fronteira traçada pelas asas é mais dura que as garras.",
   "byrdonisHex.enemyDescription": "No início do combate, todos os inimigos recebem [blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue] de [gold]Territorial[/gold].",
   "VOID_FORM_UPGRADE_RUNE.title": "Melhoria: Forma do Vazio",
-  "VOID_FORM_UPGRADE_RUNE.description": "No início de cada combate, joga automaticamente todas as suas cartas de [gold]Forma do Vazio[/gold].",
+  "VOID_FORM_UPGRADE_RUNE.description": "No início de cada combate, joga automaticamente todas as suas cartas de [gold]Forma do Vazio[/gold]. Formas do Vazio jogadas assim não encerram o seu turno.",
   "VOID_FORM_UPGRADE_RUNE.flavor": "Mesmo no vazio, uma mão continua jogando cartas.",
   "ECHO_FORM_UPGRADE_RUNE.title": "Melhoria: Forma de Eco",
   "ECHO_FORM_UPGRADE_RUNE.description": "No início de cada combate, joga automaticamente todas as suas cartas de [gold]Forma Ecoante[/gold].",

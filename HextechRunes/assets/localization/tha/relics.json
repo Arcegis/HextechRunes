@@ -1319,7 +1319,7 @@
   "BYRDONIS_HEX.flavor": "อาณาเขตที่ปีกขีดไว้ แข็งยิ่งกว่ากรงเล็บ",
   "byrdonisHex.enemyDescription": "ตอนเริ่มการต่อสู้ ศัตรูทั้งหมดได้รับ [gold]Territorial[/gold] [blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue]",
   "VOID_FORM_UPGRADE_RUNE.title": "อัปเกรด: ร่างสุญญตา",
-  "VOID_FORM_UPGRADE_RUNE.description": "เมื่อเริ่มการต่อสู้แต่ละครั้ง จะเล่น [gold]ร่างสุญญตา[/gold] ทั้งหมดของคุณโดยอัตโนมัติ",
+  "VOID_FORM_UPGRADE_RUNE.description": "เมื่อเริ่มการต่อสู้แต่ละครั้ง จะเล่น [gold]ร่างสุญญตา[/gold] ทั้งหมดของคุณโดยอัตโนมัติ ร่างสุญญตาที่เล่นด้วยวิธีนี้จะไม่จบเทิร์นของคุณ",
   "VOID_FORM_UPGRADE_RUNE.flavor": "แม้ร่วงสู่ความว่างเปล่า มือข้างหนึ่งก็ยังเล่นการ์ดอยู่",
   "ECHO_FORM_UPGRADE_RUNE.title": "อัปเกรด: ร่างกังวาน",
   "ECHO_FORM_UPGRADE_RUNE.description": "เมื่อเริ่มการต่อสู้แต่ละครั้ง จะเล่น [gold]ร่างกังวาน[/gold] ทั้งหมดของคุณโดยอัตโนมัติ",
