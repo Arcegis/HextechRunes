@@ -1,0 +1,16 @@
+{
+  "title": "海克斯大乱斗 Beta",
+  "updateTitle": true,
+  "description": "[h1] Beta Edition / Beta 版物品 [/h1]\n本物品仅支持 Slay the Spire 2 的 [b]beta 分支[/b](0.108.0+)。正式版玩家请订阅正式物品「海克斯大乱斗」。\nThis item only supports the [b]beta branch[/b] of Slay the Spire 2 (0.108.0+). For the default branch, please subscribe to the main item.\n\n[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
+  "updateDescription": true,
+  "visibility": "private",
+  "changeNote": "海斗 0.8.5(Beta 物品初版 / 0.108.0 构建):与正式物品同源,仅支持 beta 分支。\n相对已发布 0.8.5 追加修复:炽燃利息无视无限血演出怪;剥除结构性怪物buff导致卡死;额外回合使每回合一次效果双触发;升级狂宴改加法计算;墨宝联机层数按玩家数放大并在描述实时显示;墨影幻灵按联机最终血量结算;百分比生命锻造器改系数加算;升级:虚空形态开局自动打出不再结束回合。",
+  "tags": [
+    "Gameplay",
+    "Modifiers",
+    "Relics"
+  ],
+  "dependencies": [],
+  "minBranch": "public-beta",
+  "maxBranch": "public-beta"
+}
