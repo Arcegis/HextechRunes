@@ -1,10 +1,10 @@
 {
   "title": "海克斯大乱斗",
   "updateTitle": false,
-  "description": "[h1] Supported Languages / 支持语言 [/h1]\nEnglish\n简体中文\n한국어\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system to Slay the Spire 2, inspired by League of Legends. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 145 Hextech Runes with a wide variety of effects. On each floor, players can choose one random Hextech Rune, while monsters will also randomly receive a Hextech of the same rarity. Both sides will fight under constantly changing rules.\n\nThe mod also adds character-specific Hextechs, stat forges, brand-new cards, and statistics feedback, giving every run different build paths and challenge pacing.\n\n[img] https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png [/img]\n[img] https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp [/img]\n\nGitHub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
-  "updateDescription": false,
+  "description": "[h1] Public Edition [/h1]\nThis item supports the default (public) branch of Slay the Spire 2. If you play on the [b]beta branch[/b], please subscribe to the Beta edition instead:\nhttps://steamcommunity.com/sharedfiles/filedetails/?id=3758775855\n\n[h1] Supported Languages [/h1]\nEnglish\n简体中文\n한국어 (Contributors: 我有幸福症, oatone, Nark)\nEspañol\n日本語\nPortuguês do Brasil (Contributor: floca)\nภาษาไทย\nРусский (Contributor: Dragon enjoyer)\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system inspired by League of Legends to Slay the Spire 2. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 300+ Hextech Runes with a wide variety of effects. On each floor, you choose one random Hextech Rune, while monsters also randomly gain a Hextech of the same rarity — both sides then fight under ever-changing rules.\n\nThe mod also adds character-specific Hextechs, stat forgers, brand-new cards, and statistics feedback, giving every run a different build direction and challenge pacing.\n\n[img]https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png[/img]\n[img]https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp[/img]\n\nIf you enjoy my mod, you can support me on Afdian: https://ifdian.net/a/Lu-Ran\nGithub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
+  "updateDescription": true,
   "visibility": "public",
-  "changeNote": "海斗 0.8.5（正式分支 / 0.107.1）：\n【新增】我方海克斯5个：炽燃利息、我们的治疗（联机）、生机迸发、升级：永恒铠甲、升级：大奖；怪物海克斯6个：失落之物/遗忘之物/史莱姆狂战士/电球头/异螨/多尼斯异鸟；新卡2张：感受燃烧、回力OK镖；灵魂/血量/攻击/防护锻造器低阶版。\n【重做】感受燃烧与回力OK镖符文改为获得时给卡；尸爆术改为任意死亡触发全体上毒；升级：自动化改为触发时额外抽2张；形态系改为战斗开始自动打出；星界躯体改为+50%最大生命；豪猪改为按格挡获得临时荆棘；女王/苦楚改为针对最高生命敌人；蛇牙、多多益善数值调整。\n【特效】回力镖/欧米伽/飞身踢/量子计算/尸爆术战斗特效；慢炖日炎光环。\n【修复】即死卡死、复视事件房卡死与联机分叉、动量锻造器预览、power图标NOPE等。\n【平衡】咔咔！/和平主义者/佩尔的慵懒/小猪存钱罐/罪恶快感/升级打击/升级防御/验牌默认禁用；移除不退甲胄与白银覆甲锻造器。",
+  "changeNote": "海斗 0.8.5 热修（正式分支 / 0.107.1）：\n【修复】感受燃烧/升级：暴露剥除怪物机制类buff（幽灵鳗惊惧等）导致回合卡死；佩尔之眼额外回合使“每回合一次”类效果双触发（量子计算/奏鸣曲/瓦库之肩/据为己有/蛇咬/超凡入圣/神圣干涉/霜灵及6个怪物海克斯）；炽燃利息不再计入无限血演出怪（瀑布怪十亿血阶段）的灼烧转化；升级：虚空形态开局自动打出不再结束你的首回合（已在描述标注）。\n【调整】升级：狂宴改为加法计算（两次触发为+30%而非复利1.3225倍）；百分比血量锻造器（7.5%/15%/30%）改为系数加算、不再复利叠乘；升级：墨宝滑溜层数联机按玩家数放大（N/2N/3N，选择界面实时显示实际层数）；升级：墨影幻灵改按联机缩放后的最终血量结算，层数不再因人数额外翻倍。",
   "tags": [
     "Gameplay",
     "Modifiers",
@@ -12,5 +12,26 @@
   ],
   "dependencies": [],
   "minBranch": "public",
-  "maxBranch": "public"
+  "maxBranch": "public",
+  "localizedTitles": {
+    "english": "ARAM: Mayhem",
+    "schinese": "海克斯大乱斗",
+    "koreana": "무작위 총력전: 아수라장",
+    "japanese": "ランダムミッド：メイヘム",
+    "spanish": "ARAM: Caos",
+    "brazilian": "ARAM: Desordem",
+    "thai": "ARAM: Mayhem",
+    "russian": "ARAM: Mayhem"
+  },
+  "localizedDescriptionFiles": {
+    "english": "descriptions/english.txt",
+    "schinese": "descriptions/schinese.txt",
+    "koreana": "descriptions/koreana.txt",
+    "japanese": "descriptions/japanese.txt",
+    "spanish": "descriptions/spanish.txt",
+    "brazilian": "descriptions/brazilian.txt",
+    "thai": "descriptions/thai.txt",
+    "russian": "descriptions/russian.txt"
+  },
+  "skipContent": false
 }
