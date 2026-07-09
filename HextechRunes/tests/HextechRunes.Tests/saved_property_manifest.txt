@@ -45,6 +45,7 @@ SavedNearDeathStrengthBonus
 SavedOfferedThisCombat
 SavedPendingDraw
 SavedPendingEnergy
+SavedPendingEventRelicIdsJson
 SavedPendingRewardCardId
 SavedPendingTemporaryStrength
 SavedPendingTrigger

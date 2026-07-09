@@ -73,6 +73,26 @@ internal static partial class HextechEnemyPowerScalingHooks
 		}
 	}
 
+	/// <summary>
+	/// 按原值应用,绕过原版联机缩放。原版 PowerCmd.Apply 对敌方目标且 ShouldScaleInMultiplayer
+	/// 的 power(Slippery/Artifact 等)会自动 ×玩家数;层数已按最终口径算好的调用方(墨影幻灵)走这里。
+	/// </summary>
+	public static async Task<T?> ApplyExact<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
+		where T : PowerModel
+	{
+		decimal finalAmount = ClampPowerOffsetForApply<T>(target, amount);
+		if (finalAmount == 0m)
+		{
+			return target.GetPower<T>();
+		}
+
+		Creature? effectiveApplier = ShouldClearSelfApplier(target, applier) ? null : applier;
+		using (BeginOverride(ScalingOverride.FinalAmount))
+		{
+			return await PowerCmd.Apply<T>(target, finalAmount, effectiveApplier, cardSource, silent);
+		}
+	}
+
 #if STS2_107_OR_NEWER
 	private static bool ModifyPowerAmountGivenHookPrefix(
 		ICombatState combatState,

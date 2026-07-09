@@ -8,10 +8,11 @@ internal sealed class VantomEnemyHex : HextechEnemyHexEffect
 
 	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{
-		// 按联机缩放后的最终血量结算,并走裸 Apply(不进玩家数缩放路径),层数不因人数再翻倍。
+		// 按联机缩放后的最终血量结算。注意裸 PowerCmd.Apply 会被原版按 ShouldScaleInMultiplayer
+		// 再 ×玩家数(玩家实测 304 血 25 层),必须走 ApplyExact 按原值应用。
 		int stacks = (int)Math.Floor(enemy.MaxHp / MaxHpPerStack);
 		return stacks > 0
-			? PowerCmd.Apply<SlipperyPower>(enemy, stacks, enemy, null)
+			? HextechEnemyPowerScalingHooks.ApplyExact<SlipperyPower>(enemy, stacks, enemy, null)
 			: Task.CompletedTask;
 	}
 }

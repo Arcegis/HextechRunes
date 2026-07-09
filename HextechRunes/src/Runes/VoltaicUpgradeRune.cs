@@ -42,6 +42,9 @@ public sealed class VoltaicUpgradeRune : CardUpgradeRuneBase<Voltaic>
 				case PlasmaOrb:
 					await OrbCmd.Channel<PlasmaOrb>(choiceContext, card.Owner);
 					break;
+				case GlassOrb:
+					await OrbCmd.Channel<GlassOrb>(choiceContext, card.Owner);
+					break;
 			}
 		}
 	}
