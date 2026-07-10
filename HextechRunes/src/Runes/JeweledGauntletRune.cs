@@ -4,10 +4,9 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 {
 	private int _replayRollsThisCombat;
 
-	// 按 card 实例分槽存放待定的重打判定结果,而不是单一共享槽位:引擎/UI 可能在同一张牌的
-	// ModifyCardPlayCount 与 AfterModifyingCardPlayCount 之间,针对手牌里其它牌再次调用
-	// ModifyCardPlayCount(例如出牌次数预测类 UI 轮询),若用单一槽位会被那次调用覆盖,导致
-	// AfterModifyingCardPlayCount 认错牌、漏消费序号、漏播特效。
+	// (PR#18)按 card 实例分槽存放待定判定,而非单一共享槽位:引擎/UI 可能在同一张牌的
+	// ModifyCardPlayCount 与真实打出之间,针对手牌里其它牌再次调用 ModifyCardPlayCount
+	// (出牌次数预测类轮询),单一槽位会被覆盖导致认错牌。
 	private readonly Dictionary<CardModel, bool> _pendingReplayRolls = new();
 
 	public override Task BeforeCombatStart()
@@ -30,6 +29,8 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 			return playCount;
 		}
 
+		// (PR#18)这里只 peek 不消费:本钩子可能被引擎/UI 针对同一次出牌重复求值(预测轮询只在
+		// 本地端发生),在这里推进联机共享序号会让各端推进次数不一致→稳定随机结果分叉(玩家实报断线)。
 		int ordinal = PeekCombatProcOrdinal(nameof(JeweledGauntletRune), _replayRollsThisCombat);
 		bool shouldReplay = HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
@@ -44,20 +45,24 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 		return shouldReplay ? playCount + 1 : playCount;
 	}
 
-	public override Task AfterModifyingCardPlayCount(CardModel card)
+	// 消费点选 BeforeCardPlayed(PlayIndex==0)而非 AfterModifyingCardPlayCount:后者只对
+	// "改变了次数"的模型回调,判定失败(67%)时不会触发,序号将冻结、同一(卡,目标,回合)的
+	// 稳定随机结果永远不变。真实出牌每次恰好经过一次 PlayIndex==0,且与判定成败无关,
+	// 消费节奏与旧版(每次真实出牌推进一位)一致;轮询产生的残留 pending 不会走到这里,无副作用。
+	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
-		if (Owner != null && card.Owner == Owner && _pendingReplayRolls.Remove(card, out bool shouldReplay))
+		if (Owner == null || cardPlay.Card.Owner != Owner || cardPlay.PlayIndex != 0)
 		{
-			// 只在这个每次出牌保证只触发一次的钩子里消费序号,避免 ModifyCardPlayCount 被引擎重复调用时序号多推进。
+			return Task.CompletedTask;
+		}
+
+		if (_pendingReplayRolls.Remove(cardPlay.Card, out bool shouldReplay))
+		{
 			ConsumeCombatProcOrdinal(nameof(JeweledGauntletRune), ref _replayRollsThisCombat);
 			if (shouldReplay)
 			{
 				Flash();
 			}
-		}
-		else
-		{
-			_pendingReplayRolls.Remove(card);
 		}
 
 		return Task.CompletedTask;

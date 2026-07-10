@@ -41,8 +41,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Shiv>(),
-		HoverTipFactory.FromCard<SovereignBlade>()
+		HoverTipFactory.FromCard<Shiv>()
 	];
 
 	public override bool IsAvailableForPlayer(Player player)

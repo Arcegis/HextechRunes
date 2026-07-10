@@ -10,9 +10,61 @@ public sealed class DoubleVisionRune : HextechRelicBase
 	private static readonly AsyncLocal<int> CommandDuplicationSuppressionDepth = new();
 	private static readonly FieldInfo? GoldRewardWasStolenBackField = typeof(GoldReward).GetField("_wasGoldStolenBack", BindingFlags.Instance | BindingFlags.NonPublic);
 
+	// 事件房的遗物获得(先古遗物/事件遗物/交换事件等)不能在事件选项回调里内联复制(单机卡死、联机袋序分叉,
+	// 见 BeginDirectCommandReward 的排除注释)。改为记账:获得时只记 id,离开事件房进入下一房间后再走标准复制路径。
+	private readonly List<string> _pendingEventRelicIds = new();
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public string SavedPendingEventRelicIdsJson
+	{
+		get => _pendingEventRelicIds.Count == 0 ? "" : string.Join(",", _pendingEventRelicIds);
+		set
+		{
+			_pendingEventRelicIds.Clear();
+			if (!string.IsNullOrEmpty(value))
+			{
+				_pendingEventRelicIds.AddRange(value.Split(',', StringSplitOptions.RemoveEmptyEntries));
+			}
+		}
+	}
+
+	public override async Task AfterRoomEntered(AbstractRoom room)
+	{
+		if (Owner == null || _pendingEventRelicIds.Count == 0 || room is EventRoom)
+		{
+			return;
+		}
+
+		// 联机时 SavedProperty 状态同步可能把待复制清单带到远端实例,远端只清账不复制(由持有端广播兜底)。
+		if (Owner.Creature.IsDead || !ShouldDuplicateForPlayer(Owner))
+		{
+			_pendingEventRelicIds.Clear();
+			return;
+		}
+
+		List<string> pending = new(_pendingEventRelicIds);
+		_pendingEventRelicIds.Clear();
+		foreach (string idEntry in pending)
+		{
+			// 只复制仍持有的遗物(交换事件里已被换走/转化的不复制);排除规则由 DuplicateObtainedRelic 统一把关。
+			RelicModel? source = Owner.Relics.FirstOrDefault(relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry == idEntry);
+			if (source == null)
+			{
+				continue;
+			}
+
+			await DuplicateObtainedRelic(Owner, source);
+		}
+	}
+
 	public override async Task AfterRewardTaken(Player player, Reward reward)
 	{
-		if (Owner == null || !ReferenceEquals(player, Owner) || player.Creature.IsDead)
+		// 联机时奖励领取在各端都会触发本 hook:必须只在持有者本地端复制并广播,
+		// 否则 N 人局的 N-1 个远端各复制一份(玩家实测 4 人局一瓶药水复制成三瓶,塞爆药水栏黑屏)。
+		if (Owner == null
+			|| !ReferenceEquals(player, Owner)
+			|| player.Creature.IsDead
+			|| !ShouldDuplicateForPlayer(player))
 		{
 			return;
 		}
@@ -79,11 +131,16 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	internal static object? BeginDirectRelicReward(Player player)
 	{
-		return BeginDirectCommandReward(player);
+		return BeginDirectCommandReward(player) ?? (object?)BeginEventRelicRecording(player);
 	}
 
 	internal static Task<RelicModel> CompleteDirectRelicRewardAsync(Task<RelicModel> originalTask, object? duplicationState)
 	{
+		if (duplicationState is EventRelicRecordScope recordScope)
+		{
+			return RecordEventRelicAsync(originalTask, recordScope);
+		}
+
 		if (duplicationState is not DirectCommandRewardScope scope)
 		{
 			return originalTask;
@@ -91,6 +148,37 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 		RestoreCommandRewardScope(scope);
 		return CompleteDirectRelicRewardAsync(originalTask, scope);
+	}
+
+	private static EventRelicRecordScope? BeginEventRelicRecording(Player player)
+	{
+		if (IsCommandDuplicationSuppressed()
+			|| CombatManager.Instance.IsInProgress
+			|| player.RunState.CurrentRoom is not EventRoom
+			|| !ShouldDuplicateForPlayer(player))
+		{
+			return null;
+		}
+
+		IReadOnlyList<DoubleVisionRune> runes = GetActiveRunes(player);
+		return runes.Count == 0 ? null : new EventRelicRecordScope(runes);
+	}
+
+	private static async Task<RelicModel> RecordEventRelicAsync(Task<RelicModel> originalTask, EventRelicRecordScope scope)
+	{
+		RelicModel obtained = await originalTask;
+		if (obtained.Owner == null || obtained.Owner.Creature.IsDead)
+		{
+			return obtained;
+		}
+
+		string idEntry = (obtained.CanonicalInstance?.Id ?? obtained.Id).Entry;
+		foreach (DoubleVisionRune rune in scope.Runes)
+		{
+			rune._pendingEventRelicIds.Add(idEntry);
+		}
+
+		return obtained;
 	}
 
 	internal static object? BeginDirectPotionReward(Player player)
@@ -724,6 +812,16 @@ public sealed class DoubleVisionRune : HextechRelicBase
 		public decimal GoldAmount { get; set; }
 
 		public bool WasGoldStolenBack { get; set; }
+	}
+
+	private sealed class EventRelicRecordScope
+	{
+		public EventRelicRecordScope(IReadOnlyList<DoubleVisionRune> runes)
+		{
+			Runes = runes;
+		}
+
+		public IReadOnlyList<DoubleVisionRune> Runes { get; }
 	}
 
 	private sealed class CardRewardTrackingScope : RewardDuplicationScope

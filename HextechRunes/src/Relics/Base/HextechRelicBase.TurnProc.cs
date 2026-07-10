@@ -121,9 +121,9 @@ public abstract partial class HextechRelicBase
 		return true;
 	}
 
-	// 只读、不消费。ModifyCardPlayCount 等引擎可能针对同一次出牌重复调用的钩子只应在这里取序号；
-	// 真正的消费(推进共享计数)必须放在 AfterModifyingCardPlayCount 等每次出牌只触发一次的钩子里,
-	// 调用下面的 ConsumeCombatProcOrdinal,否则联机端序号推进次数不一致会导致稳定随机结果分叉。
+	// (PR#18)只读、不消费。ModifyCardPlayCount 等引擎可能针对同一次出牌重复调用的钩子只应在这里取序号;
+	// 真正的消费(推进共享计数)必须放在每次真实出牌只触发一次的钩子里调用 ConsumeCombatProcOrdinal,
+	// 否则联机各端序号推进次数不一致会导致稳定随机结果分叉。
 	protected int PeekCombatProcOrdinal(string procKey, int localCount)
 	{
 		if (ShouldUseNetworkCombatHistory()

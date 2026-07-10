@@ -6,35 +6,12 @@ internal sealed class GetExcitedEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task BeforeSideTurnStart(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		foreach (Creature enemy in combatState.Enemies.ToList())
-		{
-			if (enemy.CombatState != combatState)
-			{
-				continue;
-			}
-
-			PainfulStabsPower? legacyPower = enemy.GetPower<PainfulStabsPower>();
-			if (legacyPower != null && enemy.IsDead)
-			{
-				await PowerCmd.Remove(legacyPower);
-			}
-
-			HextechCombatCreatureHelper.RemoveRetainedDeadEnemyIfNeeded(combatState, enemy);
-		}
+		await HextechCombatCreatureHelper.CleanUpRetainedPainfulStabsEnemies(combatState);
 	}
 
 	internal override async Task BeforeDeath(HextechEnemyHexContext context, Creature creature)
 	{
-		if (creature.Side != CombatSide.Enemy || creature.CombatState?.RunState != context.RunState)
-		{
-			return;
-		}
-
-		PainfulStabsPower? painfulStabs = creature.GetPower<PainfulStabsPower>();
-		if (painfulStabs != null)
-		{
-			await PowerCmd.Remove(painfulStabs);
-		}
+		await HextechCombatCreatureHelper.RemovePainfulStabsBeforeDeath(context, creature);
 	}
 
 	internal override async Task AfterDeath(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Creature target, HextechCombatState combatState)

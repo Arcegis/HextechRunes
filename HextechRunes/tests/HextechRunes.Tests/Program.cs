@@ -450,10 +450,9 @@ internal static class Program
 		Equal(0, restored.GlobalProcsThisCombat.Count, "global proc count should clear on combat tracking reset");
 	}
 
-	// 回归测试:镶宝铁拳符文曾经在 ModifyCardPlayCount(引擎可能对同一次出牌重复求值,例如 UI 预测出牌次数的轮询)
-	// 里直接调用会推进计数的 ConsumePlayerRuneProcInCombat,导致联机端序号推进次数不一致、稳定随机结果分叉出即时
-	// 断线。修复后 ModifyCardPlayCount 只应 peek(GetPlayerRuneProcsInCombat),真正消费必须挪到每次出牌只触发一次
-	// 的 AfterModifyingCardPlayCount 里调用 ConsumePlayerRuneProcInCombat。这里验证該契约本身。
+	// (PR#18)回归测试:镶宝铁拳符文曾在 ModifyCardPlayCount(引擎/UI 可能对同一次出牌重复求值)里直接调用
+	// 会推进计数的 ConsumePlayerRuneProcInCombat,导致联机各端序号推进次数不一致、稳定随机结果分叉出即时断线。
+	// 修复后 ModifyCardPlayCount 只应 peek(GetPlayerRuneProcsInCombat),真正消费放在每次真实出牌只触发一次的钩子里。
 	private static void CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
@@ -1703,8 +1702,8 @@ internal static class Program
 		return new ModelId("HEXTECH_TEST", $"MONSTER_HEX_{(int)kind}");
 	}
 
-	// Player 的构造函数会触达 SaveManager/PlatformUtil 等只在真实 Godot 运行时下才可用的原生绑定,
-	// 在纯 CLI 测试进程里直接 new 会段错误。这里只需要一个能承载稳定 NetId 的壳子来复用
+	// (PR#18)Player 的构造函数会触达 SaveManager/PlatformUtil 等只在真实 Godot 运行时下可用的原生绑定,
+	// 纯 CLI 测试进程里直接 new 会段错误。这里只需要一个能承载稳定 NetId 的壳子来复用
 	// GetPlayerRuneProcKey 的联机计费键,故跳过构造函数,直接反射写入 NetId 的自动属性支持字段。
 	private static Player CreateOrdinalTestPlayer(ulong netId)
 	{
