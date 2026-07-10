@@ -22,6 +22,11 @@ internal sealed partial class HextechMayhemModifier
 		return HextechCombatProcTracker.TryConsumePlayerRuneProcThisTurn(_combatTracking, player, procKey, maxPerTurn);
 	}
 
+	internal int GetPlayerRuneProcsInCombat(Player player, string procKey)
+	{
+		return HextechCombatProcTracker.GetPlayerRuneProcsInCombat(_combatTracking, player, procKey);
+	}
+
 	internal int ConsumePlayerRuneProcInCombat(Player player, string procKey)
 	{
 		return HextechCombatProcTracker.ConsumePlayerRuneProcInCombat(_combatTracking, player, procKey);

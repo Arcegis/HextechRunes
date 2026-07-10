@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
@@ -71,6 +72,7 @@ internal static class Program
 				new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
 				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
 				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
+				new(nameof(CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume), CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume),
 			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
 			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
 			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
@@ -446,6 +448,28 @@ internal static class Program
 
 		restored.Reset();
 		Equal(0, restored.GlobalProcsThisCombat.Count, "global proc count should clear on combat tracking reset");
+	}
+
+	// 回归测试:镶宝铁拳符文曾经在 ModifyCardPlayCount(引擎可能对同一次出牌重复求值,例如 UI 预测出牌次数的轮询)
+	// 里直接调用会推进计数的 ConsumePlayerRuneProcInCombat,导致联机端序号推进次数不一致、稳定随机结果分叉出即时
+	// 断线。修复后 ModifyCardPlayCount 只应 peek(GetPlayerRuneProcsInCombat),真正消费必须挪到每次出牌只触发一次
+	// 的 AfterModifyingCardPlayCount 里调用 ConsumePlayerRuneProcInCombat。这里验证該契约本身。
+	private static void CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		Player player = CreateOrdinalTestPlayer(7);
+		const string procKey = nameof(JeweledGauntletRune);
+
+		Equal(0, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(tracking, player, procKey), "peek before any play should read zero");
+		Equal(0, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(tracking, player, procKey), "repeated peeks must not mutate the ordinal");
+		Equal(0, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(tracking, player, procKey), "a speculative ModifyCardPlayCount re-evaluation must be side-effect free");
+
+		Equal(0, HextechCombatProcTracker.ConsumePlayerRuneProcInCombat(tracking, player, procKey), "first real play should consume ordinal 0");
+		Equal(1, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(tracking, player, procKey), "peek after one real play should reflect the committed ordinal");
+		Equal(1, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(tracking, player, procKey), "peeking again before the next real play must not advance the ordinal");
+
+		Equal(1, HextechCombatProcTracker.ConsumePlayerRuneProcInCombat(tracking, player, procKey), "second real play should consume ordinal 1");
+		Equal(2, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(tracking, player, procKey), "ordinal should advance exactly once per real play, never per peek");
 	}
 
 	private static void CombatTrackingSerializationIsCultureInvariant()
@@ -1677,6 +1701,18 @@ internal static class Program
 	private static ModelId TestMonsterHexIconId(MonsterHexKind kind)
 	{
 		return new ModelId("HEXTECH_TEST", $"MONSTER_HEX_{(int)kind}");
+	}
+
+	// Player 的构造函数会触达 SaveManager/PlatformUtil 等只在真实 Godot 运行时下才可用的原生绑定,
+	// 在纯 CLI 测试进程里直接 new 会段错误。这里只需要一个能承载稳定 NetId 的壳子来复用
+	// GetPlayerRuneProcKey 的联机计费键,故跳过构造函数,直接反射写入 NetId 的自动属性支持字段。
+	private static Player CreateOrdinalTestPlayer(ulong netId)
+	{
+		Player player = (Player)RuntimeHelpers.GetUninitializedObject(typeof(Player));
+		typeof(Player)
+			.GetField("<NetId>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance)!
+			.SetValue(player, netId);
+		return player;
 	}
 
 	private static void Expect(bool condition, string message)

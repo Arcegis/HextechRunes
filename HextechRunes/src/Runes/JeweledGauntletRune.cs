@@ -26,7 +26,7 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 			return playCount;
 		}
 
-		int ordinal = ConsumeCombatProcOrdinal(nameof(JeweledGauntletRune), ref _replayRollsThisCombat);
+		int ordinal = PeekCombatProcOrdinal(nameof(JeweledGauntletRune), _replayRollsThisCombat);
 		bool shouldReplay = HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
 			33,
@@ -43,9 +43,14 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (Owner != null && card.Owner == Owner && _pendingReplayRollCard == card && _pendingReplayRollResult)
+		if (Owner != null && card.Owner == Owner && _pendingReplayRollCard == card)
 		{
-			Flash();
+			// 只在这个每次出牌保证只触发一次的钩子里消费序号,避免 ModifyCardPlayCount 被引擎重复调用时序号多推进。
+			ConsumeCombatProcOrdinal(nameof(JeweledGauntletRune), ref _replayRollsThisCombat);
+			if (_pendingReplayRollResult)
+			{
+				Flash();
+			}
 		}
 
 		if (_pendingReplayRollCard == card)
