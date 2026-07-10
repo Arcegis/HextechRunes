@@ -59,7 +59,12 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	public override async Task AfterRewardTaken(Player player, Reward reward)
 	{
-		if (Owner == null || !ReferenceEquals(player, Owner) || player.Creature.IsDead)
+		// 联机时奖励领取在各端都会触发本 hook:必须只在持有者本地端复制并广播,
+		// 否则 N 人局的 N-1 个远端各复制一份(玩家实测 4 人局一瓶药水复制成三瓶,塞爆药水栏黑屏)。
+		if (Owner == null
+			|| !ReferenceEquals(player, Owner)
+			|| player.Creature.IsDead
+			|| !ShouldDuplicateForPlayer(player))
 		{
 			return;
 		}

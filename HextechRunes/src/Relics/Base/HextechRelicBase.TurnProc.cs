@@ -121,6 +121,21 @@ public abstract partial class HextechRelicBase
 		return true;
 	}
 
+	// (PR#18)只读、不消费。ModifyCardPlayCount 等引擎可能针对同一次出牌重复调用的钩子只应在这里取序号;
+	// 真正的消费(推进共享计数)必须放在每次真实出牌只触发一次的钩子里调用 ConsumeCombatProcOrdinal,
+	// 否则联机各端序号推进次数不一致会导致稳定随机结果分叉。
+	protected int PeekCombatProcOrdinal(string procKey, int localCount)
+	{
+		if (ShouldUseNetworkCombatHistory()
+			&& Owner != null
+			&& Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+		{
+			return modifier.GetPlayerRuneProcsInCombat(Owner, procKey);
+		}
+
+		return localCount;
+	}
+
 	protected int ConsumeCombatProcOrdinal(string procKey, ref int localCount)
 	{
 		if (ShouldUseNetworkCombatHistory()
