@@ -7,7 +7,6 @@ public sealed class InkshadowRune : HextechRelicBase
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
 		HoverTipFactory.FromCard<Shiv>(),
-		HoverTipFactory.FromCard<SovereignBlade>(),
 		.. HoverTipFactory.FromEnchantment<Inky>()
 	];
 
