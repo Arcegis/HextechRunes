@@ -58,6 +58,11 @@ internal static class HextechCombatProcTracker
 		return true;
 	}
 
+	public static int GetPlayerRuneProcsInCombat(HextechMayhemCombatTrackingState tracking, Player player, string procKey)
+	{
+		return tracking.PlayerRuneProcsThisCombat.GetValueOrDefault(GetPlayerRuneProcKey(player, procKey), 0);
+	}
+
 	public static int ConsumePlayerRuneProcInCombat(HextechMayhemCombatTrackingState tracking, Player player, string procKey)
 	{
 		string key = GetPlayerRuneProcKey(player, procKey);
