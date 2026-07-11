@@ -30,7 +30,7 @@ public sealed class ExposeUpgradeRune : CardUpgradeRuneBase<Expose>
 		Flash([cardPlay.Target]);
 		foreach (PowerModel power in buffs)
 		{
-			await PowerCmd.Remove(power);
+			await HextechMonsterInteractionPolicy.RemoveMonsterBuffSafely(power);
 		}
 	}
 }

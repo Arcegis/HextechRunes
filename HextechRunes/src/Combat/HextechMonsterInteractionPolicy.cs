@@ -32,37 +32,26 @@ internal static class HextechMonsterInteractionPolicy
 		return IsStructuralMonsterBuff(power);
 	}
 
-	// 结构性怪物 buff = 驱动怪物动画状态机/回合流转/遭遇脚本/位置关系/意图预告的机制 power。
-	// 剥除它们会让原版逻辑断裂(实例:剥幽灵鳗 SkittishPower 后 BlockEnd 动画永不触发,回合流转挂死,
-	// 玩家实报"感受燃烧打四鳗卡住无法进入下一回合")。宁可多列——多列的代价只是该增益剥不掉,
-	// 漏列的代价是卡死。数值成长类(力量/CreativeAi 等)不在此列,允许正常剥除。
+	// 结构性怪物 buff = 剥除会让遭遇脚本/回合流转/位置关系断裂的机制 power。
+	// 曾把全部"动画/形态状态机"类也列入(防幽灵鳗 SkittishPower 卡死),现已逐个核验收窄:
+	//  - Skittish 的卡死根因是 Block 出场动画悬空,已由 RemoveMonsterBuffSafely 补出场后安全剥除;
+	//  - Smoggy/Burrowed/Hibernate/CurlUp/HardenedShell/SentryMode/Shadowmeld/Shroud/Sneaky/
+	//    Covered/Surprise/Soar/Flutter/SpectrumShift 反编译核验为一次性动画或自带 AfterRemoved 清理,可正常剥除;
+	//  - Asleep/Slumber 与怪物唤醒脚本硬耦合((LagavulinMatriarch/SlumberingBeetle)强转+IsAwake/WakeUpMove),
+	//    直接剥除会绕过唤醒流程破坏行动 AI,保留跳过。
+	// 数值成长类(力量/CreativeAi 等)不在此列,允许正常剥除。
 	public static bool IsStructuralMonsterBuff(PowerModel power)
 	{
 		return power is SandpitPower
 			or ReattachPower
 			or AdaptablePower
-			// 动画/形态状态机
-			or SkittishPower
-			or SmoggyPower
-			or BurrowedPower
+			// 怪物唤醒脚本耦合
 			or AsleepPower
+			or SlumberPower
 #if STS2_108_OR_NEWER
 			// 0.108 新增类型
-			or HibernatePower
 			or SoulboundPower
 #endif
-			or SlumberPower
-			or CurlUpPower
-			or HardenedShellPower
-			or SentryModePower
-			or ShadowmeldPower
-			or ShroudPower
-			or SneakyPower
-			or CoveredPower
-			or SurprisePower
-			or SoarPower
-			or FlutterPower
-			or SpectrumShiftPower
 			// 遭遇脚本/演出/时限
 			or BattlewornDummyTimeLimitPower
 			or MonologuePower
@@ -94,5 +83,21 @@ internal static class HextechMonsterInteractionPolicy
 			or SummonNextTurnPower
 			or StarNextTurnPower
 			or SteamEruptionPower;
+	}
+
+	/// <summary>
+	/// 安全剥除怪物增益:对有"进场动画等待出场"状态机的 power(幽灵鳗 Skittish),先补出场动画再移除,
+	/// 否则 Spine 状态机停在 Block 态、下一次动画触发永远等不到(玩家实报"感受燃烧打四鳗卡死"的根因)。
+	/// 感受燃烧/升级:暴露的剥除一律走这里。
+	/// </summary>
+	public static async Task RemoveMonsterBuffSafely(PowerModel power)
+	{
+		if (power is SkittishPower { HasGainedBlockThisTurn: true } && power.Owner != null)
+		{
+			SfxCmd.Play("event:/sfx/enemy/enemy_attacks/phantasmal_gardeners/phantasmal_gardeners_extend");
+			await CreatureCmd.TriggerAnim(power.Owner, "BlockEnd", 0.15f);
+		}
+
+		await PowerCmd.Remove(power);
 	}
 }
