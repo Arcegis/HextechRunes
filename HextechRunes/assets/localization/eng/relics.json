@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "When obtained, choose [blue]1[/blue] card from your deck and enchant it with [gold]Tezcatara's Ember[/gold].",
   "EMBERS_FORGE.flavor": "The ember is not out. It is waiting for the next card.",
   "PRISMATIC_LIFE_FORGE.title": "Life Forger",
-  "PRISMATIC_LIFE_FORGE.description": "Gain [blue]30%[/blue] Max HP.",
+  "PRISMATIC_LIFE_FORGE.description": "Gain [blue]30%[/blue] Max HP bonus.",
   "PRISMATIC_LIFE_FORGE.flavor": "The fire no longer enlarges the vessel. It rewrites it.",
   "ATTACK_FORGE.title": "Attack Forger",
   "ATTACK_FORGE.description": "Gain [blue]20%[/blue] increased damage.",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "Gain [blue]10%[/blue] increased Block and healing.",
   "GOLD_PROTECTION_FORGE.flavor": "The furnace leaves room for both wounds and shields.",
   "SILVER_HP_FORGE.title": "HP Forge",
-  "SILVER_HP_FORGE.description": "Gain [blue]7.5%[/blue] Max HP.",
+  "SILVER_HP_FORGE.description": "Gain [blue]7.5%[/blue] Max HP bonus.",
   "SILVER_HP_FORGE.flavor": "The fire no longer enlarges the vessel. It rewrites it.",
   "GOLD_HP_FORGE.title": "HP Forge",
-  "GOLD_HP_FORGE.description": "Gain [blue]15%[/blue] Max HP.",
+  "GOLD_HP_FORGE.description": "Gain [blue]15%[/blue] Max HP bonus.",
   "GOLD_HP_FORGE.flavor": "The fire no longer enlarges the vessel. It rewrites it."
 }

@@ -45,6 +45,31 @@ internal static class HextechSelfUpgradeCardStore
 		harmony.Patch(
 			RequireMethod(typeof(CardModel), nameof(CardModel.FromSerializable), BindingFlags.Static | BindingFlags.Public, typeof(SerializableCard)),
 			postfix: new HarmonyMethod(typeof(HextechSelfUpgradeCardStore), nameof(FromSerializablePostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(CardModel), nameof(CardModel.DowngradeInternal), BindingFlags.Instance | BindingFlags.Public),
+			postfix: new HarmonyMethod(typeof(HextechSelfUpgradeCardStore), nameof(DowngradeInternalPostfix)));
+	}
+
+	// 原版 DowngradeInternal(魔法骑士降级等)会用 canonical 克隆整体替换 _dynamicVars,
+	// 把本 store 加在 BaseValue 上的累计值清零(玩家实报:升级铁斩波被降级后还原成 5/5,
+	// 下场战斗从牌库本体重新克隆才恢复)。降级只应回退"升级",不应吞掉打出累计,这里把记账值补回去。
+	private static void DowngradeInternalPostfix(CardModel __instance)
+	{
+		CardModel persistent = __instance.DeckVersion ?? __instance;
+		if (!BonusByCard.TryGetValue(persistent, out Counters? counters))
+		{
+			return;
+		}
+
+		if (counters.Damage != 0)
+		{
+			ApplyDamage(__instance, counters.Damage);
+		}
+
+		if (counters.Block != 0)
+		{
+			ApplyBlock(__instance, counters.Block);
+		}
 	}
 
 	/// <summary>打出后给这张卡永久增加 <paramref name="amount"/> 点伤害白值(本局持久、逐实例)。</summary>

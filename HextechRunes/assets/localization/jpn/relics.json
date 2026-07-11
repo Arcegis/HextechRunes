@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "入手時、デッキからカードを[blue]1[/blue]枚選び、[gold]テズカタラの残り火[/gold]を付与します。",
   "EMBERS_FORGE.flavor": "残り火は消えず、次のカードを待っています。",
   "PRISMATIC_LIFE_FORGE.title": "ライフフォージャー",
-  "PRISMATIC_LIFE_FORGE.description": "[blue]30%[/blue] 最大 HPを獲得します。",
+  "PRISMATIC_LIFE_FORGE.description": "最大HPが[blue]30%[/blue]増加します。",
   "PRISMATIC_LIFE_FORGE.flavor": "火はもはや容器を拡大しません。それを書き換えるのです。",
   "ATTACK_FORGE.title": "攻撃鍛造器",
   "ATTACK_FORGE.description": "[blue]20%[/blue] 増加したダメージを獲得します。",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "[blue]10%[/blue] のブロックと回復を獲得します。",
   "GOLD_PROTECTION_FORGE.flavor": "炉には傷と盾の両方のための余地が残されています。",
   "SILVER_HP_FORGE.title": "HP鍛造器",
-  "SILVER_HP_FORGE.description": "[blue]7.5%[/blue] 最大 HPを獲得します。",
+  "SILVER_HP_FORGE.description": "最大HPが[blue]7.5%[/blue]増加します。",
   "SILVER_HP_FORGE.flavor": "火はもはや容器を拡大しません。それを書き換えるのです。",
   "GOLD_HP_FORGE.title": "HP鍛造器",
-  "GOLD_HP_FORGE.description": "[blue]15%[/blue] 最大 HPを獲得します。",
+  "GOLD_HP_FORGE.description": "最大HPが[blue]15%[/blue]増加します。",
   "GOLD_HP_FORGE.flavor": "火はもはや容器を拡大しません。それを書き換えるのです。"
 }

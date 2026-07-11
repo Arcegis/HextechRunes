@@ -50,7 +50,7 @@ public sealed class FeelTheBurnCard : CardModel
 				.ToList();
 			foreach (PowerModel power in buffs)
 			{
-				await PowerCmd.Remove(power);
+				await HextechMonsterInteractionPolicy.RemoveMonsterBuffSafely(power);
 			}
 		}
 

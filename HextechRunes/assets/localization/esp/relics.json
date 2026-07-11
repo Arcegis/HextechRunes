@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "Al obtenerlo, elige [blue]1[/blue] carta de tu mazo y encántala con [gold]Ascua de Tezcatara[/gold].",
   "EMBERS_FORGE.flavor": "La ascua no se ha apagado. Espera la siguiente carta.",
   "PRISMATIC_LIFE_FORGE.title": "forjador de vida",
-  "PRISMATIC_LIFE_FORGE.description": "Gana [blue]30%[/blue] PV máximos.",
+  "PRISMATIC_LIFE_FORGE.description": "Obtén un [blue]30%[/blue] de PV máximos adicionales.",
   "PRISMATIC_LIFE_FORGE.flavor": "El fuego ya no agranda el recipiente. Lo reescribe.",
   "ATTACK_FORGE.title": "Forjador de ataques",
   "ATTACK_FORGE.description": "Obtienes [blue]20%[/blue] de daño aumentado.",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "Obtiene [blue]10%[/blue] aumento de bloqueo y curación.",
   "GOLD_PROTECTION_FORGE.flavor": "El horno deja espacio tanto para heridas como para escudos.",
   "SILVER_HP_FORGE.title": "Forja de PV",
-  "SILVER_HP_FORGE.description": "Gana [blue]7.5%[/blue] PV máximos.",
+  "SILVER_HP_FORGE.description": "Obtén un [blue]7.5%[/blue] de PV máximos adicionales.",
   "SILVER_HP_FORGE.flavor": "El fuego ya no agranda el recipiente. Lo reescribe.",
   "GOLD_HP_FORGE.title": "Forja de PV",
-  "GOLD_HP_FORGE.description": "Gana [blue]15%[/blue] PV máximos.",
+  "GOLD_HP_FORGE.description": "Obtén un [blue]15%[/blue] de PV máximos adicionales.",
   "GOLD_HP_FORGE.flavor": "El fuego ya no agranda el recipiente. Lo reescribe."
 }

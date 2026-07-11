@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class GoliathRune : HextechRelicBase
+public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune
 {
 	private int _baseMaxHp;
 
@@ -27,6 +27,8 @@ public sealed class GoliathRune : HextechRelicBase
 		new DynamicVar("Scale", 1.35m)
 	];
 
+	public decimal MaxHpScale => DynamicVars["Scale"].BaseValue;
+
 	internal float BodyScaleDelta => (float)DynamicVars["Scale"].BaseValue - 1f;
 
 	public override async Task AfterObtained()
@@ -36,17 +38,19 @@ public sealed class GoliathRune : HextechRelicBase
 			return;
 		}
 
-		EnsureBaseMaxHpInitialized(assumeAlreadyScaled: false);
-		await CreatureCmdCompat.SetMaxHp(Owner.Creature, BaseMaxHp);
+		// 主符文可能是先获得的另一个系数参与者(星界躯体/百分比锻造器),此时基础值已在它那里,按新乘积重算。
+		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
+		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: false);
+		await CreatureCmdCompat.SetMaxHp(Owner.Creature, primary.BaseMaxHp);
 		await CreatureCmd.Heal(Owner.Creature, Owner.Creature.MaxHp - Owner.Creature.CurrentHp);
 		Grow();
 	}
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null)
+		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
 		{
-			EnsureBaseMaxHpInitialized(assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
 		}
 
 		Grow();
@@ -68,18 +72,4 @@ public sealed class GoliathRune : HextechRelicBase
 		HextechPlayerBodyScaleHelper.Update(Owner);
 	}
 
-	public void EnsureBaseMaxHpInitialized(bool assumeAlreadyScaled = true)
-	{
-		if (Owner != null && _baseMaxHp <= 0)
-		{
-			_baseMaxHp = assumeAlreadyScaled
-				? Math.Max(1, FloorToInt(Owner.Creature.MaxHp / DynamicVars["Scale"].BaseValue))
-				: Owner.Creature.MaxHp;
-		}
-	}
-
-	public int GetScaledMaxHp()
-	{
-		return FloorToInt(BaseMaxHp * DynamicVars["Scale"].BaseValue);
-	}
 }

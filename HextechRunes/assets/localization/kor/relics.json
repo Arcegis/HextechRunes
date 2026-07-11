@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "획득 시, 덱에서 카드 [blue]1[/blue]장을 선택하여 [gold]테즈카타라의 잉걸불[/gold]을 인챈트합니다.",
   "EMBERS_FORGE.flavor": "잉걸불은 꺼지지 않았고 다음 카드를 기다릴 뿐입니다.",
   "PRISMATIC_LIFE_FORGE.title": "생명 모루",
-  "PRISMATIC_LIFE_FORGE.description": "최대 체력을 [blue]30%[/blue] 얻습니다.",
+  "PRISMATIC_LIFE_FORGE.description": "최대 체력이 [blue]30%[/blue] 증가합니다.",
   "PRISMATIC_LIFE_FORGE.flavor": "불길은 더 이상 그릇을 키우지 않고, 완전히 다시 씁니다.",
   "ATTACK_FORGE.title": "공격 모루",
   "ATTACK_FORGE.description": "주는 피해가 [blue]20%[/blue] 증가합니다.",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "얻는 방어도와 회복량이 [blue]10%[/blue] 증가합니다.",
   "GOLD_PROTECTION_FORGE.flavor": "용광로는 상처와 방패 모두를 위한 공간을 남겨둡니다.",
   "SILVER_HP_FORGE.title": "체력 단조기",
-  "SILVER_HP_FORGE.description": "최대 체력을 [blue]7.5%[/blue] 얻습니다.",
+  "SILVER_HP_FORGE.description": "최대 체력이 [blue]7.5%[/blue] 증가합니다.",
   "SILVER_HP_FORGE.flavor": "불길은 더 이상 그릇을 키우지 않고, 완전히 다시 씁니다.",
   "GOLD_HP_FORGE.title": "체력 단조기",
-  "GOLD_HP_FORGE.description": "최대 체력을 [blue]15%[/blue] 얻습니다.",
+  "GOLD_HP_FORGE.description": "최대 체력이 [blue]15%[/blue] 증가합니다.",
   "GOLD_HP_FORGE.flavor": "불길은 더 이상 그릇을 키우지 않고, 완전히 다시 씁니다."
 }

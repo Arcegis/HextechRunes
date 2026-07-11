@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "เมื่อรับมา เลือกการ์ด [blue]1[/blue] ใบจากกองการ์ดของคุณ และเสริมมนตร์ [gold]เพลิงของเทซคาทารา[/gold] ให้มัน",
   "EMBERS_FORGE.flavor": "ถ่านไฟยังไม่ดับ มันรอการ์ดใบถัดไปอยู่",
   "PRISMATIC_LIFE_FORGE.title": "ช่างหลอมชีวิต",
-  "PRISMATIC_LIFE_FORGE.description": "ได้รับ HP สูงสุด [blue]30%[/blue]",
+  "PRISMATIC_LIFE_FORGE.description": "ได้รับ HP สูงสุดเพิ่มขึ้น [blue]30%[/blue]",
   "PRISMATIC_LIFE_FORGE.flavor": "ไฟไม่ได้ขยายภาชนะอีกต่อไป แต่เขียนมันขึ้นใหม่",
   "ATTACK_FORGE.title": "ช่างหลอมการโจมตี",
   "ATTACK_FORGE.description": "ได้รับความเสียหายเพิ่มขึ้น [blue]20%[/blue]",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "ได้รับบล็อกและการฟื้นฟูเพิ่มขึ้น [blue]10%[/blue]",
   "GOLD_PROTECTION_FORGE.flavor": "เตาหลอมเผื่อที่ไว้ให้ทั้งบาดแผลและโล่",
   "SILVER_HP_FORGE.title": "เครื่องตี HP",
-  "SILVER_HP_FORGE.description": "ได้รับ HP สูงสุด [blue]7.5%[/blue]",
+  "SILVER_HP_FORGE.description": "ได้รับ HP สูงสุดเพิ่มขึ้น [blue]7.5%[/blue]",
   "SILVER_HP_FORGE.flavor": "ไฟไม่ได้ขยายภาชนะอีกต่อไป แต่เขียนมันขึ้นใหม่",
   "GOLD_HP_FORGE.title": "เครื่องตี HP",
-  "GOLD_HP_FORGE.description": "ได้รับ HP สูงสุด [blue]15%[/blue]",
+  "GOLD_HP_FORGE.description": "ได้รับ HP สูงสุดเพิ่มขึ้น [blue]15%[/blue]",
   "GOLD_HP_FORGE.flavor": "ไฟไม่ได้ขยายภาชนะอีกต่อไป แต่เขียนมันขึ้นใหม่"
 }

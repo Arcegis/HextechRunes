@@ -5,15 +5,17 @@ internal static partial class HextechCombatHooks
 	private static bool GainMaxHpPrefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 	{
 		__state = false;
-		if (_handlingGoliathMaxHp || creature.Player?.GetRelic<GoliathRune>() is not GoliathRune rune)
+		if (_handlingGoliathMaxHp
+			|| creature.Player is not Player player
+			|| HextechMaxHpScaling.GetPrimary(player) is not IHextechMaxHpBaseHolder primary)
 		{
 			return true;
 		}
 
-		rune.EnsureBaseMaxHpInitialized();
+		HextechMaxHpScaling.EnsureBaseInitialized(player, primary, assumeAlreadyScaled: true);
 		int oldActual = creature.MaxHp;
-		rune.BaseMaxHp += (int)amount;
-		int newActual = rune.GetScaledMaxHp();
+		primary.BaseMaxHp += (int)amount;
+		int newActual = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
 		int delta = Math.Max(0, newActual - oldActual);
 		if (delta == 0)
 		{
@@ -30,15 +32,17 @@ internal static partial class HextechCombatHooks
 	private static bool LoseMaxHpPrefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 	{
 		__state = false;
-		if (_handlingGoliathMaxHp || creature.Player?.GetRelic<GoliathRune>() is not GoliathRune rune)
+		if (_handlingGoliathMaxHp
+			|| creature.Player is not Player player
+			|| HextechMaxHpScaling.GetPrimary(player) is not IHextechMaxHpBaseHolder primary)
 		{
 			return true;
 		}
 
-		rune.EnsureBaseMaxHpInitialized();
+		HextechMaxHpScaling.EnsureBaseInitialized(player, primary, assumeAlreadyScaled: true);
 		int oldActual = creature.MaxHp;
-		rune.BaseMaxHp -= (int)amount;
-		int newActual = rune.GetScaledMaxHp();
+		primary.BaseMaxHp -= (int)amount;
+		int newActual = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
 		int loss = Math.Max(0, oldActual - newActual);
 		if (loss == 0)
 		{
@@ -55,15 +59,17 @@ internal static partial class HextechCombatHooks
 	private static bool SetMaxHpPrefix(Creature creature, ref decimal amount, out bool __state)
 	{
 		__state = false;
-		if (_handlingGoliathMaxHp || creature.Player?.GetRelic<GoliathRune>() is not GoliathRune rune)
+		if (_handlingGoliathMaxHp
+			|| creature.Player is not Player player
+			|| HextechMaxHpScaling.GetPrimary(player) is not IHextechMaxHpBaseHolder primary)
 		{
 			return true;
 		}
 
-		rune.BaseMaxHp = (int)Math.Max(1m, amount);
+		primary.BaseMaxHp = (int)Math.Max(1m, amount);
 		_handlingGoliathMaxHp = true;
 		__state = true;
-		amount = rune.GetScaledMaxHp();
+		amount = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
 		return true;
 	}
 

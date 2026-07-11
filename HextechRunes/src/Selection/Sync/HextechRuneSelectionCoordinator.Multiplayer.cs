@@ -38,8 +38,9 @@ internal static partial class HextechRuneSelectionCoordinator
 				HextechEnemyHexAdjustmentOptions? enemyHexOptions = fallbackActiveMonsterHexes.Count > 0
 					? new HextechEnemyHexAdjustmentOptions
 					{
-						// 无新 hex 可调整时只读展示本幕全部生效的敌方 hex(修复后续选择只显示第一个)。
-						InitialHexes = fallbackNewMonsterHexes.Count > 0 ? fallbackNewMonsterHexes : fallbackActiveMonsterHexes,
+						// 只展示【本幕新增】的敌方 hex;不能回退到 fallbackActiveMonsterHexes(前几幕累积集),
+						// 否则后续选择会把历史敌方海克斯一起显示(玩家实报)。本幕无新增时面板按空集隐藏。
+						InitialHexes = fallbackNewMonsterHexes,
 						ExcludedHexes = fallbackActiveMonsterHexes,
 						RerollLimit = modifier.MonsterHexRerollLimit,
 						ControlsEnabled = fallbackNewMonsterHexes.Count > 0 && runManager.NetService.Type == NetGameType.Host && IsLocalPlayer(runManager, player),

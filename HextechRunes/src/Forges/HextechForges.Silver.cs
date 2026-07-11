@@ -160,16 +160,22 @@ public sealed class LifeForge : HextechForgeBase
 // 血量锻造器:百分比版最大生命(棱彩"生命锻造器"30% 的 1/4),与固定值的生命锻造器并存。
 public sealed class SilverHpForge : HextechForgeBase, IHextechPercentHpForge
 {
-	private int _grantedMaxHp;
+	private int _baseMaxHp;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-	public int SavedPercentHpGranted
+	public int SavedBaseMaxHp
 	{
-		get => _grantedMaxHp;
-		set => _grantedMaxHp = Math.Max(0, value);
+		get => _baseMaxHp;
+		set => _baseMaxHp = Math.Max(0, value);
 	}
 
-	int IHextechPercentHpForge.GrantedPercentHp => _grantedMaxHp;
+	public int BaseMaxHp
+	{
+		get => _baseMaxHp;
+		set => _baseMaxHp = Math.Max(1, value);
+	}
+
+	public decimal MaxHpPercentTotal => DynamicVars["MaxHpPercent"].BaseValue * StackAmount;
 
 	public override bool HasUponPickupEffect => true;
 
@@ -178,17 +184,15 @@ public sealed class SilverHpForge : HextechForgeBase, IHextechPercentHpForge
 		new DynamicVar("MaxHpPercent", 7.5m)
 	];
 
-	public override Task AfterObtained()
+	public override async Task AfterObtained()
 	{
 		if (Owner == null)
 		{
-			return Task.CompletedTask;
+			return;
 		}
 
-		int maxHpGain = Math.Max(1, FloorToInt(GetPercentHpBaseline(Owner) * DynamicVars["MaxHpPercent"].BaseValue / 100m));
-		_grantedMaxHp += maxHpGain;
 		Flash();
-		return CreatureCmd.GainMaxHp(Owner.Creature, maxHpGain);
+		await HextechMaxHpScaling.ReapplyScale(Owner);
 	}
 }
 

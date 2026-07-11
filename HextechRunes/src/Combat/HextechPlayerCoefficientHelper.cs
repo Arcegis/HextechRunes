@@ -122,11 +122,8 @@ internal static class HextechPlayerCoefficientHelper
 
 	private static decimal GetHealthMultiplier(Player player)
 	{
-		decimal multiplier = 1m;
-		if (player.GetRelic<GoliathRune>() is GoliathRune goliathRune)
-		{
-			multiplier *= goliathRune.DynamicVars["Scale"].BaseValue;
-		}
+		// 巨人化/星界躯体等最大生命系数符文统一取 HextechMaxHpScaling 乘积。
+		decimal multiplier = HextechMaxHpScaling.GetScale(player);
 
 		if (player.GetRelic<GoldenSpatulaRune>() is GoldenSpatulaRune goldenSpatulaRune)
 		{

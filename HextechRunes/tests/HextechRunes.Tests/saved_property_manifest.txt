@@ -50,7 +50,6 @@ SavedPendingRewardCardId
 SavedPendingTemporaryStrength
 SavedPendingTrigger
 SavedPendingWishAmount
-SavedPercentHpGranted
 SavedPlayerHexCountsByAct
 SavedPlayerRuneConfigDisabledIdsJson
 SavedProcsThisTurn
