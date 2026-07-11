@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "При получении выберите [blue]1[/blue] карту из колоды и зачаруйте её [gold]Угольком Тецкатары[/gold].",
   "EMBERS_FORGE.flavor": "Уголёк не погас. Он ждёт следующую карту.",
   "PRISMATIC_LIFE_FORGE.title": "Наковальня жизни++",
-  "PRISMATIC_LIFE_FORGE.description": "Получите [blue]30%[/blue] макс. ОЗ.",
+  "PRISMATIC_LIFE_FORGE.description": "Получите [blue]30%[/blue] к макс. ОЗ.",
   "PRISMATIC_LIFE_FORGE.flavor": "Огонь больше не увеличивает сосуд. Он переписывает его.",
   "ATTACK_FORGE.title": "Наковальня урона",
   "ATTACK_FORGE.description": "Вы наносите на [blue]20%[/blue] больше урона.",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "Вы получаете на [blue]10%[/blue] больше защиты и исцеления.",
   "GOLD_PROTECTION_FORGE.flavor": "Горн оставляет место и для ран, и для щитов.",
   "SILVER_HP_FORGE.title": "Кузня ОЗ",
-  "SILVER_HP_FORGE.description": "Получите [blue]7.5%[/blue] макс. ОЗ.",
+  "SILVER_HP_FORGE.description": "Получите [blue]7.5%[/blue] к макс. ОЗ.",
   "SILVER_HP_FORGE.flavor": "Огонь больше не увеличивает сосуд. Он переписывает его.",
   "GOLD_HP_FORGE.title": "Кузня ОЗ",
-  "GOLD_HP_FORGE.description": "Получите [blue]15%[/blue] макс. ОЗ.",
+  "GOLD_HP_FORGE.description": "Получите [blue]15%[/blue] к макс. ОЗ.",
   "GOLD_HP_FORGE.flavor": "Огонь больше не увеличивает сосуд. Он переписывает его."
 }

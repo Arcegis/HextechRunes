@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "Ao obter, escolha [blue]1[/blue] carta do seu deck e encante-a com [gold]Brasas de Tezcatara[/gold].",
   "EMBERS_FORGE.flavor": "A brasa não se apagou. Ela espera a próxima carta.",
   "PRISMATIC_LIFE_FORGE.title": "Forjador de Vida",
-  "PRISMATIC_LIFE_FORGE.description": "Ganhe [blue]30%[/blue] de PV Máx.",
+  "PRISMATIC_LIFE_FORGE.description": "Ganhe um bônus de [blue]30%[/blue] de PV Máx.",
   "PRISMATIC_LIFE_FORGE.flavor": "O fogo não alarga mais o recipiente. Ele o reescreve.",
   "ATTACK_FORGE.title": "Forjador de Ataque",
   "ATTACK_FORGE.description": "Ganhe [blue]20%[/blue] de aumento de dano.",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "Ganhe [blue]10%[/blue] de aumento de Bloqueio e cura.",
   "GOLD_PROTECTION_FORGE.flavor": "A fornalha deixa espaço tanto para feridas quanto para escudos.",
   "SILVER_HP_FORGE.title": "Forja de PV",
-  "SILVER_HP_FORGE.description": "Ganhe [blue]7.5%[/blue] de PV Máx.",
+  "SILVER_HP_FORGE.description": "Ganhe um bônus de [blue]7.5%[/blue] de PV Máx.",
   "SILVER_HP_FORGE.flavor": "O fogo não alarga mais o recipiente. Ele o reescreve.",
   "GOLD_HP_FORGE.title": "Forja de PV",
-  "GOLD_HP_FORGE.description": "Ganhe [blue]15%[/blue] de PV Máx.",
+  "GOLD_HP_FORGE.description": "Ganhe um bônus de [blue]15%[/blue] de PV Máx.",
   "GOLD_HP_FORGE.flavor": "O fogo não alarga mais o recipiente. Ele o reescreve."
 }

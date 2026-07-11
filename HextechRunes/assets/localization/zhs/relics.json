@@ -399,7 +399,7 @@
   "EMBERS_FORGE.description": "获得时，从牌组中选择[blue]1[/blue]张牌，为其附魔：[gold]特兹卡塔拉的余烬[/gold]。",
   "EMBERS_FORGE.flavor": "余烬不灭，只是在等下一张牌燃起。",
   "PRISMATIC_LIFE_FORGE.title": "生命锻造器",
-  "PRISMATIC_LIFE_FORGE.description": "获得[blue]30%[/blue]的最大生命值。",
+  "PRISMATIC_LIFE_FORGE.description": "获得[blue]30%[/blue]最大生命值加成。",
   "PRISMATIC_LIFE_FORGE.flavor": "炉火不再扩容，而是重写容器本身。",
   "ATTACK_FORGE.title": "攻击锻造器",
   "ATTACK_FORGE.description": "获得[blue]20%[/blue]的伤害加成。",
@@ -1347,9 +1347,9 @@
   "GOLD_PROTECTION_FORGE.description": "获得[blue]10%[/blue]的格挡与治疗加成。",
   "GOLD_PROTECTION_FORGE.flavor": "炉火替伤口和盾牌都留了余量。",
   "SILVER_HP_FORGE.title": "血量锻造器",
-  "SILVER_HP_FORGE.description": "获得[blue]7.5%[/blue]的最大生命值。",
+  "SILVER_HP_FORGE.description": "获得[blue]7.5%[/blue]最大生命值加成。",
   "SILVER_HP_FORGE.flavor": "炉火不再扩容，而是重写容器本身。",
   "GOLD_HP_FORGE.title": "血量锻造器",
-  "GOLD_HP_FORGE.description": "获得[blue]15%[/blue]的最大生命值。",
+  "GOLD_HP_FORGE.description": "获得[blue]15%[/blue]最大生命值加成。",
   "GOLD_HP_FORGE.flavor": "炉火不再扩容，而是重写容器本身。"
 }
