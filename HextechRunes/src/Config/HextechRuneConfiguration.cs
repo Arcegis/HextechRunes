@@ -8,7 +8,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 22;
+	private const int CurrentConfigVersion = 23;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -73,6 +73,19 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version22DefaultDisabledRuneTypes =
 	[
 		typeof(GetExcitedRune)
+	];
+
+	// 0.8.5 遥测(69.8万局)选取率垫底批次转为默认禁用:豪猪7.7%/巨像的勇气10.6%/瓦库11.4%/
+	// 死亡收割11.5%/最终形态12.8%/乾坤一掷14.2%/枯木14.7%(全体中位数30.3%)。
+	private static readonly Type[] Version23DefaultDisabledRuneTypes =
+	[
+		typeof(ShoulderVakuRune),
+		typeof(PorcupineRune),
+		typeof(CourageOfColossusRune),
+		typeof(DeathHarvestRune),
+		typeof(FinalFormRune),
+		typeof(AllInRune),
+		typeof(DeadwoodRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -392,6 +405,11 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 22)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version22DefaultDisabledRuneTypes));
+		}
+
+		if (previousConfigVersion < 23)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version23DefaultDisabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;
