@@ -1351,5 +1351,14 @@
   "SILVER_HP_FORGE.flavor": "불길은 더 이상 그릇을 키우지 않고, 완전히 다시 씁니다.",
   "GOLD_HP_FORGE.title": "체력 단조기",
   "GOLD_HP_FORGE.description": "최대 체력이 [blue]15%[/blue] 증가합니다.",
-  "GOLD_HP_FORGE.flavor": "불길은 더 이상 그릇을 키우지 않고, 완전히 다시 씁니다."
+  "GOLD_HP_FORGE.flavor": "불길은 더 이상 그릇을 키우지 않고, 완전히 다시 씁니다.",
+  "MYRIAD_SWORDS_RUNE.title": "만검귀종",
+  "MYRIAD_SWORDS_RUNE.description": "당신의 [gold]군주의 칼날[/gold]은 사용 후 [gold]소멸[/gold]됩니다. 턴 종료 시, 소멸 더미에 있는 모든 [gold]군주의 칼날[/gold]을 사용합니다.",
+  "MYRIAD_SWORDS_RUNE.flavor": "검총의 검은 잠들지 않는다. 부름을 기다릴 뿐.",
+  "TWILIGHT_VEIL_RUNE.title": "황혼의 베일",
+  "TWILIGHT_VEIL_RUNE.description": "전투 중 적이 버프를 얻을 때, 당신도 같은 버프를 얻습니다.",
+  "TWILIGHT_VEIL_RUNE.flavor": "황혼은 누구의 것도 아니다. 걸친 자만 빼고.",
+  "LINGERING_MIGHT_RUNE.title": "잔존하는 위세",
+  "LINGERING_MIGHT_RUNE.description": "전투 종료 시, 보유한 버프 중 무작위 한 종류를 다음 전투 시작까지 유지합니다.",
+  "LINGERING_MIGHT_RUNE.flavor": "전투는 끝나도 기세는 끝나지 않는다."
 }

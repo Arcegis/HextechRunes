@@ -1351,5 +1351,14 @@
   "SILVER_HP_FORGE.flavor": "O fogo não alarga mais o recipiente. Ele o reescreve.",
   "GOLD_HP_FORGE.title": "Forja de PV",
   "GOLD_HP_FORGE.description": "Ganhe um bônus de [blue]15%[/blue] de PV Máx.",
-  "GOLD_HP_FORGE.flavor": "O fogo não alarga mais o recipiente. Ele o reescreve."
+  "GOLD_HP_FORGE.flavor": "O fogo não alarga mais o recipiente. Ele o reescreve.",
+  "MYRIAD_SWORDS_RUNE.title": "Retorno das Mil Lâminas",
+  "MYRIAD_SWORDS_RUNE.description": "Suas [gold]Lâminas Soberanas[/gold] são exauridas ao serem jogadas. No fim do seu turno, jogue todas as [gold]Lâminas Soberanas[/gold] da sua pilha de exaustão.",
+  "MYRIAD_SWORDS_RUNE.flavor": "Lâminas enterradas não dormem — apenas aguardam o chamado.",
+  "TWILIGHT_VEIL_RUNE.title": "Véu do Crepúsculo",
+  "TWILIGHT_VEIL_RUNE.description": "Sempre que um inimigo ganha um bônus durante o combate, você ganha o mesmo bônus.",
+  "TWILIGHT_VEIL_RUNE.flavor": "O crepúsculo não pertence a ninguém — exceto a quem o veste.",
+  "LINGERING_MIGHT_RUNE.title": "Poder Remanescente",
+  "LINGERING_MIGHT_RUNE.description": "Ao fim do combate, você mantém um bônus aleatório até o início do seu próximo combate.",
+  "LINGERING_MIGHT_RUNE.flavor": "As batalhas terminam. O ímpeto, não."
 }

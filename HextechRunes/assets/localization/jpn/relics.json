@@ -1351,5 +1351,14 @@
   "SILVER_HP_FORGE.flavor": "火はもはや容器を拡大しません。それを書き換えるのです。",
   "GOLD_HP_FORGE.title": "HP鍛造器",
   "GOLD_HP_FORGE.description": "最大HPが[blue]15%[/blue]増加します。",
-  "GOLD_HP_FORGE.flavor": "火はもはや容器を拡大しません。それを書き換えるのです。"
+  "GOLD_HP_FORGE.flavor": "火はもはや容器を拡大しません。それを書き換えるのです。",
+  "MYRIAD_SWORDS_RUNE.title": "万剣帰宗",
+  "MYRIAD_SWORDS_RUNE.description": "あなたの[gold]ソブリンブレード[/gold]はプレイ後に[gold]廃棄[/gold]されます。ターン終了時、廃棄カードのすべての[gold]ソブリンブレード[/gold]をプレイします。",
+  "MYRIAD_SWORDS_RUNE.flavor": "塚に眠る剣は、号令を待っているだけだ。",
+  "TWILIGHT_VEIL_RUNE.title": "薄暮のヴェール",
+  "TWILIGHT_VEIL_RUNE.description": "戦闘中に敵がバフを獲得したとき、あなたも同じバフを獲得します。",
+  "TWILIGHT_VEIL_RUNE.flavor": "黄昏は誰のものでもない。羽織った者を除いて。",
+  "LINGERING_MIGHT_RUNE.title": "残威",
+  "LINGERING_MIGHT_RUNE.description": "戦闘終了時、あなたのバフのうちランダムな1種類を次の戦闘開始時まで保持します。",
+  "LINGERING_MIGHT_RUNE.flavor": "戦いは終わっても、勢いは終わらない。"
 }

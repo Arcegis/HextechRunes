@@ -86,6 +86,32 @@ internal static class HextechMonsterInteractionPolicy
 	}
 
 	/// <summary>
+	/// 怪物专属机制/形态类 buff:不适合镜像/转移到玩家身上(动画触发器与怪物脚本在玩家模型上不存在)。
+	/// 范围 = 结构性 buff + 已放开剥除的 15 类动画/形态 buff(可剥不代表可镜像)。
+	/// </summary>
+	public static bool IsMonsterMechanismBuff(PowerModel power)
+	{
+		return IsStructuralMonsterBuff(power)
+			|| power is SkittishPower
+				or SmoggyPower
+				or BurrowedPower
+#if STS2_108_OR_NEWER
+				or HibernatePower
+#endif
+				or CurlUpPower
+				or HardenedShellPower
+				or SentryModePower
+				or ShadowmeldPower
+				or ShroudPower
+				or SneakyPower
+				or CoveredPower
+				or SurprisePower
+				or SoarPower
+				or FlutterPower
+				or SpectrumShiftPower;
+	}
+
+	/// <summary>
 	/// 安全剥除怪物增益:对有"进场动画等待出场"状态机的 power(幽灵鳗 Skittish),先补出场动画再移除,
 	/// 否则 Spine 状态机停在 Block 态、下一次动画触发永远等不到(玩家实报"感受燃烧打四鳗卡死"的根因)。
 	/// 感受燃烧/升级:暴露的剥除一律走这里。

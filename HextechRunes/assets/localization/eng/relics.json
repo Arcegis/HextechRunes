@@ -1351,5 +1351,14 @@
   "SILVER_HP_FORGE.flavor": "The fire no longer enlarges the vessel. It rewrites it.",
   "GOLD_HP_FORGE.title": "HP Forge",
   "GOLD_HP_FORGE.description": "Gain [blue]15%[/blue] Max HP bonus.",
-  "GOLD_HP_FORGE.flavor": "The fire no longer enlarges the vessel. It rewrites it."
+  "GOLD_HP_FORGE.flavor": "The fire no longer enlarges the vessel. It rewrites it.",
+  "MYRIAD_SWORDS_RUNE.title": "Myriad Swords Return",
+  "MYRIAD_SWORDS_RUNE.description": "Your [gold]Sovereign Blades[/gold] are [gold]Exhausted[/gold] when played. At the end of your turn, play all [gold]Sovereign Blades[/gold] in your exhaust pile.",
+  "MYRIAD_SWORDS_RUNE.flavor": "Buried blades never sleep — they only await the call.",
+  "TWILIGHT_VEIL_RUNE.title": "Twilight Veil",
+  "TWILIGHT_VEIL_RUNE.description": "Whenever an enemy gains a buff during combat, you gain the same buff.",
+  "TWILIGHT_VEIL_RUNE.flavor": "Dusk belongs to no one — until you wear it.",
+  "LINGERING_MIGHT_RUNE.title": "Lingering Might",
+  "LINGERING_MIGHT_RUNE.description": "When combat ends, keep one random buff you have until the start of your next combat.",
+  "LINGERING_MIGHT_RUNE.flavor": "Battles end. Momentum doesn't."
 }
