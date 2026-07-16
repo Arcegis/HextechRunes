@@ -30,7 +30,15 @@ public sealed class DoubleVisionRune : HextechRelicBase
 
 	public override async Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner == null || _pendingEventRelicIds.Count == 0 || room is EventRoom)
+		// 结账点只放在安全房间:事件房不放(嵌套复制卡死/分叉,见 BeginDirectCommandReward 注释);
+		// 战斗房也不放——华美手镯等带交互式 AfterObtained(进场选牌附魔)的事件遗物在战斗初始化
+		// 流程里开不出选择 UI 会黑屏,联机则在战斗 init 期间广播奖励同步导致分叉卡死(玩家实报三例)。
+		// 待复制清单继续搭车,挂到下一个商店/休息/宝箱等非战斗房间再结。
+		if (Owner == null
+			|| _pendingEventRelicIds.Count == 0
+			|| room is EventRoom
+			|| room is CombatRoom
+			|| CombatManager.Instance.IsInProgress)
 		{
 			return;
 		}
