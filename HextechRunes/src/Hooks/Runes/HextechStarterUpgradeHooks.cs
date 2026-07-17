@@ -28,6 +28,14 @@ internal static class HextechStarterUpgradeHooks
 			return;
 		}
 
+		// 卡牌图鉴/预览等场景传入的是 canonical 实例:其 Owner getter 直接抛
+		// CanonicalModelException,会把整个图鉴 InitGrid 打断(卡牌全堆左上角,玩家实报,
+		// 第三方 mod 的基础打击变体同样命中判定)。canonical 卡不属于任何玩家,保持原上限。
+		if (__instance.IsCanonical)
+		{
+			return;
+		}
+
 		bool isStrike = StrikeUpgradeRune.IsBasicStrike(__instance);
 		bool isDefend = !isStrike && DefendUpgradeRune.IsBasicDefend(__instance);
 		if (!isStrike && !isDefend)
