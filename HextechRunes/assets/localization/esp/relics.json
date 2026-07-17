@@ -1,9 +1,9 @@
 {
   "STRIKE_UPGRADE_RUNE.title": "Upgrade: Strike",
-  "STRIKE_UPGRADE_RUNE.description": "After you play a [gold]Strike[/gold], transform it into a [gold]Flash of Steel[/gold] for the rest of combat.",
+  "STRIKE_UPGRADE_RUNE.description": "Tus cartas de [gold]Golpe[/gold] pueden mejorarse sin límite. Al terminar el combate, mejora cada [gold]Golpe[/gold] que hayas jugado en este combate.",
   "STRIKE_UPGRADE_RUNE.flavor": "Even the plainest blow can be honed to a gleam.",
   "DEFEND_UPGRADE_RUNE.title": "Upgrade: Defend",
-  "DEFEND_UPGRADE_RUNE.description": "After you play a [gold]Defend[/gold], transform it into a [gold]Finesse[/gold] for the rest of combat.",
+  "DEFEND_UPGRADE_RUNE.description": "Tus cartas de [gold]Defensa[/gold] pueden mejorarse sin límite. Al terminar el combate, mejora cada [gold]Defensa[/gold] que hayas jugado en este combate.",
   "DEFEND_UPGRADE_RUNE.flavor": "Within a guard hides the cleverest scheme.",
   "MOLTEN_FIST_UPGRADE_RUNE.title": "Upgrade: Molten Fist",
   "MOLTEN_FIST_UPGRADE_RUNE.description": "After you play [gold]Molten Fist[/gold], add 1 [gold]Dominate[/gold] to your hand.",

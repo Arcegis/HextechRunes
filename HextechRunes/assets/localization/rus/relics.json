@@ -1,9 +1,9 @@
 {
   "STRIKE_UPGRADE_RUNE.title": "Улучшение: Удар",
-  "STRIKE_UPGRADE_RUNE.description": "После того как вы разыграете [gold]Удар[/gold], он превращается в [gold]Отблеск стали[/gold] до конца боя.",
+  "STRIKE_UPGRADE_RUNE.description": "Ваши [gold]Удары[/gold] можно улучшать неограниченно. По окончании боя улучшите каждый [gold]Удар[/gold], разыгранный в этом бою.",
   "STRIKE_UPGRADE_RUNE.flavor": "Даже самый простой удар можно отточить до блеска.",
   "DEFEND_UPGRADE_RUNE.title": "Улучшение: Оборона",
-  "DEFEND_UPGRADE_RUNE.description": "После того как вы разыграете [gold]Оборону[/gold], она превращается в [gold]Изящность[/gold] до конца боя.",
+  "DEFEND_UPGRADE_RUNE.description": "Ваши карты [gold]Защита[/gold] можно улучшать неограниченно. По окончании боя улучшите каждую [gold]Защиту[/gold], разыгранную в этом бою.",
   "DEFEND_UPGRADE_RUNE.flavor": "За защитной стойкой прячется самый хитрый замысел.",
   "MOLTEN_FIST_UPGRADE_RUNE.title": "Улучшение: Раскаленный кулак",
   "MOLTEN_FIST_UPGRADE_RUNE.description": "После того как вы разыграете [gold]Раскаленный кулак[/gold], добавьте 1 [gold]Превосходство[/gold] в руку.",

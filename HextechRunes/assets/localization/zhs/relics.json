@@ -1,9 +1,9 @@
 {
   "STRIKE_UPGRADE_RUNE.title": "升级：打击",
-  "STRIKE_UPGRADE_RUNE.description": "打出[gold]打击[/gold]后，将其在本场战斗中变化为[gold]亮剑[/gold]。",
+  "STRIKE_UPGRADE_RUNE.description": "你的[gold]打击[/gold]可以无限升级。战斗结束后，升级你本场战斗中打出过的[gold]打击[/gold]。",
   "STRIKE_UPGRADE_RUNE.flavor": "最朴素的一击，也能磨出寒光。",
   "DEFEND_UPGRADE_RUNE.title": "升级：防御",
-  "DEFEND_UPGRADE_RUNE.description": "打出[gold]防御[/gold]后，将其在本场战斗中变化为[gold]妙计[/gold]。",
+  "DEFEND_UPGRADE_RUNE.description": "你的[gold]防御[/gold]可以无限升级。战斗结束后，升级你本场战斗中打出过的[gold]防御[/gold]。",
   "DEFEND_UPGRADE_RUNE.flavor": "守势里藏着最巧的算计。",
   "MOLTEN_FIST_UPGRADE_RUNE.title": "升级：熔融之拳",
   "MOLTEN_FIST_UPGRADE_RUNE.description": "打出[gold]熔融之拳[/gold]后，在你的手牌中添加1张[gold]主宰[/gold]。",
