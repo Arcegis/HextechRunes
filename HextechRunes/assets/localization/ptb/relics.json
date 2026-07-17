@@ -1360,5 +1360,11 @@
   "TWILIGHT_VEIL_RUNE.flavor": "O crepúsculo não pertence a ninguém — exceto a quem o veste.",
   "LINGERING_MIGHT_RUNE.title": "Poder Remanescente",
   "LINGERING_MIGHT_RUNE.description": "Ao fim do combate, você mantém um bônus aleatório até o início do seu próximo combate.",
-  "LINGERING_MIGHT_RUNE.flavor": "As batalhas terminam. O ímpeto, não."
+  "LINGERING_MIGHT_RUNE.flavor": "As batalhas terminam. O ímpeto, não.",
+  "SOUL_UPGRADE_RUNE.title": "Melhoria: Alma",
+  "SOUL_UPGRADE_RUNE.description": "Após jogar uma [gold]Alma[/gold], ganhe [blue]1[/blue] de Energia.",
+  "SOUL_UPGRADE_RUNE.flavor": "Cada alma que parte deixa uma centelha para trás.",
+  "PRISMATIC_EGG_RUNE.title": "Ovo Prismático",
+  "PRISMATIC_EGG_RUNE.description": "As recompensas de relíquia nas suas salas do tesouro são substituídas por runas Hextec aleatórias.",
+  "PRISMATIC_EGG_RUNE.flavor": "Ninguém sabe o que há dentro. Nem mesmo quem o botou."
 }

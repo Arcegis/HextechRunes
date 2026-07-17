@@ -19,7 +19,7 @@ public sealed class MyriadSwordsRune : HextechRelicBase
 	}
 
 	// 君王之剑打出后进消耗堆。去向 None(复制品等)不抢改,防幽灵实体(同八分门)。
-	public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPosition(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
+	public override (PileType, CardPilePosition) ModifyCardPlayResultPileTypeAndPositionCompat(CardModel card, bool isAutoPlay, ResourceInfo resources, PileType pileType, CardPilePosition position)
 	{
 		return pileType is not PileType.None && card.Owner == Owner && card is SovereignBlade
 			? (PileType.Exhaust, position)

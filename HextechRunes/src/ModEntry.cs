@@ -69,6 +69,7 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("starter card unlimited upgrade", () => HextechStarterUpgradeHooks.Install(harmony));
 			TryInstallOptionalHookGroup("card grid upgrade preview revert", () => HextechCardGridPreviewHooks.Install(harmony));
 			TryInstallOptionalHookGroup("well-laid plans unlimited retain", () => HextechWellLaidPlansHooks.Install(harmony));
+			TryInstallOptionalHookGroup("prismatic egg treasure replacement", () => HextechTreasureRuneHooks.Install(harmony));
 			TryInstallOptionalHookGroup("nightmare dark orb passive", () => HextechNightmareHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
 			_initialized = true;

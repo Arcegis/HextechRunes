@@ -1360,5 +1360,11 @@
   "TWILIGHT_VEIL_RUNE.flavor": "Dusk belongs to no one — until you wear it.",
   "LINGERING_MIGHT_RUNE.title": "Lingering Might",
   "LINGERING_MIGHT_RUNE.description": "When combat ends, keep one random buff you have until the start of your next combat.",
-  "LINGERING_MIGHT_RUNE.flavor": "Battles end. Momentum doesn't."
+  "LINGERING_MIGHT_RUNE.flavor": "Battles end. Momentum doesn't.",
+  "SOUL_UPGRADE_RUNE.title": "Upgrade: Soul",
+  "SOUL_UPGRADE_RUNE.description": "After playing a [gold]Soul[/gold], gain [blue]1[/blue] Energy.",
+  "SOUL_UPGRADE_RUNE.flavor": "Every departing soul leaves a spark behind.",
+  "PRISMATIC_EGG_RUNE.title": "Prismatic Egg",
+  "PRISMATIC_EGG_RUNE.description": "Relic rewards in your treasure rooms are replaced with random Hextech runes.",
+  "PRISMATIC_EGG_RUNE.flavor": "Nobody knows what's inside. Not even whoever laid it."
 }

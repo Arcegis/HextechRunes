@@ -183,4 +183,40 @@ internal static class HextechRuneGrantHelper
 		await RelicCmd.Remove(consumedRune);
 		await ObtainRandomRunes(player, candidateTypes, count);
 	}
+
+	/// <summary>
+	/// 为奖励槽确定性挑一个可获得符文(排除已拥有/已禁用/blockedIds;盐两端一致 → 联机一致,
+	/// 无需 choiceId 同步)。池空(符文全拥有或全禁用)返回 null,调用方应保留原奖励兜底。
+	/// </summary>
+	public static Type? PickRewardRuneType(Player player, IReadOnlySet<ModelId>? blockedIds, Func<Type, bool>? extraFilter, params string?[] saltParts)
+	{
+		IEnumerable<Type> candidates = HextechCatalog.GetAllConfigurableRuneTypes();
+		if (extraFilter != null)
+		{
+			candidates = candidates.Where(extraFilter);
+		}
+
+		List<Type> pool = BuildObtainableRunePool(player, candidates, blockedIds, selectedIds: new HashSet<ModelId>());
+		if (pool.Count == 0)
+		{
+			return null;
+		}
+
+		return HextechStableRandom.Pick(pool, (RunState)player.RunState, HextechStableRandom.TypeModelKey, saltParts);
+	}
+
+	/// <summary>局内所有玩家已拥有的海克斯符文 id 并集(奖励可能被任意玩家领取时的排重口径)。</summary>
+	public static HashSet<ModelId> CollectRuneIdsOwnedByAnyPlayer(IEnumerable<Player> players)
+	{
+		HashSet<ModelId> owned = [];
+		foreach (Player player in players)
+		{
+			foreach (RelicModel relic in player.Relics.Where(HextechCatalog.IsHextechRelic))
+			{
+				owned.Add(relic.Id);
+			}
+		}
+
+		return owned;
+	}
 }

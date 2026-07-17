@@ -1360,5 +1360,11 @@
   "TWILIGHT_VEIL_RUNE.flavor": "สนธยาไม่เป็นของใคร นอกจากผู้ที่สวมมัน",
   "LINGERING_MIGHT_RUNE.title": "อานุภาพตกค้าง",
   "LINGERING_MIGHT_RUNE.description": "เมื่อจบการต่อสู้ คุณจะเก็บบัฟสุ่มหนึ่งชนิดไว้จนถึงเริ่มการต่อสู้ครั้งถัดไป",
-  "LINGERING_MIGHT_RUNE.flavor": "การต่อสู้จบลง แต่โมเมนตัมไม่จบ"
+  "LINGERING_MIGHT_RUNE.flavor": "การต่อสู้จบลง แต่โมเมนตัมไม่จบ",
+  "SOUL_UPGRADE_RUNE.title": "อัปเกรด: วิญญาณ",
+  "SOUL_UPGRADE_RUNE.description": "หลังจากเล่น[gold]วิญญาณ[/gold] รับพลังงาน [blue]1[/blue] หน่วย",
+  "SOUL_UPGRADE_RUNE.flavor": "ทุกดวงวิญญาณที่จากไปย่อมทิ้งประกายไฟไว้เบื้องหลัง",
+  "PRISMATIC_EGG_RUNE.title": "ไข่ปริซึม",
+  "PRISMATIC_EGG_RUNE.description": "รางวัลเรลิกในห้องสมบัติของคุณจะถูกแทนที่ด้วยรูนเฮกซ์เทคแบบสุ่ม",
+  "PRISMATIC_EGG_RUNE.flavor": "ไม่มีใครรู้ว่าข้างในคืออะไร แม้แต่ผู้ที่ออกไข่ใบนี้ก็ตาม"
 }

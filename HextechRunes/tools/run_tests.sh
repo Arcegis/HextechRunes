@@ -3,12 +3,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# 默认对两个发布目标各跑一遍(引用目录存在才跑);显式设 HEXTECH_STS2_TARGET 则只跑该目标。
+# 默认对各发布目标各跑一遍(引用目录存在才跑);显式设 HEXTECH_STS2_TARGET 则只跑该目标。
 if [[ -n "${HEXTECH_STS2_TARGET:-}" ]]; then
   TARGETS=("$HEXTECH_STS2_TARGET")
 else
   TARGETS=()
-  for candidate in 0.107.1 0.108.0; do
+  for candidate in 0.107.1 0.108.0 0.109.0; do
     if [[ -f "$ROOT/versioned-dll-backups/$candidate/game-refs/sts2.dll" ]]; then
       TARGETS+=("$candidate")
     fi

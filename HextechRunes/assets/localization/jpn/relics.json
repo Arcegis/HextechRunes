@@ -1360,5 +1360,11 @@
   "TWILIGHT_VEIL_RUNE.flavor": "黄昏は誰のものでもない。羽織った者を除いて。",
   "LINGERING_MIGHT_RUNE.title": "残威",
   "LINGERING_MIGHT_RUNE.description": "戦闘終了時、あなたのバフのうちランダムな1種類を次の戦闘開始時まで保持します。",
-  "LINGERING_MIGHT_RUNE.flavor": "戦いは終わっても、勢いは終わらない。"
+  "LINGERING_MIGHT_RUNE.flavor": "戦いは終わっても、勢いは終わらない。",
+  "SOUL_UPGRADE_RUNE.title": "アップグレード: ソウル",
+  "SOUL_UPGRADE_RUNE.description": "[gold]Soul[/gold]をプレイした後、エネルギーを[blue]1[/blue]獲得します。",
+  "SOUL_UPGRADE_RUNE.flavor": "魂が去るたび、小さな火花が残る。",
+  "PRISMATIC_EGG_RUNE.title": "プリズムの卵",
+  "PRISMATIC_EGG_RUNE.description": "宝箱部屋のレリック報酬が、ランダムなヘクステックルーンに置き換わります。",
+  "PRISMATIC_EGG_RUNE.flavor": "中身は誰にも分からない。産んだ本人にさえも。"
 }

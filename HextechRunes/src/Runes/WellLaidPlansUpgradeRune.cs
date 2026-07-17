@@ -10,4 +10,23 @@ public sealed class WellLaidPlansUpgradeRune : CardUpgradeRuneBase<WellLaidPlans
 	];
 
 	protected override bool IsAvailableForCharacter(Player player) => IsSilentPlayer(player);
+
+#if STS2_109_OR_NEWER
+	// 0.109 原版计划妥当重做为「整手牌全保留」,power 上不再有选牌挂点;选牌逻辑搬到 rune 自身
+	// (配合 HextechWellLaidPlansHooks 把 power.ShouldFlush 拉回 true),维持「任选保留、其余弃掉」。
+	public override async Task BeforeFlushLate(PlayerChoiceContext choiceContext, Player player)
+	{
+		if (Owner == null || player != Owner || Owner.Creature == null || Owner.Creature.IsDead)
+		{
+			return;
+		}
+
+		if (Owner.Creature.GetPower<WellLaidPlansPower>() is not WellLaidPlansPower power)
+		{
+			return;
+		}
+
+		await HextechWellLaidPlansHooks.UnlimitedRetain(power, choiceContext, player);
+	}
+#endif
 }

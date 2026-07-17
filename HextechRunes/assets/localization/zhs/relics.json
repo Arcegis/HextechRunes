@@ -1360,5 +1360,11 @@
   "TWILIGHT_VEIL_RUNE.flavor": "暮色不属于任何人——披上它的那一刻除外。",
   "LINGERING_MIGHT_RUNE.title": "余威",
   "LINGERING_MIGHT_RUNE.description": "战斗结束时，你保留随机一种增益效果至下一场战斗开始。",
-  "LINGERING_MIGHT_RUNE.flavor": "战斗会结束，气势不会。"
+  "LINGERING_MIGHT_RUNE.flavor": "战斗会结束，气势不会。",
+  "SOUL_UPGRADE_RUNE.title": "升级：灵魂",
+  "SOUL_UPGRADE_RUNE.description": "打出[gold]灵魂[/gold]后，获得[blue]1[/blue]点能量。",
+  "SOUL_UPGRADE_RUNE.flavor": "每一缕魂魄离去时，都会留下一点火光。",
+  "PRISMATIC_EGG_RUNE.title": "棱彩蛋",
+  "PRISMATIC_EGG_RUNE.description": "你宝箱房内的遗物奖励会被替换为随机的海克斯符文。",
+  "PRISMATIC_EGG_RUNE.flavor": "没人知道里面是什么，连下蛋的那位也不知道。"
 }

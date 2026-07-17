@@ -27,7 +27,20 @@ internal static class Program
 
 	public static int Main()
 	{
-#if STS2_108_OR_NEWER
+#if STS2_109_OR_NEWER
+		// 0.109 起游戏引用 System.IO.Hashing(XxHash32);它不在测试的 deps.json 里(仅作文件复制),
+		// 默认加载上下文按 deps.json 解析会失败,这里从输出目录兜底加载。
+		System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += static (context, name) =>
+		{
+			string candidate = Path.Combine(AppContext.BaseDirectory, $"{name.Name}.dll");
+			return File.Exists(candidate) ? context.LoadFromAssemblyPath(candidate) : null;
+		};
+
+		// 0.109 起缓存并入 Multiplayer.Serialization.ModelIdSerializationCache,守卫语义同 0.108。
+		typeof(MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache)
+			.GetField("_initialized", BindingFlags.NonPublic | BindingFlags.Static)
+			?.SetValue(null, true);
+#elif STS2_108_OR_NEWER
 		// 0.108 起 SavedPropertiesTypeCache 未初始化即用会抛;真实游戏由启动流程 Init(),但 Init 又依赖
 		// AssemblyInfo 等更多游戏启动态。测试环境直接置 _initialized 标志,恢复 0.107.1 的无守卫语义。
 		typeof(MegaCrit.Sts2.Core.Saves.Runs.SavedPropertiesTypeCache)

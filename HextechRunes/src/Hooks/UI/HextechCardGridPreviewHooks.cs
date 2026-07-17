@@ -28,7 +28,7 @@ internal static class HextechCardGridPreviewHooks
 		}
 
 		harmony.Patch(
-			RequireMethod(typeof(NCardGrid), "set_IsShowingUpgrades", BindingFlags.Instance | BindingFlags.Public),
+			RequireMethod(typeof(NCardGrid), "set_IsShowingUpgrades", BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
 			postfix: new HarmonyMethod(typeof(HextechCardGridPreviewHooks), nameof(SetIsShowingUpgradesPostfix)));
 	}
 

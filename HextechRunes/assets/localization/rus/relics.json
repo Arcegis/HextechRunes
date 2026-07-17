@@ -1360,5 +1360,11 @@
   "TWILIGHT_VEIL_RUNE.flavor": "Сумерки не принадлежат никому — кроме того, кто их носит.",
   "LINGERING_MIGHT_RUNE.title": "Затухающая мощь",
   "LINGERING_MIGHT_RUNE.description": "По окончании боя вы сохраняете одно случайное усиление до начала следующего боя.",
-  "LINGERING_MIGHT_RUNE.flavor": "Бои заканчиваются. Инерция — нет."
+  "LINGERING_MIGHT_RUNE.flavor": "Бои заканчиваются. Инерция — нет.",
+  "SOUL_UPGRADE_RUNE.title": "Улучшение: Душа",
+  "SOUL_UPGRADE_RUNE.description": "Разыграв [gold]Душу[/gold], получите [blue]1[/blue] энергию.",
+  "SOUL_UPGRADE_RUNE.flavor": "Каждая уходящая душа оставляет после себя искру.",
+  "PRISMATIC_EGG_RUNE.title": "Призматическое яйцо",
+  "PRISMATIC_EGG_RUNE.description": "Награды-реликвии в комнатах с сокровищами заменяются случайными рунами Хекстека.",
+  "PRISMATIC_EGG_RUNE.flavor": "Никто не знает, что внутри. Даже тот, кто его снёс."
 }

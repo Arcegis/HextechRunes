@@ -349,7 +349,9 @@ internal static class HextechPlayerRuneRegistry
         Rune<DoubleVisionRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
         Rune<FeedUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 31, tagKey: "SURVIVAL"),
         Rune<NightmareRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 31, tagKey: "ORB"),
-        Rune<ExtremeSpeedRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 26, tagKey: "RESOURCE")
+        Rune<ExtremeSpeedRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 26, tagKey: "RESOURCE"),
+        Rune<SoulUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 35, tagKey: "SUMMON"),
+        Rune<PrismaticEggRune>(HextechRarityTier.Prismatic, tagKey: "RANDOM")
 	];
 
 	private static PlayerRuneRegistration Rune<TRune>(
