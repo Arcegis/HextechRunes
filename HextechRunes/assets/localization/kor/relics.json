@@ -1211,7 +1211,7 @@
   "HATTRICK_RUNE.flavor": "손이 빠르면 선택지는 전리품이 됩니다.",
   "ANTHONY_BIAS_RUNE.title": "앤서니의 편견",
   "ANTHONY_BIAS_RUNE.description": "덱에 있는 카드 [blue]1[/blue]장마다 피해, 방어도, 치유량이 [blue]{PercentPerCard}%[/blue] 증가합니다.",
-  "ANTHONY_BIAS_RUNE.flavor": "편견은 덱이 두꺼울수록 더 단단해집니다.",
+  "ANTHONY_BIAS_RUNE.flavor": "세상에서 소형 덱을 가장 증오하는 자. 의심할 여지가 없습니다.",
   "TRINITY_RUNE.title": "삼위일체",
   "TRINITY_RUNE.description": "에너지를 소비할 때마다 그만큼 별을 얻습니다. 별을 소모할 때마다 그만큼 단조합니다.",
   "TRINITY_RUNE.flavor": "에너지, 별빛, 왕의 검이 한순간에 합류합니다.",

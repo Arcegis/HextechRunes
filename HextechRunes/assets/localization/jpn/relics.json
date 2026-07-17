@@ -1211,7 +1211,7 @@
   "HATTRICK_RUNE.flavor": "速い手は選択を結果に変えます。",
   "ANTHONY_BIAS_RUNE.title": "アンソニーの偏見",
   "ANTHONY_BIAS_RUNE.description": "デッキ内のカードごとに、[blue]{PercentPerCard}%[/blue] のダメージ、ブロック、回復を獲得します。",
-  "ANTHONY_BIAS_RUNE.flavor": "偏見はデッキが厚いときに最もよくスタックします。",
+  "ANTHONY_BIAS_RUNE.flavor": "世界一の小型デッキ嫌い。疑いの余地なし。",
   "TRINITY_RUNE.title": "トリニティ",
   "TRINITY_RUNE.description": "エナジーを消費するたびに、その量のスターを獲得します。スターを消費するたびに、その分だけ鍛造します。",
   "TRINITY_RUNE.flavor": "エナジー、スターライト、ロイヤルブレードが集結する。",

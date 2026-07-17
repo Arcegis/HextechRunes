@@ -140,7 +140,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<SnailFormRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, tagKey: "SURVIVAL"),
         Rune<ColorDiscoveryRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<HattrickRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
-        Rune<AnthonyBiasRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
+        Rune<AnthonyBiasRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<OmegaRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
         Rune<ViolenceRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
         Rune<CuttingEdgeAlchemistRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, tagKey: "COMPREHENSIVE"),
