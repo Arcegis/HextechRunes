@@ -4,7 +4,7 @@
   "description": "为《海克斯大乱斗》启用部分风格更独立的赞助者物品内容。需要同时安装海克斯大乱斗本体。",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "海斗拓展包 0.8.5（正式分支 / 0.107.1）：\n- 修复「神迹」事件选项无法点击（进房管线重构，输入层不再被残留领奖界面拦截）；\n- 新增赞助者海克斯「是胃炎」（棱彩）：对生命值高于你的敌人伤害提高50%，并回复2点生命、抽1张牌；\n- 拓展包海克斯在选择界面的池标签由「通用」改为「拓展包」。",
+  "changeNote": "海斗拓展包 Beta 分支更新（beta 分支 / 游戏 0.109.0）：\n- 适配游戏 beta 0.109.0（卡牌打出去向等新 API 全链跟进）；\n- 修复金光闪闪精英战利品结算卡死（药水奖励调用改为运行时按游戏版本自适应）。\n\n正式分支（游戏 0.107.1）的构建保持不变；请按所在游戏分支自动获取对应版本。",
   "tags": [
     "Gameplay",
     "Modifiers",
@@ -13,6 +13,6 @@
   "dependencies": [
     3747501308
   ],
-  "minBranch": "public",
-  "maxBranch": "public"
+  "minBranch": "public-beta",
+  "maxBranch": "public-beta"
 }
