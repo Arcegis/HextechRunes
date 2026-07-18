@@ -386,8 +386,8 @@
       "modVersion": "0.8.6",
       "gameVersion": "0.107.1",
       "hashAlgorithm": "SHA-256",
-      "generatedAtUtc": "2026-07-17T11:42:10Z",
-      "dllSha256": "dc169019d51fce096e28506e2832f5085be41223fd88e9516cd4ec757753fa00",
+      "generatedAtUtc": "2026-07-18T13:05:39Z",
+      "dllSha256": "79346a4bf975ecaf45397b47a9eb7f024ffa2f87c9da67fa3b3ab108514feb8e",
       "pckSha256": "8135a9bd9261f52abae3e79d7e37bbd7d5a42b79de824933e9bafa82d74a4919",
       "manifestSha256": "96e479baf4386ad02077f84d60064e7861a22b1bd663a4ee226558f4f4cddcf6",
       "artifactSizes": {
@@ -400,8 +400,8 @@
       "modVersion": "0.8.6",
       "gameVersion": "0.109.0",
       "hashAlgorithm": "SHA-256",
-      "generatedAtUtc": "2026-07-17T11:42:10Z",
-      "dllSha256": "4a075d469f3ab4cadaa905151ffda022f03a48567142c566c2706a98dcd52c20",
+      "generatedAtUtc": "2026-07-18T13:05:39Z",
+      "dllSha256": "5122b100fc0012eb811fbaf0f500f7274a2c5394f33960a0969fe0969cf8acbe",
       "pckSha256": "8135a9bd9261f52abae3e79d7e37bbd7d5a42b79de824933e9bafa82d74a4919",
       "manifestSha256": "96e479baf4386ad02077f84d60064e7861a22b1bd663a4ee226558f4f4cddcf6",
       "artifactSizes": {

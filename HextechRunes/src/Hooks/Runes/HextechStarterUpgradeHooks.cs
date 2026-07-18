@@ -12,7 +12,10 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechStarterUpgradeHooks
 {
-	private const int UnlimitedUpgradeLevel = 999;
+	// 上限护栏(玩家实报 3003 伤害事故):第三方 mod 存在「while IsUpgradable 升到满」式逻辑,
+	// 上限 999 会被一口气拉满(6+3×999=3003)。战后升级每场只 +1,一局到不了 30,
+	// 玩家对封顶无感;即便再被恶性循环拉满,伤害也只到 6+90,不再是团灭级数值。
+	private const int UpgradeLevelCap = 30;
 
 	public static void Install(Harmony harmony)
 	{
@@ -46,15 +49,18 @@ internal static class HextechStarterUpgradeHooks
 		Player? owner = __instance.Owner;
 		if (owner == null)
 		{
-			// 反序列化/无主上下文:放行,保证已有等级能被读回。
-			__result = UnlimitedUpgradeLevel;
+			// 反序列化/无主上下文:放行到「当前等级+1」与护栏上限的较大值——回放第 k 级时
+			// setter 校验需要 Max≥k(level+1 恰好满足);取 max 兼容已被拉爆的历史存档
+			// (等级>上限的档也能读回,不炸档)。
+			__result = Math.Max(__instance.CurrentUpgradeLevel + 1, UpgradeLevelCap);
 			return;
 		}
 
 		if ((isStrike && owner.GetRelic<StrikeUpgradeRune>() != null)
 			|| (isDefend && owner.GetRelic<DefendUpgradeRune>() != null))
 		{
-			__result = UnlimitedUpgradeLevel;
+			// 持有者同样兼容历史坏档:等级已超上限时以当前等级为准(不再增长,但可正常游戏)。
+			__result = Math.Max(__instance.CurrentUpgradeLevel, UpgradeLevelCap);
 		}
 	}
 }
