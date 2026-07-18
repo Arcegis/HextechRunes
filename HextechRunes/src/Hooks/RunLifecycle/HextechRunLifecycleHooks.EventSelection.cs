@@ -26,12 +26,40 @@ internal static partial class HextechRunLifecycleHooks
 		// mod 延续体异常不能把原版 NEventRoom.Proceed 任务链打成 faulted(单端中断即联机分叉)。
 		try
 		{
+			// 复视:事件全部结束的瞬间(选项回调栈已退出,交互与同步窗口开放)就近结账,
+			// 玩家在事件界面收起时立刻拿到延迟的第二份,不必等下一个安全房/战斗结束。
+			await FlushDoubleVisionPendingIfEventsFinished();
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"[{ModInfo.Id}][Mayhem] EventRoomProceed double-vision flush failed: {ex}");
+		}
+
+		try
+		{
 			await EventRoomProceedContinuation(state);
 		}
 		catch (Exception ex)
 		{
 			Log.Error($"[{ModInfo.Id}][Mayhem] EventRoomProceed continuation failed: {ex}");
 		}
+	}
+
+	private static async Task FlushDoubleVisionPendingIfEventsFinished()
+	{
+		if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
+		{
+			return;
+		}
+
+		IReadOnlyList<EventModel> events = RunManager.Instance.EventSynchronizer.Events;
+		int finishedCount = events.Count(static eventModel => eventModel.IsFinished);
+		if (!AreRequiredCurrentEventsFinished(runState, events, finishedCount, out _))
+		{
+			return;
+		}
+
+		await DoubleVisionRune.FlushPendingEventRelicsForRun(runState);
 	}
 
 	private static async Task EventRoomProceedContinuation(EventRoomProceedState state)

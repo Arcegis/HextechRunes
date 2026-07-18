@@ -56,6 +56,18 @@ public sealed class DoubleVisionRune : HextechRelicBase
 		return FlushPendingEventRelics();
 	}
 
+	/// <summary>事件全部结束时的就近结账入口(由 HextechRunLifecycleHooks 的 Proceed 延续体调用)。</summary>
+	internal static async Task FlushPendingEventRelicsForRun(RunState runState)
+	{
+		foreach (DoubleVisionRune rune in runState.Players
+			.SelectMany(static player => player.Relics)
+			.OfType<DoubleVisionRune>()
+			.ToList())
+		{
+			await rune.FlushPendingEventRelics();
+		}
+	}
+
 	private async Task FlushPendingEventRelics()
 	{
 		if (Owner == null || _pendingEventRelicIds.Count == 0)
