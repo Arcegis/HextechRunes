@@ -108,7 +108,9 @@ internal static class HextechMonsterInteractionPolicy
 				or SurprisePower
 				or SoarPower
 				or FlutterPower
-				or SpectrumShiftPower;
+				or SpectrumShiftPower
+				// 机器人「库存」(Stock):囤积-释放机制与敌人行动脚本耦合,薄暮法衣镜像到玩家会卡死(玩家实报)。
+				or StockPower;
 	}
 
 	/// <summary>

@@ -12,11 +12,16 @@ public sealed class WellLaidPlansUpgradeRune : CardUpgradeRuneBase<WellLaidPlans
 	protected override bool IsAvailableForCharacter(Player player) => IsSilentPlayer(player);
 
 #if STS2_109_OR_NEWER
-	// 0.109 原版计划妥当重做为「整手牌全保留」,power 上不再有选牌挂点;选牌逻辑搬到 rune 自身
-	// (配合 HextechWellLaidPlansHooks 把 power.ShouldFlush 拉回 true),维持「任选保留、其余弃掉」。
-	public override async Task BeforeFlushLate(PlayerChoiceContext choiceContext, Player player)
+	// 0.109 原版计划妥当重做为「整手牌全保留」,power 上不再有选牌挂点。选牌不能塞回 flush
+	// 窗口(BeforeFlushLate):0.109 把交互从该窗口整体拿掉了,在里面 await 选牌 UI 会卡死回合
+	// (玩家实报"打出计划妥当直接卡住")。改挂 BeforeTurnEnd(结束回合命令链,交互开放),
+	// 选中的牌拿单回合保留标记,随后的 flush(经 hooks 把 power.ShouldFlush 拉回 true)照常弃掉未选牌。
+	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || player != Owner || Owner.Creature == null || Owner.Creature.IsDead)
+		if (side != CombatSide.Player
+			|| Owner == null
+			|| Owner.Creature == null
+			|| Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -26,7 +31,7 @@ public sealed class WellLaidPlansUpgradeRune : CardUpgradeRuneBase<WellLaidPlans
 			return;
 		}
 
-		await HextechWellLaidPlansHooks.UnlimitedRetain(power, choiceContext, player);
+		await HextechWellLaidPlansHooks.UnlimitedRetain(power, choiceContext, Owner);
 	}
 #endif
 }

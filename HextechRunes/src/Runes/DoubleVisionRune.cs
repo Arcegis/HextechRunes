@@ -28,17 +28,37 @@ public sealed class DoubleVisionRune : HextechRelicBase
 		}
 	}
 
-	public override async Task AfterRoomEntered(AbstractRoom room)
+	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		// 结账点只放在安全房间:事件房不放(嵌套复制卡死/分叉,见 BeginDirectCommandReward 注释);
-		// 战斗房也不放——华美手镯等带交互式 AfterObtained(进场选牌附魔)的事件遗物在战斗初始化
+		// 结账点只放在安全时机:事件房不放(嵌套复制卡死/分叉,见 BeginDirectCommandReward 注释);
+		// 战斗房进场不放——华美手镯等带交互式 AfterObtained(进场选牌附魔)的事件遗物在战斗初始化
 		// 流程里开不出选择 UI 会黑屏,联机则在战斗 init 期间广播奖励同步导致分叉卡死(玩家实报三例)。
-		// 待复制清单继续搭车,挂到下一个商店/休息/宝箱等非战斗房间再结。
+		// 事件→战斗的常见路线由 AfterCombatEnd 的结账点兜住(玩家实报"先古不给两份"=一直没走到安全房)。
+		if (room is EventRoom || room is CombatRoom || CombatManager.Instance.IsInProgress)
+		{
+			return Task.CompletedTask;
+		}
+
+		return FlushPendingEventRelics();
+	}
+
+	// 战斗结束(胜利判定后)也结账:此刻战斗初始化早已完成、奖励阶段本就允许交互与同步,
+	// 事件→战斗路线的玩家在打完下一场时即可拿到延迟的第二份。
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
 		if (Owner == null
-			|| _pendingEventRelicIds.Count == 0
-			|| room is EventRoom
-			|| room is CombatRoom
-			|| CombatManager.Instance.IsInProgress)
+			|| room.CombatState == null
+			|| HextechCombatCreatureHelper.GetAliveEnemies(room.CombatState).Count > 0)
+		{
+			return Task.CompletedTask;
+		}
+
+		return FlushPendingEventRelics();
+	}
+
+	private async Task FlushPendingEventRelics()
+	{
+		if (Owner == null || _pendingEventRelicIds.Count == 0)
 		{
 			return;
 		}

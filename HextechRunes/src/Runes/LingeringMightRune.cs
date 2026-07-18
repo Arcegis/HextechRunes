@@ -6,7 +6,7 @@ namespace HextechRunes;
 /// 余威(黄金,通用):战斗结束时,保留你身上随机一种增益效果(全部层数)至下一场战斗开始。
 /// 单一增益构筑可以"操纵"这个随机——池里只有一种时必中,这是留给玩家自己发现的暗线。
 /// </summary>
-public sealed class LingeringMightRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class LingeringMightRune : HextechRelicBase
 {
 	private string _pendingBuff = "";
 
@@ -18,19 +18,19 @@ public sealed class LingeringMightRune : HextechRelicBase, IHextechSharedCombatV
 		set => _pendingBuff = value ?? "";
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
+	// 快照必须挂 AfterCombatEnd:原版胜利流程里 Player.AfterCombatEnd() 会在
+	// Hook.AfterCombatVictory 之前 RemoveAllPowersInternalExcept 清光玩家 powers
+	// (反编译取证),挂 victory 时 powers 恒空 → 永不生效(玩家实报)。
+	// AfterCombatEnd 两端确定性触发 + 稳定盐,联机无需额外同步。
+	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		if (IsNetworkMultiplayer())
+		if (Owner == null || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
 
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
-	{
-		if (Owner == null || Owner.Creature.IsDead)
+		// 只在胜利时保留:战斗结束且场上没有存活敌人(逃跑/败北不保留)。
+		if (room.CombatState == null || HextechCombatCreatureHelper.GetAliveEnemies(room.CombatState).Count > 0)
 		{
 			return Task.CompletedTask;
 		}

@@ -62,8 +62,11 @@ internal static class HextechWellLaidPlansHooks
 			return;
 		}
 
-		// SelectionScreenPrompt 在 PowerModel 上是 protected,用 Traverse 反射读取原版「保留」提示文案。
-		LocString prompt = Traverse.Create(power).Property("SelectionScreenPrompt").GetValue<LocString>();
+		// SelectionScreenPrompt 在 PowerModel 上是 protected,用 Traverse 反射读取原版「保留」提示文案;
+		// 0.109 起 power 侧不再有选牌,基属性可能为空,兜底用计划妥当卡牌自身的选择提示,防 NRE 断链。
+		LocString? prompt = Traverse.Create(power).Property("SelectionScreenPrompt").GetValue<LocString>();
+		prompt ??= Traverse.Create(ModelDb.Card<WellLaidPlans>()).Property("SelectionScreenPrompt").GetValue<LocString>();
+		prompt ??= new LocString("relics", "WELL_LAID_PLANS_UPGRADE_RUNE.title");
 		List<CardModel> selected = (await CardSelectCmd.FromHand(
 			prefs: new CardSelectorPrefs(prompt, 0, handCount),
 			context: choiceContext,
