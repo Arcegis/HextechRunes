@@ -74,7 +74,9 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
 			_initialized = true;
 			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控。
-			Log.Info($"[{ModInfo.Id}] Loaded for Slay the Spire 2 {ModInfo.TargetGameVersion}.");
+			Log.Info(
+				$"[{ModInfo.Id}] Loaded implementation variant for " +
+				$"Slay the Spire 2 compat target {ModInfo.TargetGameVersion}.");
 		}
 	}
 
