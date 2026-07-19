@@ -9,8 +9,10 @@ using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
+using System.Text.Json;
 
 namespace HextechRunes.Tests;
 
@@ -66,6 +68,9 @@ internal static class Program
 			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
 			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
+			new(nameof(RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades), RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades),
+			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
+			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
 			new(nameof(DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights), DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights),
 			new(nameof(StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot), StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot),
@@ -84,12 +89,14 @@ internal static class Program
 				new(nameof(PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData), PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData),
 				new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
 				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
+				new(nameof(MindOverMatterFirstDrawTrackingResetsPerPlayerTurn), MindOverMatterFirstDrawTrackingResetsPerPlayerTurn),
 				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
 				new(nameof(CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume), CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume),
 			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
 			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
 			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
 			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
+			new(nameof(ConfigMigrationV25AddsNewDefaultDisables), ConfigMigrationV25AddsNewDefaultDisables),
 			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
 				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
@@ -119,6 +126,11 @@ internal static class Program
 			new(nameof(SavedPropertyNetIdBitSizeMatchesGameFormula), SavedPropertyNetIdBitSizeMatchesGameFormula),
 			new(nameof(CompensationReplacementGuardScopesAsyncWork), CompensationReplacementGuardScopesAsyncWork),
 			new(nameof(CompensationReplacementSuppressesSleightOfFleshResponse), CompensationReplacementSuppressesSleightOfFleshResponse),
+			new(nameof(EventRewardTransactionCommitsSequentially), EventRewardTransactionCommitsSequentially),
+			new(nameof(EventRewardTransactionRejectsLateRecordsAndSecondCommit), EventRewardTransactionRejectsLateRecordsAndSecondCommit),
+			new(nameof(DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect), DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect),
+			new(nameof(DoubleVisionDustyTomeSaveLoadPreservesAncientCard), DoubleVisionDustyTomeSaveLoadPreservesAncientCard),
+			new(nameof(DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast), DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast),
 			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
 			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
@@ -443,6 +455,26 @@ internal static class Program
 		Equal(0, tracking.MonsterDebuffActionProcKeysThisTurn.Count, "player side start should reset monster debuff round guard");
 	}
 
+	private static void MindOverMatterFirstDrawTrackingResetsPerPlayerTurn()
+	{
+		HextechMayhemCombatTrackingState tracking = new();
+		Expect(MindOverMatterEnemyHex.TryConsumeFirstDraw(tracking, 11), "first draw for player one should trigger");
+		Expect(!MindOverMatterEnemyHex.TryConsumeFirstDraw(tracking, 11), "second draw for player one should not trigger");
+		Expect(MindOverMatterEnemyHex.TryConsumeFirstDraw(tracking, 22), "first draw for a different player should trigger independently");
+
+		string serialized = tracking.Serialize();
+		HextechMayhemCombatTrackingState restored = new();
+		restored.Restore(serialized);
+		SetEqual(new ulong[] { 11, 22 }, restored.MindOverMatterPlayersTriggeredThisTurn, "first-draw guards should survive a mid-turn save/load");
+
+		restored.PrepareEnemySideTurnStart();
+		Equal(2, restored.MindOverMatterPlayersTriggeredThisTurn.Count, "enemy side start should not reopen the player-turn first draw");
+
+		restored.PreparePlayerSideTurnStart();
+		Equal(0, restored.MindOverMatterPlayersTriggeredThisTurn.Count, "next player turn should reset first-draw guards");
+		Expect(MindOverMatterEnemyHex.TryConsumeFirstDraw(restored, 11), "the next player turn should trigger again");
+	}
+
 	private static void CombatTrackingGlobalProcOrdinalsSerializeAndReset()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
@@ -555,7 +587,7 @@ internal static class Program
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
-		Equal(25, version, "v14 config should land on current version");
+		Equal(26, version, "v14 config should land on current version");
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
@@ -565,19 +597,43 @@ internal static class Program
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
 		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
-		Equal(25, version, "v15 config should land on current version");
+		Equal(26, version, "v15 config should land on current version");
 		SetEqual(
 			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
 			migrated,
 			$"v15 factory defaults + migration chain should equal current factory defaults; migrated:\n{string.Join("\n", migrated.OrderBy(static id => id, StringComparer.Ordinal))}\ncurrent defaults:\n{string.Join("\n", HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal))}");
 	}
 
+	private static void ConfigMigrationV25AddsNewDefaultDisables()
+	{
+		(int playerVersion, IReadOnlySet<string> disabledPlayers) = HextechRuneConfiguration.MigrateDisabledIdsForTests(25, []);
+		Equal(26, playerVersion, "v25 player config should land on current version");
+		Expect(
+			disabledPlayers.Contains(ModelDb.GetId<DullBladeRune>().Entry),
+			"v25 player config migration should default-disable Dull Blade");
+
+		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(25, []);
+		Equal(26, monsterVersion, "v25 monster config should land on current version");
+		Expect(
+			disabledMonsters.Contains(MonsterHexKind.BlankCheck.ToString()),
+			"v25 monster config migration should default-disable enemy Blank Check");
+	}
+
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(25, [customId]);
-		Equal(25, version, "current-version config keeps version");
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, [customId]);
+		Equal(26, version, "current-version config keeps version");
 		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
+
+		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(26, [MonsterHexKind.FrostWraith.ToString()]);
+		Equal(26, monsterVersion, "current-version monster config keeps version");
+		SetEqual(
+			[MonsterHexKind.FrostWraith.ToString()],
+			disabledMonsters,
+			"current-version monster config should preserve a user-enabled Blank Check");
 	}
 
 	// SavedProperty 属性名集合直接决定联机 net-id 布局(规范化按名排序):任何新增/改名/删除都必须是
@@ -715,6 +771,74 @@ internal static class Program
 		Equal(1, HextechRunePoolBuilder.SelectWeightedIndex(weights, 249), "second slot end");
 		Equal(2, HextechRunePoolBuilder.SelectWeightedIndex(weights, 250), "third slot start");
 		Equal(2, HextechRunePoolBuilder.SelectWeightedIndex(weights, 999), "overflow clamps to last slot");
+	}
+
+	private static void RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades()
+	{
+		RelicModel ironcladRune = new BerserkRune();
+		RelicModel ironcladUpgrade = new BloodlettingUpgradeRune();
+		RelicModel silentRune = new SnakebiteRune();
+		RelicModel genericRune = new JudicatorRune();
+		RelicModel genericUpgrade = new AutomationUpgradeRune();
+		RelicModel[] all = [ genericUpgrade, silentRune, ironcladUpgrade, genericRune, ironcladRune ];
+
+		List<RelicModel> reserved = HextechRunePoolBuilder.ConstrainCandidatesForSlot(
+			all,
+			PlayerRuneCharacterPool.Ironclad,
+			HextechRunePoolBuilder.CharacterReservedSlotIndex,
+			upgradeAlreadySelected: false);
+		SetEqual(
+			new[] { ironcladRune, ironcladUpgrade },
+			reserved,
+			"reserved slot should contain only current-character candidates while that pool is available");
+
+		List<RelicModel> reservedWithUpgradeTaken = HextechRunePoolBuilder.ConstrainCandidatesForSlot(
+			all,
+			PlayerRuneCharacterPool.Ironclad,
+			HextechRunePoolBuilder.CharacterReservedSlotIndex,
+			upgradeAlreadySelected: true);
+		SequenceEqual(
+			new[] { ironcladRune },
+			reservedWithUpgradeTaken,
+			"reserved slot should preserve the character guarantee without creating a second UpgradeRune");
+
+		List<RelicModel> genericFallback = HextechRunePoolBuilder.ConstrainCandidatesForSlot(
+			[ silentRune, genericUpgrade, genericRune ],
+			PlayerRuneCharacterPool.Ironclad,
+			HextechRunePoolBuilder.CharacterReservedSlotIndex,
+			upgradeAlreadySelected: false);
+		SetEqual(
+			new[] { genericRune, genericUpgrade },
+			genericFallback,
+			"reserved slot should use generic candidates only after the current-character pool is exhausted");
+
+		List<RelicModel> openSlotWithUpgradeTaken = HextechRunePoolBuilder.ConstrainCandidatesForSlot(
+			all,
+			PlayerRuneCharacterPool.Ironclad,
+			slotIndex: 1,
+			upgradeAlreadySelected: true);
+		Expect(
+			openSlotWithUpgradeTaken.All(static relic => !HextechRunePoolBuilder.IsUpgradeRune(relic)),
+			"open slots must not expose a second UpgradeRune");
+	}
+
+	private static void SearingAttackRuneGrantsUpgradedCard()
+	{
+		SearingAttackCard card = CreateMutableTestModel<SearingAttackCard>();
+
+		SearingAttackRune.UpgradeGrantedCard(card);
+
+		Equal(1, card.CurrentUpgradeLevel, "granted Searing Attack upgrade level");
+		Equal(16m, card.DynamicVars.Damage.BaseValue, "granted Searing Attack damage");
+	}
+
+	private static void FortuneForgeRewardScalesByStacks()
+	{
+		FortuneForge forge = CreateMutableTestModel<FortuneForge>();
+		Equal(100, forge.ExtraGoldRewardAmount, "single-stack Fortune Forge reward");
+
+		forge.SavedStackCount = 2;
+		Equal(200, forge.ExtraGoldRewardAmount, "two-stack Fortune Forge reward");
 	}
 
 	private static void DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune()
@@ -915,11 +1039,16 @@ internal static class Program
 		// 腐化树枝自配置 v16 起转为默认启用;改用长期默认禁用的逃跑计划做代表。
 		string escapePlanId = ModelDb.GetId<EscapePlanRune>().Entry;
 		string corruptedBranchId = ModelDb.GetId<CorruptedBranchRune>().Entry;
+		string dullBladeId = ModelDb.GetId<DullBladeRune>().Entry;
 		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
 
 		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(escapePlanId), "default player rune ids should disable escape plan");
 		Expect(snapshot.DisabledPlayerRuneIds.Contains(escapePlanId), "default snapshot should disable escape plan");
+		Expect(snapshot.DisabledPlayerRuneIds.Contains(dullBladeId), "default snapshot should disable Dull Blade");
 		Expect(!snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "corrupted branch should be enabled by default since config v16");
+		Expect(
+			snapshot.DisabledMonsterHexIds.Contains(MonsterHexKind.BlankCheck.ToString()),
+			"default snapshot should disable enemy Blank Check without removing it from the configurable pool");
 	}
 
 	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
@@ -1258,6 +1387,9 @@ internal static class Program
 	private static void MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
+		Expect(
+			metadata.IsEnabled(MonsterHexKind.BlankCheck),
+			"enemy Blank Check should remain registry-enabled so players can opt it back in through configuration");
 		MonsterHexRegistration[] disabledRegistrations = metadata.Registrations
 			.Where(static registration => registration.Disabled)
 			.ToArray();
@@ -1372,6 +1504,16 @@ internal static class Program
 		return (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
 	}
 
+	private static T CreateMutableTestModel<T>()
+		where T : AbstractModel, new()
+	{
+		T model = new();
+		typeof(AbstractModel)
+			.GetField("<IsMutable>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+			.SetValue(model, true);
+		return model;
+	}
+
 	private static void CompensationReplacementGuardScopesAsyncWork()
 	{
 		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should start inactive");
@@ -1410,6 +1552,194 @@ internal static class Program
 		Expect(
 			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(false),
 			"sleight response should not be suppressed when the power change would not trigger sleight");
+	}
+
+	private static void EventRewardTransactionCommitsSequentially()
+	{
+		EventRewardTransaction<int> transaction = new();
+		transaction.Record(1);
+		transaction.Record(2);
+		TaskCompletionSource firstGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		List<int> started = [];
+		List<int> completed = [];
+
+		Task commitTask = transaction.CommitSequentially(async item =>
+		{
+			started.Add(item);
+			if (item == 1)
+			{
+				await firstGate.Task;
+			}
+			completed.Add(item);
+		});
+
+		Expect(started.SequenceEqual([1]), "second event reward must not start before the first reward completes");
+		firstGate.SetResult();
+		commitTask.GetAwaiter().GetResult();
+		Expect(started.SequenceEqual([1, 2]), "event rewards should start in obtain order");
+		Expect(completed.SequenceEqual([1, 2]), "event rewards should complete sequentially");
+	}
+
+	private static void EventRewardTransactionRejectsLateRecordsAndSecondCommit()
+	{
+		EventRewardTransaction<int> transaction = new();
+		transaction.Record(1);
+		transaction.CommitSequentially(static _ => Task.CompletedTask).GetAwaiter().GetResult();
+
+		ExpectThrows<InvalidOperationException>(
+			() => transaction.Record(2),
+			"sealed event transaction should reject late records");
+		ExpectThrows<InvalidOperationException>(
+			() => transaction.CommitSequentially(static _ => Task.CompletedTask).GetAwaiter().GetResult(),
+			"event transaction should not commit twice");
+	}
+
+	private static void DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect()
+	{
+		DustyTome source = CreateTestDustyTome();
+		DustyTome? unrelated = null;
+		int obtainCount = 0;
+		int ancientCardGrantCount = 0;
+		int broadcastCount = 0;
+
+		DustyTome copy = DoubleVisionRune.DuplicateDustyTomeSpecializedForTest(
+			source,
+			syncReward: false,
+			obtainCopy: candidate =>
+			{
+				obtainCount++;
+				unrelated = CreateTestDustyTome();
+				Expect(DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(candidate), "copied Dusty Tome should suppress its own AfterObtained");
+				Task copiedAfterObtained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+				bool runCopiedAfterObtained = HextechRewardSafetyHooks.DustyTomeAfterObtainedPrefix(candidate, ref copiedAfterObtained);
+				if (runCopiedAfterObtained)
+				{
+					ancientCardGrantCount++;
+				}
+				Expect(!runCopiedAfterObtained, "copied Dusty Tome AfterObtained prefix should skip the original");
+				Expect(copiedAfterObtained.IsCompletedSuccessfully, "copied Dusty Tome AfterObtained should return a completed task");
+				Expect(!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(source), "source Dusty Tome must not be suppressed");
+				Task sourceAfterObtained = Task.CompletedTask;
+				Expect(
+					HextechRewardSafetyHooks.DustyTomeAfterObtainedPrefix(source, ref sourceAfterObtained),
+					"source Dusty Tome AfterObtained must still run");
+				Expect(!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(unrelated), "unrelated Dusty Tome must not be suppressed");
+				return Task.FromResult(candidate);
+			},
+			synchronize: _ => broadcastCount++,
+			createCopy: CreateBareTestDustyTome,
+			assignAncientCard: SetTestDustyTomeAncientCard)
+			.GetAwaiter()
+			.GetResult();
+
+		Equal(1, obtainCount, "single-player Dusty Tome obtain count");
+		Equal(0, ancientCardGrantCount, "single-player duplicated AncientCard grant count");
+		Equal(0, broadcastCount, "single-player Dusty Tome broadcast count");
+		Expect(!ReferenceEquals(source, copy), "DoubleVision should create a second Dusty Tome instance");
+		Equal(source.AncientCard, copy.AncientCard, "copied Dusty Tome AncientCard");
+		Expect(!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(copy), "Dusty Tome suppression must end after obtain");
+	}
+
+	private static void DoubleVisionDustyTomeSaveLoadPreservesAncientCard()
+	{
+		DustyTome source = CreateTestDustyTome();
+		// 测试宿主不会执行原版 ModelIdSerializationCache.Init；显式注入这个原版载体，
+		// 等价于真实启动时游戏自动收录 DustyTome 的 [SavedProperty]。
+		HextechSavedPropertyBootstrap.InjectModelType(typeof(DustyTome));
+		DustyTome copy = DoubleVisionRune.DuplicateDustyTomeSpecializedForTest(
+			source,
+			syncReward: false,
+			obtainCopy: Task.FromResult,
+			synchronize: static _ => throw new InvalidOperationException("save test must not broadcast"),
+			createCopy: CreateBareTestDustyTome,
+			assignAncientCard: SetTestDustyTomeAncientCard)
+			.GetAwaiter()
+			.GetResult();
+
+		SerializableRelic saved = copy.ToSerializable();
+		Expect(saved.Props != null, "Dusty Tome AncientCard was not written to SerializableRelic");
+		JsonSerializerOptions saveJsonOptions = new() { IncludeFields = true };
+		string json = JsonSerializer.Serialize(saved, saveJsonOptions);
+		SerializableRelic loaded = JsonSerializer.Deserialize<SerializableRelic>(json, saveJsonOptions)
+			?? throw new InvalidOperationException("Dusty Tome SerializableRelic failed to deserialize");
+		ModelId restoredAncientCard = loaded.Props?.modelIds?
+			.Single(property => property.name == nameof(DustyTome.AncientCard))
+			.value
+			?? throw new InvalidOperationException("loaded Dusty Tome is missing AncientCard");
+
+		Expect(
+			saved.Props?.modelIds?.Any(property => property.name == nameof(DustyTome.AncientCard)
+				&& property.value == source.AncientCard) == true,
+			"Dusty Tome save should contain the copied AncientCard model id");
+		Equal(copy.Id, loaded.Id, "restored Dusty Tome relic id");
+		Equal(source.AncientCard, (ModelId?)restoredAncientCard, "restored Dusty Tome AncientCard");
+	}
+
+	private static void DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast()
+	{
+		DustyTome source = CreateTestDustyTome();
+		int hostObtainCount = 0;
+		int clientObtainCount = 0;
+		int broadcastCount = 0;
+
+		DustyTome hostCopy = DoubleVisionRune.DuplicateDustyTomeSpecializedForTest(
+			source,
+			syncReward: false,
+			obtainCopy: candidate =>
+			{
+				hostObtainCount++;
+				Expect(DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(candidate), "host copy should suppress only its own AfterObtained");
+				return Task.FromResult(candidate);
+			},
+			synchronize: _ => broadcastCount++,
+			createCopy: CreateBareTestDustyTome,
+			assignAncientCard: SetTestDustyTomeAncientCard)
+			.GetAwaiter()
+			.GetResult();
+		DustyTome clientCopy = DoubleVisionRune.DuplicateDustyTomeSpecializedForTest(
+			source,
+			syncReward: false,
+			obtainCopy: candidate =>
+			{
+				clientObtainCount++;
+				Expect(DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(candidate), "client copy should suppress only its own AfterObtained");
+				return Task.FromResult(candidate);
+			},
+			synchronize: _ => broadcastCount++,
+			createCopy: CreateBareTestDustyTome,
+			assignAncientCard: SetTestDustyTomeAncientCard)
+			.GetAwaiter()
+			.GetResult();
+
+		Equal(1, hostObtainCount, "host deterministic event obtain count");
+		Equal(1, clientObtainCount, "client deterministic event obtain count");
+		Equal(0, broadcastCount, "deterministic event Dusty Tome broadcast count");
+		Expect(!ReferenceEquals(hostCopy, clientCopy), "each peer should construct its own Dusty Tome instance");
+		Equal(hostCopy.Id, clientCopy.Id, "multiplayer Dusty Tome id");
+		Equal(hostCopy.AncientCard, clientCopy.AncientCard, "multiplayer Dusty Tome AncientCard");
+	}
+
+	private static DustyTome CreateTestDustyTome()
+	{
+		DustyTome dustyTome = CreateBareTestDustyTome();
+		SetTestDustyTomeAncientCard(dustyTome, ModelDb.GetId<Apotheosis>());
+		return dustyTome;
+	}
+
+	private static DustyTome CreateBareTestDustyTome()
+	{
+		DustyTome dustyTome = new();
+		typeof(AbstractModel)
+			.GetField("<IsMutable>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+			.SetValue(dustyTome, true);
+		return dustyTome;
+	}
+
+	private static void SetTestDustyTomeAncientCard(DustyTome dustyTome, ModelId ancientCard)
+	{
+		typeof(DustyTome)
+			.GetField("_ancientCard", BindingFlags.Instance | BindingFlags.NonPublic)!
+			.SetValue(dustyTome, (ModelId?)ancientCard);
 	}
 
 	private static void PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries()
@@ -1733,6 +2063,21 @@ internal static class Program
 		{
 			throw new InvalidOperationException(message);
 		}
+	}
+
+	private static void ExpectThrows<TException>(Action action, string message)
+		where TException : Exception
+	{
+		try
+		{
+			action();
+		}
+		catch (TException)
+		{
+			return;
+		}
+
+		throw new InvalidOperationException(message);
 	}
 
 	private static void Equal<T>(T expected, T actual, string label)
