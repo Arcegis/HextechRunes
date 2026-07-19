@@ -101,7 +101,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<TransmuteGoldRune>(HextechRarityTier.Silver, tagKey: "RANDOM"),
         Rune<UniversalScopeRune>(HextechRarityTier.Silver, tagKey: "RESOURCE"),
         Rune<StokeRune>(HextechRarityTier.Silver, tagKey: "COMPREHENSIVE"),
-        Rune<DullBladeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 22, tagKey: "BLOODLETTING"),
+        Rune<DullBladeRune>(HextechRarityTier.Silver, flags: PlayerRuneFlags.Disabled, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 22, tagKey: "BLOODLETTING"),
         Rune<BodySlamUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 23, tagKey: "OUTPUT"),
         Rune<ShriekUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 23, tagKey: "COMPREHENSIVE"),
         Rune<NowYouSeeMeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 27, tagKey: "STATUS"),

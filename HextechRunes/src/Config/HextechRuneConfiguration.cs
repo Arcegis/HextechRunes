@@ -8,7 +8,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 25;
+	private const int CurrentConfigVersion = 26;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -99,6 +99,17 @@ internal static class HextechRuneConfiguration
 	private static readonly Type[] Version25DefaultEnabledRuneTypes =
 	[
 		typeof(AnthonyBiasRune)
+	];
+
+	// 设计审查批次:钝刀片默认关闭;敌方空白支票保留在配置页中,但新旧默认配置均关闭。
+	private static readonly Type[] Version26DefaultDisabledRuneTypes =
+	[
+		typeof(DullBladeRune)
+	];
+
+	private static readonly MonsterHexKind[] Version26DefaultDisabledMonsterHexKinds =
+	[
+		MonsterHexKind.BlankCheck
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -241,7 +252,9 @@ internal static class HextechRuneConfiguration
 
 	public static IReadOnlySet<string> GetDefaultDisabledMonsterHexIds()
 	{
-		return new HashSet<string>(StringComparer.Ordinal);
+		return Version26DefaultDisabledMonsterHexKinds
+			.Select(static kind => kind.ToString())
+			.ToHashSet(StringComparer.Ordinal);
 	}
 
 	public static IReadOnlySet<string> GetDefaultDisabledForgeIds()
@@ -385,6 +398,7 @@ internal static class HextechRuneConfiguration
 
 		int previousConfigVersion = config.ConfigVersion;
 		HashSet<string> disabledIds = NormalizeConfigDisabledIds(config.DisabledPlayerRuneIds);
+		HashSet<string> disabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);
 		if (previousConfigVersion < 16)
 		{
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version16DefaultEnabledRuneTypes));
@@ -435,13 +449,20 @@ internal static class HextechRuneConfiguration
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version25DefaultEnabledRuneTypes));
 		}
 
+		if (previousConfigVersion < 26)
+		{
+			disabledIds.UnionWith(GetPlayerRuneIds(Version26DefaultDisabledRuneTypes));
+			disabledMonsterHexIds.UnionWith(
+				Version26DefaultDisabledMonsterHexKinds.Select(static kind => kind.ToString()));
+		}
+
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
 		config.EnemyHexCountsByAct = NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
 		config.PlayerRuneRerollLimit = ClampRerollLimit(config.PlayerRuneRerollLimit);
 		config.MonsterHexRerollLimit = ClampRerollLimit(config.MonsterHexRerollLimit);
-		config.DisabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);
+		config.DisabledMonsterHexIds = disabledMonsterHexIds;
 		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
 		config.FirstActRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
 			ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
@@ -648,6 +669,19 @@ internal static class HextechRuneConfiguration
 		};
 		RuneConfig normalized = NormalizeLoadedConfig(config);
 		return (normalized.ConfigVersion, normalized.DisabledPlayerRuneIds);
+	}
+
+	internal static (int ConfigVersion, IReadOnlySet<string> DisabledMonsterHexIds) MigrateDisabledMonsterHexIdsForTests(
+		int configVersion,
+		IEnumerable<string> disabledIds)
+	{
+		RuneConfig config = new()
+		{
+			ConfigVersion = configVersion,
+			DisabledMonsterHexIds = disabledIds.ToHashSet(StringComparer.Ordinal)
+		};
+		RuneConfig normalized = NormalizeLoadedConfig(config);
+		return (normalized.ConfigVersion, normalized.DisabledMonsterHexIds);
 	}
 
 	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)

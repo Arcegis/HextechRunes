@@ -162,6 +162,10 @@ class Truth:
 
         # 敌方海克斯。
         monster_src = read(ROOT / "src" / "Content" / "HextechMonsterHexRegistry.cs")
+        config_src = read(ROOT / "src" / "Config" / "HextechRuneConfiguration.cs")
+        config_default_disabled_monsters = set(
+            re.findall(r"MonsterHexKind\.(\w+)", config_src)
+        )
         self.monster: list[dict] = []
         for match in re.finditer(
             r"Monster<(\w+)>\(\s*MonsterHexKind\.(\w+),\s*HextechRarityTier\.(\w+)([^)]*)\)",
@@ -172,7 +176,8 @@ class Truth:
                     "class": match.group(1),
                     "kind": match.group(2),
                     "rarity": match.group(3),
-                    "disabled": bool(re.search(r"disabled:\s*true", match.group(4))),
+                    "disabled": bool(re.search(r"disabled:\s*true", match.group(4)))
+                    or match.group(2) in config_default_disabled_monsters,
                 }
             )
 

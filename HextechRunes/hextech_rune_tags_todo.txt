@@ -210,7 +210,7 @@
 [我方 / 铁甲战士]
 我方	BloodPactRune	歃血	标签=放血
 我方	PlateletRune	血小板	标签=放血
-我方	DullBladeRune	钝刀片	标签=放血
+#我方	DullBladeRune	钝刀片	标签=放血
 我方	BodySlamUpgradeRune	升级：全身撞击	标签=输出
 #我方	AdvanceToRetreatRune	以进为退	标签=综合
 我方	SweepingBladeRune	横扫之刃	标签=输出
