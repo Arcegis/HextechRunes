@@ -41,6 +41,7 @@ public static class ModEntry
 			HextechCombatHooks.Install(harmony);
 			HextechEnemyPowerScalingHooks.Install(harmony);
 			TryInstallOptionalHookGroup("artifact encounter compatibility", () => HextechArtifactCompatibilityHooks.Install(harmony));
+			TryInstallOptionalHookGroup("personal hive damage-response safety", () => HextechPersonalHiveSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("encounter compatibility", () => HextechEncounterCompatibilityHooks.Install(harmony));
 			HextechUpdateChecker.Install(harmony);
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
@@ -68,7 +69,7 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("creature anim trigger safety", () => HextechAnimTriggerSafetyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("starter card unlimited upgrade", () => HextechStarterUpgradeHooks.Install(harmony));
 			TryInstallOptionalHookGroup("card grid upgrade preview revert", () => HextechCardGridPreviewHooks.Install(harmony));
-			TryInstallOptionalHookGroup("well-laid plans unlimited retain", () => HextechWellLaidPlansHooks.Install(harmony));
+			TryInstallOptionalHookGroup("retired well-laid plans save compatibility", () => HextechWellLaidPlansHooks.Install(harmony));
 			TryInstallOptionalHookGroup("prismatic egg treasure replacement", () => HextechTreasureRuneHooks.Install(harmony));
 			TryInstallOptionalHookGroup("nightmare dark orb passive", () => HextechNightmareHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
