@@ -264,7 +264,6 @@
 我方	SnakebiteUpgradeRune	升级：蛇咬	标签=中毒
 我方	InkshadowRune	墨影	标签=小刀
 我方	ExtremeSpeedRune	极限速度	标签=运转
-我方	WellLaidPlansUpgradeRune	升级：计划妥当	标签=综合
 
 [我方 / 储君]
 我方	ChargeUpRune	蓄能	标签=运转

@@ -133,6 +133,9 @@ class Truth:
             r"Rune<(\w+)>\(\s*HextechRarityTier\.(\w+)([^)]*)\)", registry
         ):
             cls, rarity, args = match.group(1), match.group(2), match.group(3)
+            flags = set(re.findall(r"PlayerRuneFlags\.(\w+)", args))
+            if "Retired" in flags:
+                continue
             pool_match = re.search(r"characterPool:\s*PlayerRuneCharacterPool\.(\w+)", args)
             tag_match = re.search(r'tagKey:\s*"(\w+)"', args)
             self.player.append(
@@ -141,7 +144,7 @@ class Truth:
                     "rarity": rarity,
                     "pool": pool_match.group(1) if pool_match else None,
                     "tag_key": tag_match.group(1) if tag_match else "COMPREHENSIVE",
-                    "disabled": "Disabled" in re.findall(r"PlayerRuneFlags\.(\w+)", args),
+                    "disabled": "Disabled" in flags,
                     "source": "main",
                 }
             )

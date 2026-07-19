@@ -1,7 +1,8 @@
 namespace HextechRunes;
 
-// 升级：计划妥当(仅猎人) —— 计划妥当(WellLaidPlans)回合结束保留手牌时,可保留任意张(上限改为手牌数)。
-// 真正放开上限在 HextechWellLaidPlansHooks(Harmony 改 WellLaidPlansPower.BeforeFlushLate)。本类仅负责门控与 hover。
+// 已退役，不再进入候选池、配置菜单或图鉴。本类型保留是为了让已经持有该海克斯的旧存档仍可读取。
+// 旧效果：计划妥当(WellLaidPlans)回合结束保留手牌时，可保留任意张。
+// 真正放开上限在 HextechWellLaidPlansHooks；本类仅负责门控、旧存档行为与 hover。
 public sealed class WellLaidPlansUpgradeRune : CardUpgradeRuneBase<WellLaidPlans>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>

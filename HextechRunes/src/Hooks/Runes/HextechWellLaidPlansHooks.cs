@@ -6,7 +6,8 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-// 升级：计划妥当 —— 效果恒为「回合结束时选择任意张手牌保留,未选中的正常弃掉」。
+// 已退役海克斯「升级：计划妥当」的旧存档兼容实现。
+// 效果恒为「回合结束时选择任意张手牌保留,未选中的正常弃掉」。
 // 0.108-:原版 power 的 BeforeFlushLate 自带选牌(上限 Amount),prefix 整体替换为无上限版本。
 // 0.109+:原版计划妥当重做成「整手牌全保留」(power 只剩 ShouldFlush 返回 false),不再有选牌;
 //   改为 postfix 把 ShouldFlush 拉回 true 恢复正常弃牌流程,选牌搬到 rune 自身的 BeforeFlushLate

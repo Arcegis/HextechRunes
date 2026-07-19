@@ -248,7 +248,8 @@ internal static class HextechPlayerRuneRegistry
         Rune<LingeringMightRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<HundredRefinementsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
         Rune<MoltenFistUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 30, tagKey: "OUTPUT"),
-        Rune<WellLaidPlansUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 30, tagKey: "COMPREHENSIVE"),
+        // 已退役：不进候选池、配置菜单或图鉴；模型与效果实现继续保留，仅用于旧存档。
+        Rune<WellLaidPlansUpgradeRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Retired, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 30, tagKey: "COMPREHENSIVE"),
         Rune<SubroutineUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 30, tagKey: "ORB"),
 
         Rune<StrikeUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
