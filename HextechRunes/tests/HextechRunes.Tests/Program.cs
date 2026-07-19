@@ -72,6 +72,8 @@ internal static class Program
 			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
 			new(nameof(RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades), RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades),
+			new(nameof(UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption), UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption),
+			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(NightmareHooksEveryDarkOrbPassiveTrigger), NightmareHooksEveryDarkOrbPassiveTrigger),
@@ -827,6 +829,46 @@ internal static class Program
 		Expect(
 			openSlotWithUpgradeTaken.All(static relic => !HextechRunePoolBuilder.IsUpgradeRune(relic)),
 			"open slots must not expose a second UpgradeRune");
+	}
+
+	private static void UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption()
+	{
+		RelicModel confirmed = new JudicatorRune();
+		Equal(
+			confirmed,
+			HextechRuneSelectionCoordinator.RequireCompletedSelection(confirmed, "test"),
+			"confirmed selection");
+
+		try
+		{
+			HextechRuneSelectionCoordinator.RequireCompletedSelection<RelicModel>(null, "test");
+			throw new InvalidOperationException("missing selection should cancel");
+		}
+		catch (OperationCanceledException ex)
+		{
+			Expect(ex.Message.Contains("test", StringComparison.Ordinal), "cancellation should retain diagnostic context");
+		}
+	}
+
+	private static void DestructivePickupRunesAreExcludedFromRandomRewards()
+	{
+		Type[] destructiveTypes =
+		[
+			typeof(TransmuteChaosRune),
+			typeof(TransmutePrismaticRune),
+			typeof(TransmuteGoldRune),
+			typeof(PandorasBoxRune)
+		];
+		foreach (Type runeType in destructiveTypes)
+		{
+			Expect(
+				HextechRuneGrantHelper.IsDestructiveRandomRewardRuneType(runeType),
+				$"{runeType.Name} must not be generated as a random reward");
+		}
+
+		Expect(
+			!HextechRuneGrantHelper.IsDestructiveRandomRewardRuneType(typeof(JudicatorRune)),
+			"ordinary runes should remain eligible for random rewards");
 	}
 
 	private static void SearingAttackRuneGrantsUpgradedCard()
