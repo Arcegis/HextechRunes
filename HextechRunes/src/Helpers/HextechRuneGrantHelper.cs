@@ -5,12 +5,21 @@ namespace HextechRunes;
 
 internal static class HextechRuneGrantHelper
 {
-	private static readonly IReadOnlySet<Type> ExcludedRewardRuneTypes = new HashSet<Type>
+	// 这些符文会在 AfterObtained 内立即移除自己或批量替换已有海克斯。
+	// 原版宝箱以 fire-and-forget 方式调用 RelicCmd.Obtain，随后仍持有刚发放的遗物实例继续跑动画；
+	// 因此棱彩蛋不能把这类符文塞进宝箱奖励，否则实例会在动画结束前从背包消失并卡住宝箱流程。
+	private static readonly IReadOnlySet<Type> DestructiveRandomRewardRuneTypes = new HashSet<Type>
 	{
 		typeof(TransmuteChaosRune),
 		typeof(TransmutePrismaticRune),
-		typeof(TransmuteGoldRune)
+		typeof(TransmuteGoldRune),
+		typeof(PandorasBoxRune)
 	};
+
+	internal static bool IsDestructiveRandomRewardRuneType(Type runeType)
+	{
+		return DestructiveRandomRewardRuneTypes.Contains(runeType);
+	}
 
 	public static async Task ObtainRandomRunes(Player player, IEnumerable<Type> candidateTypes, int count)
 	{
@@ -152,7 +161,7 @@ internal static class HextechRuneGrantHelper
 				? HextechCatalog.IsPlayerRuneTypeConfigurable(type)
 				: HextechCatalog.IsPlayerRuneTypeSelectable(type))
 			.Where(type => !applyConfiguration || !disabledIds.Contains(ModelDb.GetId(type).Entry))
-			.Where(type => !ExcludedRewardRuneTypes.Contains(type))
+			.Where(type => !IsDestructiveRandomRewardRuneType(type))
 			.Where(type => !unavailableIds.Contains(ModelDb.GetId(type)))
 			.Where(type =>
 			{
