@@ -1,13 +1,16 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using HextechRunes;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves.Runs;
@@ -71,6 +74,8 @@ internal static class Program
 			new(nameof(RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades), RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
+			new(nameof(NightmareHooksEveryDarkOrbPassiveTrigger), NightmareHooksEveryDarkOrbPassiveTrigger),
+			new(nameof(NightmareEffectRunsOnceAfterEachPassiveTask), NightmareEffectRunsOnceAfterEachPassiveTask),
 			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
 			new(nameof(DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights), DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights),
 			new(nameof(StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot), StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot),
@@ -105,6 +110,7 @@ internal static class Program
 			new(nameof(PlayerRuneMetadataMatchesContentRegistrySlices), PlayerRuneMetadataMatchesContentRegistrySlices),
 			new(nameof(PlayerRuneMetadataPreservesCharacterOrder), PlayerRuneMetadataPreservesCharacterOrder),
 			new(nameof(PlayerRuneMetadataClassifiesConfigStates), PlayerRuneMetadataClassifiesConfigStates),
+			new(nameof(WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible), WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible),
 			new(nameof(PlayerRuneMetadataCatalogOutputsMatchCatalogQueries), PlayerRuneMetadataCatalogOutputsMatchCatalogQueries),
 			new(nameof(PlayerRuneMetadataFallbacksAreStable), PlayerRuneMetadataFallbacksAreStable),
 			new(nameof(ForgeMetadataHasUniqueTypes), ForgeMetadataHasUniqueTypes),
@@ -114,6 +120,7 @@ internal static class Program
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
+			new(nameof(PersonalHiveSafetyRejectsPlayerSideCopies), PersonalHiveSafetyRejectsPlayerSideCopies),
 			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
 			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
 			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
@@ -841,6 +848,74 @@ internal static class Program
 		Equal(200, forge.ExtraGoldRewardAmount, "two-stack Fortune Forge reward");
 	}
 
+	private static void NightmareHooksEveryDarkOrbPassiveTrigger()
+	{
+		MethodInfo target = HextechNightmareHooks.ResolvePassiveHookTarget();
+		Equal(typeof(DarkOrb), target.DeclaringType, "nightmare hook declaring type");
+		Equal(nameof(DarkOrb.Passive), target.Name, "nightmare hook method");
+		SequenceEqual(
+			new[] { typeof(PlayerChoiceContext), typeof(Creature) },
+			target.GetParameters().Select(static parameter => parameter.ParameterType),
+			"nightmare hook parameter types");
+	}
+
+	private static void NightmareEffectRunsOnceAfterEachPassiveTask()
+	{
+		TaskCompletionSource passive = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource effect = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		int effectCount = 0;
+		Task wrapped = HextechNightmareHooks.CompletePassiveThen(
+			passive.Task,
+			() =>
+			{
+				Interlocked.Increment(ref effectCount);
+				return effect.Task;
+			});
+
+		Equal(0, effectCount, "nightmare must wait for the dark orb passive");
+		Expect(!wrapped.IsCompleted, "nightmare wrapper should await the passive");
+
+		passive.SetResult();
+		Expect(
+			SpinWait.SpinUntil(() => Volatile.Read(ref effectCount) == 1, TimeSpan.FromSeconds(1)),
+			"nightmare effect should begin after the passive completes");
+		Expect(!wrapped.IsCompleted, "nightmare wrapper should await its appended damage");
+
+		effect.SetResult();
+		wrapped.GetAwaiter().GetResult();
+		Equal(1, effectCount, "one passive should append exactly one nightmare effect");
+
+		int repeatedEffectCount = 0;
+		for (int i = 0; i < 2; i++)
+		{
+			HextechNightmareHooks.CompletePassiveThen(
+				Task.CompletedTask,
+				() =>
+				{
+					repeatedEffectCount++;
+					return Task.CompletedTask;
+				}).GetAwaiter().GetResult();
+		}
+		Equal(2, repeatedEffectCount, "two passive triggers should append exactly two nightmare effects");
+
+		int failedPassiveEffectCount = 0;
+		try
+		{
+			HextechNightmareHooks.CompletePassiveThen(
+				Task.FromException(new InvalidOperationException("passive failed")),
+				() =>
+				{
+					failedPassiveEffectCount++;
+					return Task.CompletedTask;
+				}).GetAwaiter().GetResult();
+			throw new InvalidOperationException("failed passive should propagate");
+		}
+		catch (InvalidOperationException ex) when (ex.Message == "passive failed")
+		{
+		}
+		Equal(0, failedPassiveEffectCount, "failed passive must not append nightmare damage");
+	}
+
 	private static void DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune()
 	{
 		HextechForgeRarityWeights weights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
@@ -1238,6 +1313,7 @@ internal static class Program
 		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Prismatic], HextechContentRegistry.PrismaticRuneTypes, "prismatic runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.Disabled], HextechContentRegistry.DisabledPlayerRuneTypes, "default disabled runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.SelectionExcluded], HextechContentRegistry.SelectionExcludedPlayerRuneTypes, "selection excluded runes");
+		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.Retired], HextechContentRegistry.RetiredPlayerRuneTypes, "retired runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.FirstActExcluded], HextechContentRegistry.FirstActExcludedRuneTypes, "first act excluded runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.ThirdActExcluded], HextechContentRegistry.ThirdActExcludedRuneTypes, "third act excluded runes");
 		SequenceEqual(metadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive], HextechContentRegistry.AttributeConversionExclusiveRuneTypes, "attribute conversion exclusive runes");
@@ -1279,13 +1355,30 @@ internal static class Program
 		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(defaultDisabled.Type), "catalog default disabled selectability");
 
 		PlayerRuneRegistration selectionExcluded = metadata.Registrations.First(registration =>
-			metadata.HasFlag(registration.Type, PlayerRuneFlags.SelectionExcluded));
+			metadata.HasFlag(registration.Type, PlayerRuneFlags.SelectionExcluded)
+			&& !metadata.HasFlag(registration.Type, PlayerRuneFlags.Disabled));
 		Expect(metadata.IsVisible(selectionExcluded.Type), "selection excluded rune should still be visible");
 		Expect(!metadata.IsConfigurable(selectionExcluded.Type), "selection excluded rune should not be configurable");
 		Expect(!metadata.IsSelectable(selectionExcluded.Type), "selection excluded rune should not be selectable");
 		Expect(HextechCatalog.IsPlayerRuneTypeVisible(selectionExcluded.Type), "catalog selection excluded visibility");
 		Expect(!HextechCatalog.IsPlayerRuneTypeConfigurable(selectionExcluded.Type), "catalog selection excluded configurability");
 		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(selectionExcluded.Type), "catalog selection excluded selectability");
+	}
+
+	private static void WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible()
+	{
+		Type retiredType = typeof(WellLaidPlansUpgradeRune);
+		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
+
+		Expect(metadata.IsRegistered(retiredType), "retired Well-Laid Plans rune model should remain registered for old saves");
+		Expect(metadata.HasFlag(retiredType, PlayerRuneFlags.Retired), "Well-Laid Plans rune should carry the retired flag");
+		Expect(HextechContentRegistry.RetiredPlayerRuneTypes.Contains(retiredType), "retired registry slice should contain Well-Laid Plans");
+		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(retiredType), "retired Well-Laid Plans rune should be hidden");
+		Expect(!HextechCatalog.IsPlayerRuneTypeConfigurable(retiredType), "retired Well-Laid Plans rune should not be configurable");
+		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(retiredType), "retired Well-Laid Plans rune should not be selectable");
+		Expect(
+			HextechCatalog.GetAllCustomRelicTypes().Contains(retiredType),
+			"retired Well-Laid Plans rune model should remain in custom model registration for old saves");
 	}
 
 	private static void PlayerRuneMetadataCatalogOutputsMatchCatalogQueries()
@@ -1417,6 +1510,31 @@ internal static class Program
 		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new AdaptablePower()), "adaptable power should be structural");
 		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new SandpitPower()), "sandpit power should be structural");
 		Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new StrengthPower()), "ordinary strength should not be structural");
+		Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new PersonalHivePower()), "personal hive should not be mirrored to players");
+		Expect(!HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new StrengthPower()), "ordinary strength should remain mirrorable");
+	}
+
+	private static void PersonalHiveSafetyRejectsPlayerSideCopies()
+	{
+		MethodInfo target = HextechPersonalHiveSafetyHooks.ResolveDamageResponseTarget();
+		Equal(typeof(PersonalHivePower), target.DeclaringType, "personal hive safety hook declaring type");
+		Equal(nameof(PersonalHivePower.AfterDamageReceived), target.Name, "personal hive safety hook method");
+		SequenceEqual(
+			new[]
+			{
+				typeof(PlayerChoiceContext),
+				typeof(Creature),
+				typeof(DamageResult),
+				typeof(ValueProp),
+				typeof(Creature),
+				typeof(CardModel),
+			},
+			target.GetParameters().Select(static parameter => parameter.ParameterType),
+			"personal hive safety hook parameter types");
+
+		Expect(HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Enemy), "enemy-owned personal hive should keep vanilla behavior");
+		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Player), "player-owned personal hive should be neutralized");
+		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(null), "ownerless personal hive should be neutralized");
 	}
 
 	private static void EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum()
