@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using SponsorArcaneForge = HextechRunesSponsorPack.ArcaneForge;
 using SponsorEnchantmentForge = HextechRunesSponsorPack.EnchantmentForge;
+using SponsorEntropyForge = HextechRunesSponsorPack.EntropyForge;
 using SponsorEvolutionForge = HextechRunesSponsorPack.EvolutionForge;
 using SponsorMysticForge = HextechRunesSponsorPack.MysticForge;
 
@@ -14,7 +15,8 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 	private static readonly HashSet<Type> GoldEnchantmentForgeTypes =
 	[
 		typeof(GlamForge),
-		typeof(SponsorEnchantmentForge)
+		typeof(SponsorEnchantmentForge),
+		typeof(SponsorEntropyForge)
 	];
 
 	private static readonly HashSet<Type> PrismaticEnchantmentForgeTypes =
@@ -40,7 +42,8 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 		.. HoverTipFactory.FromRelic<SponsorEvolutionForge>(),
 		.. HoverTipFactory.FromRelic<SponsorMysticForge>(),
 		.. HoverTipFactory.FromRelic<GlamForge>(),
-		.. HoverTipFactory.FromRelic<SponsorEnchantmentForge>()
+		.. HoverTipFactory.FromRelic<SponsorEnchantmentForge>(),
+		.. HoverTipFactory.FromRelic<SponsorEntropyForge>()
 	];
 
 	public override async Task AfterObtained()
@@ -50,7 +53,6 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 			return;
 		}
 
-		BuiltInRepeatableEnchantments.EnableForPlayer(Owner);
 		Flash();
 		await HextechRunesApi.ObtainRandomForges(
 			Owner,
