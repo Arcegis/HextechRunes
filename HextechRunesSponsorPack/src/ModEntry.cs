@@ -81,6 +81,7 @@ public static class ModEntry
 		}
 
 		EntropyEnchantmentHooks.Install();
+		AbyssalContractHooks.Install();
 		InstallOptionalFeature("IntegratedStrategyEvents compatibility", IntegratedStrategyEventsCompatibilityHooks.Install);
 		InstallOptionalFeature("Miracle event portrait", MiracleEventPortraitPatch.Install);
 		MiracleEventForgePricePatch.Install();
@@ -149,6 +150,10 @@ public static class ModEntry
 			HextechRarityTier.Prismatic,
 			tagKey: "COMPREHENSIVE",
 			assetModId: ModInfo.Id);
+		HextechRunesApi.RegisterPlayerRune<AbyssalContractRune>(
+			HextechRarityTier.Prismatic,
+			tagKey: "COMPREHENSIVE",
+			assetModId: ModInfo.Id);
 		// 信徒(棱彩,仅单人):IsAvailableForPlayer 内部按 !IsNetworkMultiplayerRun() 门控单人。
 		HextechRunesApi.RegisterPlayerRune<BelieverRune>(
 			HextechRarityTier.Prismatic,
@@ -164,5 +169,10 @@ public static class ModEntry
 		HextechRunesApi.RegisterEventRelic<DollyRelicChoiceRelic>(ModInfo.Id);
 		HextechRunesApi.RegisterEventRelic<EntropyIncreaseChoiceRelic>(ModInfo.Id);
 		HextechRunesApi.RegisterEventRelic<EntropyDecreaseChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<WarriorContractChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<HunterContractChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<RegentContractChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<NecrobinderContractChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<AutomatonContractChoiceRelic>(ModInfo.Id);
 	}
 }

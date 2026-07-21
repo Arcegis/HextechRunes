@@ -151,7 +151,11 @@ internal static partial class Program
 			new(nameof(ExternalEnchantmentIconRegistrationTracksPath), ExternalEnchantmentIconRegistrationTracksPath),
 			new(nameof(RepeatableEnchantmentsRequireCurrentlyOwnedEnchantmentMasterRune), RepeatableEnchantmentsRequireCurrentlyOwnedEnchantmentMasterRune),
 			new(nameof(EnchantmentCompositionAdapterFindsDirectEnchantments), EnchantmentCompositionAdapterFindsDirectEnchantments),
-			new(nameof(EnchantmentCompositionAdapterFindsSponsorCompositeEnchantments), EnchantmentCompositionAdapterFindsSponsorCompositeEnchantments)
+			new(nameof(EnchantmentCompositionAdapterFindsSponsorCompositeEnchantments), EnchantmentCompositionAdapterFindsSponsorCompositeEnchantments),
+			new(nameof(AbyssalContractChoiceModelsMapToExpectedContracts), AbyssalContractChoiceModelsMapToExpectedContracts),
+			new(nameof(AbyssalContractWarriorEliteThresholdGrows), AbyssalContractWarriorEliteThresholdGrows),
+			new(nameof(AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters), AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters),
+			new(nameof(AbyssalContractWarriorCardFilterRejectsSkillsAndPowers), AbyssalContractWarriorCardFilterRejectsSkillsAndPowers)
 		];
 
 		int failed = 0;
