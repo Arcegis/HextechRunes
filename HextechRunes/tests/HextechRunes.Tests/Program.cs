@@ -19,7 +19,7 @@ using System.Text.Json;
 
 namespace HextechRunes.Tests;
 
-internal static class Program
+internal static partial class Program
 {
 	private const int Magic = 0x48585452; // HXTR
 	private const int ChoiceKindActRoll = 1;
@@ -148,7 +148,10 @@ internal static class Program
 			new(nameof(ExternalPlayerRuneRegistrationUpdatesCatalog), ExternalPlayerRuneRegistrationUpdatesCatalog),
 			new(nameof(ExternalEventRelicRegistrationUpdatesRegistry), ExternalEventRelicRegistrationUpdatesRegistry),
 			new(nameof(ExternalForgeRegistrationUpdatesCatalog), ExternalForgeRegistrationUpdatesCatalog),
-			new(nameof(ExternalEnchantmentIconRegistrationTracksPath), ExternalEnchantmentIconRegistrationTracksPath)
+			new(nameof(ExternalEnchantmentIconRegistrationTracksPath), ExternalEnchantmentIconRegistrationTracksPath),
+			new(nameof(RepeatableEnchantmentsRequireCurrentlyOwnedEnchantmentMasterRune), RepeatableEnchantmentsRequireCurrentlyOwnedEnchantmentMasterRune),
+			new(nameof(EnchantmentCompositionAdapterFindsDirectEnchantments), EnchantmentCompositionAdapterFindsDirectEnchantments),
+			new(nameof(EnchantmentCompositionAdapterFindsSponsorCompositeEnchantments), EnchantmentCompositionAdapterFindsSponsorCompositeEnchantments)
 		];
 
 		int failed = 0;
