@@ -1,6 +1,5 @@
 using HextechRunesSponsorPack;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using SponsorArcaneForge = HextechRunesSponsorPack.ArcaneForge;
 using SponsorEnchantmentForge = HextechRunesSponsorPack.EnchantmentForge;
@@ -33,17 +32,6 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 	[
 		new DynamicVar("PrismaticForgeCount", 1m),
 		new DynamicVar("GoldForgeCount", 2m)
-	];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		.. HoverTipFactory.FromRelic<SpiralForge>(),
-		.. HoverTipFactory.FromRelic<SponsorArcaneForge>(),
-		.. HoverTipFactory.FromRelic<SponsorEvolutionForge>(),
-		.. HoverTipFactory.FromRelic<SponsorMysticForge>(),
-		.. HoverTipFactory.FromRelic<GlamForge>(),
-		.. HoverTipFactory.FromRelic<SponsorEnchantmentForge>(),
-		.. HoverTipFactory.FromRelic<SponsorEntropyForge>()
 	];
 
 	public override async Task AfterObtained()
