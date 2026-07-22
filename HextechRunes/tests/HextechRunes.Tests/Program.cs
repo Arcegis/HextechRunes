@@ -76,6 +76,9 @@ internal static partial class Program
 			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
+			new(nameof(CoefficientRunesStackAdditivelyWithinTheirOwnSector), CoefficientRunesStackAdditivelyWithinTheirOwnSector),
+			new(nameof(CoefficientForgesShareOneAdditiveSector), CoefficientForgesShareOneAdditiveSector),
+			new(nameof(MaxHpCoefficientSectorsMultiply), MaxHpCoefficientSectorsMultiply),
 			new(nameof(NightmareHooksEveryDarkOrbPassiveTrigger), NightmareHooksEveryDarkOrbPassiveTrigger),
 			new(nameof(NightmareEffectRunsOnceAfterEachPassiveTask), NightmareEffectRunsOnceAfterEachPassiveTask),
 			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
@@ -125,8 +128,10 @@ internal static partial class Program
 			new(nameof(PersonalHiveSafetyRejectsPlayerSideCopies), PersonalHiveSafetyRejectsPlayerSideCopies),
 			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
 			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
+			new(nameof(EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage), EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage),
 			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
 			new(nameof(EnemyCompensationSkipsSleightOfFleshResponse), EnemyCompensationSkipsSleightOfFleshResponse),
+			new(nameof(UniversalScopeUpgradeRestorationKeepsCapturedLevels), UniversalScopeUpgradeRestorationKeepsCapturedLevels),
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
@@ -897,6 +902,47 @@ internal static partial class Program
 		Equal(200, forge.ExtraGoldRewardAmount, "two-stack Fortune Forge reward");
 	}
 
+	private static void CoefficientRunesStackAdditivelyWithinTheirOwnSector()
+	{
+		TankEngineRune tankEngine = CreateMutableTestModel<TankEngineRune>();
+		tankEngine.SavedStacks = 3;
+		Equal(1.18m, tankEngine.MaxHpScale, "three Tank Engine stacks should be 6% + 6% + 6%");
+
+		FeedUpgradeRune feedUpgrade = CreateMutableTestModel<FeedUpgradeRune>();
+		feedUpgrade.SavedStacks = 3;
+		Equal(1.45m, feedUpgrade.MaxHpScale, "three Feed upgrade triggers should be 15% + 15% + 15%");
+
+		NineDragonPowerRune nineDragon = CreateMutableTestModel<NineDragonPowerRune>();
+		nineDragon.SavedStacks = 3;
+		Equal(1.09m, nineDragon.MaxHpScale, "three Nine Dragon stacks should be 3% + 3% + 3%");
+	}
+
+	private static void CoefficientForgesShareOneAdditiveSector()
+	{
+		SilverAttackForge silver = CreateMutableTestModel<SilverAttackForge>();
+		silver.SavedStackCount = 2;
+		GoldAttackForge gold = CreateMutableTestModel<GoldAttackForge>();
+		AttackForge prismatic = CreateMutableTestModel<AttackForge>();
+
+		decimal multiplier = HextechForgeCoefficientHelper.CombineBonusFractions(
+		[
+			silver.DamageBonusFractionTotal,
+			gold.DamageBonusFractionTotal,
+			prismatic.DamageBonusFractionTotal
+		]);
+
+		Equal(1.4m, multiplier, "two silver, one gold and one prismatic attack forge should share a 40% sector");
+	}
+
+	private static void MaxHpCoefficientSectorsMultiply()
+	{
+		decimal multiplier = HextechMaxHpScaling.CombineScales(
+			[1.35m, 1.5m, 1.18m, 1.3m],
+			[7.5m, 15m, 30m]);
+
+		Equal(4.73718375m, multiplier, "rune sectors should multiply after HP forge bonuses are added into one sector");
+	}
+
 	private static void NightmareHooksEveryDarkOrbPassiveTrigger()
 	{
 		MethodInfo target = HextechNightmareHooks.ResolvePassiveHookTarget();
@@ -1614,6 +1660,33 @@ internal static partial class Program
 		Expect(
 			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, UninitializedCard<SovereignBlade>()),
 			"damage with card source should not match poison damage signature");
+	}
+
+	private static void EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage()
+	{
+		ValueProp damageProps = ValueProp.Unblockable | ValueProp.Unpowered;
+		Expect(
+			CompensationEnemyHex.IsPoisonDamageSignature(damageProps, null, null),
+			"ordinary poison damage should match before entering the burn resolution scope");
+
+		bool matchedDuringBurn = true;
+		HextechBurnPower.RunWithDamageResolutionGuard(() =>
+		{
+			matchedDuringBurn = CompensationEnemyHex.IsPoisonDamageSignature(damageProps, null, null);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+		Expect(!matchedDuringBurn, "burn damage must not be mistaken for poison damage even when both share the same value props");
+		Expect(!HextechBurnPower.IsResolvingDamage, "burn damage guard should reset after guarded work");
+	}
+
+	private static void UniversalScopeUpgradeRestorationKeepsCapturedLevels()
+	{
+		Equal(3, CardTransformUpgradeHelper.GetUpgradeRestorationSteps(0, 3, 30), "restore all lost multi-upgrade levels");
+		Equal(2, CardTransformUpgradeHelper.GetUpgradeRestorationSteps(1, 3, 30), "restore only missing levels");
+		Equal(0, CardTransformUpgradeHelper.GetUpgradeRestorationSteps(3, 3, 30), "preserve an unchanged card");
+		Equal(0, CardTransformUpgradeHelper.GetUpgradeRestorationSteps(4, 3, 30), "never downgrade a card that gained levels while moving");
+		Equal(1, CardTransformUpgradeHelper.GetUpgradeRestorationSteps(0, 3, 1), "respect the card max upgrade level");
 	}
 
 	private static void EnemyCompensationSkipsOutbreakPoisonResponse()
