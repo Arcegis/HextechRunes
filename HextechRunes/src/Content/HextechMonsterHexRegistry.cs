@@ -126,6 +126,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<GlobeHeadHex>(MonsterHexKind.GlobeHead, HextechRarityTier.Gold),
 		Monster<MyteHex>(MonsterHexKind.Myte, HextechRarityTier.Gold),
 		Monster<FossilStalkerHex>(MonsterHexKind.FossilStalker, HextechRarityTier.Gold),
+		Monster<TungstenRodHex>(MonsterHexKind.TungstenRod, HextechRarityTier.Gold),
 		Monster<ByrdonisHex>(MonsterHexKind.Byrdonis, HextechRarityTier.Prismatic)
 	];
 

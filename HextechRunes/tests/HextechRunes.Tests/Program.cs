@@ -130,6 +130,7 @@ internal static partial class Program
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
+			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
 			new(nameof(EnemyJeweledGauntletUsesExpectedStrengthTierChances), EnemyJeweledGauntletUsesExpectedStrengthTierChances),
 			new(nameof(EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes), EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes),
 			new(nameof(EnemyJeweledGauntletDuplicatesWholeIntentGroup), EnemyJeweledGauntletDuplicatesWholeIntentGroup),
@@ -1698,6 +1699,15 @@ internal static partial class Program
 		Equal(2, FossilStalkerEnemyHex.ResolveSuckAmount(2), "enemy Fossil Stalker tier two Suck");
 		Equal(3, FossilStalkerEnemyHex.ResolveSuckAmount(3), "enemy Fossil Stalker tier three Suck");
 		Equal(3, FossilStalkerEnemyHex.ResolveSuckAmount(99), "enemy Fossil Stalker high-tier clamp Suck");
+	}
+
+	private static void EnemyTungstenRodReducesEachHpLossByTier()
+	{
+		Equal(4m, TungstenRodEnemyHex.ReduceHpLoss(5m, 1), "enemy Tungsten Rod tier one HP loss");
+		Equal(3m, TungstenRodEnemyHex.ReduceHpLoss(5m, 2), "enemy Tungsten Rod tier two HP loss");
+		Equal(2m, TungstenRodEnemyHex.ReduceHpLoss(5m, 3), "enemy Tungsten Rod tier three HP loss");
+		Equal(0m, TungstenRodEnemyHex.ReduceHpLoss(2m, 3), "enemy Tungsten Rod should floor HP loss at zero");
+		Equal(0m, TungstenRodEnemyHex.ReduceHpLoss(0m, 3), "enemy Tungsten Rod should preserve zero HP loss");
 	}
 
 	private static void EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes()

@@ -1374,5 +1374,9 @@
   "FOSSIL_STALKER_HEX.title": "アップグレード: 化石追跡者",
   "FOSSIL_STALKER_HEX.description": "戦闘開始時、すべての敵は[gold]吸引[/gold]を[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]得る。",
   "FOSSIL_STALKER_HEX.flavor": "あらゆる傷が狩りの糧となる。",
-  "fossilStalkerHex.enemyDescription": "戦闘開始時、すべての敵は[gold]吸引[/gold]を[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]得る。"
+  "fossilStalkerHex.enemyDescription": "戦闘開始時、すべての敵は[gold]吸引[/gold]を[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]得る。",
+  "TUNGSTEN_ROD_HEX.title": "アップグレード: タングステンロッド",
+  "TUNGSTEN_ROD_HEX.description": "敵がHPを失うたび、失うHPを[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]減らす。",
+  "TUNGSTEN_ROD_HEX.flavor": "どれほど重い一撃でも、合金には浅い傷しか残せない。",
+  "tungstenRodHex.enemyDescription": "敵がHPを失うたび、失うHPを[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]減らす。"
 }

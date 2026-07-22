@@ -1374,5 +1374,9 @@
   "FOSSIL_STALKER_HEX.title": "Mejora: Rastreador fósil",
   "FOSSIL_STALKER_HEX.description": "Al comienzo del combate, todos los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Succión[/gold].",
   "FOSSIL_STALKER_HEX.flavor": "Cada herida alimenta la caza.",
-  "fossilStalkerHex.enemyDescription": "Al comienzo del combate, todos los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Succión[/gold]."
+  "fossilStalkerHex.enemyDescription": "Al comienzo del combate, todos los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Succión[/gold].",
+  "TUNGSTEN_ROD_HEX.title": "Mejora: Vara de tungsteno",
+  "TUNGSTEN_ROD_HEX.description": "Cada vez que un enemigo pierde PV, reduce los PV perdidos en [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
+  "TUNGSTEN_ROD_HEX.flavor": "Ni el golpe más fuerte deja más que una marca superficial en la aleación.",
+  "tungstenRodHex.enemyDescription": "Cada vez que un enemigo pierde PV, reduce los PV perdidos en [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]."
 }

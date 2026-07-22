@@ -1374,5 +1374,9 @@
   "FOSSIL_STALKER_HEX.title": "升级：化石追踪者",
   "FOSSIL_STALKER_HEX.description": "战斗开始时，所有敌人获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]吮吸[/gold]。",
   "FOSSIL_STALKER_HEX.flavor": "每一道伤口，都让追猎更近一步。",
-  "fossilStalkerHex.enemyDescription": "战斗开始时，所有敌人获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]吮吸[/gold]。"
+  "fossilStalkerHex.enemyDescription": "战斗开始时，所有敌人获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]吮吸[/gold]。",
+  "TUNGSTEN_ROD_HEX.title": "升级：钨合金棍",
+  "TUNGSTEN_ROD_HEX.description": "敌人每次失去生命时，少失去[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点生命。",
+  "TUNGSTEN_ROD_HEX.flavor": "再沉重的打击，也只能在合金上留下一道浅痕。",
+  "tungstenRodHex.enemyDescription": "敌人每次失去生命时，少失去[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点生命。"
 }

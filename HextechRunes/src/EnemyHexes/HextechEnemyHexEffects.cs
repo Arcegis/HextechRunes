@@ -120,7 +120,8 @@ internal static class HextechEnemyHexEffects
 			new GlobeHeadEnemyHex(),
 			new MyteEnemyHex(),
 			new FossilStalkerEnemyHex(),
-			new ByrdonisEnemyHex()
+			new ByrdonisEnemyHex(),
+			new TungstenRodEnemyHex()
 		]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

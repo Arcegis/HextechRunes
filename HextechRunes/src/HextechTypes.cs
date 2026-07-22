@@ -141,5 +141,6 @@ internal enum MonsterHexKind
 
     // 2026-07-22 新增的敌方海克斯：
     JeweledGauntlet = 122,     // 珠光护手（棱彩）
-    FossilStalker = 123        // 升级：化石追踪者（黄金）
+    FossilStalker = 123,       // 升级：化石追踪者（黄金）
+    TungstenRod = 124          // 升级：钨合金棍（黄金）
 }

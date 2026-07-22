@@ -1374,5 +1374,9 @@
   "FOSSIL_STALKER_HEX.title": "Улучшение: Ископаемый следопыт",
   "FOSSIL_STALKER_HEX.description": "В начале боя все враги получают [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Высасывания[/gold].",
   "FOSSIL_STALKER_HEX.flavor": "Каждая рана питает охоту.",
-  "fossilStalkerHex.enemyDescription": "В начале боя все враги получают [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Высасывания[/gold]."
+  "fossilStalkerHex.enemyDescription": "В начале боя все враги получают [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Высасывания[/gold].",
+  "TUNGSTEN_ROD_HEX.title": "Улучшение: Вольфрамовый стержень",
+  "TUNGSTEN_ROD_HEX.description": "Каждый раз, когда враг теряет ОЗ, уменьшает потерю ОЗ на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
+  "TUNGSTEN_ROD_HEX.flavor": "Даже самый тяжёлый удар оставляет на сплаве лишь неглубокий след.",
+  "tungstenRodHex.enemyDescription": "Каждый раз, когда враг теряет ОЗ, уменьшает потерю ОЗ на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]."
 }

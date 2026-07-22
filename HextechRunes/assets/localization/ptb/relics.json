@@ -1374,5 +1374,9 @@
   "FOSSIL_STALKER_HEX.title": "Melhoria: Rastreador Fóssil",
   "FOSSIL_STALKER_HEX.description": "No início do combate, todos os inimigos recebem [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Sucção[/gold].",
   "FOSSIL_STALKER_HEX.flavor": "Cada ferida alimenta a caçada.",
-  "fossilStalkerHex.enemyDescription": "No início do combate, todos os inimigos recebem [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Sucção[/gold]."
+  "fossilStalkerHex.enemyDescription": "No início do combate, todos os inimigos recebem [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Sucção[/gold].",
+  "TUNGSTEN_ROD_HEX.title": "Melhoria: Bastão de Tungstênio",
+  "TUNGSTEN_ROD_HEX.description": "Sempre que um inimigo perder PV, reduza os PV perdidos em [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
+  "TUNGSTEN_ROD_HEX.flavor": "Mesmo o golpe mais pesado deixa apenas uma marca rasa na liga.",
+  "tungstenRodHex.enemyDescription": "Sempre que um inimigo perder PV, reduza os PV perdidos em [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]."
 }

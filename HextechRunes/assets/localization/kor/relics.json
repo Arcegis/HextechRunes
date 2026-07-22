@@ -1374,5 +1374,9 @@
   "FOSSIL_STALKER_HEX.title": "강화: 화석 추적자",
   "FOSSIL_STALKER_HEX.description": "전투 시작 시 모든 적이 [gold]흡수[/gold]를 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 얻습니다.",
   "FOSSIL_STALKER_HEX.flavor": "모든 상처가 사냥의 양분이 됩니다.",
-  "fossilStalkerHex.enemyDescription": "전투 시작 시 모든 적이 [gold]흡수[/gold]를 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 얻습니다."
+  "fossilStalkerHex.enemyDescription": "전투 시작 시 모든 적이 [gold]흡수[/gold]를 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 얻습니다.",
+  "TUNGSTEN_ROD_HEX.title": "강화: 텅스텐 막대",
+  "TUNGSTEN_ROD_HEX.description": "적이 체력을 잃을 때마다, 잃는 체력이 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 감소합니다.",
+  "TUNGSTEN_ROD_HEX.flavor": "아무리 강한 일격도 합금에는 얕은 흔적만 남깁니다.",
+  "tungstenRodHex.enemyDescription": "적이 체력을 잃을 때마다, 잃는 체력이 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 감소합니다."
 }

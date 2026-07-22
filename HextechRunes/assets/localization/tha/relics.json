@@ -1374,5 +1374,9 @@
   "FOSSIL_STALKER_HEX.title": "อัปเกรด: นักสะกดรอยฟอสซิล",
   "FOSSIL_STALKER_HEX.description": "เมื่อเริ่มการต่อสู้ ศัตรูทั้งหมดได้รับ[gold]ดูดกลืน[/gold] [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] ชั้น",
   "FOSSIL_STALKER_HEX.flavor": "ทุกบาดแผลหล่อเลี้ยงการล่า",
-  "fossilStalkerHex.enemyDescription": "เมื่อเริ่มการต่อสู้ ศัตรูทั้งหมดได้รับ[gold]ดูดกลืน[/gold] [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] ชั้น"
+  "fossilStalkerHex.enemyDescription": "เมื่อเริ่มการต่อสู้ ศัตรูทั้งหมดได้รับ[gold]ดูดกลืน[/gold] [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] ชั้น",
+  "TUNGSTEN_ROD_HEX.title": "อัปเกรด: แท่งทังสเตน",
+  "TUNGSTEN_ROD_HEX.description": "ทุกครั้งที่ศัตรูเสีย HP ลด HP ที่เสียลง [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] หน่วย",
+  "TUNGSTEN_ROD_HEX.flavor": "แม้แต่การโจมตีที่หนักที่สุดก็ทิ้งไว้เพียงรอยตื้นบนโลหะผสม",
+  "tungstenRodHex.enemyDescription": "ทุกครั้งที่ศัตรูเสีย HP ลด HP ที่เสียลง [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] หน่วย"
 }

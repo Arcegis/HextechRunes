@@ -40,6 +40,7 @@ internal static class HextechCustomModelRegistry
 		typeof(GlobeHeadHex),
 		typeof(MyteHex),
 		typeof(FossilStalkerHex),
+		typeof(TungstenRodHex),
 		typeof(ByrdonisHex)
 	];
 
