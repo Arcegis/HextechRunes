@@ -1353,7 +1353,7 @@
   "GOLD_HP_FORGE.description": "获得[blue]15%[/blue]最大生命值加成。",
   "GOLD_HP_FORGE.flavor": "炉火不再扩容，而是重写容器本身。",
   "MYRIAD_SWORDS_RUNE.title": "万剑归宗",
-  "MYRIAD_SWORDS_RUNE.description": "你的[gold]君王之剑[/gold]打出后会被[gold]消耗[/gold]。回合结束时，打出你消耗牌堆里的所有[gold]君王之剑[/gold]。",
+  "MYRIAD_SWORDS_RUNE.description": "你的[gold]君王之剑[/gold]打出后会被[gold]消耗[/gold]。每当你的抽牌堆打乱洗牌时，打出你消耗牌堆里的所有[gold]君王之剑[/gold]。",
   "MYRIAD_SWORDS_RUNE.flavor": "入冢之剑从不沉睡，只待一声令下。",
   "TWILIGHT_VEIL_RUNE.title": "薄暮法衣",
   "TWILIGHT_VEIL_RUNE.description": "敌人在战斗内获得增益效果时，你获得相同增益效果。",

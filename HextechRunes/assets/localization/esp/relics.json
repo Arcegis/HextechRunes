@@ -1353,7 +1353,7 @@
   "GOLD_HP_FORGE.description": "Obtén un [blue]15%[/blue] de PV máximos adicionales.",
   "GOLD_HP_FORGE.flavor": "El fuego ya no agranda el recipiente. Lo reescribe.",
   "MYRIAD_SWORDS_RUNE.title": "Retorno de las Mil Espadas",
-  "MYRIAD_SWORDS_RUNE.description": "Tus [gold]Sovereign Blade[/gold] se agotan al jugarse. Al final de tu turno, juega todas las [gold]Sovereign Blade[/gold] de tu pila de agotamiento.",
+  "MYRIAD_SWORDS_RUNE.description": "Tus [gold]Sovereign Blade[/gold] se agotan al jugarse. Cada vez que se baraje tu pila de robo, juega todas las [gold]Sovereign Blade[/gold] de tu pila de agotamiento.",
   "MYRIAD_SWORDS_RUNE.flavor": "Las espadas enterradas no duermen: esperan la llamada.",
   "TWILIGHT_VEIL_RUNE.title": "Velo Crepuscular",
   "TWILIGHT_VEIL_RUNE.description": "Cuando un enemigo obtiene un beneficio durante el combate, tú obtienes el mismo beneficio.",

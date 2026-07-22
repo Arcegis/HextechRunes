@@ -76,6 +76,7 @@ internal static partial class Program
 			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
+			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
 			new(nameof(CoefficientRunesStackAdditivelyWithinTheirOwnSector), CoefficientRunesStackAdditivelyWithinTheirOwnSector),
 			new(nameof(CoefficientForgesShareOneAdditiveSector), CoefficientForgesShareOneAdditiveSector),
 			new(nameof(MaxHpCoefficientSectorsMultiply), MaxHpCoefficientSectorsMultiply),
@@ -900,6 +901,15 @@ internal static partial class Program
 
 		forge.SavedStackCount = 2;
 		Equal(200, forge.ExtraGoldRewardAmount, "two-stack Fortune Forge reward");
+	}
+
+	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()
+	{
+		MethodInfo[] declaredMethods = typeof(MyriadSwordsRune).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+
+		Expect(declaredMethods.Any(method => method.Name == "AfterShuffle"), "Myriad Swords should trigger after the owner's draw pile is shuffled");
+		Expect(declaredMethods.All(method => method.Name != "BeforeTurnEnd"), "Myriad Swords should no longer trigger at turn end");
 	}
 
 	private static void CoefficientRunesStackAdditivelyWithinTheirOwnSector()

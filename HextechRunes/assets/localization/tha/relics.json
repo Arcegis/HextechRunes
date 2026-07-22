@@ -1353,7 +1353,7 @@
   "GOLD_HP_FORGE.description": "ได้รับ HP สูงสุดเพิ่มขึ้น [blue]15%[/blue]",
   "GOLD_HP_FORGE.flavor": "ไฟไม่ได้ขยายภาชนะอีกต่อไป แต่เขียนมันขึ้นใหม่",
   "MYRIAD_SWORDS_RUNE.title": "หมื่นดาบคืนสำนัก",
-  "MYRIAD_SWORDS_RUNE.description": "[gold]พระแสงอาญาสิทธิ์[/gold] ของคุณจะถูกสลายหลังเล่น เมื่อจบเทิร์น เล่น [gold]พระแสงอาญาสิทธิ์[/gold] ทั้งหมดในกองสลายของคุณ",
+  "MYRIAD_SWORDS_RUNE.description": "[gold]พระแสงอาญาสิทธิ์[/gold] ของคุณจะถูกสลายหลังเล่น ทุกครั้งที่กองจั่วของคุณถูกสับ เล่น [gold]พระแสงอาญาสิทธิ์[/gold] ทั้งหมดในกองสลายของคุณ",
   "MYRIAD_SWORDS_RUNE.flavor": "ดาบที่ถูกฝังไม่เคยหลับ เพียงรอคำสั่ง",
   "TWILIGHT_VEIL_RUNE.title": "ม่านสนธยา",
   "TWILIGHT_VEIL_RUNE.description": "เมื่อศัตรูได้รับบัฟระหว่างการต่อสู้ คุณจะได้รับบัฟเดียวกัน",

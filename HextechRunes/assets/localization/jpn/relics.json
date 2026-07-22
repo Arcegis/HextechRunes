@@ -1353,7 +1353,7 @@
   "GOLD_HP_FORGE.description": "最大HPが[blue]15%[/blue]増加します。",
   "GOLD_HP_FORGE.flavor": "火はもはや容器を拡大しません。それを書き換えるのです。",
   "MYRIAD_SWORDS_RUNE.title": "万剣帰宗",
-  "MYRIAD_SWORDS_RUNE.description": "あなたの[gold]ソブリンブレード[/gold]はプレイ後に[gold]廃棄[/gold]されます。ターン終了時、廃棄カードのすべての[gold]ソブリンブレード[/gold]をプレイします。",
+  "MYRIAD_SWORDS_RUNE.description": "あなたの[gold]ソブリンブレード[/gold]はプレイ後に[gold]廃棄[/gold]されます。あなたの山札がシャッフルされるたび、廃棄カードのすべての[gold]ソブリンブレード[/gold]をプレイします。",
   "MYRIAD_SWORDS_RUNE.flavor": "塚に眠る剣は、号令を待っているだけだ。",
   "TWILIGHT_VEIL_RUNE.title": "薄暮のヴェール",
   "TWILIGHT_VEIL_RUNE.description": "戦闘中に敵がバフを獲得したとき、あなたも同じバフを獲得します。",
