@@ -52,6 +52,7 @@ public sealed class MyriadSwordsRune : HextechRelicBase
 		try
 		{
 			Flash();
+			HextechMyriadSwordsVfx.Play(Owner.Creature);
 			PlayerChoiceContext autoChoiceContext = new BlockingPlayerChoiceContext();
 			foreach (SovereignBlade blade in blades)
 			{
@@ -70,10 +71,15 @@ public sealed class MyriadSwordsRune : HextechRelicBase
 				}
 
 				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(autoChoiceContext, blade, target, skipXCapture: true);
+				HextechSovereignBladeVfxSync.Reconcile(Owner);
 			}
 		}
 		finally
 		{
+			if (Owner?.PlayerCombatState != null && Owner.Creature.CombatState != null)
+			{
+				HextechSovereignBladeVfxSync.Reconcile(Owner);
+			}
 			_discharging = false;
 		}
 	}

@@ -79,6 +79,8 @@ internal static partial class Program
 			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
+			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
+			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
 			new(nameof(CoefficientRunesStackAdditivelyWithinTheirOwnSector), CoefficientRunesStackAdditivelyWithinTheirOwnSector),
 			new(nameof(CoefficientForgesShareOneAdditiveSector), CoefficientForgesShareOneAdditiveSector),
 			new(nameof(MaxHpCoefficientSectorsMultiply), MaxHpCoefficientSectorsMultiply),
@@ -929,6 +931,48 @@ internal static partial class Program
 
 		Expect(declaredMethods.Any(method => method.Name == "AfterShuffle"), "Myriad Swords should trigger after the owner's draw pile is shuffled");
 		Expect(declaredMethods.All(method => method.Name != "BeforeTurnEnd"), "Myriad Swords should no longer trigger at turn end");
+	}
+
+	private static void SovereignBladeVfxSyncUsesVanillaForgeScale()
+	{
+		Expect(Math.Abs(0.9f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(0)) < 0.0001f, "zero-damage blade scale");
+		Expect(Math.Abs(0.955f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(10)) < 0.0001f, "base blade scale");
+		Expect(Math.Abs(2f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(200)) < 0.0001f, "fully scaled blade");
+		Expect(Math.Abs(2f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(999)) < 0.0001f, "blade scale cap");
+	}
+
+	private static void SlowCookVfxUsesDedicatedPressureCookerTextures()
+	{
+		string[] slowCookPaths =
+		[
+			HextechAssets.SlowCookHeatGlowPath,
+			HextechAssets.SlowCookAoeGradientPath,
+			HextechAssets.SlowCookAoeGradientSubtlePath,
+			HextechAssets.SlowCookAoeEdgePath,
+			HextechAssets.SlowCookAoePolarPath,
+			HextechAssets.SlowCookEdgeAccentPath,
+			HextechAssets.SlowCookGroundRingPath,
+			HextechAssets.SlowCookFlameNoisePath,
+			HextechAssets.SlowCookInnerFirePath,
+			HextechAssets.SlowCookInnerFireBPath,
+			HextechAssets.SlowCookFlarePath
+		];
+
+		Expect(
+			slowCookPaths.All(static path => path.StartsWith("res://HextechRunes/images/effects/slow_cook/", StringComparison.Ordinal)),
+			"Slow Cook VFX should load only its dedicated Pressure Cooker textures");
+		Expect(
+			slowCookPaths.All(static path => path != HextechAssets.MikaelsBlessingAoeRunePath),
+			"Slow Cook VFX must not reuse Mikael's Blessing texture");
+		Equal(slowCookPaths.Length, slowCookPaths.Distinct(StringComparer.Ordinal).Count(), "Slow Cook VFX texture paths");
+		Equal(800f, SlowCookAuraVisual.ResolveWidth(160f), "Slow Cook aura width for a normal player hitbox");
+		Equal(800f, SlowCookAuraVisual.ResolveWidth(500f), "Slow Cook aura width should not be reduced by hitbox scaling");
+		Expect(
+			SlowCookAuraVisual.FlowShaderCode.Contains("anchored_gradient", StringComparison.Ordinal),
+			"Slow Cook aura should retain a stationary coverage sample while its texture details move");
+		Expect(
+			SlowCookAuraVisual.FlowShaderCode.Contains("intensity = min(intensity, 0.90)", StringComparison.Ordinal),
+			"Slow Cook aura should cap per-layer brightness spikes");
 	}
 
 	private static void CoefficientRunesStackAdditivelyWithinTheirOwnSector()
