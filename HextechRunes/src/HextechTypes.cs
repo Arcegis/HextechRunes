@@ -137,5 +137,9 @@ internal enum MonsterHexKind
     SlimedBerserker = 118,     // 升级：史莱姆狂战士（黄金）
     GlobeHead = 119,           // 升级：电球头（黄金）
     Myte = 120,                // 升级：异螨（黄金）
-    Byrdonis = 121             // 升级：多尼斯异鸟（棱彩）
+    Byrdonis = 121,            // 升级：多尼斯异鸟（棱彩）
+
+    // 2026-07-22 新增的敌方海克斯：
+    JeweledGauntlet = 122,     // 珠光护手（棱彩）
+    FossilStalker = 123        // 升级：化石追踪者（黄金）
 }

@@ -112,6 +112,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<DeathHarvestRune>(MonsterHexKind.DeathHarvest, HextechRarityTier.Gold),
 		Monster<GiantSlayerRune>(MonsterHexKind.GiantSlayer, HextechRarityTier.Prismatic),
 		Monster<DualWieldRune>(MonsterHexKind.DualWield, HextechRarityTier.Prismatic),
+		Monster<JeweledGauntletRune>(MonsterHexKind.JeweledGauntlet, HextechRarityTier.Prismatic),
 
 		Monster<LeafSlimeHex>(MonsterHexKind.LeafSlime, HextechRarityTier.Silver),
 		Monster<ShrinkerBeetleHex>(MonsterHexKind.ShrinkerBeetle, HextechRarityTier.Silver),
@@ -124,6 +125,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<SlimedBerserkerHex>(MonsterHexKind.SlimedBerserker, HextechRarityTier.Gold),
 		Monster<GlobeHeadHex>(MonsterHexKind.GlobeHead, HextechRarityTier.Gold),
 		Monster<MyteHex>(MonsterHexKind.Myte, HextechRarityTier.Gold),
+		Monster<FossilStalkerHex>(MonsterHexKind.FossilStalker, HextechRarityTier.Gold),
 		Monster<ByrdonisHex>(MonsterHexKind.Byrdonis, HextechRarityTier.Prismatic)
 	];
 

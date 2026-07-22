@@ -107,6 +107,7 @@ internal static class HextechEnemyHexEffects
 			new DeathHarvestEnemyHex(),
 			new GiantSlayerEnemyHex(),
 			new DualWieldEnemyHex(),
+			new JeweledGauntletEnemyHex(),
 			new LeafSlimeEnemyHex(),
 			new ShrinkerBeetleEnemyHex(),
 			new InkletEnemyHex(),
@@ -118,6 +119,7 @@ internal static class HextechEnemyHexEffects
 			new SlimedBerserkerEnemyHex(),
 			new GlobeHeadEnemyHex(),
 			new MyteEnemyHex(),
+			new FossilStalkerEnemyHex(),
 			new ByrdonisEnemyHex()
 		]);
 

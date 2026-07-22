@@ -111,6 +111,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<SowUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 32, tagKey: "OUTPUT"),
         Rune<ReapUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 33, tagKey: "OUTPUT"),
         Rune<ReprogramRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 24, tagKey: "COMPREHENSIVE"),
+        Rune<CreativeAiUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 28, tagKey: "RANDOM"),
         Rune<NeurosurgeUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 34, tagKey: "DOOM"),
 
         Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),

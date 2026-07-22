@@ -532,6 +532,7 @@
   "deathHarvestRune.enemyDescription": "El daño no bloqueado que el enemigo te inflige lo cura en un [blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue] de esa cantidad.",
   "giantSlayerRune.enemyDescription": "El enemigo se encoge. Por cada [blue]5[/blue] de vida máxima que tenga el jugador, el enemigo le inflige [blue]1%[/blue] más de daño, hasta [blue]100%[/blue].",
   "dualWieldRune.enemyDescription": "El daño de los ataques del enemigo se reduce [gold]a la mitad[/gold] y su número de golpes [gold]se duplica[/gold].",
+  "jeweledGauntletRune.enemyDescription": "Los monstruos tienen un [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] de probabilidad de repetir su acción.",
   "frostWraithRune.enemyDescription": "Cada [blue]4[/blue] turnos, todos los jugadores ganan [blue]1[/blue] turno de [gold]Tiempo prestado[/gold].",
   "escapePlanRune.enemyDescription": "Cuando el daño reduce al enemigo por debajo de [blue]50%[/blue] de su PV máximos, obtiene un bloqueo igual a [blue]60%[/blue] de su PV máximos y obtiene [blue]1[/blue] turno de [gold]Shrink[/gold]. Una vez por combate.",
   "heavyHitterRune.enemyDescription": "El enemigo gana [blue]1%[/blue] más de daño por cada [blue]10[/blue] PV máximos que tenga, hasta [blue]30%[/blue].",
@@ -1366,5 +1367,12 @@
   "SOUL_UPGRADE_RUNE.flavor": "Cada alma que parte deja una chispa tras de sí.",
   "PRISMATIC_EGG_RUNE.title": "Huevo prismático",
   "PRISMATIC_EGG_RUNE.description": "Las recompensas de reliquia en tus salas del tesoro se reemplazan por runas Hextech aleatorias.",
-  "PRISMATIC_EGG_RUNE.flavor": "Nadie sabe qué hay dentro. Ni siquiera quien lo puso."
+  "PRISMATIC_EGG_RUNE.flavor": "Nadie sabe qué hay dentro. Ni siquiera quien lo puso.",
+  "CREATIVE_AI_UPGRADE_RUNE.title": "Mejora: IA creativa",
+  "CREATIVE_AI_UPGRADE_RUNE.description": "Las cartas de poder generadas por [gold]IA creativa[/gold] se mejoran.",
+  "CREATIVE_AI_UPGRADE_RUNE.flavor": "Sus ideas llegan ya perfeccionadas.",
+  "FOSSIL_STALKER_HEX.title": "Mejora: Rastreador fósil",
+  "FOSSIL_STALKER_HEX.description": "Al comienzo del combate, todos los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Succión[/gold].",
+  "FOSSIL_STALKER_HEX.flavor": "Cada herida alimenta la caza.",
+  "fossilStalkerHex.enemyDescription": "Al comienzo del combate, todos los enemigos obtienen [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Succión[/gold]."
 }

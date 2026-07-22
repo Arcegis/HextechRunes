@@ -532,6 +532,7 @@
   "deathHarvestRune.enemyDescription": "敌人对你造成的未被格挡的伤害，会为其回复等量[blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue]的生命值。",
   "giantSlayerRune.enemyDescription": "敌人体型缩小。玩家每有[blue]5[/blue]点最大生命值，敌人对玩家的伤害就提高[blue]1%[/blue]，最多提高[blue]100%[/blue]。",
   "dualWieldRune.enemyDescription": "敌人攻击的伤害[gold]减半[/gold]，攻击段数[gold]翻倍[/gold]。",
+  "jeweledGauntletRune.enemyDescription": "怪物有[blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue]的概率重复行动。",
   "escapePlanRune.enemyDescription": "当敌人受伤后生命值降到最大生命值的[blue]50%[/blue]以下时，获得等同于最大生命值[blue]60%[/blue]的格挡，并获得[blue]1[/blue]回合的[gold]缩小[/gold]。每场战斗仅限一次。",
   "heavyHitterRune.enemyDescription": "敌人每有[blue]10[/blue]点最大生命值，就获得[blue]1%[/blue]伤害加成。最多获得[blue]30%[/blue]伤害加成。",
   "bigStrengthRune.enemyDescription": "获得[blue]20%[/blue]伤害加成。",
@@ -1366,5 +1367,12 @@
   "SOUL_UPGRADE_RUNE.flavor": "每一缕魂魄离去时，都会留下一点火光。",
   "PRISMATIC_EGG_RUNE.title": "棱彩蛋",
   "PRISMATIC_EGG_RUNE.description": "你宝箱房内的遗物奖励会被替换为随机的海克斯符文。",
-  "PRISMATIC_EGG_RUNE.flavor": "没人知道里面是什么，连下蛋的那位也不知道。"
+  "PRISMATIC_EGG_RUNE.flavor": "没人知道里面是什么，连下蛋的那位也不知道。",
+  "CREATIVE_AI_UPGRADE_RUNE.title": "升级：创造性AI",
+  "CREATIVE_AI_UPGRADE_RUNE.description": "由[gold]创造性AI[/gold]生成的能力牌会被升级。",
+  "CREATIVE_AI_UPGRADE_RUNE.flavor": "灵感落地之前，升级已经完成。",
+  "FOSSIL_STALKER_HEX.title": "升级：化石追踪者",
+  "FOSSIL_STALKER_HEX.description": "战斗开始时，所有敌人获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]吮吸[/gold]。",
+  "FOSSIL_STALKER_HEX.flavor": "每一道伤口，都让追猎更近一步。",
+  "fossilStalkerHex.enemyDescription": "战斗开始时，所有敌人获得[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]层[gold]吮吸[/gold]。"
 }

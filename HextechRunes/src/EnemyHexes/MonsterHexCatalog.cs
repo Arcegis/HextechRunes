@@ -126,6 +126,11 @@ internal static class MonsterHexCatalog
 			return [mainTip, HoverTipFactory.FromPower<HextechGalvanicPower>()];
 		}
 
+		if (hex == MonsterHexKind.FossilStalker)
+		{
+			return [mainTip, HoverTipFactory.FromPower<SuckPower>()];
+		}
+
 		return [mainTip];
 	}
 

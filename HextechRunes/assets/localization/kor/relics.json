@@ -532,6 +532,7 @@
   "deathHarvestRune.enemyDescription": "적이 입히는 막히지 않은 피해의 [blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue]만큼 그 적이 회복합니다.",
   "giantSlayerRune.enemyDescription": "적의 몸집이 작아집니다. 플레이어의 최대 생명력이 적보다 [blue]6[/blue] 높을 때마다 적이 입히는 피해가 [blue]1%[/blue] 증가합니다(최대 [blue]100%[/blue]).",
   "dualWieldRune.enemyDescription": "적 공격의 피해가 [gold]절반[/gold]이 되고, 타격 횟수가 [gold]2배[/gold]가 됩니다.",
+  "jeweledGauntletRune.enemyDescription": "몬스터는 [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] 확률로 행동을 반복합니다.",
   "frostWraithRune.enemyDescription": "매 [blue]4[/blue] 턴마다 모든 플레이어가 [blue]1[/blue] 턴 동안 [gold]연명[/gold]을 얻습니다.",
   "escapePlanRune.enemyDescription": "적이 피해를 입어 체력이 최대 체력의 [blue]50%[/blue] 미만이 되면, 최대 체력의 [blue]60%[/blue]만큼 방어도를 얻고 [blue]1[/blue] 턴 동안 [gold]압축[/gold] 상태가 됩니다. 전투당 1회 발동합니다.",
   "heavyHitterRune.enemyDescription": "적의 최대 체력 [blue]10[/blue]당 주는 피해가 [blue]1%[/blue] 증가하여 최대 [blue]30%[/blue]까지 증가합니다.",
@@ -1366,5 +1367,12 @@
   "SOUL_UPGRADE_RUNE.flavor": "영혼이 떠날 때마다 작은 불꽃이 남습니다.",
   "PRISMATIC_EGG_RUNE.title": "프리즘 알",
   "PRISMATIC_EGG_RUNE.description": "보물 방의 유물 보상이 무작위 마법공학 룬으로 대체됩니다.",
-  "PRISMATIC_EGG_RUNE.flavor": "안에 무엇이 들었는지는 아무도 모릅니다. 낳은 쪽조차도."
+  "PRISMATIC_EGG_RUNE.flavor": "안에 무엇이 들었는지는 아무도 모릅니다. 낳은 쪽조차도.",
+  "CREATIVE_AI_UPGRADE_RUNE.title": "강화: 창의적인 AI",
+  "CREATIVE_AI_UPGRADE_RUNE.description": "[gold]창의적인 AI[/gold]가 생성한 파워 카드가 강화됩니다.",
+  "CREATIVE_AI_UPGRADE_RUNE.flavor": "그 아이디어는 처음부터 완성되어 있습니다.",
+  "FOSSIL_STALKER_HEX.title": "강화: 화석 추적자",
+  "FOSSIL_STALKER_HEX.description": "전투 시작 시 모든 적이 [gold]흡수[/gold]를 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 얻습니다.",
+  "FOSSIL_STALKER_HEX.flavor": "모든 상처가 사냥의 양분이 됩니다.",
+  "fossilStalkerHex.enemyDescription": "전투 시작 시 모든 적이 [gold]흡수[/gold]를 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 얻습니다."
 }

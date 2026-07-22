@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 using System.Text.Json;
@@ -75,6 +76,7 @@ internal static partial class Program
 			new(nameof(UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption), UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption),
 			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
+			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
 			new(nameof(CoefficientRunesStackAdditivelyWithinTheirOwnSector), CoefficientRunesStackAdditivelyWithinTheirOwnSector),
@@ -125,6 +127,13 @@ internal static partial class Program
 			new(nameof(MonsterHexMetadataHasUniqueKinds), MonsterHexMetadataHasUniqueKinds),
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
+			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
+			new(nameof(EnemyJeweledGauntletUsesExpectedStrengthTierChances), EnemyJeweledGauntletUsesExpectedStrengthTierChances),
+			new(nameof(EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes), EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes),
+			new(nameof(EnemyJeweledGauntletDuplicatesWholeIntentGroup), EnemyJeweledGauntletDuplicatesWholeIntentGroup),
+			new(nameof(EnemyJeweledGauntletNeverRepeatsIntoFinalKnowledgeDemonCurse), EnemyJeweledGauntletNeverRepeatsIntoFinalKnowledgeDemonCurse),
+			new(nameof(EnemyJeweledGauntletSkipsTheInsatiableOpeningMove), EnemyJeweledGauntletSkipsTheInsatiableOpeningMove),
+			new(nameof(EnemyJeweledGauntletSkipsMonsterRevivalMoves), EnemyJeweledGauntletSkipsMonsterRevivalMoves),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
 			new(nameof(PersonalHiveSafetyRejectsPlayerSideCopies), PersonalHiveSafetyRejectsPlayerSideCopies),
 			new(nameof(EnemyCompensationDefersHalfDamageRoundedDown), EnemyCompensationDefersHalfDamageRoundedDown),
@@ -895,6 +904,15 @@ internal static partial class Program
 		Equal(16m, card.DynamicVars.Damage.BaseValue, "granted Searing Attack damage");
 	}
 
+	private static void CreativeAiUpgradeRuneUpgradesGeneratedPowerCards()
+	{
+		CreativeAi card = CreateMutableTestModel<CreativeAi>();
+
+		Expect(CreativeAiUpgradeRune.UpgradeGeneratedCard(card), "Creative AI should generate an upgraded Power card");
+		Equal(1, card.CurrentUpgradeLevel, "Creative AI generated card upgrade level");
+		Expect(!CreativeAiUpgradeRune.UpgradeGeneratedCard(card), "an already upgraded generated card should not be upgraded twice");
+	}
+
 	private static void FortuneForgeRewardScalesByStacks()
 	{
 		FortuneForge forge = CreateMutableTestModel<FortuneForge>();
@@ -1618,6 +1636,128 @@ internal static partial class Program
 		Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new StrengthPower()), "ordinary strength should not be structural");
 		Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new PersonalHivePower()), "personal hive should not be mirrored to players");
 		Expect(!HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new StrengthPower()), "ordinary strength should remain mirrorable");
+	}
+
+	private static void EnemyJeweledGauntletUsesExpectedStrengthTierChances()
+	{
+		Equal(10, HextechCombatHooks.GetJeweledGauntletRepeatPercent(0), "enemy Jeweled Gauntlet tier zero fallback chance");
+		Equal(10, HextechCombatHooks.GetJeweledGauntletRepeatPercent(1), "enemy Jeweled Gauntlet tier one chance");
+		Equal(20, HextechCombatHooks.GetJeweledGauntletRepeatPercent(2), "enemy Jeweled Gauntlet tier two chance");
+		Equal(30, HextechCombatHooks.GetJeweledGauntletRepeatPercent(3), "enemy Jeweled Gauntlet tier three chance");
+		Equal(30, HextechCombatHooks.GetJeweledGauntletRepeatPercent(99), "enemy Jeweled Gauntlet high-tier clamp chance");
+	}
+
+	private static void EnemyFossilStalkerUsesExpectedSuckTiers()
+	{
+		Equal(1, FossilStalkerEnemyHex.ResolveSuckAmount(0), "enemy Fossil Stalker tier zero fallback Suck");
+		Equal(1, FossilStalkerEnemyHex.ResolveSuckAmount(1), "enemy Fossil Stalker tier one Suck");
+		Equal(2, FossilStalkerEnemyHex.ResolveSuckAmount(2), "enemy Fossil Stalker tier two Suck");
+		Equal(3, FossilStalkerEnemyHex.ResolveSuckAmount(3), "enemy Fossil Stalker tier three Suck");
+		Equal(3, FossilStalkerEnemyHex.ResolveSuckAmount(99), "enemy Fossil Stalker high-tier clamp Suck");
+	}
+
+	private static void EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes()
+	{
+		IntentType[] repeatable =
+		[
+			IntentType.Attack,
+			IntentType.Buff,
+			IntentType.CardDebuff,
+			IntentType.Debuff,
+			IntentType.DebuffStrong,
+			IntentType.Defend,
+			IntentType.Heal,
+			IntentType.StatusCard
+		];
+		foreach (IntentType intentType in repeatable)
+		{
+			Expect(
+				HextechCombatHooks.IsJeweledGauntletIntentTypeRepeatable(intentType),
+				$"enemy Jeweled Gauntlet should repeat {intentType}");
+		}
+
+		IntentType[] excluded =
+		[
+			IntentType.DeathBlow,
+			IntentType.Escape,
+			IntentType.Hidden,
+			IntentType.Sleep,
+			IntentType.Stun,
+			IntentType.Summon,
+			IntentType.Unknown
+		];
+		foreach (IntentType intentType in excluded)
+		{
+			Expect(
+				!HextechCombatHooks.IsJeweledGauntletIntentTypeRepeatable(intentType),
+				$"enemy Jeweled Gauntlet should exclude {intentType}");
+		}
+	}
+
+	private static void EnemyJeweledGauntletDuplicatesWholeIntentGroup()
+	{
+		BuffIntent buff = new();
+		DebuffIntent debuff = new();
+		IReadOnlyList<AbstractIntent> duplicated =
+			HextechCombatHooks.DuplicateJeweledGauntletIntentGroup([buff, debuff]);
+
+		Equal(4, duplicated.Count, "enemy Jeweled Gauntlet duplicated intent count");
+		Expect(ReferenceEquals(buff, duplicated[0]), "first intent group should retain buff");
+		Expect(ReferenceEquals(debuff, duplicated[1]), "first intent group should retain debuff");
+		Expect(ReferenceEquals(buff, duplicated[2]), "second intent group should repeat buff");
+		Expect(ReferenceEquals(debuff, duplicated[3]), "second intent group should repeat debuff");
+		Expect(
+			HextechCombatHooks.AreJeweledGauntletIntentsRepeatable([buff, debuff]),
+			"ordinary multi-intent move should be repeatable");
+		Expect(
+			!HextechCombatHooks.AreJeweledGauntletIntentsRepeatable([buff, new SummonIntent()]),
+			"a special intent should exclude the whole move from repetition");
+		Expect(
+			!HextechCombatHooks.AreJeweledGauntletIntentsRepeatable([]),
+			"an empty intent group should not be repeatable");
+	}
+
+	private static void EnemyJeweledGauntletNeverRepeatsIntoFinalKnowledgeDemonCurse()
+	{
+		const string curseMove = "CURSE_OF_KNOWLEDGE_MOVE";
+		Expect(
+			!HextechCombatHooks.WouldRepeatFinalKnowledgeDemonCurse(curseMove, 0),
+			"first Knowledge Demon curse may repeat into its second stage");
+		Expect(
+			HextechCombatHooks.WouldRepeatFinalKnowledgeDemonCurse(curseMove, 1),
+			"second-stage Knowledge Demon curse must not repeat into its third stage");
+		Expect(
+			HextechCombatHooks.WouldRepeatFinalKnowledgeDemonCurse(curseMove, 2),
+			"third-stage Knowledge Demon curse should never repeat");
+		Expect(
+			HextechCombatHooks.WouldRepeatFinalKnowledgeDemonCurse(curseMove, 3),
+			"out-of-range Knowledge Demon curse should remain guarded");
+		Expect(
+			!HextechCombatHooks.WouldRepeatFinalKnowledgeDemonCurse("SLAP_MOVE", 2),
+			"other Knowledge Demon moves should remain repeatable");
+	}
+
+	private static void EnemyJeweledGauntletSkipsTheInsatiableOpeningMove()
+	{
+		Expect(
+			HextechCombatHooks.IsTheInsatiableOpeningMove("LIQUIFY_GROUND_MOVE"),
+			"The Insatiable opening move should never repeat");
+		Expect(
+			!HextechCombatHooks.IsTheInsatiableOpeningMove("THRASH_MOVE"),
+			"later The Insatiable moves should remain repeatable");
+	}
+
+	private static void EnemyJeweledGauntletSkipsMonsterRevivalMoves()
+	{
+		Expect(
+			HextechCombatHooks.IsMonsterRevivalMove("RESPAWN_MOVE"),
+			"Test Subject respawn should never repeat");
+		Expect(
+			HextechCombatHooks.IsMonsterRevivalMove("REVIVE_MOVE"),
+			"Illusion revive should never repeat");
+		Expect(
+			!HextechCombatHooks.IsMonsterRevivalMove("HEAL_MOVE"),
+			"ordinary healing moves should remain repeatable");
 	}
 
 	private static void PersonalHiveSafetyRejectsPlayerSideCopies()

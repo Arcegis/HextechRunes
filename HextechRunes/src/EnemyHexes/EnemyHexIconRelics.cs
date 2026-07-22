@@ -108,6 +108,12 @@ public sealed class MyteHex : HextechRelicBase
 	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
+/// <summary>升级：化石追踪者</summary>
+public sealed class FossilStalkerHex : HextechRelicBase
+{
+	public override bool IsAvailableForPlayer(Player player) => false;
+}
+
 /// <summary>升级：多尼斯异鸟</summary>
 public sealed class ByrdonisHex : HextechRelicBase
 {

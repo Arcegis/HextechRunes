@@ -532,6 +532,7 @@
   "deathHarvestRune.enemyDescription": "Когда враг наносит вам урон по ОЗ, то он исцеляется на [blue]50%[/blue]/[blue]75%[/blue]/[blue]100%[/blue] от нанесенного урона.",
   "giantSlayerRune.enemyDescription": "Враг уменьшается. За каждые [blue]5[/blue] макс. ОЗ у игрока враг наносит этому игроку на [blue]1%[/blue] больше урона, вплоть до [blue]100%[/blue].",
   "dualWieldRune.enemyDescription": "Урон врага [gold]уменьшается вдвое[/gold], а число его ударов [gold]удваивается[/gold].",
+  "jeweledGauntletRune.enemyDescription": "Монстры с шансом [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] повторяют своё действие.",
   "frostWraithRune.enemyDescription": "Каждые [blue]4[/blue] хода все игроки получают [blue]1[/blue] ход [gold]Сверхурочных[/gold].",
   "escapePlanRune.enemyDescription": "Когда урон опускает врага ниже [blue]50%[/blue] от его макс. ОЗ, он получает защиту в размере [blue]60%[/blue] от своих макс. ОЗ и получает [blue]1[/blue] ход [gold]Уменьшения[/gold]. Один раз за бой.",
   "heavyHitterRune.enemyDescription": "Враг получает на [blue]1%[/blue] больше урона за каждые [blue]10[/blue] макс. ОЗ у него, вплоть до [blue]30%[/blue].",
@@ -1366,5 +1367,12 @@
   "SOUL_UPGRADE_RUNE.flavor": "Каждая уходящая душа оставляет после себя искру.",
   "PRISMATIC_EGG_RUNE.title": "Призматическое яйцо",
   "PRISMATIC_EGG_RUNE.description": "Награды-реликвии в комнатах с сокровищами заменяются случайными рунами Хекстека.",
-  "PRISMATIC_EGG_RUNE.flavor": "Никто не знает, что внутри. Даже тот, кто его снёс."
+  "PRISMATIC_EGG_RUNE.flavor": "Никто не знает, что внутри. Даже тот, кто его снёс.",
+  "CREATIVE_AI_UPGRADE_RUNE.title": "Улучшение: Творческий ИИ",
+  "CREATIVE_AI_UPGRADE_RUNE.description": "Карты способностей, созданные [gold]Творческим ИИ[/gold], улучшаются.",
+  "CREATIVE_AI_UPGRADE_RUNE.flavor": "Его идеи сразу приходят совершенными.",
+  "FOSSIL_STALKER_HEX.title": "Улучшение: Ископаемый следопыт",
+  "FOSSIL_STALKER_HEX.description": "В начале боя все враги получают [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Высасывания[/gold].",
+  "FOSSIL_STALKER_HEX.flavor": "Каждая рана питает охоту.",
+  "fossilStalkerHex.enemyDescription": "В начале боя все враги получают [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Высасывания[/gold]."
 }
