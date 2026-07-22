@@ -130,6 +130,7 @@ internal static partial class Program
 			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
 			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
 			new(nameof(EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage), EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage),
+			new(nameof(PlayerCompensationRequiresActiveCombatContext), PlayerCompensationRequiresActiveCombatContext),
 			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
 			new(nameof(EnemyCompensationSkipsSleightOfFleshResponse), EnemyCompensationSkipsSleightOfFleshResponse),
 			new(nameof(UniversalScopeUpgradeRestorationKeepsCapturedLevels), UniversalScopeUpgradeRestorationKeepsCapturedLevels),
@@ -1651,6 +1652,22 @@ internal static partial class Program
 		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(5m), "five damage replacement poison");
 		Equal(2, CompensationEnemyHex.CalculateReplacementPoison(6m), "six damage replacement poison");
 		Equal(333, CompensationEnemyHex.CalculateReplacementPoison(999m), "large damage replacement poison");
+	}
+
+	private static void PlayerCompensationRequiresActiveCombatContext()
+	{
+		Expect(
+			CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: true, combatStateMatchesRun: true),
+			"Compensation should replace damage during the active combat it belongs to");
+		Expect(
+			!CompensationRune.IsActiveCombatContext(combatInProgress: false, currentRoomIsCombat: true, combatStateMatchesRun: true),
+			"Compensation should not replace event or other out-of-combat damage");
+		Expect(
+			!CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: false, combatStateMatchesRun: true),
+			"Compensation should require the current room to be a combat room");
+		Expect(
+			!CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: true, combatStateMatchesRun: false),
+			"Compensation should reject stale combat state from another run");
 	}
 
 	private static void EnemyCompensationSkipsPoisonDamageSignature()

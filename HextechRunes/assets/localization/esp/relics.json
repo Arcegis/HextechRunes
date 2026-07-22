@@ -773,7 +773,7 @@
   "DIE_FOR_YOU_RUNE.description": "Al comienzo de tu turno, invoca a [blue]5[/blue]. La primera vez que Osty muere en cada turno, registra su PV máximos. Al comienzo de tu siguiente turno, agrega [blue]1[/blue] [gold]Osty's Wish[/gold] a tu mano.",
   "DIE_FOR_YOU_RUNE.flavor": "Una guardia final todavía puede convertirse en un contraataque.",
   "COMPENSATION_RUNE.title": "Compensación",
-  "COMPENSATION_RUNE.description": "Cuando recibas daño desbloqueado, conviértelo en esa cantidad de [gold]Condena[/gold].",
+  "COMPENSATION_RUNE.description": "Durante el combate, cuando recibas daño desbloqueado, conviértelo en esa cantidad de [gold]Condena[/gold].",
   "COMPENSATION_RUNE.flavor": "El dolor no desapareció; cambió su nombre.",
   "OMINOUS_PACT_RUNE.title": "Pacto siniestro",
   "OMINOUS_PACT_RUNE.description": "Siempre que apliques [gold]Condena[/gold] a un enemigo, invoca la misma cantidad.",

@@ -773,7 +773,7 @@
   "DIE_FOR_YOU_RUNE.description": "ตอนเริ่มต้นเทิร์น อัญเชิญ [blue]5[/blue] ครั้งแรกในแต่ละเทิร์นที่ Osty ตาย จะบันทึก HP สูงสุดของมัน ตอนเริ่มเทิร์นถัดไป เพิ่ม [gold]คำอธิษฐานของออสตี้[/gold] [blue]1[/blue] ใบเข้ามือของคุณ",
   "DIE_FOR_YOU_RUNE.flavor": "การ์ดครั้งสุดท้าย ก็ยังกลายเป็นการโต้กลับได้",
   "COMPENSATION_RUNE.title": "การชดเชย",
-  "COMPENSATION_RUNE.description": "เมื่อคุณรับความเสียหายที่ไม่ถูกบล็อก จะแปลงมันเป็น [gold]อายุขัย[/gold] เท่านั้น",
+  "COMPENSATION_RUNE.description": "ระหว่างการต่อสู้ เมื่อคุณรับความเสียหายที่ไม่ถูกบล็อก จะแปลงมันเป็น [gold]อายุขัย[/gold] เท่านั้น",
   "COMPENSATION_RUNE.flavor": "ความเจ็บไม่ได้หายไป เพียงเปลี่ยนชื่อ",
   "OMINOUS_PACT_RUNE.title": "พันธสัญญาอัปมงคล",
   "OMINOUS_PACT_RUNE.description": "ทุกครั้งที่คุณสร้าง [gold]อายุขัย[/gold] ใส่ศัตรู จะอัญเชิญในจำนวนเท่ากัน",

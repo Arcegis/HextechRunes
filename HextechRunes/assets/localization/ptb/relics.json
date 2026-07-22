@@ -773,7 +773,7 @@
   "DIE_FOR_YOU_RUNE.description": "No início do seu turno, Invoque [blue]5[/blue]. A primeira vez que Osty morrer a cada turno, registre seu PV Máx. No início do seu próximo turno, adicione [blue]1[/blue] [gold]Desejo de Osty[/gold] à sua mão.",
   "DIE_FOR_YOU_RUNE.flavor": "Uma guarda final ainda pode se tornar um contra-ataque.",
   "COMPENSATION_RUNE.title": "Compensação",
-  "COMPENSATION_RUNE.description": "Quando você sofrer dano não bloqueado, converta-o nessa mesma quantidade de [gold]Ruína[/gold].",
+  "COMPENSATION_RUNE.description": "Durante o combate, quando você sofrer dano não bloqueado, converta-o nessa mesma quantidade de [gold]Ruína[/gold].",
   "COMPENSATION_RUNE.flavor": "A dor não sumiu; ela apenas mudou de nome.",
   "OMINOUS_PACT_RUNE.title": "Pacto Sinistro",
   "OMINOUS_PACT_RUNE.description": "Sempre que você aplicar [gold]Ruína[/gold] a um inimigo, Invoque a mesma quantidade.",

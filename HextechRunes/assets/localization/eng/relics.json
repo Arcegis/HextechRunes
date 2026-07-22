@@ -773,7 +773,7 @@
   "DIE_FOR_YOU_RUNE.description": "At the start of your turn, Summon [blue]5[/blue]. The first time Osty dies each turn, record its Max HP. At the start of your next turn, add [blue]1[/blue] [gold]Osty's Wish[/gold] to your hand.",
   "DIE_FOR_YOU_RUNE.flavor": "A final guard can still become a counterstrike.",
   "COMPENSATION_RUNE.title": "Compensation",
-  "COMPENSATION_RUNE.description": "When you take unblocked damage, convert it into that much [gold]Doom[/gold].",
+  "COMPENSATION_RUNE.description": "During combat, when you take unblocked damage, convert it into that much [gold]Doom[/gold].",
   "COMPENSATION_RUNE.flavor": "The pain did not vanish; it changed its name.",
   "OMINOUS_PACT_RUNE.title": "Ominous Pact",
   "OMINOUS_PACT_RUNE.description": "Whenever you apply [gold]Doom[/gold] to an enemy, Summon the same amount.",

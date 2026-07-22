@@ -773,7 +773,7 @@
   "DIE_FOR_YOU_RUNE.description": "В начале вашего хода Призовите [blue]5[/blue]. Когда Костя впервые за ход погибает, запишите его макс. ОЗ. В начале вашего следующего хода добавьте [blue]1[/blue] [gold]Желание Кости[/gold] в руку.",
   "DIE_FOR_YOU_RUNE.flavor": "Лучшая защита - это атака",
   "COMPENSATION_RUNE.title": "Компенсация",
-  "COMPENSATION_RUNE.description": "Когда вы получаете незаблокированный урон, преобразуйте его в столько же [gold]Злого рока[/gold].",
+  "COMPENSATION_RUNE.description": "В бою, когда вы получаете незаблокированный урон, преобразуйте его в столько же [gold]Злого рока[/gold].",
   "COMPENSATION_RUNE.flavor": "Боль не исчезла; она сменила имя.",
   "OMINOUS_PACT_RUNE.title": "Зловещий договор",
   "OMINOUS_PACT_RUNE.description": "Каждый раз, когда вы накладываете [gold]Злой рок[/gold] на врага, Призовите столько же.",

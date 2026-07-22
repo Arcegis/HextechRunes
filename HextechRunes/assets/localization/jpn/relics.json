@@ -773,7 +773,7 @@
   "DIE_FOR_YOU_RUNE.description": "自分のターンの開始時に、[blue]5[/blue]を召喚します。各ターンで初めてオスティが死亡したとき、その最大 HPを記録します。次の自分のターンの開始時に、[blue]1[/blue] [gold]オスティの願い[/gold]を手札に加えます。",
   "DIE_FOR_YOU_RUNE.flavor": "ファイナルガードでもカウンターストライクになる可能性はあります。",
   "COMPENSATION_RUNE.title": "補償",
-  "COMPENSATION_RUNE.description": "ブロックされていないダメージを受けた場合、それを同じ量の [gold]破滅[/gold]に変換します。",
+  "COMPENSATION_RUNE.description": "戦闘中、ブロックされていないダメージを受けた場合、それを同じ量の [gold]破滅[/gold]に変換します。",
   "COMPENSATION_RUNE.flavor": "痛みは消えなかった。名前が変わりました。",
   "OMINOUS_PACT_RUNE.title": "不気味な協定",
   "OMINOUS_PACT_RUNE.description": "[gold]破滅[/gold]を敵に適用するたびに、同じ量を召喚します。",

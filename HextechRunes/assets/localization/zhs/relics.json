@@ -773,7 +773,7 @@
   "DIE_FOR_YOU_RUNE.description": "回合开始时，召唤[blue]5[/blue]。每回合首次奥斯提死亡时，记录其最大生命值。你的下个回合开始时，将[blue]1[/blue]张[gold]奥斯提的遗愿[/gold]加入手牌。",
   "DIE_FOR_YOU_RUNE.flavor": "最后一次守护，可以改写成反击。",
   "COMPENSATION_RUNE.title": "代偿",
-  "COMPENSATION_RUNE.description": "当你受到未被格挡的伤害时，将其转化为等量的[gold]灾厄[/gold]。",
+  "COMPENSATION_RUNE.description": "战斗中，当你受到未被格挡的伤害时，将其转化为等量的[gold]灾厄[/gold]。",
   "COMPENSATION_RUNE.flavor": "疼痛没有消失，只是换了名字。",
   "OMINOUS_PACT_RUNE.title": "不详契约",
   "OMINOUS_PACT_RUNE.description": "每当你给予敌人[gold]灾厄[/gold]时，召唤相同数值。",
