@@ -113,7 +113,11 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 	internal static bool IsPoisonDamageSignature(ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return dealer == null
+		// 中毒与敌方灼烧都以“无来源 + 不可格挡 + 无力量修正”结算。若目标同时已有中毒，
+		// 只看这组签名会把正在结算的灼烧误判成中毒，使其绕过代偿并触发小丑学院的滑溜。
+		// 灼烧有自己的明确结算作用域，必须先排除，再用原版中毒的特征兜底识别。
+		return !HextechBurnPower.IsResolvingDamage
+			&& dealer == null
 			&& cardSource == null
 			&& (props & ValueProp.Unblockable) != 0
 			&& (props & ValueProp.Unpowered) != 0;

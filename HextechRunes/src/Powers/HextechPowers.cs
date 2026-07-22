@@ -45,9 +45,8 @@ public sealed class HextechBurnPower : HextechPowerBase
 		int hpLoss = Math.Max(stacks, percentHpLoss);
 		int stackLoss = Math.Max(1, (int)Math.Ceiling(stacks * StackDecayPercent));
 		Flash();
-		try
+		await RunWithDamageResolutionGuard(async () =>
 		{
-			_resolveDepth++;
 			ValueProp valueProps = ValueProp.Unpowered;
 			if (!blockable)
 			{
@@ -55,11 +54,7 @@ public sealed class HextechBurnPower : HextechPowerBase
 			}
 
 			await CreatureCmd.Damage(choiceContext, Owner, hpLoss, valueProps, null, null);
-		}
-		finally
-		{
-			_resolveDepth--;
-		}
+		});
 
 		if (Owner.IsAlive)
 		{
@@ -68,6 +63,19 @@ public sealed class HextechBurnPower : HextechPowerBase
 		else
 		{
 			await Cmd.CustomScaledWait(0.1f, 0.25f);
+		}
+	}
+
+	internal static async Task RunWithDamageResolutionGuard(Func<Task> action)
+	{
+		_resolveDepth++;
+		try
+		{
+			await action();
+		}
+		finally
+		{
+			_resolveDepth = Math.Max(0, _resolveDepth - 1);
 		}
 	}
 }
