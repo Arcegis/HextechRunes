@@ -118,7 +118,7 @@ internal static class MonsterHexCatalog
 
 		if (hex == MonsterHexKind.Compensation)
 		{
-			return [mainTip, HoverTipFactory.FromPower<PoisonPower>()];
+			return [mainTip, HoverTipFactory.FromPower<HextechNextTurnDamagePower>()];
 		}
 
 		if (hex == MonsterHexKind.SolidTime)

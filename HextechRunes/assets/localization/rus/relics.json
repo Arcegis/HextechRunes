@@ -610,7 +610,7 @@
   "mindOverMatterRune.enemyDescription": "Первая карта, которую каждый игрок берёт за ход, до конца хода стоит на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] дороже.",
   "omegaRune.enemyDescription": "В начале 4-го хода наложите [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Расщепления[/gold] на всех игроков.",
   "manipulateRealityRune.enemyDescription": "Карты Статуса, которые враги добавляют в боевые стопки игроков, удваиваются.",
-  "compensationRune.enemyDescription": "Когда враг должен получить незаблокированный урон, преобразуйте его в [gold]Яд[/gold] в размере [blue]1/3[/blue] от этого урона, округляя вниз (минимум [blue]1[/blue]).",
+  "compensationRune.enemyDescription": "Когда враг получает незаблокированный урон, половина этого урона вместо этого наносится в начале следующего хода игроков.",
   "ominousPactRune.enemyDescription": "Каждый раз, когда враг наносит незаблокированный урон, поражённый игрок получает столько же дополнительного [gold]Злого рока[/gold].",
   "solidTimeRune.enemyDescription": "Каждый раз, когда игрок разыгрывает карту способности, он получает [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] [gold]Гальванизация[/gold].",
   "forgottenSoulRune.enemyDescription": "В конце хода все карты состояний и проклятий из стопки [gold]истощения[/gold] добавляются в стопку сброса игрока.",

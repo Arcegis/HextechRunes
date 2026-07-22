@@ -610,7 +610,7 @@
   "mindOverMatterRune.enemyDescription": "The first card each player draws each turn costs [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] more that turn.",
   "omegaRune.enemyDescription": "At the start of turn 4, apply [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Disintegration[/gold] to all players.",
   "manipulateRealityRune.enemyDescription": "Status cards enemies add to players' combat piles are doubled.",
-  "compensationRune.enemyDescription": "When an enemy would take unblocked damage, convert it into [gold]Poison[/gold] equal to [blue]1/3[/blue] of that damage, rounded down (minimum [blue]1[/blue]).",
+  "compensationRune.enemyDescription": "When an enemy takes unblocked damage, half of that damage is dealt at the start of the players' next turn instead.",
   "ominousPactRune.enemyDescription": "Whenever an enemy deals unblocked damage, the hit player gains that much additional [gold]Doom[/gold].",
   "solidTimeRune.enemyDescription": "Whenever a player plays a Power card, they gain [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] [gold]Galvanic[/gold].",
   "forgottenSoulRune.enemyDescription": "At the end of the turn, all Status and Curse cards in the [gold]exhaust[/gold] pile are added to the player's discard pile.",

@@ -610,7 +610,7 @@
   "mindOverMatterRune.enemyDescription": "各プレイヤーが各ターン最初に引いたカードは、そのターン中のコストが[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]増加します。",
   "omegaRune.enemyDescription": "ターン 4 の開始時に、[blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Disintegration[/gold]をすべてのプレイヤーに適用します。",
   "manipulateRealityRune.enemyDescription": "敵がプレイヤーの戦闘パイルに追加するステータスカードは 2 倍になります。",
-  "compensationRune.enemyDescription": "敵がブロックされていないダメージを受ける場合、そのダメージをダメージ量の[blue]1/3[/blue]（切り捨て、最低[blue]1[/blue]）に等しい[gold]毒[/gold]に変換します。",
+  "compensationRune.enemyDescription": "敵がブロックされていないダメージを受けるとき、そのダメージの半分を次のプレイヤーターン開始時に受けるよう変更します。",
   "ominousPactRune.enemyDescription": "敵がブロックされていないダメージを与えるたびに、ヒットしたプレイヤーは同じ量の追加の [gold]破滅[/gold]を獲得します。",
   "solidTimeRune.enemyDescription": "プレイヤーがパワーカードをプレイするたびに、[blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] [gold]ガルバニック[/gold]を獲得します。",
   "forgottenSoulRune.enemyDescription": "ターン終了時、[gold]廃棄[/gold]の山にあるすべてのステータスカードと呪いカードをプレイヤーの捨て札に加えます。",

@@ -610,7 +610,7 @@
   "mindOverMatterRune.enemyDescription": "A primeira carta que cada jogador compra a cada turno custa [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] a mais naquele turno.",
   "omegaRune.enemyDescription": "No início do turno 4, aplique [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] de [gold]Desintegração[/gold] a todos os jogadores.",
   "manipulateRealityRune.enemyDescription": "Cartas de Status que os inimigos adicionam às pilhas de combate dos jogadores são dobradas.",
-  "compensationRune.enemyDescription": "Quando um inimigo fosse sofrer dano não bloqueado, converta-o em [gold]Veneno[/gold] igual a [blue]1/3[/blue] daquele dano, arredondado para baixo (mínimo [blue]1[/blue]).",
+  "compensationRune.enemyDescription": "Quando um inimigo sofre dano não bloqueado, metade desse dano é causada no início do próximo turno dos jogadores.",
   "ominousPactRune.enemyDescription": "Sempre que um inimigo causar dano não bloqueado, o jogador atingido ganha essa mesma quantidade de [gold]Ruína[/gold] adicional.",
   "solidTimeRune.enemyDescription": "Sempre que um jogador joga uma carta de Poder, ele ganha [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] de [gold]Galvanização[/gold].",
   "forgottenSoulRune.enemyDescription": "No fim do turno, todas as cartas de Status e Maldição da pilha de [gold]exaustão[/gold] são adicionadas à pilha de descarte do jogador.",

@@ -610,7 +610,7 @@
   "mindOverMatterRune.enemyDescription": "每名玩家每回合抽到的第[blue]1[/blue]张牌，在本回合耗能增加[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]。",
   "omegaRune.enemyDescription": "第四回合开始时，为所有玩家施加[blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue]层[gold]瓦解[/gold]。",
   "manipulateRealityRune.enemyDescription": "敌人在战斗中向玩家牌堆加入的状态牌数量翻倍。",
-  "compensationRune.enemyDescription": "敌人受到未被格挡的伤害时，将该伤害转化为其[blue]1/3[/blue]（向下取整，至少[blue]1[/blue]层）的[gold]中毒[/gold]。",
+  "compensationRune.enemyDescription": "敌人受到未被格挡的伤害时，将一半的伤害改为在玩家的下个回合开始时结算。",
   "ominousPactRune.enemyDescription": "当敌人造成未被格挡的伤害时，使受击玩家额外获得等量的[gold]灾厄[/gold]。",
   "solidTimeRune.enemyDescription": "玩家打出能力牌时，获得[blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue]层[gold]流电[/gold]。",
   "forgottenSoulRune.enemyDescription": "回合结束时，将[gold]消耗[/gold]牌堆里的所有状态牌和诅咒牌加入玩家的弃牌堆。",

@@ -127,10 +127,10 @@ internal static partial class Program
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
 			new(nameof(PersonalHiveSafetyRejectsPlayerSideCopies), PersonalHiveSafetyRejectsPlayerSideCopies),
-			new(nameof(EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum), EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum),
-			new(nameof(EnemyCompensationSkipsPoisonDamageSignature), EnemyCompensationSkipsPoisonDamageSignature),
-			new(nameof(EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage), EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage),
+			new(nameof(EnemyCompensationDefersHalfDamageRoundedDown), EnemyCompensationDefersHalfDamageRoundedDown),
 			new(nameof(PlayerCompensationRequiresActiveCombatContext), PlayerCompensationRequiresActiveCombatContext),
+			new(nameof(NextTurnDamageUsesTurnStartSnapshot), NextTurnDamageUsesTurnStartSnapshot),
+			new(nameof(NextTurnDamageDoesNotRetriggerCompensation), NextTurnDamageDoesNotRetriggerCompensation),
 			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
 			new(nameof(EnemyCompensationSkipsSleightOfFleshResponse), EnemyCompensationSkipsSleightOfFleshResponse),
 			new(nameof(UniversalScopeUpgradeRestorationKeepsCapturedLevels), UniversalScopeUpgradeRestorationKeepsCapturedLevels),
@@ -1643,15 +1643,15 @@ internal static partial class Program
 		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(null), "ownerless personal hive should be neutralized");
 	}
 
-	private static void EnemyCompensationPoisonUsesOneThirdRoundedDownWithMinimum()
+	private static void EnemyCompensationDefersHalfDamageRoundedDown()
 	{
-		Equal(0, CompensationEnemyHex.CalculateReplacementPoison(0m), "zero damage replacement poison");
-		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(1m), "one damage replacement poison");
-		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(2m), "two damage replacement poison");
-		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(3m), "three damage replacement poison");
-		Equal(1, CompensationEnemyHex.CalculateReplacementPoison(5m), "five damage replacement poison");
-		Equal(2, CompensationEnemyHex.CalculateReplacementPoison(6m), "six damage replacement poison");
-		Equal(333, CompensationEnemyHex.CalculateReplacementPoison(999m), "large damage replacement poison");
+		Equal((0m, 0), CompensationEnemyHex.SplitDamage(0m), "zero damage split");
+		Equal((1m, 0), CompensationEnemyHex.SplitDamage(1m), "one damage stays immediate");
+		Equal((1m, 1), CompensationEnemyHex.SplitDamage(2m), "even damage splits evenly");
+		Equal((2m, 1), CompensationEnemyHex.SplitDamage(3m), "odd damage rounds the deferred half down");
+		Equal((3m, 2), CompensationEnemyHex.SplitDamage(5m), "five damage preserves total after split");
+		Equal((3.5m, 2), CompensationEnemyHex.SplitDamage(5.5m), "fractional damage preserves its immediate remainder");
+		Equal((500m, 499), CompensationEnemyHex.SplitDamage(999m), "large odd damage split");
 	}
 
 	private static void PlayerCompensationRequiresActiveCombatContext()
@@ -1670,41 +1670,29 @@ internal static partial class Program
 			"Compensation should reject stale combat state from another run");
 	}
 
-	private static void EnemyCompensationSkipsPoisonDamageSignature()
+	private static void NextTurnDamageUsesTurnStartSnapshot()
 	{
-		Expect(
-			CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, null),
-			"unblockable unpowered damage without dealer or card should match poison damage signature");
-		Expect(
-			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable, null, null),
-			"missing unpowered flag should not match poison damage signature");
-		Expect(
-			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unpowered, null, null),
-			"missing unblockable flag should not match poison damage signature");
-		Expect(
-			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature)), null),
-			"damage with dealer should not match poison damage signature");
-		Expect(
-			!CompensationEnemyHex.IsPoisonDamageSignature(ValueProp.Unblockable | ValueProp.Unpowered, null, UninitializedCard<SovereignBlade>()),
-			"damage with card source should not match poison damage signature");
+		Equal(0, HextechNextTurnDamagePower.GetDamageToResolve(5, 0), "new stacks should not resolve during the turn they are applied");
+		Equal(5, HextechNextTurnDamagePower.GetDamageToResolve(5, 5), "all stacks present at turn start should resolve");
+		Equal(5, HextechNextTurnDamagePower.GetDamageToResolve(8, 5), "stacks added during turn-start hooks should wait for the following turn");
+		Equal(3, HextechNextTurnDamagePower.GetDamageToResolve(3, 5), "resolution should never exceed the current amount");
+		Equal(0, HextechNextTurnDamagePower.GetDamageToResolve(-1, 5), "negative amounts should never deal damage");
 	}
 
-	private static void EnemyCompensationDoesNotMisclassifyBurnAsPoisonDamage()
+	private static void NextTurnDamageDoesNotRetriggerCompensation()
 	{
-		ValueProp damageProps = ValueProp.Unblockable | ValueProp.Unpowered;
-		Expect(
-			CompensationEnemyHex.IsPoisonDamageSignature(damageProps, null, null),
-			"ordinary poison damage should match before entering the burn resolution scope");
+		Expect(!HextechNextTurnDamagePower.IsResolvingDamage, "next-turn damage guard should start inactive");
+		Expect(!CompensationEnemyHex.ShouldSkipDamageReplacement(), "ordinary damage should remain eligible for compensation");
 
-		bool matchedDuringBurn = true;
-		HextechBurnPower.RunWithDamageResolutionGuard(() =>
+		bool skippedDuringResolution = false;
+		HextechNextTurnDamagePower.RunWithDamageResolutionGuard(() =>
 		{
-			matchedDuringBurn = CompensationEnemyHex.IsPoisonDamageSignature(damageProps, null, null);
+			skippedDuringResolution = CompensationEnemyHex.ShouldSkipDamageReplacement();
 			return Task.CompletedTask;
 		}).GetAwaiter().GetResult();
 
-		Expect(!matchedDuringBurn, "burn damage must not be mistaken for poison damage even when both share the same value props");
-		Expect(!HextechBurnPower.IsResolvingDamage, "burn damage guard should reset after guarded work");
+		Expect(skippedDuringResolution, "next-turn damage must bypass compensation instead of being delayed again");
+		Expect(!HextechNextTurnDamagePower.IsResolvingDamage, "next-turn damage guard should reset after guarded work");
 	}
 
 	private static void UniversalScopeUpgradeRestorationKeepsCapturedLevels()
@@ -1718,18 +1706,15 @@ internal static partial class Program
 
 	private static void EnemyCompensationSkipsOutbreakPoisonResponse()
 	{
-		Creature target = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
-		Creature dealer = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
-
 		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should start inactive");
 		Expect(
-			!CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null),
+			!CompensationEnemyHex.ShouldSkipDamageReplacement(),
 			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
 
 		bool skippedInsideGuard = false;
 		HextechCombatHooks.RunWithOutbreakPowerPoisonResponseGuard(() =>
 		{
-			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null);
+			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement();
 			return Task.CompletedTask;
 		}).GetAwaiter().GetResult();
 
@@ -1739,18 +1724,15 @@ internal static partial class Program
 
 	private static void EnemyCompensationSkipsSleightOfFleshResponse()
 	{
-		Creature target = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
-		Creature dealer = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
-
 		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should start inactive");
 		Expect(
-			!CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null),
+			!CompensationEnemyHex.ShouldSkipDamageReplacement(),
 			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
 
 		bool skippedInsideGuard = false;
 		HextechCombatHooks.RunWithSleightOfFleshPowerDebuffResponseGuard(() =>
 		{
-			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement(target, ValueProp.Unpowered, dealer, null);
+			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement();
 			return Task.CompletedTask;
 		}).GetAwaiter().GetResult();
 
