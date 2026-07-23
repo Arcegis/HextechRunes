@@ -171,6 +171,10 @@ public sealed class HextechAttackReplayPower : PowerModel
 public sealed class HextechPlayerSlowPower : HextechPowerBase
 {
 	internal const decimal CardPlaySlowIncrease = 9m;
+	internal const decimal LegacySnailCombatStartAmount = -90m;
+	internal const decimal PlayerCombatStartAmount = 0m;
+	internal const decimal EnemyCombatStartAmount = 0m;
+	internal const int RoundStartAmount = 0;
 	private int _cardsPlayedThisTurn;
 
 	public int SavedCardsPlayedThisTurn
@@ -187,6 +191,44 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 
 	public override int DisplayAmount => (int)decimal.Round(Amount, 0, MidpointRounding.AwayFromZero);
 
+	internal static async Task ApplyAtZero(
+		Creature target,
+		Creature? applier,
+		CardModel? cardSource,
+		bool seedAsDebuff)
+	{
+		HextechPlayerSlowPower? existing = target.GetPower<HextechPlayerSlowPower>();
+		if (existing != null)
+		{
+			existing.SetAmount(0, silent: true);
+			return;
+		}
+
+		// PowerCmd.Apply(0) 会直接跳过。先用同侧语义的 1 层种子完成正规应用：
+		// 旧日雕像用 +1（debuff，可被对应防护拦截），百炼成钢用 -1（buff），
+		// 再直接归零以保留一个真正存在、可显示且能从 0 向两侧增长的 power 实例。
+		decimal seedAmount = seedAsDebuff ? 1m : -1m;
+		HextechPlayerSlowPower? applied = await HextechPowerCmdCompat.Apply<HextechPlayerSlowPower>(
+			target,
+			seedAmount,
+			applier,
+			cardSource,
+			silent: true);
+		applied?.SetAmount(0, silent: true);
+	}
+
+	internal static void ResetEnemyHexSlowForRound(IEnumerable<Creature> creatures)
+	{
+		foreach (Creature creature in creatures)
+		{
+			HextechPlayerSlowPower? slow = creature.GetPower<HextechPlayerSlowPower>();
+			if (slow != null && slow.Amount != RoundStartAmount)
+			{
+				slow.SetAmount(RoundStartAmount, silent: true);
+			}
+		}
+	}
+
 	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		if (side == Owner.Side)
@@ -195,17 +237,6 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 		}
 
 		return Task.CompletedTask;
-	}
-
-	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
-	{
-		if (cardPlay.Card.Owner?.Creature != Owner)
-		{
-			return;
-		}
-
-		SavedCardsPlayedThisTurn++;
-		await HextechPowerCmdCompat.Apply<HextechPlayerSlowPower>(Owner, CardPlaySlowIncrease, Owner, cardPlay.Card, silent: true);
 	}
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)

@@ -131,6 +131,11 @@ internal static class MonsterHexCatalog
 			return [mainTip, HoverTipFactory.FromPower<SuckPower>()];
 		}
 
+		if (hex is MonsterHexKind.AncientStatue or MonsterHexKind.HundredRefinements)
+		{
+			return [mainTip, HoverTipFactory.FromPower<HextechPlayerSlowPower>()];
+		}
+
 		return [mainTip];
 	}
 

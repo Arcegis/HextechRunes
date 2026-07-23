@@ -86,9 +86,14 @@ internal static class HextechAssets
 
     public const string SlowCookFlarePath = "res://HextechRunes/images/effects/slow_cook/flare.png";
 
-    public static string? TryGetCustomRelicIconPath(RelicModel relic)
-    {
-        if (HextechCatalog.IsHextechEnemyHexIconRelic(relic))
+	public static string? TryGetCustomRelicIconPath(RelicModel relic)
+	{
+		if (relic is HundredRefinementsHex)
+		{
+			return $"res://{ModInfo.Id}/images/relics/hundredRefinementsRune.png";
+		}
+
+		if (HextechCatalog.IsHextechEnemyHexIconRelic(relic))
         {
             ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
             return $"res://{ModInfo.Id}/images/relics/{ToImageFileStem(id.Entry)}.png";

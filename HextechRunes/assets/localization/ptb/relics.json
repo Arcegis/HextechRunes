@@ -89,6 +89,7 @@
   "VITALITY_SURGE_RUNE.title": "Explosão de Vitalidade",
   "VITALITY_SURGE_RUNE.description": "Para cada [blue]50[/blue] de PV máximo que possuir, compre [blue]1[/blue] carta adicional por turno. Para cada [blue]100[/blue] de PV máximo, ganhe [blue]1[/blue] de energia adicional por turno.",
   "VITALITY_SURGE_RUNE.flavor": "Onde a carne abunda, até os passos carregam o vento.",
+  "vitalitySurgeRune.enemyDescription": "Para cada [blue]20[/blue] de PV Máx. que um inimigo possui, seu dano, Bloqueio e cura aumentam em [blue]1%[/blue].",
   "OK_BOOMERANG_RUNE.title": "OK Bumerangue",
   "OK_BOOMERANG_RUNE.description": "Quando obtido, adicione [blue]1[/blue] [gold]Bumerangue OK[/gold] ao seu baralho.",
   "OK_BOOMERANG_RUNE.flavor": "Ele sai como uma piada e volta como um cobrador de dívidas.",
@@ -575,7 +576,7 @@
   "feyMagicRune.enemyDescription": "Sempre que o inimigo causa dano não bloqueado, o jogador ganha [blue]1[/blue] turno de [gold]Encolhimento[/gold] e [gold]Sem Compra[/gold].",
   "finalFormRune.enemyDescription": "Sempre que o inimigo causa dano não bloqueado, ele ganha Bloqueio igual a [blue]15[/blue]/[blue]20[/blue]/[blue]25[/blue]% do seu PV Máx. Ativa no máximo uma vez por turno.",
   "unmovableMountainRune.enemyDescription": "No início do combate, o inimigo ganha [blue]1[/blue] [gold]Barricada[/gold]. No início do seu turno, ele ganha Bloqueio igual a [blue]6[/blue]/[blue]8[/blue]/[blue]10[/blue]% do seu PV Máx.",
-  "cuttingEdgeAlchemistRune.enemyDescription": "Poções dadas como recompensa após o combate são no máximo Comuns.",
+  "cuttingEdgeAlchemistRune.enemyDescription": "A chance de os jogadores receberem uma poção após o combate é reduzida pela metade.",
   "mikaelsBlessingRune.enemyDescription": "Quando um dano reduz seus PV para menos de [blue]50%[/blue] do seu PV Máx, o inimigo cura [blue]10[/blue]/[blue]25[/blue]/[blue]40[/blue]% do seu PV Máx e remove todas as penalidades de si mesmo. Duas vezes por combate.",
   "bloodPactRune.enemyDescription": "Após sofrer dano, o inimigo ganha [blue]1[/blue] de Força temporária. Ativa até [blue]2[/blue] vezes a cada turno.",
   "dizzySpinningRune.enemyDescription": "Sempre que o baralho de compras de um jogador for embaralhado, adicione [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Atordoado[/gold] ao baralho de compras dele.",
@@ -1378,5 +1379,13 @@
   "TUNGSTEN_ROD_HEX.title": "Melhoria: Bastão de Tungstênio",
   "TUNGSTEN_ROD_HEX.description": "Sempre que um inimigo perder PV, reduza os PV perdidos em [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
   "TUNGSTEN_ROD_HEX.flavor": "Mesmo o golpe mais pesado deixa apenas uma marca rasa na liga.",
-  "tungstenRodHex.enemyDescription": "Sempre que um inimigo perder PV, reduza os PV perdidos em [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]."
+  "tungstenRodHex.enemyDescription": "Sempre que um inimigo perder PV, reduza os PV perdidos em [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
+  "ANCIENT_STATUE_HEX.title": "Melhoria: Estátua Antiga",
+  "ANCIENT_STATUE_HEX.description": "No início do combate, todos os jogadores recebem [gold]Lentidão[/gold]. Sempre que um jogador usar uma carta, sua [gold]Lentidão[/gold] aumenta em [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "ANCIENT_STATUE_HEX.flavor": "Cada ação aumenta o peso do tempo.",
+  "ancientStatueHex.enemyDescription": "No início do combate, todos os jogadores recebem [gold]Lentidão[/gold]. Sempre que um jogador usar uma carta, sua [gold]Lentidão[/gold] aumenta em [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.title": "Cem Refinamentos",
+  "HUNDRED_REFINEMENTS_HEX.description": "No início do combate, todos os inimigos recebem [gold]Lentidão[/gold]. Sempre que um inimigo sofrer dano não bloqueado, sua [gold]Lentidão[/gold] diminui em [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.flavor": "Depois de cem golpes, cada cicatriz vira armadura.",
+  "hundredRefinementsHex.enemyDescription": "No início do combate, todos os inimigos recebem [gold]Lentidão[/gold]. Sempre que um inimigo sofrer dano não bloqueado, sua [gold]Lentidão[/gold] diminui em [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]."
 }

@@ -89,6 +89,7 @@
   "VITALITY_SURGE_RUNE.title": "生机迸发",
   "VITALITY_SURGE_RUNE.description": "你每有[blue]50[/blue]点最大生命值，每回合就多抽[blue]1[/blue]张牌；你每有[blue]100[/blue]点最大生命值，每回合就额外获得[blue]1[/blue]点能量。",
   "VITALITY_SURGE_RUNE.flavor": "血肉丰盈处，步子也带风。",
+  "vitalitySurgeRune.enemyDescription": "敌人每有[blue]20[/blue]点最大生命值，就获得[blue]1%[/blue]的伤害、格挡与治疗量加成。",
   "OK_BOOMERANG_RUNE.title": "回力OK镖",
   "OK_BOOMERANG_RUNE.description": "获得时，向你的牌组中加入[blue]1[/blue]张[gold]回力OK镖[/gold]。",
   "OK_BOOMERANG_RUNE.flavor": "它飞走时像玩笑，飞回时像催债。",
@@ -559,7 +560,7 @@
   "twiceThriceRune.enemyDescription": "玩家每打出的第三张攻击牌费用翻倍，回合结束后重置计数。",
   "loopRune.enemyDescription": "玩家每回合少抽[blue]0[/blue]/[blue]1[/blue]/[blue]1[/blue]张牌。",
   "servantMasterRune.enemyDescription": "爪牙单位在生成时获得[gold]幻象[/gold]。",
-  "cuttingEdgeAlchemistRune.enemyDescription": "玩家战后掉落的药水最高为普通品质。",
+  "cuttingEdgeAlchemistRune.enemyDescription": "玩家战后掉落药水的概率减半。",
   "divineInterventionRune.enemyDescription": "每过[blue]4[/blue]回合，使所有敌人获得[blue]1[/blue]层[gold]无实体[/gold]。",
   "devilsDanceRune.enemyDescription": "当敌人造成未被格挡的伤害时，回复自身最大生命值[blue]6[/blue]/[blue]8[/blue]/[blue]10[/blue]%的生命。每回合最多触发一次。",
   "sonataRune.enemyDescription": "奇数回合开始时，使所有敌人获得等同于自身最大生命值[blue]8[/blue]/[blue]10[/blue]/[blue]12[/blue]%的格挡；偶数回合开始时，回复所有敌人自身最大生命值[blue]4[/blue]/[blue]5[/blue]/[blue]6[/blue]%的生命。",
@@ -1378,5 +1379,13 @@
   "TUNGSTEN_ROD_HEX.title": "升级：钨合金棍",
   "TUNGSTEN_ROD_HEX.description": "敌人每次失去生命时，少失去[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点生命。",
   "TUNGSTEN_ROD_HEX.flavor": "再沉重的打击，也只能在合金上留下一道浅痕。",
-  "tungstenRodHex.enemyDescription": "敌人每次失去生命时，少失去[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点生命。"
+  "tungstenRodHex.enemyDescription": "敌人每次失去生命时，少失去[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点生命。",
+  "ANCIENT_STATUE_HEX.title": "升级：旧日雕像",
+  "ANCIENT_STATUE_HEX.description": "战斗开始时，所有玩家获得[gold]缓慢[/gold]。玩家每打出1张牌，[gold]缓慢[/gold]增加[blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue]层。",
+  "ANCIENT_STATUE_HEX.flavor": "每一次行动，都让时间的重压更加沉重。",
+  "ancientStatueHex.enemyDescription": "战斗开始时，所有玩家获得[gold]缓慢[/gold]。玩家每打出1张牌，[gold]缓慢[/gold]增加[blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue]层。",
+  "HUNDRED_REFINEMENTS_HEX.title": "百炼成钢",
+  "HUNDRED_REFINEMENTS_HEX.description": "战斗开始时，所有敌人获得[gold]缓慢[/gold]。敌人每受到1次未被格挡的伤害，[gold]缓慢[/gold]减少[blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]层。",
+  "HUNDRED_REFINEMENTS_HEX.flavor": "千锤百炼之后，伤痕也成了铠甲。",
+  "hundredRefinementsHex.enemyDescription": "战斗开始时，所有敌人获得[gold]缓慢[/gold]。敌人每受到1次未被格挡的伤害，[gold]缓慢[/gold]减少[blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]层。"
 }

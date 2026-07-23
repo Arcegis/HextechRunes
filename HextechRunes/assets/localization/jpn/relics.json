@@ -89,6 +89,7 @@
   "VITALITY_SURGE_RUNE.title": "生命力の奔流",
   "VITALITY_SURGE_RUNE.description": "最大HP[blue]50[/blue]につき、毎ターン追加でカードを[blue]1[/blue]枚引く。最大HP[blue]100[/blue]につき、毎ターン追加でエネルギーを[blue]1[/blue]獲得する。",
   "VITALITY_SURGE_RUNE.flavor": "肉体が満ちれば、足取りにも風が乗る。",
+  "vitalitySurgeRune.enemyDescription": "敵の最大HP[blue]20[/blue]ごとに、その敵のダメージ、ブロック、回復量が[blue]1%[/blue]増加します。",
   "OK_BOOMERANG_RUNE.title": "OKブーメラン",
   "OK_BOOMERANG_RUNE.description": "入手したら、[blue]1[/blue] [gold]OKブーメラン[/gold]をデッキに追加します。",
   "OK_BOOMERANG_RUNE.flavor": "冗談のように去っていき、借金取りのように戻ってくる。",
@@ -575,7 +576,7 @@
   "feyMagicRune.enemyDescription": "敵はブロックされていないダメージを与えるたびに、プレイヤーは [blue]1[/blue] ターンの [gold]縮小[/gold]と[gold]ノードロー[/gold]を獲得します。",
   "finalFormRune.enemyDescription": "敵はブロックされていないダメージを与えるたびに、最大 HP の [blue]15[/blue]/[blue]20[/blue]/[blue]25[/blue]%に等しいブロックを獲得します。最大でも1ターンに1回発動する。",
   "unmovableMountainRune.enemyDescription": "敵は戦闘開始時に、[blue]1[/blue] [gold]Barricade[/gold]を獲得します。ターンの開始時に、最大 HP の [blue]6[/blue]/[blue]8[/blue]/[blue]10[/blue]%に等しいブロックを獲得します。",
-  "cuttingEdgeAlchemistRune.enemyDescription": "戦闘後にドロップされるポーション報酬は最大でもコモンです。",
+  "cuttingEdgeAlchemistRune.enemyDescription": "戦闘後にプレイヤーがポーションを獲得する確率が半分になります。",
   "mikaelsBlessingRune.enemyDescription": "敵はダメージによって最大 HP の [blue]50%[/blue]を下回った場合、最大 HP の [blue]10[/blue]/[blue]25[/blue]/[blue]40[/blue]%を回復し、自分自身からすべてのデバフを解除します。戦闘ごとに 2 回。",
   "bloodPactRune.enemyDescription": "敵はダメージを受けた後、[blue]1[/blue] の一時的な筋力を獲得します。各ターン最大 [blue]2[/blue] 回トリガーします。",
   "dizzySpinningRune.enemyDescription": "プレイヤーの山札がシャッフルされるたびに、[blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]めまい[/gold]をその山札に追加します。",
@@ -1378,5 +1379,13 @@
   "TUNGSTEN_ROD_HEX.title": "アップグレード: タングステンロッド",
   "TUNGSTEN_ROD_HEX.description": "敵がHPを失うたび、失うHPを[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]減らす。",
   "TUNGSTEN_ROD_HEX.flavor": "どれほど重い一撃でも、合金には浅い傷しか残せない。",
-  "tungstenRodHex.enemyDescription": "敵がHPを失うたび、失うHPを[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]減らす。"
+  "tungstenRodHex.enemyDescription": "敵がHPを失うたび、失うHPを[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]減らす。",
+  "ANCIENT_STATUE_HEX.title": "アップグレード: 古の彫像",
+  "ANCIENT_STATUE_HEX.description": "戦闘開始時、すべてのプレイヤーは[gold]スロウ[/gold]を得る。プレイヤーがカードを1枚プレイするたび、その[gold]スロウ[/gold]が[blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue]増加する。",
+  "ANCIENT_STATUE_HEX.flavor": "行動するたび、時の重みが増していく。",
+  "ancientStatueHex.enemyDescription": "戦闘開始時、すべてのプレイヤーは[gold]スロウ[/gold]を得る。プレイヤーがカードを1枚プレイするたび、その[gold]スロウ[/gold]が[blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue]増加する。",
+  "HUNDRED_REFINEMENTS_HEX.title": "百錬成鋼",
+  "HUNDRED_REFINEMENTS_HEX.description": "戦闘開始時、すべての敵は[gold]スロウ[/gold]を得る。敵がブロックされなかったダメージを受けるたび、その[gold]スロウ[/gold]が[blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]減少する。",
+  "HUNDRED_REFINEMENTS_HEX.flavor": "幾度も打たれ、傷跡さえ鎧となる。",
+  "hundredRefinementsHex.enemyDescription": "戦闘開始時、すべての敵は[gold]スロウ[/gold]を得る。敵がブロックされなかったダメージを受けるたび、その[gold]スロウ[/gold]が[blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]減少する。"
 }

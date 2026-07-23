@@ -89,6 +89,7 @@
   "VITALITY_SURGE_RUNE.title": "Vitality Surge",
   "VITALITY_SURGE_RUNE.description": "For every [blue]50[/blue] Max HP you have, draw [blue]1[/blue] additional card each turn. For every [blue]100[/blue] Max HP you have, gain [blue]1[/blue] additional Energy each turn.",
   "VITALITY_SURGE_RUNE.flavor": "Where flesh abounds, even footsteps carry the wind.",
+  "vitalitySurgeRune.enemyDescription": "For every [blue]20[/blue] Max HP an enemy has, its damage, Block, and healing are increased by [blue]1%[/blue].",
   "OK_BOOMERANG_RUNE.title": "OK Boomerang",
   "OK_BOOMERANG_RUNE.description": "When obtained, add [blue]1[/blue] [gold]OK Boomerang[/gold] to your deck.",
   "OK_BOOMERANG_RUNE.flavor": "It leaves like a joke and returns like a debt collector.",
@@ -575,7 +576,7 @@
   "feyMagicRune.enemyDescription": "Whenever the enemy deals unblocked damage, the player gains [blue]1[/blue] turn of [gold]Shrink[/gold] and [gold]No Draw[/gold].",
   "finalFormRune.enemyDescription": "Whenever the enemy deals unblocked damage, it gains Block equal to [blue]15[/blue]/[blue]20[/blue]/[blue]25[/blue]% of its Max HP. Triggers at most once per turn.",
   "unmovableMountainRune.enemyDescription": "At the start of combat, the enemy gains [blue]1[/blue] [gold]Barricade[/gold]. At the start of its turn, it gains Block equal to [blue]6[/blue]/[blue]8[/blue]/[blue]10[/blue]% of its Max HP.",
-  "cuttingEdgeAlchemistRune.enemyDescription": "Potion rewards dropped after combat are at most Common.",
+  "cuttingEdgeAlchemistRune.enemyDescription": "The chance for players to receive a potion after combat is halved.",
   "mikaelsBlessingRune.enemyDescription": "When damage drops the enemy below [blue]50%[/blue] of its Max HP, it heals [blue]10[/blue]/[blue]25[/blue]/[blue]40[/blue]% of its Max HP and removes all debuffs from itself. Twice per combat.",
   "bloodPactRune.enemyDescription": "After taking damage, the enemy gains [blue]1[/blue] temporary Strength. Triggers up to [blue]2[/blue] times each turn.",
   "dizzySpinningRune.enemyDescription": "Whenever a player's draw pile is shuffled, add [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Dazed[/gold] to their draw pile.",
@@ -1378,5 +1379,13 @@
   "TUNGSTEN_ROD_HEX.title": "Upgrade: Tungsten Rod",
   "TUNGSTEN_ROD_HEX.description": "Whenever an enemy loses HP, reduce the HP lost by [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
   "TUNGSTEN_ROD_HEX.flavor": "Even the heaviest blow leaves only a shallow mark on the alloy.",
-  "tungstenRodHex.enemyDescription": "Whenever an enemy loses HP, reduce the HP lost by [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]."
+  "tungstenRodHex.enemyDescription": "Whenever an enemy loses HP, reduce the HP lost by [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
+  "ANCIENT_STATUE_HEX.title": "Upgrade: Ancient Statue",
+  "ANCIENT_STATUE_HEX.description": "At the start of combat, all players gain [gold]Slow[/gold]. Whenever a player plays a card, their [gold]Slow[/gold] increases by [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "ANCIENT_STATUE_HEX.flavor": "Every action adds to the weight of time.",
+  "ancientStatueHex.enemyDescription": "At the start of combat, all players gain [gold]Slow[/gold]. Whenever a player plays a card, their [gold]Slow[/gold] increases by [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.title": "Hundred Refinements",
+  "HUNDRED_REFINEMENTS_HEX.description": "At the start of combat, all enemies gain [gold]Slow[/gold]. Whenever an enemy takes unblocked damage, its [gold]Slow[/gold] decreases by [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.flavor": "After a hundred beatings, every scar becomes armor.",
+  "hundredRefinementsHex.enemyDescription": "At the start of combat, all enemies gain [gold]Slow[/gold]. Whenever an enemy takes unblocked damage, its [gold]Slow[/gold] decreases by [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]."
 }

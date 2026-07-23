@@ -41,6 +41,8 @@ internal static class HextechCustomModelRegistry
 		typeof(MyteHex),
 		typeof(FossilStalkerHex),
 		typeof(TungstenRodHex),
+		typeof(HundredRefinementsHex),
+		typeof(AncientStatueHex),
 		typeof(ByrdonisHex)
 	];
 

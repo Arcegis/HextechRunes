@@ -89,6 +89,7 @@
   "VITALITY_SURGE_RUNE.title": "พลังชีวิตพลุ่งพล่าน",
   "VITALITY_SURGE_RUNE.description": "ทุก ๆ HP สูงสุด [blue]50[/blue] ที่คุณมี จั่วการ์ดเพิ่ม [blue]1[/blue] ใบต่อเทิร์น ทุก ๆ HP สูงสุด [blue]100[/blue] ได้รับพลังงานเพิ่ม [blue]1[/blue] ต่อเทิร์น",
   "VITALITY_SURGE_RUNE.flavor": "ที่ใดชีวิตเปี่ยมล้น แม้ฝีเท้าก็พัดพาสายลม",
+  "vitalitySurgeRune.enemyDescription": "ทุก ๆ HP สูงสุด [blue]20[/blue] ที่ศัตรูมี ความเสียหาย บล็อก และการฟื้นฟูของมันเพิ่มขึ้น [blue]1%[/blue]",
   "OK_BOOMERANG_RUNE.title": "โอเคบูมเมอแรง",
   "OK_BOOMERANG_RUNE.description": "เมื่อรับมา เพิ่ม [gold]บูมเมอแรง OK[/gold] [blue]1[/blue] ใบเข้ากองการ์ดของคุณ",
   "OK_BOOMERANG_RUNE.flavor": "มันจากไปเหมือนเรื่องตลก แล้วกลับมาเหมือนนักทวงหนี้",
@@ -575,7 +576,7 @@
   "feyMagicRune.enemyDescription": "ทุกครั้งที่ศัตรูสร้างความเสียหายที่ไม่ถูกบล็อก ผู้เล่นจะได้รับ [gold]หดตัว[/gold] และ [gold]ห้ามจั่วการ์ด[/gold] [blue]1[/blue] เทิร์น",
   "finalFormRune.enemyDescription": "ทุกครั้งที่ศัตรูสร้างความเสียหายที่ไม่ถูกบล็อก มันจะได้รับบล็อกเท่ากับ [blue]15[/blue]/[blue]20[/blue]/[blue]25[/blue]% ของ HP สูงสุดของมัน ทำงานได้สูงสุดหนึ่งครั้งต่อเทิร์น",
   "unmovableMountainRune.enemyDescription": "ตอนเริ่มต้นการต่อสู้ ศัตรูได้รับ [blue]1[/blue] [gold]ตรึงกำลัง[/gold] ตอนเริ่มต้นเทิร์นของมัน จะได้รับบล็อกเท่ากับ [blue]6[/blue]/[blue]8[/blue]/[blue]10[/blue]% ของ HP สูงสุดของมัน",
-  "cuttingEdgeAlchemistRune.enemyDescription": "รางวัลขวดยาที่ดรอปหลังการต่อสู้สูงสุดเป็นระดับธรรมดา",
+  "cuttingEdgeAlchemistRune.enemyDescription": "โอกาสที่ผู้เล่นจะได้รับขวดยาหลังการต่อสู้ลดลงครึ่งหนึ่ง",
   "mikaelsBlessingRune.enemyDescription": "เมื่อความเสียหายทำให้ศัตรูเหลือ HP ต่ำกว่า [blue]50%[/blue] ของ HP สูงสุด มันจะฟื้นฟู [blue]10[/blue]/[blue]25[/blue]/[blue]40[/blue]% ของ HP สูงสุดของมัน และลบผลผิดปกติทั้งหมดออกจากตัวเอง สองครั้งต่อการต่อสู้",
   "bloodPactRune.enemyDescription": "หลังรับความเสียหาย ศัตรูได้รับ [blue]1[/blue] ความแข็งแรงชั่วคราว ทำงานได้สูงสุด [blue]2[/blue] ครั้งต่อเทิร์น",
   "dizzySpinningRune.enemyDescription": "ทุกครั้งที่กองจั่วของผู้เล่นถูกสับ จะเพิ่ม [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]ความมึนงง[/gold] เข้ากองจั่วของพวกเขา",
@@ -1378,5 +1379,13 @@
   "TUNGSTEN_ROD_HEX.title": "อัปเกรด: แท่งทังสเตน",
   "TUNGSTEN_ROD_HEX.description": "ทุกครั้งที่ศัตรูเสีย HP ลด HP ที่เสียลง [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] หน่วย",
   "TUNGSTEN_ROD_HEX.flavor": "แม้แต่การโจมตีที่หนักที่สุดก็ทิ้งไว้เพียงรอยตื้นบนโลหะผสม",
-  "tungstenRodHex.enemyDescription": "ทุกครั้งที่ศัตรูเสีย HP ลด HP ที่เสียลง [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] หน่วย"
+  "tungstenRodHex.enemyDescription": "ทุกครั้งที่ศัตรูเสีย HP ลด HP ที่เสียลง [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] หน่วย",
+  "ANCIENT_STATUE_HEX.title": "อัปเกรด: รูปสลักโบราณ",
+  "ANCIENT_STATUE_HEX.description": "เมื่อเริ่มการต่อสู้ ผู้เล่นทุกคนได้รับ[gold]เชื่องช้า[/gold] ทุกครั้งที่ผู้เล่นใช้การ์ด 1 ใบ [gold]เชื่องช้า[/gold]ของคนนั้นเพิ่มขึ้น [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue] ชั้น",
+  "ANCIENT_STATUE_HEX.flavor": "ทุกการกระทำเพิ่มน้ำหนักของกาลเวลา",
+  "ancientStatueHex.enemyDescription": "เมื่อเริ่มการต่อสู้ ผู้เล่นทุกคนได้รับ[gold]เชื่องช้า[/gold] ทุกครั้งที่ผู้เล่นใช้การ์ด 1 ใบ [gold]เชื่องช้า[/gold]ของคนนั้นเพิ่มขึ้น [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue] ชั้น",
+  "HUNDRED_REFINEMENTS_HEX.title": "หลอมร้อยครั้ง",
+  "HUNDRED_REFINEMENTS_HEX.description": "เมื่อเริ่มการต่อสู้ ศัตรูทั้งหมดได้รับ[gold]เชื่องช้า[/gold] ทุกครั้งที่ศัตรูได้รับความเสียหายที่ไม่ถูกบล็อก [gold]เชื่องช้า[/gold]ของมันลดลง [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue] ชั้น",
+  "HUNDRED_REFINEMENTS_HEX.flavor": "หลังผ่านค้อนนับร้อย ทุกรอยแผลกลายเป็นเกราะ",
+  "hundredRefinementsHex.enemyDescription": "เมื่อเริ่มการต่อสู้ ศัตรูทั้งหมดได้รับ[gold]เชื่องช้า[/gold] ทุกครั้งที่ศัตรูได้รับความเสียหายที่ไม่ถูกบล็อก [gold]เชื่องช้า[/gold]ของมันลดลง [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue] ชั้น"
 }

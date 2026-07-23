@@ -89,6 +89,7 @@
   "VITALITY_SURGE_RUNE.title": "Всплеск жизненной силы",
   "VITALITY_SURGE_RUNE.description": "За каждые [blue]50[/blue] макс. ОЗ вы берёте [blue]1[/blue] дополнительную карту каждый ход. За каждые [blue]100[/blue] макс. ОЗ вы получаете [blue]1[/blue] дополнительную энергию каждый ход.",
   "VITALITY_SURGE_RUNE.flavor": "Где полно плоти, там и шаги несут ветер.",
+  "vitalitySurgeRune.enemyDescription": "За каждые [blue]20[/blue] макс. ОЗ врага его урон, защита и исцеление увеличиваются на [blue]1%[/blue].",
   "OK_BOOMERANG_RUNE.title": "Окей, бумеранг",
   "OK_BOOMERANG_RUNE.description": "При получении добавьте [blue]1[/blue] [gold]ОК-бумеранг[/gold] в колоду.",
   "OK_BOOMERANG_RUNE.flavor": "Он улетает как шутка и возвращается как сборщик долгов.",
@@ -575,7 +576,7 @@
   "feyMagicRune.enemyDescription": "Каждый раз, когда враг наносит урон по ОЗ, игрок получает [blue]1[/blue] ход [gold]Уменьшения[/gold] и [gold]Без добора[/gold].",
   "finalFormRune.enemyDescription": "Каждый раз, когда враг наносит урон по ОЗ, он получает защиту в размере [blue]15[/blue]/[blue]20[/blue]/[blue]25[/blue]% от своих макс. ОЗ. Срабатывает не более одного раза за ход.",
   "unmovableMountainRune.enemyDescription": "В начале боя враг получает [blue]1[/blue] [gold]Баррикаду[/gold]. В начале своего хода он получает защиту в размере [blue]6[/blue]/[blue]8[/blue]/[blue]10[/blue]% от своих макс. ОЗ.",
-  "cuttingEdgeAlchemistRune.enemyDescription": "Зелья-награды, выпадающие после боя, не выше обычных.",
+  "cuttingEdgeAlchemistRune.enemyDescription": "Шанс игроков получить зелье после боя уменьшается вдвое.",
   "mikaelsBlessingRune.enemyDescription": "Когда урон опускает врага ниже [blue]50%[/blue] от его макс. ОЗ, он исцеляет [blue]10[/blue]/[blue]25[/blue]/[blue]40[/blue]% от своих макс. ОЗ и снимает с себя все отрицательные эффекты. Дважды за бой.",
   "bloodPactRune.enemyDescription": "После получения урона враг получает [blue]1[/blue] временную силу. Срабатывает до [blue]2[/blue] раз за ход.",
   "dizzySpinningRune.enemyDescription": "Каждый раз, когда стопка добора игрока перемешивается, добавьте [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Головокружения[/gold] в его стопку добора.",
@@ -1378,5 +1379,13 @@
   "TUNGSTEN_ROD_HEX.title": "Улучшение: Вольфрамовый стержень",
   "TUNGSTEN_ROD_HEX.description": "Каждый раз, когда враг теряет ОЗ, уменьшает потерю ОЗ на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
   "TUNGSTEN_ROD_HEX.flavor": "Даже самый тяжёлый удар оставляет на сплаве лишь неглубокий след.",
-  "tungstenRodHex.enemyDescription": "Каждый раз, когда враг теряет ОЗ, уменьшает потерю ОЗ на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]."
+  "tungstenRodHex.enemyDescription": "Каждый раз, когда враг теряет ОЗ, уменьшает потерю ОЗ на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
+  "ANCIENT_STATUE_HEX.title": "Улучшение: Древняя статуя",
+  "ANCIENT_STATUE_HEX.description": "В начале боя все игроки получают [gold]Замедление[/gold]. Каждый раз, когда игрок разыгрывает карту, его [gold]Замедление[/gold] увеличивается на [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "ANCIENT_STATUE_HEX.flavor": "Каждое действие усиливает тяжесть времени.",
+  "ancientStatueHex.enemyDescription": "В начале боя все игроки получают [gold]Замедление[/gold]. Каждый раз, когда игрок разыгрывает карту, его [gold]Замедление[/gold] увеличивается на [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.title": "Сто закалок",
+  "HUNDRED_REFINEMENTS_HEX.description": "В начале боя все враги получают [gold]Замедление[/gold]. Каждый раз, когда враг получает незаблокированный урон, его [gold]Замедление[/gold] уменьшается на [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.flavor": "После сотни ударов каждый шрам становится бронёй.",
+  "hundredRefinementsHex.enemyDescription": "В начале боя все враги получают [gold]Замедление[/gold]. Каждый раз, когда враг получает незаблокированный урон, его [gold]Замедление[/gold] уменьшается на [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]."
 }

@@ -89,6 +89,7 @@
   "VITALITY_SURGE_RUNE.title": "Estallido de vitalidad",
   "VITALITY_SURGE_RUNE.description": "Por cada [blue]50[/blue] PV máximos que tengas, robas [blue]1[/blue] carta adicional cada turno. Por cada [blue]100[/blue] PV máximos, obtienes [blue]1[/blue] de energía adicional cada turno.",
   "VITALITY_SURGE_RUNE.flavor": "Donde abunda la carne, hasta los pasos llevan viento.",
+  "vitalitySurgeRune.enemyDescription": "Por cada [blue]20[/blue] PV máximos que tenga un enemigo, su daño, bloqueo y curación aumentan un [blue]1%[/blue].",
   "OK_BOOMERANG_RUNE.title": "OK bumerang",
   "OK_BOOMERANG_RUNE.description": "Cuando lo obtengas, agrega [blue]1[/blue] [gold]Bumerán OK[/gold] a tu mazo.",
   "OK_BOOMERANG_RUNE.flavor": "Se va como una broma y regresa como un cobrador de deudas.",
@@ -575,7 +576,7 @@
   "feyMagicRune.enemyDescription": "Siempre que el enemigo inflige daño desbloqueado, el jugador gana [blue]1[/blue] turno de [gold]Encoger[/gold] y [gold]No Draw[/gold].",
   "finalFormRune.enemyDescription": "Siempre que el enemigo inflige daño desbloqueado, obtiene un bloqueo equivalente al [blue]15[/blue]/[blue]20[/blue]/[blue]25[/blue]% de su PV máximos. Se activa como máximo una vez por turno.",
   "unmovableMountainRune.enemyDescription": "Al comienzo del combate, el enemigo gana [blue]1[/blue] [gold]Barricade[/gold]. Al comienzo de su turno, obtiene un bloqueo equivalente al [blue]6[/blue]/[blue]8[/blue]/[blue]10[/blue]% de su PV máximos.",
-  "cuttingEdgeAlchemistRune.enemyDescription": "Las recompensas de pociones que se obtienen después del combate son, como máximo, comunes.",
+  "cuttingEdgeAlchemistRune.enemyDescription": "La probabilidad de que los jugadores obtengan una poción después del combate se reduce a la mitad.",
   "mikaelsBlessingRune.enemyDescription": "Cuando el daño sitúa al enemigo por debajo del [blue]50%[/blue] de su PV máximos, cura el [blue]10[/blue]/[blue]25[/blue]/[blue]40[/blue]% de su PV máximos y elimina todas sus desventajas. Dos veces por combate.",
   "bloodPactRune.enemyDescription": "Después de recibir daño, el enemigo obtiene [blue]1[/blue] Fuerza temporal. Se activa hasta [blue]2[/blue] veces en cada turno.",
   "dizzySpinningRune.enemyDescription": "Siempre que se baraja la pila de robo de un jugador, agrega [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] [gold]Desorientación[/gold] a su pila de robo.",
@@ -1378,5 +1379,13 @@
   "TUNGSTEN_ROD_HEX.title": "Mejora: Vara de tungsteno",
   "TUNGSTEN_ROD_HEX.description": "Cada vez que un enemigo pierde PV, reduce los PV perdidos en [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
   "TUNGSTEN_ROD_HEX.flavor": "Ni el golpe más fuerte deja más que una marca superficial en la aleación.",
-  "tungstenRodHex.enemyDescription": "Cada vez que un enemigo pierde PV, reduce los PV perdidos en [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]."
+  "tungstenRodHex.enemyDescription": "Cada vez que un enemigo pierde PV, reduce los PV perdidos en [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue].",
+  "ANCIENT_STATUE_HEX.title": "Mejora: Estatua antigua",
+  "ANCIENT_STATUE_HEX.description": "Al comienzo del combate, todos los jugadores obtienen [gold]Lentitud[/gold]. Cada vez que un jugador juega una carta, su [gold]Lentitud[/gold] aumenta en [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "ANCIENT_STATUE_HEX.flavor": "Cada acción aumenta el peso del tiempo.",
+  "ancientStatueHex.enemyDescription": "Al comienzo del combate, todos los jugadores obtienen [gold]Lentitud[/gold]. Cada vez que un jugador juega una carta, su [gold]Lentitud[/gold] aumenta en [blue]5[/blue]/[blue]8[/blue]/[blue]10[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.title": "Cien refinamientos",
+  "HUNDRED_REFINEMENTS_HEX.description": "Al comienzo del combate, todos los enemigos obtienen [gold]Lentitud[/gold]. Cada vez que un enemigo recibe daño no bloqueado, su [gold]Lentitud[/gold] disminuye en [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue].",
+  "HUNDRED_REFINEMENTS_HEX.flavor": "Tras cien golpes, cada cicatriz se vuelve armadura.",
+  "hundredRefinementsHex.enemyDescription": "Al comienzo del combate, todos los enemigos obtienen [gold]Lentitud[/gold]. Cada vez que un enemigo recibe daño no bloqueado, su [gold]Lentitud[/gold] disminuye en [blue]3[/blue]/[blue]5[/blue]/[blue]8[/blue]."
 }

@@ -121,6 +121,7 @@ internal static partial class Program
 			new(nameof(PlayerRuneMetadataPreservesCharacterOrder), PlayerRuneMetadataPreservesCharacterOrder),
 			new(nameof(PlayerRuneMetadataClassifiesConfigStates), PlayerRuneMetadataClassifiesConfigStates),
 			new(nameof(WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible), WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible),
+			new(nameof(SnailFormRuneIsRetiredButSaveCompatible), SnailFormRuneIsRetiredButSaveCompatible),
 			new(nameof(PlayerRuneMetadataCatalogOutputsMatchCatalogQueries), PlayerRuneMetadataCatalogOutputsMatchCatalogQueries),
 			new(nameof(PlayerRuneMetadataFallbacksAreStable), PlayerRuneMetadataFallbacksAreStable),
 			new(nameof(ForgeMetadataHasUniqueTypes), ForgeMetadataHasUniqueTypes),
@@ -131,6 +132,9 @@ internal static partial class Program
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
 			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
+			new(nameof(EnemySlowHexesUseExpectedBaselinesAndTiers), EnemySlowHexesUseExpectedBaselinesAndTiers),
+			new(nameof(EnemyVitalitySurgeScalesAllSustainFromMaxHp), EnemyVitalitySurgeScalesAllSustainFromMaxHp),
+			new(nameof(EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls), EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls),
 			new(nameof(EnemyJeweledGauntletUsesExpectedStrengthTierChances), EnemyJeweledGauntletUsesExpectedStrengthTierChances),
 			new(nameof(EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes), EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes),
 			new(nameof(EnemyJeweledGauntletDuplicatesWholeIntentGroup), EnemyJeweledGauntletDuplicatesWholeIntentGroup),
@@ -1550,6 +1554,29 @@ internal static partial class Program
 			"retired Well-Laid Plans rune model should remain in custom model registration for old saves");
 	}
 
+	private static void SnailFormRuneIsRetiredButSaveCompatible()
+	{
+		Type retiredType = typeof(SnailFormRune);
+		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
+
+		Expect(metadata.IsRegistered(retiredType), "retired Pell's Laziness model should remain registered for old saves");
+		Expect(metadata.HasFlag(retiredType, PlayerRuneFlags.Retired), "Pell's Laziness should carry the retired flag");
+		Expect(HextechContentRegistry.RetiredPlayerRuneTypes.Contains(retiredType), "retired registry slice should contain Pell's Laziness");
+		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(retiredType), "retired Pell's Laziness should be hidden");
+		Expect(!HextechCatalog.IsPlayerRuneTypeConfigurable(retiredType), "retired Pell's Laziness should not be configurable");
+		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(retiredType), "retired Pell's Laziness should not be selectable");
+		Expect(
+			HextechCatalog.GetAllCustomRelicTypes().Contains(retiredType),
+			"retired Pell's Laziness model should remain in custom model registration for old saves");
+
+		MethodInfo[] powerMethods = typeof(HextechPlayerSlowPower).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+		MethodInfo[] legacyRuneMethods = typeof(SnailFormRune).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+		Expect(powerMethods.All(static method => method.Name != "AfterCardPlayed"), "custom Slow power should not add a second card-play increment");
+		Expect(legacyRuneMethods.Any(static method => method.Name == "AfterCardPlayed"), "retired Pell's Laziness should preserve its old card-play behavior for loaded saves");
+	}
+
 	private static void PlayerRuneMetadataCatalogOutputsMatchCatalogQueries()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -1708,6 +1735,42 @@ internal static partial class Program
 		Equal(2m, TungstenRodEnemyHex.ReduceHpLoss(5m, 3), "enemy Tungsten Rod tier three HP loss");
 		Equal(0m, TungstenRodEnemyHex.ReduceHpLoss(2m, 3), "enemy Tungsten Rod should floor HP loss at zero");
 		Equal(0m, TungstenRodEnemyHex.ReduceHpLoss(0m, 3), "enemy Tungsten Rod should preserve zero HP loss");
+	}
+
+	private static void EnemySlowHexesUseExpectedBaselinesAndTiers()
+	{
+		Equal(0m, HextechPlayerSlowPower.PlayerCombatStartAmount, "Ancient Statue player Slow baseline");
+		Equal(0m, HextechPlayerSlowPower.EnemyCombatStartAmount, "Hundred Refinements enemy Slow baseline");
+		Equal(0, HextechPlayerSlowPower.RoundStartAmount, "enemy Slow hexes reset to zero each round");
+		Equal(-90m, HextechPlayerSlowPower.LegacySnailCombatStartAmount, "retired Snail Form keeps its old-save baseline");
+		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(0), "Ancient Statue tier zero fallback Slow gain");
+		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(1), "Ancient Statue tier one Slow gain");
+		Equal(8, AncientStatueEnemyHex.ResolveCardSlowGain(2), "Ancient Statue tier two Slow gain");
+		Equal(10, AncientStatueEnemyHex.ResolveCardSlowGain(3), "Ancient Statue tier three Slow gain");
+		Equal(10, AncientStatueEnemyHex.ResolveCardSlowGain(99), "Ancient Statue high-tier Slow gain clamp");
+		Equal(3, HundredRefinementsEnemyHex.ResolveSlowReduction(0), "Hundred Refinements tier zero fallback Slow reduction");
+		Equal(3, HundredRefinementsEnemyHex.ResolveSlowReduction(1), "Hundred Refinements tier one Slow reduction");
+		Equal(5, HundredRefinementsEnemyHex.ResolveSlowReduction(2), "Hundred Refinements tier two Slow reduction");
+		Equal(8, HundredRefinementsEnemyHex.ResolveSlowReduction(3), "Hundred Refinements tier three Slow reduction");
+		Equal(8, HundredRefinementsEnemyHex.ResolveSlowReduction(99), "Hundred Refinements high-tier Slow reduction clamp");
+	}
+
+	private static void EnemyVitalitySurgeScalesAllSustainFromMaxHp()
+	{
+		Equal(1m, VitalitySurgeEnemyHex.ResolveMultiplier(0m), "Vitality Surge zero-HP multiplier");
+		Equal(1m, VitalitySurgeEnemyHex.ResolveMultiplier(19m), "Vitality Surge below first threshold multiplier");
+		Equal(1.01m, VitalitySurgeEnemyHex.ResolveMultiplier(20m), "Vitality Surge first threshold multiplier");
+		Equal(1.05m, VitalitySurgeEnemyHex.ResolveMultiplier(119m), "Vitality Surge floors partial twenty-HP steps");
+		Equal(1.06m, VitalitySurgeEnemyHex.ResolveMultiplier(120m), "Vitality Surge sixth threshold multiplier");
+	}
+
+	private static void EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls()
+	{
+		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0f), "successful potion roll should be kept below fifty percent");
+		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0.499999f), "successful potion roll should be kept just below fifty percent");
+		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0.5f), "successful potion roll should be removed at fifty percent boundary");
+		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0.999999f), "successful potion roll should be removed above fifty percent");
+		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: true, 0.999999f), "forced potion reward should remain guaranteed");
 	}
 
 	private static void EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes()
