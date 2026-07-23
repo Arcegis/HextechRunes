@@ -354,7 +354,7 @@ internal static class HextechPlayerRuneRegistry
         Rune<NightmareRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 31, tagKey: "ORB"),
         Rune<ExtremeSpeedRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 26, tagKey: "RESOURCE"),
         Rune<SoulUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 35, tagKey: "SUMMON"),
-        Rune<PrismaticEggRune>(HextechRarityTier.Prismatic, tagKey: "RANDOM")
+        Rune<PrismaticEggRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.ThirdActExcluded, tagKey: "RANDOM")
 	];
 
 	private static PlayerRuneRegistration Rune<TRune>(

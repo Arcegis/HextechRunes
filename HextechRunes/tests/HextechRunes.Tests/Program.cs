@@ -78,6 +78,11 @@ internal static partial class Program
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
+			new(nameof(PrismaticEggIsExcludedFromThirdAct), PrismaticEggIsExcludedFromThirdAct),
+			new(nameof(MirrorReflectionCopiesCursesButNotBasicCards), MirrorReflectionCopiesCursesButNotBasicCards),
+			new(nameof(DrainTargetsFirstEnemyWithHighestCurrentHp), DrainTargetsFirstEnemyWithHighestCurrentHp),
+			new(nameof(FeyMagicUsesThreeCostWithoutTurnLimit), FeyMagicUsesThreeCostWithoutTurnLimit),
+			new(nameof(GiantSlayerScalesFromEnemyMaxHp), GiantSlayerScalesFromEnemyMaxHp),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
 			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
 			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
@@ -927,6 +932,46 @@ internal static partial class Program
 
 		forge.SavedStackCount = 2;
 		Equal(200, forge.ExtraGoldRewardAmount, "two-stack Fortune Forge reward");
+	}
+
+	private static void PrismaticEggIsExcludedFromThirdAct()
+	{
+		Expect(
+			HextechContentRegistry.PlayerRuneMetadata.HasFlag(typeof(PrismaticEggRune), PlayerRuneFlags.ThirdActExcluded),
+			"Prismatic Egg should not appear in the third act rune pool");
+	}
+
+	private static void MirrorReflectionCopiesCursesButNotBasicCards()
+	{
+		Expect(MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<Clumsy>()), "Mirror Reflection should duplicate Curse cards");
+		Expect(!MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<StrikeIronclad>()), "Mirror Reflection should not duplicate basic Strike cards");
+		Expect(!MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<DefendIronclad>()), "Mirror Reflection should not duplicate basic Defend cards");
+	}
+
+	private static void DrainTargetsFirstEnemyWithHighestCurrentHp()
+	{
+		Equal(1, DrainRune.FindHighestCurrentHpIndex([ 8, 25, 25, 12 ]), "Drain should target the first enemy tied for highest current HP");
+		Equal(0, DrainRune.FindHighestCurrentHpIndex([ 30 ]), "Drain should target the only hittable enemy");
+	}
+
+	private static void FeyMagicUsesThreeCostWithoutTurnLimit()
+	{
+		Equal(3, FeyMagicRune.MinimumCardCost, "Fey Magic minimum card cost");
+
+		MethodInfo[] declaredMethods = typeof(FeyMagicRune).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+		Expect(declaredMethods.Any(method => method.Name == "AfterDamageGiven"), "Fey Magic should trigger after each qualifying damage event");
+		Expect(declaredMethods.All(method => method.Name != "BeforeSideTurnStart"), "Fey Magic should not keep a per-turn trigger reset");
+	}
+
+	private static void GiantSlayerScalesFromEnemyMaxHp()
+	{
+		Equal(1m, GiantSlayerRune.ResolveDamageMultiplier(0), "zero-HP fallback multiplier");
+		Equal(1m, GiantSlayerRune.ResolveDamageMultiplier(7), "below first eight-HP step multiplier");
+		Equal(1.01m, GiantSlayerRune.ResolveDamageMultiplier(8), "first eight-HP step multiplier");
+		Equal(1.49m, GiantSlayerRune.ResolveDamageMultiplier(399), "multiplier before cap");
+		Equal(1.5m, GiantSlayerRune.ResolveDamageMultiplier(400), "fifty-percent cap multiplier");
+		Equal(1.5m, GiantSlayerRune.ResolveDamageMultiplier(9999), "multiplier remains capped");
 	}
 
 	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()
