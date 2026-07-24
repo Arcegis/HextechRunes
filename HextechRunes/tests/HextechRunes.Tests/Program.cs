@@ -2468,6 +2468,8 @@ internal static partial class Program
 		Expect(!HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should not be registered initially");
 		HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests");
 		Expect(HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should be registered");
+		HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests");
+		Equal(1, HextechExternalContentRegistry.GetEventRelicTypes().Count(type => type == relicType), "idempotent event relic registration count");
 	}
 
 	private static void ExternalForgeRegistrationUpdatesCatalog()

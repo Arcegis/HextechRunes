@@ -4,6 +4,10 @@ public static class HextechRunesApi
 {
 	public const string PersistentInnateMarkerSavedPropertyName = "SavedCosplayInnateMarker";
 
+	/// <summary>
+	/// 注册外部玩家符文。必须在模组初始化阶段、共享遗物池首次枚举前调用。
+	/// </summary>
+	/// <exception cref="InvalidOperationException">目标模型池已经冻结，注册窗口已关闭。</exception>
 	public static void RegisterPlayerRune<TRune>(
 		HextechRarityTier rarity,
 		PlayerRuneFlags flags = PlayerRuneFlags.None,
@@ -16,6 +20,10 @@ public static class HextechRunesApi
 		RegisterPlayerRune(typeof(TRune), rarity, flags, characterPool, characterOrder, tagKey, assetModId);
 	}
 
+	/// <summary>
+	/// 注册外部玩家符文。必须在模组初始化阶段、共享遗物池首次枚举前调用。
+	/// </summary>
+	/// <exception cref="InvalidOperationException">目标模型池已经冻结，注册窗口已关闭。</exception>
 	public static void RegisterPlayerRune(
 		Type runeType,
 		HextechRarityTier rarity,
@@ -31,17 +39,25 @@ public static class HextechRunesApi
 		}
 
 		PlayerRuneRegistration registration = new(runeType, rarity, flags, characterPool, characterOrder, tagKey);
-		HextechExternalContentRegistry.RegisterPlayerRune(registration, assetModId);
-		HextechSavedPropertyBootstrap.InjectModelType(runeType);
 		HextechModelPoolRegistrar.RegisterPlayerRuneModels([ runeType ]);
+		HextechSavedPropertyBootstrap.InjectModelType(runeType);
+		HextechExternalContentRegistry.RegisterPlayerRune(registration, assetModId);
 	}
 
+	/// <summary>
+	/// 注册外部事件遗物。必须在模组初始化阶段、事件遗物池首次枚举前调用。
+	/// </summary>
+	/// <exception cref="InvalidOperationException">目标模型池已经冻结，注册窗口已关闭。</exception>
 	public static void RegisterEventRelic<TRelic>(string? assetModId = null)
 		where TRelic : RelicModel
 	{
 		RegisterEventRelic(typeof(TRelic), assetModId);
 	}
 
+	/// <summary>
+	/// 注册外部事件遗物。必须在模组初始化阶段、事件遗物池首次枚举前调用。
+	/// </summary>
+	/// <exception cref="InvalidOperationException">目标模型池已经冻结，注册窗口已关闭。</exception>
 	public static void RegisterEventRelic(Type relicType, string? assetModId = null)
 	{
 		if (relicType.IsAbstract || !typeof(RelicModel).IsAssignableFrom(relicType))
@@ -49,17 +65,25 @@ public static class HextechRunesApi
 			throw new ArgumentException($"Event relic type must be a concrete {nameof(RelicModel)}: {relicType.FullName}", nameof(relicType));
 		}
 
-		HextechExternalContentRegistry.RegisterEventRelic(relicType, assetModId);
-		HextechSavedPropertyBootstrap.InjectModelType(relicType);
 		HextechModelPoolRegistrar.RegisterEventRelicModels([ relicType ]);
+		HextechSavedPropertyBootstrap.InjectModelType(relicType);
+		HextechExternalContentRegistry.RegisterEventRelic(relicType, assetModId);
 	}
 
+	/// <summary>
+	/// 注册外部锻造。必须在模组初始化阶段、共享遗物池首次枚举前调用。
+	/// </summary>
+	/// <exception cref="InvalidOperationException">目标模型池已经冻结，注册窗口已关闭。</exception>
 	public static void RegisterForge<TForge>(HextechRarityTier rarity, string? assetModId = null)
 		where TForge : HextechForgeBase
 	{
 		RegisterForge(typeof(TForge), rarity, assetModId);
 	}
 
+	/// <summary>
+	/// 注册外部锻造。必须在模组初始化阶段、共享遗物池首次枚举前调用。
+	/// </summary>
+	/// <exception cref="InvalidOperationException">目标模型池已经冻结，注册窗口已关闭。</exception>
 	public static void RegisterForge(Type forgeType, HextechRarityTier rarity, string? assetModId = null)
 	{
 		if (forgeType.IsAbstract || !typeof(HextechForgeBase).IsAssignableFrom(forgeType))
@@ -67,9 +91,9 @@ public static class HextechRunesApi
 			throw new ArgumentException($"Forge type must be a concrete {nameof(HextechForgeBase)}: {forgeType.FullName}", nameof(forgeType));
 		}
 
-		HextechExternalContentRegistry.RegisterForge(new ForgeRegistration(forgeType, rarity), assetModId);
-		HextechSavedPropertyBootstrap.InjectModelType(forgeType);
 		HextechModelPoolRegistrar.RegisterForgeModels([ forgeType ]);
+		HextechSavedPropertyBootstrap.InjectModelType(forgeType);
+		HextechExternalContentRegistry.RegisterForge(new ForgeRegistration(forgeType, rarity), assetModId);
 	}
 
 	public static Task ObtainRandomForges(
