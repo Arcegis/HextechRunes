@@ -993,6 +993,15 @@ internal static partial class Program
 			GetAsyncStateMachineMoveNext(typeof(MindOverMatterRune).GetMethod(nameof(MindOverMatterRune.BeforeHandDraw))!),
 			nameof(MindOverMatterRune));
 		ExpectCombatGenerationFilters(
+			GetAsyncStateMachineMoveNext(typeof(SingularityAIRune).GetMethod(nameof(SingularityAIRune.BeforeHandDraw))!),
+			nameof(SingularityAIRune));
+		ExpectCombatGenerationFilters(
+			typeof(DeadwoodRune).GetMethod("CreateRandomCombatCard", BindingFlags.Instance | BindingFlags.NonPublic)!,
+			nameof(DeadwoodRune));
+		ExpectCombatGenerationFilters(
+			typeof(CorruptedBranchRune).GetMethod("CreateRandomCombatCard", BindingFlags.Instance | BindingFlags.NonPublic)!,
+			nameof(CorruptedBranchRune));
+		ExpectCombatGenerationFilters(
 			typeof(ColorDiscoveryRune).GetMethod("GetOtherCharacterCards", BindingFlags.NonPublic | BindingFlags.Static)!,
 			nameof(ColorDiscoveryRune));
 	}

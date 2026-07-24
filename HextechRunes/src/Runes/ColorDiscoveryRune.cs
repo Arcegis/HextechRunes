@@ -91,17 +91,22 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 		List<CardModel> options = [];
 		for (int i = 0; i < DynamicVars.Cards.IntValue && candidates.Count > 0; i++)
 		{
-			CardModel canonicalCard = HextechStableRandom.Pick(
+			CardModel? card = PickStableGeneratedCard(
+				combatState,
 				candidates,
-				(RunState)Owner.RunState,
-				HextechStableRandom.CardKey,
+				out ModelId canonicalCardId,
 				"color-discovery-option",
 				HextechStableRandom.PlayerKey(Owner),
 				combatState.RoundNumber.ToString(),
 				i.ToString(),
 				HextechStableRandom.CardPileKey(candidates));
-			options.Add(combatState.CreateCard(canonicalCard, Owner));
-			candidates.RemoveAll(card => card.Id == canonicalCard.Id);
+			if (card == null)
+			{
+				break;
+			}
+
+			options.Add(card);
+			candidates.RemoveAll(candidate => candidate.Id == canonicalCardId);
 		}
 
 		return options;
