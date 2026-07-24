@@ -140,10 +140,14 @@ internal static partial class HextechRuneSelectionCoordinator
 				syncContext.NextChoiceId,
 				choice => HextechChoiceCodec.TryDecodeEnemyHexAdjustment(choice, syncContext.ActIndex, out _),
 				$"enemy-hex-adjustment act={syncContext.ActIndex}",
-				EnemyHexAdjustmentTimeoutFrames);
+				RemoteRuneChoicePollFrames,
+				() => screen.IsInsideTree() && IsCurrentRun(runState) && IsMultiplayerConnected());
 			if (!received.HasValue)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync timeout: act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId}");
+				Log.Warn(
+					$"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync interrupted: " +
+					$"act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} " +
+					$"screenActive={screen.IsInsideTree()} runActive={IsCurrentRun(runState)} connected={IsMultiplayerConnected()}");
 				return;
 			}
 
