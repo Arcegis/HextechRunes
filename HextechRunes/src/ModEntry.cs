@@ -25,7 +25,10 @@ public static class ModEntry
 			// 注意:以下安装顺序即契约,勿重排——
 			// ① HextechModelBootstrap 必须先于 HextechSavedPropertyNetIdHooks(net-id 规范化的正确性前提:
 			//    规范化时名字集合已是最终集合,这是 1014/ModMismatch 修复的一部分);
-			// ② 全仓库不用 HarmonyPriority,同一目标方法多处 patch 的执行序 = 此处 Install 调用序。
+			// ② 同一目标方法多处 patch 默认按此处 Install 调用序;显式 priority 例外集中在:
+			//    RelicCmd.Obtain(RewardSafety=High/ForgeStacking=Low,保证 DoubleVision 事务包住锻炉叠层)、
+			//    PlayerCmd.EndTurn(First)、CardModel.CanPlay(Last,禁玩判定终裁)、
+			//    AttackCommand/敌方 power 缩放(Last/First)。新增 priority 时必须同步维护此清单。
 			HextechModelBootstrap.Install();
 			HextechRuneConfiguration.Initialize();
 			HextechTelemetry.Initialize();
