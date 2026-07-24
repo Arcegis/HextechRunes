@@ -165,6 +165,7 @@ internal static partial class Program
 			new(nameof(CompensationReplacementSuppressesSleightOfFleshResponse), CompensationReplacementSuppressesSleightOfFleshResponse),
 			new(nameof(EventRewardTransactionCommitsSequentially), EventRewardTransactionCommitsSequentially),
 			new(nameof(EventRewardTransactionRejectsLateRecordsAndSecondCommit), EventRewardTransactionRejectsLateRecordsAndSecondCommit),
+			new(nameof(EventRewardTransactionTryRecordSkipsLateAsyncRewards), EventRewardTransactionTryRecordSkipsLateAsyncRewards),
 			new(nameof(DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect), DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect),
 			new(nameof(DoubleVisionDustyTomeSaveLoadPreservesAncientCard), DoubleVisionDustyTomeSaveLoadPreservesAncientCard),
 			new(nameof(DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast), DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast),
@@ -2143,6 +2144,23 @@ internal static partial class Program
 		ExpectThrows<InvalidOperationException>(
 			() => transaction.CommitSequentially(static _ => Task.CompletedTask).GetAwaiter().GetResult(),
 			"event transaction should not commit twice");
+	}
+
+	private static void EventRewardTransactionTryRecordSkipsLateAsyncRewards()
+	{
+		EventRewardTransaction<int> transaction = new();
+		Expect(transaction.TryRecord(1), "open event transaction should accept its original reward");
+		transaction.CloseForRecording();
+		Expect(!transaction.TryRecord(2), "closed event transaction should ignore inherited async rewards");
+
+		List<int> committed = [];
+		transaction.CommitSequentially(item =>
+		{
+			committed.Add(item);
+			return Task.CompletedTask;
+		}).GetAwaiter().GetResult();
+
+		Expect(committed.SequenceEqual([1]), "late inherited reward must not enter the committed event batch");
 	}
 
 	private static void DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect()
