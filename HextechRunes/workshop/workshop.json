@@ -4,7 +4,7 @@
   "description": "[h1] Supported Languages [/h1]\nEnglish\n简体中文\n한국어 (Contributors: 我有幸福症, oatone, Nark)\nEspañol\n日本語\nPortuguês do Brasil (Contributor: floca)\nภาษาไทย\nРусский (Contributor: Dragon enjoyer)\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system inspired by League of Legends to Slay the Spire 2. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 300+ Hextech Runes with a wide variety of effects. On each floor, you choose one random Hextech Rune, while monsters also randomly gain a Hextech of the same rarity — both sides then fight under ever-changing rules.\n\nThe mod also adds character-specific Hextechs, stat forgers, brand-new cards, and statistics feedback, giving every run a different build direction and challenge pacing.\n\n[img]https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png[/img]\n[img]https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp[/img]\n\nIf you enjoy my mod, you can support me on Afdian: https://ifdian.net/a/Lu-Ran\nGithub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "海斗0.8.8热修：\n修复复视与第三方动态事件遗物、荒疫矛盾交互时可能卡死的问题；\n修复血肉戏法与敌方“百炼成钢”递归触发的问题；\n调整“重量级打击手”“生机迸发”“蛋白粉奶昔”的联机最大生命值系数阈值，并为“生机迸发”增加30%上限。",
+  "changeNote": "海斗0.8.8热修：\n修复联机选择海克斯时，纹理加载异常导致选项为空或刷新后只剩一个的问题。",
   "tags": [
     "Gameplay",
     "Modifiers",
