@@ -32,13 +32,13 @@ internal static class HextechMikaelsBlessingVfx
 				return;
 			}
 
-			Node? parent = creatureNode.GetParent();
-			if (!GodotObject.IsInstanceValid(parent))
+			Node2D? renderLayer = HextechBehindCreaturesLayer.GetOrCreate(creatureNode.GetParent());
+			if (renderLayer == null)
 			{
 				return;
 			}
 
-			MikaelsBlessingBurstVisual visual = new(creatureNode, parent);
+			MikaelsBlessingBurstVisual visual = new(creatureNode, renderLayer);
 			if (visual.Start())
 			{
 				TaskHelper.RunSafely(visual.RunAsync());
@@ -53,7 +53,7 @@ internal static class HextechMikaelsBlessingVfx
 	private sealed class MikaelsBlessingBurstVisual
 	{
 		private readonly NCreature _creature;
-		private readonly Node _renderParent;
+		private readonly Node2D _renderLayer;
 		private Node2D? _root;
 		private BurstLayer? _runeLayer;
 		private BurstLayer? _glowLayer;
@@ -62,10 +62,10 @@ internal static class HextechMikaelsBlessingVfx
 		private BurstLayer? _waveLayer;
 		private float _elapsed;
 
-		internal MikaelsBlessingBurstVisual(NCreature creature, Node renderParent)
+		internal MikaelsBlessingBurstVisual(NCreature creature, Node2D renderLayer)
 		{
 			_creature = creature;
-			_renderParent = renderParent;
+			_renderLayer = renderLayer;
 		}
 
 		internal bool Start()
@@ -87,7 +87,7 @@ internal static class HextechMikaelsBlessingVfx
 				ZAsRelative = true,
 				ZIndex = 0
 			};
-			_renderParent.AddChildSafely(_root);
+			_renderLayer.AddChildSafely(_root);
 			EnsureRenderOrder();
 			UpdatePosition();
 
@@ -97,7 +97,7 @@ internal static class HextechMikaelsBlessingVfx
 			_flashLayer = CreateLayer(_root, "WhiteGreenBurst", discTexture, new Color(0.86f, 1f, 0.88f, 0.78f), 3, additive: true);
 			_waveLayer = CreateLayer(_root, "OuterEmeraldWave", ringTexture, new Color(0.30f, 1f, 0.74f, 0.36f), 4, additive: true);
 			UpdateTransform();
-			HextechLog.Info($"[{ModInfo.Id}][MikaelsBlessingVfx] Burst attached node={_root.GetPath()} parent={_renderParent.GetPath()} creature={_creature.Entity?.ModelId.Entry ?? "<unknown>"}.");
+			HextechLog.Info($"[{ModInfo.Id}][MikaelsBlessingVfx] Burst attached node={_root.GetPath()} parent={_renderLayer.GetPath()} creature={_creature.Entity?.ModelId.Entry ?? "<unknown>"}.");
 			return true;
 		}
 
@@ -139,10 +139,7 @@ internal static class HextechMikaelsBlessingVfx
 
 		private void EnsureRenderOrder()
 		{
-			if (GodotObject.IsInstanceValid(_renderParent) && GodotObject.IsInstanceValid(_root) && _root.GetIndex() != 0)
-			{
-				_renderParent.MoveChildSafely(_root, 0);
-			}
+			HextechBehindCreaturesLayer.EnsureRenderOrder(_renderLayer);
 		}
 
 		private void UpdatePosition()

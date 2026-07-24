@@ -28,6 +28,11 @@ internal static partial class HextechCombatHooks
 
 	private static bool EntropyAfterPlayerTurnStartPrefix(EntropyPower __instance, PlayerChoiceContext choiceContext, Player player, ref Task __result)
 	{
+		if (__instance.Owner?.Player?.GetRelic<MysteryRune>() == null)
+		{
+			return true;
+		}
+
 		__result = SafeEntropyAfterPlayerTurnStart(__instance, choiceContext, player);
 		return false;
 	}

@@ -12,8 +12,10 @@ internal static partial class HextechCombatHooks
 		InstallCardPlayHooks(harmony);
 		InstallMaxHpHooks(harmony);
 		InstallPowerCompatibilityHooks(harmony);
-		InstallDamageCommandHooks(harmony);
-		InstallDualWieldIntentHooks(harmony);
+		if (InstallDamageCommandHooks(harmony))
+		{
+			InstallDualWieldIntentHooks(harmony);
+		}
 		InstallJeweledGauntletHooks(harmony);
 		TryInstallRuneHook<NearDeathFeastRune>("near-death feast", () => InstallNearDeathFeastHooks(harmony));
 		HextechPlayerRuneHooks.Install(harmony);
@@ -192,11 +194,12 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-	private static void InstallDamageCommandHooks(Harmony harmony)
+	private static bool InstallDamageCommandHooks(Harmony harmony)
 	{
+		HarmonyMethod? dualWieldPrefix = TryCreateDualWieldAttackCommandPrefix();
 		harmony.Patch(
 			RequireMethod(typeof(AttackCommand), nameof(AttackCommand.Execute), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext)),
-			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DualWieldAttackCommandExecutePrefix)),
+			prefix: dualWieldPrefix,
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(AttackCommandExecutePostfix))
 			{
 				priority = Priority.Last
@@ -253,5 +256,6 @@ internal static partial class HextechCombatHooks
 				typeof(ValueProp),
 				typeof(Creature)),
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(DieForYouModifyUnblockedDamageTargetPostfix)));
+		return dualWieldPrefix != null;
 	}
 }

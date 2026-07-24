@@ -19,9 +19,10 @@ public sealed class MindOverMatterRune : HextechRelicBase
 			return;
 		}
 
-		List<CardModel> pool = Owner.Character.CardPool
-			.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint)
-			.Where(static card => card.Rarity is not CardRarity.Basic and not CardRarity.Ancient && card.CanBeGeneratedInCombat)
+		List<CardModel> pool = CardFactory
+			.FilterForCombat(Owner.Character.CardPool
+				.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint))
+			.Where(static card => card.CanBeGeneratedByModifiers)
 			.ToList();
 		if (pool.Count == 0)
 		{

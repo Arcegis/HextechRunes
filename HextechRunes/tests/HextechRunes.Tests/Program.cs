@@ -1,11 +1,13 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using HarmonyLib;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
@@ -929,6 +931,60 @@ internal static partial class Program
 		Expect(CreativeAiUpgradeRune.UpgradeGeneratedCard(card), "Creative AI should generate an upgraded Power card");
 		Equal(1, card.CurrentUpgradeLevel, "Creative AI generated card upgrade level");
 		Expect(!CreativeAiUpgradeRune.UpgradeGeneratedCard(card), "an already upgraded generated card should not be upgraded twice");
+
+		ExpectCombatGenerationFilters(
+			GetAsyncStateMachineMoveNext(typeof(BlankCheckRune).GetMethod(nameof(BlankCheckRune.AfterPlayerTurnStart))!),
+			nameof(BlankCheckRune));
+		ExpectCombatGenerationFilters(
+			GetAsyncStateMachineMoveNext(typeof(MindOverMatterRune).GetMethod(nameof(MindOverMatterRune.BeforeHandDraw))!),
+			nameof(MindOverMatterRune));
+		ExpectCombatGenerationFilters(
+			typeof(ColorDiscoveryRune).GetMethod("GetOtherCharacterCards", BindingFlags.NonPublic | BindingFlags.Static)!,
+			nameof(ColorDiscoveryRune));
+	}
+
+	private static MethodInfo GetAsyncStateMachineMoveNext(MethodInfo asyncMethod)
+	{
+		Type stateMachineType = asyncMethod.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType
+			?? throw new InvalidOperationException($"{asyncMethod.DeclaringType?.Name}.{asyncMethod.Name} is not async");
+		return stateMachineType.GetMethod("MoveNext", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+			?? throw new MissingMethodException(stateMachineType.FullName, "MoveNext");
+	}
+
+	private static void ExpectCombatGenerationFilters(MethodBase method, string label)
+	{
+		List<MethodInfo> calledMethods = [];
+		CollectReferencedMethods(method, calledMethods, []);
+		Expect(
+			calledMethods.Any(static called => called.DeclaringType == typeof(CardFactory)
+				&& called.Name == nameof(CardFactory.FilterForCombat)),
+			$"{label} should use CardFactory.FilterForCombat");
+		Expect(
+			calledMethods.Any(static called => called.DeclaringType == typeof(CardModel)
+				&& called.Name == "get_CanBeGeneratedByModifiers"),
+			$"{label} should reject cards that modifiers cannot generate");
+	}
+
+	private static void CollectReferencedMethods(
+		MethodBase method,
+		List<MethodInfo> referencedMethods,
+		HashSet<MethodBase> visited)
+	{
+		if (!visited.Add(method))
+		{
+			return;
+		}
+
+		foreach (MethodInfo referenced in PatchProcessor.GetOriginalInstructions(method)
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>())
+		{
+			referencedMethods.Add(referenced);
+			if (referenced.DeclaringType?.Assembly == typeof(BlankCheckRune).Assembly)
+			{
+				CollectReferencedMethods(referenced, referencedMethods, visited);
+			}
+		}
 	}
 
 	private static void FortuneForgeRewardScalesByStacks()

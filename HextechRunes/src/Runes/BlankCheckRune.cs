@@ -25,9 +25,10 @@ public sealed class BlankCheckRune : HextechRelicBase
 			return;
 		}
 
-		List<CardModel> pool = ModelDb.CardPool<ColorlessCardPool>()
-			.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint)
-			.Where(static card => card.Rarity is not CardRarity.Basic and not CardRarity.Ancient && card.CanBeGeneratedInCombat)
+		List<CardModel> pool = CardFactory
+			.FilterForCombat(ModelDb.CardPool<ColorlessCardPool>()
+				.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint))
+			.Where(static card => card.CanBeGeneratedByModifiers)
 			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
 			.ToList();
 		if (pool.Count == 0)
