@@ -138,7 +138,9 @@ internal static partial class Program
 			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
 			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
 			new(nameof(EnemySlowHexesUseExpectedBaselinesAndTiers), EnemySlowHexesUseExpectedBaselinesAndTiers),
+			new(nameof(EnemyHeavyHitterScalesDamageEveryFifteenMaxHp), EnemyHeavyHitterScalesDamageEveryFifteenMaxHp),
 			new(nameof(EnemyVitalitySurgeScalesAllSustainFromMaxHp), EnemyVitalitySurgeScalesAllSustainFromMaxHp),
+			new(nameof(EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount), EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount),
 			new(nameof(EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls), EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls),
 			new(nameof(EnemyJeweledGauntletUsesExpectedStrengthTierChances), EnemyJeweledGauntletUsesExpectedStrengthTierChances),
 			new(nameof(EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes), EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes),
@@ -1812,6 +1814,34 @@ internal static partial class Program
 		Equal(1.01m, VitalitySurgeEnemyHex.ResolveMultiplier(20m), "Vitality Surge first threshold multiplier");
 		Equal(1.05m, VitalitySurgeEnemyHex.ResolveMultiplier(119m), "Vitality Surge floors partial twenty-HP steps");
 		Equal(1.06m, VitalitySurgeEnemyHex.ResolveMultiplier(120m), "Vitality Surge sixth threshold multiplier");
+		Equal(1.29m, VitalitySurgeEnemyHex.ResolveMultiplier(599m), "Vitality Surge multiplier below cap");
+		Equal(1.30m, VitalitySurgeEnemyHex.ResolveMultiplier(600m), "Vitality Surge multiplier at cap");
+		Equal(1.30m, VitalitySurgeEnemyHex.ResolveMultiplier(6000m), "Vitality Surge multiplier above cap");
+	}
+
+	private static void EnemyHeavyHitterScalesDamageEveryFifteenMaxHp()
+	{
+		Equal(1m, HeavyHitterEnemyHex.ResolveMultiplier(0m), "Heavy Hitter zero-HP multiplier");
+		Equal(1m, HeavyHitterEnemyHex.ResolveMultiplier(14m), "Heavy Hitter below first threshold multiplier");
+		Equal(1.01m, HeavyHitterEnemyHex.ResolveMultiplier(15m), "Heavy Hitter first threshold multiplier");
+		Equal(1.29m, HeavyHitterEnemyHex.ResolveMultiplier(449m), "Heavy Hitter multiplier below cap");
+		Equal(1.30m, HeavyHitterEnemyHex.ResolveMultiplier(450m), "Heavy Hitter multiplier at cap");
+		Equal(1.30m, HeavyHitterEnemyHex.ResolveMultiplier(4500m), "Heavy Hitter multiplier above cap");
+	}
+
+	private static void EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount()
+	{
+		Equal(1m, HeavyHitterEnemyHex.ResolveMultiplier(29m, 2), "two-player Heavy Hitter below 30-HP threshold");
+		Equal(1.01m, HeavyHitterEnemyHex.ResolveMultiplier(30m, 2), "two-player Heavy Hitter first threshold");
+		Equal(1.30m, HeavyHitterEnemyHex.ResolveMultiplier(900m, 2), "two-player Heavy Hitter cap");
+
+		Equal(1m, VitalitySurgeEnemyHex.ResolveMultiplier(39m, 2), "two-player Vitality Surge below 40-HP threshold");
+		Equal(1.01m, VitalitySurgeEnemyHex.ResolveMultiplier(40m, 2), "two-player Vitality Surge first threshold");
+		Equal(1.30m, VitalitySurgeEnemyHex.ResolveMultiplier(1200m, 2), "two-player Vitality Surge cap");
+
+		Equal(1m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(9m, 2), "two-player Protein Shake below 10-HP threshold");
+		Equal(1.01m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(10m, 2), "two-player Protein Shake first threshold");
+		Equal(2m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(1000m, 2), "two-player Protein Shake cap");
 	}
 
 	private static void EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls()
