@@ -183,7 +183,7 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 		set => _cardsPlayedThisTurn = Math.Max(0, value);
 	}
 
-	public override PowerType Type => Amount < 0m ? PowerType.Buff : PowerType.Debuff;
+	public override PowerType Type => PowerType.Buff;
 
 	public override PowerStackType StackType => PowerStackType.Counter;
 
@@ -194,8 +194,7 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 	internal static async Task ApplyAtZero(
 		Creature target,
 		Creature? applier,
-		CardModel? cardSource,
-		bool seedAsDebuff)
+		CardModel? cardSource)
 	{
 		HextechPlayerSlowPower? existing = target.GetPower<HextechPlayerSlowPower>();
 		if (existing != null)
@@ -204,17 +203,29 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 			return;
 		}
 
-		// PowerCmd.Apply(0) 会直接跳过。先用同侧语义的 1 层种子完成正规应用：
-		// 旧日雕像用 +1（debuff，可被对应防护拦截），百炼成钢用 -1（buff），
-		// 再直接归零以保留一个真正存在、可显示且能从 0 向两侧增长的 power 实例。
-		decimal seedAmount = seedAsDebuff ? 1m : -1m;
+		// PowerCmd.Apply(0) 会直接跳过。先用 1 层种子完成正规应用，再归零以保留实例。
+		// 这项系数状态统一按 Buff 处理，不参与“施加负面效果”类响应。
 		HextechPlayerSlowPower? applied = await HextechPowerCmdCompat.Apply<HextechPlayerSlowPower>(
 			target,
-			seedAmount,
+			1m,
 			applier,
 			cardSource,
 			silent: true);
 		applied?.SetAmount(0, silent: true);
+	}
+
+	internal static decimal NormalizeEnemyReductionAmount(decimal amount)
+	{
+		return decimal.Abs(amount);
+	}
+
+	internal void NormalizeEnemyReductionAmount()
+	{
+		decimal normalized = NormalizeEnemyReductionAmount(Amount);
+		if (normalized != Amount)
+		{
+			SetAmount((int)normalized, silent: true);
+		}
 	}
 
 	internal static void ResetEnemyHexSlowForRound(IEnumerable<Creature> creatures)
@@ -246,7 +257,10 @@ public sealed class HextechPlayerSlowPower : HextechPowerBase
 			return 1m;
 		}
 
-		decimal multiplier = 1m + Amount / 100m;
+		decimal signedAmount = Owner.Side == CombatSide.Enemy
+			? -NormalizeEnemyReductionAmount(Amount)
+			: Amount;
+		decimal multiplier = 1m + signedAmount / 100m;
 		return Math.Max(0m, multiplier);
 	}
 

@@ -11,7 +11,7 @@ internal sealed class AncientStatueEnemyHex : HextechEnemyHexEffect
 	{
 		foreach (Creature player in players.Where(static player => player.IsAlive))
 		{
-			await HextechPlayerSlowPower.ApplyAtZero(player, null, null, seedAsDebuff: true);
+			await HextechPlayerSlowPower.ApplyAtZero(player, null, null);
 		}
 	}
 

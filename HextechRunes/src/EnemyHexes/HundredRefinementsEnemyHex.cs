@@ -11,7 +11,7 @@ internal sealed class HundredRefinementsEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		await HextechPlayerSlowPower.ApplyAtZero(enemy, enemy, null, seedAsDebuff: false);
+		await HextechPlayerSlowPower.ApplyAtZero(enemy, enemy, null);
 	}
 
 	internal override Task BeforePlayerSideTurnStart(
@@ -30,18 +30,20 @@ internal sealed class HundredRefinementsEnemyHex : HextechEnemyHexEffect
 		Creature? dealer,
 		CardModel? cardSource)
 	{
+		HextechPlayerSlowPower? slow = target.GetPower<HextechPlayerSlowPower>();
 		if (!target.IsAlive
 			|| target.Side != CombatSide.Enemy
 			|| target.CombatState?.RunState != context.RunState
 			|| result.UnblockedDamage <= 0m
-			|| target.GetPower<HextechPlayerSlowPower>() == null)
+			|| slow == null)
 		{
 			return Task.CompletedTask;
 		}
 
+		slow.NormalizeEnemyReductionAmount();
 		return HextechPowerCmdCompat.Apply<HextechPlayerSlowPower>(
 			target,
-			-ResolveSlowReduction(context.GetStrengthTier(Kind)),
+			ResolveSlowReduction(context.GetStrengthTier(Kind)),
 			dealer,
 			cardSource,
 			silent: true);

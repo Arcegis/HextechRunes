@@ -1789,6 +1789,10 @@ internal static partial class Program
 		Equal(0m, HextechPlayerSlowPower.EnemyCombatStartAmount, "Hundred Refinements enemy Slow baseline");
 		Equal(0, HextechPlayerSlowPower.RoundStartAmount, "enemy Slow hexes reset to zero each round");
 		Equal(-90m, HextechPlayerSlowPower.LegacySnailCombatStartAmount, "retired Snail Form keeps its old-save baseline");
+		HextechPlayerSlowPower slow = new();
+		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.Type, "custom Slow should be classified as a buff");
+		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.GetTypeForAmount(8m), "positive Hundred Refinements changes should not trigger debuff reactions");
+		Equal(8m, HextechPlayerSlowPower.NormalizeEnemyReductionAmount(-8m), "legacy negative Hundred Refinements Slow should migrate by magnitude");
 		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(0), "Ancient Statue tier zero fallback Slow gain");
 		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(1), "Ancient Statue tier one Slow gain");
 		Equal(8, AncientStatueEnemyHex.ResolveCardSlowGain(2), "Ancient Statue tier two Slow gain");
