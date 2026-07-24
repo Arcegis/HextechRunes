@@ -1,7 +1,3 @@
-[h1] Edição Public [/h1]
-Este item é compatível com o branch padrão (público) de Slay the Spire 2. Se você joga no [b]branch beta[/b], inscreva-se na edição Beta:
-https://steamcommunity.com/sharedfiles/filedetails/?id=3758775855
-
 [h1] Idiomas suportados [/h1]
 English
 简体中文

@@ -1,7 +1,3 @@
-[h1] Edición Public [/h1]
-Este artículo es compatible con la rama predeterminada (pública) de Slay the Spire 2. Si juegas en la [b]rama beta[/b], suscríbete a la edición Beta:
-https://steamcommunity.com/sharedfiles/filedetails/?id=3758775855
-
 [h1] Idiomas compatibles [/h1]
 English
 简体中文

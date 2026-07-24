@@ -1,7 +1,3 @@
-[h1] Public Edition [/h1]
-This item supports the default (public) branch of Slay the Spire 2. If you play on the [b]beta branch[/b], please subscribe to the Beta edition instead:
-https://steamcommunity.com/sharedfiles/filedetails/?id=3758775855
-
 [h1] Supported Languages [/h1]
 English
 简体中文

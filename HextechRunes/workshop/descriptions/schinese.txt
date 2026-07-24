@@ -1,7 +1,3 @@
-[h1] Public 版说明 [/h1]
-本物品支持《杀戮尖塔2》的正式（公开）分支。[b]beta 分支[/b]的玩家请订阅 Beta 版模组：
-https://steamcommunity.com/sharedfiles/filedetails/?id=3758775855
-
 [h1] Supported Languages / 支持语言 [/h1]
 English
 简体中文
@@ -22,8 +18,6 @@ Português do Brasil（贡献者：floca）
 [h1] 注意事项 [/h1]
 海克斯大乱斗无需前置模组。
 在联机游玩时，请确保主机/客机的RitsuLib/BaseLib等前置模组启用情况相同（即要么都开，要么都不开），否则会有因SavedProperty不同而联机不同步的风险。
-由于当前有两个版本的模组同时更新（公开版与beta版），所以创意工坊偶尔会出现下载错误版本模组的问题。解决方案为【在steam右键游戏-属性-游戏版本及测试版，然后选择另外一个分支，再切换回来，就能让创意工坊正确下载原分支的模组】。
-
 [img]https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png[/img]
 [img]https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp[/img]
 

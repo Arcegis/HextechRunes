@@ -1,7 +1,3 @@
-[h1] รุ่น Public [/h1]
-ไอเทมนี้รองรับบรานช์ปกติ (สาธารณะ) ของ Slay the Spire 2 หากคุณเล่นบน[b]บรานช์เบต้า[/b] โปรดกดติดตามเวอร์ชัน Beta แทน:
-https://steamcommunity.com/sharedfiles/filedetails/?id=3758775855
-
 [h1] ภาษาที่รองรับ [/h1]
 English
 简体中文
