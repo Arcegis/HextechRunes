@@ -33,6 +33,9 @@ internal static partial class HextechRunLifecycleHooks
 
 	private static void StartRunPrefix(RunState runState)
 	{
+		HextechRunLogBudget.Reset();
+		HextechCombatHooks.ResetTransientCombatState();
+		HextechEnemyHexEffects.ResetAllRunScopedState();
 		HextechGoldrendSync.ResetCombat();
 		HextechRuneSelectionCoordinator.ResetActSelectionState();
 		HextechEnemyUi.Clear();

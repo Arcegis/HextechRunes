@@ -449,7 +449,7 @@ internal static class HextechChoiceCodec
 			if (!TryGetRuneIdForOrdinal(payload[cursor + i], out ModelId id))
 			{
 				finalOptionIds.Clear();
-				return true;
+				return false;
 			}
 
 			finalOptionIds.Add(id);
@@ -538,6 +538,12 @@ internal static class HextechChoiceCodec
 		return TryDecodeForgeSelection(result, out _, out _);
 	}
 
+	public static bool IsMalformedForgeSelectionEnvelope(PlayerChoiceResult result)
+	{
+		return IsChoiceEnvelope(result, ChoiceKindForgeSelection)
+			&& !TryDecodeForgeSelection(result, out _, out _);
+	}
+
 	public static bool TryDecodeForgeSelection(PlayerChoiceResult result, out int selectedIndex, out List<ModelId> optionIds)
 	{
 		selectedIndex = -1;
@@ -572,7 +578,7 @@ internal static class HextechChoiceCodec
 			if (!TryGetForgeIdForOrdinal(payload[4 + i], out ModelId id))
 			{
 				optionIds.Clear();
-				return true;
+				return false;
 			}
 
 			optionIds.Add(id);
@@ -609,6 +615,12 @@ internal static class HextechChoiceCodec
 		return true;
 	}
 
+	public static bool IsMalformedRelicOptionSelectionEnvelope(PlayerChoiceResult result)
+	{
+		return IsChoiceEnvelope(result, ChoiceKindRelicOptionSelection)
+			&& !TryDecodeRelicOptionSelection(result, out _, out _);
+	}
+
 	public static bool TryDecodeRelicOptionSelection(PlayerChoiceResult result, out int selectedIndex, out List<ModelId> optionIds)
 	{
 		selectedIndex = -1;
@@ -637,6 +649,14 @@ internal static class HextechChoiceCodec
 
 		id = ids[ordinal];
 		return true;
+	}
+
+	private static bool IsChoiceEnvelope(PlayerChoiceResult result, int choiceKind)
+	{
+		return TryGetIndexPayload(result, out List<int> payload)
+			&& payload.Count >= 2
+			&& payload[0] == Magic
+			&& payload[1] == choiceKind;
 	}
 
 	public static PlayerChoiceResult CreateActSelectionApplied(int actIndex, int choiceOrdinal)

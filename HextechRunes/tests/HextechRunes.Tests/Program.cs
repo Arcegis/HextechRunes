@@ -29,7 +29,9 @@ internal static partial class Program
 	private const int ChoiceKindRuneSelection = 2;
 	private const int ChoiceKindActSelectionApplied = 3;
 	private const int ChoiceKindEnemyHexAdjustment = 4;
+	private const int ChoiceKindForgeSelection = 5;
 	private const int ChoiceKindRandomRuneGrant = 6;
+	private const int ChoiceKindRelicOptionSelection = 7;
 	private const int EnemyHexAdjustmentListVersion = -2;
 	private const int StableModelIdListVersion = -3;
 
@@ -428,6 +430,58 @@ internal static partial class Program
 		});
 
 		Expect(!HextechChoiceCodec.TryDecodeRandomRuneGrant(badSerializedId, out _), "malformed model id should be rejected");
+
+		PlayerChoiceResult runeSelectionWithOutOfRangeLegacyOrdinal = PlayerChoiceResult.FromIndexes(new List<int>
+		{
+			Magic,
+			ChoiceKindRuneSelection,
+			1,
+			2,
+			0,
+			0,
+			1,
+			int.MaxValue
+		});
+		Expect(
+			!HextechChoiceCodec.TryDecodeRuneSelection(runeSelectionWithOutOfRangeLegacyOrdinal, 1, 2, out _, out _, out _),
+			"out-of-range legacy rune selection ordinal should be rejected");
+
+		PlayerChoiceResult forgeSelectionWithOutOfRangeLegacyOrdinal = PlayerChoiceResult.FromIndexes(new List<int>
+		{
+			Magic,
+			ChoiceKindForgeSelection,
+			0,
+			1,
+			int.MaxValue
+		});
+		Expect(
+			!HextechChoiceCodec.TryDecodeForgeSelection(forgeSelectionWithOutOfRangeLegacyOrdinal, out _, out _),
+			"out-of-range legacy forge selection ordinal should be rejected");
+		Expect(
+			HextechChoiceCodec.IsMalformedForgeSelectionEnvelope(forgeSelectionWithOutOfRangeLegacyOrdinal),
+			"malformed forge selection envelope should remain identifiable");
+
+		PlayerChoiceResult malformedRelicOptionSelection = PlayerChoiceResult.FromIndexes(new List<int>
+		{
+			Magic,
+			ChoiceKindRelicOptionSelection,
+			0,
+			StableModelIdListVersion
+		});
+		Expect(
+			HextechChoiceCodec.IsMalformedRelicOptionSelectionEnvelope(malformedRelicOptionSelection),
+			"malformed relic option envelope should remain identifiable");
+
+		PlayerChoiceResult randomGrantWithOutOfRangeLegacyOrdinal = PlayerChoiceResult.FromIndexes(new List<int>
+		{
+			Magic,
+			ChoiceKindRandomRuneGrant,
+			1,
+			int.MaxValue
+		});
+		Expect(
+			!HextechChoiceCodec.TryDecodeRandomRuneGrant(randomGrantWithOutOfRangeLegacyOrdinal, out _),
+			"out-of-range legacy random grant ordinal should be rejected");
 	}
 
 	private static void RelicOptionSelectionRoundTripRequiresMatchingOptions()

@@ -10,6 +10,9 @@ internal static partial class HextechRunLifecycleHooks
 
 	private static void LoadRunPostfix(RunState runState, ref Task __result)
 	{
+		HextechRunLogBudget.Reset();
+		HextechCombatHooks.ResetTransientCombatState();
+		HextechEnemyHexEffects.ResetAllRunScopedState();
 		__result = LoadRunAfterOriginal(__result, runState);
 	}
 

@@ -99,7 +99,8 @@ internal static class HextechForgeSelectionCoordinator
 			player,
 			choiceId,
 			HextechChoiceCodec.IsForgeSelection,
-			$"forge-choice {context}");
+			$"forge-choice {context}",
+			HextechChoiceCodec.IsMalformedForgeSelectionEnvelope);
 		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Remote received: player={player.NetId} choiceId={receivedChoiceId} context={context}");
 		return ResolveRemoteForgeChoice(player, options, remoteChoice, context);
 	}
@@ -150,10 +151,14 @@ internal static class HextechForgeSelectionCoordinator
 
 	private static RelicModel ResolveRemoteForgeChoice(Player player, IReadOnlyList<RelicModel> fallbackOptions, PlayerChoiceResult remoteChoice, string context)
 	{
+		string payloadDump = HextechChoiceCodec.TryGetIndexPayload(remoteChoice, out List<int> payload)
+			? $"[{string.Join(",", payload)}]"
+			: remoteChoice.ToString();
 		if (!HextechChoiceCodec.TryDecodeForgeSelection(remoteChoice, out int selectedIndex, out List<ModelId> optionIds))
 		{
-			Log.Warn($"[{ModInfo.Id}][ForgeChoice] Malformed payload: player={player.NetId} context={context} result={remoteChoice}");
-			return fallbackOptions[0];
+			string message = $"[{ModInfo.Id}][ForgeChoice] Malformed payload: player={player.NetId} context={context} payload={payloadDump}";
+			Log.Error(message);
+			throw new InvalidOperationException(message);
 		}
 
 		IReadOnlyList<RelicModel> finalOptions = fallbackOptions;
@@ -165,14 +170,15 @@ internal static class HextechForgeSelectionCoordinator
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Failed to load synced option model; falling back to local options: player={player.NetId} context={context} error={ex.Message}");
+				Log.Error($"[{ModInfo.Id}][ForgeChoice] Failed to load synced option model; falling back to local options: player={player.NetId} selectedIndex={selectedIndex} context={context} ids={string.Join(",", optionIds)} error={ex}");
 			}
 		}
 
 		if (selectedIndex < 0 || selectedIndex >= finalOptions.Count)
 		{
-			Log.Warn($"[{ModInfo.Id}][ForgeChoice] Invalid selected index: player={player.NetId} index={selectedIndex} count={finalOptions.Count} context={context}");
-			return finalOptions.FirstOrDefault() ?? fallbackOptions[0];
+			string message = $"[{ModInfo.Id}][ForgeChoice] Invalid selected index: player={player.NetId} index={selectedIndex} count={finalOptions.Count} context={context} payload={payloadDump}";
+			Log.Error(message);
+			throw new InvalidOperationException(message);
 		}
 
 		return finalOptions[selectedIndex];
@@ -208,9 +214,10 @@ internal static class HextechForgeSelectionCoordinator
 				return modifier.RandomForgeDirectGrant;
 			}
 		}
-		catch
+		catch (Exception ex)
 		{
-			// Fall back to local configuration when no run state is available yet.
+			Log.Error($"[{ModInfo.Id}][ForgeChoice] Failed to read synchronized random-forge setting; using deterministic false fallback: player={player.NetId} error={ex}");
+			return false;
 		}
 
 		return HextechRuneConfiguration.GetSnapshot().RandomForgeDirectGrant;

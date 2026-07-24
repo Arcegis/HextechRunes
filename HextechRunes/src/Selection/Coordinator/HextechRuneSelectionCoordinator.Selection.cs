@@ -239,7 +239,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		modifier.RecordSeenPlayerRunes(player, options);
 		RelicModel? selectedRelic = options.FirstOrDefault();
 		string selectedId = selectedRelic == null ? "None" : (selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id).Entry;
-		Log.Warn($"[{ModInfo.Id}][Mayhem] RuneChoice fallback: context={context} player={player.NetId} choiceId={choiceId} selected={selectedId}");
+		Log.Warn($"[{ModInfo.Id}][Mayhem] RuneChoice fallback: context={context} player={player.NetId} choiceId={choiceId} selected={selectedId} connected={IsMultiplayerConnected()}");
 		return new RuneSelectionResult(selectedRelic, options.ToList(), 0, null);
 	}
 
@@ -260,7 +260,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (syncedOptionIds.Count > 0)
 		{
-			if (TryCreateSyncedRuneOptions(player, syncedOptionIds, out List<RelicModel> syncedOptions))
+			if (TryCreateSyncedRuneOptions(player, syncedOptionIds, actIndex, choiceOrdinal, out List<RelicModel> syncedOptions))
 			{
 				MarkRelicsSeen(syncedOptions);
 				modifier.RecordSeenPlayerRunes(player, syncedOptions);
@@ -299,7 +299,12 @@ internal static partial class HextechRuneSelectionCoordinator
 			: enemyHexOptions.InitialHexes;
 	}
 
-	private static bool TryCreateSyncedRuneOptions(Player player, IReadOnlyList<ModelId> optionIds, out List<RelicModel> options)
+	private static bool TryCreateSyncedRuneOptions(
+		Player player,
+		IReadOnlyList<ModelId> optionIds,
+		int actIndex,
+		int choiceOrdinal,
+		out List<RelicModel> options)
 	{
 		options = new(optionIds.Count);
 		try
@@ -314,7 +319,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: failed to load synced option model: {ex.Message}", 2);
+			Log.Error($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: failed to load synced option model: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} ids={string.Join(",", optionIds)} error={ex}");
 			options.Clear();
 			return false;
 		}

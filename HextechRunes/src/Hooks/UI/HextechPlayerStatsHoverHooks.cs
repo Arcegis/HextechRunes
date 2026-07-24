@@ -13,7 +13,6 @@ internal static class HextechPlayerStatsHoverHooks
 
 	private static readonly FieldInfo PortraitHoverTipField = RequireField(typeof(NTopBarPortraitTip), "_hoverTip");
 	private static readonly FieldInfo HoverTipDescriptionField = RequireField(typeof(HoverTip), "<Description>k__BackingField");
-	private static int _failedUpdateLogs;
 
 	public static void Install(Harmony harmony)
 	{
@@ -58,7 +57,7 @@ internal static class HextechPlayerStatsHoverHooks
 		}
 		catch (Exception ex)
 		{
-			if (_failedUpdateLogs++ < 3)
+			if (HextechRunLogBudget.TryConsume("ui.player-stats-hover-update-failure", 3))
 			{
 				Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to update portrait stat hover tip: {ex.GetType().Name}: {ex.Message}");
 			}

@@ -90,7 +90,8 @@ internal static class HextechRelicOptionSelectionCoordinator
 			player,
 			choiceId,
 			result => HextechChoiceCodec.IsRelicOptionSelection(result, options),
-			$"relic-option-choice {context}");
+			$"relic-option-choice {context}",
+			HextechChoiceCodec.IsMalformedRelicOptionSelectionEnvelope);
 		HextechLog.Info($"[{ModInfo.Id}][RelicOptionChoice] Remote received: player={player.NetId} choiceId={receivedChoiceId} context={context}");
 		return ResolveRemoteRelicOptionChoice(player, options, remoteChoice, context);
 	}
@@ -140,10 +141,14 @@ internal static class HextechRelicOptionSelectionCoordinator
 
 	private static RelicModel ResolveRemoteRelicOptionChoice(Player player, IReadOnlyList<RelicModel> fallbackOptions, PlayerChoiceResult remoteChoice, string context)
 	{
+		string payloadDump = HextechChoiceCodec.TryGetIndexPayload(remoteChoice, out List<int> payload)
+			? $"[{string.Join(",", payload)}]"
+			: remoteChoice.ToString();
 		if (!HextechChoiceCodec.TryDecodeRelicOptionSelection(remoteChoice, out int selectedIndex, out List<ModelId> optionIds))
 		{
-			Log.Warn($"[{ModInfo.Id}][RelicOptionChoice] Malformed payload: player={player.NetId} context={context} result={remoteChoice}");
-			return fallbackOptions[0];
+			string message = $"[{ModInfo.Id}][RelicOptionChoice] Malformed payload: player={player.NetId} context={context} payload={payloadDump}";
+			Log.Error(message);
+			throw new InvalidOperationException(message);
 		}
 
 		IReadOnlyList<RelicModel> finalOptions = fallbackOptions;
@@ -155,14 +160,15 @@ internal static class HextechRelicOptionSelectionCoordinator
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][RelicOptionChoice] Failed to load synced option model; falling back to local options: player={player.NetId} context={context} error={ex.Message}");
+				Log.Error($"[{ModInfo.Id}][RelicOptionChoice] Failed to load synced option model; falling back to local options: player={player.NetId} selectedIndex={selectedIndex} context={context} ids={string.Join(",", optionIds)} error={ex}");
 			}
 		}
 
 		if (selectedIndex < 0 || selectedIndex >= finalOptions.Count)
 		{
-			Log.Warn($"[{ModInfo.Id}][RelicOptionChoice] Invalid selected index: player={player.NetId} index={selectedIndex} count={finalOptions.Count} context={context}");
-			return finalOptions.FirstOrDefault() ?? fallbackOptions[0];
+			string message = $"[{ModInfo.Id}][RelicOptionChoice] Invalid selected index: player={player.NetId} index={selectedIndex} count={finalOptions.Count} context={context} payload={payloadDump}";
+			Log.Error(message);
+			throw new InvalidOperationException(message);
 		}
 
 		return finalOptions[selectedIndex];

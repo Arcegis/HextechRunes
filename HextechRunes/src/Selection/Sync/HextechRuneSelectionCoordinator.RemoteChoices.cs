@@ -12,7 +12,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		Player player,
 		uint initialChoiceId,
 		Func<PlayerChoiceResult, bool> isExpected,
-		string context)
+		string context,
+		Func<PlayerChoiceResult, bool>? shouldReturnMalformedExactChoice = null)
 	{
 		(PlayerChoiceResult Result, uint ChoiceId)? result = await TryWaitForRemoteHextechChoice(
 			synchronizer,
@@ -21,7 +22,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			initialChoiceId,
 			isExpected,
 			context,
-			timeoutFrames: null);
+			timeoutFrames: null,
+			shouldReturnMalformedExactChoice: shouldReturnMalformedExactChoice);
 		if (result.HasValue)
 		{
 			return result.Value;
@@ -38,7 +40,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		Func<PlayerChoiceResult, bool> isExpected,
 		string context,
 		int? timeoutFrames,
-		Func<bool>? shouldContinueAfterTimeout = null)
+		Func<bool>? shouldContinueAfterTimeout = null,
+		Func<PlayerChoiceResult, bool>? shouldReturnMalformedExactChoice = null)
 	{
 		uint choiceId = initialChoiceId;
 		int skipped = 0;
@@ -66,7 +69,9 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			PlayerChoiceResult remoteChoice = remote.Value.Result;
 			uint receivedChoiceId = remote.Value.ChoiceId;
-			if (isExpected(remoteChoice))
+			if (isExpected(remoteChoice)
+				|| (receivedChoiceId == choiceId
+					&& shouldReturnMalformedExactChoice?.Invoke(remoteChoice) == true))
 			{
 				if (skipped > 0 || receivedChoiceId != choiceId)
 				{

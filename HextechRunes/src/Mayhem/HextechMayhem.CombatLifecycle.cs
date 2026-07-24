@@ -4,6 +4,7 @@ internal sealed partial class HextechMayhemModifier
 {
 	public override async Task BeforeCombatStart()
 	{
+		HextechCombatHooks.ResetTransientCombatState();
 		HextechGoldrendSync.ResetCombat();
 		ResetCombatTracking();
 		HextechMultiplayerScalingCompat.RefreshHostScalingFlagForLocalHost(this);
@@ -28,6 +29,7 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterCombatEnd(CombatRoom room)
 	{
+		HextechCombatHooks.ResetTransientCombatState();
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterCombatEnd(context, room));
@@ -106,6 +108,7 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
+		HextechCombatHooks.ClearPendingManualPlayState();
 		await ApplyDeferredBossStartHexes(combatState);
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,

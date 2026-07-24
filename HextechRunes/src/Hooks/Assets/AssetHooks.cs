@@ -418,11 +418,9 @@ internal static class AssetHooks
 		}
 	}
 
-	private static int _assetHookFailureLogs;
-
 	private static void LogAssetHookFailure(string hook, Exception ex)
 	{
-		if (_assetHookFailureLogs++ < 10)
+		if (HextechRunLogBudget.TryConsume("assets.hook-failure", 10))
 		{
 			Log.Error($"[{ModInfo.Id}][Assets] {hook} failed; keeping original result: {ex}");
 		}

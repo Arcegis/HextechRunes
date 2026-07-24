@@ -147,6 +147,14 @@ internal static class HextechEnemyHexEffects
 		.Select(static effect => effect.Kind)
 		.ToHashSet();
 
+	internal static void ResetAllRunScopedState()
+	{
+		foreach (HextechEnemyHexEffect effect in OrderedEffects)
+		{
+			effect.ResetRunScopedState();
+		}
+	}
+
 	private static IReadOnlyList<HextechEnemyHexEffect> CreateOrderedEffects(IReadOnlyList<HextechEnemyHexEffect> effects)
 	{
 		MonsterHexKind[] duplicateKinds = effects

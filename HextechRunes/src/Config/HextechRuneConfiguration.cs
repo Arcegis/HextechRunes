@@ -339,28 +339,71 @@ internal static class HextechRuneConfiguration
 
 	private static RuneConfig LoadOrCreateConfig()
 	{
-		string configPath = GetConfigPath();
-		Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-		if (!File.Exists(configPath))
-		{
-			RuneConfig defaultConfig = CreateDefaultConfig();
-			SaveConfig(defaultConfig);
-			return defaultConfig;
-		}
-
+		string? configPath = null;
 		try
 		{
+			configPath = GetConfigPath();
+			if (!File.Exists(configPath))
+			{
+				RuneConfig defaultConfig = CreateDefaultConfig();
+				SaveConfig(defaultConfig);
+				return defaultConfig;
+			}
+
 			RuneConfig? parsed = JsonSerializer.Deserialize<RuneConfig>(File.ReadAllText(configPath), JsonOptions);
 			RuneConfig config = NormalizeLoadedConfig(parsed ?? new RuneConfig());
 			SaveConfig(config);
 			return config;
 		}
+		catch (JsonException ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config JSON is invalid; using defaults: {ex.Message}", 2);
+			RuneConfig config = CreateDefaultConfig();
+			if (configPath != null && TryBackupCorruptConfig(configPath))
+			{
+				SaveConfig(config);
+			}
+
+			return config;
+		}
+		catch (UnauthorizedAccessException ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config read was denied; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			return CreateDefaultConfig();
+		}
+		catch (IOException ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			return CreateDefaultConfig();
+		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config read failed; using defaults: {ex.Message}", 2);
-			RuneConfig config = CreateDefaultConfig();
-			SaveConfig(config);
-			return config;
+			Log.Error($"[{ModInfo.Id}][RuneConfig] Unexpected config read failure; using in-memory defaults without overwriting the file: {ex}");
+			return CreateDefaultConfig();
+		}
+	}
+
+	private static bool TryBackupCorruptConfig(string configPath)
+	{
+		try
+		{
+			File.Copy(configPath, configPath + ".corrupt.bak", overwrite: true);
+			return true;
+		}
+		catch (UnauthorizedAccessException ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][RuneConfig] Could not back up corrupt config; original file will not be overwritten: {ex.Message}", 2);
+			return false;
+		}
+		catch (IOException ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][RuneConfig] Could not back up corrupt config; original file will not be overwritten: {ex.Message}", 2);
+			return false;
+		}
+		catch (Exception ex)
+		{
+			Log.Error($"[{ModInfo.Id}][RuneConfig] Unexpected corrupt-config backup failure; original file will not be overwritten: {ex}");
+			return false;
 		}
 	}
 
@@ -750,9 +793,17 @@ internal static class HextechRuneConfiguration
 
 	private static void SaveConfig(RuneConfig config)
 	{
-		string configPath = GetConfigPath();
-		Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-		File.WriteAllText(configPath, JsonSerializer.Serialize(config, JsonOptions));
+		try
+		{
+			string configPath = GetConfigPath();
+			Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+			string serialized = JsonSerializer.Serialize(config, JsonOptions);
+			File.WriteAllText(configPath, serialized);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config write failed: {ex.Message}", 2);
+		}
 	}
 
 	private static string GetConfigPath()

@@ -279,9 +279,10 @@ internal static class HextechRunePoolBuilder
 				return new HashSet<string>(StringComparer.Ordinal);
 			}
 		}
-		catch
+		catch (Exception ex)
 		{
-			// Fall back to local configuration outside a fully initialized multiplayer run.
+			Log.Error($"[{ModInfo.Id}][RuneConfig] Failed to read multiplayer service while resolving disabled player runes; using deterministic empty fallback: {ex}");
+			return new HashSet<string>(StringComparer.Ordinal);
 		}
 
 		return HextechRuneConfiguration.GetDisabledPlayerRuneIds();

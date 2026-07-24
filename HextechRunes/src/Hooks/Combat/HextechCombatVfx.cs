@@ -35,6 +35,7 @@ internal static class HextechCombatVfxHooks
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
 	{
+		HextechCreatureNodeRegistry.Clear();
 		foreach (NCreature creature in __instance.CreatureNodes)
 		{
 			HextechCreatureNodeRegistry.Register(creature);
@@ -84,10 +85,15 @@ internal static class HextechCombatVfxHooks
 	}
 }
 
-/// <summary>entity → 屏幕节点 的弱映射,由战斗节点生命周期 hook 填充;取用时校验有效性、惰性清理失效项。</summary>
+/// <summary>entity → 屏幕节点映射,由战斗节点生命周期 hook 填充;新战斗重建,取用时校验有效性。</summary>
 internal static class HextechCreatureNodeRegistry
 {
 	private static readonly Dictionary<Creature, NCreature> Nodes = new();
+
+	internal static void Clear()
+	{
+		Nodes.Clear();
+	}
 
 	internal static void Register(NCreature? node)
 	{
@@ -97,13 +103,7 @@ internal static class HextechCreatureNodeRegistry
 		}
 
 		Nodes[node.Entity] = node;
-		if (Nodes.Count > 24)
-		{
-			Prune();
-		}
 	}
-
-	private static int _safeGetFailureLogs;
 
 	/// <summary>AddCreature postfix 专用:GetCreatureNode 在战斗构建/召唤同步链上,异常不能外泄。</summary>
 	internal static NCreature? SafeGetCreatureNode(NCombatRoom room, Creature creature)
@@ -114,7 +114,7 @@ internal static class HextechCreatureNodeRegistry
 		}
 		catch (Exception ex)
 		{
-			if (_safeGetFailureLogs++ < 5)
+			if (HextechRunLogBudget.TryConsume("combat.creature-node-safe-get-failure", 5))
 			{
 				Log.Error($"[{ModInfo.Id}][Mayhem] GetCreatureNode failed in AddCreature postfix: {ex}");
 			}
@@ -131,23 +131,6 @@ internal static class HextechCreatureNodeRegistry
 		}
 
 		return null;
-	}
-
-	private static void Prune()
-	{
-		List<Creature> stale = [];
-		foreach (KeyValuePair<Creature, NCreature> pair in Nodes)
-		{
-			if (!GodotObject.IsInstanceValid(pair.Value))
-			{
-				stale.Add(pair.Key);
-			}
-		}
-
-		foreach (Creature key in stale)
-		{
-			Nodes.Remove(key);
-		}
 	}
 }
 

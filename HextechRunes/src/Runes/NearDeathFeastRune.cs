@@ -1,8 +1,12 @@
+using MegaCrit.Sts2.Core.Helpers;
+
 namespace HextechRunes;
 
 public sealed class NearDeathFeastRune : HextechRelicBase
 {
 	private const int DeathNegativeMaxHpDivisor = 2;
+	private static readonly object MissingDamageResultMemberLogLock = new();
+	private static readonly HashSet<string> LoggedMissingDamageResultMembers = [];
 	private bool _nearDeathActive;
 	private int _nearDeathDebt;
 	private int _nearDeathStrengthBonus;
@@ -131,7 +135,8 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		creature.SetCurrentHpInternal(safeHp);
 		if (!hpChanged)
 		{
-			_ = rune.SyncNearDeathStrength();
+			// 同步伤害 hook 不能等待异步力量命令；交给安全任务包装保留异常证据。
+			_ = TaskHelper.RunSafely(rune.SyncNearDeathStrength());
 		}
 
 		return CreateDamageResult(creature, props, hpLoss, false, 0);
@@ -170,7 +175,7 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		rune._nearDeathActive = true;
 		rune._nearDeathDebt = debt;
 		creature.SetCurrentHpInternal(1);
-		_ = rune.SyncNearDeathStrength();
+		_ = TaskHelper.RunSafely(rune.SyncNearDeathStrength());
 	}
 
 	internal static int GetDeathNegativeHpLimit(Creature creature)
@@ -307,7 +312,21 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		FieldInfo? field = type.GetField($"<{memberName}>k__BackingField", flags)
 			?? type.GetField(memberName, flags)
 			?? type.GetField($"_{char.ToLowerInvariant(memberName[0])}{memberName[1..]}", flags);
-		field?.SetValue(result, ConvertDamageResultValue(value, field.FieldType));
+		if (field != null)
+		{
+			field.SetValue(result, ConvertDamageResultValue(value, field.FieldType));
+			return;
+		}
+
+		lock (MissingDamageResultMemberLogLock)
+		{
+			if (!LoggedMissingDamageResultMembers.Add($"{type.AssemblyQualifiedName}:{memberName}"))
+			{
+				return;
+			}
+		}
+
+		Log.Warn($"[{ModInfo.Id}][Reflection] Missing writable DamageResult member {type.FullName}.{memberName}; result field left at its default.");
 	}
 
 	private static object ConvertDamageResultValue(object value, Type targetType)

@@ -24,8 +24,6 @@ internal static partial class HextechCombatHooks
 	private static readonly FieldInfo KnowledgeDemonCurseCounterField =
 		RequireField(typeof(KnowledgeDemon), "_curseOfKnowledgeCounter");
 
-	private static int _jeweledGauntletFailureLogs;
-
 	private static void InstallJeweledGauntletHooks(Harmony harmony)
 	{
 		try
@@ -314,7 +312,7 @@ internal static partial class HextechCombatHooks
 
 	private static void LogJeweledGauntletFailure(string hook, Exception ex)
 	{
-		if (_jeweledGauntletFailureLogs++ < 10)
+		if (HextechRunLogBudget.TryConsume("combat.jeweled-gauntlet-failure", 10))
 		{
 			Log.Error($"[{ModInfo.Id}][Mayhem] {hook} failed; enemy Jeweled Gauntlet fell back to one action: {ex}");
 		}

@@ -12,6 +12,10 @@ internal abstract class HextechEnemyHexEffect
 
 	internal virtual int EnemyHealOrder => 0;
 
+	internal virtual void ResetRunScopedState()
+	{
+	}
+
 	internal virtual decimal ModifyDamageMultiplicative(HextechEnemyHexContext context, Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		return 1m;
