@@ -110,14 +110,7 @@ internal static class HextechModelPoolRegistrar
 
 	private static bool ShouldUseMobileFirstModelRegistrationWorkaround()
 	{
-		try
-		{
-			return OperatingSystem.IsAndroid();
-		}
-		catch
-		{
-			return false;
-		}
+		return HextechRuntimeRuneCompatibility.IsAndroidRuntime;
 	}
 
 	private static bool IsMobileFirstModelWorkaroundDuplicate(Type poolType, Type modelType)
