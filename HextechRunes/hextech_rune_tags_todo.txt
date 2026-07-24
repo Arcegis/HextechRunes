@@ -185,7 +185,6 @@
 我方	AnthonyBiasRune	安东尼的偏见	标签=综合
 我方	OmegaRune	欧米伽	标签=输出
 我方	ViolenceRune	暴力	标签=运转
-#我方	SnailFormRune	佩尔的慵懒	标签=生存
 我方	MoreUniversalScopeRune	更万用的瞄准镜	标签=运转
 我方	NineDragonPowerRune	九龙之力	标签=叠层
 我方	OtterAndFriendsRune	水獭和朋友们	标签=综合

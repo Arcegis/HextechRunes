@@ -138,8 +138,6 @@ internal static class HextechPlayerRuneRegistry
         Rune<ArchmageRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
         Rune<NatureIsHealingRune>(HextechRarityTier.Gold, tagKey: "SURVIVAL"),
         Rune<PorcupineRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, tagKey: "SURVIVAL"),
-        // 已退役：不进候选池、配置菜单或图鉴；模型与效果实现继续保留，仅用于旧存档。
-        Rune<SnailFormRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Retired, tagKey: "SURVIVAL"),
         Rune<ColorDiscoveryRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<HattrickRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<AnthonyBiasRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
@@ -250,8 +248,6 @@ internal static class HextechPlayerRuneRegistry
         Rune<LingeringMightRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
         Rune<HundredRefinementsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
         Rune<MoltenFistUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 30, tagKey: "OUTPUT"),
-        // 已退役：不进候选池、配置菜单或图鉴；模型与效果实现继续保留，仅用于旧存档。
-        Rune<WellLaidPlansUpgradeRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Retired, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 30, tagKey: "COMPREHENSIVE"),
         Rune<SubroutineUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 30, tagKey: "ORB"),
 
         Rune<StrikeUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),

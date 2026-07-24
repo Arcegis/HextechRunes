@@ -51,7 +51,6 @@ internal static class HextechRuneConfiguration
 		typeof(AstralBodyRune)
 	];
 	// 设计审查批次:咔咔!(代价先付收益小)/和平主义者(非亡灵自废输出),转为默认禁用。
-	// 佩尔的慵懒已在内容注册表中正式退役，不再属于可配置内容。
 	private static readonly Type[] Version19DefaultDisabledRuneTypes =
 	[
 		typeof(KakaRune),
@@ -69,7 +68,7 @@ internal static class HextechRuneConfiguration
 		typeof(DefendUpgradeRune),
 		typeof(CardInspectionRune)
 	];
-	// 罪恶快感(开局+击杀双重资源滚雪球)转为默认禁用;不退甲胄同期移除(由升级:永恒铠甲承接机制)。
+	// 罪恶快感(开局+击杀双重资源滚雪球)转为默认禁用。
 	private static readonly Type[] Version22DefaultDisabledRuneTypes =
 	[
 		typeof(GetExcitedRune)

@@ -125,8 +125,6 @@ internal static partial class Program
 			new(nameof(PlayerRuneMetadataMatchesContentRegistrySlices), PlayerRuneMetadataMatchesContentRegistrySlices),
 			new(nameof(PlayerRuneMetadataPreservesCharacterOrder), PlayerRuneMetadataPreservesCharacterOrder),
 			new(nameof(PlayerRuneMetadataClassifiesConfigStates), PlayerRuneMetadataClassifiesConfigStates),
-			new(nameof(WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible), WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible),
-			new(nameof(SnailFormRuneIsRetiredButSaveCompatible), SnailFormRuneIsRetiredButSaveCompatible),
 			new(nameof(PlayerRuneMetadataCatalogOutputsMatchCatalogQueries), PlayerRuneMetadataCatalogOutputsMatchCatalogQueries),
 			new(nameof(PlayerRuneMetadataFallbacksAreStable), PlayerRuneMetadataFallbacksAreStable),
 			new(nameof(ForgeMetadataHasUniqueTypes), ForgeMetadataHasUniqueTypes),
@@ -1534,7 +1532,6 @@ internal static partial class Program
 		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Prismatic], HextechContentRegistry.PrismaticRuneTypes, "prismatic runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.Disabled], HextechContentRegistry.DisabledPlayerRuneTypes, "default disabled runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.SelectionExcluded], HextechContentRegistry.SelectionExcludedPlayerRuneTypes, "selection excluded runes");
-		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.Retired], HextechContentRegistry.RetiredPlayerRuneTypes, "retired runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.FirstActExcluded], HextechContentRegistry.FirstActExcludedRuneTypes, "first act excluded runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.ThirdActExcluded], HextechContentRegistry.ThirdActExcludedRuneTypes, "third act excluded runes");
 		SequenceEqual(metadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive], HextechContentRegistry.AttributeConversionExclusiveRuneTypes, "attribute conversion exclusive runes");
@@ -1584,45 +1581,6 @@ internal static partial class Program
 		Expect(HextechCatalog.IsPlayerRuneTypeVisible(selectionExcluded.Type), "catalog selection excluded visibility");
 		Expect(!HextechCatalog.IsPlayerRuneTypeConfigurable(selectionExcluded.Type), "catalog selection excluded configurability");
 		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(selectionExcluded.Type), "catalog selection excluded selectability");
-	}
-
-	private static void WellLaidPlansUpgradeRuneIsRetiredButSaveCompatible()
-	{
-		Type retiredType = typeof(WellLaidPlansUpgradeRune);
-		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
-
-		Expect(metadata.IsRegistered(retiredType), "retired Well-Laid Plans rune model should remain registered for old saves");
-		Expect(metadata.HasFlag(retiredType, PlayerRuneFlags.Retired), "Well-Laid Plans rune should carry the retired flag");
-		Expect(HextechContentRegistry.RetiredPlayerRuneTypes.Contains(retiredType), "retired registry slice should contain Well-Laid Plans");
-		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(retiredType), "retired Well-Laid Plans rune should be hidden");
-		Expect(!HextechCatalog.IsPlayerRuneTypeConfigurable(retiredType), "retired Well-Laid Plans rune should not be configurable");
-		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(retiredType), "retired Well-Laid Plans rune should not be selectable");
-		Expect(
-			HextechCatalog.GetAllCustomRelicTypes().Contains(retiredType),
-			"retired Well-Laid Plans rune model should remain in custom model registration for old saves");
-	}
-
-	private static void SnailFormRuneIsRetiredButSaveCompatible()
-	{
-		Type retiredType = typeof(SnailFormRune);
-		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
-
-		Expect(metadata.IsRegistered(retiredType), "retired Pell's Laziness model should remain registered for old saves");
-		Expect(metadata.HasFlag(retiredType, PlayerRuneFlags.Retired), "Pell's Laziness should carry the retired flag");
-		Expect(HextechContentRegistry.RetiredPlayerRuneTypes.Contains(retiredType), "retired registry slice should contain Pell's Laziness");
-		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(retiredType), "retired Pell's Laziness should be hidden");
-		Expect(!HextechCatalog.IsPlayerRuneTypeConfigurable(retiredType), "retired Pell's Laziness should not be configurable");
-		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(retiredType), "retired Pell's Laziness should not be selectable");
-		Expect(
-			HextechCatalog.GetAllCustomRelicTypes().Contains(retiredType),
-			"retired Pell's Laziness model should remain in custom model registration for old saves");
-
-		MethodInfo[] powerMethods = typeof(HextechPlayerSlowPower).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		MethodInfo[] legacyRuneMethods = typeof(SnailFormRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		Expect(powerMethods.All(static method => method.Name != "AfterCardPlayed"), "custom Slow power should not add a second card-play increment");
-		Expect(legacyRuneMethods.Any(static method => method.Name == "AfterCardPlayed"), "retired Pell's Laziness should preserve its old card-play behavior for loaded saves");
 	}
 
 	private static void PlayerRuneMetadataCatalogOutputsMatchCatalogQueries()
@@ -1790,7 +1748,6 @@ internal static partial class Program
 		Equal(0m, HextechPlayerSlowPower.PlayerCombatStartAmount, "Ancient Statue player Slow baseline");
 		Equal(0m, HextechPlayerSlowPower.EnemyCombatStartAmount, "Hundred Refinements enemy Slow baseline");
 		Equal(0, HextechPlayerSlowPower.RoundStartAmount, "enemy Slow hexes reset to zero each round");
-		Equal(-90m, HextechPlayerSlowPower.LegacySnailCombatStartAmount, "retired Snail Form keeps its old-save baseline");
 		HextechPlayerSlowPower slow = new();
 		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.Type, "custom Slow should be classified as a buff");
 		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.GetTypeForAmount(8m), "positive Hundred Refinements changes should not trigger debuff reactions");
