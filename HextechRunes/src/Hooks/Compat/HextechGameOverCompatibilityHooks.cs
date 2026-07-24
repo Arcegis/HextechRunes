@@ -109,23 +109,8 @@ internal static class HextechGameOverCompatibilityHooks
 			MaxFontSize = 28,
 			MouseFilter = Control.MouseFilterEnum.Ignore
 		};
-		ApplyDefaultMegaLabelTheme(label);
+		HextechUiTheme.ApplyDefaultMegaLabelTheme(label);
 		label.SetTextAutoSize(text);
 		return label;
-	}
-
-	private static void ApplyDefaultMegaLabelTheme(MegaLabel label)
-	{
-		Font font = label.GetThemeDefaultFont();
-		if (font != null)
-		{
-			label.AddThemeFontOverride("font", font);
-		}
-
-		int fontSize = label.GetThemeDefaultFontSize();
-		if (fontSize > 0)
-		{
-			label.AddThemeFontSizeOverride("font_size", fontSize);
-		}
 	}
 }

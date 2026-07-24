@@ -110,7 +110,7 @@ internal sealed partial class HextechRuneSelectionScreen
 			MaxFontSize = 28,
 			MinFontSize = 18
 		};
-		ApplyDefaultMegaLabelTheme(title);
+		HextechUiTheme.ApplyDefaultMegaLabelTheme(title);
 		title.Modulate = new Color(0.98f, 0.97f, 0.92f, 0.97f);
 		title.SetTextAutoSize(relic.Title.GetFormattedText());
 		content.AddChild(title);

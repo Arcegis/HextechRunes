@@ -91,11 +91,11 @@ internal static class HextechMikaelsBlessingVfx
 			EnsureRenderOrder();
 			UpdatePosition();
 
-			_runeLayer = CreateLayer(_root, "MilioGroundRune", runeTexture, new Color(0.18f, 1f, 0.55f, 0.44f), 0, additive: true);
-			_glowLayer = CreateLayer(_root, "EmeraldCleanseBloom", discTexture, new Color(0.02f, 0.95f, 0.70f, 0.38f), 1, additive: true);
-			_ringLayer = CreateLayer(_root, "CleansingRing", ringTexture, new Color(0.38f, 1f, 0.72f, 0.70f), 2, additive: true);
-			_flashLayer = CreateLayer(_root, "WhiteGreenBurst", discTexture, new Color(0.86f, 1f, 0.88f, 0.78f), 3, additive: true);
-			_waveLayer = CreateLayer(_root, "OuterEmeraldWave", ringTexture, new Color(0.30f, 1f, 0.74f, 0.36f), 4, additive: true);
+			_runeLayer = CreateLayer(_root, "MilioGroundRune", runeTexture, new Color(0.18f, 1f, 0.55f, 0.44f), additive: true);
+			_glowLayer = CreateLayer(_root, "EmeraldCleanseBloom", discTexture, new Color(0.02f, 0.95f, 0.70f, 0.38f), additive: true);
+			_ringLayer = CreateLayer(_root, "CleansingRing", ringTexture, new Color(0.38f, 1f, 0.72f, 0.70f), additive: true);
+			_flashLayer = CreateLayer(_root, "WhiteGreenBurst", discTexture, new Color(0.86f, 1f, 0.88f, 0.78f), additive: true);
+			_waveLayer = CreateLayer(_root, "OuterEmeraldWave", ringTexture, new Color(0.30f, 1f, 0.74f, 0.36f), additive: true);
 			UpdateTransform();
 			HextechLog.Info($"[{ModInfo.Id}][MikaelsBlessingVfx] Burst attached node={_root.GetPath()} parent={_renderLayer.GetPath()} creature={_creature.Entity?.ModelId.Entry ?? "<unknown>"}.");
 			return true;
@@ -212,9 +212,8 @@ internal static class HextechMikaelsBlessingVfx
 
 		}
 
-	private static BurstLayer CreateLayer(Node2D parent, string name, Texture2D texture, Color modulate, int zIndex, bool additive)
+	private static BurstLayer CreateLayer(Node2D parent, string name, Texture2D texture, Color modulate, bool additive)
 	{
-		_ = zIndex;
 		Node2D plane = new()
 		{
 			Name = name,
@@ -244,7 +243,7 @@ internal static class HextechMikaelsBlessingVfx
 
 	private static Texture2D? LoadTextureOrWarn(string path)
 	{
-		Texture2D? texture = AssetHooks.LoadUiTexture(path);
+		Texture2D? texture = HextechAssetHooks.LoadUiTexture(path);
 		if (texture == null && LoggedMissingTexturePaths.Add(path))
 		{
 			Log.Warn($"[{ModInfo.Id}][MikaelsBlessingVfx] Texture not found: {path}");

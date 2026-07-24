@@ -61,7 +61,7 @@ internal static partial class HextechCombatHooks
 	private static bool HasActiveHextechCombatContent(RunState runState)
 	{
 		return runState.Players.Any(static player => player.Relics.Any(HextechCatalog.IsHextechRelic))
-			|| GetMayhemModifier(runState)?.GetActiveMonsterHexes().Count > 0;
+			|| HextechMayhemModifier.FindIn(runState)?.GetActiveMonsterHexes().Count > 0;
 	}
 
 	private static void WarnPreCombatDamageSuppressed(Creature target)

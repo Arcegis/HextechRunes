@@ -78,7 +78,7 @@ internal sealed partial class HextechRuneSelectionScreen
 			MinFontSize = 14,
 			MaxFontSize = 14
 		};
-		ApplyDefaultMegaLabelTheme(label);
+		HextechUiTheme.ApplyDefaultMegaLabelTheme(label);
 		label.AddThemeFontSizeOverride("font_size", 14);
 		Color textColor = new(0.08f, 0.09f, 0.11f, 0.96f);
 		label.AddThemeColorOverride("font_color", textColor);

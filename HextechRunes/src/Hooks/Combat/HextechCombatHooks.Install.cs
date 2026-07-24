@@ -51,6 +51,7 @@ internal static partial class HextechCombatHooks
 
 	private static void InstallCardPlayHooks(Harmony harmony)
 	{
+		// Priority.Last 是禁玩终裁位：封禁必须压过第三方放行；本模组的放行分支只处理原结果为 false 的情形。
 		HarmonyMethod canPlayPostfix = new(typeof(HextechCombatHooks), nameof(CardCanPlayPostfix))
 		{
 			priority = Priority.Last

@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
@@ -160,16 +161,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		int playerRuneRerollLimit = 1,
 		string? titleOverride = null)
 	{
-		for (int i = 0; i < 60; i++)
-		{
-			if (NOverlayStack.Instance != null)
-			{
-				break;
-			}
-
-			await Task.Yield();
-		}
-
+		await WaitForSingletonAsync(static () => NOverlayStack.Instance);
 		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(relics, monsterHexRelic, rerollFunc, enemyHexOptions, playerRuneRerollLimit, titleOverride);
 		if (NOverlayStack.Instance == null)
 		{
@@ -210,22 +202,9 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static PlayerChoiceResult CreateRuneChoiceResult(int actIndex, int choiceOrdinal, HextechRuneSelectionScreen screen, RelicModel? selectedRelic)
 	{
-		int selectedIndex = selectedRelic == null ? -1 : IndexOfRelic(screen.CurrentRelics, selectedRelic);
+		int selectedIndex = IndexOfRelicInstance(screen.CurrentRelics, selectedRelic);
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] CreateRuneChoiceResult: act={actIndex} ordinal={choiceOrdinal} selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
 		return HextechChoiceCodec.CreateRuneSelection(actIndex, choiceOrdinal, selectedIndex, screen.RerollHistory, screen.CurrentRelics);
-	}
-
-	private static int IndexOfRelic(IReadOnlyList<RelicModel> relics, RelicModel relic)
-	{
-		for (int i = 0; i < relics.Count; i++)
-		{
-			if (ReferenceEquals(relics[i], relic))
-			{
-				return i;
-			}
-		}
-
-		return -1;
 	}
 
 	private static RuneSelectionResult CreateRemoteRuneChoiceFallback(

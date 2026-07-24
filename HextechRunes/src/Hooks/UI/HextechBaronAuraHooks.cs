@@ -348,7 +348,7 @@ internal sealed class HandOfBaronAuraVisual
 
 	private static Texture2D? LoadTextureOrWarn(string path)
 	{
-		Texture2D? texture = AssetHooks.LoadUiTexture(path);
+		Texture2D? texture = HextechAssetHooks.LoadUiTexture(path);
 		if (texture == null && LoggedMissingTexturePaths.Add(path))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Hand of Baron aura texture not found: {path}");

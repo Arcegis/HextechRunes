@@ -42,7 +42,7 @@ internal static partial class HextechRunLifecycleHooks
 				return;
 			}
 
-			HextechMayhemModifier? modifier = GetMayhemModifier(runState);
+			HextechMayhemModifier? modifier = HextechMayhemModifier.FindIn(runState);
 			if (modifier != null)
 			{
 				int actIndex = runState.CurrentActIndex;
@@ -142,7 +142,7 @@ internal static partial class HextechRunLifecycleHooks
 			return false;
 		}
 
-		HextechMayhemModifier? modifier = GetMayhemModifier(runState);
+		HextechMayhemModifier? modifier = HextechMayhemModifier.FindIn(runState);
 		if (modifier == null)
 		{
 			HextechEnemyUi.HideMayhemModifierBadge();

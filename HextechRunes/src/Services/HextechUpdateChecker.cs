@@ -112,7 +112,7 @@ internal static partial class HextechUpdateChecker
 				return;
 			}
 
-			if (!await AwaitProcessFrameAsync(mainMenu))
+			if (!await HextechGodotAsync.AwaitProcessFrameAsync(mainMenu))
 			{
 				return;
 			}
@@ -366,23 +366,6 @@ internal static partial class HextechUpdateChecker
 
 			RemoveExistingNotice(child);
 		}
-	}
-
-	private static async Task<bool> AwaitProcessFrameAsync(Node node)
-	{
-		if (!GodotObject.IsInstanceValid(node) || !node.IsInsideTree())
-		{
-			return false;
-		}
-
-		SceneTree tree = node.GetTree();
-		if (tree == null)
-		{
-			return false;
-		}
-
-		await node.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
-		return GodotObject.IsInstanceValid(node) && node.IsInsideTree();
 	}
 
 	private static string DescribeNode(Node? node)

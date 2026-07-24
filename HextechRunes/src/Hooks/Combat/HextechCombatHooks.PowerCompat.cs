@@ -48,14 +48,14 @@ internal static partial class HextechCombatHooks
 			choiceContext,
 			player,
 			new CardSelectorPrefs(CardSelectorPrefs.TransformSelectionPrompt, entropyPower.Amount),
-			CanTransformToRandomCard,
+			CardTransformUpgradeHelper.CanTransformToRandomCard,
 			entropyPower);
 
 		List<CardModel> selectedCards = selected.ToList();
 		for (int i = 0; i < selectedCards.Count; i++)
 		{
 			CardModel card = selectedCards[i];
-			if (CanTransformToRandomCard(card))
+			if (CardTransformUpgradeHelper.CanTransformToRandomCard(card))
 			{
 				await CardTransformUpgradeHelper.TransformToStableRandom(
 					card,
@@ -73,26 +73,9 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-	private static bool CanTransformToRandomCard(CardModel card)
-	{
-		if (!card.IsTransformable || card.Pile?.Type != PileType.Hand)
-		{
-			return false;
-		}
-
-		try
-		{
-			return CardFactory.GetDefaultTransformationOptions(card, card.CombatState != null).Any();
-		}
-		catch (InvalidOperationException)
-		{
-			return false;
-		}
-	}
-
 	private static bool ShouldUseHextechStormHandling(StormPower stormPower)
 	{
 		return stormPower.Owner?.CombatState?.RunState is RunState runState
-			&& GetMayhemModifier(runState) != null;
+			&& HextechMayhemModifier.FindIn(runState) != null;
 	}
 }

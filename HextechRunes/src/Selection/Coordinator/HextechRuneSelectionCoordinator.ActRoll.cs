@@ -126,15 +126,15 @@ internal static partial class HextechRuneSelectionCoordinator
 				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"host act-roll act={actIndex}");
 			}
 
-				HextechRunConfigurationSnapshot hostSnapshot = modifier.GetEffectiveRunConfigurationSnapshot();
-				if (!TrySyncLocalHextechChoice(synchronizer, authorityPlayer, choiceId, HextechChoiceCodec.CreateActRoll(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling, modifier.EnemyHexCountsByAct, modifier.PlayerRuneConfigDisabledIds, hostSnapshot), $"act-roll act={actIndex}", out uint sentChoiceId))
-				{
-					Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync failed: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId}");
-				}
-
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync: act={actIndex} choiceId={sentChoiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} playerCounts={string.Join(",", hostSnapshot.PlayerHexCountsByAct)} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} enemyConfigDisabled={hostSnapshot.DisabledMonsterHexIds.Count} forgeConfigDisabled={hostSnapshot.DisabledForgeIds.Count} betterMultiplayerScaling={hostUsesExternalScaling}");
-				return (localRarity, localMonsterHex);
+			HextechRunConfigurationSnapshot hostSnapshot = modifier.GetEffectiveRunConfigurationSnapshot();
+			if (!TrySyncLocalHextechChoice(synchronizer, authorityPlayer, choiceId, HextechChoiceCodec.CreateActRoll(actIndex, localRarity, localMonsterHex, hostUsesExternalScaling, modifier.EnemyHexCountsByAct, modifier.PlayerRuneConfigDisabledIds, hostSnapshot), $"act-roll act={actIndex}", out uint sentChoiceId))
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync failed: act={actIndex} choiceId={choiceId} authority={authorityPlayer.NetId}");
 			}
+
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll host sync: act={actIndex} choiceId={sentChoiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} playerCounts={string.Join(",", hostSnapshot.PlayerHexCountsByAct)} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} enemyConfigDisabled={hostSnapshot.DisabledMonsterHexIds.Count} forgeConfigDisabled={hostSnapshot.DisabledForgeIds.Count} betterMultiplayerScaling={hostUsesExternalScaling}");
+			return (localRarity, localMonsterHex);
+		}
 
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,

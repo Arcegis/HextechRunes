@@ -415,7 +415,7 @@ internal sealed class SlowCookAuraVisual
 
 	private static Texture2D? LoadTextureOrWarn(string path)
 	{
-		Texture2D? texture = AssetHooks.LoadUiTexture(path);
+		Texture2D? texture = HextechAssetHooks.LoadUiTexture(path);
 		if (texture == null && LoggedMissingTexturePaths.Add(path))
 		{
 			Log.Warn($"[{ModInfo.Id}][SlowCookAura] Aura texture not found: {path}");

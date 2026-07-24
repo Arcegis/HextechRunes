@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 using MegaCrit.Sts2.addons.mega_text;
+using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
@@ -169,10 +170,4 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		base._ExitTree();
 	}
 
-	private static RelicModel? CreateMonsterHexRelic(MonsterHexKind? monsterHex)
-	{
-		return monsterHex.HasValue
-			? MonsterHexCatalog.GetIconRelicForMonsterHex(monsterHex.Value).ToMutable()
-			: null;
-	}
 }

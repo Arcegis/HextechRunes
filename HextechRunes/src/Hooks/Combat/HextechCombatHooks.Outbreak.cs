@@ -2,17 +2,17 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static readonly AsyncLocal<int> OutbreakPowerPoisonResponseDepth = new();
-	private static readonly AsyncLocal<int> SleightOfFleshPowerDebuffResponseDepth = new();
-	private static readonly AsyncLocal<int> CompensationReplacementDepth = new();
+	private static readonly HextechScopedDepthGuard OutbreakPowerPoisonResponseGuard = new();
+	private static readonly HextechScopedDepthGuard SleightOfFleshPowerDebuffResponseGuard = new();
+	private static readonly HextechScopedDepthGuard CompensationReplacementGuard = new();
 
 	// 即死符文在血肉戏法/疫情响应链内不能同步 DoomKill(死亡处理与进行中的
 	// power hook 链撞车会卡死游戏),先挂账,响应链退出后统一补杀。
 	private static readonly List<Creature> PendingInstantDeathDoomKills = [];
 
-	internal static bool IsResolvingOutbreakPowerPoisonResponse => OutbreakPowerPoisonResponseDepth.Value > 0;
-	internal static bool IsResolvingSleightOfFleshPowerDebuffResponse => SleightOfFleshPowerDebuffResponseDepth.Value > 0;
-	internal static bool IsApplyingCompensationReplacement => CompensationReplacementDepth.Value > 0;
+	internal static bool IsResolvingOutbreakPowerPoisonResponse => OutbreakPowerPoisonResponseGuard.IsActive;
+	internal static bool IsResolvingSleightOfFleshPowerDebuffResponse => SleightOfFleshPowerDebuffResponseGuard.IsActive;
+	internal static bool IsApplyingCompensationReplacement => CompensationReplacementGuard.IsActive;
 
 	internal static void QueueInstantDeathDoomKill(Creature creature)
 	{
@@ -24,7 +24,7 @@ internal static partial class HextechCombatHooks
 
 	private static async Task FlushPendingInstantDeathDoomKillsIfSafe()
 	{
-		if (SleightOfFleshPowerDebuffResponseDepth.Value > 0 || OutbreakPowerPoisonResponseDepth.Value > 0)
+		if (SleightOfFleshPowerDebuffResponseGuard.IsActive || OutbreakPowerPoisonResponseGuard.IsActive)
 		{
 			return;
 		}
@@ -47,7 +47,7 @@ internal static partial class HextechCombatHooks
 			&& power is PoisonPower;
 		if (__state)
 		{
-			OutbreakPowerPoisonResponseDepth.Value++;
+			OutbreakPowerPoisonResponseGuard.Enter();
 		}
 	}
 
@@ -55,7 +55,9 @@ internal static partial class HextechCombatHooks
 	{
 		if (__state)
 		{
-			__result = CompleteWithOutbreakPowerPoisonResponseReset(__result);
+			__result = OutbreakPowerPoisonResponseGuard.WrapEnteredTask(
+				__result,
+				FlushPendingInstantDeathDoomKillsIfSafe);
 		}
 	}
 
@@ -72,7 +74,7 @@ internal static partial class HextechCombatHooks
 		if (wouldRespond)
 		{
 			__state = true;
-			SleightOfFleshPowerDebuffResponseDepth.Value++;
+			SleightOfFleshPowerDebuffResponseGuard.Enter();
 		}
 
 		return true;
@@ -82,36 +84,10 @@ internal static partial class HextechCombatHooks
 	{
 		if (__state)
 		{
-			__result = CompleteWithSleightOfFleshPowerDebuffResponseReset(__result);
+			__result = SleightOfFleshPowerDebuffResponseGuard.WrapEnteredTask(
+				__result,
+				FlushPendingInstantDeathDoomKillsIfSafe);
 		}
-	}
-
-	private static async Task CompleteWithOutbreakPowerPoisonResponseReset(Task task)
-	{
-		try
-		{
-			await task;
-		}
-		finally
-		{
-			OutbreakPowerPoisonResponseDepth.Value = Math.Max(0, OutbreakPowerPoisonResponseDepth.Value - 1);
-		}
-
-		await FlushPendingInstantDeathDoomKillsIfSafe();
-	}
-
-	private static async Task CompleteWithSleightOfFleshPowerDebuffResponseReset(Task task)
-	{
-		try
-		{
-			await task;
-		}
-		finally
-		{
-			SleightOfFleshPowerDebuffResponseDepth.Value = Math.Max(0, SleightOfFleshPowerDebuffResponseDepth.Value - 1);
-		}
-
-		await FlushPendingInstantDeathDoomKillsIfSafe();
 	}
 
 	private static bool IsSleightOfFleshPowerDebuffResponse(SleightOfFleshPower instance, PowerModel power, decimal amount, Creature? applier)
@@ -128,42 +104,18 @@ internal static partial class HextechCombatHooks
 		return wouldRespond && IsApplyingCompensationReplacement;
 	}
 
-	internal static async Task RunWithOutbreakPowerPoisonResponseGuard(Func<Task> action)
+	internal static Task RunWithOutbreakPowerPoisonResponseGuard(Func<Task> action)
 	{
-		OutbreakPowerPoisonResponseDepth.Value++;
-		try
-		{
-			await action();
-		}
-		finally
-		{
-			OutbreakPowerPoisonResponseDepth.Value = Math.Max(0, OutbreakPowerPoisonResponseDepth.Value - 1);
-		}
+		return OutbreakPowerPoisonResponseGuard.RunAsync(action);
 	}
 
-	internal static async Task RunWithCompensationReplacementGuard(Func<Task> action)
+	internal static Task RunWithCompensationReplacementGuard(Func<Task> action)
 	{
-		CompensationReplacementDepth.Value++;
-		try
-		{
-			await action();
-		}
-		finally
-		{
-			CompensationReplacementDepth.Value = Math.Max(0, CompensationReplacementDepth.Value - 1);
-		}
+		return CompensationReplacementGuard.RunAsync(action);
 	}
 
-	internal static async Task RunWithSleightOfFleshPowerDebuffResponseGuard(Func<Task> action)
+	internal static Task RunWithSleightOfFleshPowerDebuffResponseGuard(Func<Task> action)
 	{
-		SleightOfFleshPowerDebuffResponseDepth.Value++;
-		try
-		{
-			await action();
-		}
-		finally
-		{
-			SleightOfFleshPowerDebuffResponseDepth.Value = Math.Max(0, SleightOfFleshPowerDebuffResponseDepth.Value - 1);
-		}
+		return SleightOfFleshPowerDebuffResponseGuard.RunAsync(action);
 	}
 }

@@ -466,7 +466,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			MouseFilter = MouseFilterEnum.Ignore,
 			ZIndex = 4096
 		};
-		ApplyDefaultMegaLabelTheme(hint);
+		HextechUiTheme.ApplyDefaultMegaLabelTheme(hint);
 		hint.SetAnchorsPreset(LayoutPreset.BottomWide);
 		hint.OffsetTop = -96f;
 		hint.OffsetBottom = -44f;

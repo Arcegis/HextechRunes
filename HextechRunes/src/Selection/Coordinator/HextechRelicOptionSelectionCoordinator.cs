@@ -1,7 +1,7 @@
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using MegaCrit.Sts2.Core.Saves;
+using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
@@ -60,7 +60,7 @@ internal static class HextechRelicOptionSelectionCoordinator
 				return null;
 			}
 
-			int selectedIndex = IndexOfRelic(options, selected);
+			int selectedIndex = IndexOfRelicById(options, selected);
 			if (selectedIndex < 0)
 			{
 				Log.Warn($"[{ModInfo.Id}][RelicOptionChoice] Local selection not in option set: player={player.NetId} context={context}");
@@ -126,17 +126,7 @@ internal static class HextechRelicOptionSelectionCoordinator
 
 	private static async Task<bool> WaitForOverlayStackAsync()
 	{
-		for (int i = 0; i < 60; i++)
-		{
-			if (NOverlayStack.Instance != null)
-			{
-				return true;
-			}
-
-			await Task.Yield();
-		}
-
-		return NOverlayStack.Instance != null;
+		return await WaitForSingletonAsync(static () => NOverlayStack.Instance) != null;
 	}
 
 	private static RelicModel ResolveRemoteRelicOptionChoice(Player player, IReadOnlyList<RelicModel> fallbackOptions, PlayerChoiceResult remoteChoice, string context)
@@ -174,31 +164,4 @@ internal static class HextechRelicOptionSelectionCoordinator
 		return finalOptions[selectedIndex];
 	}
 
-	private static int IndexOfRelic(IReadOnlyList<RelicModel> options, RelicModel? selected)
-	{
-		if (selected == null)
-		{
-			return -1;
-		}
-
-		ModelId selectedId = selected.CanonicalInstance?.Id ?? selected.Id;
-		for (int i = 0; i < options.Count; i++)
-		{
-			ModelId optionId = options[i].CanonicalInstance?.Id ?? options[i].Id;
-			if (optionId == selectedId)
-			{
-				return i;
-			}
-		}
-
-		return -1;
-	}
-
-	private static void MarkRelicsSeen(IReadOnlyList<RelicModel> relics)
-	{
-		foreach (RelicModel relic in relics)
-		{
-			SaveManager.Instance.MarkRelicAsSeen(relic);
-		}
-	}
 }

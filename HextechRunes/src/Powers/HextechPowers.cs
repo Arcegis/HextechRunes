@@ -5,9 +5,9 @@ namespace HextechRunes;
 public sealed class HextechBurnPower : HextechPowerBase
 {
 	private const decimal StackDecayPercent = 0.1m;
-	private static int _resolveDepth;
+	private static readonly HextechScopedDepthGuard DamageResolutionGuard = new();
 
-	internal static bool IsResolvingDamage => _resolveDepth > 0;
+	internal static bool IsResolvingDamage => DamageResolutionGuard.IsActive;
 
 	public override PowerType Type => PowerType.Debuff;
 
@@ -66,17 +66,9 @@ public sealed class HextechBurnPower : HextechPowerBase
 		}
 	}
 
-	internal static async Task RunWithDamageResolutionGuard(Func<Task> action)
+	internal static Task RunWithDamageResolutionGuard(Func<Task> action)
 	{
-		_resolveDepth++;
-		try
-		{
-			await action();
-		}
-		finally
-		{
-			_resolveDepth = Math.Max(0, _resolveDepth - 1);
-		}
+		return DamageResolutionGuard.RunAsync(action);
 	}
 }
 

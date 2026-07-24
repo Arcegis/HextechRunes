@@ -1,11 +1,26 @@
 using System.Collections;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.GameActions;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
+	private const BindingFlags BufferedChoiceFieldFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+	private static readonly FieldInfo? ReceivedChoicesField = TryGetField(
+		typeof(PlayerChoiceSynchronizer),
+		"_receivedChoices",
+		BindingFlags.Instance | BindingFlags.NonPublic);
+	private static readonly Type? ReceivedChoiceType = ReceivedChoicesField?.FieldType.GetGenericArguments().FirstOrDefault();
+	private static readonly FieldInfo? ReceivedChoiceSenderIdField = TryGetReceivedChoiceField("senderId");
+	private static readonly FieldInfo? ReceivedChoiceChoiceIdField = TryGetReceivedChoiceField("choiceId");
+	private static readonly FieldInfo? ReceivedChoiceCompletionSourceField = TryGetReceivedChoiceField("completionSource");
+	private static readonly PropertyInfo? ReceivedChoiceTaskProperty = ReceivedChoiceCompletionSourceField?.FieldType.GetProperty(
+		"Task",
+		BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+	private static readonly bool BufferedChoiceReflectionAvailable = ValidateBufferedChoiceReflection();
+
 	internal static async Task<(PlayerChoiceResult Result, uint ChoiceId)> WaitForRemoteHextechChoice(
 		PlayerChoiceSynchronizer synchronizer,
 		RunState runState,
@@ -213,37 +228,20 @@ internal static partial class HextechRuneSelectionCoordinator
 		result = default;
 		try
 		{
-			FieldInfo? receivedChoicesField = typeof(PlayerChoiceSynchronizer).GetField("_receivedChoices", BindingFlags.Instance | BindingFlags.NonPublic);
-			if (receivedChoicesField?.GetValue(synchronizer) is not IList receivedChoices)
+			if (!TryGetBufferedChoices(synchronizer, out IList receivedChoices))
 			{
 				return false;
 			}
 
-			for (int i = 0; i < receivedChoices.Count; i++)
+			foreach ((int index, ulong senderId, uint bufferedChoiceId, Task<NetPlayerChoiceResult> task) in EnumerateBufferedChoices(receivedChoices))
 			{
-				object? entry = receivedChoices[i];
-				if (entry == null)
-				{
-					continue;
-				}
-
-				Type entryType = entry.GetType();
-				ulong senderId = (ulong)(entryType.GetField("senderId", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(entry) ?? 0UL);
-				uint bufferedChoiceId = (uint)(entryType.GetField("choiceId", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(entry) ?? uint.MaxValue);
 				if (senderId != player.NetId || bufferedChoiceId != choiceId)
 				{
 					continue;
 				}
 
-				object? completionSource = entryType.GetField("completionSource", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(entry);
-				if (completionSource?.GetType().GetProperty("Task")?.GetValue(completionSource) is not Task<NetPlayerChoiceResult> task
-					|| !task.IsCompletedSuccessfully)
-				{
-					continue;
-				}
-
 				result = task.Result;
-				receivedChoices.RemoveAt(i);
+				receivedChoices.RemoveAt(index);
 				return true;
 			}
 		}
@@ -267,30 +265,14 @@ internal static partial class HextechRuneSelectionCoordinator
 		choiceId = uint.MaxValue;
 		try
 		{
-			FieldInfo? receivedChoicesField = typeof(PlayerChoiceSynchronizer).GetField("_receivedChoices", BindingFlags.Instance | BindingFlags.NonPublic);
-			if (receivedChoicesField?.GetValue(synchronizer) is not IList receivedChoices)
+			if (!TryGetBufferedChoices(synchronizer, out IList receivedChoices))
 			{
 				return false;
 			}
 
-			for (int i = 0; i < receivedChoices.Count; i++)
+			foreach ((int index, ulong senderId, uint bufferedChoiceId, Task<NetPlayerChoiceResult> task) in EnumerateBufferedChoices(receivedChoices))
 			{
-				object? entry = receivedChoices[i];
-				if (entry == null)
-				{
-					continue;
-				}
-
-				Type entryType = entry.GetType();
-				ulong senderId = (ulong)(entryType.GetField("senderId", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(entry) ?? 0UL);
 				if (senderId != player.NetId)
-				{
-					continue;
-				}
-
-				object? completionSource = entryType.GetField("completionSource", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(entry);
-				if (completionSource?.GetType().GetProperty("Task")?.GetValue(completionSource) is not Task<NetPlayerChoiceResult> task
-					|| !task.IsCompletedSuccessfully)
 				{
 					continue;
 				}
@@ -301,9 +283,9 @@ internal static partial class HextechRuneSelectionCoordinator
 					continue;
 				}
 
-				choiceId = (uint)(entryType.GetField("choiceId", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(entry) ?? uint.MaxValue);
+				choiceId = bufferedChoiceId;
 				result = candidate;
-				receivedChoices.RemoveAt(i);
+				receivedChoices.RemoveAt(index);
 				return true;
 			}
 		}
@@ -313,6 +295,81 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		return false;
+	}
+
+	private static FieldInfo? TryGetReceivedChoiceField(string name)
+	{
+		return ReceivedChoiceType == null
+			? null
+			: TryGetField(ReceivedChoiceType, name, BufferedChoiceFieldFlags);
+	}
+
+	private static bool TryGetBufferedChoices(PlayerChoiceSynchronizer synchronizer, out IList receivedChoices)
+	{
+		if (ReceivedChoicesField?.GetValue(synchronizer) is IList choices)
+		{
+			receivedChoices = choices;
+			return true;
+		}
+
+		receivedChoices = null!;
+		return false;
+	}
+
+	private static IEnumerable<(int Index, ulong SenderId, uint ChoiceId, Task<NetPlayerChoiceResult> Task)> EnumerateBufferedChoices(IList receivedChoices)
+	{
+		FieldInfo? senderIdField = ReceivedChoiceSenderIdField;
+		FieldInfo? choiceIdField = ReceivedChoiceChoiceIdField;
+		FieldInfo? completionSourceField = ReceivedChoiceCompletionSourceField;
+		PropertyInfo? taskProperty = ReceivedChoiceTaskProperty;
+		if (!BufferedChoiceReflectionAvailable
+			|| senderIdField == null
+			|| choiceIdField == null
+			|| completionSourceField == null
+			|| taskProperty == null)
+		{
+			yield break;
+		}
+
+		for (int i = 0; i < receivedChoices.Count; i++)
+		{
+			object? entry = receivedChoices[i];
+			if (entry == null
+				|| senderIdField.GetValue(entry) is not ulong senderId
+				|| choiceIdField.GetValue(entry) is not uint choiceId)
+			{
+				continue;
+			}
+
+			object? completionSource = completionSourceField.GetValue(entry);
+			if (completionSource == null
+				|| taskProperty.GetValue(completionSource) is not Task<NetPlayerChoiceResult> task
+				|| !task.IsCompletedSuccessfully)
+			{
+				continue;
+			}
+
+			yield return (i, senderId, choiceId, task);
+		}
+	}
+
+	private static bool ValidateBufferedChoiceReflection()
+	{
+		if (ReceivedChoiceType == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] RemoteChoice buffered reflection unavailable: could not resolve ReceivedChoice type; using event path.");
+			return false;
+		}
+
+		if (ReceivedChoiceTaskProperty == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] RemoteChoice buffered reflection unavailable: could not resolve completionSource.Task; using event path.");
+			return false;
+		}
+
+		return ReceivedChoiceSenderIdField != null
+			&& ReceivedChoiceChoiceIdField != null
+			&& ReceivedChoiceCompletionSourceField != null;
 	}
 
 	private static bool IsExpectedNetChoice(

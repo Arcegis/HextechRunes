@@ -172,31 +172,7 @@ internal static partial class HextechRelicVisibilityHooks
 
 	private static string GetConfigPath()
 	{
-		return Path.Combine(GetDataDirectory(), ConfigFileName);
-	}
-
-	private static string GetDataDirectory()
-	{
-		try
-		{
-			string godotUserDir = OS.GetUserDataDir();
-			if (!string.IsNullOrWhiteSpace(godotUserDir))
-			{
-				return Path.Combine(godotUserDir, ModInfo.Id);
-			}
-		}
-		catch
-		{
-			// Fall back to a normal per-user directory when Godot paths are unavailable.
-		}
-
-		string baseDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
-		if (string.IsNullOrWhiteSpace(baseDir))
-		{
-			baseDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-		}
-
-		return Path.Combine(baseDir, "SlayTheSpire2", ModInfo.Id);
+		return HextechDataPaths.GetFilePath(ConfigFileName);
 	}
 
 	private const int CurrentUiConfigVersion = 1;

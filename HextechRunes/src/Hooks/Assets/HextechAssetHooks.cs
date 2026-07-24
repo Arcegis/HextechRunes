@@ -7,7 +7,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static class AssetHooks
+internal static class HextechAssetHooks
 {
 	private static readonly Dictionary<string, Texture2D> TextureCache = new();
 	private static readonly Dictionary<string, CompressedTexture2D> CompressedTextureCache = new();
@@ -25,21 +25,21 @@ internal static class AssetHooks
 		MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
 		MethodInfo getEnchantmentIcon = RequireGetter(typeof(EnchantmentModel), nameof(EnchantmentModel.Icon));
 
-		harmony.Patch(getRelicIcon, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicTexturePrefix)));
-		harmony.Patch(getRelicIconOutline, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicTexturePrefix)));
-		harmony.Patch(getRelicBigIcon, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(RelicTexturePrefix)));
+		harmony.Patch(getRelicIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
+		harmony.Patch(getRelicIconOutline, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
+		harmony.Patch(getRelicBigIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
 		if (relicReload != null && NRelicModelField != null)
 		{
-			harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(NRelicReloadPrefix)));
+			harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(NRelicReloadPrefix)));
 		}
 		else
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] NRelic.Reload asset hook skipped: missing {(relicReload == null ? "NRelic.Reload" : "NRelic._model")}.");
 		}
-		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerIconPostfix)));
-		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerBigIconPostfix)));
-		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(CardPortraitPostfix)));
-		harmony.Patch(getEnchantmentIcon, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(EnchantmentIconPostfix)));
+		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerIconPostfix)));
+		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerBigIconPostfix)));
+		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(CardPortraitPostfix)));
+		harmony.Patch(getEnchantmentIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(EnchantmentIconPostfix)));
 
 		// HoverTip 是 record struct:其构造里读的 power.Icon 拿到的是原版 NOPE 占位
 		// (AtlasResourceLoader 缺 sprite 时不返回 null 而是占位纹理,get_Icon postfix 覆盖
@@ -49,12 +49,16 @@ internal static class AssetHooks
 		MethodInfo? getHoverTips = AccessTools.PropertyGetter(typeof(PowerModel), nameof(PowerModel.HoverTips));
 		if (getDumbHoverTip != null && getHoverTips != null)
 		{
-			harmony.Patch(getDumbHoverTip, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(GetDumbHoverTipPostfix)));
-			harmony.Patch(getHoverTips, postfix: new HarmonyMethod(typeof(AssetHooks), nameof(PowerHoverTipsPostfix)));
+			harmony.Patch(getDumbHoverTip, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(GetDumbHoverTipPostfix)));
+			harmony.Patch(getHoverTips, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerHoverTipsPostfix)));
 		}
 		else
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Power hover tip icon hooks skipped: target methods not found.");
+		}
+		if (HoverTipIconField == null)
+		{
+			Log.Warn($"[{ModInfo.Id}][Assets] Power hover tip icon backing field not found; hover tip icons will show the vanilla placeholder.");
 		}
 
 		// 自定义休息室选项(目前为「添柴」StokeRestSiteOption)的图标修复。
@@ -65,7 +69,7 @@ internal static class AssetHooks
 		MethodInfo? getRestSiteOptionIcon = AccessTools.PropertyGetter(typeof(RestSiteOption), nameof(RestSiteOption.Icon));
 		if (getRestSiteOptionIcon != null)
 		{
-			harmony.Patch(getRestSiteOptionIcon, prefix: new HarmonyMethod(typeof(AssetHooks), nameof(RestSiteOptionIconPrefix)));
+			harmony.Patch(getRestSiteOptionIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RestSiteOptionIconPrefix)));
 		}
 		else
 		{
@@ -553,5 +557,4 @@ internal static class AssetHooks
 			Log.Warn($"[{ModInfo.Id}][Assets] Texture load miss ({reason}): {path}");
 		}
 	}
-
 }

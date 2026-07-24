@@ -59,18 +59,18 @@ internal static class HextechRuneGrantHelper
 
 		uint choiceId = synchronizer.ReserveChoiceId(player);
 		RunState runState = (RunState)player.RunState;
-			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
+		if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
+		{
+			List<ModelId> selectedIds = SelectRandomRuneIds(player, candidateTypes, count, blockedIds);
+			if (!HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateRandomRuneGrant(selectedIds), "random-rune-grant", out uint sentChoiceId))
 			{
-				List<ModelId> selectedIds = SelectRandomRuneIds(player, candidateTypes, count, blockedIds);
-				if (!HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateRandomRuneGrant(selectedIds), "random-rune-grant", out uint sentChoiceId))
-				{
-					Log.Warn($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local failed: player={player.NetId} choiceId={choiceId}");
-				}
-
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
-				await ObtainRuneIds(player, selectedIds);
-				return true;
+				Log.Warn($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local failed: player={player.NetId} choiceId={choiceId}");
 			}
+
+			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
+			await ObtainRuneIds(player, selectedIds);
+			return true;
+		}
 
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(
 			synchronizer,

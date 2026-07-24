@@ -117,7 +117,7 @@ internal static partial class HextechCombatHooks
 
 		if (owner?.Side != CombatSide.Enemy
 			|| owner.CombatState?.RunState is not RunState runState
-			|| GetMayhemModifier(runState) is not { } modifier
+			|| HextechMayhemModifier.FindIn(runState) is not { } modifier
 			|| !modifier.HasActiveMonsterHex(MonsterHexKind.DualWield))
 		{
 			return false;

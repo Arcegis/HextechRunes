@@ -37,7 +37,7 @@ public static class ModEntry
 			HextechMultiplayerCompatibilityHooks.Install(harmony);
 			TryInstallOptionalHookGroup("saved-property net-id canonicalization", () => HextechSavedPropertyNetIdHooks.Install(harmony));
 			HextechMobileModelRegistrationHooks.Install(harmony);
-			ThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
+			HextechThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechSelfUpgradeCardStore.Install(harmony);
 			HextechCustomRunModifierHooks.Install(harmony);
 			HextechRunLifecycleHooks.Install(harmony);
@@ -48,8 +48,8 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("encounter compatibility", () => HextechEncounterCompatibilityHooks.Install(harmony));
 			HextechUpdateChecker.Install(harmony);
 			TryInstallOptionalHookGroup("inspect relic screen", () => HextechInspectHooks.Install(harmony));
-			AssetHooks.Install(harmony);
-			TryInstallOptionalHookGroup("relic collection", () => CollectionHooks.Install(harmony));
+			HextechAssetHooks.Install(harmony);
+			TryInstallOptionalHookGroup("relic collection", () => HextechCollectionHooks.Install(harmony));
 			TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
 			TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
 			TryInstallOptionalHookGroup("form auto-play end-turn suppression", () => HextechFormAutoPlayHooks.Install(harmony));

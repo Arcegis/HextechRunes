@@ -1,3 +1,5 @@
+using static HextechRunes.HextechSelectionHelpers;
+
 namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator

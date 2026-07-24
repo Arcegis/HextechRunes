@@ -33,7 +33,7 @@ internal static partial class HextechCombatHooks
 		Creature? attacker = __instance.Attacker;
 		if (attacker?.Side != CombatSide.Enemy
 			|| attacker.CombatState?.RunState is not RunState runState
-			|| GetMayhemModifier(runState) is not { } modifier
+			|| HextechMayhemModifier.FindIn(runState) is not { } modifier
 			|| !modifier.HasActiveMonsterHex(MonsterHexKind.DualWield))
 		{
 			return;

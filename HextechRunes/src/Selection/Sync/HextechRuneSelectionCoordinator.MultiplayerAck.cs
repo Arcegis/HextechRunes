@@ -2,6 +2,7 @@ using Godot;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Nodes;
+using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
@@ -150,17 +151,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	internal static async Task<PlayerChoiceSynchronizer?> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
 	{
-		for (int i = 0; i < 60; i++)
-		{
-			if (runManager.PlayerChoiceSynchronizer != null)
-			{
-				return runManager.PlayerChoiceSynchronizer;
-			}
-
-			await Task.Yield();
-		}
-
-		return runManager.PlayerChoiceSynchronizer;
+		return await WaitForSingletonAsync(() => runManager.PlayerChoiceSynchronizer);
 	}
 
 	internal static bool IsLocalPlayer(RunManager runManager, Player player)

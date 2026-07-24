@@ -64,7 +64,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return null;
 		}
 
-		Texture2D? texture = AssetHooks.LoadUiTexture(path);
+		Texture2D? texture = HextechAssetHooks.LoadUiTexture(path);
 		if (texture == null)
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.GetCardFrameTexture: failed to load frame path={path}");
@@ -80,13 +80,13 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		try
 		{
 			Texture2D? bigIcon = relic.BigIcon;
-			if (AssetHooks.IsTextureUsable(bigIcon))
+			if (HextechAssetHooks.IsTextureUsable(bigIcon))
 			{
 				return bigIcon;
 			}
 
 			Texture2D? icon = relic.Icon;
-			if (AssetHooks.IsTextureUsable(icon))
+			if (HextechAssetHooks.IsTextureUsable(icon))
 			{
 				return icon;
 			}
@@ -94,11 +94,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		catch (Exception ex)
 		{
 			WarnDisplayTextureFallbackOnce(id, ex.GetType().Name);
-			return AssetHooks.GetMissingTexture();
+			return HextechAssetHooks.GetMissingTexture();
 		}
 
 		WarnDisplayTextureFallbackOnce(id, "no usable icon");
-		return AssetHooks.GetMissingTexture();
+		return HextechAssetHooks.GetMissingTexture();
 	}
 
 	private static void WarnDisplayTextureFallbackOnce(ModelId id, string reason)
@@ -206,7 +206,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		string path = alreadyRerolled
 			? RerollButtonUsedTexturePath
 			: hovered ? RerollButtonHoverTexturePath : RerollButtonTexturePath;
-		icon.Texture = AssetHooks.LoadUiTexture(path) ?? AssetHooks.LoadUiTexture(RerollButtonTexturePath);
+		icon.Texture = HextechAssetHooks.LoadUiTexture(path) ?? HextechAssetHooks.LoadUiTexture(RerollButtonTexturePath);
 		button.Modulate = Colors.White;
 		icon.SelfModulate = Colors.White;
 	}
@@ -228,21 +228,6 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		style.ContentMarginTop = 3;
 		style.ContentMarginBottom = 3;
 		return style;
-	}
-
-	private static void ApplyDefaultMegaLabelTheme(MegaLabel label)
-	{
-		Font font = label.GetThemeDefaultFont();
-		if (font != null)
-		{
-			label.AddThemeFontOverride("font", font);
-		}
-
-		int fontSize = label.GetThemeDefaultFontSize();
-		if (fontSize > 0)
-		{
-			label.AddThemeFontSizeOverride("font_size", fontSize);
-		}
 	}
 
 	private static void ApplyDefaultMegaRichTextTheme(MegaRichTextLabel label)

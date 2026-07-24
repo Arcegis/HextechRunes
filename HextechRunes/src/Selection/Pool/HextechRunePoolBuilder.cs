@@ -274,7 +274,7 @@ internal static class HextechRunePoolBuilder
 
 		try
 		{
-			if (RunManager.Instance.NetService.Type == NetGameType.Client)
+			if (HextechPlayerContextHelper.IsClientRun(fallbackWhenUnavailable: true))
 			{
 				return new HashSet<string>(StringComparer.Ordinal);
 			}

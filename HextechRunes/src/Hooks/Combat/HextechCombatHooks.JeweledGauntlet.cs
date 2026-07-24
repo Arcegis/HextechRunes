@@ -96,7 +96,7 @@ internal static partial class HextechCombatHooks
 		IReadOnlyList<Creature> targets = combatState!.PlayerCreatures.ToArray();
 		try
 		{
-			Log.Info($"Monster {monster.Id.Entry} repeating move {repeatState.Move.Id} via enemy Jeweled Gauntlet");
+			HextechLog.Info($"[{ModInfo.Id}][JeweledGauntlet] Monster {monster.Id.Entry} repeating move {repeatState.Move.Id} via enemy Jeweled Gauntlet");
 			await repeatState.Move.PerformMove(targets);
 			CombatManager.Instance.History.MonsterPerformedMove(combatState, monster, repeatState.Move, targets);
 		}
@@ -201,7 +201,7 @@ internal static partial class HextechCombatHooks
 			|| creature.CombatId is not uint combatId
 			|| creature.CombatState is not { } combatState
 			|| combatState.RunState is not RunState runState
-			|| GetMayhemModifier(runState) is not { } modifier
+			|| HextechMayhemModifier.FindIn(runState) is not { } modifier
 			|| !modifier.HasActiveMonsterHex(MonsterHexKind.JeweledGauntlet))
 		{
 			return false;

@@ -1,7 +1,7 @@
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using MegaCrit.Sts2.Core.Saves;
+using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
@@ -70,7 +70,7 @@ internal static class HextechForgeSelectionCoordinator
 				return null;
 			}
 
-			int selectedIndex = IndexOfRelic(options, selected);
+			int selectedIndex = IndexOfRelicById(options, selected);
 			if (selectedIndex < 0)
 			{
 				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Local selection not in option set: player={player.NetId} context={context}");
@@ -83,14 +83,14 @@ internal static class HextechForgeSelectionCoordinator
 				return null;
 			}
 
-				if (!HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options), $"forge-choice {context}", out uint sentChoiceId))
-				{
-					Log.Warn($"[{ModInfo.Id}][ForgeChoice] Sync local failed: player={player.NetId} choiceId={choiceId} index={selectedIndex} context={context}");
-				}
-
-				HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={sentChoiceId} index={selectedIndex} context={context}");
-				return selected;
+			if (!HextechRuneSelectionCoordinator.TrySyncLocalHextechChoice(synchronizer, player, choiceId, HextechChoiceCodec.CreateForgeSelection(selectedIndex, options), $"forge-choice {context}", out uint sentChoiceId))
+			{
+				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Sync local failed: player={player.NetId} choiceId={choiceId} index={selectedIndex} context={context}");
 			}
+
+			HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Sync local: player={player.NetId} choiceId={sentChoiceId} index={selectedIndex} context={context}");
+			return selected;
+		}
 
 		HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Wait remote: player={player.NetId} choiceId={choiceId} context={context}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(
@@ -123,16 +123,7 @@ internal static class HextechForgeSelectionCoordinator
 
 	private static async Task<HextechRuneSelectionScreen> CreateForgeSelectionScreenAsync(IReadOnlyList<RelicModel> options)
 	{
-		for (int i = 0; i < 60; i++)
-		{
-			if (NOverlayStack.Instance != null)
-			{
-				break;
-			}
-
-			await Task.Yield();
-		}
-
+		await WaitForSingletonAsync(static () => NOverlayStack.Instance);
 		HextechRuneSelectionScreen screen = HextechRuneSelectionScreen.Create(
 			options,
 			monsterHexRelic: null,
@@ -184,26 +175,6 @@ internal static class HextechForgeSelectionCoordinator
 		return finalOptions[selectedIndex];
 	}
 
-	private static int IndexOfRelic(IReadOnlyList<RelicModel> options, RelicModel? selected)
-	{
-		if (selected == null)
-		{
-			return -1;
-		}
-
-		ModelId selectedId = selected.CanonicalInstance?.Id ?? selected.Id;
-		for (int i = 0; i < options.Count; i++)
-		{
-			ModelId optionId = options[i].CanonicalInstance?.Id ?? options[i].Id;
-			if (optionId == selectedId)
-			{
-				return i;
-			}
-		}
-
-		return -1;
-	}
-
 	private static bool ShouldDirectlyGrantRandomForge(Player player)
 	{
 		try
@@ -235,11 +206,4 @@ internal static class HextechForgeSelectionCoordinator
 		return options[Math.Clamp(index, 0, options.Count - 1)];
 	}
 
-	private static void MarkRelicsSeen(IReadOnlyList<RelicModel> relics)
-	{
-		foreach (RelicModel relic in relics)
-		{
-			SaveManager.Instance.MarkRelicAsSeen(relic);
-		}
-	}
 }

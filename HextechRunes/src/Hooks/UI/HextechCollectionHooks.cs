@@ -9,7 +9,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-internal static partial class CollectionHooks
+internal static partial class HextechCollectionHooks
 {
 	private readonly record struct SubcategoryHeaderText(string ZhHeader, string ZhBody, string EnHeader, string EnBody);
 
@@ -135,7 +135,7 @@ internal static partial class CollectionHooks
 
 		harmony.Patch(
 			LoadRelicsMethod!,
-			postfix: new HarmonyMethod(typeof(CollectionHooks), nameof(LoadRelicsPostfix)));
+			postfix: new HarmonyMethod(typeof(HextechCollectionHooks), nameof(LoadRelicsPostfix)));
 	}
 
 	private static void LoadRelicsPostfix(

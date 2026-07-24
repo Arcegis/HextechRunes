@@ -2191,6 +2191,45 @@ internal static partial class Program
 		guarded.GetAwaiter().GetResult();
 		Expect(sawActiveAfterAwait, "compensation replacement guard should remain active after await inside guarded work");
 		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should reset after guarded work");
+
+		HextechScopedDepthGuard enteredTaskGuard = new();
+		TaskCompletionSource enteredTaskGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		bool enteredTaskActiveBeforeAwait = false;
+		bool enteredTaskActiveAfterAwait = false;
+		bool afterCompletionSawInactiveGuard = false;
+
+		async Task ObserveEnteredTask()
+		{
+			enteredTaskActiveBeforeAwait = enteredTaskGuard.IsActive;
+			await enteredTaskGate.Task;
+			enteredTaskActiveAfterAwait = enteredTaskGuard.IsActive;
+		}
+
+		enteredTaskGuard.Enter();
+		Task enteredTask = ObserveEnteredTask();
+		Task wrappedEnteredTask = enteredTaskGuard.WrapEnteredTask(
+			enteredTask,
+			() =>
+			{
+				afterCompletionSawInactiveGuard = !enteredTaskGuard.IsActive;
+				return Task.CompletedTask;
+			});
+
+		Expect(enteredTaskActiveBeforeAwait, "entered task guard should be active before the original task awaits");
+		Expect(!enteredTaskGuard.IsActive, "wrapping an entered task should immediately unwind the caller context");
+		enteredTaskGate.SetResult();
+		wrappedEnteredTask.GetAwaiter().GetResult();
+		Expect(enteredTaskActiveAfterAwait, "entered task guard should remain active after await inside the original task");
+		Expect(afterCompletionSawInactiveGuard, "entered task completion callback should run after the guarded context exits");
+		Expect(!enteredTaskGuard.IsActive, "entered task guard should remain inactive in the caller after completion");
+
+		enteredTaskGuard.Enter();
+		enteredTaskGuard.Enter();
+		Task nestedSynchronousTask = enteredTaskGuard.WrapEnteredTask(Task.CompletedTask);
+		Expect(enteredTaskGuard.IsActive, "wrapping a completed nested task should preserve the parent guard scope");
+		nestedSynchronousTask.GetAwaiter().GetResult();
+		enteredTaskGuard.Exit();
+		Expect(!enteredTaskGuard.IsActive, "nested completed task guard should unwind exactly one depth");
 	}
 
 	private static void CompensationReplacementSuppressesSleightOfFleshResponse()
