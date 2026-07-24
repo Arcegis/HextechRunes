@@ -72,9 +72,42 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		return texture;
 	}
 
+	private static readonly HashSet<string> DisplayTextureFallbackWarnings = new(StringComparer.Ordinal);
+
 	private static Texture2D? GetDisplayTexture(RelicModel relic)
 	{
-		return relic.BigIcon ?? relic.Icon;
+		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		try
+		{
+			Texture2D? bigIcon = relic.BigIcon;
+			if (AssetHooks.IsTextureUsable(bigIcon))
+			{
+				return bigIcon;
+			}
+
+			Texture2D? icon = relic.Icon;
+			if (AssetHooks.IsTextureUsable(icon))
+			{
+				return icon;
+			}
+		}
+		catch (Exception ex)
+		{
+			WarnDisplayTextureFallbackOnce(id, ex.GetType().Name);
+			return AssetHooks.GetMissingTexture();
+		}
+
+		WarnDisplayTextureFallbackOnce(id, "no usable icon");
+		return AssetHooks.GetMissingTexture();
+	}
+
+	private static void WarnDisplayTextureFallbackOnce(ModelId id, string reason)
+	{
+		string key = id.ToString();
+		if (DisplayTextureFallbackWarnings.Add(key))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.GetDisplayTexture: using fallback id={key} reason={reason}");
+		}
 	}
 
 	private static StyleBoxFlat CreateContentPanelStyle()
