@@ -7,25 +7,6 @@ using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
-internal sealed class HextechEnemyHexAdjustmentOptions
-{
-	public MonsterHexKind? InitialHex { get; init; }
-
-	public IReadOnlyList<MonsterHexKind> InitialHexes { get; init; } = [];
-
-	public IReadOnlyList<MonsterHexKind> ExcludedHexes { get; init; } = [];
-
-	public bool ControlsEnabled { get; init; }
-
-	public Func<IReadOnlyList<MonsterHexKind?>, int, int, MonsterHexKind?>? RerollFunc { get; init; }
-
-	public int RerollLimit { get; init; } = HextechRuneConfiguration.GetDefaultMonsterHexRerollLimit();
-
-	public Action<IReadOnlyList<MonsterHexKind?>, IReadOnlyList<int>>? Changed { get; init; }
-
-	public Action<HextechRuneSelectionScreen>? ScreenCreated { get; init; }
-}
-
 internal enum HextechSelectionMetadataMode
 {
 	PlayerRune,
@@ -57,11 +38,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private MegaLabel? _statusLabel;
 	private bool _choiceLocked;
 	private bool _blockMapUntilDismissed;
-	private bool _restoreAfterMapReopenQueued;
 	private bool _closed;
-	private bool _mapPreviewActive;
-	private bool _mapButtonForceEnabled;
-	private MegaLabel? _mapPreviewHint;
 	private bool _selectionConfirmGuardStarted;
 	private ulong _selectionConfirmGuardEndsAtMsec;
 
