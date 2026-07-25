@@ -81,6 +81,7 @@ internal static partial class Program
 			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
+			new(nameof(SubroutineUpgradeCombatMoveGateResetsAcrossCombats), SubroutineUpgradeCombatMoveGateResetsAcrossCombats),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(PrismaticEggIsExcludedFromThirdAct), PrismaticEggIsExcludedFromThirdAct),
 			new(nameof(MirrorReflectionCopiesCursesButNotBasicCards), MirrorReflectionCopiesCursesButNotBasicCards),
@@ -1026,6 +1027,20 @@ internal static partial class Program
 		ExpectCombatGenerationFilters(
 			typeof(ColorDiscoveryRune).GetMethod("GetOtherCharacterCards", BindingFlags.NonPublic | BindingFlags.Static)!,
 			nameof(ColorDiscoveryRune));
+	}
+
+	private static void SubroutineUpgradeCombatMoveGateResetsAcrossCombats()
+	{
+		SubroutineUpgradeRune rune = new();
+
+		Expect(rune.TryConsumeCombatStartMove(), "first combat-start move should be consumed");
+		Expect(!rune.TryConsumeCombatStartMove(), "same combat should reject a second move");
+
+		rune.BeforeCombatStart().GetAwaiter().GetResult();
+		Expect(rune.TryConsumeCombatStartMove(), "combat start should reset the move gate");
+
+		rune.AfterCombatEnd(null!).GetAwaiter().GetResult();
+		Expect(rune.TryConsumeCombatStartMove(), "combat end should clear the move gate");
 	}
 
 	private static MethodInfo GetAsyncStateMachineMoveNext(MethodInfo asyncMethod)
