@@ -970,6 +970,16 @@ internal static partial class Program
 
 	private static void SearingAttackRuneGrantsUpgradedCard()
 	{
+		Expect(typeof(HextechOwnerPoolTokenCard).IsAbstract, "owner-pool token card base should stay abstract");
+		Expect(
+			!HextechCustomModelRegistry.CustomCardTypes.Contains(typeof(HextechOwnerPoolTokenCard)),
+			"owner-pool token card base must not enter the concrete model registry");
+		Equal(
+			HextechCustomModelRegistry.CustomCardTypes.Count,
+			HextechCustomModelRegistry.CustomCardTypes.Count(
+				static type => typeof(HextechOwnerPoolTokenCard).IsAssignableFrom(type) && !type.IsAbstract),
+			"all registered custom cards should use the owner-pool token card contract");
+
 		SearingAttackCard card = CreateMutableTestModel<SearingAttackCard>();
 
 		SearingAttackRune.UpgradeGrantedCard(card);
