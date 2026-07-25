@@ -583,15 +583,27 @@ internal static partial class Program
 
 	private static void CombatTrackingGlobalProcOrdinalsSerializeAndReset()
 	{
+		Expect(!HextechEnemyHexContext.IsRoundIntervalDue(1, 3), "round intervals should not trigger on round one");
+		Expect(!HextechEnemyHexContext.IsRoundIntervalDue(3, 3), "three-round interval should wait until round four");
+		Expect(HextechEnemyHexContext.IsRoundIntervalDue(4, 3), "three-round interval should trigger on round four");
+		Expect(HextechEnemyHexContext.IsRoundIntervalDue(8, 3), "three-round interval should trigger again on round eight");
+		Expect(HextechEnemyHexContext.IsRoundIntervalDue(3, 2), "two-round interval should trigger on round three");
+		Expect(HextechEnemyHexContext.IsRoundIntervalDue(2, 1), "one-round interval should trigger on round two");
+		Expect(!HextechEnemyHexContext.IsRoundIntervalDue(4, 0), "nonpositive round intervals should stay disabled");
+
 		HextechMayhemCombatTrackingState tracking = new();
 		Equal(0, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy-archmage:net:1"), "first global proc ordinal");
 		Equal(1, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy-archmage:net:1"), "second global proc ordinal");
+		const string roundIntervalKey = "round-once:DivineIntervention:4";
+		Equal(0, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, roundIntervalKey), "first interval proc in a round");
+		Equal(1, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, roundIntervalKey), "extra turn should not repeat an interval proc");
 
 		string serialized = tracking.Serialize();
 		HextechMayhemCombatTrackingState restored = new();
 		restored.Restore(serialized);
 
 		Equal(2, restored.GlobalProcsThisCombat["enemy-archmage:net:1"], "global proc count should restore");
+		Equal(2, restored.GlobalProcsThisCombat[roundIntervalKey], "round interval guard should restore");
 		Equal(2, HextechCombatProcTracker.ConsumeGlobalProcInCombat(restored, "enemy-archmage:net:1"), "restored next global proc ordinal");
 
 		restored.PreparePlayerSideTurnStart();
