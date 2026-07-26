@@ -26,6 +26,11 @@ internal abstract class HextechEnemyHexEffect
 		return 1m;
 	}
 
+	internal virtual decimal ModifyEnemyHealMultiplicative(HextechEnemyHexContext context, Creature creature, decimal amount)
+	{
+		return 1m;
+	}
+
 	internal virtual decimal ModifyEnemyHealAmount(HextechEnemyHexContext context, Creature creature, decimal amount)
 	{
 		return amount;

@@ -9,10 +9,12 @@ internal sealed partial class HextechMayhemModifier
 			return 1m;
 		}
 
-		return HextechEnemyHexDispatcher.Transform(
-			this,
-			1m,
-			(effect, context, multiplier) => multiplier * effect.ModifyDamageMultiplicative(context, target, amount, props, dealer, cardSource));
+		HextechEnemyHexContext context = new(this);
+		return HextechEnemyCoefficientHelper.CombineMultipliersByHex(
+			HextechEnemyHexEffects.GetActive(this)
+				.Select(effect => (
+					effect.Kind,
+					effect.ModifyDamageMultiplicative(context, target, amount, props, dealer, cardSource))));
 	}
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
@@ -22,10 +24,12 @@ internal sealed partial class HextechMayhemModifier
 			return 1m;
 		}
 
-		return HextechEnemyHexDispatcher.Transform(
-			this,
-			1m,
-			(effect, context, multiplier) => multiplier * effect.ModifyBlockMultiplicative(context, target, block, props, cardSource, cardPlay));
+		HextechEnemyHexContext context = new(this);
+		return HextechEnemyCoefficientHelper.CombineMultipliersByHex(
+			HextechEnemyHexEffects.GetActive(this)
+				.Select(effect => (
+					effect.Kind,
+					effect.ModifyBlockMultiplicative(context, target, block, props, cardSource, cardPlay))));
 	}
 
 	public override decimal ModifyHpLostAfterOsty(Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)

@@ -104,6 +104,10 @@ internal static partial class Program
 			new(nameof(CoefficientRunesStackAdditivelyWithinTheirOwnSector), CoefficientRunesStackAdditivelyWithinTheirOwnSector),
 			new(nameof(CoefficientForgesShareOneAdditiveSector), CoefficientForgesShareOneAdditiveSector),
 			new(nameof(MaxHpCoefficientSectorsMultiply), MaxHpCoefficientSectorsMultiply),
+			new(nameof(EnemyCoefficientAddsWithinHexAndMultipliesAcrossHexes), EnemyCoefficientAddsWithinHexAndMultipliesAcrossHexes),
+			new(nameof(EnemyMaxHpCoefficientSectorsUseBaseHp), EnemyMaxHpCoefficientSectorsUseBaseHp),
+			new(nameof(EnemyMaxHpLegacyMigrationRecoversMixedSinglePlayerEffects), EnemyMaxHpLegacyMigrationRecoversMixedSinglePlayerEffects),
+			new(nameof(EnemyMaxHpLegacyMigrationPreservesMultiplayerScaling), EnemyMaxHpLegacyMigrationPreservesMultiplayerScaling),
 			new(nameof(NightmareHooksEveryDarkOrbPassiveTrigger), NightmareHooksEveryDarkOrbPassiveTrigger),
 			new(nameof(NightmareEffectRunsOnceAfterEachPassiveTask), NightmareEffectRunsOnceAfterEachPassiveTask),
 			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
@@ -786,6 +790,8 @@ internal static partial class Program
 		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:Bpower");
 		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:co-op");
 		HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy:net:1:coop");
+		tracking.MonsterMaxHpCoefficientBase[17] = 143;
+		tracking.MonsterMaxHpCoefficientProjected[17] = 187;
 
 		System.Globalization.CultureInfo original = System.Globalization.CultureInfo.CurrentCulture;
 		try
@@ -805,6 +811,11 @@ internal static partial class Program
 			int upperIndex = serialized[0].IndexOf("Bpower", StringComparison.Ordinal);
 			int lowerIndex = serialized[0].IndexOf("apower", StringComparison.Ordinal);
 			Expect(upperIndex >= 0 && lowerIndex >= 0 && upperIndex < lowerIndex, "combat tracking keys should sort ordinally (B before a)");
+
+			HextechMayhemCombatTrackingState restored = new();
+			restored.Restore(serialized[0]);
+			Equal(143, restored.MonsterMaxHpCoefficientBase[17], "enemy max HP coefficient base should survive combat tracking restore");
+			Equal(187, restored.MonsterMaxHpCoefficientProjected[17], "enemy max HP coefficient projection should survive combat tracking restore");
 		}
 		finally
 		{
@@ -1591,6 +1602,104 @@ internal static partial class Program
 			[7.5m, 15m, 30m]);
 
 		Equal(4.73718375m, multiplier, "rune sectors should multiply after HP forge bonuses are added into one sector");
+	}
+
+	private static void EnemyCoefficientAddsWithinHexAndMultipliesAcrossHexes()
+	{
+		decimal oneHex = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
+		[
+			(MonsterHexKind.TankEngine, 0.05m),
+			(MonsterHexKind.TankEngine, 0.05m),
+			(MonsterHexKind.TankEngine, 0.05m),
+			(MonsterHexKind.TankEngine, 0.05m),
+			(MonsterHexKind.TankEngine, 0.05m)
+		]);
+		Equal(1.25m, oneHex, "five Tank Engine contributions should add inside one enemy hex sector");
+
+		decimal crossHex = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
+		[
+			(MonsterHexKind.Goliath, 0.20m),
+			(MonsterHexKind.AstralBody, 0.30m)
+		]);
+		Equal(1.56m, crossHex, "different enemy hex sectors should multiply");
+	}
+
+	private static void EnemyMaxHpCoefficientSectorsUseBaseHp()
+	{
+		decimal scale = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
+		[
+			(MonsterHexKind.Goliath, 0.20m),
+			(MonsterHexKind.AstralBody, 0.20m),
+			(MonsterHexKind.GoldenSpatula, 0.25m),
+			(MonsterHexKind.MadScientist, -0.30m)
+		]);
+
+		Equal(1.26m, scale, "enemy max HP hex sectors");
+		Equal(126m, Math.Floor(100m * scale), "enemy max HP should derive once from the tracked base HP");
+	}
+
+	private static void EnemyMaxHpLegacyMigrationRecoversMixedSinglePlayerEffects()
+	{
+		Equal(
+			100,
+			HextechLegacyEnemyMaxHpMigration.ResolveBaseMaxHp(
+				currentMaxHp: 113,
+				rawMonsterMaxHp: 100,
+				appliedFixedBonusFractions: [0.20m, 0.30m, 0.25m],
+				madScientistLossFraction: 0.30m,
+				tankEngineStacks: 5),
+			"legacy max HP migration should reverse fixed targets, Mad Scientist and compounded Tank Engine stacks");
+		Equal(
+			100,
+			HextechLegacyEnemyMaxHpMigration.ResolveBaseMaxHp(
+				currentMaxHp: 130,
+				rawMonsterMaxHp: 100,
+				appliedFixedBonusFractions: [0.20m, 0.30m],
+				madScientistLossFraction: 0m,
+				tankEngineStacks: 0),
+			"an old fixed target masks smaller unknown scaling, so migration should use the raw monster base");
+		Equal(
+			100,
+			HextechLegacyEnemyMaxHpMigration.ResolveBaseMaxHp(
+				currentMaxHp: 156,
+				rawMonsterMaxHp: null,
+				appliedFixedBonusFractions: [0.20m, 0.30m],
+				madScientistLossFraction: 0m,
+				tankEngineStacks: 0),
+			"legacy max HP migration should reverse chained fixed bonuses when the raw monster base is unavailable");
+
+		int rawlessMixedBase = HextechLegacyEnemyMaxHpMigration.ResolveBaseMaxHp(
+			currentMaxHp: 110,
+			rawMonsterMaxHp: null,
+			appliedFixedBonusFractions: [0.20m, 0.30m],
+			madScientistLossFraction: 0.30m,
+			tankEngineStacks: 0);
+		Equal(
+			110m,
+			Math.Floor(rawlessMixedBase * 1.20m * 1.30m * 0.70m),
+			"rawless legacy migration should preserve the observed max HP after the new coefficient projection");
+	}
+
+	private static void EnemyMaxHpLegacyMigrationPreservesMultiplayerScaling()
+	{
+		Equal(
+			200,
+			HextechLegacyEnemyMaxHpMigration.ResolveBaseMaxHp(
+				currentMaxHp: 161,
+				rawMonsterMaxHp: 100,
+				appliedFixedBonusFractions: [0.20m, 0.30m],
+				madScientistLossFraction: 0.30m,
+				tankEngineStacks: 3),
+			"legacy max HP migration should retain a multiplayer-scaled base above every old fixed target");
+		Equal(
+			200,
+			HextechLegacyEnemyMaxHpMigration.ResolveBaseMaxHp(
+				currentMaxHp: 200,
+				rawMonsterMaxHp: 100,
+				appliedFixedBonusFractions: [],
+				madScientistLossFraction: 0m,
+				tankEngineStacks: 0),
+			"a fresh externally-scaled enemy should keep its current max HP as the coefficient base");
 	}
 
 	private static void NightmareHooksEveryDarkOrbPassiveTrigger()
