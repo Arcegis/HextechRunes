@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "망치가 충분히 크다면 정밀함은 선택 사항입니다.",
   "OBLIVION_UPGRADE_RUNE.title": "업그레이드: 망각",
   "OBLIVION_UPGRADE_RUNE.description": "턴 종료 시 자신이 부여한 [gold]망각[/gold]이 제거되지 않습니다.",
-  "OBLIVION_UPGRADE_RUNE.flavor": "잊힌 것에는 끝이 필요하지 않습니다."
+  "OBLIVION_UPGRADE_RUNE.flavor": "잊힌 것에는 끝이 필요하지 않습니다.",
+  "SPIN_TO_WIN_RUNE.title": "돌려서 승리",
+  "SPIN_TO_WIN_RUNE.description": "다음 턴의 카드 뽑기, 에너지, 소환, 별이 즉시 발동합니다.",
+  "SPIN_TO_WIN_RUNE.flavor": "승리는 다음 턴을 기다리지 않습니다."
 }

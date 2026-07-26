@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "Precisão é opcional quando o martelo é grande o bastante.",
   "OBLIVION_UPGRADE_RUNE.title": "Melhoria: Oblívio",
   "OBLIVION_UPGRADE_RUNE.description": "No fim do turno, o [gold]Oblívio[/gold] aplicado por você não é removido.",
-  "OBLIVION_UPGRADE_RUNE.flavor": "O que foi esquecido já não precisa de um fim."
+  "OBLIVION_UPGRADE_RUNE.flavor": "O que foi esquecido já não precisa de um fim.",
+  "SPIN_TO_WIN_RUNE.title": "Giro Vitorioso",
+  "SPIN_TO_WIN_RUNE.description": "Sua compra de cartas, Energia, Invocação e Estrelas do próximo turno são ativadas imediatamente.",
+  "SPIN_TO_WIN_RUNE.flavor": "A vitória nunca espera o próximo turno."
 }

@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "Precision is optional when the hammer is large enough.",
   "OBLIVION_UPGRADE_RUNE.title": "Upgrade: Oblivion",
   "OBLIVION_UPGRADE_RUNE.description": "At the end of the turn, [gold]Oblivion[/gold] applied by you is not removed.",
-  "OBLIVION_UPGRADE_RUNE.flavor": "What is forgotten no longer needs an ending."
+  "OBLIVION_UPGRADE_RUNE.flavor": "What is forgotten no longer needs an ending.",
+  "SPIN_TO_WIN_RUNE.title": "Spin to Win",
+  "SPIN_TO_WIN_RUNE.description": "Your next-turn card draw, Energy, Summon, and Stars take effect immediately.",
+  "SPIN_TO_WIN_RUNE.flavor": "Victory never waits for the next turn."
 }

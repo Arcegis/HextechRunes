@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "槌が十分に大きければ、精密さは要らない。",
   "OBLIVION_UPGRADE_RUNE.title": "アップグレード：忘却",
   "OBLIVION_UPGRADE_RUNE.description": "ターン終了時、自分が付与した[gold]忘却[/gold]は取り除かれない。",
-  "OBLIVION_UPGRADE_RUNE.flavor": "忘れ去られたものに終わりは要らない。"
+  "OBLIVION_UPGRADE_RUNE.flavor": "忘れ去られたものに終わりは要らない。",
+  "SPIN_TO_WIN_RUNE.title": "回して勝利",
+  "SPIN_TO_WIN_RUNE.description": "次のターンのカードドロー、エナジー、召喚、星が即座に発動する。",
+  "SPIN_TO_WIN_RUNE.flavor": "勝利は次のターンを待たない。"
 }

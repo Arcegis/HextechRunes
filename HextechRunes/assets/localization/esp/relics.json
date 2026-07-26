@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "La precisión es opcional con un martillo así.",
   "OBLIVION_UPGRADE_RUNE.title": "Mejora: Olvido",
   "OBLIVION_UPGRADE_RUNE.description": "Al final del turno, el [gold]Olvido[/gold] aplicado por ti no se elimina.",
-  "OBLIVION_UPGRADE_RUNE.flavor": "Lo olvidado ya no necesita un final."
+  "OBLIVION_UPGRADE_RUNE.flavor": "Lo olvidado ya no necesita un final.",
+  "SPIN_TO_WIN_RUNE.title": "Girar para ganar",
+  "SPIN_TO_WIN_RUNE.description": "Tu robo de cartas, Energía, Invocación y Estrellas del próximo turno se activan inmediatamente.",
+  "SPIN_TO_WIN_RUNE.flavor": "La victoria nunca espera al próximo turno."
 }

@@ -118,6 +118,7 @@
 我方	TwilightVeilRune	薄暮法衣	标签=综合
 我方	LingeringMightRune	余威	标签=综合
 我方	HundredRefinementsRune	百炼成钢	标签=随机
+我方	SpinToWinRune	转出胜利	标签=运转
 我方	TransmutePrismaticRune	质变：棱彩阶	标签=随机
 我方	ShrinkRayRune	缩小射线	标签=生存
 我方	EurekaRune	尤里卡	标签=运转

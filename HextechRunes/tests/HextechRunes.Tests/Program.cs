@@ -91,6 +91,7 @@ internal static partial class Program
 			new(nameof(PactsEndUpgradeDamageScalesWithExhaustPile), PactsEndUpgradeDamageScalesWithExhaustPile),
 			new(nameof(BrandUpgradeDamageScalesWithPermanentPlayCount), BrandUpgradeDamageScalesWithPermanentPlayCount),
 			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
+			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(PrismaticEggIsExcludedFromThirdAct), PrismaticEggIsExcludedFromThirdAct),
@@ -2911,6 +2912,15 @@ internal static partial class Program
 	{
 		Equal(15m, BigHammerRune.CalculateForgeAmount(10m, 50m, sourceAlreadyIncludesBonus: false), "direct forge bonus");
 		Equal(15m, BigHammerRune.CalculateForgeAmount(15m, 50m, sourceAlreadyIncludesBonus: true), "hammer time propagated forge");
+	}
+
+	private static void SpinToWinRecognizesSupportedDelayedResources()
+	{
+		Expect(SpinToWinRune.IsConvertiblePower(new DrawCardsNextTurnPower()), "next-turn draw should convert");
+		Expect(SpinToWinRune.IsConvertiblePower(new EnergyNextTurnPower()), "next-turn energy should convert");
+		Expect(SpinToWinRune.IsConvertiblePower(new SummonNextTurnPower()), "next-turn summon should convert");
+		Expect(SpinToWinRune.IsConvertiblePower(new StarNextTurnPower()), "next-turn stars should convert");
+		Expect(!SpinToWinRune.IsConvertiblePower(new StrengthPower()), "unrelated powers should remain unchanged");
 	}
 
 	private static void NewRuneHookTargetsMatchSupportedGameApis()

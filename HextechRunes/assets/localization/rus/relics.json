@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "Точность не обязательна, если молот достаточно велик.",
   "OBLIVION_UPGRADE_RUNE.title": "Улучшение: Забвение",
   "OBLIVION_UPGRADE_RUNE.description": "В конце хода наложенное вами [gold]Забвение[/gold] не снимается.",
-  "OBLIVION_UPGRADE_RUNE.flavor": "Забытому больше не нужен конец."
+  "OBLIVION_UPGRADE_RUNE.flavor": "Забытому больше не нужен конец.",
+  "SPIN_TO_WIN_RUNE.title": "Победный оборот",
+  "SPIN_TO_WIN_RUNE.description": "Добор карт, Энергия, Призыв и Звёзды следующего хода срабатывают немедленно.",
+  "SPIN_TO_WIN_RUNE.flavor": "Победа не ждёт следующего хода."
 }

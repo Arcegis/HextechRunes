@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "锤子足够大时，准头就不重要了。",
   "OBLIVION_UPGRADE_RUNE.title": "升级：湮灭",
   "OBLIVION_UPGRADE_RUNE.description": "回合结束时，你施加的[gold]湮灭[/gold]效果不会被移除。",
-  "OBLIVION_UPGRADE_RUNE.flavor": "被遗忘之物，不再需要终点。"
+  "OBLIVION_UPGRADE_RUNE.flavor": "被遗忘之物，不再需要终点。",
+  "SPIN_TO_WIN_RUNE.title": "转出胜利",
+  "SPIN_TO_WIN_RUNE.description": "你的下回合抽牌、能量、召唤、辉星改为即时生效。",
+  "SPIN_TO_WIN_RUNE.flavor": "胜利从不等到下一回合。"
 }

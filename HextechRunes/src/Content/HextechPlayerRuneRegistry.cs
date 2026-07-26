@@ -251,6 +251,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<SubroutineUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 30, tagKey: "ORB"),
 		Rune<TerminalIllnessRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 28, tagKey: "POISON"),
 		Rune<BigHammerRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 28, tagKey: "SWORDCRAFT"),
+		Rune<SpinToWinRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
 
 		Rune<StrikeUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
 		Rune<DefendUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),

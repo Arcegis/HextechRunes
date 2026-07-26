@@ -1396,5 +1396,8 @@
   "BIG_HAMMER_RUNE.flavor": "ความแม่นยำไม่จำเป็นเมื่อค้อนใหญ่พอ",
   "OBLIVION_UPGRADE_RUNE.title": "อัปเกรด: การลืมเลือน",
   "OBLIVION_UPGRADE_RUNE.description": "เมื่อจบเทิร์น [gold]การลืมเลือน[/gold]ที่คุณมอบให้จะไม่ถูกลบ",
-  "OBLIVION_UPGRADE_RUNE.flavor": "สิ่งที่ถูกลืมไม่ต้องการจุดจบอีกต่อไป"
+  "OBLIVION_UPGRADE_RUNE.flavor": "สิ่งที่ถูกลืมไม่ต้องการจุดจบอีกต่อไป",
+  "SPIN_TO_WIN_RUNE.title": "หมุนสู่ชัยชนะ",
+  "SPIN_TO_WIN_RUNE.description": "การจั่วการ์ด พลังงาน อัญเชิญ และดวงดาวของเทิร์นถัดไปจะมีผลทันที",
+  "SPIN_TO_WIN_RUNE.flavor": "ชัยชนะไม่เคยรอเทิร์นถัดไป"
 }
