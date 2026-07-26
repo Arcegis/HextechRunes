@@ -16,12 +16,17 @@ internal sealed partial class HextechMayhemModifier
 
 	public bool TryRecoverResolvedActsFromPlayerRelics(string reason)
 	{
+		int currentActIndex = RunState.CurrentActIndex;
+		int maxRecoverActIndex = HasRuneSelectionJournalEntriesForAct(currentActIndex)
+			? currentActIndex - 1
+			: currentActIndex;
 		HextechMayhemActRecoveryResult recovery = HextechMayhemActRecovery.RecoverResolvedActs(
 			RunState,
 			_actState,
 			_choiceHistory,
 			_hexCountRecoveryBaseline,
-			PlayerHexCountsByAct);
+			PlayerHexCountsByAct,
+			maxRecoverActIndex);
 		if (recovery.Changed)
 		{
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved acts from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} recoverThrough={recovery.RecoverThroughAct} telemetryThrough={recovery.TelemetryRecoverThroughAct} countThrough={recovery.CountRecoverThroughAct} baseline={_hexCountRecoveryBaseline} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");

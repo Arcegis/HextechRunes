@@ -132,6 +132,13 @@ public static class HextechRunesApi
 		{
 			throw new ArgumentException("Relic option selection context must not be empty.", nameof(context));
 		}
+		if (options.Count > HextechStableModelIdListCodec.MaxCount)
+		{
+			throw new ArgumentOutOfRangeException(
+				nameof(options),
+				options.Count,
+				$"Relic option count must not exceed {HextechStableModelIdListCodec.MaxCount}.");
+		}
 
 		return HextechRelicOptionSelectionCoordinator.SelectRelicOption(player, options, context, syncMultiplayerChoice);
 	}

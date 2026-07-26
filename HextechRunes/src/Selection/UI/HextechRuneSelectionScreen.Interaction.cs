@@ -7,6 +7,8 @@ namespace HextechRunes;
 
 internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScreen, IScreenContext
 {
+	private const int DismissMouseReleaseWaitLimit = 30;
+
 	private void OnHolderSelected(RelicModel relic)
 	{
 		if (_choiceLocked)
@@ -216,30 +218,45 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		await WaitForMouseReleaseAsync();
+		bool mouseReleased = await WaitForMouseReleaseAsync(DismissMouseReleaseWaitLimit);
+		if (!mouseReleased)
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: mouse release wait reached its limit; forcing overlay removal.");
+		}
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: removing overlay");
 		_blockMapUntilDismissed = false;
 		NOverlayStack.Instance?.Remove(this);
 	}
 
-	private async Task WaitForMouseReleaseAsync()
+	private async Task<bool> WaitForMouseReleaseAsync(
+		int pressedWaitLimit = int.MaxValue,
+		CancellationToken cancellationToken = default)
 	{
-		if (!await AwaitProcessFrameIfInsideTreeAsync())
+		if (!await AwaitProcessFrameIfInsideTreeAsync(cancellationToken))
 		{
-			return;
+			return true;
 		}
 
+		int pressedWaitCount = 0;
 		while (Input.IsMouseButtonPressed(MouseButton.Left))
 		{
-			if (!await AwaitProcessFrameIfInsideTreeAsync())
+			if (pressedWaitCount >= pressedWaitLimit)
 			{
-				return;
+				return false;
+			}
+
+			pressedWaitCount++;
+			if (!await AwaitProcessFrameIfInsideTreeAsync(cancellationToken))
+			{
+				return true;
 			}
 		}
-		await AwaitProcessFrameIfInsideTreeAsync();
+
+		await AwaitProcessFrameIfInsideTreeAsync(cancellationToken);
+		return true;
 	}
 
-	private async Task<bool> AwaitProcessFrameIfInsideTreeAsync()
+	private async Task<bool> AwaitProcessFrameIfInsideTreeAsync(CancellationToken cancellationToken = default)
 	{
 		if (!IsInsideTree())
 		{
@@ -252,7 +269,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return false;
 		}
 
-		await ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+		await HextechSelectionHelpers.WaitForProcessFrameOrDelayAsync(cancellationToken);
 		return IsInsideTree();
 	}
 

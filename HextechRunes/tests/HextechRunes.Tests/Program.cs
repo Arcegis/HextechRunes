@@ -66,12 +66,16 @@ internal static partial class Program
 			new(nameof(ActSelectionAppliedRejectsWrongActOrOrdinal), ActSelectionAppliedRejectsWrongActOrOrdinal),
 			new(nameof(EnemyHexAdjustmentRoundTripKeepsAllSlots), EnemyHexAdjustmentRoundTripKeepsAllSlots),
 			new(nameof(EnemyHexAdjustmentRejectsInvalidHex), EnemyHexAdjustmentRejectsInvalidHex),
-			new(nameof(LegacyEnemyHexAdjustmentStillDecodes), LegacyEnemyHexAdjustmentStillDecodes),
+			new(nameof(EnemyHexAdjustmentRejectsUnexpectedSequence), EnemyHexAdjustmentRejectsUnexpectedSequence),
+			new(nameof(EnemyHexAdjustmentRejectsExtremeCounts), EnemyHexAdjustmentRejectsExtremeCounts),
+			new(nameof(LegacyEnemyHexAdjustmentIsRejected), LegacyEnemyHexAdjustmentIsRejected),
 			new(nameof(RandomRuneGrantRoundTripKeepsStableModelIds), RandomRuneGrantRoundTripKeepsStableModelIds),
 			new(nameof(RandomRuneGrantRejectsMalformedStableModelIdList), RandomRuneGrantRejectsMalformedStableModelIdList),
 			new(nameof(RelicOptionSelectionRoundTripRequiresMatchingOptions), RelicOptionSelectionRoundTripRequiresMatchingOptions),
+			new(nameof(OperationTokensRejectCrossedPayloads), OperationTokensRejectCrossedPayloads),
 			new(nameof(StableModelIdListCodecRoundTripsFromNonzeroCursor), StableModelIdListCodecRoundTripsFromNonzeroCursor),
 			new(nameof(StableModelIdListCodecRejectsMalformedLength), StableModelIdListCodecRejectsMalformedLength),
+			new(nameof(StableModelIdListCodecRejectsEncoderOverflow), StableModelIdListCodecRejectsEncoderOverflow),
 			new(nameof(PlayerRuneRarityConfigExcludesFullyDisabledTier), PlayerRuneRarityConfigExcludesFullyDisabledTier),
 			new(nameof(PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled), PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled),
 			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
@@ -133,7 +137,10 @@ internal static partial class Program
 			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
 			new(nameof(ConfigMigrationV25AddsNewDefaultDisables), ConfigMigrationV25AddsNewDefaultDisables),
 			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
-				new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
+			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
+			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
+			new(nameof(RuneSelectionJournalRejectsConflictingSelections), RuneSelectionJournalRejectsConflictingSelections),
+			new(nameof(AppliedRuneSelectionJournalDoesNotRequireInventoryPresence), AppliedRuneSelectionJournalDoesNotRequireInventoryPresence),
 			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
 			new(nameof(PlayerRuneMetadataHasUniqueTypes), PlayerRuneMetadataHasUniqueTypes),
@@ -175,6 +182,7 @@ internal static partial class Program
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
 			new(nameof(MultiplayerGameplaySignatureExcludesRuntimeSavedProperties), MultiplayerGameplaySignatureExcludesRuntimeSavedProperties),
+			new(nameof(MultiplayerGameplayEntryIncludesReadableProtocolVersion), MultiplayerGameplayEntryIncludesReadableProtocolVersion),
 			new(nameof(SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent), SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent),
 			new(nameof(SavedPropertyNetIdBitSizeMatchesGameFormula), SavedPropertyNetIdBitSizeMatchesGameFormula),
 			new(nameof(CompensationReplacementGuardScopesAsyncWork), CompensationReplacementGuardScopesAsyncWork),
@@ -335,6 +343,7 @@ internal static partial class Program
 
 	private static void EnemyHexAdjustmentRoundTripKeepsAllSlots()
 	{
+		const int OperationToken = 112233;
 		EnemyHexAdjustmentPayload source = new(
 			ActIndex: 0,
 			Sequence: 12,
@@ -347,25 +356,27 @@ internal static partial class Program
 			RerollCounts: [ 2, -3 ],
 			IsFinal: true);
 
-		PlayerChoiceResult result = HextechChoiceCodec.CreateEnemyHexAdjustment(source);
+		PlayerChoiceResult result = HextechChoiceCodec.CreateEnemyHexAdjustment(OperationToken, source);
 
-		Expect(HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, 0, out EnemyHexAdjustmentPayload decoded), "enemy adjustment should decode");
+		Expect(HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 0, 12, out EnemyHexAdjustmentPayload decoded), "enemy adjustment should decode");
 		Equal(0, decoded.ActIndex, "act");
 		Equal(12, decoded.Sequence, "sequence");
 		Equal(true, decoded.IsFinal, "final flag");
 		SequenceEqual(source.MonsterHexes, decoded.MonsterHexes, "monster hex slots");
 		SequenceEqual(new[] { 2, 0, 0 }, decoded.RerollCounts, "reroll counts");
-		Expect(!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, 1, out _), "wrong act should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 1, 12, out _), "wrong act should be rejected");
 	}
 
 	private static void EnemyHexAdjustmentRejectsInvalidHex()
 	{
+		const int OperationToken = 223344;
 		PlayerChoiceResult result = PlayerChoiceResult.FromIndexes(new List<int>
 		{
 			Magic,
 			ChoiceKindEnemyHexAdjustment,
 			0,
 			1,
+			OperationToken,
 			EnemyHexAdjustmentListVersion,
 			0,
 			1,
@@ -373,10 +384,67 @@ internal static partial class Program
 			0
 		});
 
-		Expect(!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, 0, out _), "invalid monster hex enum should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 0, 1, out _), "invalid monster hex enum should be rejected");
 	}
 
-	private static void LegacyEnemyHexAdjustmentStillDecodes()
+	private static void EnemyHexAdjustmentRejectsUnexpectedSequence()
+	{
+		const int OperationToken = 334455;
+		EnemyHexAdjustmentPayload source = new(
+			ActIndex: 1,
+			Sequence: 3,
+			MonsterHexes: [ MonsterHexKind.FrostWraith ],
+			RerollCounts: [ 0 ],
+			IsFinal: false);
+		PlayerChoiceResult result = HextechChoiceCodec.CreateEnemyHexAdjustment(OperationToken, source);
+
+		Expect(
+			HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 1, 3, out _),
+			"exact enemy adjustment sequence should decode");
+		Expect(
+			!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 1, 2, out _),
+			"stale enemy adjustment sequence should be rejected");
+		Expect(
+			!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 1, 4, out _),
+			"future enemy adjustment sequence should be rejected");
+	}
+
+	private static void EnemyHexAdjustmentRejectsExtremeCounts()
+	{
+		const int OperationToken = 445566;
+		PlayerChoiceResult extremeHexCount = PlayerChoiceResult.FromIndexes(
+		[
+			Magic,
+			ChoiceKindEnemyHexAdjustment,
+			0,
+			0,
+			OperationToken,
+			EnemyHexAdjustmentListVersion,
+			0,
+			int.MaxValue
+		]);
+		Expect(
+			!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(extremeHexCount, OperationToken, 0, 0, out _),
+			"extreme enemy hex count should be rejected without allocation");
+
+		PlayerChoiceResult extremeRerollCount = PlayerChoiceResult.FromIndexes(
+		[
+			Magic,
+			ChoiceKindEnemyHexAdjustment,
+			0,
+			0,
+			OperationToken,
+			EnemyHexAdjustmentListVersion,
+			0,
+			0,
+			int.MaxValue
+		]);
+		Expect(
+			!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(extremeRerollCount, OperationToken, 0, 0, out _),
+			"extreme enemy reroll count should be rejected without allocation");
+	}
+
+	private static void LegacyEnemyHexAdjustmentIsRejected()
 	{
 		PlayerChoiceResult result = PlayerChoiceResult.FromIndexes(new List<int>
 		{
@@ -390,45 +458,46 @@ internal static partial class Program
 			1
 		});
 
-		Expect(HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, 1, out EnemyHexAdjustmentPayload decoded), "legacy enemy adjustment should decode");
-		Equal(1, decoded.ActIndex, "act");
-		Equal(9, decoded.Sequence, "sequence");
-		SequenceEqual(new MonsterHexKind?[] { MonsterHexKind.FrostWraith }, decoded.MonsterHexes, "legacy monster hex");
-		SequenceEqual(new[] { 2 }, decoded.RerollCounts, "legacy reroll count");
-		Equal(true, decoded.IsFinal, "legacy final flag");
+		Expect(
+			!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, 556677, 1, 9, out _),
+			"legacy enemy adjustment payload should be rejected after the protocol gate");
 	}
 
 	private static void RandomRuneGrantRoundTripKeepsStableModelIds()
 	{
+		const int OperationToken = 667788;
 		ModelId[] source =
 		[
 			new("HEXTECH_TEST", "FIRST_RUNE"),
 			new("HEXTECH_TEST", "SECOND_RUNE")
 		];
 
-		PlayerChoiceResult result = HextechChoiceCodec.CreateRandomRuneGrant(source);
+		PlayerChoiceResult result = HextechChoiceCodec.CreateRandomRuneGrant(OperationToken, source);
 
-		Expect(HextechChoiceCodec.TryDecodeRandomRuneGrant(result, out List<ModelId> decoded), "random grant should decode");
+		Expect(HextechChoiceCodec.TryDecodeRandomRuneGrant(result, OperationToken, out List<ModelId> decoded), "random grant should decode");
 		SequenceEqual(source, decoded, "stable model ids");
-		Expect(HextechChoiceCodec.IsRandomRuneGrant(result), "random grant predicate");
+		Expect(HextechChoiceCodec.IsRandomRuneGrant(result, OperationToken), "random grant predicate");
 	}
 
 	private static void RandomRuneGrantRejectsMalformedStableModelIdList()
 	{
+		const int OperationToken = 778899;
 		PlayerChoiceResult tooManyIds = PlayerChoiceResult.FromIndexes(new List<int>
 		{
 			Magic,
 			ChoiceKindRandomRuneGrant,
+			OperationToken,
 			StableModelIdListVersion,
 			65
 		});
 
-		Expect(!HextechChoiceCodec.TryDecodeRandomRuneGrant(tooManyIds, out _), "oversized stable id list should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRandomRuneGrant(tooManyIds, OperationToken, out _), "oversized stable id list should be rejected");
 
 		PlayerChoiceResult badSerializedId = PlayerChoiceResult.FromIndexes(new List<int>
 		{
 			Magic,
 			ChoiceKindRandomRuneGrant,
+			OperationToken,
 			StableModelIdListVersion,
 			1,
 			3,
@@ -437,7 +506,7 @@ internal static partial class Program
 			'D'
 		});
 
-		Expect(!HextechChoiceCodec.TryDecodeRandomRuneGrant(badSerializedId, out _), "malformed model id should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRandomRuneGrant(badSerializedId, OperationToken, out _), "malformed model id should be rejected");
 
 		PlayerChoiceResult runeSelectionWithOutOfRangeLegacyOrdinal = PlayerChoiceResult.FromIndexes(new List<int>
 		{
@@ -458,54 +527,120 @@ internal static partial class Program
 		{
 			Magic,
 			ChoiceKindForgeSelection,
+			OperationToken,
 			0,
 			1,
 			int.MaxValue
 		});
 		Expect(
-			!HextechChoiceCodec.TryDecodeForgeSelection(forgeSelectionWithOutOfRangeLegacyOrdinal, out _, out _),
+			!HextechChoiceCodec.TryDecodeForgeSelection(forgeSelectionWithOutOfRangeLegacyOrdinal, OperationToken, out _, out _),
 			"out-of-range legacy forge selection ordinal should be rejected");
 		Expect(
-			HextechChoiceCodec.IsMalformedForgeSelectionEnvelope(forgeSelectionWithOutOfRangeLegacyOrdinal),
+			HextechChoiceCodec.IsMalformedForgeSelectionEnvelope(forgeSelectionWithOutOfRangeLegacyOrdinal, OperationToken),
 			"malformed forge selection envelope should remain identifiable");
 
 		PlayerChoiceResult malformedRelicOptionSelection = PlayerChoiceResult.FromIndexes(new List<int>
 		{
 			Magic,
 			ChoiceKindRelicOptionSelection,
+			OperationToken,
 			0,
 			StableModelIdListVersion
 		});
 		Expect(
-			HextechChoiceCodec.IsMalformedRelicOptionSelectionEnvelope(malformedRelicOptionSelection),
+			HextechChoiceCodec.IsMalformedRelicOptionSelectionEnvelope(malformedRelicOptionSelection, OperationToken),
 			"malformed relic option envelope should remain identifiable");
 
 		PlayerChoiceResult randomGrantWithOutOfRangeLegacyOrdinal = PlayerChoiceResult.FromIndexes(new List<int>
 		{
 			Magic,
 			ChoiceKindRandomRuneGrant,
+			OperationToken,
 			1,
 			int.MaxValue
 		});
 		Expect(
-			!HextechChoiceCodec.TryDecodeRandomRuneGrant(randomGrantWithOutOfRangeLegacyOrdinal, out _),
+			!HextechChoiceCodec.TryDecodeRandomRuneGrant(randomGrantWithOutOfRangeLegacyOrdinal, OperationToken, out _),
 			"out-of-range legacy random grant ordinal should be rejected");
 	}
 
 	private static void RelicOptionSelectionRoundTripRequiresMatchingOptions()
 	{
+		const int OperationToken = 889900;
 		RelicModel[] options = CreateRuneSelectionTestOptions(2);
 		ModelId[] optionIds = options
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
 			.ToArray();
-		PlayerChoiceResult result = HextechChoiceCodec.CreateRelicOptionSelection(1, options);
+		PlayerChoiceResult result = HextechChoiceCodec.CreateRelicOptionSelection(OperationToken, 1, options);
 
-		Expect(HextechChoiceCodec.IsRelicOptionSelection(result, options), "matching relic option selection should be expected");
-		Expect(HextechChoiceCodec.TryDecodeRelicOptionSelection(result, out int selectedIndex, out List<ModelId> decodedOptionIds), "relic option selection should decode");
+		Expect(HextechChoiceCodec.IsRelicOptionSelection(result, OperationToken, options), "matching relic option selection should be expected");
+		Expect(HextechChoiceCodec.TryDecodeRelicOptionSelection(result, OperationToken, out int selectedIndex, out List<ModelId> decodedOptionIds), "relic option selection should decode");
 		Equal(1, selectedIndex, "selected relic option index");
 		SequenceEqual(optionIds, decodedOptionIds, "relic option ids");
-		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, options.Reverse().ToArray()), "reordered relic options should not be expected");
-		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, CreateRuneSelectionTestOptions(3)), "different relic option count should not be expected");
+		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, OperationToken, options.Reverse().ToArray()), "reordered relic options should not be expected");
+		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, OperationToken, CreateRuneSelectionTestOptions(3)), "different relic option count should not be expected");
+	}
+
+	private static void OperationTokensRejectCrossedPayloads()
+	{
+		const uint ChoiceId = 42;
+		const ulong PlayerNetId = 9001;
+		int forgeToken = HextechChoiceCodec.ComputeOperationToken(
+			"forge-selection",
+			ChoiceId,
+			PlayerNetId,
+			"source:0");
+		int sameForgeToken = HextechChoiceCodec.ComputeOperationToken(
+			"forge-selection",
+			ChoiceId,
+			PlayerNetId,
+			"source:0");
+		int crossedForgeToken = HextechChoiceCodec.ComputeOperationToken(
+			"forge-selection",
+			ChoiceId,
+			PlayerNetId,
+			"source:1");
+		Equal(forgeToken, sameForgeToken, "operation token must be stable");
+		Expect(forgeToken != crossedForgeToken, "different stable contexts should produce different operation tokens");
+
+		RelicModel[] options = CreateRuneSelectionTestOptions(2);
+		PlayerChoiceResult forge = HextechChoiceCodec.CreateForgeSelection(forgeToken, 0, options);
+		Expect(HextechChoiceCodec.TryDecodeForgeSelection(forge, forgeToken, out _, out _), "matching forge operation should decode");
+		Expect(!HextechChoiceCodec.TryDecodeForgeSelection(forge, crossedForgeToken, out _, out _), "crossed forge operation should be rejected");
+
+		int relicToken = HextechChoiceCodec.ComputeOperationToken(
+			"relic-option-selection",
+			ChoiceId,
+			PlayerNetId,
+			"relic-source");
+		PlayerChoiceResult relic = HextechChoiceCodec.CreateRelicOptionSelection(relicToken, 1, options);
+		Expect(!HextechChoiceCodec.TryDecodeRelicOptionSelection(relic, relicToken + 1, out _, out _), "crossed relic operation should be rejected");
+
+		int randomToken = HextechChoiceCodec.ComputeOperationToken(
+			"random-rune-grant",
+			ChoiceId,
+			PlayerNetId,
+			"consume:HEXTECH_TEST:RUNE");
+		PlayerChoiceResult random = HextechChoiceCodec.CreateRandomRuneGrant(
+			randomToken,
+			[ new ModelId("HEXTECH_TEST", "RUNE") ]);
+		Expect(!HextechChoiceCodec.TryDecodeRandomRuneGrant(random, randomToken + 1, out _), "crossed random grant operation should be rejected");
+
+		int enemyToken = HextechChoiceCodec.ComputeOperationToken(
+			"enemy-hex-adjustment",
+			ChoiceId,
+			PlayerNetId,
+			"act=1;sequence=2");
+		EnemyHexAdjustmentPayload enemyPayload = new(
+			ActIndex: 1,
+			Sequence: 2,
+			MonsterHexes: [ MonsterHexKind.FrostWraith ],
+			RerollCounts: [ 0 ],
+			IsFinal: true);
+		PlayerChoiceResult enemy = HextechChoiceCodec.CreateEnemyHexAdjustment(enemyToken, enemyPayload);
+		Expect(
+			!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(enemy, enemyToken + 1, 1, 2, out _),
+			"crossed enemy adjustment operation should be rejected");
 	}
 
 	private static void NetworkChoiceTimeoutUsesNominalWallClockSeconds()
@@ -1028,6 +1163,31 @@ internal static partial class Program
 		Expect(!HextechStableModelIdListCodec.TryDecode(payload, 0, out List<ModelId> decoded, out int nextCursor), "oversized stable model id length should be rejected");
 		Expect(decoded.Count == 0, "malformed stable model id list should not keep partial ids");
 		Equal(0, nextCursor, "failed stable model id decode should keep original cursor");
+	}
+
+	private static void StableModelIdListCodecRejectsEncoderOverflow()
+	{
+		ModelId id = new("HEXTECH_TEST", "ENTRY");
+		ExpectThrows<ArgumentOutOfRangeException>(
+			() => HextechStableModelIdListCodec.Append(
+				[],
+				Enumerable.Repeat(id, HextechStableModelIdListCodec.MaxCount + 1)),
+			"stable ModelId encoder should reject more than 64 items");
+
+		ModelId oversized = new(
+			new string('C', 64),
+			new string('E', HextechStableModelIdListCodec.MaxSerializedLength));
+		ExpectThrows<ArgumentException>(
+			() => HextechStableModelIdListCodec.Append([], [ oversized ]),
+			"stable ModelId encoder should reject a serialized ID longer than 128 characters");
+
+		Expect(
+			!HextechStableModelIdListCodec.TryDecode(
+				[ StableModelIdListVersion, 0 ],
+				-1,
+				out _,
+				out _),
+			"stable ModelId decoder should reject a negative cursor");
 	}
 
 	private static void PlayerRuneRarityConfigExcludesFullyDisabledTier()
@@ -1808,6 +1968,11 @@ internal static partial class Program
 		context.MonsterHexStrengthTierFloor = 3;
 		context.EnemyTezcatarasMercyCombatCounter = 4;
 		context.HostUsesBetterMultiplayerScaling = true;
+		context.RuneSelectionJournal.RecordSelected(
+			0,
+			0,
+			11,
+			new ModelId("HEXTECH_TEST", "RESET_ME"));
 
 		context.ResetForNewRun([ 7, -1, 2 ], [ 2, 7, -1 ]);
 
@@ -1820,6 +1985,78 @@ internal static partial class Program
 		Equal("", context.ChoiceHistory.SavedTelemetryChoicesJson, "new-run telemetry choices should reset");
 		Equal(0, context.CombatTracking.EnemyProtectiveVeilTurnCounter, "new-run combat tracking should reset");
 		Equal(true, context.HostUsesBetterMultiplayerScaling, "new-run should preserve host scaling flag until act roll refreshes it");
+		Expect(
+			!context.RuneSelectionJournal.TryGet(0, 0, 11, out _),
+			"new-run rune selection journal should reset");
+	}
+
+	private static void RuneSelectionJournalRoundTripsInStableOrder()
+	{
+		HextechRuneSelectionJournalState state = new();
+		ModelId later = new("HEXTECH_TEST", "LATER");
+		ModelId earlier = new("HEXTECH_TEST", "EARLIER");
+		state.RecordSelected(2, 1, 99, later);
+		state.RecordSelected(0, 0, 7, earlier);
+		state.MarkApplied(2, 1, 99, later);
+		Expect(state.HasEntriesForAct(0), "journal should report a pending operation for act zero");
+		Expect(state.HasEntriesForAct(2), "journal should retain completed operations until the run resets");
+		Expect(!state.HasEntriesForAct(1), "journal should not report an unrelated act");
+
+		string json = state.Serialize();
+		Expect(
+			json.IndexOf("EARLIER", StringComparison.Ordinal)
+				< json.IndexOf("LATER", StringComparison.Ordinal),
+			"journal JSON should sort operations by act, ordinal and player id");
+
+		HextechRuneSelectionJournalState restored = new();
+		restored.Restore(json);
+		Expect(
+			restored.TryGet(0, 0, 7, out HextechRuneSelectionJournalEntry earlierEntry),
+			"earlier journal entry should restore");
+		Equal(earlier, earlierEntry.SelectedId, "restored earlier selected ModelId");
+		Equal(false, earlierEntry.Applied, "restored earlier applied state");
+		Expect(
+			restored.TryGet(2, 1, 99, out HextechRuneSelectionJournalEntry laterEntry),
+			"later journal entry should restore");
+		Equal(later, laterEntry.SelectedId, "restored later selected ModelId");
+		Equal(true, laterEntry.Applied, "restored later applied state");
+	}
+
+	private static void RuneSelectionJournalRejectsConflictingSelections()
+	{
+		HextechRuneSelectionJournalState state = new();
+		ModelId selected = new("HEXTECH_TEST", "SELECTED");
+		ModelId conflicting = new("HEXTECH_TEST", "CONFLICTING");
+
+		Expect(state.RecordSelected(1, 2, 33, selected), "first journal selection should be recorded");
+		Expect(!state.RecordSelected(1, 2, 33, selected), "same journal selection should be idempotent");
+		ExpectThrows<InvalidOperationException>(
+			() => state.RecordSelected(1, 2, 33, conflicting),
+			"same operation must reject a different selected ModelId");
+		Expect(state.MarkApplied(1, 2, 33, selected), "first applied transition should be recorded");
+		Expect(!state.MarkApplied(1, 2, 33, selected), "applied transition should be idempotent");
+		ExpectThrows<InvalidOperationException>(
+			() => state.MarkApplied(1, 2, 33, conflicting),
+			"applied transition must reject a different ModelId");
+	}
+
+	private static void AppliedRuneSelectionJournalDoesNotRequireInventoryPresence()
+	{
+		Expect(
+			!HextechRuneSelectionJournalState.RequiresRelicObtain(
+				applied: true,
+				currentlyOwned: false),
+			"an applied journal entry must not replay after a self-consuming rune leaves the inventory");
+		Expect(
+			!HextechRuneSelectionJournalState.RequiresRelicObtain(
+				applied: false,
+				currentlyOwned: true),
+			"an inventory-boundary recovery should mark the pending entry instead of obtaining it twice");
+		Expect(
+			HextechRuneSelectionJournalState.RequiresRelicObtain(
+				applied: false,
+				currentlyOwned: false),
+			"only a pending and absent journal entry should resume relic obtain");
 	}
 
 	private static void MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex()
@@ -2998,6 +3235,25 @@ internal static partial class Program
 		Expect(!gameplaySignature.Contains("savedProps=", StringComparison.Ordinal), "gameplay signature must not include runtime SavedProperties state");
 		Expect(diagnosticSignature.Contains("savedProps=", StringComparison.Ordinal), "diagnostic signature should still include SavedProperties state");
 		Expect(!string.Equals(gameplaySignature, diagnosticSignature, StringComparison.Ordinal), "diagnostic signature should remain more detailed than gameplay signature");
+	}
+
+	private static void MultiplayerGameplayEntryIncludesReadableProtocolVersion()
+	{
+		Equal(
+			"HextechRunes-0.8.1-net1",
+			HextechMultiplayerCompatibilityHooks.BuildGameplayCompatibilityEntry("HextechRunes", "0.8.1"),
+			"gameplay compatibility entry should expose the short network protocol version");
+
+		string diagnosticSignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
+			"HextechRunes",
+			"0.8.1",
+			null,
+			"",
+			"",
+			includeSavedProperties: false);
+		Expect(
+			diagnosticSignature.Contains("protocol=net1", StringComparison.Ordinal),
+			"diagnostic signature should expose the same network protocol version");
 	}
 
 	private static void SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent()
