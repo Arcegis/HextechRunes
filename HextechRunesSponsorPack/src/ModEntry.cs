@@ -111,6 +111,10 @@ public static class ModEntry
 
 	private static void RegisterContent()
 	{
+		HextechRunesApi.RegisterSavedPropertyCarrier<Evolution>();
+		HextechRunesApi.RegisterSavedPropertyCarrier<EntropyIncrease>();
+		HextechRunesApi.RegisterSavedPropertyCarrier<EntropyDecrease>();
+		HextechRunesApi.RegisterSavedPropertyCarrier<SponsorCompositeEnchantment>();
 		HextechRunesApi.RegisterEnchantmentIcon<Evolution>($"res://{ModInfo.Id}/images/enchantments/evolution.png");
 		HextechRunesApi.RegisterEnchantmentIcon<EntropyIncrease>($"res://{ModInfo.Id}/images/enchantments/plus.png");
 		HextechRunesApi.RegisterEnchantmentIcon<EntropyDecrease>($"res://{ModInfo.Id}/images/enchantments/minus.png");

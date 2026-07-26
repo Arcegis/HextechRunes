@@ -81,7 +81,7 @@ internal static class HextechModelPoolRegistrar
 		CleanupDuplicatePoolRegistrations(poolType, modelTypes);
 	}
 
-	private static bool IsModelAlreadyQueuedForPool(Type poolType, Type modelType)
+	internal static bool IsModelAlreadyQueuedForPool(Type poolType, Type modelType)
 	{
 		try
 		{

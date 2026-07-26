@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
@@ -124,6 +125,10 @@ internal static partial class Program
 				new(nameof(CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume), CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume),
 			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
 			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
+			new(nameof(SavedPropertyPreInitRegistrationLeavesWireTablesUntouched), SavedPropertyPreInitRegistrationLeavesWireTablesUntouched),
+			new(nameof(SavedPropertyLateCarrierRegistrationFailsClosed), SavedPropertyLateCarrierRegistrationFailsClosed),
+			new(nameof(SavedPropertySameNameCarrierStillRequiresPerTypeCache), SavedPropertySameNameCarrierStillRequiresPerTypeCache),
+			new(nameof(SavedPropertyLateExternalRegistrationLeavesNoPartialState), SavedPropertyLateExternalRegistrationLeavesNoPartialState),
 			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
 			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
 			new(nameof(ConfigMigrationV25AddsNewDefaultDisables), ConfigMigrationV25AddsNewDefaultDisables),
@@ -185,6 +190,7 @@ internal static partial class Program
 			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
 			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks),
 			new(nameof(ExternalConfigDisabledIdsPreserveUnloadedContent), ExternalConfigDisabledIdsPreserveUnloadedContent),
+			new(nameof(ExternalModelIdConflictsAreRejectedBeforeRegistration), ExternalModelIdConflictsAreRejectedBeforeRegistration),
 			new(nameof(ExternalPlayerRuneRegistrationUpdatesCatalog), ExternalPlayerRuneRegistrationUpdatesCatalog),
 			new(nameof(ExternalEventRelicRegistrationUpdatesRegistry), ExternalEventRelicRegistrationUpdatesRegistry),
 			new(nameof(ExternalForgeRegistrationUpdatesCatalog), ExternalForgeRegistrationUpdatesCatalog),
@@ -795,6 +801,203 @@ internal static partial class Program
 			expected,
 			actual,
 			$"SavedProperty manifest drift; actual list:\n{string.Join("\n", actual)}");
+	}
+
+	private static void SavedPropertyPreInitRegistrationLeavesWireTablesUntouched()
+	{
+#if STS2_109_OR_NEWER
+		Type cacheType = typeof(MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache);
+		FieldInfo initializedField = cacheType.GetField(
+			"_initialized",
+			BindingFlags.NonPublic | BindingFlags.Static)
+			?? throw new InvalidOperationException("0.109 SavedProperty cache initialized field should exist");
+		string[] wireFieldNames =
+		[
+			"_savedPropertyCache",
+			"_propertyNameToNetIdMap",
+			"_netIdToPropertyNameMap"
+		];
+		Dictionary<string, (object? Value, int? Count)> before = wireFieldNames.ToDictionary(
+			static name => name,
+			name => SnapshotStaticCollection(cacheType, name),
+			StringComparer.Ordinal);
+		bool originalInitialized = initializedField.GetValue(null) is true;
+		try
+		{
+			initializedField.SetValue(null, false);
+			HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier));
+		}
+		finally
+		{
+			initializedField.SetValue(null, originalInitialized);
+		}
+
+		foreach (string fieldName in wireFieldNames)
+		{
+			(object? afterValue, int? afterCount) = SnapshotStaticCollection(cacheType, fieldName);
+			(object? beforeValue, int? beforeCount) = before[fieldName];
+			Expect(ReferenceEquals(beforeValue, afterValue), $"{fieldName} instance should not change before official Init");
+			Equal(beforeCount, afterCount, $"{fieldName} count before official Init");
+		}
+#else
+		HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier));
+		ModelId id = ModelDb.GetId<PreInitSavedPropertyCarrier>();
+		SavedProperties? properties = SavedProperties.FromInternal(new PreInitSavedPropertyCarrier(), id);
+		Expect(
+			properties?.ints?.Any(static property => property.name == "PreInitCounter") == true,
+			"0.107 should still inject a SavedProperty carrier explicitly");
+#endif
+	}
+
+	private static void SavedPropertyLateCarrierRegistrationFailsClosed()
+	{
+#if STS2_109_OR_NEWER
+		ExpectThrows<InvalidOperationException>(
+			() => HextechRunesApi.RegisterSavedPropertyCarrier<LateSavedPropertyCarrier>(),
+			"0.109 should reject a SavedProperty carrier missing from the initialized per-type cache");
+#endif
+	}
+
+	private static void SavedPropertySameNameCarrierStillRequiresPerTypeCache()
+	{
+#if STS2_109_OR_NEWER
+		Type cacheType = typeof(MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache);
+		Action[] restore =
+		[
+			CaptureStaticCollectionRestore(cacheType, "_savedPropertyCache"),
+			CaptureStaticCollectionRestore(cacheType, "_propertyNameToNetIdMap"),
+			CaptureStaticCollectionRestore(cacheType, "_netIdToPropertyNameMap")
+		];
+		try
+		{
+			MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache
+				.CacheSavedPropertiesForTypeDebug(typeof(SameNameSavedPropertyCarrierA));
+			HextechSavedPropertyBootstrap.EnsureModelTypeRegistrationAllowed(
+				typeof(SameNameSavedPropertyCarrierA));
+			ExpectThrows<InvalidOperationException>(
+				() => HextechSavedPropertyBootstrap.EnsureModelTypeRegistrationAllowed(
+					typeof(SameNameSavedPropertyCarrierB)),
+				"a globally known SavedProperty name must not hide a missing per-type carrier cache");
+		}
+		finally
+		{
+			foreach (Action restoreCollection in restore.Reverse())
+			{
+				restoreCollection();
+			}
+		}
+#endif
+	}
+
+	private static void SavedPropertyLateExternalRegistrationLeavesNoPartialState()
+	{
+#if STS2_109_OR_NEWER
+		Type runeType = typeof(LateExternalRegistrationRune);
+		int registryVersion = HextechExternalContentRegistry.Version;
+		int registrationCount = HextechExternalContentRegistry
+			.GetPlayerRuneRegistrations()
+			.Count;
+		Expect(
+			!HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(
+				typeof(MegaCrit.Sts2.Core.Models.RelicPools.SharedRelicPool),
+				runeType),
+			"late test rune should not start in the shared relic pool queue");
+
+		ExpectThrows<InvalidOperationException>(
+			() => HextechRunesApi.RegisterPlayerRune<LateExternalRegistrationRune>(
+				HextechRarityTier.Silver),
+			"late external registration with an uncached SavedProperty should fail before mutation");
+
+		Equal(registryVersion, HextechExternalContentRegistry.Version, "late failure registry version");
+		Equal(
+			registrationCount,
+			HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count,
+			"late failure registration count");
+		Expect(
+			!HextechExternalContentRegistry
+				.GetPlayerRuneRegistrations()
+				.Any(registration => registration.Type == runeType),
+			"late failure should not enter the external player rune registry");
+		Expect(
+			!HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(
+				typeof(MegaCrit.Sts2.Core.Models.RelicPools.SharedRelicPool),
+				runeType),
+			"late failure should not enter the shared relic pool queue");
+#endif
+	}
+
+	private static (object? Value, int? Count) SnapshotStaticCollection(Type type, string fieldName)
+	{
+		FieldInfo field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static)
+			?? throw new InvalidOperationException($"{type.FullName}.{fieldName} should exist");
+		object? value = field.GetValue(null);
+		int? count = value switch
+		{
+			ICollection collection => collection.Count,
+			null => null,
+			_ => value.GetType().GetProperty("Count")?.GetValue(value) as int?
+		};
+		return (value, count);
+	}
+
+	private static Action CaptureStaticCollectionRestore(Type type, string fieldName)
+	{
+		FieldInfo field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static)
+			?? throw new InvalidOperationException($"{type.FullName}.{fieldName} should exist");
+		object value = field.GetValue(null)
+			?? throw new InvalidOperationException($"{type.FullName}.{fieldName} should not be null");
+		if (value is IDictionary dictionary)
+		{
+			DictionaryEntry[] entries = dictionary
+				.Cast<DictionaryEntry>()
+				.ToArray();
+			return () =>
+			{
+				dictionary.Clear();
+				foreach (DictionaryEntry entry in entries)
+				{
+					dictionary.Add(entry.Key, entry.Value);
+				}
+			};
+		}
+		if (value is IList list)
+		{
+			object?[] items = list
+				.Cast<object?>()
+				.ToArray();
+			return () =>
+			{
+				list.Clear();
+				foreach (object? item in items)
+				{
+					list.Add(item);
+				}
+			};
+		}
+
+		throw new InvalidOperationException(
+			$"{type.FullName}.{fieldName} is not a mutable dictionary or list");
+	}
+
+	private static void RunBeforeSavedPropertyCacheInitialization(Action action)
+	{
+#if STS2_109_OR_NEWER
+		FieldInfo initializedField = typeof(MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache)
+			.GetField("_initialized", BindingFlags.NonPublic | BindingFlags.Static)
+			?? throw new InvalidOperationException("0.109 SavedProperty cache initialized field should exist");
+		bool originalInitialized = initializedField.GetValue(null) is true;
+		try
+		{
+			initializedField.SetValue(null, false);
+			action();
+		}
+		finally
+		{
+			initializedField.SetValue(null, originalInitialized);
+		}
+#else
+		action();
+#endif
 	}
 
 	private static void StableModelIdListCodecRoundTripsFromNonzeroCursor()
@@ -2412,9 +2615,14 @@ internal static partial class Program
 	private static void DoubleVisionDustyTomeSaveLoadPreservesAncientCard()
 	{
 		DustyTome source = CreateTestDustyTome();
-		// 测试宿主不会执行原版 ModelIdSerializationCache.Init；显式注入这个原版载体，
-		// 等价于真实启动时游戏自动收录 DustyTome 的 [SavedProperty]。
+#if STS2_109_OR_NEWER
+		// 测试宿主不会执行原版 Init；仅在测试进程用官方 Debug 入口补齐原版载体。
+		// 生产代码仍禁止调用该入口，以免绕过 0.109 的 SavedProperty wire hash。
+		MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache
+			.CacheSavedPropertiesForTypeDebug(typeof(DustyTome));
+#else
 		HextechSavedPropertyBootstrap.InjectModelType(typeof(DustyTome));
+#endif
 		DustyTome copy = DoubleVisionRune.DuplicateDustyTomeSpecializedForTest(
 			source,
 			syncReward: false,
@@ -2594,14 +2802,96 @@ internal static partial class Program
 		SequenceEqual(rarityPool.Where(hex => hex != currentHex), fallbackPool, "reroll pool should fall back to non-current rarity pool when known exclusions exhaust it");
 	}
 
+	private static void ExternalModelIdConflictsAreRejectedBeforeRegistration()
+	{
+		Type playerCollisionType = typeof(BurningBlood);
+		Type forgeCollisionType = typeof(Anchor);
+		Equal(
+			ModelDb.GetId<MegaCrit.Sts2.Core.Models.Relics.BurningBlood>(),
+			ModelDb.GetId(playerCollisionType),
+			"test player rune should collide with the vanilla Burning Blood ModelId");
+		Equal(
+			ModelDb.GetId<MegaCrit.Sts2.Core.Models.Relics.Anchor>(),
+			ModelDb.GetId(forgeCollisionType),
+			"test forge should collide with the vanilla Anchor ModelId");
+
+		int registryVersion = HextechExternalContentRegistry.Version;
+		int playerRuneCount = HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count;
+		int forgeCount = HextechExternalContentRegistry.GetForgeRegistrations().Count;
+		int eventRelicCount = HextechExternalContentRegistry.GetEventRelicTypes().Count;
+		InvalidOperationException universeConflict = ExpectThrows<InvalidOperationException>(
+			() => HextechCatalog.EnsureExternalModelIdAvailable(playerCollisionType),
+			"external ModelId validation should include vanilla model types");
+		Expect(
+			universeConflict.Message.Contains("same ModelId", StringComparison.Ordinal),
+			"vanilla collision should come from the ModelId validator");
+		ExpectThrows<InvalidOperationException>(
+			() => RunBeforeSavedPropertyCacheInitialization(() =>
+				HextechRunesApi.RegisterPlayerRune<BurningBlood>(HextechRarityTier.Silver)),
+			"player rune API should reject a vanilla ModelId collision before registration");
+		ExpectThrows<InvalidOperationException>(
+			() => RunBeforeSavedPropertyCacheInitialization(() =>
+				HextechRunesApi.RegisterEventRelic<BurningBlood>()),
+			"event relic API should reject a vanilla ModelId collision before registration");
+		ExpectThrows<InvalidOperationException>(
+			() => RunBeforeSavedPropertyCacheInitialization(() =>
+				HextechRunesApi.RegisterForge<Anchor>(HextechRarityTier.Gold)),
+			"forge API should reject a vanilla ModelId collision before registration");
+		Equal(registryVersion, HextechExternalContentRegistry.Version, "ModelId collision registry version");
+		Equal(playerRuneCount, HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count, "ModelId collision player rune count");
+		Equal(forgeCount, HextechExternalContentRegistry.GetForgeRegistrations().Count, "ModelId collision forge count");
+		Equal(eventRelicCount, HextechExternalContentRegistry.GetEventRelicTypes().Count, "ModelId collision event relic count");
+		Expect(
+			!HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(
+				typeof(MegaCrit.Sts2.Core.Models.RelicPools.SharedRelicPool),
+				playerCollisionType),
+			"colliding player rune should not enter the shared relic pool queue");
+		Expect(
+			!HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(
+				typeof(MegaCrit.Sts2.Core.Models.RelicPools.SharedRelicPool),
+				forgeCollisionType),
+			"colliding forge should not enter the shared relic pool queue");
+		Expect(
+			!HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(
+				typeof(MegaCrit.Sts2.Core.Models.RelicPools.EventRelicPool),
+				playerCollisionType),
+			"colliding event relic should not enter the event relic pool queue");
+
+		Type existingType = typeof(ExternalRegistrationEventRelic);
+		Type incomingType = typeof(ExternalRegistrationTestRune);
+		Dictionary<Type, ModelId> duplicateIds = new()
+		{
+			[existingType] = new ModelId("HEXTECH_TEST", "DUPLICATE"),
+			[incomingType] = new ModelId("HEXTECH_TEST", "DUPLICATE")
+		};
+		ExpectThrows<InvalidOperationException>(
+			() => HextechCatalog.EnsureUniqueModelIds(
+				[ existingType, incomingType ],
+				type => duplicateIds[type]),
+			"different external model types must not share a full ModelId");
+
+		Dictionary<Type, ModelId> duplicateEntries = new()
+		{
+			[existingType] = new ModelId("EXTERNAL_A", "SAME_ENTRY"),
+			[incomingType] = new ModelId("EXTERNAL_B", "SAME_ENTRY")
+		};
+		ExpectThrows<InvalidOperationException>(
+			() => HextechCatalog.EnsureConfigurablePlayerRuneIdEntryAvailable(
+				incomingType,
+				[ existingType ],
+				type => duplicateEntries[type]),
+			"configurable external runes must reject duplicate Entry values across categories");
+	}
+
 	private static void ExternalPlayerRuneRegistrationUpdatesCatalog()
 	{
 		Type runeType = typeof(ExternalRegistrationTestRune);
 		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should not be visible before registration");
-		HextechRunesApi.RegisterPlayerRune<ExternalRegistrationTestRune>(
-			HextechRarityTier.Gold,
-			tagKey: "COMPREHENSIVE",
-			assetModId: "HextechRunes.Tests");
+		RunBeforeSavedPropertyCacheInitialization(() =>
+			HextechRunesApi.RegisterPlayerRune<ExternalRegistrationTestRune>(
+				HextechRarityTier.Gold,
+				tagKey: "COMPREHENSIVE",
+				assetModId: "HextechRunes.Tests"));
 		Expect(HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should be visible after registration");
 		Expect(HextechCatalog.IsPlayerRuneTypeConfigurable(runeType), "external rune should be configurable after registration");
 		Expect(HextechCatalog.IsPlayerRuneTypeSelectable(runeType), "external rune should be selectable after registration");
@@ -2614,9 +2904,11 @@ internal static partial class Program
 	{
 		Type relicType = typeof(ExternalRegistrationEventRelic);
 		Expect(!HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should not be registered initially");
-		HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests");
+		RunBeforeSavedPropertyCacheInitialization(() =>
+			HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests"));
 		Expect(HextechContentRegistry.EventRelicTypes.Contains(relicType), "external event relic should be registered");
-		HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests");
+		RunBeforeSavedPropertyCacheInitialization(() =>
+			HextechRunesApi.RegisterEventRelic<ExternalRegistrationEventRelic>("HextechRunes.Tests"));
 		Equal(1, HextechExternalContentRegistry.GetEventRelicTypes().Count(type => type == relicType), "idempotent event relic registration count");
 	}
 
@@ -2624,7 +2916,10 @@ internal static partial class Program
 	{
 		Type forgeType = typeof(ExternalRegistrationForge);
 		Expect(!HextechContentRegistry.AllForgeTypes.Contains(forgeType), "external forge should not be registered initially");
-		HextechRunesApi.RegisterForge<ExternalRegistrationForge>(HextechRarityTier.Prismatic, "HextechRunes.Tests");
+		RunBeforeSavedPropertyCacheInitialization(() =>
+			HextechRunesApi.RegisterForge<ExternalRegistrationForge>(
+				HextechRarityTier.Prismatic,
+				"HextechRunes.Tests"));
 		Expect(HextechContentRegistry.AllForgeTypes.Contains(forgeType), "external forge should enter all forge types");
 		Expect(HextechContentRegistry.PrismaticForgeTypes.Contains(forgeType), "external forge should enter prismatic pool");
 		Expect(HextechCatalog.GetForgeTypesForRarity(HextechRarityTier.Prismatic).Contains(forgeType), "external forge should enter catalog rarity pool");
@@ -2652,13 +2947,19 @@ internal static partial class Program
 		ModelId id = ModelDb.GetId<ExternalRegistrationEnchantment>();
 		const string iconPath = "res://HextechRunes.Tests/images/enchantments/externalRegistrationEnchantment.png";
 		Expect(HextechExternalContentRegistry.GetEnchantmentIconPath(id) == null, "external enchantment icon should not be registered initially");
-		HextechRunesApi.RegisterEnchantmentIcon<ExternalRegistrationEnchantment>(iconPath);
+		RunBeforeSavedPropertyCacheInitialization(() =>
+		{
+			HextechRunesApi.RegisterSavedPropertyCarrier<ExternalRegistrationEnchantment>();
+			HextechRunesApi.RegisterEnchantmentIcon<ExternalRegistrationEnchantment>(iconPath);
+		});
 		Equal(iconPath, HextechExternalContentRegistry.GetEnchantmentIconPath(id), "external enchantment icon path");
 
+#if !STS2_109_OR_NEWER
 		SavedProperties? props = SavedProperties.FromInternal(new ExternalRegistrationEnchantment(), id);
 		Expect(
 			props?.ints?.Any(static property => property.name == "PersistentCounter" && property.value == 7) == true,
-			"external enchantment saved property should be registered");
+			"0.107 explicit SavedProperty carrier registration should inject the property");
+#endif
 	}
 
 	private static void IllusoryWeaponPenNibPrefixesCanReturnSkippedTask()
@@ -2765,10 +3066,48 @@ internal static partial class Program
 	{
 	}
 
+	private sealed class BurningBlood : HextechRelicBase
+	{
+	}
+
+	private sealed class Anchor : HextechForgeBase
+	{
+	}
+
 	private sealed class ExternalRegistrationEnchantment : EnchantmentModel
 	{
 		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 		private int PersistentCounter { get; set; } = 7;
+	}
+
+	private sealed class PreInitSavedPropertyCarrier : EnchantmentModel
+	{
+		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+		private int PreInitCounter { get; set; } = 3;
+	}
+
+	private sealed class LateSavedPropertyCarrier : EnchantmentModel
+	{
+		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+		private int LateCounter { get; set; } = 5;
+	}
+
+	private sealed class SameNameSavedPropertyCarrierA : EnchantmentModel
+	{
+		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+		private int SharedCounter { get; set; } = 1;
+	}
+
+	private sealed class SameNameSavedPropertyCarrierB : EnchantmentModel
+	{
+		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+		private int SharedCounter { get; set; } = 2;
+	}
+
+	private sealed class LateExternalRegistrationRune : HextechRelicBase
+	{
+		[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+		private int LateExternalCounter { get; set; } = 1;
 	}
 
 	private sealed class RuneSelectionTestRelicA : RelicModel
@@ -2836,16 +3175,16 @@ internal static partial class Program
 		}
 	}
 
-	private static void ExpectThrows<TException>(Action action, string message)
+	private static TException ExpectThrows<TException>(Action action, string message)
 		where TException : Exception
 	{
 		try
 		{
 			action();
 		}
-		catch (TException)
+		catch (TException ex)
 		{
-			return;
+			return ex;
 		}
 
 		throw new InvalidOperationException(message);
