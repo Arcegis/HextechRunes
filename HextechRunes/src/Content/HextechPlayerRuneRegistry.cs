@@ -249,6 +249,8 @@ internal static class HextechPlayerRuneRegistry
 		Rune<HundredRefinementsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
 		Rune<MoltenFistUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 30, tagKey: "OUTPUT"),
 		Rune<SubroutineUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 30, tagKey: "ORB"),
+		Rune<TerminalIllnessRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 28, tagKey: "POISON"),
+		Rune<BigHammerRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 28, tagKey: "SWORDCRAFT"),
 
 		Rune<StrikeUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
 		Rune<DefendUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),
@@ -350,7 +352,11 @@ internal static class HextechPlayerRuneRegistry
 		Rune<NightmareRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 31, tagKey: "ORB"),
 		Rune<ExtremeSpeedRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 26, tagKey: "RESOURCE"),
 		Rune<SoulUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 35, tagKey: "SUMMON"),
-		Rune<PrismaticEggRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.ThirdActExcluded, tagKey: "RANDOM")
+		Rune<PrismaticEggRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.ThirdActExcluded, tagKey: "RANDOM"),
+		Rune<PactsEndUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 32, tagKey: "EXHAUST"),
+		Rune<BrandUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 33, tagKey: "OUTPUT"),
+		Rune<CorrosiveWaveUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 29, tagKey: "POISON"),
+		Rune<OblivionUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 36, tagKey: "DOOM")
 	];
 
 	private static PlayerRuneRegistration Rune<TRune>(

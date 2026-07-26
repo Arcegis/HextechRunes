@@ -49,6 +49,11 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<VoltaicUpgradeRune>("voltaic upgraded play", () => InstallVoltaicUpgradeHooks(harmony));
 		TryInstallRuneHook<GrandFinaleUpgradeRune>("grand finale upgraded play", () => InstallGrandFinaleUpgradeHooks(harmony));
 		TryInstallRuneHook<CrashLandingUpgradeRune>("crash landing upgraded play", () => InstallCrashLandingUpgradeHooks(harmony));
+		TryInstallRuneHook<PactsEndUpgradeRune>("pacts end direct play", () => HextechRuneMechanicHooks.InstallPactsEndUpgrade(harmony));
+		TryInstallRuneHook<CorrosiveWaveUpgradeRune>("corrosive wave persistence", () => HextechRuneMechanicHooks.InstallCorrosiveWaveUpgrade(harmony));
+		TryInstallRuneHook<TerminalIllnessRune>("persistent poison", () => HextechRuneMechanicHooks.InstallTerminalIllness(harmony));
+		TryInstallRuneHook<BigHammerRune>("forge amount bonus", () => HextechRuneMechanicHooks.InstallBigHammer(harmony));
+		TryInstallRuneHook<OblivionUpgradeRune>("oblivion persistence", () => HextechRuneMechanicHooks.InstallOblivionUpgrade(harmony));
 	}
 
 	private static void InstallCreativeAiUpgradeHooks(Harmony harmony)

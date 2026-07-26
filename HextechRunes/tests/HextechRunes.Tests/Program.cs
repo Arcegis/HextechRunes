@@ -88,6 +88,10 @@ internal static partial class Program
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
 			new(nameof(SubroutineUpgradeCombatMoveGateResetsAcrossCombats), SubroutineUpgradeCombatMoveGateResetsAcrossCombats),
+			new(nameof(PactsEndUpgradeDamageScalesWithExhaustPile), PactsEndUpgradeDamageScalesWithExhaustPile),
+			new(nameof(BrandUpgradeDamageScalesWithPermanentPlayCount), BrandUpgradeDamageScalesWithPermanentPlayCount),
+			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
+			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(PrismaticEggIsExcludedFromThirdAct), PrismaticEggIsExcludedFromThirdAct),
 			new(nameof(MirrorReflectionCopiesCursesButNotBasicCards), MirrorReflectionCopiesCursesButNotBasicCards),
@@ -2887,6 +2891,34 @@ internal static partial class Program
 			.GetField("<IsMutable>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
 			.SetValue(model, true);
 		return model;
+	}
+
+	private static void PactsEndUpgradeDamageScalesWithExhaustPile()
+	{
+		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(0, 6m), "empty exhaust pile bonus");
+		Equal(30m, PactsEndUpgradeRune.CalculateBonusDamage(5, 6m), "five-card exhaust pile bonus");
+		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(-1, 6m), "negative exhaust count clamps");
+	}
+
+	private static void BrandUpgradeDamageScalesWithPermanentPlayCount()
+	{
+		Equal(1m, BrandUpgradeRune.CalculateDamageMultiplier(0, 2m), "zero brand plays");
+		Equal(1.02m, BrandUpgradeRune.CalculateDamageMultiplier(1, 2m), "one brand play");
+		Equal(1.20m, BrandUpgradeRune.CalculateDamageMultiplier(10, 2m), "ten brand plays");
+	}
+
+	private static void BigHammerForgeBonusAvoidsHammerTimeDoubleScaling()
+	{
+		Equal(15m, BigHammerRune.CalculateForgeAmount(10m, 50m, sourceAlreadyIncludesBonus: false), "direct forge bonus");
+		Equal(15m, BigHammerRune.CalculateForgeAmount(15m, 50m, sourceAlreadyIncludesBonus: true), "hammer time propagated forge");
+	}
+
+	private static void NewRuneHookTargetsMatchSupportedGameApis()
+	{
+		Expect(typeof(PactsEnd).GetMethod("get_CanDealDamage", BindingFlags.Instance | BindingFlags.NonPublic) != null, "pacts end private condition hook target");
+		Expect(typeof(CorrosiveWavePower).GetMethod(nameof(CorrosiveWavePower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "corrosive wave turn-end hook target");
+		Expect(typeof(PoisonPower).GetMethod(nameof(PoisonPower.CalculateTotalDamageNextTurn), BindingFlags.Instance | BindingFlags.Public) != null, "poison preview hook target");
+		Expect(typeof(OblivionPower).GetMethod(nameof(OblivionPower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "oblivion turn-end hook target");
 	}
 
 	private static void CompensationReplacementGuardScopesAsyncWork()
