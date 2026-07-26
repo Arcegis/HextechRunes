@@ -13,6 +13,7 @@ internal static partial class HextechRunLifecycleHooks
 		HextechRunLogBudget.Reset();
 		HextechCombatHooks.ResetTransientCombatState();
 		HextechEnemyHexEffects.ResetAllRunScopedState();
+		HextechGoldrendSync.ResetForRun(runState);
 		__result = LoadRunAfterOriginal(__result, runState);
 	}
 

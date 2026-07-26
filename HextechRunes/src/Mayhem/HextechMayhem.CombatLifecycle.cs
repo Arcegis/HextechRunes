@@ -5,7 +5,7 @@ internal sealed partial class HextechMayhemModifier
 	public override async Task BeforeCombatStart()
 	{
 		HextechCombatHooks.ResetTransientCombatState();
-		HextechGoldrendSync.ResetCombat();
+		HextechGoldrendSync.BeginCombat(RunState);
 		ResetCombatTracking();
 		HextechMultiplayerScalingCompat.RefreshHostScalingFlagForLocalHost(this);
 		if (RunState.CurrentRoom is CombatRoom currentCombatRoom)

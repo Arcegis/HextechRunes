@@ -15,6 +15,7 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		HextechCombatHooks.ResetTransientCombatState();
 		HextechEnemyHexEffects.ResetAllRunScopedState();
+		HextechGoldrendSync.ClearRun(__state);
 		HextechTelemetry.OnRunEnded(__state, __result, isVictory);
 	}
 

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using MegaCrit.Sts2.Core.Helpers;
 
 namespace HextechRunes;
@@ -7,6 +8,7 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 	private const int DeathNegativeMaxHpDivisor = 2;
 	private static readonly object MissingDamageResultMemberLogLock = new();
 	private static readonly HashSet<string> LoggedMissingDamageResultMembers = [];
+	private static readonly ConditionalWeakTable<NearDeathFeastRune, SemaphoreSlim> StrengthSyncGates = new();
 	private bool _nearDeathActive;
 	private int _nearDeathDebt;
 	private int _nearDeathStrengthBonus;
@@ -255,24 +257,48 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 
 	private async Task SyncNearDeathStrength()
 	{
-		if (Owner == null)
+		SemaphoreSlim syncGate = StrengthSyncGates.GetValue(this, static _ => new SemaphoreSlim(1, 1));
+		await syncGate.WaitAsync();
+		int previousBonus = 0;
+		int reservedBonus = 0;
+		bool bonusReserved = false;
+		try
 		{
-			return;
-		}
+			if (Owner is not Player owner)
+			{
+				return;
+			}
 
-		int desiredBonus = _nearDeathActive
-			? _nearDeathDebt * (int)DynamicVars["StrengthPerNegativeHp"].BaseValue
-			: 0;
-		int delta = desiredBonus - _nearDeathStrengthBonus;
-		if (delta <= 0)
+			int desiredBonus = _nearDeathActive
+				? _nearDeathDebt * (int)DynamicVars["StrengthPerNegativeHp"].BaseValue
+				: 0;
+			previousBonus = _nearDeathStrengthBonus;
+			int delta = desiredBonus - previousBonus;
+			if (delta <= 0)
+			{
+				_nearDeathStrengthBonus = desiredBonus;
+				return;
+			}
+
+			reservedBonus = desiredBonus;
+			_nearDeathStrengthBonus = reservedBonus;
+			bonusReserved = true;
+			Flash();
+			await PowerCmd.Apply<StrengthPower>(owner.Creature, delta, owner.Creature, null);
+		}
+		catch
 		{
-			_nearDeathStrengthBonus = desiredBonus;
-			return;
-		}
+			if (bonusReserved && _nearDeathStrengthBonus == reservedBonus)
+			{
+				_nearDeathStrengthBonus = previousBonus;
+			}
 
-		_nearDeathStrengthBonus = desiredBonus;
-		Flash();
-		await PowerCmd.Apply<StrengthPower>(Owner.Creature, delta, Owner.Creature, null);
+			throw;
+		}
+		finally
+		{
+			syncGate.Release();
+		}
 	}
 
 	private void ResetNearDeathState()

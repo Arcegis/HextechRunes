@@ -36,7 +36,7 @@ internal static partial class HextechRunLifecycleHooks
 		HextechRunLogBudget.Reset();
 		HextechCombatHooks.ResetTransientCombatState();
 		HextechEnemyHexEffects.ResetAllRunScopedState();
-		HextechGoldrendSync.ResetCombat();
+		HextechGoldrendSync.ResetForRun(runState);
 		HextechRuneSelectionCoordinator.ResetActSelectionState();
 		HextechEnemyUi.Clear();
 		HextechEnemyUi.HideMayhemModifierBadge();
