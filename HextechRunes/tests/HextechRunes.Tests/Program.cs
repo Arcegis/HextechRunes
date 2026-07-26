@@ -84,6 +84,7 @@ internal static partial class Program
 			new(nameof(RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades), RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades),
 			new(nameof(UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption), UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption),
 			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
+			new(nameof(StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops), StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
 			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
 			new(nameof(SubroutineUpgradeCombatMoveGateResetsAcrossCombats), SubroutineUpgradeCombatMoveGateResetsAcrossCombats),
@@ -1375,6 +1376,48 @@ internal static partial class Program
 
 		Equal(1, card.CurrentUpgradeLevel, "granted Searing Attack upgrade level");
 		Equal(16m, card.DynamicVars.Damage.BaseValue, "granted Searing Attack damage");
+	}
+
+	private static void StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops()
+	{
+		Equal(999, HextechStarterUpgradeHooks.UpgradeLevelCap, "starter multi-upgrade cap");
+		Equal(
+			999,
+			HextechStarterUpgradeHooks.ResolveOwnedMaxUpgradeLevel(0),
+			"owned basic cards with the matching rune use the +999 cap");
+		Equal(
+			1001,
+			HextechStarterUpgradeHooks.ResolveOwnedMaxUpgradeLevel(1001),
+			"owned legacy over-cap cards remain loadable but cannot grow further");
+		Equal(
+			1,
+			HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(0, isDeserializing: false),
+			"new unowned cards keep the vanilla cap");
+		Equal(
+			1,
+			HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(998, isDeserializing: false),
+			"ordinary unowned cards do not inherit the rune cap");
+		Equal(
+			1001,
+			HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(1000, isDeserializing: true),
+			"legacy over-cap saves can replay the next upgrade level");
+
+		int simulatedUpgradeLevel = 0;
+		int upgradeCount = 0;
+		while (simulatedUpgradeLevel < HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(
+			simulatedUpgradeLevel,
+			isDeserializing: false))
+		{
+			simulatedUpgradeLevel++;
+			upgradeCount++;
+			Expect(upgradeCount <= 1, "UpgradeAllCards-style loop must terminate at the vanilla cap");
+		}
+
+		Equal(1, simulatedUpgradeLevel, "UpgradeAllCards-style loop final level");
+		Equal(1, upgradeCount, "UpgradeAllCards-style loop iteration count");
+
+		SearingAttackCard searingAttack = CreateMutableTestModel<SearingAttackCard>();
+		Equal(999, searingAttack.MaxUpgradeLevel, "Searing Attack cap");
 	}
 
 	private static void CreativeAiUpgradeRuneUpgradesGeneratedPowerCards()

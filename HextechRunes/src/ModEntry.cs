@@ -71,7 +71,7 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("neurosurge doom redirect", () => HextechNeurosurgeHooks.Install(harmony));
 			TryInstallOptionalHookGroup("inkshadow blade of ink guard", () => HextechInkshadowHooks.Install(harmony));
 			TryInstallOptionalHookGroup("creature anim trigger safety", () => HextechAnimTriggerSafetyHooks.Install(harmony));
-			TryInstallOptionalHookGroup("starter card unlimited upgrade", () => HextechStarterUpgradeHooks.Install(harmony));
+			TryInstallOptionalHookGroup("starter card multi-upgrade cap", () => HextechStarterUpgradeHooks.Install(harmony));
 			TryInstallOptionalHookGroup("card grid upgrade preview revert", () => HextechCardGridPreviewHooks.Install(harmony));
 			TryInstallOptionalHookGroup("prismatic egg treasure replacement", () => HextechTreasureRuneHooks.Install(harmony));
 			TryInstallOptionalHookGroup("nightmare dark orb passive", () => HextechNightmareHooks.Install(harmony));

@@ -86,7 +86,7 @@ internal static class HextechRuneConfiguration
 		typeof(DeadwoodRune)
 	];
 
-	// 升级:打击/防御重做为"无限升级+战后升级本场打出过的"(棱彩),转为默认启用。
+	// 升级:打击/防御重做为"最高+999且战后升级本场打出过的"(棱彩),转为默认启用。
 	private static readonly Type[] Version24DefaultEnabledRuneTypes =
 	[
 		typeof(StrikeUpgradeRune),
