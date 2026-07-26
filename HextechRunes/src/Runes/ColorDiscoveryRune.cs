@@ -115,13 +115,22 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 	private static IEnumerable<CardModel> GetOtherCharacterCards(Player player)
 	{
 		ModelId ownerPoolId = player.Character.CardPool.Id;
-		return GetCharacterPools()
+		IEnumerable<CardModel> candidates = GetCharacterPools()
 			.Where(pool => !pool.Id.Equals(ownerPoolId))
 			.SelectMany(pool => CardFactory.FilterForCombat(
 				pool.GetUnlockedCards(player.UnlockState, player.RunState.CardMultiplayerConstraint)))
 			.Where(static card => card.CanBeGeneratedByModifiers)
 			.GroupBy(static card => card.Id)
 			.Select(static group => group.First());
+		return OrderCandidatesForStableSelection(candidates);
+	}
+
+	internal static IReadOnlyList<CardModel> OrderCandidatesForStableSelection(
+		IEnumerable<CardModel> candidates)
+	{
+		return candidates
+			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
+			.ToArray();
 	}
 
 	private static IEnumerable<CardPoolModel> GetCharacterPools()

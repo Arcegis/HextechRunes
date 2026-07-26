@@ -111,6 +111,7 @@ internal static partial class Program
 			new(nameof(StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot), StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot),
 			new(nameof(StableRandomSequentialFloorsAvoidExcessClustering), StableRandomSequentialFloorsAvoidExcessClustering),
 			new(nameof(StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle), StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle),
+			new(nameof(ColorDiscoveryCandidateOrderIsPermutationInvariant), ColorDiscoveryCandidateOrderIsPermutationInvariant),
 			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
@@ -1879,6 +1880,28 @@ internal static partial class Program
 		Equal(9, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, -1), "infinite decrements to nine");
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, HextechRuneConfiguration.StepRerollLimit(HextechRuneConfiguration.InfiniteRerollLimit, 1), "infinite stays infinite on increment");
 		Equal(9, HextechRuneConfiguration.ClampRerollLimit(99), "finite values clamp to nine");
+	}
+
+	private static void ColorDiscoveryCandidateOrderIsPermutationInvariant()
+	{
+		CardModel[] candidates =
+		[
+			CreateMutableTestModel<SearingAttackCard>(),
+			CreateMutableTestModel<FeelTheBurnCard>(),
+			CreateMutableTestModel<WhiteHoleCard>()
+		];
+		string[] forward = ColorDiscoveryRune.OrderCandidatesForStableSelection(candidates)
+			.Select(HextechStableRandom.CardKey)
+			.ToArray();
+		string[] reversed = ColorDiscoveryRune.OrderCandidatesForStableSelection(candidates.Reverse())
+			.Select(HextechStableRandom.CardKey)
+			.ToArray();
+
+		SequenceEqual(forward, reversed, "Color Discovery candidates should ignore source enumeration order");
+		SequenceEqual(
+			forward.OrderBy(static key => key, StringComparer.Ordinal),
+			forward,
+			"Color Discovery candidates should use ordinal CardKey order");
 	}
 
 	private static void RandomForgeShopRelicUpdatesDisplayedPrice()
