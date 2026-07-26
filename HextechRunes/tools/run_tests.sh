@@ -51,6 +51,7 @@ for TARGET in "${TARGETS[@]}"; do
   dotnet build \
     "$TEST_PROJECT" \
     --configuration Release \
+    --no-incremental \
     "${BUILD_STABILITY_ARGS[@]}" \
     -p:HextechSts2Target="$TARGET" \
     -p:HextechSponsorSts2Target="$TARGET" \
