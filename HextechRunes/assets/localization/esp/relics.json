@@ -214,7 +214,7 @@
   "FEY_MAGIC_RUNE.description": "Cuando usas una carta que cuesta [blue]3[/blue] o más para infligir daño a un enemigo, aturde a ese enemigo.",
   "FEY_MAGIC_RUNE.flavor": "El hechizo verdaderamente difícil roba el siguiente paso primero.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.title": "Cuidado, magdalena",
-  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "Después de ganar el combate, suelta una reliquia de comida extra. Las reliquias de comida pueden caer repetidamente; Si ya tienes [gold]Ice Cream[/gold], [gold]Ice Cream[/gold] no volverá a caer.",
+  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "Tras ganar un combate, obtén [blue]1[/blue] reliquia de comida aleatoria adicional. Algunas reliquias de comida pueden obtenerse varias veces.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.flavor": "La dulzura es sólo un cebo. La cuestión es lo que se esconde debajo del plato.",
   "PROTEIN_SHAKE_RUNE.title": "Batido de proteínas",
   "PROTEIN_SHAKE_RUNE.description": "Por cada [blue]2[/blue] PV máximos que tengas, obtienes [blue]1%[/blue] más curación y bloqueo.",

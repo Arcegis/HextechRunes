@@ -214,7 +214,7 @@
   "FEY_MAGIC_RUNE.description": "使用[blue]3[/blue]费及以上的卡牌对敌人造成伤害时，击晕该敌人。",
   "FEY_MAGIC_RUNE.flavor": "棘手咒语最懂礼貌，先偷走下一步。",
   "WATCH_OUT_GRAPEFRUIT_RUNE.title": "当心小蛋糕",
-  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "战斗胜利后，额外掉落一个食物遗物。食物遗物可以重复掉落；若你已经拥有[gold]冰淇淋[/gold]，则不会再掉落[gold]冰淇淋[/gold]。",
+  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "战斗胜利后，额外掉落[blue]1[/blue]个随机食物遗物。部分食物遗物可重复获得。",
   "WATCH_OUT_GRAPEFRUIT_RUNE.flavor": "甜味只是诱饵，重点在盘底藏着什么。",
   "PROTEIN_SHAKE_RUNE.title": "蛋白粉奶昔",
   "PROTEIN_SHAKE_RUNE.description": "每有[blue]2[/blue]点最大生命值，就获得[blue]1%[/blue]的治疗量与格挡量加成。",

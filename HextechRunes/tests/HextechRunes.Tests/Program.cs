@@ -182,6 +182,7 @@ internal static partial class Program
 			new(nameof(NextTurnDamageDoesNotRetriggerCompensation), NextTurnDamageDoesNotRetriggerCompensation),
 			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
 			new(nameof(EnemyCompensationSkipsSleightOfFleshResponse), EnemyCompensationSkipsSleightOfFleshResponse),
+			new(nameof(WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics), WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics),
 			new(nameof(UniversalScopeChancesAddBeforeSingleRoll), UniversalScopeChancesAddBeforeSingleRoll),
 			new(nameof(UniversalScopeUpgradeRestorationKeepsCapturedLevels), UniversalScopeUpgradeRestorationKeepsCapturedLevels),
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
@@ -2772,6 +2773,52 @@ internal static partial class Program
 		Equal(45, UniversalScopeRuneBase.CombineChancePercent([ 15, 30 ]), "two scope chances add directly");
 		Equal(95, UniversalScopeRuneBase.CombineChancePercent([ 15, 30, 50 ]), "all scope chances add directly");
 		Equal(100, UniversalScopeRuneBase.CombineChancePercent([ 50, 50, 30 ]), "combined chance is capped at certainty");
+	}
+
+	private static void WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics()
+	{
+		IReadOnlyList<Type> commonPool = WatchOutGrapefruitRune.BuildFoodRelicCandidates(
+			isRegent: false,
+			hasIceCream: false,
+			hasNutritiousSoup: false);
+		Type[] requestedCommonRelics =
+		[
+			typeof(ChosenCheese),
+			typeof(LastingCandy),
+			typeof(NutritiousSoup),
+			typeof(BoneTea),
+			typeof(EmberTea)
+		];
+		foreach (Type relicType in requestedCommonRelics)
+		{
+			Expect(commonPool.Contains(relicType), $"common food pool should contain {relicType.Name}");
+		}
+		Expect(!commonPool.Contains(typeof(LunarPastry)), "non-Regent food pool should exclude Lunar Pastry");
+		Equal(commonPool.Count, commonPool.Distinct().Count(), "common food pool should not contain duplicate relic types");
+
+		IReadOnlyList<Type> regentPool = WatchOutGrapefruitRune.BuildFoodRelicCandidates(
+			isRegent: true,
+			hasIceCream: false,
+			hasNutritiousSoup: false);
+		Expect(regentPool.Contains(typeof(LunarPastry)), "Regent food pool should contain Lunar Pastry");
+		Equal(commonPool.Count + 1, regentPool.Count, "Regent food pool should add only Lunar Pastry");
+
+		IReadOnlyList<Type> iceCreamOwnedPool = WatchOutGrapefruitRune.BuildFoodRelicCandidates(
+			isRegent: true,
+			hasIceCream: true,
+			hasNutritiousSoup: false);
+		Expect(!iceCreamOwnedPool.Contains(typeof(IceCream)), "owned Ice Cream should stay excluded");
+		Expect(iceCreamOwnedPool.Contains(typeof(LunarPastry)), "Ice Cream exclusion should keep Regent Lunar Pastry");
+		Equal(regentPool.Count - 1, iceCreamOwnedPool.Count, "owning Ice Cream should remove exactly one candidate");
+
+		IReadOnlyList<Type> nutritiousSoupOwnedPool = WatchOutGrapefruitRune.BuildFoodRelicCandidates(
+			isRegent: true,
+			hasIceCream: false,
+			hasNutritiousSoup: true);
+		Expect(!nutritiousSoupOwnedPool.Contains(typeof(NutritiousSoup)), "owned Nutritious Soup should stay excluded");
+		Expect(nutritiousSoupOwnedPool.Contains(typeof(IceCream)), "Nutritious Soup exclusion should keep Ice Cream");
+		Expect(nutritiousSoupOwnedPool.Contains(typeof(LunarPastry)), "Nutritious Soup exclusion should keep Regent Lunar Pastry");
+		Equal(regentPool.Count - 1, nutritiousSoupOwnedPool.Count, "owning Nutritious Soup should remove exactly one candidate");
 	}
 
 	private static void UniversalScopeUpgradeRestorationKeepsCapturedLevels()

@@ -214,7 +214,7 @@
   "FEY_MAGIC_RUNE.description": "비용이 [blue]3[/blue] 이상인 카드로 적에게 피해를 주면 그 적을 기절시킵니다.",
   "FEY_MAGIC_RUNE.flavor": "정말로 어려운 주문은 다음 걸음을 먼저 훔칩니다.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.title": "조심해, 컵케이키",
-  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "전투 보상에 음식 유물 보상을 추가로 제공합니다. 음식 유물은 중복해서 등장할 수 있습니다.; 이미 [gold]아이스크림[/gold]을 가지고 있다면, [gold]아이스크림[/gold]은 다시 등장하지 않습니다.",
+  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "전투 승리 후 무작위 음식 유물을 [blue]1[/blue]개 추가로 획득합니다. 일부 음식 유물은 중복 획득할 수 있습니다.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.flavor": "단맛은 미끼일 뿐입니다. 중요한 건 접시 밑에 숨겨진 것이죠.",
   "PROTEIN_SHAKE_RUNE.title": "단백질 쉐이크",
   "PROTEIN_SHAKE_RUNE.description": "최대 체력 [blue]2[/blue]당 회복량과 방어도가 [blue]1%[/blue] 증가합니다.",

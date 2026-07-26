@@ -214,7 +214,7 @@
   "FEY_MAGIC_RUNE.description": "コスト[blue]3[/blue]以上のカードで敵にダメージを与えると、その敵を気絶させる。",
   "FEY_MAGIC_RUNE.flavor": "本当に難しい呪文は、まず次のステップを奪います。",
   "WATCH_OUT_GRAPEFRUIT_RUNE.title": "気をつけろ、カップケーキ",
-  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "戦闘に勝利した後、追加の食料遺物をドロップします。食べ物の残骸は繰り返しドロップする可能性があります。すでに [gold]Ice Cream[/gold]を持っている場合、[gold]Ice Cream[/gold]は再びドロップしません。",
+  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "戦闘に勝利した後、ランダムな食べ物レリックを追加で[blue]1[/blue]個獲得します。一部の食べ物レリックは重複して獲得できます。",
   "WATCH_OUT_GRAPEFRUIT_RUNE.flavor": "甘さはただの餌です。ポイントはお皿の下に何が隠れているかです。",
   "PROTEIN_SHAKE_RUNE.title": "プロテインシェイク",
   "PROTEIN_SHAKE_RUNE.description": "[blue]2[/blue] 最大 HP ごとに、[blue]1%[/blue] の回復とブロックを獲得します。",

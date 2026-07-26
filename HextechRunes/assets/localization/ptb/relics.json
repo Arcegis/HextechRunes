@@ -214,7 +214,7 @@
   "FEY_MAGIC_RUNE.description": "Quando você usa uma carta que custa [blue]3[/blue] ou mais para causar dano a um inimigo, atordoe aquele inimigo.",
   "FEY_MAGIC_RUNE.flavor": "O feitiço verdadeiramente difícil rouba o próximo passo primeiro.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.title": "Cuidado, Docinho",
-  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "Após vencer um combate, obtenha uma relíquia de comida extra. Relíquias de comida podem aparecer repetidamente; se você já tiver [gold]Sorvete[/gold], [gold]Sorvete[/gold] não aparecerá novamente.",
+  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "Após vencer um combate, obtenha [blue]1[/blue] relíquia de comida aleatória adicional. Algumas relíquias de comida podem ser obtidas repetidamente.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.flavor": "A doçura é apenas uma isca. O ponto importante é o que está escondido sob o prato.",
   "PROTEIN_SHAKE_RUNE.title": "Shake de Proteína",
   "PROTEIN_SHAKE_RUNE.description": "Para cada [blue]2[/blue] de PV Máx que você possuir, ganhe [blue]1%[/blue] a mais de cura e Bloqueio.",

@@ -214,7 +214,7 @@
   "FEY_MAGIC_RUNE.description": "When you use a card that costs [blue]3[/blue] or more to deal damage to an enemy, stun that enemy.",
   "FEY_MAGIC_RUNE.flavor": "The truly difficult spell steals the next step first.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.title": "Watch Out, Cupcake",
-  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "After winning combat, drop an extra food relic. Food relics can drop repeatedly; if you already have [gold]Ice Cream[/gold], [gold]Ice Cream[/gold] will not drop again.",
+  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "After winning combat, gain [blue]1[/blue] additional random food relic. Some food relics can be obtained repeatedly.",
   "WATCH_OUT_GRAPEFRUIT_RUNE.flavor": "Sweetness is only bait. The point is what is hidden under the plate.",
   "PROTEIN_SHAKE_RUNE.title": "Protein Shake",
   "PROTEIN_SHAKE_RUNE.description": "For each [blue]2[/blue] Max HP you have, gain [blue]1%[/blue] more healing and Block.",

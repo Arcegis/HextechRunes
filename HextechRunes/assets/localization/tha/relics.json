@@ -214,7 +214,7 @@
   "FEY_MAGIC_RUNE.description": "เมื่อคุณใช้การ์ดต้นทุน [blue]3[/blue] ขึ้นไปสร้างความเสียหายใส่ศัตรู จะทำให้ศัตรูตัวนั้นหยุดชะงัก",
   "FEY_MAGIC_RUNE.flavor": "เวทที่ยากแท้จริง ขโมยก้าวถัดไปไปก่อน",
   "WATCH_OUT_GRAPEFRUIT_RUNE.title": "ระวังนะ คัพเค้ก",
-  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "หลังชนะการต่อสู้ จะดรอปเครื่องรางอาหารพิเศษ เครื่องรางอาหารดรอปซ้ำได้ หากคุณมี [gold]ไอศกรีม[/gold] อยู่แล้ว [gold]ไอศกรีม[/gold] จะไม่ดรอปอีก",
+  "WATCH_OUT_GRAPEFRUIT_RUNE.description": "หลังชนะการต่อสู้ จะได้รับเครื่องรางอาหารแบบสุ่มเพิ่ม [blue]1[/blue] ชิ้น เครื่องรางอาหารบางชนิดสามารถได้รับซ้ำได้",
   "WATCH_OUT_GRAPEFRUIT_RUNE.flavor": "ความหวานเป็นเพียงเหยื่อล่อ สาระอยู่ที่สิ่งซ่อนใต้จาน",
   "PROTEIN_SHAKE_RUNE.title": "โปรตีนเชค",
   "PROTEIN_SHAKE_RUNE.description": "ทุกๆ [blue]2[/blue] HP สูงสุดที่คุณมี ได้รับการฟื้นฟูและบล็อกเพิ่มขึ้น [blue]1%[/blue]",
