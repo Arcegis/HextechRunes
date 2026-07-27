@@ -55,6 +55,8 @@ internal sealed class CombatTrackingSnapshot
 	public List<ulong> VakuuControlledPlayersThisCombat { get; set; } = [];
 	public List<ulong> EightPennyGatePlayersTriggeredThisTurn { get; set; } = [];
 	public List<ulong> EightPennyGatePlayersTriggeredSecondThisTurn { get; set; } = [];
+	public Dictionary<ulong, int> InspectExtraDrawsPreventedThisTurn { get; set; } = new();
+	public List<ulong> GripPlayersTriggeredThisTurn { get; set; } = [];
 	public int ArcanePunchPlayerAttackCardsPlayed { get; set; }
 	public int EnemyProtectiveVeilTurnCounter { get; set; }
 }

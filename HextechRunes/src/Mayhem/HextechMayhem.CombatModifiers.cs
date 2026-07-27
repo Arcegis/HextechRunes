@@ -53,6 +53,13 @@ internal sealed partial class HextechMayhemModifier
 			(effect, context, current) => effect.ModifyHandDraw(context, player, current));
 	}
 
+	public override bool ShouldDraw(Player player, bool fromHandDraw)
+	{
+		return HextechEnemyHexDispatcher.All(
+			this,
+			(effect, context) => effect.ShouldDraw(context, player, fromHandDraw));
+	}
+
 	public override bool ShouldFlush(Player player)
 	{
 		return HextechEnemyHexDispatcher.All(

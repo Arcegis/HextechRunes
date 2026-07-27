@@ -124,7 +124,9 @@ internal static class HextechEnemyHexEffects
 		new TungstenRodEnemyHex(),
 		new HundredRefinementsEnemyHex(),
 		new VitalitySurgeEnemyHex(),
-		new AncientStatueEnemyHex()
+		new AncientStatueEnemyHex(),
+		new IInspectEnemyHex(),
+		new IGripEnemyHex()
 	]);
 
 	internal static IEnumerable<HextechEnemyHexEffect> GetActive(HextechMayhemModifier modifier)

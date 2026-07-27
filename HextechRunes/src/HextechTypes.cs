@@ -145,5 +145,7 @@ internal enum MonsterHexKind
 
 	AncientStatue = 125,       // 升级：旧日雕像（棱彩）
 	HundredRefinements = 126,  // 百炼成钢（黄金）
-	VitalitySurge = 127        // 生机迸发（黄金）
+	VitalitySurge = 127,       // 生机迸发（黄金）
+	IInspect = 128,            // 我细看（棱彩）
+	IGrip = 129                // 我紧握（棱彩）
 }

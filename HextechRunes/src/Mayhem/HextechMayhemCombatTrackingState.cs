@@ -73,6 +73,10 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredThisTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly HashSet<ulong> EightPennyGatePlayersTriggeredSecondThisTurn = new();
+	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
+	public readonly Dictionary<ulong, int> InspectExtraDrawsPreventedThisTurn = new();
+	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
+	public readonly HashSet<ulong> GripPlayersTriggeredThisTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart | CombatTrackingClearPhase.PlayerTurnEnd)]
 	public int ArcanePunchPlayerAttackCardsPlayed;
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]

@@ -93,6 +93,11 @@ internal static class HextechAssets
 			return $"res://{ModInfo.Id}/images/relics/hundredRefinementsRune.png";
 		}
 
+		if (relic is HungryHex or InspectHex or GripHex)
+		{
+			return $"res://{ModInfo.Id}/images/relics/eightPennyGateRune.png";
+		}
+
 		if (HextechCatalog.IsHextechEnemyHexIconRelic(relic))
 		{
 			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;

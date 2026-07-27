@@ -366,6 +366,9 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
     # 与 HextechAssets.TryGetCustomRelicIconPath 中显式复用其他模型图标的分支保持一致。
     shared_icon_stems = {
         "hundredRefinementsHex": "hundredRefinementsRune",
+        "hungryHex": "eightPennyGateRune",
+        "inspectHex": "eightPennyGateRune",
+        "gripHex": "eightPennyGateRune",
     }
 
     expected_stems: set[str] = set()

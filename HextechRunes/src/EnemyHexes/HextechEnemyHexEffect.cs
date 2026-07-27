@@ -46,6 +46,11 @@ internal abstract class HextechEnemyHexEffect
 		return count;
 	}
 
+	internal virtual bool ShouldDraw(HextechEnemyHexContext context, Player player, bool fromHandDraw)
+	{
+		return true;
+	}
+
 	internal virtual bool ShouldFlush(HextechEnemyHexContext context, Player player)
 	{
 		return true;
