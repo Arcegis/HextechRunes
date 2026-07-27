@@ -2,6 +2,21 @@ namespace HextechRunes;
 
 internal static partial class HextechPlayerRuneHooks
 {
+	private static bool BodySlamOnPlayPrefix(
+		BodySlam __instance,
+		PlayerChoiceContext choiceContext,
+		CardPlay cardPlay,
+		ref Task __result)
+	{
+		if (__instance.Owner?.GetRelic<BodySlamUpgradeRune>() is not BodySlamUpgradeRune rune)
+		{
+			return true;
+		}
+
+		__result = rune.PlayUpgraded(choiceContext, __instance, cardPlay);
+		return false;
+	}
+
 	private static bool WroughtInWarOnPlayPrefix(
 		WroughtInWar __instance,
 		PlayerChoiceContext choiceContext,

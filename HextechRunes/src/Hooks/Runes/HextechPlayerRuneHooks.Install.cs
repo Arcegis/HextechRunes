@@ -54,6 +54,7 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<TerminalIllnessRune>("persistent poison", () => HextechRuneMechanicHooks.InstallTerminalIllness(harmony));
 		TryInstallRuneHook<BigHammerRune>("forge amount bonus", () => HextechRuneMechanicHooks.InstallBigHammer(harmony));
 		TryInstallRuneHook<OblivionUpgradeRune>("oblivion persistence", () => HextechRuneMechanicHooks.InstallOblivionUpgrade(harmony));
+		TryInstallRuneHook<BodySlamUpgradeRune>("body slam block", () => InstallBodySlamUpgradeHooks(harmony));
 		TryInstallRuneHook<WroughtInWarUpgradeRune>("wrought in war block", () => InstallWroughtInWarUpgradeHooks(harmony));
 		TryInstallRuneHook<DecisionsDecisionsUpgradeRune>("decisions card selection", () => InstallDecisionsDecisionsUpgradeHooks(harmony));
 	}
@@ -252,6 +253,13 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(CrashLanding), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CrashLandingOnPlayPrefix)));
+	}
+
+	private static void InstallBodySlamUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(BodySlam), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(BodySlamOnPlayPrefix)));
 	}
 
 	private static void InstallWroughtInWarUpgradeHooks(Harmony harmony)

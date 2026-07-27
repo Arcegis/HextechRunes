@@ -96,6 +96,7 @@ internal static partial class Program
 			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
 			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
 			new(nameof(NewCardUpgradeRunesUseExpectedTriggerRules), NewCardUpgradeRunesUseExpectedTriggerRules),
+			new(nameof(PlayerSustainRunesUseExpectedMaxHpRules), PlayerSustainRunesUseExpectedMaxHpRules),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
 			new(nameof(DrawYourSwordUsesEnemyTurnStartOrbCleanup), DrawYourSwordUsesEnemyTurnStartOrbCleanup),
 			new(nameof(EnemyOmniDragonSoulUsesPlayerTurnStart), EnemyOmniDragonSoulUsesPlayerTurnStart),
@@ -2998,10 +2999,23 @@ internal static partial class Program
 		Expect(!StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: false), "vanilla Storm should ignore Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: true), "upgraded Storm should trigger for Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Skill, hasUpgradeRune: true), "upgraded Storm should trigger for Skills");
+		Equal(7, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 0), "Body Slam should count total damage like Fisticuffs");
+		Equal(10, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 3), "Body Slam should add overkill damage like Fisticuffs");
 		Equal(7, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 0), "Wrought in War should count total damage like Fisticuffs");
 		Equal(10, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 3), "Wrought in War should add overkill damage like Fisticuffs");
 		Expect(DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: false), "Decisions should allow playable cards of any type");
 		Expect(!DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: true), "Decisions should still reject Unplayable cards");
+	}
+
+	private static void PlayerSustainRunesUseExpectedMaxHpRules()
+	{
+		Equal(0, DevilsDanceRune.CountMaxHpTriggers(0, 2, 3), "Devil's Dance should wait for three Attacks");
+		Equal(1, DevilsDanceRune.CountMaxHpTriggers(2, 3, 3), "Devil's Dance should trigger on the third Attack");
+		Equal(2, DevilsDanceRune.CountMaxHpTriggers(2, 7, 3), "Devil's Dance should preserve thresholds across turns");
+		Equal(1, AncientWineRune.CalculateHealAmount(99, 1m), "Ancient Wine should floor one-percent healing with a minimum of one");
+		Equal(2, AncientWineRune.CalculateHealAmount(250, 1m), "Ancient Wine should heal one percent of Max HP");
+		Equal(2, SturdyRune.CalculateHealAmount(100, 50, 2m, 50m, 5m), "Sturdy should use two percent at exactly half HP");
+		Equal(5, SturdyRune.CalculateHealAmount(100, 49, 2m, 50m, 5m), "Sturdy should use five percent below half HP");
 	}
 
 	private static void NewRuneHookTargetsMatchSupportedGameApis()
@@ -3010,6 +3024,7 @@ internal static partial class Program
 		Expect(typeof(CorrosiveWavePower).GetMethod(nameof(CorrosiveWavePower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "corrosive wave turn-end hook target");
 		Expect(typeof(PoisonPower).GetMethod(nameof(PoisonPower.CalculateTotalDamageNextTurn), BindingFlags.Instance | BindingFlags.Public) != null, "poison preview hook target");
 		Expect(typeof(OblivionPower).GetMethod(nameof(OblivionPower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "oblivion turn-end hook target");
+		Expect(typeof(BodySlam).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "body slam play hook target");
 		Expect(typeof(WroughtInWar).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "wrought in war play hook target");
 		Expect(typeof(CardSelectCmd).GetMethod(
 			nameof(CardSelectCmd.FromHand),
