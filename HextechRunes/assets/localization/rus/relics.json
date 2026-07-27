@@ -1411,5 +1411,14 @@
   "OBLIVION_UPGRADE_RUNE.flavor": "Забытому больше не нужен конец.",
   "SPIN_TO_WIN_RUNE.title": "Победный оборот",
   "SPIN_TO_WIN_RUNE.description": "Добор карт, Энергия, Призыв и Звёзды следующего хода срабатывают немедленно.",
-  "SPIN_TO_WIN_RUNE.flavor": "Победа не ждёт следующего хода."
+  "SPIN_TO_WIN_RUNE.flavor": "Победа не ждёт следующего хода.",
+  "STORM_UPGRADE_RUNE.title": "Улучшение: Буря",
+  "STORM_UPGRADE_RUNE.description": "Ваша [gold]Буря[/gold] срабатывает от каждой разыгранной вами карты.",
+  "STORM_UPGRADE_RUNE.flavor": "Каждая карта становится фитилём под грозовой тучей.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.title": "Улучшение: Закалённое войной",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.description": "После розыгрыша [gold]Закалённого войной[/gold] вы также получаете Блок, равный нанесённому им урону.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "Один огонь закаляет и клинок, и бастион.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "Улучшение: Решения, решения",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "Ваши [gold]Решения, решения[/gold] могут выбрать любую разыгрываемую карту.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "Настоящее решение отвергает заранее заданные ответы."
 }

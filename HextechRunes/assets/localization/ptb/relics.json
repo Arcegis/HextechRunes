@@ -1411,5 +1411,14 @@
   "OBLIVION_UPGRADE_RUNE.flavor": "O que foi esquecido já não precisa de um fim.",
   "SPIN_TO_WIN_RUNE.title": "Giro Vitorioso",
   "SPIN_TO_WIN_RUNE.description": "Sua compra de cartas, Energia, Invocação e Estrelas do próximo turno são ativadas imediatamente.",
-  "SPIN_TO_WIN_RUNE.flavor": "A vitória nunca espera o próximo turno."
+  "SPIN_TO_WIN_RUNE.flavor": "A vitória nunca espera o próximo turno.",
+  "STORM_UPGRADE_RUNE.title": "Melhoria: Tempestade",
+  "STORM_UPGRADE_RUNE.description": "Sua [gold]Tempestade[/gold] é ativada por cada carta que você joga.",
+  "STORM_UPGRADE_RUNE.flavor": "Cada carta é um pavio sob a nuvem de tempestade.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.title": "Melhoria: Forjado na Guerra",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.description": "Após jogar [gold]Forjado na Guerra[/gold], também ganhe Bloqueio igual ao dano que ele causou.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "O mesmo fogo tempera a lâmina e a muralha.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "Melhoria: Decisões, Decisões",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "Sua [gold]Decisões, Decisões[/gold] pode escolher qualquer carta jogável.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "Uma decisão verdadeira rejeita toda resposta predeterminada."
 }

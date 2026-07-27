@@ -113,6 +113,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<ReprogramRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 24, tagKey: "COMPREHENSIVE"),
 		Rune<CreativeAiUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 28, tagKey: "RANDOM"),
 		Rune<NeurosurgeUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 34, tagKey: "DOOM"),
+		Rune<WroughtInWarUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 29, tagKey: "SWORDCRAFT"),
 
 		Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 		Rune<TranscendentEvilRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.ThirdActExcluded, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 3, tagKey: "STACKING"),
@@ -357,7 +358,9 @@ internal static class HextechPlayerRuneRegistry
 		Rune<PactsEndUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 32, tagKey: "EXHAUST"),
 		Rune<BrandUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 33, tagKey: "OUTPUT"),
 		Rune<CorrosiveWaveUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 29, tagKey: "POISON"),
-		Rune<OblivionUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 36, tagKey: "DOOM")
+		Rune<OblivionUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 36, tagKey: "DOOM"),
+		Rune<StormUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 32, tagKey: "ORB"),
+		Rune<DecisionsDecisionsUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 30, tagKey: "COMPREHENSIVE")
 	];
 
 	private static PlayerRuneRegistration Rune<TRune>(

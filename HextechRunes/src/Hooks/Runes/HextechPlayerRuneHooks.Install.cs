@@ -1,4 +1,5 @@
 using HarmonyLib;
+using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Orbs;
 using static HextechRunes.HextechHookReflection;
@@ -53,6 +54,8 @@ internal static partial class HextechPlayerRuneHooks
 		TryInstallRuneHook<TerminalIllnessRune>("persistent poison", () => HextechRuneMechanicHooks.InstallTerminalIllness(harmony));
 		TryInstallRuneHook<BigHammerRune>("forge amount bonus", () => HextechRuneMechanicHooks.InstallBigHammer(harmony));
 		TryInstallRuneHook<OblivionUpgradeRune>("oblivion persistence", () => HextechRuneMechanicHooks.InstallOblivionUpgrade(harmony));
+		TryInstallRuneHook<WroughtInWarUpgradeRune>("wrought in war block", () => InstallWroughtInWarUpgradeHooks(harmony));
+		TryInstallRuneHook<DecisionsDecisionsUpgradeRune>("decisions card selection", () => InstallDecisionsDecisionsUpgradeHooks(harmony));
 	}
 
 	private static void InstallCreativeAiUpgradeHooks(Harmony harmony)
@@ -249,6 +252,28 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(CrashLanding), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CrashLandingOnPlayPrefix)));
+	}
+
+	private static void InstallWroughtInWarUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(typeof(WroughtInWar), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(WroughtInWarOnPlayPrefix)));
+	}
+
+	private static void InstallDecisionsDecisionsUpgradeHooks(Harmony harmony)
+	{
+		harmony.Patch(
+			RequireMethod(
+				typeof(CardSelectCmd),
+				nameof(CardSelectCmd.FromHand),
+				BindingFlags.Static | BindingFlags.Public,
+				typeof(PlayerChoiceContext),
+				typeof(Player),
+				typeof(CardSelectorPrefs),
+				typeof(Func<CardModel, bool>),
+				typeof(AbstractModel)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(DecisionsDecisionsFromHandPrefix)));
 	}
 
 	private static void TryInstallCombatHookGroup(string label, Action install)

@@ -1411,5 +1411,14 @@
   "OBLIVION_UPGRADE_RUNE.flavor": "Lo olvidado ya no necesita un final.",
   "SPIN_TO_WIN_RUNE.title": "Girar para ganar",
   "SPIN_TO_WIN_RUNE.description": "Tu robo de cartas, Energía, Invocación y Estrellas del próximo turno se activan inmediatamente.",
-  "SPIN_TO_WIN_RUNE.flavor": "La victoria nunca espera al próximo turno."
+  "SPIN_TO_WIN_RUNE.flavor": "La victoria nunca espera al próximo turno.",
+  "STORM_UPGRADE_RUNE.title": "Mejora: Tormenta",
+  "STORM_UPGRADE_RUNE.description": "Tu [gold]Tormenta[/gold] se activa con cada carta que juegas.",
+  "STORM_UPGRADE_RUNE.flavor": "Cada carta es una mecha bajo el nubarrón.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.title": "Mejora: Forjado en la guerra",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.description": "Después de jugar [gold]Forjado en la guerra[/gold], también obtienes Bloqueo igual al daño que infligió.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "El mismo fuego templa el filo y la muralla.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "Mejora: Decisiones, decisiones",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "Tu [gold]Decisiones, decisiones[/gold] puede elegir cualquier carta que se pueda jugar.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "Una decisión real rechaza toda respuesta prefijada."
 }

@@ -1411,5 +1411,14 @@
   "OBLIVION_UPGRADE_RUNE.flavor": "被遗忘之物，不再需要终点。",
   "SPIN_TO_WIN_RUNE.title": "转出胜利",
   "SPIN_TO_WIN_RUNE.description": "你的下回合抽牌、能量、召唤、辉星改为即时生效。",
-  "SPIN_TO_WIN_RUNE.flavor": "胜利从不等到下一回合。"
+  "SPIN_TO_WIN_RUNE.flavor": "胜利从不等到下一回合。",
+  "STORM_UPGRADE_RUNE.title": "升级：雷暴",
+  "STORM_UPGRADE_RUNE.description": "你的[gold]雷暴[/gold]会由你打出的所有牌触发。",
+  "STORM_UPGRADE_RUNE.flavor": "每一张牌，都是雷云的引线。",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.title": "升级：战火铸就",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.description": "打出[gold]战火铸就[/gold]后，你还会获得等量于所造成伤害的格挡。",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "炉火锻出锋刃，也锻出壁垒。",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "升级：抉择，抉择",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "你的[gold]抉择，抉择[/gold]可以选择任意一张可打出的牌。",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "真正的抉择，从来不接受预设答案。"
 }

@@ -1411,5 +1411,14 @@
   "OBLIVION_UPGRADE_RUNE.flavor": "สิ่งที่ถูกลืมไม่ต้องการจุดจบอีกต่อไป",
   "SPIN_TO_WIN_RUNE.title": "หมุนสู่ชัยชนะ",
   "SPIN_TO_WIN_RUNE.description": "การจั่วการ์ด พลังงาน อัญเชิญ และดวงดาวของเทิร์นถัดไปจะมีผลทันที",
-  "SPIN_TO_WIN_RUNE.flavor": "ชัยชนะไม่เคยรอเทิร์นถัดไป"
+  "SPIN_TO_WIN_RUNE.flavor": "ชัยชนะไม่เคยรอเทิร์นถัดไป",
+  "STORM_UPGRADE_RUNE.title": "อัปเกรด: พายุ",
+  "STORM_UPGRADE_RUNE.description": "[gold]พายุ[/gold]ของคุณทำงานจากการ์ดทุกใบที่คุณเล่น",
+  "STORM_UPGRADE_RUNE.flavor": "การ์ดทุกใบคือชนวนใต้เมฆพายุ",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.title": "อัปเกรด: หลอมจากสงคราม",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.description": "หลังเล่น[gold]หลอมจากสงคราม[/gold] คุณจะได้รับบล็อกเท่ากับความเสียหายที่การ์ดนั้นสร้าง",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "เปลวไฟเดียวกันชุบทั้งคมดาบและกำแพง",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "อัปเกรด: เลือกแล้วเลือกอีก",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "[gold]เลือกแล้วเลือกอีก[/gold]ของคุณสามารถเลือกการ์ดที่เล่นได้ใบใดก็ได้",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "การตัดสินใจที่แท้จริงไม่ยอมรับคำตอบที่กำหนดไว้"
 }

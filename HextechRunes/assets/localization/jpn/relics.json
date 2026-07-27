@@ -1411,5 +1411,14 @@
   "OBLIVION_UPGRADE_RUNE.flavor": "忘れ去られたものに終わりは要らない。",
   "SPIN_TO_WIN_RUNE.title": "回して勝利",
   "SPIN_TO_WIN_RUNE.description": "次のターンのカードドロー、エナジー、召喚、星が即座に発動する。",
-  "SPIN_TO_WIN_RUNE.flavor": "勝利は次のターンを待たない。"
+  "SPIN_TO_WIN_RUNE.flavor": "勝利は次のターンを待たない。",
+  "STORM_UPGRADE_RUNE.title": "アップグレード：ストーム",
+  "STORM_UPGRADE_RUNE.description": "[gold]ストーム[/gold]が、プレイしたすべてのカードで発動する。",
+  "STORM_UPGRADE_RUNE.flavor": "すべてのカードが雷雲の導火線となる。",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.title": "アップグレード：戦火の鍛造",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.description": "[gold]戦火の鍛造[/gold]をプレイした後、それが与えたダメージと同量のブロックを得る。",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "同じ炎が刃と城壁を鍛え上げる。",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "アップグレード：決断、決断",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "[gold]決断、決断[/gold]でプレイ可能な任意のカードを選べる。",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "真の決断は、用意された答えを拒む。"
 }

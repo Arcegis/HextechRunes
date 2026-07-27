@@ -1411,5 +1411,14 @@
   "OBLIVION_UPGRADE_RUNE.flavor": "What is forgotten no longer needs an ending.",
   "SPIN_TO_WIN_RUNE.title": "Spin to Win",
   "SPIN_TO_WIN_RUNE.description": "Your next-turn card draw, Energy, Summon, and Stars take effect immediately.",
-  "SPIN_TO_WIN_RUNE.flavor": "Victory never waits for the next turn."
+  "SPIN_TO_WIN_RUNE.flavor": "Victory never waits for the next turn.",
+  "STORM_UPGRADE_RUNE.title": "Upgrade: Storm",
+  "STORM_UPGRADE_RUNE.description": "Your [gold]Storm[/gold] is triggered by every card you play.",
+  "STORM_UPGRADE_RUNE.flavor": "Every card is a fuse beneath the thundercloud.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.title": "Upgrade: Wrought in War",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.description": "After playing [gold]Wrought in War[/gold], also gain Block equal to the damage it dealt.",
+  "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "The same fire tempers both edge and bulwark.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "Upgrade: Decisions, Decisions",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "Your [gold]Decisions, Decisions[/gold] can select any playable card.",
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "A true decision refuses every predetermined answer."
 }
