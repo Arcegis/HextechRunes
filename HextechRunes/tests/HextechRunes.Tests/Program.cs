@@ -93,6 +93,8 @@ internal static partial class Program
 			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
 			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
+			new(nameof(DrawYourSwordUsesEnemyTurnStartOrbCleanup), DrawYourSwordUsesEnemyTurnStartOrbCleanup),
+			new(nameof(EnemyOmniDragonSoulUsesPlayerTurnStart), EnemyOmniDragonSoulUsesPlayerTurnStart),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(PrismaticEggIsExcludedFromThirdAct), PrismaticEggIsExcludedFromThirdAct),
 			new(nameof(MirrorReflectionCopiesCursesButNotBasicCards), MirrorReflectionCopiesCursesButNotBasicCards),
@@ -2598,11 +2600,11 @@ internal static partial class Program
 		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.Type, "custom Slow should be classified as a buff");
 		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.GetTypeForAmount(8m), "positive Hundred Refinements changes should not trigger debuff reactions");
 		Equal(8m, HextechPlayerSlowPower.NormalizeEnemyReductionAmount(-8m), "legacy negative Hundred Refinements Slow should migrate by magnitude");
-		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(0), "Ancient Statue tier zero fallback Slow gain");
-		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(1), "Ancient Statue tier one Slow gain");
-		Equal(8, AncientStatueEnemyHex.ResolveCardSlowGain(2), "Ancient Statue tier two Slow gain");
-		Equal(10, AncientStatueEnemyHex.ResolveCardSlowGain(3), "Ancient Statue tier three Slow gain");
-		Equal(10, AncientStatueEnemyHex.ResolveCardSlowGain(99), "Ancient Statue high-tier Slow gain clamp");
+		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(0), "Ancient Statue tier zero fallback Slow gain");
+		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(1), "Ancient Statue tier one Slow gain");
+		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(2), "Ancient Statue tier two Slow gain");
+		Equal(8, AncientStatueEnemyHex.ResolveCardSlowGain(3), "Ancient Statue tier three Slow gain");
+		Equal(8, AncientStatueEnemyHex.ResolveCardSlowGain(99), "Ancient Statue high-tier Slow gain clamp");
 		Equal(3, HundredRefinementsEnemyHex.ResolveSlowReduction(0), "Hundred Refinements tier zero fallback Slow reduction");
 		Equal(3, HundredRefinementsEnemyHex.ResolveSlowReduction(1), "Hundred Refinements tier one Slow reduction");
 		Equal(5, HundredRefinementsEnemyHex.ResolveSlowReduction(2), "Hundred Refinements tier two Slow reduction");
@@ -2992,6 +2994,26 @@ internal static partial class Program
 		Expect(typeof(CorrosiveWavePower).GetMethod(nameof(CorrosiveWavePower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "corrosive wave turn-end hook target");
 		Expect(typeof(PoisonPower).GetMethod(nameof(PoisonPower.CalculateTotalDamageNextTurn), BindingFlags.Instance | BindingFlags.Public) != null, "poison preview hook target");
 		Expect(typeof(OblivionPower).GetMethod(nameof(OblivionPower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "oblivion turn-end hook target");
+	}
+
+	private static void DrawYourSwordUsesEnemyTurnStartOrbCleanup()
+	{
+		MethodInfo[] runeMethods = typeof(DrawYourSwordRune).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+		Expect(runeMethods.Any(method => method.Name == nameof(DrawYourSwordRune.BeforeSideTurnStart)), "Draw Your Sword should clean up Orbs from a side-turn-start hook");
+
+		MethodInfo[] hookMethods = typeof(HextechPlayerRuneHooks).GetMethods(
+			BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+		Expect(hookMethods.All(method => method.Name != "OrbChannelPrefix"), "Draw Your Sword should no longer intercept Orb channeling");
+		Expect(hookMethods.All(method => method.Name != "InstallDrawYourSwordHooks"), "Draw Your Sword should not install the old Orb channel hook");
+	}
+
+	private static void EnemyOmniDragonSoulUsesPlayerTurnStart()
+	{
+		MethodInfo[] declaredMethods = typeof(OmniDragonSoulEnemyHex).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+		Expect(declaredMethods.Any(method => method.Name == "BeforePlayerSideTurnStart"), "enemy Omni Dragon Soul should apply its debuff at player turn start");
+		Expect(declaredMethods.All(method => method.Name != "BeforeEnemySideTurnStart"), "enemy Omni Dragon Soul should no longer apply its debuff at enemy turn start");
 	}
 
 	private static void CompensationReplacementGuardScopesAsyncWork()
