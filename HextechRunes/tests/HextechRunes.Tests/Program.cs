@@ -183,6 +183,7 @@ internal static partial class Program
 			new(nameof(MonsterHexMetadataHasUniqueKinds), MonsterHexMetadataHasUniqueKinds),
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
+			new(nameof(EnemyHexHoverTipsUseExpectedPowerModels), EnemyHexHoverTipsUseExpectedPowerModels),
 			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
 			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
 			new(nameof(EnemySlowHexesUseExpectedBaselinesAndTiers), EnemySlowHexesUseExpectedBaselinesAndTiers),
@@ -2700,7 +2701,54 @@ internal static partial class Program
 		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new SandpitPower()), "sandpit power should be structural");
 		Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new StrengthPower()), "ordinary strength should not be structural");
 		Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new PersonalHivePower()), "personal hive should not be mirrored to players");
+		Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new HextechPlayerSlowPower()), "custom Slow should not be mirrored to players");
 		Expect(!HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new StrengthPower()), "ordinary strength should remain mirrorable");
+	}
+
+	private static void EnemyHexHoverTipsUseExpectedPowerModels()
+	{
+		SequenceEqual(
+			new[] { typeof(DisintegrationPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Doomsday),
+			"enemy Doomsday should explain Disintegration");
+		SequenceEqual(
+			new[] { typeof(DisintegrationPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Omega),
+			"enemy Omega should explain Disintegration");
+		SequenceEqual(
+			new[] { typeof(DoomPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.OminousPact),
+			"enemy Ominous Pact should explain Doom");
+		SequenceEqual(
+			new[] { typeof(SkittishPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.PhantasmalGardener),
+			"enemy Phantasmal Gardener should explain Skittish");
+		SequenceEqual(
+			new[] { typeof(ChainsOfBindingPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Queen),
+			"enemy Queen should explain Chains of Binding");
+		SequenceEqual(
+			new[] { typeof(ArtifactPower), typeof(PlatingPower), typeof(RegenPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.HailToTheKing),
+			"enemy Hail to the King should explain all three powers");
+		SequenceEqual(
+			new[] { typeof(WeakPower), typeof(FrailPower), typeof(VulnerablePower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.OmniDragonSoul),
+			"enemy Omni Dragon Soul should explain all three debuffs");
+		SequenceEqual(
+			new[] { typeof(TaintedPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.ArcanePunch),
+			"enemy Arcane Punch should explain Tainted");
+
+		foreach (MonsterHexKind hex in HextechContentRegistry.AllMonsterHexKinds)
+		{
+			IReadOnlyList<Type> powerTypes = MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(hex);
+			Equal(powerTypes.Count, powerTypes.Distinct().Count(), $"enemy {hex} hover-tip power types should be unique");
+			foreach (Type powerType in powerTypes)
+			{
+				Expect(typeof(PowerModel).IsAssignableFrom(powerType), $"enemy {hex} hover-tip type should be a power model: {powerType}");
+			}
+		}
 	}
 
 	private static void EnemyJeweledGauntletUsesExpectedStrengthTierChances()
