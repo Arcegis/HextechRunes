@@ -32,6 +32,20 @@ internal static partial class HextechPlayerRuneHooks
 		return false;
 	}
 
+	private static bool DecisionsDecisionsOnPlayPrefix(
+		DecisionsDecisions __instance,
+		PlayerChoiceContext choiceContext,
+		ref Task __result)
+	{
+		if (__instance.Owner?.GetRelic<DecisionsDecisionsUpgradeRune>() is not DecisionsDecisionsUpgradeRune rune)
+		{
+			return true;
+		}
+
+		__result = rune.PlayUpgraded(choiceContext, __instance);
+		return false;
+	}
+
 	private static void DecisionsDecisionsFromHandPrefix(
 		AbstractModel source,
 		ref Func<CardModel, bool> filter)

@@ -220,6 +220,7 @@ internal static partial class Program
 			new(nameof(EventRewardTransactionCommitsSequentially), EventRewardTransactionCommitsSequentially),
 			new(nameof(EventRewardTransactionRejectsLateRecordsAndSecondCommit), EventRewardTransactionRejectsLateRecordsAndSecondCommit),
 			new(nameof(EventRewardTransactionTryRecordSkipsLateAsyncRewards), EventRewardTransactionTryRecordSkipsLateAsyncRewards),
+			new(nameof(DoubleVisionCopiesWaxStateWithoutCopyingMeltedState), DoubleVisionCopiesWaxStateWithoutCopyingMeltedState),
 			new(nameof(DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect), DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect),
 			new(nameof(DoubleVisionDustyTomeSaveLoadPreservesAncientCard), DoubleVisionDustyTomeSaveLoadPreservesAncientCard),
 			new(nameof(DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast), DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast),
@@ -3181,12 +3182,16 @@ internal static partial class Program
 		Expect(!StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: false), "vanilla Storm should ignore Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: true), "upgraded Storm should trigger for Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Skill, hasUpgradeRune: true), "upgraded Storm should trigger for Skills");
+		Expect(ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: false), "Reanimate should count Minion and Small Hand deaths like Melancholy");
+		Expect(!ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: true), "Reanimate should ignore a death that was prevented");
 		Equal(7, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 0), "Body Slam should count total damage like Fisticuffs");
 		Equal(10, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 3), "Body Slam should add overkill damage like Fisticuffs");
 		Equal(7, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 0), "Wrought in War should count total damage like Fisticuffs");
 		Equal(10, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 3), "Wrought in War should add overkill damage like Fisticuffs");
 		Expect(DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: false), "Decisions should allow playable cards of any type");
 		Expect(!DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: true), "Decisions should still reject Unplayable cards");
+		Equal(3, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(1, 3), "Decisions should resolve all three plays inside one card-play wrapper");
+		Equal(4, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(2, 3), "Decisions replay count should combine additively with another replay");
 	}
 
 	private static void PlayerSustainRunesUseExpectedMaxHpRules()
@@ -3208,6 +3213,7 @@ internal static partial class Program
 		Expect(typeof(OblivionPower).GetMethod(nameof(OblivionPower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "oblivion turn-end hook target");
 		Expect(typeof(BodySlam).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "body slam play hook target");
 		Expect(typeof(WroughtInWar).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "wrought in war play hook target");
+		Expect(typeof(DecisionsDecisions).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "decisions play hook target");
 		Expect(typeof(CardSelectCmd).GetMethod(
 			nameof(CardSelectCmd.FromHand),
 			BindingFlags.Static | BindingFlags.Public,
@@ -3377,9 +3383,23 @@ internal static partial class Program
 		Expect(committed.SequenceEqual([1]), "late inherited reward must not enter the committed event batch");
 	}
 
+	private static void DoubleVisionCopiesWaxStateWithoutCopyingMeltedState()
+	{
+		DustyTome source = CreateBareTestDustyTome();
+		source.IsWax = true;
+		source.IsMelted = true;
+		DustyTome copy = CreateBareTestDustyTome();
+
+		DoubleVisionRune.CopyWaxState(source, copy);
+
+		Expect(copy.IsWax, "Double Vision should preserve wax on a copied relic");
+		Expect(!copy.IsMelted, "Double Vision should not copy an already-melted state");
+	}
+
 	private static void DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect()
 	{
 		DustyTome source = CreateTestDustyTome();
+		source.IsWax = true;
 		DustyTome? unrelated = null;
 		int obtainCount = 0;
 		int ancientCardGrantCount = 0;
@@ -3420,6 +3440,7 @@ internal static partial class Program
 		Equal(0, broadcastCount, "single-player Dusty Tome broadcast count");
 		Expect(!ReferenceEquals(source, copy), "DoubleVision should create a second Dusty Tome instance");
 		Equal(source.AncientCard, copy.AncientCard, "copied Dusty Tome AncientCard");
+		Expect(copy.IsWax, "copied Dusty Tome should preserve wax");
 		Expect(!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(copy), "Dusty Tome suppression must end after obtain");
 	}
 

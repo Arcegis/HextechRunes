@@ -272,6 +272,10 @@ internal static partial class HextechPlayerRuneHooks
 	private static void InstallDecisionsDecisionsUpgradeHooks(Harmony harmony)
 	{
 		harmony.Patch(
+			RequireMethod(typeof(DecisionsDecisions), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(DecisionsDecisionsOnPlayPrefix)));
+
+		harmony.Patch(
 			RequireMethod(
 				typeof(CardSelectCmd),
 				nameof(CardSelectCmd.FromHand),

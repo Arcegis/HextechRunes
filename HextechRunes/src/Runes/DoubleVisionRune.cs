@@ -496,6 +496,7 @@ public sealed class DoubleVisionRune : HextechRelicBase
 			}
 
 			RelicModel copy = canonical.ToMutable();
+			CopyWaxState(sourceRelic, copy);
 			if (sourceRelic is DustyTome sourceTome && copy is DustyTome copyTome)
 			{
 				if (sourceTome.AncientCard is not { } ancientCardId)
@@ -841,6 +842,7 @@ public sealed class DoubleVisionRune : HextechRelicBase
 		}
 
 		RelicModel copy = canonical.ToMutable();
+		CopyWaxState(sourceRelic, copy);
 		RelicModel obtained = await RunWithCommandDuplicationSuppressed(
 			() => RelicCmd.Obtain(copy, player));
 		if (LocalContext.IsMe(player))
@@ -925,6 +927,7 @@ public sealed class DoubleVisionRune : HextechRelicBase
 			?? (DustyTome)ModelDb
 				.GetById<RelicModel>(sourceTome.CanonicalInstance?.Id ?? sourceTome.Id)
 				.ToMutable();
+		CopyWaxState(sourceTome, copy);
 		assignAncientCard ??= static (dustyTome, cardId) => dustyTome.AncientCard = cardId;
 		assignAncientCard(copy, ancientCardId);
 		T obtained = await RunWithDustyTomeAfterObtainedSuppressed(
@@ -936,6 +939,11 @@ public sealed class DoubleVisionRune : HextechRelicBase
 		}
 
 		return obtained;
+	}
+
+	internal static void CopyWaxState(RelicModel source, RelicModel copy)
+	{
+		copy.IsWax = source.IsWax;
 	}
 
 	internal static bool ShouldSuppressDustyTomeAfterObtained(DustyTome dustyTome)
