@@ -83,6 +83,12 @@ internal static partial class Program
 			new(nameof(PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled), PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled),
 			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
 			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
+			new(nameof(GoldenRerollOnlyUpgradesSilverAndGold), GoldenRerollOnlyUpgradesSilverAndGold),
+			new(nameof(GoldenRerollUsesExactFivePercentWindow), GoldenRerollUsesExactFivePercentWindow),
+			new(nameof(GoldenRerollSeparatesPlayersAndKeepsConsoleLocal), GoldenRerollSeparatesPlayersAndKeepsConsoleLocal),
+			new(nameof(GoldenRerollDebugForceIsOneShot), GoldenRerollDebugForceIsOneShot),
+			new(nameof(GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused), GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused),
+			new(nameof(GoldenRerollCardThemeFollowsRerolledRuneRarity), GoldenRerollCardThemeFollowsRerolledRuneRarity),
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
 			new(nameof(RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades), RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades),
 			new(nameof(UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption), UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption),
@@ -1331,6 +1337,134 @@ internal static partial class Program
 		SequenceEqual(Enum.GetValues<HextechRarityTier>(), HextechRarityRollResolver.GetUniformRarityOrder([]), "empty enabled fallback order");
 		Expect(HextechRarityRollResolver.HasAllRarities(Enum.GetValues<HextechRarityTier>()), "all-rarity detection");
 		Expect(!HextechRarityRollResolver.HasAllRarities(order), "partial-rarity detection");
+	}
+
+	private static void GoldenRerollOnlyUpgradesSilverAndGold()
+	{
+		Expect(
+			HextechGoldenRerollRules.TryGetUpgradedRarity(
+				HextechRarityTier.Silver,
+				out HextechRarityTier upgradedSilver),
+			"silver should be eligible for a golden reroll");
+		Equal(HextechRarityTier.Gold, upgradedSilver, "silver golden reroll target");
+
+		Expect(
+			HextechGoldenRerollRules.TryGetUpgradedRarity(
+				HextechRarityTier.Gold,
+				out HextechRarityTier upgradedGold),
+			"gold should be eligible for a golden reroll");
+		Equal(HextechRarityTier.Prismatic, upgradedGold, "gold golden reroll target");
+
+		Expect(
+			!HextechGoldenRerollRules.TryGetUpgradedRarity(
+				HextechRarityTier.Prismatic,
+				out HextechRarityTier unchangedPrismatic),
+			"prismatic should not be eligible for a golden reroll");
+		Equal(HextechRarityTier.Prismatic, unchangedPrismatic, "prismatic fallback target");
+	}
+
+	private static void GoldenRerollUsesExactFivePercentWindow()
+	{
+		for (int roll = 0; roll < 100; roll++)
+		{
+			Equal(
+				roll < HextechGoldenRerollRules.ActivationPercent,
+				HextechGoldenRerollRules.ShouldActivateForRoll(
+					HextechRarityTier.Silver,
+					hasUpgradedCandidates: true,
+					roll),
+				$"silver golden reroll roll {roll}");
+		}
+
+		Expect(
+			!HextechGoldenRerollRules.ShouldActivateForRoll(
+				HextechRarityTier.Prismatic,
+				hasUpgradedCandidates: true,
+				percentRoll: 0),
+			"prismatic should not activate even on a winning roll");
+		Expect(
+			!HextechGoldenRerollRules.ShouldActivateForRoll(
+				HextechRarityTier.Gold,
+				hasUpgradedCandidates: false,
+				percentRoll: 0),
+			"gold should not activate when the upgraded pool is unavailable");
+	}
+
+	private static void GoldenRerollSeparatesPlayersAndKeepsConsoleLocal()
+	{
+		string[] firstPlayerSalt = HextechGoldenRerollRules.BuildSaltParts(
+			actIndex: 1,
+			choiceOrdinal: 0,
+			playerKey: "net:100");
+		string[] secondPlayerSalt = HextechGoldenRerollRules.BuildSaltParts(
+			actIndex: 1,
+			choiceOrdinal: 0,
+			playerKey: "net:200");
+
+		Expect(
+			!firstPlayerSalt.SequenceEqual(secondPlayerSalt),
+			"different multiplayer players must receive independent golden reroll rolls");
+		Equal("net:100", firstPlayerSalt[^1], "first player golden reroll salt");
+		Equal("net:200", secondPlayerSalt[^1], "second player golden reroll salt");
+		Expect(
+			!new GoldenRerollConsoleCmd().IsNetworked,
+			"golden reroll test command must only affect the issuing client");
+	}
+
+	private static void GoldenRerollDebugForceIsOneShot()
+	{
+		HextechGoldenRerollDebug.ResetForTests();
+		HextechGoldenRerollDebug.ForceCurrentOrNext(out bool activatedCurrent);
+		Expect(!activatedCurrent, "force without an open selection should target the next eligible selection");
+		Expect(HextechGoldenRerollDebug.IsNextEligibleForced, "next eligible selection should be forced");
+		Expect(HextechGoldenRerollDebug.ConsumeNextEligibleForce(), "first eligible selection should consume the force");
+		Expect(!HextechGoldenRerollDebug.ConsumeNextEligibleForce(), "force should not leak to another player or selection");
+		Expect(!HextechGoldenRerollDebug.IsNextEligibleForced, "consumed force should clear");
+	}
+
+	private static void GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused()
+	{
+		Expect(
+			HextechGoldenRerollVisual.ShaderCode.Contains("uniform float animation_time", StringComparison.Ordinal),
+			"golden reroll shader should receive an explicit animation clock");
+		Expect(
+			HextechGoldenRerollVisual.ShaderCode.Contains("sweep_position", StringComparison.Ordinal),
+			"golden reroll shader should include a visible moving sweep");
+		Expect(
+			HextechGoldenRerollVisual.ShaderCode.Contains("sparkles", StringComparison.Ordinal),
+			"golden reroll shader should include animated noise sparkles");
+		MethodInfo? processOverride = typeof(HextechGoldenRerollVisual).GetMethod(
+			"_Process",
+			BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+		Expect(
+			processOverride == null,
+			"golden reroll animation should not depend on an unreliable dynamic Control _Process callback");
+		Expect(
+			typeof(HextechGoldenRerollVisual).GetMethod(
+				"StartAnimationLoop",
+				BindingFlags.Public | BindingFlags.Instance) != null,
+			"golden reroll animation should expose the ProcessFrame loop started after overlay open");
+	}
+
+	private static void GoldenRerollCardThemeFollowsRerolledRuneRarity()
+	{
+		foreach (HextechRarityTier rarity in Enum.GetValues<HextechRarityTier>())
+		{
+			Type runeType = HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity).First();
+			RelicModel rune = (RelicModel)Activator.CreateInstance(runeType)!;
+			string expected = rarity switch
+			{
+				HextechRarityTier.Silver => "SILVER",
+				HextechRarityTier.Prismatic => "PRISMATIC",
+				_ => "GOLD"
+			};
+			Equal(
+				expected,
+				HextechRuneSelectionScreen.DetermineCardRarityKey(
+					rune,
+					HextechSelectionMetadataMode.PlayerRune),
+				$"{rarity} rerolled card theme");
+		}
 	}
 
 	private static void WeightedIndexBoundarySelection()

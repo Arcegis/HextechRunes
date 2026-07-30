@@ -24,12 +24,24 @@ internal static partial class HextechRuneSelectionCoordinator
 			modifier.RecordSeenPlayerRunes(player, options);
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
 			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
+			HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
+				player,
+				actIndex,
+				choiceOrdinal,
+				options);
 			HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 				options,
 				monsterHexRelic,
-				(relics, slotIndex, _) => RerollSingleOptionAndTrack(modifier, player, relics, slotIndex, seenOptionIds),
+				(relics, slotIndex, _) => RerollSingleOptionAndTrack(
+					modifier,
+					player,
+					relics,
+					slotIndex,
+					seenOptionIds,
+					GetGoldenRerollOverride(goldenReroll)),
 				enemyHexOptions,
-				modifier.PlayerRuneRerollLimit);
+				modifier.PlayerRuneRerollLimit,
+				goldenRerollSession: goldenReroll);
 			RelicModel? selectedRelic = (await screen.RelicsSelected()).FirstOrDefault();
 			return new RuneSelectionResult(selectedRelic, screen.CurrentRelics.ToList(), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes);
 		}
@@ -43,12 +55,25 @@ internal static partial class HextechRuneSelectionCoordinator
 			modifier.RecordSeenPlayerRunes(player, options);
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
 			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
+			HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
+				player,
+				actIndex,
+				choiceOrdinal,
+				options);
 			HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 				options,
 				monsterHexRelic,
-				(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, player, relics, slotIndex, rerollOrdinal, seenOptionIds),
+				(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(
+					modifier,
+					player,
+					relics,
+					slotIndex,
+					rerollOrdinal,
+					seenOptionIds,
+					GetGoldenRerollOverride(goldenReroll)),
 				enemyHexOptions,
-				modifier.PlayerRuneRerollLimit);
+				modifier.PlayerRuneRerollLimit,
+				goldenRerollSession: goldenReroll);
 			RelicModel? selectedRelic;
 			try
 			{
@@ -118,12 +143,25 @@ internal static partial class HextechRuneSelectionCoordinator
 			modifier.RecordSeenPlayerRunes(selection.Player, selection.Options);
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(selection.Options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(selection.Player));
 			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
+			HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
+				selection.Player,
+				actIndex,
+				choiceOrdinal,
+				selection.Options);
 			HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 				selection.Options,
 				monsterHexRelic,
-				(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, selection.Player, relics, slotIndex, rerollOrdinal, seenOptionIds),
+				(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(
+					modifier,
+					selection.Player,
+					relics,
+					slotIndex,
+					rerollOrdinal,
+					seenOptionIds,
+					GetGoldenRerollOverride(goldenReroll)),
 				enemyHexOptions,
 				modifier.PlayerRuneRerollLimit,
+				goldenRerollSession: goldenReroll,
 				cancellationToken: cancellationToken);
 			screenCreated?.Invoke(screen);
 			RelicModel? selectedRelic;
@@ -205,10 +243,18 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null,
 		int playerRuneRerollLimit = 1,
 		string? titleOverride = null,
+		HextechGoldenRerollSession? goldenRerollSession = null,
 		CancellationToken cancellationToken = default)
 	{
 		await WaitForSingletonAsync(static () => NOverlayStack.Instance, cancellationToken: cancellationToken);
-		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(relics, monsterHexRelic, rerollFunc, enemyHexOptions, playerRuneRerollLimit, titleOverride);
+		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(
+			relics,
+			monsterHexRelic,
+			rerollFunc,
+			enemyHexOptions,
+			playerRuneRerollLimit,
+			titleOverride,
+			goldenRerollSession: goldenRerollSession);
 		if (NOverlayStack.Instance == null)
 		{
 			throw new InvalidOperationException("NOverlayStack is not available for rune selection.");

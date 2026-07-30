@@ -35,9 +35,29 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		};
 	}
 
+	internal static string DetermineCardRarityKey(
+		RelicModel relic,
+		HextechSelectionMetadataMode metadataMode)
+	{
+		if (metadataMode == HextechSelectionMetadataMode.Forge
+			&& HextechCatalog.TryGetForgeRarity(relic, out HextechRarityTier forgeRarity))
+		{
+			return GetRarityKey(forgeRarity);
+		}
+
+		return HextechCatalog.TryGetPlayerRuneRarity(relic, out HextechRarityTier runeRarity)
+			? GetRarityKey(runeRarity)
+			: "GOLD";
+	}
+
 	private Color GetAccentColor()
 	{
-		return _rarityKey switch
+		return GetAccentColor(_rarityKey);
+	}
+
+	private static Color GetAccentColor(string rarityKey)
+	{
+		return rarityKey switch
 		{
 			"SILVER" => new Color(0.56f, 0.85f, 0.92f),
 			"PRISMATIC" => new Color(0.94f, 0.43f, 1f),
@@ -47,7 +67,12 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private string? GetCardFramePath()
 	{
-		return _rarityKey switch
+		return GetCardFramePath(_rarityKey);
+	}
+
+	private static string? GetCardFramePath(string rarityKey)
+	{
+		return rarityKey switch
 		{
 			"SILVER" => SilverCardFramePath,
 			"PRISMATIC" => PrismaticCardFramePath,
@@ -58,7 +83,12 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private Texture2D? GetCardFrameTexture()
 	{
-		string? path = GetCardFramePath();
+		return GetCardFrameTexture(_rarityKey);
+	}
+
+	private static Texture2D? GetCardFrameTexture(string rarityKey)
+	{
+		string? path = GetCardFramePath(rarityKey);
 		if (path == null)
 		{
 			return null;

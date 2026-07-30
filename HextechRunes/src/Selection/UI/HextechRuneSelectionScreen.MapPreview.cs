@@ -25,6 +25,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		EnsureMapButtonEnabled();
 		Modulate = Colors.White;
 		Visible = true;
+		foreach (HextechGoldenRerollVisual visual in _goldenRerollVisuals)
+		{
+			visual.StartAnimationLoop();
+		}
 		TryGrabOverlayFocus();
 	}
 

@@ -23,6 +23,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private readonly int _enemyHexRerollLimit;
 	private readonly string? _titleOverride;
 	private readonly HextechSelectionMetadataMode _metadataMode;
+	private readonly HextechGoldenRerollSession? _goldenRerollSession;
 	private List<RelicModel> _relics;
 	private readonly List<MonsterHexKind?> _monsterHexKinds = [];
 	private readonly List<MonsterHexKind?> _monsterHexBeforeRemoval = [];
@@ -30,6 +31,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private readonly string _rarityKey;
 	private readonly List<Button> _holders = new();
 	private readonly List<Button> _rerollButtons = new();
+	private readonly List<HextechGoldenRerollVisual> _goldenRerollVisuals = new();
 	private readonly List<int> _playerRuneRerollCounts = new();
 	private readonly List<int> _rerollHistory = new();
 	private readonly bool _enemyHexControlsEnabled;
@@ -83,7 +85,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions,
 		int playerRuneRerollLimit,
 		string? titleOverride,
-		HextechSelectionMetadataMode metadataMode)
+		HextechSelectionMetadataMode metadataMode,
+		HextechGoldenRerollSession? goldenRerollSession)
 	{
 		_relics = relics.ToList();
 		_rerollFunc = rerollFunc;
@@ -93,6 +96,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_enemyHexRerollLimit = HextechRuneConfiguration.ClampRerollLimit(enemyHexOptions?.RerollLimit ?? HextechRuneConfiguration.GetDefaultMonsterHexRerollLimit());
 		_titleOverride = titleOverride;
 		_metadataMode = metadataMode;
+		_goldenRerollSession = goldenRerollSession;
 		_enemyHexControlsEnabled = enemyHexOptions?.ControlsEnabled == true || enemyHexOptions?.RerollFunc != null;
 		List<MonsterHexKind> initialMonsterHexes = enemyHexOptions?.InitialHexes?.ToList() ?? [];
 		if (initialMonsterHexes.Count == 0 && enemyHexOptions?.InitialHex is { } initialHex)
@@ -117,6 +121,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		FocusBehaviorRecursive = FocusBehaviorRecursiveEnum.Enabled;
 		Visible = true;
 		BuildUi();
+		if (_goldenRerollSession?.CanActivate == true)
+		{
+			HextechGoldenRerollDebug.RegisterScreen(this);
+		}
 	}
 
 	public static HextechRuneSelectionScreen Create(
@@ -126,14 +134,24 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null,
 		int playerRuneRerollLimit = 1,
 		string? titleOverride = null,
-		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune)
+		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune,
+		HextechGoldenRerollSession? goldenRerollSession = null)
 	{
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count}");
-		return new HextechRuneSelectionScreen(relics, monsterHexRelic, rerollFunc, enemyHexOptions, playerRuneRerollLimit, titleOverride, metadataMode);
+		return new HextechRuneSelectionScreen(
+			relics,
+			monsterHexRelic,
+			rerollFunc,
+			enemyHexOptions,
+			playerRuneRerollLimit,
+			titleOverride,
+			metadataMode,
+			goldenRerollSession);
 	}
 
 	public override void _ExitTree()
 	{
+		HextechGoldenRerollDebug.UnregisterScreen(this);
 		EndMapPreview(restoreOverlay: false);
 		RestoreMapButtonState();
 		_mapPreviewHint?.QueueFree();

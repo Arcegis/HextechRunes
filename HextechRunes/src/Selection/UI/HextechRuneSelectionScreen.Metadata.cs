@@ -8,23 +8,31 @@ internal sealed partial class HextechRuneSelectionScreen
 {
 	private Control CreateRarityPill()
 	{
-		return CreateTextPill(new LocString(LocTable, "HEXTECH_SERIES." + _rarityKey).GetRawText());
+		return CreateRarityPill(_rarityKey);
 	}
 
-	private Control CreatePlayerPoolPill(RelicModel relic)
+	private static Control CreateRarityPill(string rarityKey)
+	{
+		return CreateTextPill(
+			new LocString(LocTable, "HEXTECH_SERIES." + rarityKey).GetRawText(),
+			GetAccentColor(rarityKey));
+	}
+
+	private static Control CreatePlayerPoolPill(RelicModel relic, Color accent)
 	{
 		string poolKey = HextechCatalog.GetPlayerRunePoolKey(relic);
-		return CreateTextPill(new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText());
+		return CreateTextPill(new LocString(LocTable, "HEXTECH_POOL." + poolKey).GetRawText(), accent);
 	}
 
-	private Control CreatePlayerTagPill(RelicModel relic)
+	private static Control CreatePlayerTagPill(RelicModel relic, Color accent)
 	{
 		string tagKey = HextechCatalog.GetPlayerRuneTagKey(relic);
-		return CreateTextPill(new LocString(LocTable, "HEXTECH_TAG." + tagKey).GetRawText());
+		return CreateTextPill(new LocString(LocTable, "HEXTECH_TAG." + tagKey).GetRawText(), accent);
 	}
 
-	private Control CreatePlayerMetadataPills(RelicModel relic)
+	private Control CreatePlayerMetadataPills(RelicModel relic, string rarityKey)
 	{
+		Color accent = GetAccentColor(rarityKey);
 		Control wrapper = new()
 		{
 			MouseFilter = MouseFilterEnum.Ignore,
@@ -50,13 +58,13 @@ internal sealed partial class HextechRuneSelectionScreen
 		row.AddThemeConstantOverride("separation", 6);
 		if (_metadataMode == HextechSelectionMetadataMode.Forge)
 		{
-			row.AddChild(CreateTextPill(new LocString(LocTable, "HEXTECH_POOL.FORGE").GetRawText()));
-			row.AddChild(CreateRarityPill());
+			row.AddChild(CreateTextPill(new LocString(LocTable, "HEXTECH_POOL.FORGE").GetRawText(), accent));
+			row.AddChild(CreateRarityPill(rarityKey));
 		}
 		else
 		{
-			row.AddChild(CreatePlayerPoolPill(relic));
-			row.AddChild(CreatePlayerTagPill(relic));
+			row.AddChild(CreatePlayerPoolPill(relic, accent));
+			row.AddChild(CreatePlayerTagPill(relic, accent));
 		}
 		pillCenter.AddChild(row);
 		wrapper.AddChild(pillCenter);
@@ -65,11 +73,16 @@ internal sealed partial class HextechRuneSelectionScreen
 
 	private Control CreateTextPill(string text)
 	{
+		return CreateTextPill(text, GetAccentColor());
+	}
+
+	private static Control CreateTextPill(string text, Color accent)
+	{
 		PanelContainer pill = new()
 		{
 			MouseFilter = MouseFilterEnum.Ignore
 		};
-		pill.AddThemeStyleboxOverride("panel", CreatePillStyle(GetAccentColor()));
+		pill.AddThemeStyleboxOverride("panel", CreatePillStyle(accent));
 
 		MegaLabel label = new()
 		{

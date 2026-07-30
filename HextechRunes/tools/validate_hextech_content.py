@@ -404,7 +404,7 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
     # HextechAssets/HextechAssetHooks 里显式书写的 res:// 路径逐一核对存在性(卡牌立绘/能力图标/特效贴图)。
     assets_root = REPO_ROOT / "assets"
     referenced = set()
-    for name in ("HextechAssets.cs", "HextechAssetHooks.cs"):
+    for name in ("HextechAssets.cs", "HextechAssetHooks.cs", "HextechRuneSelectionScreen.Metrics.cs"):
         referenced.update(re.findall(r'res://HextechRunes/(images/[^"]+\.(?:png|jpg))', read(source_file_named(name))))
     missing_refs = sorted(ref for ref in referenced if not (assets_root / ref).exists())
     if missing_refs:

@@ -138,6 +138,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		_holders.Clear();
 		_rerollButtons.Clear();
+		_goldenRerollVisuals.Clear();
 		while (_playerRuneRerollCounts.Count < _relics.Count)
 		{
 			_playerRuneRerollCounts.Add(0);

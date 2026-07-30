@@ -32,6 +32,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			rerollButton.Disabled = true;
 		}
+		foreach (HextechGoldenRerollVisual visual in _goldenRerollVisuals)
+		{
+			visual.SetVisualState(active: false, hovered: false, disabled: true);
+		}
 
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
 		PlayRuneSelectSfx(relic);
@@ -68,6 +72,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
+		bool goldenRerollWasActive = _goldenRerollSession?.IsActive == true;
 		IReadOnlyList<RelicModel> rerolled = _rerollFunc(_relics, slotIndex, _rerollHistory.Count);
 		if (rerolled.Count != _relics.Count)
 		{
@@ -86,10 +91,38 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_relics = rerolled.ToList();
 		_playerRuneRerollCounts[slotIndex]++;
 		_rerollHistory.Add(slotIndex);
+		if (goldenRerollWasActive)
+		{
+			_goldenRerollSession!.Consume();
+			HextechLog.Info(
+				$"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: golden reroll consumed " +
+				$"slot={slotIndex} upgraded={_goldenRerollSession.UpgradedRarity}");
+		}
 		// RebuildCards 会在当前输入事件内销毁并重建按钮。重新开启确认保护，避免鼠标、
 		// 手柄确认键或键盘重复输入落到新生成的卡片上，表现为“刷新后直接跳过”。
 		RestartSelectionConfirmGuard();
 		RebuildCards();
+	}
+
+	internal bool ActivateGoldenRerollForDebug()
+	{
+		if (_choiceLocked || _goldenRerollSession?.ActivateForDebug() != true)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < _goldenRerollVisuals.Count; i++)
+		{
+			bool disabled = i >= _rerollButtons.Count || _rerollButtons[i].Disabled;
+			_goldenRerollVisuals[i].StartAnimationLoop();
+			_goldenRerollVisuals[i].SetVisualState(
+				active: true,
+				hovered: false,
+				disabled);
+		}
+
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen: golden reroll forced by console");
+		return true;
 	}
 
 	private void OnEnemyHexRerollPressed(int slotIndex)
