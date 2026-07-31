@@ -20,6 +20,7 @@ using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 using System.Text.Json;
@@ -104,6 +105,10 @@ internal static partial class Program
 			new(nameof(NewCardUpgradeRunesUseExpectedTriggerRules), NewCardUpgradeRunesUseExpectedTriggerRules),
 			new(nameof(PlayerSustainRunesUseExpectedMaxHpRules), PlayerSustainRunesUseExpectedMaxHpRules),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
+			new(nameof(FormAutoPlayBatchDispatchesOneCardPlayEvent), FormAutoPlayBatchDispatchesOneCardPlayEvent),
+			new(nameof(FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay), FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay),
+			new(nameof(FormAutoPlayBatchUsesOnePreparedFinalEffect), FormAutoPlayBatchUsesOnePreparedFinalEffect),
+			new(nameof(FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments), FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments),
 			new(nameof(DrawYourSwordUsesEnemyTurnStartOrbCleanup), DrawYourSwordUsesEnemyTurnStartOrbCleanup),
 			new(nameof(EnemyOmniDragonSoulUsesPlayerTurnStart), EnemyOmniDragonSoulUsesPlayerTurnStart),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
@@ -3207,6 +3212,20 @@ internal static partial class Program
 
 	private static void NewRuneHookTargetsMatchSupportedGameApis()
 	{
+#if STS2_110_OR_NEWER
+		Expect(typeof(Outbreak).GetMethod(
+			"OnPlay",
+			BindingFlags.Instance | BindingFlags.NonPublic,
+			[
+				typeof(PlayerChoiceContext),
+				typeof(CardPlay)
+			]) != null,
+			"0.110 outbreak card response guard target");
+#else
+		Expect(typeof(OutbreakPower).GetMethods(BindingFlags.Instance | BindingFlags.Public)
+			.Any(method => method.Name == "AfterPowerAmountChanged"),
+			"legacy outbreak power response guard target");
+#endif
 		Expect(typeof(PactsEnd).GetMethod("get_CanDealDamage", BindingFlags.Instance | BindingFlags.NonPublic) != null, "pacts end private condition hook target");
 		Expect(typeof(CorrosiveWavePower).GetMethod(nameof(CorrosiveWavePower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "corrosive wave turn-end hook target");
 		Expect(typeof(PoisonPower).GetMethod(nameof(PoisonPower.CalculateTotalDamageNextTurn), BindingFlags.Instance | BindingFlags.Public) != null, "poison preview hook target");
@@ -3225,6 +3244,171 @@ internal static partial class Program
 				typeof(AbstractModel)
 			]) != null,
 			"decisions hand-selection hook target");
+		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
+			nameof(MegaCrit.Sts2.Core.Hooks.Hook.BeforeCardPlayed),
+			BindingFlags.Static | BindingFlags.Public,
+			[
+				typeof(ICombatState),
+				typeof(CardPlay)
+			]) != null,
+			"form batch before-card-played hook target");
+		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
+			nameof(MegaCrit.Sts2.Core.Hooks.Hook.AfterCardPlayed),
+			BindingFlags.Static | BindingFlags.Public,
+			[
+				typeof(ICombatState),
+				typeof(PlayerChoiceContext),
+				typeof(CardPlay)
+			]) != null,
+			"form batch after-card-played hook target");
+		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
+			nameof(MegaCrit.Sts2.Core.Hooks.Hook.AfterCardChangedPiles),
+			BindingFlags.Static | BindingFlags.Public,
+			[
+				typeof(IRunState),
+				typeof(ICombatState),
+				typeof(CardModel),
+				typeof(PileType),
+				typeof(AbstractModel)
+			]) != null,
+			"form batch changed-piles hook target");
+		Expect(typeof(CardModel).GetMethod(
+			"PlayPowerCardFlyVfx",
+			BindingFlags.Instance | BindingFlags.NonPublic) != null,
+			"form batch power-card VFX hook target");
+		Expect(typeof(PileTypeExtensions).GetMethod(
+			nameof(PileTypeExtensions.GetTargetPosition),
+			BindingFlags.Static | BindingFlags.Public,
+			[
+				typeof(PileType),
+				typeof(MegaCrit.Sts2.Core.Nodes.Cards.NCard)
+			]) != null,
+			"form batch entry target-position hook target");
+		Expect(typeof(CardModel).GetMethod(
+			"GeneratePlayCount",
+			BindingFlags.Instance | BindingFlags.NonPublic,
+			[
+				typeof(ICombatState),
+				typeof(Creature)
+			]) != null,
+			"form batch play-count generation target");
+		foreach (Type formType in new[] { typeof(DemonForm), typeof(EchoForm), typeof(ReaperForm), typeof(SerpentForm), typeof(VoidForm) })
+		{
+			Expect(formType.GetMethod(
+				"OnPlay",
+				BindingFlags.Instance | BindingFlags.NonPublic,
+				[
+					typeof(PlayerChoiceContext),
+					typeof(CardPlay)
+				]) != null,
+				$"combined {formType.Name} play hook target");
+		}
+	}
+
+	private static void FormAutoPlayBatchDispatchesOneCardPlayEvent()
+	{
+		DemonForm firstCard = new();
+		DemonForm secondCard = new();
+		DemonForm outsideCard = new();
+		HextechFormAutoPlayBatchState batch = new([firstCard, secondCard]);
+		CardPlay firstPlay = CreateCardPlay(firstCard, playIndex: 0, playCount: 2);
+		CardPlay firstReplay = CreateCardPlay(firstCard, playIndex: 1, playCount: 2);
+		CardPlay secondPlay = CreateCardPlay(secondCard);
+		CardPlay outsidePlay = CreateCardPlay(outsideCard);
+
+		Expect(batch.ShouldDispatchCardPlayedHook(firstPlay), "form batch should dispatch BeforeCardPlayed for the first real play");
+		Expect(batch.ShouldDispatchCardPlayedHook(firstPlay), "form batch should dispatch AfterCardPlayed for the same first play");
+		Expect(!batch.ShouldDispatchCardPlayedHook(firstReplay), "form batch should suppress replay hooks after its first event");
+		Expect(!batch.ShouldDispatchCardPlayedHook(secondPlay), "form batch should suppress hooks for later form cards");
+		Expect(batch.ShouldDispatchCardPlayedHook(outsidePlay), "form batch should not suppress nested non-batch cards");
+
+		using (batch.BeginPowerCardFlyVfxPreview([firstCard, secondCard]))
+		{
+			Expect(batch.ShouldPlayPowerCardFlyVfx(firstCard), "form batch should show the first card in its group VFX");
+			Expect(batch.ShouldPlayPowerCardFlyVfx(secondCard), "form batch should show later cards in its group VFX");
+		}
+		Expect(!batch.ShouldPlayPowerCardFlyVfx(firstCard), "form batch should suppress the first card's built-in duplicate VFX");
+		Expect(!batch.ShouldPlayPowerCardFlyVfx(secondCard), "form batch should suppress later cards' built-in duplicate VFX");
+		Expect(batch.ShouldPlayPowerCardFlyVfx(outsideCard), "form batch should not suppress VFX for non-batch cards");
+		Expect(!batch.ShouldDispatchCardChangedPilesHook(firstCard, PileType.Play, PileType.Play), "form batch should suppress its synthetic Play-to-Play pile event");
+		Expect(batch.ShouldDispatchCardChangedPilesHook(firstCard, PileType.Hand, PileType.Play), "form batch should keep the real move into the Play pile");
+		Expect(batch.ShouldDispatchCardChangedPilesHook(outsideCard, PileType.Play, PileType.Play), "form batch should not suppress pile hooks for non-batch cards");
+	}
+
+	private static void FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay()
+	{
+		DemonForm firstCard = new();
+		DemonForm middleCard = new();
+		DemonForm lastCard = new();
+		DemonForm outsideCard = new();
+		HextechFormAutoPlayBatchState batch = new([firstCard, middleCard, lastCard]);
+
+		Expect(batch.TryGetHorizontalOffset(firstCard, out float firstOffset), "first form should have an entry offset");
+		Expect(batch.TryGetHorizontalOffset(middleCard, out float middleOffset), "middle form should have an entry offset");
+		Expect(batch.TryGetHorizontalOffset(lastCard, out float lastOffset), "last form should have an entry offset");
+		Equal(-190f, firstOffset, "first form should enter left of center");
+		Equal(0f, middleOffset, "middle form should enter at center");
+		Equal(190f, lastOffset, "last form should enter right of center");
+		Expect(!batch.TryGetHorizontalOffset(outsideCard, out _), "non-batch cards should keep the vanilla play target");
+	}
+
+	private static void FormAutoPlayBatchUsesOnePreparedFinalEffect()
+	{
+		DemonForm primary = new();
+		DemonForm secondary = new();
+		HextechFormAutoPlayBatchState batch = new([primary, secondary]);
+		HextechFormCardResult result = new(null!, PileType.None, CardPilePosition.Bottom);
+
+		batch.PrepareCombinedResolution(primary, 8m, 1, result);
+		Expect(batch.ShouldUsePreparedPlayCount(primary), "combined primary should bypass a second play-count query");
+		Equal(1, batch.PreparedPlayCount, "combined primary should execute its summed effect once");
+		Expect(!batch.ShouldUsePreparedPlayCount(secondary), "combined secondary should not intercept unrelated play-count queries");
+		Expect(batch.TryGetPreparedResult(primary, out HextechFormCardResult preparedResult), "combined primary should reuse its prepared result");
+		Equal(PileType.None, preparedResult.PileType, "combined primary should preserve its prepared result pile");
+		Expect(batch.TryGetCombinedAmount(primary, out decimal amount), "combined primary should expose one final effect amount");
+		Equal(8m, amount, "combined final effect should use the summed form amount");
+		Expect(!batch.TryGetCombinedAmount(secondary, out _), "combined effect should only replace the representative card OnPlay");
+
+		batch.FinishCombinedResolution();
+		Expect(!batch.ShouldUsePreparedPlayCount(primary), "combined state should clear after the representative finishes");
+		Expect(!batch.TryGetCombinedAmount(primary, out _), "combined amount should not leak past the batch");
+	}
+
+	private static void FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments()
+	{
+		Expect(HextechFormAutoPlayHooks.IsCombinedEffectSafeEnchantment(null), "unenchanted forms should combine");
+		Expect(
+			HextechFormAutoPlayHooks.IsCombinedEffectSafeEnchantment(new MegaCrit.Sts2.Core.Models.Enchantments.Clone()),
+			"forms enchanted only with Clone should combine");
+		Expect(
+			!HextechFormAutoPlayHooks.IsCombinedEffectSafeEnchantment(new MegaCrit.Sts2.Core.Models.Enchantments.Sharp()),
+			"forms with effect-changing enchantments should keep the per-card path");
+		Expect(
+			!HextechFormAutoPlayHooks.IsCombinedEffectSafeEnchantment(new UniversalSpiral()),
+			"forms with replay enchantments should keep the per-card path");
+	}
+
+	private static CardPlay CreateCardPlay(CardModel card, int playIndex = 0, int playCount = 1)
+	{
+		return new CardPlay
+		{
+			Card = card,
+#if STS2_109_OR_NEWER
+			Player = null!,
+#endif
+			Target = null,
+			ResultPile = PileType.Discard,
+			Resources = new ResourceInfo
+			{
+				EnergySpent = 0,
+				EnergyValue = 0,
+				StarsSpent = 0,
+				StarValue = 0
+			},
+			IsAutoPlay = true,
+			PlayIndex = playIndex,
+			PlayCount = playCount
+		};
 	}
 
 	private static void DrawYourSwordUsesEnemyTurnStartOrbCleanup()

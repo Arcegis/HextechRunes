@@ -52,7 +52,7 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("relic collection", () => HextechCollectionHooks.Install(harmony));
 			TryInstallOptionalHookGroup("shop random forge", () => HextechShopForgeHooks.Install(harmony));
 			TryInstallOptionalHookGroup("forge stacking", () => HextechForgeStackingHooks.Install(harmony));
-			TryInstallOptionalHookGroup("form auto-play end-turn suppression", () => HextechFormAutoPlayHooks.Install(harmony));
+			TryInstallOptionalHookGroup("form auto-play batching", () => HextechFormAutoPlayHooks.Install(harmony));
 			TryInstallOptionalHookGroup("enemy tezcataras mercy wax relics", () => HextechEnemyTezcatarasMercyHooks.Install(harmony));
 			TryInstallOptionalHookGroup("enemy cutting-edge alchemist potion odds", () => HextechEnemyCuttingEdgeAlchemistHooks.Install(harmony));
 			TryInstallOptionalHookGroup("enemy hex top bar hover", () => HextechEnemyUi.Install(harmony));
