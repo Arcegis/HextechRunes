@@ -496,7 +496,7 @@
   "MYSTERY_RUNE.description": "戦闘開始時に、[blue]2[/blue] [gold]メイヘム[/gold] および [blue]2[/blue] [gold]Entropy[/gold]を獲得します。",
   "MYSTERY_RUNE.flavor": "疑問符には答えはなく、次の混乱の爆発だけが存在します。",
   "STARTUP_ROUTINE_RUNE.title": "起動ルーチン",
-  "STARTUP_ROUTINE_RUNE.description": "戦闘開始時に、[blue]15[/blue] ブロックを獲得します。",
+  "STARTUP_ROUTINE_RUNE.description": "戦闘開始時に、[blue]16[/blue] ブロックを獲得します。",
   "STARTUP_ROUTINE_RUNE.flavor": "プロセスが完了するまで、傷はドアの前で待つことができます。",
   "COLLECTOR_RUNE.title": "コレクター",
   "COLLECTOR_RUNE.description": "[blue]10%[/blue] の追加ダメージを獲得します。敵が死亡するたびに、[blue]10[/blue] カウントを獲得します。戦闘に勝利すると、カウントに等しい追加のゴールドを獲得します。",

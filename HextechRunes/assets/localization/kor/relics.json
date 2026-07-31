@@ -496,7 +496,7 @@
   "MYSTERY_RUNE.description": "매 전투 시작 시, [gold]대혼란[/gold]을 [blue]2[/blue], [gold]엔트로피[/gold]를 [blue]2[/blue] 얻습니다.",
   "MYSTERY_RUNE.flavor": "물음표에는 답이 없고, 오직 혼돈의 다음 폭발만이 있을 뿐입니다.",
   "STARTUP_ROUTINE_RUNE.title": "시작 루틴",
-  "STARTUP_ROUTINE_RUNE.description": "매 전투 시작 시, 방어도를 [blue]15[/blue] 얻습니다.",
+  "STARTUP_ROUTINE_RUNE.description": "매 전투 시작 시, 방어도를 [blue]16[/blue] 얻습니다.",
   "STARTUP_ROUTINE_RUNE.flavor": "프로세스가 완료될 때까지 상처는 문 밖에서 기다려야 합니다.",
   "COLLECTOR_RUNE.title": "징수의 총",
   "COLLECTOR_RUNE.description": "주는 피해가 [blue]10%[/blue] 증가합니다. 적이 죽을 때마다 카운트를 [blue]10[/blue] 얻습니다. 전투 승리 후 카운트만큼 추가 골드를 얻습니다.",

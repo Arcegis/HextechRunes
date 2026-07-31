@@ -496,7 +496,7 @@
   "MYSTERY_RUNE.description": "ตอนเริ่มต้นการต่อสู้ ได้รับ [blue]2[/blue] [gold]ความโกลาหล[/gold] และ [blue]2[/blue] [gold]Entropy[/gold]",
   "MYSTERY_RUNE.flavor": "เครื่องหมายคำถามไม่มีคำตอบ มีเพียงความอลวนระลอกถัดไป",
   "STARTUP_ROUTINE_RUNE.title": "ขั้นตอนสตาร์ทอัพ",
-  "STARTUP_ROUTINE_RUNE.description": "ตอนเริ่มต้นการต่อสู้ ได้รับ [blue]15[/blue] บล็อก",
+  "STARTUP_ROUTINE_RUNE.description": "ตอนเริ่มต้นการต่อสู้ ได้รับ [blue]16[/blue] บล็อก",
   "STARTUP_ROUTINE_RUNE.flavor": "จนกว่ากระบวนการจะเสร็จ บาดแผลก็รออยู่หน้าประตูได้",
   "COLLECTOR_RUNE.title": "นักสะสม",
   "COLLECTOR_RUNE.description": "ได้รับความเสียหายเพิ่มขึ้น [blue]10%[/blue] ทุกครั้งที่ศัตรูตาย ได้รับแต้มสะสม [blue]10[/blue] หลังชนะการต่อสู้ ได้รับทองพิเศษเท่ากับแต้มสะสม",

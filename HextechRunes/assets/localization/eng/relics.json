@@ -496,7 +496,7 @@
   "MYSTERY_RUNE.description": "At the start of combat, gain [blue]2[/blue] [gold]Mayhem[/gold] and [blue]2[/blue] [gold]Entropy[/gold].",
   "MYSTERY_RUNE.flavor": "The question mark has no answer, only the next burst of chaos.",
   "STARTUP_ROUTINE_RUNE.title": "Startup Routine",
-  "STARTUP_ROUTINE_RUNE.description": "At the start of combat, gain [blue]15[/blue] Block.",
+  "STARTUP_ROUTINE_RUNE.description": "At the start of combat, gain [blue]16[/blue] Block.",
   "STARTUP_ROUTINE_RUNE.flavor": "Until the process finishes, wounds can wait at the door.",
   "COLLECTOR_RUNE.title": "Collector",
   "COLLECTOR_RUNE.description": "Gain [blue]10%[/blue] more damage. Whenever an enemy dies, gain [blue]10[/blue] count. After winning combat, gain extra Gold equal to the count.",

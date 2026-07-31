@@ -496,7 +496,7 @@
   "MYSTERY_RUNE.description": "No início do combate, ganhe [blue]2[/blue] [gold]Caos[/gold] e [blue]2[/blue] [gold]Entropia[/gold].",
   "MYSTERY_RUNE.flavor": "O ponto de interrogação não traz respostas, apenas a próxima explosão de caos.",
   "STARTUP_ROUTINE_RUNE.title": "Rotina de Inicialização",
-  "STARTUP_ROUTINE_RUNE.description": "No início do combate, ganhe [blue]15[/blue] de Bloqueio.",
+  "STARTUP_ROUTINE_RUNE.description": "No início do combate, ganhe [blue]16[/blue] de Bloqueio.",
   "STARTUP_ROUTINE_RUNE.flavor": "Até que o processo termine, as feridas podem esperar na porta.",
   "COLLECTOR_RUNE.title": "Coletor",
   "COLLECTOR_RUNE.description": "Ganhe [blue]10%[/blue] a mais de dano. Sempre que um inimigo morrer, ganhe [blue]10[/blue] de contagem. Após vencer um combate, ganhe Ouro extra igual à contagem.",

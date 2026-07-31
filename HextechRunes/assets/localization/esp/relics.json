@@ -496,7 +496,7 @@
   "MYSTERY_RUNE.description": "Al comienzo del combate, gana [blue]2[/blue] [gold]Mayhem[/gold] y [blue]2[/blue] [gold]Entropy[/gold].",
   "MYSTERY_RUNE.flavor": "El signo de interrogación no tiene respuesta, sólo el próximo estallido de caos.",
   "STARTUP_ROUTINE_RUNE.title": "Rutina de inicio",
-  "STARTUP_ROUTINE_RUNE.description": "Al comienzo del combate, gana [blue]15[/blue] Bloque.",
+  "STARTUP_ROUTINE_RUNE.description": "Al comienzo del combate, gana [blue]16[/blue] Bloque.",
   "STARTUP_ROUTINE_RUNE.flavor": "Hasta que finalice el proceso, las heridas pueden esperar en la puerta.",
   "COLLECTOR_RUNE.title": "Coleccionista",
   "COLLECTOR_RUNE.description": "Gana [blue]10%[/blue] más daño. Cada vez que un enemigo muere, obtienes [blue]10[/blue] conteo. Después de ganar el combate, ganas Oro adicional igual a la cuenta.",

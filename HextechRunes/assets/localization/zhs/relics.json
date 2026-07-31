@@ -496,7 +496,7 @@
   "MYSTERY_RUNE.description": "战斗开始时，获得[blue]2[/blue]层[gold]乱战[/gold]和[blue]2[/blue]层[gold]熵[/gold]。",
   "MYSTERY_RUNE.flavor": "问号没有答案，只有下一次混乱。",
   "STARTUP_ROUTINE_RUNE.title": "启动流程",
-  "STARTUP_ROUTINE_RUNE.description": "战斗开始时，获得[blue]15[/blue]点格挡。",
+  "STARTUP_ROUTINE_RUNE.description": "战斗开始时，获得[blue]16[/blue]点格挡。",
   "STARTUP_ROUTINE_RUNE.flavor": "流程走完之前，伤口最好先在门外排队。",
   "COLLECTOR_RUNE.title": "收集者",
   "COLLECTOR_RUNE.description": "获得[blue]10%[/blue]伤害加成。每有[blue]1[/blue]个敌人死亡就增加[blue]10[/blue]层计数。战斗胜利后，额外获得等同于计数的金币。",
