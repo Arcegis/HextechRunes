@@ -109,12 +109,24 @@ internal static partial class HextechCombatHooks
 		harmony.Patch(
 			RequireMethod(typeof(EntropyPower), nameof(EntropyPower.AfterPlayerTurnStart), BindingFlags.Public | BindingFlags.Instance, typeof(PlayerChoiceContext), typeof(Player)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(EntropyAfterPlayerTurnStartPrefix)));
+#if STS2_110_OR_NEWER
+		harmony.Patch(
+			RequireMethod(
+				typeof(Outbreak),
+				"OnPlay",
+				BindingFlags.Instance | BindingFlags.NonPublic,
+				typeof(PlayerChoiceContext),
+				typeof(CardPlay)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OutbreakOnPlayPrefix)),
+			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(OutbreakOnPlayPostfix)));
+#else
 		TryPatchAfterPowerAmountChanged(
 			harmony,
 			typeof(OutbreakPower),
 			nameof(OutbreakPower),
 			nameof(OutbreakPowerAfterPowerAmountChangedPrefix),
 			nameof(OutbreakPowerAfterPowerAmountChangedPostfix));
+#endif
 		TryPatchAfterPowerAmountChanged(
 			harmony,
 			typeof(SleightOfFleshPower),

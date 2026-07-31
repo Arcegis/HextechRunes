@@ -40,6 +40,25 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
+#if STS2_110_OR_NEWER
+	// 0.110.0 将疫情从持续监听中毒施加的 OutbreakPower 重做为技能牌:
+	// 整个 OnPlay 内先施加中毒再主动触发。守卫覆盖这段完整响应链,维持即死与补偿的安全边界。
+	private static void OutbreakOnPlayPrefix(out bool __state)
+	{
+		__state = true;
+		OutbreakPowerPoisonResponseGuard.Enter();
+	}
+
+	private static void OutbreakOnPlayPostfix(bool __state, ref Task __result)
+	{
+		if (__state)
+		{
+			__result = OutbreakPowerPoisonResponseGuard.WrapEnteredTask(
+				__result,
+				FlushPendingInstantDeathDoomKillsIfSafe);
+		}
+	}
+#else
 	private static void OutbreakPowerAfterPowerAmountChangedPrefix(OutbreakPower __instance, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource, out bool __state)
 	{
 		__state = amount > 0m
@@ -60,6 +79,7 @@ internal static partial class HextechCombatHooks
 				FlushPendingInstantDeathDoomKillsIfSafe);
 		}
 	}
+#endif
 
 	private static bool SleightOfFleshPowerAfterPowerAmountChangedPrefix(SleightOfFleshPower __instance, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource, ref Task __result, out bool __state)
 	{
