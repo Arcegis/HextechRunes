@@ -105,6 +105,7 @@ internal static partial class Program
 			new(nameof(NewCardUpgradeRunesUseExpectedTriggerRules), NewCardUpgradeRunesUseExpectedTriggerRules),
 			new(nameof(PlayerSustainRunesUseExpectedMaxHpRules), PlayerSustainRunesUseExpectedMaxHpRules),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
+			new(nameof(FormVfxSafetySkipsMissingHolder), FormVfxSafetySkipsMissingHolder),
 			new(nameof(FormAutoPlayBatchDispatchesOneCardPlayEvent), FormAutoPlayBatchDispatchesOneCardPlayEvent),
 			new(nameof(FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay), FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay),
 			new(nameof(FormAutoPlayBatchUsesOnePreparedFinalEffect), FormAutoPlayBatchUsesOnePreparedFinalEffect),
@@ -3221,6 +3222,15 @@ internal static partial class Program
 				typeof(CardPlay)
 			]) != null,
 			"0.110 outbreak card response guard target");
+		Expect(
+			HextechFormVfxSafetyHooks.ResolveAddFormVfxTarget().GetParameters()
+				.Select(static parameter => parameter.ParameterType)
+				.SequenceEqual([typeof(MegaCrit.Sts2.Core.Nodes.Vfx.Forms.NFormVfx)]),
+			"0.110 form VFX add safety target");
+		Equal(
+			0,
+			HextechFormVfxSafetyHooks.ResolveRemoveFormVfxTarget().GetParameters().Length,
+			"0.110 form VFX removal safety target arity");
 #else
 		Expect(typeof(OutbreakPower).GetMethods(BindingFlags.Instance | BindingFlags.Public)
 			.Any(method => method.Name == "AfterPowerAmountChanged"),
@@ -3303,6 +3313,16 @@ internal static partial class Program
 				]) != null,
 				$"combined {formType.Name} play hook target");
 		}
+	}
+
+	private static void FormVfxSafetySkipsMissingHolder()
+	{
+		Expect(
+			!HextechFormVfxSafetyHooks.ShouldRunOriginal(hasFormVfxHolder: false),
+			"form VFX should be skipped when a custom character has no holder");
+		Expect(
+			HextechFormVfxSafetyHooks.ShouldRunOriginal(hasFormVfxHolder: true),
+			"form VFX should retain vanilla behavior when the holder exists");
 	}
 
 	private static void FormAutoPlayBatchDispatchesOneCardPlayEvent()
