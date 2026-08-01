@@ -499,7 +499,7 @@
   "STARTUP_ROUTINE_RUNE.description": "戦闘開始時に、[blue]16[/blue] ブロックを獲得します。",
   "STARTUP_ROUTINE_RUNE.flavor": "プロセスが完了するまで、傷はドアの前で待つことができます。",
   "COLLECTOR_RUNE.title": "コレクター",
-  "COLLECTOR_RUNE.description": "[blue]10%[/blue] の追加ダメージを獲得します。敵が死亡するたびに、[blue]10[/blue] カウントを獲得します。戦闘に勝利すると、カウントに等しい追加のゴールドを獲得します。",
+  "COLLECTOR_RUNE.description": "あなたが与えるダメージは、最大HPが[blue]15%[/blue]未満のモンスターを処刑します。敵を処刑するたび、カウントが[blue]20[/blue]増加します。戦闘勝利後、カウントに等しい追加のゴールドを獲得します。",
   "COLLECTOR_RUNE.flavor": "勝利をカウントする人もいます。レシートを数えるものもある。",
   "LIFE_FLOW_RUNE.title": "ライフフロー",
   "LIFE_FLOW_RUNE.description": "[blue]1[/blue] カードがなくなるたびに、最大 HP の [blue]5%[/blue]を回復します。各ターン最大 [blue]3[/blue] 回トリガーします。",

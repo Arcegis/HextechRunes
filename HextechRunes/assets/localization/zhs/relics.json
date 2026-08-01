@@ -499,7 +499,7 @@
   "STARTUP_ROUTINE_RUNE.description": "战斗开始时，获得[blue]16[/blue]点格挡。",
   "STARTUP_ROUTINE_RUNE.flavor": "流程走完之前，伤口最好先在门外排队。",
   "COLLECTOR_RUNE.title": "收集者",
-  "COLLECTOR_RUNE.description": "获得[blue]10%[/blue]伤害加成。每有[blue]1[/blue]个敌人死亡就增加[blue]10[/blue]层计数。战斗胜利后，额外获得等同于计数的金币。",
+  "COLLECTOR_RUNE.description": "你造成的伤害会处决生命值低于[blue]15%[/blue]最大生命值的怪物。处决敌人时增加[blue]20[/blue]层计数，战斗胜利后，额外获得等同于计数的金币。",
   "COLLECTOR_RUNE.flavor": "有人数战果，有人数账目。",
   "LIFE_FLOW_RUNE.title": "生命回流",
   "LIFE_FLOW_RUNE.description": "每当有[blue]1[/blue]张牌被消耗时，回复最大生命值的[blue]5%[/blue]。每回合最多触发[blue]3[/blue]次。",

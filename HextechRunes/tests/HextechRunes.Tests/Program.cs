@@ -104,6 +104,7 @@ internal static partial class Program
 			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
 			new(nameof(NewCardUpgradeRunesUseExpectedTriggerRules), NewCardUpgradeRunesUseExpectedTriggerRules),
 			new(nameof(PlayerSustainRunesUseExpectedMaxHpRules), PlayerSustainRunesUseExpectedMaxHpRules),
+			new(nameof(CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions), CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
 			new(nameof(FormVfxSafetySkipsMissingHolder), FormVfxSafetySkipsMissingHolder),
 			new(nameof(FormAutoPlayBatchDispatchesOneCardPlayEvent), FormAutoPlayBatchDispatchesOneCardPlayEvent),
@@ -3209,6 +3210,33 @@ internal static partial class Program
 		Equal(2, AncientWineRune.CalculateHealAmount(250, 1m), "Ancient Wine should heal one percent of Max HP");
 		Equal(2, SturdyRune.CalculateHealAmount(100, 50, 2m, 50m, 5m), "Sturdy should use two percent at exactly half HP");
 		Equal(5, SturdyRune.CalculateHealAmount(100, 49, 2m, 50m, 5m), "Sturdy should use five percent below half HP");
+	}
+
+	private static void CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions()
+	{
+		Equal(15m, CollectorRune.ExecutePercent, "Collector execute percent");
+		Equal(20, CollectorRune.CountPerExecute, "Collector count per execute");
+		Expect(
+			CollectorRune.IsBelowExecuteThreshold(14.99m, 100m, CollectorRune.ExecutePercent),
+			"Collector should execute below fifteen percent max HP");
+		Expect(
+			!CollectorRune.IsBelowExecuteThreshold(15m, 100m, CollectorRune.ExecutePercent),
+			"Collector should not execute at exactly fifteen percent max HP");
+		Expect(
+			!CollectorRune.IsBelowExecuteThreshold(1m, 0m, CollectorRune.ExecutePercent),
+			"Collector should reject invalid max HP thresholds");
+
+		MethodInfo[] declaredMethods = typeof(CollectorRune).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+		Expect(
+			declaredMethods.Any(static method => method.Name == nameof(CollectorRune.AfterDamageGiven)),
+			"Collector should execute from owner damage events");
+		Expect(
+			declaredMethods.All(static method => method.Name != nameof(CollectorRune.AfterDeath)),
+			"Collector should not count unrelated enemy deaths");
+		Expect(
+			declaredMethods.All(static method => method.Name != nameof(CollectorRune.ModifyDamageMultiplicativeCompat)),
+			"Collector should not retain its old damage multiplier");
 	}
 
 	private static void NewRuneHookTargetsMatchSupportedGameApis()

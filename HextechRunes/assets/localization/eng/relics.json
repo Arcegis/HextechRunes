@@ -499,7 +499,7 @@
   "STARTUP_ROUTINE_RUNE.description": "At the start of combat, gain [blue]16[/blue] Block.",
   "STARTUP_ROUTINE_RUNE.flavor": "Until the process finishes, wounds can wait at the door.",
   "COLLECTOR_RUNE.title": "Collector",
-  "COLLECTOR_RUNE.description": "Gain [blue]10%[/blue] more damage. Whenever an enemy dies, gain [blue]10[/blue] count. After winning combat, gain extra Gold equal to the count.",
+  "COLLECTOR_RUNE.description": "Damage you deal executes monsters below [blue]15%[/blue] of their max HP. When you execute an enemy, gain [blue]20[/blue] count. After winning combat, gain extra Gold equal to the count.",
   "COLLECTOR_RUNE.flavor": "Some count victories. Some count receipts.",
   "LIFE_FLOW_RUNE.title": "Life Flow",
   "LIFE_FLOW_RUNE.description": "Whenever [blue]1[/blue] card is exhausted, heal [blue]5%[/blue] of your Max HP. Triggers up to [blue]3[/blue] times each turn.",

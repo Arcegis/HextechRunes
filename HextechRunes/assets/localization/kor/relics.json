@@ -499,7 +499,7 @@
   "STARTUP_ROUTINE_RUNE.description": "매 전투 시작 시, 방어도를 [blue]16[/blue] 얻습니다.",
   "STARTUP_ROUTINE_RUNE.flavor": "프로세스가 완료될 때까지 상처는 문 밖에서 기다려야 합니다.",
   "COLLECTOR_RUNE.title": "징수의 총",
-  "COLLECTOR_RUNE.description": "주는 피해가 [blue]10%[/blue] 증가합니다. 적이 죽을 때마다 카운트를 [blue]10[/blue] 얻습니다. 전투 승리 후 카운트만큼 추가 골드를 얻습니다.",
+  "COLLECTOR_RUNE.description": "당신이 주는 피해는 최대 체력의 [blue]15%[/blue] 미만인 몬스터를 처형합니다. 적을 처형할 때 카운트를 [blue]20[/blue] 얻습니다. 전투 승리 후 카운트만큼 추가 골드를 얻습니다.",
   "COLLECTOR_RUNE.flavor": "누군가는 승리를 세고, 누군가는 영수증을 셉니다.",
   "LIFE_FLOW_RUNE.title": "생명의 흐름",
   "LIFE_FLOW_RUNE.description": "카드가 [blue]1[/blue]장 [gold]소멸[/gold]될 때마다 최대 체력의 [blue]5%[/blue]를 회복합니다. 매 턴 최대 [blue]3[/blue]번 발동합니다.",
