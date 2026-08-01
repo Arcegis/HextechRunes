@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "Cuando lo obtengas, agrega [blue]1[/blue] [gold]White Hole[/gold] a tu mazo.",
   "WHITE_HOLE_RUNE.flavor": "La energía fluye desde la dirección que no debería.",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "Unidad ataque-defensa",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "Cuando los obtengas, empareja el [gold]Strikes[/gold] básico y el [gold]Defends[/gold] básico en tu mazo. Para cada par, elimine [blue]1[/blue] [gold]Strike[/gold] y [blue]1[/blue] [gold]Defend[/gold], luego agregue [blue]1[/blue] [gold]Iron Wave[/gold].",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "Al obtenerlo, reemplaza cada pareja formada por un [gold]Golpe[/gold] básico y una [gold]Defensa[/gold] básica de tu mazo por [blue]1[/blue] [gold]Ola de acero[/gold].",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "Avance y guardia se convierten en el mismo corte.",
   "BLACK_CANDLE_RUNE.title": "Vela Negra",
   "BLACK_CANDLE_RUNE.description": "Cuando lo obtengas, elimina todas las maldiciones de tu mazo. No se pueden agregar maldiciones a tu mazo.",

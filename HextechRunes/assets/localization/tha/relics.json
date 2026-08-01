@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "เมื่อรับมา เพิ่ม [gold]หลุมขาว[/gold] [blue]1[/blue] ใบเข้ากองการ์ดของคุณ",
   "WHITE_HOLE_RUNE.flavor": "พลังงานหลั่งไหลมาจากทิศที่ไม่ควรจะเป็น",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "รุกรับเป็นหนึ่ง",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "เมื่อรับมา จับคู่ [gold]จู่โจม[/gold] พื้นฐานและ [gold]ป้องกัน[/gold] พื้นฐานในกองการ์ดของคุณ สำหรับแต่ละคู่ นำ [blue]1[/blue] [gold]จู่โจม[/gold] และ [blue]1[/blue] [gold]ป้องกัน[/gold] ออก แล้วเพิ่ม [blue]1[/blue] [gold]คลื่นคมดาบ[/gold]",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "เมื่อได้รับ การ์ด [gold]จู่โจม[/gold] พื้นฐานและ [gold]ป้องกัน[/gold] พื้นฐานทุกคู่ในกองการ์ดของคุณจะถูกแทนที่ด้วย [blue]1[/blue] ใบของ [gold]คลื่นคมดาบ[/gold]",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "การรุกและการป้องกันกลายเป็นรอยฟันเดียวกัน",
   "BLACK_CANDLE_RUNE.title": "เทียนดำ",
   "BLACK_CANDLE_RUNE.description": "เมื่อรับมา นำคำสาปทั้งหมดออกจากกองการ์ดของคุณ คำสาปไม่สามารถถูกเพิ่มเข้ากองการ์ดของคุณได้",

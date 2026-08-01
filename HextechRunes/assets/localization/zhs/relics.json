@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "获得时，向你的牌组中加入[blue]1[/blue]张[gold]白洞[/gold]。",
   "WHITE_HOLE_RUNE.flavor": "能量从不该出现的方向涌出。",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "攻防一体",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "获得时，将你牌组中的基础[gold]打击[/gold]与基础[gold]防御[/gold]配对。每对移除[blue]1[/blue]张[gold]打击[/gold]和[blue]1[/blue]张[gold]防御[/gold]，并加入[blue]1[/blue]张[gold]铁斩波[/gold]。",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "获得时，将牌组中的每对基础[gold]打击[/gold]和基础[gold]防御[/gold]替换为[blue]1[/blue]张[gold]铁斩波[/gold]。",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "一进一退，合成同一刀。",
   "BLACK_CANDLE_RUNE.title": "黑蜡烛",
   "BLACK_CANDLE_RUNE.description": "获得时，移除牌组中的所有诅咒牌。诅咒牌无法加入你的牌组。",

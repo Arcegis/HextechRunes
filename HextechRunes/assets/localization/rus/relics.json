@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "При получении добавьте [blue]1[/blue] [gold]Белую дыру[/gold] в колоду.",
   "WHITE_HOLE_RUNE.flavor": "Энергия льётся с той стороны, с которой не должна.",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "Единство атаки и защиты",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "При получении составьте пары из базовых [gold]Ударов[/gold] и базовых [gold]Защит[/gold] в колоде. За каждую пару удалите [blue]1[/blue] [gold]Удар[/gold] и [blue]1[/blue] [gold]Защиту[/gold], затем добавьте [blue]1[/blue] [gold]Стальную волну[/gold].",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "При получении замените каждую пару из базовых [gold]Удара[/gold] и [gold]Обороны[/gold] в колоде на [blue]1[/blue] [gold]Стальную волну[/gold].",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "Наступление и защита становятся одним и тем же разрезом.",
   "BLACK_CANDLE_RUNE.title": "Чёрная свечка",
   "BLACK_CANDLE_RUNE.description": "При получении удалите все Проклятия из колоды. Проклятия не могут быть добавлены в вашу колоду.",

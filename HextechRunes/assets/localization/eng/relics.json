@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "When obtained, add [blue]1[/blue] [gold]White Hole[/gold] to your deck.",
   "WHITE_HOLE_RUNE.flavor": "Energy pours from the direction it should not.",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "Attack-Defense Unity",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "When obtained, pair the basic [gold]Strikes[/gold] and basic [gold]Defends[/gold] in your deck. For each pair, remove [blue]1[/blue] [gold]Strike[/gold] and [blue]1[/blue] [gold]Defend[/gold], then add [blue]1[/blue] [gold]Iron Wave[/gold].",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "When obtained, replace each pair of a basic [gold]Strike[/gold] and a basic [gold]Defend[/gold] in your deck with [blue]1[/blue] [gold]Iron Wave[/gold].",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "Advance and guard become the same cut.",
   "BLACK_CANDLE_RUNE.title": "Black Candle",
   "BLACK_CANDLE_RUNE.description": "When obtained, remove all Curses from your deck. Curses cannot be added to your deck.",

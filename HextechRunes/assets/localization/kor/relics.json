@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "획득 시, 덱에 [gold]화이트홀[/gold]을 [blue]1[/blue]장 추가합니다.",
   "WHITE_HOLE_RUNE.flavor": "에너지가 쏟아져 나오지 말아야 할 방향에서 쏟아집니다.",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "공방일체",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "획득 시, 덱에 있는 기본 [gold]타격[/gold]과 기본 [gold]수비[/gold]를 짝지어 줍니다. 각 쌍마다 [blue]1[/blue]장의 [gold]타격[/gold]과 [blue]1[/blue]장의 [gold]수비[/gold]를 제거하고, [gold]철의 파동[/gold]을 [blue]1[/blue]장 추가합니다.",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "획득 시, 덱에 있는 기본 [gold]타격[/gold]과 기본 [gold]수비[/gold]의 각 쌍을 [blue]1[/blue]장의 [gold]철의 파동[/gold]으로 대체합니다.",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "전진과 방어가 같은 베기가 됩니다.",
   "BLACK_CANDLE_RUNE.title": "검은 양초",
   "BLACK_CANDLE_RUNE.description": "획득 시, 덱에서 모든 저주를 제거합니다. 저주가 덱에 추가될 수 없습니다.",

@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "Quando obtido, adicione [blue]1[/blue] [gold]Buraco Branco[/gold] ao seu baralho.",
   "WHITE_HOLE_RUNE.flavor": "A energia jorra da direção que não deveria.",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "Unidade Ataque-Defesa",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "Quando obtido, emparelhe os [gold]Golpes[/gold] básicos e [gold]Defesas[/gold] básicas no seu baralho. Para cada par, remova [blue]1[/blue] [gold]Golpe[/gold] e [blue]1[/blue] [gold]Defesa[/gold], e depois adicione [blue]1[/blue] [gold]Onda de Ferro[/gold].",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "Ao obtê-lo, substitua cada par formado por um [gold]Golpe[/gold] básico e uma [gold]Defesa[/gold] básica no seu baralho por [blue]1[/blue] [gold]Onda Férrea[/gold].",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "Avanço e guarda tornam-se o mesmo corte.",
   "BLACK_CANDLE_RUNE.title": "Vela Negra",
   "BLACK_CANDLE_RUNE.description": "Quando obtido, remova todas as Maldições do seu baralho. Maldições não podem ser adicionadas ao seu baralho.",

@@ -982,7 +982,7 @@
   "WHITE_HOLE_RUNE.description": "入手したら、[blue]1[/blue] [gold]ホワイトホール[/gold]をデッキに加えます。",
   "WHITE_HOLE_RUNE.flavor": "エナジーは流れてはいけない方向から流れ込んでくる。",
   "ATTACK_DEFENSE_UNITY_RUNE.title": "攻撃と防御の一体化",
-  "ATTACK_DEFENSE_UNITY_RUNE.description": "入手したら、基本 [gold]Strikes[/gold]と基本 [gold]Defends[/gold]をデッキに組み入れます。各ペアについて、[blue]1[/blue] [gold]Strike[/gold] および [blue]1[/blue] [gold]Defend[/gold]を削除し、[blue]1[/blue] [gold]Iron Wave[/gold]を追加します。",
+  "ATTACK_DEFENSE_UNITY_RUNE.description": "入手時、デッキ内の基本[gold]ストライク[/gold]と基本[gold]防御[/gold]の各ペアを、[blue]1[/blue]枚の[gold]アイアンウェーブ[/gold]に置き換える。",
   "ATTACK_DEFENSE_UNITY_RUNE.flavor": "アドバンスとガードが同じカットになります。",
   "BLACK_CANDLE_RUNE.title": "ブラックキャンドル",
   "BLACK_CANDLE_RUNE.description": "入手したら、デッキからすべての呪いを取り除く。呪いはデッキに加えられません。",
