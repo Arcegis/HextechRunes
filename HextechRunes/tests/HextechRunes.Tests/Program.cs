@@ -3208,9 +3208,10 @@ internal static partial class Program
 
 	private static void BrandUpgradeDamageScalesWithPermanentPlayCount()
 	{
-		Equal(1m, BrandUpgradeRune.CalculateDamageMultiplier(0, 2m), "zero brand plays");
-		Equal(1.02m, BrandUpgradeRune.CalculateDamageMultiplier(1, 2m), "one brand play");
-		Equal(1.20m, BrandUpgradeRune.CalculateDamageMultiplier(10, 2m), "ten brand plays");
+		Equal(3, BrandUpgradeRune.DamagePercentPerBrand, "Brand damage percent per play");
+		Equal(1m, BrandUpgradeRune.CalculateDamageMultiplier(0, BrandUpgradeRune.DamagePercentPerBrand), "zero brand plays");
+		Equal(1.03m, BrandUpgradeRune.CalculateDamageMultiplier(1, BrandUpgradeRune.DamagePercentPerBrand), "one brand play");
+		Equal(1.30m, BrandUpgradeRune.CalculateDamageMultiplier(10, BrandUpgradeRune.DamagePercentPerBrand), "ten brand plays");
 	}
 
 	private static void BigHammerForgeBonusAvoidsHammerTimeDoubleScaling()
@@ -3230,6 +3231,12 @@ internal static partial class Program
 
 	private static void NewCardUpgradeRunesUseExpectedTriggerRules()
 	{
+		Equal(0, ThornmailRune.CalculateThorns(19m), "Thornmail should floor partial Max HP steps");
+		Equal(1, ThornmailRune.CalculateThorns(20m), "Thornmail should grant one Thorns per twenty Max HP");
+		Equal(4, ThornmailRune.CalculateThorns(99m), "Thornmail should have no legacy bonus cap");
+		Expect(CorrosiveWaveUpgradeRune.ShouldExhaust(new CorrosiveWave(), PileType.Discard), "Corrosive Wave should move to the Exhaust pile after play");
+		Expect(!CorrosiveWaveUpgradeRune.ShouldExhaust(new CorrosiveWave(), PileType.None), "ephemeral Corrosive Wave copies should keep the None result pile");
+		Expect(!CorrosiveWaveUpgradeRune.ShouldExhaust(new StrikeIronclad(), PileType.Discard), "Corrosive Wave upgrade should not exhaust other cards");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Power, hasUpgradeRune: false), "vanilla Storm should still trigger for Power cards");
 		Expect(!StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: false), "vanilla Storm should ignore Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: true), "upgraded Storm should trigger for Attacks");
