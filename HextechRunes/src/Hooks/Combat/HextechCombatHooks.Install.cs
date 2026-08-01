@@ -101,6 +101,9 @@ internal static partial class HextechCombatHooks
 	{
 		InstallShrinkPowerCompatibilityHooks(harmony);
 		harmony.Patch(
+			RequireMethod(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), BindingFlags.Public | BindingFlags.Instance, typeof(decimal)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(PowerModelGetTypeForAmountPrefix)));
+		harmony.Patch(
 			RequireMethod(typeof(StormPower), nameof(StormPower.BeforeCardPlayed), BindingFlags.Public | BindingFlags.Instance, typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(StormBeforeCardPlayedPrefix)));
 		harmony.Patch(

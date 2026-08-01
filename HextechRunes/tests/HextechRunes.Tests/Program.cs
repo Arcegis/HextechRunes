@@ -2789,23 +2789,67 @@ internal static partial class Program
 
 	private static void EnemySlowHexesUseExpectedBaselinesAndTiers()
 	{
-		Equal(0m, HextechPlayerSlowPower.PlayerCombatStartAmount, "Ancient Statue player Slow baseline");
-		Equal(0m, HextechPlayerSlowPower.EnemyCombatStartAmount, "Hundred Refinements enemy Slow baseline");
-		Equal(0, HextechPlayerSlowPower.RoundStartAmount, "enemy Slow hexes reset to zero each round");
 		HextechPlayerSlowPower slow = new();
-		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.Type, "custom Slow should be classified as a buff");
-		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff, slow.GetTypeForAmount(8m), "positive Hundred Refinements changes should not trigger debuff reactions");
-		Equal(8m, HextechPlayerSlowPower.NormalizeEnemyReductionAmount(-8m), "legacy negative Hundred Refinements Slow should migrate by magnitude");
+		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, slow.Type, "custom Slow should be neither a buff nor a debuff");
+		HextechTemporarySlowPower temporarySlow =
+			(HextechTemporarySlowPower)RuntimeHelpers.GetUninitializedObject(typeof(HextechTemporarySlowPower));
+		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, temporarySlow.Type, "temporary custom Slow should be neither a buff nor a debuff");
+		Expect(temporarySlow.AllowNegative, "temporary custom Slow should support damage reduction stacks");
+		Expect(HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player), "temporary Slow should expire at player turn start");
+		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Enemy), "temporary Slow should remain during enemy turn start");
+		Expect(
+			HextechCombatHooks.TryResolveNeutralPowerType(slow, out MegaCrit.Sts2.Core.Entities.Powers.PowerType neutralType),
+			"custom Slow should bypass vanilla signed Counter classification");
+		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, neutralType, "custom Slow signed amount type");
+		Expect(
+			!HextechCombatHooks.TryResolveNeutralPowerType(new StrengthPower(), out _),
+			"neutral classification override should not affect vanilla powers");
+		Harmony neutralTypeHarmony = new("Natsuki.HextechRunes.Tests.SlowPowerType");
+		neutralTypeHarmony.Patch(
+			AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), [typeof(decimal)]),
+			prefix: new HarmonyMethod(AccessTools.Method(typeof(HextechCombatHooks), "PowerModelGetTypeForAmountPrefix")));
+		try
+		{
+			Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, slow.GetTypeForAmount(8m), "positive custom Slow should remain neutral");
+			Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, slow.GetTypeForAmount(-8m), "negative custom Slow should remain neutral");
+			Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, temporarySlow.GetTypeForAmount(-8m), "negative temporary custom Slow should remain neutral");
+			Equal(
+				MegaCrit.Sts2.Core.Entities.Powers.PowerType.Debuff,
+				new StrengthPower().GetTypeForAmount(-8m),
+				"neutral classification patch should preserve vanilla signed Counter behavior");
+		}
+		finally
+		{
+			neutralTypeHarmony.UnpatchAll(neutralTypeHarmony.Id);
+		}
+		Equal(1.08m, HextechPlayerSlowPower.ResolveDamageMultiplier(8m), "positive Slow should increase damage taken on either side");
+		Equal(0.92m, HextechPlayerSlowPower.ResolveDamageMultiplier(-8m), "negative Slow should reduce damage taken on either side");
+		Equal(0m, HextechPlayerSlowPower.ResolveDamageMultiplier(-120m), "negative Slow damage multiplier should floor at zero");
+		Equal(2, FrostWraithRune.TurnsNeeded, "Frost Wraith trigger interval");
+		Equal(50, FrostWraithRune.TemporarySlowAmount, "Frost Wraith temporary Slow amount");
+		Expect(!FrostWraithRune.ShouldTriggerForRound(1, FrostWraithRune.TurnsNeeded), "Frost Wraith should not trigger at combat start");
+		Expect(!FrostWraithRune.ShouldTriggerForRound(2, FrostWraithRune.TurnsNeeded), "Frost Wraith should wait for two completed rounds");
+		Expect(FrostWraithRune.ShouldTriggerForRound(3, FrostWraithRune.TurnsNeeded), "Frost Wraith should trigger after two completed rounds");
+		Expect(FrostWraithRune.ShouldTriggerForRound(5, FrostWraithRune.TurnsNeeded), "Frost Wraith should trigger every two rounds afterward");
+		Equal(6, CorrosionRune.TemporarySlowAmount, "Corrosion temporary Slow amount per damage event");
 		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(0), "Ancient Statue tier zero fallback Slow gain");
 		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(1), "Ancient Statue tier one Slow gain");
 		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(2), "Ancient Statue tier two Slow gain");
 		Equal(8, AncientStatueEnemyHex.ResolveCardSlowGain(3), "Ancient Statue tier three Slow gain");
 		Equal(8, AncientStatueEnemyHex.ResolveCardSlowGain(99), "Ancient Statue high-tier Slow gain clamp");
-		Equal(3, HundredRefinementsEnemyHex.ResolveSlowReduction(0), "Hundred Refinements tier zero fallback Slow reduction");
-		Equal(3, HundredRefinementsEnemyHex.ResolveSlowReduction(1), "Hundred Refinements tier one Slow reduction");
-		Equal(5, HundredRefinementsEnemyHex.ResolveSlowReduction(2), "Hundred Refinements tier two Slow reduction");
-		Equal(8, HundredRefinementsEnemyHex.ResolveSlowReduction(3), "Hundred Refinements tier three Slow reduction");
-		Equal(8, HundredRefinementsEnemyHex.ResolveSlowReduction(99), "Hundred Refinements high-tier Slow reduction clamp");
+		Equal(-3, HundredRefinementsEnemyHex.ResolveSlowReduction(0), "Hundred Refinements tier zero fallback Slow reduction");
+		Equal(-3, HundredRefinementsEnemyHex.ResolveSlowReduction(1), "Hundred Refinements tier one Slow reduction");
+		Equal(-5, HundredRefinementsEnemyHex.ResolveSlowReduction(2), "Hundred Refinements tier two Slow reduction");
+		Equal(-8, HundredRefinementsEnemyHex.ResolveSlowReduction(3), "Hundred Refinements tier three Slow reduction");
+		Equal(-8, HundredRefinementsEnemyHex.ResolveSlowReduction(99), "Hundred Refinements high-tier Slow reduction clamp");
+		MethodInfo[] ancientStatueMethods = typeof(AncientStatueEnemyHex).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+		Expect(
+			ancientStatueMethods.All(static method => method.Name is not nameof(AncientStatueEnemyHex.ApplyCombatStartPlayerDebuffs) and not nameof(AncientStatueEnemyHex.BeforePlayerSideTurnStart)),
+			"Ancient Statue should not seed or manually reset persistent Slow");
+		MethodInfo[] hundredRefinementsMethods = typeof(HundredRefinementsEnemyHex).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+		Expect(
+			hundredRefinementsMethods.All(static method => method.Name is not nameof(HundredRefinementsEnemyHex.ApplyCombatStartToEnemy) and not nameof(HundredRefinementsEnemyHex.BeforePlayerSideTurnStart)),
+			"Hundred Refinements should not seed or manually reset persistent Slow");
 	}
 
 	private static void EnemyVitalitySurgeScalesAllSustainFromMaxHp()

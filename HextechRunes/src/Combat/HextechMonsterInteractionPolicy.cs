@@ -116,7 +116,7 @@ internal static class HextechMonsterInteractionPolicy
 				or PersonalHivePower
 				// 机器人「库存」(Stock):囤积-释放机制与敌人行动脚本耦合,薄暮法衣镜像到玩家会卡死(玩家实报)。
 				or StockPower
-				// 敌我共用的缓慢系数按持有者阵营解释方向,从敌方镜像到玩家会把减伤反转为易伤。
+				// 敌我共用的缓慢系数带有正负层数语义,不应作为普通怪物增益镜像到玩家。
 				or HextechPlayerSlowPower;
 	}
 
