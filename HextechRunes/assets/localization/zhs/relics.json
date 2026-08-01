@@ -1075,7 +1075,7 @@
   "REANIMATE_UPGRADE_RUNE.description": "你的[gold]死者苏生[/gold]费用减少[blue]1[/blue]。每当有任何生物死亡时，费用额外减少[blue]1[/blue]。",
   "REANIMATE_UPGRADE_RUNE.flavor": "死亡越响，召唤越深。",
   "HIDDEN_GEM_UPGRADE_RUNE.title": "升级：未掘宝石",
-  "HIDDEN_GEM_UPGRADE_RUNE.description": "你的[gold]未掘宝石[/gold]可以为已有[gold]重放[/gold]的牌再次添加[gold]重放[/gold]。",
+  "HIDDEN_GEM_UPGRADE_RUNE.description": "打出[gold]未掘宝石[/gold]后，将获得[gold]重放[/gold]的牌加入你的手牌。",
   "HIDDEN_GEM_UPGRADE_RUNE.flavor": "宝石可以继续切面，直到光折回手中。",
   "AUTOMATION_UPGRADE_RUNE.title": "升级：自动化",
   "AUTOMATION_UPGRADE_RUNE.description": "你在触发[gold]自动化[/gold]效果时，额外抽[blue]2[/blue]张牌。",

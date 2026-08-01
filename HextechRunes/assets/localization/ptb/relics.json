@@ -1075,7 +1075,7 @@
   "REANIMATE_UPGRADE_RUNE.description": "Seu [gold]Reanimar[/gold] custa [blue]1[/blue] a menos. Sempre que qualquer criatura morrer, ele custa [blue]1[/blue] a menos neste combate.",
   "REANIMATE_UPGRADE_RUNE.flavor": "Quanto mais alto a morte ecoa, mais profundo é o chamado.",
   "HIDDEN_GEM_UPGRADE_RUNE.title": "Melhoria: Joia Escondida",
-  "HIDDEN_GEM_UPGRADE_RUNE.description": "Seu [gold]Joia Escondida[/gold] pode adicionar [gold]Repetir[/gold] a cartas que já possuem [gold]Repetir[/gold].",
+  "HIDDEN_GEM_UPGRADE_RUNE.description": "Após jogar [gold]Joia Escondida[/gold], adicione à sua mão a carta que recebeu [gold]Repetir[/gold].",
   "HIDDEN_GEM_UPGRADE_RUNE.flavor": "Uma joia pode continuar encontrando novas faces.",
   "AUTOMATION_UPGRADE_RUNE.title": "Melhoria: Automação",
   "AUTOMATION_UPGRADE_RUNE.description": "Quando sua [gold]Automação[/gold] é ativada, compre [blue]2[/blue] cartas adicionais.",

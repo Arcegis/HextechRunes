@@ -1075,7 +1075,7 @@
   "REANIMATE_UPGRADE_RUNE.description": "[gold]Reanimate[/gold] のコストは [blue]1[/blue] 安くなります。いずれかのクリーチャーが死亡するたび、この戦闘でのコストは[blue]1[/blue]減ります。",
   "REANIMATE_UPGRADE_RUNE.flavor": "死の鐘が大きくなればなるほど、その叫びは深くなります。",
   "HIDDEN_GEM_UPGRADE_RUNE.title": "アップグレード: 隠された宝石",
-  "HIDDEN_GEM_UPGRADE_RUNE.description": "[gold]Hidden Gem[/gold]は、すでに [gold]リプレイ[/gold]を持っているカードに [gold]リプレイ[/gold]を追加できます。",
+  "HIDDEN_GEM_UPGRADE_RUNE.description": "[gold]Hidden Gem[/gold]をプレイした後、[gold]リプレイ[/gold]を得たカードを手札に加えます。",
   "HIDDEN_GEM_UPGRADE_RUNE.flavor": "宝石は新しい顔を発見し続けることができます。",
   "AUTOMATION_UPGRADE_RUNE.title": "アップグレード: 自動化",
   "AUTOMATION_UPGRADE_RUNE.description": "[gold]オートメーション[/gold]が発動したとき、追加でカードを[blue]2[/blue]枚引く。",

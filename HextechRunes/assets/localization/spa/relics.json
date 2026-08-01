@@ -1075,7 +1075,7 @@
   "REANIMATE_UPGRADE_RUNE.description": "Tu [gold]Reanimate[/gold] cuesta [blue]1[/blue] menos. Siempre que una criatura muera, le costará [blue]1[/blue] menos este combate.",
   "REANIMATE_UPGRADE_RUNE.flavor": "Cuanto más fuerte suena la muerte, más profundo es el llamado.",
   "HIDDEN_GEM_UPGRADE_RUNE.title": "Mejora: joya escondida",
-  "HIDDEN_GEM_UPGRADE_RUNE.description": "Tu [gold]Hidden Gem[/gold] puede agregar [gold]Repetición[/gold] a cartas que ya tienen [gold]Repetición[/gold].",
+  "HIDDEN_GEM_UPGRADE_RUNE.description": "Después de jugar [gold]Hidden Gem[/gold], añade a tu mano la carta que obtuvo [gold]Repetición[/gold].",
   "HIDDEN_GEM_UPGRADE_RUNE.flavor": "Una joya puede seguir encontrando caras nuevas.",
   "AUTOMATION_UPGRADE_RUNE.title": "Actualización: Automatización",
   "AUTOMATION_UPGRADE_RUNE.description": "Cuando se activa tu [gold]Automatización[/gold], roba [blue]2[/blue] cartas adicionales.",

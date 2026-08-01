@@ -1075,7 +1075,7 @@
   "REANIMATE_UPGRADE_RUNE.description": "[gold]Reanimate[/gold] ของคุณมีต้นทุนลดลง [blue]1[/blue] ทุกครั้งที่สิ่งมีชีวิตใดตาย มันจะมีต้นทุนลดลง [blue]1[/blue] ในการต่อสู้นี้",
   "REANIMATE_UPGRADE_RUNE.flavor": "ยิ่งความตายดังก้อง เสียงเรียกก็ยิ่งลึก",
   "HIDDEN_GEM_UPGRADE_RUNE.title": "อัปเกรด: Hidden Gem",
-  "HIDDEN_GEM_UPGRADE_RUNE.description": "[gold]Hidden Gem[/gold] ของคุณสามารถเพิ่ม [gold]เล่นซ้ำ[/gold] ให้การ์ดที่มี [gold]เล่นซ้ำ[/gold] อยู่แล้วได้",
+  "HIDDEN_GEM_UPGRADE_RUNE.description": "หลังจากเล่น [gold]Hidden Gem[/gold] นำการ์ดที่ได้รับ [gold]เล่นซ้ำ[/gold] ขึ้นมือของคุณ",
   "HIDDEN_GEM_UPGRADE_RUNE.flavor": "อัญมณีหาด้านใหม่ๆ ของตัวเองได้เรื่อยๆ",
   "AUTOMATION_UPGRADE_RUNE.title": "อัปเกรด: กลไกอัตโนมัติ",
   "AUTOMATION_UPGRADE_RUNE.description": "เมื่อ[gold]กลไกอัตโนมัติ[/gold]ของคุณทำงาน จั่วการ์ดเพิ่ม [blue]2[/blue] ใบ",

@@ -103,6 +103,7 @@ internal static partial class Program
 			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
 			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
 			new(nameof(NewCardUpgradeRunesUseExpectedTriggerRules), NewCardUpgradeRunesUseExpectedTriggerRules),
+			new(nameof(HiddenGemUpgradeMovesNewReplayTargetToHand), HiddenGemUpgradeMovesNewReplayTargetToHand),
 			new(nameof(PlayerSustainRunesUseExpectedMaxHpRules), PlayerSustainRunesUseExpectedMaxHpRules),
 			new(nameof(CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions), CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
@@ -3199,6 +3200,20 @@ internal static partial class Program
 		Expect(!DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: true), "Decisions should still reject Unplayable cards");
 		Equal(3, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(1, 3), "Decisions should resolve all three plays inside one card-play wrapper");
 		Equal(4, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(2, 3), "Decisions replay count should combine additively with another replay");
+	}
+
+	private static void HiddenGemUpgradeMovesNewReplayTargetToHand()
+	{
+		StrikeIronclad target = CreateMutableTestModel<StrikeIronclad>();
+		Expect(
+			HiddenGemUpgradeRune.IsEligibleReplayTarget(target),
+			"Hidden Gem should accept a playable card without Replay");
+
+		target.BaseReplayCount = 1;
+		Expect(
+			!HiddenGemUpgradeRune.IsEligibleReplayTarget(target),
+			"Hidden Gem should retain the vanilla restriction against cards that already have Replay");
+		Equal(PileType.Hand, HiddenGemUpgradeRune.ReplayTargetPile, "Hidden Gem upgraded replay target pile");
 	}
 
 	private static void PlayerSustainRunesUseExpectedMaxHpRules()

@@ -1075,7 +1075,7 @@
   "REANIMATE_UPGRADE_RUNE.description": "Ваше [gold]Оживление[/gold] стоит на [blue]1[/blue] дешевле. Каждый раз, когда любое существо погибает, оно стоит на [blue]1[/blue] дешевле в этот бой.",
   "REANIMATE_UPGRADE_RUNE.flavor": "Чем громче звенит смерть, тем глубже зов.",
   "HIDDEN_GEM_UPGRADE_RUNE.title": "Улучшение: Скрытая жемчужина",
-  "HIDDEN_GEM_UPGRADE_RUNE.description": "Ваш [gold]Скрытый самоцвет[/gold] может добавлять [gold]Повтор[/gold] картам, у которых уже есть [gold]Повтор[/gold].",
+  "HIDDEN_GEM_UPGRADE_RUNE.description": "После розыгрыша [gold]Скрытого самоцвета[/gold] добавьте в руку карту, получившую [gold]Повтор[/gold].",
   "HIDDEN_GEM_UPGRADE_RUNE.flavor": "Самоцвет может находить всё новые грани.",
   "AUTOMATION_UPGRADE_RUNE.title": "Улучшение: Автоматизация",
   "AUTOMATION_UPGRADE_RUNE.description": "Когда срабатывает ваша [gold]Автоматизация[/gold], возьмите [blue]2[/blue] дополнительные карты.",

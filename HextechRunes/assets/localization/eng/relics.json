@@ -1075,7 +1075,7 @@
   "REANIMATE_UPGRADE_RUNE.description": "Your [gold]Reanimate[/gold] costs [blue]1[/blue] less. Whenever any creature dies, it costs [blue]1[/blue] less this combat.",
   "REANIMATE_UPGRADE_RUNE.flavor": "The louder death rings, the deeper the call.",
   "HIDDEN_GEM_UPGRADE_RUNE.title": "Upgrade: Hidden Gem",
-  "HIDDEN_GEM_UPGRADE_RUNE.description": "Your [gold]Hidden Gem[/gold] can add [gold]Replay[/gold] to cards that already have [gold]Replay[/gold].",
+  "HIDDEN_GEM_UPGRADE_RUNE.description": "After you play [gold]Hidden Gem[/gold], add the card that gained [gold]Replay[/gold] to your hand.",
   "HIDDEN_GEM_UPGRADE_RUNE.flavor": "A gem can keep finding new faces.",
   "AUTOMATION_UPGRADE_RUNE.title": "Upgrade: Automation",
   "AUTOMATION_UPGRADE_RUNE.description": "When your [gold]Automation[/gold] triggers, draw [blue]2[/blue] additional cards.",
