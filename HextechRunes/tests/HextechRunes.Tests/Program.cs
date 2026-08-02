@@ -2774,9 +2774,86 @@ internal static partial class Program
 
 	private static void MonsterInteractionPolicyPreservesStructuralMonsterBuffs()
 	{
-		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new ReattachPower()), "reattach power should be structural");
-		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new AdaptablePower()), "adaptable power should be structural");
-		Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new SandpitPower()), "sandpit power should be structural");
+		PowerModel[] structuralEnemyPowers =
+		[
+			new AdaptablePower(),
+			new AsleepPower(),
+			new SlumberPower(),
+			new BattlewornDummyTimeLimitPower(),
+			new MinionPower(),
+			new InfestedPower(),
+		];
+		foreach (PowerModel power in structuralEnemyPowers)
+		{
+			string name = power.GetType().Name;
+			Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be structural");
+			Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should survive buff removal");
+			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not trigger monster self-buff effects");
+			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
+		}
+
+		PowerModel[] enemyHostedPlayerRelations = [new BackAttackLeftPower(), new BackAttackRightPower()];
+		foreach (PowerModel power in enemyHostedPlayerRelations)
+		{
+			string name = power.GetType().Name;
+			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be classified as a player relation rather than structural");
+			Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should survive enemy buff removal for Surrounded");
+			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not trigger monster self-buff effects");
+			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
+		}
+
+		PowerModel[] removableMonsterMechanisms =
+		[
+			new HatchPower(),
+			new ReattachPower(),
+			new HardToKillPower(),
+			new WitheringPresencePower(),
+			new NemesisPower(),
+			new IllusionPower(),
+			new SteamEruptionPower(),
+		];
+		foreach (PowerModel power in removableMonsterMechanisms)
+		{
+			string name = power.GetType().Name;
+			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be removable while its owner is alive");
+			Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should be removable by Feel the Burn and upgraded Expose");
+			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should keep its monster self-buff trigger restriction");
+			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
+		}
+
+		PowerModel[] nonEnemyPowers =
+		[
+			new SandpitPower(),
+			new MonologuePower(),
+			new CountdownPower(),
+			new TheSealedThronePower(),
+			new PillarOfCreationPower(),
+			new ChildOfTheStarsPower(),
+			new PaleBlueDotPower(),
+			new TheHuntPower(),
+			new DemesnePower(),
+			new UnmovablePower(),
+			new OrbitPower(),
+			new GuardedPower(),
+			new InterceptPower(),
+			new DieForYouPower(),
+			new FastenPower(),
+			new HauntPower(),
+			new SummonNextTurnPower(),
+			new StarNextTurnPower(),
+#if STS2_108_OR_NEWER
+			new SoulboundPower(),
+#endif
+		];
+		foreach (PowerModel power in nonEnemyPowers)
+		{
+			string name = power.GetType().Name;
+			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should not be classified as an enemy structural power");
+			Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should not be protected by enemy buff removal policy");
+			Expect(!HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not be classified as a monster self-buff");
+			Expect(!HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be classified as a monster mechanism");
+		}
+
 		Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(new StrengthPower()), "ordinary strength should not be structural");
 		Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new PersonalHivePower()), "personal hive should not be mirrored to players");
 		Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new HextechPlayerSlowPower()), "custom Slow should not be mirrored to players");
