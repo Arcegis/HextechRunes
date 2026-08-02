@@ -114,6 +114,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<CreativeAiUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 28, tagKey: "RANDOM"),
 		Rune<NeurosurgeUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 34, tagKey: "DOOM"),
 		Rune<WroughtInWarUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 29, tagKey: "SWORDCRAFT"),
+		Rune<TerminalIllnessRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 28, tagKey: "POISON"),
 
 		Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 		Rune<TranscendentEvilRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.ThirdActExcluded, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 3, tagKey: "STACKING"),
@@ -250,7 +251,6 @@ internal static class HextechPlayerRuneRegistry
 		Rune<HundredRefinementsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
 		Rune<MoltenFistUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 30, tagKey: "OUTPUT"),
 		Rune<SubroutineUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 30, tagKey: "ORB"),
-		Rune<TerminalIllnessRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 28, tagKey: "POISON"),
 		Rune<BigHammerRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 28, tagKey: "SWORDCRAFT"),
 		Rune<SpinToWinRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
 

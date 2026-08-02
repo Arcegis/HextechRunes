@@ -32,6 +32,13 @@ internal static class HextechMonsterInteractionPolicy
 		return IsStructuralMonsterBuff(power);
 	}
 
+	public static bool ShouldPreserveFromBuffRemoval(PowerModel power)
+	{
+		return IsStructuralMonsterBuff(power)
+			// 这两个 power 保存被偷金币/卡牌，并在怪物死亡时负责归还；提前剥除会永久丢失战利品。
+			|| power is HeistPower or SwipePower;
+	}
+
 	// 结构性怪物 buff = 剥除会让遭遇脚本/回合流转/位置关系断裂的机制 power。
 	// 曾把全部"动画/形态状态机"类也列入(防幽灵鳗 SkittishPower 卡死),现已逐个核验收窄:
 	//  - Skittish 的卡死根因是 Block 出场动画悬空,已由 RemoveMonsterBuffSafely 补出场后安全剥除;
