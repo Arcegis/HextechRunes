@@ -4,7 +4,7 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private readonly record struct HealPostState(Player? Player, Creature Creature, decimal Amount, bool ShouldProcess);
+	private readonly record struct HealPostState(Player? Player, Creature Creature, int CurrentHpBefore, bool ShouldProcess);
 
 	private static bool HealPrefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 	{
@@ -65,7 +65,7 @@ internal static partial class HextechCombatHooks
 			return false;
 		}
 
-		__state = new HealPostState(player, creature, amount, ShouldProcess: true);
+		__state = new HealPostState(player, creature, creature.CurrentHp, ShouldProcess: true);
 		return true;
 	}
 
@@ -85,7 +85,12 @@ internal static partial class HextechCombatHooks
 
 		Player? player = state.Player;
 		Creature creature = state.Creature;
-		decimal amount = state.Amount;
+		decimal amount = CalculateActualHealAmount(state.CurrentHpBefore, creature.CurrentHp);
+		if (amount <= 0m)
+		{
+			return;
+		}
+
 		if (player?.GetRelic<CircleOfDeathRune>() is CircleOfDeathRune circleOfDeathRune
 			&& creature == player.Creature
 			&& creature.CombatState != null)
@@ -95,6 +100,11 @@ internal static partial class HextechCombatHooks
 
 		// 我们的治疗(仅联机):队友被治疗后镜像给持有者,战斗内外通吃。
 		await OurHealingRune.MirrorTeammateHeal(creature, amount);
+	}
+
+	internal static decimal CalculateActualHealAmount(int currentHpBefore, int currentHpAfter)
+	{
+		return Math.Max(0m, currentHpAfter - (decimal)currentHpBefore);
 	}
 
 	private static bool IsSkulkingColony(Creature creature)
