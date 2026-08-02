@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using HextechRunes;
+using FormVfxKind = HextechRunes.HextechFormVfxSafetyHooks.FormVfxKind;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -109,6 +110,7 @@ internal static partial class Program
 			new(nameof(CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions), CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
 			new(nameof(FormVfxSafetySkipsMissingHolder), FormVfxSafetySkipsMissingHolder),
+			new(nameof(SymphonyOfWarPreservesDemonAndSerpentFormVfx), SymphonyOfWarPreservesDemonAndSerpentFormVfx),
 			new(nameof(FormAutoPlayBatchDispatchesOneCardPlayEvent), FormAutoPlayBatchDispatchesOneCardPlayEvent),
 			new(nameof(FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay), FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay),
 			new(nameof(FormAutoPlayBatchUsesOnePreparedFinalEffect), FormAutoPlayBatchUsesOnePreparedFinalEffect),
@@ -3433,6 +3435,52 @@ internal static partial class Program
 		Expect(
 			HextechFormVfxSafetyHooks.ShouldRunOriginal(hasFormVfxHolder: true),
 			"form VFX should retain vanilla behavior when the holder exists");
+	}
+
+	private static void SymphonyOfWarPreservesDemonAndSerpentFormVfx()
+	{
+		Expect(
+			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
+				hasSymphonyOfWar: true,
+				FormVfxKind.Demon,
+				FormVfxKind.Serpent),
+			"Symphony of War should preserve Serpent Form VFX when Demon Form is added");
+		Expect(
+			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
+				hasSymphonyOfWar: true,
+				FormVfxKind.Serpent,
+				FormVfxKind.Demon),
+			"Symphony of War should preserve Demon Form VFX when Serpent Form is added");
+		Expect(
+			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
+				hasSymphonyOfWar: true,
+				FormVfxKind.Other,
+				FormVfxKind.Demon),
+			"later non-Symphony forms should not erase Demon Form VFX");
+		Expect(
+			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
+				hasSymphonyOfWar: true,
+				FormVfxKind.Other,
+				FormVfxKind.Serpent),
+			"later non-Symphony forms should not erase Serpent Form VFX");
+		Expect(
+			!HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
+				hasSymphonyOfWar: true,
+				FormVfxKind.Other,
+				FormVfxKind.Other),
+			"non-Symphony forms should retain vanilla last-form-wins behavior");
+		Expect(
+			!HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
+				hasSymphonyOfWar: false,
+				FormVfxKind.Demon,
+				FormVfxKind.Serpent),
+			"players without Symphony of War should keep vanilla replacement behavior");
+		Expect(
+			!HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
+				hasSymphonyOfWar: true,
+				FormVfxKind.Demon,
+				FormVfxKind.Demon),
+			"reapplying a form should replace its stale same-type VFX");
 	}
 
 	private static void FormAutoPlayBatchDispatchesOneCardPlayEvent()
