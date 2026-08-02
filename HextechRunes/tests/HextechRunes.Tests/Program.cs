@@ -97,11 +97,15 @@ internal static partial class Program
 			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
 			new(nameof(StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops), StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops),
 			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
+			new(nameof(CardUpgradePickupAndAvailabilityRules), CardUpgradePickupAndAvailabilityRules),
+			new(nameof(BashUpgradeStrengthMatchesVulnerableApplied), BashUpgradeStrengthMatchesVulnerableApplied),
 			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
 			new(nameof(SubroutineUpgradeCombatMoveGateResetsAcrossCombats), SubroutineUpgradeCombatMoveGateResetsAcrossCombats),
 			new(nameof(PactsEndUpgradeDamageScalesWithExhaustPile), PactsEndUpgradeDamageScalesWithExhaustPile),
 			new(nameof(BrandUpgradeDamageScalesWithPermanentPlayCount), BrandUpgradeDamageScalesWithPermanentPlayCount),
 			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
+			new(nameof(HundredRefinementsRequiresTwoBodyForges), HundredRefinementsRequiresTwoBodyForges),
+			new(nameof(HastyScribbleDrawsToFullHandAtTurnStart), HastyScribbleDrawsToFullHandAtTurnStart),
 			new(nameof(BigHandsIncreasesSummonAmountByFiftyPercent), BigHandsIncreasesSummonAmountByFiftyPercent),
 			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
 			new(nameof(NewCardUpgradeRunesUseExpectedTriggerRules), NewCardUpgradeRunesUseExpectedTriggerRules),
@@ -1609,6 +1613,63 @@ internal static partial class Program
 
 		Equal(1, card.CurrentUpgradeLevel, "granted Searing Attack upgrade level");
 		Equal(16m, card.DynamicVars.Damage.BaseValue, "granted Searing Attack damage");
+	}
+
+	private static void CardUpgradePickupAndAvailabilityRules()
+	{
+		BloodlettingUpgradeRune singleForm = new();
+		Expect(singleForm.GrantsCardOnPickup, "ordinary card upgrade runes should grant their target card");
+		Expect(singleForm.HasUponPickupEffect, "ordinary card upgrade runes should advertise their pickup effect");
+		Expect(singleForm.MeetsCardAvailabilityRequirement([]), "ordinary card upgrade runes should not require the target card");
+
+		BashUpgradeRune bash = new();
+		NeutralizeUpgradeRune neutralize = new();
+		FallingStarUpgradeRune fallingStar = new();
+		UnleashUpgradeRune unleash = new();
+		RelicModel[] dualFormRunes = [ bash, neutralize, fallingStar, unleash ];
+		foreach (RelicModel rune in dualFormRunes)
+		{
+			Expect(!rune.HasUponPickupEffect, $"{rune.GetType().Name} should not grant a card on pickup");
+			Expect(
+				rune is IHextechSelectionFooterProvider footerProvider
+				&& footerProvider.GetSelectionFooterText() == null,
+				$"{rune.GetType().Name} should not show a pickup footer");
+		}
+
+		Expect(!bash.MeetsCardAvailabilityRequirement([]), "Bash upgrade should require Bash or Break");
+		Expect(bash.MeetsCardAvailabilityRequirement([new Bash()]), "Bash upgrade should accept Bash");
+		Expect(bash.MeetsCardAvailabilityRequirement([new Break()]), "Bash upgrade should accept Break");
+		Expect(!neutralize.MeetsCardAvailabilityRequirement([]), "Neutralize upgrade should require Neutralize or Suppress");
+		Expect(neutralize.MeetsCardAvailabilityRequirement([new Neutralize()]), "Neutralize upgrade should accept Neutralize");
+		Expect(neutralize.MeetsCardAvailabilityRequirement([new Suppress()]), "Neutralize upgrade should accept Suppress");
+		Expect(!fallingStar.MeetsCardAvailabilityRequirement([]), "Falling Star upgrade should require Falling Star or Meteor Shower");
+		Expect(fallingStar.MeetsCardAvailabilityRequirement([new FallingStar()]), "Falling Star upgrade should accept Falling Star");
+		Expect(fallingStar.MeetsCardAvailabilityRequirement([new MeteorShower()]), "Falling Star upgrade should accept Meteor Shower");
+		Expect(!unleash.MeetsCardAvailabilityRequirement([]), "Unleash upgrade should require Unleash or Protector");
+		Expect(unleash.MeetsCardAvailabilityRequirement([new Unleash()]), "Unleash upgrade should accept Unleash");
+		Expect(unleash.MeetsCardAvailabilityRequirement([new Protector()]), "Unleash upgrade should accept Protector");
+
+		Expect((object)new StrikeUpgradeRune() is not IHextechSelectionFooterProvider, "Strike upgrade should not show a pickup footer");
+		Expect((object)new DefendUpgradeRune() is not IHextechSelectionFooterProvider, "Defend upgrade should not show a pickup footer");
+		Expect(!StrikeUpgradeRune.HasBasicStrike([]), "Strike upgrade should require a basic Strike");
+		Expect(StrikeUpgradeRune.HasBasicStrike([new StrikeIronclad()]), "Strike upgrade should accept a basic Strike");
+		Expect(!DefendUpgradeRune.HasBasicDefend([]), "Defend upgrade should require a basic Defend");
+		Expect(DefendUpgradeRune.HasBasicDefend([new DefendIronclad()]), "Defend upgrade should accept a basic Defend");
+	}
+
+	private static void BashUpgradeStrengthMatchesVulnerableApplied()
+	{
+		Bash bash = CreateMutableTestModel<Bash>();
+		Equal(2m, BashUpgradeRune.CalculateStrengthGain(bash), "base Bash vulnerable and Strength");
+		CardCmd.Upgrade(bash);
+		Equal(3m, BashUpgradeRune.CalculateStrengthGain(bash), "upgraded Bash vulnerable and Strength");
+
+		Break breakCard = CreateMutableTestModel<Break>();
+		Equal(5m, BashUpgradeRune.CalculateStrengthGain(breakCard), "base Break vulnerable and Strength");
+		CardCmd.Upgrade(breakCard);
+		Equal(7m, BashUpgradeRune.CalculateStrengthGain(breakCard), "upgraded Break vulnerable and Strength");
+
+		Equal(0m, BashUpgradeRune.CalculateStrengthGain(new StrikeIronclad()), "unrelated card Strength");
 	}
 
 	private static void StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops()
@@ -3233,6 +3294,20 @@ internal static partial class Program
 	{
 		Equal(15m, BigHammerRune.CalculateForgeAmount(10m, 50m, sourceAlreadyIncludesBonus: false), "direct forge bonus");
 		Equal(15m, BigHammerRune.CalculateForgeAmount(15m, 50m, sourceAlreadyIncludesBonus: true), "hammer time propagated forge");
+	}
+
+	private static void HundredRefinementsRequiresTwoBodyForges()
+	{
+		var rune = new HundredRefinementsRune();
+		Equal(2, rune.DynamicVars["BodyForges"].IntValue, "Hundred Refinements body forge requirement");
+	}
+
+	private static void HastyScribbleDrawsToFullHandAtTurnStart()
+	{
+		Equal(CardPile.MaxCardsInHand, HastyScribbleRune.CalculateCardsToDraw(0), "empty hand draw");
+		Equal(6, HastyScribbleRune.CalculateCardsToDraw(4), "partially filled hand draw");
+		Equal(0, HastyScribbleRune.CalculateCardsToDraw(CardPile.MaxCardsInHand), "full hand draw");
+		Equal(0, HastyScribbleRune.CalculateCardsToDraw(CardPile.MaxCardsInHand + 1), "overfull hand draw");
 	}
 
 	private static void BigHandsIncreasesSummonAmountByFiftyPercent()
