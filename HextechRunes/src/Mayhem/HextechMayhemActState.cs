@@ -328,8 +328,7 @@ internal sealed class HextechMayhemActState
 		HashSet<MonsterHexKind> seen = new();
 		for (int actIndex = 0; actIndex < Math.Min(ActCountValue, value.Length); actIndex++)
 		{
-			// 旧版"改名敌方海克斯"的退役枚举值先 remap 到新身份，再走 IsDefined 防御。
-			int rawHex = MonsterHexKindMigration.RemapRawValue(value[actIndex]);
+			int rawHex = value[actIndex];
 			if (Enum.IsDefined(typeof(MonsterHexKind), rawHex))
 			{
 				MonsterHexKind hex = (MonsterHexKind)rawHex;
@@ -500,13 +499,12 @@ internal sealed class HextechMayhemActState
 
 		foreach (int rawHex in value)
 		{
-			int remappedHex = MonsterHexKindMigration.RemapRawValue(rawHex);
-			if (!Enum.IsDefined(typeof(MonsterHexKind), remappedHex))
+			if (!Enum.IsDefined(typeof(MonsterHexKind), rawHex))
 			{
 				continue;
 			}
 
-			MonsterHexKind hex = (MonsterHexKind)remappedHex;
+			MonsterHexKind hex = (MonsterHexKind)rawHex;
 			if (seen.Add(hex))
 			{
 				normalized.Add(hex);

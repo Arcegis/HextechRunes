@@ -99,7 +99,6 @@ internal static class HextechEnemyHexEffects
 		new ForgottenSoulEnemyHex(),
 		new CerberusEnemyHex(),
 		new OmniDragonSoulEnemyHex(),
-		new BlankCheckEnemyHex(),
 		new CorrosionEnemyHex(),
 		new BrutalityEnemyHex(),
 		new JudicatorEnemyHex(),

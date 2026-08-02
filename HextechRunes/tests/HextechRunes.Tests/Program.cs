@@ -174,7 +174,7 @@ internal static partial class Program
 			new(nameof(SavedPropertyLateExternalRegistrationLeavesNoPartialState), SavedPropertyLateExternalRegistrationLeavesNoPartialState),
 			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
 			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
-			new(nameof(ConfigMigrationV25AddsNewDefaultDisables), ConfigMigrationV25AddsNewDefaultDisables),
+			new(nameof(ConfigMigrationV25AddsNewPlayerDefaultDisable), ConfigMigrationV25AddsNewPlayerDefaultDisable),
 			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
 			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
@@ -929,7 +929,6 @@ internal static partial class Program
 		typeof(AnthonyBiasRune),
 		typeof(AstralBodyRune),
 		typeof(CorruptedBranchRune),
-		typeof(CrackTheEggRune),
 		typeof(CuttingEdgeAlchemistRune),
 		typeof(DawnbringersResolveRune),
 		typeof(EarthAwakensRune),
@@ -938,14 +937,10 @@ internal static partial class Program
 		typeof(FeelTheBurnRune),
 		typeof(HappyAccidentRune),
 		typeof(HardBonesRune),
-		typeof(HolyFireRune),
 		typeof(MasterOfDualityRune),
-		typeof(MindPurificationRune),
 		typeof(NeowsGrudgeRune),
 		typeof(NightParadeRune),
-		typeof(NoNonsenseRune),
 		typeof(OkBoomerangRune),
-		typeof(OldIdolRune),
 		typeof(PrimitiveMadnessRune),
 		typeof(RegenerationSuppressionRune),
 		typeof(SuperBrainRune),
@@ -974,20 +969,13 @@ internal static partial class Program
 			$"v15 factory defaults + migration chain should equal current factory defaults; migrated:\n{string.Join("\n", migrated.OrderBy(static id => id, StringComparer.Ordinal))}\ncurrent defaults:\n{string.Join("\n", HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal))}");
 	}
 
-	private static void ConfigMigrationV25AddsNewDefaultDisables()
+	private static void ConfigMigrationV25AddsNewPlayerDefaultDisable()
 	{
 		(int playerVersion, IReadOnlySet<string> disabledPlayers) = HextechRuneConfiguration.MigrateDisabledIdsForTests(25, []);
 		Equal(26, playerVersion, "v25 player config should land on current version");
 		Expect(
 			disabledPlayers.Contains(ModelDb.GetId<DullBladeRune>().Entry),
 			"v25 player config migration should default-disable Dull Blade");
-
-		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
-			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(25, []);
-		Equal(26, monsterVersion, "v25 monster config should land on current version");
-		Expect(
-			disabledMonsters.Contains(MonsterHexKind.BlankCheck.ToString()),
-			"v25 monster config migration should default-disable enemy Blank Check");
 	}
 
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
@@ -2242,9 +2230,6 @@ internal static partial class Program
 		Expect(snapshot.DisabledPlayerRuneIds.Contains(escapePlanId), "default snapshot should disable escape plan");
 		Expect(snapshot.DisabledPlayerRuneIds.Contains(dullBladeId), "default snapshot should disable Dull Blade");
 		Expect(!snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "corrupted branch should be enabled by default since config v16");
-		Expect(
-			snapshot.DisabledMonsterHexIds.Contains(MonsterHexKind.BlankCheck.ToString()),
-			"default snapshot should disable enemy Blank Check without removing it from the configurable pool");
 	}
 
 	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
@@ -2684,9 +2669,6 @@ internal static partial class Program
 	private static void MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		Expect(
-			metadata.IsEnabled(MonsterHexKind.BlankCheck),
-			"enemy Blank Check should remain registry-enabled so players can opt it back in through configuration");
 		MonsterHexRegistration[] disabledRegistrations = metadata.Registrations
 			.Where(static registration => registration.Disabled)
 			.ToArray();

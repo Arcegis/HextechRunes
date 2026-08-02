@@ -99,15 +99,10 @@ internal static class HextechRuneConfiguration
 		typeof(AnthonyBiasRune)
 	];
 
-	// 设计审查批次:钝刀片默认关闭;敌方空白支票保留在配置页中,但新旧默认配置均关闭。
+	// 设计审查批次:钝刀片默认关闭。
 	private static readonly Type[] Version26DefaultDisabledRuneTypes =
 	[
 		typeof(DullBladeRune)
-	];
-
-	private static readonly MonsterHexKind[] Version26DefaultDisabledMonsterHexKinds =
-	[
-		MonsterHexKind.BlankCheck
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -232,8 +227,7 @@ internal static class HextechRuneConfiguration
 			.SelectMany(static kinds => kinds)
 			.Select(static kind => kind.ToString())
 			.ToHashSet(StringComparer.Ordinal);
-		// 旧配置里"改名敌方海克斯"的退役枚举名（如 GhostForm）remap 到新身份名再校验。
-		return NormalizeStringIds(ids?.Select(MonsterHexKindMigration.RemapName), validIds);
+		return NormalizeStringIds(ids, validIds);
 	}
 
 	internal static HashSet<string> NormalizeDisabledForgeIds(IEnumerable<string>? ids)
@@ -250,9 +244,7 @@ internal static class HextechRuneConfiguration
 
 	public static IReadOnlySet<string> GetDefaultDisabledMonsterHexIds()
 	{
-		return Version26DefaultDisabledMonsterHexKinds
-			.Select(static kind => kind.ToString())
-			.ToHashSet(StringComparer.Ordinal);
+		return new HashSet<string>(StringComparer.Ordinal);
 	}
 
 	public static IReadOnlySet<string> GetDefaultDisabledForgeIds()
@@ -493,8 +485,6 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 26)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version26DefaultDisabledRuneTypes));
-			disabledMonsterHexIds.UnionWith(
-				Version26DefaultDisabledMonsterHexKinds.Select(static kind => kind.ToString()));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;
