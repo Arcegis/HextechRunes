@@ -252,7 +252,28 @@ internal static partial class Program
 			new(nameof(AbyssalContractChoiceModelsMapToExpectedContracts), AbyssalContractChoiceModelsMapToExpectedContracts),
 			new(nameof(AbyssalContractWarriorEliteThresholdGrows), AbyssalContractWarriorEliteThresholdGrows),
 			new(nameof(AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters), AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters),
-			new(nameof(AbyssalContractWarriorCardFilterRejectsSkillsAndPowers), AbyssalContractWarriorCardFilterRejectsSkillsAndPowers)
+			new(nameof(AbyssalContractWarriorCardFilterRejectsSkillsAndPowers), AbyssalContractWarriorCardFilterRejectsSkillsAndPowers),
+			new(nameof(ActualDamageHookCannotSuppressOutOfCombatCalls), ActualDamageHookCannotSuppressOutOfCombatCalls),
+			new(nameof(HookReflectionRequiresExactSignatures), HookReflectionRequiresExactSignatures),
+			new(nameof(SavedPropertyProtocolClassifierMatchesOnlyOfficialShapes), SavedPropertyProtocolClassifierMatchesOnlyOfficialShapes),
+			new(nameof(SavedPropertyLateRegistrationFailsClosedOn0107WithoutPartialState), SavedPropertyLateRegistrationFailsClosedOn0107WithoutPartialState),
+			new(nameof(ExternalRegistrationValidationPrecedesAllSideEffects), ExternalRegistrationValidationPrecedesAllSideEffects),
+			new(nameof(ExternalResourceOwnershipIsFirstWriterWinsAndIdempotent), ExternalResourceOwnershipIsFirstWriterWinsAndIdempotent),
+			new(nameof(SavedForgeRewardRestoreFiltersUnavailableExternalContent), SavedForgeRewardRestoreFiltersUnavailableExternalContent),
+			new(nameof(SavedForgeRewardRestoreKeepsGoldFallbackWhenAllOptionsInvalid), SavedForgeRewardRestoreKeepsGoldFallbackWhenAllOptionsInvalid),
+			new(nameof(StormReplacementRequiresMayhemAndUpgradeRune), StormReplacementRequiresMayhemAndUpgradeRune),
+			new(nameof(EntomancerFallbackIsVersionScopedAndMissingHiveOnly), EntomancerFallbackIsVersionScopedAndMissingHiveOnly),
+			new(nameof(EnemyPowerScalingDoesNotPatchOfficialModifierPipeline), EnemyPowerScalingDoesNotPatchOfficialModifierPipeline),
+			new(nameof(CardPlayAllowancePreservesThirdPartyDenials), CardPlayAllowancePreservesThirdPartyDenials),
+			new(nameof(CardPlayAllowanceAndBlockerUseSeparatePriorities), CardPlayAllowanceAndBlockerUseSeparatePriorities),
+			new(nameof(HealCompositionUsesActualHpDelta), HealCompositionUsesActualHpDelta),
+			new(nameof(ColorDiscoveryRewardUsesPublicCardsAndMissingSpecialFieldKeepsOriginal), ColorDiscoveryRewardUsesPublicCardsAndMissingSpecialFieldKeepsOriginal),
+			new(nameof(ColorDiscoveryIncludesThirdPartyCharacterPools), ColorDiscoveryIncludesThirdPartyCharacterPools),
+			new(nameof(MapLengthReducerRejectsGoldenPathAndThirdPartyMapTypes), MapLengthReducerRejectsGoldenPathAndThirdPartyMapTypes),
+			new(nameof(JeweledGauntletReflectionTargetsFailClosedAsAGroup), JeweledGauntletReflectionTargetsFailClosedAsAGroup),
+			new(nameof(TestSubjectRespawnReflectionMissingFallsBackToZero), TestSubjectRespawnReflectionMissingFallsBackToZero),
+			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
+			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives)
 		];
 
 		int failed = 0;
