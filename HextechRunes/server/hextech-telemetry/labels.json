@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "HextechRunes + HextechRunesSponsorPack zhs relics.json (0.8.8 补全)",
+  "generatedFrom": "HextechRunes + HextechRunesSponsorPack zhs relics.json (0.8.10 补全)",
   "runes": {
     "JUDICATOR_RUNE": "裁决使",
     "SLAP_RUNE": "扇巴掌",
@@ -439,7 +439,17 @@
     "PRISMATIC_EGG_RUNE": "棱彩蛋",
     "SOUL_UPGRADE_RUNE": "升级：灵魂",
     "TWILIGHT_VEIL_RUNE": "薄暮法衣",
-    "ABYSSAL_CONTRACT_RUNE": "深渊契约"
+    "ABYSSAL_CONTRACT_RUNE": "深渊契约",
+    "PACTS_END_UPGRADE_RUNE": "升级：契约终结",
+    "BRAND_UPGRADE_RUNE": "升级：烙印",
+    "CORROSIVE_WAVE_UPGRADE_RUNE": "升级：腐蚀波",
+    "TERMINAL_ILLNESS_RUNE": "病入膏肓",
+    "BIG_HAMMER_RUNE": "大锤子",
+    "OBLIVION_UPGRADE_RUNE": "升级：湮灭",
+    "SPIN_TO_WIN_RUNE": "转出胜利",
+    "STORM_UPGRADE_RUNE": "升级：雷暴",
+    "WROUGHT_IN_WAR_UPGRADE_RUNE": "升级：战火铸就",
+    "DECISIONS_DECISIONS_UPGRADE_RUNE": "升级：抉择，抉择"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",
@@ -516,7 +526,7 @@
     "ProteinShake": "蛋白粉奶昔",
     "GoldenSpatula": "金铲铲",
     "HailToTheKing": "尊我为王",
-    "EightPennyGate": "扉八分钱",
+    "EightPennyGate": "我饥饿",
     "DuffsVintage": "达弗的陈酿",
     "HastyScribble": "潦草急就",
     "Misery": "苦楚",
@@ -567,7 +577,9 @@
     "TungstenRod": "升级：钨合金棍",
     "AncientStatue": "升级：旧日雕像",
     "HundredRefinements": "百炼成钢",
-    "VitalitySurge": "生机迸发"
+    "VitalitySurge": "生机迸发",
+    "IInspect": "我细看",
+    "IGrip": "我紧握"
   },
   "characters": {
     "IRONCLAD": "战士",
