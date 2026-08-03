@@ -237,6 +237,7 @@ internal static partial class Program
 			new(nameof(EventRewardTransactionCommitsSequentially), EventRewardTransactionCommitsSequentially),
 			new(nameof(EventRewardTransactionRejectsLateRecordsAndSecondCommit), EventRewardTransactionRejectsLateRecordsAndSecondCommit),
 			new(nameof(EventRewardTransactionTryRecordSkipsLateAsyncRewards), EventRewardTransactionTryRecordSkipsLateAsyncRewards),
+			new(nameof(DoubleVisionCopiesTrackedCardsWhenMultiSelectEndsWithoutCompletingReward), DoubleVisionCopiesTrackedCardsWhenMultiSelectEndsWithoutCompletingReward),
 			new(nameof(DoubleVisionCopiesWaxStateWithoutCopyingMeltedState), DoubleVisionCopiesWaxStateWithoutCopyingMeltedState),
 			new(nameof(DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect), DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect),
 			new(nameof(DoubleVisionDustyTomeSaveLoadPreservesAncientCard), DoubleVisionDustyTomeSaveLoadPreservesAncientCard),
@@ -3917,6 +3918,19 @@ internal static partial class Program
 		}).GetAwaiter().GetResult();
 
 		Expect(committed.SequenceEqual([1]), "late inherited reward must not enter the committed event batch");
+	}
+
+	private static void DoubleVisionCopiesTrackedCardsWhenMultiSelectEndsWithoutCompletingReward()
+	{
+		Expect(
+			DoubleVisionRune.ShouldDuplicateTrackedCardRewards(rewardComplete: false, addedCardCount: 1),
+			"cards already obtained through Hattrick must still be duplicated when the reward ends via Skip");
+		Expect(
+			DoubleVisionRune.ShouldDuplicateTrackedCardRewards(rewardComplete: true, addedCardCount: 2),
+			"all tracked cards from a completed multi-select reward should be duplicated");
+		Expect(
+			!DoubleVisionRune.ShouldDuplicateTrackedCardRewards(rewardComplete: false, addedCardCount: 0),
+			"an empty skipped reward must not create a card copy");
 	}
 
 	private static void DoubleVisionCopiesWaxStateWithoutCopyingMeltedState()
