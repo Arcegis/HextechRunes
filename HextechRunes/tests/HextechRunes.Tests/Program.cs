@@ -180,6 +180,7 @@ internal static partial class Program
 			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
 			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
 			new(nameof(ConfigMigrationV25AddsNewPlayerDefaultDisable), ConfigMigrationV25AddsNewPlayerDefaultDisable),
+			new(nameof(ConfigMigrationV26AddsNewPlayerDefaultDisables), ConfigMigrationV26AddsNewPlayerDefaultDisables),
 			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
 			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
@@ -980,7 +981,7 @@ internal static partial class Program
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
-		Equal(26, version, "v14 config should land on current version");
+		Equal(27, version, "v14 config should land on current version");
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
@@ -990,7 +991,7 @@ internal static partial class Program
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
 		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
-		Equal(26, version, "v15 config should land on current version");
+		Equal(27, version, "v15 config should land on current version");
 		SetEqual(
 			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
 			migrated,
@@ -1000,22 +1001,38 @@ internal static partial class Program
 	private static void ConfigMigrationV25AddsNewPlayerDefaultDisable()
 	{
 		(int playerVersion, IReadOnlySet<string> disabledPlayers) = HextechRuneConfiguration.MigrateDisabledIdsForTests(25, []);
-		Equal(26, playerVersion, "v25 player config should land on current version");
+		Equal(27, playerVersion, "v25 player config should land on current version");
 		Expect(
 			disabledPlayers.Contains(ModelDb.GetId<DullBladeRune>().Entry),
 			"v25 player config migration should default-disable Dull Blade");
 	}
 
+	private static void ConfigMigrationV26AddsNewPlayerDefaultDisables()
+	{
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, []);
+		Equal(27, version, "v26 player config should land on current version");
+		SetEqual(
+			HextechPlayerRuneConfigIds.FromTypes(
+			[
+				typeof(OmegaRune),
+				typeof(OkBoomerangRune),
+				typeof(FeyMagicRune),
+				typeof(AstralBodyRune)
+			]).ToArray(),
+			disabled,
+			"v26 player config migration should add the newly default-disabled runes");
+	}
+
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, [customId]);
-		Equal(26, version, "current-version config keeps version");
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(27, [customId]);
+		Equal(27, version, "current-version config keeps version");
 		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
 
 		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
-			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(26, [MonsterHexKind.FrostWraith.ToString()]);
-		Equal(26, monsterVersion, "current-version monster config keeps version");
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(27, [MonsterHexKind.FrostWraith.ToString()]);
+		Equal(27, monsterVersion, "current-version monster config keeps version");
 		SetEqual(
 			[MonsterHexKind.FrostWraith.ToString()],
 			disabledMonsters,
@@ -2334,6 +2351,12 @@ internal static partial class Program
 		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(escapePlanId), "default player rune ids should disable escape plan");
 		Expect(snapshot.DisabledPlayerRuneIds.Contains(escapePlanId), "default snapshot should disable escape plan");
 		Expect(snapshot.DisabledPlayerRuneIds.Contains(dullBladeId), "default snapshot should disable Dull Blade");
+		foreach (Type runeType in new[] { typeof(OmegaRune), typeof(OkBoomerangRune), typeof(FeyMagicRune), typeof(PorcupineRune), typeof(AstralBodyRune) })
+		{
+			Expect(
+				snapshot.DisabledPlayerRuneIds.Contains(ModelDb.GetId(runeType).Entry),
+				$"default snapshot should disable {runeType.Name}");
+		}
 		Expect(!snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "corrupted branch should be enabled by default since config v16");
 	}
 
