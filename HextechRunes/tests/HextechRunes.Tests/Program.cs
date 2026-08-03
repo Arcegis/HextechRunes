@@ -86,6 +86,7 @@ internal static partial class Program
 			new(nameof(FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering), FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering),
 			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
 			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
+			new(nameof(ConsecutiveSilverRuleExcludesSilverFromEveryLaterAct), ConsecutiveSilverRuleExcludesSilverFromEveryLaterAct),
 			new(nameof(GoldenRerollOnlyUpgradesSilverAndGold), GoldenRerollOnlyUpgradesSilverAndGold),
 			new(nameof(GoldenRerollUsesExactFivePercentWindow), GoldenRerollUsesExactFivePercentWindow),
 			new(nameof(GoldenRerollSeparatesPlayersAndKeepsConsoleLocal), GoldenRerollSeparatesPlayersAndKeepsConsoleLocal),
@@ -181,6 +182,7 @@ internal static partial class Program
 			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
 			new(nameof(ConfigMigrationV25AddsNewPlayerDefaultDisable), ConfigMigrationV25AddsNewPlayerDefaultDisable),
 			new(nameof(ConfigMigrationV26AddsNewPlayerDefaultDisables), ConfigMigrationV26AddsNewPlayerDefaultDisables),
+			new(nameof(ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention), ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention),
 			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
 			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
@@ -322,9 +324,9 @@ internal static partial class Program
 			DisabledPlayerRuneIds = disabledIds,
 			DisabledMonsterHexIds = [ MonsterHexKind.FrostWraith.ToString() ],
 			DisabledForgeIds = [ disabledForgeId ],
-			FirstActRuneRarityWeights = new HextechRarityWeights(1, 2, 3),
-			NormalRuneRarityWeights = new HextechRarityWeights(4, 5, 6),
-			SecondActAfterSilverRuneRarityWeights = new HextechRarityWeights(0, 7, 8),
+			RuneRarityWeights = new HextechRarityWeights(4, 5, 6),
+			PreventConsecutiveSilverRunes = false,
+			GoldenRerollChancePercent = 37,
 			ForgeRarityWeights = new HextechForgeRarityWeights(9, 10, 11),
 			RandomForgeShopPrice = 123,
 			PlayerRuneRerollLimit = 8,
@@ -361,6 +363,9 @@ internal static partial class Program
 		Equal(123, decodedSnapshot.RandomForgeShopPrice, "forge shop price");
 		Equal(8, decodedSnapshot.PlayerRuneRerollLimit, "player reroll limit");
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, decodedSnapshot.MonsterHexRerollLimit, "monster reroll limit");
+		Equal(new HextechRarityWeights(4, 5, 6), decodedSnapshot.RuneRarityWeights, "rune rarity weights");
+		Equal(false, decodedSnapshot.PreventConsecutiveSilverRunes, "prevent consecutive Silver toggle");
+		Equal(37, decodedSnapshot.GoldenRerollChancePercent, "golden reroll chance");
 		Equal(10, decodedSnapshot.ForgeRarityWeights.Gold, "forge rarity weight");
 		Expect(!HextechChoiceCodec.TryDecodeActRoll(result, 0, out _, out _, out _, out _, out _), "wrong act should be rejected");
 	}
@@ -982,7 +987,7 @@ internal static partial class Program
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
-		Equal(27, version, "v14 config should land on current version");
+		Equal(29, version, "v14 config should land on current version");
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
@@ -992,7 +997,7 @@ internal static partial class Program
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
 		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
-		Equal(27, version, "v15 config should land on current version");
+		Equal(29, version, "v15 config should land on current version");
 		SetEqual(
 			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
 			migrated,
@@ -1002,7 +1007,7 @@ internal static partial class Program
 	private static void ConfigMigrationV25AddsNewPlayerDefaultDisable()
 	{
 		(int playerVersion, IReadOnlySet<string> disabledPlayers) = HextechRuneConfiguration.MigrateDisabledIdsForTests(25, []);
-		Equal(27, playerVersion, "v25 player config should land on current version");
+		Equal(29, playerVersion, "v25 player config should land on current version");
 		Expect(
 			disabledPlayers.Contains(ModelDb.GetId<DullBladeRune>().Entry),
 			"v25 player config migration should default-disable Dull Blade");
@@ -1011,7 +1016,7 @@ internal static partial class Program
 	private static void ConfigMigrationV26AddsNewPlayerDefaultDisables()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, []);
-		Equal(27, version, "v26 player config should land on current version");
+		Equal(29, version, "v26 player config should land on current version");
 		SetEqual(
 			HextechPlayerRuneConfigIds.FromTypes(
 			[
@@ -1027,17 +1032,35 @@ internal static partial class Program
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(27, [customId]);
-		Equal(27, version, "current-version config keeps version");
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(29, [customId]);
+		Equal(29, version, "current-version config keeps version");
 		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
 
 		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
-			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(27, [MonsterHexKind.FrostWraith.ToString()]);
-		Equal(27, monsterVersion, "current-version monster config keeps version");
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(29, [MonsterHexKind.FrostWraith.ToString()]);
+		Equal(29, monsterVersion, "current-version monster config keeps version");
 		SetEqual(
 			[MonsterHexKind.FrostWraith.ToString()],
 			disabledMonsters,
 			"current-version monster config should preserve a user-enabled Blank Check");
+	}
+
+	private static void ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention()
+	{
+		(int migratedVersion, HextechRarityWeights migratedWeights, bool ruleEnabledWithZeroLegacySilverWeight) =
+			HextechRuneConfiguration.MigrateRarityConfigForTests(
+				27,
+				new HextechRarityWeights(4, 5, 6),
+				new HextechRarityWeights(0, 7, 8));
+		Equal(29, migratedVersion, "v27 rarity config should land on current version");
+		Equal(new HextechRarityWeights(4, 5, 6), migratedWeights, "v27 normal weights should become rune weights");
+		Equal(true, ruleEnabledWithZeroLegacySilverWeight, "legacy rarity config should enable consecutive-Silver prevention by default");
+
+		(_, _, bool ruleEnabledWithPositiveLegacySilverWeight) = HextechRuneConfiguration.MigrateRarityConfigForTests(
+			27,
+			new HextechRarityWeights(1, 1, 1),
+			new HextechRarityWeights(2, 1, 1));
+		Equal(true, ruleEnabledWithPositiveLegacySilverWeight, "removed legacy after-Silver weights should not disable the new default-on rule");
 	}
 
 	// SavedProperty 属性名集合直接决定联机 net-id 布局(规范化按名排序):任何新增/改名/删除都必须是
@@ -1407,6 +1430,52 @@ internal static partial class Program
 		Expect(!HextechRarityRollResolver.HasAllRarities(order), "partial-rarity detection");
 	}
 
+	private static void ConsecutiveSilverRuleExcludesSilverFromEveryLaterAct()
+	{
+		HextechRarityWeights configured = new(2, 5, 3);
+		Equal(
+			configured,
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 0, null),
+			"first act weights");
+		Equal(
+			configured,
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 1, HextechRarityTier.Gold),
+			"weights after non-Silver act");
+		Equal(
+			configured,
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, false, 1, HextechRarityTier.Silver),
+			"disabled consecutive-Silver rule");
+		Equal(
+			new HextechRarityWeights(0, 5, 3),
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 1, HextechRarityTier.Silver),
+			"second act weights after Silver");
+		Equal(
+			new HextechRarityWeights(0, 5, 3),
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 2, HextechRarityTier.Silver),
+			"third act weights after Silver");
+		Equal(
+			new HextechRarityWeights(0, 1, 1),
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(new HextechRarityWeights(9, 0, 0), true, 2, HextechRarityTier.Silver),
+			"non-Silver zero-weight fallback");
+
+		SequenceEqual(
+			new[] { HextechRarityTier.Gold },
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityCandidates(
+				[ HextechRarityTier.Silver, HextechRarityTier.Gold ],
+				true,
+				1,
+				HextechRarityTier.Silver),
+			"enabled non-Silver candidates");
+		SequenceEqual(
+			new[] { HextechRarityTier.Gold, HextechRarityTier.Prismatic },
+			HextechRuneSelectionCoordinator.GetEffectiveActRarityCandidates(
+				[ HextechRarityTier.Silver ],
+				true,
+				1,
+				HextechRarityTier.Silver),
+			"strict non-Silver fallback candidates");
+	}
+
 	private static void GoldenRerollOnlyUpgradesSilverAndGold()
 	{
 		Expect(
@@ -1436,25 +1505,43 @@ internal static partial class Program
 		for (int roll = 0; roll < 100; roll++)
 		{
 			Equal(
-				roll < HextechGoldenRerollRules.ActivationPercent,
+				roll < 5,
 				HextechGoldenRerollRules.ShouldActivateForRoll(
 					HextechRarityTier.Silver,
 					hasUpgradedCandidates: true,
-					roll),
+					roll,
+					activationPercent: 5),
 				$"silver golden reroll roll {roll}");
 		}
 
 		Expect(
 			!HextechGoldenRerollRules.ShouldActivateForRoll(
+				HextechRarityTier.Silver,
+				hasUpgradedCandidates: true,
+				percentRoll: 0,
+				activationPercent: 0),
+			"zero percent should never activate");
+		Expect(
+			HextechGoldenRerollRules.ShouldActivateForRoll(
+				HextechRarityTier.Gold,
+				hasUpgradedCandidates: true,
+				percentRoll: 99,
+				activationPercent: 100),
+			"one hundred percent should always activate for eligible rolls");
+
+		Expect(
+			!HextechGoldenRerollRules.ShouldActivateForRoll(
 				HextechRarityTier.Prismatic,
 				hasUpgradedCandidates: true,
-				percentRoll: 0),
+				percentRoll: 0,
+				activationPercent: 100),
 			"prismatic should not activate even on a winning roll");
 		Expect(
 			!HextechGoldenRerollRules.ShouldActivateForRoll(
 				HextechRarityTier.Gold,
 				hasUpgradedCandidates: false,
-				percentRoll: 0),
+				percentRoll: 0,
+				activationPercent: 100),
 			"gold should not activate when the upgraded pool is unavailable");
 	}
 
@@ -2339,6 +2426,11 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 3 }, snapshot.EnemyHexCountsByAct, "default enemy act counts");
 		Equal(1, snapshot.PlayerRuneRerollLimit, "default player reroll limit");
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, snapshot.MonsterHexRerollLimit, "default monster reroll limit");
+		Equal(new HextechRarityWeights(1, 1, 1), snapshot.RuneRarityWeights, "default rune rarity weights");
+		Equal(true, snapshot.PreventConsecutiveSilverRunes, "default prevent consecutive Silver toggle");
+		Equal(5, snapshot.GoldenRerollChancePercent, "default golden reroll chance");
+		Equal(0, HextechRuneConfiguration.ClampGoldenRerollChancePercent(-1), "golden reroll chance lower clamp");
+		Equal(100, HextechRuneConfiguration.ClampGoldenRerollChancePercent(101), "golden reroll chance upper clamp");
 	}
 
 	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()

@@ -7,7 +7,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 27;
+	private const int CurrentConfigVersion = 29;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -21,15 +21,17 @@ internal static class HextechRuneConfiguration
 	private const int MaxRandomForgeShopPrice = 9999;
 	private const int DefaultRandomForgeShopPrice = 250;
 	private const bool DefaultRandomForgeDirectGrant = false;
+	private const bool DefaultPreventConsecutiveSilverRunes = true;
+	private const int DefaultGoldenRerollChancePercent = 5;
+	private const int MinGoldenRerollChancePercent = 0;
+	private const int MaxGoldenRerollChancePercent = 100;
 	// 模组总开关默认开启:关闭后本局表现得与原版一致(开局时快照,联机按房主)。
 	private const bool DefaultModEnabled = true;
 	private static readonly int[] DefaultPlayerHexCountsByAct = [ 1, 1, 1 ];
 	private static readonly int[] DefaultEnemyHexCountsByAct = [ 1, 2, 3 ];
 	private const int DefaultPlayerRuneRerollLimit = 1;
 	private const int DefaultMonsterHexRerollLimit = InfiniteRerollLimit;
-	private static readonly HextechRarityWeights DefaultFirstActRuneRarityWeights = new(2, 5, 3);
-	private static readonly HextechRarityWeights DefaultNormalRuneRarityWeights = new(1, 1, 1);
-	private static readonly HextechRarityWeights DefaultSecondActAfterSilverRuneRarityWeights = new(0, 1, 1);
+	private static readonly HextechRarityWeights DefaultRuneRarityWeights = new(1, 1, 1);
 	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
 	// v4~v14 的历史迁移段与配套数组已删除:v15(0.8.4)强制重置使 ConfigVersion<15 一律整体回默认,
 	// 那些分支永不可达。活跃链从 v16 起。
@@ -214,9 +216,9 @@ internal static class HextechRuneConfiguration
 				_config.DisabledPlayerRuneIds,
 				_config.DisabledMonsterHexIds,
 				_config.DisabledForgeIds,
-				ToRarityWeights(_config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
-				ToRarityWeights(_config.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
-				ToRarityWeights(_config.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
+				ToRarityWeights(_config.RuneRarityWeights, DefaultRuneRarityWeights),
+				_config.PreventConsecutiveSilverRunes,
+				_config.GoldenRerollChancePercent,
 				ToForgeRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
 				_config.RandomForgeShopPrice,
 				_config.RandomForgeDirectGrant,
@@ -297,9 +299,12 @@ internal static class HextechRuneConfiguration
 			_config.DisabledPlayerRuneIds = normalized.DisabledPlayerRuneIds;
 			_config.DisabledMonsterHexIds = normalized.DisabledMonsterHexIds;
 			_config.DisabledForgeIds = normalized.DisabledForgeIds;
-			_config.FirstActRuneRarityWeights = FromRarityWeights(normalized.FirstActRuneRarityWeights);
-			_config.NormalRuneRarityWeights = FromRarityWeights(normalized.NormalRuneRarityWeights);
-			_config.SecondActAfterSilverRuneRarityWeights = FromRarityWeights(normalized.SecondActAfterSilverRuneRarityWeights);
+			_config.RuneRarityWeights = FromRarityWeights(normalized.RuneRarityWeights);
+			_config.PreventConsecutiveSilverRunes = normalized.PreventConsecutiveSilverRunes;
+			_config.GoldenRerollChancePercent = normalized.GoldenRerollChancePercent;
+			_config.FirstActRuneRarityWeights = null;
+			_config.NormalRuneRarityWeights = null;
+			_config.SecondActAfterSilverRuneRarityWeights = null;
 			_config.ForgeRarityWeights = FromForgeRarityWeights(normalized.ForgeRarityWeights);
 			_config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
 			_config.RandomForgeDirectGrant = normalized.RandomForgeDirectGrant;
@@ -419,9 +424,9 @@ internal static class HextechRuneConfiguration
 			MonsterHexRerollLimit = DefaultMonsterHexRerollLimit,
 			DisabledMonsterHexIds = GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
 			DisabledForgeIds = GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
-			FirstActRuneRarityWeights = FromRarityWeights(DefaultFirstActRuneRarityWeights),
-			NormalRuneRarityWeights = FromRarityWeights(DefaultNormalRuneRarityWeights),
-			SecondActAfterSilverRuneRarityWeights = FromRarityWeights(DefaultSecondActAfterSilverRuneRarityWeights),
+			RuneRarityWeights = FromRarityWeights(DefaultRuneRarityWeights),
+			PreventConsecutiveSilverRunes = DefaultPreventConsecutiveSilverRunes,
+			GoldenRerollChancePercent = DefaultGoldenRerollChancePercent,
 			ForgeRarityWeights = FromForgeRarityWeights(DefaultForgeRarityWeights),
 			RandomForgeShopPrice = DefaultRandomForgeShopPrice,
 			RandomForgeDirectGrant = DefaultRandomForgeDirectGrant,
@@ -501,6 +506,17 @@ internal static class HextechRuneConfiguration
 			disabledIds.UnionWith(GetPlayerRuneIds(Version27DefaultDisabledRuneTypes));
 		}
 
+		if (previousConfigVersion < 28)
+		{
+			config.RuneRarityWeights = config.NormalRuneRarityWeights;
+			config.PreventConsecutiveSilverRunes = DefaultPreventConsecutiveSilverRunes;
+		}
+
+		if (previousConfigVersion < 29)
+		{
+			config.GoldenRerollChancePercent = DefaultGoldenRerollChancePercent;
+		}
+
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
@@ -509,15 +525,13 @@ internal static class HextechRuneConfiguration
 		config.MonsterHexRerollLimit = ClampRerollLimit(config.MonsterHexRerollLimit);
 		config.DisabledMonsterHexIds = disabledMonsterHexIds;
 		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
-		config.FirstActRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
-			ToRarityWeights(config.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
-			DefaultFirstActRuneRarityWeights));
-		config.NormalRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
-			ToRarityWeights(config.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
-			DefaultNormalRuneRarityWeights));
-		config.SecondActAfterSilverRuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
-			ToRarityWeights(config.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
-			DefaultSecondActAfterSilverRuneRarityWeights));
+		config.RuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
+			ToRarityWeights(config.RuneRarityWeights, DefaultRuneRarityWeights),
+			DefaultRuneRarityWeights));
+		config.GoldenRerollChancePercent = ClampGoldenRerollChancePercent(config.GoldenRerollChancePercent);
+		config.FirstActRuneRarityWeights = null;
+		config.NormalRuneRarityWeights = null;
+		config.SecondActAfterSilverRuneRarityWeights = null;
 		config.ForgeRarityWeights = FromForgeRarityWeights(NormalizeForgeRarityWeights(
 			ToForgeRarityWeights(config.ForgeRarityWeights, DefaultForgeRarityWeights),
 			DefaultForgeRarityWeights));
@@ -597,19 +611,24 @@ internal static class HextechRuneConfiguration
 		return Math.Clamp(price, MinRandomForgeShopPrice, MaxRandomForgeShopPrice);
 	}
 
-	public static HextechRarityWeights GetDefaultFirstActRuneRarityWeights()
+	public static HextechRarityWeights GetDefaultRuneRarityWeights()
 	{
-		return DefaultFirstActRuneRarityWeights;
+		return DefaultRuneRarityWeights;
 	}
 
-	public static HextechRarityWeights GetDefaultNormalRuneRarityWeights()
+	public static bool GetDefaultPreventConsecutiveSilverRunes()
 	{
-		return DefaultNormalRuneRarityWeights;
+		return DefaultPreventConsecutiveSilverRunes;
 	}
 
-	public static HextechRarityWeights GetDefaultSecondActAfterSilverRuneRarityWeights()
+	public static int GetDefaultGoldenRerollChancePercent()
 	{
-		return DefaultSecondActAfterSilverRuneRarityWeights;
+		return DefaultGoldenRerollChancePercent;
+	}
+
+	public static int ClampGoldenRerollChancePercent(int percent)
+	{
+		return Math.Clamp(percent, MinGoldenRerollChancePercent, MaxGoldenRerollChancePercent);
 	}
 
 	public static HextechForgeRarityWeights GetDefaultForgeRarityWeights()
@@ -632,9 +651,9 @@ internal static class HextechRuneConfiguration
 			GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal),
 			GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
 			GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
-			DefaultFirstActRuneRarityWeights,
-			DefaultNormalRuneRarityWeights,
-			DefaultSecondActAfterSilverRuneRarityWeights,
+			DefaultRuneRarityWeights,
+			DefaultPreventConsecutiveSilverRunes,
+			DefaultGoldenRerollChancePercent,
 			DefaultForgeRarityWeights,
 			DefaultRandomForgeShopPrice,
 			DefaultRandomForgeDirectGrant,
@@ -651,9 +670,9 @@ internal static class HextechRuneConfiguration
 			NormalizeDisabledPlayerRuneIds(snapshot.DisabledPlayerRuneIds),
 			NormalizeDisabledMonsterHexIds(snapshot.DisabledMonsterHexIds),
 			NormalizeDisabledForgeIds(snapshot.DisabledForgeIds),
-			NormalizeRarityWeights(snapshot.FirstActRuneRarityWeights, DefaultFirstActRuneRarityWeights),
-			NormalizeRarityWeights(snapshot.NormalRuneRarityWeights, DefaultNormalRuneRarityWeights),
-			NormalizeRarityWeights(snapshot.SecondActAfterSilverRuneRarityWeights, DefaultSecondActAfterSilverRuneRarityWeights),
+			NormalizeRarityWeights(snapshot.RuneRarityWeights, DefaultRuneRarityWeights),
+			snapshot.PreventConsecutiveSilverRunes,
+			ClampGoldenRerollChancePercent(snapshot.GoldenRerollChancePercent),
 			NormalizeForgeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
 			ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice),
 			snapshot.RandomForgeDirectGrant,
@@ -727,6 +746,24 @@ internal static class HextechRuneConfiguration
 		};
 		RuneConfig normalized = NormalizeLoadedConfig(config);
 		return (normalized.ConfigVersion, normalized.DisabledMonsterHexIds);
+	}
+
+	internal static (int ConfigVersion, HextechRarityWeights RuneRarityWeights, bool PreventConsecutiveSilverRunes) MigrateRarityConfigForTests(
+		int configVersion,
+		HextechRarityWeights normalWeights,
+		HextechRarityWeights afterSilverWeights)
+	{
+		RuneConfig config = new()
+		{
+			ConfigVersion = configVersion,
+			NormalRuneRarityWeights = FromRarityWeights(normalWeights),
+			SecondActAfterSilverRuneRarityWeights = FromRarityWeights(afterSilverWeights)
+		};
+		RuneConfig normalized = NormalizeLoadedConfig(config);
+		return (
+			normalized.ConfigVersion,
+			ToRarityWeights(normalized.RuneRarityWeights, DefaultRuneRarityWeights),
+			normalized.PreventConsecutiveSilverRunes);
 	}
 
 	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)
@@ -840,13 +877,25 @@ internal static class HextechRuneConfiguration
 		[JsonPropertyName("disabled_forge_ids")]
 		public HashSet<string> DisabledForgeIds { get; set; } = new(StringComparer.Ordinal);
 
+		[JsonPropertyName("rune_rarity_weights")]
+		public RarityWeightConfig? RuneRarityWeights { get; set; }
+
+		[JsonPropertyName("prevent_consecutive_silver_runes")]
+		public bool PreventConsecutiveSilverRunes { get; set; } = DefaultPreventConsecutiveSilverRunes;
+
+		[JsonPropertyName("golden_reroll_chance_percent")]
+		public int GoldenRerollChancePercent { get; set; } = DefaultGoldenRerollChancePercent;
+
 		[JsonPropertyName("first_act_rune_rarity_weights")]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public RarityWeightConfig? FirstActRuneRarityWeights { get; set; }
 
 		[JsonPropertyName("normal_rune_rarity_weights")]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public RarityWeightConfig? NormalRuneRarityWeights { get; set; }
 
 		[JsonPropertyName("second_act_after_silver_rune_rarity_weights")]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public RarityWeightConfig? SecondActAfterSilverRuneRarityWeights { get; set; }
 
 		[JsonPropertyName("forge_rarity_weights")]

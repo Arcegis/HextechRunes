@@ -23,7 +23,9 @@ internal static class HextechChoiceCodec
 	private const int EnemyHexAdjustmentListVersion = -2;
 	private const int PlayerRuneConfigBitsetVersion = -4;
 	private const int LegacyRunConfigurationSnapshotVersion = -5;
-	private const int RunConfigurationSnapshotVersion = -6;
+	private const int LegacyRerollRunConfigurationSnapshotVersion = -6;
+	private const int PreviousRunConfigurationSnapshotVersion = -7;
+	private const int RunConfigurationSnapshotVersion = -8;
 	private const int PlayerRuneConfigBitsPerWord = 30;
 	private const int MaxPlayerRuneConfigBitsetWords = 64;
 	private const int MaxDisabledMonsterHexes = 128;
@@ -231,9 +233,9 @@ internal static class HextechChoiceCodec
 		payload.AddRange(HextechEnemyHexCountState.Normalize(snapshot.EnemyHexCountsByAct));
 		payload.Add(HextechRuneConfiguration.ClampRerollLimit(snapshot.PlayerRuneRerollLimit));
 		payload.Add(HextechRuneConfiguration.ClampRerollLimit(snapshot.MonsterHexRerollLimit));
-		AppendRarityWeights(payload, snapshot.FirstActRuneRarityWeights);
-		AppendRarityWeights(payload, snapshot.NormalRuneRarityWeights);
-		AppendRarityWeights(payload, snapshot.SecondActAfterSilverRuneRarityWeights);
+		AppendRarityWeights(payload, snapshot.RuneRarityWeights);
+		payload.Add(snapshot.PreventConsecutiveSilverRunes ? 1 : 0);
+		payload.Add(HextechRuneConfiguration.ClampGoldenRerollChancePercent(snapshot.GoldenRerollChancePercent));
 		AppendForgeRarityWeights(payload, snapshot.ForgeRarityWeights);
 		payload.Add(HextechRuneConfiguration.ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice));
 		payload.Add(snapshot.RandomForgeDirectGrant ? 1 : 0);
@@ -272,15 +274,22 @@ internal static class HextechChoiceCodec
 		}
 
 		int snapshotVersion = payload[cursor];
-		if (snapshotVersion != RunConfigurationSnapshotVersion && snapshotVersion != LegacyRunConfigurationSnapshotVersion)
+		if (snapshotVersion != RunConfigurationSnapshotVersion
+			&& snapshotVersion != PreviousRunConfigurationSnapshotVersion
+			&& snapshotVersion != LegacyRerollRunConfigurationSnapshotVersion
+			&& snapshotVersion != LegacyRunConfigurationSnapshotVersion)
 		{
 			return true;
 		}
 
 		cursor++;
-		int fixedIntCount = snapshotVersion == RunConfigurationSnapshotVersion
-			? 3 + 3 + 2 + 3 + 3 + 3 + 3 + 1 + 1
-			: 3 + 3 + 3 + 3 + 3 + 3 + 1;
+		int fixedIntCount = snapshotVersion switch
+		{
+			RunConfigurationSnapshotVersion => 3 + 3 + 2 + 3 + 1 + 1 + 3 + 1 + 1,
+			PreviousRunConfigurationSnapshotVersion => 3 + 3 + 2 + 3 + 1 + 3 + 1 + 1,
+			LegacyRerollRunConfigurationSnapshotVersion => 3 + 3 + 2 + 3 + 3 + 3 + 3 + 1 + 1,
+			_ => 3 + 3 + 3 + 3 + 3 + 3 + 1
+		};
 		if (!HasRemaining(payload, cursor, fixedIntCount))
 		{
 			return false;
@@ -292,19 +301,36 @@ internal static class HextechChoiceCodec
 		cursor += 3;
 		int playerRuneRerollLimit = fallback.PlayerRuneRerollLimit;
 		int monsterHexRerollLimit = fallback.MonsterHexRerollLimit;
-		if (snapshotVersion == RunConfigurationSnapshotVersion)
+		if (snapshotVersion is RunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion or LegacyRerollRunConfigurationSnapshotVersion)
 		{
 			playerRuneRerollLimit = HextechRuneConfiguration.ClampRerollLimit(payload[cursor++]);
 			monsterHexRerollLimit = HextechRuneConfiguration.ClampRerollLimit(payload[cursor++]);
 		}
 
-		HextechRarityWeights firstActWeights = ReadRarityWeights(payload, ref cursor);
-		HextechRarityWeights normalWeights = ReadRarityWeights(payload, ref cursor);
-		HextechRarityWeights secondActAfterSilverWeights = ReadRarityWeights(payload, ref cursor);
+		HextechRarityWeights runeWeights;
+		bool preventConsecutiveSilverRunes;
+		int goldenRerollChancePercent = HextechRuneConfiguration.GetDefaultGoldenRerollChancePercent();
+		if (snapshotVersion is RunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion)
+		{
+			runeWeights = ReadRarityWeights(payload, ref cursor);
+			preventConsecutiveSilverRunes = payload[cursor++] != 0;
+			if (snapshotVersion == RunConfigurationSnapshotVersion)
+			{
+				goldenRerollChancePercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(payload[cursor++]);
+			}
+		}
+		else
+		{
+			_ = ReadRarityWeights(payload, ref cursor);
+			runeWeights = ReadRarityWeights(payload, ref cursor);
+			_ = ReadRarityWeights(payload, ref cursor);
+			preventConsecutiveSilverRunes = HextechRuneConfiguration.GetDefaultPreventConsecutiveSilverRunes();
+		}
+
 		HextechForgeRarityWeights forgeWeights = ReadForgeRarityWeights(payload, ref cursor);
 		int forgePrice = payload[cursor++];
 		bool randomForgeDirectGrant = fallback.RandomForgeDirectGrant;
-		if (snapshotVersion == RunConfigurationSnapshotVersion)
+		if (snapshotVersion is RunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion or LegacyRerollRunConfigurationSnapshotVersion)
 		{
 			randomForgeDirectGrant = payload[cursor++] != 0;
 		}
@@ -353,9 +379,9 @@ internal static class HextechChoiceCodec
 			fallback.DisabledPlayerRuneIds,
 			disabledMonsterHexIds,
 			disabledForgeIds.Select(static id => id.Entry).ToHashSet(StringComparer.Ordinal),
-			firstActWeights,
-			normalWeights,
-			secondActAfterSilverWeights,
+			runeWeights,
+			preventConsecutiveSilverRunes,
+			goldenRerollChancePercent,
 			forgeWeights,
 			forgePrice,
 			randomForgeDirectGrant,

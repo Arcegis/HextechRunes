@@ -25,6 +25,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
 			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
 			HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
+				modifier,
 				player,
 				actIndex,
 				choiceOrdinal,
@@ -56,6 +57,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(player));
 			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
 			HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
+				modifier,
 				player,
 				actIndex,
 				choiceOrdinal,
@@ -144,6 +146,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(selection.Options, monsterHexRelic, modifier.GetSeenPlayerRuneIds(selection.Player));
 			AddMonsterHexIconIds(seenOptionIds, GetEnemyHexesExcludedFromPlayerRerolls(enemyHexOptions));
 			HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
+				modifier,
 				selection.Player,
 				actIndex,
 				choiceOrdinal,
