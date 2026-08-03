@@ -204,6 +204,7 @@ internal static partial class Program
 			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
 			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
 			new(nameof(EnemySlowHexesUseExpectedBaselinesAndTiers), EnemySlowHexesUseExpectedBaselinesAndTiers),
+			new(nameof(EnemyOpeningBuffHexesUseDedicatedReplayableHook), EnemyOpeningBuffHexesUseDedicatedReplayableHook),
 			new(nameof(EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit), EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit),
 			new(nameof(EnemyHeavyHitterScalesDamageEveryFifteenMaxHp), EnemyHeavyHitterScalesDamageEveryFifteenMaxHp),
 			new(nameof(EnemyVitalitySurgeScalesAllSustainFromMaxHp), EnemyVitalitySurgeScalesAllSustainFromMaxHp),
@@ -3049,6 +3050,39 @@ internal static partial class Program
 		Expect(
 			hundredRefinementsMethods.All(static method => method.Name is not nameof(HundredRefinementsEnemyHex.ApplyCombatStartToEnemy) and not nameof(HundredRefinementsEnemyHex.BeforePlayerSideTurnStart)),
 			"Hundred Refinements should not seed or manually reset persistent Slow");
+	}
+
+	private static void EnemyOpeningBuffHexesUseDedicatedReplayableHook()
+	{
+		Type[] openingBuffHexTypes =
+		[
+			typeof(ProtectiveVeilEnemyHex),
+			typeof(ThornmailEnemyHex),
+			typeof(SuperBrainEnemyHex),
+			typeof(SkulkingColonyEnemyHex),
+			typeof(UnmovableMountainEnemyHex)
+		];
+
+		foreach (Type effectType in openingBuffHexTypes)
+		{
+			MethodInfo[] declaredMethods = effectType.GetMethods(
+				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+			MethodInfo? openingHook = declaredMethods.SingleOrDefault(
+				static method => method.Name == nameof(HextechEnemyHexEffect.ApplyOpeningCombatStartToEnemy));
+			Expect(
+				openingHook != null,
+				$"{effectType.Name} should apply through the replayable opening combat-start hook");
+			Equal(
+				typeof(bool),
+				openingHook!.GetParameters()[3].ParameterType,
+				$"{effectType.Name} opening hook replay flag type");
+			Expect(
+				declaredMethods.All(static method => method.Name != nameof(HextechEnemyHexEffect.ApplyPersistentToEnemy)),
+				$"{effectType.Name} should not apply to enemies added after combat start");
+			Expect(
+				declaredMethods.All(static method => method.Name != nameof(HextechEnemyHexEffect.ApplyCombatStartToEnemy)),
+				$"{effectType.Name} should not use the generic spawned-enemy combat-start hook");
+		}
 	}
 
 	private static void EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit()

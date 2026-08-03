@@ -83,6 +83,13 @@ internal sealed partial class HextechMayhemModifier
 		using (TwilightVeilRune.BeginMirrorSuppression())
 		{
 			await ApplyPersistentMonsterHexes(creature, replayOneShotPowers: true);
+			await HextechEnemyHexDispatcher.ForEachActive(
+				this,
+				(effect, context) => effect.ApplyOpeningCombatStartToEnemy(
+					context,
+					creature,
+					room,
+					replayOneShotPowers: true));
 			await ApplyMonsterCombatStartHexesToEnemy(creature, room);
 		}
 	}
