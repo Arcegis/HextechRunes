@@ -202,6 +202,7 @@ internal static partial class Program
 			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
 			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
 			new(nameof(EnemySlowHexesUseExpectedBaselinesAndTiers), EnemySlowHexesUseExpectedBaselinesAndTiers),
+			new(nameof(EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit), EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit),
 			new(nameof(EnemyHeavyHitterScalesDamageEveryFifteenMaxHp), EnemyHeavyHitterScalesDamageEveryFifteenMaxHp),
 			new(nameof(EnemyVitalitySurgeScalesAllSustainFromMaxHp), EnemyVitalitySurgeScalesAllSustainFromMaxHp),
 			new(nameof(EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount), EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount),
@@ -3003,6 +3004,24 @@ internal static partial class Program
 		Expect(
 			hundredRefinementsMethods.All(static method => method.Name is not nameof(HundredRefinementsEnemyHex.ApplyCombatStartToEnemy) and not nameof(HundredRefinementsEnemyHex.BeforePlayerSideTurnStart)),
 			"Hundred Refinements should not seed or manually reset persistent Slow");
+	}
+
+	private static void EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit()
+	{
+		Equal(1, CorrosionEnemyHex.FrailAmount, "enemy Corrosion Frail amount");
+		Expect(CorrosionEnemyHex.ShouldApplyFrail(1m, targetIsPlayer: true), "enemy Corrosion should trigger on unblocked player damage");
+		Expect(!CorrosionEnemyHex.ShouldApplyFrail(0m, targetIsPlayer: true), "enemy Corrosion should ignore fully blocked damage");
+		Expect(!CorrosionEnemyHex.ShouldApplyFrail(1m, targetIsPlayer: false), "enemy Corrosion should ignore non-player targets");
+		SequenceEqual(
+			new[] { typeof(FrailPower) },
+			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Corrosion),
+			"enemy Corrosion should explain Frail");
+		Expect(
+			typeof(HextechMayhemCombatTrackingState).GetField("CorrosionProcsThisTurn") == null,
+			"enemy Corrosion should not retain a per-turn proc gate");
+		Expect(
+			typeof(CombatTrackingSnapshot).GetProperty("CorrosionProcsThisTurn") == null,
+			"enemy Corrosion snapshot should not retain the obsolete proc gate");
 	}
 
 	private static void EnemyVitalitySurgeScalesAllSustainFromMaxHp()

@@ -514,7 +514,7 @@
   "GOLDEN_SPATULA_RUNE.description": "After winning combat, gain [blue]1[/blue] stack. Each stack gives you [blue]1%[/blue] more Max HP, damage, Block, and healing. When you have more than [blue]10[/blue] stacks, this bonus is tripled.",
   "GOLDEN_SPATULA_RUNE.flavor": "It must do something... no, it can do everything!",
   "slapRune.enemyDescription": "Whenever the enemy applies a debuff to a player, it gains [blue]1[/blue] Strength. Triggers up to [blue]3[/blue] times each turn.",
-  "corrosionRune.enemyDescription": "When the enemy deals unblocked damage to you for the first time each turn, you lose [blue]1[/blue] [gold]Strength[/gold] or [blue]1[/blue] [gold]Dexterity[/gold].",
+  "corrosionRune.enemyDescription": "Whenever an enemy deals unblocked damage to a player, that player gains [blue]1[/blue] [gold]Frail[/gold].",
   "brutalityRune.enemyDescription": "At the start of its turn, the enemy loses [blue]5%[/blue] of its max HP and gains [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Vigor[/gold].",
   "judicatorRune.enemyDescription": "The enemy deals [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] more damage to you while you are below [blue]50%[/blue] HP.",
   "soulEaterRune.enemyDescription": "When another enemy dies, this enemy heals [blue]10%[/blue] of its max HP.",

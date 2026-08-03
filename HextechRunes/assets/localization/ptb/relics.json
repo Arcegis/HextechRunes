@@ -514,7 +514,7 @@
   "GOLDEN_SPATULA_RUNE.description": "Após vencer um combate, ganhe [blue]1[/blue] acúmulo. Cada acúmulo lhe concede [blue]1%[/blue] a mais de PV Máx, dano, Bloqueio e cura. Quando você tiver mais de [blue]10[/blue] acúmulos, este bônus é triplicado.",
   "GOLDEN_SPATULA_RUNE.flavor": "Ela deve fazer alguma coisa... não, ela pode fazer de tudo!",
   "slapRune.enemyDescription": "Sempre que o inimigo aplica uma penalidade a um jogador, ele ganha [blue]1[/blue] de Força. Ativa até [blue]3[/blue] vezes a cada turno.",
-  "corrosionRune.enemyDescription": "Na primeira vez por turno que o inimigo causa dano não bloqueado a você, você perde [blue]1[/blue] de [gold]Força[/gold] ou [blue]1[/blue] de [gold]Destreza[/gold].",
+  "corrosionRune.enemyDescription": "Sempre que um inimigo causar dano não bloqueado a um jogador, esse jogador ganha [blue]1[/blue] de [gold]Frágil[/gold].",
   "brutalityRune.enemyDescription": "No início do turno, o inimigo perde [blue]5%[/blue] da vida máxima e ganha [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de [gold]Vigor[/gold].",
   "judicatorRune.enemyDescription": "O inimigo causa [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] mais dano a você enquanto você estiver abaixo de [blue]50%[/blue] de vida.",
   "soulEaterRune.enemyDescription": "Quando outro inimigo morre, este inimigo recupera [blue]10%[/blue] da vida máxima.",

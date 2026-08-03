@@ -20,7 +20,7 @@ internal static class MonsterHexCatalog
 		new Dictionary<MonsterHexKind, Type[]>
 		{
 			[MonsterHexKind.Slap] = [typeof(StrengthPower)],
-			[MonsterHexKind.Corrosion] = [typeof(StrengthPower), typeof(DexterityPower)],
+			[MonsterHexKind.Corrosion] = [typeof(FrailPower)],
 			[MonsterHexKind.Brutality] = [typeof(VigorPower)],
 			[MonsterHexKind.EscapePlan] = [typeof(ShrinkPower)],
 			[MonsterHexKind.ProtectiveVeil] = [typeof(ArtifactPower)],

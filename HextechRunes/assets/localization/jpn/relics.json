@@ -514,7 +514,7 @@
   "GOLDEN_SPATULA_RUNE.description": "戦闘に勝利すると、[blue]1[/blue] スタックを獲得します。各スタックにより、最大 HP、ダメージ、ブロック、回復力が [blue]1%[/blue] 増加します。 [blue]10[/blue] スタックを超えると、このボーナスは 3 倍になります。",
   "GOLDEN_SPATULA_RUNE.flavor": "それは何かをしなければなりません...いいえ、それはすべてを行うことができます!",
   "slapRune.enemyDescription": "敵はプレイヤーにデバフを適用するたびに、[blue]1[/blue] の筋力を獲得します。各ターン最大 [blue]3[/blue] 回トリガーします。",
-  "corrosionRune.enemyDescription": "敵がこのターン初めてあなたに非ブロックのダメージを与えたとき、あなたは[gold]筋力[/gold]を[blue]1[/blue]または[gold]敏捷[/gold]を[blue]1[/blue]失う。",
+  "corrosionRune.enemyDescription": "敵がプレイヤーにブロックされなかったダメージを与えるたび、そのプレイヤーは[gold]脆弱[/gold]を[blue]1[/blue]得る。",
   "brutalityRune.enemyDescription": "ターン開始時、敵は最大HPの[blue]5%[/blue]を失い、[gold]活力[/gold]を[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]獲得する。",
   "judicatorRune.enemyDescription": "あなたのHPが[blue]50%[/blue]未満のとき、敵があなたに与えるダメージが[blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue]増加する。",
   "soulEaterRune.enemyDescription": "他の敵が死亡したとき、この敵は最大HPの[blue]10%[/blue]を回復する。",

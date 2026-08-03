@@ -514,7 +514,7 @@
   "GOLDEN_SPATULA_RUNE.description": "전투 승리 후 [blue]1[/blue] 중첩을 얻습니다. 각 중첩은 당신에게 [blue]1%[/blue]의 추가 최대 체력, 피해량, 방어도, 회복량을 제공합니다. 중첩이 [blue]10[/blue] 이상일 때 이 보너스는 세 배가 됩니다.",
   "GOLDEN_SPATULA_RUNE.flavor": "뭔가 하긴 할 텐데... 아니, 모든 걸 할 수 있어!",
   "slapRune.enemyDescription": "적이 플레이어에게 해로운 효과를 부여할 때마다 [gold]힘[/gold]을 [blue]1[/blue] 얻습니다. 매 턴 최대 [blue]3[/blue]번 발동합니다.",
-  "corrosionRune.enemyDescription": "매 턴 처음으로 적이 막히지 않은 피해를 줄 때, 플레이어가 [gold]힘[/gold] [blue]1[/blue] 또는 [gold]민첩[/gold] [blue]1[/blue]을 잃습니다.",
+  "corrosionRune.enemyDescription": "적이 플레이어에게 막히지 않은 피해를 줄 때마다, 해당 플레이어가 [gold]손상[/gold] [blue]1[/blue]을 얻습니다.",
   "brutalityRune.enemyDescription": "매 턴 시작 시, 적이 최대 생명력의 [blue]5%[/blue]를 잃고 [gold]활력[/gold]을 [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] 얻습니다.",
   "judicatorRune.enemyDescription": "플레이어의 생명력이 [blue]50%[/blue] 미만일 때, 적이 주는 피해가 [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] 증가합니다.",
   "soulEaterRune.enemyDescription": "이 적은 다른 적이 죽을 시 최대 생명력의 [blue]10%[/blue]를 회복합니다.",

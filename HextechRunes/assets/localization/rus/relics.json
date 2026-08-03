@@ -514,7 +514,7 @@
   "GOLDEN_SPATULA_RUNE.description": "После победы в бою получите [blue]1[/blue] заряд. Каждый заряд даёт вам на [blue]1%[/blue] больше макс. ОЗ, урона, защиты и исцеления. Когда у вас больше [blue]10[/blue] зарядов, этот бонус утраивается.",
   "GOLDEN_SPATULA_RUNE.flavor": "Она должна хоть что-то делать... нет, она может всё!",
   "slapRune.enemyDescription": "Каждый раз, когда враг накладывает отрицательный эффект на игрока, он получает [blue]1[/blue] силы. Срабатывает до [blue]3[/blue] раз за ход.",
-  "corrosionRune.enemyDescription": "Когда враг впервые за ход наносит вам урон по ОЗ, вы теряете [blue]1[/blue] [gold]силы[/gold] или [blue]1[/blue] [gold]ловкости[/gold].",
+  "corrosionRune.enemyDescription": "Каждый раз, когда враг наносит игроку урон по ОЗ, этот игрок получает [blue]1[/blue] [gold]Хрупкости[/gold].",
   "brutalityRune.enemyDescription": "В начале своего хода враг теряет [blue]5%[/blue] от своих макс. ОЗ и получает [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] [gold]Бодрости[/gold].",
   "judicatorRune.enemyDescription": "Враг наносит вам на [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] больше урона, пока у вас меньше [blue]50%[/blue] ОЗ.",
   "soulEaterRune.enemyDescription": "Когда другой враг погибает, этот враг исцеляется на [blue]10%[/blue] от своих макс. ОЗ.",
