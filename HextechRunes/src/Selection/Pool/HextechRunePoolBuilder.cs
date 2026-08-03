@@ -30,7 +30,7 @@ internal static class HextechRunePoolBuilder
 				&& (excludedIds == null || !excludedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)))
 			.ToList();
 
-		return applyConfiguration ? ApplyPlayerRuneConfiguration(pool, rarity, runState) : pool;
+		return applyConfiguration ? ApplyPlayerRuneConfiguration(pool, runState) : pool;
 	}
 
 	public static List<RelicModel> BuildSelectableRunesForRarity(
@@ -225,7 +225,7 @@ internal static class HextechRunePoolBuilder
 		return HextechRarityTier.Gold;
 	}
 
-	private static List<RelicModel> ApplyPlayerRuneConfiguration(List<RelicModel> pool, HextechRarityTier rarity, RunState runState)
+	private static List<RelicModel> ApplyPlayerRuneConfiguration(List<RelicModel> pool, RunState runState)
 	{
 		IReadOnlySet<string> disabledIds = GetEffectiveDisabledPlayerRuneIds(runState);
 		if (disabledIds.Count == 0)
@@ -233,23 +233,20 @@ internal static class HextechRunePoolBuilder
 			return pool;
 		}
 
-		List<RelicModel> configuredPool = pool
+		return FilterDisabledPlayerRunes(pool, disabledIds);
+	}
+
+	internal static List<RelicModel> FilterDisabledPlayerRunes(
+		IEnumerable<RelicModel> pool,
+		IReadOnlySet<string> disabledIds)
+	{
+		return pool
 			.Where(relic =>
 			{
 				ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
 				return !disabledIds.Contains(id.Entry);
 			})
 			.ToList();
-		bool hasAnyEnabledRarity = Enum.GetValues<HextechRarityTier>()
-			.Any(enabledRarity => HasEnabledConfigurablePlayerRuneForRarity(enabledRarity, disabledIds));
-		bool rarityDisabledByConfig = hasAnyEnabledRarity && !HasEnabledConfigurablePlayerRuneForRarity(rarity, disabledIds);
-		if (configuredPool.Count > 0 || pool.Count == 0 || rarityDisabledByConfig)
-		{
-			return configuredPool;
-		}
-
-		Log.Warn($"[{ModInfo.Id}][RuneConfig] Player rune config filtered all {rarity} options; falling back to the default pool for this roll.", 2);
-		return pool;
 	}
 
 	internal static bool ShouldApplyPlayerRuneConfiguration(Player player)

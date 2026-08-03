@@ -83,6 +83,7 @@ internal static partial class Program
 			new(nameof(StableModelIdListCodecRejectsEncoderOverflow), StableModelIdListCodecRejectsEncoderOverflow),
 			new(nameof(PlayerRuneRarityConfigExcludesFullyDisabledTier), PlayerRuneRarityConfigExcludesFullyDisabledTier),
 			new(nameof(PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled), PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled),
+			new(nameof(FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering), FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering),
 			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
 			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
 			new(nameof(GoldenRerollOnlyUpgradesSilverAndGold), GoldenRerollOnlyUpgradesSilverAndGold),
@@ -1335,6 +1336,26 @@ internal static partial class Program
 		IReadOnlyList<HextechRarityTier> enabled = HextechRunePoolBuilder.GetEnabledPlayerRuneRaritiesForDisabledIds(disabledIds);
 
 		SequenceEqual(Enum.GetValues<HextechRarityTier>(), enabled, "all disabled fallback rarities");
+	}
+
+	private static void FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering()
+	{
+		string flyingKickId = ModelDb.GetId<FlyingKickRune>().Entry;
+		HashSet<string> disabledIds = HextechRuneConfiguration.NormalizeDisabledPlayerRuneIds([ flyingKickId ]);
+		Expect(disabledIds.Contains(flyingKickId), "Flying Kick disable should survive config import normalization");
+
+		RelicModel flyingKick = CreateMutableTestModel<FlyingKickRune>();
+		RelicModel doubleVision = CreateMutableTestModel<DoubleVisionRune>();
+		List<RelicModel> filtered = HextechRunePoolBuilder.FilterDisabledPlayerRunes(
+			[ flyingKick, doubleVision ],
+			disabledIds);
+		SequenceEqual(
+			new[] { ModelDb.GetId<DoubleVisionRune>() },
+			filtered.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id),
+			"disabled Flying Kick should never re-enter a partially filtered pool");
+		Expect(
+			HextechRunePoolBuilder.FilterDisabledPlayerRunes([ flyingKick ], disabledIds).Count == 0,
+			"an exhausted pool must remain empty instead of restoring disabled Flying Kick");
 	}
 
 	private static void RarityRollResolverFiltersWeightedRarities()
