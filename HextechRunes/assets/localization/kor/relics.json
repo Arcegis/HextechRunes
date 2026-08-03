@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "비용이 [blue]3[/blue] 이상인 카드를 사용할 수 없습니다. 받는 회복량, 얻는 방어도, 주는 피해가 [blue]40%[/blue] 증가합니다.",
   "BACK_TO_BASICS_RUNE.flavor": "기술은 당신을 잊을지 몰라도 기본기는 그렇지 않습니다.",
   "DRAW_YOUR_SWORD_RUNE.title": "검을 뽑아라",
-  "DRAW_YOUR_SWORD_RUNE.description": "적 턴 시작 시, 보유한 모든 구체를 제거합니다. 제거한 구체 하나당 [gold]밀집[/gold]을 [blue]1[/blue] 얻습니다. 당신의 [gold]밀집[/gold] 변화는 같은 양의 [gold]힘[/gold]과 [gold]민첩[/gold]으로 전환됩니다.",
+  "DRAW_YOUR_SWORD_RUNE.description": "구체가 [gold]발현[/gold]될 때 발현 효과가 발동하지 않고, 대신 [gold]밀집[/gold]을 [blue]{FocusPower}[/blue] 얻습니다. [gold]밀집[/gold]의 변화는 같은 양의 [gold]힘[/gold]과 [gold]민첩[/gold]으로 전환됩니다.",
   "DRAW_YOUR_SWORD_RUNE.flavor": "칼날이 칼집을 떠나는 순간, 돌아갈 길도 베어내야 합니다.",
   "FEEL_THE_BURN_RUNE.title": "저주의 화염",
   "FEEL_THE_BURN_RUNE.description": "획득 시, 덱에 [gold]저주의 화염[/gold]을 [blue]1[/blue]장 추가합니다.",

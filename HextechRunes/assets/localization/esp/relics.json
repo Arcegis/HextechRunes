@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "No puedes jugar cartas que cuesten [blue]3[/blue] o más. La curación que recibes, el bloqueo que obtienes y el daño que infliges aumentan en [blue]40%[/blue].",
   "BACK_TO_BASICS_RUNE.flavor": "Los trucos pueden olvidarte. Los fundamentos no.",
   "DRAW_YOUR_SWORD_RUNE.title": "Saca tu espada",
-  "DRAW_YOUR_SWORD_RUNE.description": "Al comienzo del turno enemigo, elimina todos tus Orbes. Por cada Orbe eliminado, gana [blue]1[/blue] de [gold]Focus[/gold]. Los cambios en su [gold]Focus[/gold] se convierten en [gold]Fuerza[/gold] y [gold]Destreza[/gold] iguales.",
+  "DRAW_YOUR_SWORD_RUNE.description": "Cuando tus Orbes son [gold]Evocados[/gold], sus efectos de Evocación no se activan. En su lugar, obtienes [blue]{FocusPower}[/blue] de [gold]Concentración[/gold]. Los cambios en tu [gold]Concentración[/gold] se convierten en la misma cantidad de [gold]Fuerza[/gold] y [gold]Destreza[/gold].",
   "DRAW_YOUR_SWORD_RUNE.flavor": "En el momento en que la hoja sale de la funda, también se debe cortar el camino de regreso.",
   "FEEL_THE_BURN_RUNE.title": "Siente la quemadura",
   "FEEL_THE_BURN_RUNE.description": "Cuando lo obtengas, agrega [blue]1[/blue] [gold]Siente el ardor[/gold] a tu mazo.",

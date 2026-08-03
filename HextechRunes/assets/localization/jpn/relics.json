@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "[blue]3[/blue] 以上のコストのカードをプレイすることはできません。受ける治癒、獲得するブロック、および与えるダメージは [blue]40%[/blue] 増加します。",
   "BACK_TO_BASICS_RUNE.flavor": "トリックはあなたを忘れてしまうかもしれません。基本はそうではありません。",
   "DRAW_YOUR_SWORD_RUNE.title": "剣を抜いて",
-  "DRAW_YOUR_SWORD_RUNE.description": "敵のターン開始時、あなたのオーブをすべて取り除きます。取り除いたオーブ1個につき [blue]1[/blue] [gold]集中力[/gold]を得ます。[gold]集中力[/gold]への変更は、同等の [gold]筋力[/gold]と [gold]敏捷[/gold]に変換されます。",
+  "DRAW_YOUR_SWORD_RUNE.description": "あなたのオーブが[gold]解放[/gold]される時、その解放効果は発動せず、代わりに[blue]{FocusPower}[/blue]の[gold]集中力[/gold]を得ます。[gold]集中力[/gold]の変化は、同量の[gold]筋力[/gold]と[gold]敏捷[/gold]に変換されます。",
   "DRAW_YOUR_SWORD_RUNE.flavor": "刃が鞘から離れた瞬間、帰り道も断たれるはずだ。",
   "FEEL_THE_BURN_RUNE.title": "フィール・ザ・火傷",
   "FEEL_THE_BURN_RUNE.description": "入手したら、[blue]1[/blue] [gold]燃焼を感じろ[/gold]をデッキに追加します。",

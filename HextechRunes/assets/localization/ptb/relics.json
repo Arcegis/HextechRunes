@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "Você não pode jogar cartas que custem [blue]3[/blue] ou mais. A cura que recebe, o Bloqueio que ganha e o dano que causa aumentam em [blue]40%[/blue].",
   "BACK_TO_BASICS_RUNE.flavor": "Truques podem se esquecer de você. Os fundamentos não.",
   "DRAW_YOUR_SWORD_RUNE.title": "Puxar a Espada",
-  "DRAW_YOUR_SWORD_RUNE.description": "No início do turno inimigo, remova todos os seus Orbes. Para cada Orbe removido, ganhe [blue]1[/blue] de [gold]Foco[/gold]. Mudanças no seu [gold]Foco[/gold] são convertidas em quantidades iguais de [gold]Força[/gold] e [gold]Destreza[/gold].",
+  "DRAW_YOUR_SWORD_RUNE.description": "Quando seus Orbes são [gold]Evocados[/gold], os efeitos de Evocação deles não são ativados. Em vez disso, ganhe [blue]{FocusPower}[/blue] de [gold]Foco[/gold]. Mudanças no seu [gold]Foco[/gold] são convertidas em quantidades iguais de [gold]Força[/gold] e [gold]Destreza[/gold].",
   "DRAW_YOUR_SWORD_RUNE.flavor": "No momento em que a lâmina deixa a bainha, o caminho de volta também deve ser cortado.",
   "FEEL_THE_BURN_RUNE.title": "Sinta o Calor",
   "FEEL_THE_BURN_RUNE.description": "Quando obtido, adicione [blue]1[/blue] [gold]Sinta a Queimadura[/gold] ao seu baralho.",

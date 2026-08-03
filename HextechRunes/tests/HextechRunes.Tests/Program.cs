@@ -120,7 +120,7 @@ internal static partial class Program
 			new(nameof(FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay), FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay),
 			new(nameof(FormAutoPlayBatchUsesOnePreparedFinalEffect), FormAutoPlayBatchUsesOnePreparedFinalEffect),
 			new(nameof(FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments), FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments),
-			new(nameof(DrawYourSwordUsesEnemyTurnStartOrbCleanup), DrawYourSwordUsesEnemyTurnStartOrbCleanup),
+			new(nameof(DrawYourSwordReplacesOrbEvokeWithTwoFocus), DrawYourSwordReplacesOrbEvokeWithTwoFocus),
 			new(nameof(EnemyOmniDragonSoulUsesPlayerTurnStart), EnemyOmniDragonSoulUsesPlayerTurnStart),
 			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
 			new(nameof(PrismaticEggIsExcludedFromThirdAct), PrismaticEggIsExcludedFromThirdAct),
@@ -3785,16 +3785,25 @@ internal static partial class Program
 		};
 	}
 
-	private static void DrawYourSwordUsesEnemyTurnStartOrbCleanup()
+	private static void DrawYourSwordReplacesOrbEvokeWithTwoFocus()
 	{
+		var rune = new DrawYourSwordRune();
+		Equal(2m, rune.DynamicVars["FocusPower"].BaseValue, "Draw Your Sword Focus per Evoke");
+
 		MethodInfo[] runeMethods = typeof(DrawYourSwordRune).GetMethods(
 			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(runeMethods.Any(method => method.Name == nameof(DrawYourSwordRune.BeforeSideTurnStart)), "Draw Your Sword should clean up Orbs from a side-turn-start hook");
+		Expect(runeMethods.All(method => method.Name != nameof(DrawYourSwordRune.BeforeSideTurnStart)), "Draw Your Sword should no longer remove Orbs at enemy turn start");
+		Expect(runeMethods.Any(method => method.Name == nameof(DrawYourSwordRune.ReplaceOrbEvoke)), "Draw Your Sword should replace each Orb's Evoke effect");
 
 		MethodInfo[] hookMethods = typeof(HextechPlayerRuneHooks).GetMethods(
 			BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 		Expect(hookMethods.All(method => method.Name != "OrbChannelPrefix"), "Draw Your Sword should no longer intercept Orb channeling");
-		Expect(hookMethods.All(method => method.Name != "InstallDrawYourSwordHooks"), "Draw Your Sword should not install the old Orb channel hook");
+		Expect(hookMethods.Any(method => method.Name == "InstallDrawYourSwordHooks"), "Draw Your Sword should install an Orb Evoke replacement hook");
+		Expect(hookMethods.Any(method => method.Name == "OrbEvokePrefix"), "Draw Your Sword should intercept Orb Evoke effects");
+
+		IReadOnlyList<MethodInfo> evokeMethods = HextechPlayerRuneHooks.FindLoadedOrbEvokeMethods();
+		Expect(evokeMethods.Any(method => method.DeclaringType == typeof(OrbModel)), "Orb Evoke replacement should include the base implementation");
+		Expect(evokeMethods.Any(method => method.DeclaringType == typeof(LightningOrb)), "Orb Evoke replacement should include concrete Orb implementations");
 	}
 
 	private static void EnemyOmniDragonSoulUsesPlayerTurnStart()

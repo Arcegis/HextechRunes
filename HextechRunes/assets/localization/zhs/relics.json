@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "你无法打出[blue]3[/blue]费及以上的卡牌，你获得的治疗量，格挡量和造成的伤害增加[blue]40%[/blue]。",
   "BACK_TO_BASICS_RUNE.flavor": "花招会散，基本功留在手里。",
   "DRAW_YOUR_SWORD_RUNE.title": "亮出你的剑",
-  "DRAW_YOUR_SWORD_RUNE.description": "敌方回合开始时，移除你所有的充能球，每移除[blue]1[/blue]个充能球就获得[blue]1[/blue]点[gold]集中[/gold]。你[gold]集中[/gold]的变化会等量转化为[gold]力量[/gold]和[gold]敏捷[/gold]。",
+  "DRAW_YOUR_SWORD_RUNE.description": "你的充能球被激发时，不再触发其激发效果，改为获得[blue]{FocusPower}[/blue]点[gold]集中[/gold]。你[gold]集中[/gold]的变化会等量转化为[gold]力量[/gold]和[gold]敏捷[/gold]。",
   "DRAW_YOUR_SWORD_RUNE.flavor": "出鞘那刻，退路也该一并斩断。",
   "FEEL_THE_BURN_RUNE.title": "感受燃烧",
   "FEEL_THE_BURN_RUNE.description": "获得时，向你的牌组中加入[blue]1[/blue]张[gold]感受燃烧[/gold]。",

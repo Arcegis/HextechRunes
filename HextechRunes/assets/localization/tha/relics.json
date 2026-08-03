@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "คุณเล่นการ์ดที่มีต้นทุน [blue]3[/blue] ขึ้นไปไม่ได้ การฟื้นฟูที่คุณได้รับ บล็อกที่คุณได้รับ และความเสียหายที่คุณสร้างเพิ่มขึ้น [blue]40%[/blue]",
   "BACK_TO_BASICS_RUNE.flavor": "ลูกเล่นอาจลืมคุณ แต่พื้นฐานไม่ลืม",
   "DRAW_YOUR_SWORD_RUNE.title": "ชักดาบ",
-  "DRAW_YOUR_SWORD_RUNE.description": "ตอนเริ่มต้นเทิร์นของศัตรู นำลูกแก้วทั้งหมดของคุณออก สำหรับลูกแก้วแต่ละลูกที่นำออก ได้รับ [blue]1[/blue] [gold]โฟกัส[/gold] การเปลี่ยนแปลง [gold]โฟกัส[/gold] ของคุณจะถูกแปลงเป็น [gold]ความแข็งแรง[/gold] และ [gold]ความชำนาญ[/gold] เท่ากัน",
+  "DRAW_YOUR_SWORD_RUNE.description": "เมื่อลูกแก้วของคุณถูก[gold]ปลดปล่อย[/gold] เอฟเฟกต์ปลดปล่อยของมันจะไม่ทำงาน แต่คุณจะได้รับ [blue]{FocusPower}[/blue] [gold]โฟกัส[/gold]แทน การเปลี่ยนแปลง[gold]โฟกัส[/gold]ของคุณจะถูกแปลงเป็น[gold]พละกำลัง[/gold]และ[gold]ความคล่องแคล่ว[/gold]ในจำนวนเท่ากัน",
   "DRAW_YOUR_SWORD_RUNE.flavor": "ชั่วขณะที่ดาบพ้นฝัก ทางกลับก็ควรถูกตัดขาดไปด้วย",
   "FEEL_THE_BURN_RUNE.title": "สัมผัสไฟลุก",
   "FEEL_THE_BURN_RUNE.description": "เมื่อรับมา เพิ่ม [gold]รู้สึกถึงการเผาไหม้[/gold] [blue]1[/blue] ใบเข้ากองการ์ดของคุณ",

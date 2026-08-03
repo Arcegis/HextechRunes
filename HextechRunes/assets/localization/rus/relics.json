@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "Вы не можете разыгрывать карты стоимостью [blue]3[/blue] или больше. Получаемое вами исцеление, защита и наносимый урон увеличиваются на [blue]40%[/blue].",
   "BACK_TO_BASICS_RUNE.flavor": "Трюки могут вас забыть. Основы — нет.",
   "DRAW_YOUR_SWORD_RUNE.title": "Обнажи меч",
-  "DRAW_YOUR_SWORD_RUNE.description": "В начале хода врага удалите все свои сферы. За каждую удалённую сферу получите [blue]1[/blue] [gold]Фокус[/gold]. Изменения вашего [gold]Фокуса[/gold] преобразуются в равные значения [gold]силы[/gold] и [gold]ловкости[/gold].",
+  "DRAW_YOUR_SWORD_RUNE.description": "Когда ваши сферы [gold]активируются[/gold], их эффекты активации не срабатывают. Вместо этого вы получаете [blue]{FocusPower}[/blue] [gold]Фокуса[/gold]. Изменения вашего [gold]Фокуса[/gold] преобразуются в равные значения [gold]силы[/gold] и [gold]ловкости[/gold].",
   "DRAW_YOUR_SWORD_RUNE.flavor": "В тот миг, когда клинок покидает ножны, путь назад тоже должен быть отрезан.",
   "FEEL_THE_BURN_RUNE.title": "Почувствуй жар!",
   "FEEL_THE_BURN_RUNE.description": "При получении добавьте [blue]1[/blue] [gold]Почувствуй жжение[/gold] в колоду.",

@@ -235,7 +235,7 @@
   "BACK_TO_BASICS_RUNE.description": "You cannot play cards that cost [blue]3[/blue] or more. The healing you receive, the Block you gain, and the damage you deal increase by [blue]40%[/blue].",
   "BACK_TO_BASICS_RUNE.flavor": "Tricks may forget you. Fundamentals do not.",
   "DRAW_YOUR_SWORD_RUNE.title": "Draw Your Sword",
-  "DRAW_YOUR_SWORD_RUNE.description": "At the start of the enemy turn, remove all your Orbs. Gain [blue]1[/blue] [gold]Focus[/gold] for each Orb removed. Changes to your [gold]Focus[/gold] are converted into equal [gold]Strength[/gold] and [gold]Dexterity[/gold].",
+  "DRAW_YOUR_SWORD_RUNE.description": "When your Orbs are [gold]Evoked[/gold], their Evoke effects do not trigger. Instead, gain [blue]{FocusPower}[/blue] [gold]Focus[/gold]. Changes to your [gold]Focus[/gold] are converted into equal [gold]Strength[/gold] and [gold]Dexterity[/gold].",
   "DRAW_YOUR_SWORD_RUNE.flavor": "The moment the blade leaves the sheath, the way back should be cut as well.",
   "FEEL_THE_BURN_RUNE.title": "Feel The Burn",
   "FEEL_THE_BURN_RUNE.description": "When obtained, add [blue]1[/blue] [gold]Feel the Burn[/gold] to your deck.",
