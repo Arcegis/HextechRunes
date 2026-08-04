@@ -772,7 +772,7 @@
   "OMINOUS_PACT_RUNE.description": "Siempre que apliques [gold]Condena[/gold] a un enemigo, invoca la misma cantidad.",
   "OMINOUS_PACT_RUNE.flavor": "Cada golpe de fatalidad añade otra línea al pacto.",
   "HAPPY_ACCIDENT_RUNE.title": "feliz accidente",
-  "HAPPY_ACCIDENT_RUNE.description": "Siempre que generes la carta de estado [blue]1[/blue], canaliza [blue]1[/blue] Orbe aleatorio y gana [blue]1[/blue] Concentración.",
+  "HAPPY_ACCIDENT_RUNE.description": "Al comienzo de tu turno, canaliza [blue]1[/blue] Orbe aleatorio por cada carta de Estado en tu pila de Agotadas.",
   "HAPPY_ACCIDENT_RUNE.flavor": "Un mal funcionamiento aún puede derivar en la corriente correcta.",
   "MISERY_RUNE.title": "miseria",
   "MISERY_RUNE.description": "Al comienzo de tu turno, el enemigo con más PV pierde [blue]1[/blue] [gold]Fuerza[/gold] y [blue]1[/blue] [gold]Destreza[/gold], y tú ganas [blue]1[/blue] [gold]Fuerza[/gold] y [blue]1[/blue]. [gold]Destreza[/gold].",

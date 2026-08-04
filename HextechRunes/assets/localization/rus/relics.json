@@ -772,7 +772,7 @@
   "OMINOUS_PACT_RUNE.description": "Каждый раз, когда вы накладываете [gold]Злой рок[/gold] на врага, Призовите столько же.",
   "OMINOUS_PACT_RUNE.flavor": "Каждый росчерк злого рока добавляет ещё одну строку в договор.",
   "HAPPY_ACCIDENT_RUNE.title": "Счастливая случайность",
-  "HAPPY_ACCIDENT_RUNE.description": "Каждый раз, когда вы создаёте [blue]1[/blue] карту Статуса, зарядите [blue]1[/blue] случайную сферу и получите [blue]1[/blue] Фокус.",
+  "HAPPY_ACCIDENT_RUNE.description": "В начале вашего хода зарядите [blue]1[/blue] случайную сферу за каждую карту Статуса в стопке истощения.",
   "HAPPY_ACCIDENT_RUNE.flavor": "Сбой всё ещё может вывернуться в нужный ток.",
   "MISERY_RUNE.title": "Страдания",
   "MISERY_RUNE.description": "В начале вашего хода враг с наибольшим здоровьем теряет [blue]1[/blue] [gold]силы[/gold] и [blue]1[/blue] [gold]ловкости[/gold], а вы получаете [blue]1[/blue] [gold]силы[/gold] и [blue]1[/blue] [gold]ловкости[/gold].",

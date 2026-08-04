@@ -109,6 +109,7 @@ internal static partial class Program
 			new(nameof(HundredRefinementsRequiresTwoBodyForges), HundredRefinementsRequiresTwoBodyForges),
 			new(nameof(InitialForgeGrantRunesPersistPendingTransaction), InitialForgeGrantRunesPersistPendingTransaction),
 			new(nameof(InitialForgeGrantLoadRecoveryPrecedesActRecovery), InitialForgeGrantLoadRecoveryPrecedesActRecovery),
+			new(nameof(HappyAccidentUsesExhaustedStatusesAtTurnStart), HappyAccidentUsesExhaustedStatusesAtTurnStart),
 			new(nameof(HastyScribbleDrawsToFullHandAtTurnStart), HastyScribbleDrawsToFullHandAtTurnStart),
 			new(nameof(BigHandsIncreasesSummonAmountByFiftyPercent), BigHandsIncreasesSummonAmountByFiftyPercent),
 			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
@@ -187,6 +188,7 @@ internal static partial class Program
 			new(nameof(ConfigMigrationV26AddsNewPlayerDefaultDisables), ConfigMigrationV26AddsNewPlayerDefaultDisables),
 			new(nameof(ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention), ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention),
 			new(nameof(ConfigMigrationV30EnablesAdvanceToRetreat), ConfigMigrationV30EnablesAdvanceToRetreat),
+			new(nameof(ConfigMigrationV31EnablesHappyAccident), ConfigMigrationV31EnablesHappyAccident),
 			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
 			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
@@ -990,7 +992,7 @@ internal static partial class Program
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
-		Equal(30, version, "v14 config should land on current version");
+		Equal(31, version, "v14 config should land on current version");
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
@@ -1000,7 +1002,7 @@ internal static partial class Program
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
 		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
-		Equal(30, version, "v15 config should land on current version");
+		Equal(31, version, "v15 config should land on current version");
 		SetEqual(
 			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
 			migrated,
@@ -1010,7 +1012,7 @@ internal static partial class Program
 	private static void ConfigMigrationV26AddsNewPlayerDefaultDisables()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, []);
-		Equal(30, version, "v26 player config should land on current version");
+		Equal(31, version, "v26 player config should land on current version");
 		SetEqual(
 			HextechPlayerRuneConfigIds.FromTypes(
 			[
@@ -1026,13 +1028,13 @@ internal static partial class Program
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(30, [customId]);
-		Equal(30, version, "current-version config keeps version");
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(31, [customId]);
+		Equal(31, version, "current-version config keeps version");
 		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
 
 		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
-			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(30, [MonsterHexKind.FrostWraith.ToString()]);
-		Equal(30, monsterVersion, "current-version monster config keeps version");
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(31, [MonsterHexKind.FrostWraith.ToString()]);
+		Equal(31, monsterVersion, "current-version monster config keeps version");
 		SetEqual(
 			[MonsterHexKind.FrostWraith.ToString()],
 			disabledMonsters,
@@ -1046,7 +1048,7 @@ internal static partial class Program
 				27,
 				new HextechRarityWeights(4, 5, 6),
 				new HextechRarityWeights(0, 7, 8));
-		Equal(30, migratedVersion, "v27 rarity config should land on current version");
+		Equal(31, migratedVersion, "v27 rarity config should land on current version");
 		Equal(new HextechRarityWeights(4, 5, 6), migratedWeights, "v27 normal weights should become rune weights");
 		Equal(true, ruleEnabledWithZeroLegacySilverWeight, "legacy rarity config should enable consecutive-Silver prevention by default");
 
@@ -1061,8 +1063,16 @@ internal static partial class Program
 	{
 		string id = ModelDb.GetId<AdvanceToRetreatRune>().Entry;
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(29, [id]);
-		Equal(30, version, "v29 player config should land on current version");
+		Equal(31, version, "v29 player config should land on current version");
 		Expect(!disabled.Contains(id), "v29 player config migration should enable Advance to Retreat");
+	}
+
+	private static void ConfigMigrationV31EnablesHappyAccident()
+	{
+		string id = ModelDb.GetId<HappyAccidentRune>().Entry;
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(30, [id]);
+		Equal(31, version, "v30 player config should land on current version");
+		Expect(!disabled.Contains(id), "v30 player config migration should enable Happy Accident");
 	}
 
 	// SavedProperty 属性名集合直接决定联机 net-id 布局(规范化按名排序):任何新增/改名/删除都必须是
@@ -1988,6 +1998,29 @@ internal static partial class Program
 			"load continuation should finish pending initial forge grants before resuming act selection");
 	}
 
+	private static void HappyAccidentUsesExhaustedStatusesAtTurnStart()
+	{
+		CardModel[] exhaustedCards =
+		[
+			CreateMutableTestModel<Dazed>(),
+			CreateMutableTestModel<StrikeIronclad>(),
+			CreateMutableTestModel<Slimed>()
+		];
+		Equal(2, HappyAccidentRune.CountStatusCards(exhaustedCards), "Happy Accident exhausted Status count");
+		Equal(0, HappyAccidentRune.ResolveOrbCount(-1, 1), "Happy Accident negative Status fallback");
+		Equal(0, HappyAccidentRune.ResolveOrbCount(3, 0), "Happy Accident disabled orb count");
+		Equal(3, HappyAccidentRune.ResolveOrbCount(3, 1), "Happy Accident one orb per exhausted Status");
+
+		MethodInfo[] declaredMethods = typeof(HappyAccidentRune).GetMethods(
+			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+		Expect(
+			declaredMethods.Any(static method => method.Name == nameof(HappyAccidentRune.AfterPlayerTurnStart)),
+			"Happy Accident should trigger at player turn start");
+		Expect(
+			declaredMethods.All(static method => method.Name != "AfterCardGeneratedForCombat"),
+			"Happy Accident should no longer trigger when Status cards are generated");
+	}
+
 	private static void PrismaticEggIsExcludedFromThirdAct()
 	{
 		Expect(
@@ -2531,11 +2564,13 @@ internal static partial class Program
 		string escapePlanId = ModelDb.GetId<EscapePlanRune>().Entry;
 		string corruptedBranchId = ModelDb.GetId<CorruptedBranchRune>().Entry;
 		string advanceToRetreatId = ModelDb.GetId<AdvanceToRetreatRune>().Entry;
+		string happyAccidentId = ModelDb.GetId<HappyAccidentRune>().Entry;
 		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
 
 		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(escapePlanId), "default player rune ids should disable escape plan");
 		Expect(snapshot.DisabledPlayerRuneIds.Contains(escapePlanId), "default snapshot should disable escape plan");
 		Expect(!snapshot.DisabledPlayerRuneIds.Contains(advanceToRetreatId), "default snapshot should enable Advance to Retreat");
+		Expect(!snapshot.DisabledPlayerRuneIds.Contains(happyAccidentId), "default snapshot should enable Happy Accident");
 		foreach (Type runeType in new[] { typeof(OmegaRune), typeof(OkBoomerangRune), typeof(FeyMagicRune), typeof(PorcupineRune), typeof(AstralBodyRune) })
 		{
 			Expect(

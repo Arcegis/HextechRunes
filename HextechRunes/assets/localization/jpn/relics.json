@@ -772,7 +772,7 @@
   "OMINOUS_PACT_RUNE.description": "[gold]破滅[/gold]を敵に適用するたびに、同じ量を召喚します。",
   "OMINOUS_PACT_RUNE.flavor": "破滅の一撃が起こるたびに、協定に新たな一線が追加される。",
   "HAPPY_ACCIDENT_RUNE.title": "ハッピーアクシデント",
-  "HAPPY_ACCIDENT_RUNE.description": "[blue]1[/blue] ステータスカードを生成するたびに、[blue]1[/blue] ランダムオーブをチャネルし、[blue]1[/blue] 集中力を獲得します。",
+  "HAPPY_ACCIDENT_RUNE.description": "ターン開始時、廃棄パイルにあるステータスカード[blue]1[/blue]枚につき、ランダムなオーブを[blue]1[/blue]個生成します。",
   "HAPPY_ACCIDENT_RUNE.flavor": "誤動作が依然として正しい電流にねじれる可能性があります。",
   "MISERY_RUNE.title": "悲惨",
   "MISERY_RUNE.description": "自分のターンの開始時に、HPが最も高い敵が [blue]1[/blue] [gold]筋力[/gold] および [blue]1[/blue] [gold]敏捷[/gold]を失い、自分は [blue]1[/blue] [gold]筋力[/gold] および [blue]1[/blue]を獲得します。 [gold]敏捷[/gold]。",

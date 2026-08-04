@@ -772,7 +772,7 @@
   "OMINOUS_PACT_RUNE.description": "ทุกครั้งที่คุณสร้าง [gold]อายุขัย[/gold] ใส่ศัตรู จะอัญเชิญในจำนวนเท่ากัน",
   "OMINOUS_PACT_RUNE.flavor": "ทุกขีดของอายุขัย เพิ่มอีกบรรทัดให้พันธสัญญา",
   "HAPPY_ACCIDENT_RUNE.title": "อุบัติเหตุแสนสุข",
-  "HAPPY_ACCIDENT_RUNE.description": "ทุกครั้งที่คุณสร้างการ์ดสถานะ [blue]1[/blue] ใบ ปลุกเสกลูกแก้วแบบสุ่ม [blue]1[/blue] ลูก และได้รับ [blue]1[/blue] โฟกัส",
+  "HAPPY_ACCIDENT_RUNE.description": "เมื่อเริ่มเทิร์นของคุณ ปลุกเสกลูกแก้วแบบสุ่ม [blue]1[/blue] ลูกต่อการ์ดสถานะทุก [blue]1[/blue] ใบในกอง Exhaust",
   "HAPPY_ACCIDENT_RUNE.flavor": "ความขัดข้องยังบิดกลายเป็นกระแสที่ถูกต้องได้",
   "MISERY_RUNE.title": "ความทุกข์ระทม",
   "MISERY_RUNE.description": "ตอนเริ่มต้นเทิร์น ศัตรูที่มี HP สูงสุดเสีย [blue]1[/blue] [gold]ความแข็งแรง[/gold] และ [blue]1[/blue] [gold]ความชำนาญ[/gold] และคุณได้รับ [blue]1[/blue] [gold]ความแข็งแรง[/gold] และ [blue]1[/blue] [gold]ความชำนาญ[/gold]",

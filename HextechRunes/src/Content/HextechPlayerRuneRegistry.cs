@@ -306,7 +306,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<DieForYouRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 10, tagKey: "SUMMON"),
 		Rune<CompensationRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 25, tagKey: "DOOM"),
 		Rune<OminousPactRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 26, tagKey: "DOOM"),
-		Rune<HappyAccidentRune>(HextechRarityTier.Prismatic, flags: PlayerRuneFlags.Disabled, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 10, tagKey: "STATUS"),
+		Rune<HappyAccidentRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 10, tagKey: "STATUS"),
 		Rune<MiseryRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),
 		Rune<GhostFormRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),
 		Rune<ForbiddenGrimoireRune>(HextechRarityTier.Prismatic, tagKey: "COMPREHENSIVE"),

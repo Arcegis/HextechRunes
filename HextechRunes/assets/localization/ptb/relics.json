@@ -772,7 +772,7 @@
   "OMINOUS_PACT_RUNE.description": "Sempre que você aplicar [gold]Ruína[/gold] a um inimigo, Invoque a mesma quantidade.",
   "OMINOUS_PACT_RUNE.flavor": "Cada traço de ruína adiciona mais uma linha ao pacto.",
   "HAPPY_ACCIDENT_RUNE.title": "Acidente Feliz",
-  "HAPPY_ACCIDENT_RUNE.description": "Sempre que você gerar [blue]1[/blue] carta de Status, Canalize [blue]1[/blue] Orbe aleatório e ganhe [blue]1[/blue] de Foco.",
+  "HAPPY_ACCIDENT_RUNE.description": "No início do seu turno, Canalize [blue]1[/blue] Orbe aleatório para cada carta de Status na sua Pilha de Exaustão.",
   "HAPPY_ACCIDENT_RUNE.flavor": "Um mau funcionamento ainda pode se transformar na corrente certa.",
   "MISERY_RUNE.title": "Miséria",
   "MISERY_RUNE.description": "No início do seu turno, o inimigo com mais PV perde [blue]1[/blue] de [gold]Força[/gold] e [blue]1[/blue] de [gold]Destreza[/gold], e você ganhe [blue]1[/blue] de [gold]Força[/gold] e [blue]1[/blue] de [gold]Destreza[/gold].",

@@ -772,7 +772,7 @@
   "OMINOUS_PACT_RUNE.description": "Whenever you apply [gold]Doom[/gold] to an enemy, Summon the same amount.",
   "OMINOUS_PACT_RUNE.flavor": "Every stroke of doom adds another line to the pact.",
   "HAPPY_ACCIDENT_RUNE.title": "Happy Accident",
-  "HAPPY_ACCIDENT_RUNE.description": "Whenever you generate [blue]1[/blue] Status card, Channel [blue]1[/blue] random Orb and gain [blue]1[/blue] Focus.",
+  "HAPPY_ACCIDENT_RUNE.description": "At the start of your turn, Channel [blue]1[/blue] random Orb for each Status card in your Exhaust Pile.",
   "HAPPY_ACCIDENT_RUNE.flavor": "A malfunction can still twist into the right current.",
   "MISERY_RUNE.title": "Misery",
   "MISERY_RUNE.description": "At the start of your turn, the enemy with the highest HP loses [blue]1[/blue] [gold]Strength[/gold] and [blue]1[/blue] [gold]Dexterity[/gold], and you gain [blue]1[/blue] [gold]Strength[/gold] and [blue]1[/blue] [gold]Dexterity[/gold].",

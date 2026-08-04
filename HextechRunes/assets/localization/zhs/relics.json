@@ -772,7 +772,7 @@
   "OMINOUS_PACT_RUNE.description": "每当你给予敌人[gold]灾厄[/gold]时，召唤相同数值。",
   "OMINOUS_PACT_RUNE.flavor": "每一笔灾厄，都会替你多写一行契约。",
   "HAPPY_ACCIDENT_RUNE.title": "歪打正着",
-  "HAPPY_ACCIDENT_RUNE.description": "每当你生成状态牌时，生成[blue]1[/blue]个随机充能球并获得[blue]1[/blue]点集中。",
+  "HAPPY_ACCIDENT_RUNE.description": "回合开始时，你的消耗牌堆中每有[blue]1[/blue]张状态牌，就生成[blue]1[/blue]个随机充能球。",
   "HAPPY_ACCIDENT_RUNE.flavor": "故障偶尔也会拧出正确的电流。",
   "MISERY_RUNE.title": "苦楚",
   "MISERY_RUNE.description": "回合开始时，使当前生命值最高的敌人失去[blue]1[/blue]点[gold]力量[/gold]和[blue]1[/blue]点[gold]敏捷[/gold]，并让自身获得[blue]1[/blue]点[gold]力量[/gold]和[blue]1[/blue]点[gold]敏捷[/gold]。",
