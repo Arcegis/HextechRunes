@@ -1395,5 +1395,8 @@
   "TWIN_FLAMES_RUNE.flavor": "서로 다른 빛깔의 두 불꽃이 같은 먹잇감을 쫓습니다.",
   "DUALCAST_UPGRADE_RUNE.title": "강화: 이중 시전",
   "DUALCAST_UPGRADE_RUNE.description": "[gold]이중 시전[/gold] 또는 [gold]사중 시전[/gold]을 사용한 후, 그 카드를 손으로 되돌립니다.",
-  "DUALCAST_UPGRADE_RUNE.flavor": "회로는 사라지는 메아리를 붙잡아 다시 순환시킵니다."
+  "DUALCAST_UPGRADE_RUNE.flavor": "회로는 사라지는 메아리를 붙잡아 다시 순환시킵니다.",
+  "DEATH_WARRANT_RUNE.title": "죽음의 부적",
+  "DEATH_WARRANT_RUNE.description": "카드를 [blue]{CardsNeeded}[/blue]장 뽑을 때마다 모든 적의 [gold]중독[/gold]을 즉시 한 번 발동시킵니다.",
+  "DEATH_WARRANT_RUNE.flavor": "여덟 번째 종이 소리에 독이 값을 받으러 옵니다."
 }

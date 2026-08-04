@@ -135,6 +135,7 @@ internal static partial class Program
 			new(nameof(MagicMissileUsesThreeTwoPercentHits), MagicMissileUsesThreeTwoPercentHits),
 			new(nameof(TwinFlamesUsesTwoEnergyScaledHits), TwinFlamesUsesTwoEnergyScaledHits),
 			new(nameof(DualcastUpgradeReturnsBothCastCardsToHand), DualcastUpgradeReturnsBothCastCardsToHand),
+			new(nameof(DeathWarrantTriggersPoisonEveryEightDraws), DeathWarrantTriggersPoisonEveryEightDraws),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
 			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
 			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
@@ -2127,6 +2128,28 @@ internal static partial class Program
 		DualcastUpgradeRune rune = new();
 		Expect(!rune.GrantsCardOnPickup, "Dualcast Upgrade should not grant a card when obtained");
 		Expect(!rune.HasUponPickupEffect, "Dualcast Upgrade should not advertise a pickup effect");
+	}
+
+	private static void DeathWarrantTriggersPoisonEveryEightDraws()
+	{
+		Equal(8, DeathWarrantRune.CardsNeeded, "Death Warrant draw threshold");
+		Equal(0, DeathWarrantRune.ResolveThresholdCrossings(0, 7), "Death Warrant should wait for eight draws");
+		Equal(1, DeathWarrantRune.ResolveThresholdCrossings(7, 8), "Death Warrant should trigger on the eighth draw");
+		Equal(0, DeathWarrantRune.ResolveThresholdCrossings(8, 15), "Death Warrant should preserve progress after triggering");
+		Equal(2, DeathWarrantRune.ResolveThresholdCrossings(8, 24), "Death Warrant should recover every missed threshold after load or network delay");
+
+		MethodInfo trigger = typeof(DeathWarrantRune).GetMethod(
+			"TriggerPoisonCompat",
+			BindingFlags.Static | BindingFlags.NonPublic)
+			?? throw new MissingMethodException(nameof(DeathWarrantRune), "TriggerPoisonCompat");
+		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(trigger)
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>()
+			.ToArray();
+		Equal(typeof(PoisonPower), trigger.GetParameters()[0].ParameterType, "Death Warrant poison trigger target type");
+		Expect(
+			calls.Any(static method => method.Name == nameof(PoisonPower.AfterSideTurnStart)),
+			"Death Warrant should use the Poison turn-start path shared by both supported game versions");
 	}
 
 	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()

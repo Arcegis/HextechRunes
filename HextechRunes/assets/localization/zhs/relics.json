@@ -1395,5 +1395,8 @@
   "TWIN_FLAMES_RUNE.flavor": "两道异色焰光，追向同一个猎物。",
   "DUALCAST_UPGRADE_RUNE.title": "升级：双重释放",
   "DUALCAST_UPGRADE_RUNE.description": "打出[gold]双重释放[/gold]或[gold]四重释放[/gold]后，将其返回至手牌。",
-  "DUALCAST_UPGRADE_RUNE.flavor": "回路接住消散的余响，再将它送回掌心。"
+  "DUALCAST_UPGRADE_RUNE.flavor": "回路接住消散的余响，再将它送回掌心。",
+  "DEATH_WARRANT_RUNE.title": "催命符",
+  "DEATH_WARRANT_RUNE.description": "每抽[blue]{CardsNeeded}[/blue]张牌，就立刻触发一次所有敌人的[gold]中毒[/gold]。",
+  "DEATH_WARRANT_RUNE.flavor": "八声纸响，毒便提前来收账。"
 }

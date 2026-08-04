@@ -1395,5 +1395,8 @@
   "TWIN_FLAMES_RUNE.flavor": "Duas chamas de cores diferentes perseguem a mesma presa.",
   "DUALCAST_UPGRADE_RUNE.title": "Aprimoramento: Conjuração Dupla",
   "DUALCAST_UPGRADE_RUNE.description": "Depois de jogar [gold]Conjuração Dupla[/gold] ou [gold]Conjuração Quádrupla[/gold], devolva essa carta à sua mão.",
-  "DUALCAST_UPGRADE_RUNE.flavor": "O circuito captura cada eco que se apaga e o põe para circular outra vez."
+  "DUALCAST_UPGRADE_RUNE.flavor": "O circuito captura cada eco que se apaga e o põe para circular outra vez.",
+  "DEATH_WARRANT_RUNE.title": "Mandado de Morte",
+  "DEATH_WARRANT_RUNE.description": "A cada [blue]{CardsNeeded}[/blue] cartas compradas, acione imediatamente uma vez o [gold]Veneno[/gold] de todos os inimigos.",
+  "DEATH_WARRANT_RUNE.flavor": "Ao oitavo farfalhar, o veneno vem cobrar."
 }

@@ -1395,5 +1395,8 @@
   "TWIN_FLAMES_RUNE.flavor": "Two differently colored flames pursue the same quarry.",
   "DUALCAST_UPGRADE_RUNE.title": "Upgrade: Dualcast",
   "DUALCAST_UPGRADE_RUNE.description": "After playing [gold]Dualcast[/gold] or [gold]Quadcast[/gold], return it to your hand.",
-  "DUALCAST_UPGRADE_RUNE.flavor": "The circuit catches every fading echo and sends it around again."
+  "DUALCAST_UPGRADE_RUNE.flavor": "The circuit catches every fading echo and sends it around again.",
+  "DEATH_WARRANT_RUNE.title": "Death Warrant",
+  "DEATH_WARRANT_RUNE.description": "Every time you draw [blue]{CardsNeeded}[/blue] cards, immediately trigger every enemy's [gold]Poison[/gold] once.",
+  "DEATH_WARRANT_RUNE.flavor": "After the eighth rustle, the poison comes to collect."
 }

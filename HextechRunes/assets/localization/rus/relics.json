@@ -1395,5 +1395,8 @@
   "TWIN_FLAMES_RUNE.flavor": "Два пламени разных цветов преследуют одну добычу.",
   "DUALCAST_UPGRADE_RUNE.title": "Улучшение: Двойной разряд",
   "DUALCAST_UPGRADE_RUNE.description": "После розыгрыша [gold]Двойного разряда[/gold] или [gold]Четверного разряда[/gold] верните эту карту в руку.",
-  "DUALCAST_UPGRADE_RUNE.flavor": "Контур ловит затихающий отголосок и запускает его снова."
+  "DUALCAST_UPGRADE_RUNE.flavor": "Контур ловит затихающий отголосок и запускает его снова.",
+  "DEATH_WARRANT_RUNE.title": "Смертный приговор",
+  "DEATH_WARRANT_RUNE.description": "Каждый раз, когда вы берёте [blue]{CardsNeeded}[/blue] карт, немедленно активируйте [gold]Яд[/gold] всех врагов один раз.",
+  "DEATH_WARRANT_RUNE.flavor": "На восьмой шелест яд приходит за долгом."
 }

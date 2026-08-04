@@ -1395,5 +1395,8 @@
   "TWIN_FLAMES_RUNE.flavor": "เปลวเพลิงต่างสีสองสายไล่ล่าเหยื่อเดียวกัน",
   "DUALCAST_UPGRADE_RUNE.title": "อัปเกรด: ร่ายสองครั้ง",
   "DUALCAST_UPGRADE_RUNE.description": "หลังจากเล่น [gold]ร่ายสองครั้ง[/gold] หรือ [gold]ร่ายสี่ครั้ง[/gold] ให้นำการ์ดใบนั้นกลับขึ้นมือ",
-  "DUALCAST_UPGRADE_RUNE.flavor": "วงจรคว้าเสียงสะท้อนที่กำลังเลือนหายแล้วส่งให้หมุนเวียนอีกครั้ง"
+  "DUALCAST_UPGRADE_RUNE.flavor": "วงจรคว้าเสียงสะท้อนที่กำลังเลือนหายแล้วส่งให้หมุนเวียนอีกครั้ง",
+  "DEATH_WARRANT_RUNE.title": "หมายมรณะ",
+  "DEATH_WARRANT_RUNE.description": "ทุกครั้งที่จั่วการ์ดครบ [blue]{CardsNeeded}[/blue] ใบ ให้ [gold]พิษ[/gold] ของศัตรูทั้งหมดทำงานทันทีหนึ่งครั้ง",
+  "DEATH_WARRANT_RUNE.flavor": "เมื่อกระดาษดังเป็นครั้งที่แปด พิษก็มาเก็บหนี้"
 }
