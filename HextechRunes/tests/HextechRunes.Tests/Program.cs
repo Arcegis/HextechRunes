@@ -164,6 +164,7 @@ internal static partial class Program
 			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
+			new(nameof(RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi), RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi),
 			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
 			new(nameof(RunConfigurationDefaultSnapshotDisablesRiskyContent), RunConfigurationDefaultSnapshotDisablesRiskyContent),
 			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
@@ -2631,6 +2632,34 @@ internal static partial class Program
 		Equal(5, snapshot.GoldenRerollChancePercent, "default golden reroll chance");
 		Equal(0, HextechRuneConfiguration.ClampGoldenRerollChancePercent(-1), "golden reroll chance lower clamp");
 		Equal(100, HextechRuneConfiguration.ClampGoldenRerollChancePercent(101), "golden reroll chance upper clamp");
+	}
+
+	private static void RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi()
+	{
+		SequenceEqual(
+			new[]
+			{
+				typeof(HextechSilverRunModifier),
+				typeof(HextechGoldRunModifier),
+				typeof(HextechPrismaticRunModifier)
+			},
+			HextechCustomModelRegistry.CustomRarityModifierTypes,
+			"retired custom rarity modifier models should remain registered for old runs");
+		Expect(
+			typeof(HextechCustomRunModifierCompatibility).GetMethod(
+				"Install",
+				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) == null,
+			"retired rarity modifiers should expose no custom-run UI installer");
+
+		MethodInfo initialize = typeof(ModEntry).GetMethod(nameof(ModEntry.Initialize), BindingFlags.Static | BindingFlags.Public)
+			?? throw new MissingMethodException(nameof(ModEntry), nameof(ModEntry.Initialize));
+		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(initialize)
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>()
+			.ToArray();
+		Expect(
+			calls.All(static method => method.DeclaringType != typeof(HextechCustomRunModifierCompatibility)),
+			"mod initialization should not install retired custom rarity modifier UI hooks");
 	}
 
 	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()

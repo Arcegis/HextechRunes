@@ -82,7 +82,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechRunConfigurationSnapshot localRunConfigSnapshot = modifier.GetEffectiveRunConfigurationSnapshot();
 
 		HextechRarityTier? savedRarity = modifier.GetRarityForAct(actIndex);
-		HextechRarityTier? forcedRarity = HextechCustomRunModifierHooks.GetForcedRarity(runState);
+		HextechRarityTier? forcedRarity = HextechCustomRunModifierCompatibility.GetForcedRarity(runState);
 		IReadOnlyList<HextechRarityTier> enabledRarities = HextechRunePoolBuilder.GetEnabledPlayerRuneRarities(runState);
 		HextechRarityTier? effectiveForcedRarity = forcedRarity.HasValue && enabledRarities.Contains(forcedRarity.Value)
 			? forcedRarity

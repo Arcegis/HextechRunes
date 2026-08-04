@@ -40,7 +40,6 @@ public static class ModEntry
 			HextechMobileModelRegistrationHooks.Install(harmony);
 			HextechThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechSelfUpgradeCardStore.Install(harmony);
-			HextechCustomRunModifierHooks.Install(harmony);
 			HextechRunLifecycleHooks.Install(harmony);
 			HextechCombatHooks.Install(harmony);
 			HextechEnemyPowerScalingHooks.Install(harmony);
