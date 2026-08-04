@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "三筋の赤い軌跡が、同じ結末を描く。",
   "TWIN_FLAMES_RUNE.title": "双生の炎",
   "TWIN_FLAMES_RUNE.description": "スキルをプレイした後、ランダムな敵に[blue]{Missiles}[/blue]発のミサイルを放つ。各ミサイルはそのスキルのエナジーコストに等しいダメージを与える。",
-  "TWIN_FLAMES_RUNE.flavor": "異なる色の二つの炎が、同じ獲物を追う。"
+  "TWIN_FLAMES_RUNE.flavor": "異なる色の二つの炎が、同じ獲物を追う。",
+  "DUALCAST_UPGRADE_RUNE.title": "アップグレード：デュアルキャスト",
+  "DUALCAST_UPGRADE_RUNE.description": "[gold]デュアルキャスト[/gold]または[gold]クアッドキャスト[/gold]をプレイした後、そのカードを手札に戻す。",
+  "DUALCAST_UPGRADE_RUNE.flavor": "回路は消えかけた残響を拾い、もう一度巡らせる。"
 }

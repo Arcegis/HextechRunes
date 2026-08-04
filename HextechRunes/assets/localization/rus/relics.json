@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "Три багровых следа пишут один финал.",
   "TWIN_FLAMES_RUNE.title": "Двойное пламя",
   "TWIN_FLAMES_RUNE.description": "После розыгрыша Навыка выпустите [blue]{Missiles}[/blue] снаряда в случайного врага. Каждый наносит урон, равный стоимости Энергии этого Навыка.",
-  "TWIN_FLAMES_RUNE.flavor": "Два пламени разных цветов преследуют одну добычу."
+  "TWIN_FLAMES_RUNE.flavor": "Два пламени разных цветов преследуют одну добычу.",
+  "DUALCAST_UPGRADE_RUNE.title": "Улучшение: Двойной разряд",
+  "DUALCAST_UPGRADE_RUNE.description": "После розыгрыша [gold]Двойного разряда[/gold] или [gold]Четверного разряда[/gold] верните эту карту в руку.",
+  "DUALCAST_UPGRADE_RUNE.flavor": "Контур ловит затихающий отголосок и запускает его снова."
 }

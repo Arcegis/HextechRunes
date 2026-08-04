@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "Três rastros carmesim escrevem o mesmo fim.",
   "TWIN_FLAMES_RUNE.title": "Chamas Gêmeas",
   "TWIN_FLAMES_RUNE.description": "Depois de jogar uma Habilidade, dispare [blue]{Missiles}[/blue] mísseis contra um inimigo aleatório. Cada míssil causa dano igual ao custo de Energia daquela Habilidade.",
-  "TWIN_FLAMES_RUNE.flavor": "Duas chamas de cores diferentes perseguem a mesma presa."
+  "TWIN_FLAMES_RUNE.flavor": "Duas chamas de cores diferentes perseguem a mesma presa.",
+  "DUALCAST_UPGRADE_RUNE.title": "Aprimoramento: Conjuração Dupla",
+  "DUALCAST_UPGRADE_RUNE.description": "Depois de jogar [gold]Conjuração Dupla[/gold] ou [gold]Conjuração Quádrupla[/gold], devolva essa carta à sua mão.",
+  "DUALCAST_UPGRADE_RUNE.flavor": "O circuito captura cada eco que se apaga e o põe para circular outra vez."
 }

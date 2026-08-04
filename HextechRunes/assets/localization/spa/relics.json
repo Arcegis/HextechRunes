@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "Tres estelas carmesí escriben el mismo final.",
   "TWIN_FLAMES_RUNE.title": "Llamas gemelas",
   "TWIN_FLAMES_RUNE.description": "Después de jugar una Habilidad, lanza [blue]{Missiles}[/blue] proyectiles contra un enemigo al azar. Cada proyectil inflige daño equivalente al coste de Energía de esa Habilidad.",
-  "TWIN_FLAMES_RUNE.flavor": "Dos llamas de distinto color persiguen a la misma presa."
+  "TWIN_FLAMES_RUNE.flavor": "Dos llamas de distinto color persiguen a la misma presa.",
+  "DUALCAST_UPGRADE_RUNE.title": "Mejora: Lanzamiento doble",
+  "DUALCAST_UPGRADE_RUNE.description": "Después de jugar [gold]Lanzamiento doble[/gold] o [gold]Lanzamiento cuádruple[/gold], devuelve esa carta a tu mano.",
+  "DUALCAST_UPGRADE_RUNE.flavor": "El circuito atrapa cada eco que se desvanece y lo pone de nuevo en marcha."
 }

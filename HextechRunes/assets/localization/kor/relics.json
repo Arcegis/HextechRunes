@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "세 줄기의 붉은 궤적이 같은 결말을 씁니다.",
   "TWIN_FLAMES_RUNE.title": "쌍둥이 불꽃",
   "TWIN_FLAMES_RUNE.description": "스킬 카드를 사용한 후, 무작위 적에게 미사일을 [blue]{Missiles}[/blue]발 발사합니다. 각 미사일은 그 스킬 카드의 에너지 비용만큼 피해를 줍니다.",
-  "TWIN_FLAMES_RUNE.flavor": "서로 다른 빛깔의 두 불꽃이 같은 먹잇감을 쫓습니다."
+  "TWIN_FLAMES_RUNE.flavor": "서로 다른 빛깔의 두 불꽃이 같은 먹잇감을 쫓습니다.",
+  "DUALCAST_UPGRADE_RUNE.title": "강화: 이중 시전",
+  "DUALCAST_UPGRADE_RUNE.description": "[gold]이중 시전[/gold] 또는 [gold]사중 시전[/gold]을 사용한 후, 그 카드를 손으로 되돌립니다.",
+  "DUALCAST_UPGRADE_RUNE.flavor": "회로는 사라지는 메아리를 붙잡아 다시 순환시킵니다."
 }

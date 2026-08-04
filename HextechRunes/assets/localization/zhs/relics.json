@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "三道赤痕，写下同一个结局。",
   "TWIN_FLAMES_RUNE.title": "双生火焰",
   "TWIN_FLAMES_RUNE.description": "打出技能牌后，会对随机敌人发射[blue]{Missiles}[/blue]个飞弹，每个飞弹造成等同于技能牌耗能的伤害。",
-  "TWIN_FLAMES_RUNE.flavor": "两道异色焰光，追向同一个猎物。"
+  "TWIN_FLAMES_RUNE.flavor": "两道异色焰光，追向同一个猎物。",
+  "DUALCAST_UPGRADE_RUNE.title": "升级：双重释放",
+  "DUALCAST_UPGRADE_RUNE.description": "打出[gold]双重释放[/gold]或[gold]四重释放[/gold]后，将其返回至手牌。",
+  "DUALCAST_UPGRADE_RUNE.flavor": "回路接住消散的余响，再将它送回掌心。"
 }

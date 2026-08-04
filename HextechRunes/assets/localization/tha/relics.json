@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "รอยสีชาดสามสายเขียนจุดจบเดียวกัน",
   "TWIN_FLAMES_RUNE.title": "เปลวเพลิงคู่",
   "TWIN_FLAMES_RUNE.description": "หลังจากเล่นการ์ดสกิล ยิงมิสไซล์ [blue]{Missiles}[/blue] ลูกใส่ศัตรูแบบสุ่ม มิสไซล์แต่ละลูกสร้างความเสียหายเท่ากับค่าพลังงานของการ์ดสกิลนั้น",
-  "TWIN_FLAMES_RUNE.flavor": "เปลวเพลิงต่างสีสองสายไล่ล่าเหยื่อเดียวกัน"
+  "TWIN_FLAMES_RUNE.flavor": "เปลวเพลิงต่างสีสองสายไล่ล่าเหยื่อเดียวกัน",
+  "DUALCAST_UPGRADE_RUNE.title": "อัปเกรด: ร่ายสองครั้ง",
+  "DUALCAST_UPGRADE_RUNE.description": "หลังจากเล่น [gold]ร่ายสองครั้ง[/gold] หรือ [gold]ร่ายสี่ครั้ง[/gold] ให้นำการ์ดใบนั้นกลับขึ้นมือ",
+  "DUALCAST_UPGRADE_RUNE.flavor": "วงจรคว้าเสียงสะท้อนที่กำลังเลือนหายแล้วส่งให้หมุนเวียนอีกครั้ง"
 }

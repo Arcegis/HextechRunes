@@ -1392,5 +1392,8 @@
   "MAGIC_MISSILE_RUNE.flavor": "Three crimson trails write the same ending.",
   "TWIN_FLAMES_RUNE.title": "Twin Flames",
   "TWIN_FLAMES_RUNE.description": "After you play a Skill, fire [blue]{Missiles}[/blue] missiles at a random enemy. Each missile deals damage equal to that Skill's Energy cost.",
-  "TWIN_FLAMES_RUNE.flavor": "Two differently colored flames pursue the same quarry."
+  "TWIN_FLAMES_RUNE.flavor": "Two differently colored flames pursue the same quarry.",
+  "DUALCAST_UPGRADE_RUNE.title": "Upgrade: Dualcast",
+  "DUALCAST_UPGRADE_RUNE.description": "After playing [gold]Dualcast[/gold] or [gold]Quadcast[/gold], return it to your hand.",
+  "DUALCAST_UPGRADE_RUNE.flavor": "The circuit catches every fading echo and sends it around again."
 }

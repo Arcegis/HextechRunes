@@ -134,6 +134,7 @@ internal static partial class Program
 			new(nameof(GiantSlayerScalesFromEnemyMaxHp), GiantSlayerScalesFromEnemyMaxHp),
 			new(nameof(MagicMissileUsesThreeTwoPercentHits), MagicMissileUsesThreeTwoPercentHits),
 			new(nameof(TwinFlamesUsesTwoEnergyScaledHits), TwinFlamesUsesTwoEnergyScaledHits),
+			new(nameof(DualcastUpgradeReturnsBothCastCardsToHand), DualcastUpgradeReturnsBothCastCardsToHand),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
 			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
 			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
@@ -1766,7 +1767,8 @@ internal static partial class Program
 		NeutralizeUpgradeRune neutralize = new();
 		FallingStarUpgradeRune fallingStar = new();
 		UnleashUpgradeRune unleash = new();
-		RelicModel[] dualFormRunes = [ bash, neutralize, fallingStar, unleash ];
+		DualcastUpgradeRune dualcast = new();
+		RelicModel[] dualFormRunes = [ bash, neutralize, fallingStar, unleash, dualcast ];
 		foreach (RelicModel rune in dualFormRunes)
 		{
 			Expect(!rune.HasUponPickupEffect, $"{rune.GetType().Name} should not grant a card on pickup");
@@ -1788,6 +1790,9 @@ internal static partial class Program
 		Expect(!unleash.MeetsCardAvailabilityRequirement([]), "Unleash upgrade should require Unleash or Protector");
 		Expect(unleash.MeetsCardAvailabilityRequirement([new Unleash()]), "Unleash upgrade should accept Unleash");
 		Expect(unleash.MeetsCardAvailabilityRequirement([new Protector()]), "Unleash upgrade should accept Protector");
+		Expect(!dualcast.MeetsCardAvailabilityRequirement([]), "Dualcast upgrade should require Dualcast or Quadcast");
+		Expect(dualcast.MeetsCardAvailabilityRequirement([new Dualcast()]), "Dualcast upgrade should accept Dualcast");
+		Expect(dualcast.MeetsCardAvailabilityRequirement([new Quadcast()]), "Dualcast upgrade should accept Quadcast");
 
 		Expect((object)new StrikeUpgradeRune() is not IHextechSelectionFooterProvider, "Strike upgrade should not show a pickup footer");
 		Expect((object)new DefendUpgradeRune() is not IHextechSelectionFooterProvider, "Defend upgrade should not show a pickup footer");
@@ -2100,6 +2105,28 @@ internal static partial class Program
 				"PlayTwinFlamesMissile",
 				BindingFlags.Static | BindingFlags.NonPublic) != null,
 			"Twin Flames should expose its blue-yellow projectile VFX path");
+	}
+
+	private static void DualcastUpgradeReturnsBothCastCardsToHand()
+	{
+		Expect(
+			DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Dualcast>()),
+			"Dualcast Upgrade should return Dualcast to hand");
+		Expect(
+			DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Quadcast>()),
+			"Dualcast Upgrade should return Quadcast to hand");
+		Expect(
+			!DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Zap>()),
+			"Dualcast Upgrade should ignore unrelated cards");
+		Expect(
+			DualcastUpgradeRune.CanReturnFromResultPile(PileType.Discard),
+			"normal result piles should be redirected to hand");
+		Expect(
+			!DualcastUpgradeRune.CanReturnFromResultPile(PileType.None),
+			"temporary copies with no result pile should still disappear");
+		DualcastUpgradeRune rune = new();
+		Expect(!rune.GrantsCardOnPickup, "Dualcast Upgrade should not grant a card when obtained");
+		Expect(!rune.HasUponPickupEffect, "Dualcast Upgrade should not advertise a pickup effect");
 	}
 
 	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()

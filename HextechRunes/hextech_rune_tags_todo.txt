@@ -323,6 +323,7 @@
 我方	MadScientistRune	科学狂人	标签=产球
 我方	NightmareRune	梦魇	标签=产球
 我方	StormUpgradeRune	升级：雷暴	标签=产球
+我方	DualcastUpgradeRune	升级：双重释放	标签=产球
 
 [我方 / 亡灵契约师]
 我方	TauntRune	嘲弄	标签=灾厄
