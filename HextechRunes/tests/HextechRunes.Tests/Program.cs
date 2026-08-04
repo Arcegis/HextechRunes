@@ -107,6 +107,8 @@ internal static partial class Program
 			new(nameof(BrandUpgradeDamageScalesWithPermanentPlayCount), BrandUpgradeDamageScalesWithPermanentPlayCount),
 			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
 			new(nameof(HundredRefinementsRequiresTwoBodyForges), HundredRefinementsRequiresTwoBodyForges),
+			new(nameof(InitialForgeGrantRunesPersistPendingTransaction), InitialForgeGrantRunesPersistPendingTransaction),
+			new(nameof(InitialForgeGrantLoadRecoveryPrecedesActRecovery), InitialForgeGrantLoadRecoveryPrecedesActRecovery),
 			new(nameof(HastyScribbleDrawsToFullHandAtTurnStart), HastyScribbleDrawsToFullHandAtTurnStart),
 			new(nameof(BigHandsIncreasesSummonAmountByFiftyPercent), BigHandsIncreasesSummonAmountByFiftyPercent),
 			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
@@ -1932,6 +1934,58 @@ internal static partial class Program
 
 		forge.SavedStackCount = 2;
 		Equal(200, forge.ExtraGoldRewardAmount, "two-stack Fortune Forge reward");
+	}
+
+	private static void InitialForgeGrantRunesPersistPendingTransaction()
+	{
+		Type[] initialForgeRunes =
+		[
+			typeof(StatsRune),
+			typeof(StatsOnStatsRune),
+			typeof(StatsOnStatsOnStatsRune),
+			typeof(HailToTheKingRune)
+		];
+		foreach (Type type in initialForgeRunes)
+		{
+			Expect(
+				type.IsSubclassOf(typeof(InitialForgeGrantRune)),
+				$"{type.Name} should use the resumable initial forge transaction");
+		}
+
+		StatsOnStatsRune rune = new();
+		Expect(!rune.SavedInitialForgeGrantPending, "initial forge transaction should default to completed");
+		rune.SavedInitialForgeGrantPending = true;
+		Expect(rune.SavedInitialForgeGrantPending, "pending initial forge transaction should be saveable");
+
+		MethodInfo method = typeof(HextechForgeGrantHelper).GetMethod(
+			"TryObtainRandomForges",
+			BindingFlags.Static | BindingFlags.NonPublic)
+			?? throw new MissingMethodException(nameof(HextechForgeGrantHelper), "TryObtainRandomForges");
+		Equal(typeof(Task<bool>), method.ReturnType, "initial forge transaction completion result");
+	}
+
+	private static void InitialForgeGrantLoadRecoveryPrecedesActRecovery()
+	{
+		MethodInfo recovery = typeof(HextechRunLifecycleHooks).GetMethod(
+			"ResumePendingSelectionTransactionsAfterLoad",
+			BindingFlags.Static | BindingFlags.NonPublic)
+			?? throw new MissingMethodException(nameof(HextechRunLifecycleHooks), "ResumePendingSelectionTransactionsAfterLoad");
+		MethodInfo moveNext = GetAsyncStateMachineMoveNext(recovery);
+		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(moveNext)
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>()
+			.ToArray();
+		int forgeRecoveryIndex = Array.FindIndex(
+			calls,
+			static method => method.Name == "ResumePendingInitialForgeGrantsAfterLoad");
+		int actRecoveryIndex = Array.FindIndex(
+			calls,
+			static method => method.Name == "ResumePendingActSelectionAfterLoad");
+
+		Expect(forgeRecoveryIndex >= 0, "load continuation should resume pending initial forge grants");
+		Expect(
+			actRecoveryIndex > forgeRecoveryIndex,
+			"load continuation should finish pending initial forge grants before resuming act selection");
 	}
 
 	private static void PrismaticEggIsExcludedFromThirdAct()
