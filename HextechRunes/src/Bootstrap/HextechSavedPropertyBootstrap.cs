@@ -95,7 +95,7 @@ internal static class HextechSavedPropertyBootstrap
 		}
 
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechMayhemModifier));
-		foreach (Type type in HextechCustomModelRegistry.CustomRarityModifierTypes)
+		foreach (Type type in HextechCustomModelRegistry.AllCustomModifierTypes)
 		{
 			SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 		}

@@ -165,6 +165,8 @@ internal static partial class Program
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
 			new(nameof(RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi), RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi),
+			new(nameof(StuffedToRuinChallengeUsesThreeFixedActPlans), StuffedToRuinChallengeUsesThreeFixedActPlans),
+			new(nameof(DefenseCounterMasterChallengeUsesThreeFixedActPlans), DefenseCounterMasterChallengeUsesThreeFixedActPlans),
 			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
 			new(nameof(RunConfigurationDefaultSnapshotDisablesRiskyContent), RunConfigurationDefaultSnapshotDisablesRiskyContent),
 			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
@@ -2660,6 +2662,68 @@ internal static partial class Program
 		Expect(
 			calls.All(static method => method.DeclaringType != typeof(HextechCustomRunModifierCompatibility)),
 			"mod initialization should not install retired custom rarity modifier UI hooks");
+	}
+
+	private static void StuffedToRuinChallengeUsesThreeFixedActPlans()
+	{
+		SequenceEqual(
+			new[] { typeof(StuffedToRuinChallengeModifier), typeof(DefenseCounterMasterChallengeModifier) },
+			HextechCustomModelRegistry.CustomChallengeModifierTypes,
+			"custom-run challenge registry");
+		Expect(
+			HextechCustomModelRegistry.AllCustomModifierTypes.Contains(typeof(StuffedToRuinChallengeModifier)),
+			"challenge modifier should be included in saved-property model registration");
+
+		HextechPresetChallengeActPlan[] expectedPlans =
+		[
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.ForgottenSoul ]),
+			new(HextechRarityTier.Gold, [ MonsterHexKind.PhrogParasite, MonsterHexKind.ManipulateReality ]),
+			new(HextechRarityTier.Silver, [ MonsterHexKind.LeafSlime, MonsterHexKind.DizzySpinning ])
+		];
+		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
+		{
+			Expect(
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(StuffedToRuinChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				$"challenge act {actIndex + 1} should exist");
+			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"challenge act {actIndex + 1} player rarity");
+			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"challenge act {actIndex + 1} enemy hexes");
+		}
+
+		Expect(
+			!HextechPresetChallengeRegistry.TryGetActPlan(typeof(StuffedToRuinChallengeModifier), 3, out _),
+			"challenge should not schedule a fourth acquisition");
+		HextechRunConfigurationSnapshot defaultSnapshot = HextechRuneConfiguration.GetDefaultSnapshot();
+		SequenceEqual(new[] { 1, 1, 1 }, defaultSnapshot.PlayerHexCountsByAct, "challenge default player counts");
+		SequenceEqual(new[] { 1, 2, 3 }, defaultSnapshot.EnemyHexCountsByAct, "challenge default enemy counts");
+		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "challenge fixed enemy counts");
+		Equal(new HextechRarityWeights(1, 1, 1), defaultSnapshot.RuneRarityWeights, "challenge default rarity weights");
+	}
+
+	private static void DefenseCounterMasterChallengeUsesThreeFixedActPlans()
+	{
+		Expect(
+			HextechCustomModelRegistry.AllCustomModifierTypes.Contains(typeof(DefenseCounterMasterChallengeModifier)),
+			"defense counter challenge should be included in saved-property model registration");
+
+		HextechPresetChallengeActPlan[] expectedPlans =
+		[
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.Exoskeleton ]),
+			new(HextechRarityTier.Gold, [ MonsterHexKind.HundredRefinements, MonsterHexKind.Porcupine ]),
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.ProteinShake, MonsterHexKind.UnmovableMountain ])
+		];
+		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
+		{
+			Expect(
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(DefenseCounterMasterChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				$"defense counter challenge act {actIndex + 1} should exist");
+			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"defense counter challenge act {actIndex + 1} player rarity");
+			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"defense counter challenge act {actIndex + 1} enemy hexes");
+		}
+
+		Expect(
+			!HextechPresetChallengeRegistry.TryGetActPlan(typeof(DefenseCounterMasterChallengeModifier), 3, out _),
+			"defense counter challenge should not schedule a fourth acquisition");
+		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "defense counter challenge fixed enemy counts");
 	}
 
 	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()

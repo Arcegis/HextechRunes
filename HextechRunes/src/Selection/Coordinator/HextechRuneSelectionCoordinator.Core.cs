@@ -46,6 +46,20 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
+		if (HextechPresetChallengeRegistry.IsActive(runState)
+			&& !HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out _))
+		{
+			IReadOnlyList<MonsterHexKind> activeMonsterHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
+			modifier.SetMonsterHexesForAct(actIndex, activeMonsterHexes);
+			modifier.SetStageResolved(actIndex, true);
+			modifier.ApplyMapModifiersToCurrentAct(nameof(HandleStageSelection), actIndex);
+			HextechEnemyUi.Refresh(modifier);
+			await modifier.ApplyToCurrentEnemiesIfNeeded();
+			await PersistActSelection(runState, actIndex);
+			HextechLog.Info($"[{ModInfo.Id}][Challenge] Skipped acquisition after the three preset acts: act={actIndex}");
+			return;
+		}
+
 		ActSelectionGate.Enter(runState);
 		bool reopenMapAfterSelection = false;
 		try
@@ -102,7 +116,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			NetGameType gameType = RunManager.Instance.NetService.Type;
 			for (int choiceOrdinal = 0; choiceOrdinal < playerHexCount; choiceOrdinal++)
 			{
-				bool allowEnemyHexAdjustment = choiceOrdinal == 0;
+				bool allowEnemyHexAdjustment = choiceOrdinal == 0
+					&& !HextechPresetChallengeRegistry.IsActive(runState);
 				if (gameType is NetGameType.Singleplayer or NetGameType.None)
 				{
 					foreach (Player player in runState.Players)
@@ -181,10 +196,11 @@ internal static partial class HextechRuneSelectionCoordinator
 						modifier,
 						actIndex,
 						rarity,
-						allowEnemyHexAdjustment ? previousMonsterHexes : finalMonsterHexes,
-						allowEnemyHexAdjustment ? newMonsterHexes : [],
+						previousMonsterHexes,
+						newMonsterHexes,
 						monsterHexRelic,
-						choiceOrdinal);
+						choiceOrdinal,
+						allowEnemyHexAdjustment);
 					if (allowEnemyHexAdjustment)
 					{
 						newMonsterHexes = finalMonsterHexes
