@@ -1386,5 +1386,11 @@
   "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "Один огонь закаляет и клинок, и бастион.",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "Улучшение: Решения, решения",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "Ваши [gold]Решения, решения[/gold] могут выбрать любую разыгрываемую карту.",
-  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "Настоящее решение отвергает заранее заданные ответы."
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "Настоящее решение отвергает заранее заданные ответы.",
+  "MAGIC_MISSILE_RUNE.title": "Магическая стрела",
+  "MAGIC_MISSILE_RUNE.description": "После розыгрыша первой Атаки за ход выпустите в её цель [blue]{Missiles}[/blue] снаряда. Каждый наносит урон в размере [blue]{MaxHpDamagePercent}%[/blue] от макс. ОЗ этого врага.",
+  "MAGIC_MISSILE_RUNE.flavor": "Три багровых следа пишут один финал.",
+  "TWIN_FLAMES_RUNE.title": "Двойное пламя",
+  "TWIN_FLAMES_RUNE.description": "После розыгрыша Навыка выпустите [blue]{Missiles}[/blue] снаряда в случайного врага. Каждый наносит урон, равный стоимости Энергии этого Навыка.",
+  "TWIN_FLAMES_RUNE.flavor": "Два пламени разных цветов преследуют одну добычу."
 }

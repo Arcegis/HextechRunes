@@ -1386,5 +1386,11 @@
   "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "同じ炎が刃と城壁を鍛え上げる。",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "アップグレード：決断、決断",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "[gold]決断、決断[/gold]でプレイ可能な任意のカードを選べる。",
-  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "真の決断は、用意された答えを拒む。"
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "真の決断は、用意された答えを拒む。",
+  "MAGIC_MISSILE_RUNE.title": "マジックミサイル",
+  "MAGIC_MISSILE_RUNE.description": "各ターン最初のアタックをプレイした後、その対象へ[blue]{Missiles}[/blue]発のミサイルを放つ。各ミサイルはその敵の最大HPの[blue]{MaxHpDamagePercent}%[/blue]に等しいダメージを与える。",
+  "MAGIC_MISSILE_RUNE.flavor": "三筋の赤い軌跡が、同じ結末を描く。",
+  "TWIN_FLAMES_RUNE.title": "双生の炎",
+  "TWIN_FLAMES_RUNE.description": "スキルをプレイした後、ランダムな敵に[blue]{Missiles}[/blue]発のミサイルを放つ。各ミサイルはそのスキルのエナジーコストに等しいダメージを与える。",
+  "TWIN_FLAMES_RUNE.flavor": "異なる色の二つの炎が、同じ獲物を追う。"
 }

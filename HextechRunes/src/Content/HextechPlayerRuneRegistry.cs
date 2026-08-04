@@ -109,6 +109,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<NeurosurgeUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 34, tagKey: "DOOM"),
 		Rune<WroughtInWarUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 29, tagKey: "SWORDCRAFT"),
 		Rune<TerminalIllnessRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 28, tagKey: "POISON"),
+		Rune<TwinFlamesRune>(HextechRarityTier.Silver, tagKey: "OUTPUT"),
 
 		Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 		Rune<TranscendentEvilRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.ThirdActExcluded, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 3, tagKey: "STACKING"),
@@ -242,6 +243,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<SubroutineUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 30, tagKey: "ORB"),
 		Rune<BigHammerRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 28, tagKey: "SWORDCRAFT"),
 		Rune<SpinToWinRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
+		Rune<MagicMissileRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 
 		Rune<StrikeUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
 		Rune<DefendUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),

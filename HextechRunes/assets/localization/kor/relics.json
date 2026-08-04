@@ -1386,5 +1386,11 @@
   "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "같은 불길이 칼날과 방벽을 함께 단련합니다.",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "업그레이드: 선택, 또 선택",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "[gold]선택, 또 선택[/gold]으로 사용 가능한 아무 카드나 선택할 수 있습니다.",
-  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "진정한 선택은 정해진 답을 거부합니다."
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "진정한 선택은 정해진 답을 거부합니다.",
+  "MAGIC_MISSILE_RUNE.title": "마법 미사일",
+  "MAGIC_MISSILE_RUNE.description": "매 턴 처음으로 공격 카드를 사용한 후, 그 대상에게 미사일을 [blue]{Missiles}[/blue]발 발사합니다. 각 미사일은 해당 적 최대 체력의 [blue]{MaxHpDamagePercent}%[/blue]만큼 피해를 줍니다.",
+  "MAGIC_MISSILE_RUNE.flavor": "세 줄기의 붉은 궤적이 같은 결말을 씁니다.",
+  "TWIN_FLAMES_RUNE.title": "쌍둥이 불꽃",
+  "TWIN_FLAMES_RUNE.description": "스킬 카드를 사용한 후, 무작위 적에게 미사일을 [blue]{Missiles}[/blue]발 발사합니다. 각 미사일은 그 스킬 카드의 에너지 비용만큼 피해를 줍니다.",
+  "TWIN_FLAMES_RUNE.flavor": "서로 다른 빛깔의 두 불꽃이 같은 먹잇감을 쫓습니다."
 }

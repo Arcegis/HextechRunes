@@ -1386,5 +1386,11 @@
   "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "O mesmo fogo tempera a lâmina e a muralha.",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "Melhoria: Decisões, Decisões",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "Sua [gold]Decisões, Decisões[/gold] pode escolher qualquer carta jogável.",
-  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "Uma decisão verdadeira rejeita toda resposta predeterminada."
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "Uma decisão verdadeira rejeita toda resposta predeterminada.",
+  "MAGIC_MISSILE_RUNE.title": "Míssil Mágico",
+  "MAGIC_MISSILE_RUNE.description": "Depois de jogar seu primeiro Ataque a cada turno, dispare [blue]{Missiles}[/blue] mísseis contra o alvo. Cada míssil causa dano igual a [blue]{MaxHpDamagePercent}%[/blue] do PV Máx daquele inimigo.",
+  "MAGIC_MISSILE_RUNE.flavor": "Três rastros carmesim escrevem o mesmo fim.",
+  "TWIN_FLAMES_RUNE.title": "Chamas Gêmeas",
+  "TWIN_FLAMES_RUNE.description": "Depois de jogar uma Habilidade, dispare [blue]{Missiles}[/blue] mísseis contra um inimigo aleatório. Cada míssil causa dano igual ao custo de Energia daquela Habilidade.",
+  "TWIN_FLAMES_RUNE.flavor": "Duas chamas de cores diferentes perseguem a mesma presa."
 }

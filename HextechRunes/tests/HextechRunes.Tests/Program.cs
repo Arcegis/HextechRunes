@@ -129,6 +129,8 @@ internal static partial class Program
 			new(nameof(DrainTargetsFirstEnemyWithHighestCurrentHp), DrainTargetsFirstEnemyWithHighestCurrentHp),
 			new(nameof(FeyMagicUsesThreeCostWithoutTurnLimit), FeyMagicUsesThreeCostWithoutTurnLimit),
 			new(nameof(GiantSlayerScalesFromEnemyMaxHp), GiantSlayerScalesFromEnemyMaxHp),
+			new(nameof(MagicMissileUsesThreeTwoPercentHits), MagicMissileUsesThreeTwoPercentHits),
+			new(nameof(TwinFlamesUsesTwoEnergyScaledHits), TwinFlamesUsesTwoEnergyScaledHits),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
 			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
 			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
@@ -1970,6 +1972,47 @@ internal static partial class Program
 		Equal(1.49m, GiantSlayerRune.ResolveDamageMultiplier(399), "multiplier before cap");
 		Equal(1.5m, GiantSlayerRune.ResolveDamageMultiplier(400), "fifty-percent cap multiplier");
 		Equal(1.5m, GiantSlayerRune.ResolveDamageMultiplier(9999), "multiplier remains capped");
+	}
+
+	private static void MagicMissileUsesThreeTwoPercentHits()
+	{
+		Equal(3, MagicMissileRune.MissileCount, "Magic Missile hit count");
+		Equal(2m, MagicMissileRune.MaxHpDamagePercent, "Magic Missile max-HP damage percent");
+		Equal(0.055f, HextechCombatVfx.MagicMissileLaunchIntervalSeconds, "Magic Missile launch interval");
+		Equal(0.28f, HextechCombatVfx.MagicMissileBaseFlightSeconds, "Magic Missile base flight duration");
+		Equal(0.025f, HextechCombatVfx.MagicMissileFlightStepSeconds, "Magic Missile flight duration step");
+		MethodInfo? afterCardPlayed = typeof(MagicMissileRune).GetMethod(
+			nameof(MagicMissileRune.AfterCardPlayed),
+			BindingFlags.Instance | BindingFlags.Public);
+		Equal<AsyncStateMachineAttribute?>(
+			null,
+			afterCardPlayed?.GetCustomAttribute<AsyncStateMachineAttribute>(),
+			"Magic Missile should not hold the card-play hook open while projectiles resolve");
+		Equal(1, MagicMissileRune.CalculateMissileDamage(1), "Magic Missile should deal at least one damage");
+		Equal(2, MagicMissileRune.CalculateMissileDamage(100), "Magic Missile should deal two percent of 100 max HP");
+		Equal(3, MagicMissileRune.CalculateMissileDamage(199), "Magic Missile should round max-HP damage down");
+	}
+
+	private static void TwinFlamesUsesTwoEnergyScaledHits()
+	{
+		Equal(2, TwinFlamesRune.MissileCount, "Twin Flames hit count");
+		Equal(0m, TwinFlamesRune.ResolveMissileDamage(-1m), "Twin Flames should not create negative damage");
+		Equal(0m, TwinFlamesRune.ResolveMissileDamage(0m), "zero-cost Skills should resolve to zero missile damage");
+		Equal(3m, TwinFlamesRune.ResolveMissileDamage(3m), "Twin Flames damage should equal the played Skill's Energy cost");
+		Expect(!TwinFlamesRune.ShouldLaunchMissiles(0m), "zero-cost Skills should not launch Twin Flames missiles");
+		Expect(TwinFlamesRune.ShouldLaunchMissiles(1m), "positive-cost Skills should launch Twin Flames missiles");
+		MethodInfo? afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
+			nameof(TwinFlamesRune.AfterCardPlayed),
+			BindingFlags.Instance | BindingFlags.Public);
+		Equal<AsyncStateMachineAttribute?>(
+			null,
+			afterCardPlayed?.GetCustomAttribute<AsyncStateMachineAttribute>(),
+			"Twin Flames should not hold the card-play hook open while projectiles resolve");
+		Expect(
+			typeof(HextechCombatVfx).GetMethod(
+				"PlayTwinFlamesMissile",
+				BindingFlags.Static | BindingFlags.NonPublic) != null,
+			"Twin Flames should expose its blue-yellow projectile VFX path");
 	}
 
 	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()

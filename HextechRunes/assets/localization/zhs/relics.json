@@ -1386,5 +1386,11 @@
   "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "炉火锻出锋刃，也锻出壁垒。",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "升级：抉择，抉择",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "你的[gold]抉择，抉择[/gold]可以选择任意一张可打出的牌。",
-  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "真正的抉择，从来不接受预设答案。"
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "真正的抉择，从来不接受预设答案。",
+  "MAGIC_MISSILE_RUNE.title": "魔法飞弹",
+  "MAGIC_MISSILE_RUNE.description": "每回合首次打出攻击牌后，会对其目标发射[blue]{Missiles}[/blue]个飞弹，每个飞弹造成目标最大生命值[blue]{MaxHpDamagePercent}%[/blue]的伤害。",
+  "MAGIC_MISSILE_RUNE.flavor": "三道赤痕，写下同一个结局。",
+  "TWIN_FLAMES_RUNE.title": "双生火焰",
+  "TWIN_FLAMES_RUNE.description": "打出技能牌后，会对随机敌人发射[blue]{Missiles}[/blue]个飞弹，每个飞弹造成等同于技能牌耗能的伤害。",
+  "TWIN_FLAMES_RUNE.flavor": "两道异色焰光，追向同一个猎物。"
 }

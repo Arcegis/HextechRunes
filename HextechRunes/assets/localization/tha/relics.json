@@ -1386,5 +1386,11 @@
   "WROUGHT_IN_WAR_UPGRADE_RUNE.flavor": "เปลวไฟเดียวกันชุบทั้งคมดาบและกำแพง",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.title": "อัปเกรด: เลือกแล้วเลือกอีก",
   "DECISIONS_DECISIONS_UPGRADE_RUNE.description": "[gold]เลือกแล้วเลือกอีก[/gold]ของคุณสามารถเลือกการ์ดที่เล่นได้ใบใดก็ได้",
-  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "การตัดสินใจที่แท้จริงไม่ยอมรับคำตอบที่กำหนดไว้"
+  "DECISIONS_DECISIONS_UPGRADE_RUNE.flavor": "การตัดสินใจที่แท้จริงไม่ยอมรับคำตอบที่กำหนดไว้",
+  "MAGIC_MISSILE_RUNE.title": "มิสไซล์เวทมนตร์",
+  "MAGIC_MISSILE_RUNE.description": "หลังจากเล่นการ์ดโจมตีใบแรกในแต่ละเทิร์น ยิงมิสไซล์ [blue]{Missiles}[/blue] ลูกใส่เป้าหมาย มิสไซล์แต่ละลูกสร้างความเสียหายเท่ากับ [blue]{MaxHpDamagePercent}%[/blue] ของ HP สูงสุดของศัตรูนั้น",
+  "MAGIC_MISSILE_RUNE.flavor": "รอยสีชาดสามสายเขียนจุดจบเดียวกัน",
+  "TWIN_FLAMES_RUNE.title": "เปลวเพลิงคู่",
+  "TWIN_FLAMES_RUNE.description": "หลังจากเล่นการ์ดสกิล ยิงมิสไซล์ [blue]{Missiles}[/blue] ลูกใส่ศัตรูแบบสุ่ม มิสไซล์แต่ละลูกสร้างความเสียหายเท่ากับค่าพลังงานของการ์ดสกิลนั้น",
+  "TWIN_FLAMES_RUNE.flavor": "เปลวเพลิงต่างสีสองสายไล่ล่าเหยื่อเดียวกัน"
 }
