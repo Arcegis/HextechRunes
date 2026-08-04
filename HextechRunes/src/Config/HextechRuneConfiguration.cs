@@ -7,7 +7,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 29;
+	private const int CurrentConfigVersion = 30;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -76,16 +76,14 @@ internal static class HextechRuneConfiguration
 	];
 
 	// 0.8.5 遥测(69.8万局)选取率垫底批次转为默认禁用:豪猪7.7%/巨像的勇气10.6%/瓦库11.4%/
-	// 死亡收割11.5%/最终形态12.8%/乾坤一掷14.2%/枯木14.7%(全体中位数30.3%)。
+	// 死亡收割11.5%/最终形态12.8%(全体中位数30.3%)。
 	private static readonly Type[] Version23DefaultDisabledRuneTypes =
 	[
 		typeof(ShoulderVakuRune),
 		typeof(PorcupineRune),
 		typeof(CourageOfColossusRune),
 		typeof(DeathHarvestRune),
-		typeof(FinalFormRune),
-		typeof(AllInRune),
-		typeof(DeadwoodRune)
+		typeof(FinalFormRune)
 	];
 
 	// 升级:打击/防御重做为"最高+999且战后升级本场打出过的"(棱彩),转为默认启用。
@@ -101,12 +99,6 @@ internal static class HextechRuneConfiguration
 		typeof(AnthonyBiasRune)
 	];
 
-	// 设计审查批次:钝刀片默认关闭。
-	private static readonly Type[] Version26DefaultDisabledRuneTypes =
-	[
-		typeof(DullBladeRune)
-	];
-
 	// 高风险或流程偏慢的通用海克斯转为默认禁用;豪猪已在 v23 禁用,不重复覆盖玩家后续选择。
 	private static readonly Type[] Version27DefaultDisabledRuneTypes =
 	[
@@ -114,6 +106,12 @@ internal static class HextechRuneConfiguration
 		typeof(OkBoomerangRune),
 		typeof(FeyMagicRune),
 		typeof(AstralBodyRune)
+	];
+
+	// 以进为退转为默认启用。
+	private static readonly Type[] Version30DefaultEnabledRuneTypes =
+	[
+		typeof(AdvanceToRetreatRune)
 	];
 
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -496,11 +494,6 @@ internal static class HextechRuneConfiguration
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version25DefaultEnabledRuneTypes));
 		}
 
-		if (previousConfigVersion < 26)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version26DefaultDisabledRuneTypes));
-		}
-
 		if (previousConfigVersion < 27)
 		{
 			disabledIds.UnionWith(GetPlayerRuneIds(Version27DefaultDisabledRuneTypes));
@@ -515,6 +508,11 @@ internal static class HextechRuneConfiguration
 		if (previousConfigVersion < 29)
 		{
 			config.GoldenRerollChancePercent = DefaultGoldenRerollChancePercent;
+		}
+
+		if (previousConfigVersion < 30)
+		{
+			disabledIds.ExceptWith(GetPlayerRuneIds(Version30DefaultEnabledRuneTypes));
 		}
 
 		config.ConfigVersion = CurrentConfigVersion;

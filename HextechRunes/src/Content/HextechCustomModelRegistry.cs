@@ -51,11 +51,9 @@ internal static class HextechCustomModelRegistry
 
 	internal static IReadOnlyList<Type> CustomCardTypes { get; } =
 	[
-		typeof(ElicitCard),
 		typeof(TrickMagicCard),
 		typeof(BladeWaltzCard),
 		typeof(CatalystCard),
-		typeof(AllInCard),
 		typeof(WhiteHoleCard),
 		typeof(SearingAttackCard),
 		typeof(FeelTheBurnCard),
