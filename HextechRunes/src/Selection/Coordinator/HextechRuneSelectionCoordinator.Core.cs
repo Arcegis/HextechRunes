@@ -22,10 +22,14 @@ internal static partial class HextechRuneSelectionCoordinator
 		return HandleActSelection(modifier.ActiveRunState, modifier);
 	}
 
-	public static async Task HandleActSelection(RunState runState, HextechMayhemModifier modifier)
+	public static Task HandleActSelection(RunState runState, HextechMayhemModifier modifier)
 	{
-		int actIndex = runState.CurrentActIndex;
-		if (!modifier.IsActResolved(actIndex) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(HandleActSelection)))
+		return HandleStageSelection(runState, modifier, modifier.GetCurrentActSelectionIndex());
+	}
+
+	public static async Task HandleStageSelection(RunState runState, HextechMayhemModifier modifier, int actIndex)
+	{
+		if (!modifier.IsStageResolved(actIndex) && modifier.TryRecoverResolvedActsFromPlayerRelics(nameof(HandleStageSelection), actIndex))
 		{
 			HextechEnemyUi.Refresh(modifier);
 		}
@@ -35,8 +39,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			Log.Warn($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: clearing stale handling state for previous run");
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsActResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
-		if (ActSelectionGate.IsHandling || !IsCurrentRun(runState) || actIndex < 0 || actIndex > 2 || modifier.IsActResolved(actIndex))
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsStageResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
+		if (ActSelectionGate.IsHandling || !IsCurrentRun(runState) || actIndex < 0 || modifier.IsStageResolved(actIndex))
 		{
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skip");
 			return;
@@ -203,8 +207,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			modifier.SetMonsterHexesForAct(actIndex, finalMonsterHexes);
-			modifier.SetActResolved(actIndex, true);
-			modifier.ApplyMapModifiersToCurrentAct(nameof(HandleActSelection));
+			modifier.SetStageResolved(actIndex, true);
+			modifier.ApplyMapModifiersToCurrentAct(nameof(HandleStageSelection), actIndex);
 			HextechEnemyUi.Refresh(modifier);
 			await modifier.ApplyToCurrentEnemiesIfNeeded();
 			await PersistActSelection(runState, actIndex);

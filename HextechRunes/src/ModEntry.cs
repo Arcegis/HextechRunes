@@ -32,6 +32,7 @@ public static class ModEntry
 			HextechModelBootstrap.Install();
 			HextechRuneConfiguration.Initialize();
 			HextechTelemetry.Initialize();
+			HextechIntegratedStrategyEventsCompat.Install();
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
 			TryInstallOptionalHookGroup("model id serialization warning compatibility", () => HextechModelIdSerializationWarningHooks.Install(harmony));
 			HextechMultiplayerCompatibilityHooks.Install(harmony);

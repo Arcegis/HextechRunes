@@ -188,7 +188,8 @@ internal static partial class Program
 			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
 			new(nameof(RuneSelectionJournalRejectsConflictingSelections), RuneSelectionJournalRejectsConflictingSelections),
 			new(nameof(AppliedRuneSelectionJournalDoesNotRequireInventoryPresence), AppliedRuneSelectionJournalDoesNotRequireInventoryPresence),
-			new(nameof(MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex), MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex),
+			new(nameof(MayhemRunContextResetForEndlessLoopPreservesStageRows), MayhemRunContextResetForEndlessLoopPreservesStageRows),
+			new(nameof(MayhemActStateSupportsExtraActsAndStableExtraStageIds), MayhemActStateSupportsExtraActsAndStableExtraStageIds),
 			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
 			new(nameof(PlayerRuneMetadataHasUniqueTypes), PlayerRuneMetadataHasUniqueTypes),
 			new(nameof(PlayerRuneMetadataMatchesContentRegistrySlices), PlayerRuneMetadataMatchesContentRegistrySlices),
@@ -2664,11 +2665,13 @@ internal static partial class Program
 			"only a pending and absent journal entry should resume relic obtain");
 	}
 
-	private static void MayhemRunContextResetForEndlessLoopCarriesActiveMonsterHex()
+	private static void MayhemRunContextResetForEndlessLoopPreservesStageRows()
 	{
 		HextechMayhemRunContext context = new();
 		context.EnemyHexCounts.Set([ 1, 2, 3 ]);
-		context.ActState.SetMonsterHexes(1, [ MonsterHexKind.ShrinkRay ]);
+		context.ActState.SetMonsterHexes(0, [ MonsterHexKind.ShrinkRay ]);
+		context.ActState.SetResolved(0, true);
+		context.ActState.SetMonsterHexes(1, [ MonsterHexKind.ShrinkRay, MonsterHexKind.PandorasBox ]);
 		context.ActState.SetResolved(1, true);
 		context.ChoiceHistory.SavedSeenPlayerRuneIdsJson = "{\"0\":[\"A\"]}";
 		context.CombatTracking.EnemyProtectiveVeilTurnCounter = 9;
@@ -2679,10 +2682,41 @@ internal static partial class Program
 		Equal(6, context.HexCountRecoveryBaseline, "endless recovery baseline");
 		Equal(3, context.MonsterHexStrengthTierFloor, "endless strength floor");
 		Expect(context.IsEndlessLoopActive, "endless flag");
-		Expect(!context.ActState.IsResolved(1), "endless reset should clear resolved acts");
-		Expect(context.ActState.GetKnownMonsterHexes().Contains(MonsterHexKind.ShrinkRay), "endless reset should carry latest active monster hex");
+		Equal(3, context.ActSelectionIndexOffset, "endless reset should advance the monotonic stage index");
+		Expect(context.ActState.IsResolved(1), "endless reset should preserve resolved stage history");
+		IReadOnlyList<IReadOnlyList<MonsterHexKind>> existingRows = context.ActState.GetMonsterHexRows();
+		Equal(2, existingRows.Count, "endless reset should preserve previous acquisition rows");
+		SequenceEqual(new[] { MonsterHexKind.ShrinkRay }, existingRows[0], "first enemy-hex acquisition row");
+		SequenceEqual(new[] { MonsterHexKind.PandorasBox }, existingRows[1], "second enemy-hex acquisition row");
+
+		context.ActState.SetMonsterHexes(3, [ MonsterHexKind.ShrinkRay, MonsterHexKind.PandorasBox, MonsterHexKind.FrostWraith ]);
+		context.ActState.SetResolved(3, true);
+		IReadOnlyList<IReadOnlyList<MonsterHexKind>> rowsAfterNextLoop = context.ActState.GetMonsterHexRows();
+		Equal(3, rowsAfterNextLoop.Count, "fourth acquisition should create a new collapse row");
+		SequenceEqual(new[] { MonsterHexKind.FrostWraith }, rowsAfterNextLoop[2], "next-loop acquisition row");
 		Equal("", context.ChoiceHistory.SavedSeenPlayerRuneIdsJson, "endless reset should clear seen runes");
 		Equal(0, context.CombatTracking.EnemyProtectiveVeilTurnCounter, "endless reset should clear combat tracking");
+	}
+
+	private static void MayhemActStateSupportsExtraActsAndStableExtraStageIds()
+	{
+		HextechMayhemActState state = new();
+		state.SetRarity(4, HextechRarityTier.Prismatic);
+		state.SetMonsterHexes(4, [ MonsterHexKind.ShrinkRay ]);
+		state.SetResolved(4, true);
+		int finaleIndex = state.GetOrCreateExtraStageIndex("0:IntegratedStrategyEvents:Finale:EternalDust", 5);
+		Equal(5, finaleIndex, "extra finale should be placed after real acts");
+		Equal(finaleIndex, state.GetOrCreateExtraStageIndex("0:IntegratedStrategyEvents:Finale:EternalDust", 99), "extra finale identity should be stable");
+
+		HextechMayhemActState restored = new();
+		restored.SavedRarityByAct = state.SavedRarityByAct;
+		restored.SavedResolvedActs = state.SavedResolvedActs;
+		restored.SavedMonsterHexesByActJson = state.SavedMonsterHexesByActJson;
+		restored.SavedExtraStageIndexesJson = state.SavedExtraStageIndexesJson;
+		Equal(HextechRarityTier.Prismatic, restored.GetRarity(4), "extra-act rarity should round-trip");
+		Expect(restored.IsResolved(4), "extra-act resolved state should round-trip");
+		SequenceEqual(new[] { MonsterHexKind.ShrinkRay }, restored.GetMonsterHexes(4), "extra-act enemy hexes should round-trip");
+		Equal(finaleIndex, restored.GetOrCreateExtraStageIndex("0:IntegratedStrategyEvents:Finale:EternalDust", 99), "extra finale mapping should round-trip");
 	}
 
 	private static void MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex()

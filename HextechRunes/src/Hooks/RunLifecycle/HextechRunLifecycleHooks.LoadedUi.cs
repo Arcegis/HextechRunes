@@ -46,24 +46,24 @@ internal static partial class HextechRunLifecycleHooks
 			HextechMayhemModifier? modifier = HextechMayhemModifier.FindIn(runState);
 			if (modifier != null)
 			{
-				int actIndex = runState.CurrentActIndex;
-				if (actIndex is < 0 or > 2 || modifier.IsActResolved(actIndex))
+				int stageIndex = ResolveCurrentStageIndex(runState, modifier, out _);
+				if (stageIndex < 0 || modifier.IsStageResolved(stageIndex))
 				{
 					return;
 				}
 
 				if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResumePendingActSelectionAfterLoad: deferred for current event act={actIndex}");
+					HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResumePendingActSelectionAfterLoad: deferred for current event act={runState.CurrentActIndex} stage={stageIndex}");
 					return;
 				}
 
 				if (NOverlayStack.Instance != null
 					&& NRun.Instance?.GlobalUi?.TopBar != null
-					&& ShouldScheduleActSelectionOnRoomEntered(runState, modifier))
+					&& ShouldScheduleActSelectionOnRoomEntered(runState, modifier, stageIndex))
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResumePendingActSelectionAfterLoad: reopening unresolved selection act={actIndex} frame={frame} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
-					await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
+					HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResumePendingActSelectionAfterLoad: reopening unresolved selection act={runState.CurrentActIndex} stage={stageIndex} frame={frame} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+					await HextechRuneSelectionCoordinator.HandleStageSelection(runState, modifier, stageIndex);
 					return;
 				}
 			}
@@ -152,8 +152,9 @@ internal static partial class HextechRunLifecycleHooks
 
 		SubscribeRoomEnteredIfNeeded();
 		SubscribeRoomExitedIfNeeded();
-		bool recovered = !modifier.IsActResolved(runState.CurrentActIndex)
-			&& modifier.TryRecoverResolvedActsFromPlayerRelics(reason);
+		int stageIndex = ResolveCurrentStageIndex(runState, modifier, out _);
+		bool recovered = !modifier.IsStageResolved(stageIndex)
+			&& modifier.TryRecoverResolvedActsFromPlayerRelics(reason, stageIndex);
 		HextechEnemyUi.Refresh(modifier);
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh: reason={reason} frame={frame} recovered={recovered} actIndex={runState.CurrentActIndex} {modifier.DescribeActState()}");
 		return true;

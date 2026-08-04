@@ -72,6 +72,7 @@ internal static class HextechRunePoolBuilder
 		Player player,
 		HextechRarityTier rarity,
 		RunState runState,
+		int selectionStageIndex,
 		IReadOnlySet<ModelId>? excludedIds = null,
 		bool useEndlessTagWindow = false)
 	{
@@ -103,7 +104,7 @@ internal static class HextechRunePoolBuilder
 			tagCounts,
 			useEndlessTagWindow,
 			"rune-selection-options",
-			runState.CurrentActIndex.ToString(),
+			selectionStageIndex.ToString(),
 			HextechStableRandom.PlayerKey(player),
 			((int)rarity).ToString(),
 			effectiveExcludedIds == null ? "" : string.Join(",", effectiveExcludedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal)))

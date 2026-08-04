@@ -70,6 +70,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					player,
 					relics,
 					slotIndex,
+					actIndex,
 					rerollOrdinal,
 					seenOptionIds,
 					GetGoldenRerollOverride(goldenReroll)),
@@ -159,6 +160,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					selection.Player,
 					relics,
 					slotIndex,
+					actIndex,
 					rerollOrdinal,
 					seenOptionIds,
 					GetGoldenRerollOverride(goldenReroll)),
@@ -286,7 +288,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			options,
 			monsterHexRelic,
 			useMultiplayerReroll
-				? (relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, player, relics, slotIndex, rerollOrdinal, seenOptionIds)
+				? (relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(modifier, player, relics, slotIndex, modifier.GetCurrentStageIndex(), rerollOrdinal, seenOptionIds)
 				: (relics, slotIndex, _) => RerollSingleOptionAndTrack(modifier, player, relics, slotIndex, seenOptionIds),
 			enemyHexOptions,
 			modifier.PlayerRuneRerollLimit,

@@ -63,6 +63,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				player,
 				rarity,
 				runState,
+				actIndex,
 				excludedIds,
 				useEndlessTagWindow: modifier.IsEndlessLoopActive);
 			if (options.Count == 0)
