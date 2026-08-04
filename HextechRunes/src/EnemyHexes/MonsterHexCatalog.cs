@@ -26,7 +26,7 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.ProtectiveVeil] = [typeof(ArtifactPower)],
 			[MonsterHexKind.Repulsor] = [typeof(SlipperyPower)],
 			[MonsterHexKind.Thornmail] = [typeof(ThornsPower)],
-			[MonsterHexKind.FrostWraith] = [typeof(SlowPower)],
+			[MonsterHexKind.FrostWraith] = [typeof(HextechPlayerSlowPower)],
 			[MonsterHexKind.DawnbringersResolve] = [typeof(RegenPower)],
 			[MonsterHexKind.ShrinkRay] = [typeof(ShrinkPower)],
 			[MonsterHexKind.SuperBrain] = [typeof(PlatingPower)],

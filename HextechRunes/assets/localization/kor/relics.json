@@ -522,7 +522,7 @@
   "giantSlayerRune.enemyDescription": "적의 몸집이 작아집니다. 플레이어의 최대 생명력이 적보다 [blue]6[/blue] 높을 때마다 적이 입히는 피해가 [blue]1%[/blue] 증가합니다(최대 [blue]100%[/blue]).",
   "dualWieldRune.enemyDescription": "적 공격의 피해가 [gold]절반[/gold]이 되고, 타격 횟수가 [gold]2배[/gold]가 됩니다.",
   "jeweledGauntletRune.enemyDescription": "몬스터는 [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] 확률로 행동을 반복합니다.",
-  "frostWraithRune.enemyDescription": "매 [blue]4[/blue] 턴마다 모든 플레이어가 [blue]1[/blue] 턴 동안 [gold]연명[/gold]을 얻습니다.",
+  "frostWraithRune.enemyDescription": "[blue]3[/blue]턴이 지날 때마다 모든 플레이어가 임시 [gold]둔화[/gold] [blue]50[/blue]을 얻습니다.",
   "escapePlanRune.enemyDescription": "적이 피해를 입어 체력이 최대 체력의 [blue]50%[/blue] 미만이 되면, 최대 체력의 [blue]60%[/blue]만큼 방어도를 얻고 [blue]1[/blue] 턴 동안 [gold]압축[/gold] 상태가 됩니다. 전투당 1회 발동합니다.",
   "heavyHitterRune.enemyDescription": "적의 최대 체력 [blue]{HpPerPercent}[/blue]당 주는 피해가 [blue]1%[/blue] 증가하여 최대 [blue]30%[/blue]까지 증가합니다.",
   "bigStrengthRune.enemyDescription": "주는 피해가 [blue]20%[/blue] 증가합니다.",

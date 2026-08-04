@@ -522,7 +522,7 @@
   "giantSlayerRune.enemyDescription": "ศัตรูตัวเล็กลง ทุกๆ [blue]5[/blue] HP สูงสุดที่ผู้เล่นมี ศัตรูจะสร้างความเสียหายใส่ผู้เล่นนั้นเพิ่มขึ้น [blue]1%[/blue] สูงสุด [blue]100%[/blue]",
   "dualWieldRune.enemyDescription": "ความเสียหายของศัตรูถูก [gold]ลดลงครึ่งหนึ่ง[/gold] และจำนวนครั้งที่มันโจมตีถูก [gold]เพิ่มเป็นสองเท่า[/gold]",
   "jeweledGauntletRune.enemyDescription": "มอนสเตอร์มีโอกาส [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] ที่จะทำการกระทำซ้ำ",
-  "frostWraithRune.enemyDescription": "ทุกๆ [blue]4[/blue] เทิร์น ผู้เล่นทุกคนได้รับ [gold]กู้ยืมเวลา[/gold] [blue]1[/blue] เทิร์น",
+  "frostWraithRune.enemyDescription": "ทุกๆ [blue]3[/blue] เทิร์น ผู้เล่นทั้งหมดได้รับ [gold]เชื่องช้า[/gold]ชั่วคราว [blue]50[/blue] ชั้น",
   "escapePlanRune.enemyDescription": "เมื่อความเสียหายทำให้ศัตรูเหลือ HP ต่ำกว่า [blue]50%[/blue] ของ HP สูงสุด มันจะได้รับบล็อกเท่ากับ [blue]60%[/blue] ของ HP สูงสุดของมัน และได้รับ [gold]Shrink[/gold] [blue]1[/blue] เทิร์น หนึ่งครั้งต่อการต่อสู้",
   "heavyHitterRune.enemyDescription": "ศัตรูได้รับความเสียหายเพิ่มขึ้น [blue]1%[/blue] ต่อทุกๆ [blue]{HpPerPercent}[/blue] HP สูงสุดที่มันมี สูงสุด [blue]30%[/blue]",
   "bigStrengthRune.enemyDescription": "สร้างความเสียหายเพิ่มขึ้น [blue]20%[/blue]",

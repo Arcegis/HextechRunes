@@ -522,7 +522,7 @@
   "giantSlayerRune.enemyDescription": "O inimigo encolhe. Para cada [blue]5[/blue] de vida máxima que o jogador tem, o inimigo causa [blue]1%[/blue] mais dano a esse jogador, até [blue]100%[/blue].",
   "dualWieldRune.enemyDescription": "O dano dos ataques do inimigo é reduzido [gold]pela metade[/gold], e o número de golpes é [gold]dobrado[/gold].",
   "jeweledGauntletRune.enemyDescription": "Os monstros têm [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] de chance de repetir sua ação.",
-  "frostWraithRune.enemyDescription": "A cada [blue]4[/blue] turnos, todos os jogadores ganham [blue]1[/blue] turno de [gold]Tempo Emprestado[/gold].",
+  "frostWraithRune.enemyDescription": "A cada [blue]3[/blue] turnos, todos os jogadores ganham [blue]50[/blue] de [gold]Lentidão[/gold] temporária.",
   "escapePlanRune.enemyDescription": "Quando um dano reduz seus PV para menos de [blue]50%[/blue] do seu PV Máx, o inimigo ganha Bloqueio igual a [blue]60%[/blue] do seu PV Máx e ganha [blue]1[/blue] turno de [gold]Encolher[/gold]. Uma vez por combate.",
   "heavyHitterRune.enemyDescription": "O inimigo ganha [blue]1%[/blue] a mais de dano para cada [blue]{HpPerPercent}[/blue] de PV Máx que tiver, até um limite de [blue]30%[/blue].",
   "bigStrengthRune.enemyDescription": "Causa [blue]20%[/blue] a mais de dano.",

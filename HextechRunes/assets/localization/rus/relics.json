@@ -522,7 +522,7 @@
   "giantSlayerRune.enemyDescription": "Враг уменьшается. За каждые [blue]5[/blue] макс. ОЗ у игрока враг наносит этому игроку на [blue]1%[/blue] больше урона, вплоть до [blue]100%[/blue].",
   "dualWieldRune.enemyDescription": "Урон врага [gold]уменьшается вдвое[/gold], а число его ударов [gold]удваивается[/gold].",
   "jeweledGauntletRune.enemyDescription": "Монстры с шансом [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] повторяют своё действие.",
-  "frostWraithRune.enemyDescription": "Каждые [blue]4[/blue] хода все игроки получают [blue]1[/blue] ход [gold]Сверхурочных[/gold].",
+  "frostWraithRune.enemyDescription": "Каждые [blue]3[/blue] хода все игроки получают [blue]50[/blue] временного [gold]Замедления[/gold].",
   "escapePlanRune.enemyDescription": "Когда урон опускает врага ниже [blue]50%[/blue] от его макс. ОЗ, он получает защиту в размере [blue]60%[/blue] от своих макс. ОЗ и получает [blue]1[/blue] ход [gold]Уменьшения[/gold]. Один раз за бой.",
   "heavyHitterRune.enemyDescription": "Враг получает на [blue]1%[/blue] больше урона за каждые [blue]{HpPerPercent}[/blue] макс. ОЗ у него, вплоть до [blue]30%[/blue].",
   "bigStrengthRune.enemyDescription": "Урон врага увеличивается на [blue]20%[/blue].",

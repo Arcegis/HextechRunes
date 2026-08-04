@@ -522,7 +522,7 @@
   "giantSlayerRune.enemyDescription": "The enemy shrinks. For every [blue]5[/blue] max HP the player has, the enemy deals [blue]1%[/blue] more damage to that player, up to [blue]100%[/blue].",
   "dualWieldRune.enemyDescription": "The enemy's damage is [gold]halved[/gold], and its number of hits is [gold]doubled[/gold].",
   "jeweledGauntletRune.enemyDescription": "Monsters have a [blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue] chance to repeat their move.",
-  "frostWraithRune.enemyDescription": "Every [blue]4[/blue] turns, all players gain [blue]1[/blue] turn of [gold]Borrowed Time[/gold].",
+  "frostWraithRune.enemyDescription": "Every [blue]3[/blue] turns, all players gain [blue]50[/blue] temporary [gold]Slow[/gold].",
   "escapePlanRune.enemyDescription": "When damage drops the enemy below [blue]50%[/blue] of its Max HP, it gains Block equal to [blue]60%[/blue] of its Max HP and gains [blue]1[/blue] turn of [gold]Shrink[/gold]. Once per combat.",
   "heavyHitterRune.enemyDescription": "The enemy gains [blue]1%[/blue] more damage for every [blue]{HpPerPercent}[/blue] Max HP it has, up to [blue]30%[/blue].",
   "bigStrengthRune.enemyDescription": "Deal [blue]20%[/blue] more damage.",

@@ -532,7 +532,7 @@
   "thornmailRune.enemyDescription": "战斗开始时，敌人获得[blue]0[/blue]/[blue]1[/blue]/[blue]2[/blue]层[gold]荆棘[/gold]。",
   "lightEmUpRune.enemyDescription": "玩家每回合打出的第四张攻击牌费用翻倍，回合结束后重置计数。",
   "mountainSoulRune.enemyDescription": "如果敌人上回合未受到未被格挡的伤害，则在本回合开始时获得相当于最大生命值[blue]10%[/blue]的格挡。",
-  "frostWraithRune.enemyDescription": "每过[blue]4[/blue]回合，使所有玩家获得[blue]1[/blue]回合的[gold]预借时间[/gold]。",
+  "frostWraithRune.enemyDescription": "每过[blue]3[/blue]回合，使所有玩家获得[blue]50[/blue]层临时[gold]缓慢[/gold]。",
   "firstAidKitRune.enemyDescription": "敌人获得的治疗量和格挡量增加[blue]25%[/blue]。",
   "speedDemonRune.enemyDescription": "当敌人造成未被格挡的伤害时，在下个玩家回合开始时获得相当于最大生命值[blue]5[/blue]/[blue]10[/blue]/[blue]15[/blue]%的格挡。每回合最多触发一次。",
   "sturdyRune.enemyDescription": "回合开始时，敌人回复[blue]2%[/blue]的最大生命值。若当前生命值低于[blue]50%[/blue]，改为回复[blue]4%[/blue]的最大生命值。",

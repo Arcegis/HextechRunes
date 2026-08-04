@@ -522,7 +522,7 @@
   "giantSlayerRune.enemyDescription": "敵の体が小さくなる。プレイヤーの最大HP[blue]5[/blue]ごとに、敵がそのプレイヤーに与えるダメージが[blue]1%[/blue]増加する（最大[blue]100%[/blue]）。",
   "dualWieldRune.enemyDescription": "敵の攻撃のダメージが[gold]半分[/gold]になり、攻撃の段数が[gold]2倍[/gold]になる。",
   "jeweledGauntletRune.enemyDescription": "モンスターは[blue]10%[/blue]/[blue]20%[/blue]/[blue]30%[/blue]の確率で行動を繰り返す。",
-  "frostWraithRune.enemyDescription": "[blue]4[/blue] ターンごとに、すべてのプレイヤーは [blue]1[/blue] ターンの [gold]借用時間[/gold]を獲得します。",
+  "frostWraithRune.enemyDescription": "[blue]3[/blue]ターン経過するたび、すべてのプレイヤーに一時的な[gold]スロウ[/gold]を[blue]50[/blue]付与する。",
   "escapePlanRune.enemyDescription": "敵はダメージによって最大 HP の [blue]50%[/blue]を下回ると、最大 HP の [blue]60%[/blue]に等しいブロックを獲得し、[gold]Shrink[/gold] の [blue]1[/blue] ターンを獲得します。戦闘ごとに 1 回。",
   "heavyHitterRune.enemyDescription": "敵は最大 [blue]{HpPerPercent}[/blue] の最大 HP ごとに [blue]1%[/blue] のダメージが増加し、最大 [blue]30%[/blue]になります。",
   "bigStrengthRune.enemyDescription": "[blue]20%[/blue] 個以上のダメージを与えます。",
