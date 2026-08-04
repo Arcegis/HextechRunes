@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Godot;
 using HarmonyLib;
 using HextechRunes;
 using FormVfxKind = HextechRunes.HextechFormVfxSafetyHooks.FormVfxKind;
@@ -136,6 +137,7 @@ internal static partial class Program
 			new(nameof(TwinFlamesUsesTwoEnergyScaledHits), TwinFlamesUsesTwoEnergyScaledHits),
 			new(nameof(DualcastUpgradeReturnsBothCastCardsToHand), DualcastUpgradeReturnsBothCastCardsToHand),
 			new(nameof(DeathWarrantTriggersPoisonEveryEightDraws), DeathWarrantTriggersPoisonEveryEightDraws),
+			new(nameof(MadScientistOrbLayoutOnlyTweensFirstTen), MadScientistOrbLayoutOnlyTweensFirstTen),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
 			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
 			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
@@ -2150,6 +2152,29 @@ internal static partial class Program
 		Expect(
 			calls.Any(static method => method.Name == nameof(PoisonPower.AfterSideTurnStart)),
 			"Death Warrant should use the Poison turn-start path shared by both supported game versions");
+	}
+
+	private static void MadScientistOrbLayoutOnlyTweensFirstTen()
+	{
+		Equal(10, HextechPlayerRuneHooks.ResolveTweenedOrbCount(true, 11, 11), "the eleventh Mad Scientist orb should skip layout tweening");
+		Equal(10, HextechPlayerRuneHooks.ResolveTweenedOrbCount(true, 40, 40), "Mad Scientist tween work should stay capped as slots grow");
+		Equal(7, HextechPlayerRuneHooks.ResolveTweenedOrbCount(true, 40, 7), "the first ten visible slots should keep their normal tween");
+		Equal(11, HextechPlayerRuneHooks.ResolveTweenedOrbCount(false, 11, 11), "non-Mad Scientist large layouts should keep existing tween behavior");
+
+		MethodInfo layout = typeof(HextechPlayerRuneHooks).GetMethod(
+			"OrbTweenLayoutPrefixCore",
+			BindingFlags.Static | BindingFlags.NonPublic)
+			?? throw new MissingMethodException(nameof(HextechPlayerRuneHooks), "OrbTweenLayoutPrefixCore");
+		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(layout)
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>()
+			.ToArray();
+		Expect(
+			calls.Any(static method => method.DeclaringType == typeof(Engine) && method.Name == nameof(Engine.GetProcessFrames)),
+			"Mad Scientist orb layout should coalesce duplicate work within one process frame");
+		Expect(
+			calls.Any(static method => method.Name == "set_Position"),
+			"overflow orbs should move directly to their unchanged layout target");
 	}
 
 	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()
