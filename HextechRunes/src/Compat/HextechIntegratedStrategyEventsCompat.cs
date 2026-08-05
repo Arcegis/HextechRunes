@@ -40,11 +40,17 @@ internal static class HextechIntegratedStrategyEventsCompat
 			.FirstOrDefault(static candidate =>
 				string.Equals(candidate.GetName().Name, AssemblyName, StringComparison.Ordinal));
 		Type? interopType = assembly?.GetType(InteropTypeName, throwOnError: false);
-		return interopType?.GetMethod(
+		MethodInfo? method = interopType?.GetMethod(
 			MethodName,
 			BindingFlags.Public | BindingFlags.Static,
 			binder: null,
 			types: [ typeof(IRunState) ],
 			modifiers: null);
+		if (assembly != null && method == null && HextechRunLogBudget.TryConsume("compat.integrated-strategy-extra-act-api-missing", 1))
+		{
+			Log.Warn($"[{ModInfo.Id}][Mayhem] Integrated Strategy is loaded but does not expose {InteropTypeName}.{MethodName}(IRunState); finale acts cannot trigger Hextech acquisition until Integrated Strategy is updated.");
+		}
+
+		return method;
 	}
 }
