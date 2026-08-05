@@ -257,7 +257,7 @@
   "HOMEGUARD_RUNE.description": "Si no recibiste daño desbloqueado el último turno, roba [blue]2[/blue] cartas adicionales al comienzo de este turno.",
   "HOMEGUARD_RUNE.flavor": "Mantén el suelo debajo de ti y el camino que tienes por delante se abrirá.",
   "LIGHT_EM_UP_RUNE.title": "Enciéndelos",
-  "LIGHT_EM_UP_RUNE.description": "Cada cuarta carta de Ataque que juegues se juega una vez más.",
+  "LIGHT_EM_UP_RUNE.description": "Después de cada [blue]{Attacks}[/blue] cartas de Ataque que juegues, dispara [blue]{Missiles}[/blue] proyectiles contra su objetivo. Cada proyectil inflige daño igual al coste de Energía de ese Ataque.",
   "LIGHT_EM_UP_RUNE.flavor": "En el cuarto movimiento, la chispa habla por ti una vez más.",
   "SHRINK_ENGINE_RUNE.title": "Motor de contracción",
   "SHRINK_ENGINE_RUNE.description": "Después de ganar el combate, gana [blue]1[/blue] pila. Cada pila reduce su tamaño en [blue]2%[/blue]. Por cada [blue]4[/blue] pilas, roba [blue]1[/blue] cartas adicionales en cada turno. Por cada [blue]8[/blue] acumulaciones, gana [blue]1[/blue] energía adicional cada turno.",
@@ -493,7 +493,7 @@
   "STARTUP_ROUTINE_RUNE.description": "Al comienzo del combate, gana [blue]16[/blue] Bloque.",
   "STARTUP_ROUTINE_RUNE.flavor": "Hasta que finalice el proceso, las heridas pueden esperar en la puerta.",
   "COLLECTOR_RUNE.title": "Coleccionista",
-  "COLLECTOR_RUNE.description": "El daño que infliges ejecuta a los monstruos que estén por debajo del [blue]15%[/blue] de sus PV máximos. Cuando ejecutas a un enemigo, obtienes [blue]20[/blue] de conteo. Tras ganar el combate, obtienes Oro adicional igual al conteo.",
+  "COLLECTOR_RUNE.description": "El daño que infliges ejecuta a los monstruos que estén por debajo del [blue]{ExecutePercent}%[/blue] de sus PV máximos. Cuando ejecutas a un enemigo, obtienes [blue]20[/blue] de conteo. Tras ganar el combate, obtienes Oro adicional igual al conteo.",
   "COLLECTOR_RUNE.flavor": "Algunos cuentan las victorias. Algunos cuentan los recibos.",
   "LIFE_FLOW_RUNE.title": "Flujo de vida",
   "LIFE_FLOW_RUNE.description": "Siempre que se agote la carta [blue]1[/blue], cura el [blue]5%[/blue] de tu PV máximos. Se activa hasta [blue]3[/blue] veces por turno.",
@@ -1403,5 +1403,8 @@
   "DUALCAST_UPGRADE_RUNE.flavor": "El circuito atrapa cada eco que se desvanece y lo pone de nuevo en marcha.",
   "DEATH_WARRANT_RUNE.title": "Sentencia de muerte",
   "DEATH_WARRANT_RUNE.description": "Cada vez que robes [blue]{CardsNeeded}[/blue] cartas, activa inmediatamente una vez el [gold]Veneno[/gold] de todos los enemigos.",
-  "DEATH_WARRANT_RUNE.flavor": "Al octavo susurro, el veneno viene a cobrar."
+  "DEATH_WARRANT_RUNE.flavor": "Al octavo susurro, el veneno viene a cobrar.",
+  "PIERCING_THREAD_RUNE.title": "Enhebrar la aguja",
+  "PIERCING_THREAD_RUNE.description": "El [blue]{PiercingPercent}%[/blue] del daño que infliges ignora el Bloqueo de los enemigos.",
+  "PIERCING_THREAD_RUNE.flavor": "Hasta la abertura más estrecha basta para un golpe perfecto."
 }

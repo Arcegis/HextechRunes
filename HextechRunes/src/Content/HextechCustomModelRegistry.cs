@@ -15,7 +15,10 @@ internal static class HextechCustomModelRegistry
 	internal static IReadOnlyList<Type> CustomChallengeModifierTypes { get; } =
 	[
 		typeof(StuffedToRuinChallengeModifier),
-		typeof(DefenseCounterMasterChallengeModifier)
+		typeof(DefenseCounterMasterChallengeModifier),
+		typeof(BruteForceChallengeModifier),
+		typeof(EightPennyGateChallengeModifier),
+		typeof(ListlessChallengeModifier)
 	];
 
 	internal static IReadOnlyList<Type> AllCustomModifierTypes { get; } =

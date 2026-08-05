@@ -257,7 +257,7 @@
   "HOMEGUARD_RUNE.description": "前のターンにブロックされていないダメージを受けなかった場合、このターンの開始時に追加で [blue]2[/blue] 枚のカードを引く。",
   "HOMEGUARD_RUNE.flavor": "足元の地面をしっかり押さえれば、前方の道は自然に開けます。",
   "LIGHT_EM_UP_RUNE.title": "ライトエムアップ",
-  "LIGHT_EM_UP_RUNE.description": "プレイする攻撃カードは 4 枚ごとに追加でプレイされます。",
+  "LIGHT_EM_UP_RUNE.description": "アタックを[blue]{Attacks}[/blue]枚プレイするたび、その対象へ[blue]{Missiles}[/blue]発のミサイルを放つ。各ミサイルはそのアタックのエナジーコストに等しいダメージを与える。",
   "LIGHT_EM_UP_RUNE.flavor": "4 回目のスイングで、火花がもう一度語りかけます。",
   "SHRINK_ENGINE_RUNE.title": "シュリンクエンジン",
   "SHRINK_ENGINE_RUNE.description": "戦闘に勝利すると、[blue]1[/blue] スタックを獲得します。各スタックにより、サイズが [blue]2%[/blue] 削減されます。 [blue]4[/blue] スタックごとに、毎ターン [blue]1[/blue] 追加のカードを引きます。 [blue]8[/blue] スタックごとに、毎ターン [blue]1[/blue] の追加のエナジーを獲得します。",
@@ -493,7 +493,7 @@
   "STARTUP_ROUTINE_RUNE.description": "戦闘開始時に、[blue]16[/blue] ブロックを獲得します。",
   "STARTUP_ROUTINE_RUNE.flavor": "プロセスが完了するまで、傷はドアの前で待つことができます。",
   "COLLECTOR_RUNE.title": "コレクター",
-  "COLLECTOR_RUNE.description": "あなたが与えるダメージは、最大HPが[blue]15%[/blue]未満のモンスターを処刑します。敵を処刑するたび、カウントが[blue]20[/blue]増加します。戦闘勝利後、カウントに等しい追加のゴールドを獲得します。",
+  "COLLECTOR_RUNE.description": "あなたが与えるダメージは、最大HPが[blue]{ExecutePercent}%[/blue]未満のモンスターを処刑します。敵を処刑するたび、カウントが[blue]20[/blue]増加します。戦闘勝利後、カウントに等しい追加のゴールドを獲得します。",
   "COLLECTOR_RUNE.flavor": "勝利をカウントする人もいます。レシートを数えるものもある。",
   "LIFE_FLOW_RUNE.title": "ライフフロー",
   "LIFE_FLOW_RUNE.description": "[blue]1[/blue] カードがなくなるたびに、最大 HP の [blue]5%[/blue]を回復します。各ターン最大 [blue]3[/blue] 回トリガーします。",
@@ -1403,5 +1403,8 @@
   "DUALCAST_UPGRADE_RUNE.flavor": "回路は消えかけた残響を拾い、もう一度巡らせる。",
   "DEATH_WARRANT_RUNE.title": "死を告げる札",
   "DEATH_WARRANT_RUNE.description": "カードを[blue]{CardsNeeded}[/blue]枚引くたび、すべての敵の[gold]毒[/gold]を即座に1回発動させる。",
-  "DEATH_WARRANT_RUNE.flavor": "八度目の紙鳴りで、毒が取り立てに来る。"
+  "DEATH_WARRANT_RUNE.flavor": "八度目の紙鳴りで、毒が取り立てに来る。",
+  "PIERCING_THREAD_RUNE.title": "針の穴を通す",
+  "PIERCING_THREAD_RUNE.description": "与えるダメージの[blue]{PiercingPercent}%[/blue]は敵のブロックを無視する。",
+  "PIERCING_THREAD_RUNE.flavor": "どれほど狭い隙間でも、完璧な一撃には十分だ。"
 }

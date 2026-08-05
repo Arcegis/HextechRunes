@@ -281,6 +281,17 @@ internal static partial class HextechCombatHooks
 			postfix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(SlipperyAfterDamageReceivedPostfix)));
 		harmony.Patch(
 			RequireMethod(
+				typeof(Creature),
+				nameof(Creature.DamageBlockInternal),
+				BindingFlags.Instance | BindingFlags.Public,
+				typeof(decimal),
+				typeof(ValueProp)),
+			prefix: new HarmonyMethod(typeof(HextechCombatHooks), nameof(PiercingThreadDamageBlockPrefix))
+			{
+				priority = Priority.First
+			});
+		harmony.Patch(
+			RequireMethod(
 				typeof(DieForYouPower),
 				nameof(DieForYouPower.ModifyUnblockedDamageTarget),
 				BindingFlags.Instance | BindingFlags.Public,

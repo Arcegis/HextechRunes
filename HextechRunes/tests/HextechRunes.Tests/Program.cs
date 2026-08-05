@@ -135,6 +135,8 @@ internal static partial class Program
 			new(nameof(GiantSlayerScalesFromEnemyMaxHp), GiantSlayerScalesFromEnemyMaxHp),
 			new(nameof(MagicMissileUsesThreeTwoPercentHits), MagicMissileUsesThreeTwoPercentHits),
 			new(nameof(TwinFlamesUsesTwoEnergyScaledHits), TwinFlamesUsesTwoEnergyScaledHits),
+			new(nameof(LightEmUpUsesFiveEnergyScaledTwinFlameMissiles), LightEmUpUsesFiveEnergyScaledTwinFlameMissiles),
+			new(nameof(PiercingThreadSplitsOneDamageEventBeforeBlock), PiercingThreadSplitsOneDamageEventBeforeBlock),
 			new(nameof(DualcastUpgradeReturnsBothCastCardsToHand), DualcastUpgradeReturnsBothCastCardsToHand),
 			new(nameof(DeathWarrantTriggersPoisonEveryEightDraws), DeathWarrantTriggersPoisonEveryEightDraws),
 			new(nameof(MadScientistOrbLayoutOnlyTweensFirstTen), MadScientistOrbLayoutOnlyTweensFirstTen),
@@ -167,6 +169,10 @@ internal static partial class Program
 			new(nameof(RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi), RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi),
 			new(nameof(StuffedToRuinChallengeUsesThreeFixedActPlans), StuffedToRuinChallengeUsesThreeFixedActPlans),
 			new(nameof(DefenseCounterMasterChallengeUsesThreeFixedActPlans), DefenseCounterMasterChallengeUsesThreeFixedActPlans),
+			new(nameof(BruteForceChallengeUsesThreeFixedActPlans), BruteForceChallengeUsesThreeFixedActPlans),
+			new(nameof(EightPennyGateChallengeUsesThreeFixedActPlans), EightPennyGateChallengeUsesThreeFixedActPlans),
+			new(nameof(ListlessChallengeUsesThreeFixedActPlans), ListlessChallengeUsesThreeFixedActPlans),
+			new(nameof(PresetChallengesArePairwiseMutuallyExclusive), PresetChallengesArePairwiseMutuallyExclusive),
 			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
 			new(nameof(RunConfigurationDefaultSnapshotDisablesRiskyContent), RunConfigurationDefaultSnapshotDisablesRiskyContent),
 			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
@@ -2117,6 +2123,72 @@ internal static partial class Program
 			"Twin Flames should expose its blue-yellow projectile VFX path");
 	}
 
+	private static void LightEmUpUsesFiveEnergyScaledTwinFlameMissiles()
+	{
+		Equal(4, LightEmUpRune.AttacksPerVolley, "Light Em Up attacks per volley");
+		Equal(5, LightEmUpRune.MissileCount, "Light Em Up missile count");
+		Equal(0m, LightEmUpRune.ResolveMissileDamage(-1m), "Light Em Up should not create negative damage");
+		Equal(3m, LightEmUpRune.ResolveMissileDamage(3m), "Light Em Up damage should equal the triggering Attack's Energy cost");
+
+		int progress = 0;
+		for (int attackIndex = 0; attackIndex < 3; attackIndex++)
+		{
+			progress = LightEmUpRune.AdvanceAttackProgress(progress, 1m, out bool launchedEarly);
+			Expect(!launchedEarly, "Light Em Up should not launch before the fourth Attack");
+		}
+
+		progress = LightEmUpRune.AdvanceAttackProgress(progress, 0m, out bool launchedAtZeroCostThreshold);
+		Equal(4, progress, "zero-cost fourth Attack should hold Light Em Up at full progress");
+		Expect(!launchedAtZeroCostThreshold, "zero-cost fourth Attack should not launch Light Em Up missiles");
+		progress = LightEmUpRune.AdvanceAttackProgress(progress, 0m, out bool launchedWhileStored);
+		Equal(4, progress, "additional zero-cost Attacks should preserve stored Light Em Up progress");
+		Expect(!launchedWhileStored, "stored Light Em Up progress should wait for a positive-cost Attack");
+		progress = LightEmUpRune.AdvanceAttackProgress(progress, 2m, out bool launchedAfterStoredProgress);
+		Equal(0, progress, "Light Em Up should reset after launching its stored volley");
+		Expect(launchedAfterStoredProgress, "positive-cost Attack should release stored Light Em Up missiles");
+
+		MethodInfo? afterCardPlayed = typeof(LightEmUpRune).GetMethod(
+			nameof(LightEmUpRune.AfterCardPlayed),
+			BindingFlags.Instance | BindingFlags.Public);
+		Equal<AsyncStateMachineAttribute?>(
+			null,
+			afterCardPlayed?.GetCustomAttribute<AsyncStateMachineAttribute>(),
+			"Light Em Up should not hold the card-play hook open while projectiles resolve");
+		Expect(
+			typeof(LightEmUpRune).GetMethod(
+				nameof(LightEmUpRune.ModifyCardPlayCount),
+				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly) == null,
+			"Light Em Up should no longer replay the fourth Attack");
+		Expect(
+			typeof(HextechCombatVfx).GetMethod(
+				"PlayTwinFlamesMissile",
+				BindingFlags.Static | BindingFlags.NonPublic) != null,
+			"Light Em Up should reuse the blue-yellow Twin Flames projectile VFX path");
+	}
+
+	private static void PiercingThreadSplitsOneDamageEventBeforeBlock()
+	{
+		Equal(50m, PiercingThreadRune.PiercingPercent, "Piercing Thread percentage");
+		Equal(0, PiercingThreadRune.CalculatePiercingDamage(-1m), "negative damage should not pierce");
+		Equal(0, PiercingThreadRune.CalculatePiercingDamage(1m), "one damage should round its piercing half down");
+		Equal(2, PiercingThreadRune.CalculatePiercingDamage(5m), "odd piercing damage should round down");
+		Equal(5, PiercingThreadRune.CalculatePiercingDamage(10m), "even piercing damage should split evenly");
+		Equal(3m, PiercingThreadRune.CalculateBlockableDamage(5m), "the non-piercing remainder should still hit Block");
+		Equal(5m, PiercingThreadRune.CalculateBlockableDamage(10m), "half of even damage should remain blockable");
+		Equal(5m, 10m - Math.Min(100m, PiercingThreadRune.CalculateBlockableDamage(10m)), "full Block should still take five piercing damage");
+		Equal(7m, 11m - Math.Min(4m, PiercingThreadRune.CalculateBlockableDamage(11m)), "piercing damage and block overflow should remain one damage result");
+
+		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
+			registration => registration.Type == typeof(PiercingThreadRune));
+		Equal(HextechRarityTier.Gold, registration.Rarity, "Piercing Thread rarity");
+		Equal("OUTPUT", registration.TagKey, "Piercing Thread tag");
+		Expect(
+			typeof(HextechCombatHooks).GetMethod(
+				"PiercingThreadDamageBlockPrefix",
+				BindingFlags.Static | BindingFlags.NonPublic) != null,
+			"Piercing Thread should alter the blockable amount at the original block-consumption boundary");
+	}
+
 	private static void DualcastUpgradeReturnsBothCastCardsToHand()
 	{
 		Expect(
@@ -2671,7 +2743,7 @@ internal static partial class Program
 	private static void StuffedToRuinChallengeUsesThreeFixedActPlans()
 	{
 		SequenceEqual(
-			new[] { typeof(StuffedToRuinChallengeModifier), typeof(DefenseCounterMasterChallengeModifier) },
+			new[] { typeof(StuffedToRuinChallengeModifier), typeof(DefenseCounterMasterChallengeModifier), typeof(BruteForceChallengeModifier), typeof(EightPennyGateChallengeModifier), typeof(ListlessChallengeModifier) },
 			HextechCustomModelRegistry.CustomChallengeModifierTypes,
 			"custom-run challenge registry");
 		Expect(
@@ -2728,6 +2800,107 @@ internal static partial class Program
 			!HextechPresetChallengeRegistry.TryGetActPlan(typeof(DefenseCounterMasterChallengeModifier), 3, out _),
 			"defense counter challenge should not schedule a fourth acquisition");
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "defense counter challenge fixed enemy counts");
+	}
+
+	private static void BruteForceChallengeUsesThreeFixedActPlans()
+	{
+		Expect(
+			HextechCustomModelRegistry.AllCustomModifierTypes.Contains(typeof(BruteForceChallengeModifier)),
+			"brute force challenge should be included in saved-property model registration");
+
+		HextechPresetChallengeActPlan[] expectedPlans =
+		[
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.Goliath ]),
+			new(HextechRarityTier.Gold, [ MonsterHexKind.AstralBody, MonsterHexKind.VitalitySurge ]),
+			new(HextechRarityTier.Gold, [ MonsterHexKind.StatsOnStats, MonsterHexKind.TankEngine ])
+		];
+		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
+		{
+			Expect(
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(BruteForceChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				$"brute force challenge act {actIndex + 1} should exist");
+			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"brute force challenge act {actIndex + 1} player rarity");
+			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"brute force challenge act {actIndex + 1} enemy hexes");
+		}
+
+		Expect(
+			!HextechPresetChallengeRegistry.TryGetActPlan(typeof(BruteForceChallengeModifier), 3, out _),
+			"brute force challenge should not schedule a fourth acquisition");
+		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "brute force challenge fixed enemy counts");
+	}
+
+	private static void EightPennyGateChallengeUsesThreeFixedActPlans()
+	{
+		Expect(
+			HextechCustomModelRegistry.AllCustomModifierTypes.Contains(typeof(EightPennyGateChallengeModifier)),
+			"eight-penny gate challenge should be included in saved-property model registration");
+
+		HextechPresetChallengeActPlan[] expectedPlans =
+		[
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.EightPennyGate ]),
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.IGrip ]),
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.IInspect ])
+		];
+		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
+		{
+			Expect(
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(EightPennyGateChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				$"eight-penny gate challenge act {actIndex + 1} should exist");
+			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"eight-penny gate challenge act {actIndex + 1} player rarity");
+			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"eight-penny gate challenge act {actIndex + 1} enemy hexes");
+		}
+
+		Expect(
+			!HextechPresetChallengeRegistry.TryGetActPlan(typeof(EightPennyGateChallengeModifier), 3, out _),
+			"eight-penny gate challenge should not schedule a fourth acquisition");
+		SequenceEqual(new[] { 1, 1, 1 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "eight-penny gate challenge fixed enemy counts");
+	}
+
+	private static void ListlessChallengeUsesThreeFixedActPlans()
+	{
+		Expect(
+			HextechCustomModelRegistry.AllCustomModifierTypes.Contains(typeof(ListlessChallengeModifier)),
+			"listless challenge should be included in saved-property model registration");
+
+		HextechPresetChallengeActPlan[] expectedPlans =
+		[
+			new(HextechRarityTier.Gold, [ MonsterHexKind.MonarchsGaze ]),
+			new(HextechRarityTier.Silver, [ MonsterHexKind.TheLost, MonsterHexKind.TheForgotten ]),
+			new(HextechRarityTier.Prismatic, [ MonsterHexKind.LagavulinMatriarch, MonsterHexKind.MasterOfDuality ])
+		];
+		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
+		{
+			Expect(
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(ListlessChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				$"listless challenge act {actIndex + 1} should exist");
+			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"listless challenge act {actIndex + 1} player rarity");
+			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"listless challenge act {actIndex + 1} enemy hexes");
+		}
+
+		Expect(
+			!HextechPresetChallengeRegistry.TryGetActPlan(typeof(ListlessChallengeModifier), 3, out _),
+			"listless challenge should not schedule a fourth acquisition");
+		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "listless challenge fixed enemy counts");
+	}
+
+	private static void PresetChallengesArePairwiseMutuallyExclusive()
+	{
+		foreach (Type selectedType in HextechCustomModelRegistry.CustomChallengeModifierTypes)
+		{
+			foreach (Type candidateType in HextechCustomModelRegistry.CustomChallengeModifierTypes)
+			{
+				Equal(
+					selectedType != candidateType,
+					HextechPresetChallengeRegistry.AreMutuallyExclusiveChallengeTypes(selectedType, candidateType),
+					$"challenge exclusivity {selectedType.Name} -> {candidateType.Name}");
+			}
+		}
+
+		Expect(
+			!HextechPresetChallengeRegistry.AreMutuallyExclusiveChallengeTypes(
+				typeof(StuffedToRuinChallengeModifier),
+				typeof(HextechSilverRunModifier)),
+			"preset challenges should not untick ordinary custom-run modifiers");
 	}
 
 	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()
@@ -4046,14 +4219,14 @@ internal static partial class Program
 
 	private static void CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions()
 	{
-		Equal(15m, CollectorRune.ExecutePercent, "Collector execute percent");
+		Equal(10m, CollectorRune.ExecutePercent, "Collector execute percent");
 		Equal(20, CollectorRune.CountPerExecute, "Collector count per execute");
 		Expect(
-			CollectorRune.IsBelowExecuteThreshold(14.99m, 100m, CollectorRune.ExecutePercent),
-			"Collector should execute below fifteen percent max HP");
+			CollectorRune.IsBelowExecuteThreshold(9.99m, 100m, CollectorRune.ExecutePercent),
+			"Collector should execute below ten percent max HP");
 		Expect(
-			!CollectorRune.IsBelowExecuteThreshold(15m, 100m, CollectorRune.ExecutePercent),
-			"Collector should not execute at exactly fifteen percent max HP");
+			!CollectorRune.IsBelowExecuteThreshold(10m, 100m, CollectorRune.ExecutePercent),
+			"Collector should not execute at exactly ten percent max HP");
 		Expect(
 			!CollectorRune.IsBelowExecuteThreshold(1m, 0m, CollectorRune.ExecutePercent),
 			"Collector should reject invalid max HP thresholds");

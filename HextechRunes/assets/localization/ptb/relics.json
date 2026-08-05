@@ -257,7 +257,7 @@
   "HOMEGUARD_RUNE.description": "Se você não sofreu dano não bloqueado no turno anterior, compre [blue]2[/blue] cartas adicionais no início deste turno.",
   "HOMEGUARD_RUNE.flavor": "Segure o chão firme abaixo de você e a estrada adiante se abrirá.",
   "LIGHT_EM_UP_RUNE.title": "Incendiar Tudo",
-  "LIGHT_EM_UP_RUNE.description": "Cada quarta carta de Ataque que você jogar é jogada uma vez adicional.",
+  "LIGHT_EM_UP_RUNE.description": "Após cada [blue]{Attacks}[/blue] cartas de Ataque jogadas, dispare [blue]{Missiles}[/blue] mísseis contra o alvo. Cada míssil causa dano igual ao custo de Energia daquele Ataque.",
   "LIGHT_EM_UP_RUNE.flavor": "No quarto golpe, a faísca fala por você mais uma vez.",
   "SHRINK_ENGINE_RUNE.title": "Motor de Encolhimento",
   "SHRINK_ENGINE_RUNE.description": "Após vencer um combate, ganhe [blue]1[/blue] acúmulo. Cada acúmulo reduz seu tamanho em [blue]2%[/blue]. Para cada [blue]4[/blue] acúmulos, compre [blue]1[/blue] carta adicional a cada turno. Para cada [blue]8[/blue] acúmulos, ganhe [blue]1[/blue] de Energia extra a cada turno.",
@@ -493,7 +493,7 @@
   "STARTUP_ROUTINE_RUNE.description": "No início do combate, ganhe [blue]16[/blue] de Bloqueio.",
   "STARTUP_ROUTINE_RUNE.flavor": "Até que o processo termine, as feridas podem esperar na porta.",
   "COLLECTOR_RUNE.title": "Coletor",
-  "COLLECTOR_RUNE.description": "O dano que você causa executa monstros com menos de [blue]15%[/blue] dos PV máximos. Ao executar um inimigo, ganhe [blue]20[/blue] de contagem. Após vencer o combate, ganhe Ouro extra igual à contagem.",
+  "COLLECTOR_RUNE.description": "O dano que você causa executa monstros com menos de [blue]{ExecutePercent}%[/blue] dos PV máximos. Ao executar um inimigo, ganhe [blue]20[/blue] de contagem. Após vencer o combate, ganhe Ouro extra igual à contagem.",
   "COLLECTOR_RUNE.flavor": "Alguns contam vitórias. Alguns contam moedas.",
   "LIFE_FLOW_RUNE.title": "Fluxo de Vida",
   "LIFE_FLOW_RUNE.description": "Sempre que [blue]1[/blue] carta for exaurida, cure [blue]5%[/blue] do seu PV Máx. Ativa até [blue]3[/blue] vezes a cada turno.",
@@ -1403,5 +1403,8 @@
   "DUALCAST_UPGRADE_RUNE.flavor": "O circuito captura cada eco que se apaga e o põe para circular outra vez.",
   "DEATH_WARRANT_RUNE.title": "Mandado de Morte",
   "DEATH_WARRANT_RUNE.description": "A cada [blue]{CardsNeeded}[/blue] cartas compradas, acione imediatamente uma vez o [gold]Veneno[/gold] de todos os inimigos.",
-  "DEATH_WARRANT_RUNE.flavor": "Ao oitavo farfalhar, o veneno vem cobrar."
+  "DEATH_WARRANT_RUNE.flavor": "Ao oitavo farfalhar, o veneno vem cobrar.",
+  "PIERCING_THREAD_RUNE.title": "Passar pelo Buraco da Agulha",
+  "PIERCING_THREAD_RUNE.description": "[blue]{PiercingPercent}%[/blue] do dano que você causa ignora o Bloqueio dos inimigos.",
+  "PIERCING_THREAD_RUNE.flavor": "Até a menor abertura basta para um golpe perfeito."
 }

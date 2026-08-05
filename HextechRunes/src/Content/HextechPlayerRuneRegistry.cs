@@ -246,6 +246,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<MagicMissileRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 		Rune<DualcastUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 33, tagKey: "ORB"),
 		Rune<DeathWarrantRune>(HextechRarityTier.Gold, tagKey: "POISON"),
+		Rune<PiercingThreadRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 
 		Rune<StrikeUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),
 		Rune<DefendUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "SURVIVAL"),

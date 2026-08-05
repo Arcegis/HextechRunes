@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 public sealed class CollectorRune : HextechRelicBase
 {
-	internal const decimal ExecutePercent = 15m;
+	internal const decimal ExecutePercent = 10m;
 	internal const int CountPerExecute = 20;
 
 	private const string ExecutePercentVar = "ExecutePercent";
