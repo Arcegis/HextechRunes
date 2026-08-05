@@ -216,6 +216,7 @@ internal static partial class Program
 			new(nameof(MonsterHexMetadataHasUniqueKinds), MonsterHexMetadataHasUniqueKinds),
 			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
+			new(nameof(NewEnemyHexesReusePlayerRuneIconsAndRarities), NewEnemyHexesReusePlayerRuneIconsAndRarities),
 			new(nameof(EnemyHexHoverTipsUseExpectedPowerModels), EnemyHexHoverTipsUseExpectedPowerModels),
 			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
 			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
@@ -224,6 +225,9 @@ internal static partial class Program
 			new(nameof(EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit), EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit),
 			new(nameof(EnemyHeavyHitterScalesDamageEveryFifteenMaxHp), EnemyHeavyHitterScalesDamageEveryFifteenMaxHp),
 			new(nameof(EnemyVitalitySurgeScalesAllSustainFromMaxHp), EnemyVitalitySurgeScalesAllSustainFromMaxHp),
+			new(nameof(EnemyTwilightVeilMirrorsOnlyPositivePlayerBlock), EnemyTwilightVeilMirrorsOnlyPositivePlayerBlock),
+			new(nameof(EnemyAttributeBoostsUseExpectedTiersAndCrossHexMultiplication), EnemyAttributeBoostsUseExpectedTiersAndCrossHexMultiplication),
+			new(nameof(EnemyMiserableFateUsesMissingHpDivisors), EnemyMiserableFateUsesMissingHpDivisors),
 			new(nameof(EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount), EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount),
 			new(nameof(EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls), EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls),
 			new(nameof(EnemyJeweledGauntletUsesExpectedStrengthTierChances), EnemyJeweledGauntletUsesExpectedStrengthTierChances),
@@ -3240,6 +3244,28 @@ internal static partial class Program
 		Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
 	}
 
+	private static void NewEnemyHexesReusePlayerRuneIconsAndRarities()
+	{
+		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
+		(MonsterHexKind Kind, int Value, HextechRarityTier Rarity, Type IconType)[] expected =
+		[
+			(MonsterHexKind.TwilightVeil, 130, HextechRarityTier.Gold, typeof(TwilightVeilRune)),
+			(MonsterHexKind.Stats, 131, HextechRarityTier.Silver, typeof(StatsRune)),
+			(MonsterHexKind.StatsOnStats, 132, HextechRarityTier.Gold, typeof(StatsOnStatsRune)),
+			(MonsterHexKind.StatsOnStatsOnStats, 133, HextechRarityTier.Prismatic, typeof(StatsOnStatsOnStatsRune)),
+			(MonsterHexKind.MiserableFate, 134, HextechRarityTier.Prismatic, typeof(MiserableFateRune))
+		];
+
+		foreach ((MonsterHexKind kind, int value, HextechRarityTier rarity, Type iconType) in expected)
+		{
+			Equal(value, (int)kind, $"{kind} append-only enum value");
+			Expect(metadata.TryGetRegistration(kind, out MonsterHexRegistration registration), $"{kind} registration should exist");
+			Equal(rarity, registration.Rarity, $"{kind} rarity");
+			Equal(iconType, registration.IconRelicType, $"{kind} icon relic type");
+			Expect(!registration.Disabled, $"{kind} should be enabled by default");
+		}
+	}
+
 	private static void MonsterInteractionPolicyPreservesStructuralMonsterBuffs()
 	{
 		PowerModel[] structuralEnemyPowers =
@@ -3544,6 +3570,44 @@ internal static partial class Program
 		Equal(1.29m, VitalitySurgeEnemyHex.ResolveMultiplier(599m), "Vitality Surge multiplier below cap");
 		Equal(1.30m, VitalitySurgeEnemyHex.ResolveMultiplier(600m), "Vitality Surge multiplier at cap");
 		Equal(1.30m, VitalitySurgeEnemyHex.ResolveMultiplier(6000m), "Vitality Surge multiplier above cap");
+	}
+
+	private static void EnemyAttributeBoostsUseExpectedTiersAndCrossHexMultiplication()
+	{
+		Equal(0m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.Stats, 1), "Stats tier one bonus");
+		Equal(0.05m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.Stats, 2), "Stats tier two bonus");
+		Equal(0.10m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.Stats, 3), "Stats tier three bonus");
+		Equal(0.05m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStats, 1), "Stats on Stats tier one bonus");
+		Equal(0.10m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStats, 2), "Stats on Stats tier two bonus");
+		Equal(0.15m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStats, 3), "Stats on Stats tier three bonus");
+		Equal(0.10m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStatsOnStats, 1), "Stats on Stats on Stats tier one bonus");
+		Equal(0.20m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStatsOnStats, 2), "Stats on Stats on Stats tier two bonus");
+		Equal(0.30m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStatsOnStats, 3), "Stats on Stats on Stats tier three bonus");
+
+		decimal combined = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
+		[
+			(MonsterHexKind.Stats, 0.05m),
+			(MonsterHexKind.Stats, 0.05m),
+			(MonsterHexKind.StatsOnStats, 0.10m)
+		]);
+		Equal(1.21m, combined, "attribute bonuses should add within one hex and multiply across hexes");
+	}
+
+	private static void EnemyTwilightVeilMirrorsOnlyPositivePlayerBlock()
+	{
+		Expect(TwilightVeilEnemyHex.ShouldMirrorBlock(CombatSide.Player, 1m), "Twilight Veil should mirror positive player Block");
+		Expect(!TwilightVeilEnemyHex.ShouldMirrorBlock(CombatSide.Player, 0m), "Twilight Veil should ignore zero player Block");
+		Expect(!TwilightVeilEnemyHex.ShouldMirrorBlock(CombatSide.Enemy, 1m), "Twilight Veil should not recurse from enemy Block");
+	}
+
+	private static void EnemyMiserableFateUsesMissingHpDivisors()
+	{
+		Equal(0, MiserableFateEnemyHex.ResolveBlock(100, 97, 4), "tier one should floor fewer than four missing HP");
+		Equal(1, MiserableFateEnemyHex.ResolveBlock(100, 96, 4), "tier one first block threshold");
+		Equal(3, MiserableFateEnemyHex.ResolveBlock(100, 90, 3), "tier two should floor missing HP thirds");
+		Equal(5, MiserableFateEnemyHex.ResolveBlock(100, 90, 2), "tier three should use two missing HP per block");
+		Equal(0, MiserableFateEnemyHex.ResolveBlock(100, 120, 2), "overhealing should not grant block");
+		Equal(55, MiserableFateEnemyHex.ResolveBlock(100, -10, 2), "negative HP should count as additional missing HP");
 	}
 
 	private static void EnemyHeavyHitterScalesDamageEveryFifteenMaxHp()

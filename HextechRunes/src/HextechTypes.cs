@@ -138,5 +138,10 @@ internal enum MonsterHexKind
 	HundredRefinements = 126,  // 百炼成钢（黄金）
 	VitalitySurge = 127,       // 生机迸发（黄金）
 	IInspect = 128,            // 我细看（棱彩）
-	IGrip = 129                // 我紧握（棱彩）
+	IGrip = 129,               // 我紧握（棱彩）
+	TwilightVeil = 130,        // 薄暮法衣（黄金）
+	Stats = 131,               // 属性！（白银）
+	StatsOnStats = 132,        // 属性叠属性！（黄金）
+	StatsOnStatsOnStats = 133, // 属性叠属性叠属性！（棱彩）
+	MiserableFate = 134        // 悲惨命运（棱彩）
 }

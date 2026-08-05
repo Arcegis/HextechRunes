@@ -582,7 +582,12 @@
     "HundredRefinements": "百炼成钢",
     "VitalitySurge": "生机迸发",
     "IInspect": "我细看",
-    "IGrip": "我紧握"
+    "IGrip": "我紧握",
+    "TwilightVeil": "薄暮法衣",
+    "Stats": "属性！",
+    "StatsOnStats": "属性叠属性！",
+    "StatsOnStatsOnStats": "属性叠属性叠属性！",
+    "MiserableFate": "悲惨命运"
   },
   "characters": {
     "IRONCLAD": "战士",

@@ -43,6 +43,9 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<uint> MadScientistApplied = new();
 	public readonly HashSet<uint> UnmovableMountainApplied = new();
 	public readonly HashSet<uint> GoldenSpatulaApplied = new();
+	public readonly HashSet<uint> StatsApplied = new();
+	public readonly HashSet<uint> StatsOnStatsApplied = new();
+	public readonly HashSet<uint> StatsOnStatsOnStatsApplied = new();
 	public readonly HashSet<uint> DoormakerRealStartApplied = new();
 	public readonly Dictionary<uint, int> TestSubjectPhaseStartApplied = new();
 	public readonly Dictionary<uint, int> MonsterMaxHpCoefficientBase = new();

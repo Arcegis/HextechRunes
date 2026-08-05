@@ -137,6 +137,11 @@ internal abstract class HextechEnemyHexEffect
 		return Task.CompletedTask;
 	}
 
+	internal virtual Task AfterBlockGained(HextechEnemyHexContext context, Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
+	{
+		return Task.CompletedTask;
+	}
+
 	internal virtual Task AfterCardPlayedLate(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		return Task.CompletedTask;
