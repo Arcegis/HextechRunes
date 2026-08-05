@@ -109,6 +109,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<NeurosurgeUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 34, tagKey: "DOOM"),
 		Rune<WroughtInWarUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 29, tagKey: "SWORDCRAFT"),
 		Rune<TerminalIllnessRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 28, tagKey: "POISON"),
+		Rune<TrickLicenseRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 2, tagKey: "TRICK"),
 		Rune<TwinFlamesRune>(HextechRarityTier.Silver, tagKey: "OUTPUT"),
 
 		Rune<JudicatorRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
@@ -162,7 +163,6 @@ internal static class HextechPlayerRuneRegistry
 		Rune<StatsOnStatsRune>(HextechRarityTier.Gold, tagKey: "RANDOM"),
 		Rune<LifeFlowRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 1, tagKey: "EXHAUST"),
 		Rune<RekindleRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 4, tagKey: "EXHAUST"),
-		Rune<TrickLicenseRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 2, tagKey: "TRICK"),
 		Rune<GalacticGiftRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 1, tagKey: "STARLIGHT"),
 		Rune<SomethingFromNothingRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 2, tagKey: "VOID"),
 		Rune<LubricantRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 4, tagKey: "COMPREHENSIVE"),
