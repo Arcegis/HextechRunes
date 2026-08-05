@@ -11,7 +11,7 @@ public sealed class StuffedToRuinChallengeModifier : ModifierModel
 
 	public override LocString Description => new("modifiers", "HEXTECH_STUFFED_TO_RUIN_CHALLENGE.description");
 
-	protected override string IconPath => $"res://{ModInfo.Id}/images/relics/slimedBerserkerHex.png";
+	protected override string IconPath => $"res://{ModInfo.Id}/images/relics/stuffedToRuinChallenge.png";
 }
 
 public sealed class DefenseCounterMasterChallengeModifier : ModifierModel
@@ -20,7 +20,7 @@ public sealed class DefenseCounterMasterChallengeModifier : ModifierModel
 
 	public override LocString Description => new("modifiers", "HEXTECH_DEFENSE_COUNTER_MASTER_CHALLENGE.description");
 
-	protected override string IconPath => $"res://{ModInfo.Id}/images/relics/exoskeletonHex.png";
+	protected override string IconPath => $"res://{ModInfo.Id}/images/relics/defenseCounterMasterChallenge.png";
 }
 
 internal sealed record HextechPresetChallengeActPlan(

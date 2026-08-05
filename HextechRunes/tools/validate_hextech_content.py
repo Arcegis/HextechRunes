@@ -385,6 +385,12 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
         for type_name in extract_type_list(registry_text, values_list):
             expected_stems.add(model_loc_stem(type_name))
 
+    run_modifiers_dir = SRC / "RunModifiers"
+    for source_path in run_modifiers_dir.glob("*.cs"):
+        expected_stems.update(
+            re.findall(r'images/relics/([^"/]+)\.png', read(source_path))
+        )
+
     missing = sorted(
         stem
         for stem in expected_stems
