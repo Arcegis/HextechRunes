@@ -43,6 +43,8 @@ public sealed class DeathWarrantRune : HextechRelicBase
 		HoverTipFactory.FromPower<PoisonPower>()
 	];
 
+	public override bool IsAvailableForPlayer(Player player) => IsSilentPlayer(player);
+
 	public override Task BeforeCombatStart()
 	{
 		_cardsDrawnThisCombat = 0;

@@ -245,7 +245,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<SpinToWinRune>(HextechRarityTier.Gold, tagKey: "RESOURCE"),
 		Rune<MagicMissileRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 		Rune<DualcastUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 33, tagKey: "ORB"),
-		Rune<DeathWarrantRune>(HextechRarityTier.Gold, tagKey: "POISON"),
+		Rune<DeathWarrantRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 30, tagKey: "POISON"),
 		Rune<PiercingThreadRune>(HextechRarityTier.Gold, tagKey: "OUTPUT"),
 
 		Rune<StrikeUpgradeRune>(HextechRarityTier.Prismatic, tagKey: "OUTPUT"),

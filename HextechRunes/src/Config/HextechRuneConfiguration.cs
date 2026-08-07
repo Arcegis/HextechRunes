@@ -7,7 +7,7 @@ internal static class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 31;
+	private const int CurrentConfigVersion = 32;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -32,6 +32,12 @@ internal static class HextechRuneConfiguration
 	private const int DefaultPlayerRuneRerollLimit = 1;
 	private const int DefaultMonsterHexRerollLimit = InfiniteRerollLimit;
 	private static readonly HextechRarityWeights DefaultRuneRarityWeights = new(1, 1, 1);
+	private static readonly HextechRarityWeights[] DefaultRuneRarityWeightsByAct =
+	[
+		DefaultRuneRarityWeights,
+		DefaultRuneRarityWeights,
+		DefaultRuneRarityWeights
+	];
 	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
 	// v4~v14 的历史迁移段与配套数组已删除:v15(0.8.4)强制重置使 ConfigVersion<15 一律整体回默认,
 	// 那些分支永不可达。活跃链从 v16 起。
@@ -220,7 +226,7 @@ internal static class HextechRuneConfiguration
 				_config.DisabledPlayerRuneIds,
 				_config.DisabledMonsterHexIds,
 				_config.DisabledForgeIds,
-				ToRarityWeights(_config.RuneRarityWeights, DefaultRuneRarityWeights),
+				ToRarityWeightsByAct(_config.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
 				_config.PreventConsecutiveSilverRunes,
 				_config.GoldenRerollChancePercent,
 				ToForgeRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
@@ -303,7 +309,8 @@ internal static class HextechRuneConfiguration
 			_config.DisabledPlayerRuneIds = normalized.DisabledPlayerRuneIds;
 			_config.DisabledMonsterHexIds = normalized.DisabledMonsterHexIds;
 			_config.DisabledForgeIds = normalized.DisabledForgeIds;
-			_config.RuneRarityWeights = FromRarityWeights(normalized.RuneRarityWeights);
+			_config.RuneRarityWeightsByAct = FromRarityWeightsByAct(normalized.RuneRarityWeightsByAct);
+			_config.RuneRarityWeights = null;
 			_config.PreventConsecutiveSilverRunes = normalized.PreventConsecutiveSilverRunes;
 			_config.GoldenRerollChancePercent = normalized.GoldenRerollChancePercent;
 			_config.FirstActRuneRarityWeights = null;
@@ -428,7 +435,7 @@ internal static class HextechRuneConfiguration
 			MonsterHexRerollLimit = DefaultMonsterHexRerollLimit,
 			DisabledMonsterHexIds = GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
 			DisabledForgeIds = GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
-			RuneRarityWeights = FromRarityWeights(DefaultRuneRarityWeights),
+			RuneRarityWeightsByAct = FromRarityWeightsByAct(DefaultRuneRarityWeightsByAct),
 			PreventConsecutiveSilverRunes = DefaultPreventConsecutiveSilverRunes,
 			GoldenRerollChancePercent = DefaultGoldenRerollChancePercent,
 			ForgeRarityWeights = FromForgeRarityWeights(DefaultForgeRarityWeights),
@@ -526,6 +533,12 @@ internal static class HextechRuneConfiguration
 			disabledIds.ExceptWith(GetPlayerRuneIds(Version31DefaultEnabledRuneTypes));
 		}
 
+		if (previousConfigVersion < 32)
+		{
+			HextechRarityWeights legacyWeights = ToRarityWeights(config.RuneRarityWeights, DefaultRuneRarityWeights);
+			config.RuneRarityWeightsByAct = FromRarityWeightsByAct([ legacyWeights, legacyWeights, legacyWeights ]);
+		}
+
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
@@ -534,9 +547,10 @@ internal static class HextechRuneConfiguration
 		config.MonsterHexRerollLimit = ClampRerollLimit(config.MonsterHexRerollLimit);
 		config.DisabledMonsterHexIds = disabledMonsterHexIds;
 		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
-		config.RuneRarityWeights = FromRarityWeights(NormalizeRarityWeights(
-			ToRarityWeights(config.RuneRarityWeights, DefaultRuneRarityWeights),
-			DefaultRuneRarityWeights));
+		config.RuneRarityWeightsByAct = FromRarityWeightsByAct(NormalizeRarityWeightsByAct(
+			ToRarityWeightsByAct(config.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
+			DefaultRuneRarityWeightsByAct));
+		config.RuneRarityWeights = null;
 		config.GoldenRerollChancePercent = ClampGoldenRerollChancePercent(config.GoldenRerollChancePercent);
 		config.FirstActRuneRarityWeights = null;
 		config.NormalRuneRarityWeights = null;
@@ -625,6 +639,11 @@ internal static class HextechRuneConfiguration
 		return DefaultRuneRarityWeights;
 	}
 
+	public static HextechRarityWeights[] GetDefaultRuneRarityWeightsByAct()
+	{
+		return DefaultRuneRarityWeightsByAct.ToArray();
+	}
+
 	public static bool GetDefaultPreventConsecutiveSilverRunes()
 	{
 		return DefaultPreventConsecutiveSilverRunes;
@@ -660,7 +679,7 @@ internal static class HextechRuneConfiguration
 			GetDefaultDisabledPlayerRuneIds().ToHashSet(StringComparer.Ordinal),
 			GetDefaultDisabledMonsterHexIds().ToHashSet(StringComparer.Ordinal),
 			GetDefaultDisabledForgeIds().ToHashSet(StringComparer.Ordinal),
-			DefaultRuneRarityWeights,
+			DefaultRuneRarityWeightsByAct,
 			DefaultPreventConsecutiveSilverRunes,
 			DefaultGoldenRerollChancePercent,
 			DefaultForgeRarityWeights,
@@ -679,7 +698,7 @@ internal static class HextechRuneConfiguration
 			NormalizeDisabledPlayerRuneIds(snapshot.DisabledPlayerRuneIds),
 			NormalizeDisabledMonsterHexIds(snapshot.DisabledMonsterHexIds),
 			NormalizeDisabledForgeIds(snapshot.DisabledForgeIds),
-			NormalizeRarityWeights(snapshot.RuneRarityWeights, DefaultRuneRarityWeights),
+			NormalizeRarityWeightsByAct(snapshot.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
 			snapshot.PreventConsecutiveSilverRunes,
 			ClampGoldenRerollChancePercent(snapshot.GoldenRerollChancePercent),
 			NormalizeForgeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
@@ -695,6 +714,23 @@ internal static class HextechRuneConfiguration
 			ClampRarityWeight(weights.Gold),
 			ClampRarityWeight(weights.Prismatic));
 		return normalized.Total > 0 ? normalized : fallback;
+	}
+
+	internal static HextechRarityWeights[] NormalizeRarityWeightsByAct(
+		IReadOnlyList<HextechRarityWeights>? weightsByAct,
+		IReadOnlyList<HextechRarityWeights> fallbackByAct)
+	{
+		HextechRarityWeights[] normalized = new HextechRarityWeights[HexActCount];
+		for (int actIndex = 0; actIndex < normalized.Length; actIndex++)
+		{
+			HextechRarityWeights fallback = fallbackByAct[Math.Min(actIndex, fallbackByAct.Count - 1)];
+			HextechRarityWeights weights = weightsByAct != null && actIndex < weightsByAct.Count
+				? weightsByAct[actIndex]
+				: fallback;
+			normalized[actIndex] = NormalizeRarityWeights(weights, fallback);
+		}
+
+		return normalized;
 	}
 
 	internal static HextechForgeRarityWeights NormalizeForgeRarityWeights(HextechForgeRarityWeights weights, HextechForgeRarityWeights fallback)
@@ -771,8 +807,21 @@ internal static class HextechRuneConfiguration
 		RuneConfig normalized = NormalizeLoadedConfig(config);
 		return (
 			normalized.ConfigVersion,
-			ToRarityWeights(normalized.RuneRarityWeights, DefaultRuneRarityWeights),
+			ToRarityWeightsByAct(normalized.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct)[0],
 			normalized.PreventConsecutiveSilverRunes);
+	}
+
+	internal static HextechRarityWeights[] MigrateSingleRarityConfigForTests(
+		int configVersion,
+		HextechRarityWeights weights)
+	{
+		RuneConfig config = new()
+		{
+			ConfigVersion = configVersion,
+			RuneRarityWeights = FromRarityWeights(weights)
+		};
+		RuneConfig normalized = NormalizeLoadedConfig(config);
+		return ToRarityWeightsByAct(normalized.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct);
 	}
 
 	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)
@@ -813,6 +862,17 @@ internal static class HextechRuneConfiguration
 			: new HextechRarityWeights(config.Silver, config.Gold, config.Prismatic);
 	}
 
+	private static HextechRarityWeights[] ToRarityWeightsByAct(
+		IReadOnlyList<RarityWeightConfig>? configs,
+		IReadOnlyList<HextechRarityWeights> fallback)
+	{
+		return Enumerable.Range(0, HexActCount)
+			.Select(actIndex => configs != null && actIndex < configs.Count
+				? ToRarityWeights(configs[actIndex], fallback[Math.Min(actIndex, fallback.Count - 1)])
+				: fallback[Math.Min(actIndex, fallback.Count - 1)])
+			.ToArray();
+	}
+
 	private static HextechForgeRarityWeights ToForgeRarityWeights(RarityWeightConfig? config, HextechForgeRarityWeights fallback)
 	{
 		return config == null
@@ -828,6 +888,11 @@ internal static class HextechRuneConfiguration
 			Gold = weights.Gold,
 			Prismatic = weights.Prismatic
 		};
+	}
+
+	private static RarityWeightConfig[] FromRarityWeightsByAct(IEnumerable<HextechRarityWeights> weightsByAct)
+	{
+		return weightsByAct.Select(FromRarityWeights).ToArray();
 	}
 
 	private static RarityWeightConfig FromForgeRarityWeights(HextechForgeRarityWeights weights)
@@ -887,7 +952,11 @@ internal static class HextechRuneConfiguration
 		public HashSet<string> DisabledForgeIds { get; set; } = new(StringComparer.Ordinal);
 
 		[JsonPropertyName("rune_rarity_weights")]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public RarityWeightConfig? RuneRarityWeights { get; set; }
+
+		[JsonPropertyName("rune_rarity_weights_by_act")]
+		public RarityWeightConfig[]? RuneRarityWeightsByAct { get; set; }
 
 		[JsonPropertyName("prevent_consecutive_silver_runes")]
 		public bool PreventConsecutiveSilverRunes { get; set; } = DefaultPreventConsecutiveSilverRunes;

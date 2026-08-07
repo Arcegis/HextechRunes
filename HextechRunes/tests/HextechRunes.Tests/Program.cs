@@ -203,6 +203,7 @@ internal static partial class Program
 			new(nameof(ConfigMigrationV30EnablesAdvanceToRetreat), ConfigMigrationV30EnablesAdvanceToRetreat),
 			new(nameof(ConfigMigrationV31EnablesHappyAccident), ConfigMigrationV31EnablesHappyAccident),
 			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
+			new(nameof(ConfigShareRoundTripKeepsActRarityWeights), ConfigShareRoundTripKeepsActRarityWeights),
 			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
 			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
 			new(nameof(RuneSelectionJournalRejectsConflictingSelections), RuneSelectionJournalRejectsConflictingSelections),
@@ -348,7 +349,12 @@ internal static partial class Program
 			DisabledPlayerRuneIds = disabledIds,
 			DisabledMonsterHexIds = [ MonsterHexKind.FrostWraith.ToString() ],
 			DisabledForgeIds = [ disabledForgeId ],
-			RuneRarityWeights = new HextechRarityWeights(4, 5, 6),
+			RuneRarityWeightsByAct =
+			[
+				new HextechRarityWeights(4, 5, 6),
+				new HextechRarityWeights(7, 8, 9),
+				new HextechRarityWeights(10, 11, 12)
+			],
 			PreventConsecutiveSilverRunes = false,
 			GoldenRerollChancePercent = 37,
 			ForgeRarityWeights = new HextechForgeRarityWeights(9, 10, 11),
@@ -387,7 +393,15 @@ internal static partial class Program
 		Equal(123, decodedSnapshot.RandomForgeShopPrice, "forge shop price");
 		Equal(8, decodedSnapshot.PlayerRuneRerollLimit, "player reroll limit");
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, decodedSnapshot.MonsterHexRerollLimit, "monster reroll limit");
-		Equal(new HextechRarityWeights(4, 5, 6), decodedSnapshot.RuneRarityWeights, "rune rarity weights");
+		SequenceEqual(
+			new[]
+			{
+				new HextechRarityWeights(4, 5, 6),
+				new HextechRarityWeights(7, 8, 9),
+				new HextechRarityWeights(10, 11, 12)
+			},
+			decodedSnapshot.RuneRarityWeightsByAct,
+			"rune rarity weights by act");
 		Equal(false, decodedSnapshot.PreventConsecutiveSilverRunes, "prevent consecutive Silver toggle");
 		Equal(37, decodedSnapshot.GoldenRerollChancePercent, "golden reroll chance");
 		Equal(10, decodedSnapshot.ForgeRarityWeights.Gold, "forge rarity weight");
@@ -1009,7 +1023,7 @@ internal static partial class Program
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
-		Equal(31, version, "v14 config should land on current version");
+		Equal(32, version, "v14 config should land on current version");
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
@@ -1019,7 +1033,7 @@ internal static partial class Program
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
 		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
-		Equal(31, version, "v15 config should land on current version");
+		Equal(32, version, "v15 config should land on current version");
 		SetEqual(
 			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
 			migrated,
@@ -1029,7 +1043,7 @@ internal static partial class Program
 	private static void ConfigMigrationV26AddsNewPlayerDefaultDisables()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, []);
-		Equal(31, version, "v26 player config should land on current version");
+		Equal(32, version, "v26 player config should land on current version");
 		SetEqual(
 			HextechPlayerRuneConfigIds.FromTypes(
 			[
@@ -1045,17 +1059,35 @@ internal static partial class Program
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(31, [customId]);
-		Equal(31, version, "current-version config keeps version");
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(32, [customId]);
+		Equal(32, version, "current-version config keeps version");
 		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
 
 		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
-			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(31, [MonsterHexKind.FrostWraith.ToString()]);
-		Equal(31, monsterVersion, "current-version monster config keeps version");
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(32, [MonsterHexKind.FrostWraith.ToString()]);
+		Equal(32, monsterVersion, "current-version monster config keeps version");
 		SetEqual(
 			[MonsterHexKind.FrostWraith.ToString()],
 			disabledMonsters,
 			"current-version monster config should preserve a user-enabled Blank Check");
+	}
+
+	private static void ConfigShareRoundTripKeepsActRarityWeights()
+	{
+		HextechRarityWeights[] expectedWeights =
+		[
+			new HextechRarityWeights(1, 2, 3),
+			new HextechRarityWeights(4, 5, 6),
+			new HextechRarityWeights(7, 8, 9)
+		];
+		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot() with
+		{
+			RuneRarityWeightsByAct = expectedWeights
+		};
+		string code = HextechConfigShareCodec.Export(snapshot);
+		HextechConfigShareCodec.ImportPreview preview = HextechConfigShareCodec.TryParseForTests(code, snapshot)
+			?? throw new InvalidOperationException("act rarity share code should decode");
+		SequenceEqual(expectedWeights, preview.Snapshot.RuneRarityWeightsByAct, "act rarity weights should survive share-code round trip");
 	}
 
 	private static void ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention()
@@ -1065,7 +1097,7 @@ internal static partial class Program
 				27,
 				new HextechRarityWeights(4, 5, 6),
 				new HextechRarityWeights(0, 7, 8));
-		Equal(31, migratedVersion, "v27 rarity config should land on current version");
+		Equal(32, migratedVersion, "v27 rarity config should land on current version");
 		Equal(new HextechRarityWeights(4, 5, 6), migratedWeights, "v27 normal weights should become rune weights");
 		Equal(true, ruleEnabledWithZeroLegacySilverWeight, "legacy rarity config should enable consecutive-Silver prevention by default");
 
@@ -1074,13 +1106,26 @@ internal static partial class Program
 			new HextechRarityWeights(1, 1, 1),
 			new HextechRarityWeights(2, 1, 1));
 		Equal(true, ruleEnabledWithPositiveLegacySilverWeight, "removed legacy after-Silver weights should not disable the new default-on rule");
+
+		HextechRarityWeights[] migratedByAct = HextechRuneConfiguration.MigrateSingleRarityConfigForTests(
+			31,
+			new HextechRarityWeights(3, 4, 5));
+		SequenceEqual(
+			new[]
+			{
+				new HextechRarityWeights(3, 4, 5),
+				new HextechRarityWeights(3, 4, 5),
+				new HextechRarityWeights(3, 4, 5)
+			},
+			migratedByAct,
+			"v31 single rarity weights should migrate to every act");
 	}
 
 	private static void ConfigMigrationV30EnablesAdvanceToRetreat()
 	{
 		string id = ModelDb.GetId<AdvanceToRetreatRune>().Entry;
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(29, [id]);
-		Equal(31, version, "v29 player config should land on current version");
+		Equal(32, version, "v29 player config should land on current version");
 		Expect(!disabled.Contains(id), "v29 player config migration should enable Advance to Retreat");
 	}
 
@@ -1088,7 +1133,7 @@ internal static partial class Program
 	{
 		string id = ModelDb.GetId<HappyAccidentRune>().Entry;
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(30, [id]);
-		Equal(31, version, "v30 player config should land on current version");
+		Equal(32, version, "v30 player config should land on current version");
 		Expect(!disabled.Contains(id), "v30 player config migration should enable Happy Accident");
 	}
 
@@ -2213,6 +2258,15 @@ internal static partial class Program
 
 	private static void DeathWarrantTriggersPoisonEveryEightDraws()
 	{
+		MethodInfo availability = typeof(DeathWarrantRune).GetMethod(nameof(HextechRelicBase.IsAvailableForPlayer))
+			?? throw new MissingMethodException(nameof(DeathWarrantRune), nameof(HextechRelicBase.IsAvailableForPlayer));
+		Equal(typeof(DeathWarrantRune), availability.DeclaringType, "Death Warrant should override the player availability gate");
+		Expect(
+			PatchProcessor.GetOriginalInstructions(availability)
+				.Select(static instruction => instruction.operand)
+				.OfType<MethodInfo>()
+				.Any(static method => method.Name == "IsSilentPlayer"),
+			"Death Warrant availability should use the Silent character gate");
 		Equal(8, DeathWarrantRune.CardsNeeded, "Death Warrant draw threshold");
 		Equal(0, DeathWarrantRune.ResolveThresholdCrossings(0, 7), "Death Warrant should wait for eight draws");
 		Equal(1, DeathWarrantRune.ResolveThresholdCrossings(7, 8), "Death Warrant should trigger on the eighth draw");
@@ -2705,7 +2759,16 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 3 }, snapshot.EnemyHexCountsByAct, "default enemy act counts");
 		Equal(1, snapshot.PlayerRuneRerollLimit, "default player reroll limit");
 		Equal(HextechRuneConfiguration.InfiniteRerollLimit, snapshot.MonsterHexRerollLimit, "default monster reroll limit");
-		Equal(new HextechRarityWeights(1, 1, 1), snapshot.RuneRarityWeights, "default rune rarity weights");
+		SequenceEqual(
+			new[]
+			{
+				new HextechRarityWeights(1, 1, 1),
+				new HextechRarityWeights(1, 1, 1),
+				new HextechRarityWeights(1, 1, 1)
+			},
+			snapshot.RuneRarityWeightsByAct,
+			"default rune rarity weights by act");
+		Equal(snapshot.RuneRarityWeightsByAct[2], snapshot.GetRuneRarityWeightsForAct(5), "extra acts should use third-act-plus weights");
 		Equal(true, snapshot.PreventConsecutiveSilverRunes, "default prevent consecutive Silver toggle");
 		Equal(5, snapshot.GoldenRerollChancePercent, "default golden reroll chance");
 		Equal(0, HextechRuneConfiguration.ClampGoldenRerollChancePercent(-1), "golden reroll chance lower clamp");
@@ -2772,7 +2835,9 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 1, 1 }, defaultSnapshot.PlayerHexCountsByAct, "challenge default player counts");
 		SequenceEqual(new[] { 1, 2, 3 }, defaultSnapshot.EnemyHexCountsByAct, "challenge default enemy counts");
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "challenge fixed enemy counts");
-		Equal(new HextechRarityWeights(1, 1, 1), defaultSnapshot.RuneRarityWeights, "challenge default rarity weights");
+		Expect(
+			defaultSnapshot.RuneRarityWeightsByAct.All(static weights => weights == new HextechRarityWeights(1, 1, 1)),
+			"challenge default rarity weights should be 1:1:1 in every act");
 	}
 
 	private static void DefenseCounterMasterChallengeUsesThreeFixedActPlans()
@@ -3244,6 +3309,7 @@ internal static partial class Program
 		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Prismatic], HextechContentRegistry.PrismaticRuneTypes, "prismatic runes");
 		Equal(HextechRarityTier.Silver, metadata.GetRegistration(typeof(TerminalIllnessRune)).Rarity, "Terminal Illness rarity");
 		Equal(HextechRarityTier.Silver, metadata.GetRegistration(typeof(TrickLicenseRune)).Rarity, "Trick License rarity");
+		Equal(PlayerRuneCharacterPool.Silent, metadata.GetRegistration(typeof(DeathWarrantRune)).CharacterPool, "Death Warrant character pool");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.Disabled], HextechContentRegistry.DisabledPlayerRuneTypes, "default disabled runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.SelectionExcluded], HextechContentRegistry.SelectionExcludedPlayerRuneTypes, "selection excluded runes");
 		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.FirstActExcluded], HextechContentRegistry.FirstActExcludedRuneTypes, "first act excluded runes");
@@ -3446,6 +3512,7 @@ internal static partial class Program
 			new AdaptablePower(),
 			new AsleepPower(),
 			new SlumberPower(),
+			new SandpitPower(),
 			new BattlewornDummyTimeLimitPower(),
 			new MinionPower(),
 			new InfestedPower(),
@@ -3490,7 +3557,6 @@ internal static partial class Program
 
 		PowerModel[] nonEnemyPowers =
 		[
-			new SandpitPower(),
 			new MonologuePower(),
 			new CountdownPower(),
 			new TheSealedThronePower(),

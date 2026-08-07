@@ -7,7 +7,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static HextechRarityTier RollRandomRarity(HextechMayhemModifier modifier, int actIndex, RunState runState, IReadOnlyList<HextechRarityTier> enabledRarities)
 	{
 		HextechRarityWeights weights = GetEffectiveActRarityWeights(
-			modifier.RuneRarityWeights,
+			modifier.GetRuneRarityWeightsForAct(actIndex),
 			modifier.PreventConsecutiveSilverRunes,
 			actIndex,
 			modifier.GetRarityForAct(actIndex - 1));
@@ -22,7 +22,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static HextechRarityTier RollStableRarity(HextechMayhemModifier modifier, int actIndex, RunState runState, IReadOnlyList<HextechRarityTier> enabledRarities)
 	{
 		HextechRarityWeights weights = GetEffectiveActRarityWeights(
-			modifier.RuneRarityWeights,
+			modifier.GetRuneRarityWeightsForAct(actIndex),
 			modifier.PreventConsecutiveSilverRunes,
 			actIndex,
 			modifier.GetRarityForAct(actIndex - 1));

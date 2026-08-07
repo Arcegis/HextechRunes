@@ -331,7 +331,9 @@ internal static partial class HextechRuneConfigMenuHooks
 		HashSet<string> pendingDisabledPlayerIds = pendingSnapshot.DisabledPlayerRuneIds.ToHashSet(StringComparer.Ordinal);
 		HashSet<string> pendingDisabledMonsterHexIds = pendingSnapshot.DisabledMonsterHexIds.ToHashSet(StringComparer.Ordinal);
 		HashSet<string> pendingDisabledForgeIds = pendingSnapshot.DisabledForgeIds.ToHashSet(StringComparer.Ordinal);
-		int[] pendingRuneWeights = ToWeightArray(pendingSnapshot.RuneRarityWeights);
+		int[][] pendingRuneWeightsByAct = pendingSnapshot.RuneRarityWeightsByAct
+			.Select(ToWeightArray)
+			.ToArray();
 		int[] pendingGoldenRerollChancePercent = [ pendingSnapshot.GoldenRerollChancePercent ];
 		int[] pendingForgeWeights = ToWeightArray(pendingSnapshot.ForgeRarityWeights);
 		int[] pendingForgePrice = [ pendingSnapshot.RandomForgeShopPrice ];
@@ -394,7 +396,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		Control runePoolPage = CreateRunePoolPage(playerEntries, pendingDisabledPlayerIds, enemyEntries, pendingDisabledMonsterHexIds, loadTargets, badgeRefreshers, compactLayout);
 		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pendingDisabledForgeIds, loadTargets, badgeRefreshers, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
 		Control detailsPage = CreateDetailsPage(
-			pendingRuneWeights,
+			pendingRuneWeightsByAct,
 			pendingForgeWeights,
 			pendingPreventConsecutiveSilverRunes,
 			pendingForgePrice,
@@ -509,7 +511,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			pendingEnemyHexCounts,
 			pendingPlayerRuneRerollLimit,
 			pendingMonsterHexRerollLimit,
-			pendingRuneWeights,
+			pendingRuneWeightsByAct,
 			pendingForgeWeights,
 			pendingGoldenRerollChancePercent,
 			pendingForgePrice,
@@ -567,6 +569,11 @@ internal static partial class HextechRuneConfigMenuHooks
 			weights.Count > 0 ? weights[0] : 0,
 			weights.Count > 1 ? weights[1] : 0,
 			weights.Count > 2 ? weights[2] : 0);
+	}
+
+	private static HextechRarityWeights[] ToRarityWeightsByAct(IEnumerable<IReadOnlyList<int>> weightsByAct)
+	{
+		return weightsByAct.Select(ToRarityWeights).ToArray();
 	}
 
 	private static HextechForgeRarityWeights ToForgeRarityWeights(IReadOnlyList<int> weights)
@@ -864,7 +871,7 @@ internal static partial class HextechRuneConfigMenuHooks
 	}
 
 	private static Control CreateDetailsPage(
-		int[] pendingRuneWeights,
+		int[][] pendingRuneWeightsByAct,
 		int[] pendingForgeWeights,
 		bool[] pendingPreventConsecutiveSilverRunes,
 		int[] pendingForgePrice,
@@ -883,7 +890,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		page.AddChild(CreateShareSection(shareActions, compactLayout));
 		page.AddChild(CreatePriceSection(pendingForgePrice, numericBindings, compactLayout));
 		page.AddChild(CreateWeightMatrixSection(
-			pendingRuneWeights,
+			pendingRuneWeightsByAct,
 			pendingForgeWeights,
 			pendingPreventConsecutiveSilverRunes,
 			numericBindings,
@@ -1074,7 +1081,7 @@ internal static partial class HextechRuneConfigMenuHooks
 	}
 
 	private static Control CreateWeightMatrixSection(
-		int[] runeWeights,
+		int[][] runeWeightsByAct,
 		int[] forgeWeights,
 		bool[] preventConsecutiveSilverRunes,
 		List<NumericValueBinding> numericBindings,
@@ -1102,7 +1109,9 @@ internal static partial class HextechRuneConfigMenuHooks
 		grid.AddChild(CreateRarityColumnHeader(L("HEXTECH_RARITY_GOLD"), HextechRarityTier.Gold, compactLayout));
 		grid.AddChild(CreateRarityColumnHeader(L("HEXTECH_RARITY_PRISMATIC"), HextechRarityTier.Prismatic, compactLayout));
 
-		AddWeightMatrixRow(grid, L("HEXTECH_RARITY_WEIGHTS_ROW_RUNE"), runeWeights, numericBindings, compactLayout);
+		AddWeightMatrixRow(grid, L("HEXTECH_ENEMY_COUNT_ACT1"), runeWeightsByAct[0], numericBindings, compactLayout);
+		AddWeightMatrixRow(grid, L("HEXTECH_ENEMY_COUNT_ACT2"), runeWeightsByAct[1], numericBindings, compactLayout);
+		AddWeightMatrixRow(grid, L("HEXTECH_ENEMY_COUNT_ACT3"), runeWeightsByAct[2], numericBindings, compactLayout);
 		AddWeightMatrixRow(grid, L("HEXTECH_RARITY_WEIGHTS_ROW_FORGE"), forgeWeights, numericBindings, compactLayout);
 		section.AddChild(CreateBooleanOption(
 			L("HEXTECH_PREVENT_CONSECUTIVE_SILVER_TOGGLE_TITLE"),
@@ -1457,7 +1466,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		int[] pendingEnemyHexCounts,
 		int[] pendingPlayerRuneRerollLimit,
 		int[] pendingMonsterHexRerollLimit,
-		int[] pendingRuneWeights,
+		int[][] pendingRuneWeightsByAct,
 		int[] pendingForgeWeights,
 		int[] pendingGoldenRerollChancePercent,
 		int[] pendingForgePrice,
@@ -1563,7 +1572,10 @@ internal static partial class HextechRuneConfigMenuHooks
 					UpdateAllRuneIcons(forgeIconBindings, pendingDisabledForgeIds);
 					break;
 				case 3:
-					CopyArray(ToWeightArray(defaults.RuneRarityWeights), pendingRuneWeights);
+					for (int actIndex = 0; actIndex < pendingRuneWeightsByAct.Length; actIndex++)
+					{
+						CopyArray(ToWeightArray(defaults.RuneRarityWeightsByAct[actIndex]), pendingRuneWeightsByAct[actIndex]);
+					}
 					CopyArray(ToWeightArray(defaults.ForgeRarityWeights), pendingForgeWeights);
 					pendingGoldenRerollChancePercent[0] = defaults.GoldenRerollChancePercent;
 					pendingForgePrice[0] = defaults.RandomForgeShopPrice;
@@ -1591,7 +1603,7 @@ internal static partial class HextechRuneConfigMenuHooks
 				pendingDisabledPlayerIds,
 				pendingDisabledMonsterHexIds,
 				pendingDisabledForgeIds,
-				ToRarityWeights(pendingRuneWeights),
+				ToRarityWeightsByAct(pendingRuneWeightsByAct),
 				pendingPreventConsecutiveSilverRunes[0],
 				pendingGoldenRerollChancePercent[0],
 				ToForgeRarityWeights(pendingForgeWeights),
@@ -1603,7 +1615,8 @@ internal static partial class HextechRuneConfigMenuHooks
 			HextechRelicVisibilityHooks.SetCollapseEnemyHexes(pendingCollapseEnemyHexes[0]);
 			HextechUpdateChecker.ApplyNoticeVisibility(overlay);
 			HextechCollectionHooks.RefreshOpenRelicCollections();
-			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} preventConsecutiveSilver={pendingPreventConsecutiveSilverRunes[0]} goldenRerollChance={pendingGoldenRerollChancePercent[0]}% forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]} showUpdateNotice={pendingShowUpdateNotice[0]} randomForgeDirect={pendingRandomForgeDirectGrant[0]} modEnabled={pendingModEnabled[0]}");
+			string runeWeights = string.Join("/", pendingRuneWeightsByAct.Select(static weights => string.Join(",", weights)));
+			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pendingDisabledPlayerIds.Count} enemyDisabled={pendingDisabledMonsterHexIds.Count} forgeDisabled={pendingDisabledForgeIds.Count} playerCounts={string.Join(",", pendingPlayerHexCounts)} enemyCounts={string.Join(",", pendingEnemyHexCounts)} playerRerolls={pendingPlayerRuneRerollLimit[0]} monsterRerolls={pendingMonsterHexRerollLimit[0]} runeWeightsByAct={runeWeights} preventConsecutiveSilver={pendingPreventConsecutiveSilverRunes[0]} goldenRerollChance={pendingGoldenRerollChancePercent[0]}% forgePrice={pendingForgePrice[0]} showHiddenUiToggle={pendingShowHiddenRelicsToggle[0]} showUpdateNotice={pendingShowUpdateNotice[0]} randomForgeDirect={pendingRandomForgeDirectGrant[0]} modEnabled={pendingModEnabled[0]}");
 			CloseOverlayAnimated(overlay);
 		}, compactLayout);
 		Button cancel = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout);
@@ -1619,7 +1632,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			pendingDisabledPlayerIds,
 			pendingDisabledMonsterHexIds,
 			pendingDisabledForgeIds,
-			ToRarityWeights(pendingRuneWeights),
+			ToRarityWeightsByAct(pendingRuneWeightsByAct),
 			pendingPreventConsecutiveSilverRunes[0],
 			pendingGoldenRerollChancePercent[0],
 			ToForgeRarityWeights(pendingForgeWeights),
@@ -1647,7 +1660,10 @@ internal static partial class HextechRuneConfigMenuHooks
 			pendingDisabledMonsterHexIds.UnionWith(imported.DisabledMonsterHexIds);
 			pendingDisabledForgeIds.Clear();
 			pendingDisabledForgeIds.UnionWith(imported.DisabledForgeIds);
-			CopyArray(ToWeightArray(imported.RuneRarityWeights), pendingRuneWeights);
+			for (int actIndex = 0; actIndex < pendingRuneWeightsByAct.Length; actIndex++)
+			{
+				CopyArray(ToWeightArray(imported.RuneRarityWeightsByAct[actIndex]), pendingRuneWeightsByAct[actIndex]);
+			}
 			CopyArray(ToWeightArray(imported.ForgeRarityWeights), pendingForgeWeights);
 			pendingForgePrice[0] = imported.RandomForgeShopPrice;
 			pendingRandomForgeDirectGrant[0] = imported.RandomForgeDirectGrant;

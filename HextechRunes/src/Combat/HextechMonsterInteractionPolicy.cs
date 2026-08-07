@@ -57,6 +57,8 @@ internal static class HextechMonsterInteractionPolicy
 			// 怪物唤醒脚本耦合
 			or AsleepPower
 			or SlumberPower
+			// 沙坑同时管理沙虫倒计时、玩家站位与倒计时结束处决，复制或提前剥除都会破坏遭遇流程。
+			or SandpitPower
 			// 遭遇脚本/时限
 			or BattlewornDummyTimeLimitPower
 			// 战斗结束/死亡流程
