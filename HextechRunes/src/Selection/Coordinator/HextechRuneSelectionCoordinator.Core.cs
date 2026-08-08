@@ -91,7 +91,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				RemoveRunesFromGrabBags(player);
 			}
 
-			(HextechRarityTier rarity, MonsterHexKind? monsterHex) = await ResolveActRoll(runState, modifier, actIndex);
+			(HextechRarityTier rarity, MonsterHexKind? monsterHex, int playerHexCount) = await ResolveActRoll(runState, modifier, actIndex);
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
 			IReadOnlyList<MonsterHexKind> previousMonsterHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
@@ -99,8 +99,6 @@ internal static partial class HextechRuneSelectionCoordinator
 			IReadOnlyList<MonsterHexKind> finalMonsterHexes = CombineMonsterHexes(previousMonsterHexes, newMonsterHexes);
 			MonsterHexKind? visibleMonsterHex = FirstMonsterHexOrNull(newMonsterHexes);
 			RelicModel? monsterHexRelic = CreateMonsterHexRelic(visibleMonsterHex);
-			int playerHexCount = modifier.GetPlayerHexCountForAct(actIndex);
-
 			// 模组总开关:在 act-roll(已完成两端握手/房主同步)之后冻结本局值。禁用则不发放任何玩家符文、
 			// 不分配敌方海克斯——本局表现为原版。仍走到下方 SetMonsterHexesForAct(空)+SetActResolved(true) 正常收尾,
 			// 两端对称、不破坏联机同步。

@@ -134,13 +134,17 @@ internal static partial class Program
 			new(nameof(FeyMagicUsesThreeCostWithoutTurnLimit), FeyMagicUsesThreeCostWithoutTurnLimit),
 			new(nameof(GiantSlayerScalesFromEnemyMaxHp), GiantSlayerScalesFromEnemyMaxHp),
 			new(nameof(MagicMissileUsesThreeTwoPercentHits), MagicMissileUsesThreeTwoPercentHits),
+			new(nameof(EchoAddsItsCopyWithoutRecursingThroughGenerationHooks), EchoAddsItsCopyWithoutRecursingThroughGenerationHooks),
 			new(nameof(TwinFlamesUsesTwoEnergyScaledHits), TwinFlamesUsesTwoEnergyScaledHits),
+			new(nameof(TwinFlamesKeepsMultiplayerDamageInsideCardAction), TwinFlamesKeepsMultiplayerDamageInsideCardAction),
 			new(nameof(LightEmUpUsesFiveEnergyScaledTwinFlameMissiles), LightEmUpUsesFiveEnergyScaledTwinFlameMissiles),
+			new(nameof(ProjectileRunesKeepMultiplayerDamageInsideCardAction), ProjectileRunesKeepMultiplayerDamageInsideCardAction),
 			new(nameof(PiercingThreadSplitsOneDamageEventBeforeBlock), PiercingThreadSplitsOneDamageEventBeforeBlock),
 			new(nameof(DualcastUpgradeReturnsBothCastCardsToHand), DualcastUpgradeReturnsBothCastCardsToHand),
 			new(nameof(DeathWarrantTriggersPoisonEveryEightDraws), DeathWarrantTriggersPoisonEveryEightDraws),
 			new(nameof(MadScientistOrbLayoutOnlyTweensFirstTen), MadScientistOrbLayoutOnlyTweensFirstTen),
 			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
+			new(nameof(MyriadSwordsExplicitlyClosesAStalePlayPile), MyriadSwordsExplicitlyClosesAStalePlayPile),
 			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
 			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
 			new(nameof(AssetResolverPrefersRawTextureBeforePackedResource), AssetResolverPrefersRawTextureBeforePackedResource),
@@ -2168,6 +2172,63 @@ internal static partial class Program
 			"Twin Flames should expose its blue-yellow projectile VFX path");
 	}
 
+	private static void EchoAddsItsCopyWithoutRecursingThroughGenerationHooks()
+	{
+		MethodInfo hook = typeof(EchoRune).GetMethod(
+			nameof(EchoRune.AfterCardGeneratedForCombat),
+			BindingFlags.Instance | BindingFlags.Public)
+			?? throw new MissingMethodException(nameof(EchoRune), nameof(EchoRune.AfterCardGeneratedForCombat));
+		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(GetAsyncStateMachineMoveNext(hook))
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>()
+			.ToArray();
+		Expect(
+			calls.Any(static method => method.DeclaringType == typeof(CardPileCmd) && method.Name == nameof(CardPileCmd.Add)),
+			"Echo should add its already-cloned copy directly to the destination pile");
+		Expect(
+			calls.All(static method => method.DeclaringType != typeof(HextechCardGeneration)),
+			"Echo copies must not recursively enter the generated-card hook chain");
+	}
+
+	private static void TwinFlamesKeepsMultiplayerDamageInsideCardAction()
+	{
+		MethodInfo afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
+			nameof(TwinFlamesRune.AfterCardPlayed),
+			BindingFlags.Instance | BindingFlags.Public)
+			?? throw new MissingMethodException(nameof(TwinFlamesRune), nameof(TwinFlamesRune.AfterCardPlayed));
+		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(afterCardPlayed)
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>()
+			.ToArray();
+		Expect(
+			calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
+			"Twin Flames should use its multiplayer lockstep path in network runs");
+		Expect(
+			calls.Any(static method => method.Name == "ResolveVolleyDamageInLockstepAsync"),
+			"Twin Flames multiplayer damage should be returned to the current card action");
+	}
+
+	private static void ProjectileRunesKeepMultiplayerDamageInsideCardAction()
+	{
+		foreach (Type runeType in new[] { typeof(MagicMissileRune), typeof(TwinFlamesRune), typeof(LightEmUpRune) })
+		{
+			MethodInfo afterCardPlayed = runeType.GetMethod(
+				nameof(HextechRelicBase.AfterCardPlayed),
+				BindingFlags.Instance | BindingFlags.Public)
+				?? throw new MissingMethodException(runeType.Name, nameof(HextechRelicBase.AfterCardPlayed));
+			MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(afterCardPlayed)
+				.Select(static instruction => instruction.operand)
+				.OfType<MethodInfo>()
+				.ToArray();
+			Expect(
+				calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
+				$"{runeType.Name} should select a multiplayer lockstep path");
+			Expect(
+				calls.Any(static method => method.Name == "ResolveVolleyDamageInLockstepAsync"),
+				$"{runeType.Name} should return its multiplayer damage task to the card action");
+		}
+	}
+
 	private static void LightEmUpUsesFiveEnergyScaledTwinFlameMissiles()
 	{
 		Equal(4, LightEmUpRune.AttacksPerVolley, "Light Em Up attacks per volley");
@@ -2317,6 +2378,21 @@ internal static partial class Program
 
 		Expect(declaredMethods.Any(method => method.Name == "AfterShuffle"), "Myriad Swords should trigger after the owner's draw pile is shuffled");
 		Expect(declaredMethods.All(method => method.Name != "BeforeTurnEnd"), "Myriad Swords should no longer trigger at turn end");
+	}
+
+	private static void MyriadSwordsExplicitlyClosesAStalePlayPile()
+	{
+		MethodInfo afterShuffle = typeof(MyriadSwordsRune).GetMethod(
+			"AfterShuffle",
+			BindingFlags.Instance | BindingFlags.Public)
+			?? throw new MissingMethodException(nameof(MyriadSwordsRune), "AfterShuffle");
+		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(GetAsyncStateMachineMoveNext(afterShuffle))
+			.Select(static instruction => instruction.operand)
+			.OfType<MethodInfo>()
+			.ToArray();
+		Expect(
+			calls.Any(static method => method.DeclaringType == typeof(CardPileCmd) && method.Name == nameof(CardPileCmd.Add)),
+			"Myriad Swords should explicitly move a lethal autoplay card out of the Play pile");
 	}
 
 	private static void SovereignBladeVfxSyncUsesVanillaForgeScale()
