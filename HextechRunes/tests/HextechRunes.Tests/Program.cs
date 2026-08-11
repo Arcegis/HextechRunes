@@ -306,6 +306,7 @@ internal static partial class Program
 			new(nameof(EnemyPowerScalingDoesNotPatchOfficialModifierPipeline), EnemyPowerScalingDoesNotPatchOfficialModifierPipeline),
 			new(nameof(CardPlayAllowancePreservesThirdPartyDenials), CardPlayAllowancePreservesThirdPartyDenials),
 			new(nameof(CardPlayAllowanceAndBlockerUseSeparatePriorities), CardPlayAllowanceAndBlockerUseSeparatePriorities),
+			new(nameof(GlassCannonHealCapRunsAfterHealingMultipliers), GlassCannonHealCapRunsAfterHealingMultipliers),
 			new(nameof(HealCompositionUsesActualHpDelta), HealCompositionUsesActualHpDelta),
 			new(nameof(ColorDiscoveryRewardUsesPublicCardsAndMissingSpecialFieldKeepsOriginal), ColorDiscoveryRewardUsesPublicCardsAndMissingSpecialFieldKeepsOriginal),
 			new(nameof(ColorDiscoveryIncludesThirdPartyCharacterPools), ColorDiscoveryIncludesThirdPartyCharacterPools),

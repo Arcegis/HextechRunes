@@ -212,5 +212,75 @@ internal static partial class Program
 		Equal(0m, HextechCombatHooks.CalculateActualHealAmount(20, 15), "concurrent HP loss must not become healing");
 	}
 
+	private static void GlassCannonHealCapRunsAfterHealingMultipliers()
+	{
+		decimal capBeforeMultiplier = HextechCombatHooks.ClampHealAmountToCap(
+			3885,
+			5552,
+			1m,
+			GlassCannonEnemyHex.HealCapPercent);
+		Equal(
+			1m,
+			HextechCombatHooks.ClampHealAmountToCap(
+				3885,
+				5552,
+				capBeforeMultiplier * 2.5m,
+				GlassCannonEnemyHex.HealCapPercent),
+			"Hextech-first healing should be recapped after an external multiplier");
+		Equal(
+			1m,
+			HextechCombatHooks.ClampHealAmountToCap(
+				3885,
+				5552,
+				1m * 2.5m,
+				GlassCannonEnemyHex.HealCapPercent),
+			"external-first healing should stop at the same floored 70% cap");
+		Equal(
+			0m,
+			HextechCombatHooks.ClampHealAmountToCap(3886, 5552, 100m, GlassCannonEnemyHex.HealCapPercent),
+			"Glass Cannon should reject healing at its floored cap");
+		MethodInfo mikaelsThresholdHook = typeof(MikaelsBlessingEnemyHex).GetMethod(
+			nameof(MikaelsBlessingEnemyHex.AfterEnemyHealthThreshold),
+			BindingFlags.Instance | BindingFlags.NonPublic)
+			?? throw new MissingMethodException(nameof(MikaelsBlessingEnemyHex), nameof(MikaelsBlessingEnemyHex.AfterEnemyHealthThreshold));
+		Expect(
+			PatchProcessor.GetOriginalInstructions(GetAsyncStateMachineMoveNext(mikaelsThresholdHook))
+				.Select(static instruction => instruction.operand)
+				.OfType<MethodInfo>()
+				.Any(static method => method.DeclaringType == typeof(MegaCrit.Sts2.Core.Commands.CreatureCmd)
+					&& method.Name == nameof(MegaCrit.Sts2.Core.Commands.CreatureCmd.Heal)),
+			"Mikael's Blessing healing should pass through the globally capped heal command");
+
+		Harmony harmony = new("Natsuki.HextechRunes.Tests.GlassCannonHealOrder");
+		MethodInfo install = typeof(HextechCombatHooks).GetMethod(
+			"InstallHealingHooks",
+			BindingFlags.Static | BindingFlags.NonPublic)
+			?? throw new MissingMethodException(nameof(HextechCombatHooks), "InstallHealingHooks");
+		MethodInfo heal = typeof(MegaCrit.Sts2.Core.Commands.CreatureCmd).GetMethod(
+			nameof(MegaCrit.Sts2.Core.Commands.CreatureCmd.Heal),
+			BindingFlags.Static | BindingFlags.Public,
+			binder: null,
+			types: [typeof(Creature), typeof(decimal), typeof(bool)],
+			modifiers: null)
+			?? throw new MissingMethodException(nameof(MegaCrit.Sts2.Core.Commands.CreatureCmd), nameof(MegaCrit.Sts2.Core.Commands.CreatureCmd.Heal));
+
+		try
+		{
+			install.Invoke(null, [harmony]);
+			IEnumerable<Patch> prefixes = Harmony.GetPatchInfo(heal)?.Prefixes.AsEnumerable()
+				?? Enumerable.Empty<Patch>();
+			Patch finalCap = prefixes
+				.Single(patch => patch.owner == harmony.Id && patch.PatchMethod.Name == "FinalizeGlassCannonHealCapPrefix");
+			Equal(Priority.Last, finalCap.priority, "Glass Cannon final heal cap priority");
+			Expect(
+				finalCap.after.Contains(HextechCombatHooks.EndlessModeHarmonyId),
+				"Glass Cannon final heal cap must run after EndlessMode's healing multiplier");
+		}
+		finally
+		{
+			harmony.UnpatchAll(harmony.Id);
+		}
+	}
+
 	private sealed class CompatibilityEntomancerSignatureFixture;
 }
