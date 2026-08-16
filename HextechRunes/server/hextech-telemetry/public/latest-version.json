@@ -2,7 +2,7 @@
   "modId": "HextechRunes",
   "serverIdentity": "Natsuki.HextechRunes.official",
   "name": "海克斯大乱斗",
-  "latestVersion": "0.9.0",
+  "latestVersion": "0.9.1",
   "officialBuilds": [
     {
       "modVersion": "0.6.1",
@@ -547,6 +547,48 @@
       "artifactSizes": {
         "dllBytes": 2122752,
         "pckBytes": 15434296,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.9.1",
+      "gameVersion": "0.107.1",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-08-14T04:16:50Z",
+      "dllSha256": "38683cb8eaabc163add367135b6a9b08f2854e7cf527571b9253d03273e7cf42",
+      "pckSha256": "8ed57399391e3199915747110fe734fc93bda5fd768915a63fc7ec516bda09aa",
+      "manifestSha256": "3b34871f2315e443487708f5e92db7a8b736527d3a7da247dd5e29ee66eea23e",
+      "artifactSizes": {
+        "dllBytes": 2154496,
+        "pckBytes": 15539392,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.9.1",
+      "gameVersion": "0.110.0",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-08-14T04:16:51Z",
+      "dllSha256": "38b78cb4aaa220a2687ab7393b87103bd6522be5f256d210c14cf955cdd1b375",
+      "pckSha256": "8ed57399391e3199915747110fe734fc93bda5fd768915a63fc7ec516bda09aa",
+      "manifestSha256": "3b34871f2315e443487708f5e92db7a8b736527d3a7da247dd5e29ee66eea23e",
+      "artifactSizes": {
+        "dllBytes": 2152960,
+        "pckBytes": 15539392,
+        "manifestBytes": 485
+      }
+    },
+    {
+      "modVersion": "0.9.1",
+      "gameVersion": "0.111.0",
+      "hashAlgorithm": "SHA-256",
+      "generatedAtUtc": "2026-08-14T04:16:51Z",
+      "dllSha256": "39d784d642096c2bc997939c25b1df75885693113a472566f05763a65b99583d",
+      "pckSha256": "8ed57399391e3199915747110fe734fc93bda5fd768915a63fc7ec516bda09aa",
+      "manifestSha256": "3b34871f2315e443487708f5e92db7a8b736527d3a7da247dd5e29ee66eea23e",
+      "artifactSizes": {
+        "dllBytes": 2152960,
+        "pckBytes": 15539392,
         "manifestBytes": 485
       }
     }

@@ -4,7 +4,7 @@
   "description": "[h1] Supported Languages [/h1]\nEnglish\n简体中文\n한국어 (Contributors: 我有幸福症, oatone, Nark)\nEspañol\n日本語\nPortuguês do Brasil (Contributor: floca)\nภาษาไทย\nРусский (Contributor: Dragon enjoyer)\n\n[h1] Introduction [/h1]\nThis mod adds a Hextech Rune system inspired by League of Legends to Slay the Spire 2. It is a popular large-scale expansion mod for Slay the Spire 2.\n\nThere are currently 300+ Hextech Runes with a wide variety of effects. On each floor, you choose one random Hextech Rune, while monsters also randomly gain a Hextech of the same rarity — both sides then fight under ever-changing rules.\n\nThe mod also adds character-specific Hextechs, stat forgers, brand-new cards, and statistics feedback, giving every run a different build direction and challenge pacing.\n\n[img]https://i.mji.rip/2026/06/19/7459c0449d26c3e1a35bd5b020bd3961.png[/img]\n[img]https://i.mji.rip/2026/06/19/a7431d3a5ca25b7c5fa80026a0ba2496.webp[/img]\n\nIf you enjoy my mod, you can support me on Afdian: https://ifdian.net/a/Lu-Ran\nGithub: https://github.com/s1f102500012/sts2mod\nQQ Group: 1077728669",
   "updateDescription": false,
   "visibility": "public",
-  "changeNote": "海斗0.9.0热修：\n修复了部分情况下房主配置在联机时失效的问题；\n修复了飞弹类海克斯在联机时发生不同步的问题；\n修复了万剑归宗在斩杀敌人时发生联机不同步的问题；\n修复了回响在搭配带选牌效果的卡时出现联机不同步的问题；",
+  "changeNote": "海斗0.9.1更新日志：\n0.9.1同时适配游戏0.111.0、0.110.0和0.107.1；\n\n【新增】\n新增我方棱彩海克斯“无本万利”；\n新增实验性手柄支持；\n\n【调整】\n敌方海克斯默认重随次数由无限改为1次（当然，玩家仍然可以在配置中改回无限次）；\n重随敌方海克斯时，已经见过的海克斯出现优先级降低；\n优化敌方海克斯的重随、移除与撤销按钮样式，并补充对应按钮音效；\n\n【修复】\n优化无尽模式下联机时怪物能力数值与联机倍率的结算顺序（感谢Uranium的详细反馈）；\n修复敌方“我细看”错误阻止“潦草急就”在回合开始时抽满手牌的问题；\n修复“玻璃大炮”的生命值上限被“米凯尔的祝福”突破的问题；\n修复展开敌方海克斯面板后离开对局，面板仍然残留在主界面的问题",
   "tags": [
     "Gameplay",
     "Modifiers",
