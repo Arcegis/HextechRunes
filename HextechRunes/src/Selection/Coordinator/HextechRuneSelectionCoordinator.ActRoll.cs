@@ -386,11 +386,17 @@ internal static partial class HextechRuneSelectionCoordinator
 		int actIndex,
 		MonsterHexKind? currentHex,
 		int rerollOrdinal,
-		IReadOnlySet<ModelId> excludedIconRelicIds)
+		IReadOnlySet<ModelId> excludedIconRelicIds,
+		HashSet<MonsterHexKind> seenEnemyHexes)
 	{
+		if (currentHex.HasValue)
+		{
+			seenEnemyHexes.Add(currentHex.Value);
+		}
+
 		IReadOnlyList<MonsterHexKind> pool = HextechMonsterHexRoller.BuildRerollPool(
 			rarity,
-			modifier.GetKnownMonsterHexes(),
+			seenEnemyHexes,
 			currentHex,
 			excludedIconRelicIds,
 			GetMonsterHexIconRelicId,
@@ -410,7 +416,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			(currentHex.HasValue ? ((int)currentHex.Value).ToString() : "none"),
 			rerollOrdinal.ToString(),
 			poolKey);
-		return pool[index];
+		MonsterHexKind rerolled = pool[index];
+		seenEnemyHexes.Add(rerolled);
+		return rerolled;
 	}
 
 	private static ModelId GetMonsterHexIconRelicId(MonsterHexKind hex)

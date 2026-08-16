@@ -85,6 +85,55 @@ internal static partial class Program
 			"retained enemy scaling targets must be limited to GetScaledAmountForMultiplayer");
 	}
 
+	private static void EndlessMonsterPowerNormalizationUsesCapturedBaseAmounts()
+	{
+		Equal(9, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(9m, 1m), "unscaled Exoskeleton base amount");
+		Equal(23, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(9m, 2.5m), "scaled Exoskeleton base amount");
+		Equal(50, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(20m, 2.5m), "scaled Hardened Shell base amount");
+		Equal(int.MaxValue, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(decimal.MaxValue, 2m), "overflowing power amount");
+
+		Harmony harmony = new("Natsuki.HextechRunes.Tests.EndlessPowerOrder");
+		try
+		{
+			HextechEndlessModeCompatibilityHooks.Install(harmony);
+			MethodInfo applyPower = typeof(MegaCrit.Sts2.Core.Commands.PowerCmd).GetMethod(
+				nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.Apply),
+				BindingFlags.Public | BindingFlags.Static,
+				binder: null,
+				types:
+				[
+					typeof(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext),
+					typeof(PowerModel),
+					typeof(Creature),
+					typeof(decimal),
+					typeof(Creature),
+					typeof(CardModel),
+					typeof(bool)
+				],
+				modifiers: null)
+				?? throw new MissingMethodException(nameof(MegaCrit.Sts2.Core.Commands.PowerCmd), nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.Apply));
+			Patch capture = (Harmony.GetPatchInfo(applyPower)?.Prefixes.AsEnumerable() ?? Enumerable.Empty<Patch>())
+				.Single(patch => patch.owner == harmony.Id && patch.PatchMethod.Name == "CaptureRawPowerAmountPrefix");
+			Equal(Priority.First, capture.priority, "raw power capture priority");
+			Expect(
+				capture.before.Contains(HextechCombatHooks.EndlessModeHarmonyId),
+				"raw power amount must be captured before EndlessMode changes it");
+
+			MethodInfo exoskeletonAfterAdded = typeof(Exoskeleton).GetMethod(nameof(Exoskeleton.AfterAddedToRoom))
+				?? throw new MissingMethodException(nameof(Exoskeleton), nameof(Exoskeleton.AfterAddedToRoom));
+			Patch normalize = (Harmony.GetPatchInfo(exoskeletonAfterAdded)?.Postfixes.AsEnumerable() ?? Enumerable.Empty<Patch>())
+				.Single(patch => patch.owner == harmony.Id && patch.PatchMethod.Name == "ExoskeletonAfterAddedToRoomPostfix");
+			Equal(Priority.Last, normalize.priority, "monster power normalization priority");
+			Expect(
+				normalize.after.Contains(HextechCombatHooks.EndlessModeHarmonyId),
+				"monster power normalization must run after EndlessMode's entry hook");
+		}
+		finally
+		{
+			harmony.UnpatchAll(harmony.Id);
+		}
+	}
+
 	private static void CardPlayAllowancePreservesThirdPartyDenials()
 	{
 		Equal(

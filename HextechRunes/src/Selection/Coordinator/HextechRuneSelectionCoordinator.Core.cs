@@ -134,6 +134,8 @@ internal static partial class HextechRuneSelectionCoordinator
 						}
 
 						HashSet<ModelId> enemyRerollExcludedIds = CreateEnemyHexRerollExcludedIds(options);
+						HashSet<MonsterHexKind> seenEnemyHexes = modifier.GetKnownMonsterHexes().ToHashSet();
+						seenEnemyHexes.UnionWith(newMonsterHexes);
 						HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection options: player={player.NetId} ordinal={choiceOrdinal} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
 						// choiceOrdinal>0(!allowEnemyHexAdjustment):敌方 hex 已在第一次选择时定妥,后续玩家符文选择只读展示
 						// 【本幕新增】的敌方 hex(newMonsterHexes 在首次选择后已更新为调整后的结果),不给控件。
@@ -153,7 +155,8 @@ internal static partial class HextechRuneSelectionCoordinator
 										actIndex,
 										GetMonsterHexSlot(currentHexes, slotIndex),
 										rerollOrdinal,
-										CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex))
+										CreateEnemyHexRerollExcludedIds(enemyRerollExcludedIds, currentHexes, slotIndex),
+										seenEnemyHexes)
 									: null
 							}
 							: null;
