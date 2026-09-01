@@ -171,6 +171,8 @@ public static class ModEntry
 		HextechRunesApi.RegisterEventRelic<ArcaneRoyallyApprovedChoiceRelic>(ModInfo.Id);
 		HextechRunesApi.RegisterEventRelic<DollyCardChoiceRelic>(ModInfo.Id);
 		HextechRunesApi.RegisterEventRelic<DollyRelicChoiceRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<DollyPreviousPageRelic>(ModInfo.Id);
+		HextechRunesApi.RegisterEventRelic<DollyNextPageRelic>(ModInfo.Id);
 		HextechRunesApi.RegisterEventRelic<EntropyIncreaseChoiceRelic>(ModInfo.Id);
 		HextechRunesApi.RegisterEventRelic<EntropyDecreaseChoiceRelic>(ModInfo.Id);
 		HextechRunesApi.RegisterEventRelic<WarriorContractChoiceRelic>(ModInfo.Id);
