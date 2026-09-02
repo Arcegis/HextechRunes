@@ -5465,8 +5465,8 @@ internal static partial class Program
 
 	private static void IllusoryWeaponPenNibPrefixesCanReturnSkippedTask()
 	{
-		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPrefix");
-		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibAfterCardPlayedPrefix");
+		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPatch");
+		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibAfterCardPlayedPatch");
 	}
 
 	private static void AttackCommandCompatibilityRestoresNullExecuteResult()
@@ -5537,9 +5537,12 @@ internal static partial class Program
 		Equal(8, HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(129), "count=129 -> 8 bits");
 	}
 
-	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string methodName)
+	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string patchClassName)
 	{
-		MethodInfo? method = typeof(HextechPlayerRuneHooks).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+		string methodName = $"{patchClassName}.Prefix";
+		MethodInfo? method = typeof(HextechPlayerRuneHooks)
+			.GetNestedType(patchClassName, BindingFlags.NonPublic | BindingFlags.Public)
+			?.GetMethod("Prefix", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
 		if (method == null)
 		{
 			throw new InvalidOperationException($"{methodName} should exist");

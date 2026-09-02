@@ -29,5 +29,24 @@ internal sealed class HextechPatchAttribute : Attribute
 
 	public Type? Rune { get; init; }
 
+	/// <summary>一个补丁同时服务多个符文时(如卡牌标签),失败时全部标记。</summary>
+	public Type[]? Runes { get; init; }
+
 	public bool Optional { get; init; }
+
+	internal IEnumerable<Type> AffectedRunes
+	{
+		get
+		{
+			if (Rune != null)
+			{
+				yield return Rune;
+			}
+
+			foreach (Type rune in Runes ?? [])
+			{
+				yield return rune;
+			}
+		}
+	}
 }

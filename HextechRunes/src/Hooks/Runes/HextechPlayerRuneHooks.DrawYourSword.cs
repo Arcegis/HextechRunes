@@ -4,26 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechPlayerRuneHooks
 {
-	private static void InstallDrawYourSwordHooks(Harmony harmony)
-	{
-		Assembly coreAssembly = typeof(OrbModel).Assembly;
-		HarmonyMethod prefix = new(typeof(HextechPlayerRuneHooks), nameof(OrbEvokePrefix))
-		{
-			priority = Priority.First
-		};
-
-		foreach (MethodInfo method in FindLoadedOrbEvokeMethods())
-		{
-			try
-			{
-				harmony.Patch(method, prefix: prefix);
-			}
-			catch (Exception ex) when (method.DeclaringType?.Assembly != coreAssembly)
-			{
-				Log.Warn($"[{ModInfo.Id}][Compat] Could not replace evoke for external Orb {method.DeclaringType?.FullName}: {ex.Message}");
-			}
-		}
-	}
 
 	internal static IReadOnlyList<MethodInfo> FindLoadedOrbEvokeMethods()
 	{
@@ -118,5 +98,30 @@ internal static partial class HextechPlayerRuneHooks
 
 		__result = rune.ReplaceOrbEvoke();
 		return false;
+	}
+
+	[HextechPatch("rune.draw-your-sword.evoke", "亮出你的剑", Rune = typeof(DrawYourSwordRune))]
+	private static class DrawYourSwordEvokePatch
+	{
+		private static void Apply(Harmony harmony)
+		{
+			Assembly coreAssembly = typeof(OrbModel).Assembly;
+			HarmonyMethod prefix = new(typeof(HextechPlayerRuneHooks), nameof(OrbEvokePrefix))
+			{
+				priority = Priority.First
+			};
+
+			foreach (MethodInfo method in FindLoadedOrbEvokeMethods())
+			{
+				try
+				{
+					harmony.Patch(method, prefix: prefix);
+				}
+				catch (Exception ex) when (method.DeclaringType?.Assembly != coreAssembly)
+				{
+					Log.Warn($"[{ModInfo.Id}][Compat] Could not replace evoke for external Orb {method.DeclaringType?.FullName}: {ex.Message}");
+				}
+			}
+		}
 	}
 }

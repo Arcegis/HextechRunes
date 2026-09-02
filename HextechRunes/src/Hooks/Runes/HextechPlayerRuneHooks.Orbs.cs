@@ -85,43 +85,6 @@ internal static partial class HextechPlayerRuneHooks
 		OrbManagerCurrentTweenField ??= RequireField(typeof(NOrbManager), "_curTween");
 	}
 
-	private static bool OrbAddSlotsPrefix(Player player, int amount, ref Task __result)
-	{
-		if (player.GetRelic<MadScientistRune>() == null)
-		{
-			return true;
-		}
-
-		if (CombatManager.Instance.IsOverOrEnding || amount <= 0)
-		{
-			__result = Task.CompletedTask;
-			return false;
-		}
-
-		if (player.PlayerCombatState == null)
-		{
-			return true;
-		}
-
-		player.PlayerCombatState.OrbQueue.AddCapacity(amount);
-		NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.OrbManager?.AddSlotAnim(amount);
-		__result = Task.CompletedTask;
-		return false;
-	}
-
-	private static bool OrbTweenLayoutPrefix(NOrbManager __instance)
-	{
-		try
-		{
-			return OrbTweenLayoutPrefixCore(__instance);
-		}
-		catch (Exception ex)
-		{
-			// 纯布局表现层,异常回退原版布局,不能向调用方外泄。
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Orb layout override failed; falling back to vanilla layout: {ex.Message}");
-			return true;
-		}
-	}
 
 	private static bool OrbTweenLayoutPrefixCore(NOrbManager __instance)
 	{
@@ -208,16 +171,6 @@ internal static partial class HextechPlayerRuneHooks
 		return capacity > 0;
 	}
 
-	private static bool LightningApplyDamagePrefix(LightningOrb __instance, decimal value, Creature? target, PlayerChoiceContext choiceContext, ref Task<IEnumerable<Creature>> __result)
-	{
-		if (__instance.Owner?.GetRelic<ElectrodynamicsRune>() == null)
-		{
-			return true;
-		}
-
-		__result = ApplyElectrodynamicsLightningDamage(__instance, value, choiceContext);
-		return false;
-	}
 
 	private static async Task<IEnumerable<Creature>> ApplyElectrodynamicsLightningDamage(LightningOrb orb, decimal value, PlayerChoiceContext choiceContext)
 	{
@@ -236,5 +189,83 @@ internal static partial class HextechPlayerRuneHooks
 
 		await CreatureCmd.Damage(choiceContext, targets, value, ValueProp.Unpowered, orb.Owner.Creature);
 		return targets;
+	}
+
+	[HarmonyPatch(typeof(OrbCmd), nameof(OrbCmd.AddSlots), typeof(Player), typeof(int))]
+	[HextechPatch("rune.mad-scientist", "科学狂人", Rune = typeof(MadScientistRune))]
+	private static class MadScientistPatch
+	{
+		[HarmonyPrefix]
+		private static bool Prefix(Player player, int amount, ref Task __result)
+		{
+			if (player.GetRelic<MadScientistRune>() == null)
+			{
+				return true;
+			}
+
+			if (CombatManager.Instance.IsOverOrEnding || amount <= 0)
+			{
+				__result = Task.CompletedTask;
+				return false;
+			}
+
+			if (player.PlayerCombatState == null)
+			{
+				return true;
+			}
+
+			player.PlayerCombatState.OrbQueue.AddCapacity(amount);
+			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.OrbManager?.AddSlotAnim(amount);
+			__result = Task.CompletedTask;
+			return false;
+		}
+	}
+
+	[HarmonyPatch(typeof(NOrbManager), "TweenLayout")]
+	[HextechPatch("rune.orb-layout-soft-cap", "充能球布局软上限")]
+	private static class OrbLayoutSoftCapPatch
+	{
+		[HarmonyPrepare]
+		private static bool Prepare()
+		{
+			EnsureOrbLayoutFields();
+			return true;
+		}
+
+		[HarmonyPrefix]
+		private static bool Prefix(NOrbManager __instance)
+		{
+			try
+			{
+				return OrbTweenLayoutPrefixCore(__instance);
+			}
+			catch (Exception ex)
+			{
+				// 纯布局表现层,异常回退原版布局,不能向调用方外泄。
+				Log.Warn($"[{ModInfo.Id}][Mayhem] Orb layout override failed; falling back to vanilla layout: {ex.Message}");
+				return true;
+			}
+		}
+	}
+
+	#if STS2_108_OR_NEWER
+	[HarmonyPatch(typeof(LightningOrb), "ApplyLightningDamage", typeof(decimal), typeof(Creature), typeof(PlayerChoiceContext), typeof(bool))]
+	#else
+	[HarmonyPatch(typeof(LightningOrb), "ApplyLightningDamage", typeof(decimal), typeof(Creature), typeof(PlayerChoiceContext))]
+	#endif
+	[HextechPatch("rune.electrodynamics", "电动力学", Rune = typeof(ElectrodynamicsRune))]
+	private static class ElectrodynamicsPatch
+	{
+		[HarmonyPrefix]
+		private static bool Prefix(LightningOrb __instance, decimal value, Creature? target, PlayerChoiceContext choiceContext, ref Task<IEnumerable<Creature>> __result)
+		{
+			if (__instance.Owner?.GetRelic<ElectrodynamicsRune>() == null)
+			{
+				return true;
+			}
+
+			__result = ApplyElectrodynamicsLightningDamage(__instance, value, choiceContext);
+			return false;
+		}
 	}
 }

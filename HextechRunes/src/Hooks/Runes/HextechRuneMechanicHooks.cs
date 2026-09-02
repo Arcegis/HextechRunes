@@ -6,140 +6,137 @@ namespace HextechRunes;
 
 internal static class HextechRuneMechanicHooks
 {
-	internal static void InstallPactsEndUpgrade(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(PactsEnd), "get_CanDealDamage", BindingFlags.Instance | BindingFlags.NonPublic),
-			postfix: new HarmonyMethod(typeof(HextechRuneMechanicHooks), nameof(PactsEndCanDealDamagePostfix)));
-	}
 
-	internal static void InstallCorrosiveWaveUpgrade(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(CorrosiveWavePower), nameof(CorrosiveWavePower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext), typeof(CombatSide), typeof(IEnumerable<Creature>)),
-			prefix: new HarmonyMethod(typeof(HextechRuneMechanicHooks), nameof(CorrosiveWaveAfterSideTurnEndPrefix)));
-	}
 
-	internal static void InstallTerminalIllness(Harmony harmony)
+	[HarmonyPatch(typeof(PactsEnd), "CanDealDamage", MethodType.Getter)]
+	[HextechPatch("rune.pacts-end", "升级契约终结", Rune = typeof(PactsEndUpgradeRune))]
+	private static class PactsEndPatch
 	{
-		harmony.Patch(
-			RequireMethod(typeof(PoisonPower), nameof(PoisonPower.CalculateTotalDamageNextTurn), BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechRuneMechanicHooks), nameof(PoisonCalculateTotalDamageNextTurnPostfix)));
-	}
-
-	internal static void InstallBigHammer(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(ForgeCmd), nameof(ForgeCmd.Forge), BindingFlags.Static | BindingFlags.Public, typeof(decimal), typeof(Player), typeof(AbstractModel)),
-			prefix: new HarmonyMethod(typeof(HextechRuneMechanicHooks), nameof(ForgePrefix)));
-	}
-
-	internal static void InstallOblivionUpgrade(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(OblivionPower), nameof(OblivionPower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public, typeof(PlayerChoiceContext), typeof(CombatSide), typeof(IEnumerable<Creature>)),
-			prefix: new HarmonyMethod(typeof(HextechRuneMechanicHooks), nameof(OblivionAfterSideTurnEndPrefix)));
-	}
-
-	private static void PactsEndCanDealDamagePostfix(PactsEnd __instance, ref bool __result)
-	{
-		if (!__result && __instance.Owner.GetRelic<PactsEndUpgradeRune>() != null)
+		[HarmonyPostfix]
+		private static void Postfix(PactsEnd __instance, ref bool __result)
 		{
-			__result = true;
+			if (!__result && __instance.Owner.GetRelic<PactsEndUpgradeRune>() != null)
+			{
+				__result = true;
+			}
 		}
 	}
 
-	private static bool CorrosiveWaveAfterSideTurnEndPrefix(CorrosiveWavePower __instance, ref Task __result)
+	[HarmonyPatch(typeof(CorrosiveWavePower), nameof(CorrosiveWavePower.AfterSideTurnEnd), typeof(PlayerChoiceContext), typeof(CombatSide), typeof(IEnumerable<Creature>))]
+	[HextechPatch("rune.corrosive-wave", "升级腐蚀波", Rune = typeof(CorrosiveWaveUpgradeRune))]
+	private static class CorrosiveWavePatch
 	{
-		if (__instance.Owner.Player?.GetRelic<CorrosiveWaveUpgradeRune>() == null)
+		[HarmonyPrefix]
+		private static bool Prefix(CorrosiveWavePower __instance, ref Task __result)
 		{
-			return true;
-		}
+			if (__instance.Owner.Player?.GetRelic<CorrosiveWaveUpgradeRune>() == null)
+			{
+				return true;
+			}
 
-		__result = Task.CompletedTask;
-		return false;
+			__result = Task.CompletedTask;
+			return false;
+		}
 	}
 
-	private static void PoisonCalculateTotalDamageNextTurnPostfix(PoisonPower __instance, ref int __result)
+	[HarmonyPatch(typeof(PoisonPower), nameof(PoisonPower.CalculateTotalDamageNextTurn), new Type[0])]
+	[HextechPatch("rune.terminal-illness", "绝症", Rune = typeof(TerminalIllnessRune))]
+	private static class TerminalIllnessPatch
 	{
-		HextechCombatState? combatState = __instance.Owner.CombatState;
-		if (combatState == null
-			|| __instance.Owner.Side != CombatSide.Enemy
-			|| !combatState.Players.Any(static player =>
-				player.Creature.IsAlive && player.GetRelic<TerminalIllnessRune>() != null))
+		[HarmonyPostfix]
+		private static void Postfix(PoisonPower __instance, ref int __result)
 		{
-			return;
-		}
+			HextechCombatState? combatState = __instance.Owner.CombatState;
+			if (combatState == null
+				|| __instance.Owner.Side != CombatSide.Enemy
+				|| !combatState.Players.Any(static player =>
+					player.Creature.IsAlive && player.GetRelic<TerminalIllnessRune>() != null))
+			{
+				return;
+			}
 
-		int triggerCount = Math.Min(
-			__instance.Amount,
-			1 + combatState
-				.GetOpponentsOf(__instance.Owner)
-				.Where(static creature => creature.IsAlive)
-				.Sum(static creature => creature.GetPowerAmount<AccelerantPower>()));
-		decimal totalDamage = 0m;
-		for (int i = 0; i < triggerCount; i++)
-		{
-#if STS2_108_OR_NEWER
-			decimal damage = Hook.ModifyDamage(
-				combatState.RunState,
-				combatState,
-				__instance.Owner,
-				null,
+			int triggerCount = Math.Min(
 				__instance.Amount,
-				ValueProp.Unblockable | ValueProp.Unpowered,
-				null,
-				null,
-				ModifyDamageHookType.All,
-				CardPreviewMode.None,
-				out _);
-#else
-			decimal damage = Hook.ModifyDamage(
-				combatState.RunState,
-				combatState,
-				__instance.Owner,
-				null,
-				__instance.Amount,
-				ValueProp.Unblockable | ValueProp.Unpowered,
-				null,
-				ModifyDamageHookType.All,
-				CardPreviewMode.None,
-				out _);
-#endif
-			totalDamage += damage;
-		}
+				1 + combatState
+					.GetOpponentsOf(__instance.Owner)
+					.Where(static creature => creature.IsAlive)
+					.Sum(static creature => creature.GetPowerAmount<AccelerantPower>()));
+			decimal totalDamage = 0m;
+			for (int i = 0; i < triggerCount; i++)
+			{
+	#if STS2_108_OR_NEWER
+				decimal damage = Hook.ModifyDamage(
+					combatState.RunState,
+					combatState,
+					__instance.Owner,
+					null,
+					__instance.Amount,
+					ValueProp.Unblockable | ValueProp.Unpowered,
+					null,
+					null,
+					ModifyDamageHookType.All,
+					CardPreviewMode.None,
+					out _);
+	#else
+				decimal damage = Hook.ModifyDamage(
+					combatState.RunState,
+					combatState,
+					__instance.Owner,
+					null,
+					__instance.Amount,
+					ValueProp.Unblockable | ValueProp.Unpowered,
+					null,
+					ModifyDamageHookType.All,
+					CardPreviewMode.None,
+					out _);
+	#endif
+				totalDamage += damage;
+			}
 
-		__result = (int)totalDamage;
+			__result = (int)totalDamage;
+		}
 	}
 
-	private static void ForgePrefix(ref decimal amount, Player player, AbstractModel? source)
+	[HarmonyPatch(typeof(ForgeCmd), nameof(ForgeCmd.Forge), typeof(decimal), typeof(Player), typeof(AbstractModel))]
+	[HextechPatch("rune.big-hammer", "大锤", Rune = typeof(BigHammerRune))]
+	private static class BigHammerPatch
 	{
-		BigHammerRune? rune = player.GetRelic<BigHammerRune>();
-		if (rune == null)
+		[HarmonyPrefix]
+		private static void Prefix(ref decimal amount, Player player, AbstractModel? source)
 		{
-			return;
-		}
+			BigHammerRune? rune = player.GetRelic<BigHammerRune>();
+			if (rune == null)
+			{
+				return;
+			}
 
-		bool sourceAlreadyIncludesBonus = source is HammerTimePower hammerTime
-			&& hammerTime.Owner.Player?.GetRelic<BigHammerRune>() != null;
-		decimal modifiedAmount = rune.ApplyForgeBonus(amount, sourceAlreadyIncludesBonus);
-		if (modifiedAmount == amount)
-		{
-			return;
-		}
+			bool sourceAlreadyIncludesBonus = source is HammerTimePower hammerTime
+				&& hammerTime.Owner.Player?.GetRelic<BigHammerRune>() != null;
+			decimal modifiedAmount = rune.ApplyForgeBonus(amount, sourceAlreadyIncludesBonus);
+			if (modifiedAmount == amount)
+			{
+				return;
+			}
 
-		amount = modifiedAmount;
-		rune.Flash();
+			amount = modifiedAmount;
+			rune.Flash();
+		}
 	}
 
-	private static bool OblivionAfterSideTurnEndPrefix(OblivionPower __instance, ref Task __result)
+	[HarmonyPatch(typeof(OblivionPower), nameof(OblivionPower.AfterSideTurnEnd), typeof(PlayerChoiceContext), typeof(CombatSide), typeof(IEnumerable<Creature>))]
+	[HextechPatch("rune.oblivion", "升级遗忘", Rune = typeof(OblivionUpgradeRune))]
+	private static class OblivionPatch
 	{
-		if (__instance.Applier?.Player?.GetRelic<OblivionUpgradeRune>() == null)
+		[HarmonyPrefix]
+		private static bool Prefix(OblivionPower __instance, ref Task __result)
 		{
-			return true;
-		}
+			if (__instance.Applier?.Player?.GetRelic<OblivionUpgradeRune>() == null)
+			{
+				return true;
+			}
 
-		__result = Task.CompletedTask;
-		return false;
+			__result = Task.CompletedTask;
+			return false;
+		}
 	}
 }

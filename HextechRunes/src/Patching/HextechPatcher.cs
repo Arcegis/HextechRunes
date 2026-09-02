@@ -18,31 +18,56 @@ internal static class HextechPatcher
 
 	private static readonly List<PatchResult> Results = [];
 
-	/// <summary>应用 <paramref name="assembly"/> 中所有带 <c>[HarmonyPatch]</c> 的类型。</summary>
+	/// <summary>
+	/// 应用 <paramref name="assembly"/> 中所有补丁类:带 <c>[HarmonyPatch]</c> 的走 Harmony 类处理器;
+	/// 只带 <c>[HextechPatch]</c> 且声明 <c>static void Apply(Harmony)</c> 的是"动态目标"补丁
+	/// (目标集合只能在运行时枚举,如所有已加载程序集里的 Orb 子类),由该方法自行逐个 Patch。
+	/// </summary>
 	internal static void ApplyAll(Harmony harmony, Assembly assembly)
 	{
 		foreach (Type type in AccessTools.GetTypesFromAssembly(assembly))
 		{
-			if (!HarmonyMethodExtensions.GetFromType(type).Any())
+			HextechPatchAttribute? meta = type.GetCustomAttribute<HextechPatchAttribute>();
+			bool hasHarmonyAttributes = HarmonyMethodExtensions.GetFromType(type).Any();
+			MethodInfo? dynamicApply = hasHarmonyAttributes || meta == null
+				? null
+				: type.GetMethod("Apply", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, [typeof(Harmony)]);
+			if (!hasHarmonyAttributes && dynamicApply == null)
 			{
 				continue;
 			}
 
-			HextechPatchAttribute? meta = type.GetCustomAttribute<HextechPatchAttribute>();
 			string id = meta?.Id ?? type.FullName ?? type.Name;
 			string feature = meta?.Feature ?? "unspecified";
 			try
 			{
-				harmony.CreateClassProcessor(type).Patch();
+				if (dynamicApply != null)
+				{
+					dynamicApply.Invoke(null, [harmony]);
+				}
+				else
+				{
+					harmony.CreateClassProcessor(type).Patch();
+				}
+
 				Results.Add(new PatchResult(id, feature, type, Applied: true, Error: null));
 			}
 			catch (Exception ex)
 			{
-				Exception root = ex is HarmonyException { InnerException: not null } harmonyException ? harmonyException.InnerException! : ex;
-				Results.Add(new PatchResult(id, feature, type, Applied: false, Error: $"{root.GetType().Name}: {root.Message}"));
-				if (meta?.Rune != null)
+				Exception root = ex switch
 				{
-					HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed(meta.Rune, id, root);
+					HarmonyException { InnerException: not null } harmonyException => harmonyException.InnerException!,
+					TargetInvocationException { InnerException: not null } invocation => invocation.InnerException!,
+					_ => ex
+				};
+				Results.Add(new PatchResult(id, feature, type, Applied: false, Error: $"{root.GetType().Name}: {root.Message}"));
+				Type[] runes = meta?.AffectedRunes.ToArray() ?? [];
+				if (runes.Length > 0)
+				{
+					foreach (Type rune in runes)
+					{
+						HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed(rune, id, root);
+					}
 				}
 				else if (meta?.Optional == true)
 				{
