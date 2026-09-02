@@ -258,8 +258,11 @@ src/
 | 1 loader / 联机校验 | 完成 | loader 只在 Associate 两级都失败时才装 `ReflectionHelper.ModTypes` 后缀，headless 确认走 `AssociateAssemblyWithMod` 且自比较假警告消失；删除 `Log.Warn` 拦截、模组清单条目重写、两个包接收终结器；net-id 规范化整文件 `#if STS2_107_1`；0.109+ 载体自检改到首次 StartRun/LoadRun 一次性执行 |
 | 2 补丁基础设施 | 完成 | 199 个手工 `harmony.Patch` 全部改为 `[HarmonyPatch]`+`[HextechPatch]` 嵌套补丁类（160 个类），`ModEntry` 只剩编排；`HextechPatcher`（逐类应用、失败按符文/功能归因、共享补丁点日志、补丁表导出）；补丁清单快照测试 `patch_manifest.<target>.txt`；原版拷贝守卫 `vanilla_copy_guard.0.111.0.txt`（95 个可跳过原方法的目标，嵌入 DLL 启动比对 IL SHA1）；反射缺失一次性汇总 |
 | 3 迁到官方扩展点 | 部分 | `CardModel.CanPlay` 三处 postfix 全部删除：回归基本功/卡卡走 `ShouldPlay`，敌方回归基本功走 Modifier→敌方海克斯效果的 `ShouldPlay`，蓝蜡烛走 `TryModifyKeywordsInCombat` 摘掉 Unplayable，升级压轴只补 `GrandFinale.IsPlayable`；六组视觉附件 18 个补丁合并为 `HextechCreatureVisualHost` 3 个 |
-| 4 重做三块 | 未做 | 形态自动打出、配置菜单场景化、视觉附件事件化都需要真机/双客户端验证 |
-| 5 垂直切片与状态收敛 | 未做 | — |
+| 3 资源图标（第二轮） | 完成 | 用游戏自带引擎跑 GDScript 探针（`--headless -s probe.gd` 挂 mod PCK）证实 PCK 内图片可被 `ResourceLoader` 直接加载为 `CompressedTexture2D`；删除 `RelicModel.Icon/IconOutline/BigIcon` 三个前缀、`NRelic.Reload` 前缀与 `CardModel.Portrait` 后缀（模型的虚路径属性已指向 PCK 资源；描边改指一张全透明图 `relicOutlineEmpty.png`）。手动解码纹理的工具从补丁类拆成 `HextechTextures`，只服务模组自建 UI/特效。资源补丁 11 → 6 |
+| 3 治疗管线（§8.3 修正） | 完成 | 反编译 `CreatureCmd.Heal` 状态机：amount 为 0 也会播治疗音效/特效/动画，因此"禁止回血"必须继续跳过原方法，§8.3 的"改 void 前缀"不成立；只给封顶前缀补 `[HarmonyAfter]` RitsuLib core 与 BaseLib，保证第三方加减乘算完后再封顶 |
+| 4 重做三块 | 未做 | 形态自动打出的批处理刻意走出牌管线以保留附魔/流电/克隆语义，`Hook.*` 前缀在批处理窗口外一律直接放行，直接施加 Power 的重做会丢这些语义，不做；配置菜单场景化、视觉附件事件化需真机验证 |
+| 5 垂直切片（第一轮） | 完成 | 36 个符文专属补丁类搬进各自符文文件（如 `SurvivorUpgradeRune` 内嵌 `SurvivorPatch`），删除 `HextechRuneMechanicHooks`、`CrashLanding`、`CardUpgradeSelection` 三个文件；`src/Hooks/Runes` 只剩共享辅助（幻影武器、充能球布局、卡牌标签、亮剑枚举） |
+| 5 状态收敛 | 未做 | ≈376 个可变静态字段需逐个判定作用域，属语义改动 |
 
 评估后**决定保留**的补丁（理由已核实，不要再翻案）：
 - `CardPileCmd.Draw` 前缀：卡牌检视是"用选牌界面替换抽牌返回值"，`ShouldDraw/ModifyHandDraw/BeforeHandDraw` 都表达不了，且改成 Hook 会把 PlayerChoice 挪到不同的同步点。
