@@ -100,6 +100,8 @@ public sealed class FlyingKickRune : HextechRelicBase
 			// 处决表现:原版大斩击+本体色爆闪(即刻),半秒后治疗绿光弧线流回自身;
 			// 尸体横飞由 FlyingKickCorpseLaunchDriver 在 Kill 内接管,三段时序互补。
 			HextechCombatVfx.FlyingKickStrike(target, Owner.Creature);
+			// 收集者共享处决计数:真死亡判定要在 Kill 之前算,Kill 后怪物已移出战斗、CombatState 为空。
+			bool creditable = CollectorRune.IsCreditableDeath(target);
 			if (killTarget)
 			{
 				FlyingKickCorpseLaunchDriver.MarkPending(target);
@@ -110,7 +112,7 @@ public sealed class FlyingKickRune : HextechRelicBase
 				FlyingKickCorpseLaunchDriver.MarkPendingUntilConsumed(target);
 			}
 
-			Owner.GetRelic<CollectorRune>()?.RecordExecution(target);
+			Owner.GetRelic<CollectorRune>()?.RecordExecution(target, creditable);
 		}
 		finally
 		{

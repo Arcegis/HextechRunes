@@ -5,6 +5,8 @@ assets.power-dumb-hover-tip | MegaCrit.Sts2.Core.Models.PowerModel.GetDumbHoverT
 assets.power-hover-tips | MegaCrit.Sts2.Core.Models.PowerModel.HoverTips(*) [Getter] | postfix(400)
 assets.power-icon | MegaCrit.Sts2.Core.Models.PowerModel.Icon(*) [Getter] | postfix(400)
 assets.rest-site-option-icon | MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption.Icon(*) [Getter] | prefix?(200)
+card.keyword-persistence.clone-combat | MegaCrit.Sts2.Core.Combat.CombatState.CloneCard(CardModel) | postfix(400)
+card.keyword-persistence.clone-deck | MegaCrit.Sts2.Core.Runs.RunState.CloneCard(CardModel) | postfix(400)
 card.keyword-persistence.load | MegaCrit.Sts2.Core.Models.CardModel.FromSerializable(SerializableCard) | postfix(400)
 card.keyword-persistence.rebuild | targetmethod(KeywordRebuildPatch) | postfix(400) prefix(400)
 card.keyword-persistence.save | MegaCrit.Sts2.Core.Models.CardModel.ToSerializable() | postfix(400)

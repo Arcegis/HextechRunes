@@ -290,6 +290,31 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 			&& property.value != 0) == true;
 	}
 
+	// 原版克隆(DeepCloneFields)只按"有来源"的关键词重建 _keywords,思维覆写/谢幕/扮演/腐化枝/不死这类
+	// 运行期附加的关键词与追踪标记都会丢;镜中倒影、复视等复制整副牌组的路径拿到的副本因此没有虚无词条
+	// (玩家反馈)。牌组级克隆把源牌的持久化快照原样恢复到副本上,副本自己成为被追踪的牌组版本。
+	[HarmonyPatch(typeof(MegaCrit.Sts2.Core.Runs.RunState), nameof(MegaCrit.Sts2.Core.Runs.RunState.CloneCard), typeof(CardModel))]
+	[HextechPatch("card.keyword-persistence.clone-deck", "关键词持久化")]
+	private static class RunStateCloneCardPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(CardModel mutableCard, CardModel __result)
+		{
+			KeywordPersistenceSnapshot.Capture(mutableCard).Restore(__result);
+		}
+	}
+
+	[HarmonyPatch(typeof(MegaCrit.Sts2.Core.Combat.CombatState), nameof(MegaCrit.Sts2.Core.Combat.CombatState.CloneCard), typeof(CardModel))]
+	[HextechPatch("card.keyword-persistence.clone-combat", "关键词持久化")]
+	private static class CombatStateCloneCardPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(CardModel mutableCard, CardModel __result)
+		{
+			KeywordPersistenceSnapshot.Capture(mutableCard).Restore(__result);
+		}
+	}
+
 	[HarmonyPatch(typeof(CardModel), nameof(CardModel.ToSerializable), new Type[0])]
 	[HextechPatch("card.keyword-persistence.save", "关键词持久化")]
 	private static class ToSerializablePatch

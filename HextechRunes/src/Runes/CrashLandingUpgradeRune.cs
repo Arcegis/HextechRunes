@@ -27,6 +27,7 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 		}
 
 		card.Owner.GetRelic<CrashLandingUpgradeRune>()?.Flash();
+		HextechLog.Info($"[{ModInfo.Id}][CrashLanding] Upgraded play for {card.Owner.NetId}: hand={CardPile.GetCards(card.Owner, PileType.Hand).Count()}/{CardPile.MaxCardsInHand}");
 		await DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
 			.FromCardCompat(card)
 			.TargetingAllOpponents(combatState)
