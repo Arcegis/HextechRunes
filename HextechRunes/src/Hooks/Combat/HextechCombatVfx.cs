@@ -18,30 +18,19 @@ namespace HextechRunes;
 internal static class HextechCombatVfxHooks
 {
 
-	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
-	{
-		HextechCreatureNodeRegistry.Clear();
-		foreach (NCreature creature in __instance.CreatureNodes)
-		{
-			HextechCreatureNodeRegistry.Register(creature);
-		}
-	}
-
-	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
-	{
-		HextechCreatureNodeRegistry.Register(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
-	}
-
-	private static void CreatureReadyPostfix(NCreature __instance)
-	{
-		HextechCreatureNodeRegistry.Register(__instance);
-	}
-
 	/// <summary>
 	/// 吞噬灵魂的特效在死亡动画开始的瞬间派发(真死亡分支必经点),而不是等 rune 的 AfterDeath:
 	/// Hook.AfterDeath 是逐监听器顺序 await 的链条,排在前面的监听器等待死亡动画会让魂"卡一下"
 	/// 才飞出(最后一只怪死亡时链条提前收尾所以不卡)。此处仅派发表现,数值仍在 rune 内结算。
 	/// </summary>
+	[HarmonyPatch(typeof(NCreature), nameof(NCreature.StartDeathAnim), typeof(bool))]
+	[HextechPatch("visual.combat-vfx.soul-drain", "吞噬灵魂特效")]
+	private static class StartDeathAnimPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NCreature __instance) => StartDeathAnimPostfix(__instance);
+	}
+
 	private static void StartDeathAnimPostfix(NCreature __instance)
 	{
 		try
@@ -69,26 +58,6 @@ internal static class HextechCombatVfxHooks
 		}
 	}
 
-	[HextechPatch("visual.combat-vfx", "战斗特效分发")]
-	private static class VfxPatches
-	{
-		public static void Apply(Harmony harmony)
-		{
-			harmony.Patch(
-				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(CombatRoomReadyPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(AddCreaturePostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(CreatureReadyPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCreature), nameof(NCreature.StartDeathAnim), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
-				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(StartDeathAnimPostfix)));
-			HextechLog.Info($"[{ModInfo.Id}][CombatVfx] Hooks installed.");
-		}
-	}
 }
 
 /// <summary>entity → 屏幕节点映射,由战斗节点生命周期 hook 填充;新战斗重建,取用时校验有效性。</summary>

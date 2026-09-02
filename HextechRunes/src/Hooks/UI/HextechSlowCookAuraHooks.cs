@@ -3,48 +3,8 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
-
-internal static class HextechSlowCookAuraHooks
-{
-
-	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
-	{
-		foreach (NCreature creature in __instance.CreatureNodes)
-		{
-			SlowCookAuraVisual.TryAttach(creature);
-		}
-	}
-
-	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
-	{
-		SlowCookAuraVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
-	}
-
-	private static void CreatureReadyPostfix(NCreature __instance)
-	{
-		SlowCookAuraVisual.TryAttach(__instance);
-	}
-
-	[HextechPatch("visual.slow-cook-aura", "慢炖光环视觉")]
-	private static class AuraPatches
-	{
-		public static void Apply(Harmony harmony)
-		{
-			harmony.Patch(
-				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CombatRoomReadyPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-				postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(AddCreaturePostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CreatureReadyPostfix)));
-		}
-	}
-}
 
 /// <summary>
 /// 慢炖的持续脚底光环。纹理来自 Pressure Cooker 素材包，并在 Godot 中重组为

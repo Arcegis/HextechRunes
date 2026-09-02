@@ -3,49 +3,8 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
-
-internal static class HextechBaronAuraHooks
-{
-
-	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
-	{
-		foreach (NCreature creature in __instance.CreatureNodes)
-		{
-			HandOfBaronAuraVisual.TryAttach(creature);
-		}
-	}
-
-	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
-	{
-		HandOfBaronAuraVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
-	}
-
-	private static void CreatureReadyPostfix(NCreature __instance)
-	{
-		HandOfBaronAuraVisual.TryAttach(__instance);
-	}
-
-	[HextechPatch("visual.baron-aura", "男爵之手光环视觉")]
-	private static class AuraPatches
-	{
-		public static void Apply(Harmony harmony)
-		{
-			harmony.Patch(
-				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CombatRoomReadyPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-				postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(AddCreaturePostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CreatureReadyPostfix)));
-			HextechLog.Info($"[{ModInfo.Id}][BaronAura] Hooks installed.");
-		}
-	}
-}
 
 internal sealed class HandOfBaronAuraVisual
 {
