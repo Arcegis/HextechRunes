@@ -8,96 +8,6 @@ internal static partial class HextechCombatHooks
 
 	private readonly record struct HealPostState(Player? Player, Creature Creature, int CurrentHpBefore, bool ShouldProcess);
 
-	private static bool HealPrefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
-	{
-		if (NearDeathFeastRune.ShouldPreventSustain(creature) || HextechEnemyNearDeath.ShouldPreventSustain(creature))
-		{
-			__state = default;
-			__result = Task.CompletedTask;
-			return false;
-		}
-
-		Player? player = creature.Player;
-		if (player != null && creature == player.Creature)
-		{
-			amount *= HextechPlayerCoefficientHelper.GetHealingMultiplier(player);
-		}
-
-		if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune && creature == player.Creature)
-		{
-			int healCap = (int)Math.Floor(creature.MaxHp * glassCannonRune.HealCapPercent);
-			amount = Math.Min(amount, Math.Max(0, healCap - creature.CurrentHp));
-			if (amount <= 0m)
-			{
-				__state = default;
-				__result = Task.CompletedTask;
-				return false;
-			}
-		}
-
-		RunState? currentRunState = creature.CombatState?.RunState as RunState;
-		HextechMayhemModifier? modifier = null;
-		bool isEnemyReviveHeal = IsEnemyReviveHeal(creature, amount);
-		if (creature.Side == CombatSide.Enemy
-			&& currentRunState != null
-			&& !isEnemyReviveHeal
-			&& HextechMayhemModifier.FindIn(currentRunState) is HextechMayhemModifier activeModifier)
-		{
-			modifier = activeModifier;
-			amount = modifier.ModifyEnemyHealAmount(creature, amount);
-			if (amount <= 0m)
-			{
-				__state = default;
-				__result = Task.CompletedTask;
-				return false;
-			}
-		}
-
-		if (!isEnemyReviveHeal && TryQueueEnemyHealAsDelayedBlock(creature, amount, currentRunState, modifier))
-		{
-			__state = default;
-			__result = Task.CompletedTask;
-			return false;
-		}
-
-		if (amount <= 0m)
-		{
-			__state = default;
-			__result = Task.CompletedTask;
-			return false;
-		}
-
-		__state = new HealPostState(player, creature, creature.CurrentHp, ShouldProcess: true);
-		return true;
-	}
-
-	private static void FinalizeGlassCannonHealCapPrefix(Creature creature, ref decimal amount)
-	{
-		if (amount <= 0m || IsEnemyReviveHeal(creature, amount))
-		{
-			return;
-		}
-
-		decimal? capPercent = null;
-		Player? player = creature.Player;
-		if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune
-			&& creature == player.Creature)
-		{
-			capPercent = glassCannonRune.HealCapPercent;
-		}
-		else if (creature.Side == CombatSide.Enemy
-			&& creature.CombatState?.RunState is RunState runState
-			&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier
-			&& modifier.HasActiveMonsterHex(MonsterHexKind.GlassCannon))
-		{
-			capPercent = GlassCannonEnemyHex.HealCapPercent;
-		}
-
-		if (capPercent.HasValue)
-		{
-			amount = ClampHealAmountToCap(creature.CurrentHp, creature.MaxHp, amount, capPercent.Value);
-		}
-	}
 
 	internal static decimal ClampHealAmountToCap(int currentHp, int maxHp, decimal amount, decimal capPercent)
 	{
@@ -110,15 +20,6 @@ internal static partial class HextechCombatHooks
 		return Math.Min(amount, Math.Max(0m, healCap - currentHp));
 	}
 
-	private static void HealPostfix(HealPostState __state, ref Task __result)
-	{
-		if (!__state.ShouldProcess)
-		{
-			return;
-		}
-
-		__result = HealAfterOriginal(__result, __state);
-	}
 
 	private static async Task HealAfterOriginal(Task original, HealPostState state)
 	{
@@ -190,5 +91,116 @@ internal static partial class HextechCombatHooks
 		}
 
 		return true;
+	}
+
+	[HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.Heal), typeof(Creature), typeof(decimal), typeof(bool))]
+	[HextechPatch("combat.heal", "治疗修正")]
+	private static class HealPatch
+	{
+		[HarmonyPrefix]
+		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
+		{
+			if (NearDeathFeastRune.ShouldPreventSustain(creature) || HextechEnemyNearDeath.ShouldPreventSustain(creature))
+			{
+				__state = default;
+				__result = Task.CompletedTask;
+				return false;
+			}
+
+			Player? player = creature.Player;
+			if (player != null && creature == player.Creature)
+			{
+				amount *= HextechPlayerCoefficientHelper.GetHealingMultiplier(player);
+			}
+
+			if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune && creature == player.Creature)
+			{
+				int healCap = (int)Math.Floor(creature.MaxHp * glassCannonRune.HealCapPercent);
+				amount = Math.Min(amount, Math.Max(0, healCap - creature.CurrentHp));
+				if (amount <= 0m)
+				{
+					__state = default;
+					__result = Task.CompletedTask;
+					return false;
+				}
+			}
+
+			RunState? currentRunState = creature.CombatState?.RunState as RunState;
+			HextechMayhemModifier? modifier = null;
+			bool isEnemyReviveHeal = IsEnemyReviveHeal(creature, amount);
+			if (creature.Side == CombatSide.Enemy
+				&& currentRunState != null
+				&& !isEnemyReviveHeal
+				&& HextechMayhemModifier.FindIn(currentRunState) is HextechMayhemModifier activeModifier)
+			{
+				modifier = activeModifier;
+				amount = modifier.ModifyEnemyHealAmount(creature, amount);
+				if (amount <= 0m)
+				{
+					__state = default;
+					__result = Task.CompletedTask;
+					return false;
+				}
+			}
+
+			if (!isEnemyReviveHeal && TryQueueEnemyHealAsDelayedBlock(creature, amount, currentRunState, modifier))
+			{
+				__state = default;
+				__result = Task.CompletedTask;
+				return false;
+			}
+
+			if (amount <= 0m)
+			{
+				__state = default;
+				__result = Task.CompletedTask;
+				return false;
+			}
+
+			__state = new HealPostState(player, creature, creature.CurrentHp, ShouldProcess: true);
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Last)]
+		[HarmonyAfter(EndlessModeHarmonyId)]
+		private static void FinalCapPrefix(Creature creature, ref decimal amount)
+		{
+			if (amount <= 0m || IsEnemyReviveHeal(creature, amount))
+			{
+				return;
+			}
+
+			decimal? capPercent = null;
+			Player? player = creature.Player;
+			if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune
+				&& creature == player.Creature)
+			{
+				capPercent = glassCannonRune.HealCapPercent;
+			}
+			else if (creature.Side == CombatSide.Enemy
+				&& creature.CombatState?.RunState is RunState runState
+				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier
+				&& modifier.HasActiveMonsterHex(MonsterHexKind.GlassCannon))
+			{
+				capPercent = GlassCannonEnemyHex.HealCapPercent;
+			}
+
+			if (capPercent.HasValue)
+			{
+				amount = ClampHealAmountToCap(creature.CurrentHp, creature.MaxHp, amount, capPercent.Value);
+			}
+		}
+
+		[HarmonyPostfix]
+		private static void Postfix(HealPostState __state, ref Task __result)
+		{
+			if (!__state.ShouldProcess)
+			{
+				return;
+			}
+
+			__result = HealAfterOriginal(__result, __state);
+		}
 	}
 }

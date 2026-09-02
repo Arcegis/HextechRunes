@@ -2,17 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static void CardCanPlayAllowanceWithReasonPostfix(
-		CardModel __instance,
-		ref bool __result,
-		ref UnplayableReason reason,
-		ref AbstractModel preventer)
-	{
-		UnplayableReason allowedReasons = ResolveCardPlayAllowanceReasons(
-			BlueCandleMedkitRune.AllowsPlaying(__instance),
-			GrandFinaleUpgradeRune.AllowsPlaying(__instance));
-		ApplyCardPlayAllowance(ref __result, ref reason, preventer != null, allowedReasons);
-	}
 
 	internal static UnplayableReason ResolveCardPlayAllowanceReasons(
 		bool blueCandleAllows,
@@ -46,43 +35,6 @@ internal static partial class HextechCombatHooks
 		result = reason == UnplayableReason.None && !hasPreventer;
 	}
 
-	private static void CardCanPlayBlockerPostfix(CardModel __instance, ref bool __result)
-	{
-		if (__result && IsBlockedByBackToBasics(__instance))
-		{
-			__result = false;
-			return;
-		}
-
-		if (__result && KakaRune.BlocksAttack(__instance))
-		{
-			__result = false;
-		}
-	}
-
-	private static void CardCanPlayBlockerWithReasonPostfix(
-		CardModel __instance,
-		ref bool __result,
-		ref UnplayableReason reason,
-		ref AbstractModel preventer)
-	{
-		if (__result && IsBlockedByBackToBasics(__instance, out AbstractModel? backToBasicsPreventer))
-		{
-			reason |= UnplayableReason.BlockedByHook;
-			preventer = backToBasicsPreventer!;
-			__result = false;
-			return;
-		}
-
-		if (__result
-			&& KakaRune.BlocksAttack(__instance)
-			&& __instance.Owner?.GetRelic<KakaRune>() is KakaRune kakaRune)
-		{
-			reason |= UnplayableReason.BlockedByHook;
-			preventer = kakaRune;
-			__result = false;
-		}
-	}
 
 	private static bool IsBlockedByBackToBasics(CardModel card)
 	{
@@ -123,5 +75,71 @@ internal static partial class HextechCombatHooks
 		}
 
 		return false;
+	}
+
+	[HarmonyPatch(typeof(CardModel), nameof(CardModel.CanPlay), new Type[0])]
+	[HextechPatch("combat.can-play", "禁玩判定")]
+	private static class CanPlayPatch
+	{
+		[HarmonyPostfix]
+		[HarmonyPriority(Priority.Last)]
+		private static void Postfix(CardModel __instance, ref bool __result)
+		{
+			if (__result && IsBlockedByBackToBasics(__instance))
+			{
+				__result = false;
+				return;
+			}
+
+			if (__result && KakaRune.BlocksAttack(__instance))
+			{
+				__result = false;
+			}
+		}
+	}
+
+	[HarmonyPatch(typeof(CardModel), nameof(CardModel.CanPlay), new[] { typeof(UnplayableReason), typeof(AbstractModel) }, new[] { ArgumentType.Out, ArgumentType.Out })]
+	[HextechPatch("combat.can-play-reason", "禁玩判定")]
+	private static class CanPlayWithReasonPatch
+	{
+		[HarmonyPostfix]
+		[HarmonyPriority(Priority.First)]
+		private static void AllowancePostfix(
+			CardModel __instance,
+			ref bool __result,
+			ref UnplayableReason reason,
+			ref AbstractModel preventer)
+		{
+			UnplayableReason allowedReasons = ResolveCardPlayAllowanceReasons(
+				BlueCandleMedkitRune.AllowsPlaying(__instance),
+				GrandFinaleUpgradeRune.AllowsPlaying(__instance));
+			ApplyCardPlayAllowance(ref __result, ref reason, preventer != null, allowedReasons);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPriority(Priority.Last)]
+		private static void BlockerPostfix(
+			CardModel __instance,
+			ref bool __result,
+			ref UnplayableReason reason,
+			ref AbstractModel preventer)
+		{
+			if (__result && IsBlockedByBackToBasics(__instance, out AbstractModel? backToBasicsPreventer))
+			{
+				reason |= UnplayableReason.BlockedByHook;
+				preventer = backToBasicsPreventer!;
+				__result = false;
+				return;
+			}
+
+			if (__result
+				&& KakaRune.BlocksAttack(__instance)
+				&& __instance.Owner?.GetRelic<KakaRune>() is KakaRune kakaRune)
+			{
+				reason |= UnplayableReason.BlockedByHook;
+				preventer = kakaRune;
+				__result = false;
+			}
+		}
 	}
 }
