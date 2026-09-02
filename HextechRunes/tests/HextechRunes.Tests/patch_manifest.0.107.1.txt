@@ -1,5 +1,10 @@
 ﻿# 由 HEXTECH_WRITE_PATCH_MANIFEST=1 生成;每行 = 补丁类 id | 目标 | 补丁方法(优先级)。
-assets.custom-icons | dynamic(AssetPatches.Apply)
+assets.enchantment-icon | MegaCrit.Sts2.Core.Models.EnchantmentModel.Icon(*) [Getter] | postfix(400)
+assets.power-big-icon | MegaCrit.Sts2.Core.Models.PowerModel.BigIcon(*) [Getter] | postfix(400)
+assets.power-dumb-hover-tip | MegaCrit.Sts2.Core.Models.PowerModel.GetDumbHoverTip(*) | postfix(400)
+assets.power-hover-tips | MegaCrit.Sts2.Core.Models.PowerModel.HoverTips(*) [Getter] | postfix(400)
+assets.power-icon | MegaCrit.Sts2.Core.Models.PowerModel.Icon(*) [Getter] | postfix(400)
+assets.rest-site-option-icon | MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption.Icon(*) [Getter] | prefix?(400)
 card.keyword-persistence.load | MegaCrit.Sts2.Core.Models.CardModel.FromSerializable(SerializableCard) | postfix(400)
 card.keyword-persistence.rebuild | targetmethod(KeywordRebuildPatch) | postfix(400) prefix(400)
 card.keyword-persistence.save | MegaCrit.Sts2.Core.Models.CardModel.ToSerializable() | postfix(400)

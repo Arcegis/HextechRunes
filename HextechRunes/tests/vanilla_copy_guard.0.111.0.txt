@@ -69,9 +69,6 @@ MegaCrit.Sts2.Core.Models.Powers.SleightOfFleshPower::AfterPowerAmountChanged(Me
 MegaCrit.Sts2.Core.Models.Powers.SlipperyPower::GetScaledAmountForMultiplayer(MegaCrit.Sts2.Core.Combat.ICombatState,MegaCrit.Sts2.Core.Entities.Creatures.Creature,System.Decimal,MegaCrit.Sts2.Core.Entities.Creatures.Creature,MegaCrit.Sts2.Core.Models.CardModel)=cd548f141f708523a1ddd7a6ade6b47bb16f000f
 MegaCrit.Sts2.Core.Models.Powers.StormPower::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=bb11f64cc1aa52d8494cf28fc3822555a96c1908
 MegaCrit.Sts2.Core.Models.Powers.StormPower::BeforeCardPlayed(MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=fd477ee9eba876ff4ea7518349b2cea17b9288c2
-MegaCrit.Sts2.Core.Models.RelicModel::get_BigIcon()=1f5ded0a59cf87c50dce95f27dcd97821b0585c8
-MegaCrit.Sts2.Core.Models.RelicModel::get_Icon()=f8abce0cf9811ed4e778b5d2e5977a1788d631a4
-MegaCrit.Sts2.Core.Models.RelicModel::get_IconOutline()=f9649167c2ff104350dd7d4f67839c7948e8f7e3
 MegaCrit.Sts2.Core.Models.Relics.DustyTome::AfterObtained()=35170800030715cf97b2a5273f522fd914b4b7e9
 MegaCrit.Sts2.Core.Models.Relics.Kunai::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=f1e52d5aeeabd5545a34d5d52a182be1800f38e8
 MegaCrit.Sts2.Core.Models.Relics.Nunchaku::AfterCardPlayed(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=5eb9c3a254bd0dafb0cf053f9fcb96fe7fe7f72e
@@ -86,7 +83,6 @@ MegaCrit.Sts2.Core.Nodes.Combat.NCreatureVisuals::RemoveFormVfx()=92c6e15fec6276
 MegaCrit.Sts2.Core.Nodes.Combat.NHealthBar::RefreshForeground()=0e9adf36c659f7ed5232720f039d1367917bf31c
 MegaCrit.Sts2.Core.Nodes.Multiplayer.NMultiplayerPlayerIntentHandler::BeforeActionReadyToResumeAfterPlayerChoice(MegaCrit.Sts2.Core.GameActions.GameAction)=7e7b2dec8dbd06c3e39b5bf771c529039c076e74
 MegaCrit.Sts2.Core.Nodes.Orbs.NOrbManager::TweenLayout()=78e9c16508fb69dc4d81c1b2124b57f086e39b6d
-MegaCrit.Sts2.Core.Nodes.Relics.NRelic::Reload()=b9670d81881ebcf4775a8720ee42deb6a3b67b54
 MegaCrit.Sts2.Core.Nodes.Relics.NRelicBasicHolder::OnFocus()=be251d7e202b9f66658d97a69596a88a7198fa79
 MegaCrit.Sts2.Core.Nodes.Relics.NRelicBasicHolder::OnUnfocus()=a7f1023c8786acdbfdaa8a2e69f63005492d314b
 MegaCrit.Sts2.Core.Nodes.Relics.NRelicInventoryHolder::DoFlash()=37b001a0569779eb0998a1a8306931ebdce00112
