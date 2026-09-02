@@ -36,6 +36,7 @@ public static class ModEntry
 			HextechPatcher.ApplyAll(harmony, typeof(ModEntry).Assembly);
 			HextechPatcher.LogSummary();
 			HextechPatcher.LogSharedPatchTargets(harmony);
+			HextechVanillaCopyGuard.Verify(harmony.Id);
 			HextechPatcher.DumpIfRequested(harmony);
 			_initialized = true;
 			HextechMultiplayerDiagnostics.LogNetworkSignature();

@@ -117,6 +117,12 @@ internal static class HextechPatcher
 		{
 			HextechLog.Info($"[{ModInfo.Id}][Patch]   failed {result.Id} ({result.Feature}): {result.Error}");
 		}
+
+		IReadOnlyList<string> missingMembers = HextechHookReflection.MissingMembers;
+		if (missingMembers.Count > 0)
+		{
+			Log.Warn($"[{ModInfo.Id}][Patch] {missingMembers.Count} vanilla private member(s) missing in this game build (dependent features degraded):\n  {string.Join("\n  ", missingMembers)}");
+		}
 	}
 
 	/// <summary>
@@ -215,7 +221,10 @@ internal static class HextechPatcher
 			}
 
 			builder.Append(method.DeclaringType?.FullName).Append('.').Append(method.Name)
-				.Append('(').Append(string.Join(", ", method.GetParameters().Select(parameter => parameter.ParameterType.Name))).Append(')').Append('\n');
+				.Append('(').Append(string.Join(", ", method.GetParameters().Select(parameter => parameter.ParameterType.Name))).Append(')')
+				.Append(" il=").Append(HextechVanillaCopyGuard.ComputeIlHash(method) ?? "<none>")
+				.Append(" key=").Append(HextechVanillaCopyGuard.DescribeTarget(method))
+				.Append('\n');
 			foreach (string line in lines)
 			{
 				builder.Append("  ").Append(line).Append('\n');
@@ -239,6 +248,11 @@ internal static class HextechPatcher
 			if (patch.after.Length > 0)
 			{
 				extras += $" after={string.Join("|", patch.after)}";
+			}
+
+			if (kind == "prefix" && patch.PatchMethod.ReturnType == typeof(bool))
+			{
+				extras += " skip=true";
 			}
 
 			lines.Add($"{kind} priority={patch.priority} {patch.PatchMethod.DeclaringType?.Name}.{patch.PatchMethod.Name}{extras}");

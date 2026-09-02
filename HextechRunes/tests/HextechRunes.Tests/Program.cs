@@ -202,6 +202,7 @@ internal static partial class Program
 				new(nameof(CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume), CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume),
 			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
 			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
+			new(nameof(PatchManifestMatchesCheckedInList), PatchManifestMatchesCheckedInList),
 			new(nameof(SavedPropertyPreInitRegistrationLeavesWireTablesUntouched), SavedPropertyPreInitRegistrationLeavesWireTablesUntouched),
 			new(nameof(SavedPropertyLateCarrierRegistrationFailsClosed), SavedPropertyLateCarrierRegistrationFailsClosed),
 			new(nameof(SavedPropertySameNameCarrierStillRequiresPerTypeCache), SavedPropertySameNameCarrierStillRequiresPerTypeCache),

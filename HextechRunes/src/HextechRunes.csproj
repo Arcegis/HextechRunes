@@ -37,6 +37,11 @@
     <AssemblyMetadata Include="HextechCompatibilityTarget" Value="$(HextechSts2Target)" />
   </ItemGroup>
 
+  <!-- 原版拷贝守卫的冻结 IL 表(按变体);缺表则守卫在运行时跳过。生成方式见 HextechVanillaCopyGuard。 -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)../tests/vanilla_copy_guard.$(HextechSts2Target).txt')">
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)../tests/vanilla_copy_guard.$(HextechSts2Target).txt" LogicalName="vanilla_copy_guard.txt" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="sts2">
       <HintPath>$(GameDataDir)/sts2.dll</HintPath>
