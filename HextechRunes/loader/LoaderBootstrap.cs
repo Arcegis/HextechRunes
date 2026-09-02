@@ -48,6 +48,8 @@ public static class LoaderBootstrap
 
 	public static void Initialize()
 	{
+		LinuxNativeDependencyBootstrap.EnsureHarmonyRuntimeDependenciesVisible();
+
 		string? loaderDirectory = Path.GetDirectoryName(typeof(LoaderBootstrap).Assembly.Location);
 		if (string.IsNullOrWhiteSpace(loaderDirectory))
 		{
