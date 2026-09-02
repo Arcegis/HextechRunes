@@ -265,6 +265,10 @@ src/
 | 5 垂直切片（第二轮） | 完成 | 幻影武器 7 个补丁类内嵌进 `IllusoryWeaponRune`；版本兼容基类文件（`HextechGameApiCompat`、`HextechModelBaseCompat`）移入 `src/Compat/` |
 | 5 god class 拆分 | 完成（分部文件） | `DoubleVisionRune` 1,388 行 → 主体 118 行 + Transactions / Duplication / Scopes / Types 四个分部；`HextechCombatVfx` 1,562 → 主体 446 + Sequences / Primitives；`HextechRuneConfigMenuHooks` 2,836 → 主体 219 + Overlay / Pages / BottomBar / RuneGrid / Entries / Types。纯移动，按 IL 等价法思路只影响编译顺序 |
 | 5 `#if` 收口示范 | 完成 | `HextechSavedPropertyBootstrap` 拆成共享流程 + `.Legacy.cs`（整文件 `#if STS2_107_1`）+ `.Official.cs`（整文件 `#if STS2_109_OR_NEWER`），共享代码里不再有任何 `#if`；同一套路可继续用于 `HextechRelicBase`、形态自动打出等剩余 `#if` 密集文件 |
+| 4 配置菜单（主菜单按钮） | 完成 | 按钮改在 `NMainMenu._Ready` 的前缀里插入：原版随后自己的 `ConnectMainMenuTextButtonFocusLogic` 会把焦点光标动画连到它身上；文案走公开的 `SetLocalization`，`HEXTECH_CONFIG_BUTTON*` 两个键迁到 `main_menu_ui.json`（9 语言，原版 `LocManager` 逐表合并模组 loc 文件，headless 日志已见 `Merging with base loc table`）；覆盖层关闭时把焦点还给打开它的按钮。`_locString` / `_lastHitButton` / `MainMenuButtonFocused` / `MainMenuButtonUnfocused` 四个私有成员反射全部删除，配置菜单不再触碰任何原版私有成员。主面板场景化不做：程序化节点树没有冲突面，场景化只换可维护性，且需要 Godot 编辑器工作流与真机逐页核对 |
+| 5 测试文件拆分 | 完成 | `tests/Program.cs` 5,948 行按主题拆成 Selection / Config / Metadata / EnemyHexes / DoubleVision / Runes 六个分部（221 个用例按名称前缀归组、无遗漏），主文件只剩 harness、注册表与共享辅助（782 行） |
+| 5 `#if` 现状 | 133 → 50 | 剩余 50 处里 `HextechGameApiCompat` 占 9、其余全是原版虚方法/`Hook.*` 签名随版本变化的覆写或补丁目标声明（`ModifyDamage*`、`ModifyCardPlayResultLocation`、`Shiv.CreateInHand`、`GetResultLocationForCardPlay`），属于 §5.3 允许保留的那一类，不再往下压 |
+| 5 静态字段审计 | 完成 | 92 个可变静态字段逐个核对：约 65 个是反射句柄 / 纹理缓存 / 只记一次的日志旗标（进程级只写一次）；约 15 个是 UI 单例的节点引用（随界面重建重绑）；约 10 个是运行期状态，全部带显式重置（`HextechGoldrendSync` 按 RunState 引用切换、`HextechRunLifecycleHooks` 按 RunManager 引用重订阅、`HextechGoldenRerollSession` 用弱引用 + 一次性旗标、`CompensationEnemyHex` 在命令结束时清空）。没有需要改作用域的项 |
 | 5 状态收敛 | 护栏先行 | 加入可变静态字段清单快照测试 `static_state_manifest.<target>.txt`（非 readonly、非 const 的静态字段全部列出，实际 92 个，§1 的 ≈376 是把 readonly 缓存也算进去的粗估），新增一个就必须在清单里显形；逐个改作用域仍是后续语义改动 |
 
 评估后**决定保留**的补丁（理由已核实，不要再翻案）：
