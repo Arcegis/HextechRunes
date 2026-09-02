@@ -818,6 +818,34 @@ internal static partial class Program
 		Equal(100, weights.Total, "total weight");
 	}
 
+	/// <summary>掷骰狂人 50%±10、红包 25%±5 的药水式动态掉率:掉落降档、未掉升档、始终夹在 0~100 内,默认偏移就是基础值。</summary>
+	private static void ForgeDropChanceAdjustsLikePotionOdds()
+	{
+		Equal(50, HextechDynamicDropChance.CurrentChance(0, DiceManiacRune.BaseDropChance), "Dice Maniac starts at its base drop chance");
+		int offset = HextechDynamicDropChance.NextOffset(0, DiceManiacRune.BaseDropChance, DiceManiacRune.DropChanceStep, dropped: true);
+		Equal(40, HextechDynamicDropChance.CurrentChance(offset, DiceManiacRune.BaseDropChance), "a drop lowers Dice Maniac by ten");
+		offset = HextechDynamicDropChance.NextOffset(offset, DiceManiacRune.BaseDropChance, DiceManiacRune.DropChanceStep, dropped: false);
+		offset = HextechDynamicDropChance.NextOffset(offset, DiceManiacRune.BaseDropChance, DiceManiacRune.DropChanceStep, dropped: false);
+		Equal(60, HextechDynamicDropChance.CurrentChance(offset, DiceManiacRune.BaseDropChance), "two misses raise Dice Maniac by twenty");
+		for (int i = 0; i < 20; i++)
+		{
+			offset = HextechDynamicDropChance.NextOffset(offset, DiceManiacRune.BaseDropChance, DiceManiacRune.DropChanceStep, dropped: false);
+		}
+		Equal(100, HextechDynamicDropChance.CurrentChance(offset, DiceManiacRune.BaseDropChance), "drop chance is capped at one hundred");
+		for (int i = 0; i < 40; i++)
+		{
+			offset = HextechDynamicDropChance.NextOffset(offset, DiceManiacRune.BaseDropChance, DiceManiacRune.DropChanceStep, dropped: true);
+		}
+		Equal(0, HextechDynamicDropChance.CurrentChance(offset, DiceManiacRune.BaseDropChance), "drop chance is floored at zero");
+
+		Equal(25, HextechDynamicDropChance.CurrentChance(0, RedEnvelopeRune.BaseForgeChance), "Red Envelope forge side starts at twenty-five");
+		int envelope = HextechDynamicDropChance.NextOffset(0, RedEnvelopeRune.BaseForgeChance, RedEnvelopeRune.ForgeChanceStep, dropped: true);
+		Equal(20, HextechDynamicDropChance.CurrentChance(envelope, RedEnvelopeRune.BaseForgeChance), "a forge drop lowers Red Envelope by five");
+		envelope = HextechDynamicDropChance.NextOffset(envelope, RedEnvelopeRune.BaseForgeChance, RedEnvelopeRune.ForgeChanceStep, dropped: false);
+		Equal(25, HextechDynamicDropChance.CurrentChance(envelope, RedEnvelopeRune.BaseForgeChance), "a gold result raises Red Envelope by five");
+		Equal(-25, HextechDynamicDropChance.ClampOffset(-999, RedEnvelopeRune.BaseForgeChance), "saved offsets are clamped on load");
+	}
+
 	private static void DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights()
 	{
 		HextechForgeRarityWeights defaultWeights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
