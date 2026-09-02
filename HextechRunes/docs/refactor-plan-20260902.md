@@ -247,3 +247,25 @@ src/
 2. 海克斯内部四处修正收进一个本地聚合器：加法项求和 → 乘法项连乘 → 最后封顶，一个入口写回 `amount`。签名照 RitsuLib `IHealHookListener` 的三阶段写，不引用 RitsuLib；日后要互通再加软依赖桥。
 3. 聚合器落地后拆掉 `FinalizeGlassCannonHealCapPrefix` 的 `Priority.Last + after = Natsuki.EndlessMode` 排队。
 4. 验证点很窄：装与不装 RitsuLib 两种环境、双客户端，濒死狂宴 / 玻璃大炮 / 敌方延迟格挡三个符文的回血数值一致。
+
+## 9. 执行进度（2026-09-02，commit 24f29adc → 3f294ae3）
+
+每步都通过了三目标 Release 零警告、三目标测试全绿、部署 + headless 加载、以及"补丁表导出比对"（`HEXTECH_DUMP_PATCHES` 导出目标/种类/优先级/同目标执行序，改动前后 normalize 后 diff）。
+
+| 阶段 | 状态 | 结果 |
+|---|---|---|
+| 0 清死代码 | 完成 | 编译目标 10 → 3（csproj 加 `HextechValidateTarget` 拦截其它值）；`#if` 133 → 56；ModInfo 版本链 3 段 |
+| 1 loader / 联机校验 | 完成 | loader 只在 Associate 两级都失败时才装 `ReflectionHelper.ModTypes` 后缀，headless 确认走 `AssociateAssemblyWithMod` 且自比较假警告消失；删除 `Log.Warn` 拦截、模组清单条目重写、两个包接收终结器；net-id 规范化整文件 `#if STS2_107_1`；0.109+ 载体自检改到首次 StartRun/LoadRun 一次性执行 |
+| 2 补丁基础设施 | 完成 | 199 个手工 `harmony.Patch` 全部改为 `[HarmonyPatch]`+`[HextechPatch]` 嵌套补丁类（160 个类），`ModEntry` 只剩编排；`HextechPatcher`（逐类应用、失败按符文/功能归因、共享补丁点日志、补丁表导出）；补丁清单快照测试 `patch_manifest.<target>.txt`；原版拷贝守卫 `vanilla_copy_guard.0.111.0.txt`（95 个可跳过原方法的目标，嵌入 DLL 启动比对 IL SHA1）；反射缺失一次性汇总 |
+| 3 迁到官方扩展点 | 部分 | `CardModel.CanPlay` 三处 postfix 全部删除：回归基本功/卡卡走 `ShouldPlay`，敌方回归基本功走 Modifier→敌方海克斯效果的 `ShouldPlay`，蓝蜡烛走 `TryModifyKeywordsInCombat` 摘掉 Unplayable，升级压轴只补 `GrandFinale.IsPlayable`；六组视觉附件 18 个补丁合并为 `HextechCreatureVisualHost` 3 个 |
+| 4 重做三块 | 未做 | 形态自动打出、配置菜单场景化、视觉附件事件化都需要真机/双客户端验证 |
+| 5 垂直切片与状态收敛 | 未做 | — |
+
+评估后**决定保留**的补丁（理由已核实，不要再翻案）：
+- `CardPileCmd.Draw` 前缀：卡牌检视是"用选牌界面替换抽牌返回值"，`ShouldDraw/ModifyHandDraw/BeforeHandDraw` 都表达不了，且改成 Hook 会把 PlayerChoice 挪到不同的同步点。
+- `RunManager.OnEnded` 前缀+后缀：前缀要在 `ToSave` 之前补战斗历史（原版败北存档缺房间记录），`OnMetricsUpload` 只在 `ShouldSave` 且首次上报时触发，替不了。
+- `NGame.StartRun / LoadRun`：需要包住原版 UI 任务链再做延续，`RunManager.RunStarted` 只在模型层触发。
+- 资源图标 11 个补丁：原版 `RelicModel.Icon` 确实只读虚属性 `PackedIconPath`，理论上可以整组删除，但纹理加载曾多轮返工（见 `sts2-resourcepath-assetcache-dispose`），headless 无法验证视觉，必须真机看过遗物栏/图鉴/检视/悬浮四处再删。
+- 复视奖励事务 8 个补丁：改用 `AfterRewardTaken` 等需要重新设计"同一事务只复制一次"的幂等键，属于重做而非迁移。
+
+后续动手顺序建议：先做资源图标组（真机验证四处 UI 即可删 11 个补丁），再做治疗管线 void 前缀 + 聚合器（§8.3，需双客户端），最后才是形态自动打出重做。
