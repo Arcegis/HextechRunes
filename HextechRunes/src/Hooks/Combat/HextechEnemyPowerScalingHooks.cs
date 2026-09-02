@@ -15,7 +15,6 @@ internal static partial class HextechEnemyPowerScalingHooks
 
 	public static void Install(Harmony harmony)
 	{
-#if STS2_105_OR_NEWER
 		HarmonyMethod scaledPrefix = new(typeof(HextechEnemyPowerScalingHooks), nameof(GetScaledAmountForMultiplayerPrefix))
 		{
 			priority = Priority.First
@@ -25,7 +24,6 @@ internal static partial class HextechEnemyPowerScalingHooks
 		{
 			harmony.Patch(scaledTarget, prefix: scaledPrefix);
 		}
-#endif
 	}
 
 	public static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
@@ -71,7 +69,6 @@ internal static partial class HextechEnemyPowerScalingHooks
 		}
 	}
 
-#if STS2_105_OR_NEWER
 	private static bool GetScaledAmountForMultiplayerPrefix(
 		PowerModel __instance,
 		decimal amount,
@@ -89,7 +86,6 @@ internal static partial class HextechEnemyPowerScalingHooks
 		__result = ClampPowerOffsetForApply(__instance, target, amount);
 		return false;
 	}
-#endif
 
 	private static decimal CalculateFinalAmount(Creature target, decimal amount, Creature? applier, ScalingOverride scalingOverride)
 	{
@@ -139,11 +135,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 
 	private static bool IsInstancedPower(PowerModel power)
 	{
-#if STS2_105_OR_NEWER
 		return power.InstanceType != PowerInstanceType.None;
-#else
-		return power.IsInstanced;
-#endif
 	}
 
 	private static bool ShouldClearSelfApplier(Creature target, Creature? applier)

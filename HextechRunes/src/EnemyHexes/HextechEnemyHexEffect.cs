@@ -152,17 +152,10 @@ internal abstract class HextechEnemyHexEffect
 		return Task.CompletedTask;
 	}
 
-#if STS2_104_OR_NEWER
 	internal virtual Task AfterAutoPrePlayPhaseEnteredLate(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player player)
 	{
 		return Task.CompletedTask;
 	}
-#else
-	internal virtual Task BeforePlayPhaseStart(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player player)
-	{
-		return Task.CompletedTask;
-	}
-#endif
 
 	internal virtual Task BeforeTurnEnd(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, CombatRoom? combatRoom)
 	{

@@ -10,7 +10,7 @@ internal static class HextechEncounterCompatibilityHooks
 
 	public static void Install(Harmony harmony)
 	{
-	#if STS2_107_1 && !STS2_108_OR_NEWER
+	#if STS2_107_1
 		MethodInfo? spitMove = TryResolveEntomancerSpitMove(typeof(Entomancer), warnIfMissing: true);
 		if (spitMove == null)
 		{
@@ -25,14 +25,14 @@ internal static class HextechEncounterCompatibilityHooks
 
 	internal static bool ShouldRunOriginalEntomancerSpitMove(bool hasPersonalHive)
 	{
-#if STS2_107_1 && !STS2_108_OR_NEWER
+#if STS2_107_1
 		return hasPersonalHive;
 #else
 		return true;
 #endif
 	}
 
-	#if STS2_107_1 && !STS2_108_OR_NEWER
+	#if STS2_107_1
 	internal static MethodInfo? TryResolveEntomancerSpitMove(Type entomancerType, bool warnIfMissing)
 	{
 		return TryGetMethod(

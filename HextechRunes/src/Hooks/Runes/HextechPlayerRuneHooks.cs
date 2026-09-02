@@ -205,19 +205,9 @@ internal static partial class HextechPlayerRuneHooks
 			.WithHitFx("vfx/vfx_giant_horizontal_slash", null, "slash_attack.mp3");
 
 		await attack.Execute(choiceContext);
-#if !STS2_107_OR_NEWER
-		if (card.Owner.Creature.GetPower<ParryPower>() is { } parryPower)
-		{
-			await parryPower.AfterSovereignBladePlayed(card.Owner.Creature, attack.Results);
-		}
-#endif
 	}
 
-#if STS2_104_OR_NEWER
 	private static void CardPileCmdAddGeneratedCardsToCombatPrefix(ref IEnumerable<CardModel> cards, Player? creator)
-#else
-	private static void CardPileCmdAddGeneratedCardsToCombatPrefix(ref IEnumerable<CardModel> cards, bool addedByPlayer)
-#endif
 	{
 		// 整体兜底:本 prefix 在"敌人塞状态牌/生成卡进战斗"的必经路径上,任何异常都会让
 		// 整个 AddGeneratedCardsToCombat 调用中断、上层塞牌任务链卡死(游戏卡住)。
@@ -231,9 +221,7 @@ internal static partial class HextechPlayerRuneHooks
 				return;
 			}
 
-#if STS2_104_OR_NEWER
 			bool addedByPlayer = creator != null;
-#endif
 			List<CardModel>? rewritten = null;
 			for (int i = 0; i < originals.Count; i++)
 			{

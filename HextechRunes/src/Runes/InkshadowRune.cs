@@ -21,11 +21,7 @@ public sealed class InkshadowRune : HextechRelicBase
 			&& rune.TryApplyInkshadow(card, flash);
 	}
 
-#if STS2_104_OR_NEWER
 	public override Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
-#else
-	public override Task AfterCardGeneratedForCombat(CardModel card, bool addedByPlayer)
-#endif
 	{
 		TryApplyInkshadow(card);
 		return Task.CompletedTask;

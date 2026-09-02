@@ -12,9 +12,7 @@ internal static partial class HextechCombatHooks
 	}
 
 	private static bool ShrinkPowerModifyAmountPrefix(
-#if STS2_104_OR_NEWER
 		PlayerChoiceContext choiceContext,
-#endif
 		PowerModel power,
 		decimal offset,
 		Creature? applier,
@@ -28,9 +26,7 @@ internal static partial class HextechCombatHooks
 		}
 
 		object? effectiveChoiceContext = null;
-#if STS2_104_OR_NEWER
 		effectiveChoiceContext = choiceContext;
-#endif
 
 		__result = ReplaceTemporaryShrinkWithPermanent(
 			effectiveChoiceContext,

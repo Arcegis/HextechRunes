@@ -81,7 +81,6 @@ public abstract partial class HextechRelicBase : RelicModel
 	}
 #endif
 
-#if STS2_106_OR_NEWER
 	public virtual Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
 		return Task.CompletedTask;
@@ -121,7 +120,6 @@ public abstract partial class HextechRelicBase : RelicModel
 	{
 		return AfterTurnEnd(choiceContext, side);
 	}
-#endif
 
 	public sealed override RelicRarity Rarity => RelicRarity.Starter;
 

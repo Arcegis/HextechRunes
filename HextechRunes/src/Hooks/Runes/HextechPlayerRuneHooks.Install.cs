@@ -113,15 +113,9 @@ internal static partial class HextechPlayerRuneHooks
 		harmony.Patch(
 			RequireMethod(typeof(SovereignBlade), "OnPlay", BindingFlags.Instance | BindingFlags.NonPublic, typeof(PlayerChoiceContext), typeof(CardPlay)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(SovereignBladeOnPlayPrefix)));
-#if STS2_104_OR_NEWER
 		harmony.Patch(
 			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.AddGeneratedCardsToCombat), BindingFlags.Public | BindingFlags.Static, typeof(IEnumerable<CardModel>), typeof(PileType), typeof(Player), typeof(CardPilePosition)),
 			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CardPileCmdAddGeneratedCardsToCombatPrefix)));
-#else
-		harmony.Patch(
-			RequireMethod(typeof(CardPileCmd), nameof(CardPileCmd.AddGeneratedCardsToCombat), BindingFlags.Public | BindingFlags.Static, typeof(IEnumerable<CardModel>), typeof(PileType), typeof(bool), typeof(CardPilePosition)),
-			prefix: new HarmonyMethod(typeof(HextechPlayerRuneHooks), nameof(CardPileCmdAddGeneratedCardsToCombatPrefix)));
-#endif
 	}
 
 	private static void InstallFlyingKickDescriptionHooks(Harmony harmony)

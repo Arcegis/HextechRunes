@@ -203,11 +203,7 @@ internal static class HextechShopForgeHooks
 		int purchaseOrdinal = shopRelic?.PurchaseCount ?? 0;
 		if (!HextechForgeGrantHelper.TryCreateStableShopForgeChoice(player, purchaseOrdinal, out List<RelicModel> options))
 		{
-#if STS2_104_OR_NEWER
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
-#else
-			entry.InvokePurchaseFailed(PurchaseStatus.FailureForbidden);
-#endif
 			return (false, 0);
 		}
 
@@ -221,11 +217,7 @@ internal static class HextechShopForgeHooks
 		if (HextechForgeGrantHelper.IsForgeDisabledForPlayer(player, forge))
 		{
 			Log.Warn($"[{ModInfo.Id}][Mayhem] Blocked purchasing a config-disabled forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}");
-#if STS2_104_OR_NEWER
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
-#else
-			entry.InvokePurchaseFailed(PurchaseStatus.FailureForbidden);
-#endif
 			return (false, 0);
 		}
 
