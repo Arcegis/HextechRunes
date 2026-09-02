@@ -5538,7 +5538,7 @@ internal static partial class Program
 	private static void AssertHarmonyTaskPrefixCanReturnSkippedTask(string patchClassName)
 	{
 		string methodName = $"{patchClassName}.Prefix";
-		MethodInfo? method = typeof(HextechPlayerRuneHooks)
+		MethodInfo? method = typeof(IllusoryWeaponRune)
 			.GetNestedType(patchClassName, BindingFlags.NonPublic | BindingFlags.Public)
 			?.GetMethod("Prefix", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
 		if (method == null)

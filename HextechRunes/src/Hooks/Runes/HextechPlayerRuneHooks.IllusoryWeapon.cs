@@ -7,24 +7,24 @@ namespace HextechRunes;
 
 internal static partial class HextechPlayerRuneHooks
 {
-	private const string FinisherCalculatedHitsKey = "CalculatedHits";
+	internal const string FinisherCalculatedHitsKey = "CalculatedHits";
 
-	private static PropertyInfo? KunaiAttacksPlayedThisTurnProperty;
-	private static PropertyInfo? ShurikenAttacksPlayedThisTurnProperty;
-	private static PropertyInfo? OrnamentalFanAttacksPlayedThisTurnProperty;
-	private static PropertyInfo? PenNibAttackToDoubleProperty;
+	internal static PropertyInfo? KunaiAttacksPlayedThisTurnProperty;
+	internal static PropertyInfo? ShurikenAttacksPlayedThisTurnProperty;
+	internal static PropertyInfo? OrnamentalFanAttacksPlayedThisTurnProperty;
+	internal static PropertyInfo? PenNibAttackToDoubleProperty;
 
-	private static MethodInfo? NunchakuDoActivateVisualsMethod;
-	private static MethodInfo? KunaiDoActivateVisualsMethod;
-	private static MethodInfo? ShurikenDoActivateVisualsMethod;
-	private static MethodInfo? OrnamentalFanDoActivateVisualsMethod;
-	private static bool? _illusoryWeaponReflectionReady;
+	internal static MethodInfo? NunchakuDoActivateVisualsMethod;
+	internal static MethodInfo? KunaiDoActivateVisualsMethod;
+	internal static MethodInfo? ShurikenDoActivateVisualsMethod;
+	internal static MethodInfo? OrnamentalFanDoActivateVisualsMethod;
+	internal static bool? _illusoryWeaponReflectionReady;
 
 	/// <summary>
 	/// 幻影武器要改写五个原版遗物的私有计数与视觉方法;任一缺失就整组停用并把符文标为本运行时不可用。
 	/// 七个补丁类共用这一次解析。
 	/// </summary>
-	private static bool IllusoryWeaponReflectionReady
+	internal static bool IllusoryWeaponReflectionReady
 	{
 		get
 		{
@@ -56,14 +56,14 @@ internal static partial class HextechPlayerRuneHooks
 		}
 	}
 
-	private static PropertyInfo RequireProperty(Type type, string name)
+	internal static PropertyInfo RequireProperty(Type type, string name)
 	{
 		return type.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 			?? throw new InvalidOperationException($"Could not find required property {type.FullName}.{name}.");
 	}
 
 
-	private static decimal CountFinisherAttackCardsPlayedThisTurn(CardModel card, Creature? _)
+	internal static decimal CountFinisherAttackCardsPlayedThisTurn(CardModel card, Creature? _)
 	{
 			return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
 				card.Owner,
@@ -73,7 +73,7 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 
-	private static async Task ResolveIllusoryWeaponNunchaku(Nunchaku nunchaku)
+	internal static async Task ResolveIllusoryWeaponNunchaku(Nunchaku nunchaku)
 	{
 		nunchaku.AttacksPlayed++;
 		int cardsNeeded = nunchaku.DynamicVars.Cards.IntValue;
@@ -87,7 +87,7 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 
-	private static async Task ResolveIllusoryWeaponKunai(Kunai kunai)
+	internal static async Task ResolveIllusoryWeaponKunai(Kunai kunai)
 	{
 		int attacksPlayed = IncrementIntProperty(kunai, KunaiAttacksPlayedThisTurnProperty);
 		int cardsNeeded = kunai.DynamicVars.Cards.IntValue;
@@ -101,7 +101,7 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 
-	private static async Task ResolveIllusoryWeaponShuriken(Shuriken shuriken)
+	internal static async Task ResolveIllusoryWeaponShuriken(Shuriken shuriken)
 	{
 		int attacksPlayed = IncrementIntProperty(shuriken, ShurikenAttacksPlayedThisTurnProperty);
 		int cardsNeeded = shuriken.DynamicVars.Cards.IntValue;
@@ -115,7 +115,7 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 
-	private static async Task ResolveIllusoryWeaponOrnamentalFan(OrnamentalFan ornamentalFan)
+	internal static async Task ResolveIllusoryWeaponOrnamentalFan(OrnamentalFan ornamentalFan)
 	{
 		int attacksPlayed = IncrementIntProperty(ornamentalFan, OrnamentalFanAttacksPlayedThisTurnProperty);
 		int cardsNeeded = ornamentalFan.DynamicVars.Cards.IntValue;
@@ -140,7 +140,7 @@ internal static partial class HextechPlayerRuneHooks
 		SetPenNibAttackToDouble(penNib, null);
 	}
 
-	private static bool ShouldHandleIllusoryWeaponSkill(CardPlay cardPlay, Player? owner)
+	internal static bool ShouldHandleIllusoryWeaponSkill(CardPlay cardPlay, Player? owner)
 	{
 		return owner != null
 			&& cardPlay.Card.Type != CardType.Attack
@@ -148,7 +148,7 @@ internal static partial class HextechPlayerRuneHooks
 			&& IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, owner);
 	}
 
-	private static int IncrementIntProperty(object instance, PropertyInfo? property)
+	internal static int IncrementIntProperty(object instance, PropertyInfo? property)
 	{
 		int value = property?.GetValue(instance) is int current ? current : 0;
 		value++;
@@ -156,17 +156,17 @@ internal static partial class HextechPlayerRuneHooks
 		return value;
 	}
 
-	private static bool IsPenNibTracking(PenNib penNib, CardModel card)
+	internal static bool IsPenNibTracking(PenNib penNib, CardModel card)
 	{
 		return ReferenceEquals(PenNibAttackToDoubleProperty?.GetValue(penNib), card);
 	}
 
-	private static void SetPenNibAttackToDouble(PenNib penNib, CardModel? card)
+	internal static void SetPenNibAttackToDouble(PenNib penNib, CardModel? card)
 	{
 		PenNibAttackToDoubleProperty?.SetValue(penNib, card);
 	}
 
-	private static Task InvokePrivateRelicVisuals(RelicModel relic, MethodInfo? method, string relicName)
+	internal static Task InvokePrivateRelicVisuals(RelicModel relic, MethodInfo? method, string relicName)
 	{
 		if (method == null)
 		{
@@ -185,146 +185,4 @@ internal static partial class HextechPlayerRuneHooks
 		}
 	}
 
-	[HarmonyPatch(typeof(Finisher), "CanonicalVars", MethodType.Getter)]
-	[HextechPatch("rune.illusory-weapon.finisher", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
-	private static class FinisherCanonicalVarsPatch
-	{
-		[HarmonyPrepare]
-		private static bool Prepare() => IllusoryWeaponReflectionReady;
-
-		[HarmonyPostfix]
-		private static void Postfix(ref IEnumerable<DynamicVar> __result)
-		{
-			__result = __result.Select(static dynamicVar =>
-				dynamicVar.Name == FinisherCalculatedHitsKey
-					? new CalculatedVar(FinisherCalculatedHitsKey).WithMultiplier(CountFinisherAttackCardsPlayedThisTurn)
-					: dynamicVar);
-		}
-	}
-
-	[HarmonyPatch(typeof(Nunchaku), nameof(Nunchaku.AfterCardPlayed), typeof(PlayerChoiceContext), typeof(CardPlay))]
-	[HextechPatch("rune.illusory-weapon.nunchaku", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
-	private static class NunchakuPatch
-	{
-		[HarmonyPrepare]
-		private static bool Prepare() => IllusoryWeaponReflectionReady;
-
-		[HarmonyPrefix]
-		private static bool Prefix(Nunchaku __instance, CardPlay cardPlay, ref Task __result)
-		{
-			if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner))
-			{
-				return true;
-			}
-
-			__result = ResolveIllusoryWeaponNunchaku(__instance);
-			return false;
-		}
-	}
-
-	[HarmonyPatch(typeof(Kunai), nameof(Kunai.AfterCardPlayed), typeof(PlayerChoiceContext), typeof(CardPlay))]
-	[HextechPatch("rune.illusory-weapon.kunai", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
-	private static class KunaiPatch
-	{
-		[HarmonyPrepare]
-		private static bool Prepare() => IllusoryWeaponReflectionReady;
-
-		[HarmonyPrefix]
-		private static bool Prefix(Kunai __instance, CardPlay cardPlay, ref Task __result)
-		{
-			if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner) || !CombatManager.Instance.IsInProgress)
-			{
-				return true;
-			}
-
-			__result = ResolveIllusoryWeaponKunai(__instance);
-			return false;
-		}
-	}
-
-	[HarmonyPatch(typeof(Shuriken), nameof(Shuriken.AfterCardPlayed), typeof(PlayerChoiceContext), typeof(CardPlay))]
-	[HextechPatch("rune.illusory-weapon.shuriken", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
-	private static class ShurikenPatch
-	{
-		[HarmonyPrepare]
-		private static bool Prepare() => IllusoryWeaponReflectionReady;
-
-		[HarmonyPrefix]
-		private static bool Prefix(Shuriken __instance, CardPlay cardPlay, ref Task __result)
-		{
-			if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner) || !CombatManager.Instance.IsInProgress)
-			{
-				return true;
-			}
-
-			__result = ResolveIllusoryWeaponShuriken(__instance);
-			return false;
-		}
-	}
-
-	[HarmonyPatch(typeof(OrnamentalFan), nameof(OrnamentalFan.AfterCardPlayed), typeof(PlayerChoiceContext), typeof(CardPlay))]
-	[HextechPatch("rune.illusory-weapon.ornamental-fan", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
-	private static class OrnamentalFanPatch
-	{
-		[HarmonyPrepare]
-		private static bool Prepare() => IllusoryWeaponReflectionReady;
-
-		[HarmonyPrefix]
-		private static bool Prefix(OrnamentalFan __instance, CardPlay cardPlay, ref Task __result)
-		{
-			if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner) || !CombatManager.Instance.IsInProgress)
-			{
-				return true;
-			}
-
-			__result = ResolveIllusoryWeaponOrnamentalFan(__instance);
-			return false;
-		}
-	}
-
-	[HarmonyPatch(typeof(PenNib), nameof(PenNib.BeforeCardPlayed), typeof(CardPlay))]
-	[HextechPatch("rune.illusory-weapon.pen-nib-before", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
-	private static class PenNibBeforeCardPlayedPatch
-	{
-		[HarmonyPrepare]
-		private static bool Prepare() => IllusoryWeaponReflectionReady;
-
-		[HarmonyPrefix]
-		private static bool Prefix(PenNib __instance, CardPlay cardPlay, ref Task __result)
-		{
-			if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner))
-			{
-				return true;
-			}
-
-			__instance.NotifyAttackPlayed();
-			if (__instance.AttacksPlayed == 0)
-			{
-				SetPenNibAttackToDouble(__instance, cardPlay.Card);
-			}
-			__result = Task.CompletedTask;
-			return false;
-		}
-	}
-
-	[HarmonyPatch(typeof(PenNib), nameof(PenNib.AfterCardPlayed), typeof(PlayerChoiceContext), typeof(CardPlay))]
-	[HextechPatch("rune.illusory-weapon.pen-nib-after", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
-	private static class PenNibAfterCardPlayedPatch
-	{
-		[HarmonyPrepare]
-		private static bool Prepare() => IllusoryWeaponReflectionReady;
-
-		[HarmonyPrefix]
-		private static bool Prefix(PenNib __instance, CardPlay cardPlay, ref Task __result)
-		{
-			if (!ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner)
-				|| !IsPenNibTracking(__instance, cardPlay.Card))
-			{
-				return true;
-			}
-
-			__result = Task.CompletedTask;
-			return false;
-		}
-	}
 }
