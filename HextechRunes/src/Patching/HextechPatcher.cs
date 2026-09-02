@@ -34,6 +34,13 @@ internal static class HextechPatcher
 				: type.GetMethod("Apply", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, [typeof(Harmony)]);
 			if (!hasHarmonyAttributes && dynamicApply == null)
 			{
+				if (meta != null)
+				{
+					// 声明了元数据却没有任何目标:属性挂错了类。这类错误静默跳过等于补丁凭空消失,必须显形。
+					Results.Add(new PatchResult(meta.Id, meta.Feature, type, Applied: false, Error: "no [HarmonyPatch] target and no Apply(Harmony)"));
+					Log.Warn($"[{ModInfo.Id}][Patch] Patch declared but has no target: {meta.Id} ({meta.Feature}) on {type.FullName}");
+				}
+
 				continue;
 			}
 
@@ -47,7 +54,13 @@ internal static class HextechPatcher
 				}
 				else
 				{
-					harmony.CreateClassProcessor(type).Patch();
+					List<MethodInfo>? patched = harmony.CreateClassProcessor(type).Patch();
+					bool gated = type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+						.Any(static method => method.GetCustomAttribute<HarmonyPrepare>() != null);
+					if ((patched == null || patched.Count == 0) && !gated && meta?.Optional != true)
+					{
+						throw new InvalidOperationException("class processor patched no methods");
+					}
 				}
 
 				Results.Add(new PatchResult(id, feature, type, Applied: true, Error: null));

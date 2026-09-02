@@ -31,6 +31,7 @@ MegaCrit.Sts2.Core.Models.Cards.CrashLanding::OnPlay(MegaCrit.Sts2.Core.GameActi
 MegaCrit.Sts2.Core.Models.Cards.DecisionsDecisions::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=268e288ff6ea7e17e5a6104538a1ec02912d6eb0
 MegaCrit.Sts2.Core.Models.Cards.DemonForm::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=5d1dcaeda806045028e3e4782f4eda30c13bca9a
 MegaCrit.Sts2.Core.Models.Cards.EchoForm::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=eefab9102cf71f52542c835fd9336cfcf27e32c3
+MegaCrit.Sts2.Core.Models.Cards.GrandFinale::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=0584bb255b9ad8cd72c3fde98a933784925169fd
 MegaCrit.Sts2.Core.Models.Cards.HiddenGem::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=35b4d713f8575a0a153d54604bc70a02c88b0990
 MegaCrit.Sts2.Core.Models.Cards.Jackpot::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=b46c32a17d17d0801a5f3be7c5ac6cb73d3c0d4d
 MegaCrit.Sts2.Core.Models.Cards.ReaperForm::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=87a50ae8864ae69faa3617978122f875e25e87c1

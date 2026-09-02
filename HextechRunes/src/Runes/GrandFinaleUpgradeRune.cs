@@ -30,7 +30,6 @@ public sealed class GrandFinaleUpgradeRune : CardUpgradeRuneBase<GrandFinale>
 			.Execute(choiceContext);
 	}
 
-	[HarmonyPatch(typeof(GrandFinale), "OnPlay", typeof(PlayerChoiceContext), typeof(CardPlay))]
 	// 升级压轴无视"抽牌堆为空"的出牌条件:只补这张牌自己的 IsPlayable,不碰全局 CanPlay。
 	[HarmonyPatch(typeof(GrandFinale), "IsPlayable", MethodType.Getter)]
 	[HextechPatch("rune.grand-finale.playable", "升级压轴", Rune = typeof(GrandFinaleUpgradeRune))]
@@ -46,6 +45,7 @@ public sealed class GrandFinaleUpgradeRune : CardUpgradeRuneBase<GrandFinale>
 		}
 	}
 
+	[HarmonyPatch(typeof(GrandFinale), "OnPlay", typeof(PlayerChoiceContext), typeof(CardPlay))]
 	[HextechPatch("rune.grand-finale", "升级压轴", Rune = typeof(GrandFinaleUpgradeRune))]
 	private static class GrandFinalePatch
 	{
