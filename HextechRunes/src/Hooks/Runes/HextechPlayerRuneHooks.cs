@@ -303,6 +303,21 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 	[HarmonyPatch(typeof(GrandFinale), "OnPlay", typeof(PlayerChoiceContext), typeof(CardPlay))]
+	// 升级压轴无视"抽牌堆为空"的出牌条件:只补这张牌自己的 IsPlayable,不碰全局 CanPlay。
+	[HarmonyPatch(typeof(GrandFinale), "IsPlayable", MethodType.Getter)]
+	[HextechPatch("rune.grand-finale.playable", "升级压轴", Rune = typeof(GrandFinaleUpgradeRune))]
+	private static class GrandFinalePlayablePatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(GrandFinale __instance, ref bool __result)
+		{
+			if (!__result && GrandFinaleUpgradeRune.AllowsPlaying(__instance))
+			{
+				__result = true;
+			}
+		}
+	}
+
 	[HextechPatch("rune.grand-finale", "升级压轴", Rune = typeof(GrandFinaleUpgradeRune))]
 	private static class GrandFinalePatch
 	{

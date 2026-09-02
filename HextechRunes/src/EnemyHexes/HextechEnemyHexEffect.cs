@@ -51,6 +51,11 @@ internal abstract class HextechEnemyHexEffect
 		return true;
 	}
 
+	internal virtual bool ShouldPlay(HextechEnemyHexContext context, CardModel card, AutoPlayType autoPlayType)
+	{
+		return true;
+	}
+
 	internal virtual bool ShouldFlush(HextechEnemyHexContext context, Player player)
 	{
 		return true;
