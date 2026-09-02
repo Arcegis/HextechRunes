@@ -16,7 +16,6 @@ internal static partial class HextechRuneConfigMenuHooks
 	private const string LocTable = "relic_collection";
 	private const string ButtonName = "HextechRuneConfigButton";
 	private const string OverlayName = "HextechRuneConfigOverlay";
-	private const int MaxAttachAttempts = 30;
 	private const int NativeDuplicateFlags = 14;
 	private const int OverlayZIndex = 1000;
 	private const int HoverTipZIndex = 2000;
@@ -45,72 +44,26 @@ internal static partial class HextechRuneConfigMenuHooks
 	private const float ToggleKnobSlideSeconds = 0.17f;
 	private const string ConfigPanelName = "HextechRuneConfigPanel";
 	private const string TabIndicatorName = "HextechRuneConfigTabIndicator";
-	private static readonly FieldInfo? MainMenuButtonLocStringField = TryGetField(typeof(NMainMenuTextButton), "_locString");
-	private static readonly FieldInfo? MainMenuLastHitButtonField = TryGetField(typeof(NMainMenu), "_lastHitButton");
-	private static readonly MethodInfo? MainMenuButtonFocusedMethod = TryGetMethod(typeof(NMainMenu), "MainMenuButtonFocused", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NMainMenuTextButton));
-	private static readonly MethodInfo? MainMenuButtonUnfocusedMethod = TryGetMethod(typeof(NMainMenu), "MainMenuButtonUnfocused", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NMainMenuTextButton));
+	private const string MainMenuLocTable = "main_menu_ui";
 
-
-	private static async Task AttachButtonWhenReadyAsync(NMainMenu mainMenu)
+	/// <summary>
+	/// 在 NMainMenu._Ready 之前把按钮插进 %MainMenuTextButtons:原版随后自己的
+	/// ConnectMainMenuTextButtonFocusLogic 会把焦点光标动画连到它身上,文案走公开的
+	/// SetLocalization(main_menu_ui 表由本模组的 loc 文件合并),不再触碰任何私有成员。
+	/// </summary>
+	private static void TryAttachButton(NMainMenu host)
 	{
-		for (int attempt = 1; attempt <= MaxAttachAttempts; attempt++)
+		if (host.FindChild(ButtonName, recursive: true, owned: false) is NMainMenuTextButton existing
+			&& GodotObject.IsInstanceValid(existing))
 		{
-			if (!GodotObject.IsInstanceValid(mainMenu))
-			{
-				return;
-			}
-
-			try
-			{
-				if (TryAttachButton(mainMenu))
-				{
-					return;
-				}
-			}
-			catch (Exception ex)
-			{
-				Log.Warn($"[{ModInfo.Id}][RuneConfig] Main menu button install failed: {ex.Message}", 2);
-				return;
-			}
-
-			if (!await HextechGodotAsync.AwaitProcessFrameAsync(mainMenu))
-			{
-				return;
-			}
+			return;
 		}
 
-		Log.Warn($"[{ModInfo.Id}][RuneConfig] Main menu button skipped: root was not ready.", 2);
-	}
-
-	private static bool TryAttachButton(NMainMenu host)
-	{
-		if (host.FindChild(ButtonName, recursive: true, owned: false) is NMainMenuTextButton existingNative
-			&& GodotObject.IsInstanceValid(existingNative))
+		if ((host.GetNodeOrNull<Control>("%MainMenuTextButtons") ?? host.GetNodeOrNull<Control>("MainMenuTextButtons")) is not { } buttonHost
+			|| buttonHost.GetNodeOrNull<NMainMenuTextButton>("SettingsButton") is not { } settingsButton)
 		{
-			return true;
-		}
-
-		if (TryAttachNativeMenuButton(host))
-		{
-			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Main menu config button attached.");
-			return true;
-		}
-
-		Log.Warn($"[{ModInfo.Id}][RuneConfig] Main menu config button skipped: native menu buttons were not available.", 2);
-		return false;
-	}
-
-	private static bool TryAttachNativeMenuButton(NMainMenu mainMenu)
-	{
-		if (MainMenuButtonLocStringField == null)
-		{
-			return false;
-		}
-
-		if (mainMenu.GetNodeOrNull<Control>("MainMenuTextButtons") is not { } buttonHost
-			|| mainMenu.GetNodeOrNull<NMainMenuTextButton>("MainMenuTextButtons/SettingsButton") is not { } settingsButton)
-		{
-			return false;
+			Log.Warn($"[{ModInfo.Id}][RuneConfig] Main menu config button skipped: native menu buttons were not available.", 2);
+			return;
 		}
 
 		NMainMenuTextButton configButton = (NMainMenuTextButton)((Node)settingsButton).Duplicate(NativeDuplicateFlags);
@@ -118,12 +71,12 @@ internal static partial class HextechRuneConfigMenuHooks
 		((Node)configButton).UniqueNameInOwner = true;
 		buttonHost.AddChild(configButton);
 		buttonHost.MoveChild(configButton, Math.Min(settingsButton.GetIndex() + 1, buttonHost.GetChildCount() - 1));
-		ConfigureNativeMenuLabel(configButton);
+		configButton.SetLocalization("HEXTECH_CONFIG_BUTTON");
+		((Control)configButton).TooltipText = new LocString(MainMenuLocTable, "HEXTECH_CONFIG_BUTTON_TOOLTIP").GetRawText();
 		ConfigureNativeMenuButton(configButton, settingsButton);
-		ConfigureNativeMenuFocus(mainMenu, configButton);
 		ConfigureNativeMenuNeighbors(buttonHost, configButton, settingsButton);
-		ConnectNativeMenuButton(configButton);
-		return true;
+		((GodotObject)configButton).Connect(NClickableControl.SignalName.Released, Callable.From<NButton>(_ => OpenOverlay(configButton)));
+		HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Main menu config button attached.");
 	}
 
 	private static void ConfigureNativeMenuNeighbors(Control buttonHost, NMainMenuTextButton configButton, NMainMenuTextButton settingsButton)
@@ -145,18 +98,6 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 	}
 
-	private static void ConfigureNativeMenuLabel(NMainMenuTextButton configButton)
-	{
-		MainMenuButtonLocStringField?.SetValue(configButton, null);
-		if (((Node)configButton).GetChildCount() > 0 && ((Node)configButton).GetChild(0) is Label label)
-		{
-			label.Text = L("HEXTECH_CONFIG_BUTTON");
-			label.PivotOffset = label.Size * 0.5f;
-		}
-
-		((Control)configButton).TooltipText = L("HEXTECH_CONFIG_BUTTON_TOOLTIP");
-	}
-
 	private static void ConfigureNativeMenuButton(NMainMenuTextButton configButton, NMainMenuTextButton template)
 	{
 		Control control = configButton;
@@ -170,49 +111,21 @@ internal static partial class HextechRuneConfigMenuHooks
 		control.ZAsRelative = ((Control)template).ZAsRelative;
 	}
 
-	private static void ConfigureNativeMenuFocus(NMainMenu mainMenu, NMainMenuTextButton configButton)
-	{
-		if (MainMenuButtonFocusedMethod != null)
-		{
-			((GodotObject)configButton).Connect(
-				NClickableControl.SignalName.Focused,
-				Callable.From<NMainMenuTextButton>(button =>
-				{
-					Callable.From(() => MainMenuButtonFocusedMethod.Invoke(mainMenu, [button])).CallDeferred();
-				}));
-		}
-
-		if (MainMenuButtonUnfocusedMethod != null)
-		{
-			((GodotObject)configButton).Connect(
-				NClickableControl.SignalName.Unfocused,
-				Callable.From<NMainMenuTextButton>(button => MainMenuButtonUnfocusedMethod.Invoke(mainMenu, [button])));
-		}
-	}
-
-	private static void ConnectNativeMenuButton(NMainMenuTextButton configButton)
-	{
-		((GodotObject)configButton).Connect(
-			NClickableControl.SignalName.Released,
-			Callable.From<NButton>(_ =>
-			{
-				if (FindAncestor<NMainMenu>(configButton) is { } mainMenu)
-				{
-					MainMenuLastHitButtonField?.SetValue(mainMenu, configButton);
-				}
-
-				OpenOverlay(configButton);
-			}));
-	}
-
 	[HarmonyPatch(typeof(NMainMenu), nameof(NMainMenu._Ready), new Type[0])]
 	[HextechPatch("ui.rune-config-menu", "海克斯配置菜单")]
 	private static class MainMenuReadyPatch
 	{
-		[HarmonyPostfix]
-		private static void Postfix(NMainMenu __instance)
+		[HarmonyPrefix]
+		private static void Prefix(NMainMenu __instance)
 		{
-			TaskHelper.RunSafely(AttachButtonWhenReadyAsync(__instance));
+			try
+			{
+				TryAttachButton(__instance);
+			}
+			catch (Exception ex)
+			{
+				Log.Warn($"[{ModInfo.Id}][RuneConfig] Main menu button install failed: {ex.Message}", 2);
+			}
 		}
 	}
 }

@@ -13,11 +13,18 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneConfigMenuHooks
 {
+	private const string OpenerMetaKey = "hextech_opener";
+
 	private static void OpenOverlay(Node source)
 	{
 		Node root = ResolveRoot(source);
 		RemoveExistingOverlay(root);
 		Control overlay = CreateOverlay(out RuneConfigOverlayState state);
+		if (source is Control opener)
+		{
+			overlay.SetMeta(OpenerMetaKey, opener);
+		}
+
 		root.AddChild(overlay);
 		if (overlay is HextechControllerOverlay controllerOverlay)
 		{
@@ -84,11 +91,18 @@ internal static partial class HextechRuneConfigMenuHooks
 			tween.TweenProperty(panel, "scale", Vector2.One * OverlayOpenScale, OverlayCloseSeconds).SetEase(Tween.EaseType.In);
 		}
 
+		Control? opener = overlay.HasMeta(OpenerMetaKey) ? overlay.GetMeta(OpenerMetaKey).As<Control>() : null;
 		tween.Chain().TweenCallback(Callable.From(() =>
 		{
 			if (GodotObject.IsInstanceValid(overlay))
 			{
 				overlay.QueueFree();
+			}
+
+			// 覆盖层不是原版 SubmenuStack 的一员,焦点要自己还给打开它的按钮。
+			if (opener != null && GodotObject.IsInstanceValid(opener) && opener.IsInsideTree() && opener.IsVisibleInTree())
+			{
+				opener.GrabFocus();
 			}
 		}));
 	}
