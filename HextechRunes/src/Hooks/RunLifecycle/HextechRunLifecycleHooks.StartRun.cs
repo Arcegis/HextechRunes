@@ -48,6 +48,9 @@ internal static partial class HextechRunLifecycleHooks
 
 	private static void StartRunPostfix(RunState runState, ref Task __result)
 	{
+#if STS2_109_OR_NEWER
+		HextechSavedPropertyBootstrap.RunOfficialCacheAuditOnce();
+#endif
 		__result = StartRunAfterOriginal(__result, runState);
 	}
 

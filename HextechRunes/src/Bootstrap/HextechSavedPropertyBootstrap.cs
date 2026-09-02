@@ -124,6 +124,33 @@ internal static class HextechSavedPropertyBootstrap
 #endif
 	}
 
+#if STS2_109_OR_NEWER
+	private static bool _officialCacheAudited;
+
+	/// <summary>
+	/// 0.109+ 的载体自检:官方 Init 在启动状态机里填表,启动期自检必误报全量,推迟到首个跑局开始/读档时跑一次。
+	/// 此时拓展包的延迟注册也已完成,能抓到"包侧新增 [SavedProperty] 载体却忘了走 API 注册"的漏项。
+	/// </summary>
+	internal static void RunOfficialCacheAuditOnce()
+	{
+		if (_officialCacheAudited)
+		{
+			return;
+		}
+
+		_officialCacheAudited = true;
+		try
+		{
+			WarnOnUninjectedSavedPropertyCarriers();
+			HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] SavedProperty net-id map is game-canonical: bitSize={SavedPropertiesTypeCache.PropertyIdBitSize} hash={SavedPropertiesTypeCache.Hash:X8}.");
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] SavedProperty post-init audit failed: {ex.GetType().Name}: {ex.Message}");
+		}
+	}
+#endif
+
 	// 启动自检同时核对全局 net-id 名字表和每个载体自己的 PropertyInfo 缓存。前者决定 wire 布局，
 	// 后者决定保存/同步时实际枚举哪些属性；只查名字会漏掉“同名属性已存在、载体本身未缓存”的静默丢字段。
 	internal static void WarnOnUninjectedSavedPropertyCarriers()

@@ -34,9 +34,10 @@ public static class ModEntry
 			HextechTelemetry.Initialize();
 			HextechIntegratedStrategyEventsCompat.Install();
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
-			TryInstallOptionalHookGroup("model id serialization warning compatibility", () => HextechModelIdSerializationWarningHooks.Install(harmony));
-			HextechMultiplayerCompatibilityHooks.Install(harmony);
+#if STS2_107_1
+			// 0.109 起原版 ModelIdSerializationCache.Init 自行做确定性排序与哈希,规范化只对 0.107.1 有意义。
 			TryInstallOptionalHookGroup("saved-property net-id canonicalization", () => HextechSavedPropertyNetIdHooks.Install(harmony));
+#endif
 			HextechMobileModelRegistrationHooks.Install(harmony);
 			HextechThoughtOverwriteKeywordPersistenceHooks.Install(harmony);
 			HextechSelfUpgradeCardStore.Install(harmony);
@@ -80,6 +81,7 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("nightmare dark orb passive", () => HextechNightmareHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
 			_initialized = true;
+			HextechMultiplayerDiagnostics.LogNetworkSignature();
 			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控。
 			Log.Info(
 				$"[{ModInfo.Id}] Loaded implementation variant for " +

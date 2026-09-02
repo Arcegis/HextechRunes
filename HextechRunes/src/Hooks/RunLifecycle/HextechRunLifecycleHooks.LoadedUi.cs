@@ -11,6 +11,9 @@ internal static partial class HextechRunLifecycleHooks
 
 	private static void LoadRunPostfix(RunState runState, ref Task __result)
 	{
+#if STS2_109_OR_NEWER
+		HextechSavedPropertyBootstrap.RunOfficialCacheAuditOnce();
+#endif
 		HextechRunLogBudget.Reset();
 		HextechCombatHooks.ResetTransientCombatState();
 		HextechEnemyHexEffects.ResetAllRunScopedState();

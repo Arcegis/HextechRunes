@@ -270,7 +270,6 @@ internal static partial class Program
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
 			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
 			new(nameof(MultiplayerGameplaySignatureExcludesRuntimeSavedProperties), MultiplayerGameplaySignatureExcludesRuntimeSavedProperties),
-			new(nameof(MultiplayerGameplayEntryIncludesReadableProtocolVersion), MultiplayerGameplayEntryIncludesReadableProtocolVersion),
 			new(nameof(SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent), SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent),
 			new(nameof(SavedPropertyNetIdBitSizeMatchesGameFormula), SavedPropertyNetIdBitSizeMatchesGameFormula),
 			new(nameof(CompensationReplacementGuardScopesAsyncWork), CompensationReplacementGuardScopesAsyncWork),
@@ -305,7 +304,6 @@ internal static partial class Program
 			new(nameof(AbyssalContractWarriorCardFilterRejectsSkillsAndPowers), AbyssalContractWarriorCardFilterRejectsSkillsAndPowers),
 			new(nameof(ActualDamageHookCannotSuppressOutOfCombatCalls), ActualDamageHookCannotSuppressOutOfCombatCalls),
 			new(nameof(HookReflectionRequiresExactSignatures), HookReflectionRequiresExactSignatures),
-			new(nameof(SavedPropertyProtocolClassifierMatchesOnlyOfficialShapes), SavedPropertyProtocolClassifierMatchesOnlyOfficialShapes),
 			new(nameof(SavedPropertyLateRegistrationFailsClosedOn0107WithoutPartialState), SavedPropertyLateRegistrationFailsClosedOn0107WithoutPartialState),
 			new(nameof(ExternalRegistrationValidationPrecedesAllSideEffects), ExternalRegistrationValidationPrecedesAllSideEffects),
 			new(nameof(ExternalResourceOwnershipIsFirstWriterWinsAndIdempotent), ExternalResourceOwnershipIsFirstWriterWinsAndIdempotent),
@@ -5483,14 +5481,14 @@ internal static partial class Program
 
 	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
 	{
-		string gameplaySignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
+		string gameplaySignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
 			"HextechRunes",
 			"0.8.1",
 			null,
 			"",
 			"",
 			includeSavedProperties: false);
-		string diagnosticSignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
+		string diagnosticSignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
 			"HextechRunes",
 			"0.8.1",
 			null,
@@ -5501,25 +5499,6 @@ internal static partial class Program
 		Expect(!gameplaySignature.Contains("savedProps=", StringComparison.Ordinal), "gameplay signature must not include runtime SavedProperties state");
 		Expect(diagnosticSignature.Contains("savedProps=", StringComparison.Ordinal), "diagnostic signature should still include SavedProperties state");
 		Expect(!string.Equals(gameplaySignature, diagnosticSignature, StringComparison.Ordinal), "diagnostic signature should remain more detailed than gameplay signature");
-	}
-
-	private static void MultiplayerGameplayEntryIncludesReadableProtocolVersion()
-	{
-		Equal(
-			"HextechRunes-0.8.1-net1",
-			HextechMultiplayerCompatibilityHooks.BuildGameplayCompatibilityEntry("HextechRunes", "0.8.1"),
-			"gameplay compatibility entry should expose the short network protocol version");
-
-		string diagnosticSignature = HextechMultiplayerCompatibilityHooks.BuildModNetworkSignature(
-			"HextechRunes",
-			"0.8.1",
-			null,
-			"",
-			"",
-			includeSavedProperties: false);
-		Expect(
-			diagnosticSignature.Contains("protocol=net1", StringComparison.Ordinal),
-			"diagnostic signature should expose the same network protocol version");
 	}
 
 	private static void SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent()
