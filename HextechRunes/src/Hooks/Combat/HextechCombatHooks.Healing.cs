@@ -5,6 +5,8 @@ namespace HextechRunes;
 internal static partial class HextechCombatHooks
 {
 	internal const string EndlessModeHarmonyId = "Natsuki.EndlessMode";
+	internal const string RitsuLibCoreHarmonyId = "com.ritsukage.sts2-RitsuLib.framework-core";
+	internal const string BaseLibHarmonyId = "BaseLib";
 
 	private readonly record struct HealPostState(Player? Player, Creature Creature, int CurrentHpBefore, bool ShouldProcess);
 
@@ -161,9 +163,11 @@ internal static partial class HextechCombatHooks
 			return true;
 		}
 
+		// 封顶必须是治疗前缀链的最后一环:别的模组(无尽/RitsuLib/BaseLib)的加减乘都算完,再按当前生命封顶。
+		// 原版 Heal 对 0 也会播治疗音效与特效,所以"禁止回血"仍由上面的 Prefix 跳过原方法,这里只做数值封顶。
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Last)]
-		[HarmonyAfter(EndlessModeHarmonyId)]
+		[HarmonyAfter(EndlessModeHarmonyId, RitsuLibCoreHarmonyId, BaseLibHarmonyId)]
 		private static void FinalCapPrefix(Creature creature, ref decimal amount)
 		{
 			if (amount <= 0m || IsEnemyReviveHeal(creature, amount))

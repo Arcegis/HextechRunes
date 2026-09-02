@@ -18,9 +18,9 @@ internal static partial class HextechPlayerRuneHooks
 	private const float OrbLayoutMaxRadius = 300f;
 	private const float OrbLayoutTweenSpeed = 0.45f;
 
-	private static FieldInfo? OrbManagerOrbsField;
-	private static FieldInfo? OrbManagerCreatureField;
-	private static FieldInfo? OrbManagerCurrentTweenField;
+	internal static FieldInfo? OrbManagerOrbsField;
+	internal static FieldInfo? OrbManagerCreatureField;
+	internal static FieldInfo? OrbManagerCurrentTweenField;
 	private static readonly ConditionalWeakTable<NOrbManager, OrbLayoutFrameState> OrbLayoutFrameStates = new();
 
 	private sealed class OrbLayoutFrameState
@@ -78,7 +78,7 @@ internal static partial class HextechPlayerRuneHooks
 		}
 	}
 
-	private static void EnsureOrbLayoutFields()
+	internal static void EnsureOrbLayoutFields()
 	{
 		OrbManagerOrbsField ??= RequireField(typeof(NOrbManager), "_orbs");
 		OrbManagerCreatureField ??= RequireField(typeof(NOrbManager), "_creatureNode");
@@ -86,7 +86,7 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 
-	private static bool OrbTweenLayoutPrefixCore(NOrbManager __instance)
+	internal static bool OrbTweenLayoutPrefixCore(NOrbManager __instance)
 	{
 		if (!TryGetOrbLayoutState(__instance, out List<NOrb> orbs, out Player? player, out int capacity)
 			|| capacity <= OrbLayoutRadiusSoftCapSlots)
@@ -158,7 +158,7 @@ internal static partial class HextechPlayerRuneHooks
 			: layoutCount;
 	}
 
-	private static bool TryGetOrbLayoutState(
+	internal static bool TryGetOrbLayoutState(
 		NOrbManager manager,
 		out List<NOrb> orbs,
 		out Player? player,
@@ -172,7 +172,7 @@ internal static partial class HextechPlayerRuneHooks
 	}
 
 
-	private static async Task<IEnumerable<Creature>> ApplyElectrodynamicsLightningDamage(LightningOrb orb, decimal value, PlayerChoiceContext choiceContext)
+	internal static async Task<IEnumerable<Creature>> ApplyElectrodynamicsLightningDamage(LightningOrb orb, decimal value, PlayerChoiceContext choiceContext)
 	{
 		List<Creature> targets = orb.CombatState.GetOpponentsOf(orb.Owner.Creature)
 			.Where(static enemy => enemy.IsHittable)
@@ -191,39 +191,9 @@ internal static partial class HextechPlayerRuneHooks
 		return targets;
 	}
 
-	[HarmonyPatch(typeof(OrbCmd), nameof(OrbCmd.AddSlots), typeof(Player), typeof(int))]
-	[HextechPatch("rune.mad-scientist", "科学狂人", Rune = typeof(MadScientistRune))]
-	private static class MadScientistPatch
-	{
-		[HarmonyPrefix]
-		private static bool Prefix(Player player, int amount, ref Task __result)
-		{
-			if (player.GetRelic<MadScientistRune>() == null)
-			{
-				return true;
-			}
-
-			if (CombatManager.Instance.IsOverOrEnding || amount <= 0)
-			{
-				__result = Task.CompletedTask;
-				return false;
-			}
-
-			if (player.PlayerCombatState == null)
-			{
-				return true;
-			}
-
-			player.PlayerCombatState.OrbQueue.AddCapacity(amount);
-			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.OrbManager?.AddSlotAnim(amount);
-			__result = Task.CompletedTask;
-			return false;
-		}
-	}
-
 	[HarmonyPatch(typeof(NOrbManager), "TweenLayout")]
 	[HextechPatch("rune.orb-layout-soft-cap", "充能球布局软上限")]
-	private static class OrbLayoutSoftCapPatch
+	internal static class OrbLayoutSoftCapPatch
 	{
 		[HarmonyPrepare]
 		private static bool Prepare()
@@ -245,27 +215,6 @@ internal static partial class HextechPlayerRuneHooks
 				Log.Warn($"[{ModInfo.Id}][Mayhem] Orb layout override failed; falling back to vanilla layout: {ex.Message}");
 				return true;
 			}
-		}
-	}
-
-	#if STS2_108_OR_NEWER
-	[HarmonyPatch(typeof(LightningOrb), "ApplyLightningDamage", typeof(decimal), typeof(Creature), typeof(PlayerChoiceContext), typeof(bool))]
-	#else
-	[HarmonyPatch(typeof(LightningOrb), "ApplyLightningDamage", typeof(decimal), typeof(Creature), typeof(PlayerChoiceContext))]
-	#endif
-	[HextechPatch("rune.electrodynamics", "电动力学", Rune = typeof(ElectrodynamicsRune))]
-	private static class ElectrodynamicsPatch
-	{
-		[HarmonyPrefix]
-		private static bool Prefix(LightningOrb __instance, decimal value, Creature? target, PlayerChoiceContext choiceContext, ref Task<IEnumerable<Creature>> __result)
-		{
-			if (__instance.Owner?.GetRelic<ElectrodynamicsRune>() == null)
-			{
-				return true;
-			}
-
-			__result = ApplyElectrodynamicsLightningDamage(__instance, value, choiceContext);
-			return false;
 		}
 	}
 }

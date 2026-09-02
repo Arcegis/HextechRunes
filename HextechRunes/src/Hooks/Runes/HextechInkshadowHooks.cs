@@ -14,7 +14,7 @@ internal static class HextechInkshadowHooks
 {
 
 
-	private static async Task PlayWithGuardedEnchant(BladeOfInk card, Player owner, HextechCombatState combatState)
+	internal static async Task PlayWithGuardedEnchant(BladeOfInk card, Player owner, HextechCombatState combatState)
 	{
 		foreach (CardModel item in await Shiv.CreateInHand(owner, card.DynamicVars.Cards.IntValue, combatState))
 		{
@@ -32,22 +32,4 @@ internal static class HextechInkshadowHooks
 		}
 	}
 
-	[HarmonyPatch(typeof(BladeOfInk), "OnPlay", typeof(PlayerChoiceContext), typeof(CardPlay))]
-	[HextechPatch("rune.inkshadow", "墨影")]
-	private static class BladeOfInkPatch
-	{
-		[HarmonyPrefix]
-		private static bool Prefix(BladeOfInk __instance, PlayerChoiceContext choiceContext, ref Task __result)
-		{
-			if (__instance.Owner is not { } owner
-				|| __instance.CombatState is not { } combatState
-				|| owner.GetRelic<InkshadowRune>() == null)
-			{
-				return true;
-			}
-
-			__result = PlayWithGuardedEnchant(__instance, owner, combatState);
-			return false;
-		}
-	}
 }

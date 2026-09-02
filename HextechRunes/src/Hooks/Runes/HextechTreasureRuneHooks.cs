@@ -16,11 +16,11 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechTreasureRuneHooks
 {
-	private static readonly FieldInfo CurrentRelicsField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_currentRelics");
-	private static readonly FieldInfo PlayerCollectionField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_playerCollection");
+	internal static readonly FieldInfo CurrentRelicsField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_currentRelics");
+	internal static readonly FieldInfo PlayerCollectionField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_playerCollection");
 
 
-	private static void ReplaceRelicsForEggOwners(TreasureRoomRelicSynchronizer synchronizer)
+	internal static void ReplaceRelicsForEggOwners(TreasureRoomRelicSynchronizer synchronizer)
 	{
 		if (CurrentRelicsField.GetValue(synchronizer) is not List<RelicModel> relics
 			|| relics.Count == 0
@@ -85,22 +85,4 @@ internal static class HextechTreasureRuneHooks
 		}
 	}
 
-	[HarmonyPatch(typeof(TreasureRoomRelicSynchronizer), "BeginRelicPicking")]
-	[HextechPatch("rune.prismatic-egg", "棱彩之卵")]
-	private static class BeginRelicPickingPatch
-	{
-		[HarmonyPostfix]
-		private static void Postfix(TreasureRoomRelicSynchronizer __instance)
-		{
-			try
-			{
-				ReplaceRelicsForEggOwners(__instance);
-			}
-			catch (Exception ex)
-			{
-				// 替换失败只损失棱彩蛋效果,绝不能打断原版开箱。
-				Log.Warn($"[{ModInfo.Id}][Mayhem] PrismaticEgg treasure replacement skipped: {ex.GetType().Name}: {ex.Message}");
-			}
-		}
-	}
 }
