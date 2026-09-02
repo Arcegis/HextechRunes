@@ -49,8 +49,6 @@ HextechRunes.HextechGoldrendSync._trackedRunState : RunState
 HextechRunes.HextechInspectHooks._inspectScreenHooksAvailable : Nullable`1
 HextechRunes.HextechInspectHooks._inspectScreenHooksInstalled : Boolean
 HextechRunes.HextechIntegratedStrategyEventsCompat._getCurrentExtraActId : MethodInfo
-HextechRunes.HextechIntegrityCheck._loggedOfficialBuildCheck : Boolean
-HextechRunes.HextechIntegrityCheck._loggedOfficialServer : Boolean
 HextechRunes.HextechLog._verbose : Boolean
 HextechRunes.HextechModelBootstrap._installed : Boolean
 HextechRunes.HextechMultiplayerDiagnostics._cachedNetworkSignature : String

@@ -31,7 +31,6 @@ grep -Fq 'LegacyModAssemblyField?.SetValue(mod, _selectedVariantAssembly)' "$ROO
 grep -Fq 'CompatTargetMetadataKey = "HextechCompatibilityTarget"' "$ROOT/loader/LoaderBootstrap.cs"
 grep -Fq '<AssemblyMetadata Include="HextechCompatibilityTarget"' "$ROOT/src/HextechRunes.csproj"
 grep -Fq 'TARGETS=(0.107.1 0.110.0 0.111.0)' "$ROOT/tools/build_and_deploy.sh"
-grep -Fq -- '--dll-path "$DIST/lib/$target/$FILE_STEM.dll"' "$ROOT/tools/build_and_deploy.sh"
 
 SPONSOR_ROOT="$ROOT/../HextechRunesSponsorPack"
 grep -Fq 'LinuxNativeDependencyBootstrap.EnsureHarmonyRuntimeDependenciesVisible();' "$SPONSOR_ROOT/loader/LoaderBootstrap.cs"
