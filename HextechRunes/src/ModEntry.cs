@@ -80,6 +80,10 @@ public static class ModEntry
 			TryInstallOptionalHookGroup("prismatic egg treasure replacement", () => HextechTreasureRuneHooks.Install(harmony));
 			TryInstallOptionalHookGroup("nightmare dark orb passive", () => HextechNightmareHooks.Install(harmony));
 			TryInstallOptionalHookGroup("game over score line compatibility", () => HextechGameOverCompatibilityHooks.Install(harmony));
+			HextechPatcher.ApplyAll(harmony, typeof(ModEntry).Assembly);
+			HextechPatcher.LogSummary();
+			HextechPatcher.LogSharedPatchTargets(harmony);
+			HextechPatcher.DumpIfRequested(harmony);
 			_initialized = true;
 			HextechMultiplayerDiagnostics.LogNetworkSignature();
 			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控。

@@ -1,0 +1,195 @@
+using System.Text;
+using HarmonyLib;
+
+namespace HextechRunes;
+
+/// <summary>
+/// 属性式补丁的统一应用入口:逐类应用、逐条汇报、失败按功能归因,并在启动时列出与其他模组共享的补丁点。
+/// </summary>
+/// <remarks>
+/// 同一目标上本模组的多个补丁,执行序只由 <c>[HarmonyPriority]</c> 决定,不依赖类的声明顺序;
+/// 需要先后关系的地方必须显式标优先级。
+/// </remarks>
+internal static class HextechPatcher
+{
+	private const string DumpEnvVar = "HEXTECH_DUMP_PATCHES";
+
+	private sealed record PatchResult(string Id, string Feature, Type PatchType, bool Applied, string? Error);
+
+	private static readonly List<PatchResult> Results = [];
+
+	/// <summary>应用 <paramref name="assembly"/> 中所有带 <c>[HarmonyPatch]</c> 的类型。</summary>
+	internal static void ApplyAll(Harmony harmony, Assembly assembly)
+	{
+		foreach (Type type in AccessTools.GetTypesFromAssembly(assembly))
+		{
+			if (!HarmonyMethodExtensions.GetFromType(type).Any())
+			{
+				continue;
+			}
+
+			HextechPatchAttribute? meta = type.GetCustomAttribute<HextechPatchAttribute>();
+			string id = meta?.Id ?? type.FullName ?? type.Name;
+			string feature = meta?.Feature ?? "unspecified";
+			try
+			{
+				harmony.CreateClassProcessor(type).Patch();
+				Results.Add(new PatchResult(id, feature, type, Applied: true, Error: null));
+			}
+			catch (Exception ex)
+			{
+				Exception root = ex is HarmonyException { InnerException: not null } harmonyException ? harmonyException.InnerException! : ex;
+				Results.Add(new PatchResult(id, feature, type, Applied: false, Error: $"{root.GetType().Name}: {root.Message}"));
+				if (meta?.Rune != null)
+				{
+					HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed(meta.Rune, id, root);
+				}
+				else if (meta?.Optional == true)
+				{
+					HextechLog.Info($"[{ModInfo.Id}][Patch] Optional patch skipped: {id} ({feature}): {root.GetType().Name}: {root.Message}");
+				}
+				else
+				{
+					Log.Warn($"[{ModInfo.Id}][Patch] Patch failed: {id} ({feature}): {root.GetType().Name}: {root.Message}");
+				}
+			}
+		}
+	}
+
+	/// <summary>启动汇总:应用/失败计数,失败项逐条列出。</summary>
+	internal static void LogSummary()
+	{
+		int failed = Results.Count(result => !result.Applied);
+		HextechLog.Info($"[{ModInfo.Id}][Patch] Applied {Results.Count - failed}/{Results.Count} patch classes.");
+		foreach (PatchResult result in Results.Where(result => !result.Applied))
+		{
+			HextechLog.Info($"[{ModInfo.Id}][Patch]   failed {result.Id} ({result.Feature}): {result.Error}");
+		}
+	}
+
+	/// <summary>
+	/// 列出本模组补丁与其他 owner 共享的目标方法。这是排查"装了别的模组后行为变样"的第一手线索。
+	/// </summary>
+	internal static void LogSharedPatchTargets(Harmony harmony)
+	{
+		try
+		{
+			List<string> lines = [];
+			foreach (MethodBase method in Harmony.GetAllPatchedMethods())
+			{
+				Patches? info = Harmony.GetPatchInfo(method);
+				if (info == null)
+				{
+					continue;
+				}
+
+				List<Patch> all = [.. info.Prefixes, .. info.Postfixes, .. info.Transpilers, .. info.Finalizers];
+				if (!all.Any(patch => patch.owner == harmony.Id))
+				{
+					continue;
+				}
+
+				string[] others = all
+					.Where(patch => patch.owner != harmony.Id)
+					.Select(patch => patch.owner)
+					.Distinct(StringComparer.Ordinal)
+					.OrderBy(owner => owner, StringComparer.Ordinal)
+					.ToArray();
+				if (others.Length > 0)
+				{
+					lines.Add($"{method.DeclaringType?.FullName}.{method.Name} <- {string.Join(", ", others)}");
+				}
+			}
+
+			if (lines.Count == 0)
+			{
+				HextechLog.Info($"[{ModInfo.Id}][Patch] No patch targets are shared with other mods.");
+				return;
+			}
+
+			lines.Sort(StringComparer.Ordinal);
+			Log.Info($"[{ModInfo.Id}][Patch] {lines.Count} patch target(s) shared with other mods:\n  {string.Join("\n  ", lines)}");
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Patch] Shared patch target scan failed: {ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
+	/// <summary>
+	/// 环境变量 <c>HEXTECH_DUMP_PATCHES=&lt;path&gt;</c> 存在时,把本模组全部补丁按目标方法排序写成文本。
+	/// 用于重构前后比对:目标集合、补丁种类、优先级与同目标内的执行序都必须一致。
+	/// </summary>
+	internal static void DumpIfRequested(Harmony harmony)
+	{
+		string? path = Environment.GetEnvironmentVariable(DumpEnvVar);
+		if (string.IsNullOrWhiteSpace(path))
+		{
+			return;
+		}
+
+		try
+		{
+			File.WriteAllText(path, BuildPatchTable(harmony.Id), Encoding.UTF8);
+			Log.Info($"[{ModInfo.Id}][Patch] Patch table written to {path}.");
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Patch] Patch table dump failed: {ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
+	internal static string BuildPatchTable(string ownerId)
+	{
+		StringBuilder builder = new();
+		IEnumerable<MethodBase> methods = Harmony.GetAllPatchedMethods()
+			.OrderBy(method => $"{method.DeclaringType?.FullName}.{method.Name}({string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.Name))})", StringComparer.Ordinal);
+		foreach (MethodBase method in methods)
+		{
+			Patches? info = Harmony.GetPatchInfo(method);
+			if (info == null)
+			{
+				continue;
+			}
+
+			List<string> lines = [];
+			AppendKind(lines, "prefix", info.Prefixes, ownerId);
+			AppendKind(lines, "postfix", info.Postfixes, ownerId);
+			AppendKind(lines, "transpiler", info.Transpilers, ownerId);
+			AppendKind(lines, "finalizer", info.Finalizers, ownerId);
+			if (lines.Count == 0)
+			{
+				continue;
+			}
+
+			builder.Append(method.DeclaringType?.FullName).Append('.').Append(method.Name)
+				.Append('(').Append(string.Join(", ", method.GetParameters().Select(parameter => parameter.ParameterType.Name))).Append(')').Append('\n');
+			foreach (string line in lines)
+			{
+				builder.Append("  ").Append(line).Append('\n');
+			}
+		}
+
+		return builder.ToString();
+	}
+
+	private static void AppendKind(List<string> lines, string kind, IReadOnlyCollection<Patch> patches, string ownerId)
+	{
+		// Harmony 执行序:优先级降序,同优先级按加入序。before/after 只影响跨 owner 的相对序,这里按 owner 内视角记录。
+		foreach (Patch patch in patches.Where(patch => patch.owner == ownerId).OrderByDescending(patch => patch.priority).ThenBy(patch => patch.index))
+		{
+			string extras = string.Empty;
+			if (patch.before.Length > 0)
+			{
+				extras += $" before={string.Join("|", patch.before)}";
+			}
+
+			if (patch.after.Length > 0)
+			{
+				extras += $" after={string.Join("|", patch.after)}";
+			}
+
+			lines.Add($"{kind} priority={patch.priority} {patch.PatchMethod.DeclaringType?.Name}.{patch.PatchMethod.Name}{extras}");
+		}
+	}
+}
