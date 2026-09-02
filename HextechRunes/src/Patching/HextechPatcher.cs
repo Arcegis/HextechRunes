@@ -81,6 +81,33 @@ internal static class HextechPatcher
 		}
 	}
 
+	/// <summary>
+	/// 只应用 <paramref name="outerType"/> 里声明的嵌套补丁类(测试用:隔离验证某一功能组的补丁)。
+	/// 给了 <paramref name="nestedNames"/> 就只应用点名的那几个。
+	/// </summary>
+	internal static void ApplyNested(Harmony harmony, Type outerType, params string[] nestedNames)
+	{
+		foreach (Type nested in outerType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+		{
+			if (nestedNames.Length > 0 && !nestedNames.Contains(nested.Name, StringComparer.Ordinal))
+			{
+				continue;
+			}
+
+			if (HarmonyMethodExtensions.GetFromType(nested).Any())
+			{
+				harmony.CreateClassProcessor(nested).Patch();
+			}
+		}
+	}
+
+	/// <summary>测试用:按外层类型 + 嵌套补丁类名定位补丁方法。</summary>
+	internal static MethodInfo? FindPatchMethod(Type outerType, string nestedName, string methodName)
+	{
+		return outerType.GetNestedType(nestedName, BindingFlags.Public | BindingFlags.NonPublic)
+			?.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+	}
+
 	/// <summary>启动汇总:应用/失败计数,失败项逐条列出。</summary>
 	internal static void LogSummary()
 	{

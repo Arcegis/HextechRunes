@@ -320,7 +320,7 @@ internal static class HextechRewardSafetyHooks
 
 	[HarmonyPatch(typeof(DustyTome), nameof(DustyTome.AfterObtained), new Type[0])]
 	[HextechPatch("reward.dusty-tome", "复视奖励事务")]
-	private static class DustyTomePatch
+	internal static class DustyTomePatch
 	{
 		[HarmonyPrefix]
 		internal static bool Prefix(DustyTome __instance, ref Task __result)

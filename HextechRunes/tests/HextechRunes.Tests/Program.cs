@@ -2511,9 +2511,7 @@ internal static partial class Program
 		Equal(HextechRarityTier.Gold, registration.Rarity, "Piercing Thread rarity");
 		Equal("OUTPUT", registration.TagKey, "Piercing Thread tag");
 		Expect(
-			typeof(HextechCombatHooks).GetMethod(
-				"PiercingThreadDamageBlockPrefix",
-				BindingFlags.Static | BindingFlags.NonPublic) != null,
+			HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "DamageBlockPatch", "Prefix") != null,
 			"Piercing Thread should alter the blockable amount at the original block-consumption boundary");
 	}
 
@@ -3995,7 +3993,7 @@ internal static partial class Program
 		Harmony neutralTypeHarmony = new("Natsuki.HextechRunes.Tests.SlowPowerType");
 		neutralTypeHarmony.Patch(
 			AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), [typeof(decimal)]),
-			prefix: new HarmonyMethod(AccessTools.Method(typeof(HextechCombatHooks), "PowerModelGetTypeForAmountPrefix")));
+			prefix: new HarmonyMethod(HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "PowerTypeForAmountPatch", "Prefix")));
 		try
 		{
 			Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, slow.GetTypeForAmount(8m), "positive custom Slow should remain neutral");
@@ -4887,7 +4885,7 @@ internal static partial class Program
 		MethodInfo[] hookMethods = typeof(HextechPlayerRuneHooks).GetMethods(
 			BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 		Expect(hookMethods.All(method => method.Name != "OrbChannelPrefix"), "Draw Your Sword should no longer intercept Orb channeling");
-		Expect(hookMethods.Any(method => method.Name == "InstallDrawYourSwordHooks"), "Draw Your Sword should install an Orb Evoke replacement hook");
+		Expect(HextechPatcher.FindPatchMethod(typeof(HextechPlayerRuneHooks), "DrawYourSwordEvokePatch", "Apply") != null, "Draw Your Sword should install an Orb Evoke replacement hook");
 		Expect(hookMethods.Any(method => method.Name == "OrbEvokePrefix"), "Draw Your Sword should intercept Orb Evoke effects");
 
 		IReadOnlyList<MethodInfo> evokeMethods = HextechPlayerRuneHooks.FindLoadedOrbEvokeMethods();
@@ -5083,7 +5081,7 @@ internal static partial class Program
 				unrelated = CreateTestDustyTome();
 				Expect(DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(candidate), "copied Dusty Tome should suppress its own AfterObtained");
 				Task copiedAfterObtained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task;
-				bool runCopiedAfterObtained = HextechRewardSafetyHooks.DustyTomeAfterObtainedPrefix(candidate, ref copiedAfterObtained);
+				bool runCopiedAfterObtained = HextechRewardSafetyHooks.DustyTomePatch.Prefix(candidate, ref copiedAfterObtained);
 				if (runCopiedAfterObtained)
 				{
 					ancientCardGrantCount++;
@@ -5093,7 +5091,7 @@ internal static partial class Program
 				Expect(!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(source), "source Dusty Tome must not be suppressed");
 				Task sourceAfterObtained = Task.CompletedTask;
 				Expect(
-					HextechRewardSafetyHooks.DustyTomeAfterObtainedPrefix(source, ref sourceAfterObtained),
+					HextechRewardSafetyHooks.DustyTomePatch.Prefix(source, ref sourceAfterObtained),
 					"source Dusty Tome AfterObtained must still run");
 				Expect(!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(unrelated), "unrelated Dusty Tome must not be suppressed");
 				return Task.FromResult(candidate);
