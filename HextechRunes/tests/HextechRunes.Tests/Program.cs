@@ -203,6 +203,7 @@ internal static partial class Program
 			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
 			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
 			new(nameof(PatchManifestMatchesCheckedInList), PatchManifestMatchesCheckedInList),
+			new(nameof(StaticStateManifestMatchesCheckedInList), StaticStateManifestMatchesCheckedInList),
 			new(nameof(CardPlayBlockersUseOfficialShouldPlayHook), CardPlayBlockersUseOfficialShouldPlayHook),
 			new(nameof(SavedPropertyPreInitRegistrationLeavesWireTablesUntouched), SavedPropertyPreInitRegistrationLeavesWireTablesUntouched),
 			new(nameof(SavedPropertyLateCarrierRegistrationFailsClosed), SavedPropertyLateCarrierRegistrationFailsClosed),

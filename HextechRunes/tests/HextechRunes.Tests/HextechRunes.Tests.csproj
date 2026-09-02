@@ -32,6 +32,9 @@
     <Content Include="saved_property_manifest.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="static_state_manifest.$(HextechSts2Target).txt" Condition="Exists('$(MSBuildThisFileDirectory)static_state_manifest.$(HextechSts2Target).txt')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="patch_manifest.$(HextechSts2Target).txt" Condition="Exists('$(MSBuildThisFileDirectory)patch_manifest.$(HextechSts2Target).txt')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

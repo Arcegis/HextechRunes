@@ -262,7 +262,10 @@ src/
 | 3 治疗管线（§8.3 修正） | 完成 | 反编译 `CreatureCmd.Heal` 状态机：amount 为 0 也会播治疗音效/特效/动画，因此"禁止回血"必须继续跳过原方法，§8.3 的"改 void 前缀"不成立；只给封顶前缀补 `[HarmonyAfter]` RitsuLib core 与 BaseLib，保证第三方加减乘算完后再封顶 |
 | 4 重做三块 | 未做 | 形态自动打出的批处理刻意走出牌管线以保留附魔/流电/克隆语义，`Hook.*` 前缀在批处理窗口外一律直接放行，直接施加 Power 的重做会丢这些语义，不做；配置菜单场景化、视觉附件事件化需真机验证 |
 | 5 垂直切片（第一轮） | 完成 | 36 个符文专属补丁类搬进各自符文文件（如 `SurvivorUpgradeRune` 内嵌 `SurvivorPatch`），删除 `HextechRuneMechanicHooks`、`CrashLanding`、`CardUpgradeSelection` 三个文件；`src/Hooks/Runes` 只剩共享辅助（幻影武器、充能球布局、卡牌标签、亮剑枚举） |
-| 5 状态收敛 | 未做 | ≈376 个可变静态字段需逐个判定作用域，属语义改动 |
+| 5 垂直切片（第二轮） | 完成 | 幻影武器 7 个补丁类内嵌进 `IllusoryWeaponRune`；版本兼容基类文件（`HextechGameApiCompat`、`HextechModelBaseCompat`）移入 `src/Compat/` |
+| 5 god class 拆分 | 完成（分部文件） | `DoubleVisionRune` 1,388 行 → 主体 118 行 + Transactions / Duplication / Scopes / Types 四个分部；`HextechCombatVfx` 1,562 → 主体 446 + Sequences / Primitives；`HextechRuneConfigMenuHooks` 2,836 → 主体 219 + Overlay / Pages / BottomBar / RuneGrid / Entries / Types。纯移动，按 IL 等价法思路只影响编译顺序 |
+| 5 `#if` 收口示范 | 完成 | `HextechSavedPropertyBootstrap` 拆成共享流程 + `.Legacy.cs`（整文件 `#if STS2_107_1`）+ `.Official.cs`（整文件 `#if STS2_109_OR_NEWER`），共享代码里不再有任何 `#if`；同一套路可继续用于 `HextechRelicBase`、形态自动打出等剩余 `#if` 密集文件 |
+| 5 状态收敛 | 护栏先行 | 加入可变静态字段清单快照测试 `static_state_manifest.<target>.txt`（非 readonly、非 const 的静态字段全部列出，实际 92 个，§1 的 ≈376 是把 readonly 缓存也算进去的粗估），新增一个就必须在清单里显形；逐个改作用域仍是后续语义改动 |
 
 评估后**决定保留**的补丁（理由已核实，不要再翻案）：
 - `CardPileCmd.Draw` 前缀：卡牌检视是"用选牌界面替换抽牌返回值"，`ShouldDraw/ModifyHandDraw/BeforeHandDraw` 都表达不了，且改成 Hook 会把 PlayerChoice 挪到不同的同步点。
