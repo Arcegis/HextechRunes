@@ -259,8 +259,9 @@ internal static partial class Program
 			(HextechTemporarySlowPower)RuntimeHelpers.GetUninitializedObject(typeof(HextechTemporarySlowPower));
 		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, temporarySlow.Type, "temporary custom Slow should be neither a buff nor a debuff");
 		Expect(temporarySlow.AllowNegative, "temporary custom Slow should support damage reduction stacks");
-		Expect(HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player), "temporary Slow should expire at player turn start");
-		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Enemy), "temporary Slow should remain during enemy turn start");
+		Expect(HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, roundNumber: 3, appliedRound: 2), "temporary Slow should expire at the next player turn start");
+		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, roundNumber: 3, appliedRound: 3), "temporary Slow applied during this player turn start must survive the same turn (Frost Wraith)");
+		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Enemy, roundNumber: 3, appliedRound: 2), "temporary Slow should remain during enemy turn start");
 		Expect(
 			HextechCombatHooks.TryResolveNeutralPowerType(slow, out MegaCrit.Sts2.Core.Entities.Powers.PowerType neutralType),
 			"custom Slow should bypass vanilla signed Counter classification");
