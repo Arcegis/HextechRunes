@@ -50,6 +50,7 @@ public sealed class SurvivorUpgradeRune : CardUpgradeRuneBase<Survivor>
 	private static class SurvivorPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Survivor __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
 			if (!SurvivorUpgradeRune.ShouldUseUpgradedPlay(__instance))

@@ -100,6 +100,7 @@ internal static partial class HextechCombatHooks
 	private static class HealPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 		{
 			if (NearDeathFeastRune.ShouldPreventSustain(creature) || HextechEnemyNearDeath.ShouldPreventSustain(creature))

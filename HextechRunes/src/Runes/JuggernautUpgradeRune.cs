@@ -15,6 +15,7 @@ public sealed class JuggernautUpgradeRune : CardUpgradeRuneBase<Juggernaut>
 	private static class JuggernautPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(JuggernautPower __instance, Creature creature, decimal amount, ValueProp props, CardModel? cardSource, ref Task __result)
 		{
 			if (__instance.Owner?.Player?.GetRelic<JuggernautUpgradeRune>() == null)

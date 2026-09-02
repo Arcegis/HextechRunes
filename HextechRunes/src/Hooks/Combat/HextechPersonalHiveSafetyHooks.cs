@@ -37,6 +37,7 @@ internal static class HextechPersonalHiveSafetyHooks
 		private static MethodBase TargetMethod() => ResolveDamageResponseTarget();
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(PersonalHivePower __instance, ref Task __result)
 		{
 			if (ShouldRunOriginal(__instance.Owner?.Side))

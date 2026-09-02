@@ -18,6 +18,7 @@ public sealed class NeurosurgeUpgradeRune : CardUpgradeRuneBase<Neurosurge>
 	private static class AfterSideTurnStartPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NeurosurgePower __instance, IReadOnlyList<Creature> participants, ref Task __result)
 		{
 			Creature? owner = __instance.Owner;
@@ -50,6 +51,7 @@ public sealed class NeurosurgeUpgradeRune : CardUpgradeRuneBase<Neurosurge>
 	private static class ArtifactPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			PowerModel canonicalPower,
 			Creature target,

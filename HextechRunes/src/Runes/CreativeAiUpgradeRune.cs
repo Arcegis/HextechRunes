@@ -68,6 +68,7 @@ public sealed class CreativeAiUpgradeRune : CardUpgradeRuneBase<CreativeAi>
 	private static class CreativeAiPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(CreativeAiPower __instance, Player player, ref Task __result)
 		{
 			if (!CreativeAiUpgradeRune.ShouldUseUpgradedGeneration(__instance, player))

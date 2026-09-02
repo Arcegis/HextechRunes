@@ -5,10 +5,13 @@ namespace HextechRunes;
 internal static partial class HextechPlayerRuneHooks
 {
 
+	/// <summary>
+	/// 只补原版程序集里的充能球 Evoke 覆写。以前会扫描所有已加载程序集并给第三方模组的充能球类也打补丁,
+	/// 那等于替别人的类型做决定;第三方充能球现在保持原版激发,亮剑不替换它们。
+	/// </summary>
 	internal static IReadOnlyList<MethodInfo> FindLoadedOrbEvokeMethods()
 	{
 		Assembly coreAssembly = typeof(OrbModel).Assembly;
-		string? coreAssemblyName = coreAssembly.GetName().Name;
 		HashSet<MethodInfo> methods =
 		[
 			typeof(OrbModel).GetMethod(
@@ -20,36 +23,27 @@ internal static partial class HextechPlayerRuneHooks
 				?? throw new MissingMethodException(typeof(OrbModel).FullName, nameof(OrbModel.Evoke))
 		];
 
-		foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+		foreach (Type type in GetLoadableTypes(coreAssembly, coreAssembly))
 		{
-			if (assembly.IsDynamic || !CanContainOrbModels(assembly, coreAssembly, coreAssemblyName))
+			if (type == typeof(OrbModel) || !typeof(OrbModel).IsAssignableFrom(type))
 			{
 				continue;
 			}
 
-			foreach (Type type in GetLoadableTypes(assembly, coreAssembly))
+			MethodInfo? evoke = type.GetMethod(
+				nameof(OrbModel.Evoke),
+				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
+				binder: null,
+				types: [typeof(PlayerChoiceContext)],
+				modifiers: null);
+			if (evoke is { IsAbstract: false } && evoke.ReturnType == typeof(Task<IEnumerable<Creature>>))
 			{
-				if (type == typeof(OrbModel) || !typeof(OrbModel).IsAssignableFrom(type))
-				{
-					continue;
-				}
-
-				MethodInfo? evoke = type.GetMethod(
-					nameof(OrbModel.Evoke),
-					BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
-					binder: null,
-					types: [typeof(PlayerChoiceContext)],
-					modifiers: null);
-				if (evoke is { IsAbstract: false } && evoke.ReturnType == typeof(Task<IEnumerable<Creature>>))
-				{
-					methods.Add(evoke);
-				}
+				methods.Add(evoke);
 			}
 		}
 
 		return methods
-			.OrderBy(static method => method.DeclaringType?.Assembly.FullName, StringComparer.Ordinal)
-			.ThenBy(static method => method.DeclaringType?.FullName, StringComparer.Ordinal)
+			.OrderBy(static method => method.DeclaringType?.FullName, StringComparer.Ordinal)
 			.ToArray();
 	}
 

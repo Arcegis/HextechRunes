@@ -228,6 +228,7 @@ internal static class HextechRewardSafetyHooks
 	private static class CardRewardAlternativesPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(CardReward cardReward, ref IReadOnlyList<CardRewardAlternative> __result)
 		{
 			__result = GenerateCardRewardAlternativesWithoutVanillaLimit(cardReward);
@@ -323,6 +324,7 @@ internal static class HextechRewardSafetyHooks
 	internal static class DustyTomePatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		internal static bool Prefix(DustyTome __instance, ref Task __result)
 		{
 			if (!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(__instance))

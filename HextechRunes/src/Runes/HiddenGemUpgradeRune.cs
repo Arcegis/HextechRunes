@@ -73,6 +73,7 @@ public sealed class HiddenGemUpgradeRune : CardUpgradeRuneBase<HiddenGem>
 	private static class HiddenGemPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(HiddenGem __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HiddenGemUpgradeRune.ShouldUseUpgradedPlay(__instance))

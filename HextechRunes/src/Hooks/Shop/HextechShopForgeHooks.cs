@@ -317,6 +317,7 @@ internal static class HextechShopForgeHooks
 		private static bool Prepare() => RandomForgeShopHooksAvailable;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(MerchantRelicEntry __instance, MerchantInventory inventory, bool ignoreCost, ref Task<(bool, int)> __result)
 		{
 			if (!IsRandomForgeEntry(__instance))
@@ -337,6 +338,7 @@ internal static class HextechShopForgeHooks
 		private static bool Prepare() => RandomForgeShopHooksAvailable;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(MerchantRelicEntry __instance)
 		{
 			return !IsRandomForgeEntry(__instance);
@@ -369,6 +371,7 @@ internal static class HextechShopForgeHooks
 		private static bool Prepare() => RandomForgeShopHooksAvailable;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(MerchantEntry entry, ref bool __result)
 		{
 			if (!IsRandomForgeEntry(entry))
@@ -435,6 +438,7 @@ internal static class HextechShopForgeHooks
 		private static bool Prepare() => RandomForgeShopHooksAvailable;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NMerchantRelic __instance)
 		{
 			if (!IsRandomForgeEntry(__instance.Entry))

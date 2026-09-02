@@ -213,6 +213,7 @@ internal static class HextechUiSafetyHooks
 	private static class NewlyAcquiredAnimationPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NRelicInventoryHolder __instance, ref Task __result, out bool __state)
 		{
 			__state = false;
@@ -242,6 +243,7 @@ internal static class HextechUiSafetyHooks
 	private static class MultiplayerIntentPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NMultiplayerPlayerIntentHandler __instance, GameAction action)
 		{
 			NCard? card = IntentCardInPlayAwaitingPlayerChoiceField?.GetValue(__instance) as NCard;
@@ -261,6 +263,7 @@ internal static class HextechUiSafetyHooks
 	private static class CardPlayQueuePatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NCardPlayQueue __instance, GameAction action)
 		{
 			if (!TryFindQueueItem(__instance, action, out IList? playQueue, out int index, out object? item, out NCard? card))

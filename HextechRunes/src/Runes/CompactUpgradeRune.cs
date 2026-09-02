@@ -62,6 +62,7 @@ public sealed class CompactUpgradeRune : CardUpgradeRuneBase<Compact>
 	private static class CompactPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Compact __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
 			if (!CompactUpgradeRune.ShouldUseUpgradedPlay(__instance))

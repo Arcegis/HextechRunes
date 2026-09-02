@@ -46,6 +46,7 @@ internal static class HextechEncounterCompatibilityHooks
 		private static MethodBase TargetMethod() => TryResolveEntomancerSpitMove(typeof(Entomancer), warnIfMissing: false)!;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Entomancer __instance, ref Task __result)
 		{
 			if (ShouldRunOriginalEntomancerSpitMove(__instance.Creature.HasPower<PersonalHivePower>()))

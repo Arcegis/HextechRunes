@@ -84,6 +84,7 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 	private static class AutomationPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(AutomationPower __instance, PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw, ref Task __result)
 		{
 			if (!AutomationUpgradeRune.ShouldUseUpgradedDraw(__instance, card))

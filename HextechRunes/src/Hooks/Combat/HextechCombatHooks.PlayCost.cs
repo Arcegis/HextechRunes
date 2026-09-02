@@ -220,6 +220,7 @@ internal static partial class HextechCombatHooks
 	private static class SpendResourcesPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(CardModel __instance, ref Task<ValueTuple<int, int>> __result)
 		{
 			PendingManualPlayEnergyValues[__instance] = __instance.EnergyCost.GetAmountToSpend();

@@ -309,6 +309,7 @@ internal static class HextechBurnHealthBarHooks
 		}
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NHealthBar __instance)
 		{
 			try

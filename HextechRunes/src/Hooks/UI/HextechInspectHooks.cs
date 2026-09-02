@@ -278,6 +278,7 @@ internal static class HextechInspectHooks
 		private static bool Prepare() => InspectScreenHooksAvailable;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NInspectRelicScreen __instance)
 		{
 			if (!_inspectScreenHooksInstalled)

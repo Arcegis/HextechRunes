@@ -43,6 +43,7 @@ public sealed class ElectrodynamicsRune : HextechRelicBase
 	private static class ElectrodynamicsPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(LightningOrb __instance, decimal value, Creature? target, PlayerChoiceContext choiceContext, ref Task<IEnumerable<Creature>> __result)
 		{
 			if (__instance.Owner?.GetRelic<ElectrodynamicsRune>() == null)

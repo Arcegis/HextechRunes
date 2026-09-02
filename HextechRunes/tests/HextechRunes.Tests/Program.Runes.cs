@@ -1086,22 +1086,16 @@ internal static partial class Program
 			"reapplying a form should replace its stale same-type VFX");
 	}
 
-	private static void FormAutoPlayBatchDispatchesOneCardPlayEvent()
+	/// <summary>
+	/// 批处理不再拦截任何 Hook.* 分发点:它只管一组并行飞行动画(替代逐张内置动画)和进场偏移。
+	/// 出牌事件由代表牌走原版 CardCmd.AutoPlay 如实发出。
+	/// </summary>
+	private static void FormAutoPlayBatchOnlySuppressesDuplicateFlyVfx()
 	{
 		DemonForm firstCard = new();
 		DemonForm secondCard = new();
 		DemonForm outsideCard = new();
 		HextechFormAutoPlayBatchState batch = new([firstCard, secondCard]);
-		CardPlay firstPlay = CreateCardPlay(firstCard, playIndex: 0, playCount: 2);
-		CardPlay firstReplay = CreateCardPlay(firstCard, playIndex: 1, playCount: 2);
-		CardPlay secondPlay = CreateCardPlay(secondCard);
-		CardPlay outsidePlay = CreateCardPlay(outsideCard);
-
-		Expect(batch.ShouldDispatchCardPlayedHook(firstPlay), "form batch should dispatch BeforeCardPlayed for the first real play");
-		Expect(batch.ShouldDispatchCardPlayedHook(firstPlay), "form batch should dispatch AfterCardPlayed for the same first play");
-		Expect(!batch.ShouldDispatchCardPlayedHook(firstReplay), "form batch should suppress replay hooks after its first event");
-		Expect(!batch.ShouldDispatchCardPlayedHook(secondPlay), "form batch should suppress hooks for later form cards");
-		Expect(batch.ShouldDispatchCardPlayedHook(outsidePlay), "form batch should not suppress nested non-batch cards");
 
 		using (batch.BeginPowerCardFlyVfxPreview([firstCard, secondCard]))
 		{
@@ -1111,9 +1105,12 @@ internal static partial class Program
 		Expect(!batch.ShouldPlayPowerCardFlyVfx(firstCard), "form batch should suppress the first card's built-in duplicate VFX");
 		Expect(!batch.ShouldPlayPowerCardFlyVfx(secondCard), "form batch should suppress later cards' built-in duplicate VFX");
 		Expect(batch.ShouldPlayPowerCardFlyVfx(outsideCard), "form batch should not suppress VFX for non-batch cards");
-		Expect(!batch.ShouldDispatchCardChangedPilesHook(firstCard, PileType.Play, PileType.Play), "form batch should suppress its synthetic Play-to-Play pile event");
-		Expect(batch.ShouldDispatchCardChangedPilesHook(firstCard, PileType.Hand, PileType.Play), "form batch should keep the real move into the Play pile");
-		Expect(batch.ShouldDispatchCardChangedPilesHook(outsideCard, PileType.Play, PileType.Play), "form batch should not suppress pile hooks for non-batch cards");
+
+		string[] hookTargets = BuildPatchManifest()
+			.Where(line => line.StartsWith("combat.form-auto-play", StringComparison.Ordinal))
+			.Where(line => line.Contains("MegaCrit.Sts2.Core.Hooks.Hook.", StringComparison.Ordinal))
+			.ToArray();
+		Expect(hookTargets.Length == 0, "form batch must not patch any Hook.* dispatcher: " + string.Join("; ", hookTargets));
 	}
 
 	private static void FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay()
@@ -1133,26 +1130,23 @@ internal static partial class Program
 		Expect(!batch.TryGetHorizontalOffset(outsideCard, out _), "non-batch cards should keep the vanilla play target");
 	}
 
-	private static void FormAutoPlayBatchUsesOnePreparedFinalEffect()
+	/// <summary>
+	/// 代表牌走原版结算自己的数值 × 出牌次数;次要牌的贡献 = Σ(数值 × 各自出牌次数),0 次不贡献。
+	/// 代表牌优先选流电牌,保证整批只触发一次电击。
+	/// </summary>
+	private static void FormAutoPlaySecondaryContributionSumsAmountTimesPlayCount()
 	{
-		DemonForm primary = new();
-		DemonForm secondary = new();
-		HextechFormAutoPlayBatchState batch = new([primary, secondary]);
-		HextechFormCardResult result = new(null!, PileType.None, CardPilePosition.Bottom);
+		decimal total = HextechFormAutoPlayHooks.SumSecondaryContribution([(2m, 1), (2m, 2), (3m, 0)]);
+		Equal(6m, total, "secondary contribution should weight each card by its own play count and skip zero plays");
+		Equal(0m, HextechFormAutoPlayHooks.SumSecondaryContribution([]), "no secondaries means no extra power");
 
-		batch.PrepareCombinedResolution(primary, 8m, 1, result);
-		Expect(batch.ShouldUsePreparedPlayCount(primary), "combined primary should bypass a second play-count query");
-		Equal(1, batch.PreparedPlayCount, "combined primary should execute its summed effect once");
-		Expect(!batch.ShouldUsePreparedPlayCount(secondary), "combined secondary should not intercept unrelated play-count queries");
-		Expect(batch.TryGetPreparedResult(primary, out HextechFormCardResult preparedResult), "combined primary should reuse its prepared result");
-		Equal(PileType.None, preparedResult.PileType, "combined primary should preserve its prepared result pile");
-		Expect(batch.TryGetCombinedAmount(primary, out decimal amount), "combined primary should expose one final effect amount");
-		Equal(8m, amount, "combined final effect should use the summed form amount");
-		Expect(!batch.TryGetCombinedAmount(secondary, out _), "combined effect should only replace the representative card OnPlay");
-
-		batch.FinishCombinedResolution();
-		Expect(!batch.ShouldUsePreparedPlayCount(primary), "combined state should clear after the representative finishes");
-		Expect(!batch.TryGetCombinedAmount(primary, out _), "combined amount should not leak past the batch");
+		// 规范模型不能读 DynamicVars;这里只验证代表牌的选择规则。
+		DemonForm first = new();
+		DemonForm second = new();
+		Expect(
+			ReferenceEquals(HextechFormAutoPlayHooks.SelectPrimary([first, second]), first),
+			"without galvanized the first form is the representative");
+		Equal(1m, HextechFormAutoPlayHooks.GetFormAmount(new ReaperForm()), "reaper form contributes one stack per play without touching dynamic vars");
 	}
 
 	private static void FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments()

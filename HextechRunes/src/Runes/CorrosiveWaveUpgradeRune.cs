@@ -40,6 +40,7 @@ public sealed class CorrosiveWaveUpgradeRune : CardUpgradeRuneBase<CorrosiveWave
 	private static class CorrosiveWavePatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(CorrosiveWavePower __instance, ref Task __result)
 		{
 			if (__instance.Owner.Player?.GetRelic<CorrosiveWaveUpgradeRune>() == null)

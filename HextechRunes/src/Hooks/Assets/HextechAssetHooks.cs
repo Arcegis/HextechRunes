@@ -151,6 +151,7 @@ internal static class HextechAssetHooks
 	private static class RestSiteOptionIconPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(RestSiteOption __instance, ref Texture2D __result)
 		{
 			try

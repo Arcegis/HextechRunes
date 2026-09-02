@@ -18,6 +18,7 @@ public sealed class OblivionUpgradeRune : CardUpgradeRuneBase<Oblivion>
 	private static class OblivionPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(OblivionPower __instance, ref Task __result)
 		{
 			if (__instance.Applier?.Player?.GetRelic<OblivionUpgradeRune>() == null)

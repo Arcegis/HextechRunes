@@ -59,6 +59,7 @@ public sealed class JackpotUpgradeRune : CardUpgradeRuneBase<Jackpot>
 	private static class JackpotPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Jackpot __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
 			if (!JackpotUpgradeRune.ShouldUseUpgradedPlay(__instance))

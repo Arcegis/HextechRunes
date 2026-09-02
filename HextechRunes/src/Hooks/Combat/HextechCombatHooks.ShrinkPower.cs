@@ -41,6 +41,7 @@ internal static partial class HextechCombatHooks
 	private static class ModifyAmountPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			PlayerChoiceContext choiceContext,
 			PowerModel power,

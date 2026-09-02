@@ -8,6 +8,7 @@ internal static partial class HextechCombatHooks
 	private static class DrawPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(PlayerChoiceContext choiceContext, decimal count, Player player, bool fromHandDraw, ref Task<IEnumerable<CardModel>> __result)
 		{
 			// 抽牌必经路径:prefix 抛异常会让整个 Draw 调用中断、抽牌任务链卡死(游戏卡住);

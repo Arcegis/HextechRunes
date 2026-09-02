@@ -130,6 +130,7 @@ internal static partial class HextechCombatHooks
 	private static class SleightOfFleshPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(SleightOfFleshPower __instance, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource, ref Task __result, out bool __state)
 		{
 			__state = false;

@@ -121,6 +121,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		private static bool Prepare() => HextechPlayerRuneHooks.IllusoryWeaponReflectionReady;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Nunchaku __instance, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HextechPlayerRuneHooks.ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner))
@@ -141,6 +142,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		private static bool Prepare() => HextechPlayerRuneHooks.IllusoryWeaponReflectionReady;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Kunai __instance, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HextechPlayerRuneHooks.ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner) || !CombatManager.Instance.IsInProgress)
@@ -161,6 +163,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		private static bool Prepare() => HextechPlayerRuneHooks.IllusoryWeaponReflectionReady;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Shuriken __instance, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HextechPlayerRuneHooks.ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner) || !CombatManager.Instance.IsInProgress)
@@ -181,6 +184,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		private static bool Prepare() => HextechPlayerRuneHooks.IllusoryWeaponReflectionReady;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(OrnamentalFan __instance, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HextechPlayerRuneHooks.ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner) || !CombatManager.Instance.IsInProgress)
@@ -201,6 +205,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		private static bool Prepare() => HextechPlayerRuneHooks.IllusoryWeaponReflectionReady;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(PenNib __instance, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HextechPlayerRuneHooks.ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner))
@@ -226,6 +231,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		private static bool Prepare() => HextechPlayerRuneHooks.IllusoryWeaponReflectionReady;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(PenNib __instance, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HextechPlayerRuneHooks.ShouldHandleIllusoryWeaponSkill(cardPlay, __instance.Owner)

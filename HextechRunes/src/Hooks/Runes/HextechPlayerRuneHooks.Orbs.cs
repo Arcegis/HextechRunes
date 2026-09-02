@@ -203,6 +203,7 @@ internal static partial class HextechPlayerRuneHooks
 		}
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NOrbManager __instance)
 		{
 			try

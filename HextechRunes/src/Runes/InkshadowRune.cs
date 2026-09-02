@@ -78,6 +78,7 @@ public sealed class InkshadowRune : HextechRelicBase
 	private static class BladeOfInkPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(BladeOfInk __instance, PlayerChoiceContext choiceContext, ref Task __result)
 		{
 			if (__instance.Owner is not { } owner

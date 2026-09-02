@@ -110,6 +110,7 @@ internal static partial class HextechCombatHooks
 		private static bool Prepare() => DualWieldFieldsAvailable;
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			AbstractIntent __instance,
 			IEnumerable<Creature> targets,

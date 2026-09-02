@@ -29,6 +29,7 @@ internal static partial class HextechCombatHooks
 	private static class NearDeathFeastLoseHpPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature __instance, decimal amount, ValueProp props, ref DamageResult __result)
 		{
 			if (NearDeathFeastRune.ShouldInterceptLoseHp(__instance, amount))
@@ -52,6 +53,7 @@ internal static partial class HextechCombatHooks
 	private static class NearDeathFeastCurrentHpPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature __instance, int value)
 		{
 			if (value >= 0)
@@ -116,6 +118,7 @@ internal static partial class HextechCombatHooks
 	private static class NearDeathFeastGainBlockPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		internal static bool Prefix(Creature creature, ref Task<decimal> __result)
 		{
 			if (!NearDeathFeastRune.ShouldPreventSustain(creature) && !HextechEnemyNearDeath.ShouldPreventSustain(creature))
@@ -133,6 +136,7 @@ internal static partial class HextechCombatHooks
 	private static class NearDeathFeastGainBlockVarPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref Task<decimal> __result)
 		{
 			return NearDeathFeastGainBlockPatch.Prefix(creature, ref __result);

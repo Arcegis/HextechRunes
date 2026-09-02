@@ -59,6 +59,7 @@ public sealed class BigKnifeRune : HextechRelicBase
 	private static class ShivCreateOnePatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Player owner, HextechCombatState combatState, ref Task<CardModel?> __result)
 		{
 			if (owner.GetRelic<BigKnifeRune>() == null || combatState is not CombatState concreteState)
@@ -80,6 +81,7 @@ public sealed class BigKnifeRune : HextechRelicBase
 	private static class ShivCreateManyPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Player owner, int count, HextechCombatState combatState, ref Task<IEnumerable<CardModel>> __result)
 		{
 			if (owner.GetRelic<BigKnifeRune>() == null || combatState is not CombatState concreteState)
@@ -111,6 +113,7 @@ public sealed class BigKnifeRune : HextechRelicBase
 	private static class SovereignBladeOnPlayPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(SovereignBlade __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
 			if (!HextechKnifeHelper.ShouldFanOfKnivesAffectSovereignBlade(__instance) || __instance.CombatState is not CombatState)

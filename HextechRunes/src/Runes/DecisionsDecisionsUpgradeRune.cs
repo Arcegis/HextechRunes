@@ -83,6 +83,7 @@ public sealed class DecisionsDecisionsUpgradeRune : CardUpgradeRuneBase<Decision
 	private static class DecisionsDecisionsOnPlayPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			DecisionsDecisions __instance,
 			PlayerChoiceContext choiceContext,

@@ -40,6 +40,7 @@ public sealed class MadScientistRune : HextechRelicBase
 	private static class MadScientistPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Player player, int amount, ref Task __result)
 		{
 			if (player.GetRelic<MadScientistRune>() == null)

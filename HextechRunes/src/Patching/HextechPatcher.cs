@@ -146,6 +146,7 @@ internal static class HextechPatcher
 		try
 		{
 			List<string> lines = [];
+			List<string> shadowed = [];
 			foreach (MethodBase method in Harmony.GetAllPatchedMethods())
 			{
 				Patches? info = Harmony.GetPatchInfo(method);
@@ -166,9 +167,26 @@ internal static class HextechPatcher
 					.Distinct(StringComparer.Ordinal)
 					.OrderBy(owner => owner, StringComparer.Ordinal)
 					.ToArray();
-				if (others.Length > 0)
+				if (others.Length == 0)
 				{
-					lines.Add($"{method.DeclaringType?.FullName}.{method.Name} <- {string.Join(", ", others)}");
+					continue;
+				}
+
+				string target = $"{method.DeclaringType?.FullName}.{method.Name}";
+				lines.Add($"{target} <- {string.Join(", ", others)}");
+
+				// 本模组的 bool 前缀会跳过原方法,优先级比它低的第三方前缀就跑不到了:单独点名,给冲突排查一个直接答案。
+				Patch[] ourSkippingPrefixes = info.Prefixes
+					.Where(patch => patch.owner == harmony.Id && patch.PatchMethod.ReturnType == typeof(bool))
+					.ToArray();
+				foreach (Patch other in info.Prefixes.Where(patch => patch.owner != harmony.Id))
+				{
+					Patch? shadowing = ourSkippingPrefixes.FirstOrDefault(ours => ours.priority > other.priority
+						|| (ours.priority == other.priority && ours.index < other.index));
+					if (shadowing != null)
+					{
+						shadowed.Add($"{target}: {other.owner}.{other.PatchMethod.Name} (priority {other.priority}) runs after our skipping prefix {shadowing.PatchMethod.DeclaringType?.Name}.{shadowing.PatchMethod.Name} (priority {shadowing.priority}) and may be skipped");
+					}
 				}
 			}
 
@@ -180,6 +198,11 @@ internal static class HextechPatcher
 
 			lines.Sort(StringComparer.Ordinal);
 			Log.Info($"[{ModInfo.Id}][Patch] {lines.Count} patch target(s) shared with other mods:\n  {string.Join("\n  ", lines)}");
+			if (shadowed.Count > 0)
+			{
+				shadowed.Sort(StringComparer.Ordinal);
+				Log.Warn($"[{ModInfo.Id}][Patch] {shadowed.Count} third-party prefix(es) may be skipped by this mod's prefixes:\n  {string.Join("\n  ", shadowed)}");
+			}
 		}
 		catch (Exception ex)
 		{

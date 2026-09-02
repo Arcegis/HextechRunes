@@ -70,6 +70,7 @@ internal static partial class HextechCombatHooks
 		private static void Postfix(Creature creature, bool __state, ref Task __result) => ResetGoliathTaskPostfix(creature, __state, ref __result);
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 		{
 			__state = false;
@@ -106,6 +107,7 @@ internal static partial class HextechCombatHooks
 		private static void Postfix(Creature creature, bool __state, ref Task __result) => ResetGoliathTaskPostfix(creature, __state, ref __result);
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 		{
 			__state = false;
@@ -142,6 +144,7 @@ internal static partial class HextechCombatHooks
 		private static void Postfix(Creature creature, bool __state, ref Task<decimal> __result) => ResetGoliathDecimalTaskPostfix(creature, __state, ref __result);
 
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, out bool __state)
 		{
 			__state = false;

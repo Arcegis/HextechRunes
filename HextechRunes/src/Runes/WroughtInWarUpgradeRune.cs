@@ -33,6 +33,7 @@ public sealed class WroughtInWarUpgradeRune : CardUpgradeRuneBase<WroughtInWar>
 	private static class WroughtInWarPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			WroughtInWar __instance,
 			PlayerChoiceContext choiceContext,

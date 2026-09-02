@@ -377,6 +377,7 @@ internal static class HextechEnemyUi
 	private static class HolderFocusPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NRelicBasicHolder __instance)
 		{
 			NHoverTipSet.Remove(__instance);
@@ -396,6 +397,7 @@ internal static class HextechEnemyUi
 	private static class HolderUnfocusPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NRelicBasicHolder __instance)
 		{
 			if (!TryGetHexFromHolder(__instance, out _))

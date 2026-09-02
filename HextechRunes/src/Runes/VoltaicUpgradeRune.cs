@@ -57,6 +57,7 @@ public sealed class VoltaicUpgradeRune : CardUpgradeRuneBase<Voltaic>
 	private static class VoltaicPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Voltaic __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
 			if (!VoltaicUpgradeRune.ShouldUseUpgradedPlay(__instance))

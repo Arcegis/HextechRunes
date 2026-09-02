@@ -50,6 +50,7 @@ public sealed class GrandFinaleUpgradeRune : CardUpgradeRuneBase<GrandFinale>
 	private static class GrandFinalePatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(GrandFinale __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
 			if (!GrandFinaleUpgradeRune.AllowsPlaying(__instance))

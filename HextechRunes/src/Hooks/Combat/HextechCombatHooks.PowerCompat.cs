@@ -61,6 +61,7 @@ internal static partial class HextechCombatHooks
 	private static class StormBeforeCardPlayedPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(StormPower __instance, ref Task __result)
 		{
 			if (ShouldUseHextechStormHandling(__instance))
@@ -78,6 +79,7 @@ internal static partial class HextechCombatHooks
 	private static class StormAfterCardPlayedPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(StormPower __instance, ref Task __result)
 		{
 			if (ShouldUseHextechStormHandling(__instance))
@@ -95,6 +97,7 @@ internal static partial class HextechCombatHooks
 	private static class EntropyTurnStartPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(EntropyPower __instance, PlayerChoiceContext choiceContext, Player player, ref Task __result)
 		{
 			if (__instance.Owner?.Player?.GetRelic<MysteryRune>() == null)

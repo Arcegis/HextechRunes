@@ -21,6 +21,7 @@ internal static partial class HextechCombatHooks
 	private static class PowerTypeForAmountPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			PowerModel __instance,
 			ref PowerType __result)

@@ -54,6 +54,7 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 	private static class CrashLandingPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(CrashLanding __instance, PlayerChoiceContext choiceContext, ref Task __result)
 		{
 			if (!CrashLandingUpgradeRune.ShouldUseUpgradedPlay(__instance))

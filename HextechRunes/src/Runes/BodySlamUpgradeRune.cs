@@ -35,6 +35,7 @@ public sealed class BodySlamUpgradeRune : CardUpgradeRuneBase<BodySlam>
 	private static class BodySlamPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			BodySlam __instance,
 			PlayerChoiceContext choiceContext,

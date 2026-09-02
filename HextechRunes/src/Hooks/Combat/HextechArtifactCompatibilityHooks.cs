@@ -17,6 +17,7 @@ internal static class HextechArtifactCompatibilityHooks
 	private static class TryModifyPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
 			PowerModel canonicalPower,
 			decimal amount,
