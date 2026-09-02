@@ -14,68 +14,6 @@ internal static class HextechAssetHooks
 
 	private static readonly FieldInfo? NRelicModelField = TryGetField(typeof(NRelic), "_model");
 
-	public static void Install(Harmony harmony)
-	{
-		MethodInfo getRelicIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.Icon));
-		MethodInfo getRelicIconOutline = RequireGetter(typeof(RelicModel), nameof(RelicModel.IconOutline));
-		MethodInfo getRelicBigIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.BigIcon));
-		MethodInfo? relicReload = TryGetMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
-		MethodInfo getPowerIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.Icon));
-		MethodInfo getPowerBigIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.BigIcon));
-		MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
-		MethodInfo getEnchantmentIcon = RequireGetter(typeof(EnchantmentModel), nameof(EnchantmentModel.Icon));
-
-		harmony.Patch(getRelicIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
-		harmony.Patch(getRelicIconOutline, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
-		harmony.Patch(getRelicBigIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
-		if (relicReload != null && NRelicModelField != null)
-		{
-			harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(NRelicReloadPrefix)));
-		}
-		else
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] NRelic.Reload asset hook skipped: missing {(relicReload == null ? "NRelic.Reload" : "NRelic._model")}.");
-		}
-		harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerIconPostfix)));
-		harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerBigIconPostfix)));
-		harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(CardPortraitPostfix)));
-		harmony.Patch(getEnchantmentIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(EnchantmentIconPostfix)));
-
-		// HoverTip 是 record struct:其构造里读的 power.Icon 拿到的是原版 NOPE 占位
-		// (AtlasResourceLoader 缺 sprite 时不返回 null 而是占位纹理,get_Icon postfix 覆盖
-		// 不到 struct 构造内联/值语义路径)。在返回 HoverTip 的两个总入口修返回值:
-		// GetDumbHoverTip(遗物/卡牌 ExtraHoverTips 走 FromPower)与 HoverTips(战斗内 smart tip)。
-		MethodInfo? getDumbHoverTip = AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetDumbHoverTip));
-		MethodInfo? getHoverTips = AccessTools.PropertyGetter(typeof(PowerModel), nameof(PowerModel.HoverTips));
-		if (getDumbHoverTip != null && getHoverTips != null)
-		{
-			harmony.Patch(getDumbHoverTip, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(GetDumbHoverTipPostfix)));
-			harmony.Patch(getHoverTips, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerHoverTipsPostfix)));
-		}
-		else
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Power hover tip icon hooks skipped: target methods not found.");
-		}
-		if (HoverTipIconField == null)
-		{
-			Log.Warn($"[{ModInfo.Id}][Assets] Power hover tip icon backing field not found; hover tip icons will show the vanilla placeholder.");
-		}
-
-		// 自定义休息室选项(目前为「添柴」StokeRestSiteOption)的图标修复。
-		// 基类 RestSiteOption.Icon 从 res://images/ui/rest_site/option_<id>.png 取图,模组无法在该 base-game
-		// 命名空间提供真实资源,旧实现用可被卸载的缓存别名兜底,在联机非持有方会取到 null 并在渲染思考气泡时抛
-		// NotImplementedException —— 该异常发生在同步的 ChooseOption 路径里,导致离开休息室时校验和分叉、客户端被踢。
-		// 这里用前缀直接返回稳定纹理(原版 Stoke 卡牌立绘),保证任何端、任何时机 Icon 都有效。
-		MethodInfo? getRestSiteOptionIcon = AccessTools.PropertyGetter(typeof(RestSiteOption), nameof(RestSiteOption.Icon));
-		if (getRestSiteOptionIcon != null)
-		{
-			harmony.Patch(getRestSiteOptionIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RestSiteOptionIconPrefix)));
-		}
-		else
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] RestSiteOption.Icon asset hook skipped: getter not found (custom rest-site option icons may fail to render and could desync multiplayer).");
-		}
-	}
 
 	/// <summary>
 	/// 为自定义休息室选项提供稳定的图标。仅拦截 <see cref="StokeRestSiteOption"/>:返回原版 Stoke 立绘并跳过原版
@@ -554,6 +492,73 @@ internal static class HextechAssetHooks
 		if (WarnedTextureMissPaths.Add(path))
 		{
 			Log.Warn($"[{ModInfo.Id}][Assets] Texture load miss ({reason}): {path}");
+		}
+	}
+
+	[HextechPatch("assets.custom-icons", "自定义图标加载")]
+	private static class AssetPatches
+	{
+		public static void Apply(Harmony harmony)
+		{
+			MethodInfo getRelicIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.Icon));
+			MethodInfo getRelicIconOutline = RequireGetter(typeof(RelicModel), nameof(RelicModel.IconOutline));
+			MethodInfo getRelicBigIcon = RequireGetter(typeof(RelicModel), nameof(RelicModel.BigIcon));
+			MethodInfo? relicReload = TryGetMethod(typeof(NRelic), "Reload", BindingFlags.Instance | BindingFlags.NonPublic);
+			MethodInfo getPowerIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.Icon));
+			MethodInfo getPowerBigIcon = RequireGetter(typeof(PowerModel), nameof(PowerModel.BigIcon));
+			MethodInfo getCardPortrait = RequireGetter(typeof(CardModel), nameof(CardModel.Portrait));
+			MethodInfo getEnchantmentIcon = RequireGetter(typeof(EnchantmentModel), nameof(EnchantmentModel.Icon));
+
+			harmony.Patch(getRelicIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
+			harmony.Patch(getRelicIconOutline, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
+			harmony.Patch(getRelicBigIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RelicTexturePrefix)));
+			if (relicReload != null && NRelicModelField != null)
+			{
+				harmony.Patch(relicReload, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(NRelicReloadPrefix)));
+			}
+			else
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] NRelic.Reload asset hook skipped: missing {(relicReload == null ? "NRelic.Reload" : "NRelic._model")}.");
+			}
+			harmony.Patch(getPowerIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerIconPostfix)));
+			harmony.Patch(getPowerBigIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerBigIconPostfix)));
+			harmony.Patch(getCardPortrait, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(CardPortraitPostfix)));
+			harmony.Patch(getEnchantmentIcon, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(EnchantmentIconPostfix)));
+
+			// HoverTip 是 record struct:其构造里读的 power.Icon 拿到的是原版 NOPE 占位
+			// (AtlasResourceLoader 缺 sprite 时不返回 null 而是占位纹理,get_Icon postfix 覆盖
+			// 不到 struct 构造内联/值语义路径)。在返回 HoverTip 的两个总入口修返回值:
+			// GetDumbHoverTip(遗物/卡牌 ExtraHoverTips 走 FromPower)与 HoverTips(战斗内 smart tip)。
+			MethodInfo? getDumbHoverTip = AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetDumbHoverTip));
+			MethodInfo? getHoverTips = AccessTools.PropertyGetter(typeof(PowerModel), nameof(PowerModel.HoverTips));
+			if (getDumbHoverTip != null && getHoverTips != null)
+			{
+				harmony.Patch(getDumbHoverTip, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(GetDumbHoverTipPostfix)));
+				harmony.Patch(getHoverTips, postfix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(PowerHoverTipsPostfix)));
+			}
+			else
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] Power hover tip icon hooks skipped: target methods not found.");
+			}
+			if (HoverTipIconField == null)
+			{
+				Log.Warn($"[{ModInfo.Id}][Assets] Power hover tip icon backing field not found; hover tip icons will show the vanilla placeholder.");
+			}
+
+			// 自定义休息室选项(目前为「添柴」StokeRestSiteOption)的图标修复。
+			// 基类 RestSiteOption.Icon 从 res://images/ui/rest_site/option_<id>.png 取图,模组无法在该 base-game
+			// 命名空间提供真实资源,旧实现用可被卸载的缓存别名兜底,在联机非持有方会取到 null 并在渲染思考气泡时抛
+			// NotImplementedException —— 该异常发生在同步的 ChooseOption 路径里,导致离开休息室时校验和分叉、客户端被踢。
+			// 这里用前缀直接返回稳定纹理(原版 Stoke 卡牌立绘),保证任何端、任何时机 Icon 都有效。
+			MethodInfo? getRestSiteOptionIcon = AccessTools.PropertyGetter(typeof(RestSiteOption), nameof(RestSiteOption.Icon));
+			if (getRestSiteOptionIcon != null)
+			{
+				harmony.Patch(getRestSiteOptionIcon, prefix: new HarmonyMethod(typeof(HextechAssetHooks), nameof(RestSiteOptionIconPrefix)));
+			}
+			else
+			{
+				Log.Warn($"[{ModInfo.Id}][Mayhem] RestSiteOption.Icon asset hook skipped: getter not found (custom rest-site option icons may fail to render and could desync multiplayer).");
+			}
 		}
 	}
 }

@@ -17,22 +17,6 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechCombatVfxHooks
 {
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(CombatRoomReadyPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-			postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(AddCreaturePostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(CreatureReadyPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCreature), nameof(NCreature.StartDeathAnim), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
-			postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(StartDeathAnimPostfix)));
-		HextechLog.Info($"[{ModInfo.Id}][CombatVfx] Hooks installed.");
-	}
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
 	{
@@ -82,6 +66,27 @@ internal static class HextechCombatVfxHooks
 		catch (Exception ex)
 		{
 			Log.Warn($"[{ModInfo.Id}][CombatVfx] Soul drain dispatch on death anim failed: {ex.Message}");
+		}
+	}
+
+	[HextechPatch("visual.combat-vfx", "战斗特效分发")]
+	private static class VfxPatches
+	{
+		public static void Apply(Harmony harmony)
+		{
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(CombatRoomReadyPostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
+				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(AddCreaturePostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(CreatureReadyPostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCreature), nameof(NCreature.StartDeathAnim), BindingFlags.Instance | BindingFlags.Public, typeof(bool)),
+				postfix: new HarmonyMethod(typeof(HextechCombatVfxHooks), nameof(StartDeathAnimPostfix)));
+			HextechLog.Info($"[{ModInfo.Id}][CombatVfx] Hooks installed.");
 		}
 	}
 }

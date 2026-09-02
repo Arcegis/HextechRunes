@@ -14,19 +14,6 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechNearDeathFeastVisualHooks
 {
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechNearDeathFeastVisualHooks), nameof(CombatRoomReadyPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-			postfix: new HarmonyMethod(typeof(HextechNearDeathFeastVisualHooks), nameof(AddCreaturePostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechNearDeathFeastVisualHooks), nameof(CreatureReadyPostfix)));
-		HextechLog.Info($"[{ModInfo.Id}][NearDeathFeast] Visual hooks installed.");
-	}
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
 	{
@@ -44,6 +31,24 @@ internal static class HextechNearDeathFeastVisualHooks
 	private static void CreatureReadyPostfix(NCreature __instance)
 	{
 		HextechNearDeathFeastVisual.TryAttach(__instance);
+	}
+
+	[HextechPatch("visual.near-death-feast", "濒死狂宴视觉")]
+	private static class VisualPatches
+	{
+		public static void Apply(Harmony harmony)
+		{
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechNearDeathFeastVisualHooks), nameof(CombatRoomReadyPostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
+				postfix: new HarmonyMethod(typeof(HextechNearDeathFeastVisualHooks), nameof(AddCreaturePostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechNearDeathFeastVisualHooks), nameof(CreatureReadyPostfix)));
+			HextechLog.Info($"[{ModInfo.Id}][NearDeathFeast] Visual hooks installed.");
+		}
 	}
 }
 

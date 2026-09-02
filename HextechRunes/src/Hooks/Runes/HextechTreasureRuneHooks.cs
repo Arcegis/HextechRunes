@@ -19,25 +19,6 @@ internal static class HextechTreasureRuneHooks
 	private static readonly FieldInfo CurrentRelicsField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_currentRelics");
 	private static readonly FieldInfo PlayerCollectionField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_playerCollection");
 
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(TreasureRoomRelicSynchronizer), "BeginRelicPicking", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic),
-			postfix: new HarmonyMethod(typeof(HextechTreasureRuneHooks), nameof(BeginRelicPickingPostfix)));
-	}
-
-	private static void BeginRelicPickingPostfix(TreasureRoomRelicSynchronizer __instance)
-	{
-		try
-		{
-			ReplaceRelicsForEggOwners(__instance);
-		}
-		catch (Exception ex)
-		{
-			// 替换失败只损失棱彩蛋效果,绝不能打断原版开箱。
-			Log.Warn($"[{ModInfo.Id}][Mayhem] PrismaticEgg treasure replacement skipped: {ex.GetType().Name}: {ex.Message}");
-		}
-	}
 
 	private static void ReplaceRelicsForEggOwners(TreasureRoomRelicSynchronizer synchronizer)
 	{
@@ -101,6 +82,25 @@ internal static class HextechTreasureRuneHooks
 			relics[slot] = rune;
 			blocked.Add(rune.Id);
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] PrismaticEgg replaced treasure relic: slot={slot} rune={rune.Id.Entry} eggOwners={eggOwners.Count}");
+		}
+	}
+
+	[HarmonyPatch(typeof(TreasureRoomRelicSynchronizer), "BeginRelicPicking")]
+	[HextechPatch("rune.prismatic-egg", "棱彩之卵")]
+	private static class BeginRelicPickingPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(TreasureRoomRelicSynchronizer __instance)
+		{
+			try
+			{
+				ReplaceRelicsForEggOwners(__instance);
+			}
+			catch (Exception ex)
+			{
+				// 替换失败只损失棱彩蛋效果,绝不能打断原版开箱。
+				Log.Warn($"[{ModInfo.Id}][Mayhem] PrismaticEgg treasure replacement skipped: {ex.GetType().Name}: {ex.Message}");
+			}
 		}
 	}
 }

@@ -14,36 +14,42 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechGlassCannonHealthBarHooks
 {
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechGlassCannonHealthBarHooks), nameof(CombatRoomReadyPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-			postfix: new HarmonyMethod(typeof(HextechGlassCannonHealthBarHooks), nameof(AddCreaturePostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechGlassCannonHealthBarHooks), nameof(CreatureReadyPostfix)));
-		HextechLog.Info($"[{ModInfo.Id}][GlassCannon] Health bar hooks installed.");
-	}
 
-	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
+
+	[HarmonyPatch(typeof(NCombatRoom), "_Ready", new Type[0])]
+	[HextechPatch("ui.glass-cannon.room-ready", "玻璃大炮血条锁")]
+	private static class CombatRoomReadyPatch
 	{
-		foreach (NCreature creature in __instance.CreatureNodes)
+		[HarmonyPostfix]
+		private static void Postfix(NCombatRoom __instance)
 		{
-			HextechGlassCannonHealthBarVisual.TryAttach(creature);
+			foreach (NCreature creature in __instance.CreatureNodes)
+			{
+				HextechGlassCannonHealthBarVisual.TryAttach(creature);
+			}
 		}
 	}
 
-	private static void AddCreaturePostfix(NCombatRoom __instance, Creature creature)
+	[HarmonyPatch(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), typeof(Creature))]
+	[HextechPatch("ui.glass-cannon.add-creature", "玻璃大炮血条锁")]
+	private static class AddCreaturePatch
 	{
-		HextechGlassCannonHealthBarVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
+		[HarmonyPostfix]
+		private static void Postfix(NCombatRoom __instance, Creature creature)
+		{
+			HextechGlassCannonHealthBarVisual.TryAttach(HextechCreatureNodeRegistry.SafeGetCreatureNode(__instance, creature));
+		}
 	}
 
-	private static void CreatureReadyPostfix(NCreature __instance)
+	[HarmonyPatch(typeof(NCreature), "_Ready", new Type[0])]
+	[HextechPatch("ui.glass-cannon.creature-ready", "玻璃大炮血条锁")]
+	private static class CreatureReadyPatch
 	{
-		HextechGlassCannonHealthBarVisual.TryAttach(__instance);
+		[HarmonyPostfix]
+		private static void Postfix(NCreature __instance)
+		{
+			HextechGlassCannonHealthBarVisual.TryAttach(__instance);
+		}
 	}
 }
 

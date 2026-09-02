@@ -25,32 +25,6 @@ internal static class HextechSavedPropertyNetIdHooks
 	/// <summary>规范化是否已发生。此后再注入 SavedProperty 载体会绕过规范排序(见 HextechSavedPropertyBootstrap.InjectModelType 的告警)。</summary>
 	internal static bool IsCanonicalized => _canonicalized;
 
-	public static void Install(Harmony harmony)
-	{
-		if (_installed)
-		{
-			return;
-		}
-
-		_installed = true;
-
-		Type? oneTimeInit = AccessTools.TypeByName("MegaCrit.Sts2.Core.Helpers.OneTimeInitialization");
-		MethodInfo? essential = oneTimeInit == null ? null : AccessTools.Method(oneTimeInit, "ExecuteEssential");
-		if (essential == null)
-		{
-			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Could not patch OneTimeInitialization.ExecuteEssential; SavedProperty net-id canonicalization is disabled (multiplayer may desync with other SavedProperty mods such as RitsuLib).");
-			return;
-		}
-
-		try
-		{
-			harmony.Patch(essential, postfix: new HarmonyMethod(typeof(HextechSavedPropertyNetIdHooks), nameof(CanonicalizeNetIdMapPostfix)));
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Skipped SavedProperty net-id canonicalization: {ex.GetType().Name}: {ex.Message}");
-		}
-	}
 
 	private static void CanonicalizeNetIdMapPostfix()
 	{
@@ -146,6 +120,37 @@ internal static class HextechSavedPropertyNetIdHooks
 		}
 
 		backing.SetValue(null, bitSize);
+	}
+
+	[HextechPatch("compat.saved-property-net-id", "SavedProperty net-id 规范化")]
+	private static class CanonicalizePatch
+	{
+		public static void Apply(Harmony harmony)
+		{
+			if (_installed)
+			{
+				return;
+			}
+
+			_installed = true;
+
+			Type? oneTimeInit = AccessTools.TypeByName("MegaCrit.Sts2.Core.Helpers.OneTimeInitialization");
+			MethodInfo? essential = oneTimeInit == null ? null : AccessTools.Method(oneTimeInit, "ExecuteEssential");
+			if (essential == null)
+			{
+				Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Could not patch OneTimeInitialization.ExecuteEssential; SavedProperty net-id canonicalization is disabled (multiplayer may desync with other SavedProperty mods such as RitsuLib).");
+				return;
+			}
+
+			try
+			{
+				harmony.Patch(essential, postfix: new HarmonyMethod(typeof(HextechSavedPropertyNetIdHooks), nameof(CanonicalizeNetIdMapPostfix)));
+			}
+			catch (Exception ex)
+			{
+				Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Skipped SavedProperty net-id canonicalization: {ex.GetType().Name}: {ex.Message}");
+			}
+		}
 	}
 }
 #endif

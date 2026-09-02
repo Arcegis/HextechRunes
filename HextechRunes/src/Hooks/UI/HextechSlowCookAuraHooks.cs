@@ -9,18 +9,6 @@ namespace HextechRunes;
 
 internal static class HextechSlowCookAuraHooks
 {
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CombatRoomReadyPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-			postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(AddCreaturePostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CreatureReadyPostfix)));
-	}
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
 	{
@@ -38,6 +26,23 @@ internal static class HextechSlowCookAuraHooks
 	private static void CreatureReadyPostfix(NCreature __instance)
 	{
 		SlowCookAuraVisual.TryAttach(__instance);
+	}
+
+	[HextechPatch("visual.slow-cook-aura", "慢炖光环视觉")]
+	private static class AuraPatches
+	{
+		public static void Apply(Harmony harmony)
+		{
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CombatRoomReadyPostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
+				postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(AddCreaturePostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechSlowCookAuraHooks), nameof(CreatureReadyPostfix)));
+		}
 	}
 }
 

@@ -8,13 +8,6 @@ namespace HextechRunes;
 // 漆黑等回合内效果会通过 OrbCmd.Passive 直接触发 Passive,不会经过回合结束入口。
 internal static class HextechNightmareHooks
 {
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			ResolvePassiveHookTarget(),
-			postfix: new HarmonyMethod(typeof(HextechNightmareHooks), nameof(PassivePostfix)));
-		HextechLog.Info($"[{ModInfo.Id}][Nightmare] DarkOrb passive hook installed.");
-	}
 
 	internal static MethodInfo ResolvePassiveHookTarget()
 	{
@@ -26,16 +19,6 @@ internal static class HextechNightmareHooks
 			typeof(Creature));
 	}
 
-	private static void PassivePostfix(DarkOrb __instance, PlayerChoiceContext choiceContext, ref Task __result)
-	{
-		Player? player = __instance.Owner;
-		if (player?.GetRelic<NightmareRune>() != null)
-		{
-			__result = CompletePassiveThen(
-				__result,
-				() => TriggerNightmare(__instance, choiceContext, player));
-		}
-	}
 
 	internal static async Task CompletePassiveThen(Task passiveTask, Func<Task> nightmareEffect)
 	{
@@ -58,5 +41,22 @@ internal static class HextechNightmareHooks
 
 		Creature weakest = enemies.MinBy(static creature => creature.CurrentHp)!;
 		await CreatureCmd.Damage(choiceContext, weakest, orb.EvokeVal, ValueProp.Unpowered, player.Creature);
+	}
+
+	[HarmonyPatch(typeof(DarkOrb), nameof(DarkOrb.Passive), typeof(PlayerChoiceContext), typeof(Creature))]
+	[HextechPatch("rune.nightmare", "梦魇")]
+	private static class PassivePatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(DarkOrb __instance, PlayerChoiceContext choiceContext, ref Task __result)
+		{
+			Player? player = __instance.Owner;
+			if (player?.GetRelic<NightmareRune>() != null)
+			{
+				__result = CompletePassiveThen(
+					__result,
+					() => TriggerNightmare(__instance, choiceContext, player));
+			}
+		}
 	}
 }

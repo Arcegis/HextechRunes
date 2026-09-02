@@ -9,19 +9,6 @@ namespace HextechRunes;
 
 internal static class HextechBaronAuraHooks
 {
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CombatRoomReadyPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-			postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(AddCreaturePostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CreatureReadyPostfix)));
-		HextechLog.Info($"[{ModInfo.Id}][BaronAura] Hooks installed.");
-	}
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
 	{
@@ -39,6 +26,24 @@ internal static class HextechBaronAuraHooks
 	private static void CreatureReadyPostfix(NCreature __instance)
 	{
 		HandOfBaronAuraVisual.TryAttach(__instance);
+	}
+
+	[HextechPatch("visual.baron-aura", "男爵之手光环视觉")]
+	private static class AuraPatches
+	{
+		public static void Apply(Harmony harmony)
+		{
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CombatRoomReadyPostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
+				postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(AddCreaturePostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechBaronAuraHooks), nameof(CreatureReadyPostfix)));
+			HextechLog.Info($"[{ModInfo.Id}][BaronAura] Hooks installed.");
+		}
 	}
 }
 

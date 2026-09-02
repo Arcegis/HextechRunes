@@ -50,17 +50,6 @@ internal static partial class HextechRuneConfigMenuHooks
 	private static readonly MethodInfo? MainMenuButtonFocusedMethod = TryGetMethod(typeof(NMainMenu), "MainMenuButtonFocused", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NMainMenuTextButton));
 	private static readonly MethodInfo? MainMenuButtonUnfocusedMethod = TryGetMethod(typeof(NMainMenu), "MainMenuButtonUnfocused", BindingFlags.Instance | BindingFlags.NonPublic, typeof(NMainMenuTextButton));
 
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(NMainMenu), nameof(NMainMenu._Ready), BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechRuneConfigMenuHooks), nameof(MainMenuReadyPostfix)));
-	}
-
-	private static void MainMenuReadyPostfix(NMainMenu __instance)
-	{
-		TaskHelper.RunSafely(AttachButtonWhenReadyAsync(__instance));
-	}
 
 	private static async Task AttachButtonWhenReadyAsync(NMainMenu mainMenu)
 	{
@@ -2833,4 +2822,15 @@ internal static partial class HextechRuneConfigMenuHooks
 		BaseButton Toggle,
 		Action<bool>? ApplyVisual = null);
 
+
+	[HarmonyPatch(typeof(NMainMenu), nameof(NMainMenu._Ready), new Type[0])]
+	[HextechPatch("ui.rune-config-menu", "海克斯配置菜单")]
+	private static class MainMenuReadyPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NMainMenu __instance)
+		{
+			TaskHelper.RunSafely(AttachButtonWhenReadyAsync(__instance));
+		}
+	}
 }

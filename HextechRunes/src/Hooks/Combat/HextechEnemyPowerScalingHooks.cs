@@ -13,18 +13,6 @@ internal static partial class HextechEnemyPowerScalingHooks
 
 	private static readonly AsyncLocal<ScalingOverride?> CurrentOverride = new();
 
-	public static void Install(Harmony harmony)
-	{
-		HarmonyMethod scaledPrefix = new(typeof(HextechEnemyPowerScalingHooks), nameof(GetScaledAmountForMultiplayerPrefix))
-		{
-			priority = Priority.First
-		};
-
-		foreach (MethodInfo scaledTarget in ResolveGetScaledAmountForMultiplayerTargets())
-		{
-			harmony.Patch(scaledTarget, prefix: scaledPrefix);
-		}
-	}
 
 	public static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
 		where T : PowerModel
@@ -145,4 +133,21 @@ internal static partial class HextechEnemyPowerScalingHooks
 			&& (target.IsPrimaryEnemy || target.IsSecondaryEnemy);
 	}
 
+
+	[HextechPatch("combat.enemy-power-scaling", "敌方能力联机缩放")]
+	private static class ScaledAmountPatch
+	{
+		public static void Apply(Harmony harmony)
+		{
+			HarmonyMethod scaledPrefix = new(typeof(HextechEnemyPowerScalingHooks), nameof(GetScaledAmountForMultiplayerPrefix))
+			{
+				priority = Priority.First
+			};
+
+			foreach (MethodInfo scaledTarget in ResolveGetScaledAmountForMultiplayerTargets())
+			{
+				harmony.Patch(scaledTarget, prefix: scaledPrefix);
+			}
+		}
+	}
 }

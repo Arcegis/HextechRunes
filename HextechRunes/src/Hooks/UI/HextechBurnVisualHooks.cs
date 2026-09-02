@@ -18,19 +18,6 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechBurnVisualHooks
 {
-	public static void Install(Harmony harmony)
-	{
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechBurnVisualHooks), nameof(CombatRoomReadyPostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
-			postfix: new HarmonyMethod(typeof(HextechBurnVisualHooks), nameof(AddCreaturePostfix)));
-		harmony.Patch(
-			RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
-			postfix: new HarmonyMethod(typeof(HextechBurnVisualHooks), nameof(CreatureReadyPostfix)));
-		HextechLog.Info($"[{ModInfo.Id}][Burn] Visual hooks installed.");
-	}
 
 	private static void CombatRoomReadyPostfix(NCombatRoom __instance)
 	{
@@ -48,6 +35,24 @@ internal static class HextechBurnVisualHooks
 	private static void CreatureReadyPostfix(NCreature __instance)
 	{
 		HextechBurnVisual.TryAttach(__instance);
+	}
+
+	[HextechPatch("visual.burn-flames", "灼烧火焰视觉")]
+	private static class VisualPatches
+	{
+		public static void Apply(Harmony harmony)
+		{
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechBurnVisualHooks), nameof(CombatRoomReadyPostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCombatRoom), nameof(NCombatRoom.AddCreature), BindingFlags.Instance | BindingFlags.Public, typeof(Creature)),
+				postfix: new HarmonyMethod(typeof(HextechBurnVisualHooks), nameof(AddCreaturePostfix)));
+			harmony.Patch(
+				RequireMethod(typeof(NCreature), "_Ready", BindingFlags.Instance | BindingFlags.Public),
+				postfix: new HarmonyMethod(typeof(HextechBurnVisualHooks), nameof(CreatureReadyPostfix)));
+			HextechLog.Info($"[{ModInfo.Id}][Burn] Visual hooks installed.");
+		}
 	}
 }
 
