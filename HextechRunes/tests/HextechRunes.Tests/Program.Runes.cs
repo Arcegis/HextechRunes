@@ -818,6 +818,17 @@ internal static partial class Program
 		Equal(100, weights.Total, "total weight");
 	}
 
+	/// <summary>袖珍锻炉的药水槽总数封顶 16:原版 SerializablePotion 的 SlotIndex 只有 4 bit,超出会在联机同步里截断丢药水。</summary>
+	private static void PocketForgeKeepsPotionSlotsWithinFourBitSlotIndex()
+	{
+		Equal(16, PocketForge.MaxSerializablePotionSlots, "potion slot cap must match the 4-bit SlotIndex wire format");
+		Equal(2, PocketForge.ClampSlotIncrease(3, 2), "normal stacks add the full two slots");
+		Equal(1, PocketForge.ClampSlotIncrease(15, 2), "the last stack only adds what fits");
+		Equal(0, PocketForge.ClampSlotIncrease(16, 2), "no slots are added at the cap");
+		Equal(0, PocketForge.ClampSlotIncrease(22, 2), "over-cap saves never grow further");
+		Equal(0, PocketForge.ClampSlotIncrease(3, -5), "negative requests are ignored");
+	}
+
 	/// <summary>掷骰狂人 50%±10、红包 25%±5 的药水式动态掉率:掉落降档、未掉升档、始终夹在 0~100 内,默认偏移就是基础值。</summary>
 	private static void ForgeDropChanceAdjustsLikePotionOdds()
 	{
