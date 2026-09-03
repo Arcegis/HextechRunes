@@ -85,16 +85,14 @@ public static class ModEntry
 
 		if (!_contentRegistered)
 		{
-			try
+			// 注册按条隔离(SponsorCatalog.RegisterAll 内部逐条 try/catch),失败条目已各自 Warn。
+			// 补丁无条件照装:注册不是事务,失败时前面的内容已经入池,此时跳过补丁反而会留下
+			// "符文抽得到、依赖的补丁没装"的半初始化状态;每个补丁都以持有对应符文为前提,内容缺席只是空转。
+			int failures = SponsorCatalog.RegisterAll();
+			_contentRegistered = true;
+			if (failures > 0)
 			{
-				SponsorCatalog.RegisterAll();
-				_contentRegistered = true;
-			}
-			catch (Exception ex)
-			{
-				// 内容注册失败时不再装补丁:每个补丁都只服务本包内容(深渊契约、信徒),内容不在场时它们只会白占中枢。
-				Log.Warn($"[{ModInfo.Id}] Content registration failed; patches skipped: {ex.GetType().Name}: {ex.Message}", 2);
-				return;
+				Log.Warn($"[{ModInfo.Id}] {failures} content registration(s) failed; remaining content stays registered and patches are still applied.", 2);
 			}
 		}
 

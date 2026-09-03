@@ -72,33 +72,56 @@ internal static class SponsorCatalog
 		typeof(AutomatonContractChoiceRelic)
 	];
 
-	internal static void RegisterAll()
+	/// <summary>
+	/// 逐条注册。注册不是事务:本体的注册表没有回滚口子,一条失败不能把前面已入池的内容撤回。
+	/// 所以这里按条隔离——一条失败只记 Warn 并继续,让其余内容照常入池;返回失败条数供入口决定日志级别。
+	/// 补丁由入口无条件应用(每个补丁都以"玩家持有对应符文"为前提,内容缺席时它们只是空转),
+	/// 这样不会出现"符文已入池、但它依赖的补丁没装"的半初始化状态。
+	/// </summary>
+	internal static int RegisterAll()
 	{
+		int failures = 0;
 		foreach (Type carrier in SavedPropertyCarriers)
 		{
-			HextechRunesApi.RegisterSavedPropertyCarrier(carrier);
+			failures += Register("SavedProperty carrier", carrier, () => HextechRunesApi.RegisterSavedPropertyCarrier(carrier));
 		}
 
 		foreach ((Type enchantment, string iconFile) in EnchantmentIcons)
 		{
-			HextechRunesApi.RegisterEnchantmentIcon(enchantment, $"res://{ModInfo.Id}/images/enchantments/{iconFile}");
+			failures += Register("enchantment icon", enchantment, () => HextechRunesApi.RegisterEnchantmentIcon(enchantment, $"res://{ModInfo.Id}/images/enchantments/{iconFile}"));
 		}
 
 		foreach ((Type forge, HextechRarityTier rarity) in Forges)
 		{
-			HextechRunesApi.RegisterForge(forge, rarity, ModInfo.Id);
+			failures += Register("forge", forge, () => HextechRunesApi.RegisterForge(forge, rarity, ModInfo.Id));
 		}
 
 		foreach ((Type rune, HextechRarityTier rarity, string tagKey) in PlayerRunes)
 		{
-			HextechRunesApi.RegisterPlayerRune(rune, rarity, tagKey: tagKey, assetModId: ModInfo.Id);
+			failures += Register("player rune", rune, () => HextechRunesApi.RegisterPlayerRune(rune, rarity, tagKey: tagKey, assetModId: ModInfo.Id));
 		}
 
 		Log.Info($"[{ModInfo.Id}] Registered IntegratedStrategyEvents soft-collab rune content with runtime availability gating.");
 
 		foreach (Type relic in EventRelics)
 		{
-			HextechRunesApi.RegisterEventRelic(relic, ModInfo.Id);
+			failures += Register("event relic", relic, () => HextechRunesApi.RegisterEventRelic(relic, ModInfo.Id));
+		}
+
+		return failures;
+	}
+
+	private static int Register(string kind, Type type, Action register)
+	{
+		try
+		{
+			register();
+			return 0;
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}] Failed to register {kind} {type.Name}: {ex.GetType().Name}: {ex.Message}", 2);
+			return 1;
 		}
 	}
 }
