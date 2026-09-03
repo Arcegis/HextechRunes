@@ -1,26 +1,18 @@
 using HextechRunes;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
-using MegaCrit.Sts2.Core.Models.Enchantments;
-using MegaCrit.Sts2.Core.Models.Orbs;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Rooms;
-using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Runs;
-using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunesSponsorPack;
 
+// 枚举值参与 SavedContract 的持久化与联机同步,append-only,不要重排数值。
 public enum AbyssalContractKind
 {
 	None = 0,
@@ -31,6 +23,8 @@ public enum AbyssalContractKind
 	Automaton = 5
 }
 
+// 符文本身只做三件事:持有 [SavedProperty]、在获得时跑选择流程、把每个 hook 转发给对应契约策略。
+// 五种契约的行为在 Features/AbyssalContract/ 下,每种一个无状态策略类。
 public sealed class AbyssalContractRune : HextechRelicBase
 {
 	internal const int WarriorInitialStrength = 5;
@@ -42,12 +36,24 @@ public sealed class AbyssalContractRune : HextechRelicBase
 	internal const int AutomatonOrbSlotBonus = 99;
 	internal const int AutomatonDamagePerOrb = 1;
 
+	private static readonly IReadOnlyDictionary<AbyssalContractKind, IAbyssalContract> Strategies =
+		new Dictionary<AbyssalContractKind, IAbyssalContract>
+		{
+			[AbyssalContractKind.Warrior] = new WarriorContract(),
+			[AbyssalContractKind.Hunter] = new HunterContract(),
+			[AbyssalContractKind.Regent] = new RegentContract(),
+			[AbyssalContractKind.Necrobinder] = new NecrobinderContract(),
+			[AbyssalContractKind.Automaton] = new AutomatonContract()
+		};
+
 	private AbyssalContractKind _contract;
 	private int _warriorEliteKills;
 	private int _warriorStrengthBonuses;
 	private int _hunterCompletedCombats;
-	private int _hunterSkillsPlayedThisCombat;
-	private bool _autoPlayingSnakebite;
+
+	// 每场战斗的临时计数,不入存档;猎人契约读写,战斗开始与结束时无条件清零。
+	internal int HunterSkillsPlayedThisCombat;
+	internal bool AutoPlayingSnakebite;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedContract
@@ -83,22 +89,19 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 	internal AbyssalContractKind Contract => _contract;
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips => _contract switch
-	{
-		AbyssalContractKind.Warrior => HoverTipFactory.FromRelic<WarriorContractChoiceRelic>(),
-		AbyssalContractKind.Hunter => HoverTipFactory.FromRelic<HunterContractChoiceRelic>(),
-		AbyssalContractKind.Regent => HoverTipFactory.FromRelic<RegentContractChoiceRelic>(),
-		AbyssalContractKind.Necrobinder => HoverTipFactory.FromRelic<NecrobinderContractChoiceRelic>(),
-		AbyssalContractKind.Automaton => HoverTipFactory.FromRelic<AutomatonContractChoiceRelic>(),
-		_ =>
+	private IAbyssalContract? Strategy =>
+		Strategies.TryGetValue(_contract, out IAbyssalContract? strategy) ? strategy : null;
+
+	// 未签约时把五种契约的提示全列出来,签约后只留自己那一条。
+	protected override IEnumerable<IHoverTip> ExtraHoverTips => Strategy?.ExtraHoverTips
+		??
 		[
 			.. HoverTipFactory.FromRelic<WarriorContractChoiceRelic>(),
 			.. HoverTipFactory.FromRelic<HunterContractChoiceRelic>(),
 			.. HoverTipFactory.FromRelic<RegentContractChoiceRelic>(),
 			.. HoverTipFactory.FromRelic<NecrobinderContractChoiceRelic>(),
 			.. HoverTipFactory.FromRelic<AutomatonContractChoiceRelic>()
-		]
-	};
+		];
 
 	public override async Task AfterObtained()
 	{
@@ -127,198 +130,92 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 		SavedContract = (int)contract;
 		Flash();
-		await ApplyInitialContractEffect();
+		if (Strategy is IAbyssalContract strategy)
+		{
+			await strategy.ApplyInitialEffect(this);
+		}
 	}
 
-	public override async Task AfterRemoved()
+	public override Task AfterRemoved()
 	{
-		if (Owner == null || _contract != AbyssalContractKind.Automaton)
+		if (Owner == null)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
-		Owner.BaseOrbSlotCount = Math.Max(0, Owner.BaseOrbSlotCount - AutomatonOrbSlotBonus);
-		if (Owner.PlayerCombatState != null && Owner.Creature.CombatState != null)
-		{
-			Owner.PlayerCombatState.OrbQueue.RemoveCapacity(AutomatonOrbSlotBonus);
-		}
-		await Task.CompletedTask;
+		return Strategy?.AfterRemoved(this) ?? Task.CompletedTask;
 	}
 
-	public override async Task BeforeCombatStart()
+	public override Task BeforeCombatStart()
 	{
-		_hunterSkillsPlayedThisCombat = 0;
-		_autoPlayingSnakebite = false;
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| _contract != AbyssalContractKind.Warrior)
+		HunterSkillsPlayedThisCombat = 0;
+		AutoPlayingSnakebite = false;
+		if (Owner == null || Owner.Creature.IsDead)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
-		Flash();
-		await PowerCmd.Apply<StrengthPower>(
-			Owner.Creature,
-			WarriorInitialStrength + _warriorStrengthBonuses,
-			Owner.Creature,
-			null);
+		return Strategy?.BeforeCombatStart(this) ?? Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		_hunterSkillsPlayedThisCombat = 0;
-		_autoPlayingSnakebite = false;
+		HunterSkillsPlayedThisCombat = 0;
+		AutoPlayingSnakebite = false;
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterCombatVictory(CombatRoom room)
+	public override Task AfterCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
-		if (_contract == AbyssalContractKind.Warrior && room.RoomType == RoomType.Elite)
-		{
-			int eliteKills = _warriorEliteKills;
-			int strengthBonuses = _warriorStrengthBonuses;
-			bool gainedStrength = AdvanceWarriorEliteProgress(ref eliteKills, ref strengthBonuses);
-			SavedWarriorEliteKills = eliteKills;
-			SavedWarriorStrengthBonuses = strengthBonuses;
-			if (gainedStrength)
-			{
-				Flash();
-			}
-			return;
-		}
-
-		if (_contract != AbyssalContractKind.Hunter)
-		{
-			return;
-		}
-
-		SavedHunterCompletedCombats = _hunterCompletedCombats + 1;
-		if (_hunterCompletedCombats != 0)
-		{
-			return;
-		}
-
-		await TransformRandomCardIntoSnakebite();
+		return Strategy?.AfterCombatVictory(this, room) ?? Task.CompletedTask;
 	}
 
-	public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| _contract != AbyssalContractKind.Hunter
-			|| _autoPlayingSnakebite
-			|| cardPlay.Card.Owner != Owner
-			|| cardPlay.Card.Type != CardType.Skill)
+		if (Owner == null || Owner.Creature.IsDead)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
-		_hunterSkillsPlayedThisCombat++;
-		if (_hunterSkillsPlayedThisCombat < HunterSkillInterval)
-		{
-			return;
-		}
-
-		_hunterSkillsPlayedThisCombat -= HunterSkillInterval;
-		Snakebite? snakebite = Owner.PlayerCombatState?.AllCards
-			.OfType<Snakebite>()
-			.FirstOrDefault(static card => card.Pile?.Type is PileType.Hand or PileType.Draw or PileType.Discard);
-		if (snakebite == null)
-		{
-			return;
-		}
-
-		_autoPlayingSnakebite = true;
-		try
-		{
-			Flash();
-			await CardPileCmd.Add(snakebite, PileType.Play);
-			await CardCmd.AutoPlay(choiceContext, snakebite, null);
-		}
-		finally
-		{
-			_autoPlayingSnakebite = false;
-		}
+		return Strategy?.AfterCardPlayed(this, choiceContext, cardPlay) ?? Task.CompletedTask;
 	}
 
-	public override async Task BeforeSideTurnStart(
+	public override Task BeforeSideTurnStart(
 		PlayerChoiceContext choiceContext,
 		CombatSide side,
 		HextechCombatState combatState)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| _contract != AbyssalContractKind.Necrobinder
-			|| side != Owner.Creature.Side)
+		if (Owner == null || Owner.Creature.IsDead)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
-		IReadOnlyList<Creature> targets = combatState.Creatures
-			.Where(static creature => creature.IsAlive && creature.CanReceivePowers)
-			.ToArray();
-		if (targets.Count == 0)
-		{
-			return;
-		}
-
-		Flash(targets);
-		foreach (Creature target in targets)
-		{
-			for (int i = 0; i < NecrobinderDebuffApplications; i++)
-			{
-				await ApplyRandomDebuff(choiceContext, target);
-			}
-		}
+		return Strategy?.BeforeSideTurnStart(this, choiceContext, side, combatState) ?? Task.CompletedTask;
 	}
 
-	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
+	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| _contract != AbyssalContractKind.Automaton
-			|| side != Owner.Creature.Side
-			|| Owner.PlayerCombatState == null)
+		if (Owner == null || Owner.Creature.IsDead)
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
-		int orbCount = Owner.PlayerCombatState.OrbQueue.Orbs.Count;
-		if (orbCount <= 0)
-		{
-			return;
-		}
-
-		Flash([Owner.Creature]);
-		await CreatureCmd.Damage(
-			choiceContext,
-			Owner.Creature,
-			orbCount * AutomatonDamagePerOrb,
-			ValueProp.Unpowered,
-			Owner.Creature);
+		return Strategy?.BeforeTurnEnd(this, choiceContext, side) ?? Task.CompletedTask;
 	}
 
 	public override bool ShouldAddToDeck(CardModel card)
 	{
-		return _contract != AbyssalContractKind.Warrior
-			|| card.Owner != Owner
-			|| !IsWarriorForbiddenCardType(card.Type);
+		return Strategy?.ShouldAddToDeck(this, card) ?? true;
 	}
 
 	public override Task AfterAddToDeckPrevented(CardModel card)
 	{
-		if (_contract == AbyssalContractKind.Warrior
-			&& card.Owner == Owner
-			&& IsWarriorForbiddenCardType(card.Type))
-		{
-			Flash();
-		}
-		return Task.CompletedTask;
+		return Strategy?.AfterAddToDeckPrevented(this, card) ?? Task.CompletedTask;
 	}
 
 	public override bool TryModifyEnergyCostInCombat(
@@ -327,21 +224,21 @@ public sealed class AbyssalContractRune : HextechRelicBase
 		out decimal modifiedCost)
 	{
 		modifiedCost = originalCost;
-		if (_contract != AbyssalContractKind.Hunter
-			|| card.Owner != Owner
-			|| card is not Snakebite
-			|| card.EnergyCost.CostsX)
-		{
-			return false;
-		}
-
-		modifiedCost = Math.Max(0m, originalCost - HunterSnakebiteCostReduction);
-		return true;
+		IAbyssalContract? strategy = Strategy;
+		return strategy != null
+			&& strategy.TryModifyEnergyCostInCombat(this, card, originalCost, out modifiedCost);
 	}
 
 	internal bool HasContract(AbyssalContractKind contract)
 	{
 		return _contract == contract;
+	}
+
+	// 契约赠卡走本体的「战斗中入手、战斗外入牌组」通道;策略类看不到 protected 成员,由符文转发。
+	internal Task AddContractCards<TCard>(int count, Action<CardModel>? configureCard = null)
+		where TCard : CardModel
+	{
+		return AddCardCopiesToDeckOrHand<TCard>(count, configureCard);
 	}
 
 	internal static bool IsWarriorForbiddenCardType(CardType cardType)
@@ -400,174 +297,5 @@ public sealed class AbyssalContractRune : HextechRelicBase
 			return typeof(InfusedCore);
 		}
 		return null;
-	}
-
-	private async Task ApplyInitialContractEffect()
-	{
-		switch (_contract)
-		{
-			case AbyssalContractKind.Warrior:
-				await RemoveWarriorForbiddenCards();
-				await UpgradeCurrentStartingRelic();
-				break;
-			case AbyssalContractKind.Hunter:
-				await AddCardCopiesToDeckOrHand<Snakebite>(HunterSnakebiteCount);
-				break;
-			case AbyssalContractKind.Regent:
-				await ReplaceCurrentStartingRelicWithFencingManual();
-				await AddCardCopiesToDeckOrHand<SwordSage>(1, ApplyImbuedEnchantment);
-				await AddCardCopiesToDeckOrHand<Parry>(1, ApplyImbuedEnchantment);
-				break;
-			case AbyssalContractKind.Necrobinder:
-				await AddCardCopiesToDeckOrHand<SleightOfFlesh>(1, ApplyImbuedEnchantment);
-				break;
-			case AbyssalContractKind.Automaton:
-				ApplyAutomatonOrbSlots();
-				await UpgradeCurrentStartingRelic();
-				break;
-		}
-	}
-
-	private async Task RemoveWarriorForbiddenCards()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		IReadOnlyList<CardModel> cards = Owner.Deck.Cards
-			.Where(static card => IsWarriorForbiddenCardType(card.Type))
-			.ToArray();
-		if (cards.Count > 0)
-		{
-			await CardPileCmd.RemoveFromDeck(cards, showPreview: true);
-		}
-	}
-
-	private async Task TransformRandomCardIntoSnakebite()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		IReadOnlyList<CardModel> nonSnakebites = Owner.Deck.Cards
-			.Where(static card => card is not Snakebite)
-			.ToArray();
-		if (nonSnakebites.Count == 0)
-		{
-			return;
-		}
-
-		IReadOnlyList<CardModel> attacks = nonSnakebites
-			.Where(static card => card.Type == CardType.Attack)
-			.ToArray();
-		IReadOnlyList<CardModel> candidates = attacks.Count > 0 ? attacks : nonSnakebites;
-		CardModel? original = Owner.PlayerRng.Transformations.NextItem(candidates);
-		if (original == null)
-		{
-			return;
-		}
-		CardModel replacement = Owner.RunState.CreateCard<Snakebite>(Owner);
-		Flash();
-		await CardCmd.Transform(original, replacement, CardPreviewStyle.HorizontalLayout);
-	}
-
-	private async Task ApplyRandomDebuff(PlayerChoiceContext choiceContext, Creature target)
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		switch (Owner.RunState.Rng.Niche.NextInt(5))
-		{
-			case 0:
-				await PowerCmd.Apply<WeakPower>(choiceContext, target, 1m, Owner.Creature, null);
-				break;
-			case 1:
-				await PowerCmd.Apply<VulnerablePower>(choiceContext, target, 1m, Owner.Creature, null);
-				break;
-			case 2:
-				await PowerCmd.Apply<FrailPower>(choiceContext, target, 1m, Owner.Creature, null);
-				break;
-			case 3:
-				await PowerCmd.Apply<DoomPower>(choiceContext, target, 1m, Owner.Creature, null);
-				break;
-			default:
-				await PowerCmd.Apply<PoisonPower>(choiceContext, target, 1m, Owner.Creature, null);
-				break;
-		}
-	}
-
-	private async Task UpgradeCurrentStartingRelic()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		(RelicModel? original, RelicModel? replacement) = Owner.Character switch
-		{
-			Ironclad => ((RelicModel?)Owner.GetRelic<BurningBlood>(), ModelDb.Relic<BlackBlood>().ToMutable()),
-			Silent => ((RelicModel?)Owner.GetRelic<RingOfTheSnake>(), ModelDb.Relic<RingOfTheDrake>().ToMutable()),
-			Regent => ((RelicModel?)Owner.GetRelic<DivineRight>(), ModelDb.Relic<DivineDestiny>().ToMutable()),
-			Necrobinder => ((RelicModel?)Owner.GetRelic<BoundPhylactery>(), ModelDb.Relic<PhylacteryUnbound>().ToMutable()),
-			Defect => ((RelicModel?)Owner.GetRelic<CrackedCore>(), ModelDb.Relic<InfusedCore>().ToMutable()),
-			_ => (null, null)
-		};
-		if (original != null && replacement != null)
-		{
-			await RelicCmd.Replace(original, replacement);
-		}
-	}
-
-	private async Task ReplaceCurrentStartingRelicWithFencingManual()
-	{
-		if (Owner == null || Owner.GetRelic<FencingManual>() != null)
-		{
-			return;
-		}
-
-		RelicModel? starter = Owner.Character switch
-		{
-			Ironclad => (RelicModel?)Owner.GetRelic<BurningBlood>() ?? Owner.GetRelic<BlackBlood>(),
-			Silent => (RelicModel?)Owner.GetRelic<RingOfTheSnake>() ?? Owner.GetRelic<RingOfTheDrake>(),
-			Regent => (RelicModel?)Owner.GetRelic<DivineRight>() ?? Owner.GetRelic<DivineDestiny>(),
-			Necrobinder => (RelicModel?)Owner.GetRelic<BoundPhylactery>() ?? Owner.GetRelic<PhylacteryUnbound>(),
-			Defect => (RelicModel?)Owner.GetRelic<CrackedCore>() ?? Owner.GetRelic<InfusedCore>(),
-			_ => null
-		};
-		FencingManual replacement = (FencingManual)ModelDb.Relic<FencingManual>().ToMutable();
-		if (starter != null)
-		{
-			await RelicCmd.Replace(starter, replacement);
-		}
-		else
-		{
-			await RelicCmd.Obtain(replacement, Owner);
-		}
-	}
-
-	private void ApplyAutomatonOrbSlots()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		Owner.BaseOrbSlotCount += AutomatonOrbSlotBonus;
-		if (Owner.PlayerCombatState != null && Owner.Creature.CombatState != null)
-		{
-			Owner.PlayerCombatState.OrbQueue.AddCapacity(AutomatonOrbSlotBonus);
-		}
-	}
-
-	private static void ApplyImbuedEnchantment(CardModel card)
-	{
-		Imbued imbued = (Imbued)ModelDb.Enchantment<Imbued>().ToMutable();
-		card.EnchantInternal(imbued, 1m);
-		imbued.ModifyCard();
-		card.FinalizeUpgradeInternal();
 	}
 }

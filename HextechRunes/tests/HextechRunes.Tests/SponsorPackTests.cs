@@ -131,6 +131,38 @@ internal static partial class Program
 			"the migration shell must not expose any multi-enchantment API any more");
 	}
 
+	// 熵减的「战后一次预览批量删除」不再靠 Hook.AfterCombatEnd 的补丁收集,改由第一个被回调的实例
+	// 扫一遍牌组。选牌是纯函数,在这里守住:只挑本场打出过(PendingRemoval)的熵减牌,且保持牌组顺序。
+	private static void EntropyDecreaseCollectsOnlyCardsMarkedForRemoval()
+	{
+		FieldInfo enchantmentField = typeof(CardModel)
+			.GetField("<Enchantment>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+		CardModel plain = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
+
+		CardModel unplayed = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
+		enchantmentField.SetValue(unplayed, RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease)));
+
+		CardModel played = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
+		EntropyDecrease playedEnchantment = (EntropyDecrease)RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease));
+		playedEnchantment.PendingRemoval = true;
+		enchantmentField.SetValue(played, playedEnchantment);
+
+		CardModel otherEnchantment = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
+		enchantmentField.SetValue(otherEnchantment, RuntimeHelpers.GetUninitializedObject(typeof(EntropyIncrease)));
+
+		CardModel alsoPlayed = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
+		EntropyDecrease alsoPlayedEnchantment = (EntropyDecrease)RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease));
+		alsoPlayedEnchantment.PendingRemoval = true;
+		enchantmentField.SetValue(alsoPlayed, alsoPlayedEnchantment);
+
+		IReadOnlyList<CardModel> collected = EntropyDecrease.CollectPendingRemovalCards(
+			[plain, unplayed, played, otherEnchantment, alsoPlayed]);
+		Equal(2, collected.Count, "only the played entropy-decrease cards should be collected");
+		Equal(played, collected[0], "collection keeps deck order");
+		Equal(alsoPlayed, collected[1], "collection keeps deck order");
+	}
+
 	private static void DollysMirrorRelicPagesStayWithinVanillaViewport()
 	{
 		DollyRelicPageLayout first = DollysMirrorForge.GetRelicPageLayout(13, 0);

@@ -73,8 +73,7 @@ public static class ModEntry
 			_contentRegistered = true;
 		}
 
-		EntropyEnchantmentHooks.Install();
-		AbyssalContractHooks.Install();
+		AbyssalContractPatches.Install();
 		InstallOptionalFeature("IntegratedStrategyEvents compatibility", IntegratedStrategyEventsCompatibilityHooks.Install);
 		InstallOptionalFeature("Miracle event portrait", MiracleEventPortraitPatch.Install);
 		MiracleEventForgePricePatch.Install();
