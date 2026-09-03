@@ -303,6 +303,7 @@ internal static partial class Program
 			new(nameof(RandomEnchantmentPoolLegalEnchantmentsPreserveOrderAndCanEnchant), RandomEnchantmentPoolLegalEnchantmentsPreserveOrderAndCanEnchant),
 			new(nameof(SponsorCompositeEnchantmentIsReadOnlyMigrationShell), SponsorCompositeEnchantmentIsReadOnlyMigrationShell),
 			new(nameof(EntropyDecreaseCollectsOnlyCardsMarkedForRemoval), EntropyDecreaseCollectsOnlyCardsMarkedForRemoval),
+			new(nameof(SponsorCatalogDependencyTableIsConsistent), SponsorCatalogDependencyTableIsConsistent),
 			new(nameof(DollysMirrorRelicPagesStayWithinVanillaViewport), DollysMirrorRelicPagesStayWithinVanillaViewport),
 			new(nameof(AbyssalContractChoiceModelsMapToExpectedContracts), AbyssalContractChoiceModelsMapToExpectedContracts),
 			new(nameof(AbyssalContractWarriorEliteThresholdGrows), AbyssalContractWarriorEliteThresholdGrows),
