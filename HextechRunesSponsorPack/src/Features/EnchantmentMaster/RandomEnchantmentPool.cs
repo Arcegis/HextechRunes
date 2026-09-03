@@ -4,7 +4,8 @@ using MegaCrit.Sts2.Core.Models.Enchantments;
 
 namespace HextechRunesSponsorPack;
 
-// 附魔大师的候选池。拓展包不实现任何附魔机制,只是 CardCmd.Enchant 的一个普通调用方:
+// 附魔大师的候选池:ModelDb 里的全部附魔——原版的、本包的(进化 / 熵增)、其他模组的——只按下面的规则排除
+// 弃用、负面与「模组内部伴随附魔」。拓展包不实现任何附魔机制,只是 CardCmd.Enchant 的一个普通调用方:
 // 「合法」的定义完全由 enchantment.CanEnchant(card) 给出——没装多重附魔类模组时它只放行空槽位与
 // 原版 IsStackable 的同类叠层;装了这类模组时由它们放宽规则。本文件不引用、也不探测任何第三方程序集。
 //
@@ -78,9 +79,11 @@ internal static class RandomEnchantmentPool
 	/// </summary>
 	internal static bool IsExcludedType(Type type)
 	{
+		// 负面附魔:熵减打出后会在战斗结束时把牌移出牌组,随机塞给玩家是惩罚,与原版 Corrupted 同类。
 		if (type == typeof(DeprecatedEnchantment)
 			|| type == typeof(Corrupted)
 			|| type == typeof(Clone)
+			|| type == typeof(EntropyDecrease)
 			|| type == typeof(SponsorCompositeEnchantment))
 		{
 			return true;
@@ -103,15 +106,26 @@ internal static class RandomEnchantmentPool
 	}
 
 	/// <summary>
-	/// 实例层面的排除规则 = 类型规则 + 「没有图标」。
-	/// 没有 res://images/enchantments/&lt;id&gt;.png 的多半是模组内部用的伴随附魔;
-	/// 注意本体 HextechRunesApi.RegisterEnchantmentIcon 只改 EnchantmentModel.Icon 不改 IconPath,
-	/// 所以走该 API 登记图标的附魔(进化 / 熵增 / 熵减 等)同样落在这一条里,不进随机池。
+	/// 实例层面的排除规则 = 类型规则 + 「非本包附魔且没有图标」。
+	/// 没有 res://images/enchantments/&lt;id&gt;.png 的第三方附魔多半是模组内部用的伴随附魔;
+	/// 但本体 HextechRunesApi.RegisterEnchantmentIcon 只改 EnchantmentModel.Icon 不改 IconPath,
+	/// 本包自己的附魔(进化 / 熵增)都走那条 API,IconPath 仍是 MissingIconPath——
+	/// 所以图标规则不适用于本程序集,它们只受类型规则约束。
 	/// </summary>
 	internal static bool IsExcluded(EnchantmentModel enchantment)
 	{
-		return IsExcludedType(enchantment.GetType())
-			|| string.Equals(enchantment.IconPath, EnchantmentModel.MissingIconPath, StringComparison.Ordinal);
+		Type type = enchantment.GetType();
+		if (IsExcludedType(type))
+		{
+			return true;
+		}
+
+		if (type.Assembly == typeof(RandomEnchantmentPool).Assembly)
+		{
+			return false;
+		}
+
+		return string.Equals(enchantment.IconPath, EnchantmentModel.MissingIconPath, StringComparison.Ordinal);
 	}
 
 	private static IReadOnlyList<EnchantmentModel> BuildPool()

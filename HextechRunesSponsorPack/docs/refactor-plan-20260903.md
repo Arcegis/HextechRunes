@@ -92,9 +92,10 @@
 
 - **符文**：`EnchantmentMasterRune.AfterObtained` 保持现状（`ObtainRandomForges` 棱彩 1 / 黄金 2）；`IsAvailableForPlayer` 保持 `true`；新增 `AfterCombatVictory(CombatRoom)` 覆写：从牌组里选一张"至少存在一个合法附魔"的牌，再从该牌的合法附魔里选一个，`CardCmd.Enchant(canonical.ToMutable(), card, 1m)` + `Flash()` + `CardCmd.Preview(card)`。每场胜利一次，不设总上限，精英 / Boss 不加倍（数值先按文案最简形态，观察遥测后再调）。
 - **候选池**（`src/Features/EnchantmentMaster/RandomEnchantmentPool.cs`）：枚举 ModelDb 里全部 `EnchantmentModel` 的 canonical 实例，按 `Id.Entry` 有序（保证两端顺序一致），逐张牌过 `enchantment.CanEnchant(card)`。排除规则：
-  1. `DeprecatedEnchantment`、`Corrupted`（原版负面）、`Clone`（无篝火选项时是空效果）；
+  池的范围是**原版 + 本拓展包 + 其他模组**的全部附魔，只排除下面这些：
+  1. `DeprecatedEnchantment`、`Corrupted`（原版负面）、`Clone`（无篝火选项时是空效果）、`EntropyDecrease`（本包负面：打出后战斗结束把牌移出牌组）；
   2. 基类链里有 `MultiEnchantmentMod.Api.MarkerEnchantmentModel` 的（MEM 的标记，不是附魔；按 `FullName` 字符串比对，不引用 MEM）；
-  3. `IconPath == EnchantmentModel.MissingIconPath` 的（没图标的多半是模组内部用的伴随附魔）；
+  3. **非本包**且 `IconPath == EnchantmentModel.MissingIconPath` 的（没图标的第三方附魔多半是模组内部用的伴随附魔）。本包附魔的图标走 `HextechRunesApi.RegisterEnchantmentIcon`，它只改 `Icon` 不改 `IconPath`，所以图标规则对本程序集不适用——否则进化 / 熵增会被自己的规则误排除；
   4. 类型名以 `SubEnchantment` 结尾的（PengoTarot 的伴随附魔命名约定，它自己也按名字判定）；
   5. 拓展包自己的 `SponsorCompositeEnchantment` 迁移壳。
   排除表放在一个静态只读集合里，日志在首次构建池时列出"进池 N 个 / 排除 M 个"各一行。

@@ -46,6 +46,11 @@ internal static partial class Program
 		Expect(!RandomEnchantmentPool.IsExcludedType(typeof(Sharp)), "a plain vanilla enchantment must stay eligible");
 		Expect(!RandomEnchantmentPool.IsExcludedType(typeof(Sown)), "a plain vanilla enchantment must stay eligible");
 
+		// 候选池包含本包自己的附魔;熵减是负面(打出后战斗结束把牌移出牌组),与 Corrupted 同类排除。
+		Expect(!RandomEnchantmentPool.IsExcludedType(typeof(Evolution)), "the sponsor pack's own Evolution must stay eligible");
+		Expect(!RandomEnchantmentPool.IsExcludedType(typeof(EntropyIncrease)), "the sponsor pack's own EntropyIncrease must stay eligible");
+		Expect(RandomEnchantmentPool.IsExcludedType(typeof(EntropyDecrease)), "EntropyDecrease is a negative enchantment and must be excluded");
+
 		// MultiEnchantmentMod 的标记基类按 FullName 字符串比对,不引用该程序集。
 		ModuleBuilder module = AssemblyBuilder
 			.DefineDynamicAssembly(new AssemblyName("SponsorPackFakeMultiEnchantmentMod"), AssemblyBuilderAccess.Run)
@@ -62,13 +67,20 @@ internal static partial class Program
 		Expect(RandomEnchantmentPool.IsExcludedType(subEnchantment), "types named *SubEnchantment must be excluded");
 		Expect(!RandomEnchantmentPool.IsExcludedType(unrelated), "unrelated third-party enchantments must stay eligible");
 
-		// 没有图标的按「模组内部伴随附魔」排除。预置 EnchantmentModel._iconPath 避开 Godot ResourceLoader。
+		// 没有图标的第三方附魔按「模组内部伴随附魔」排除。预置 EnchantmentModel._iconPath 避开 Godot ResourceLoader。
 		FieldInfo iconPath = typeof(EnchantmentModel).GetField("_iconPath", BindingFlags.Instance | BindingFlags.NonPublic)!;
 		EnchantmentModel sharp = (Sharp)RuntimeHelpers.GetUninitializedObject(typeof(Sharp));
 		iconPath.SetValue(sharp, EnchantmentModel.MissingIconPath);
 		Expect(RandomEnchantmentPool.IsExcluded(sharp), "an enchantment falling back to the missing icon must be excluded");
 		iconPath.SetValue(sharp, "res://images/enchantments/sharp.png");
 		Expect(!RandomEnchantmentPool.IsExcluded(sharp), "an enchantment with a real icon must stay eligible");
+
+		// 本包附魔的图标经 HextechRunesApi.RegisterEnchantmentIcon 登记(只改 Icon 不改 IconPath),IconPath 恒为
+		// MissingIconPath,所以图标规则只能对非本包程序集生效,否则进化 / 熵增会被误排除。
+		// (真实 canonical 实例要 ModelDb + Godot 资源层,测试进程里造不出来;这里用未初始化实例复现同样的 IconPath 状态。)
+		EnchantmentModel evolution = (Evolution)RuntimeHelpers.GetUninitializedObject(typeof(Evolution));
+		iconPath.SetValue(evolution, EnchantmentModel.MissingIconPath);
+		Expect(!RandomEnchantmentPool.IsExcluded(evolution), "the sponsor pack's own enchantments must not be excluded by the icon rule");
 	}
 
 	// GetLegalEnchantments 只做「过 CanEnchant 的保序过滤」;池本身的 Id.Entry 有序由 SortByEntryOrdinal 保证。
