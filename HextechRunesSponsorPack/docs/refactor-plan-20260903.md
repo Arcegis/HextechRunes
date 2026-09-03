@@ -14,7 +14,7 @@
 5. **"命名空间冻结"是误判。** 已核实 `ModelDb.GetEntry` 只取 `type.Name`、本地化键只取 `Id.Entry`、net-id 表按 `ModelId` 与属性名排序，命名空间不参与任何持久化身份。14 个 `namespace HextechRunes;` 文件可以安全归位到 `HextechRunesSponsorPack`，只要类名与 `[SavedProperty]` 属性名不动。
 6. 版本兼容层是健康的（`#if` 只有 3 处），本地化 9 语言键集 100% 对齐，多人同步路径静态审查未发现新分叉点。这些不动。
 
-规模上，本方案把源码从 5,523 行压到约 3,700 行，补丁 21 → 7（§6 落地后 4），可跳过原方法的前缀 8 → 1，原版私有成员反射 12 → 0，Harmony id 9 → 1，`namespace` 2 套 → 1 套；**不改任何类名、`[SavedProperty]` 属性名、随机盐与 `HextechRunesApi` 调用面**，唯一的兼容性断裂是删除 `SponsorCompositeEnchantment` 这个模型 ID（见 §2.5，随版本号 0.10.0 发布）。
+规模上，本方案把源码从 5,523 行压到约 3,700 行，补丁 21 → 7（§6 落地后 4），可跳过原方法的前缀 8 → 1，原版私有成员反射 12 → 0，Harmony id 9 → 1，`namespace` 2 套 → 1 套；**不改任何类名、`[SavedProperty]` 属性名、随机盐与 `HextechRunesApi` 调用面**，唯一的兼容性断裂是删除 `SponsorCompositeEnchantment` 这个模型 ID（见 §2.5，随版本号 0.9.2 发布）。
 
 ## 1. 现状取证
 
@@ -107,7 +107,7 @@
 
 ### 2.5 存档与联机迁移
 
-- `SponsorCompositeEnchantment` 是 ModelDb 里的模型。删除它 = 模型 ID 集合变化 = `ModelIdSerializationCache.Hash` 变化 = 与旧版本联机必然 ModMismatch。这与任何一次内容增删相同，随版本号 0.10.0 走，更新日志【注意】写明。
+- `SponsorCompositeEnchantment` 是 ModelDb 里的模型。删除它 = 模型 ID 集合变化 = `ModelIdSerializationCache.Hash` 变化 = 与旧版本联机必然 ModMismatch。这与任何一次内容增删相同，随版本号 0.9.2 走，更新日志【注意】写明。
 - 旧存档：`EnchantmentModel.FromSerializable` 走 `SaveUtil.EnchantmentOrDeprecated`，未知 ID 落到 `DeprecatedEnchantment`（0.111 `SaveUtil` 第 89–92 行），**不会崩**，但内层附魔全部丢失。处理：保留 `SponsorCompositeEnchantment` 类一个版本周期作"只读迁移壳"（≤60 行，无 Harmony）：`CanEnchant` 恒 false、不注册图标、不进候选池；`OnEnchant` 时把 JSON 里的第一个内层附魔反序列化后用 `card.ClearEnchantmentInternal()` + `card.EnchantInternal` + `ModifyCard()` 放回槽位，其余丢弃并 Warn 一行"其余附魔已丢失"。不再有"MEM 在场就塞回去"的分支。下一个版本删类。
 - 联机：拓展包不再有任何附魔序列化补丁；`SavedEnchantmentsJson` 这条全包最大的字符串 `[SavedProperty]` 随迁移壳保留一个版本周期，之后从本体 `tests/HextechRunes.Tests/saved_property_manifest.txt` 里去掉（测试工程引用了拓展包，快照必须同步更新）。
 
@@ -247,13 +247,13 @@ src/
   - 有 MEM（0.111）：同一流程，已附魔的牌被再次抽中时由 MEM 叠加，无 `[MultiEnchantment]` Error。
   - 有 MEM + PengoTarot：牌组里有带 Pengo 行星附魔的牌时，附魔大师叠第二个附魔后行星效果与手牌图标仍触发。这是本轮的验收标准。
   - 旧存档（含复合附魔）读一次，看迁移壳日志与卡面。
-- 版本 0.10.0，更新日志【注意】：与 0.9.x 不能联机；带复合附魔的旧存档只保留第一个附魔。
+- 版本 0.9.2，更新日志【注意】：与 0.9.1 及更早版本不能联机；带复合附魔的旧存档只保留第一个附魔。
 
-#### 更新日志草稿（0.10.0）
+#### 更新日志草稿（0.9.2）
 
 ```
-海斗拓展包0.10.0更新日志：
-0.10.0同时适配游戏0.111.0、0.110.0和0.107.1；
+海斗拓展包0.9.2更新日志：
+0.9.2同时适配游戏0.111.0、0.110.0和0.107.1；
 
 【优化】
 重做了附魔大师：不再改写附魔规则，改为每场战斗结束时为牌组内的随机牌添加一个随机的合法附魔，锻造器奖励不变；
@@ -266,8 +266,8 @@ src/
 修复了复制、篝火、偷牌等原版流程在多重附魔下识别错误附魔的问题；
 
 【注意】
-本版本与0.9.x无法联机，请与好友同时更新到0.10.0；
-0.9.x存档中带有多个附魔的卡牌，读档后只会保留其中的第一个附魔，其余附魔会丢失；
+本版本与0.9.1及更早版本无法联机，请与好友同时更新到0.9.2；
+0.9.1及更早版本存档中带有多个附魔的卡牌，读档后只会保留其中的第一个附魔，其余附魔会丢失；
 附魔大师的效果已变更为「战斗结束时，为牌组内的随机牌添加随机合法附魔」，不再提供「同一张牌附魔多重效果」；
 ```
 
@@ -324,6 +324,6 @@ src/
 ### 遗留
 
 1. **§6 的三个口子按用户裁决本轮未动**：①本体把补丁基础设施对拓展包可见（落地后删掉拓展包自带的 `SponsorPatcher`）；②本体开锻造器售价 API（落地后删 `MiracleEventForgePricePatch`，本体解除"internal 类不能挪"的约束）；③ISE 开 `IsFinalChorale` / `GrantProphecyProjection` Interop（落地后删 `IntegratedStrategyEventsBridge` 的 4 处私有属性反射与 `Creature.SetCurrentHpInternal` 前缀）。
-2. **`SponsorCompositeEnchantment` 迁移壳**：只读，保留一个版本周期供 0.9.x 存档读一次；下个版本删类，并同步本体 `tests/HextechRunes.Tests/saved_property_manifest.txt` 里的 `SavedEnchantmentsJson`。
+2. **`SponsorCompositeEnchantment` 迁移壳**：只读，保留一个版本周期供 0.9.1 及更早版本的存档读一次；下个版本删类，并同步本体 `tests/HextechRunes.Tests/saved_property_manifest.txt` 里的 `SavedEnchantmentsJson`。
 3. **实机验收未做**：本轮只做到"编译 + 单元测试 + headless 加载 + 补丁表等价"。附魔大师的三张验收清单在 §7 阶段 2（无 MEM / 有 MEM / MEM + PengoTarot / 旧存档读档），深渊契约自动机的 `+99` 珠槽 UI 布局（§3 P6）与熵减"一次预览批量删除"（§7 阶段 3）也仍待实机确认。
 4. **加载器仍是本体的副本**：构建期漂移检查守着，共源（`loader/*.cs` 用 MSBuild 属性注入三个常量）归 §6，未做。
