@@ -67,7 +67,6 @@ public static class ModEntry
 			return;
 		}
 
-		BuiltInRepeatableEnchantments.Initialize();
 		if (!_contentRegistered)
 		{
 			RegisterContent();
@@ -108,11 +107,11 @@ public static class ModEntry
 		HextechRunesApi.RegisterSavedPropertyCarrier<Evolution>();
 		HextechRunesApi.RegisterSavedPropertyCarrier<EntropyIncrease>();
 		HextechRunesApi.RegisterSavedPropertyCarrier<EntropyDecrease>();
+		// 迁移壳仍带 [SavedProperty],载体注册保留;它不再有图标(不注册、不进随机附魔池)。
 		HextechRunesApi.RegisterSavedPropertyCarrier<SponsorCompositeEnchantment>();
 		HextechRunesApi.RegisterEnchantmentIcon<Evolution>($"res://{ModInfo.Id}/images/enchantments/evolution.png");
 		HextechRunesApi.RegisterEnchantmentIcon<EntropyIncrease>($"res://{ModInfo.Id}/images/enchantments/plus.png");
 		HextechRunesApi.RegisterEnchantmentIcon<EntropyDecrease>($"res://{ModInfo.Id}/images/enchantments/minus.png");
-		HextechRunesApi.RegisterEnchantmentIcon<SponsorCompositeEnchantment>($"res://{ModInfo.Id}/images/relics/enchantmentMasterRune.png");
 		HextechRunesApi.RegisterForge<BasicForge>(HextechRarityTier.Gold, ModInfo.Id);
 		HextechRunesApi.RegisterForge<EnchantmentForge>(HextechRarityTier.Gold, ModInfo.Id);
 		HextechRunesApi.RegisterForge<EntropyForge>(HextechRarityTier.Gold, ModInfo.Id);

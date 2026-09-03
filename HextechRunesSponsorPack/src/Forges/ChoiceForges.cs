@@ -120,7 +120,8 @@ public sealed class ArcaneForge : HextechForgeBase
 
 	private static bool HasCloneEnchantment(CardModel card)
 	{
-		return EnchantmentCompositionAdapter.Contains(card, typeof(Clone));
+		// 原版语义:card.Enchantment 就是这张牌的附魔。装了多重附魔类模组时由它们的 IL 重写器接管这种写法。
+		return card.Enchantment is Clone;
 	}
 
 }

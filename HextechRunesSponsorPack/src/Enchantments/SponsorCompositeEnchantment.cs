@@ -1,402 +1,73 @@
 using System.Text.Json;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Enchantments;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves.Runs;
-using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunesSponsorPack;
 
+// 只读迁移壳:0.10.0 起附魔大师不再实现「多重附魔」,复合附魔不会再被创建。
+// 本类仅为读取 0.9.x 存档保留一个版本周期(下一个版本删除),没有 Harmony、不注册图标、不进随机附魔池。
+// 类名与 [SavedProperty] 属性名 SavedEnchantmentsJson 都不能改:它们决定 ModelId 与 net-id 布局。
 public sealed class SponsorCompositeEnchantment : EnchantmentModel
 {
-	private List<EnchantmentModel> _innerEnchantments = [];
-	private List<EnchantmentModel> _subscribedInnerEnchantments = [];
+	private string? _savedEnchantmentsJson;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	private string? SavedEnchantmentsJson
 	{
-		get => _innerEnchantments.Count == 0
-			? null
-			: JsonSerializer.Serialize(_innerEnchantments.Select(static enchantment => enchantment.ToSerializable()).ToArray());
-		set
-		{
-			UnsubscribeFromInnerEnchantments();
-			_innerEnchantments = [];
-			if (string.IsNullOrWhiteSpace(value))
-			{
-				Amount = 0;
-				BuiltInRepeatableEnchantments.DebugLog("Save", "Loaded empty composite enchantment payload.");
-				return;
-			}
-
-			SerializableEnchantment[]? serialized = JsonSerializer.Deserialize<SerializableEnchantment[]>(value);
-			if (serialized == null)
-			{
-				Amount = 0;
-				BuiltInRepeatableEnchantments.DebugLog("Save", "Composite enchantment payload deserialized to null.");
-				return;
-			}
-
-			foreach (SerializableEnchantment item in serialized)
-			{
-				_innerEnchantments.Add(EnchantmentModel.FromSerializable(item));
-			}
-
-			Amount = _innerEnchantments.Count;
-			RefreshCompositeStatus();
-			BuiltInRepeatableEnchantments.DebugLog("Save", $"Loaded {_innerEnchantments.Count} inner enchantments into composite: {DescribeInnerEnchantments()}.");
-		}
+		get => _savedEnchantmentsJson;
+		set => _savedEnchantmentsJson = value;
 	}
 
 	public override bool HasExtraCardText => false;
-
-	public override bool ShowAmount
-	{
-		get
-		{
-			EnsureInnerBindings();
-			if (_innerEnchantments.Count > 1)
-			{
-				return true;
-			}
-
-			return GetLeadEnchantment()?.ShowAmount ?? false;
-		}
-	}
-
-	public override int DisplayAmount
-	{
-		get
-		{
-			EnsureInnerBindings();
-			if (_innerEnchantments.Count > 1)
-			{
-				return _innerEnchantments.Count;
-			}
-
-			return GetLeadEnchantment()?.DisplayAmount ?? 0;
-		}
-	}
-
-	public override bool ShouldStartAtBottomOfDrawPile
-	{
-		get
-		{
-			EnsureInnerBindings();
-			if (HasCard && Card.Keywords.Contains(CardKeyword.Innate))
-			{
-				return false;
-			}
-
-			return _innerEnchantments.Any(static enchantment => enchantment.ShouldStartAtBottomOfDrawPile);
-		}
-	}
-
-	public override bool ShouldGlowGold
-	{
-		get
-		{
-			EnsureInnerBindings();
-			return _innerEnchantments.Any(static enchantment => enchantment.ShouldGlowGold);
-		}
-	}
-
-	public override bool ShouldGlowRed
-	{
-		get
-		{
-			EnsureInnerBindings();
-			return _innerEnchantments.Any(static enchantment => enchantment.ShouldGlowRed);
-		}
-	}
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips
-	{
-		get
-		{
-			EnsureInnerBindings();
-			return _innerEnchantments.SelectMany(static enchantment => enchantment.HoverTips).ToList();
-		}
-	}
-
-	public IReadOnlyList<EnchantmentModel> InnerEnchantments
-	{
-		get
-		{
-			EnsureInnerBindings();
-			return _innerEnchantments;
-		}
-	}
 
 	public override bool CanEnchant(CardModel card)
 	{
 		return false;
 	}
 
-	public EnchantmentModel? GetLeadEnchantment()
-	{
-		EnsureInnerBindings();
-		return _innerEnchantments.LastOrDefault();
-	}
-
-	public bool ContainsEnchantmentType(Type enchantmentType)
-	{
-		EnsureInnerBindings();
-		return _innerEnchantments.Any(enchantment => enchantment.GetType() == enchantmentType);
-	}
-
-	public EnchantmentModel? FindEnchantment(Type enchantmentType)
-	{
-		EnsureInnerBindings();
-		return _innerEnchantments.FirstOrDefault(enchantment => enchantment.GetType() == enchantmentType);
-	}
-
-	public EnchantmentModel ImportExistingEnchantment(EnchantmentModel enchantment)
-	{
-		AssertMutable();
-		EnsureCompositeCard();
-		if (!enchantment.HasCard)
-		{
-			enchantment.ApplyInternal(Card, enchantment.Amount);
-		}
-		else if (!ReferenceEquals(enchantment.Card, Card))
-		{
-			BuiltInRepeatableEnchantments.DebugLog("Composite", $"Rebinding imported enchantment {enchantment.Id.Entry} from {BuiltInRepeatableEnchantments.DescribeCard(enchantment.Card)} to {BuiltInRepeatableEnchantments.DescribeCard(Card)}.");
-			enchantment.ClearInternal();
-			enchantment.ApplyInternal(Card, enchantment.Amount);
-		}
-
-		_innerEnchantments.Add(enchantment);
-		SubscribeToInnerEnchantment(enchantment);
-		Amount = _innerEnchantments.Count;
-		RefreshCompositeStatus();
-		BuiltInRepeatableEnchantments.DebugLog("Composite", $"Imported existing enchantment {enchantment.Id.Entry} into {BuiltInRepeatableEnchantments.DescribeCard(Card)}. Current={DescribeInnerEnchantments()}.");
-		return enchantment;
-	}
-
-	public EnchantmentModel AddOrStackEnchantment(EnchantmentModel enchantment, decimal amount, bool refreshConsumedStacks)
-	{
-		AssertMutable();
-		EnsureCompositeCard();
-		EnsureInnerBindings();
-
-		EnchantmentModel? existing = FindEnchantment(enchantment.GetType());
-		if (existing != null)
-		{
-			BuiltInRepeatableEnchantments.DebugLog("Composite", $"Stacking {enchantment.Id.Entry} on {BuiltInRepeatableEnchantments.DescribeCard(Card)} by {amount}. Existing amount={existing.Amount}, status={existing.Status}.");
-			existing.Amount += (int)amount;
-			if (refreshConsumedStacks && existing.Status == EnchantmentStatus.Disabled)
-			{
-				existing.Status = EnchantmentStatus.Normal;
-			}
-
-			existing.RecalculateValues();
-			Card.DynamicVars.RecalculateForUpgradeOrEnchant();
-			RefreshCompositeStatus();
-			return existing;
-		}
-
-		enchantment.ApplyInternal(Card, amount);
-		_innerEnchantments.Add(enchantment);
-		SubscribeToInnerEnchantment(enchantment);
-		Amount = _innerEnchantments.Count;
-		enchantment.ModifyCard();
-		RefreshCompositeStatus();
-		BuiltInRepeatableEnchantments.DebugLog("Composite", $"Added new inner enchantment {enchantment.Id.Entry} to {BuiltInRepeatableEnchantments.DescribeCard(Card)}. Current={DescribeInnerEnchantments()}.");
-		return enchantment;
-	}
-
-	public IEnumerable<string> GetVisibleExtraCardTextLines()
-	{
-		EnsureInnerBindings();
-		HashSet<string> seen = new(StringComparer.Ordinal);
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
-		{
-			string? text = enchantment.DynamicDescription.GetFormattedText();
-			if (!string.IsNullOrWhiteSpace(text) && seen.Add(text))
-			{
-				yield return "[purple]" + text + "[/purple]";
-			}
-		}
-	}
-
-	protected override void DeepCloneFields()
-	{
-		base.DeepCloneFields();
-		_innerEnchantments = _innerEnchantments
-			.Select(static enchantment => (EnchantmentModel)enchantment.ClonePreservingMutability())
-			.ToList();
-		_subscribedInnerEnchantments = [];
-	}
-
+	// 旧存档里复合附魔占着 card.Enchantment 槽位。CardModel.FromSerializable 在 EnchantInternal 之后
+	// 调 Enchantment.ModifyCard()(0.111 CardModel 第 2264-2266 行),ModifyCard 会走到这里,
+	// 是把槽位换回单个原版附魔的唯一时机。
 	protected override void OnEnchant()
 	{
-		EnsureInnerBindings();
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
-		{
-			enchantment.ModifyCard();
-		}
-
-		Amount = _innerEnchantments.Count;
-		RefreshCompositeStatus();
-	}
-
-	public override void RecalculateValues()
-	{
-		EnsureInnerBindings();
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
-		{
-			enchantment.RecalculateValues();
-		}
-
-		Amount = _innerEnchantments.Count;
-		Card?.DynamicVars.RecalculateForUpgradeOrEnchant();
-		RefreshCompositeStatus();
-	}
-
-	public override decimal EnchantBlockAdditive(decimal originalBlock)
-	{
-		EnsureInnerBindings();
-		return CalculateFinalBlock(originalBlock) - originalBlock;
-	}
-
-	public override decimal EnchantBlockMultiplicative(decimal originalBlock)
-	{
-		return 1m;
-	}
-
-	public override decimal EnchantDamageAdditive(decimal originalDamage, ValueProp props)
-	{
-		EnsureInnerBindings();
-		return CalculateFinalDamage(originalDamage, props) - originalDamage;
-	}
-
-	public override decimal EnchantDamageMultiplicative(decimal originalDamage, ValueProp props)
-	{
-		return 1m;
-	}
-
-	public override int EnchantPlayCount(int originalPlayCount)
-	{
-		EnsureInnerBindings();
-		int current = originalPlayCount;
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
-		{
-			current = enchantment.EnchantPlayCount(current);
-		}
-
-		return current;
-	}
-
-	public override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay? cardPlay)
-	{
-		EnsureInnerBindings();
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
-		{
-			await enchantment.OnPlay(choiceContext, cardPlay);
-			enchantment.InvokeExecutionFinished();
-		}
-
-		RefreshCompositeStatus();
-	}
-
-	private decimal CalculateFinalBlock(decimal originalBlock)
-	{
-		decimal current = originalBlock;
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
-		{
-			current += enchantment.EnchantBlockAdditive(current);
-			current *= enchantment.EnchantBlockMultiplicative(current);
-		}
-
-		return current;
-	}
-
-	private decimal CalculateFinalDamage(decimal originalDamage, ValueProp props)
-	{
-		decimal current = originalDamage;
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
-		{
-			current += enchantment.EnchantDamageAdditive(current, props);
-			current *= enchantment.EnchantDamageMultiplicative(current, props);
-		}
-
-		return current;
-	}
-
-	private void EnsureCompositeCard()
-	{
-		if (!HasCard)
-		{
-			throw new InvalidOperationException("Composite enchantment must be attached to a card before it can manage inner enchantments.");
-		}
-	}
-
-	private void EnsureInnerBindings()
-	{
-		if (!HasCard)
+		if (string.IsNullOrWhiteSpace(_savedEnchantmentsJson) || !HasCard)
 		{
 			return;
 		}
 
-		foreach (EnchantmentModel enchantment in _innerEnchantments)
+		CardModel card = Card;
+		string payload = _savedEnchantmentsJson;
+		_savedEnchantmentsJson = null;
+		try
 		{
-			if (!enchantment.HasCard || !ReferenceEquals(enchantment.Card, Card))
+			SerializableEnchantment[]? saved = JsonSerializer.Deserialize<SerializableEnchantment[]>(payload);
+			if (saved is not { Length: > 0 })
 			{
-				if (enchantment.HasCard)
-				{
-					enchantment.ClearInternal();
-				}
-
-				enchantment.ApplyInternal(Card, enchantment.Amount);
+				return;
 			}
 
-			SubscribeToInnerEnchantment(enchantment);
+			EnchantmentModel inner = EnchantmentModel.FromSerializable(saved[0]);
+			card.ClearEnchantmentInternal();
+			card.EnchantInternal(inner, inner.Amount);
+			inner.ModifyCard();
+			card.FinalizeUpgradeInternal();
+			Log.Warn($"[{ModInfo.Id}] 旧版复合附魔已迁移为 {inner.Id.Entry},其余 {saved.Length - 1} 个附魔已丢失。", 2);
 		}
-	}
-
-	private void SubscribeToInnerEnchantment(EnchantmentModel enchantment)
-	{
-		if (_subscribedInnerEnchantments.Contains(enchantment))
+		catch (Exception ex)
 		{
-			return;
+			Log.Warn($"[{ModInfo.Id}] 旧版复合附魔迁移失败,该牌的附魔已丢弃:{ex.GetType().Name}: {ex.Message}", 2);
 		}
-
-		enchantment.StatusChanged += OnInnerEnchantmentStatusChanged;
-		_subscribedInnerEnchantments.Add(enchantment);
-	}
-
-	private void UnsubscribeFromInnerEnchantments()
-	{
-		foreach (EnchantmentModel enchantment in _subscribedInnerEnchantments)
+		finally
 		{
-			enchantment.StatusChanged -= OnInnerEnchantmentStatusChanged;
+			// ClearEnchantmentInternal 把本壳的 Card 置空,但外层 EnchantmentModel.ModifyCard 在 OnEnchant
+			// 之后还要读 Card.DynamicVars(0.111 EnchantmentModel 第 359-366 行)。卡的附魔槽位此时已经是
+			// 内层附魔,本壳只是个孤儿对象,重新挂回同一张卡只为让外层那两行不抛 NullReference。
+			if (!HasCard)
+			{
+				ApplyInternal(card, Amount);
+			}
 		}
-
-		_subscribedInnerEnchantments.Clear();
-	}
-
-	private void OnInnerEnchantmentStatusChanged()
-	{
-		RefreshCompositeStatus();
-	}
-
-	internal void RefreshCompositeStatus()
-	{
-		Status = _innerEnchantments.Any(static enchantment => enchantment.Status == EnchantmentStatus.Normal)
-			? EnchantmentStatus.Normal
-			: EnchantmentStatus.Disabled;
-	}
-
-	private string DescribeInnerEnchantments()
-	{
-		if (_innerEnchantments.Count == 0)
-		{
-			return "<none>";
-		}
-
-		return string.Join(", ", _innerEnchantments.Select(static enchantment => $"{enchantment.Id.Entry}x{enchantment.Amount}[{enchantment.Status}]"));
 	}
 }

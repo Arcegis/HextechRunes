@@ -99,7 +99,7 @@ internal static class EntropyEnchantmentHooks
 	{
 		__state = runState.IterateHookListeners(combatState)
 			.OfType<EnchantmentModel>()
-			.Select(static enchantment => EnchantmentCompositionAdapter.Find(enchantment, typeof(EntropyDecrease)) as EntropyDecrease)
+			.Select(static enchantment => enchantment as EntropyDecrease)
 			.Where(static enchantment => enchantment?.PendingRemoval == true)
 			.Select(static enchantment => enchantment!.Card.DeckVersion ?? enchantment.Card)
 			.Distinct()
@@ -124,7 +124,7 @@ internal static class EntropyEnchantmentHooks
 		IReadOnlyList<CardModel> cardsToRemove = pendingCards
 			.Where(static card =>
 				card.Pile?.Type == PileType.Deck
-				&& (EnchantmentCompositionAdapter.Find(card, typeof(EntropyDecrease)) as EntropyDecrease)?.PendingRemoval == true)
+				&& (card.Enchantment as EntropyDecrease)?.PendingRemoval == true)
 			.ToArray();
 		if (cardsToRemove.Count == 0)
 		{

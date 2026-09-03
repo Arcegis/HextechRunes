@@ -58,7 +58,7 @@ public sealed class EntropyDecrease : EnchantmentModel
 		PendingRemoval = true;
 		CardModel deckCard = Card.DeckVersion ?? Card;
 		if (!ReferenceEquals(deckCard, Card)
-			&& EnchantmentCompositionAdapter.Find(deckCard, typeof(EntropyDecrease)) is EntropyDecrease deckEntropyDecrease)
+			&& deckCard.Enchantment is EntropyDecrease deckEntropyDecrease)
 		{
 			deckEntropyDecrease.PendingRemoval = true;
 		}

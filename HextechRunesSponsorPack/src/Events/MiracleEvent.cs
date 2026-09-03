@@ -237,45 +237,10 @@ public sealed class MiracleEvent : EventModel
 
 	// 事件目前仅单机开放,但写游戏状态的随机一律走运行种子哈希而非 GD.Randi():
 	// 避免日后放开联机或二创移植时留下双端分叉隐患(与主模组 HextechStableRandom 同款算法)。
+	// 算法本体已抽到 SponsorStableRandom(附魔大师共用);盐格式与哈希逐位不变,历史结果不受影响。
 	private static int StableRoll(Player owner, int count, params string?[] saltParts)
 	{
-		RunState runState = (RunState)owner.RunState;
-		ulong hash = 14695981039346656037UL;
-		AddHashPart(ref hash, runState.Rng.StringSeed);
-		AddHashPart(ref hash, "|act:");
-		AddHashPart(ref hash, runState.CurrentActIndex.ToString());
-		AddHashPart(ref hash, "|floor:");
-		AddHashPart(ref hash, runState.TotalFloor.ToString());
-		foreach (string? part in saltParts)
-		{
-			AddHashPart(ref hash, "|");
-			AddHashPart(ref hash, part);
-		}
-
-		unchecked
-		{
-			hash ^= hash >> 33;
-			hash *= 0xff51afd7ed558ccdUL;
-			hash ^= hash >> 33;
-			hash *= 0xc4ceb9fe1a85ec53UL;
-			hash ^= hash >> 33;
-		}
-
-		return (int)(hash % (ulong)count);
-	}
-
-	private static void AddHashPart(ref ulong hash, string? value)
-	{
-		if (value == null)
-		{
-			return;
-		}
-
-		foreach (char ch in value)
-		{
-			hash ^= ch;
-			hash *= 1099511628211UL;
-		}
+		return SponsorStableRandom.Roll(owner, count, saltParts);
 	}
 
 	private static int GoldAmount(int tier) => tier == 3 ? 400 : 100 * tier;
