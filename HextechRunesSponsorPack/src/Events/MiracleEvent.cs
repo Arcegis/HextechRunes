@@ -1,4 +1,5 @@
 using System.Linq;
+using HextechRunes;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -8,9 +9,8 @@ using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Runs;
-using SponsorModInfo = HextechRunesSponsorPack.ModInfo;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 // 「神迹」事件:信徒海克斯触发。三级分支(大类→献祭/索取→强度1/2/3)。游戏原生 EventModel + SetEventState 多屏导航,
 // 自动被 ModelDb 发现、不进随机事件池;立绘/锻造器售价由对应 Harmony 补丁处理。纯拓展包,不动主 mod。
@@ -125,7 +125,7 @@ public sealed class MiracleEvent : EventModel
 		for (int i = 0; i < tier; i++)
 		{
 			await HextechRunesApi.ObtainRandomForges(
-				owner, RandomForgeRarity(owner, $"forge:{tier}:{i}"), 1, static _ => true, $"{SponsorModInfo.Id}.miracle.forge");
+				owner, RandomForgeRarity(owner, $"forge:{tier}:{i}"), 1, static _ => true, $"{ModInfo.Id}.miracle.forge");
 		}
 	}
 
@@ -205,7 +205,7 @@ public sealed class MiracleEvent : EventModel
 			int roll = StableRoll(owner, 100, "miracle.gift", tier.ToString(), i.ToString());
 			if (roll < 10)
 			{
-				await HextechRunesApi.ObtainRandomForges(owner, RandomForgeRarity(owner, $"gift:{tier}:{i}"), 1, static _ => true, $"{SponsorModInfo.Id}.miracle.gift.forge");
+				await HextechRunesApi.ObtainRandomForges(owner, RandomForgeRarity(owner, $"gift:{tier}:{i}"), 1, static _ => true, $"{ModInfo.Id}.miracle.gift.forge");
 			}
 			else if (roll < 20)
 			{

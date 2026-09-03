@@ -1,3 +1,4 @@
+using HextechRunes;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -6,7 +7,7 @@ using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rooms;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 public sealed class StarlightSparkleRune : HextechRelicBase
 {

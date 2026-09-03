@@ -1,3 +1,4 @@
+using HextechRunes;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -7,7 +8,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 public sealed class CosplayRune : HextechRelicBase
 {

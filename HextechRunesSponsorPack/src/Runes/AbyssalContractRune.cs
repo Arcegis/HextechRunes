@@ -1,4 +1,4 @@
-using HextechRunesSponsorPack;
+using HextechRunes;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -19,7 +19,7 @@ using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 public enum AbyssalContractKind
 {

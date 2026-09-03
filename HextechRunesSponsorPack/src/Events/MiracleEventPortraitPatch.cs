@@ -2,9 +2,8 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
-using SponsorModInfo = HextechRunesSponsorPack.ModInfo;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 // 神迹事件立绘:游戏的 EventModel.CreateInitialPortrait() 按 events/{id.entry}.png 自动找图,
 // 对自定义事件会解析到不存在的 res://images/events/miracle_event.png。该方法是 public 非 virtual,
@@ -25,7 +24,7 @@ internal static class MiracleEventPortraitPatch
 			nameof(EventModel.CreateInitialPortrait));
 		if (target == null)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Miracle portrait patch skipped: EventModel.CreateInitialPortrait not found.", 2);
+			Log.Warn($"[{ModInfo.Id}] Miracle portrait patch skipped: EventModel.CreateInitialPortrait not found.", 2);
 			return;
 		}
 

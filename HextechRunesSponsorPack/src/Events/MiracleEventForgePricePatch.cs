@@ -1,15 +1,17 @@
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
+using HextechRunes;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Runs;
-using SponsorModInfo = HextechRunesSponsorPack.ModInfo;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 // 神迹事件的「锻造器售价」本局临时修正:主 mod 的 HextechForgeShopPriceHelper.GetRandomForgeShopPriceFor
 // 是 internal,拓展包用 Harmony(反射定位)postfix,把本局 BelieverRune 累计的售价修正叠加到算出的价格上。
 // 纯拓展包,主 mod 源码一行不动。
+// 目标按全名字符串 TypeByName("HextechRunes.HextechForgeShopPriceHelper") 定位:主 mod 若把这个 internal 类
+// 挪进子命名空间,本补丁会静默失效(Install 只 Log.Warn)。
 internal static class MiracleEventForgePricePatch
 {
 	private const string HarmonyId = "Natsuki.HextechRunesSponsorPack.MiracleForgePrice";
@@ -26,17 +28,17 @@ internal static class MiracleEventForgePricePatch
 				: AccessTools.Method(helper, "GetRandomForgeShopPriceFor", [ typeof(RunState) ]);
 			if (target == null)
 			{
-				Log.Warn($"[{SponsorModInfo.Id}] Miracle forge-price patch skipped: GetRandomForgeShopPriceFor not found.", 2);
+				Log.Warn($"[{ModInfo.Id}] Miracle forge-price patch skipped: GetRandomForgeShopPriceFor not found.", 2);
 				return;
 			}
 
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
 			harmony.Patch(target, postfix: new HarmonyMethod(typeof(MiracleEventForgePricePatch), nameof(Postfix)));
-			Log.Info($"[{SponsorModInfo.Id}] Miracle forge-price patch installed on {target.DeclaringType?.Name}.{target.Name}.");
+			Log.Info($"[{ModInfo.Id}] Miracle forge-price patch installed on {target.DeclaringType?.Name}.{target.Name}.");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Miracle forge-price patch failed: {ex.GetType().Name}: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}] Miracle forge-price patch failed: {ex.GetType().Name}: {ex.Message}", 2);
 		}
 	}
 

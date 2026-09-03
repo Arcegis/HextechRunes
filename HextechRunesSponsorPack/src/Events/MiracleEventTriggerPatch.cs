@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using Godot;
 using HarmonyLib;
+using HextechRunes;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Logging;
@@ -10,9 +11,8 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
-using SponsorModInfo = HextechRunesSponsorPack.ModInfo;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 // 「神迹」事件的安全注入点(信徒海克斯)。信徒不在战斗胜利 hook 里直接 EnterRoom —— 那会把刚打赢、奖励还在的战斗房
 // 连同流程一起弹掉(EnterRoom 内部先 ExitCurrentRooms),造成「打完 Boss 不自动进下一层要 SL / SL 时事件丢失 / 末战无法结算」。
@@ -37,17 +37,17 @@ internal static class MiracleEventTriggerPatch
 			MethodInfo? target = AccessTools.Method(typeof(RunManager), nameof(RunManager.ProceedFromTerminalRewardsScreen));
 			if (target == null)
 			{
-				Log.Warn($"[{SponsorModInfo.Id}] Miracle trigger patch skipped: ProceedFromTerminalRewardsScreen not found.", 2);
+				Log.Warn($"[{ModInfo.Id}] Miracle trigger patch skipped: ProceedFromTerminalRewardsScreen not found.", 2);
 				return;
 			}
 
 			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
 			harmony.Patch(target, postfix: new HarmonyMethod(typeof(MiracleEventTriggerPatch), nameof(Postfix)));
-			Log.Info($"[{SponsorModInfo.Id}] Miracle trigger patch installed on RunManager.ProceedFromTerminalRewardsScreen.");
+			Log.Info($"[{ModInfo.Id}] Miracle trigger patch installed on RunManager.ProceedFromTerminalRewardsScreen.");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Miracle trigger patch failed: {ex.GetType().Name}: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}] Miracle trigger patch failed: {ex.GetType().Name}: {ex.Message}", 2);
 		}
 	}
 
@@ -107,7 +107,7 @@ internal static class MiracleEventTriggerPatch
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Miracle trigger postfix error: {ex.GetType().Name}: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}] Miracle trigger postfix error: {ex.GetType().Name}: {ex.Message}", 2);
 		}
 	}
 
@@ -123,7 +123,7 @@ internal static class MiracleEventTriggerPatch
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] BelieverRune failed to enter Miracle event: {ex.GetType().Name}: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}] BelieverRune failed to enter Miracle event: {ex.GetType().Name}: {ex.Message}", 2);
 			// 兜底:进事件失败时确保地图可用,玩家不至于卡死。
 			try
 			{

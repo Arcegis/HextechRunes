@@ -12,7 +12,5 @@
   ],
   "dependencies": [
     3747501308
-  ],
-  "minBranch": "public",
-  "maxBranch": "public-beta"
+  ]
 }

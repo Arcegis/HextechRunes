@@ -6,9 +6,8 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
-using SponsorModInfo = HextechRunesSponsorPack.ModInfo;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 internal static class IntegratedStrategyEventsBridge
 {
@@ -64,7 +63,7 @@ internal static class IntegratedStrategyEventsBridge
 
 			if (!TryCreateEndlessKey(out RelicModel? endlessKey))
 			{
-				Log.Warn($"[{SponsorModInfo.Id}] Failed to add Final Chorale rewards: EndlessKeyRelic is unavailable.", 2);
+				Log.Warn($"[{ModInfo.Id}] Failed to add Final Chorale rewards: EndlessKeyRelic is unavailable.", 2);
 				return;
 			}
 
@@ -74,7 +73,7 @@ internal static class IntegratedStrategyEventsBridge
 			}
 
 			room.AddExtraReward(player, new RelicReward(endlessKey, player));
-			Log.Info($"[{SponsorModInfo.Id}] Added missing Final Chorale completion rewards for player {player.NetId}.");
+			Log.Info($"[{ModInfo.Id}] Added missing Final Chorale completion rewards for player {player.NetId}.");
 		}
 	}
 
@@ -90,7 +89,7 @@ internal static class IntegratedStrategyEventsBridge
 		{
 			if (!ModelDb.Contains(projectionType))
 			{
-				Log.Warn($"[{SponsorModInfo.Id}] Failed to create ProphecyProjectionRelic: model type is not registered in ModelDb.", 2);
+				Log.Warn($"[{ModInfo.Id}] Failed to create ProphecyProjectionRelic: model type is not registered in ModelDb.", 2);
 				return false;
 			}
 
@@ -99,7 +98,7 @@ internal static class IntegratedStrategyEventsBridge
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Failed to create ProphecyProjectionRelic: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}] Failed to create ProphecyProjectionRelic: {ex.Message}", 2);
 			return false;
 		}
 	}
@@ -116,7 +115,7 @@ internal static class IntegratedStrategyEventsBridge
 		{
 			if (!ModelDb.Contains(endlessKeyType))
 			{
-				Log.Warn($"[{SponsorModInfo.Id}] Failed to create EndlessKeyRelic: model type is not registered in ModelDb.", 2);
+				Log.Warn($"[{ModInfo.Id}] Failed to create EndlessKeyRelic: model type is not registered in ModelDb.", 2);
 				return false;
 			}
 
@@ -125,7 +124,7 @@ internal static class IntegratedStrategyEventsBridge
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Failed to create EndlessKeyRelic: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}] Failed to create EndlessKeyRelic: {ex.Message}", 2);
 			return false;
 		}
 	}
@@ -140,7 +139,7 @@ internal static class IntegratedStrategyEventsBridge
 		ok &= SetNonPublicProperty(projection, "SavedProphecyProjectionChoraleHp", hp);
 		if (!ok)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] ProphecyProjectionRelic HP bonus was only partially configured.", 2);
+			Log.Warn($"[{ModInfo.Id}] ProphecyProjectionRelic HP bonus was only partially configured.", 2);
 		}
 	}
 
@@ -174,7 +173,7 @@ internal static class IntegratedStrategyEventsBridge
 
 		if (existingProjections.Count > 0)
 		{
-			Log.Info($"[{SponsorModInfo.Id}] Removed {existingProjections.Count} old ProphecyProjectionRelic instance(s) before granting the empowered projection.");
+			Log.Info($"[{ModInfo.Id}] Removed {existingProjections.Count} old ProphecyProjectionRelic instance(s) before granting the empowered projection.");
 		}
 	}
 
@@ -196,7 +195,7 @@ internal static class IntegratedStrategyEventsBridge
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{SponsorModInfo.Id}] Failed to set {propertyName} on ProphecyProjectionRelic: {ex.Message}", 2);
+			Log.Warn($"[{ModInfo.Id}] Failed to set {propertyName} on ProphecyProjectionRelic: {ex.Message}", 2);
 			return false;
 		}
 	}

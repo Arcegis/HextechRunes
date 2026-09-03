@@ -1,11 +1,11 @@
+using HextechRunes;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves.Runs;
-using SponsorModInfo = HextechRunesSponsorPack.ModInfo;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 // 信徒(棱彩,仅单人):击败 BOSS+6 / 精英+3 / 小怪+1 充能,满 6 排队一次「神迹」;获得时也排队一次。
 //
@@ -70,7 +70,7 @@ public sealed class BelieverRune : HextechRelicBase
 	internal void AddForgePriceDelta(int delta)
 	{
 		SavedForgePriceDelta = _forgePriceDelta + delta;
-		Log.Info($"[{SponsorModInfo.Id}] BelieverRune forge-price delta {(delta >= 0 ? "+" : "")}{delta} -> total {_forgePriceDelta}.");
+		Log.Info($"[{ModInfo.Id}] BelieverRune forge-price delta {(delta >= 0 ? "+" : "")}{delta} -> total {_forgePriceDelta}.");
 	}
 
 	// 仅单人游戏出现。

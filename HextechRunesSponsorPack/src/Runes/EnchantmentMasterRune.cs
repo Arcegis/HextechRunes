@@ -1,29 +1,24 @@
-using HextechRunesSponsorPack;
+using HextechRunes;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using SponsorArcaneForge = HextechRunesSponsorPack.ArcaneForge;
-using SponsorEnchantmentForge = HextechRunesSponsorPack.EnchantmentForge;
-using SponsorEntropyForge = HextechRunesSponsorPack.EntropyForge;
-using SponsorEvolutionForge = HextechRunesSponsorPack.EvolutionForge;
-using SponsorMysticForge = HextechRunesSponsorPack.MysticForge;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 public sealed class EnchantmentMasterRune : HextechRelicBase
 {
 	private static readonly HashSet<Type> GoldEnchantmentForgeTypes =
 	[
 		typeof(GlamForge),
-		typeof(SponsorEnchantmentForge),
-		typeof(SponsorEntropyForge)
+		typeof(EnchantmentForge),
+		typeof(EntropyForge)
 	];
 
 	private static readonly HashSet<Type> PrismaticEnchantmentForgeTypes =
 	[
 		typeof(SpiralForge),
-		typeof(SponsorArcaneForge),
-		typeof(SponsorEvolutionForge),
-		typeof(SponsorMysticForge)
+		typeof(ArcaneForge),
+		typeof(EvolutionForge),
+		typeof(MysticForge)
 	];
 
 	public override bool HasUponPickupEffect => true;

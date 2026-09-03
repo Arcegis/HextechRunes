@@ -1,3 +1,4 @@
+using HextechRunes;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -8,7 +9,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.ValueProps;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 /// <summary>
 /// 是胃炎(赞助者物品,棱彩):对当前生命值高于你的敌人造成伤害时,伤害提高 50%,

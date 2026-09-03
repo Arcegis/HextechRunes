@@ -1,9 +1,8 @@
-using System.Reflection;
+using HextechRunes;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Relics;
@@ -11,7 +10,7 @@ using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace HextechRunes;
+namespace HextechRunesSponsorPack;
 
 public sealed class GoldStarRelic : RelicModel, IHextechSharedCombatVictoryRune
 {
@@ -82,38 +81,13 @@ public sealed class GoldStarRelic : RelicModel, IHextechSharedCombatVictoryRune
 		}
 	}
 
-	// 0.108.0 起 Roll 去掉 AscensionManager 参数。这里按运行时实际签名自适应而非条件编译:
-	// 拓展包是单物品双分支,创意工坊错发分支构建时(玩家实报公开分支拿到 beta 构建),
-	// 编译期绑定会在杀精英触发本调用时 MissingMethodException 卡死;反射调用让错包也不炸。
-	// 每次精英胜利才调用一次,反射开销可忽略。
+	// 0.108.0 起 PotionRewardOdds.Roll 去掉了 AscensionManager 参数。
 	private static bool RollPotionReward(Player owner)
 	{
-		object odds = owner.PlayerOdds.PotionReward;
-		MethodInfo? roll = odds.GetType().GetMethod("Roll", BindingFlags.Instance | BindingFlags.Public);
-		if (roll == null)
-		{
-			return false;
-		}
-
-		object?[] args = roll.GetParameters().Length switch
-		{
-			2 => [owner, RoomType.Monster],
-			3 => [owner, RunManager.Instance!.AscensionManager, RoomType.Monster],
-			_ => []
-		};
-		if (args.Length == 0)
-		{
-			return false;
-		}
-
-		try
-		{
-			return roll.Invoke(odds, args) is true;
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[HextechRunesSponsorPack][GoldStar] Potion reward roll failed: {ex.GetType().Name}: {ex.Message}");
-			return false;
-		}
+#if STS2_107_1
+		return owner.PlayerOdds.PotionReward.Roll(owner, RunManager.Instance!.AscensionManager, RoomType.Monster);
+#else
+		return owner.PlayerOdds.PotionReward.Roll(owner, RoomType.Monster);
+#endif
 	}
 }
