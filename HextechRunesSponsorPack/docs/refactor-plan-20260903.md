@@ -292,3 +292,37 @@ src/
 ## 9. 与本体方案的差异
 
 本体那份方案（`HextechRunes/docs/refactor-plan-20260902.md`）的主题是"把 199 个补丁收进基础设施、把 4 成补丁迁到官方扩展点"。拓展包的主题不同：**它最大的一块不该存在**。所以本方案的核心动作是"删并重做效果"而不是"迁移"，阶段 2 的验收标准是三方共装（拓展包 + MEM + PengoTarot）冒烟通过，而不是补丁数字。
+
+## 10. 执行进度（2026-09-03）
+
+五次提交，全部在 `dev` 分支：
+
+| 提交 | 阶段 | 内容 |
+|---|---|---|
+| `205ac76f` | 阶段 0 | 编译目标 10 → 3、版本号改读程序集、命名空间归位 14 文件、加载器移植本体单路径修复并加构建期漂移检查、`workshop.json` 清分支字段 |
+| `aebb5a5a` | 阶段 2 | 附魔大师重做为"战斗结束时为牌组内随机牌添加随机合法附魔"，删除自建多重附魔引擎与 12 个附魔中枢补丁，`SponsorCompositeEnchantment` 降为只读迁移壳，9 语言文案 |
+| `7f8d5cea` | 阶段 3 | 熵附魔退出 `Hook.AfterCombatEnd` / `Hook.ModifyCardBeingAddedToDeck` 两个全局分发点，改覆写 + `AsyncLocal` 递归守卫；深渊契约拆 5 个策略类 |
+| `e8c9f8e9` | 阶段 1 | `SponsorPatcher` + `[SponsorPatch]`（本体 `HextechPatcher` 的最小同构副本），补丁全部改属性式、单 Harmony id，`ModEntry` 只做编排；补丁表 dump 工具 |
+| 本提交 | 阶段 4 | `Features/` 垂直切片（纯移动，反编译类型/成员清单 diff 为空）、`Content/SponsorCatalog` 表驱动注册、延迟注册补窗口检查（P5）、日志前缀与死 using 清理 |
+
+### 指标（改前 = 根仓库 `7aca074f`，改后 = 阶段 4 完成时，均为实测）
+
+| 指标 | 改前 | 改后 | 说明 |
+|---|---|---|---|
+| `src/**/*.cs` 文件数 | 36 | 47 | 垂直切片：一个功能一个目录，拆分不共享文件 |
+| `src/**/*.cs` 行数 | 5,523 | 4,606 | −917 行（多重附魔引擎 −1,537，新增效果 / 补丁基础设施 / 目录骨架 +620） |
+| 补丁方法数 | 21 | 6 | 改后数值来自 headless 导出的补丁表（`HEXTECH_SPONSOR_DUMP_PATCHES`） |
+| 补丁目标方法数 | 20 | 6 | 同上 |
+| 可跳过原方法的 bool 前缀 | 8 | 1 | 只剩 `ForgeCmd.Forge`（摄政契约门控，不复制任何原版逻辑） |
+| 原版私有成员反射 | 12 | 0 | 剩余反射只有 ISE 的 4 个私有 `[SavedProperty]`（§6.3 未落地）与补丁应用器自身的类型自省 |
+| Harmony id | 9 | 1 | `Natsuki.HextechRunesSponsorPack` |
+| `namespace` 套数 | 2 | 1 | 全部 `HextechRunesSponsorPack`；目录分层不引入子命名空间，便于反编译比对 |
+| `#if` 处数 | 3 | 1 | 唯一一处是 `Compat/GoldStarRelic.Roll.cs`（0.107.1 的 `PotionRewardOdds.Roll` 签名） |
+| 拓展包测试用例 | 10 | 10 | 寄居本体 `tests/HextechRunes.Tests/SponsorPackTests.cs`；本体全量 262/262，三编译目标各一遍 |
+
+### 遗留
+
+1. **§6 的三个口子按用户裁决本轮未动**：①本体把补丁基础设施对拓展包可见（落地后删掉拓展包自带的 `SponsorPatcher`）；②本体开锻造器售价 API（落地后删 `MiracleEventForgePricePatch`，本体解除"internal 类不能挪"的约束）；③ISE 开 `IsFinalChorale` / `GrantProphecyProjection` Interop（落地后删 `IntegratedStrategyEventsBridge` 的 4 处私有属性反射与 `Creature.SetCurrentHpInternal` 前缀）。
+2. **`SponsorCompositeEnchantment` 迁移壳**：只读，保留一个版本周期供 0.9.x 存档读一次；下个版本删类，并同步本体 `tests/HextechRunes.Tests/saved_property_manifest.txt` 里的 `SavedEnchantmentsJson`。
+3. **实机验收未做**：本轮只做到"编译 + 单元测试 + headless 加载 + 补丁表等价"。附魔大师的三张验收清单在 §7 阶段 2（无 MEM / 有 MEM / MEM + PengoTarot / 旧存档读档），深渊契约自动机的 `+99` 珠槽 UI 布局（§3 P6）与熵减"一次预览批量删除"（§7 阶段 3）也仍待实机确认。
+4. **加载器仍是本体的副本**：构建期漂移检查守着，共源（`loader/*.cs` 用 MSBuild 属性注入三个常量）归 §6，未做。

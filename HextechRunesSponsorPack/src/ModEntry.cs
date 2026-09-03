@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
 using HarmonyLib;
-using HextechRunes;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 
@@ -58,8 +55,25 @@ public static class ModEntry
 		{
 			AppDomain.CurrentDomain.AssemblyLoad -= OnAssemblyLoad;
 			_waitingForPrerequisite = false;
+
+			// 延迟路径的失败模式:本体若在模组初始化阶段结束后才载入,模型与 SavedProperty 的注册窗口已经关闭,
+			// HextechRunesApi 的注册会抛 InvalidOperationException,并从 AssemblyLoad 事件处理器里冒出去。
+			// 符文不入池比崩溃好:这里只警告并退出。
+			if (IsModelRegistrationWindowClosed())
+			{
+				Log.Warn($"[{ModInfo.Id}] HextechRunes 加载过晚(模型注册窗口已关闭),拓展包内容未注册。", 2);
+				return;
+			}
+
 			RegisterAll();
 		}
+	}
+
+	// ModManager.State 在全部 mod 的 initializer 跑完之后才置 Initialized / Skipped
+	// (public static,0.107.1 第 500/527 行、0.111.0 第 523/550 行),所以"仍是 None"等价于"注册窗口还开着"。
+	private static bool IsModelRegistrationWindowClosed()
+	{
+		return ModManager.State != ModManagerState.None;
 	}
 
 	private static void RegisterAll()
@@ -71,14 +85,31 @@ public static class ModEntry
 
 		if (!_contentRegistered)
 		{
-			RegisterContent();
-			_contentRegistered = true;
+			try
+			{
+				SponsorCatalog.RegisterAll();
+				_contentRegistered = true;
+			}
+			catch (Exception ex)
+			{
+				// 内容注册失败时不再装补丁:每个补丁都只服务本包内容(深渊契约、信徒),内容不在场时它们只会白占中枢。
+				Log.Warn($"[{ModInfo.Id}] Content registration failed; patches skipped: {ex.GetType().Name}: {ex.Message}", 2);
+				return;
+			}
 		}
 
-		Harmony harmony = new(HarmonyId);
-		SponsorPatcher.ApplyAll(harmony, typeof(ModEntry).Assembly);
-		SponsorPatcher.LogSummary();
-		SponsorPatcher.DumpIfRequested(harmony);
+		try
+		{
+			Harmony harmony = new(HarmonyId);
+			SponsorPatcher.ApplyAll(harmony, typeof(ModEntry).Assembly);
+			SponsorPatcher.LogSummary();
+			SponsorPatcher.DumpIfRequested(harmony);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}] Patch application failed: {ex.GetType().Name}: {ex.Message}", 2);
+		}
+
 		_registered = true;
 		Log.Info($"[{ModInfo.Id}] Loaded and registered HextechRunes sponsor-pack content.");
 	}
@@ -88,78 +119,5 @@ public static class ModEntry
 	{
 		return AppDomain.CurrentDomain.GetAssemblies()
 			.Any(assembly => string.Equals(assembly.GetName().Name, PrerequisiteAssemblyName, StringComparison.Ordinal));
-	}
-
-	private static void RegisterContent()
-	{
-		HextechRunesApi.RegisterSavedPropertyCarrier<Evolution>();
-		HextechRunesApi.RegisterSavedPropertyCarrier<EntropyIncrease>();
-		HextechRunesApi.RegisterSavedPropertyCarrier<EntropyDecrease>();
-		// 迁移壳仍带 [SavedProperty],载体注册保留;它不再有图标(不注册、不进随机附魔池)。
-		HextechRunesApi.RegisterSavedPropertyCarrier<SponsorCompositeEnchantment>();
-		HextechRunesApi.RegisterEnchantmentIcon<Evolution>($"res://{ModInfo.Id}/images/enchantments/evolution.png");
-		HextechRunesApi.RegisterEnchantmentIcon<EntropyIncrease>($"res://{ModInfo.Id}/images/enchantments/plus.png");
-		HextechRunesApi.RegisterEnchantmentIcon<EntropyDecrease>($"res://{ModInfo.Id}/images/enchantments/minus.png");
-		HextechRunesApi.RegisterForge<BasicForge>(HextechRarityTier.Gold, ModInfo.Id);
-		HextechRunesApi.RegisterForge<EnchantmentForge>(HextechRarityTier.Gold, ModInfo.Id);
-		HextechRunesApi.RegisterForge<EntropyForge>(HextechRarityTier.Gold, ModInfo.Id);
-		HextechRunesApi.RegisterForge<ArcaneForge>(HextechRarityTier.Prismatic, ModInfo.Id);
-		HextechRunesApi.RegisterForge<DollysMirrorForge>(HextechRarityTier.Prismatic, ModInfo.Id);
-		HextechRunesApi.RegisterForge<EvolutionForge>(HextechRarityTier.Prismatic, ModInfo.Id);
-		HextechRunesApi.RegisterForge<MysticForge>(HextechRarityTier.Prismatic, ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<StarlightSparkleRune>(
-			HextechRarityTier.Gold,
-			tagKey: "COMPREHENSIVE",
-			assetModId: ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<CosplayRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "COMPREHENSIVE",
-			assetModId: ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<OtterAndFriendsRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "COMPREHENSIVE",
-			assetModId: ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<RegretRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "SURVIVAL",
-			assetModId: ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<GastritisRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "OUTPUT",
-			assetModId: ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<EnchantmentMasterRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "COMPREHENSIVE",
-			assetModId: ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<DesperateFinaleRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "COMPREHENSIVE",
-			assetModId: ModInfo.Id);
-		HextechRunesApi.RegisterPlayerRune<AbyssalContractRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "COMPREHENSIVE",
-			assetModId: ModInfo.Id);
-		// 信徒(棱彩,仅单人):IsAvailableForPlayer 内部按 !IsNetworkMultiplayerRun() 门控单人。
-		HextechRunesApi.RegisterPlayerRune<BelieverRune>(
-			HextechRarityTier.Prismatic,
-			tagKey: "COMPREHENSIVE",
-			assetModId: ModInfo.Id);
-		Log.Info($"[{ModInfo.Id}] Registered IntegratedStrategyEvents soft-collab rune content with runtime availability gating.");
-
-		HextechRunesApi.RegisterEventRelic<GoldStarRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<ArcaneCloneChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<ArcaneSoulsPowerChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<ArcaneRoyallyApprovedChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<DollyCardChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<DollyRelicChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<DollyPreviousPageRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<DollyNextPageRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<EntropyIncreaseChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<EntropyDecreaseChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<WarriorContractChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<HunterContractChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<RegentContractChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<NecrobinderContractChoiceRelic>(ModInfo.Id);
-		HextechRunesApi.RegisterEventRelic<AutomatonContractChoiceRelic>(ModInfo.Id);
 	}
 }

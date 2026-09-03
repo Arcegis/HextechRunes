@@ -60,7 +60,7 @@ internal static class RandomEnchantmentPool
 			{
 				if (LoggedCanEnchantFailures.Add(type))
 				{
-					Log.Warn($"[{ModInfo.Id}][EnchantmentMaster] {type.FullName}.CanEnchant threw on a canonical instance; treating it as illegal: {ex.GetType().Name}: {ex.Message}", 2);
+					Log.Warn($"[{ModInfo.Id}] EnchantmentMaster: {type.FullName}.CanEnchant threw on a canonical instance; treating it as illegal: {ex.GetType().Name}: {ex.Message}", 2);
 				}
 			}
 
@@ -132,7 +132,7 @@ internal static class RandomEnchantmentPool
 
 		List<EnchantmentModel> sorted = SortByEntryOrdinal(eligible, static enchantment => enchantment.Id.Entry);
 		excluded.Sort(StringComparer.Ordinal);
-		Log.Info($"[{ModInfo.Id}][EnchantmentMaster] Enchantment pool built: {sorted.Count} eligible, {excluded.Count} excluded ({string.Join(", ", excluded)}).");
+		Log.Info($"[{ModInfo.Id}] EnchantmentMaster pool built: {sorted.Count} eligible, {excluded.Count} excluded ({string.Join(", ", excluded)}).");
 		return sorted;
 	}
 }
