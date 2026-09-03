@@ -9,28 +9,13 @@ namespace HextechRunesSponsorPack;
 // 对自定义事件会解析到不存在的 res://images/events/miracle_event.png。该方法是 public 非 virtual,
 // 没法子类 override —— 在拓展包内用 Harmony postfix 拦截:若是 MiracleEvent,改为复用原版
 // doors_of_light_and_dark 事件贴图。纯拓展包,不动主 mod。
+[SponsorPatch("believer.miracle-portrait", "信徒·神迹事件立绘", Optional = true)]
+[HarmonyPatch(typeof(EventModel), nameof(EventModel.CreateInitialPortrait))]
 internal static class MiracleEventPortraitPatch
 {
 	private const string DoorsPortraitPath = "res://images/events/doors_of_light_and_dark.png";
-	private const string HarmonyId = "Natsuki.HextechRunesSponsorPack.MiracleEventPortrait";
 
-	private static Harmony? _harmony;
-
-	internal static void Install()
-	{
-		Harmony harmony = _harmony ??= new Harmony(HarmonyId);
-		System.Reflection.MethodInfo? target = AccessTools.Method(
-			typeof(EventModel),
-			nameof(EventModel.CreateInitialPortrait));
-		if (target == null)
-		{
-			Log.Warn($"[{ModInfo.Id}] Miracle portrait patch skipped: EventModel.CreateInitialPortrait not found.", 2);
-			return;
-		}
-
-		harmony.Patch(target, postfix: new HarmonyMethod(typeof(MiracleEventPortraitPatch), nameof(Postfix)));
-	}
-
+	[HarmonyPostfix]
 	private static void Postfix(EventModel __instance, ref Texture2D __result)
 	{
 		if (__instance is not MiracleEvent)

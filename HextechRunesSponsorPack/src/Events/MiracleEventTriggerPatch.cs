@@ -24,36 +24,14 @@ namespace HextechRunesSponsorPack;
 // SL 安全:计数是 SavedProperty,且在这一刻才于内存里消耗(晚于「战斗胜利后」那次存档)。所以 SL 回到事件中途,会落到
 // 「计数仍 >0、战斗房 pre-finished」的存档 → 再次 proceed 时神迹重现,而非消失。末幕 Boss 守卫则避免在终局插事件破坏结算。
 // 纯拓展包,主 mod 一行不动。
+[SponsorPatch("believer.miracle-trigger", "信徒·神迹事件")]
+[HarmonyPatch(typeof(RunManager), nameof(RunManager.ProceedFromTerminalRewardsScreen))]
 internal static class MiracleEventTriggerPatch
 {
-	private const string HarmonyId = "Natsuki.HextechRunesSponsorPack.MiracleTrigger";
-
-	private static Harmony? _harmony;
-
-	internal static void Install()
-	{
-		try
-		{
-			MethodInfo? target = AccessTools.Method(typeof(RunManager), nameof(RunManager.ProceedFromTerminalRewardsScreen));
-			if (target == null)
-			{
-				Log.Warn($"[{ModInfo.Id}] Miracle trigger patch skipped: ProceedFromTerminalRewardsScreen not found.", 2);
-				return;
-			}
-
-			Harmony harmony = _harmony ??= new Harmony(HarmonyId);
-			harmony.Patch(target, postfix: new HarmonyMethod(typeof(MiracleEventTriggerPatch), nameof(Postfix)));
-			Log.Info($"[{ModInfo.Id}] Miracle trigger patch installed on RunManager.ProceedFromTerminalRewardsScreen.");
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}] Miracle trigger patch failed: {ex.GetType().Name}: {ex.Message}", 2);
-		}
-	}
-
 	// 不再拦截原方法:让它完整执行(关领奖屏、开地图——所有原生 UI 收尾照常),
 	// 之后再从"地图已打开"状态 deferred 进神迹,与玩家从地图点进事件房的路径完全同构。
 	// (此前的 prefix 替换版把原方法的 UI 收尾一并跳过:领奖层残留拦截输入/事件选项无法点击。)
+	[HarmonyPostfix]
 	private static void Postfix(RunManager __instance, ref Task __result)
 	{
 		__result = ChainMiracleAfterProceed(__instance, __result);

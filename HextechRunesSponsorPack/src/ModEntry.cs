@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using HarmonyLib;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
@@ -10,6 +11,7 @@ namespace HextechRunesSponsorPack;
 public static class ModEntry
 {
 	private const string PrerequisiteAssemblyName = "HextechRunes";
+	private const string HarmonyId = "Natsuki.HextechRunesSponsorPack";
 
 	private static readonly object InitializeLock = new();
 	private static bool _waitingForPrerequisite;
@@ -73,25 +75,12 @@ public static class ModEntry
 			_contentRegistered = true;
 		}
 
-		AbyssalContractPatches.Install();
-		InstallOptionalFeature("IntegratedStrategyEvents compatibility", IntegratedStrategyEventsCompatibilityHooks.Install);
-		InstallOptionalFeature("Miracle event portrait", MiracleEventPortraitPatch.Install);
-		MiracleEventForgePricePatch.Install();
-		MiracleEventTriggerPatch.Install();
+		Harmony harmony = new(HarmonyId);
+		SponsorPatcher.ApplyAll(harmony, typeof(ModEntry).Assembly);
+		SponsorPatcher.LogSummary();
+		SponsorPatcher.DumpIfRequested(harmony);
 		_registered = true;
 		Log.Info($"[{ModInfo.Id}] Loaded and registered HextechRunes sponsor-pack content.");
-	}
-
-	private static void InstallOptionalFeature(string name, Action install)
-	{
-		try
-		{
-			install();
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}] Optional feature '{name}' was disabled: {ex.GetType().Name}: {ex.Message}", 2);
-		}
 	}
 
 	// 兼容本体与二创(synergy)版:两者都打包了程序集名为 "HextechRunes" 的 dll(暴露同样的 HextechRunesApi)。
