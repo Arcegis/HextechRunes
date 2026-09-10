@@ -232,7 +232,8 @@ internal static class HextechRuneConfiguration
 				ToForgeRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
 				_config.RandomForgeShopPrice,
 				_config.RandomForgeDirectGrant,
-				_config.ModEnabled));
+				_config.ModEnabled,
+				_config.ChaosRuneChancePercent));
 		}
 	}
 
@@ -313,6 +314,7 @@ internal static class HextechRuneConfiguration
 			_config.RuneRarityWeights = null;
 			_config.PreventConsecutiveSilverRunes = normalized.PreventConsecutiveSilverRunes;
 			_config.GoldenRerollChancePercent = normalized.GoldenRerollChancePercent;
+			_config.ChaosRuneChancePercent = normalized.ChaosRuneChancePercent;
 			_config.FirstActRuneRarityWeights = null;
 			_config.NormalRuneRarityWeights = null;
 			_config.SecondActAfterSilverRuneRarityWeights = null;
@@ -557,6 +559,7 @@ internal static class HextechRuneConfiguration
 			DefaultRuneRarityWeightsByAct));
 		config.RuneRarityWeights = null;
 		config.GoldenRerollChancePercent = ClampGoldenRerollChancePercent(config.GoldenRerollChancePercent);
+		config.ChaosRuneChancePercent = Math.Clamp(config.ChaosRuneChancePercent, 0, 100);
 		config.FirstActRuneRarityWeights = null;
 		config.NormalRuneRarityWeights = null;
 		config.SecondActAfterSilverRuneRarityWeights = null;
@@ -709,7 +712,8 @@ internal static class HextechRuneConfiguration
 			NormalizeForgeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
 			ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice),
 			snapshot.RandomForgeDirectGrant,
-			snapshot.ModEnabled);
+			snapshot.ModEnabled,
+			Math.Clamp(snapshot.ChaosRuneChancePercent, 0, 100));
 	}
 
 	internal static HextechRarityWeights NormalizeRarityWeights(HextechRarityWeights weights, HextechRarityWeights fallback)
@@ -981,6 +985,8 @@ internal static class HextechRuneConfiguration
 
 		[JsonPropertyName("golden_reroll_chance_percent")]
 		public int GoldenRerollChancePercent { get; set; } = DefaultGoldenRerollChancePercent;
+
+		public int ChaosRuneChancePercent { get; set; } = 33;
 
 		[JsonPropertyName("first_act_rune_rarity_weights")]
 		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

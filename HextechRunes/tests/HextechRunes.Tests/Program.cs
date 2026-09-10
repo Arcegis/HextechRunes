@@ -66,6 +66,11 @@ internal static partial class Program
 #endif
 		TestCase[] tests =
 		[
+			new(nameof(GeneratedRuneSelectionPreservesInstanceDataAndRejectsTruncation), GeneratedRuneSelectionPreservesInstanceDataAndRejectsTruncation),
+			new(nameof(ChaosChanceConfigurationRoundTripsAndDefaults), ChaosChanceConfigurationRoundTripsAndDefaults),
+			new(nameof(NaturalRelicPoolPreservesVanillaRngAndForeignContent), NaturalRelicPoolPreservesVanillaRngAndForeignContent),
+			new(nameof(RunActivationUsesSnapshotBeforeFreezeAndPreservesFrozenValue), RunActivationUsesSnapshotBeforeFreezeAndPreservesFrozenValue),
+			new(nameof(DisabledStageBranchesBeforeEnemyGeneration), DisabledStageBranchesBeforeEnemyGeneration),
 			new(nameof(ActRollRoundTripKeepsHostSnapshot), ActRollRoundTripKeepsHostSnapshot),
 			new(nameof(RuneSelectionRoundTripRequiresMatchingActAndOrdinal), RuneSelectionRoundTripRequiresMatchingActAndOrdinal),
 			new(nameof(RuneSelectionRejectsWrongActOrOrdinal), RuneSelectionRejectsWrongActOrOrdinal),
@@ -94,8 +99,11 @@ internal static partial class Program
 			new(nameof(GoldenRerollDebugForceIsOneShot), GoldenRerollDebugForceIsOneShot),
 			new(nameof(GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused), GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused),
 			new(nameof(GoldenRerollCardThemeFollowsRerolledRuneRarity), GoldenRerollCardThemeFollowsRerolledRuneRarity),
+			new(nameof(CharacterWeightUsesSequentialAdditiveSteps), CharacterWeightUsesSequentialAdditiveSteps),
+			new(nameof(CharacterWeightSaveAndReplayArePerPlayer), CharacterWeightSaveAndReplayArePerPlayer),
+			new(nameof(CharacterWeightProtocolPreservesRerollProgressAndRecipes), CharacterWeightProtocolPreservesRerollProgressAndRecipes),
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
-			new(nameof(RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades), RuneSelectionCandidateConstraintsReserveCharacterAndLimitUpgrades),
+			new(nameof(RuneSelectionCandidateConstraintsMixCharactersAndLimitUpgrades), RuneSelectionCandidateConstraintsMixCharactersAndLimitUpgrades),
 			new(nameof(UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption), UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption),
 			new(nameof(SelectionUiWaitsForControllerInputBeforeFocusing), SelectionUiWaitsForControllerInputBeforeFocusing),
 			new(nameof(EnemyHexRerollPlaysRerollSound), EnemyHexRerollPlaysRerollSound),
