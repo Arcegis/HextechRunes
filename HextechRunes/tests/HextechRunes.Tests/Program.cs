@@ -42,7 +42,7 @@ internal static partial class Program
 	private const int EnemyHexAdjustmentListVersion = -2;
 	private const int StableModelIdListVersion = -3;
 
-	public static int Main()
+	public static int Main(string[] args)
 	{
 #if STS2_109_OR_NEWER
 		// 0.109 起游戏引用 System.IO.Hashing(XxHash32);它不在测试的 deps.json 里(仅作文件复制),
@@ -362,6 +362,19 @@ internal static partial class Program
 			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
 			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives)
 		];
+
+		if (args.Length > 0)
+		{
+			foreach (string name in args)
+			{
+				if (tests.All(test => test.Name != name))
+				{
+					Console.Error.WriteLine($"Unknown test: {name}");
+					return 1;
+				}
+			}
+			tests = tests.Where(test => args.Contains(test.Name)).ToArray();
+		}
 
 		int failed = 0;
 		foreach (TestCase test in tests)
