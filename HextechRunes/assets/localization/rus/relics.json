@@ -1453,5 +1453,20 @@
   "HAUNTED_SHIP_HEX.title": "Улучшение: Корабль-призрак",
   "HAUNTED_SHIP_HEX.description": "В начале боя добавьте [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] карты [gold]Ошеломление[/gold] в стопку сброса каждого игрока.",
   "HAUNTED_SHIP_HEX.flavor": "",
-  "hauntedShipHex.enemyDescription": "В начале боя добавьте [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] карты [gold]Ошеломление[/gold] в стопку сброса каждого игрока."
+  "hauntedShipHex.enemyDescription": "В начале боя добавьте [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] карты [gold]Ошеломление[/gold] в стопку сброса каждого игрока.",
+  "HEXTECH_BLACK_BLOOD_PLUS.title": "Черная кровь+",
+  "HEXTECH_BLACK_BLOOD_PLUS.description": "Восполняет [green]{Heal}[/green] ОЗ в конце боя.",
+  "HEXTECH_BLACK_BLOOD_PLUS.flavor": "[red]Подробности об этой реликвии станут известны в будущем…[/red]",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.title": "Кольцо ящера+",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.description": "Вы добираете еще [blue]{Cards}[/blue] {Cards:plural(ru):карту|карты|карт} {Turns:plural(ru):в начале боя|в начале первых [blue]{}[/blue] ходов|в начале первых [blue]{}[/blue] ходов}.",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.flavor": "[red]Подробности об этой реликвии станут известны в будущем…[/red]",
+  "HEXTECH_DIVINE_DESTINY_PLUS.title": "Божественная судьба+",
+  "HEXTECH_DIVINE_DESTINY_PLUS.description": "Дает {Stars:starIcons()} в начале боя.",
+  "HEXTECH_DIVINE_DESTINY_PLUS.flavor": "[red]Подробности об этой реликвии станут известны в будущем…[/red]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.title": "Неподвластная филактерия+",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.description": "[gold]Призывает[/gold] [blue]{StartOfCombat}[/blue] в начале боя. [gold]Призывает[/gold] [blue]{StartOfTurn}[/blue] в начале хода.",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.flavor": "[red]Подробности об этой реликвии станут известны в будущем…[/red]",
+  "HEXTECH_INFUSED_CORE_PLUS.title": "Заряженное ядро+",
+  "HEXTECH_INFUSED_CORE_PLUS.description": "[gold]Заряжает[/gold] [blue]{Lightning}[/blue] [gold]сферы молнии[/gold] в начале боя. [gold]Сферы молнии[/gold] наносят на [blue]{ExtraDamage}[/blue] урона больше.",
+  "HEXTECH_INFUSED_CORE_PLUS.flavor": "[red]Подробности об этой реликвии станут известны в будущем…[/red]"
 }

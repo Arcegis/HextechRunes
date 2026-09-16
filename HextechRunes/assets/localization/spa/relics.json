@@ -1453,5 +1453,20 @@
   "HAUNTED_SHIP_HEX.title": "Mejora: Barco fantasma",
   "HAUNTED_SHIP_HEX.description": "Al comenzar el combate, añade [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Aturdimientos[/gold] a la pila de descartes de cada jugador.",
   "HAUNTED_SHIP_HEX.flavor": "",
-  "hauntedShipHex.enemyDescription": "Al comenzar el combate, añade [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Aturdimientos[/gold] a la pila de descartes de cada jugador."
+  "hauntedShipHex.enemyDescription": "Al comenzar el combate, añade [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Aturdimientos[/gold] a la pila de descartes de cada jugador.",
+  "HEXTECH_BLACK_BLOOD_PLUS.title": "Sangre negra+",
+  "HEXTECH_BLACK_BLOOD_PLUS.description": "Al final del combate, te curas [green]{Heal}[/green] PV.",
+  "HEXTECH_BLACK_BLOOD_PLUS.flavor": "[red]Los detalles de esta reliquia serán revelados en el futuro...[/red]",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.title": "Anillo del dragón+",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.description": "Al comienzo de {Turns:plural:tu siguiente turno|tus siguientes [blue]{}[/blue] turnos}, roba [blue]{Cards}[/blue] {Cards:plural:carta adicional|cartas adicionales}.",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.flavor": "[red]Los detalles de esta reliquia serán revelados en el futuro...[/red]",
+  "HEXTECH_DIVINE_DESTINY_PLUS.title": "Destino divino+",
+  "HEXTECH_DIVINE_DESTINY_PLUS.description": "Al comienzo de cada combate, gana {Stars:starIcons()}.",
+  "HEXTECH_DIVINE_DESTINY_PLUS.flavor": "[red]Los detalles de esta reliquia serán revelados en el futuro...[/red]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.title": "Filacteria potenciada+",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.description": "Al comienzo de cada combate, [gold]Vincula[/gold] [blue]{StartOfCombat}[/blue]. Al comienzo de tu turno, [gold]Vincula[/gold] [blue]{StartOfTurn}[/blue].",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.flavor": "[red]Los detalles de esta reliquia serán revelados en el futuro...[/red]",
+  "HEXTECH_INFUSED_CORE_PLUS.title": "Núcleo modificado+",
+  "HEXTECH_INFUSED_CORE_PLUS.description": "Al comienzo de cada combate, [gold]Invoca[/gold] [blue]{Lightning}[/blue] [gold]Relámpago[/gold]. [gold]Relámpago[/gold] inflige [blue]{ExtraDamage}[/blue] de daño adicional.",
+  "HEXTECH_INFUSED_CORE_PLUS.flavor": "[red]Los detalles de esta reliquia serán revelados en el futuro...[/red]"
 }

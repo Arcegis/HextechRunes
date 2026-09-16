@@ -66,6 +66,10 @@ internal static partial class Program
 #endif
 		TestCase[] tests =
 		[
+			new(nameof(ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask), ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask),
+			new(nameof(OrobasSecondUpgradePreservesNativeAndForeignMappings), OrobasSecondUpgradePreservesNativeAndForeignMappings),
+			new(nameof(OrobasPlusDrawAndLightningStayOwnerScoped), OrobasPlusDrawAndLightningStayOwnerScoped),
+			new(nameof(OrobasPlusUsesNativeAssetsAndVersionedValues), OrobasPlusUsesNativeAssetsAndVersionedValues),
 			new(nameof(ThreeNewRunesHaveRequestedPoolsAndRarities), ThreeNewRunesHaveRequestedPoolsAndRarities),
 			new(nameof(ScapegoatIncludesNegativeAttributesButLeavesBuffs), ScapegoatIncludesNegativeAttributesButLeavesBuffs),
 			new(nameof(BloodDebtAccumulatesPerCardAndExpiresAfterCombat), BloodDebtAccumulatesPerCardAndExpiresAfterCombat),

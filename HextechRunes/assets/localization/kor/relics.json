@@ -1453,5 +1453,20 @@
   "HAUNTED_SHIP_HEX.title": "강화: 유령선",
   "HAUNTED_SHIP_HEX.description": "전투 시작 시 각 플레이어의 버린 카드 더미에 [gold]어지러움[/gold]을 [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]장 추가합니다.",
   "HAUNTED_SHIP_HEX.flavor": "",
-  "hauntedShipHex.enemyDescription": "전투 시작 시 각 플레이어의 버린 카드 더미에 [gold]어지러움[/gold]을 [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]장 추가합니다."
+  "hauntedShipHex.enemyDescription": "전투 시작 시 각 플레이어의 버린 카드 더미에 [gold]어지러움[/gold]을 [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]장 추가합니다.",
+  "HEXTECH_BLACK_BLOOD_PLUS.title": "어두운 피+",
+  "HEXTECH_BLACK_BLOOD_PLUS.description": "매 전투 종료 시, 체력을 [green]{Heal}[/green] 회복합니다.",
+  "HEXTECH_BLACK_BLOOD_PLUS.flavor": "[red]이 유물에 관한 자세한 내용은 추후 공개될 예정입니다...[/red]",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.title": "비룡의 반지+",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.description": "{Turns:choose(1):첫 번째 턴|첫 [blue]{}[/blue] 턴} 시작 시, 카드를 추가로 [blue]{Cards}[/blue]장 뽑습니다.",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.flavor": "[red]이 유물에 관한 자세한 내용은 추후 공개될 예정입니다...[/red]",
+  "HEXTECH_DIVINE_DESTINY_PLUS.title": "신성한 운명+",
+  "HEXTECH_DIVINE_DESTINY_PLUS.description": "매 전투 시작 시, {Stars:starIcons()}을 얻습니다.",
+  "HEXTECH_DIVINE_DESTINY_PLUS.flavor": "[red]이 유물에 관한 자세한 내용은 추후 공개될 예정입니다...[/red]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.title": "해방된 성물함+",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.description": "매 전투 시작 시, [gold]소환[/gold] [blue]{StartOfCombat}[/blue]. 내 턴 시작 시, [gold]소환[/gold] [blue]{StartOfTurn}[/blue].",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.flavor": "[red]이 유물에 관한 자세한 내용은 추후 공개될 예정입니다...[/red]",
+  "HEXTECH_INFUSED_CORE_PLUS.title": "주입된 핵+",
+  "HEXTECH_INFUSED_CORE_PLUS.description": "매 전투 시작 시, [gold]전기[/gold]를 [blue]{Lightning}[/blue]번 [gold]영창[/gold]합니다. [gold]전기[/gold]의 피해량이 [blue]{ExtraDamage}[/blue] 증가합니다.",
+  "HEXTECH_INFUSED_CORE_PLUS.flavor": "[red]이 유물에 관한 자세한 내용은 추후 공개될 예정입니다...[/red]"
 }

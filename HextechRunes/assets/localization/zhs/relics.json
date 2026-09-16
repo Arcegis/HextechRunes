@@ -1453,5 +1453,20 @@
   "HAUNTED_SHIP_HEX.title": "升级：幽灵船",
   "HAUNTED_SHIP_HEX.description": "战斗开始时，将[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]张[gold]晕眩[/gold]加入每名玩家的弃牌堆。",
   "HAUNTED_SHIP_HEX.flavor": "",
-  "hauntedShipHex.enemyDescription": "战斗开始时，将[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]张[gold]晕眩[/gold]加入每名玩家的弃牌堆。"
+  "hauntedShipHex.enemyDescription": "战斗开始时，将[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]张[gold]晕眩[/gold]加入每名玩家的弃牌堆。",
+  "HEXTECH_BLACK_BLOOD_PLUS.title": "黑暗之血+",
+  "HEXTECH_BLACK_BLOOD_PLUS.description": "在战斗结束时，回复[green]{Heal}[/green]点生命。",
+  "HEXTECH_BLACK_BLOOD_PLUS.flavor": "[red]这个遗物的细节将在未来揭晓……[/red]",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.title": "长蛇戒指+",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.description": "在战斗开始时的前[blue]{Turns}[/blue]个回合，你额外抽[blue]{Cards}[/blue]张牌。",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.flavor": "[red]这个遗物的细节将在未来揭晓……[/red]",
+  "HEXTECH_DIVINE_DESTINY_PLUS.title": "天命所归+",
+  "HEXTECH_DIVINE_DESTINY_PLUS.description": "在每场战斗开始时，获得{Stars:starIcons()}。",
+  "HEXTECH_DIVINE_DESTINY_PLUS.flavor": "[red]这个遗物的细节将在未来揭晓……[/red]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.title": "无界命匣+",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.description": "在每场战斗开始时，[gold]召唤[/gold][blue]{StartOfCombat}[/blue]。在你的回合开始时，[gold]召唤[/gold][blue]{StartOfTurn}[/blue]。",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.flavor": "[red]这个遗物的细节将在未来揭晓……[/red]",
+  "HEXTECH_INFUSED_CORE_PLUS.title": "注能核心+",
+  "HEXTECH_INFUSED_CORE_PLUS.description": "在每场战斗开始时，[gold]生成[/gold][blue]{Lightning}[/blue]个[gold]闪电[/gold]充能球。[gold]闪电[/gold]充能球额外造成[blue]{ExtraDamage}[/blue]点伤害。",
+  "HEXTECH_INFUSED_CORE_PLUS.flavor": "[red]这个遗物的细节将在未来揭晓……[/red]"
 }

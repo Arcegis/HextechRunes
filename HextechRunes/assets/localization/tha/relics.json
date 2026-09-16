@@ -1453,5 +1453,20 @@
   "HAUNTED_SHIP_HEX.title": "อัปเกรด: เรือผี",
   "HAUNTED_SHIP_HEX.description": "เมื่อเริ่มการต่อสู้ เพิ่ม [gold]มึนงง[/gold] [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] ใบลงในกองทิ้งของผู้เล่นแต่ละคน",
   "HAUNTED_SHIP_HEX.flavor": "",
-  "hauntedShipHex.enemyDescription": "เมื่อเริ่มการต่อสู้ เพิ่ม [gold]มึนงง[/gold] [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] ใบลงในกองทิ้งของผู้เล่นแต่ละคน"
+  "hauntedShipHex.enemyDescription": "เมื่อเริ่มการต่อสู้ เพิ่ม [gold]มึนงง[/gold] [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] ใบลงในกองทิ้งของผู้เล่นแต่ละคน",
+  "HEXTECH_BLACK_BLOOD_PLUS.title": "โลหิตทมิฬ+",
+  "HEXTECH_BLACK_BLOOD_PLUS.description": "ตอนจบการต่อสู้ ฟื้นฟู [green]{Heal}[/green] HP",
+  "HEXTECH_BLACK_BLOOD_PLUS.flavor": "[red]รายละเอียดของเครื่องรางนี้จะถูกเปิดเผยในอนาคต...[/red]",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.title": "Ring of the Drake+",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.description": "ตอนเริ่มต้นของ {Turns:choose(1):1|[blue]{}[/blue]} เทิร์นแรก จั่วการ์ดเพิ่ม [blue]{Cards}[/blue] ใบ",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.flavor": "[red]รายละเอียดของเครื่องรางนี้จะถูกเปิดเผยในอนาคต...[/red]",
+  "HEXTECH_DIVINE_DESTINY_PLUS.title": "Divine Destiny+",
+  "HEXTECH_DIVINE_DESTINY_PLUS.description": "ตอนเริ่มต้นการต่อสู้ ได้รับ {Stars:starIcons()}",
+  "HEXTECH_DIVINE_DESTINY_PLUS.flavor": "[red]รายละเอียดของเครื่องรางนี้จะถูกเปิดเผยในอนาคต...[/red]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.title": "กล่องดวงใจ (อิสระ)+",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.description": "ตอนเริ่มต้นการต่อสู้ [gold]อัญเชิญ[/gold] [blue]{StartOfCombat}[/blue] และตอนเริ่มต้นเทิร์น [gold]อัญเชิญ[/gold] [blue]{StartOfTurn}[/blue]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.flavor": "[red]รายละเอียดของเครื่องรางนี้จะถูกเปิดเผยในอนาคต...[/red]",
+  "HEXTECH_INFUSED_CORE_PLUS.title": "Infused Core+",
+  "HEXTECH_INFUSED_CORE_PLUS.description": "ตอนเริ่มต้นการต่อสู้ [gold]ปลุกเสก[/gold] [blue]{Lightning}[/blue] [gold]สายฟ้า[/gold] และ[gold]สายฟ้า[/gold]สร้างความเสียหายเพิ่ม [blue]{ExtraDamage}[/blue]",
+  "HEXTECH_INFUSED_CORE_PLUS.flavor": "[red]รายละเอียดของเครื่องรางนี้จะถูกเปิดเผยในอนาคต...[/red]"
 }

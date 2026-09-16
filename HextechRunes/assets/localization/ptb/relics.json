@@ -1453,5 +1453,20 @@
   "HAUNTED_SHIP_HEX.title": "Melhoria: Navio Fantasma",
   "HAUNTED_SHIP_HEX.description": "No início do combate, adicione [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Atordoamentos[/gold] à pilha de descarte de cada jogador.",
   "HAUNTED_SHIP_HEX.flavor": "",
-  "hauntedShipHex.enemyDescription": "No início do combate, adicione [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Atordoamentos[/gold] à pilha de descarte de cada jogador."
+  "hauntedShipHex.enemyDescription": "No início do combate, adicione [blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue] [gold]Atordoamentos[/gold] à pilha de descarte de cada jogador.",
+  "HEXTECH_BLACK_BLOOD_PLUS.title": "Sangue Escuro+",
+  "HEXTECH_BLACK_BLOOD_PLUS.description": "No final do combate, cure [green]{Heal}[/green] PV.",
+  "HEXTECH_BLACK_BLOOD_PLUS.flavor": "[red]Detalhes sobre esta relíquia serão revelados no futuro...[/red]",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.title": "Anel do Dragonete+",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.description": "No início {Turns:plural:do seu primeiro turno|dos seus primeiros [blue]{}[/blue] turnos}, compre [blue]{Cards}[/blue] {Cards:plural:carta adicional|cartas adicionais}.",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.flavor": "[red]Detalhes sobre esta relíquia serão revelados no futuro...[/red]",
+  "HEXTECH_DIVINE_DESTINY_PLUS.title": "Destino Divino+",
+  "HEXTECH_DIVINE_DESTINY_PLUS.description": "No início de cada combate, receba {Stars:starIcons()}.",
+  "HEXTECH_DIVINE_DESTINY_PLUS.flavor": "[red]Detalhes sobre esta relíquia serão revelados no futuro...[/red]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.title": "Talismã Desvinculado+",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.description": "No início do combate, [gold]Vincule[/gold] [blue]{StartOfCombat}[/blue]. No início do seu turno, [gold]Vincule[/gold] [blue]{StartOfTurn}[/blue].",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.flavor": "[red]Detalhes sobre esta relíquia serão revelados no futuro...[/red]",
+  "HEXTECH_INFUSED_CORE_PLUS.title": "Núcleo Carregado+",
+  "HEXTECH_INFUSED_CORE_PLUS.description": "No início de cada combate, [gold]Canalize[/gold] [blue]{Lightning}[/blue] [gold]Relâmpago[/gold]. [gold]Relâmpago[/gold] causa [blue]{ExtraDamage}[/blue] de dano adicional.",
+  "HEXTECH_INFUSED_CORE_PLUS.flavor": "[red]Detalhes sobre esta relíquia serão revelados no futuro...[/red]"
 }

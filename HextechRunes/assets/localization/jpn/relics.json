@@ -1453,5 +1453,20 @@
   "HAUNTED_SHIP_HEX.title": "アップグレード：幽霊船",
   "HAUNTED_SHIP_HEX.description": "戦闘開始時、各プレイヤーの捨て札に[gold]めまい[/gold]を[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]枚加える。",
   "HAUNTED_SHIP_HEX.flavor": "",
-  "hauntedShipHex.enemyDescription": "戦闘開始時、各プレイヤーの捨て札に[gold]めまい[/gold]を[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]枚加える。"
+  "hauntedShipHex.enemyDescription": "戦闘開始時、各プレイヤーの捨て札に[gold]めまい[/gold]を[blue]2[/blue]/[blue]3[/blue]/[blue]4[/blue]枚加える。",
+  "HEXTECH_BLACK_BLOOD_PLUS.title": "ブラックブラッド+",
+  "HEXTECH_BLACK_BLOOD_PLUS.description": "戦闘終了時、HPを[green]{Heal}[/green]回復する。",
+  "HEXTECH_BLACK_BLOOD_PLUS.flavor": "[red]このレリックの詳細は今後明かされるはずだ……[/red]",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.title": "ドレイクの指輪+",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.description": "最初の[blue]{Turns}[/blue]ターンの開始時、追加でカードを[blue]{Cards}[/blue]枚引く。",
+  "HEXTECH_RING_OF_THE_DRAKE_PLUS.flavor": "[red]このレリックの詳細は今後明かされるはずだ……[/red]",
+  "HEXTECH_DIVINE_DESTINY_PLUS.title": "神授天命+",
+  "HEXTECH_DIVINE_DESTINY_PLUS.description": "戦闘開始時、{Stars:starIcons()}を得る。",
+  "HEXTECH_DIVINE_DESTINY_PLUS.flavor": "[red]このレリックの詳細は今後明かされるはずだ……[/red]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.title": "解き放たれし霊箱+",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.description": "戦闘開始時、[gold]召喚[/gold][blue]{StartOfCombat}[/blue]。ターン開始時、[gold]召喚[/gold][blue]{StartOfTurn}[/blue]",
+  "HEXTECH_PHYLACTERY_UNBOUND_PLUS.flavor": "[red]このレリックの詳細は今後明かされるはずだ……[/red]",
+  "HEXTECH_INFUSED_CORE_PLUS.title": "インフューズドコア+",
+  "HEXTECH_INFUSED_CORE_PLUS.description": "戦闘開始時、[gold]ライトニング[/gold][blue]{Lightning}[/blue]を[gold]生成[/gold]する。[gold]ライトニング[/gold]の与えるダメージが[blue]{ExtraDamage}[/blue]増加する。",
+  "HEXTECH_INFUSED_CORE_PLUS.flavor": "[red]このレリックの詳細は今後明かされるはずだ……[/red]"
 }
