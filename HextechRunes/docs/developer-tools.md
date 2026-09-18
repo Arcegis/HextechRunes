@@ -36,6 +36,8 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/sync_content_txt.py --help
 
 ## 定向验证
 
+玩家侧活力火花的施加入口与清理规则见 [玩家侧活力火花](player-vital-spark.md)；使用 `PowerCmd.Apply<HextechVitalSparkPower>`，不要直接将原版敌方增益施加到玩家。
+
 ```bash
 python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --list --match Hopper
 python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEscapeSurvivesTheNextNativeMoveRoll
@@ -58,6 +60,7 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --target 
 | `tools/build_and_deploy.sh` | Zsh 脚本，重建 `.build` 和 `dist`、导入、构建、打包；默认替换本机模组目录，设 `HEXTECH_DEPLOY=0` 才不部署 |
 | `tools/package_release_zip.sh [输出绝对路径]` | 只打包现有 dist，不构建、不部署；调用下面的 Python 实现 |
 | `tools/package_release.py [输出绝对路径] --dist <目录>` | 校验 bundle，再按变体清单打 ZIP；包含 loader、PCK、manifest、各变体 DLL 和必要 `compat-target.txt`，不含更新日志 TXT；成功后才替换原 ZIP |
+| `tools/extract_near_death_feast_glow.gd -- <原版PCK> <输出PNG>` | 用 Godot `--headless --path tools -s <脚本绝对路径>` 运行，提取 SOUL_NEXUS 红光并写入指定 PNG；区域与来源见 [濒死狂宴红光](near-death-feast-visual.md) |
 | `tools/update_latest_version.py` / 工坊上传器 / 镜像同步 | 涉及版本发布或外部写入；按用户指定范围使用，不是代码修改后的自动步骤 |
 
 ## 运行时共享能力
