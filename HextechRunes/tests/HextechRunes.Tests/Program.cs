@@ -67,6 +67,10 @@ internal static partial class Program
 		TestCase[] tests =
 		[
 			new(nameof(CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder), CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder),
+			new(nameof(PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped), PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped),
+			new(nameof(ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth), ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth),
+			new(nameof(PersistentPowerUpgradesDoNotAffectOtherPlayers), PersistentPowerUpgradesDoNotAffectOtherPlayers),
+			new(nameof(CardUpgradeReplacementBodiesMatchReviewedVanilla), CardUpgradeReplacementBodiesMatchReviewedVanilla),
 			new(nameof(ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask), ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask),
 			new(nameof(OrobasSecondUpgradePreservesNativeAndForeignMappings), OrobasSecondUpgradePreservesNativeAndForeignMappings),
 			new(nameof(OrobasPlusDrawAndLightningStayOwnerScoped), OrobasPlusDrawAndLightningStayOwnerScoped),

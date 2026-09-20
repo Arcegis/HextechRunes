@@ -36,5 +36,8 @@
   "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "No início do seu turno, ganha [blue]1[/blue] de [gold]Força[/gold].",
   "HEXTECH_GALVANIC_POWER.title": "Galvanização",
   "HEXTECH_GALVANIC_POWER.description": "Poderes recebem [gold]Galvanização[/gold].",
-  "HEXTECH_GALVANIC_POWER.smartDescription": "Poderes recebem [gold]{AfflictionTitle}[/gold]."
+  "HEXTECH_GALVANIC_POWER.smartDescription": "Poderes recebem [gold]{AfflictionTitle}[/gold].",
+  "HEXTECH_HANG_POWER.title": "Enforcar",
+  "HEXTECH_HANG_POWER.description": "Todo dano recebido é multiplicado pelo número de acúmulos.",
+  "HEXTECH_HANG_POWER.smartDescription": "Todo dano recebido é multiplicado por [blue]{Amount}[/blue]."
 }

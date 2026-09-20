@@ -363,7 +363,20 @@ internal static class HextechPlayerRuneRegistry
 		Rune<KingdomArmyRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 31, tagKey: "SWORDCRAFT"),
 		Rune<ScapegoatRune>(HextechRarityTier.Gold, tagKey: "COMPREHENSIVE"),
 		Rune<BloodDebtRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 34, tagKey: "BLOODLETTING"),
-		Rune<NetherSoulRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 37, tagKey: "VOID")
+		Rune<NetherSoulRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 37, tagKey: "VOID"),
+		Rune<BulletTimeUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 32, tagKey: "DRAW"),
+		Rune<ParticleWallUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 32, tagKey: "SURVIVAL"),
+		Rune<NightmareUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 33, tagKey: "RESOURCE"),
+		Rune<LoopUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 35, tagKey: "ORB"),
+		Rune<RageUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 35, tagKey: "SURVIVAL"),
+		Rune<ReflectUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 33, tagKey: "SURVIVAL"),
+		Rune<FlakCannonUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 36, tagKey: "STATUS"),
+		Rune<HangUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 38, tagKey: "OUTPUT"),
+		Rune<ClawUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 37, tagKey: "OUTPUT"),
+		Rune<InfernoUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 36, tagKey: "OUTPUT"),
+		Rune<FlameBarrierUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 37, tagKey: "OUTPUT"),
+		Rune<RebootUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 38, tagKey: "DRAW"),
+		Rune<SmokestackUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 39, tagKey: "STATUS")
 	];
 
 	private static PlayerRuneRegistration Rune<TRune>(

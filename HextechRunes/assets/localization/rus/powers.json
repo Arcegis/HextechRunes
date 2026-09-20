@@ -36,5 +36,8 @@
   "HEXTECH_RUNE_DEMON_FORM_PREVIEW.description": "Дает [blue]1[/blue] [gold]силы[/gold] в начале хода.",
   "HEXTECH_GALVANIC_POWER.title": "Гальванизация",
   "HEXTECH_GALVANIC_POWER.description": "Таланты становятся [gold]гальваническими[/gold].",
-  "HEXTECH_GALVANIC_POWER.smartDescription": "На Таланты накладывается порча [gold]«{AfflictionTitle}»[/gold]."
+  "HEXTECH_GALVANIC_POWER.smartDescription": "На Таланты накладывается порча [gold]«{AfflictionTitle}»[/gold].",
+  "HEXTECH_HANG_POWER.title": "Повешение",
+  "HEXTECH_HANG_POWER.description": "Весь получаемый урон умножается на число зарядов.",
+  "HEXTECH_HANG_POWER.smartDescription": "Весь получаемый урон умножается на [blue]{Amount}[/blue]."
 }

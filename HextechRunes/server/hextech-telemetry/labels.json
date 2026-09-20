@@ -485,7 +485,20 @@
     "HEXTECH_RING_OF_THE_DRAKE_PLUS": "长蛇戒指+",
     "HEXTECH_DIVINE_DESTINY_PLUS": "天命所归+",
     "HEXTECH_PHYLACTERY_UNBOUND_PLUS": "无界命匣+",
-    "HEXTECH_INFUSED_CORE_PLUS": "注能核心+"
+    "HEXTECH_INFUSED_CORE_PLUS": "注能核心+",
+    "BULLET_TIME_UPGRADE_RUNE": "升级：子弹时间",
+    "PARTICLE_WALL_UPGRADE_RUNE": "升级：粒子墙",
+    "NIGHTMARE_UPGRADE_RUNE": "升级：夜魇",
+    "LOOP_UPGRADE_RUNE": "升级：循环",
+    "RAGE_UPGRADE_RUNE": "升级：狂怒",
+    "REFLECT_UPGRADE_RUNE": "升级：倒映",
+    "FLAK_CANNON_UPGRADE_RUNE": "升级：散射炮",
+    "HANG_UPGRADE_RUNE": "升级：吊杀",
+    "CLAW_UPGRADE_RUNE": "升级：爪击",
+    "INFERNO_UPGRADE_RUNE": "升级：狱火",
+    "FLAME_BARRIER_UPGRADE_RUNE": "升级：火焰屏障",
+    "REBOOT_UPGRADE_RUNE": "升级：重启",
+    "SMOKESTACK_UPGRADE_RUNE": "升级：烟囱"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",
