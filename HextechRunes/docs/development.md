@@ -63,7 +63,7 @@
 
 当前维护版本以 `src/HextechRunes.csproj` 和 `tools/build_and_deploy.sh` 为准；本文编写时为 0.107.1、0.110.0、0.111.0，模组版本由 manifest/ModInfo 决定。不要把某个版本的 DLL 当跨版本证据。
 
-角色卡牌升级符文的作用范围、永久成长约定见 [卡牌升级实现](player-card-upgrades.md)。
+角色卡牌升级符文的作用范围、永久成长与王国资产结算约定见 [卡牌升级实现](player-card-upgrades.md)。战斗中发放金币的联机路径与递归限制见 [即时金币](immediate-gold.md)。
 
 隐藏的角色二次升级遗物使用原版图标和独立模型，获取、隐藏及版本数值约定见 [欧洛巴斯二次强化](orobas-plus-relics.md)。
 

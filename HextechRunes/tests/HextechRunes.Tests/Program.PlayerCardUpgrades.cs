@@ -18,6 +18,8 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	private static readonly List<(Player Player, int Gold)> UpgradeGoldRewards = [];
+
 	private static T UpgradeTestPower<T>(Creature owner, int amount) where T : PowerModel
 	{
 		T power = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
@@ -25,6 +27,53 @@ internal static partial class Program
 		AccessTools.Property(typeof(PowerModel), nameof(PowerModel.Owner)).SetValue(power, owner);
 		AccessTools.Field(typeof(PowerModel), "_amount").SetValue(power, amount);
 		return power;
+	}
+
+	private static void RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual()
+	{
+		WithImmediateGoldFixture((first, second, _, listener) =>
+		{
+			RoyaltiesUpgradeRune rune = CreateMutableTestModel<RoyaltiesUpgradeRune>();
+			rune.Owner = first;
+			RoyaltiesPower power = UpgradeTestPower<RoyaltiesPower>(first.Creature, 19);
+			AccessTools.Field(typeof(Creature), "_powers").SetValue(first.Creature, new List<PowerModel> { power });
+			rune.BeforeCombatStart().GetAwaiter().GetResult();
+			rune.AfterPlayerTurnStart(null!, second).GetAwaiter().GetResult();
+			Equal(0, listener.Calls, "teammate's turn does not grant royalties");
+			int gold = first.Gold;
+			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
+			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
+			Equal(0, rune.SavedCountThisCombat, "immediate income does not accrue for a second payout");
+			Equal(gold + 18, first.Gold, "floor fifty percent each turn, paid immediately with no compounding");
+			Equal(19, power.Amount, "original combat-end royalties remain intact");
+			rune.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
+			Equal(0, UpgradeGoldRewards.Count, "no battle-end duplicate");
+			// 旧版本保存的尚未领取计数仍能还原并结算一次。
+			rune.SavedCountThisCombat = 13;
+#if STS2_109_OR_NEWER
+			MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache.CacheSavedPropertiesForTypeDebug(typeof(RoyaltiesUpgradeRune));
+#else
+			HextechSavedPropertyBootstrap.InjectModelType(typeof(RoyaltiesUpgradeRune));
+#endif
+			SerializableRelic saved = rune.ToSerializable();
+			int count = saved.Props!.ints!.Single(p => p.name == nameof(RoyaltiesUpgradeRune.SavedCountThisCombat)).value;
+			RoyaltiesUpgradeRune loaded = CreateMutableTestModel<RoyaltiesUpgradeRune>();
+			loaded.Owner = first;
+			loaded.SavedCountThisCombat = count;
+			loaded.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
+			loaded.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
+			Equal(1, UpgradeGoldRewards.Count, "one fixed combat reward");
+			Equal((first, 13), UpgradeGoldRewards[0], "legacy saved accrual belongs only to its owner");
+			Equal(0, loaded.SavedCountThisCombat, "payout clears accrued counter");
+			loaded.BeforeCombatStart().GetAwaiter().GetResult();
+			Equal(0, loaded.SavedCountThisCombat, "next combat starts empty");
+		});
+	}
+
+	private static bool CaptureUpgradeGoldReward(Player player, Reward reward)
+	{
+		UpgradeGoldRewards.Add((player, ((GoldReward)reward).Amount));
+		return false;
 	}
 
 	private static void PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped()

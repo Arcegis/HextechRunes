@@ -498,7 +498,8 @@
     "INFERNO_UPGRADE_RUNE": "升级：狱火",
     "FLAME_BARRIER_UPGRADE_RUNE": "升级：火焰屏障",
     "REBOOT_UPGRADE_RUNE": "升级：重启",
-    "SMOKESTACK_UPGRADE_RUNE": "升级：烟囱"
+    "SMOKESTACK_UPGRADE_RUNE": "升级：烟囱",
+    "ROYALTIES_UPGRADE_RUNE": "升级：王国资产"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",

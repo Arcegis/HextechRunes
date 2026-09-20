@@ -67,6 +67,9 @@ internal static partial class Program
 		TestCase[] tests =
 		[
 			new(nameof(CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder), CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder),
+			new(nameof(RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual), RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual),
+			new(nameof(ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory), ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory),
+			new(nameof(ImmediateGoldFeedbackStopsAndLaterDamageStillPays), ImmediateGoldFeedbackStopsAndLaterDamageStillPays),
 			new(nameof(PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped), PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped),
 			new(nameof(ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth), ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth),
 			new(nameof(PersistentPowerUpgradesDoNotAffectOtherPlayers), PersistentPowerUpgradesDoNotAffectOtherPlayers),

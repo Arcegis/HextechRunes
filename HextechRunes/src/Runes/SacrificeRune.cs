@@ -1,9 +1,8 @@
-using Godot;
-
 namespace HextechRunes;
 
 public sealed class SacrificeRune : HextechRelicBase
 {
+	// 仅保留旧存档尚未领取的战后奖励；新的触发直接发放金币。
 	private int _countThisCombat;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -25,7 +24,7 @@ public sealed class SacrificeRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical && _countThisCombat > 0;
 
 	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
 
@@ -55,9 +54,8 @@ public sealed class SacrificeRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		_countThisCombat += player.Creature.CombatState.Enemies.Count(static enemy => enemy.IsAlive && enemy.Side == CombatSide.Enemy) * DynamicVars["CountPerEnemy"].IntValue;
-		InvokeDisplayAmountChanged();
-		return Task.CompletedTask;
+		int gold = player.Creature.CombatState.Enemies.Count(static enemy => enemy.IsAlive && enemy.Side == CombatSide.Enemy) * DynamicVars["CountPerEnemy"].IntValue;
+		return gold > 0 ? PlayerCmd.GainGold(gold, player) : Task.CompletedTask;
 	}
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
