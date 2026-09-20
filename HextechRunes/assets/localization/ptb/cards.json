@@ -1,6 +1,6 @@
 {
   "TRICK_MAGIC_CARD.title": "Magia de Truque",
-  "TRICK_MAGIC_CARD.description": "Compre [blue]{Cards}[/blue] cartas. Ganhe [blue]{BufferPower}[/blue] de [gold]Prevenção[/gold]. O próximo Ataque que você jogar é repetido [blue]{Replays}[/blue] vez(es).",
+  "TRICK_MAGIC_CARD.description": "Compre [blue]{Cards}[/blue] cartas. Ganhe [blue]{BufferPower}[/blue] de [gold]Amortecedor[/gold]. O próximo Ataque que você jogar é repetido [blue]{Replays}[/blue] vez(es).",
   "TRICK_MAGIC_CARD.flavor": "O público vê fitas. O inimigo vê a conta.",
   "BLADE_WALTZ_CARD.title": "Valsa das Lâminas",
   "BLADE_WALTZ_CARD.description": "Causa {Damage:diff()} de dano a inimigos aleatórios [blue]{Hits}[/blue] vezes. Ganhe [blue]{IntangiblePower}[/blue] de [gold]Intangível[/gold].",
@@ -18,7 +18,7 @@
   "HEXTECH_DRAGON_SOUL_CARD.description": "Ganha [blue]{Energy}[/blue] de Energia extra a cada turno.",
   "HEXTECH_DRAGON_SOUL_CARD.flavor": "O raio na bobina nunca dorme.",
   "MOUNTAIN_DRAGON_SOUL_CARD.title": "Alma do Dragão da Montanha",
-  "MOUNTAIN_DRAGON_SOUL_CARD.description": "No início do seu turno, ganha [blue]{PlatingPower}[/blue] [gold]Placas de Armadura[/gold].",
+  "MOUNTAIN_DRAGON_SOUL_CARD.description": "No início do seu turno, ganha [blue]{PlatingPower}[/blue] [gold]Blindagem[/gold].",
   "MOUNTAIN_DRAGON_SOUL_CARD.flavor": "A montanha não recua.",
   "CHEMTECH_DRAGON_SOUL_CARD.title": "Alma do Dragão Quimtec",
   "CHEMTECH_DRAGON_SOUL_CARD.description": "No início do seu turno, obtém [blue]{PotionCount}[/blue] Poção aleatória.",

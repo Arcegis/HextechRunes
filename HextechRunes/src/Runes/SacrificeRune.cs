@@ -2,13 +2,17 @@ namespace HextechRunes;
 
 public sealed class SacrificeRune : HextechRelicBase
 {
+	private const decimal SustainMultiplierValue = 1.1m;
+	private const decimal SustainBonusPercentValue = (SustainMultiplierValue - 1m) * 100m;
+
 	// 仅保留旧存档尚未领取的战后奖励；新的触发直接发放金币。
 	private int _countThisCombat;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("CountPerEnemy", 5m),
-		new DynamicVar("SustainMultiplier", 1.1m)
+		new DynamicVar("SustainMultiplier", SustainMultiplierValue),
+		new DynamicVar("SustainBonusPercent", SustainBonusPercentValue)
 	];
 
 	public decimal SustainMultiplier => DynamicVars["SustainMultiplier"].BaseValue;
