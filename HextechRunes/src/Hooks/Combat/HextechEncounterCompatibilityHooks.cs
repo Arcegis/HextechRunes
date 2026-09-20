@@ -29,9 +29,16 @@ internal static class HextechEncounterCompatibilityHooks
 
 	private static async Task EntomancerSpitMoveWithoutPersonalHive(Entomancer entomancer)
 	{
-		SfxCmd.Play(EntomancerCastSfx);
-		await CreatureCmd.TriggerAnim(entomancer.Creature, "Cast", 0.5f);
 		await PowerCmd.Apply<StrengthPower>(entomancer.Creature, 2m, entomancer.Creature, null);
+		try
+		{
+			SfxCmd.Play(EntomancerCastSfx);
+			await CreatureCmd.TriggerAnim(entomancer.Creature, "Cast", 0.5f);
+		}
+		catch (Exception ex)
+		{
+			Log.Warn($"[{ModInfo.Id}][Entomancer] Cast visual failed: {ex.Message}");
+		}
 	}
 
 	// 0.107.1 的昆虫法师在没有私人蜂巢时 SpitMove 会空引用;0.108 起原版已修复。

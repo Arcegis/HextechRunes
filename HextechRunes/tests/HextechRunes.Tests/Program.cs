@@ -66,6 +66,8 @@ internal static partial class Program
 #endif
 		TestCase[] tests =
 		[
+			new(nameof(GameplayDeterminismApisRequireReviewedExceptions), GameplayDeterminismApisRequireReviewedExceptions),
+			new(nameof(RandomGenerationClassesMatchReviewedManifest), RandomGenerationClassesMatchReviewedManifest),
 			new(nameof(CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder), CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder),
 			new(nameof(RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual), RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual),
 			new(nameof(ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory), ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory),
@@ -476,9 +478,14 @@ internal static partial class Program
 			?? throw new InvalidOperationException($"{type.FullName}.{fieldName} should not be null");
 		if (value is IDictionary dictionary)
 		{
-			DictionaryEntry[] entries = dictionary
-				.Cast<DictionaryEntry>()
-				.ToArray();
+			// 泛型 Dictionary 的 IEnumerable 枚举器返回 KeyValuePair；通过 IDictionary
+			// 的专用枚举器取 Entry，避免在实际保存守卫执行前就因测试快照类型转换失败。
+			List<DictionaryEntry> entries = [];
+			IDictionaryEnumerator enumerator = dictionary.GetEnumerator();
+			while (enumerator.MoveNext())
+			{
+				entries.Add(enumerator.Entry);
+			}
 			return () =>
 			{
 				dictionary.Clear();
