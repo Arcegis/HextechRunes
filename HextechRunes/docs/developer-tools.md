@@ -36,11 +36,11 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/sync_content_txt.py --help
 
 TXT 描述从对应模型的 `CanonicalVars` 和数值常量取得未升级基础值，支持同文件多个模型、标准变量及 `PowerVar`，并剥离 BBCode。敌方人数缩放读取 `MonsterHexCatalog` 的参数表，以 `N` 表示玩家人数；需要具体对局状态的值使用明确公式。遇到无法静态解析的变量会报错，不能让裸占位符进入说明，也不能猜一个数值。已有人工描述仍须通过 `--accept-json` 才会更新。
 
-`tools/validate_hextech_content.py` 还会比较固定九语逐键占位符集合、BBCode 配平及数量；原版中文引用读取 `tools/official_zhs_titles.json`，运行时不依赖本机 PCK。名称检查覆盖 `CardUpgradeRuneBase<T>` 的源码绑定、`[gold]` 名称引用，以及快照中逐键登记的无高亮官方模型引用，区分自创标题与普通强调词。它不是任意新句子的实体识别器：新增或删去无高亮引用时，须人工核对并维护 `references`。补充官方名称时从原版本地化取证更新快照；不得把错写的原版名称加到普通强调词豁免中。术语依据见 [术语表](terminology-glossary.md)。
+`tools/validate_hextech_content.py` 还会比较固定九语逐键占位符集合、BBCode 配平及数量；原版中文引用读取 `tools/official_zhs_titles.json`，运行时不依赖本机 PCK。名称检查覆盖 `CardUpgradeRuneBase<T>` 的源码绑定、`[gold]` 名称引用，以及快照中逐键登记的无高亮官方模型引用，区分自创标题与普通强调词。它不是任意新句子的实体识别器：新增或删去无高亮引用时，须人工核对并维护 `references`。补充官方名称时从原版本地化取证更新快照；不得把错写的原版名称加到普通强调词豁免中。术语依据见 [自创术语](custom-terms.md)；原版中文名以 `tools/official_zhs_titles.json` 为准，不要在文档里另维护一份。
 
 ## 定向验证
 
-玩家侧活力火花的施加入口与清理规则见 [玩家侧活力火花](player-vital-spark.md)；使用 `PowerCmd.Apply<HextechVitalSparkPower>`，不要直接将原版敌方增益施加到玩家。
+玩家侧活力火花的施加入口与清理规则见 [设计裁决 · 玩家符文](design-decisions.md#玩家符文)；使用 `PowerCmd.Apply<HextechVitalSparkPower>`，不要直接将原版敌方增益施加到玩家。
 
 ```bash
 python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --list --match Hopper
@@ -64,7 +64,7 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --target 
 | `tools/build_and_deploy.sh` | Zsh 脚本，重建 `.build` 和 `dist`、导入、构建、打包；默认替换本机模组目录，设 `HEXTECH_DEPLOY=0` 才不部署 |
 | `tools/package_release_zip.sh [输出绝对路径]` | 只打包现有 dist，不构建、不部署；调用下面的 Python 实现 |
 | `tools/package_release.py [输出绝对路径] --dist <目录>` | 校验 bundle，再按变体清单打 ZIP；包含 loader、PCK、manifest、各变体 DLL 和必要 `compat-target.txt`，不含更新日志 TXT；成功后才替换原 ZIP |
-| `tools/extract_near_death_feast_glow.gd -- <原版PCK> <输出PNG>` | 用 Godot `--headless --path tools -s <脚本绝对路径>` 运行，提取 SOUL_NEXUS 红光并写入指定 PNG；区域与来源见 [濒死狂宴红光](near-death-feast-visual.md) |
+| `tools/extract_near_death_feast_glow.gd -- <原版PCK> <输出PNG>` | 用 Godot `--headless --path tools -s <脚本绝对路径>` 运行，提取 SOUL_NEXUS 红光并写入指定 PNG；区域与来源见 [设计裁决 · 视觉](design-decisions.md#视觉) |
 | `tools/update_latest_version.py` / 工坊上传器 / 镜像同步 | 涉及版本发布或外部写入；按用户指定范围使用，不是代码修改后的自动步骤 |
 
 ## 运行时共享能力

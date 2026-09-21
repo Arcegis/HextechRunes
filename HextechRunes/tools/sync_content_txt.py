@@ -10,7 +10,7 @@
 - 标签中文: assets/localization/zhs/relic_collection.json 的 HEXTECH_TAG.*
 
 目标文件与策略:
-- hextech_rune_tags_todo.txt   纯生成物,全量重生成(保留既有行序,新条目插到注册表邻位)。
+- hextech_rune_tags.txt        纯生成物,全量重生成(保留既有行序,新条目插到注册表邻位)。
 - hextech_relic_flavors.txt    生成物,全量重生成;PERMANENT/PENDING_OVERRIDES 保留 txt 人工值。
 - hextech_relics_summary.txt   混合物,只做增量:补缺失条目、修 #禁用前缀/品级前缀;
                                描述永不覆盖(单条采纳用 --accept-json);删除需 --prune。
@@ -38,7 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SPONSOR = ROOT.parent / "HextechRunesSponsorPack"
 
-TAGS_TXT = ROOT / "hextech_rune_tags_todo.txt"
+TAGS_TXT = ROOT / "hextech_rune_tags.txt"
 FLAVORS_TXT = ROOT / "hextech_relic_flavors.txt"
 SUMMARY_TXT = ROOT / "hextech_relics_summary.txt"
 
@@ -384,7 +384,7 @@ def insert_position(existing: list[str], anchor_order: list[str], item: str) -> 
 
 
 # ---------------------------------------------------------------------------
-# 1) hextech_rune_tags_todo.txt —— 全量重生成
+# 1) hextech_rune_tags.txt —— 全量重生成
 
 
 def generate_tags(truth: Truth, current_text: str, report: list[str]) -> str:
