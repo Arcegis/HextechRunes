@@ -613,7 +613,7 @@
   "monarchsGazeRune.enemyDescription": "Когда игрок разыгрывает Атаку, он теряет [blue]1[/blue] временную силу.",
   "swiftAndSafeRune.enemyDescription": "За каждые [blue]15[/blue]/[blue]12[/blue]/[blue]10[/blue] взятых игроками карт все враги получают [blue]1[/blue] [gold]Артефакт[/gold].",
   "tezcatarasMercyRune.enemyDescription": "Реликвии, которые игроки получают впоследствии, становятся восковыми реликвиями. Каждые [blue]4[/blue] боя крайняя левая восковая реликвия плавится. Не влияет на руны Хекстека и наковальни показателей.",
-  "mysteryRune.enemyDescription": "В начале хода игрока преобразуйте [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] случайные карты в руке этого игрока.",
+  "mysteryRune.enemyDescription": "В начале боя преобразуйте [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] случайные карты каждого игрока.",
   "mindOverMatterRune.enemyDescription": "Первая карта, которую каждый игрок берёт за ход, до конца хода стоит на [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] дороже.",
   "omegaRune.enemyDescription": "В начале 4-го хода наложите [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Расщепление[/gold] на всех игроков.",
   "manipulateRealityRune.enemyDescription": "Карты Статуса, которые враги добавляют в боевые стопки игроков, удваиваются.",

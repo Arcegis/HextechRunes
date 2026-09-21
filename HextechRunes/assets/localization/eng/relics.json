@@ -613,7 +613,7 @@
   "monarchsGazeRune.enemyDescription": "When a player plays an Attack, they lose [blue]1[/blue] temporary Strength.",
   "swiftAndSafeRune.enemyDescription": "For every [blue]15[/blue]/[blue]12[/blue]/[blue]10[/blue] cards players draw, all enemies gain [blue]1[/blue] [gold]Artifact[/gold].",
   "tezcatarasMercyRune.enemyDescription": "Relics players obtain afterward become Wax relics. Every [blue]4[/blue] combats, the leftmost Wax relic melts. Does not affect Hextech Runes or Stat Forgers.",
-  "mysteryRune.enemyDescription": "At the start of the player turn, transform [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] random card in that player's hand.",
+  "mysteryRune.enemyDescription": "At the start of combat, transform [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] random cards of each player.",
   "mindOverMatterRune.enemyDescription": "The first card each player draws each turn costs [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] more that turn.",
   "omegaRune.enemyDescription": "At the start of turn 4, apply [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Disintegration[/gold] to all players.",
   "manipulateRealityRune.enemyDescription": "Status cards enemies add to players' combat piles are doubled.",

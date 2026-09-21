@@ -622,9 +622,14 @@ internal static partial class Program
 		foreign.Owner = CreateOrdinalTestPlayer(2);
 		addedEthereal.AddKeyword(CardKeyword.Ethereal);
 		foreign.AddKeyword(CardKeyword.Ethereal);
-		List<CardModel> exhausted = [addedEthereal, ordinary, foreign, addedEthereal];
+		var etherealStatus = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Void>();
+		var etherealCurse = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Injury>();
+		etherealStatus.Owner = etherealCurse.Owner = owner;
+		etherealCurse.AddKeyword(CardKeyword.Ethereal);
+		Expect(etherealStatus.Keywords.Contains(CardKeyword.Ethereal), "Void is natively ethereal");
+		List<CardModel> exhausted = [addedEthereal, ordinary, foreign, addedEthereal, etherealStatus, etherealCurse];
 		var snapshot = NetherSoulRune.SnapshotEtherealCards(owner, exhausted);
-		Equal(1, snapshot.Length, "added keywords count; ordinary and foreign cards do not; each instance only once");
+		Equal(1, snapshot.Length, "added keywords count; ordinary, foreign, status and curse cards do not; each instance only once");
 		Expect(ReferenceEquals(addedEthereal, snapshot[0]), "play actual exhausted card rather than a copy");
 		exhausted.Clear();
 		Equal(1, snapshot.Length, "playing and exhausting cards cannot enlarge the batch");

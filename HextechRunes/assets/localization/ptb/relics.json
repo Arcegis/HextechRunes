@@ -613,7 +613,7 @@
   "monarchsGazeRune.enemyDescription": "Quando um jogador joga um Ataque, ele perde [blue]1[/blue] de Força temporária.",
   "swiftAndSafeRune.enemyDescription": "Para cada [blue]15[/blue]/[blue]12[/blue]/[blue]10[/blue] cartas que os jogadores comprarem, todos os inimigos ganham [blue]1[/blue] [gold]Artefato[/gold].",
   "tezcatarasMercyRune.enemyDescription": "Relíquias que os jogadores obtiverem posteriormente tornam-se relíquias de Cera. A cada [blue]4[/blue] combates, a relíquia de Cera mais à esquerda derrete. Não afeta Runas Hextec ou Forjas de Atributos.",
-  "mysteryRune.enemyDescription": "No início do turno do jogador, transforme [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] carta aleatória na mão daquele jogador.",
+  "mysteryRune.enemyDescription": "No início do combate, transforme [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] cartas aleatórias de cada jogador.",
   "mindOverMatterRune.enemyDescription": "A primeira carta que cada jogador compra a cada turno custa [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] a mais naquele turno.",
   "omegaRune.enemyDescription": "No início do turno 4, aplique [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] de [gold]Desintegração[/gold] a todos os jogadores.",
   "manipulateRealityRune.enemyDescription": "Cartas de Status que os inimigos adicionam às pilhas de combate dos jogadores são dobradas.",

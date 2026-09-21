@@ -613,7 +613,7 @@
   "monarchsGazeRune.enemyDescription": "玩家打出攻击牌时，失去[blue]1[/blue]点临时力量。",
   "swiftAndSafeRune.enemyDescription": "玩家每抽[blue]15[/blue]/[blue]12[/blue]/[blue]10[/blue]张牌，所有敌人获得[blue]1[/blue]层[gold]人工制品[/gold]。",
   "tezcatarasMercyRune.enemyDescription": "玩家之后获得的遗物会变为蜡制遗物。每经过[blue]4[/blue]场战斗，最左侧的蜡制遗物会融化。不会影响海克斯符文和属性锻造器。",
-  "mysteryRune.enemyDescription": "玩家回合开始时，随机变化其手牌中的[blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue]张牌。",
+  "mysteryRune.enemyDescription": "战斗开始时，随机变化玩家的[blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue]张牌。",
   "mindOverMatterRune.enemyDescription": "每名玩家每回合抽到的第[blue]1[/blue]张牌，在本回合耗能增加[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]。",
   "omegaRune.enemyDescription": "第四回合开始时，为所有玩家施加[blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue]层[gold]瓦解[/gold]。",
   "manipulateRealityRune.enemyDescription": "敌人在战斗中向玩家牌堆加入的状态牌数量翻倍。",

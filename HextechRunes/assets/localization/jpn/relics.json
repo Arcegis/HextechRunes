@@ -613,7 +613,7 @@
   "monarchsGazeRune.enemyDescription": "プレイヤーが攻撃をプレイすると、[blue]1[/blue] の一時的な筋力を失います。",
   "swiftAndSafeRune.enemyDescription": "プレイヤーが引く [blue]15[/blue]/[blue]12[/blue]/[blue]10[/blue] カードごとに、すべての敵は [blue]1[/blue] [gold]アーティファクト[/gold]を獲得します。",
   "tezcatarasMercyRune.enemyDescription": "プレイヤーがその後入手したレリックはワックスレリックになります。 [blue]4[/blue]が戦闘するたびに、一番左のワックスレリックが溶けます。ヘクステックルーンや属性鍛造には影響しません。",
-  "mysteryRune.enemyDescription": "プレイヤーのターンの開始時に、そのプレイヤーの手札にある [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] のランダムなカードを変換します。",
+  "mysteryRune.enemyDescription": "戦闘開始時、各プレイヤーのランダムなカードを[blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue]枚変換します。",
   "mindOverMatterRune.enemyDescription": "各プレイヤーが各ターン最初に引いたカードは、そのターン中のコストが[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]増加します。",
   "omegaRune.enemyDescription": "ターン 4 の開始時に、[blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]崩壊[/gold]をすべてのプレイヤーに適用します。",
   "manipulateRealityRune.enemyDescription": "敵がプレイヤーの戦闘パイルに追加するステータスカードは 2 倍になります。",

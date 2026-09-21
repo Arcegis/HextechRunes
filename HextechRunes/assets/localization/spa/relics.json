@@ -613,7 +613,7 @@
   "monarchsGazeRune.enemyDescription": "Cuando un jugador juega un Ataque, pierde [blue]1[/blue] Fuerza temporal.",
   "swiftAndSafeRune.enemyDescription": "Por cada [blue]15[/blue]/[blue]12[/blue]/[blue]10[/blue] cartas que roban los jugadores, todos los enemigos obtienen [blue]1[/blue] [gold]Artefact[/gold].",
   "tezcatarasMercyRune.enemyDescription": "Las reliquias que los jugadores obtienen después se convierten en reliquias de cera. Cada [blue]4[/blue] combate, la reliquia de cera más a la izquierda se derrite. No afecta a las Runas Hextech ni a las Forjas de Atributos.",
-  "mysteryRune.enemyDescription": "Al comienzo del turno del jugador, transforma [blue]1[/blue]/[blue]1[/blue]/[blue]2[/blue] carta aleatoria en la mano de ese jugador.",
+  "mysteryRune.enemyDescription": "Al comienzo del combate, transforma [blue]2[/blue]/[blue]4[/blue]/[blue]6[/blue] cartas aleatorias de cada jugador.",
   "mindOverMatterRune.enemyDescription": "La primera carta que roba cada jugador en cada turno cuesta [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] más durante ese turno.",
   "omegaRune.enemyDescription": "Al comienzo del turno 4, aplica [blue]5[/blue]/[blue]8[/blue]/[blue]12[/blue] [gold]Desintegración[/gold] a todos los jugadores.",
   "manipulateRealityRune.enemyDescription": "Las cartas de estado que los enemigos añaden a las pilas de combate de los jugadores se duplican.",
