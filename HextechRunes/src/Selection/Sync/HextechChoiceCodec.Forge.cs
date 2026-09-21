@@ -4,13 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechChoiceCodec
 {
-	private static readonly Lazy<IReadOnlyList<ModelId>> ForgeIdsByOrdinal = new(
-		() => HextechCatalog.GetAllForgeTypes()
-			.Select(ModelDb.GetId)
-			.OrderBy(static id => id.Category, StringComparer.Ordinal)
-			.ThenBy(static id => id.Entry, StringComparer.Ordinal)
-			.ToArray());
-
 	public static PlayerChoiceResult CreateForgeSelection(
 		int operationToken,
 		int selectedIndex,
@@ -76,18 +69,5 @@ internal static partial class HextechChoiceCodec
 
 		selectedIndex = payload[3];
 		return HextechStableModelIdListCodec.TryDecode(payload, 4, out optionIds, out _);
-	}
-
-	private static bool TryGetForgeIdForOrdinal(int ordinal, out ModelId id)
-	{
-		IReadOnlyList<ModelId> ids = ForgeIdsByOrdinal.Value;
-		if (ordinal < 0 || ordinal >= ids.Count)
-		{
-			id = null!;
-			return false;
-		}
-
-		id = ids[ordinal];
-		return true;
 	}
 }

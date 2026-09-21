@@ -5,8 +5,6 @@ namespace HextechRunes;
 
 internal static class HextechEncounterCompatibilityHooks
 {
-	private const string EntomancerCastSfx = "event:/sfx/enemy/enemy_attacks/entomancer/entomancer_cast";
-
 	internal static bool ShouldRunOriginalEntomancerSpitMove(bool hasPersonalHive)
 	{
 #if STS2_107_1
@@ -17,6 +15,8 @@ internal static class HextechEncounterCompatibilityHooks
 	}
 
 #if STS2_107_1
+	private const string EntomancerCastSfx = "event:/sfx/enemy/enemy_attacks/entomancer/entomancer_cast";
+
 	internal static MethodInfo? TryResolveEntomancerSpitMove(Type entomancerType, bool warnIfMissing)
 	{
 		return TryGetMethod(
