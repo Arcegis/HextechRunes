@@ -51,5 +51,8 @@
   "FEEL_THE_BURN_CARD.flavor": "Apague o fogo deles, depois acenda o seu.",
   "OK_BOOMERANG_CARD.title": "Bumerangue OK",
   "OK_BOOMERANG_CARD.description": "Causa {Damage:diff()} de dano a TODOS os inimigos [blue]{Hits}[/blue] vezes.\nDevolva esta carta à sua mão.",
-  "OK_BOOMERANG_CARD.flavor": "Parte como uma piada e volta como um cobrador."
+  "OK_BOOMERANG_CARD.flavor": "Parte como uma piada e volta como um cobrador.",
+  "QUANTUM_COMPUTING_CARD.title": "Computação Quântica",
+  "QUANTUM_COMPUTING_CARD.description": "Cause dano a todos os inimigos igual a {DamagePercent:diff()}% de seus PV máximos, e então cure-se em {HealPercent:diff()}% do dano causado.",
+  "QUANTUM_COMPUTING_CARD.flavor": "Antes que a resposta apareça, os PV do inimigo já colapsaram."
 }

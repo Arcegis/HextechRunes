@@ -896,7 +896,7 @@
   "BRUTAL_FORCE_RUNE.description": "战斗开始时，额外抽[blue]{Cards}[/blue]张牌，并获得[blue]{StrengthPower}[/blue]点[gold]力量[/gold]。",
   "BRUTAL_FORCE_RUNE.flavor": "够快，够重，够不讲理。",
   "QUANTUM_COMPUTING_RUNE.title": "量子计算",
-  "QUANTUM_COMPUTING_RUNE.description": "每过[blue]2[/blue]个回合，对所有敌人造成[blue]10[/blue]+其最大生命值[blue]10%[/blue]的伤害，并回复相当于所造成伤害值[blue]10%[/blue]的生命。",
+  "QUANTUM_COMPUTING_RUNE.description": "获得时，向你的牌组中加入[blue]{Cards}[/blue]张[gold]量子计算[/gold]。",
   "QUANTUM_COMPUTING_RUNE.flavor": "答案还没出现，敌人的生命值已经开始坍缩。",
   "MIND_OVER_MATTER_RUNE.title": "心胜于物",
   "MIND_OVER_MATTER_RUNE.description": "回合开始时，将[blue]{Cards}[/blue]张随机牌添加到你的手牌中。添加的牌获得[gold]虚无[/gold]，且在本场战斗内可以免费打出。",

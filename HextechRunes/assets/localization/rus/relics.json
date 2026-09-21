@@ -896,7 +896,7 @@
   "BRUTAL_FORCE_RUNE.description": "В начале боя возьмите [blue]{Cards}[/blue] доп. карты и получите [blue]{StrengthPower}[/blue] [gold]Сила[/gold].",
   "BRUTAL_FORCE_RUNE.flavor": "Достаточно быстро, достаточно тяжело, достаточно безрассудно.",
   "QUANTUM_COMPUTING_RUNE.title": "Квантовые вычисления",
-  "QUANTUM_COMPUTING_RUNE.description": "Каждые [blue]2[/blue] хода вы наносите всем врагам урон в размере [blue]10[/blue] плюс [blue]10%[/blue] от их макс. ОЗ, затем исцелитесь на [blue]10%[/blue] от нанесённого урона.",
+  "QUANTUM_COMPUTING_RUNE.description": "При получении добавьте [blue]{Cards}[/blue] [gold]Квантовые вычисления[/gold] в колоду.",
   "QUANTUM_COMPUTING_RUNE.flavor": "Прежде чем появится ответ, ОЗ врага уже схлопнулись.",
   "MIND_OVER_MATTER_RUNE.title": "Разум превыше материи",
   "MIND_OVER_MATTER_RUNE.description": "В начале хода добавьте [blue]{Cards}[/blue] случайную карту в руку. Она получает [gold]Эфирная[/gold] и может быть разыграна бесплатно в этот бой.",

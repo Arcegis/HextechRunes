@@ -896,7 +896,7 @@
   "BRUTAL_FORCE_RUNE.description": "No início do combate, compre [blue]{Cards}[/blue] cartas adicionais e ganhe [blue]{StrengthPower}[/blue] de [gold]Força[/gold].",
   "BRUTAL_FORCE_RUNE.flavor": "Rápido o suficiente, pesado o suficiente, irracional o suficiente.",
   "QUANTUM_COMPUTING_RUNE.title": "Computação Quântica",
-  "QUANTUM_COMPUTING_RUNE.description": "A cada [blue]2[/blue] turnos, cause dano a todos os inimigos igual a [blue]10[/blue] mais [blue]10%[/blue] de seus PV máximos, e então cure-se em [blue]10%[/blue] do dano causado.",
+  "QUANTUM_COMPUTING_RUNE.description": "Quando obtido, adicione [blue]{Cards}[/blue] [gold]Computação Quântica[/gold] ao seu baralho.",
   "QUANTUM_COMPUTING_RUNE.flavor": "Antes que a resposta apareça, os PV do inimigo já colapsaram.",
   "MIND_OVER_MATTER_RUNE.title": "Mente Sobre a Matéria",
   "MIND_OVER_MATTER_RUNE.description": "No início do seu turno, adicione [blue]{Cards}[/blue] carta aleatória à sua mão. Ela ganha [gold]Etérea[/gold] e pode ser jogada de graça neste combate.",

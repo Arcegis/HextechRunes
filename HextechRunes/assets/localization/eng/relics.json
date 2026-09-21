@@ -896,7 +896,7 @@
   "BRUTAL_FORCE_RUNE.description": "At the start of combat, draw [blue]{Cards}[/blue] additional cards and gain [blue]{StrengthPower}[/blue] [gold]Strength[/gold].",
   "BRUTAL_FORCE_RUNE.flavor": "Fast enough, heavy enough, unreasonable enough.",
   "QUANTUM_COMPUTING_RUNE.title": "Quantum Computing",
-  "QUANTUM_COMPUTING_RUNE.description": "Every [blue]2[/blue] turns, deal damage to all enemies equal to [blue]10[/blue] plus [blue]10%[/blue] of their max HP, then heal for [blue]10%[/blue] of the damage dealt.",
+  "QUANTUM_COMPUTING_RUNE.description": "When obtained, add [blue]{Cards}[/blue] [gold]Quantum Computing[/gold] to your deck.",
   "QUANTUM_COMPUTING_RUNE.flavor": "Before the answer appears, enemy HP has already collapsed.",
   "MIND_OVER_MATTER_RUNE.title": "Mind Over Matter",
   "MIND_OVER_MATTER_RUNE.description": "At the start of your turn, add [blue]{Cards}[/blue] random card to your hand. It gains [gold]Ethereal[/gold] and can be played for free this combat.",

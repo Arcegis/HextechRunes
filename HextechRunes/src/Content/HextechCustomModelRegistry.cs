@@ -93,6 +93,7 @@ internal static class HextechCustomModelRegistry
 		typeof(HextechDragonSoulCard),
 		typeof(MountainDragonSoulCard),
 		typeof(ChemtechDragonSoulCard),
-		typeof(CloudDragonSoulCard)
+		typeof(CloudDragonSoulCard),
+		typeof(QuantumComputingCard)
 	];
 }

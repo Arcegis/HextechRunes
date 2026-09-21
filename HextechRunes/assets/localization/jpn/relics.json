@@ -896,7 +896,7 @@
   "BRUTAL_FORCE_RUNE.description": "戦闘開始時に、追加のカード [blue]{Cards}[/blue]を引き、[blue]{StrengthPower}[/blue] [gold]筋力[/gold]を獲得します。",
   "BRUTAL_FORCE_RUNE.flavor": "十分に速く、十分に重く、十分に無理があります。",
   "QUANTUM_COMPUTING_RUNE.title": "量子コンピューティング",
-  "QUANTUM_COMPUTING_RUNE.description": "[blue]2[/blue] ターンごとに、すべての敵に [blue]10[/blue]に最大 HP の [blue]10%[/blue]を加えたダメージを与え、その後、与えられたダメージの [blue]10%[/blue]を回復します。",
+  "QUANTUM_COMPUTING_RUNE.description": "入手したら、[blue]{Cards}[/blue] [gold]量子コンピューティング[/gold]をデッキに追加します。",
   "QUANTUM_COMPUTING_RUNE.flavor": "答えが出る前にすでに敵のHPは崩壊している。",
   "MIND_OVER_MATTER_RUNE.title": "問題よりも精神を重視する",
   "MIND_OVER_MATTER_RUNE.description": "自分のターンの開始時に、[blue]{Cards}[/blue] のランダムなカードを手札に加えます。 [gold]エセリアル[/gold]を獲得し、この戦闘では無料でプレイできます。",

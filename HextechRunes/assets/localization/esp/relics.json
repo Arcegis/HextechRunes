@@ -896,7 +896,7 @@
   "BRUTAL_FORCE_RUNE.description": "Al comienzo del combate, roba [blue]{Cards}[/blue] cartas adicionales y gana [blue]{StrengthPower}[/blue] [gold]Fuerza[/gold].",
   "BRUTAL_FORCE_RUNE.flavor": "Lo suficientemente rápido, lo suficientemente pesado y lo suficientemente irrazonable.",
   "QUANTUM_COMPUTING_RUNE.title": "Computación cuántica",
-  "QUANTUM_COMPUTING_RUNE.description": "Cada [blue]2[/blue] turnos, inflige daño a todos los enemigos igual a [blue]10[/blue] más [blue]10%[/blue] de su PV máximos, luego sana [blue]10%[/blue] del daño infligido.",
+  "QUANTUM_COMPUTING_RUNE.description": "Cuando lo obtengas, agrega [blue]{Cards}[/blue] [gold]Computación cuántica[/gold] a tu mazo.",
   "QUANTUM_COMPUTING_RUNE.flavor": "Antes de que aparezca la respuesta, el PV del enemigo ya se ha derrumbado.",
   "MIND_OVER_MATTER_RUNE.title": "Mente sobre materia",
   "MIND_OVER_MATTER_RUNE.description": "Al comienzo de tu turno, agrega [blue]{Cards}[/blue] carta aleatoria a tu mano. Gana [gold]Evanescencia[/gold] y se puede jugar gratis en este combate.",

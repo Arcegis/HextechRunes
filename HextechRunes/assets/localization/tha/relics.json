@@ -896,7 +896,7 @@
   "BRUTAL_FORCE_RUNE.description": "ตอนเริ่มต้นการต่อสู้ จั่วการ์ดเพิ่ม [blue]{Cards}[/blue] ใบ และได้รับ [blue]{StrengthPower}[/blue] [gold]ความแข็งแรง[/gold]",
   "BRUTAL_FORCE_RUNE.flavor": "เร็วพอ หนักพอ ไร้เหตุผลพอ",
   "QUANTUM_COMPUTING_RUNE.title": "ควอนตัมคอมพิวติง",
-  "QUANTUM_COMPUTING_RUNE.description": "ทุกๆ [blue]2[/blue] เทิร์น สร้างความเสียหายใส่ศัตรูทั้งหมดเท่ากับ [blue]10[/blue] บวก [blue]10%[/blue] ของ HP สูงสุดของพวกมัน จากนั้นฟื้นฟู [blue]10%[/blue] ของความเสียหายที่สร้าง",
+  "QUANTUM_COMPUTING_RUNE.description": "เมื่อรับมา เพิ่ม [gold]ควอนตัมคอมพิวติง[/gold] [blue]{Cards}[/blue] ใบเข้ากองการ์ดของคุณ",
   "QUANTUM_COMPUTING_RUNE.flavor": "ก่อนคำตอบจะปรากฏ HP ศัตรูก็ทลายไปแล้ว",
   "MIND_OVER_MATTER_RUNE.title": "ใจเหนือกาย",
   "MIND_OVER_MATTER_RUNE.description": "ตอนเริ่มต้นเทิร์น เพิ่มการ์ดแบบสุ่ม [blue]{Cards}[/blue] ใบเข้ามือของคุณ มันจะได้รับ [gold]กึ่งสลาย[/gold] และเล่นได้ฟรีในการต่อสู้นี้",
