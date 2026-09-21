@@ -205,6 +205,12 @@ internal static partial class HextechRuneConfiguration
 			disabledMonsterHexIds.Add(MonsterHexKind.GetExcited.ToString());
 		}
 
+		if (previousConfigVersion < 37)
+		{
+			// 只禁用我方；敌方"无本万利"不受影响。只迁移一次，之后尊重手动开启。
+			disabledIds.UnionWith(GetPlayerRuneIds([typeof(SomethingForNothingRune), typeof(SoulCallingRune)]));
+		}
+
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);

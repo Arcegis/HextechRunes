@@ -15,6 +15,8 @@
 - **冥土追魂挂在 `AfterSideTurnEndLate`（回合弃牌与虚无消耗之后），并要求持有者属于本次 participants。** 否则队友的额外回合会触发它。`NetherSoulRune`
 - **玩家侧活力火花必须走 `PowerCmd.Apply<HextechVitalSparkPower>`，不能把原版敌方增益直接施加到玩家。** 牌上污染层数 = 本玩家模组层数 + 场上原版活力火花总层数，但打出时每个 Power 只施加自己那份，避免重复乘算。原版 `BeforeCombatStart` / `AfterPowerAmountChanged` / `AfterRemoved` 会覆盖或清空侵蚀，普通模型 Hook 保证不了执行在原版写入之后，因此这三处用等待原 Task 的 postfix 重算。`HextechVitalSparkPower`
 - **百炼成钢的临时缓慢在官方 `BeforeSideTurnStart` 清理，并按"变化后总量减本次新增量"识别旧层。** 叠层回调会刷新整个实例的 `_appliedRound`，让旧层连续多个回合逃过清理（水银沙漏的回合开始伤害是触发链）。修正依赖 `PowerCmd.ModifyAmount` 的公开契约：先改层数 → 派发 `AfterPowerAmountChanged` → 最后才检查移除零层实例。不为沙漏或冰淇淋写特例。`HextechTemporarySlowPower`
+- **我方扇巴掌 / 恶趣味 / 坚若磐石监听"持有者自己收到负面效果"（来源不限），且不限每回合次数；折磨者仍监听"给敌人施加"，同样不限次数。** 去掉上限是为了让同轴海克斯能叠加，而不是拿到第二个就零收益。判定沿用敌方侧的口径：只认层数增加、排除临时属性的包装 Power。`LimitedDebuffProcRelicBase` 的 `SavedProcsThisTurn` 对无上限子类已无用，但它在 SavedProperty 清单里，不能删。`SlapRune`、`BadTasteRune`、`AdamantRune`、`TormentorRune`
+- **坚若磐石的格挡一律记到原版 `BlockNextTurnPower`，不当场发放。** 负面效果多半在敌方回合收到，当场给的格挡会在玩家回合开始时被清掉；原版这个能力在 `AfterBlockCleared` 发放（有壁垒时同样触发），自带显示、保存与联机同步，不需要新增待发状态。
 
 ## 敌方海克斯
 
