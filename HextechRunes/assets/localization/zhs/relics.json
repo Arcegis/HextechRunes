@@ -1499,7 +1499,7 @@
   "SMOKESTACK_UPGRADE_RUNE.title": "升级：烟囱",
   "SMOKESTACK_UPGRADE_RUNE.description": "每当你抽到状态牌时，也会触发你的[gold]烟囱[/gold]。",
   "ROYALTIES_UPGRADE_RUNE.title": "升级：王国资产",
-  "ROYALTIES_UPGRADE_RUNE.description": "你的[gold]王国资产[/gold]额外在你的回合开始时获得其[blue]50%[/blue]的金币。",
+  "ROYALTIES_UPGRADE_RUNE.description": "你的[gold]王国资产[/gold]额外在你的回合开始时获得等同于层数的金币。",
   "BULLET_TIME_UPGRADE_RUNE.flavor": "时间慢了下来，你的手却没有。",
   "CLAW_UPGRADE_RUNE.flavor": "每一道抓痕，都记在下一爪上。",
   "FLAK_CANNON_UPGRADE_RUNE.flavor": "打出去的是废料，收回来的是燃料。",

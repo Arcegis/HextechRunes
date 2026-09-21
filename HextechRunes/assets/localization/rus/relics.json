@@ -1499,7 +1499,7 @@
   "SMOKESTACK_UPGRADE_RUNE.title": "Улучшение: Дымоход",
   "SMOKESTACK_UPGRADE_RUNE.description": "Когда вы берёте карту статуса, ваш [gold]Дымоход[/gold] тоже срабатывает.",
   "ROYALTIES_UPGRADE_RUNE.title": "Улучшение: Дань",
-  "ROYALTIES_UPGRADE_RUNE.description": "Ваш [gold]Дань[/gold] также даёт [blue]50%[/blue] своего золота в начале вашего хода.",
+  "ROYALTIES_UPGRADE_RUNE.description": "Ваш [gold]Дань[/gold] также даёт золото, равное её количеству, в начале вашего хода.",
   "BULLET_TIME_UPGRADE_RUNE.flavor": "Время замедлилось. Ваши руки — нет.",
   "CLAW_UPGRADE_RUNE.flavor": "Каждую царапину запоминает следующий коготь.",
   "FLAK_CANNON_UPGRADE_RUNE.flavor": "Вылетает хлам. Возвращается топливо.",

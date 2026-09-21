@@ -1499,7 +1499,7 @@
   "SMOKESTACK_UPGRADE_RUNE.title": "อัปเกรด: Smokestack",
   "SMOKESTACK_UPGRADE_RUNE.description": "เมื่อคุณจั่วไพ่สถานะ [gold]Smokestack[/gold] ของคุณจะทำงานด้วย",
   "ROYALTIES_UPGRADE_RUNE.title": "อัปเกรด: ค่าภาคหลวง",
-  "ROYALTIES_UPGRADE_RUNE.description": "[gold]ค่าภาคหลวง[/gold] ของคุณมอบทองเพิ่ม [blue]50%[/blue] ของทองของมันเมื่อเริ่มเทิร์นของคุณ",
+  "ROYALTIES_UPGRADE_RUNE.description": "[gold]ค่าภาคหลวง[/gold] ของคุณมอบทองเพิ่มเท่ากับจำนวนของมันเมื่อเริ่มเทิร์นของคุณ",
   "BULLET_TIME_UPGRADE_RUNE.flavor": "เวลาช้าลง แต่มือของคุณไม่ช้าตาม",
   "CLAW_UPGRADE_RUNE.flavor": "รอยข่วนทุกรอย ถูกจดจำไว้ในกรงเล็บครั้งถัดไป",
   "FLAK_CANNON_UPGRADE_RUNE.flavor": "สิ่งที่ยิงออกไปคือเศษเหล็ก สิ่งที่กลับมาคือเชื้อเพลิง",

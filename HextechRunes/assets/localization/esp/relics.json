@@ -1499,7 +1499,7 @@
   "SMOKESTACK_UPGRADE_RUNE.title": "Mejora: Chimeneas",
   "SMOKESTACK_UPGRADE_RUNE.description": "Robar una carta de estado también activa tu [gold]Chimeneas[/gold].",
   "ROYALTIES_UPGRADE_RUNE.title": "Mejora: Regalías",
-  "ROYALTIES_UPGRADE_RUNE.description": "Tu [gold]Regalías[/gold] también otorga el [blue]50%[/blue] de su oro al inicio de tu turno.",
+  "ROYALTIES_UPGRADE_RUNE.description": "Tu [gold]Regalías[/gold] también otorga oro igual a su cantidad al inicio de tu turno.",
   "BULLET_TIME_UPGRADE_RUNE.flavor": "El tiempo se ralentiza. Tus manos, no.",
   "CLAW_UPGRADE_RUNE.flavor": "Cada arañazo queda anotado para la siguiente garra.",
   "FLAK_CANNON_UPGRADE_RUNE.flavor": "Lo que sale es chatarra. Lo que vuelve es combustible.",

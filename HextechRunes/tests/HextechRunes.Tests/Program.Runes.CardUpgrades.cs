@@ -50,7 +50,7 @@ internal static partial class Program
 			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
 			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
 			Equal(0, rune.SavedCountThisCombat, "immediate income does not accrue for a second payout");
-			Equal(gold + 18, first.Gold, "floor fifty percent each turn, paid immediately with no compounding");
+			Equal(gold + 38, first.Gold, "full royalties amount each turn, paid immediately with no compounding");
 			Equal(19, power.Amount, "original combat-end royalties remain intact");
 			rune.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
 			Equal(0, UpgradeGoldRewards.Count, "no battle-end duplicate");

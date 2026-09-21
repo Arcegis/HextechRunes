@@ -1499,7 +1499,7 @@
   "SMOKESTACK_UPGRADE_RUNE.title": "Aprimoramento: Chaminé",
   "SMOKESTACK_UPGRADE_RUNE.description": "Comprar uma carta de Status também ativa seu [gold]Chaminé[/gold].",
   "ROYALTIES_UPGRADE_RUNE.title": "Aprimoramento: Impostos",
-  "ROYALTIES_UPGRADE_RUNE.description": "Seu [gold]Impostos[/gold] também concede [blue]50%[/blue] de seu Ouro no início do seu turno.",
+  "ROYALTIES_UPGRADE_RUNE.description": "Seu [gold]Impostos[/gold] também concede Ouro igual à sua quantidade no início do seu turno.",
   "BULLET_TIME_UPGRADE_RUNE.flavor": "O tempo desacelera. Suas mãos, não.",
   "CLAW_UPGRADE_RUNE.flavor": "Cada arranhão fica gravado na próxima garra.",
   "FLAK_CANNON_UPGRADE_RUNE.flavor": "O que sai é sucata. O que volta é combustível.",

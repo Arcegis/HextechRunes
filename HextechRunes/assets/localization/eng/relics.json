@@ -1499,7 +1499,7 @@
   "SMOKESTACK_UPGRADE_RUNE.title": "Upgrade: Smokestack",
   "SMOKESTACK_UPGRADE_RUNE.description": "Drawing a Status card also triggers your [gold]Smokestack[/gold].",
   "ROYALTIES_UPGRADE_RUNE.title": "Upgrade: Royalties",
-  "ROYALTIES_UPGRADE_RUNE.description": "Your [gold]Royalties[/gold] also grants [blue]50%[/blue] of its Gold at the start of your turn.",
+  "ROYALTIES_UPGRADE_RUNE.description": "Your [gold]Royalties[/gold] also grants Gold equal to its amount at the start of your turn.",
   "BULLET_TIME_UPGRADE_RUNE.flavor": "Time slows down. Your hands do not.",
   "CLAW_UPGRADE_RUNE.flavor": "Every scratch is remembered by the next claw.",
   "FLAK_CANNON_UPGRADE_RUNE.flavor": "What goes out is scrap. What comes back is fuel.",

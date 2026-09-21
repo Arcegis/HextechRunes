@@ -1499,7 +1499,7 @@
   "SMOKESTACK_UPGRADE_RUNE.title": "強化: 煙突",
   "SMOKESTACK_UPGRADE_RUNE.description": "状態異常カードを引いた時も、自分の[gold]煙突[/gold]が発動する。",
   "ROYALTIES_UPGRADE_RUNE.title": "強化: ロイヤリティ",
-  "ROYALTIES_UPGRADE_RUNE.description": "自分の[gold]ロイヤリティ[/gold]は、自分のターン開始時にもそのゴールドの[blue]50%[/blue]を獲得する。",
+  "ROYALTIES_UPGRADE_RUNE.description": "自分の[gold]ロイヤリティ[/gold]は、自分のターン開始時にもその数値に等しいゴールドを獲得する。",
   "BULLET_TIME_UPGRADE_RUNE.flavor": "時間は遅くなる。だが、あなたの手は止まらない。",
   "CLAW_UPGRADE_RUNE.flavor": "ひとつひとつの爪痕が、次の一撃に刻まれる。",
   "FLAK_CANNON_UPGRADE_RUNE.flavor": "撃ち出すのは屑、戻ってくるのは燃料。",
