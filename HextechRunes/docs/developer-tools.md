@@ -36,7 +36,7 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/sync_content_txt.py --help
 
 TXT 描述从对应模型的 `CanonicalVars` 和数值常量取得未升级基础值，支持同文件多个模型、标准变量及 `PowerVar`，并剥离 BBCode。敌方人数缩放读取 `MonsterHexCatalog` 的参数表，以 `N` 表示玩家人数；需要具体对局状态的值使用明确公式。遇到无法静态解析的变量会报错，不能让裸占位符进入说明，也不能猜一个数值。已有人工描述仍须通过 `--accept-json` 才会更新。
 
-`tools/validate_hextech_content.py` 还会比较固定九语逐键占位符集合、BBCode 配平及数量；原版中文引用读取 `tools/official_zhs_titles.json`，运行时不依赖本机 PCK。名称检查覆盖 `CardUpgradeRuneBase<T>` 的源码绑定、`[gold]` 名称引用，以及快照中逐键登记的无高亮官方模型引用，区分自创标题与普通强调词。它不是任意新句子的实体识别器：新增或删去无高亮引用时，须人工核对并维护 `references`。补充官方名称时从原版本地化取证更新快照；不得把错写的原版名称加到普通强调词豁免中。术语依据见 [自创术语](custom-terms.md)；原版中文名以 `tools/official_zhs_titles.json` 为准，不要在文档里另维护一份。
+`tools/validate_hextech_content.py` 还会比较固定九语逐键占位符集合与 BBCode 配平（各语言标签数量不要求一致）；原版中文引用读取 `tools/official_zhs_titles.json`，运行时不依赖本机 PCK。名称检查覆盖 `CardUpgradeRuneBase<T>` 的源码绑定和 `[gold]` 名称引用，区分自创标题与普通强调词；没有高亮的普通句子里的原版名称不在检查范围内，需人工核对。补充官方名称时从原版本地化取证更新快照；不得把错写的原版名称加到普通强调词豁免中。术语依据见 [自创术语](custom-terms.md)；原版中文名以 `tools/official_zhs_titles.json` 为准，不要在文档里另维护一份。
 
 ## 定向验证
 
