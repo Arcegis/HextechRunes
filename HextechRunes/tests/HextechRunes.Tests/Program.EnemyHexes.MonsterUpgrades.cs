@@ -36,7 +36,7 @@ internal static partial class Program
 		Expect(autoPatrol.Flags.HasFlag(PlayerRuneFlags.Disabled), "Auto Patrol disabled by default");
 		string autoPatrolId = ModelDb.GetId<AutoPatrolRune>().Entry;
 		var (_, migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(34, ["custom-rune"]);
-		SetEqual(new[] { autoPatrolId, ModelDb.GetId<SomethingForNothingRune>().Entry, ModelDb.GetId<SoulCallingRune>().Entry, "custom-rune" }, migrated, "existing config gains Auto Patrol and the later default disables, keeps custom selections");
+		SetEqual(new[] { autoPatrolId, ModelDb.GetId<SomethingForNothingRune>().Entry, ModelDb.GetId<SoulCallingRune>().Entry, ModelDb.GetId<GhostFormRune>().Entry, ModelDb.GetId<DieForYouRune>().Entry, "custom-rune" }, migrated, "existing config gains Auto Patrol and the later default disables, keeps custom selections");
 		var (_, reenabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(35, []);
 		Expect(!reenabled.Contains(autoPatrolId), "manual reenable after migration survives reload");
 	}

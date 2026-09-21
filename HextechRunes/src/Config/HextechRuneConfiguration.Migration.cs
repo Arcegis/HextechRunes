@@ -217,6 +217,12 @@ internal static partial class HextechRuneConfiguration
 			disabledMonsterHexIds.Add(MonsterHexKind.ShoulderVaku.ToString());
 		}
 
+		if (previousConfigVersion < 39)
+		{
+			// 只迁移一次，之后尊重手动开启。
+			disabledIds.UnionWith(GetPlayerRuneIds([typeof(GhostFormRune), typeof(DieForYouRune)]));
+		}
+
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
