@@ -1519,5 +1519,13 @@
   "INFESTED_PRISM_HEX.flavor": "A luz atravessa o prisma. O que sai já não é limpo.",
   "LIVING_FOG_HEX.flavor": "Dentro da névoa, só dá para fazer algumas poucas coisas.",
   "SOUL_FYSH_HEX.flavor": "Cada vez que o baralho é agitado, mais um chamado sobe do fundo.",
-  "THIEVING_HOPPER_HEX.flavor": "Não tem apego à luta. Só às suas cartas."
+  "THIEVING_HOPPER_HEX.flavor": "Não tem apego à luta. Só às suas cartas.",
+  "VAKUU_MOCKERY_RUNE.title": "Zombaria de Vaku",
+  "VAKUU_MOCKERY_RUNE.description": "Quando obtido, ganhe [blue]{Relics}[/blue] Relíquias Antigas de Vaku aleatórias.",
+  "VAKUU_MOCKERY_RUNE.flavor": "Ele entrega os presentes rindo. A risada chega primeiro.",
+  "CORRUPT_HEART_HEX.title": "Melhoria: Coração Corrompido",
+  "CORRUPT_HEART_HEX.description": "Sempre que um jogador joga uma carta, recebe [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de dano.",
+  "CORRUPT_HEART_HEX.flavor": "A cada batida, sua mão fica um pouco mais lenta.",
+  "corruptHeartHex.enemyDescription": "Sempre que um jogador joga uma carta, recebe [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de dano.",
+  "badTasteRune.enemyDescription": "Sempre que um inimigo recebe um efeito negativo, recupera [blue]1%[/blue] de seus PV máximos."
 }

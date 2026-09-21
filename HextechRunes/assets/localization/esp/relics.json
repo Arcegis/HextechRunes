@@ -1519,5 +1519,13 @@
   "INFESTED_PRISM_HEX.flavor": "La luz atraviesa el prisma. Lo que sale ya no está limpio.",
   "LIVING_FOG_HEX.flavor": "Dentro de la niebla solo se pueden hacer unas pocas cosas.",
   "SOUL_FYSH_HEX.flavor": "Cada vez que se agita el mazo, otra llamada sube desde el fondo.",
-  "THIEVING_HOPPER_HEX.flavor": "No le interesa la pelea. Solo tus cartas."
+  "THIEVING_HOPPER_HEX.flavor": "No le interesa la pelea. Solo tus cartas.",
+  "VAKUU_MOCKERY_RUNE.title": "La burla de Vaku",
+  "VAKUU_MOCKERY_RUNE.description": "Cuando se obtiene, obtiene [blue]{Relics}[/blue] Reliquias antiguas aleatorias de Vaku.",
+  "VAKUU_MOCKERY_RUNE.flavor": "Te entrega los regalos riéndose. La risa llega primero.",
+  "CORRUPT_HEART_HEX.title": "Mejora: Corazón corrupto",
+  "CORRUPT_HEART_HEX.description": "Cada vez que un jugador juega una carta, recibe [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de daño.",
+  "CORRUPT_HEART_HEX.flavor": "Con cada latido, tu mano se vuelve un poco más lenta.",
+  "corruptHeartHex.enemyDescription": "Cada vez que un jugador juega una carta, recibe [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] de daño.",
+  "badTasteRune.enemyDescription": "Cada vez que un enemigo recibe un efecto negativo, recupera [blue]1%[/blue] de sus PV máximos."
 }

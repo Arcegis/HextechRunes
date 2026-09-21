@@ -1,5 +1,6 @@
 [我方 / 通用]
 我方	ScapegoatRune	祸水东引	标签=综合
+我方	VakuuMockeryRune	瓦库的嘲弄	标签=随机
 我方	SlapRune	扇巴掌	标签=输出
 我方	DexterityToStrengthRune	敏捷转力量	标签=输出
 我方	StrengthToDexterityRune	力量转敏捷	标签=生存

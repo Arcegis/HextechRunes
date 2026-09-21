@@ -1519,5 +1519,13 @@
   "INFESTED_PRISM_HEX.flavor": "Light goes through the prism. What comes out is no longer clean.",
   "LIVING_FOG_HEX.flavor": "There are only so many things you can do inside the fog.",
   "SOUL_FYSH_HEX.flavor": "Each time the deck is stirred, one more call rises from below.",
-  "THIEVING_HOPPER_HEX.flavor": "It has no love for battle. Only for your cards."
+  "THIEVING_HOPPER_HEX.flavor": "It has no love for battle. Only for your cards.",
+  "VAKUU_MOCKERY_RUNE.title": "Vaku's Mockery",
+  "VAKUU_MOCKERY_RUNE.description": "When obtained, gain [blue]{Relics}[/blue] random Vaku Ancient Relics.",
+  "VAKUU_MOCKERY_RUNE.flavor": "He hands you the gifts laughing. The laughter arrives first.",
+  "CORRUPT_HEART_HEX.title": "Upgrade: Corrupt Heart",
+  "CORRUPT_HEART_HEX.description": "Whenever a player plays a card, they take [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] damage.",
+  "CORRUPT_HEART_HEX.flavor": "With every beat, your hand gets a little slower.",
+  "corruptHeartHex.enemyDescription": "Whenever a player plays a card, they take [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] damage.",
+  "badTasteRune.enemyDescription": "Whenever an enemy receives a debuff, it heals [blue]1%[/blue] of its Max HP."
 }

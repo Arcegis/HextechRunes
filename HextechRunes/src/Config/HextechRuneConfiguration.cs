@@ -4,7 +4,7 @@ internal static partial class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
 	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
-	private const int CurrentConfigVersion = 37;
+	private const int CurrentConfigVersion = 38;
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -161,7 +161,11 @@ internal static partial class HextechRuneConfiguration
 
 	public static IReadOnlySet<string> GetDefaultDisabledMonsterHexIds()
 	{
-		return new HashSet<string>(StringComparer.Ordinal) { MonsterHexKind.GetExcited.ToString() };
+		return new HashSet<string>(StringComparer.Ordinal)
+		{
+			MonsterHexKind.GetExcited.ToString(),
+			MonsterHexKind.ShoulderVaku.ToString()
+		};
 	}
 
 	public static IReadOnlySet<string> GetDefaultDisabledForgeIds()

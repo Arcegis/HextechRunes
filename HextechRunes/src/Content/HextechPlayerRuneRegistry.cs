@@ -377,7 +377,8 @@ internal static class HextechPlayerRuneRegistry
 		Rune<FlameBarrierUpgradeRune>(HextechRarityTier.Silver, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 37, tagKey: "OUTPUT"),
 		Rune<RebootUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 38, tagKey: "DRAW"),
 		Rune<SmokestackUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 39, tagKey: "STATUS"),
-		Rune<RoyaltiesUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 34, tagKey: "ECONOMY")
+		Rune<RoyaltiesUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 34, tagKey: "ECONOMY"),
+		Rune<VakuuMockeryRune>(HextechRarityTier.Gold, tagKey: "RANDOM")
 	];
 
 	private static PlayerRuneRegistration Rune<TRune>(

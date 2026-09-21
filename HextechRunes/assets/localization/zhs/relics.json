@@ -1519,5 +1519,13 @@
   "INFESTED_PRISM_HEX.flavor": "光穿过棱柱，出来的已经不干净了。",
   "LIVING_FOG_HEX.flavor": "雾里能做的事，只有那么几件。",
   "SOUL_FYSH_HEX.flavor": "牌堆每搅动一次，水下就多一声呼唤。",
-  "THIEVING_HOPPER_HEX.flavor": "它不恋战，只恋你的牌。"
+  "THIEVING_HOPPER_HEX.flavor": "它不恋战，只恋你的牌。",
+  "VAKUU_MOCKERY_RUNE.title": "瓦库的嘲弄",
+  "VAKUU_MOCKERY_RUNE.description": "获得时，随机获得[blue]{Relics}[/blue]件瓦库的先古遗物。",
+  "VAKUU_MOCKERY_RUNE.flavor": "他笑着把礼物塞给你，笑声比礼物先到。",
+  "CORRUPT_HEART_HEX.title": "升级：腐化之心",
+  "CORRUPT_HEART_HEX.description": "玩家每打出1张牌，就受到[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点伤害。",
+  "CORRUPT_HEART_HEX.flavor": "它每跳一下，你的手就慢一拍。",
+  "corruptHeartHex.enemyDescription": "玩家每打出1张牌，就受到[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]点伤害。",
+  "badTasteRune.enemyDescription": "每当敌人受到负面效果时，回复[blue]1%[/blue]的最大生命值。"
 }

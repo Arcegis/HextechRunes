@@ -211,6 +211,12 @@ internal static partial class HextechRuneConfiguration
 			disabledIds.UnionWith(GetPlayerRuneIds([typeof(SomethingForNothingRune), typeof(SoulCallingRune)]));
 		}
 
+		if (previousConfigVersion < 38)
+		{
+			// 我方"你肩上的瓦库"早已默认禁用；敌方只迁移一次，之后尊重手动开启。
+			disabledMonsterHexIds.Add(MonsterHexKind.ShoulderVaku.ToString());
+		}
+
 		config.ConfigVersion = CurrentConfigVersion;
 		config.DisabledPlayerRuneIds = disabledIds;
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);

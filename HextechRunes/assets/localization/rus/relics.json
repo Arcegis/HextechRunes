@@ -1519,5 +1519,13 @@
   "INFESTED_PRISM_HEX.flavor": "Свет проходит сквозь призму. Наружу выходит уже не чистый.",
   "LIVING_FOG_HEX.flavor": "В тумане можно сделать лишь немногое.",
   "SOUL_FYSH_HEX.flavor": "Стоит перемешать колоду — из глубины доносится ещё один зов.",
-  "THIEVING_HOPPER_HEX.flavor": "Бой ему не дорог. Дороги только ваши карты."
+  "THIEVING_HOPPER_HEX.flavor": "Бой ему не дорог. Дороги только ваши карты.",
+  "VAKUU_MOCKERY_RUNE.title": "Насмешка Ваку",
+  "VAKUU_MOCKERY_RUNE.description": "При получении получите [blue]{Relics}[/blue] случайные древние реликвии Ваку.",
+  "VAKUU_MOCKERY_RUNE.flavor": "Он вручает дары смеясь. Смех приходит первым.",
+  "CORRUPT_HEART_HEX.title": "Улучшение: Порочное сердце",
+  "CORRUPT_HEART_HEX.description": "Когда игрок разыгрывает карту, он получает [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] урона.",
+  "CORRUPT_HEART_HEX.flavor": "С каждым ударом сердца ваша рука становится чуть медленнее.",
+  "corruptHeartHex.enemyDescription": "Когда игрок разыгрывает карту, он получает [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue] урона.",
+  "badTasteRune.enemyDescription": "Когда враг получает отрицательный эффект, он восстанавливает [blue]1%[/blue] от макс. ОЗ."
 }

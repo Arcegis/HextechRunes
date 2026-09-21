@@ -499,7 +499,8 @@
     "FLAME_BARRIER_UPGRADE_RUNE": "升级：火焰屏障",
     "REBOOT_UPGRADE_RUNE": "升级：重启",
     "SMOKESTACK_UPGRADE_RUNE": "升级：烟囱",
-    "ROYALTIES_UPGRADE_RUNE": "升级：王国资产"
+    "ROYALTIES_UPGRADE_RUNE": "升级：王国资产",
+    "VAKUU_MOCKERY_RUNE": "瓦库的嘲弄"
   },
   "monsterHexes": {
     "Slap": "扇巴掌",
@@ -646,7 +647,9 @@
     "SomethingForNothing": "无本万利",
     "CorruptedBranch": "腐化树枝",
     "MoreTheMerrier": "多多益善",
-    "Enlightenment": "开悟"
+    "Enlightenment": "开悟",
+    "CorruptHeart": "升级：腐化之心",
+    "BadTaste": "恶趣味"
   },
   "characters": {
     "IRONCLAD": "战士",

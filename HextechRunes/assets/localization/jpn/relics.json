@@ -1519,5 +1519,13 @@
   "INFESTED_PRISM_HEX.flavor": "光はプリズムを通る。出てくるものは、もう清らかではない。",
   "LIVING_FOG_HEX.flavor": "霧の中でできることは、ほんのわずかしかない。",
   "SOUL_FYSH_HEX.flavor": "山札がかき混ぜられるたび、水底から呼び声がひとつ増える。",
-  "THIEVING_HOPPER_HEX.flavor": "戦いに未練はない。あるのは、あなたのカードへの未練だけ。"
+  "THIEVING_HOPPER_HEX.flavor": "戦いに未練はない。あるのは、あなたのカードへの未練だけ。",
+  "VAKUU_MOCKERY_RUNE.title": "ヴァクの嘲り",
+  "VAKUU_MOCKERY_RUNE.description": "入手すると、[blue]{Relics}[/blue] 個のランダムなヴァク古代遺物を獲得します。",
+  "VAKUU_MOCKERY_RUNE.flavor": "彼は笑いながら贈り物を押しつける。笑い声のほうが先に届く。",
+  "CORRUPT_HEART_HEX.title": "アップグレード：腐敗した心臓",
+  "CORRUPT_HEART_HEX.description": "プレイヤーがカードを1枚プレイするたび、[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]ダメージを受ける。",
+  "CORRUPT_HEART_HEX.flavor": "鼓動がひとつ打つたび、あなたの手は少し遅くなる。",
+  "corruptHeartHex.enemyDescription": "プレイヤーがカードを1枚プレイするたび、[blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]ダメージを受ける。",
+  "badTasteRune.enemyDescription": "敵がデバフを受けるたび、最大HPの[blue]1%[/blue]を回復する。"
 }

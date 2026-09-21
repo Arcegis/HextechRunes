@@ -29,7 +29,7 @@ internal static partial class Program
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
-		Equal(37, version, "v14 config should land on current version");
+		Equal(38, version, "v14 config should land on current version");
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
@@ -37,7 +37,7 @@ internal static partial class Program
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
 		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
-		Equal(37, version, "v15 config should land on current version");
+		Equal(38, version, "v15 config should land on current version");
 		SetEqual(
 			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
 			migrated,
@@ -47,7 +47,7 @@ internal static partial class Program
 	private static void ConfigMigrationV26AddsNewPlayerDefaultDisables()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, []);
-		Equal(37, version, "v26 player config should land on current version");
+		Equal(38, version, "v26 player config should land on current version");
 		SetEqual(
 			HextechPlayerRuneConfigIds.FromTypes(
 			[
@@ -78,13 +78,13 @@ internal static partial class Program
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(37, [customId]);
-		Equal(37, version, "current-version config keeps version");
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(38, [customId]);
+		Equal(38, version, "current-version config keeps version");
 		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
 
 		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
-			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(37, [MonsterHexKind.FrostWraith.ToString()]);
-		Equal(37, monsterVersion, "current-version monster config keeps version");
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(38, [MonsterHexKind.FrostWraith.ToString()]);
+		Equal(38, monsterVersion, "current-version monster config keeps version");
 		SetEqual(
 			[MonsterHexKind.FrostWraith.ToString()],
 			disabledMonsters,
@@ -116,7 +116,7 @@ internal static partial class Program
 				27,
 				new HextechRarityWeights(4, 5, 6),
 				new HextechRarityWeights(0, 7, 8));
-		Equal(37, migratedVersion, "v27 rarity config should land on current version");
+		Equal(38, migratedVersion, "v27 rarity config should land on current version");
 		Equal(new HextechRarityWeights(4, 5, 6), migratedWeights, "v27 normal weights should become rune weights");
 		Equal(true, ruleEnabledWithZeroLegacySilverWeight, "legacy rarity config should enable consecutive-Silver prevention by default");
 
@@ -144,7 +144,7 @@ internal static partial class Program
 	{
 		string id = ModelDb.GetId<AdvanceToRetreatRune>().Entry;
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(29, [id]);
-		Equal(37, version, "v29 player config should land on current version");
+		Equal(38, version, "v29 player config should land on current version");
 		Expect(!disabled.Contains(id), "v29 player config migration should enable Advance to Retreat");
 	}
 
@@ -152,7 +152,7 @@ internal static partial class Program
 	{
 		string id = ModelDb.GetId<HappyAccidentRune>().Entry;
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(30, [id]);
-		Equal(37, version, "v30 player config should land on current version");
+		Equal(38, version, "v30 player config should land on current version");
 		Expect(!disabled.Contains(id), "v30 player config migration should enable Happy Accident");
 	}
 
@@ -160,7 +160,7 @@ internal static partial class Program
 	{
 		(int migratedVersion, int migratedLimit) =
 			HextechRuneConfiguration.MigrateMonsterHexRerollLimitForTests(32, HextechRuneConfiguration.InfiniteRerollLimit);
-		Equal(37, migratedVersion, "v32 config should land on current version");
+		Equal(38, migratedVersion, "v32 config should land on current version");
 		Equal(1, migratedLimit, "v32 infinite enemy rerolls should migrate to the new one-reroll default");
 
 		(_, int finiteLimit) = HextechRuneConfiguration.MigrateMonsterHexRerollLimitForTests(32, 4);
@@ -181,7 +181,7 @@ internal static partial class Program
 		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(ModelDb.GetId<GetExcitedRune>().Entry), "player default is disabled");
 		Expect(HextechRuneConfiguration.GetDefaultDisabledMonsterHexIds().Contains(enemyId), "enemy default is disabled");
 		var migrated = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(35, [MonsterHexKind.FrostWraith.ToString()]);
-		Expect(migrated.DisabledMonsterHexIds.SetEquals(new[] { enemyId, MonsterHexKind.FrostWraith.ToString() }), "migration adds only Get Excited");
+		Expect(migrated.DisabledMonsterHexIds.SetEquals(new[] { enemyId, MonsterHexKind.ShoulderVaku.ToString(), MonsterHexKind.FrostWraith.ToString() }), "migration adds Get Excited and the later enemy default disables, keeps custom selections");
 		var custom = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(migrated.ConfigVersion, []);
 		Equal(0, custom.DisabledMonsterHexIds.Count, "manual re-enable persists after migration");
 		Expect(!HextechMonsterHexRegistry.Registrations.Single(row => row.Kind == MonsterHexKind.GetExcited).Disabled, "config default does not hard-remove content");

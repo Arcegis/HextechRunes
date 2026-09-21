@@ -101,6 +101,31 @@ internal static partial class Program
 		}
 	}
 
+	private static void CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff()
+	{
+		Equal(146, (int)MonsterHexKind.CorruptHeart, "append-only enemy identity");
+		Equal(147, (int)MonsterHexKind.BadTaste, "append-only enemy identity");
+		var heart = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.CorruptHeart);
+		Expect(heart.Rarity == HextechRarityTier.Prismatic && !heart.Disabled && heart.IconRelicType == typeof(CorruptHeartHex), "prismatic with its own icon carrier");
+		Expect(!HextechPlayerRuneRegistry.Registrations.Any(r => r.Type == typeof(CorruptHeartHex)), "enemy icon carrier cannot enter player pool");
+		var badTaste = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.BadTaste);
+		Expect(badTaste.Rarity == HextechRarityTier.Silver && !badTaste.Disabled && badTaste.IconRelicType == typeof(BadTasteRune), "silver, reuses the player rune icon");
+		Equal(1, BadTasteEnemyHex.HealAmountFor(40), "one percent never rounds a small enemy down to zero");
+		Equal(10, BadTasteEnemyHex.HealAmountFor(1000), "one percent of max HP");
+		Equal(0, BadTasteEnemyHex.HealAmountFor(0), "no max HP, no heal");
+
+		string vaku = MonsterHexKind.ShoulderVaku.ToString();
+		Expect(HextechRuneConfiguration.GetDefaultDisabledMonsterHexIds().Contains(vaku), "enemy Vaku is off by default");
+		Expect(!HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.ShoulderVaku).Disabled, "default-off stays configurable, not hard-removed");
+		var migrated = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(37, []);
+		Expect(migrated.DisabledMonsterHexIds.Contains(vaku), "existing configs gain the default disable once");
+		var reenabled = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(migrated.ConfigVersion, []);
+		Expect(!reenabled.DisabledMonsterHexIds.Contains(vaku), "manual re-enable survives reload");
+
+		var mockery = HextechPlayerRuneRegistry.Registrations.Single(r => r.Type == typeof(VakuuMockeryRune));
+		Expect(mockery.Rarity == HextechRarityTier.Gold && !mockery.Flags.HasFlag(PlayerRuneFlags.Disabled), "gold and enabled");
+	}
+
 	private static void HopperSkipsSleepingEnemiesAndMinions()
 	{
 		Expect(ThievingHopperEnemyHex.HasTheftBlockingPower([new AsleepPower()]), "sleeping matriarch cannot steal");

@@ -290,6 +290,7 @@ internal static partial class Program
 			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
 			new(nameof(NewEnemyHexesReusePlayerRuneIconsAndRarities), NewEnemyHexesReusePlayerRuneIconsAndRarities),
 			new(nameof(FiveEnemyUpgradesHaveStableIdentityAndAutoPatrolDisabled), FiveEnemyUpgradesHaveStableIdentityAndAutoPatrolDisabled),
+			new(nameof(CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff), CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff),
 			new(nameof(MonsterUpgradeIntentsPreserveAttacksAndDoNotAccumulate), MonsterUpgradeIntentsPreserveAttacksAndDoNotAccumulate),
 			new(nameof(HopperEscapeSurvivesTheNextNativeMoveRoll), HopperEscapeSurvivesTheNextNativeMoveRoll),
 			new(nameof(HopperSkipsSleepingEnemiesAndMinions), HopperSkipsSleepingEnemiesAndMinions),

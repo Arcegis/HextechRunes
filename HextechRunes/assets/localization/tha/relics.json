@@ -1519,5 +1519,13 @@
   "INFESTED_PRISM_HEX.flavor": "แสงลอดผ่านปริซึม สิ่งที่ออกมาไม่สะอาดอีกต่อไป",
   "LIVING_FOG_HEX.flavor": "ในหมอก สิ่งที่ทำได้มีเพียงไม่กี่อย่าง",
   "SOUL_FYSH_HEX.flavor": "ทุกครั้งที่กองการ์ดถูกกวน เสียงเรียกจากใต้น้ำก็เพิ่มขึ้นอีกหนึ่ง",
-  "THIEVING_HOPPER_HEX.flavor": "มันไม่ได้รักการต่อสู้ มันรักแค่การ์ดของคุณ"
+  "THIEVING_HOPPER_HEX.flavor": "มันไม่ได้รักการต่อสู้ มันรักแค่การ์ดของคุณ",
+  "VAKUU_MOCKERY_RUNE.title": "การเย้ยหยันของ Vaku",
+  "VAKUU_MOCKERY_RUNE.description": "เมื่อรับมา ได้รับเครื่องรางโบราณของ Vaku แบบสุ่ม [blue]{Relics}[/blue] ชิ้น",
+  "VAKUU_MOCKERY_RUNE.flavor": "เขายื่นของขวัญให้พร้อมเสียงหัวเราะ เสียงหัวเราะมาถึงก่อน",
+  "CORRUPT_HEART_HEX.title": "อัปเกรด: หัวใจแห่งความเสื่อม",
+  "CORRUPT_HEART_HEX.description": "เมื่อผู้เล่นเล่นการ์ด 1 ใบ จะได้รับความเสียหาย [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]",
+  "CORRUPT_HEART_HEX.flavor": "ทุกจังหวะที่มันเต้น มือของคุณก็ช้าลงอีกนิด",
+  "corruptHeartHex.enemyDescription": "เมื่อผู้เล่นเล่นการ์ด 1 ใบ จะได้รับความเสียหาย [blue]1[/blue]/[blue]2[/blue]/[blue]3[/blue]",
+  "badTasteRune.enemyDescription": "เมื่อศัตรูได้รับดีบัฟ จะฟื้นฟู [blue]1%[/blue] ของ HP สูงสุด"
 }
