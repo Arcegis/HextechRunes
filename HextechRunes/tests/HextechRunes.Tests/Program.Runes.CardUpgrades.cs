@@ -397,9 +397,15 @@ internal static partial class Program
 		Equal(0, ThornmailRune.CalculateThorns(19m), "Thornmail should floor partial Max HP steps");
 		Equal(1, ThornmailRune.CalculateThorns(20m), "Thornmail should grant one Thorns per twenty Max HP");
 		Equal(4, ThornmailRune.CalculateThorns(99m), "Thornmail should have no legacy bonus cap");
-		Expect(CorrosiveWaveUpgradeRune.ShouldExhaust(new CorrosiveWave(), PileType.Discard), "Corrosive Wave should move to the Exhaust pile after play");
-		Expect(!CorrosiveWaveUpgradeRune.ShouldExhaust(new CorrosiveWave(), PileType.None), "ephemeral Corrosive Wave copies should keep the None result pile");
-		Expect(!CorrosiveWaveUpgradeRune.ShouldExhaust(new StrikeIronclad(), PileType.Discard), "Corrosive Wave upgrade should not exhaust other cards");
+		var waveOwner = CreateOrdinalTestPlayer(1);
+		var ownWave = CreateMutableTestModel<CorrosiveWave>();
+		var teammateWave = CreateMutableTestModel<CorrosiveWave>();
+		var ownStrike = CreateMutableTestModel<StrikeIronclad>();
+		ownWave.Owner = ownStrike.Owner = waveOwner;
+		teammateWave.Owner = CreateOrdinalTestPlayer(2);
+		Expect(CorrosiveWaveUpgradeRune.GrantsExhaust(ownWave, waveOwner), "the owner's Corrosive Wave gains the Exhaust keyword");
+		Expect(!CorrosiveWaveUpgradeRune.GrantsExhaust(teammateWave, waveOwner), "a teammate's Corrosive Wave is untouched");
+		Expect(!CorrosiveWaveUpgradeRune.GrantsExhaust(ownStrike, waveOwner), "Corrosive Wave upgrade should not exhaust other cards");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Power, hasUpgradeRune: false), "vanilla Storm should still trigger for Power cards");
 		Expect(!StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: false), "vanilla Storm should ignore Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: true), "upgraded Storm should trigger for Attacks");
