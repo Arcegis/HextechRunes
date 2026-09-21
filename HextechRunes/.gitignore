@@ -7,3 +7,5 @@ tests/**/bin/
 tests/**/obj/
 versioned-dll-backups/
 mod-uploader.log
+workshop/content/
+analytics/*_latest.csv
