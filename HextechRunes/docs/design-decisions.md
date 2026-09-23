@@ -73,6 +73,13 @@
 - **权重确认后提交绝对值，不按最后三个候选反推被重掷覆盖的历史。** 远端缺倍率或格式错误时中止该选择，禁止默默回退到 150%。`HextechWeightedRuneOptions`
 - **权重存进既有 `SavedRuneSelectionJournalJson` 的 `characterWeights`（按玩家 ID 排序），没有新增或改名 SavedProperty。** 旧存档缺这部分数据时从 150% 开始；无尽循环清理选择流水时保留倍率。
 
+## 手柄
+
+- **是否给默认焦点只看游戏自己的输入模式（0.110 起 `IsUsingDirectionalNavigation`，0.107.1 为 `IsUsingController`），鼠标玩家打开界面不出焦点框。** 不能从事件类型自己判断：Steam Input 下按键到达时已是合成的动作事件，没有原始 `InputEventJoypadButton`；不走 Steam 时第一下按键又会被原版切换手柄模式时吞掉。原版切进手柄模式和切换界面时都会聚焦 `IScreenContext.DefaultFocusedControl`，选择界面靠这个拿到焦点。`HextechControllerInput`
+- **原版确认键 A/× 映射为 `ui_select`，只有原版 `NClickableControl` 认它；本模组的 Godot `Button` 和自绘控件只认 `ui_accept`，而游戏里没有任何手柄键映射到 `ui_accept`。** 选择界面和配置菜单在自己子树有焦点时，把 `ui_select` 的按下和松开延后转成 `ui_accept`；原版可点击控件不转换，以免触发两次。`HextechControllerInput.TryTranslateSelectToAccept`
+- **配置菜单挂在场景根上，不是原版认得的当前界面。** 打开期间关掉主菜单的可聚焦性，否则方向导航会跨过遮罩落到背后的主菜单按钮；社区面板和上传对话框登记为子弹窗，按 B 先逐层关闭它们；LB/RB 切页签。`HextechControllerOverlay`
+- **顶栏的敌方海克斯折叠按钮和隐藏 UI 开关不在原版顶栏焦点链上，手柄够不着，暂未处理。**
+
 ## 待实机验证
 
 - **F04 幽灵鳗 Skittish 的动画顺序改动已回滚，源码保持 `6a5ec941` 原样。** 曾把"BlockEnd 音画失败仍保留 Skittish"改成先移除 Power 再补出场音画，但这个顺序正是玩家实报"感受燃烧打四鳗卡死"的修复点，未经实机验证不要再调整。`src/Combat/HextechMonsterInteractionPolicy.cs`

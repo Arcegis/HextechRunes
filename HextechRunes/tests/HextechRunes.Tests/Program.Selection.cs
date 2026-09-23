@@ -332,7 +332,9 @@ internal static partial class Program
 		}
 	}
 
-	private static void SelectionUiWaitsForControllerInputBeforeFocusing()
+	// 手柄焦点只跟随游戏自己的输入模式(NControllerManager 的方向导航):鼠标玩家打开界面不出焦点框;
+	// 原版确认键 A 是 ui_select,本模组 Godot 按钮只认 ui_accept,选择界面必须做转换。
+	private static void SelectionUiFocusesOnlyInDirectionalNavigation()
 	{
 		MethodInfo defaultFocusGetter = typeof(HextechRuneSelectionScreen)
 			.GetProperty(nameof(HextechRuneSelectionScreen.DefaultFocusedControl))!
@@ -340,20 +342,20 @@ internal static partial class Program
 		Expect(
 			PatchProcessor.GetOriginalInstructions(defaultFocusGetter)
 				.Select(static instruction => instruction.operand)
-				.OfType<FieldInfo>()
-				.Any(static field => field.Name == "_controllerNavigationActivated"),
-			"selection overlay should not expose an initial focus target before controller navigation activates");
+				.OfType<MethodInfo>()
+				.Any(static method => method.DeclaringType == typeof(HextechControllerInput) && method.Name == "get_" + nameof(HextechControllerInput.IsDirectionalNavigation)),
+			"selection overlay should expose an initial focus target only in the game's directional navigation mode");
 
 		MethodInfo selectionInput = typeof(HextechRuneSelectionScreen).GetMethod(
-			nameof(HextechRuneSelectionScreen._UnhandledInput),
+			nameof(HextechRuneSelectionScreen._Input),
 			BindingFlags.Instance | BindingFlags.Public)
-			?? throw new MissingMethodException(nameof(HextechRuneSelectionScreen), nameof(HextechRuneSelectionScreen._UnhandledInput));
+			?? throw new MissingMethodException(nameof(HextechRuneSelectionScreen), nameof(HextechRuneSelectionScreen._Input));
 		Expect(
 			PatchProcessor.GetOriginalInstructions(selectionInput)
 				.Select(static instruction => instruction.operand)
 				.OfType<MethodInfo>()
-				.Any(static method => method.DeclaringType == typeof(HextechControllerInput) && method.Name == nameof(HextechControllerInput.IsIntentional)),
-			"selection overlay should activate focus from real joypad input");
+				.Any(static method => method.DeclaringType == typeof(HextechControllerInput) && method.Name == nameof(HextechControllerInput.TryTranslateSelectToAccept)),
+			"selection overlay should translate the controller confirm (ui_select) for its Godot buttons");
 
 		MethodInfo openConfig = typeof(HextechRuneConfigMenuHooks).GetMethod(
 			"OpenOverlay",

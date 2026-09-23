@@ -46,7 +46,6 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private bool _choiceLocked;
 	private bool _blockMapUntilDismissed;
 	private bool _closed;
-	private bool _controllerNavigationActivated;
 	private bool _selectionConfirmGuardStarted;
 	private ulong _selectionConfirmGuardEndsAtMsec;
 
@@ -54,7 +53,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public bool UseSharedBackstop => true;
 
-	public Control? DefaultFocusedControl => _controllerNavigationActivated ? _holders.FirstOrDefault() ?? _enemyOnlyConfirm : null;
+	// 只在游戏处于手柄/纯键盘方向导航时给默认焦点:原版切进手柄模式与界面切换时都会聚焦它;鼠标玩家返回 null,不出焦点框。
+	public Control? DefaultFocusedControl => HextechControllerInput.IsDirectionalNavigation
+		? _holders.FirstOrDefault(CanReceiveFocus) ?? (_enemyOnlyConfirm != null && CanReceiveFocus(_enemyOnlyConfirm) ? _enemyOnlyConfirm : null)
+		: null;
 
 	public bool RequestedReroll => false;
 
