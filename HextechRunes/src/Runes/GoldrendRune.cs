@@ -52,6 +52,9 @@ public sealed class GoldrendRune : HextechRelicBase
 			return;
 		}
 
+		// 纯本地表现:延后一帧播放、自带异常隔离,不影响下面的共享结算。
+		HextechCombatVfx.CoinBurst(target);
+
 		// 金币可经鲜血神像触发受伤及反击，不能让这条反馈链再次触发自身。
 		_grantingGold = true;
 		try

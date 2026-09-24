@@ -440,4 +440,56 @@ internal static partial class HextechCombatVfx
 		Creature[] snapshot = [.. targets];
 		Callable.From(() => RunQuantumPulse(owner, snapshot)).CallDeferred();
 	}
+
+	private const string CoinExplosionPath = "vfx/vfx_coin_explosion_regular";
+
+	/// <summary>
+	/// 夺金:被命中的敌人身上爆出原版小鬼佣兵偷钱时的金币特效(同一资源)。位置与容器在调用当下快照:
+	/// 击杀那一击触发时目标已死,原版 VfxCmd.PlayOnCreatureCenter 会跳过死者,所以这里直接按坐标播放。
+	/// </summary>
+	internal static void CoinBurst(Creature target)
+	{
+		try
+		{
+			NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
+			if (node == null)
+			{
+				return;
+			}
+
+			Control? container = NCombatRoom.Instance?.CombatVfxContainer;
+			if (container == null || !GodotObject.IsInstanceValid(container))
+			{
+				return;
+			}
+
+			Vector2 position = node.VfxSpawnPosition;
+			Callable.From(() =>
+			{
+				try
+				{
+					if (GodotObject.IsInstanceValid(container) && container.IsInsideTree())
+					{
+						VfxCmd.PlayVfx(position, CoinExplosionPath, container);
+					}
+				}
+				catch (Exception ex)
+				{
+					LogCoinBurstFailure(ex);
+				}
+			}).CallDeferred();
+		}
+		catch (Exception ex)
+		{
+			LogCoinBurstFailure(ex);
+		}
+	}
+
+	private static void LogCoinBurstFailure(Exception ex)
+	{
+		if (HextechRunLogBudget.TryConsume("visual.goldrend-coin-burst", 3))
+		{
+			Log.Warn($"[{ModInfo.Id}][Vfx] Goldrend coin burst failed: {ex.GetType().Name}: {ex.Message}");
+		}
+	}
 }

@@ -62,6 +62,8 @@
 - **濒死狂宴红光用的是原版 0.111.0 SOUL_NEXUS 图集的 `glowie` 区域，未改色未重绘。** 源 `res://animations/monsters/soul_nexus/soulnexus.png`，图集 1063×656，裁切 `(2, 77, 580, 577)`，无旋转；模组自己打包该纹理，运行时不依赖原版图集位置、Spine 或怪物场景脚本。重新提取用 `tools/extract_near_death_feast_glow.gd`，该脚本只校验整张图集尺寸，识别不了同尺寸重排 —— 游戏更新后先人工核对 `.atlas` 里 `glowie` 的坐标。`HextechNearDeathFeastVisual`
 - **红光几何是调出来的固定值：** 中心在碰撞框自底向上 64% 处，基础宽度 = 碰撞框宽度夹取到 120–360 像素后的 2.45 倍，两层同步缩放。
 - **表现节点不进战斗状态、不调用共享 RNG。** 死亡或脱离濒死时隐藏，角色节点销毁时释放。
+- **灼烧常驻火焰保持程序化渐变粒子(沿骨骼发射的火焰、烟与火星);每次灼烧结算额外升起原版地面火 `NGroundFireVfx`(状态牌"灼伤"同款)。** 实机试过三种替代都被否决:原版火把 4 帧翻页图放大后像多边形碎片,整团着色器火焰摆在脚下像站在一排篝火上,着色器火苗无论撒在身上还是从脚底窜起都像火焰贴纸。`HextechBurnVisual`
+- **夺金命中爆金币复用原版小鬼佣兵的 `vfx/vfx_coin_explosion_regular`，按调用当下快照的坐标播放。** 原版 `VfxCmd.PlayOnCreatureCenter` 会跳过已死目标，击杀那一击就没有金币。`HextechCombatVfx.CoinBurst`
 
 ## 生成与权重
 
