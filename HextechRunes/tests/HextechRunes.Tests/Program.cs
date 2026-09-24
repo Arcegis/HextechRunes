@@ -71,6 +71,7 @@ internal static partial class Program
 			new(nameof(CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder), CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder),
 			new(nameof(RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual), RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual),
 			new(nameof(ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory), ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory),
+			new(nameof(GoldrendSfxMuteIsScopedToGoldSounds), GoldrendSfxMuteIsScopedToGoldSounds),
 			new(nameof(ImmediateGoldFeedbackStopsAndLaterDamageStillPays), ImmediateGoldFeedbackStopsAndLaterDamageStillPays),
 			new(nameof(PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped), PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped),
 			new(nameof(ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth), ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth),
