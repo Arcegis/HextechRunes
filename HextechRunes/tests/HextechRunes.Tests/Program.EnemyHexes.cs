@@ -471,6 +471,36 @@ internal static partial class Program
 		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(MoreTheMerrierRune), "enabled gold with matching icon");
 	}
 
+	private static void BalanceAdjustmentsSeptember25()
+	{
+		Dictionary<uint, int> hits = new();
+		bool[] fired = Enumerable.Range(0, 6).Select(_ => HextechEnemyHexEffect.ReachesHitThreshold(hits, 7, 3)).ToArray();
+		SequenceEqual(new[] { false, false, true, false, false, true }, fired, "every third unblocked hit on the same enemy triggers");
+		Expect(!HextechEnemyHexEffect.ReachesHitThreshold(hits, 8, 3), "each enemy keeps its own count");
+		Equal(6, hits[7], "remainder carries forward instead of resetting");
+		Expect(!HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 0), "a zero threshold never triggers");
+		Expect(HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 1), "threshold one triggers on every hit");
+		Equal(3, PorcupineEnemyHex.HitsPerTriggerPerPlayer, "porcupine needs 3N hits");
+		Equal(1, HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer, "hundred refinements needs N hits");
+
+		// 描述里的 {HitsNeeded} 靠按人数缩放的阈值表填值,漏登记就会原样显示占位符。
+		var thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
+			.GetField("PlayerCountScaledThresholds", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+		Equal(("HitsNeeded", PorcupineEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.Porcupine]!,
+			"porcupine description threshold matches the effect");
+		Equal(("HitsNeeded", HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.HundredRefinements]!,
+			"hundred refinements description threshold matches the effect");
+
+		Equal(HextechRarityTier.Prismatic,
+			HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == typeof(DemonFormUpgradeRune)).Rarity,
+			"Upgrade: Demon Form is prismatic");
+
+		// 王国军势生成仆从牌期间嵌套进来的铸造直接返回,凝辉/王令无法把它再次点燃。
+		KingdomArmyRune kingdomArmy = CreateMutableTestModel<KingdomArmyRune>();
+		typeof(KingdomArmyRune).GetField("_generating", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(kingdomArmy, true);
+		Expect(kingdomArmy.AfterForge(3m, null!, null).IsCompletedSuccessfully, "nested forge during minion generation is ignored");
+	}
+
 	private static void EnemyGiantSlayerScalesWithPlayerMaxHp()
 	{
 		Equal(0.33m, GiantSlayerEnemyHex.GetBonus(66), "66 max HP gives +33%");

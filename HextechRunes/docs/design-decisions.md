@@ -6,7 +6,7 @@
 
 ## 玩家符文
 
-- **一呼百应同一批自动打出不会递归启动另一批。** 否则放血回手一类效果会自身无限重入；按模型 ID 匹配同名牌（升级与附魔不影响匹配），先抽牌堆后手牌、排除触发牌自身，目标死亡则按 CombatId 改选存活可命中的敌人。`RallyingCallRune`
+- **一呼百应同一批自动打出不会递归启动另一批。** 否则放血回手一类效果会自身无限重入；按模型 ID 匹配同名牌（升级与附魔不影响匹配），只取抽牌堆（2026-09 起不再连带手牌：遥测胜率偏差 +10.5，初始牌组打 1 张打击等于打出 5 张）、排除触发牌自身，目标死亡则按 CombatId 改选存活可命中的敌人。`RallyingCallRune`
 - **轮转不息的辉星优惠必须用临时费用 + `TryModifyStarCost` 延续。** 原版辉星 ThisTurn 在打出后会被清理，不延续则"打出再回手"不再免费；能量侧用整回合减费。无每回合次数限制。`EndlessRotationRune`
 - **见血封喉是加算进原版攻击伤害，不是额外伤害事件。** 因此照常吃攻击伤害修饰与格挡，预览用同一公式；小刀身份复用项目规则，所以"大号匕首"替换的君王之剑也受益。`VenomousBladeRune`、`HextechKnifeHelper`
 - **森罗万象先确认持有者在本次结束回合的 participants 里再冻结球队列。** 避免队友额外回合触发；已离场的球不再触发，新生成的球不扩大本批次。`MyriadManifestationsRune`
@@ -18,11 +18,13 @@
 - **我方扇巴掌 / 恶趣味 / 坚若磐石监听"持有者自己收到负面效果"（来源不限），且不限每回合次数；折磨者仍监听"给敌人施加"，同样不限次数。** 去掉上限是为了让同轴海克斯能叠加，而不是拿到第二个就零收益。判定沿用敌方侧的口径：只认层数增加、排除临时属性的包装 Power。`LimitedDebuffProcRelicBase` 的 `SavedProcsThisTurn` 对无上限子类已无用，但它在 SavedProperty 清单里，不能删。`SlapRune`、`BadTasteRune`、`AdamantRune`、`TormentorRune`
 - **坚若磐石的格挡一律记到原版 `BlockNextTurnPower`，不当场发放。** 负面效果多半在敌方回合收到，当场给的格挡会在玩家回合开始时被清掉；原版这个能力在 `AfterBlockCleared` 发放（有壁垒时同样触发），自带显示、保存与联机同步，不需要新增待发状态。
 - **回归基本功的"无法打出 3 费及以上"只限手动出牌，自动打出一律放行。** 与敌方同名海克斯、卡卡同口径；否则同时持有"升级：XX形态"时，3 费形态牌开局自动打出会被拦下直接进弃牌堆。`BackToBasicsRune`
+- **王国军势生成仆从牌期间，嵌套进来的铸造不再生成牌。** 它与凝辉（生成牌→辉星）、王令（辉星→铸造）三件同持时构成无终点循环：mplab 复现中 1 颗辉星在 2.5 秒内把牌数从 10 刷到 144，遥测里三件同持的对局 2 胜 26 负、集中卡在拿到第三件后的第一场战斗。加防重入后，同一场景 1 颗辉星只多出 3 张牌就结束。只持有王国军势＋王令时不受影响。`KingdomArmyRune`
 
 ## 敌方海克斯
 
 - **`MonsterHexKind` 一律尾部追加，不重排旧编号。** 编号是保存与联机契约。
 - **敌方蓝烛药箱（玩家状态/诅咒牌耗能 +1）优先级最低，视同加在基础费用上。** 原版费用 = 基础 → 卡牌临时修正 → 常规 Hook → Late Hook，敌方修饰器在监听顺序里排在遗物、能力、卡牌之后。所以 +1 在常规阶段按卡牌临时修正折算后再加（轮转不息一类的本回合 0 费会吃掉它，相对减费照常叠加）；我方蓝烛药箱的 0 费因此移到 Late 阶段，否则会被加回 1；敌方开悟的 1 费下限同在 Late 且排在遗物之后，仍最优先。原版无法打出的状态/诅咒基础费用是 -1，原版 Hook 直接跳过，这类牌不受影响。`BlueCandleMedkitEnemyHex`、`BlueCandleMedkitRune`
+- **豪猪（每 3N 次）与百炼成钢（每 N 次）的"未被格挡伤害"按敌人 CombatId 计数，整场战斗累积、余数带到下回合，战斗结束才清空；获得的荆棘与临时缓慢仍只到本回合。** N 为联机人数。描述里的 `{HitsNeeded}` 由 `MonsterHexCatalog` 的按人数缩放阈值表填值，表里必须写字面量（`sync_content_txt.py` 按字面量渲染 TXT 的"3N"），测试断言它与效果类常数一致。`PorcupineEnemyHex`、`HundredRefinementsEnemyHex`
 - **偷窃草蜢：AsleepPower / SlumberPower 不属于原版 `IsStunned`，必须单独排除。** 计划偷牌和行动结束实际偷牌两处都要排。`ThievingHopperEnemyHex`
 - **偷窃草蜢：MinionPower 单位不偷牌逃跑。** 仆从退场常绑在首领的 `AfterDeath` 上（女王的 TorchHeadAmalgam），而 `CreatureCmd.Escape` 不发死亡回调，逃跑会破坏遭遇关系；不能靠改女王或伪造死亡事件绕过。
 - **偷窃草蜢：逃跑意图靠 FollowUpState 自循环保留，不要设 `MustPerformOnceBeforeTransitioning`。** 那把锁会让千足虫 ReattachPower 的 `SetMoveImmediate(DeadState)` 失效，挡住复活。

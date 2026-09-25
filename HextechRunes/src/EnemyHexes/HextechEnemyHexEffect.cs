@@ -66,6 +66,14 @@ internal abstract class HextechEnemyHexEffect
 		return true;
 	}
 
+	/// <summary>给该敌人的命中计数 +1,返回这一次是否恰好凑满一个阈值(每满 threshold 次返回一次 true)。</summary>
+	internal static bool ReachesHitThreshold(Dictionary<uint, int> counters, uint combatId, int threshold)
+	{
+		int hits = counters.GetValueOrDefault(combatId, 0) + 1;
+		counters[combatId] = hits;
+		return threshold > 0 && hits % threshold == 0;
+	}
+
 	internal virtual decimal ModifyPlayerAttackEnergyCostMultiplier(HextechEnemyHexContext context, CardModel card, decimal originalCost)
 	{
 		return 1m;

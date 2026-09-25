@@ -203,7 +203,7 @@ internal static class HextechPlayerRuneRegistry
 		Rune<VoidFormUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 19, tagKey: "COMPREHENSIVE"),
 		Rune<EchoFormUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 21, tagKey: "COMPREHENSIVE"),
 		Rune<SerpentFormUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Silent, characterOrder: 19, tagKey: "COMPREHENSIVE"),
-		Rune<DemonFormUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 20, tagKey: "COMPREHENSIVE"),
+		Rune<DemonFormUpgradeRune>(HextechRarityTier.Prismatic, characterPool: PlayerRuneCharacterPool.Ironclad, characterOrder: 20, tagKey: "COMPREHENSIVE"),
 		Rune<ReaperFormUpgradeRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Necrobinder, characterOrder: 23, tagKey: "COMPREHENSIVE"),
 		Rune<SwordFlightRune>(HextechRarityTier.Gold, flags: PlayerRuneFlags.Disabled, characterPool: PlayerRuneCharacterPool.Regent, characterOrder: 13, tagKey: "COMPREHENSIVE"),
 		Rune<ElectrodynamicsRune>(HextechRarityTier.Gold, characterPool: PlayerRuneCharacterPool.Defect, characterOrder: 15, tagKey: "ORB"),

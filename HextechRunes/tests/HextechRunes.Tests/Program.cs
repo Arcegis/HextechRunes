@@ -291,6 +291,7 @@ internal static partial class Program
 			new(nameof(FourPrismaticEnemiesKeepIdentityAndStrengthScope), FourPrismaticEnemiesKeepIdentityAndStrengthScope),
 			new(nameof(PlayerVitalSparkScopesCardsAndCleansUp), PlayerVitalSparkScopesCardsAndCleansUp),
 			new(nameof(EnemyMoreTheMerrierUsesPooledRelicsForAllThreeMultipliers), EnemyMoreTheMerrierUsesPooledRelicsForAllThreeMultipliers),
+			new(nameof(BalanceAdjustmentsSeptember25), BalanceAdjustmentsSeptember25),
 			new(nameof(EnemyGiantSlayerScalesWithPlayerMaxHp), EnemyGiantSlayerScalesWithPlayerMaxHp),
 			new(nameof(EnemyBlueCandleRaisesPlayerStatusAndCurseCosts), EnemyBlueCandleRaisesPlayerStatusAndCurseCosts),
 			new(nameof(EnemyEnlightenmentFloorsDiscountedCostsWithoutChangingBase), EnemyEnlightenmentFloorsDiscountedCostsWithoutChangingBase),

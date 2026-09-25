@@ -71,7 +71,6 @@ internal static class MpLabDriver
 	private static bool _finished;
 	private static ulong _quitAtMsec;
 	private static Type? _runeSelectionScreenType;
-	private static Type? _demonFormRuneType;
 
 	internal static void Start(string role)
 	{
@@ -362,10 +361,29 @@ internal static class MpLabDriver
 		}
 	}
 
+	private static bool _starsPoked;
+
+	private static string DescribePiles(Player player)
+	{
+		PlayerCombatState? combat = player.PlayerCombatState;
+		return combat == null ? "cards=?" : $"cards={combat.AllCards.Count()} stars={combat.Stars}";
+	}
+
+	// 逐个获得,避免同一玩家的多个 Obtain 并发交错。
+	private static async Task GrantRunesInOrder(Player player, IReadOnlyList<Type> runeTypes)
+	{
+		MethodInfo obtain = typeof(RelicCmd).GetMethods(BindingFlags.Public | BindingFlags.Static)
+			.First(m => m.Name == nameof(RelicCmd.Obtain) && m.IsGenericMethodDefinition && m.GetParameters().Length == 1);
+		foreach (Type runeType in runeTypes)
+		{
+			await (Task)obtain.MakeGenericMethod(runeType).Invoke(null, [player])!;
+		}
+	}
+
 	private static void SeedDecks(RunState runState)
 	{
 		_deckSeeded = true;
-		_demonFormRuneType ??= FindType(FormScenario.RuneTypeName);
+		List<Type> runeTypes = FormScenario.RuneTypeNames.Select(FindType).OfType<Type>().ToList();
 		CardModel canonical = FormScenario.Card;
 		// 1 张走逐张自动打出,≥2 张走合并批处理。
 		int formCount = int.TryParse(System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_FORMS"), out int forms) ? Math.Max(0, forms) : 3;
@@ -378,15 +396,8 @@ internal static class MpLabDriver
 				player.Deck.AddInternal(card, player.Deck.Cards.Count, silent: true);
 			}
 
-			if (_demonFormRuneType != null)
-			{
-				MethodInfo obtain = typeof(RelicCmd).GetMethods(BindingFlags.Public | BindingFlags.Static)
-					.First(m => m.Name == nameof(RelicCmd.Obtain) && m.IsGenericMethodDefinition && m.GetParameters().Length == 1)
-					.MakeGenericMethod(_demonFormRuneType);
-				grants.Add((Task)obtain.Invoke(null, [player])!);
-			}
-
-			Info($"seeded player {player.NetId}: deck={player.Deck.Cards.Count} cards, rune={(_demonFormRuneType != null ? "granting" : "type missing")}");
+			grants.Add(GrantRunesInOrder(player, runeTypes));
+			Info($"seeded player {player.NetId}: deck={player.Deck.Cards.Count} cards, runes={string.Join(",", runeTypes.Select(t => t.Name))}");
 		}
 
 		_relicGrant = Task.WhenAll(grants);
@@ -486,7 +497,14 @@ internal static class MpLabDriver
 		{
 			_armedRound = state.RoundNumber;
 			_endTurnDueMsec = now + 2500;
-			Info($"round {state.RoundNumber}: hp={me.Creature.CurrentHp}/{me.Creature.MaxHp} powers=[{string.Join(",", me.Creature.Powers.Select(p => $"{p.Id.Entry}:{p.Amount}"))}]");
+			Info($"round {state.RoundNumber}: hp={me.Creature.CurrentHp}/{me.Creature.MaxHp} powers=[{string.Join(",", me.Creature.Powers.Select(p => $"{p.Id.Entry}:{p.Amount}"))}] {DescribePiles(me)}");
+			if (FormScenario.PokeStarsInCombat && _role == "host" && !_starsPoked)
+			{
+				// 驱动不出牌:在出牌阶段直接给 1 辉星,模拟打出生星牌,点燃"生成牌→辉星→铸造"链。只在主机执行,仅用于卡死检测。
+				_starsPoked = true;
+				Info($"poking 1 star for {me.NetId}");
+				_ = PlayerCmd.GainStars(1, me).ContinueWith(t => Log.Info($"{Tag}[{_role}] star poke finished: {t.Status} {DescribePiles(me)}", 2), TaskScheduler.Default);
+			}
 			return;
 		}
 
@@ -498,7 +516,7 @@ internal static class MpLabDriver
 		try
 		{
 			_turnsEnded++;
-			Info($"ending turn #{_turnsEnded} round={state.RoundNumber} for {me.NetId}");
+			Info($"ending turn #{_turnsEnded} round={state.RoundNumber} for {me.NetId} {DescribePiles(me)}");
 			PlayerCmd.EndTurn(me, canBackOut: false, actionDuringEnemyTurn: null!);
 			// 若请求没被接受(下一次 tick 仍未就绪),隔 5 秒再发,避免每 tick 重复请求。
 			_endTurnDueMsec = now + 5000;
@@ -599,7 +617,10 @@ internal static class MpLabDriver
 	}
 }
 
-/// <summary>HEXTECH_MPLAB_FORM 选择角色 + 形态牌 + "升级:XX形态"符文三件套,默认战士恶魔形态。</summary>
+/// <summary>
+/// HEXTECH_MPLAB_FORM 选择角色 + 形态牌 + 要发放的符文,默认战士恶魔形态。
+/// regentloop:储君 + 王国军势/凝辉/王令(初始遗物神授之权进房给辉星即可点燃循环,配合 HEXTECH_MPLAB_FORMS=0)。
+/// </summary>
 internal static class FormScenario
 {
 	private static readonly string Key = (System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_FORM") ?? "demon").Trim().ToLowerInvariant();
@@ -609,7 +630,7 @@ internal static class FormScenario
 		"echo" => ModelDb.Character<Defect>(),
 		"reaper" => ModelDb.Character<Necrobinder>(),
 		"serpent" => ModelDb.Character<Silent>(),
-		"void" => ModelDb.Character<Regent>(),
+		"void" or "regentloop" => ModelDb.Character<Regent>(),
 		_ => ModelDb.Character<Ironclad>()
 	};
 
@@ -622,12 +643,15 @@ internal static class FormScenario
 		_ => ModelDb.Card<DemonForm>()
 	};
 
-	internal static string RuneTypeName => Key switch
+	internal static bool PokeStarsInCombat => Key == "regentloop";
+
+	internal static string[] RuneTypeNames => Key switch
 	{
-		"echo" => "HextechRunes.EchoFormUpgradeRune",
-		"reaper" => "HextechRunes.ReaperFormUpgradeRune",
-		"serpent" => "HextechRunes.SerpentFormUpgradeRune",
-		"void" => "HextechRunes.VoidFormUpgradeRune",
-		_ => "HextechRunes.DemonFormUpgradeRune"
+		"echo" => ["HextechRunes.EchoFormUpgradeRune"],
+		"reaper" => ["HextechRunes.ReaperFormUpgradeRune"],
+		"serpent" => ["HextechRunes.SerpentFormUpgradeRune"],
+		"void" => ["HextechRunes.VoidFormUpgradeRune"],
+		"regentloop" => ["HextechRunes.KingdomArmyRune", "HextechRunes.CondensedRadianceRune", "HextechRunes.RoyalCommandRune"],
+		_ => ["HextechRunes.DemonFormUpgradeRune"]
 	};
 }
