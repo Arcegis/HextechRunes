@@ -367,6 +367,13 @@ internal static partial class HextechRuneConfigMenuHooks
 			booleanBindings,
 			compactLayout));
 		section.AddChild(CreateBooleanOption(
+			L("HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE"),
+			L("HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION"),
+			() => pending.ConfirmRuneSelection,
+			value => pending.ConfirmRuneSelection = value,
+			booleanBindings,
+			compactLayout));
+		section.AddChild(CreateBooleanOption(
 			L("HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_TITLE"),
 			L("HEXTECH_SHOW_HIDDEN_RELICS_TOGGLE_DESCRIPTION"),
 			() => pending.ShowHiddenRelicsToggle,

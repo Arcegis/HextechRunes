@@ -56,6 +56,8 @@
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "开启后，主菜单左下角会显示“海克斯大乱斗模组为最新版 XXX”等版本检查提示；关闭后不再显示。",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "折叠敌方海克斯",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "开启后，战斗中敌方海克斯会收进顶栏地图按钮左侧的折叠按钮里，点击展开即可查看；关闭后恢复旧版，直接平铺显示在顶栏上。",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "海克斯选择二次确认",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "开启后，在海克斯选择界面点击卡片只会先标记，需要再按“确认”才会选定；确认前仍可重随或取消。自选模式本身就需要确认，不受此项影响。",
   "HEXTECH_FORGE_PRICE_TITLE": "属性锻造器价格",
   "HEXTECH_FORGE_PRICE_LABEL": "商店价格",
   "HEXTECH_FORGE_RARITY_TITLE": "属性锻造器稀有度权重",

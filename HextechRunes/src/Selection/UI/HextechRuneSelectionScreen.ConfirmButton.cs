@@ -11,11 +11,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private static readonly Color ConfirmTextDisabledColor = new(0.62f, 0.65f, 0.7f, 0.75f);
 
 	/// <summary>
-	/// 选择界面底部的文字确认按钮(自选确认、只选敌方海克斯时的确认),外观与重随/移除按钮的铜金色面板一致。
+	/// 选择界面底部的文字按钮(确认/取消),主按钮外观与重随/移除按钮的铜金色面板一致,次按钮为同形的钢灰色。
 	/// 文字不用 Button 自带的 Text:Button 走主题默认字体,中日韩等语言会落到系统回退字体而发虚;
 	/// 改由居中的 MegaLabel 绘制,它在 _Ready 时按当前语言替换字体,与界面其他文字同一套渲染。
 	/// </summary>
-	private static Button CreateConfirmButton(string name, Vector2 size, out MegaLabel label)
+	private static Button CreateConfirmButton(string name, Vector2 size, out MegaLabel label, bool secondary = false)
 	{
 		Button button = new()
 		{
@@ -26,10 +26,20 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			FocusMode = FocusModeEnum.All,
 			MouseDefaultCursorShape = CursorShape.PointingHand
 		};
-		button.AddThemeStyleboxOverride("normal", CreateConfirmStyle(new Color(0.2f, 0.15f, 0.08f, 0.96f), new Color(0.78f, 0.62f, 0.34f, 1f), 6));
-		button.AddThemeStyleboxOverride("hover", CreateConfirmStyle(new Color(0.28f, 0.21f, 0.1f, 0.98f), new Color(0.98f, 0.82f, 0.46f, 1f), 10));
-		button.AddThemeStyleboxOverride("pressed", CreateConfirmStyle(new Color(0.13f, 0.1f, 0.05f, 0.98f), new Color(0.9f, 0.72f, 0.4f, 1f), 2));
-		button.AddThemeStyleboxOverride("hover_pressed", CreateConfirmStyle(new Color(0.13f, 0.1f, 0.05f, 0.98f), new Color(0.9f, 0.72f, 0.4f, 1f), 2));
+		if (secondary)
+		{
+			button.AddThemeStyleboxOverride("normal", CreateConfirmStyle(new Color(0.12f, 0.14f, 0.18f, 0.96f), new Color(0.5f, 0.56f, 0.64f, 0.9f), 6));
+			button.AddThemeStyleboxOverride("hover", CreateConfirmStyle(new Color(0.17f, 0.2f, 0.25f, 0.98f), new Color(0.72f, 0.78f, 0.86f, 1f), 10));
+			button.AddThemeStyleboxOverride("pressed", CreateConfirmStyle(new Color(0.08f, 0.09f, 0.12f, 0.98f), new Color(0.6f, 0.66f, 0.74f, 1f), 2));
+			button.AddThemeStyleboxOverride("hover_pressed", CreateConfirmStyle(new Color(0.08f, 0.09f, 0.12f, 0.98f), new Color(0.6f, 0.66f, 0.74f, 1f), 2));
+		}
+		else
+		{
+			button.AddThemeStyleboxOverride("normal", CreateConfirmStyle(new Color(0.2f, 0.15f, 0.08f, 0.96f), new Color(0.78f, 0.62f, 0.34f, 1f), 6));
+			button.AddThemeStyleboxOverride("hover", CreateConfirmStyle(new Color(0.28f, 0.21f, 0.1f, 0.98f), new Color(0.98f, 0.82f, 0.46f, 1f), 10));
+			button.AddThemeStyleboxOverride("pressed", CreateConfirmStyle(new Color(0.13f, 0.1f, 0.05f, 0.98f), new Color(0.9f, 0.72f, 0.4f, 1f), 2));
+			button.AddThemeStyleboxOverride("hover_pressed", CreateConfirmStyle(new Color(0.13f, 0.1f, 0.05f, 0.98f), new Color(0.9f, 0.72f, 0.4f, 1f), 2));
+		}
 		button.AddThemeStyleboxOverride("disabled", CreateConfirmStyle(new Color(0.1f, 0.11f, 0.14f, 0.88f), new Color(0.36f, 0.4f, 0.47f, 0.7f), 0));
 		button.AddThemeStyleboxOverride("focus", HextechControllerInput.CreateFocusRing());
 

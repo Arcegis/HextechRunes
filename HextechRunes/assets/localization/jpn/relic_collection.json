@@ -56,6 +56,8 @@
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "有効にすると、メインメニュー左下に Hextech Mayhem のバージョン確認通知が表示されます。無効にすると非表示になります。",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "ルーン選択の確認",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "オンにすると、選択画面でカードをクリックしても仮選択になり、「確定」を押して初めて決定されます。確定前はリロールや取り消しができます。直接選択モードは常に確定が必要なため、この設定の影響を受けません。",
   "HEXTECH_FORGE_PRICE_TITLE": "ステータス金床の価格",
   "HEXTECH_FORGE_PRICE_LABEL": "ショップ価格",
   "HEXTECH_FORGE_RARITY_TITLE": "ステータス金床レアリティ重み",

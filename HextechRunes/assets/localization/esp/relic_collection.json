@@ -56,6 +56,8 @@
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "Cuando está activado, el menú principal muestra el aviso de versión de Hextech Mayhem en la esquina inferior izquierda. Desactívalo para ocultarlo.",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "Confirmar selección de runa",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "Si está activado, al hacer clic en una runa en la pantalla de selección solo se marca; pulsa Confirmar para tomarla. Antes de confirmar aún puedes repetir o cancelar. El modo de elección directa siempre pide confirmación y no se ve afectado.",
   "HEXTECH_FORGE_PRICE_TITLE": "Precio del forjador de atributo",
   "HEXTECH_FORGE_PRICE_LABEL": "Precio en tienda",
   "HEXTECH_FORGE_RARITY_TITLE": "Pesos de rareza de forjador",

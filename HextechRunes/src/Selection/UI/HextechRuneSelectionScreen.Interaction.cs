@@ -38,9 +38,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		if (ShouldUsePlayerRuneConfirmation(_metadataMode, _enemyOnly))
+		if (UsesPlayerRuneConfirmation)
 		{
-			_pendingPlayerRuneSlot = ResolvePendingPlayerRuneSlot(_metadataMode, _enemyOnly, slotIndex, _relics.Count);
+			_pendingPlayerRuneSlot = ResolvePendingPlayerRuneSlot(UsesPlayerRuneConfirmation, slotIndex, _relics.Count);
 			if (!_pendingPlayerRuneSlot.HasValue)
 			{
 				return;
@@ -86,7 +86,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private void OnPlayerRuneConfirmPressed()
 	{
-		if (_choiceLocked || !ShouldUsePlayerRuneConfirmation(_metadataMode, _enemyOnly))
+		if (_choiceLocked || !UsesPlayerRuneConfirmation)
 		{
 			return;
 		}
@@ -111,7 +111,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private void OnPlayerRuneCancelPressed()
 	{
-		if (_choiceLocked || !ShouldUsePlayerRuneConfirmation(_metadataMode, _enemyOnly))
+		if (_choiceLocked || !UsesPlayerRuneConfirmation)
 		{
 			return;
 		}
@@ -151,12 +151,12 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private void UpdatePendingPlayerRuneVisuals()
 	{
-		if (!ShouldUsePlayerRuneConfirmation(_metadataMode, _enemyOnly))
+		if (!UsesPlayerRuneConfirmation)
 		{
 			return;
 		}
 
-		for (int i = 0; i < _holders.Count; i++)
+		for (int i = 0; i < _pendingSelectionOutlines.Count; i++)
 		{
 			_pendingSelectionOutlines[i].Visible = _pendingPlayerRuneSlot == i;
 		}

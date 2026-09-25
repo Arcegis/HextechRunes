@@ -114,7 +114,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			};
 			root.AddChild(_enemyOnlyConfirm);
 		}
-		else if (ShouldUsePlayerRuneConfirmation(_metadataMode, _enemyOnly))
+		else if (UsesPlayerRuneConfirmation)
 		{
 			HBoxContainer selectionActions = new()
 			{
@@ -125,31 +125,15 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			};
 			selectionActions.AddThemeConstantOverride("separation", 16);
 
-			_playerRuneConfirm = new Button
-			{
-				Name = "PlayerRuneConfirm",
-				Text = new LocString(LocTable, "HEXTECH_ENEMY_CONFIRM").GetRawText(),
-				CustomMinimumSize = new Vector2(220f, 58f),
-				FocusMode = FocusModeEnum.All,
-				Disabled = true,
-				MouseDefaultCursorShape = CursorShape.PointingHand
-			};
-			ApplySelectionActionButtonStyle(_playerRuneConfirm, confirm: true);
-			_playerRuneConfirm.AddThemeFontSizeOverride("font_size", 26);
+			_playerRuneConfirm = CreateConfirmButton("PlayerRuneConfirm", new Vector2(240f, 60f), out MegaLabel playerConfirmLabel);
+			playerConfirmLabel.SetTextAutoSize(new LocString(LocTable, "HEXTECH_ENEMY_CONFIRM").GetRawText());
+			_playerRuneConfirm.Disabled = true;
 			_playerRuneConfirm.Pressed += OnPlayerRuneConfirmPressed;
 			selectionActions.AddChild(_playerRuneConfirm);
 
-			_playerRuneCancel = new Button
-			{
-				Name = "PlayerRuneCancel",
-				Text = new LocString(LocTable, "HEXTECH_CONFIG_CANCEL").GetRawText(),
-				CustomMinimumSize = new Vector2(220f, 58f),
-				FocusMode = FocusModeEnum.All,
-				Disabled = true,
-				MouseDefaultCursorShape = CursorShape.PointingHand
-			};
-			ApplySelectionActionButtonStyle(_playerRuneCancel, confirm: false);
-			_playerRuneCancel.AddThemeFontSizeOverride("font_size", 26);
+			_playerRuneCancel = CreateConfirmButton("PlayerRuneCancel", new Vector2(240f, 60f), out MegaLabel playerCancelLabel, secondary: true);
+			playerCancelLabel.SetTextAutoSize(new LocString(LocTable, "HEXTECH_CONFIG_CANCEL").GetRawText());
+			_playerRuneCancel.Disabled = true;
 			_playerRuneCancel.Pressed += OnPlayerRuneCancelPressed;
 			selectionActions.AddChild(_playerRuneCancel);
 			root.AddChild(selectionActions);

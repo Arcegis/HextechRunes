@@ -56,6 +56,8 @@
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "활성화하면 메인 메뉴 좌측 하단에 이 모드의 버전 확인 안내가 표시됩니다. 비활성화하면 숨겨집니다.",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "적 증강 접기",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "활성화하면 전투 중 적 증강이 지도 버튼 왼쪽의 접기 버튼 안으로 정리됩니다. 버튼을 클릭하면 펼쳐서 확인할 수 있습니다. 비활성화하면 기존처럼 상단 바에 그대로 표시됩니다.",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "룬 선택 확인",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "켜면 선택 화면에서 카드를 클릭해도 표시만 되고, '확인'을 눌러야 선택됩니다. 확인 전에는 리롤하거나 취소할 수 있습니다. 직접 선택 모드는 항상 확인이 필요하므로 이 설정의 영향을 받지 않습니다.",
   "HEXTECH_FORGE_PRICE_TITLE": "능력치 모루 가격",
   "HEXTECH_FORGE_PRICE_LABEL": "상점 가격",
   "HEXTECH_FORGE_RARITY_TITLE": "능력치 모루 희귀도 가중치",

@@ -376,31 +376,30 @@ internal static partial class Program
 	private static void PlayerRuneSelectionUsesPendingSlotUntilConfirmation()
 	{
 		Expect(
-			HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.PlayerRune, enemyOnly: false),
-			"normal player rune selection should expose confirmation");
+			HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.PlayerRune, enemyOnly: false, selfPickMode: false, preferenceEnabled: true),
+			"normal player rune selection uses confirmation when the preference is on");
 		Expect(
-			!HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.Forge, enemyOnly: false),
+			!HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.PlayerRune, enemyOnly: false, selfPickMode: false, preferenceEnabled: false),
+			"preference off keeps one-click selection");
+		Expect(
+			!HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.PlayerRune, enemyOnly: false, selfPickMode: true, preferenceEnabled: true),
+			"self-pick already confirms; its confirm must not be swallowed as a slotless pending pick");
+		Expect(
+			!HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.Forge, enemyOnly: false, selfPickMode: false, preferenceEnabled: true),
 			"forge selection should remain immediate");
 		Expect(
-			!HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.PlayerRune, enemyOnly: true),
+			!HextechRuneSelectionScreen.ShouldUsePlayerRuneConfirmation(HextechSelectionMetadataMode.PlayerRune, enemyOnly: true, selfPickMode: false, preferenceEnabled: true),
 			"enemy-only selection should keep its existing confirmation");
 		Equal(
 			1,
-			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(HextechSelectionMetadataMode.PlayerRune, enemyOnly: false, slotIndex: 1, slotCount: 3),
+			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: true, slotIndex: 1, slotCount: 3),
 			"card click should record its slot without completing the selection");
 		Equal(
 			0,
-			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(HextechSelectionMetadataMode.PlayerRune, enemyOnly: false, slotIndex: 0, slotCount: 3),
+			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: true, slotIndex: 0, slotCount: 3),
 			"a second card click should replace the pending slot");
-		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(HextechSelectionMetadataMode.Forge, enemyOnly: false, slotIndex: 0, slotCount: 3), "forge has no pending slot");
-
-		MethodInfo buildUi = typeof(HextechRuneSelectionScreen).GetMethod("BuildUi", BindingFlags.Instance | BindingFlags.NonPublic)!;
-		string[] localizedKeys = PatchProcessor.GetOriginalInstructions(buildUi)
-			.Select(static instruction => instruction.operand)
-			.OfType<string>()
-			.ToArray();
-		Expect(localizedKeys.Contains("HEXTECH_ENEMY_CONFIRM"), "player confirm should reuse the existing confirm key");
-		Expect(localizedKeys.Contains("HEXTECH_CONFIG_CANCEL"), "player cancel should reuse the existing cancel key");
+		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: false, slotIndex: 0, slotCount: 3), "no pending slot without confirmation");
+		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: true, slotIndex: 3, slotCount: 3), "out-of-range slot is not pending");
 	}
 
 	private static void PlayerRuneRerollClearsOnlyCurrentPendingSlot()

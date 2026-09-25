@@ -56,6 +56,8 @@
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "เมื่อเปิดใช้งาน เมนูหลักจะแสดงประกาศตรวจสอบเวอร์ชันของ Hextech Mayhem ที่มุมล่างซ้าย ปิดเพื่อซ่อน",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "ยืนยันการเลือกรูน",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "เมื่อเปิด การคลิกการ์ดรูนในหน้าจอเลือกจะเป็นเพียงการทำเครื่องหมาย ต้องกด ยืนยัน จึงจะได้รับรูนนั้น ก่อนยืนยันยังสุ่มใหม่หรือยกเลิกได้ โหมดเลือกเองต้องยืนยันอยู่แล้วจึงไม่ได้รับผลจากตัวเลือกนี้",
   "HEXTECH_FORGE_PRICE_TITLE": "ราคาช่างหลอมค่าสถานะ",
   "HEXTECH_FORGE_PRICE_LABEL": "ราคาในร้านค้า",
   "HEXTECH_FORGE_RARITY_TITLE": "น้ำหนักความหายากของช่างหลอมค่าสถานะ",

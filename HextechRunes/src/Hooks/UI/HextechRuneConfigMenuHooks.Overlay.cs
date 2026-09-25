@@ -169,7 +169,8 @@ internal static partial class HextechRuneConfigMenuHooks
 			HextechRuneConfiguration.GetSnapshot(),
 			HextechRelicVisibilityHooks.GetShowHiddenRelicsToggle(),
 			HextechRelicVisibilityHooks.GetShowUpdateNotice(),
-			HextechRelicVisibilityHooks.GetCollapseEnemyHexes());
+			HextechRelicVisibilityHooks.GetCollapseEnemyHexes(),
+			HextechRelicVisibilityHooks.GetConfirmRuneSelection());
 		List<NumericValueBinding> numericBindings = [];
 		List<BooleanValueBinding> booleanBindings = [];
 		bool configReadOnly = IsEnemyHexCountConfigReadOnly();

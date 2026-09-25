@@ -56,6 +56,8 @@
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "When enabled, the main menu shows the Hextech Mayhem version-check notice in the lower-left corner. Disable to hide it.",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "Confirm Rune Selection",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "When on, clicking a rune card on the selection screen only marks it; press Confirm to take it. You can still reroll or cancel before confirming. Direct pick mode always asks for confirmation and is unaffected.",
   "HEXTECH_FORGE_PRICE_TITLE": "Stat Forger Price",
   "HEXTECH_FORGE_PRICE_LABEL": "Shop Price",
   "HEXTECH_FORGE_RARITY_TITLE": "Stat Forger Rarity Weights",

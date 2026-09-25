@@ -54,6 +54,8 @@
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "Когда включено, в главном меню в левом нижнем углу отображается уведомление о проверке версии «Хаос Хекстека». Отключите, чтобы скрыть его.",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
   "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "Подтверждение выбора руны",
+  "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "Если включено, щелчок по руне на экране выбора только отмечает её; чтобы взять её, нажмите «Подтвердить». До подтверждения можно перевыбрать или отменить. Режим прямого выбора всегда требует подтверждения и не зависит от этой настройки.",
   "HEXTECH_FORGE_PRICE_TITLE": "Цена наковальни показателей",
   "HEXTECH_FORGE_PRICE_LABEL": "Цена в магазине",
   "HEXTECH_FORGE_RARITY_TITLE": "Вес редкости наковальни показателей",
