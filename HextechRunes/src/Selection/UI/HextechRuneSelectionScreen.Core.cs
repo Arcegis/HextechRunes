@@ -55,7 +55,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	// 只在游戏处于手柄/纯键盘方向导航时给默认焦点:原版切进手柄模式与界面切换时都会聚焦它;鼠标玩家返回 null,不出焦点框。
 	public Control? DefaultFocusedControl => HextechControllerInput.IsDirectionalNavigation
-		? _holders.FirstOrDefault(CanReceiveFocus) ?? (_enemyOnlyConfirm != null && CanReceiveFocus(_enemyOnlyConfirm) ? _enemyOnlyConfirm : null)
+		? _holders.FirstOrDefault(CanReceiveFocus)
+			?? _selfPickButtons.FirstOrDefault(CanReceiveFocus)
+			?? (_enemyOnlyConfirm != null && CanReceiveFocus(_enemyOnlyConfirm) ? _enemyOnlyConfirm : null)
 		: null;
 
 	public bool RequestedReroll => false;
@@ -94,9 +96,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		int playerRuneRerollLimit,
 		string? titleOverride,
 		HextechSelectionMetadataMode metadataMode,
-		HextechGoldenRerollSession? goldenRerollSession)
+		HextechGoldenRerollSession? goldenRerollSession,
+		IReadOnlyList<RelicModel>? selfPickPool)
 	{
 		_relics = HextechWeightedRuneOptions.Copy(relics);
+		_selfPickPool = selfPickPool;
 		_rerollFunc = rerollFunc;
 		_enemyHexRerollFunc = enemyHexOptions?.RerollFunc;
 		_enemyHexChanged = enemyHexOptions?.Changed;
@@ -144,9 +148,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		int playerRuneRerollLimit = 1,
 		string? titleOverride = null,
 		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune,
-		HextechGoldenRerollSession? goldenRerollSession = null)
+		HextechGoldenRerollSession? goldenRerollSession = null,
+		IReadOnlyList<RelicModel>? selfPickPool = null)
 	{
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count}");
+		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count} selfPickPool={selfPickPool?.Count ?? 0}");
 		return new HextechRuneSelectionScreen(
 			relics,
 			monsterHexRelic,
@@ -155,7 +160,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			playerRuneRerollLimit,
 			titleOverride,
 			metadataMode,
-			goldenRerollSession);
+			goldenRerollSession,
+			selfPickPool);
 	}
 
 	public override void _ExitTree()

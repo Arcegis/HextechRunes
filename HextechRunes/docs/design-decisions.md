@@ -59,6 +59,7 @@
 
 ## 视觉
 
+- **带文字的按钮不用 Godot `Button.Text`，文字交给居中的 `MegaLabel`。** `Button` 用主题默认字体，中日韩等语言会落到系统回退字体而发虚；`MegaLabel` 在 `_Ready` 时按当前语言替换字体。选择界面的确认按钮统一走 `CreateConfirmButton`（与重随/移除按钮同一套铜金色面板）。
 - **濒死狂宴红光用的是原版 0.111.0 SOUL_NEXUS 图集的 `glowie` 区域，未改色未重绘。** 源 `res://animations/monsters/soul_nexus/soulnexus.png`，图集 1063×656，裁切 `(2, 77, 580, 577)`，无旋转；模组自己打包该纹理，运行时不依赖原版图集位置、Spine 或怪物场景脚本。重新提取用 `tools/extract_near_death_feast_glow.gd`，该脚本只校验整张图集尺寸，识别不了同尺寸重排 —— 游戏更新后先人工核对 `.atlas` 里 `glowie` 的坐标。`HextechNearDeathFeastVisual`
 - **红光几何是调出来的固定值：** 中心在碰撞框自底向上 64% 处，基础宽度 = 碰撞框宽度夹取到 120–360 像素后的 2.45 倍，两层同步缩放。
 - **表现节点不进战斗状态、不调用共享 RNG。** 死亡或脱离濒死时隐藏，角色节点销毁时释放。
@@ -74,6 +75,7 @@
 - **倍率为零且合法池只剩专属时回退到原有标签权重，避免空选项。** 没有映射到原版角色池的模组角色不推进专属权重。
 - **权重确认后提交绝对值，不按最后三个候选反推被重掷覆盖的历史。** 远端缺倍率或格式错误时中止该选择，禁止默默回退到 150%。`HextechWeightedRuneOptions`
 - **权重存进既有 `SavedRuneSelectionJournalJson` 的 `characterWeights`（按玩家 ID 排序），没有新增或改名 SavedProperty。** 旧存档缺这部分数据时从 150% 开始；无尽循环清理选择流水时保留倍率。
+- **玩家重随次数设为无限时，每幕选择界面改成直接自选：列出本稀有度的全部合法海克斯，与配置界面的启用开关同一套过滤（配置、幕、角色、已拥有、互斥）。** 判定读本局冻结配置（联机是房主的）；三候选照常先按权重生成，所以候选 RNG 与角色倍率照常推进，稀有度也由候选决定。自选池只在本机用 `BuildSelectableRunePool` 构造，不消耗 RNG；提交时把最终候选换成所选的一个（序号 0、无重随历史、倍率原样），远端按 ID 还原，同步格式不变。锻造器选择与只选敌方海克斯的界面不受影响。`HextechRuneSelectionScreen.SelfPick.cs`、`BuildSelfPickPool`
 
 ## 手柄
 

@@ -139,6 +139,7 @@ internal static partial class Program
 			new(nameof(CharacterWeightUsesSequentialAdditiveSteps), CharacterWeightUsesSequentialAdditiveSteps),
 			new(nameof(CharacterWeightSaveAndReplayArePerPlayer), CharacterWeightSaveAndReplayArePerPlayer),
 			new(nameof(CharacterWeightProtocolPreservesRerollProgressAndRecipes), CharacterWeightProtocolPreservesRerollProgressAndRecipes),
+			new(nameof(SelfPickSelectionRoundTripsAsSingleFinalOption), SelfPickSelectionRoundTripsAsSingleFinalOption),
 			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
 			new(nameof(RuneSelectionCandidateConstraintsMixCharactersAndLimitUpgrades), RuneSelectionCandidateConstraintsMixCharactersAndLimitUpgrades),
 			new(nameof(UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption), UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption),
