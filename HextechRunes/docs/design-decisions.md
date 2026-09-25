@@ -17,10 +17,12 @@
 - **百炼成钢的临时缓慢在官方 `BeforeSideTurnStart` 清理，并按"变化后总量减本次新增量"识别旧层。** 叠层回调会刷新整个实例的 `_appliedRound`，让旧层连续多个回合逃过清理（水银沙漏的回合开始伤害是触发链）。修正依赖 `PowerCmd.ModifyAmount` 的公开契约：先改层数 → 派发 `AfterPowerAmountChanged` → 最后才检查移除零层实例。不为沙漏或冰淇淋写特例。`HextechTemporarySlowPower`
 - **我方扇巴掌 / 恶趣味 / 坚若磐石监听"持有者自己收到负面效果"（来源不限），且不限每回合次数；折磨者仍监听"给敌人施加"，同样不限次数。** 去掉上限是为了让同轴海克斯能叠加，而不是拿到第二个就零收益。判定沿用敌方侧的口径：只认层数增加、排除临时属性的包装 Power。`LimitedDebuffProcRelicBase` 的 `SavedProcsThisTurn` 对无上限子类已无用，但它在 SavedProperty 清单里，不能删。`SlapRune`、`BadTasteRune`、`AdamantRune`、`TormentorRune`
 - **坚若磐石的格挡一律记到原版 `BlockNextTurnPower`，不当场发放。** 负面效果多半在敌方回合收到，当场给的格挡会在玩家回合开始时被清掉；原版这个能力在 `AfterBlockCleared` 发放（有壁垒时同样触发），自带显示、保存与联机同步，不需要新增待发状态。
+- **回归基本功的"无法打出 3 费及以上"只限手动出牌，自动打出一律放行。** 与敌方同名海克斯、卡卡同口径；否则同时持有"升级：XX形态"时，3 费形态牌开局自动打出会被拦下直接进弃牌堆。`BackToBasicsRune`
 
 ## 敌方海克斯
 
 - **`MonsterHexKind` 一律尾部追加，不重排旧编号。** 编号是保存与联机契约。
+- **敌方蓝烛药箱（玩家状态/诅咒牌耗能 +1）优先级最低，视同加在基础费用上。** 原版费用 = 基础 → 卡牌临时修正 → 常规 Hook → Late Hook，敌方修饰器在监听顺序里排在遗物、能力、卡牌之后。所以 +1 在常规阶段按卡牌临时修正折算后再加（轮转不息一类的本回合 0 费会吃掉它，相对减费照常叠加）；我方蓝烛药箱的 0 费因此移到 Late 阶段，否则会被加回 1；敌方开悟的 1 费下限同在 Late 且排在遗物之后，仍最优先。原版无法打出的状态/诅咒基础费用是 -1，原版 Hook 直接跳过，这类牌不受影响。`BlueCandleMedkitEnemyHex`、`BlueCandleMedkitRune`
 - **偷窃草蜢：AsleepPower / SlumberPower 不属于原版 `IsStunned`，必须单独排除。** 计划偷牌和行动结束实际偷牌两处都要排。`ThievingHopperEnemyHex`
 - **偷窃草蜢：MinionPower 单位不偷牌逃跑。** 仆从退场常绑在首领的 `AfterDeath` 上（女王的 TorchHeadAmalgam），而 `CreatureCmd.Escape` 不发死亡回调，逃跑会破坏遭遇关系；不能靠改女王或伪造死亡事件绕过。
 - **偷窃草蜢：逃跑意图靠 FollowUpState 自循环保留，不要设 `MustPerformOnceBeforeTransitioning`。** 那把锁会让千足虫 ReattachPower 的 `SetMoveImmediate(DeadState)` 失效，挡住复活。

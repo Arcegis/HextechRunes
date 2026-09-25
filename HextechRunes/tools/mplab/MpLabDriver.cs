@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Logging;
@@ -329,9 +330,10 @@ internal static class MpLabDriver
 				return;
 			}
 
-			change.Invoke(lobby, [lobby.LocalPlayer.id, ModelDb.Character<Ironclad>(), false]);
+			CharacterModel character = FormScenario.Character;
+			change.Invoke(lobby, [lobby.LocalPlayer.id, character, false]);
 			_characterChosen = true;
-			Info($"character chosen: Ironclad (local id {lobby.LocalPlayer.id})");
+			Info($"character chosen: {character.Id.Entry} (local id {lobby.LocalPlayer.id})");
 			return;
 		}
 
@@ -363,12 +365,14 @@ internal static class MpLabDriver
 	private static void SeedDecks(RunState runState)
 	{
 		_deckSeeded = true;
-		_demonFormRuneType ??= FindType("HextechRunes.DemonFormUpgradeRune");
-		CardModel canonical = ModelDb.Card<DemonForm>();
+		_demonFormRuneType ??= FindType(FormScenario.RuneTypeName);
+		CardModel canonical = FormScenario.Card;
+		// 1 张走逐张自动打出,≥2 张走合并批处理。
+		int formCount = int.TryParse(System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_FORMS"), out int forms) ? Math.Max(0, forms) : 3;
 		List<Task> grants = [];
 		foreach (Player player in runState.Players)
 		{
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < formCount; i++)
 			{
 				CardModel card = runState.CreateCard(canonical, player);
 				player.Deck.AddInternal(card, player.Deck.Cards.Count, silent: true);
@@ -465,6 +469,13 @@ internal static class MpLabDriver
 			return;
 		}
 
+		// 回合开始钩子(含形态开局自动打出)执行期间是 NotPlayPhase:此时记录的能力还没结算,
+		// 结束回合请求也会被原版丢弃,驱动就此卡住。只在出牌阶段记录和结束回合。
+		if (RunManager.Instance?.ActionQueueSynchronizer?.CombatState != ActionSynchronizerCombatState.PlayPhase)
+		{
+			return;
+		}
+
 		Player me = LocalContext.GetMe(state);
 		if (manager.IsPlayerReadyToEndTurn(me))
 		{
@@ -489,6 +500,8 @@ internal static class MpLabDriver
 			_turnsEnded++;
 			Info($"ending turn #{_turnsEnded} round={state.RoundNumber} for {me.NetId}");
 			PlayerCmd.EndTurn(me, canBackOut: false, actionDuringEnemyTurn: null!);
+			// 若请求没被接受(下一次 tick 仍未就绪),隔 5 秒再发,避免每 tick 重复请求。
+			_endTurnDueMsec = now + 5000;
 			if (_turnsEnded >= 6)
 			{
 				Finish("turn budget reached");
@@ -584,4 +597,37 @@ internal static class MpLabDriver
 		Log.Warn($"{Tag} type not found: {fullName}", 2);
 		return null;
 	}
+}
+
+/// <summary>HEXTECH_MPLAB_FORM 选择角色 + 形态牌 + "升级:XX形态"符文三件套,默认战士恶魔形态。</summary>
+internal static class FormScenario
+{
+	private static readonly string Key = (System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_FORM") ?? "demon").Trim().ToLowerInvariant();
+
+	internal static CharacterModel Character => Key switch
+	{
+		"echo" => ModelDb.Character<Defect>(),
+		"reaper" => ModelDb.Character<Necrobinder>(),
+		"serpent" => ModelDb.Character<Silent>(),
+		"void" => ModelDb.Character<Regent>(),
+		_ => ModelDb.Character<Ironclad>()
+	};
+
+	internal static CardModel Card => Key switch
+	{
+		"echo" => ModelDb.Card<EchoForm>(),
+		"reaper" => ModelDb.Card<ReaperForm>(),
+		"serpent" => ModelDb.Card<SerpentForm>(),
+		"void" => ModelDb.Card<VoidForm>(),
+		_ => ModelDb.Card<DemonForm>()
+	};
+
+	internal static string RuneTypeName => Key switch
+	{
+		"echo" => "HextechRunes.EchoFormUpgradeRune",
+		"reaper" => "HextechRunes.ReaperFormUpgradeRune",
+		"serpent" => "HextechRunes.SerpentFormUpgradeRune",
+		"void" => "HextechRunes.VoidFormUpgradeRune",
+		_ => "HextechRunes.DemonFormUpgradeRune"
+	};
 }
