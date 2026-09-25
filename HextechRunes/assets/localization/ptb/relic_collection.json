@@ -124,6 +124,7 @@
   "HEXTECH_TAG.SUMMON": "Invocação",
   "HEXTECH_TAG.VOID": "Vazio",
   "HEXTECH_TAG.DOOM": "Ruína",
+  "HEXTECH_TAG.MULTIPLAYER": "Cooperativo",
   "HEXTECH_CONFIG_EXPORT_CODE": "Exportar código",
   "HEXTECH_CONFIG_IMPORT_CODE": "Importar código",
   "HEXTECH_CONFIG_EXPORT_DONE": "Código de configuração copiado para a área de transferência — cole para compartilhar.",

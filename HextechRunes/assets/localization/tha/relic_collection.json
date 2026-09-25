@@ -124,6 +124,7 @@
   "HEXTECH_TAG.SUMMON": "อัญเชิญ",
   "HEXTECH_TAG.VOID": "สุญญตา",
   "HEXTECH_TAG.DOOM": "อายุขัย",
+  "HEXTECH_TAG.MULTIPLAYER": "ร่วมทีม",
   "HEXTECH_CONFIG_EXPORT_CODE": "ส่งออกโค้ดตั้งค่า",
   "HEXTECH_CONFIG_IMPORT_CODE": "นำเข้าโค้ดตั้งค่า",
   "HEXTECH_CONFIG_EXPORT_DONE": "คัดลอกโค้ดตั้งค่าไปยังคลิปบอร์ดแล้ว วางเพื่อแชร์ได้เลย",

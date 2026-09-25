@@ -124,6 +124,7 @@
   "HEXTECH_TAG.SUMMON": "Invocar",
   "HEXTECH_TAG.VOID": "vacío",
   "HEXTECH_TAG.DOOM": "Condena",
+  "HEXTECH_TAG.MULTIPLAYER": "Cooperativo",
   "HEXTECH_CONFIG_EXPORT_CODE": "Exportar código",
   "HEXTECH_CONFIG_IMPORT_CODE": "Importar código",
   "HEXTECH_CONFIG_EXPORT_DONE": "Código de configuración copiado al portapapeles: pégalo para compartirlo.",

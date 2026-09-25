@@ -124,6 +124,7 @@
   "HEXTECH_TAG.SUMMON": "召唤",
   "HEXTECH_TAG.VOID": "虚无",
   "HEXTECH_TAG.DOOM": "灾厄",
+  "HEXTECH_TAG.MULTIPLAYER": "联机",
   "HEXTECH_CONFIG_EXPORT_CODE": "导出配置码",
   "HEXTECH_CONFIG_IMPORT_CODE": "导入配置码",
   "HEXTECH_CONFIG_EXPORT_DONE": "配置码已复制到剪贴板，粘贴即可分享。",

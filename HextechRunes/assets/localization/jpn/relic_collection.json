@@ -124,6 +124,7 @@
   "HEXTECH_TAG.SUMMON": "召喚",
   "HEXTECH_TAG.VOID": "虚無",
   "HEXTECH_TAG.DOOM": "破滅",
+  "HEXTECH_TAG.MULTIPLAYER": "協力",
   "HEXTECH_CONFIG_EXPORT_CODE": "設定コードを書き出す",
   "HEXTECH_CONFIG_IMPORT_CODE": "設定コードを読み込む",
   "HEXTECH_CONFIG_EXPORT_DONE": "設定コードをクリップボードにコピーしました。貼り付けて共有できます。",

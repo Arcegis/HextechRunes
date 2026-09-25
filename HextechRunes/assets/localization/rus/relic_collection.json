@@ -122,6 +122,7 @@
   "HEXTECH_TAG.SUMMON": "Призыв",
   "HEXTECH_TAG.VOID": "Бездна",
   "HEXTECH_TAG.DOOM": "Злой рок",
+  "HEXTECH_TAG.MULTIPLAYER": "Кооператив",
   "HEXTECH_CONFIG_EXPORT_CODE": "Экспорт кода",
   "HEXTECH_CONFIG_IMPORT_CODE": "Импорт кода",
   "HEXTECH_CONFIG_EXPORT_DONE": "Код конфигурации скопирован в буфер обмена — вставьте, чтобы поделиться.",

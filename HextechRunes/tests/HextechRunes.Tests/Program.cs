@@ -93,6 +93,7 @@ internal static partial class Program
 			new(nameof(ThreeNewRuneHooksUseNativeCommandsAndStableTargets), ThreeNewRuneHooksUseNativeCommandsAndStableTargets),
 			new(nameof(FiveNewRunesHaveRequestedPoolsAndRarities), FiveNewRunesHaveRequestedPoolsAndRarities),
 			new(nameof(RallyingCallSnapshotsSameModelCardsWithoutSourceOrOtherPlayers), RallyingCallSnapshotsSameModelCardsWithoutSourceOrOtherPlayers),
+			new(nameof(MultiplayerSupportRunesHaveRequestedRaritiesAndNumbers), MultiplayerSupportRunesHaveRequestedRaritiesAndNumbers),
 			new(nameof(EndlessRotationFreesBothCostsUntilTurnEnd), EndlessRotationFreesBothCostsUntilTurnEnd),
 			new(nameof(MyriadManifestationsCountsTypesRatherThanSlots), MyriadManifestationsCountsTypesRatherThanSlots),
 			new(nameof(VenomousBladeReadsEachTargetPoisonWithoutExtraDamageEvents), VenomousBladeReadsEachTargetPoisonWithoutExtraDamageEvents),

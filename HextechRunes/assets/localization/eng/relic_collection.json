@@ -124,6 +124,7 @@
   "HEXTECH_TAG.SUMMON": "Summon",
   "HEXTECH_TAG.VOID": "Void",
   "HEXTECH_TAG.DOOM": "Doom",
+  "HEXTECH_TAG.MULTIPLAYER": "Co-op",
   "HEXTECH_CONFIG_EXPORT_CODE": "Export Code",
   "HEXTECH_CONFIG_IMPORT_CODE": "Import Code",
   "HEXTECH_CONFIG_EXPORT_DONE": "Config code copied to clipboard — paste it anywhere to share.",
