@@ -67,6 +67,7 @@ internal static partial class Program
 		TestCase[] tests =
 		[
 			new(nameof(GameplayDeterminismApisRequireReviewedExceptions), GameplayDeterminismApisRequireReviewedExceptions),
+			new(nameof(GenericModelHookOverridesDoNotUseTypeParameters), GenericModelHookOverridesDoNotUseTypeParameters),
 			new(nameof(RandomGenerationClassesMatchReviewedManifest), RandomGenerationClassesMatchReviewedManifest),
 			new(nameof(CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder), CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder),
 			new(nameof(RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual), RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual),

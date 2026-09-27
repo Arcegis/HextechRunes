@@ -69,6 +69,7 @@ internal static class MpLabDriver
 	private static int _armedRound = -1;
 	private static ulong _endTurnDueMsec;
 	private static bool _finished;
+	private static bool _ftuesDisabled;
 	private static ulong _quitAtMsec;
 	private static Type? _runeSelectionScreenType;
 
@@ -91,6 +92,35 @@ internal static class MpLabDriver
 	}
 
 	private static void Info(string text) => Log.Info($"{Tag}[{_role}] {text}", 2);
+
+	private static bool _faultInstalled;
+
+	// HEXTECH_MPLAB_THROW_FORM_BATCH=1:让本端的形态批处理抛异常,模拟"只有一端在回合开始钩子里出错"。
+	private static void InstallFaultInjection()
+	{
+		if (_faultInstalled || System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_THROW_FORM_BATCH") != "1")
+		{
+			return;
+		}
+
+		MethodInfo? target = FindType("HextechRunes.HextechFormAutoPlayHooks")
+			?.GetMethod("PlayCardBatchVfx", BindingFlags.Static | BindingFlags.NonPublic);
+		if (target == null)
+		{
+			return;
+		}
+
+		_faultInstalled = true;
+		new HarmonyLib.Harmony("hextech.mplab.fault").Patch(
+			target,
+			prefix: new HarmonyLib.HarmonyMethod(typeof(MpLabDriver).GetMethod(nameof(ThrowingPrefix), BindingFlags.Static | BindingFlags.NonPublic)));
+		Info("fault injection installed: HextechFormAutoPlayHooks.PlayCardBatchVfx throws");
+	}
+
+	private static bool ThrowingPrefix()
+	{
+		throw new InvalidOperationException("mplab injected fault in form batch");
+	}
 
 	private static void OnFrame()
 	{
@@ -132,8 +162,25 @@ internal static class MpLabDriver
 			return;
 		}
 
+		InstallFaultInjection();
+
+		// 隔离 HOME 是全新存档,有窗口运行时新手引导会在开战时抛空引用并杀死回合循环。
+		if (!_ftuesDisabled && MegaCrit.Sts2.Core.Saves.SaveManager.Instance != null)
+		{
+			_ftuesDisabled = true;
+			MegaCrit.Sts2.Core.Saves.SaveManager.Instance.SetFtuesEnabled(false);
+		}
+
 		Node root = _tree!.Root;
 		RunState? runState = RunManager.Instance?.DebugOnlyGetState();
+		// 子菜单栈里会同时挂着隐藏的选角界面,读档大厅要先于它判断。
+		NMultiplayerLoadGameScreen? loadScreen = runState == null ? FindNode<NMultiplayerLoadGameScreen>(root) : null;
+		if (loadScreen != null && loadScreen.IsVisibleInTree())
+		{
+			DriveLoadLobby(loadScreen);
+			return;
+		}
+
 		NCharacterSelectScreen? select = FindNode<NCharacterSelectScreen>(root);
 		if (select != null && runState == null)
 		{
@@ -144,6 +191,29 @@ internal static class MpLabDriver
 		if (runState == null)
 		{
 			return;
+		}
+
+		// 读档复现(HEXTECH_MPLAB_NO_SEED=1):牌组与海克斯全部来自存档,不再追加。
+		if (!_deckSeeded && System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_NO_SEED") == "1")
+		{
+			_deckSeeded = true;
+			Info($"no-seed mode: players={string.Join("; ", runState.Players.Select(p => $"{p.NetId} {p.Character.Id.Entry} relics=[{string.Join(",", p.Relics.Select(r => r.Id.Entry))}]"))}");
+			foreach (RelicModel r in runState.Players.SelectMany(p => p.Relics).Where(r => r.GetType().Name == "EchoFormUpgradeRune"))
+			{
+				Type? t = r.GetType().BaseType;
+				while (t != null && !t.IsGenericType) { t = t.BaseType; }
+				Type? arg = t?.GetGenericArguments()[0];
+				static string Ctx(Type? x) => x == null ? "null" : $"{x.Assembly.GetName().Name}@{System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(x.Assembly)?.Name}#{x.Assembly.GetHashCode()} loc={x.Assembly.Location}";
+				Info($"rune TCard sameAsGame={ReferenceEquals(arg, typeof(EchoForm))} runeTCard={Ctx(arg)} gameEchoForm={Ctx(typeof(EchoForm))} runeRelicModel={Ctx(r.GetType().Assembly.GetType("HextechRunes.HextechRelicBase")?.BaseType)} gameRelicModel={Ctx(typeof(RelicModel))} ownerIsPlayer={runState.Players.Any(p => ReferenceEquals(p, r.Owner))}");
+			}
+
+			foreach (Player p in runState.Players)
+			{
+				foreach (CardModel c in p.Deck.Cards.Where(c => c.Id.Entry.Contains("FORM")))
+				{
+					Info($"deck card {p.NetId} {c.Id.Entry}: type={c.GetType().FullName} asm={c.GetType().Assembly.GetName().Name} isVanillaEchoForm={c is EchoForm} base={c.GetType().BaseType?.FullName}");
+				}
+			}
 		}
 
 		if (!_deckSeeded)
@@ -311,6 +381,47 @@ internal static class MpLabDriver
 		eventRoom.OptionButtonClicked(options[index], index);
 	}
 
+	private static bool _loadReady;
+	private static int _loadLobbyLogs;
+
+	// --fastmp=load 的读档大厅:主机等客户端连上后再就绪,两端就绪即开局。
+	private static void DriveLoadLobby(NMultiplayerLoadGameScreen screen)
+	{
+		if (!_loadReady && _loadLobbyLogs == 0)
+		{
+			Info($"load screen found: lobbyField={typeof(NMultiplayerLoadGameScreen).GetField("_runLobby", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(screen)?.GetType().Name ?? "null"}");
+		}
+
+		if (_loadReady
+			|| typeof(NMultiplayerLoadGameScreen).GetField("_runLobby", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(screen) is not LoadRunLobby lobby)
+		{
+			return;
+		}
+
+		int connected = lobby.Players.Count;
+		if (_loadLobbyLogs++ % 10 == 0)
+		{
+			Info($"load lobby seen: players={connected} ids=[{string.Join(",", lobby.Players.Select(p => p.id))}]");
+		}
+
+		if (_role == "host" && connected < _expectedPlayers)
+		{
+			return;
+		}
+
+		MethodInfo? setReady = typeof(LoadRunLobby).GetMethod("SetReady", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+		if (setReady == null)
+		{
+			Log.Warn($"{Tag} LoadRunLobby.SetReady not found", 2);
+			_loadReady = true;
+			return;
+		}
+
+		setReady.Invoke(lobby, [true]);
+		_loadReady = true;
+		Info($"load lobby ready: players={connected}");
+	}
+
 	private static void DriveLobby(NCharacterSelectScreen select)
 	{
 		StartRunLobby? lobby = select.Lobby;
@@ -321,16 +432,9 @@ internal static class MpLabDriver
 
 		if (!_characterChosen)
 		{
-			MethodInfo? change = typeof(StartRunLobby).GetMethod("ChangeCharacter", BindingFlags.Instance | BindingFlags.NonPublic);
-			if (change == null)
-			{
-				Log.Warn($"{Tag} StartRunLobby.ChangeCharacter not found", 2);
-				_characterChosen = true;
-				return;
-			}
-
+			// 必须走公开入口:私有 ChangeCharacter 只改本机,不广播,客户端的角色在主机那边仍是默认值。
 			CharacterModel character = FormScenario.Character;
-			change.Invoke(lobby, [lobby.LocalPlayer.id, character, false]);
+			lobby.SetLocalCharacter(character);
 			_characterChosen = true;
 			Info($"character chosen: {character.Id.Entry} (local id {lobby.LocalPlayer.id})");
 			return;
@@ -366,7 +470,16 @@ internal static class MpLabDriver
 	private static string DescribePiles(Player player)
 	{
 		PlayerCombatState? combat = player.PlayerCombatState;
-		return combat == null ? "cards=?" : $"cards={combat.AllCards.Count()} stars={combat.Stars}";
+		if (combat == null)
+		{
+			return "cards=?";
+		}
+
+		Type formType = FormScenario.Card.GetType();
+		string forms = string.Join(",", combat.AllCards
+			.Where(card => card.GetType() == formType)
+			.Select(card => (card.Pile?.Type.ToString() ?? "none") + (card.IsUpgraded ? "+" : "")));
+		return $"cards={combat.AllCards.Count()} stars={combat.Stars} forms=[{forms}]";
 	}
 
 	// 逐个获得,避免同一玩家的多个 Obtain 并发交错。
@@ -393,6 +506,19 @@ internal static class MpLabDriver
 			for (int i = 0; i < formCount; i++)
 			{
 				CardModel card = runState.CreateCard(canonical, player);
+				// 模拟实战里拿海克斯前就已在火堆升级过的形态牌。
+				if (System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_FORMS_UPGRADED") == "1" && card.IsUpgradable)
+				{
+					card.UpgradeInternal();
+					card.FinalizeUpgradeInternal();
+				}
+
+				// 带非克隆附魔的形态牌不满足合并条件,整批回退到逐张自动打出。
+				if (System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_FORMS_ENCHANTED") == "1")
+				{
+					CardCmd.Enchant(ModelDb.Enchantment<MegaCrit.Sts2.Core.Models.Enchantments.Swift>().ToMutable(), card, 1m);
+				}
+
 				player.Deck.AddInternal(card, player.Deck.Cards.Count, silent: true);
 			}
 
@@ -409,7 +535,9 @@ internal static class MpLabDriver
 			}
 			else
 			{
-				Log.Info($"{Tag}[{_role}] relic grant done", 2);
+				Type formType = canonical.GetType();
+				string decks = string.Join("; ", runState.Players.Select(p => $"{p.NetId}: forms={p.Deck.Cards.Count(c => c.GetType() == formType)} deck={p.Deck.Cards.Count} relics=[{string.Join(",", p.Relics.Select(r => r.Id.Entry))}]"));
+				Log.Info($"{Tag}[{_role}] relic grant done: {decks}", 2);
 			}
 		}, TaskScheduler.Default);
 	}
@@ -497,7 +625,10 @@ internal static class MpLabDriver
 		{
 			_armedRound = state.RoundNumber;
 			_endTurnDueMsec = now + 2500;
-			Info($"round {state.RoundNumber}: hp={me.Creature.CurrentHp}/{me.Creature.MaxHp} powers=[{string.Join(",", me.Creature.Powers.Select(p => $"{p.Id.Entry}:{p.Amount}"))}] {DescribePiles(me)}");
+			foreach (Player player in state.Players)
+			{
+				Info($"round {state.RoundNumber} player {player.NetId}{(player == me ? "(me)" : "")} {player.Character.Id.Entry}: hp={player.Creature.CurrentHp}/{player.Creature.MaxHp} powers=[{string.Join(",", player.Creature.Powers.Select(p => $"{p.Id.Entry}:{p.Amount}"))}] {DescribePiles(player)} relics=[{string.Join(",", player.Relics.Select(r => r.Id.Entry))}]");
+			}
 			if (FormScenario.PokeStarsInCombat && _role == "host" && !_starsPoked)
 			{
 				// 驱动不出牌:在出牌阶段直接给 1 辉星,模拟打出生星牌,点燃"生成牌→辉星→铸造"链。只在主机执行,仅用于卡死检测。
