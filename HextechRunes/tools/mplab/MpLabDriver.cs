@@ -7,12 +7,15 @@ using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Multiplayer.Game.Lobby;
 using MegaCrit.Sts2.Core.Nodes.Cards;
@@ -63,7 +66,7 @@ internal static class MpLabDriver
 	private static bool _deckSeeded;
 	private static Task? _relicGrant;
 	private static readonly HashSet<ulong> VotedScreens = [];
-	private static readonly HashSet<ulong> PickedRuneScreens = [];
+	private static readonly Dictionary<ulong, ulong> RuneScreenNextPickMsec = [];
 	private static bool _combatSeen;
 	private static int _turnsEnded;
 	private static int _armedRound = -1;
@@ -240,9 +243,34 @@ internal static class MpLabDriver
 			return;
 		}
 
+		LogRunStateHeartbeat(runState, root, now);
+
 		NMapScreen? map = FindNode<NMapScreen>(root);
 		if (map != null && map.IsTravelEnabled && !map.IsTraveling)
 		{
+			// HEXTECH_MPLAB_MAP_COMMAND="act 2;limitless-chapter X":主机在可操作地图上按顺序发联网控制台命令
+			// (走 ConsoleCmdGameAction 同步)。每条都等上一步流程(开局/每幕海克斯选择)结束 10 秒后再发。
+			string[] commands = (System.Environment.GetEnvironmentVariable("HEXTECH_MPLAB_MAP_COMMAND") ?? "")
+				.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+			_firstMapMsec = _firstMapMsec == 0 ? now : _firstMapMsec;
+			if (_mapCommandsSent < commands.Length && _role == "host" && FindRuneSelectionScreen(root) == null)
+			{
+				if (now - _firstMapMsec < 10000)
+				{
+					return;
+				}
+
+				string command = commands[_mapCommandsSent++];
+				_firstMapMsec = now;
+				Player? me = LocalContext.GetMe(runState);
+				if (me != null)
+				{
+					Info($"sending console command '{command}' at act {runState.CurrentActIndex}");
+					RunManager.Instance!.ActionQueueSynchronizer.RequestEnqueue(new MegaCrit.Sts2.Core.DevConsole.ConsoleCmdGameAction(me, command, false));
+					return;
+				}
+			}
+
 			VoteFirstTravelablePoint(map);
 			return;
 		}
@@ -379,6 +407,25 @@ internal static class MpLabDriver
 		_lastEventChoiceMsec = now;
 		Info($"event {localEvent.Id.Entry}: choosing option {index}/{options.Count} '{label}'");
 		eventRoom.OptionButtonClicked(options[index], index);
+	}
+
+	private static int _mapCommandsSent;
+	private static ulong _firstMapMsec;
+	private static ulong _lastHeartbeatMsec;
+
+	// 每 5 秒记一次所在幕/房间/可见界面,用于判断黑屏卡死(状态长期不变且没有可操作界面)。
+	private static void LogRunStateHeartbeat(RunState runState, Node root, ulong now)
+	{
+		if (now - _lastHeartbeatMsec < 5000)
+		{
+			return;
+		}
+
+		_lastHeartbeatMsec = now;
+		string room = runState.CurrentRoom?.GetType().Name ?? "null";
+		NMapScreen? map = FindNode<NMapScreen>(root);
+		Node? runeScreen = FindRuneSelectionScreen(root);
+		Info($"heartbeat act={runState.CurrentActIndex} floor={runState.TotalFloor} room={room} map={(map == null ? "none" : $"visible={map.IsVisibleInTree()} travel={map.IsTravelEnabled} traveling={map.IsTraveling}")} runeScreen={(runeScreen == null ? "none" : "open")} combat={CombatManager.Instance?.IsInProgress}");
 	}
 
 	private static bool _loadReady;
@@ -538,6 +585,7 @@ internal static class MpLabDriver
 				Type formType = canonical.GetType();
 				string decks = string.Join("; ", runState.Players.Select(p => $"{p.NetId}: forms={p.Deck.Cards.Count(c => c.GetType() == formType)} deck={p.Deck.Cards.Count} relics=[{string.Join(",", p.Relics.Select(r => r.Id.Entry))}]"));
 				Log.Info($"{Tag}[{_role}] relic grant done: {decks}", 2);
+				Log.Info($"{Tag}[{_role}] gold after grant: {string.Join(", ", runState.Players.Select(p => $"{p.NetId}={p.Gold}"))}", 2);
 			}
 		}, TaskScheduler.Default);
 	}
@@ -548,13 +596,23 @@ internal static class MpLabDriver
 		return _runeSelectionScreenType == null ? null : FindNode(root, _runeSelectionScreenType);
 	}
 
+	// 选择界面有防误触:刚打开时的点击会被丢弃。界面出现 2 秒后再点,只要界面还开着就每 2 秒重试。
 	private static void PickFirstRune(Node screen)
 	{
 		ulong id = screen.GetInstanceId();
-		if (PickedRuneScreens.Contains(id))
+		ulong now = Time.GetTicksMsec();
+		if (!RuneScreenNextPickMsec.TryGetValue(id, out ulong due))
+		{
+			RuneScreenNextPickMsec[id] = now + 2000;
+			return;
+		}
+
+		if (now < due)
 		{
 			return;
 		}
+
+		RuneScreenNextPickMsec[id] = now + 2000;
 
 		Type type = screen.GetType();
 		if (type.GetProperty("CurrentRelics", BindingFlags.Instance | BindingFlags.Public)?.GetValue(screen) is not IReadOnlyList<RelicModel> relics || relics.Count == 0)
@@ -562,8 +620,7 @@ internal static class MpLabDriver
 			return;
 		}
 
-		MethodInfo? select = type.GetMethod("OnHolderSelected", BindingFlags.Instance | BindingFlags.NonPublic);
-		PickedRuneScreens.Add(id);
+		MethodInfo? select = type.GetMethod("OnHolderSelected", BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(RelicModel)], null);
 		if (select == null)
 		{
 			Log.Warn($"{Tag} HextechRuneSelectionScreen.OnHolderSelected not found", 2);
@@ -627,8 +684,21 @@ internal static class MpLabDriver
 			_endTurnDueMsec = now + 2500;
 			foreach (Player player in state.Players)
 			{
+				Info($"round {state.RoundNumber} player {player.NetId} gold={player.Gold}");
 				Info($"round {state.RoundNumber} player {player.NetId}{(player == me ? "(me)" : "")} {player.Character.Id.Entry}: hp={player.Creature.CurrentHp}/{player.Creature.MaxHp} powers=[{string.Join(",", player.Creature.Powers.Select(p => $"{p.Id.Entry}:{p.Amount}"))}] {DescribePiles(player)} relics=[{string.Join(",", player.Relics.Select(r => r.Id.Entry))}]");
 			}
+			Info($"round {state.RoundNumber} block={me.Creature.Block} enemies=[{string.Join(",", state.Enemies.Select(e => $"{e.ModelId.Entry}:{e.CurrentHp}hp{(e.IsAlive ? "" : "(dead)")} doom={e.GetPowerAmount<DoomPower>()}"))}]");
+			if (FormScenario.PlayFormCardEachRound)
+			{
+				// 走原版出牌动作入队(与手动出牌同一路径),两端各自只出自己的牌,联机同步。
+				CardModel? toPlay = PileType.Hand.GetPile(me).Cards.FirstOrDefault(c => c.GetType() == FormScenario.Card.GetType());
+				if (toPlay != null)
+				{
+					Info($"playing {toPlay.Id.Entry} for {me.NetId}");
+					RunManager.Instance!.ActionQueueSynchronizer.RequestEnqueue(new PlayCardAction(toPlay, null));
+				}
+			}
+
 			if (FormScenario.PokeStarsInCombat && _role == "host" && !_starsPoked)
 			{
 				// 驱动不出牌:在出牌阶段直接给 1 辉星,模拟打出生星牌,点燃"生成牌→辉星→铸造"链。只在主机执行,仅用于卡死检测。
@@ -648,7 +718,8 @@ internal static class MpLabDriver
 		{
 			_turnsEnded++;
 			Info($"ending turn #{_turnsEnded} round={state.RoundNumber} for {me.NetId} {DescribePiles(me)}");
-			PlayerCmd.EndTurn(me, canBackOut: false, actionDuringEnemyTurn: null!);
+			// 走原版结束回合动作入队:本地 PlayerCmd.EndTurn 在联机下不会同步给其他端。
+			RunManager.Instance!.ActionQueueSynchronizer.RequestEnqueue(new EndPlayerTurnAction(me, me.PlayerCombatState?.TurnNumber ?? state.RoundNumber));
 			// 若请求没被接受(下一次 tick 仍未就绪),隔 5 秒再发,避免每 tick 重复请求。
 			_endTurnDueMsec = now + 5000;
 			if (_turnsEnded >= 6)
@@ -760,6 +831,7 @@ internal static class FormScenario
 	{
 		"echo" => ModelDb.Character<Defect>(),
 		"reaper" => ModelDb.Character<Necrobinder>(),
+		"miserable" => ModelDb.Character<Necrobinder>(),
 		"serpent" => ModelDb.Character<Silent>(),
 		"void" or "regentloop" => ModelDb.Character<Regent>(),
 		_ => ModelDb.Character<Ironclad>()
@@ -769,12 +841,16 @@ internal static class FormScenario
 	{
 		"echo" => ModelDb.Card<EchoForm>(),
 		"reaper" => ModelDb.Card<ReaperForm>(),
+		"miserable" => ModelDb.Card<Deathbringer>(),
 		"serpent" => ModelDb.Card<SerpentForm>(),
 		"void" => ModelDb.Card<VoidForm>(),
 		_ => ModelDb.Card<DemonForm>()
 	};
 
 	internal static bool PokeStarsInCombat => Key == "regentloop";
+
+	// miserable:每回合出牌阶段打出一张死亡使者,观察悲惨命运的格挡时点与灾厄统计。
+	internal static bool PlayFormCardEachRound => Key == "miserable";
 
 	internal static string[] RuneTypeNames => Key switch
 	{
@@ -783,6 +859,8 @@ internal static class FormScenario
 		"serpent" => ["HextechRunes.SerpentFormUpgradeRune"],
 		"void" => ["HextechRunes.VoidFormUpgradeRune"],
 		"regentloop" => ["HextechRunes.KingdomArmyRune", "HextechRunes.CondensedRadianceRune", "HextechRunes.RoyalCommandRune"],
+		"miserable" => ["HextechRunes.MiserableFateRune"],
+		"mawbank" => ["HextechRunes.DoubleVisionRune", "MegaCrit.Sts2.Core.Models.Relics.MawBank"],
 		_ => ["HextechRunes.DemonFormUpgradeRune"]
 	};
 }
