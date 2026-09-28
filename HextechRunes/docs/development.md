@@ -19,7 +19,7 @@
 
 | 内容 | 放置与关联入口 |
 | --- | --- |
-| 我方符文 | `src/Runes/<Name>Rune.cs`，继承 `HextechRelicBase`；`src/Content/HextechPlayerRuneRegistry.cs` 注册品级、角色池、标签及开关 |
+| 我方符文 | `src/Runes/<Name>Rune.cs`，继承 `HextechRelicBase`；`src/Content/HextechPlayerRuneRegistry.cs` 注册品级、角色池、标签及开关。外部模组的注册入口与契约见 [对接指南](../INTEGRATION.md)，判断海克斯归属用注册表（`HextechCatalog.IsHextechCustomRelic`），不要只写 `is HextechRelicBase` |
 | 敌方效果 | `src/EnemyHexes/<Name>EnemyHex.cs`，继承 `HextechEnemyHexEffect`；同时检查效果目录、`HextechMonsterHexRegistry`、`MonsterHexKind` 及展示用遗物 |
 | 卡牌/Power | `src/Cards`、`src/Powers`；自定义模型登记见 `src/Content/HextechCustomModelRegistry.cs` |
 | 选择流程 | `src/Selection/Coordinator` 编排；`Pool`/`Reroll` 生成；`Sync`/`EnemyAdjust` 通讯；`UI` 展示和输入 |

@@ -73,7 +73,8 @@
 
 ## 生成与权重
 
-- **模组关闭时模型仍无条件注册，只在 `SharedRelicPool.GetUnlockedRelics` 的窄范围 postfix 里排除 `HextechRelicBase`。** 原版 `RelicGrabBag.Populate` 会给 Starter 稀有度条目洗牌，即使它们最终不掉落也会消耗与遭遇/Boss 共用的 UpFront 随机数，生成后再移除条目无法回退已推进的 RNG。过滤保留原版与其他模组条目及顺序。
+- **模组关闭时模型仍无条件注册，只在 `SharedRelicPool.GetUnlockedRelics` 的窄范围 postfix 里排除海克斯内容（`HextechRelicBase` 或注册表内的符文/锻造/商店/敌方图标载体）。** 原版 `RelicGrabBag.Populate` 会给 Starter 稀有度条目洗牌，即使它们最终不掉落也会消耗与遭遇/Boss 共用的 UpFront 随机数，生成后再移除条目无法回退已推进的 RNG。过滤保留原版与其他模组条目及顺序。
+- **不引用本程序集的外部模组经 `HextechRunesInterop.RegisterPlayerRune` 注册只继承 `RelicModel` 的符文；"是不是海克斯内容"一律按注册表判定，类型判定只作兜底。** 强类型 `HextechRunesApi.RegisterPlayerRune<T>` 保留 `HextechRelicBase` 约束，拓展包等既有调用方不变。外部符文必须是 Starter 稀有度，否则 `IsAvailableForPlayer` 拒发——原版多处按稀有度取遗物，只有 Starter 能挡住自然池以外的漏出。基类虚方法换成登记时附带的可用性委托，首个登记者生效，抛异常按不可用。Interop 签名发布后不再改，新能力新增方法并递增 `ApiVersion`；不公开 `HextechAssets`，外部符文自己覆写图标路径。来源标签（`HEXTECH_POOL.<key>`）与配置菜单分组标题由外部模组经 `SetPlayerRunePoolLabel` / `RegisterConfigSectionTitle` 自选，未指定时分别是角色名或"通用"、"外部模组：<id>"；额外拓展包保留内置的"拓展包"与"额外拓展包"，不必为此发版。外部给的键可能缺失，而原版缺键会抛 `LocException` 打断整个界面，所以这类文字统一走 `HextechRuneLabels` 先查键、缺失时显示键名。对接说明见模组根目录 `INTEGRATION.md`。`HextechRunesInterop`、`HextechCatalog.IsAvailableForPlayer`、`HextechNaturalRelicPoolHooks`
 - **该过滤只读本局冻结配置，不读本地菜单值。** 联机房主配置尚未同步时读本地值会产生不同候选池。已接受的代价：开启模组的新局种子结果也可能与旧版本不同；旧存档已生成的房间和遭遇不重置。
 - **角色专属海克斯用动态权重，没有固定位置保底。** 每名玩家新局 150%，刷出非专属 +10 个百分点、刷出本角色专属 −10 个百分点，最低 0%、无上限；三个位置依次抽取并立即使用更新后的倍率。
 - **计数依据是刷出的候选，不是最终拿取。** 重掷成功生成的候选也计一次，未发生替换不计；混沌实验室在普通候选生成之后替换，不产生第二次计数。
