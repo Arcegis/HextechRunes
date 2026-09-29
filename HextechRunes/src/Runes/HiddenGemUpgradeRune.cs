@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-using MegaCrit.Sts2.Core.Nodes.Combat;
-
 namespace HextechRunes;
 
 public sealed class HiddenGemUpgradeRune : CardUpgradeRuneBase<HiddenGem>

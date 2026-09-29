@@ -35,9 +35,9 @@ public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHex
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-			new DynamicVar("StackBonusPercent", 1m),
-			new DynamicVar("StackOverloadThreshold", 10m)
-		];
+		new DynamicVar("StackBonusPercent", 1m),
+		new DynamicVar("StackOverloadThreshold", 10m)
+	];
 
 	public decimal SustainMultiplier => StackMultiplier;
 

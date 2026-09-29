@@ -17,11 +17,18 @@ public sealed class NetherSoulRune : HextechRelicBase
 	{
 		if (_playingExhausted || Owner?.PlayerCombatState == null || side != Owner.Creature.Side
 			|| !participants.Contains(Owner.Creature) || Owner.Creature.IsDead
-			|| Owner.Creature.CombatState == null || CombatManager.Instance.IsOverOrEnding) return;
+			|| Owner.Creature.CombatState == null || CombatManager.Instance.IsOverOrEnding)
+		{
+			return;
+		}
 
 		// 此阶段在弃牌与虚无消耗后。快照只执行一遍，牌自身再次消耗不会重新入队。
 		CardModel[] cards = SnapshotEtherealCards(Owner, PileType.Exhaust.GetPile(Owner).Cards);
-		if (cards.Length == 0) return;
+		if (cards.Length == 0)
+		{
+			return;
+		}
+
 		_playingExhausted = true;
 		try
 		{
@@ -29,14 +36,25 @@ public sealed class NetherSoulRune : HextechRelicBase
 			foreach (CardModel card in cards)
 			{
 				if (CombatManager.Instance.IsOverOrEnding || Owner.Creature.IsDead
-					|| Owner.Creature.CombatState == null) break;
+					|| Owner.Creature.CombatState == null)
+				{
+					break;
+				}
+
 				if (card.Owner != Owner || card.Pile?.Type != PileType.Exhaust
-					|| !IsPlayableEtherealCard(card)) continue;
+					|| !IsPlayableEtherealCard(card))
+				{
+					continue;
+				}
 
 				Creature? target = card.TargetType == TargetType.AnyEnemy
 					? HextechRuneTargeting.FirstHittableEnemy(Owner.Creature.CombatState)
 					: null;
-				if (card.TargetType == TargetType.AnyEnemy && target == null) break;
+				if (card.TargetType == TargetType.AnyEnemy && target == null)
+				{
+					break;
+				}
+
 				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);
 			}
 		}

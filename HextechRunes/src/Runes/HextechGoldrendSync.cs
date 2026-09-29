@@ -187,7 +187,7 @@ internal static class HextechGoldrendSync
 
 	private static bool CanBroadcastGoldLoss()
 	{
-		var netService = RunManager.Instance.NetService;
+		INetGameService netService = RunManager.Instance.NetService;
 		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
 	}
 

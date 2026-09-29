@@ -412,7 +412,10 @@ internal static partial class Program
 			new(nameof(JeweledGauntletReflectionTargetsFailClosedAsAGroup), JeweledGauntletReflectionTargetsFailClosedAsAGroup),
 			new(nameof(TestSubjectRespawnReflectionMissingFallsBackToZero), TestSubjectRespawnReflectionMissingFallsBackToZero),
 			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
-			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives)
+			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives),
+			new(nameof(NearDeathHpLossResolvesDyingAndKillThresholds), NearDeathHpLossResolvesDyingAndKillThresholds),
+			new(nameof(RuneFamilyHelpersKeepThresholdAndRoundSemantics), RuneFamilyHelpersKeepThresholdAndRoundSemantics),
+			new(nameof(RuneFamilyTypesUseSharedBases), RuneFamilyTypesUseSharedBases)
 		];
 
 		if (args.Length > 0)

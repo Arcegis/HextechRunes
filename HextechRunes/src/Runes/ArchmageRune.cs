@@ -59,22 +59,22 @@ public sealed class ArchmageRune : HextechRelicBase
 					.Where(static card => (card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
 						&& card.CostsEnergyOrStars(includeGlobalModifiers: true))
 					.ToList(),
-					sourceCard,
-					rollOrdinal,
-					"base-cost")
-				?? PickFromCandidates(
-					handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
-					sourceCard,
-					rollOrdinal,
-					"global-cost")
+				sourceCard,
+				rollOrdinal,
+				"base-cost")
+			?? PickFromCandidates(
+				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
+				sourceCard,
+				rollOrdinal,
+				"global-cost")
 			?? PickFromCandidates(
 				handCards
 					.Where(static card => card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
 					.ToList(),
-					sourceCard,
-					rollOrdinal,
-					"base-any")
-				?? PickFromCandidates(handCards.ToList(), sourceCard, rollOrdinal, "any");
+				sourceCard,
+				rollOrdinal,
+				"base-any")
+			?? PickFromCandidates(handCards.ToList(), sourceCard, rollOrdinal, "any");
 	}
 
 	private CardModel? PickFromCandidates(IReadOnlyList<CardModel> candidates, CardModel sourceCard, int rollOrdinal, string tier)
@@ -87,11 +87,11 @@ public sealed class ArchmageRune : HextechRelicBase
 		int index = HextechStableRandom.Index(
 			(RunState)Owner.RunState,
 			candidates.Count,
-				"archmage-pick-card",
-				HextechStableRandom.PlayerKey(Owner),
-				Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
-				rollOrdinal.ToString(),
-				HextechStableRandom.CardKey(sourceCard),
+			"archmage-pick-card",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			rollOrdinal.ToString(),
+			HextechStableRandom.CardKey(sourceCard),
 			tier,
 			HextechStableRandom.CardPileKey(candidates));
 		return candidates[index];
