@@ -185,6 +185,12 @@ internal static class HextechEndlessModeCompatibilityHooks
 			return _endlessMultiplierMethod;
 		}
 
+		// 是否加载以模组清单为准（与第 3 幕候选池同一口径）；程序集只用来取倍率方法对象。
+		if (!HextechCatalog.IsEndlessModeLoaded())
+		{
+			return null;
+		}
+
 		lock (EndlessMethodLock)
 		{
 			if (_endlessMultiplierMethod != null)
@@ -207,7 +213,7 @@ internal static class HextechEndlessModeCompatibilityHooks
 			if (assembly != null && _endlessMultiplierMethod == null && !_loggedMissingEndlessApi)
 			{
 				_loggedMissingEndlessApi = true;
-				HextechLog.Warn("EndlessCompat", $"Endless enemy multiplier API not found; monster power normalization skipped.");
+				HextechLog.Warn("EndlessCompat", "Endless enemy multiplier API not found; monster power normalization skipped.");
 			}
 
 			return _endlessMultiplierMethod;

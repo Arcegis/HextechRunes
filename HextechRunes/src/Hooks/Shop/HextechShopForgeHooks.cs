@@ -103,14 +103,14 @@ internal static class HextechShopForgeHooks
 
 		if (!CanContinueSynchronizedPurchase())
 		{
-			HextechLog.Warn("Mayhem", $"Random forge purchase cancelled because multiplayer service is disconnected.");
+			HextechLog.Warn("Mayhem", "Random forge purchase cancelled because multiplayer service is disconnected.");
 			return (false, 0);
 		}
 
 		if (!ignoreCost)
 		{
 			await PlayerCmd.LoseGold(cost, player, GoldLossType.Spent);
-			if (CanSyncMultiplayerReward())
+			if (HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
 				RunManager.Instance.RewardSynchronizer.SyncLocalGoldLost(cost);
 			}
@@ -146,16 +146,10 @@ internal static class HextechShopForgeHooks
 		return (true, ignoreCost ? 0 : cost);
 	}
 
+	// 单人流程照常继续；联机局只在连接仍在时继续。
 	private static bool CanContinueSynchronizedPurchase()
 	{
-		INetGameService netService = RunManager.Instance.NetService;
-		return netService.Type is not (NetGameType.Host or NetGameType.Client) || netService.IsConnected;
-	}
-
-	private static bool CanSyncMultiplayerReward()
-	{
-		INetGameService netService = RunManager.Instance.NetService;
-		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
+		return !HextechPlayerContextHelper.IsNetworkMultiplayerRun() || HextechPlayerContextHelper.IsMultiplayerConnected();
 	}
 
 	private static bool IsRandomForgeEntry(MerchantEntry entry)
