@@ -412,7 +412,11 @@ internal static partial class Program
 			new(nameof(JeweledGauntletReflectionTargetsFailClosedAsAGroup), JeweledGauntletReflectionTargetsFailClosedAsAGroup),
 			new(nameof(TestSubjectRespawnReflectionMissingFallsBackToZero), TestSubjectRespawnReflectionMissingFallsBackToZero),
 			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
-			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives)
+			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives),
+			// ReviewSelection
+			new(nameof(ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut), ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut),
+			new(nameof(ReviewConfigMigrationTableMatchesLegacyChain), ReviewConfigMigrationTableMatchesLegacyChain),
+			new(nameof(ReviewShareCodePreviewNormalizesLikeSave), ReviewShareCodePreviewNormalizesLikeSave)
 		];
 
 		if (args.Length > 0)

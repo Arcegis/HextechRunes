@@ -11,7 +11,7 @@ internal static partial class HextechRuneConfiguration
 		DefaultRuneRarityWeights,
 		DefaultRuneRarityWeights
 	];
-	private static readonly HextechForgeRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
+	private static readonly HextechRarityWeights DefaultForgeRarityWeights = new(65, 25, 10);
 
 	public static int[] GetDefaultPlayerHexCountsByAct()
 	{
@@ -105,7 +105,12 @@ internal static partial class HextechRuneConfiguration
 		return Math.Clamp(percent, MinGoldenRerollChancePercent, MaxGoldenRerollChancePercent);
 	}
 
-	public static HextechForgeRarityWeights GetDefaultForgeRarityWeights()
+	public static int ClampChaosRuneChancePercent(int percent)
+	{
+		return Math.Clamp(percent, MinChaosRuneChancePercent, MaxChaosRuneChancePercent);
+	}
+
+	public static HextechRarityWeights GetDefaultForgeRarityWeights()
 	{
 		return DefaultForgeRarityWeights;
 	}
@@ -131,7 +136,8 @@ internal static partial class HextechRuneConfiguration
 			DefaultForgeRarityWeights,
 			DefaultRandomForgeShopPrice,
 			DefaultRandomForgeDirectGrant,
-			DefaultModEnabled));
+			DefaultModEnabled,
+			DefaultChaosRuneChancePercent));
 	}
 
 	internal static HextechRunConfigurationSnapshot NormalizeSnapshot(HextechRunConfigurationSnapshot snapshot)
@@ -147,11 +153,11 @@ internal static partial class HextechRuneConfiguration
 			NormalizeRarityWeightsByAct(snapshot.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
 			snapshot.PreventConsecutiveSilverRunes,
 			ClampGoldenRerollChancePercent(snapshot.GoldenRerollChancePercent),
-			NormalizeForgeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
+			NormalizeRarityWeights(snapshot.ForgeRarityWeights, DefaultForgeRarityWeights),
 			ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice),
 			snapshot.RandomForgeDirectGrant,
 			snapshot.ModEnabled,
-			Math.Clamp(snapshot.ChaosRuneChancePercent, 0, 100));
+			ClampChaosRuneChancePercent(snapshot.ChaosRuneChancePercent));
 	}
 
 	internal static HextechRarityWeights NormalizeRarityWeights(HextechRarityWeights weights, HextechRarityWeights fallback)
@@ -178,15 +184,6 @@ internal static partial class HextechRuneConfiguration
 		}
 
 		return normalized;
-	}
-
-	internal static HextechForgeRarityWeights NormalizeForgeRarityWeights(HextechForgeRarityWeights weights, HextechForgeRarityWeights fallback)
-	{
-		HextechForgeRarityWeights normalized = new(
-			ClampRarityWeight(weights.Silver),
-			ClampRarityWeight(weights.Gold),
-			ClampRarityWeight(weights.Prismatic));
-		return normalized.Total > 0 ? normalized : fallback;
 	}
 
 	internal static int[] NormalizePlayerHexCounts(IReadOnlyList<int>? counts)

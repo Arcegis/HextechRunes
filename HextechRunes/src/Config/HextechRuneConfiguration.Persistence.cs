@@ -119,7 +119,7 @@ internal static partial class HextechRuneConfiguration
 			RuneRarityWeightsByAct = FromRarityWeightsByAct(DefaultRuneRarityWeightsByAct),
 			PreventConsecutiveSilverRunes = DefaultPreventConsecutiveSilverRunes,
 			GoldenRerollChancePercent = DefaultGoldenRerollChancePercent,
-			ForgeRarityWeights = FromForgeRarityWeights(DefaultForgeRarityWeights),
+			ForgeRarityWeights = FromRarityWeights(DefaultForgeRarityWeights),
 			RandomForgeShopPrice = DefaultRandomForgeShopPrice,
 			RandomForgeDirectGrant = DefaultRandomForgeDirectGrant,
 			ModEnabled = DefaultModEnabled
@@ -144,13 +144,6 @@ internal static partial class HextechRuneConfiguration
 			.ToArray();
 	}
 
-	private static HextechForgeRarityWeights ToForgeRarityWeights(RarityWeightConfig? config, HextechForgeRarityWeights fallback)
-	{
-		return config == null
-			? fallback
-			: new HextechForgeRarityWeights(config.Silver, config.Gold, config.Prismatic);
-	}
-
 	private static RarityWeightConfig FromRarityWeights(HextechRarityWeights weights)
 	{
 		return new RarityWeightConfig
@@ -166,16 +159,6 @@ internal static partial class HextechRuneConfiguration
 		return weightsByAct.Select(FromRarityWeights).ToArray();
 	}
 
-	private static RarityWeightConfig FromForgeRarityWeights(HextechForgeRarityWeights weights)
-	{
-		return new RarityWeightConfig
-		{
-			Silver = weights.Silver,
-			Gold = weights.Gold,
-			Prismatic = weights.Prismatic
-		};
-	}
-
 	private static void SaveConfig(RuneConfig config)
 	{
 		try
@@ -183,7 +166,10 @@ internal static partial class HextechRuneConfiguration
 			string configPath = GetConfigPath();
 			Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
 			string serialized = JsonSerializer.Serialize(config, JsonOptions);
-			File.WriteAllText(configPath, serialized);
+			// 先写临时文件再原子替换:写到一半崩溃/断电不会留下截断的 JSON(否则下次载入会被当作损坏配置回落默认)。
+			string tempPath = configPath + ".tmp";
+			File.WriteAllText(tempPath, serialized);
+			File.Move(tempPath, configPath, overwrite: true);
 		}
 		catch (Exception ex)
 		{
@@ -235,7 +221,11 @@ internal static partial class HextechRuneConfiguration
 		[JsonPropertyName("golden_reroll_chance_percent")]
 		public int GoldenRerollChancePercent { get; set; } = DefaultGoldenRerollChancePercent;
 
-		public int ChaosRuneChancePercent { get; set; } = 33;
+		// 刻意保持 PascalCase 键名(其余字段是 snake_case):该字段首次发布时没有 JsonPropertyName,
+		// 已发布的 rune_config.json 里存的就是 "ChaosRuneChancePercent"。改成 snake_case 会让降级到旧版本的
+		// 玩家读不到该值;显式写出特性是为了把现有键名钉住,不受日后命名策略变更影响。
+		[JsonPropertyName("ChaosRuneChancePercent")]
+		public int ChaosRuneChancePercent { get; set; } = DefaultChaosRuneChancePercent;
 
 		[JsonPropertyName("first_act_rune_rarity_weights")]
 		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

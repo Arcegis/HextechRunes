@@ -98,7 +98,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		row.AddChild(CreateNumericStepper(
 			L("HEXTECH_CHAOS_RUNE_CHANCE_VALUE_LABEL"),
 			() => pending.ChaosRuneChancePercent,
-			value => pending.ChaosRuneChancePercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(value),
+			value => pending.ChaosRuneChancePercent = HextechRuneConfiguration.ClampChaosRuneChancePercent(value),
 			numericBindings,
 			compactLayout,
 			getDisplayText: () => $"{pending.ChaosRuneChancePercent}%"));

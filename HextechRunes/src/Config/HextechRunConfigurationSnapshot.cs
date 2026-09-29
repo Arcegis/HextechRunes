@@ -11,11 +11,12 @@ internal sealed record HextechRunConfigurationSnapshot(
 	HextechRarityWeights[] RuneRarityWeightsByAct,
 	bool PreventConsecutiveSilverRunes,
 	int GoldenRerollChancePercent,
-	HextechForgeRarityWeights ForgeRarityWeights,
+	HextechRarityWeights ForgeRarityWeights,
 	int RandomForgeShopPrice,
 	bool RandomForgeDirectGrant,
 	bool ModEnabled,
-	int ChaosRuneChancePercent = 33)
+	// 默认值同时是旧存档 JSON(无此字段)反序列化时的回退值。
+	int ChaosRuneChancePercent = HextechRuneConfiguration.DefaultChaosRuneChancePercent)
 {
 	public HextechRunConfigurationSnapshot Copy()
 	{

@@ -80,7 +80,7 @@ internal static partial class HextechChoiceCodec
 		}
 		payload.Add(snapshot.PreventConsecutiveSilverRunes ? 1 : 0);
 		payload.Add(HextechRuneConfiguration.ClampGoldenRerollChancePercent(snapshot.GoldenRerollChancePercent));
-		AppendForgeRarityWeights(payload, snapshot.ForgeRarityWeights);
+		AppendRarityWeights(payload, snapshot.ForgeRarityWeights);
 		payload.Add(HextechRuneConfiguration.ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice));
 		payload.Add(snapshot.RandomForgeDirectGrant ? 1 : 0);
 
@@ -100,10 +100,12 @@ internal static partial class HextechChoiceCodec
 				.Select(static entry => new ModelId(ModInfo.Id, entry))
 				.OrderBy(static id => id.Entry, StringComparer.Ordinal));
 
-		// 模组总开关:作为尾部可选 int 追加,避免改 snapshot 版本号/定长计数。
-		// 旧 payload 无此尾巴时解码端回退到 fallback(默认开启)。
+		// 未版本化的尾部可选 int,按追加顺序解码,避免改 snapshot 版本号/定长计数:
+		// 1) 模组总开关:旧 payload 没有时解码端回退到 fallback(默认开启);
+		// 2) 混沌海克斯概率:旧 payload 没有时回退到 DefaultChaosRuneChancePercent。
+		// 以后再加尾部字段只能继续往后追加,不能插入或重排。
 		payload.Add(snapshot.ModEnabled ? 1 : 0);
-		payload.Add(snapshot.ChaosRuneChancePercent);
+		payload.Add(HextechRuneConfiguration.ClampChaosRuneChancePercent(snapshot.ChaosRuneChancePercent));
 	}
 
 	private static bool TryDecodeRunConfigurationSnapshot(
@@ -187,7 +189,7 @@ internal static partial class HextechChoiceCodec
 			preventConsecutiveSilverRunes = HextechRuneConfiguration.GetDefaultPreventConsecutiveSilverRunes();
 		}
 
-		HextechForgeRarityWeights forgeWeights = ReadForgeRarityWeights(payload, ref cursor);
+		HextechRarityWeights forgeWeights = ReadRarityWeights(payload, ref cursor);
 		int forgePrice = payload[cursor++];
 		bool randomForgeDirectGrant = fallback.RandomForgeDirectGrant;
 		if (snapshotVersion is RunConfigurationSnapshotVersion or PreviousSingleRarityRunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion or LegacyRerollRunConfigurationSnapshotVersion)
@@ -224,12 +226,16 @@ internal static partial class HextechChoiceCodec
 			return false;
 		}
 
-		// 模组总开关:尾部可选 int。旧 payload 没有这一项时回退到 fallback(默认开启)。
+		// 尾部可选 int(见 AppendRunConfigurationSnapshot):模组总开关、混沌海克斯概率。
 		bool modEnabled = fallback.ModEnabled;
 		if (payload.Count > forgeListNextCursor)
 		{
 			modEnabled = payload[forgeListNextCursor] != 0;
 		}
+
+		int chaosRuneChancePercent = payload.Count > forgeListNextCursor + 1
+			? payload[forgeListNextCursor + 1]
+			: HextechRuneConfiguration.DefaultChaosRuneChancePercent;
 
 		snapshot = HextechRuneConfiguration.NormalizeSnapshot(new HextechRunConfigurationSnapshot(
 			playerHexCounts,
@@ -246,7 +252,7 @@ internal static partial class HextechChoiceCodec
 			forgePrice,
 			randomForgeDirectGrant,
 			modEnabled,
-			payload.Count > forgeListNextCursor + 1 ? payload[forgeListNextCursor + 1] : 33));
+			chaosRuneChancePercent));
 		return true;
 	}
 
@@ -257,23 +263,9 @@ internal static partial class HextechChoiceCodec
 		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Prismatic));
 	}
 
-	private static void AppendForgeRarityWeights(List<int> payload, HextechForgeRarityWeights weights)
-	{
-		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Silver));
-		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Gold));
-		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Prismatic));
-	}
-
 	private static HextechRarityWeights ReadRarityWeights(List<int> payload, ref int cursor)
 	{
 		HextechRarityWeights weights = new(payload[cursor], payload[cursor + 1], payload[cursor + 2]);
-		cursor += 3;
-		return weights;
-	}
-
-	private static HextechForgeRarityWeights ReadForgeRarityWeights(List<int> payload, ref int cursor)
-	{
-		HextechForgeRarityWeights weights = new(payload[cursor], payload[cursor + 1], payload[cursor + 2]);
 		cursor += 3;
 		return weights;
 	}

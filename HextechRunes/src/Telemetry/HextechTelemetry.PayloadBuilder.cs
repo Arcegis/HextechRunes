@@ -30,7 +30,7 @@ internal static partial class HextechTelemetry
 		IReadOnlyList<RuneChoiceRecord> runeChoices = modifier?.GetTelemetryChoiceRecords() ?? [];
 
 		return new RunEndedPayload(
-			1,
+			TelemetrySchemaVersion,
 			ModInfo.Id,
 			ModInfo.Version,
 			ModInfo.TargetGameVersion,
