@@ -1,0 +1,20 @@
+# HextechRunesSponsorPack 程序集声明的全部 [SavedProperty] 属性名快照(去重、Ordinal 排序;继承自本体基类的属性由
+# saved_property_manifest.txt 负责)。拓展包与本体共用同一张 net-id 表:新增/改名/删除任何一项都会改变 net-id 布局,
+# 与线上旧版本联机会 1014/ModMismatch。改动必须是有意为之,并同步更新本清单
+# (跑 tools/run_tests.sh,按 SponsorSavedPropertyManifestMatchesCheckedInList 的输出更新)。三个目标版本共用本清单。
+EvolutionPlayCount
+PendingRemoval
+SavedCharge
+SavedContract
+SavedCosplayInnateMarker
+SavedCycleIndex
+SavedDamageBonusPercent
+SavedEnchantmentsJson
+SavedFinalChoraleKills
+SavedForgePriceDelta
+SavedFreeCardsUntilOwnerTurnEnd
+SavedHunterCompletedCombats
+SavedPendingMiracles
+SavedRevivesUsed
+SavedWarriorEliteKills
+SavedWarriorStrengthBonuses

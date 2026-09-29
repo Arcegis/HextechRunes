@@ -213,18 +213,17 @@ internal static partial class Program
 
 	private static void SavedPropertyManifestMatchesCheckedInList()
 	{
-		string manifestPath = Path.Combine(AppContext.BaseDirectory, "saved_property_manifest.txt");
-		Expect(File.Exists(manifestPath), $"saved_property_manifest.txt should exist at {manifestPath}");
+		ExpectSavedPropertyManifest("saved_property_manifest.txt", CollectSavedPropertyNames(typeof(HextechCatalog).Assembly, declaredInAssemblyOnly: false));
+	}
 
-		string[] expected = File.ReadAllLines(manifestPath)
-			.Select(static line => line.Trim())
-			.Where(static line => line.Length > 0 && !line.StartsWith('#'))
-			.ToArray();
-
+	// declaredInAssemblyOnly=false 时也收入从原版基类继承的属性(本体清单一直如此,含 IsMelted/IsWax);
+	// 拓展包清单只收本程序集声明的属性,继承自本体基类的由本体清单负责。
+	private static string[] CollectSavedPropertyNames(Assembly assembly, bool declaredInAssemblyOnly)
+	{
 		Type abstractModelType = typeof(AbstractModel);
 		const BindingFlags propertyFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 		HashSet<string> names = new(StringComparer.Ordinal);
-		foreach (Type type in typeof(HextechCatalog).Assembly.GetTypes())
+		foreach (Type type in assembly.GetTypes())
 		{
 			if (type.IsAbstract || !type.IsClass || !abstractModelType.IsAssignableFrom(type))
 			{
@@ -233,6 +232,11 @@ internal static partial class Program
 
 			foreach (PropertyInfo property in type.GetProperties(propertyFlags))
 			{
+				if (declaredInAssemblyOnly && property.DeclaringType?.Assembly != assembly)
+				{
+					continue;
+				}
+
 				bool isSavedProperty = property
 					.GetCustomAttributes(inherit: true)
 					.Any(static attr => attr.GetType().Name == "SavedPropertyAttribute");
@@ -243,11 +247,22 @@ internal static partial class Program
 			}
 		}
 
-		string[] actual = names.OrderBy(static name => name, StringComparer.Ordinal).ToArray();
+		return names.OrderBy(static name => name, StringComparer.Ordinal).ToArray();
+	}
+
+	private static void ExpectSavedPropertyManifest(string manifestFileName, string[] actual)
+	{
+		string manifestPath = Path.Combine(AppContext.BaseDirectory, manifestFileName);
+		Expect(File.Exists(manifestPath), $"{manifestFileName} should exist at {manifestPath}");
+
+		string[] expected = File.ReadAllLines(manifestPath)
+			.Select(static line => line.Trim())
+			.Where(static line => line.Length > 0 && !line.StartsWith('#'))
+			.ToArray();
 		SequenceEqual(
 			expected,
 			actual,
-			$"SavedProperty manifest drift; actual list:\n{string.Join("\n", actual)}");
+			$"SavedProperty manifest drift ({manifestFileName}); actual list:\n{string.Join("\n", actual)}");
 	}
 
 	private static void SavedPropertyPreInitRegistrationLeavesWireTablesUntouched()
