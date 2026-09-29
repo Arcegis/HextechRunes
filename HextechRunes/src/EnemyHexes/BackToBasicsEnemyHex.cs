@@ -40,10 +40,4 @@ internal sealed class BackToBasicsEnemyHex : HextechEnemyHexEffect
 		int limit = context.TierValue(MonsterHexKind.BackToBasics, TurnCardLimitTier1, TurnCardLimitTier2, TurnCardLimitTier3);
 		return context.Tracking.BackToBasicsCardsPlayedThisTurn.GetValueOrDefault(owner.NetId) < limit;
 	}
-
-	internal static int GetTurnCardLimit(HextechMayhemModifier modifier)
-	{
-		return new HextechEnemyHexContext(modifier)
-			.TierValue(MonsterHexKind.BackToBasics, TurnCardLimitTier1, TurnCardLimitTier2, TurnCardLimitTier3);
-	}
 }

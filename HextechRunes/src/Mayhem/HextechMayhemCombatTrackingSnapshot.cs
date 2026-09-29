@@ -62,5 +62,4 @@ internal sealed class CombatTrackingSnapshot
 	public List<ulong> EightPennyGatePlayersTriggeredSecondThisTurn { get; set; } = [];
 	public Dictionary<ulong, int> InspectExtraDrawsPreventedThisTurn { get; set; } = new();
 	public List<ulong> GripPlayersTriggeredThisTurn { get; set; } = [];
-	public int ArcanePunchPlayerAttackCardsPlayed { get; set; }
 }

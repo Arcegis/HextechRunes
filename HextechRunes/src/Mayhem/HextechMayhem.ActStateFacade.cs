@@ -11,11 +11,6 @@ internal sealed partial class HextechMayhemModifier
 		return IsStageResolved(GetSelectionIndexForAct(actIndex));
 	}
 
-	public void SetActResolved(int actIndex, bool resolved)
-	{
-		SetStageResolved(GetSelectionIndexForAct(actIndex), resolved);
-	}
-
 	internal bool IsStageResolved(int stageIndex)
 	{
 		return _actState.IsResolved(stageIndex);

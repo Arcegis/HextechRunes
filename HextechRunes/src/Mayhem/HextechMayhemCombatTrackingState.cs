@@ -83,8 +83,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<ulong> PlayersAwaitingPlayPhase = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly HashSet<ulong> GripPlayersTriggeredThisTurn = new();
-	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart | CombatTrackingClearPhase.PlayerTurnEnd)]
-	public int ArcanePunchPlayerAttackCardsPlayed;
 	[CombatTrackingTransient]
 	public string? LastEnemyThresholdTriggerKey;
 	[CombatTrackingTransient]

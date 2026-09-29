@@ -14,7 +14,7 @@ internal static partial class HextechCombatHooks
 	}
 
 	private static async Task<int> ReplaceTemporaryShrinkWithPermanent(
-		object? choiceContext,
+		PlayerChoiceContext choiceContext,
 		PowerModel temporaryShrink,
 		decimal permanentOffset,
 		Creature? applier,

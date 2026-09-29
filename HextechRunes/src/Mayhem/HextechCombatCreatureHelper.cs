@@ -5,17 +5,6 @@ namespace HextechRunes;
 
 internal static class HextechCombatCreatureHelper
 {
-	public static void DowngradePlayerCombatCards(HextechCombatState combatState)
-	{
-		foreach (CardModel card in combatState.Players
-			.SelectMany(static player => player.PlayerCombatState?.AllCards ?? Array.Empty<CardModel>())
-			.Where(static card => card.IsUpgraded)
-			.ToList())
-		{
-			CardCmd.Downgrade(card);
-		}
-	}
-
 	public static IReadOnlyList<Creature> GetAliveEnemies(HextechCombatState combatState)
 	{
 		return combatState.Enemies.Where(static creature => creature.IsAlive).ToList();
