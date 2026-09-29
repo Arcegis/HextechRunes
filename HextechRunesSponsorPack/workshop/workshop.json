@@ -1,0 +1,16 @@
+{
+  "title": "海克斯大乱斗：额外拓展包",
+  "updateTitle": false,
+  "description": "为《海克斯大乱斗》启用部分风格更独立的赞助者物品内容。需要同时安装海克斯大乱斗本体。",
+  "updateDescription": false,
+  "visibility": "public",
+  "changeNote": "海斗拓展包0.9.2更新日志：\n应社区的兼容性反馈，重做了“附魔大师”的效果，并移除了相关多余补丁；\n减少了卡牌显示与附魔判定时的额外开销；\n修复了拓展包在新版本游戏上可能重复注册内容并刷警告的问题；",
+  "tags": [
+    "Gameplay",
+    "Modifiers",
+    "Relics"
+  ],
+  "dependencies": [
+    3747501308
+  ]
+}
