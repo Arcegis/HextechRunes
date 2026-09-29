@@ -35,13 +35,14 @@ public sealed class SendThemInRune : HextechRelicBase
 
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
+		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
 		if (player != Owner || Owner == null || Owner.Creature.IsDead || !IsRegentPlayer(player))
 		{
 			return;
 		}
 
 		int ordinal = ConsumeCombatProcOrdinal(nameof(SendThemInRune), ref _generatedMinionsThisCombat);
-		CardModel card = HextechStableRandom.CreateMinionCard(combatState, Owner, "send-them-in", ordinal);
+		CardModel card = HextechStableCombatSpawns.CreateMinionCard(combatState, Owner, "send-them-in", ordinal);
 
 		Flash();
 		await HextechCardGeneration.AddGeneratedCardToCombat(card, PileType.Hand, addedByPlayer: true);

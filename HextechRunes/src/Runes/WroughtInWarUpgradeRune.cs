@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.CardSelection;
 namespace HextechRunes;
 
 public sealed class WroughtInWarUpgradeRune : CardUpgradeRuneBase<WroughtInWar>

@@ -3,10 +3,10 @@ namespace HextechRunes;
 public sealed class UltimateUnstoppableRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
-		[
-			new DynamicVar("MinCost", 2m),
-			new PowerVar<ArtifactPower>(2m)
-		];
+	[
+		new DynamicVar("MinCost", 2m),
+		new PowerVar<ArtifactPower>(2m)
+	];
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[

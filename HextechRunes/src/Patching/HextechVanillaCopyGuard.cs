@@ -1,11 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
-using HarmonyLib;
 
 namespace HextechRunes;
 
 /// <summary>
-/// 原版拷贝守卫:凡本模组用 <c>bool</c> 前缀可能跳过原方法的目标,都可能复制了一段原版逻辑。
+/// 原版拷贝守卫:凡本模组用 <c>bool</c> 前缀可能跳过原方法的目标,都可能复制了一段原版逻辑;
+/// 另有少数补丁不跳过原方法、却在 Postfix 里复制原方法步骤,由 <see cref="HextechPatchAttribute.CopiesVanillaLogic"/> 声明纳入。
 /// 游戏更新后这些拷贝会静默失真,因此启动时比对目标方法 IL 的 SHA1 与冻结表,漂移即告警。
 /// </summary>
 /// <remarks>
@@ -48,17 +48,28 @@ internal static class HextechVanillaCopyGuard
 		return stateMachine?.GetMethod("MoveNext", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 	}
 
-	/// <summary>本模组挂了可跳过原方法的前缀的所有目标。</summary>
-	internal static IEnumerable<MethodBase> EnumerateSkipCapableTargets(string ownerId)
+	/// <summary>本模组挂了可跳过原方法的前缀、或声明复制原版逻辑的补丁的所有目标。</summary>
+	internal static IEnumerable<MethodBase> EnumerateGuardedTargets(string ownerId)
 	{
 		foreach (MethodBase method in Harmony.GetAllPatchedMethods())
 		{
 			Patches? info = Harmony.GetPatchInfo(method);
-			if (info != null && info.Prefixes.Any(patch => patch.owner == ownerId && patch.PatchMethod.ReturnType == typeof(bool)))
+			if (info == null)
+			{
+				continue;
+			}
+
+			if (info.Prefixes.Any(patch => patch.owner == ownerId && HextechPatcher.IsSkipCapable(patch))
+				|| info.Postfixes.Any(patch => patch.owner == ownerId && DeclaresVanillaCopy(patch)))
 			{
 				yield return method;
 			}
 		}
+	}
+
+	private static bool DeclaresVanillaCopy(Patch patch)
+	{
+		return patch.PatchMethod.DeclaringType?.GetCustomAttribute<HextechPatchAttribute>()?.CopiesVanillaLogic == true;
 	}
 
 	internal static IReadOnlyDictionary<string, string> LoadExpectedHashes()
@@ -93,13 +104,14 @@ internal static class HextechVanillaCopyGuard
 			IReadOnlyDictionary<string, string> expected = LoadExpectedHashes();
 			if (expected.Count == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][VanillaCopyGuard] No frozen IL table for compat target {ModInfo.TargetGameVersion}; skipping.");
+				HextechLog.Info("VanillaCopyGuard", $"No frozen IL table for compat target {ModInfo.TargetGameVersion}; skipping.");
 				return;
 			}
 
 			List<string> drifted = [];
 			List<string> unregistered = [];
-			foreach (MethodBase method in EnumerateSkipCapableTargets(ownerId).SelectMany(WithAsyncBody))
+			int verified = 0;
+			foreach (MethodBase method in EnumerateGuardedTargets(ownerId).SelectMany(WithAsyncBody))
 			{
 				string key = DescribeTarget(method);
 				string? actual = ComputeIlHash(method);
@@ -111,26 +123,31 @@ internal static class HextechVanillaCopyGuard
 				{
 					drifted.Add($"{key} frozen={frozen} actual={actual ?? "<no body>"}");
 				}
+				else
+				{
+					verified++;
+				}
 			}
 
 			if (drifted.Count > 0)
 			{
-				Log.Warn($"[{ModInfo.Id}][VanillaCopyGuard] DRIFT: {drifted.Count} patched method(s) changed IL since the table was frozen; review the prefixes that replace vanilla logic:\n  {string.Join("\n  ", drifted)}");
+				HextechLog.Warn("VanillaCopyGuard", $"DRIFT: {drifted.Count} patched method(s) changed IL since the table was frozen; review the prefixes that replace vanilla logic:\n  {string.Join("\n  ", drifted)}");
 			}
 
 			if (unregistered.Count > 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][VanillaCopyGuard] {unregistered.Count} skip-capable target(s) not in the frozen table:\n  {string.Join("\n  ", unregistered)}");
+				HextechLog.Info("VanillaCopyGuard", $"{unregistered.Count} skip-capable target(s) not in the frozen table:\n  {string.Join("\n  ", unregistered)}");
 			}
 
 			if (drifted.Count == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][VanillaCopyGuard] {expected.Count} frozen target(s) verified.");
+				// 冻结表覆盖所有版本的所有补丁目标，本变体实际打上并核对通过的才是 verified。
+				HextechLog.Info("VanillaCopyGuard", $"{verified} patched target(s) verified against {expected.Count} frozen row(s).");
 			}
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][VanillaCopyGuard] Verification failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("VanillaCopyGuard", $"Verification failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

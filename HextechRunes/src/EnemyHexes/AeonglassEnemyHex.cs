@@ -26,11 +26,7 @@ internal sealed class AeonglassEnemyHex : HextechEnemyHexEffect
 
 	internal override Task AfterShuffle(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player shuffler)
 	{
-		if (shuffler.Creature.Side != CombatSide.Player
-			|| shuffler.Creature.IsDead
-			|| shuffler.Creature.CombatState is not HextechCombatState combatState
-			|| shuffler.PlayerCombatState is not { } playerCombatState
-			|| combatState.RunState != context.RunState)
+		if (shuffler.PlayerCombatState is not { } playerCombatState)
 		{
 			return Task.CompletedTask;
 		}

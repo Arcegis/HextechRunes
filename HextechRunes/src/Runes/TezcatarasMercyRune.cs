@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Saves;
 
 namespace HextechRunes;
 
-public sealed class TezcatarasMercyRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class TezcatarasMercyRune : HextechSharedCombatVictoryRuneBase
 {
 	private int _combatCounter;
 
@@ -19,14 +19,7 @@ public sealed class TezcatarasMercyRune : HextechRelicBase, IHextechSharedCombat
 		new DynamicVar("CombatInterval", 3m)
 	];
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		return IsNetworkMultiplayer()
-			? Task.CompletedTask
-			: ApplySharedCombatVictory(room);
-	}
-
-	public async Task ApplySharedCombatVictory(CombatRoom room)
+	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

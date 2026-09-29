@@ -6,21 +6,6 @@ internal readonly record struct HextechCardPlayResourceSpend(decimal Energy, dec
 
 internal static partial class HextechCombatHooks
 {
-	private static readonly Dictionary<CardModel, Stack<int>> ActivePlayEnergyValues = new();
-	private static readonly Dictionary<CardModel, int> PendingManualPlayEnergyValues = new();
-
-	internal static void ResetTransientCombatState()
-	{
-		ActivePlayEnergyValues.Clear();
-		ClearPendingManualPlayState();
-		PendingInstantDeathDoomKills.Clear();
-	}
-
-	internal static void ClearPendingManualPlayState()
-	{
-		PendingManualPlayEnergyValues.Clear();
-	}
-
 	internal static bool TryGetActivePlayEnergyValue(CardModel? card, out decimal energyValue)
 	{
 		energyValue = 0m;
@@ -55,11 +40,13 @@ internal static partial class HextechCombatHooks
 		return new HextechCardPlayResourceSpend(Math.Max(0, resources.EnergySpent), Math.Max(0, stars));
 	}
 
+	// 逐步对照原版 CardModel.SpendResources/SpendEnergy（0.111.0），只把"扣辉星"换成保留辉星并闪烁星尘符文。
+	// 原版同样假定出牌时 Owner/CombatState/PlayerCombatState 都存在，缺失即是调用方契约错误。
 	private static async Task<ValueTuple<int, int>> SpendResourcesPreservingStars(CardModel card)
 	{
-		var owner = card.Owner!;
-		var combatState = card.CombatState!;
-		var playerCombatState = owner.PlayerCombatState!;
+		Player owner = card.Owner ?? throw new InvalidOperationException($"{card.Id.Entry} has no owner while spending resources.");
+		HextechCombatState combatState = card.CombatState ?? throw new InvalidOperationException($"{card.Id.Entry} is not in combat while spending resources.");
+		PlayerCombatState playerCombatState = owner.PlayerCombatState ?? throw new InvalidOperationException($"{card.Id.Entry} owner has no combat state while spending resources.");
 		int energy = playerCombatState.Energy;
 		int energyToSpend = card.EnergyCost.GetAmountToSpend();
 		int starsToSpend = Math.Max(0, card.GetStarCostWithModifiers());
@@ -85,7 +72,6 @@ internal static partial class HextechCombatHooks
 		owner.GetRelic<StardustUpgradeRune>()?.Flash();
 		return new ValueTuple<int, int>(energyToSpend, starsToSpend);
 	}
-
 
 	private static void PushActivePlayEnergyValue(CardModel card, int energyValue)
 	{

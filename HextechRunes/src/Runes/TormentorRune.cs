@@ -2,6 +2,9 @@ namespace HextechRunes;
 
 public sealed class TormentorRune : LimitedDebuffProcRelicBase
 {
+	// 文案写的是字面值，改数值要同步九语言。
+	private const decimal BurnPerDebuff = 2m;
+
 	private bool _applyingBurnProc;
 
 	protected override bool HasTurnLimit => false;
@@ -21,12 +24,12 @@ public sealed class TormentorRune : LimitedDebuffProcRelicBase
 		await base.AfterPowerAmountChanged(choiceContext, power, amount, applier, cardSource);
 	}
 
-	protected override async Task OnEnemyDebuffApplied(Creature target)
+	protected override async Task OnDebuffProc(Player owner, Creature target)
 	{
 		try
 		{
 			_applyingBurnProc = true;
-			await PowerCmd.Apply<HextechBurnPower>(target, 2m, Owner!.Creature, null);
+			await PowerCmd.Apply<HextechBurnPower>(target, BurnPerDebuff, owner.Creature, null);
 		}
 		finally
 		{

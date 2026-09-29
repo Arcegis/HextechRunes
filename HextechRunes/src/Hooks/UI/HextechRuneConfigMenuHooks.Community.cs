@@ -1,13 +1,22 @@
 using Godot;
-using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Helpers;
 
 namespace HextechRunes;
 
 // 社区配置面板：精选(人工审核)/热门/最新/我的 四个 tab,上传当前配置、点赞、举报、删除自己的上传。
 // 「应用」与导入配置码同路径:填充配置界面 pending 编辑态,「保存并关闭」生效。
+// 网络请求都在按钮的同步处理器里经 TaskHelper.RunSafely 启动;异步流程自己捕获失败,
+// 回到主线程(CallDeferred)后再碰节点,并先确认节点仍然有效。
 internal static partial class HextechRuneConfigMenuHooks
 {
+	private enum CommunityTab
+	{
+		Featured,
+		Hot,
+		New,
+		Mine
+	}
+
 	private sealed record CommunityDisplayEntry(
 		string? Id,
 		string Title,
@@ -18,74 +27,64 @@ internal static partial class HextechRuneConfigMenuHooks
 		bool IsMine,
 		bool Hidden);
 
-	private static readonly HashSet<string> SessionLikedIds = [];
-
-	// 按钮文字由 AddCrispButtonText 加的 MegaLabel 子节点承载;直接改 Button.Text 会与其叠字。
-	private static void SetActionButtonText(Button button, string text)
+	/// <summary>一个打开中的社区面板:列表、状态行与当前登录的 Steam 身份。</summary>
+	private sealed record CommunityPanel(
+		ConfigMenuContext Menu,
+		Control Blocker,
+		VBoxContainer List,
+		Label Status,
+		string MySteamId)
 	{
-		foreach (Node child in button.GetChildren())
-		{
-			if (child is MegaLabel label)
-			{
-				label.SetTextAutoSize(text);
-				return;
-			}
-		}
+		internal bool HasSteam => !string.IsNullOrEmpty(MySteamId);
+
+		internal Action ReloadTab { get; set; } = static () => { };
 	}
 
-	private static void OpenCommunityConfigsPanel(
-		Control overlay,
-		Action<HextechConfigShareCodec.ImportPreview> applyPreview,
-		Func<string> buildPendingCode,
-		bool compactLayout)
+	/// <summary>上传对话框里需要在网络返回后更新的节点。</summary>
+	private sealed record CommunityUploadForm(
+		Control DialogBlocker,
+		LineEdit TitleInput,
+		Label Feedback,
+		Button Confirm);
+
+	// 本次游戏进程里点过赞的社区配置,只用于切换"点赞/取消点赞";只在主线程读写。
+	private static readonly HashSet<string> SessionLikedIds = [];
+
+	private static readonly (CommunityTab Tab, string LocKey)[] CommunityTabs =
+	[
+		(CommunityTab.Featured, "HEXTECH_COMMUNITY_TAB_FEATURED"),
+		(CommunityTab.Hot, "HEXTECH_COMMUNITY_TAB_HOT"),
+		(CommunityTab.New, "HEXTECH_COMMUNITY_TAB_NEW"),
+		(CommunityTab.Mine, "HEXTECH_COMMUNITY_TAB_MINE")
+	];
+
+	/// <summary>社区 API 的排序参数;精选与"我的"走各自的接口,不用这个参数。</summary>
+	private static string GetCommunitySortKey(CommunityTab tab)
 	{
-		Control blocker = new()
+		return tab switch
 		{
-			Name = "HextechCommunityConfigsBlocker",
-			MouseFilter = Control.MouseFilterEnum.Stop
+			CommunityTab.Hot => "hot",
+			CommunityTab.New => "new",
+			_ => throw new ArgumentOutOfRangeException(nameof(tab), tab, null)
 		};
-		blocker.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-		ColorRect dim = new()
-		{
-			Color = new Color(0f, 0f, 0f, 0.55f),
-			MouseFilter = Control.MouseFilterEnum.Ignore
-		};
-		dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-		blocker.AddChild(dim);
+	}
 
-		PanelContainer panel = new()
-		{
-			CustomMinimumSize = new Vector2(compactLayout ? 540f : 680f, compactLayout ? 470f : 570f)
-		};
-		panel.AddThemeStyleboxOverride("panel", CreatePanelStyle());
-		panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-		panel.GrowHorizontal = Control.GrowDirection.Both;
-		panel.GrowVertical = Control.GrowDirection.Both;
-		blocker.AddChild(panel);
+	private static void OpenCommunityConfigsPanel(ConfigMenuContext menu)
+	{
+		bool compactLayout = menu.CompactLayout;
+		Control blocker = CreateModalShell(
+			dimAlpha: 0.55f,
+			panelMinSize: new Vector2(compactLayout ? 540f : 680f, compactLayout ? 470f : 570f),
+			horizontalMargin: compactLayout ? 16 : 22,
+			verticalMargin: compactLayout ? 12 : 16,
+			separation: compactLayout ? 10 : 12,
+			out VBoxContainer body);
+		blocker.Name = "HextechCommunityConfigsBlocker";
 
-		MarginContainer margin = new();
-		int pad = compactLayout ? 16 : 22;
-		margin.AddThemeConstantOverride("margin_left", pad);
-		margin.AddThemeConstantOverride("margin_right", pad);
-		margin.AddThemeConstantOverride("margin_top", compactLayout ? 12 : 16);
-		margin.AddThemeConstantOverride("margin_bottom", compactLayout ? 12 : 16);
-		panel.AddChild(margin);
-
-		VBoxContainer body = new();
-		body.AddThemeConstantOverride("separation", compactLayout ? 10 : 12);
-		margin.AddChild(body);
-
-		Label title = CreateLabel(L("HEXTECH_CONFIG_FEATURED"), compactLayout ? 17 : 19, new Color(0.95f, 0.87f, 0.62f, 1f));
+		Label title = CreateLabel(L("HEXTECH_CONFIG_FEATURED"), compactLayout ? 17 : 19, HextechUiTheme.DialogTitleText);
 		title.HorizontalAlignment = HorizontalAlignment.Center;
 		body.AddChild(title);
-
-		ColorRect hairline = new()
-		{
-			Color = new Color(0.86f, 0.74f, 0.42f, 0.28f),
-			CustomMinimumSize = new Vector2(0f, 1f),
-			MouseFilter = Control.MouseFilterEnum.Ignore
-		};
-		body.AddChild(hairline);
+		body.AddChild(CreateHairline());
 
 		HBoxContainer tabs = new()
 		{
@@ -112,35 +111,33 @@ internal static partial class HextechRuneConfigMenuHooks
 		scroll.AddChild(list);
 		body.AddChild(scroll);
 
+		HextechSteamIdentity.TryGetSteamId(out string mySteamId);
+		CommunityPanel panel = new(menu, blocker, list, status, mySteamId);
+
 		HBoxContainer bottom = new()
 		{
 			Alignment = BoxContainer.AlignmentMode.Center
 		};
 		bottom.AddThemeConstantOverride("separation", compactLayout ? 10 : 14);
-		bool hasSteam = HextechSteamIdentity.TryGetSteamId(out string mySteamId);
-		string currentTab = "featured";
-		Action reloadCurrentTab = () => { };
-
-		Button upload = CreateActionButton(L("HEXTECH_COMMUNITY_UPLOAD"), () =>
-			OpenCommunityUploadDialog(blocker, mySteamId, buildPendingCode, () => reloadCurrentTab(), compactLayout), compactLayout);
-		upload.Disabled = !hasSteam;
-		if (!hasSteam)
+		Button upload = CreateActionButton(L("HEXTECH_COMMUNITY_UPLOAD"), () => OpenCommunityUploadDialog(panel), compactLayout);
+		upload.Disabled = !panel.HasSteam;
+		if (!panel.HasSteam)
 		{
 			upload.TooltipText = L("HEXTECH_COMMUNITY_NEED_STEAM");
 		}
 
 		bottom.AddChild(upload);
-		Button close = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => blocker.QueueFree(), compactLayout);
-		bottom.AddChild(close);
+		bottom.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => blocker.QueueFree(), compactLayout));
 		body.AddChild(bottom);
 
-		List<Button> tabButtons = [];
-		Action<string> selectTab = tab =>
+		List<(CommunityTab Tab, Button Button)> tabButtons = [];
+		CommunityTab currentTab = CommunityTab.Featured;
+		void SelectTab(CommunityTab tab)
 		{
 			currentTab = tab;
-			foreach (Button button in tabButtons)
+			foreach ((CommunityTab buttonTab, Button button) in tabButtons)
 			{
-				button.Disabled = (string)button.GetMeta("communityTab") == tab;
+				button.Disabled = buttonTab == tab;
 			}
 
 			foreach (Node child in list.GetChildren())
@@ -148,123 +145,154 @@ internal static partial class HextechRuneConfigMenuHooks
 				child.QueueFree();
 			}
 
-			status.Visible = true;
-			status.Text = L("HEXTECH_CONFIG_FEATURED_LOADING");
-			TaskHelper.RunSafely(PopulateCommunityListAsync(blocker, list, status, tab, mySteamId, applyPreview, () => reloadCurrentTab(), compactLayout));
-		};
-		reloadCurrentTab = () => selectTab(currentTab);
+			ShowCommunityStatus(status, L("HEXTECH_CONFIG_FEATURED_LOADING"));
+			TaskHelper.RunSafely(PopulateCommunityListAsync(panel, tab));
+		}
 
-		foreach ((string key, string locKey) in new[]
+		panel.ReloadTab = () => SelectTab(currentTab);
+		foreach ((CommunityTab tab, string locKey) in CommunityTabs)
 		{
-			("featured", "HEXTECH_COMMUNITY_TAB_FEATURED"),
-			("hot", "HEXTECH_COMMUNITY_TAB_HOT"),
-			("new", "HEXTECH_COMMUNITY_TAB_NEW"),
-			("mine", "HEXTECH_COMMUNITY_TAB_MINE")
-		})
-		{
-			if (key == "mine" && !hasSteam)
+			if (tab == CommunityTab.Mine && !panel.HasSteam)
 			{
 				continue;
 			}
 
-			Button tabButton = CreateActionButton(L(locKey), () => selectTab(key), compactLayout);
-			tabButton.SetMeta("communityTab", key);
-			tabButtons.Add(tabButton);
+			Button tabButton = CreateActionButton(L(locKey), () => SelectTab(tab), compactLayout);
+			tabButtons.Add((tab, tabButton));
 			tabs.AddChild(tabButton);
 		}
 
-		overlay.AddChild(blocker);
-		HextechControllerOverlay.RegisterModal(blocker, tabButtons.FirstOrDefault());
-		selectTab("featured");
+		menu.Overlay.AddChild(blocker);
+		HextechControllerOverlay.RegisterModal(blocker, tabButtons.Count > 0 ? tabButtons[0].Button : null);
+		SelectTab(CommunityTab.Featured);
 	}
 
-	private static async Task PopulateCommunityListAsync(
-		Control blocker,
-		VBoxContainer list,
-		Label status,
-		string tab,
-		string mySteamId,
-		Action<HextechConfigShareCodec.ImportPreview> applyPreview,
-		Action reloadTab,
-		bool compactLayout)
+	/// <summary>
+	/// 覆盖层内的模态弹窗骨架:半透明遮罩 + 居中面板 + 内容列。调用方往 <paramref name="body"/> 里加内容,
+	/// 再把返回的遮罩挂到覆盖层并用 <see cref="HextechControllerOverlay.RegisterModal"/> 登记。
+	/// </summary>
+	private static Control CreateModalShell(
+		float dimAlpha,
+		Vector2 panelMinSize,
+		int horizontalMargin,
+		int verticalMargin,
+		int separation,
+		out VBoxContainer body)
 	{
-		List<CommunityDisplayEntry> entries = [];
-		bool failed = false;
-		if (tab == "featured")
+		Control blocker = new()
 		{
-			IReadOnlyList<HextechFeaturedConfigs.FeaturedConfigEntry>? featured = await HextechFeaturedConfigs.FetchAsync().ConfigureAwait(false);
-			if (featured == null)
-			{
-				failed = true;
-			}
-			else
-			{
-				entries = featured
-					.Select(entry => new CommunityDisplayEntry(
-						entry.Id, entry.Name ?? string.Empty, entry.Author ?? string.Empty, entry.Code ?? string.Empty,
-						-1, IsCommunity: false, IsMine: false, Hidden: false))
-					.ToList();
-			}
+			MouseFilter = Control.MouseFilterEnum.Stop
+		};
+		blocker.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		ColorRect dim = new()
+		{
+			Color = new Color(0f, 0f, 0f, dimAlpha),
+			MouseFilter = Control.MouseFilterEnum.Ignore
+		};
+		dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+		blocker.AddChild(dim);
+
+		PanelContainer panel = new()
+		{
+			CustomMinimumSize = panelMinSize
+		};
+		panel.AddThemeStyleboxOverride("panel", CreatePanelStyle());
+		panel.SetAnchorsPreset(Control.LayoutPreset.Center);
+		panel.GrowHorizontal = Control.GrowDirection.Both;
+		panel.GrowVertical = Control.GrowDirection.Both;
+		blocker.AddChild(panel);
+
+		MarginContainer margin = new();
+		margin.AddThemeConstantOverride("margin_left", horizontalMargin);
+		margin.AddThemeConstantOverride("margin_right", horizontalMargin);
+		margin.AddThemeConstantOverride("margin_top", verticalMargin);
+		margin.AddThemeConstantOverride("margin_bottom", verticalMargin);
+		panel.AddChild(margin);
+
+		body = new VBoxContainer();
+		body.AddThemeConstantOverride("separation", separation);
+		margin.AddChild(body);
+		return blocker;
+	}
+
+	private static void ShowCommunityStatus(Label status, string text)
+	{
+		status.Visible = true;
+		SetLabelText(status, text);
+	}
+
+	private static async Task PopulateCommunityListAsync(CommunityPanel panel, CommunityTab tab)
+	{
+		List<CommunityDisplayEntry>? entries;
+		try
+		{
+			entries = await FetchCommunityEntriesAsync(panel.MySteamId, tab);
 		}
-		else
+		catch (Exception ex)
 		{
-			IReadOnlyList<HextechFeaturedConfigs.CommunityConfigEntry>? community = tab == "mine"
-				? await HextechFeaturedConfigs.FetchMineAsync(mySteamId).ConfigureAwait(false)
-				: await HextechFeaturedConfigs.FetchCommunityAsync(tab).ConfigureAwait(false);
-			if (community == null)
-			{
-				failed = true;
-			}
-			else
-			{
-				entries = community
-					.Select(entry => new CommunityDisplayEntry(
-						entry.Id, entry.Title ?? string.Empty, entry.Author ?? string.Empty, entry.Code ?? string.Empty,
-						entry.Likes, IsCommunity: true, IsMine: tab == "mine", Hidden: entry.Hidden))
-					.ToList();
-			}
+			LogCommunityFailure("list", ex);
+			entries = null;
 		}
 
 		Callable.From(() =>
 		{
-			if (!GodotObject.IsInstanceValid(blocker) || !GodotObject.IsInstanceValid(list) || !GodotObject.IsInstanceValid(status))
+			if (!GodotObject.IsInstanceValid(panel.Blocker) || !GodotObject.IsInstanceValid(panel.List) || !GodotObject.IsInstanceValid(panel.Status))
 			{
 				return;
 			}
 
-			if (failed)
+			if (entries == null)
 			{
-				status.Text = L("HEXTECH_CONFIG_FEATURED_ERROR");
+				ShowCommunityStatus(panel.Status, L("HEXTECH_CONFIG_FEATURED_ERROR"));
 				return;
 			}
 
 			if (entries.Count == 0)
 			{
-				status.Text = L("HEXTECH_CONFIG_FEATURED_EMPTY");
+				ShowCommunityStatus(panel.Status, L("HEXTECH_CONFIG_FEATURED_EMPTY"));
 				return;
 			}
 
-			status.Visible = false;
+			panel.Status.Visible = false;
 			foreach (CommunityDisplayEntry entry in entries)
 			{
-				list.AddChild(CreateCommunityConfigCard(blocker, entry, mySteamId, applyPreview, reloadTab, compactLayout));
+				panel.List.AddChild(CreateCommunityConfigCard(panel, entry));
 			}
 		}).CallDeferred();
 	}
 
-	private static Control CreateCommunityConfigCard(
-		Control blocker,
-		CommunityDisplayEntry entry,
-		string mySteamId,
-		Action<HextechConfigShareCodec.ImportPreview> applyPreview,
-		Action reloadTab,
-		bool compactLayout)
+	/// <summary>拉取某个页签的条目;请求失败返回 null(接口层已记日志)。</summary>
+	private static async Task<List<CommunityDisplayEntry>?> FetchCommunityEntriesAsync(string mySteamId, CommunityTab tab)
 	{
+		if (tab == CommunityTab.Featured)
+		{
+			IReadOnlyList<HextechFeaturedConfigs.FeaturedConfigEntry>? featured = await HextechFeaturedConfigs.FetchAsync().ConfigureAwait(false);
+			return featured?
+				.Select(static entry => new CommunityDisplayEntry(
+					entry.Id, entry.Name ?? string.Empty, entry.Author ?? string.Empty, entry.Code ?? string.Empty,
+					-1, IsCommunity: false, IsMine: false, Hidden: false))
+				.ToList();
+		}
+
+		bool mine = tab == CommunityTab.Mine;
+		IReadOnlyList<HextechCommunityClient.CommunityConfigEntry>? community = mine
+			? await HextechCommunityClient.FetchMineAsync(mySteamId).ConfigureAwait(false)
+			: await HextechCommunityClient.FetchCommunityAsync(GetCommunitySortKey(tab)).ConfigureAwait(false);
+		return community?
+			.Select(entry => new CommunityDisplayEntry(
+				entry.Id, entry.Title ?? string.Empty, entry.Author ?? string.Empty, entry.Code ?? string.Empty,
+				entry.Likes, IsCommunity: true, IsMine: mine, Hidden: entry.Hidden))
+			.ToList();
+	}
+
+	private static Control CreateCommunityConfigCard(CommunityPanel panel, CommunityDisplayEntry entry)
+	{
+		bool compactLayout = panel.Menu.CompactLayout;
 		PanelContainer card = new()
 		{
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
 		};
-		StyleBoxFlat cardStyle = CreateButtonStyle(new Color(0.1f, 0.12f, 0.17f, 0.75f), new Color(0.46f, 0.55f, 0.68f, 0.5f));
+		StyleBoxFlat cardStyle = CreateButtonStyle(new Color(0.1f, 0.12f, 0.17f, 0.75f), HextechUiTheme.SoftSteelBorder);
 		cardStyle.ContentMarginLeft = compactLayout ? 12f : 14f;
 		cardStyle.ContentMarginRight = compactLayout ? 12f : 14f;
 		cardStyle.ContentMarginTop = compactLayout ? 8f : 10f;
@@ -278,13 +306,19 @@ internal static partial class HextechRuneConfigMenuHooks
 		};
 		row.AddThemeConstantOverride("separation", compactLayout ? 10 : 14);
 		card.AddChild(row);
+		row.AddChild(CreateCommunityCardInfo(panel, entry));
+		row.AddChild(CreateCommunityCardActions(panel, entry));
+		return card;
+	}
 
+	private static Control CreateCommunityCardInfo(CommunityPanel panel, CommunityDisplayEntry entry)
+	{
+		bool compactLayout = panel.Menu.CompactLayout;
 		VBoxContainer left = new()
 		{
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
 		};
 		left.AddThemeConstantOverride("separation", 4);
-		row.AddChild(left);
 
 		HBoxContainer headerRow = new()
 		{
@@ -304,8 +338,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		left.AddChild(headerRow);
 		if (!string.IsNullOrWhiteSpace(entry.Author))
 		{
-			Label author = CreateLabel(entry.Author, 12, new Color(0.72f, 0.76f, 0.84f, 0.85f));
-			left.AddChild(author);
+			left.AddChild(CreateLabel(entry.Author, 12, new Color(0.72f, 0.76f, 0.84f, 0.85f)));
 		}
 
 		// 占位把简介推到左下角
@@ -316,7 +349,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		};
 		left.AddChild(leftSpacer);
 
-		string summaryText = BuildConfigSummaryText(entry.Code);
+		string summaryText = BuildConfigSummaryText(entry.Code, panel.Menu.PoolIds);
 		if (!string.IsNullOrEmpty(summaryText))
 		{
 			Label summaryLabel = CreateLabel(summaryText, 12, new Color(0.85f, 0.88f, 0.94f, 0.92f));
@@ -326,130 +359,156 @@ internal static partial class HextechRuneConfigMenuHooks
 			left.AddChild(summaryLabel);
 		}
 
+		return left;
+	}
+
+	private static Control CreateCommunityCardActions(CommunityPanel panel, CommunityDisplayEntry entry)
+	{
+		bool compactLayout = panel.Menu.CompactLayout;
 		VBoxContainer actions = new()
 		{
 			SizeFlagsVertical = Control.SizeFlags.ShrinkCenter
 		};
 		actions.AddThemeConstantOverride("separation", 6);
-		row.AddChild(actions);
 
-		bool hasSteam = !string.IsNullOrEmpty(mySteamId);
-		if (entry.IsCommunity && entry.Id != null && !entry.IsMine)
+		if (entry.IsCommunity && entry.Id is { } likeId && !entry.IsMine)
 		{
-			Button like = CreateActionButton($"♥ {Math.Max(0, entry.Likes)}", () => { }, compactLayout);
-			like.Disabled = !hasSteam;
-			like.Pressed += async () =>
-			{
-				bool on = !SessionLikedIds.Contains(entry.Id);
-				HextechFeaturedConfigs.CommunityApiResult result = await HextechFeaturedConfigs.LikeAsync(mySteamId, entry.Id, on);
-				Callable.From(() =>
-				{
-					if (!GodotObject.IsInstanceValid(like) || !result.Ok)
-					{
-						return;
-					}
-
-					if (on)
-					{
-						SessionLikedIds.Add(entry.Id);
-					}
-					else
-					{
-						SessionLikedIds.Remove(entry.Id);
-					}
-
-					SetActionButtonText(like, $"♥ {(result.Likes >= 0 ? result.Likes : entry.Likes)}");
-				}).CallDeferred();
-			};
+			Button like = CreateAsyncActionButton(
+				FormatLikes(Math.Max(0, entry.Likes)),
+				button => ToggleLikeAsync(button, panel.MySteamId, likeId, entry.Likes),
+				compactLayout);
+			like.Disabled = !panel.HasSteam;
 			actions.AddChild(like);
 		}
 
-		Button apply = CreateActionButton(L("HEXTECH_CONFIG_FEATURED_APPLY"), () =>
-		{
-			HextechConfigShareCodec.ImportPreview? preview = HextechConfigShareCodec.TryParse(entry.Code);
-			if (preview != null)
-			{
-				applyPreview(preview);
-			}
+		actions.AddChild(CreateActionButton(L("HEXTECH_CONFIG_FEATURED_APPLY"), () => ApplyCommunityConfig(panel, entry), compactLayout));
 
-			blocker.QueueFree();
-		}, compactLayout);
-		actions.AddChild(apply);
-
-		if (entry.IsCommunity && entry.Id != null && entry.IsMine && hasSteam)
+		if (entry.IsCommunity && entry.Id is { } ownId && entry.IsMine && panel.HasSteam)
 		{
-			Button remove = CreateActionButton(L("HEXTECH_COMMUNITY_DELETE"), () => { }, compactLayout);
-			remove.Pressed += async () =>
-			{
-				remove.Disabled = true;
-				await HextechFeaturedConfigs.DeleteAsync(mySteamId, entry.Id);
-				Callable.From(reloadTab).CallDeferred();
-			};
-			actions.AddChild(remove);
+			actions.AddChild(CreateAsyncActionButton(
+				L("HEXTECH_COMMUNITY_DELETE"),
+				button => DeleteOwnConfigAsync(button, panel, ownId),
+				compactLayout));
 		}
-		else if (entry.IsCommunity && entry.Id != null)
+		else if (entry.IsCommunity && entry.Id is { } reportId)
 		{
-			Button report = CreateActionButton(L("HEXTECH_COMMUNITY_REPORT"), () => { }, compactLayout);
-			report.Disabled = !hasSteam;
-			report.Pressed += async () =>
-			{
-				// 乐观 UI:点击立即置灰改字(Pressed 在主线程),网络结果不影响展示。
-				report.Disabled = true;
-				SetActionButtonText(report, L("HEXTECH_COMMUNITY_REPORTED"));
-				await HextechFeaturedConfigs.ReportAsync(mySteamId, entry.Id);
-			};
+			Button report = CreateAsyncActionButton(
+				L("HEXTECH_COMMUNITY_REPORT"),
+				button => ReportConfigAsync(button, panel.MySteamId, reportId),
+				compactLayout);
+			report.Disabled = !panel.HasSteam;
 			actions.AddChild(report);
 		}
 
-		return card;
+		return actions;
 	}
 
-	private static void OpenCommunityUploadDialog(
-		Control blocker,
-		string mySteamId,
-		Func<string> buildPendingCode,
-		Action reloadTab,
-		bool compactLayout)
+	private static string FormatLikes(int likes)
 	{
-		Control dialogBlocker = new()
+		return $"♥ {likes}";
+	}
+
+	/// <summary>「应用」:解析成功填进编辑态并关闭面板;配置码无法解析时留在面板里提示。</summary>
+	private static void ApplyCommunityConfig(CommunityPanel panel, CommunityDisplayEntry entry)
+	{
+		HextechConfigShareCodec.ImportPreview? preview = HextechConfigShareCodec.TryParse(entry.Code);
+		if (preview == null)
 		{
-			MouseFilter = Control.MouseFilterEnum.Stop
-		};
-		dialogBlocker.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-		ColorRect dim = new()
+			ShowCommunityStatus(panel.Status, L("HEXTECH_COMMUNITY_APPLY_INVALID"));
+			return;
+		}
+
+		ApplyImportPreview(panel.Menu, preview);
+		panel.Blocker.QueueFree();
+	}
+
+	private static async Task ToggleLikeAsync(Button like, string mySteamId, string entryId, int fallbackLikes)
+	{
+		bool on = !SessionLikedIds.Contains(entryId);
+		HextechCommunityClient.CommunityApiResult result;
+		try
 		{
-			Color = new Color(0f, 0f, 0f, 0.5f),
-			MouseFilter = Control.MouseFilterEnum.Ignore
-		};
-		dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-		dialogBlocker.AddChild(dim);
-
-		PanelContainer panel = new()
+			result = await HextechCommunityClient.LikeAsync(mySteamId, entryId, on);
+		}
+		catch (Exception ex)
 		{
-			CustomMinimumSize = new Vector2(compactLayout ? 380f : 460f, 0f)
-		};
-		panel.AddThemeStyleboxOverride("panel", CreatePanelStyle());
-		panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-		panel.GrowHorizontal = Control.GrowDirection.Both;
-		panel.GrowVertical = Control.GrowDirection.Both;
-		dialogBlocker.AddChild(panel);
+			LogCommunityFailure("like", ex);
+			return;
+		}
 
-		MarginContainer margin = new();
-		margin.AddThemeConstantOverride("margin_left", 18);
-		margin.AddThemeConstantOverride("margin_right", 18);
-		margin.AddThemeConstantOverride("margin_top", 14);
-		margin.AddThemeConstantOverride("margin_bottom", 14);
-		panel.AddChild(margin);
+		Callable.From(() =>
+		{
+			if (!GodotObject.IsInstanceValid(like) || !result.Ok)
+			{
+				return;
+			}
 
-		VBoxContainer body = new();
-		body.AddThemeConstantOverride("separation", 10);
-		margin.AddChild(body);
+			if (on)
+			{
+				SessionLikedIds.Add(entryId);
+			}
+			else
+			{
+				SessionLikedIds.Remove(entryId);
+			}
 
-		Label title = CreateLabel(L("HEXTECH_COMMUNITY_UPLOAD"), 16, new Color(0.95f, 0.87f, 0.62f, 1f));
+			SetActionButtonText(like, FormatLikes(result.Likes >= 0 ? result.Likes : fallbackLikes));
+		}).CallDeferred();
+	}
+
+	private static async Task DeleteOwnConfigAsync(Button remove, CommunityPanel panel, string entryId)
+	{
+		remove.Disabled = true;
+		try
+		{
+			await HextechCommunityClient.DeleteAsync(panel.MySteamId, entryId);
+		}
+		catch (Exception ex)
+		{
+			LogCommunityFailure("delete", ex);
+		}
+
+		// 无论成败都刷新当前页签:列表以服务器为准。
+		Callable.From(() =>
+		{
+			if (GodotObject.IsInstanceValid(panel.Blocker))
+			{
+				panel.ReloadTab();
+			}
+		}).CallDeferred();
+	}
+
+	private static async Task ReportConfigAsync(Button report, string mySteamId, string entryId)
+	{
+		// 乐观 UI:点击立即置灰改字(Pressed 在主线程),网络结果不影响展示。
+		report.Disabled = true;
+		SetActionButtonText(report, L("HEXTECH_COMMUNITY_REPORTED"));
+		try
+		{
+			await HextechCommunityClient.ReportAsync(mySteamId, entryId);
+		}
+		catch (Exception ex)
+		{
+			LogCommunityFailure("report", ex);
+		}
+	}
+
+	private static void OpenCommunityUploadDialog(CommunityPanel panel)
+	{
+		bool compactLayout = panel.Menu.CompactLayout;
+		Control dialogBlocker = CreateModalShell(
+			dimAlpha: 0.5f,
+			panelMinSize: new Vector2(compactLayout ? 380f : 460f, 0f),
+			horizontalMargin: 18,
+			verticalMargin: 14,
+			separation: 10,
+			out VBoxContainer body);
+
+		Label title = CreateLabel(L("HEXTECH_COMMUNITY_UPLOAD"), 16, HextechUiTheme.DialogTitleText);
 		title.HorizontalAlignment = HorizontalAlignment.Center;
 		body.AddChild(title);
 
-		Label hint = CreateLabel(L("HEXTECH_COMMUNITY_UPLOAD_HINT"), 12, new Color(0.78f, 0.82f, 0.9f, 0.85f));
+		Label hint = CreateLabel(L("HEXTECH_COMMUNITY_UPLOAD_HINT"), 12, HextechUiTheme.HintText);
 		hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 		body.AddChild(hint);
 
@@ -469,59 +528,81 @@ internal static partial class HextechRuneConfigMenuHooks
 			Alignment = BoxContainer.AlignmentMode.Center
 		};
 		buttons.AddThemeConstantOverride("separation", 12);
-		Button confirm = CreateActionButton(L("HEXTECH_COMMUNITY_UPLOAD_CONFIRM"), () => { }, compactLayout);
-		confirm.Pressed += async () =>
-		{
-			string uploadTitle = titleInput.Text.Trim();
-			if (uploadTitle.Length == 0)
-			{
-				feedback.Text = L("HEXTECH_COMMUNITY_TITLE_EMPTY");
-				return;
-			}
-
-			confirm.Disabled = true;
-			HextechFeaturedConfigs.CommunityApiResult result = await HextechFeaturedConfigs.UploadAsync(
-				mySteamId,
-				HextechSteamIdentity.GetPersonaName(),
-				uploadTitle,
-				buildPendingCode());
-			Callable.From(() =>
-			{
-				if (!GodotObject.IsInstanceValid(dialogBlocker))
-				{
-					return;
-				}
-
-				if (result.Ok)
-				{
-					dialogBlocker.QueueFree();
-					reloadTab();
-					return;
-				}
-
-				confirm.Disabled = false;
-				feedback.Text = result.Error switch
-				{
-					"title_rejected" => L("HEXTECH_COMMUNITY_ERR_TITLE_REJECTED"),
-					"quota_exceeded" => L("HEXTECH_COMMUNITY_ERR_QUOTA"),
-					"too_frequent" or "daily_limit" => L("HEXTECH_COMMUNITY_ERR_RATE"),
-					"banned" => L("HEXTECH_COMMUNITY_ERR_BANNED"),
-					_ => L("HEXTECH_CONFIG_FEATURED_ERROR")
-				};
-			}).CallDeferred();
-		};
-		Button cancel = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => dialogBlocker.QueueFree(), compactLayout);
+		Button confirm = CreateAsyncActionButton(
+			L("HEXTECH_COMMUNITY_UPLOAD_CONFIRM"),
+			button => UploadCommunityConfigAsync(panel, new CommunityUploadForm(dialogBlocker, titleInput, feedback, button)),
+			compactLayout);
 		buttons.AddChild(confirm);
-		buttons.AddChild(cancel);
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => dialogBlocker.QueueFree(), compactLayout));
 		body.AddChild(buttons);
 
-		blocker.AddChild(dialogBlocker);
+		panel.Blocker.AddChild(dialogBlocker);
 		HextechControllerOverlay.RegisterModal(dialogBlocker, titleInput);
 		titleInput.GrabFocus();
 	}
 
+	private static async Task UploadCommunityConfigAsync(CommunityPanel panel, CommunityUploadForm form)
+	{
+		string uploadTitle = form.TitleInput.Text.Trim();
+		if (uploadTitle.Length == 0)
+		{
+			SetLabelText(form.Feedback, L("HEXTECH_COMMUNITY_TITLE_EMPTY"));
+			return;
+		}
+
+		form.Confirm.Disabled = true;
+		HextechCommunityClient.CommunityApiResult result;
+		try
+		{
+			result = await HextechCommunityClient.UploadAsync(
+				panel.MySteamId,
+				HextechSteamIdentity.GetPersonaName(),
+				uploadTitle,
+				BuildPendingShareCode(panel.Menu));
+		}
+		catch (Exception ex)
+		{
+			LogCommunityFailure("upload", ex);
+			result = new HextechCommunityClient.CommunityApiResult(false, "network", null, -1);
+		}
+
+		Callable.From(() =>
+		{
+			if (!GodotObject.IsInstanceValid(form.DialogBlocker))
+			{
+				return;
+			}
+
+			if (result.Ok)
+			{
+				form.DialogBlocker.QueueFree();
+				if (GodotObject.IsInstanceValid(panel.Blocker))
+				{
+					panel.ReloadTab();
+				}
+
+				return;
+			}
+
+			form.Confirm.Disabled = false;
+			SetLabelText(form.Feedback, result.Error switch
+			{
+				"title_rejected" => L("HEXTECH_COMMUNITY_ERR_TITLE_REJECTED"),
+				"quota_exceeded" => L("HEXTECH_COMMUNITY_ERR_QUOTA"),
+				"too_frequent" or "daily_limit" => L("HEXTECH_COMMUNITY_ERR_RATE"),
+				"banned" => L("HEXTECH_COMMUNITY_ERR_BANNED"),
+				_ => L("HEXTECH_CONFIG_FEATURED_ERROR")
+			});
+		}).CallDeferred();
+	}
+
+	private static void LogCommunityFailure(string action, Exception ex)
+	{
+		HextechLog.Warn("Community", $"Community {action} failed: {ex.GetType().Name}: {ex.Message}");
+	}
+
 	/// <summary>三行本地化摘要：我方海克斯 启用/总数、敌方海克斯 启用/总数、双方每幕数量。</summary>
-	private static string BuildConfigSummaryText(string code)
+	private static string BuildConfigSummaryText(string code, ConfigPoolIds poolIds)
 	{
 		HextechConfigShareCodec.ImportPreview? preview = HextechConfigShareCodec.TryParse(code);
 		if (preview == null)
@@ -530,18 +611,12 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 
 		HextechRunConfigurationSnapshot snapshot = preview.Snapshot;
-		int playerTotal = HextechCatalog.GetAllConfigurableRuneTypes().Count();
-		int enemyTotal = HextechContentRegistry.SilverMonsterHexes.Count
-			+ HextechContentRegistry.GoldMonsterHexes.Count
-			+ HextechContentRegistry.PrismaticMonsterHexes.Count;
-		int playerEnabled = Math.Max(0, playerTotal - snapshot.DisabledPlayerRuneIds.Count);
-		int enemyEnabled = Math.Max(0, enemyTotal - snapshot.DisabledMonsterHexIds.Count);
 		return string.Format(
 			L("HEXTECH_COMMUNITY_SUMMARY"),
-			playerEnabled,
-			playerTotal,
-			enemyEnabled,
-			enemyTotal,
+			ConfigPoolIds.CountEnabled(poolIds.Player, snapshot.DisabledPlayerRuneIds),
+			poolIds.Player.Count,
+			ConfigPoolIds.CountEnabled(poolIds.Enemy, snapshot.DisabledMonsterHexIds),
+			poolIds.Enemy.Count,
 			string.Join("-", snapshot.PlayerHexCountsByAct),
 			string.Join("-", snapshot.EnemyHexCountsByAct));
 	}

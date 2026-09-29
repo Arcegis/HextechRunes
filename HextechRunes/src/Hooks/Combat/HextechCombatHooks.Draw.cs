@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
 	[HarmonyPatch(typeof(CardPileCmd), nameof(CardPileCmd.Draw), typeof(PlayerChoiceContext), typeof(decimal), typeof(Player), typeof(bool))]
 	[HextechPatch("combat.draw", "卡牌检视")]
 	private static class DrawPatch
@@ -20,7 +19,7 @@ internal static partial class HextechCombatHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Draw] Draw prefix relic lookup failed; falling back to vanilla draw: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("Draw", $"Draw prefix relic lookup failed; falling back to vanilla draw: {ex.GetType().Name}: {ex.Message}");
 				return true;
 			}
 

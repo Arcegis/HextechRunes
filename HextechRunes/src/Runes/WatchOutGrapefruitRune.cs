@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
 
-public sealed class WatchOutGrapefruitRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class WatchOutGrapefruitRune : HextechSharedCombatVictoryRuneBase
 {
 	private static readonly Type[] FoodRelicTypes =
 	[
@@ -28,17 +28,7 @@ public sealed class WatchOutGrapefruitRune : HextechRelicBase, IHextechSharedCom
 		typeof(EmberTea)
 	];
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

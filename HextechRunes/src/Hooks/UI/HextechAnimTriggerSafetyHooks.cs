@@ -1,7 +1,5 @@
 using System.Runtime.CompilerServices;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -51,7 +49,7 @@ internal static class HextechAnimTriggerSafetyHooks
 
 			if (HextechRunLogBudget.TryConsume("ui.animation-trigger-nre", 5))
 			{
-				Log.Warn($"[{ModInfo.Id}][AnimSafety] Suppressed NullReferenceException in animation trigger '{trigger}' on {creature.ModelId.Entry} (vanilla animator condition reading a power this mod removed).");
+				HextechLog.Warn("AnimSafety", $"Suppressed NullReferenceException in animation trigger '{trigger}' on {creature.ModelId.Entry} (vanilla animator condition reading a power this mod removed).");
 			}
 
 			return null;

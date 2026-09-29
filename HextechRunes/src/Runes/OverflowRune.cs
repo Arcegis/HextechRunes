@@ -1,7 +1,11 @@
 namespace HextechRunes;
 
-public sealed class OverflowRune : HextechRelicBase
+public sealed class OverflowRune : HextechRelicBase, IHextechHealingMultiplierProvider
 {
+	// 治疗、格挡、伤害共用的倍率与手牌加费；文案写的是字面值（翻倍、+1），改数值要同步九语言。
+	private const decimal StatMultiplier = 2m;
+	private const decimal HandCostIncrease = 1m;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new EnergyVar(1)
@@ -20,17 +24,22 @@ public sealed class OverflowRune : HextechRelicBase
 			return false;
 		}
 
-		modifiedCost = originalCost + 1m;
+		modifiedCost = originalCost + HandCostIncrease;
 		return true;
 	}
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? 2m : 1m;
+		return target == Owner?.Creature ? StatMultiplier : 1m;
 	}
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? 2m : 1m;
+		return IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource) ? StatMultiplier : 1m;
+	}
+
+	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
+	{
+		return IsFirstOwnedInstance(player) ? StatMultiplier : 1m;
 	}
 }

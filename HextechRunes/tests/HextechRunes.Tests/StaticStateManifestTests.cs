@@ -13,6 +13,7 @@ internal static partial class Program
 	/// 只列非 readonly、非 const 的静态字段;readonly 的缓存/反射句柄不在此列。
 	/// 用 HEXTECH_WRITE_PATCH_MANIFEST=1 重生成。
 	/// </summary>
+	[HextechTest]
 	private static void StaticStateManifestMatchesCheckedInList()
 	{
 		string manifestPath = Path.Combine(AppContext.BaseDirectory, StaticStateManifestFileName);

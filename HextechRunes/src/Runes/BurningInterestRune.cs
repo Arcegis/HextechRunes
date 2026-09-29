@@ -7,7 +7,7 @@ namespace HextechRunes;
 /// </summary>
 public sealed class BurningInterestRune : HextechRelicBase
 {
-	// 仅保留旧存档尚未领取的战后奖励；新的触发直接发放金币。
+	// 仅保留旧存档尚未领取的战后奖励（见 SettleLegacyCombatGold）；新的触发直接发放金币。
 	private int _countThisCombat;
 	private bool _grantingGold;
 
@@ -22,7 +22,7 @@ public sealed class BurningInterestRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical && _countThisCombat > 0;
+	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
 
 	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
 
@@ -39,18 +39,13 @@ public sealed class BurningInterestRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		ResetCount();
+		SettleLegacyCombatGold(null, ref _countThisCombat);
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		if (Owner != null && _countThisCombat > 0)
-		{
-			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, _countThisCombat);
-		}
-
-		ResetCount();
+		SettleLegacyCombatGold(room, ref _countThisCombat);
 		return Task.CompletedTask;
 	}
 
@@ -91,11 +86,5 @@ public sealed class BurningInterestRune : HextechRelicBase
 		{
 			_grantingGold = false;
 		}
-	}
-
-	private void ResetCount()
-	{
-		_countThisCombat = 0;
-		InvokeDisplayAmountChanged();
 	}
 }

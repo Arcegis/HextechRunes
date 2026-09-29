@@ -1,4 +1,3 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using static HextechRunes.HextechHookReflection;
@@ -9,20 +8,23 @@ internal static partial class HextechPlayerRuneHooks
 {
 	internal const string FinisherCalculatedHitsKey = "CalculatedHits";
 
-	internal static PropertyInfo? KunaiAttacksPlayedThisTurnProperty;
-	internal static PropertyInfo? ShurikenAttacksPlayedThisTurnProperty;
-	internal static PropertyInfo? OrnamentalFanAttacksPlayedThisTurnProperty;
-	internal static PropertyInfo? PenNibAttackToDoubleProperty;
+	private const BindingFlags InstanceNonPublic = BindingFlags.Instance | BindingFlags.NonPublic;
 
-	internal static MethodInfo? NunchakuDoActivateVisualsMethod;
-	internal static MethodInfo? KunaiDoActivateVisualsMethod;
-	internal static MethodInfo? ShurikenDoActivateVisualsMethod;
-	internal static MethodInfo? OrnamentalFanDoActivateVisualsMethod;
-	internal static bool? _illusoryWeaponReflectionReady;
+	// 苦无/手里剑/装饰扇的 AttacksPlayedThisTurn、钢笔尖的 AttackToDouble（私有 setter 的属性），
+	// 以及双节棍/苦无/手里剑/装饰扇的 DoActivateVisuals()（私有方法），均为 0.107.1/0.110.0/0.111.0 原版成员。
+	private static readonly PropertyInfo? KunaiAttacksPlayedThisTurnProperty = TryGetProperty(typeof(Kunai), "AttacksPlayedThisTurn");
+	private static readonly PropertyInfo? ShurikenAttacksPlayedThisTurnProperty = TryGetProperty(typeof(Shuriken), "AttacksPlayedThisTurn");
+	private static readonly PropertyInfo? OrnamentalFanAttacksPlayedThisTurnProperty = TryGetProperty(typeof(OrnamentalFan), "AttacksPlayedThisTurn");
+	private static readonly PropertyInfo? PenNibAttackToDoubleProperty = TryGetProperty(typeof(PenNib), "AttackToDouble");
+	private static readonly MethodInfo? NunchakuDoActivateVisualsMethod = TryGetMethod(typeof(Nunchaku), "DoActivateVisuals", InstanceNonPublic);
+	private static readonly MethodInfo? KunaiDoActivateVisualsMethod = TryGetMethod(typeof(Kunai), "DoActivateVisuals", InstanceNonPublic);
+	private static readonly MethodInfo? ShurikenDoActivateVisualsMethod = TryGetMethod(typeof(Shuriken), "DoActivateVisuals", InstanceNonPublic);
+	private static readonly MethodInfo? OrnamentalFanDoActivateVisualsMethod = TryGetMethod(typeof(OrnamentalFan), "DoActivateVisuals", InstanceNonPublic);
+	private static bool? _illusoryWeaponReflectionReady;
 
 	/// <summary>
 	/// 幻影武器要改写五个原版遗物的私有计数与视觉方法;任一缺失就整组停用并把符文标为本运行时不可用。
-	/// 七个补丁类共用这一次解析。
+	/// IllusoryWeaponRune 的七个补丁类在 Prepare 里共用这一次判定。
 	/// </summary>
 	internal static bool IllusoryWeaponReflectionReady
 	{
@@ -33,45 +35,34 @@ internal static partial class HextechPlayerRuneHooks
 				return cached;
 			}
 
-			try
+			bool ready = KunaiAttacksPlayedThisTurnProperty != null
+				&& ShurikenAttacksPlayedThisTurnProperty != null
+				&& OrnamentalFanAttacksPlayedThisTurnProperty != null
+				&& PenNibAttackToDoubleProperty != null
+				&& NunchakuDoActivateVisualsMethod != null
+				&& KunaiDoActivateVisualsMethod != null
+				&& ShurikenDoActivateVisualsMethod != null
+				&& OrnamentalFanDoActivateVisualsMethod != null;
+			if (!ready)
 			{
-				KunaiAttacksPlayedThisTurnProperty = RequireProperty(typeof(Kunai), "AttacksPlayedThisTurn");
-				ShurikenAttacksPlayedThisTurnProperty = RequireProperty(typeof(Shuriken), "AttacksPlayedThisTurn");
-				OrnamentalFanAttacksPlayedThisTurnProperty = RequireProperty(typeof(OrnamentalFan), "AttacksPlayedThisTurn");
-				PenNibAttackToDoubleProperty = RequireProperty(typeof(PenNib), "AttackToDouble");
-
-				NunchakuDoActivateVisualsMethod = RequireMethod(typeof(Nunchaku), "DoActivateVisuals", BindingFlags.Instance | BindingFlags.NonPublic);
-				KunaiDoActivateVisualsMethod = RequireMethod(typeof(Kunai), "DoActivateVisuals", BindingFlags.Instance | BindingFlags.NonPublic);
-				ShurikenDoActivateVisualsMethod = RequireMethod(typeof(Shuriken), "DoActivateVisuals", BindingFlags.Instance | BindingFlags.NonPublic);
-				OrnamentalFanDoActivateVisualsMethod = RequireMethod(typeof(OrnamentalFan), "DoActivateVisuals", BindingFlags.Instance | BindingFlags.NonPublic);
-				_illusoryWeaponReflectionReady = true;
-			}
-			catch (Exception ex)
-			{
-				HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed<IllusoryWeaponRune>("illusory weapon attack counters", ex);
-				_illusoryWeaponReflectionReady = false;
+				HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed<IllusoryWeaponRune>(
+					"illusory weapon attack counters",
+					new MissingMemberException("Illusory Weapon relic counters or activation visuals are missing in this game build."));
 			}
 
-			return _illusoryWeaponReflectionReady.Value;
+			_illusoryWeaponReflectionReady = ready;
+			return ready;
 		}
 	}
 
-	internal static PropertyInfo RequireProperty(Type type, string name)
-	{
-		return type.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-			?? throw new InvalidOperationException($"Could not find required property {type.FullName}.{name}.");
-	}
-
-
 	internal static decimal CountFinisherAttackCardsPlayedThisTurn(CardModel card, Creature? _)
 	{
-			return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
-				card.Owner,
-				card.CombatState as CombatState,
-				firstInSeriesOnly: false,
-				includeAutoPlay: true);
+		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
+			card.Owner,
+			card.CombatState as CombatState,
+			firstInSeriesOnly: false,
+			includeAutoPlay: true);
 	}
-
 
 	internal static async Task ResolveIllusoryWeaponNunchaku(Nunchaku nunchaku)
 	{
@@ -83,9 +74,9 @@ internal static partial class HextechPlayerRuneHooks
 		}
 
 		await PlayerCmd.GainEnergy(nunchaku.DynamicVars.Energy.BaseValue, nunchaku.Owner);
+		// 遗物激活动画是纯表现层：原版 DoActivateVisuals 同样不参与结算，不等待它以免拖慢出牌链；失败只回退闪光。
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(nunchaku, NunchakuDoActivateVisualsMethod, nameof(Nunchaku)));
 	}
-
 
 	internal static async Task ResolveIllusoryWeaponKunai(Kunai kunai)
 	{
@@ -97,9 +88,9 @@ internal static partial class HextechPlayerRuneHooks
 		}
 
 		await PowerCmd.Apply<DexterityPower>(kunai.Owner.Creature, kunai.DynamicVars.Dexterity.BaseValue, kunai.Owner.Creature, null);
+		// 纯表现层，同上，不等待。
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(kunai, KunaiDoActivateVisualsMethod, nameof(Kunai)));
 	}
-
 
 	internal static async Task ResolveIllusoryWeaponShuriken(Shuriken shuriken)
 	{
@@ -111,9 +102,9 @@ internal static partial class HextechPlayerRuneHooks
 		}
 
 		await PowerCmd.Apply<StrengthPower>(shuriken.Owner.Creature, shuriken.DynamicVars.Strength.BaseValue, shuriken.Owner.Creature, null);
+		// 纯表现层，同上，不等待。
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(shuriken, ShurikenDoActivateVisualsMethod, nameof(Shuriken)));
 	}
-
 
 	internal static async Task ResolveIllusoryWeaponOrnamentalFan(OrnamentalFan ornamentalFan)
 	{
@@ -125,9 +116,9 @@ internal static partial class HextechPlayerRuneHooks
 		}
 
 		await CreatureCmd.GainBlock(ornamentalFan.Owner.Creature, ornamentalFan.DynamicVars.Block, null);
+		// 纯表现层，同上，不等待。
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(ornamentalFan, OrnamentalFanDoActivateVisualsMethod, nameof(OrnamentalFan)));
 	}
-
 
 	internal static void ClearIllusoryWeaponPendingPenNib(Player? owner, CardModel card)
 	{
@@ -145,10 +136,10 @@ internal static partial class HextechPlayerRuneHooks
 		return owner != null
 			&& cardPlay.Card.Type != CardType.Attack
 			&& cardPlay.Card.Owner == owner
-			&& IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, owner);
+			&& HextechCardEffectTypes.IsAttackForEffects(cardPlay.Card, owner);
 	}
 
-	internal static int IncrementIntProperty(object instance, PropertyInfo? property)
+	private static int IncrementIntProperty(object instance, PropertyInfo? property)
 	{
 		int value = property?.GetValue(instance) is int current ? current : 0;
 		value++;
@@ -166,7 +157,7 @@ internal static partial class HextechPlayerRuneHooks
 		PenNibAttackToDoubleProperty?.SetValue(penNib, card);
 	}
 
-	internal static async Task InvokePrivateRelicVisuals(RelicModel relic, MethodInfo? method, string relicName)
+	private static async Task InvokePrivateRelicVisuals(RelicModel relic, MethodInfo? method, string relicName)
 	{
 		if (method == null)
 		{
@@ -179,16 +170,15 @@ internal static partial class HextechPlayerRuneHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][IllusoryWeapon] Failed to run {relicName} activation visuals: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("IllusoryWeapon", $"Failed to run {relicName} activation visuals: {ex.GetType().Name}: {ex.Message}");
 			try
 			{
 				relic.Flash();
 			}
 			catch (Exception flashException)
 			{
-				Log.Warn($"[{ModInfo.Id}][IllusoryWeapon] Fallback flash failed for {relicName}: {flashException.Message}");
+				HextechLog.Warn("IllusoryWeapon", $"Fallback flash failed for {relicName}: {flashException.Message}");
 			}
 		}
 	}
-
 }

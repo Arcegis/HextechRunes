@@ -2,6 +2,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void AssetResolverPrefersRawTextureBeforePackedResource()
 	{
 		Dictionary<string, FakeTexture> cache = new(StringComparer.Ordinal);
@@ -23,6 +24,7 @@ internal static partial class Program
 		Equal("raw", cache["res://HextechRunes/images/relics/test.png"].Name, "cached raw image texture");
 	}
 
+	[HextechTest]
 	private static void AssetResolverRecognizesRawImagePaths()
 	{
 		Expect(AssetResourceResolver.IsRawImagePath("res://HextechRunes/images/relics/test.png"), "PNG should use raw decoding");
@@ -31,6 +33,7 @@ internal static partial class Program
 		Expect(!AssetResourceResolver.IsRawImagePath("res://HextechRunes/images/relics/test.ctex"), "CTEX must not be treated as a raw image");
 	}
 
+	[HextechTest]
 	private static void AssetResolverRejectsInvalidTextureObjects()
 	{
 		const string path = "res://HextechRunes/images/relics/test.png";
@@ -50,6 +53,7 @@ internal static partial class Program
 		Expect(!cache.ContainsKey(path), "invalid cached and packed textures must not remain cached");
 	}
 
+	[HextechTest]
 	private static void AssetResolverPropagatesLoaderExceptionsWithoutCachingDirtyEntries()
 	{
 		const string path = "res://HextechRunes/images/relics/test.png";
@@ -69,9 +73,10 @@ internal static partial class Program
 		Expect(!cache.ContainsKey(path), "stale entry must be evicted and no dirty entry cached after a loader throw");
 	}
 
+	[HextechTest]
 	private static void AssetResolverRawOnlyMissReturnsNullWithoutCaching()
 	{
-		// 生产形态:raw 图片路径的 secondary 恒返回 null(HextechTextures.LoadPortableTexture)。
+		// 生产形态:raw 图片路径的 secondary 恒返回 null(HextechTextures.LoadUiTexture)。
 		const string path = "res://HextechRunes/images/relics/test.png";
 		Dictionary<string, FakeTexture> cache = new(StringComparer.Ordinal);
 

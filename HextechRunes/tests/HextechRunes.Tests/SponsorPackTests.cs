@@ -14,30 +14,9 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
-	// 神迹事件的随机结果必须逐位不变:算法从 MiracleEvent.StableRoll 抽到 SponsorStableRandom 后,
-	// 用纯函数核心守住「同输入同输出、任一盐位变化则输出变化」。
-	private static void SponsorStableRandomHashIsDeterministicAndSaltSensitive()
-	{
-		ulong baseline = SponsorStableRandom.Hash("SEED-1", 2, 17, "enchantment-master", "3", "card");
-		Equal(
-			baseline,
-			SponsorStableRandom.Hash("SEED-1", 2, 17, "enchantment-master", "3", "card"),
-			"same seed/act/floor/salt must produce the same hash");
-		Expect(baseline != SponsorStableRandom.Hash("SEED-1", 2, 17, "enchantment-master", "3", "enchant"), "a different salt tail must change the hash");
-		Expect(baseline != SponsorStableRandom.Hash("SEED-1", 2, 18, "enchantment-master", "3", "card"), "a different floor must change the hash");
-		Expect(baseline != SponsorStableRandom.Hash("SEED-1", 3, 17, "enchantment-master", "3", "card"), "a different act must change the hash");
-		Expect(baseline != SponsorStableRandom.Hash("SEED-2", 2, 17, "enchantment-master", "3", "card"), "a different run seed must change the hash");
-		Expect(baseline != SponsorStableRandom.Hash("SEED-1", 2, 17, "enchantment-master", "4", "card"), "a different owner net id must change the hash");
-
-		// 神迹事件的历史盐(miracle.*)与附魔大师共用同一核心,顺序与分隔符不能变。
-		Expect(
-			SponsorStableRandom.Hash("SEED-1", 0, 0, "miracle.gift", "2", "1")
-				!= SponsorStableRandom.Hash("SEED-1", 0, 0, "miracle.gift", "1", "2"),
-			"salt parts must not be order-insensitive");
-	}
-
 	// 功能组注册的依赖表必须与清单表自洽:可获得内容都在锻造器/符文表里,依赖都在载体/图标/事件遗物表里;
 	// 并且运行期硬引用选择遗物的锻造器/符文都声明了依赖(漏声明 = 依赖注册失败时它照样入池,结算时 ModelDb.Relic<T>() 报错)。
+	[HextechTest]
 	private static void SponsorCatalogDependencyTableIsConsistent()
 	{
 		HashSet<Type> obtainables = [.. SponsorCatalog.ObtainableTypes];
@@ -59,6 +38,7 @@ internal static partial class Program
 	}
 
 	// 排除规则的类型部分(纯函数,不触碰 Godot 资源层)。
+	[HextechTest]
 	private static void RandomEnchantmentPoolExcludesDeprecatedNegativeAndMarkerTypes()
 	{
 		Expect(RandomEnchantmentPool.IsExcludedType(typeof(DeprecatedEnchantment)), "DeprecatedEnchantment must be excluded");
@@ -105,14 +85,13 @@ internal static partial class Program
 		Expect(!RandomEnchantmentPool.IsExcluded(evolution), "the sponsor pack's own enchantments must not be excluded by the icon rule");
 	}
 
-	// GetLegalEnchantments 只做「过 CanEnchant 的保序过滤」;池本身的 Id.Entry 有序由 SortByEntryOrdinal 保证。
+	// GetLegalEnchantments 只做「过 CanEnchant 的保序过滤」;池本身按 Id.Entry 的 Ordinal 顺序在 BuildPool 里排好。
 	// 真实池要 ModelDb 造 canonical 实例(需要 Godot 资源层),测试进程里跑不了,所以走纯函数重载。
+	[HextechTest]
 	private static void RandomEnchantmentPoolLegalEnchantmentsPreserveOrderAndCanEnchant()
 	{
 		CardModel skill = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
-		typeof(CardModel)
-			.GetField("<Type>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-			.SetValue(skill, CardType.Skill);
+		SetAutoProperty(skill, nameof(CardModel.Type), CardType.Skill);
 
 		EnchantmentModel vigorous = (Vigorous)RuntimeHelpers.GetUninitializedObject(typeof(Vigorous));
 		EnchantmentModel steady = (Steady)RuntimeHelpers.GetUninitializedObject(typeof(Steady));
@@ -129,16 +108,11 @@ internal static partial class Program
 			Expect(enchantment.CanEnchant(skill), $"{enchantment.GetType().Name} must actually satisfy CanEnchant");
 		}
 
-		// 池的排序键是 Id.Entry,比较器必须是 Ordinal(大写在前),不是 OrdinalIgnoreCase。
-		List<string> sorted = RandomEnchantmentPool.SortByEntryOrdinal([ "b", "A", "a", "B" ], static entry => entry);
-		Equal("A", sorted[0], "ordinal sort puts uppercase first");
-		Equal("B", sorted[1], "ordinal sort puts uppercase first");
-		Equal("a", sorted[2], "ordinal sort order");
-		Equal("b", sorted[3], "ordinal sort order");
 	}
 
 	// 复合附魔只剩一个只读迁移壳:恒不可附、只保留 SavedEnchantmentsJson 这一个 [SavedProperty](net-id 布局不变)、
 	// 保留 OnEnchant 作为读档迁移入口。真正的迁移路径要 ModelDb + SaveUtil 造内层附魔,测试进程里无法执行。
+	[HextechTest]
 	private static void SponsorCompositeEnchantmentIsReadOnlyMigrationShell()
 	{
 		SponsorCompositeEnchantment shell = (SponsorCompositeEnchantment)RuntimeHelpers.GetUninitializedObject(typeof(SponsorCompositeEnchantment));
@@ -159,6 +133,7 @@ internal static partial class Program
 				"OnEnchant",
 				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly) != null,
 			"the migration shell must keep OnEnchant as the save-load migration entry point");
+		// 有意的 API 面守护:0.9.2 起多重附魔 API 已移除,迁移壳上重新出现任何公开方法都意味着有人把旧 API 加回来了。
 		Expect(
 			typeof(SponsorCompositeEnchantment).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
 				.All(static method => method.Name is nameof(EnchantmentModel.CanEnchant) or "get_HasExtraCardText"),
@@ -167,28 +142,26 @@ internal static partial class Program
 
 	// 熵减的「战后一次预览批量删除」不再靠 Hook.AfterCombatEnd 的补丁收集,改由第一个被回调的实例
 	// 扫一遍牌组。选牌是纯函数,在这里守住:只挑本场打出过(PendingRemoval)的熵减牌,且保持牌组顺序。
+	[HextechTest]
 	private static void EntropyDecreaseCollectsOnlyCardsMarkedForRemoval()
 	{
-		FieldInfo enchantmentField = typeof(CardModel)
-			.GetField("<Enchantment>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!;
-
 		CardModel plain = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
 
 		CardModel unplayed = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
-		enchantmentField.SetValue(unplayed, RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease)));
+		SetAutoProperty(unplayed, nameof(CardModel.Enchantment), RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease)));
 
 		CardModel played = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
 		EntropyDecrease playedEnchantment = (EntropyDecrease)RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease));
 		playedEnchantment.PendingRemoval = true;
-		enchantmentField.SetValue(played, playedEnchantment);
+		SetAutoProperty(played, nameof(CardModel.Enchantment), playedEnchantment);
 
 		CardModel otherEnchantment = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
-		enchantmentField.SetValue(otherEnchantment, RuntimeHelpers.GetUninitializedObject(typeof(EntropyIncrease)));
+		SetAutoProperty(otherEnchantment, nameof(CardModel.Enchantment), RuntimeHelpers.GetUninitializedObject(typeof(EntropyIncrease)));
 
 		CardModel alsoPlayed = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
 		EntropyDecrease alsoPlayedEnchantment = (EntropyDecrease)RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease));
 		alsoPlayedEnchantment.PendingRemoval = true;
-		enchantmentField.SetValue(alsoPlayed, alsoPlayedEnchantment);
+		SetAutoProperty(alsoPlayed, nameof(CardModel.Enchantment), alsoPlayedEnchantment);
 
 		IReadOnlyList<CardModel> collected = EntropyDecrease.CollectPendingRemovalCards(
 			[plain, unplayed, played, otherEnchantment, alsoPlayed]);
@@ -197,6 +170,7 @@ internal static partial class Program
 		Equal(alsoPlayed, collected[1], "collection keeps deck order");
 	}
 
+	[HextechTest]
 	private static void DollysMirrorRelicPagesStayWithinVanillaViewport()
 	{
 		DollyRelicPageLayout first = DollysMirrorForge.GetRelicPageLayout(13, 0);
@@ -216,35 +190,40 @@ internal static partial class Program
 		Equal(2, last.PageIndex, "Dolly relic page index clamp");
 	}
 
+	// 契约表是选择界面、提示、识别与事件遗物注册的唯一来源:每种契约恰好一条,选项遗物能反查回自己的契约。
+	[HextechTest]
 	private static void AbyssalContractChoiceModelsMapToExpectedContracts()
 	{
+		(AbyssalContractKind Kind, Type ChoiceRelic)[] expected =
+		[
+			(AbyssalContractKind.Warrior, typeof(WarriorContractChoiceRelic)),
+			(AbyssalContractKind.Hunter, typeof(HunterContractChoiceRelic)),
+			(AbyssalContractKind.Regent, typeof(RegentContractChoiceRelic)),
+			(AbyssalContractKind.Necrobinder, typeof(NecrobinderContractChoiceRelic)),
+			(AbyssalContractKind.Automaton, typeof(AutomatonContractChoiceRelic))
+		];
+		SequenceEqual(
+			expected.Select(static entry => entry.ChoiceRelic),
+			AbyssalContractCatalog.ChoiceRelicTypes,
+			"contract choice relics keep their registration/selection order");
+		foreach ((AbyssalContractKind kind, Type choiceRelic) in expected)
+		{
+			RelicModel relic = (RelicModel)RuntimeHelpers.GetUninitializedObject(choiceRelic);
+			Equal(kind, AbyssalContractCatalog.GetKindForChoice(relic), $"{choiceRelic.Name} maps to its contract");
+		}
+
+		Equal(AbyssalContractKind.None, AbyssalContractCatalog.GetKindForChoice(null), "no selection");
 		Equal(
-			AbyssalContractKind.Warrior,
-			AbyssalContractRune.GetContractKindForChoice(
-				(WarriorContractChoiceRelic)RuntimeHelpers.GetUninitializedObject(typeof(WarriorContractChoiceRelic))),
-			"warrior contract choice");
-		Equal(
-			AbyssalContractKind.Hunter,
-			AbyssalContractRune.GetContractKindForChoice(
-				(HunterContractChoiceRelic)RuntimeHelpers.GetUninitializedObject(typeof(HunterContractChoiceRelic))),
-			"hunter contract choice");
-		Equal(
-			AbyssalContractKind.Regent,
-			AbyssalContractRune.GetContractKindForChoice(
-				(RegentContractChoiceRelic)RuntimeHelpers.GetUninitializedObject(typeof(RegentContractChoiceRelic))),
-			"regent contract choice");
-		Equal(
-			AbyssalContractKind.Necrobinder,
-			AbyssalContractRune.GetContractKindForChoice(
-				(NecrobinderContractChoiceRelic)RuntimeHelpers.GetUninitializedObject(typeof(NecrobinderContractChoiceRelic))),
-			"necrobinder contract choice");
-		Equal(
-			AbyssalContractKind.Automaton,
-			AbyssalContractRune.GetContractKindForChoice(
-				(AutomatonContractChoiceRelic)RuntimeHelpers.GetUninitializedObject(typeof(AutomatonContractChoiceRelic))),
-			"automaton contract choice");
+			AbyssalContractKind.None,
+			AbyssalContractCatalog.GetKindForChoice((RelicModel)RuntimeHelpers.GetUninitializedObject(typeof(BlackBlood))),
+			"unrelated relic");
+		SequenceEqual(
+			Enum.GetValues<AbyssalContractKind>().Where(static kind => kind != AbyssalContractKind.None),
+			AbyssalContractCatalog.Choices.Select(static choice => choice.Kind),
+			"every contract kind has exactly one choice entry, in enum order");
 	}
 
+	[HextechTest]
 	private static void AbyssalContractWarriorEliteThresholdGrows()
 	{
 		int eliteKills = 0;
@@ -266,15 +245,31 @@ internal static partial class Program
 		Equal(2, strengthBonuses, "second strength bonus count");
 	}
 
+	// 战士/自动机契约升级起始遗物、摄政契约替换起始遗物都读这张表(IAbyssalContract.UpgradeCurrentStartingRelic、RegentContract)。
+	[HextechTest]
 	private static void AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters()
 	{
-		Equal(typeof(BlackBlood), AbyssalContractRune.GetStarterUpgradeType(typeof(Ironclad)), "Ironclad starter upgrade");
-		Equal(typeof(RingOfTheDrake), AbyssalContractRune.GetStarterUpgradeType(typeof(Silent)), "Silent starter upgrade");
-		Equal(typeof(DivineDestiny), AbyssalContractRune.GetStarterUpgradeType(typeof(Regent)), "Regent starter upgrade");
-		Equal(typeof(PhylacteryUnbound), AbyssalContractRune.GetStarterUpgradeType(typeof(Necrobinder)), "Necrobinder starter upgrade");
-		Equal(typeof(InfusedCore), AbyssalContractRune.GetStarterUpgradeType(typeof(Defect)), "Defect starter upgrade");
+		(Type Character, Type Starter, Type Upgraded)[] expected =
+		[
+			// 测试工程里有同名夹具类 Program.BurningBlood,这里必须写全名。
+			(typeof(Ironclad), typeof(MegaCrit.Sts2.Core.Models.Relics.BurningBlood), typeof(BlackBlood)),
+			(typeof(Silent), typeof(RingOfTheSnake), typeof(RingOfTheDrake)),
+			(typeof(Regent), typeof(DivineRight), typeof(DivineDestiny)),
+			(typeof(Necrobinder), typeof(BoundPhylactery), typeof(PhylacteryUnbound)),
+			(typeof(Defect), typeof(CrackedCore), typeof(InfusedCore))
+		];
+		foreach ((Type character, Type starter, Type upgraded) in expected)
+		{
+			CharacterModel model = (CharacterModel)RuntimeHelpers.GetUninitializedObject(character);
+			Expect(AbyssalContractCatalog.TryGetStarterRelics(model, out AbyssalContractCatalog.StarterRelicUpgrade relics), $"{character.Name} has a starter mapping");
+			Equal(starter, relics.Starter, $"{character.Name} starter relic");
+			Equal(upgraded, relics.Upgraded, $"{character.Name} upgraded starter relic");
+		}
+
+		Equal(expected.Length, AbyssalContractCatalog.StarterRelics.Count, "one starter mapping per vanilla character");
 	}
 
+	[HextechTest]
 	private static void AbyssalContractWarriorCardFilterRejectsSkillsAndPowers()
 	{
 		Expect(!AbyssalContractRune.IsWarriorForbiddenCardType(CardType.Attack), "attacks should remain legal");

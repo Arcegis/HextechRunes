@@ -17,23 +17,18 @@ public sealed class StrengthToDexterityRune : AttributeConversionRelicBase
 		return PowerCmd.Apply<DexterityPower>(Owner.Creature, DynamicVars.Dexterity.BaseValue, Owner.Creature, null);
 	}
 
-	protected override bool ShouldConvert(PowerModel canonicalPower)
-	{
-		return canonicalPower is StrengthPower;
-	}
-
-	protected override bool ShouldConvertAppliedPower(PowerModel power)
+	protected override bool ShouldConvert(PowerModel power)
 	{
 		return power is StrengthPower;
 	}
 
-	protected override Task ApplyConvertedPower(decimal amount, Creature? applier, CardModel? cardSource)
+	protected override Task ApplyConvertedPower(Creature owner, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		return PowerCmd.Apply<DexterityPower>(Owner!.Creature, amount, applier, cardSource);
+		return PowerCmd.Apply<DexterityPower>(owner, amount, applier, cardSource);
 	}
 
-	protected override Task RevertOriginalPower(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+	protected override Task RevertOriginalPower(Creature owner, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		return PowerCmd.Apply<StrengthPower>(Owner!.Creature, -amount, applier, cardSource);
+		return PowerCmd.Apply<StrengthPower>(owner, -amount, applier, cardSource);
 	}
 }

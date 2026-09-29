@@ -1,5 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
@@ -17,8 +17,8 @@ internal static partial class HextechCombatHooks
 	private const string IllusionReviveMoveId = "REVIVE_MOVE";
 	private const string TheInsatiableOpeningMoveId = "LIQUIFY_GROUND_MOVE";
 
-	private static readonly FieldInfo? MoveStateIntentsField =
-		TryGetField(typeof(MoveState), "<Intents>k__BackingField");
+	// MonsterModel._isPerformingMove（bool）与 KnowledgeDemon._curseOfKnowledgeCounter（int），
+	// 0.107.1/0.110.0/0.111.0 原版私有字段；MoveState.Intents 后备字段见 HextechCombatHooks.Core。
 	private static readonly FieldInfo? MonsterIsPerformingMoveField =
 		TryGetField(typeof(MonsterModel), "_isPerformingMove");
 	private static readonly FieldInfo? KnowledgeDemonCurseCounterField =
@@ -41,7 +41,7 @@ internal static partial class HextechCombatHooks
 				KnowledgeDemonCurseCounterField);
 			if (!available)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] 珠光护手 hook 已禁用:所需私有字段缺失或签名变化。");
+				HextechLog.Warn("Mayhem", "Enemy Jeweled Gauntlet hooks disabled: required private fields are missing or changed type.");
 			}
 
 			_jeweledGauntletHooksAvailable = available;
@@ -49,6 +49,10 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
+	// 在原版 MonsterModel.PerformMove（0.107.1/0.110.0/0.111.0）完成后按同一顺序再执行一次行动：
+	// 等待 → 置 _isPerformingMove → MoveState.PerformMove → 记战斗历史 → 清标志 → 死亡移除 → 等待。
+	// 原版没有"重复执行本回合行动"的 Hook；刻意省略 MoveStateMachine.OnMovePerformed，状态机只前进一次。
+	// 这段复制写在 Postfix 里而非跳过型前缀，因此由 HextechPatch.CopiesVanillaLogic 把 PerformMove 纳入原版拷贝守卫。
 	private static async Task RepeatJeweledGauntletMoveAfterOriginal(
 		Task originalTask,
 		JeweledGauntletMoveRepeatState repeatState)
@@ -76,7 +80,7 @@ internal static partial class HextechCombatHooks
 		IReadOnlyList<Creature> targets = combatState!.PlayerCreatures.ToArray();
 		try
 		{
-			HextechLog.Info($"[{ModInfo.Id}][JeweledGauntlet] Monster {monster.Id.Entry} repeating move {repeatState.Move.Id} via enemy Jeweled Gauntlet");
+			HextechLog.Info("JeweledGauntlet", $"Monster {monster.Id.Entry} repeating move {repeatState.Move.Id} via enemy Jeweled Gauntlet");
 			await repeatState.Move.PerformMove(targets);
 			CombatManager.Instance.History.MonsterPerformedMove(combatState, monster, repeatState.Move, targets);
 		}
@@ -111,7 +115,6 @@ internal static partial class HextechCombatHooks
 		return ReferenceEquals(monster.NextMove, capturedMove);
 	}
 
-
 	private static void RestoreJeweledGauntletIntents(JeweledGauntletIntentPatchState? state)
 	{
 		if (state == null)
@@ -135,16 +138,15 @@ internal static partial class HextechCombatHooks
 
 	private static bool ShouldRepeatJeweledGauntletMove(
 		MonsterModel monster,
-		out MoveState? move)
+		[NotNullWhen(true)] out MoveState? move)
 	{
 		move = null;
 		Creature creature = monster.Creature;
-		if (creature.Side != CombatSide.Enemy
-			|| creature.CombatId is not uint combatId
+		// 稳定随机数需要具体 RunState 作为种子来源。
+		if (creature.CombatId is not uint combatId
 			|| creature.CombatState is not { } combatState
 			|| combatState.RunState is not RunState runState
-			|| HextechMayhemModifier.FindIn(runState) is not { } modifier
-			|| !modifier.HasActiveMonsterHex(MonsterHexKind.JeweledGauntlet))
+			|| !TryGetActiveEnemyHexModifier(creature, MonsterHexKind.JeweledGauntlet, out HextechMayhemModifier? modifier))
 		{
 			return false;
 		}
@@ -268,7 +270,7 @@ internal static partial class HextechCombatHooks
 	{
 		if (HextechRunLogBudget.TryConsume("combat.jeweled-gauntlet-failure", 10))
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] {hook} failed; enemy Jeweled Gauntlet fell back to one action: {ex}");
+			HextechLog.Error("Mayhem", $"{hook} failed; enemy Jeweled Gauntlet fell back to one action: {ex}");
 		}
 	}
 
@@ -280,7 +282,7 @@ internal static partial class HextechCombatHooks
 		IReadOnlyList<AbstractIntent> DisplayedIntents);
 
 	[HarmonyPatch(typeof(MonsterModel), nameof(MonsterModel.PerformMove), new Type[0])]
-	[HextechPatch("combat.jeweled-gauntlet.perform-move", "珠光护手")]
+	[HextechPatch("combat.jeweled-gauntlet.perform-move", "珠光护手", CopiesVanillaLogic = true)]
 	private static class JeweledGauntletPerformMovePatch
 	{
 		[HarmonyPrepare]
@@ -294,7 +296,7 @@ internal static partial class HextechCombatHooks
 			__state = null;
 			try
 			{
-				if (ShouldRepeatJeweledGauntletMove(__instance, out MoveState? move) && move != null)
+				if (ShouldRepeatJeweledGauntletMove(__instance, out MoveState? move))
 				{
 					__state = new JeweledGauntletMoveRepeatState(__instance, move);
 				}
@@ -334,8 +336,7 @@ internal static partial class HextechCombatHooks
 			{
 				MonsterModel? monster = __instance.Entity?.Monster;
 				if (monster == null
-					|| !ShouldRepeatJeweledGauntletMove(monster, out MoveState? move)
-					|| move == null)
+					|| !ShouldRepeatJeweledGauntletMove(monster, out MoveState? move))
 				{
 					return;
 				}
@@ -351,12 +352,7 @@ internal static partial class HextechCombatHooks
 			}
 		}
 
-		[HarmonyPostfix]
-		private static void Postfix(JeweledGauntletIntentPatchState? __state)
-		{
-			RestoreJeweledGauntletIntents(__state);
-		}
-
+		// Finalizer 在正常返回与异常时都会执行，恢复只需要这一处。
 		[HarmonyFinalizer]
 		private static Exception? Finalizer(
 			Exception? __exception,

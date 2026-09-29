@@ -6,11 +6,21 @@ namespace HextechRunes;
 
 internal static class HextechSelectionHelpers
 {
+	// 没有场景树可等(或节点尚未入树)时,用约一帧(60 FPS)的延迟代替等待 ProcessFrame。
+	private static readonly TimeSpan FrameFallbackDelay = TimeSpan.FromMilliseconds(16);
+
 	internal static bool SameRuneCandidate(RelicModel left, RelicModel right)
 	{
-		if ((left.CanonicalInstance?.Id ?? left.Id) != (right.CanonicalInstance?.Id ?? right.Id)) return false;
+		if (left.CanonicalId() != right.CanonicalId())
+		{
+			return false;
+		}
+
 		if (left is IHextechGeneratedRune a && right is IHextechGeneratedRune b)
+		{
 			return string.Equals(a.ExportSelectionData(), b.ExportSelectionData(), StringComparison.Ordinal);
+		}
+
 		return true;
 	}
 
@@ -39,10 +49,10 @@ internal static class HextechSelectionHelpers
 			return -1;
 		}
 
-		ModelId selectedId = selected.CanonicalInstance?.Id ?? selected.Id;
+		ModelId selectedId = selected.CanonicalId();
 		for (int i = 0; i < relics.Count; i++)
 		{
-			ModelId optionId = relics[i].CanonicalInstance?.Id ?? relics[i].Id;
+			ModelId optionId = relics[i].CanonicalId();
 			if (optionId == selectedId)
 			{
 				return i;
@@ -102,7 +112,7 @@ internal static class HextechSelectionHelpers
 		NGame? game = NGame.Instance;
 		if (game?.IsInsideTree() != true)
 		{
-			await Task.Delay(TimeSpan.FromMilliseconds(16), cancellationToken);
+			await Task.Delay(FrameFallbackDelay, cancellationToken);
 			return;
 		}
 
@@ -116,7 +126,7 @@ internal static class HextechSelectionHelpers
 		tree.ProcessFrame += OnProcessFrame;
 		try
 		{
-			Task delay = Task.Delay(TimeSpan.FromMilliseconds(16), cancellationToken);
+			Task delay = Task.Delay(FrameFallbackDelay, cancellationToken);
 			Task completed = await Task.WhenAny(processFrame.Task, delay);
 			await completed;
 		}

@@ -1,6 +1,3 @@
-using HarmonyLib;
-using static HextechRunes.HextechHookReflection;
-
 namespace HextechRunes;
 
 /// <summary>
@@ -14,7 +11,6 @@ internal static class HextechStarterUpgradeHooks
 	internal const int UpgradeLevelCap = 999;
 
 	private static readonly HextechScopedDepthGuard CardDeserializationGuard = new();
-
 
 	internal static int ResolveOwnedMaxUpgradeLevel(int currentUpgradeLevel)
 	{
@@ -33,7 +29,6 @@ internal static class HextechStarterUpgradeHooks
 			: currentUpgradeLevel + 1;
 		return Math.Max(nextUpgradeLevel, UpgradeLevelCap);
 	}
-
 
 	[HarmonyPatch(typeof(CardModel), nameof(CardModel.MaxUpgradeLevel), MethodType.Getter)]
 	[HextechPatch("card.starter-upgrade.max-level", "起始牌多重升级")]

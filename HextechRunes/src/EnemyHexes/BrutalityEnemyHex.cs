@@ -15,7 +15,7 @@ internal sealed class BrutalityEnemyHex : HextechEnemyHexEffect
 			}
 
 			// 失去 5% 最大生命(非伤害,不会击杀,至少保留 1 点),换取活力。
-			int loss = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.05m));
+			int loss = HextechEnemyHexContext.FractionOfMaxHp(enemy, 0.05m);
 			int newHp = Math.Max(1, enemy.CurrentHp - loss);
 			if (newHp < enemy.CurrentHp)
 			{

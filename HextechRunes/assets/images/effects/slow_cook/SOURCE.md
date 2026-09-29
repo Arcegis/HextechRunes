@@ -7,4 +7,4 @@ League of Legends 16.14 Pressure Cooker particle textures supplied with that
 package. The original SCB meshes are not compatible with Godot, so the mod
 reconstructs their documented `aoe_polar`, `aoe_edge`,
 `aoe_edge_accentSubtle`, `inner_darkerEdges`, `Groundlights`, and `sparks`
-layers in `HextechSlowCookAuraHooks.cs`.
+layers in `src/Hooks/UI/SlowCookAuraVisual.cs`.

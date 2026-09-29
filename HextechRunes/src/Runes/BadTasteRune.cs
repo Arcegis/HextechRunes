@@ -11,8 +11,8 @@ public sealed class BadTasteRune : LimitedDebuffProcRelicBase
 		new HealVar(2m)
 	];
 
-	protected override Task OnEnemyDebuffApplied(Creature target)
+	protected override Task OnDebuffProc(Player owner, Creature target)
 	{
-		return CreatureCmd.Heal(Owner!.Creature, DynamicVars.Heal.BaseValue);
+		return CreatureCmd.Heal(owner.Creature, DynamicVars.Heal.BaseValue);
 	}
 }

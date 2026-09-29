@@ -45,11 +45,24 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		List<Control> cards = _holders.Cast<Control>().Where(CanReceiveFocus).ToList();
+		// 主行:候选卡片;仅敌方模式没有卡片时,确认按钮占据同一行。
+		List<Control> primaryRow = _holders.Cast<Control>().Where(CanReceiveFocus).ToList();
 		List<Control> playerActions = [];
-		if (_playerRuneConfirm != null && CanReceiveFocus(_playerRuneConfirm)) playerActions.Add(_playerRuneConfirm);
-		if (_playerRuneCancel != null && CanReceiveFocus(_playerRuneCancel)) playerActions.Add(_playerRuneCancel);
-		if (_enemyOnlyConfirm != null && CanReceiveFocus(_enemyOnlyConfirm)) cards.Add(_enemyOnlyConfirm);
+		if (_playerRuneConfirm != null && CanReceiveFocus(_playerRuneConfirm))
+		{
+			playerActions.Add(_playerRuneConfirm);
+		}
+
+		if (_playerRuneCancel != null && CanReceiveFocus(_playerRuneCancel))
+		{
+			playerActions.Add(_playerRuneCancel);
+		}
+
+		if (_enemyOnlyConfirm != null && CanReceiveFocus(_enemyOnlyConfirm))
+		{
+			primaryRow.Add(_enemyOnlyConfirm);
+		}
+
 		List<Control> rerolls = _rerollButtons.Cast<Control>().Where(CanReceiveFocus).ToList();
 		List<Control> enemyActions = [];
 		int enemySlotCount = Math.Max(_enemyHexRerollButtons.Count, _enemyHexRemoveButtons.Count);
@@ -65,7 +78,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			}
 		}
 
-		ConfigureHorizontalNeighbors(cards);
+		ConfigureHorizontalNeighbors(primaryRow);
 		ConfigureHorizontalNeighbors(playerActions);
 		ConfigureHorizontalNeighbors(rerolls);
 		ConfigureHorizontalNeighbors(enemyActions);
@@ -131,8 +144,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		for (int i = 0; i < enemyActions.Count; i++)
 		{
 			Control action = enemyActions[i];
-			Control down = cards.Count > 0
-				? cards[Math.Min(i, cards.Count - 1)]
+			Control down = primaryRow.Count > 0
+				? primaryRow[Math.Min(i, primaryRow.Count - 1)]
 				: action;
 			action.FocusNeighborTop = action.GetPath();
 			action.FocusNeighborBottom = down.GetPath();

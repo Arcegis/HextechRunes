@@ -27,6 +27,14 @@
 - **回归基本功的"无法打出 3 费及以上"只限手动出牌，自动打出一律放行。** 与敌方同名海克斯、卡卡同口径；否则同时持有"升级：XX形态"时，3 费形态牌开局自动打出会被拦下直接进弃牌堆。`BackToBasicsRune`
 - **仅联机的协作海克斯按固定规则选队友，不弹选择。** 花晓之剑取"当前生命/最大生命"最低、平局按 NetId 最小的存活队友，各端算出同一个人；回复 2% 最大生命向下取整、至少 1 点，同一张牌的重放只算一次。俯冲轰炸挂在持有者自己的 `AfterDeath`：原版先分发 `AfterDeath` 再停用死亡玩家的钩子，所以能收到；伤害无来源、不吃力量与易伤，可被格挡。全心为你多人持有时乘算叠加，持有者倒下后停止生效：格挡走原版全局 Hook（持有者遗物对每个玩家目标返回倍率），治疗在 `HextechPlayerCoefficientHelper` 里按全队存活持有者计数；属性悬浮额外补上队友持有的格挡份额。我们的治疗改为"持有者被治疗时分享给队友"，仍用同一异步链防重入，防止双持互相回血。`BlossomBladeRune`、`DiveBomberRune`、`AllForYouRune`、`OurHealingRune`
 - **王国军势生成仆从牌期间，嵌套进来的铸造不再生成牌。** 它与凝辉（生成牌→辉星）、王令（辉星→铸造）三件同持时构成无终点循环：mplab 复现中 1 颗辉星在 2.5 秒内把牌数从 10 刷到 144，遥测里三件同持的对局 2 胜 26 负、集中卡在拿到第三件后的第一场战斗。加防重入后，同一场景 1 颗辉星只多出 3 张牌就结束。只持有王国军势＋王令时不受影响。`KingdomArmyRune`
+- **濒死狂宴（玩家与敌方）的力量补差只在 `AfterCurrentHpChanged` 里等待执行，同步的失血前缀只记债务。** 原版 `CreatureCmd.Damage` 对 `UnblockedDamage > 0` 必派发该钩子、`SetCurrentHp` 写入负值也必派发（0.107.1/0.110.0/0.111.0 相同），此前的 fire-and-forget 会让力量命令脱离命令链；其他模组绕过命令直接改生命时，补差延后到下一次生命变化。敌方版同步失败改为回滚后抛出，与玩家版一致。`NearDeathFeastRune`、`HextechEnemyNearDeath`、`NearDeathFeastEnemyHex`、`HextechNearDeathHpLoss`
+- **带“每回合”状态的符文继承 `TurnScopedRelicBase`，只实现 `ResetTurnScopedState()`；回合身份按持有者 `TurnNumber` 计。** 连发（FanTheHammer）原先自造按 `RoundNumber` 的回合态，额外回合时单机不清零、联机清零，统一后两条路径一致。补偿（Compensation）的清零不按持有者阵营判断，没有并入。`TurnScopedRelicBase`、`FanTheHammerRune`
+- **本体符文的治疗系数由符文实现 `IHextechHealingMultiplierProvider` 自报，用 `IsFirstOwnedInstance` 保持“同类只乘一次”。** 此前 `HextechPlayerCoefficientHelper` 硬编码 1.25/1.4/1.2/2 等倍率，与符文自身数值各写一份；链上只有 decimal 连乘，改后乘积不变。全队效果（全心为你）仍在 helper 里按持有者计数。`HextechPlayerCoefficientHelper`、`OverflowRune`、`FirstAidKitRune`、`GoliathRune` 等
+- **大法师、死亡之环、快乐意外、升级隐藏宝石、幻影武器的单机稳定随机序号跨战斗累加、读档归零（联机按每场计数），按现状保留。** 这些序号只作稳定随机的 ordinal，改为每场清零会改变单机随机结果；字段名已改为 `_localXxxOrdinal` 表明口径。
+- **角色限定符文在触发时仍判断角色。** 发放闸门 `HextechCatalog.IsAvailableForPlayer` 覆盖不了 `RelicBundleGrantHelper.GrantRelics`、控制台和其他模组直接 `RelicCmd.Obtain` 的路径。
+- **升级雷暴的补发闪电仍由 Modifier 分发、排在所有监听者之后；算法与按牌记录的层数在符文自己身上。** 原版监听顺序是生物 Power → 该玩家遗物 → 牌 → Modifier，改为遗物覆写 Late 钩子会让闪电提前到奥术重击、恶魔之舞等符文的联机补记之前。补发改用钩子传入的 choiceContext。`StormUpgradeRune`、`HextechMayhem.CardEvents`
+- **白洞由牌自己覆写 `AfterCardDrawn`（与原版虚空同写法），非大乱斗下（如控制台给的牌）也会回能。** 回能时机从“所有监听者之后”提前到这张牌在监听列表里的位置，仍在持有者自己的遗物/Power 之后、敌方海克斯分发之前。`WhiteHoleCard`
+- **`HextechPowerCmdCompat` 在有 choiceContext 的调用点暂不改传。** 原版会把 context 传给 `Hook.AfterPowerAmountChanged`；Hook 自带的 context 在玩家做选择时会放行其他玩家的命令队列，`BlockingPlayerChoiceContext` 不会，改传会改变联机时序。强类型重载已提供，`object?` 重载只为已编译的拓展包二进制保留。`HextechPowerCmdCompat`
 
 ## 敌方海克斯
 
@@ -48,6 +56,8 @@
 - **敌方默认禁用项写进可修改的默认禁用集合，不从可配置内容目录里硬删除。** 用户手动重新启用必须持续有效。
 - **鲜血神像在战斗已结束/正在结束/无战斗状态时改用 `CreatureCmd.SetCurrentHp` 扣 1 点、最低保留 1 点。** 奖励界面的死亡不能交给已经停止的战斗流程处理，也避免非战斗伤害修正把扣血放大到致死；仍发送原版生命变化回调。`BloodIdolRune`
 - **仅开启敌方海克斯时才显示独立确认界面。** 条件是我方数量为 0 且本幕确有新增敌方海克斯；沿用现有重掷/移除/撤销与敌方同步消息，不生成玩家候选、不发放玩家遗物；界面未确认退出不标记该幕完成。
+- **欧米茄、大法师、偷窃草蜢的战斗计数键统一经 `HextechCombatProcTracker` 拼接。** 旧版本战斗中途留下的快照读回后：欧米茄的一次性标记失效（只有载入后同一回合 4 再触发回合开始钩子才可能重复），大法师当场随机序号从 0 重新计；不会多触发。`OmegaEnemyHex`、`ArchmageEnemyHex`、`ThievingHopperEnemyHex`
+- **八文门“每回合最多 2 次”保留两个 HashSet。** 它们参与战斗快照序列化，改成字典需要迁移旧 JSON，收益太小。
 
 ## 卡牌升级
 
@@ -69,6 +79,7 @@
 - **"+"版继承 `RelicModel` 而非 `HextechRelicBase`。** 因此不参加海克斯计数、重铸与候选生成，只注册到 EventRelicPool；保留 Starter 稀有度并默认在图鉴隐藏。类名是联机契约，不要改。
 - **启用判定复用 `HextechMayhemModifier.IsEnabledForRun`：缺少 modifier ≠ 禁用。** 单机旧局或控制台缺 modifier 时读菜单开关，否则单机会回退成头环；联机缺快照时不使用各端本地配置。
 - **古老牙齿遇到永恒牌会抛异常并卡住整条组合奖励链。** 原版 `CardTransformation` 构造器与 `CardCmd.Transform` 都检查 `IsTransformable`。修法是 AsyncLocal 作用域 + `CardModel.IsTransformable` postfix 只放行本次记录的那一张永恒牌，不改 `IsRemovable`、不删原牌关键词、不复制原版转换命令、不吞其他异常。`ArchaicToothEternalHooks`
+- **神迹事件的锻造器稀有度 65/25/10 是固定值，不跟随本局配置里改过的权重。** 是否跟随属于平衡裁决，未改。`MiracleEvent`（拓展包）
 
 ## 视觉
 
@@ -89,10 +100,14 @@
 - **倍率为零且合法池只剩专属时回退到原有标签权重，避免空选项。** 没有映射到原版角色池的模组角色不推进专属权重。
 - **权重确认后提交绝对值，不按最后三个候选反推被重掷覆盖的历史。** 远端缺倍率或格式错误时中止该选择，禁止默默回退到 150%。`HextechWeightedRuneOptions`
 - **权重存进既有 `SavedRuneSelectionJournalJson` 的 `characterWeights`（按玩家 ID 排序），没有新增或改名 SavedProperty。** 旧存档缺这部分数据时从 150% 开始；无尽循环清理选择流水时保留倍率。
-- **每名玩家本局见过的海克斯（展示过、重随刷出过的）不再出现在之后的候选里；未见过的抽完后才回到见过没选的，再抽完就只给"继续"界面。** "已见"按玩家存进 `SavedSeenPlayerRuneIdsJson`，只记条目名，还原时必须用遗物的真实分类（`RELIC`）；这份 JSON 参与双端比对，所以联机时各端对每名玩家只记初始候选（各端同种子生成）与同步来的最终候选，重随中途刷出又被换掉的只进本机界面的已见集合（单人照记）；2026-04 起误用模组名作分类，排除从未生效（遥测 0.9.5 后续幕约 10% 的候选含早幕见过的）。单人与联机的每幕生成、玩家重随都是"未见池为空才放开已见"。"继续"界面是纯本机界面、不同步、不发放；每名玩家每幕最多弹一次；单人若本幕还能调整敌方海克斯，就用仅敌方界面代替。联机时敌方调整的权威玩家若本次没有候选，本幕不开放敌方调整，否则其余客户端会一直等他的调整结果。`HextechMayhemChoiceHistoryState`、`ShowNoRuneOptionsScreenAsync`
+- **每名玩家本局见过的海克斯（展示过、重随刷出过的）不再出现在之后的候选里；未见过的抽完后才回到见过没选的，再抽完就只给"继续"界面。** "已见"按玩家存进 `SavedSeenPlayerRuneIdsJson`，只记条目名，还原时必须用遗物的真实分类（`RELIC`）；这份 JSON 参与双端比对，所以联机时本次展示过的完整候选（含重随中途刷出又被换掉的）随确认结果同步，两端在确认后统一写入（`CommitSeenRuneSelection`）；已见区段每块最多 64 个 ID、可跨多块，重随次数不受 64 上限约束，缺少已见区段的旧消息一律拒绝（与旧版本不能联机）；单人在展示和重随时照记，自选补记最终所选；2026-04 起误用模组名作分类，排除从未生效（遥测 0.9.5 后续幕约 10% 的候选含早幕见过的）。单人与联机的每幕生成、玩家重随都是"未见池为空才放开已见"。"继续"界面是纯本机界面、不同步、不发放；每名玩家每幕最多弹一次；单人若本幕还能调整敌方海克斯，就用仅敌方界面代替。联机时敌方调整的权威玩家若本次没有候选，本幕不开放敌方调整，否则其余客户端会一直等他的调整结果。`HextechMayhemChoiceHistoryState`、`ShowNoRuneOptionsScreenAsync`
 - **敌我海克斯不再互相回避同名（2026-09 删除）。** 玩家三选一与重随只排除本局已见过的符文；敌方每幕掷骰只排除敌方已出现过的，敌方重掷只避开同一界面上其他敌方槽位和已见过的敌方海克斯。原先玩家候选会排除敌方当前海克斯的同名、敌方重掷会避开玩家当前候选，但敌方首掷从不看玩家已持有的，遥测 0.9.5 仍有约 1.9% 的对局出现同名，规则不完整也不直观，因此整体去掉。
 - **玩家重随次数设为无限时，每幕选择界面改成直接自选：列出本稀有度的全部合法海克斯，与配置界面的启用开关同一套过滤（配置、幕、角色、已拥有、互斥）。** 判定读本局冻结配置（联机是房主的）；三候选照常先按权重生成，所以候选 RNG 与角色倍率照常推进，稀有度也由候选决定。自选池只在本机用 `BuildSelectableRunePool` 构造，不消耗 RNG；提交时把最终候选换成所选的一个（序号 0、无重随历史、倍率原样），远端按 ID 还原，同步格式不变。锻造器选择与只选敌方海克斯的界面不受影响。`HextechRuneSelectionScreen.SelfPick.cs`、`BuildSelfPickPool`
 - **海克斯选择二次确认（来自公开仓库 PR #33）是本机界面偏好，默认关，放在配置-杂项。** 开启后普通每幕三选一点卡片只标记待定，按确认才提交；待定时仍可重随，重随待定的那张会清掉待定。它只改变本机何时提交，提交内容与同步协议不变，所以存在 UI 偏好文件而不是本局冻结配置，联机各端可以不同；界面打开时读一次。锻造器、只选敌方海克斯、自选模式都不启用：自选本身就是点选加确认，而且它的确认走同一个选定入口、不带卡槽，若启用会被当成无效待定而吞掉。`ShouldUsePlayerRuneConfirmation`
+- **`HextechForgeRarityWeights` 是 `HextechRarityWeights` 的全局别名，配置 JSON 与分享码形状不变。**
+- **敌方图标载体表 `EnemyHexIconRelicTypes` 按手写顺序保留。** 这个顺序就是模型进 SharedRelicPool 的登记顺序，从 MonsterHex 注册派生会改变顺序；由测试守住两者集合一致。`HextechCustomModelRegistry`
+- **`IsUpgradeRune` 保持按类名后缀判定。** 这些符文没有共同基类（另有 3 个直接继承 `HextechRelicBase`），外部模组也沿用该命名。`HextechRunePoolBuilder`
+- **外部 API 登记本体内置的符文或锻造器时，在参数校验之后、登记窗口检查与任何副作用之前就被拒绝，只告警不抛出。** `HextechExternalContentRegistry` 保留同一检查作兜底；窗口关闭后再登记内置类型也只告警。`HextechRunesApi`
 
 ## 手柄
 
@@ -101,7 +116,16 @@
 - **配置菜单挂在场景根上，不是原版认得的当前界面。** 打开期间关掉主菜单的可聚焦性，否则方向导航会跨过遮罩落到背后的主菜单按钮；社区面板和上传对话框登记为子弹窗，按 B 先逐层关闭它们；LB/RB 切页签。`HextechControllerOverlay`
 - **顶栏的敌方海克斯折叠按钮和隐藏 UI 开关不在原版顶栏焦点链上，手柄够不着，暂未处理。**
 
+## 配置、遥测与流程
+
+- **`rune_config.json` 里的 `ChaosRuneChancePercent` 保持已发布的 PascalCase 键名，其余字段是 snake_case。** 改名会让旧配置读不到；用显式 `JsonPropertyName` 钉住。默认值与钳制集中在 `DefaultChaosRuneChancePercent` / `ClampChaosRuneChancePercent`。
+- **遥测配置缺 endpoint 或 endpoint 为空时只补默认地址，不覆盖用户写的 `enabled`。** 默认开启、明文 HTTP、无游戏内开关维持现状（用户决定）；文件损坏时的行为不变。`HextechTelemetry.Config`
+- **无尽模式检测只认已加载的 EndlessMode，在 ModManager 初始化完成后缓存。** 旧实现读 `_mods`，把未加载的模组也算进去。`HextechCatalog.IsEndlessModeLoaded`
+- **配置菜单的计数与网格同口径：打开菜单时按网格实际列出的条目算一次 ID 集合，页脚、角标、社区配置摘要共用。** 我方总数不再包含生成型符文，敌方总数按网格条目，禁用集合里的未知 ID 不计入。`HextechRuneConfigMenuHooks`
+- **远古事件结束后等待其他玩家完成事件，不设单端超时，只在等满 18000 帧时告警一次后继续等待，换局才退出。** 超时由各端独立判定：先放弃的一端会等下一房间，后完成的一端进入选择界面等它，而地图行进已被禁用、原版进入下一房间需要全员投票，双方互相卡住。要取消只能走同步协议让所有客户端一起放弃。`HextechRunLifecycleHooks.EventSelection`
+- **“已连接的联机”统一用 `HextechPlayerContextHelper.IsMultiplayerConnected()`，NetService 为空时返回 false。** 此前选择、夺金、锻造发放三处在 NetService 为空时会抛空引用。
+
 ## 待实机验证
 
 - **F04 幽灵鳗 Skittish 的动画顺序改动已回滚，源码保持 `6a5ec941` 原样。** 曾把"BlockEnd 音画失败仍保留 Skittish"改成先移除 Power 再补出场音画，但这个顺序正是玩家实报"感受燃烧打四鳗卡死"的修复点，未经实机验证不要再调整。`src/Combat/HextechMonsterInteractionPolicy.cs`
-- **F10/F11 在自有基类边界用 `new` 隐藏非虚的 `Flash` 重载与计数事件，只捕获表现回调，尚未实机验证。** 目的是防 UI 订阅者抛错截断共享写入；只隔离原版本来就属于 UI 的事件，不拦原版/第三方全局事件，也没有把所有 Flash 搬到共享写入之后。`HextechRelicBase.TurnProc.cs`、`src/Compat/HextechModelBaseCompat.cs`
+- **F10/F11 在自有基类边界用 `new` 隐藏非虚的 `Flash` 重载与计数事件，只捕获表现回调，尚未实机验证。** 目的是防 UI 订阅者抛错截断共享写入；只隔离原版本来就属于 UI 的事件，不拦原版/第三方全局事件，也没有把所有 Flash 搬到共享写入之后。`HextechRelicBase.TurnProc.cs`、`src/Compat/HextechPowerBase.cs`、`src/Compat/HextechModifierBase.cs`；表现层兜底统一用 `HextechPresentation.TryRun`

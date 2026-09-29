@@ -1,12 +1,9 @@
 using System.Text;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -14,110 +11,11 @@ namespace HextechRunes;
 /// 事件驱动的战斗特效派发器。符文在其触发点(战斗逻辑、各端一致执行)调用这里的方法,
 /// 由本类把可视节点延迟挂到对应 <see cref="NCreature"/> 上。纯表现层:只新建可视节点、不读写任何
 /// gameplay/同步状态;取不到节点时安全跳过。<see cref="HextechCreatureNodeRegistry"/> 提供 entity→node 桥。
-/// 延迟异步入口均为 fire-and-forget,对应 Run* 方法必须在顶层捕获并记录异常。
+/// 延迟入口经 Callable.CallDeferred 推到主线程后不再等待（纯表现层，不能拖住战斗命令），
+/// 对应 Run* 方法必须在顶层捕获并记录异常。
 /// </summary>
-internal static class HextechCombatVfxHooks
-{
-
-	/// <summary>
-	/// 吞噬灵魂的特效在死亡动画开始的瞬间派发(真死亡分支必经点),而不是等 rune 的 AfterDeath:
-	/// Hook.AfterDeath 是逐监听器顺序 await 的链条,排在前面的监听器等待死亡动画会让魂"卡一下"
-	/// 才飞出(最后一只怪死亡时链条提前收尾所以不卡)。此处仅派发表现,数值仍在 rune 内结算。
-	/// </summary>
-	[HarmonyPatch(typeof(NCreature), nameof(NCreature.StartDeathAnim), typeof(bool))]
-	[HextechPatch("visual.combat-vfx.soul-drain", "吞噬灵魂特效")]
-	private static class StartDeathAnimPatch
-	{
-		[HarmonyPostfix]
-		private static void Postfix(NCreature __instance) => StartDeathAnimPostfix(__instance);
-	}
-
-	private static void StartDeathAnimPostfix(NCreature __instance)
-	{
-		try
-		{
-			Creature? dead = __instance.Entity;
-			if (dead is not { Side: CombatSide.Enemy } || dead.CombatState is not { } combatState
-				|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(dead))
-			{
-				return;
-			}
-
-			foreach (Player player in combatState.Players)
-			{
-				if (player.Creature is { IsDead: false } collector && player.GetRelic<SoulEaterRune>() != null)
-				{
-					// 缕数必须在此刻(死亡瞬间)按身份算好:特效延迟一帧执行时死者已被移出战斗,
-					// CombatState 为 null、按小怪兜底,导致精英/BOSS 也只掉 1-2 缕。
-					HextechCombatVfx.SoulDrain(dead, collector, HextechCombatVfx.GetSoulWispCount(dead));
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Soul drain dispatch on death anim failed: {ex.Message}");
-		}
-	}
-
-}
-
-/// <summary>entity → 屏幕节点映射,由战斗节点生命周期 hook 填充;新战斗重建,取用时校验有效性。</summary>
-internal static class HextechCreatureNodeRegistry
-{
-	private static readonly Dictionary<Creature, NCreature> Nodes = new();
-
-	internal static void Clear()
-	{
-		Nodes.Clear();
-	}
-
-	internal static void Register(NCreature? node)
-	{
-		if (!GodotObject.IsInstanceValid(node) || node!.Entity == null)
-		{
-			return;
-		}
-
-		Nodes[node.Entity] = node;
-	}
-
-	/// <summary>AddCreature postfix 专用:GetCreatureNode 在战斗构建/召唤同步链上,异常不能外泄。</summary>
-	internal static NCreature? SafeGetCreatureNode(NCombatRoom room, Creature creature)
-	{
-		try
-		{
-			return room.GetCreatureNode(creature);
-		}
-		catch (Exception ex)
-		{
-			if (HextechRunLogBudget.TryConsume("combat.creature-node-safe-get-failure", 5))
-			{
-				Log.Error($"[{ModInfo.Id}][Mayhem] GetCreatureNode failed in AddCreature postfix: {ex}");
-			}
-
-			return null;
-		}
-	}
-
-	internal static NCreature? TryGet(Creature? creature)
-	{
-		if (creature != null && Nodes.TryGetValue(creature, out NCreature? node) && GodotObject.IsInstanceValid(node))
-		{
-			return node;
-		}
-
-		return null;
-	}
-}
-
 internal static partial class HextechCombatVfx
 {
-	private enum MissileStyle
-	{
-		MagicMissile,
-		TwinFlames
-	}
-
 	internal const float MagicMissileLaunchIntervalSeconds = 0.055f;
 	internal const float MagicMissileBaseFlightSeconds = 0.28f;
 	internal const float MagicMissileFlightStepSeconds = 0.025f;
@@ -135,23 +33,9 @@ internal static partial class HextechCombatVfx
 
 	// 仅表现层随机(路径弧度/粒子错落),不触碰联机决定论。
 	private static readonly Random VisualRng = new();
-	private static readonly Dictionary<string, Texture2D?> VanillaTextureCache = [];
 
 	private static Texture2D? _glowTexture;
 	private static Texture2D? _ringTexture;
-
-	/// <summary>加载原版 PCK 内贴图;失败返回 null(调用方回退程序化纹理)。</summary>
-	private static Texture2D? LoadVanillaTexture(string resPath)
-	{
-		if (VanillaTextureCache.TryGetValue(resPath, out Texture2D? cached))
-		{
-			return cached != null && GodotObject.IsInstanceValid(cached) ? cached : null;
-		}
-
-		Texture2D? texture = ResourceLoader.Load(resPath) as Texture2D;
-		VanillaTextureCache[resPath] = texture;
-		return texture;
-	}
 
 	private static Vector2 Bezier(Vector2 from, Vector2 control, Vector2 to, float t)
 	{
@@ -171,12 +55,11 @@ internal static partial class HextechCombatVfx
 	/// </summary>
 	internal static int GetSoulWispCount(Creature source)
 	{
-		MegaCrit.Sts2.Core.Rooms.RoomType roomType =
-			source.CombatState?.Encounter?.RoomType ?? MegaCrit.Sts2.Core.Rooms.RoomType.Monster;
+		RoomType roomType = source.CombatState?.Encounter?.RoomType ?? RoomType.Monster;
 		return roomType switch
 		{
-			MegaCrit.Sts2.Core.Rooms.RoomType.Boss when source.IsPrimaryEnemy => 5 + VisualRng.Next(2),
-			MegaCrit.Sts2.Core.Rooms.RoomType.Elite when source.IsPrimaryEnemy => 3 + VisualRng.Next(2),
+			RoomType.Boss when source.IsPrimaryEnemy => 5 + VisualRng.Next(2),
+			RoomType.Elite when source.IsPrimaryEnemy => 3 + VisualRng.Next(2),
 			_ => 1 + VisualRng.Next(2)
 		};
 	}
@@ -319,39 +202,16 @@ internal static partial class HextechCombatVfx
 	/// </summary>
 	internal static Task<bool> PlayMagicMissile(Creature source, Creature target, int missileIndex)
 	{
-		try
-		{
-			NCreature? sourceNode = HextechCreatureNodeRegistry.TryGet(source);
-			NCreature? targetNode = HextechCreatureNodeRegistry.TryGet(target);
-			if (sourceNode == null || targetNode == null)
-			{
-				return Task.FromResult(true);
-			}
-
-			Node? parent = targetNode.GetParent();
-			if (!GodotObject.IsInstanceValid(parent))
-			{
-				return Task.FromResult(true);
-			}
-
-			return SpawnMissile(
-				parent!,
-				CreatureCenter(sourceNode),
-				CreatureCenter(targetNode),
-				Mathf.Min(CreatureWidth(sourceNode), CreatureWidth(targetNode)),
-				missileIndex,
-				missileIndex * MagicMissileLaunchIntervalSeconds,
-				MissileStyle.MagicMissile);
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Magic missile failed: {ex.Message}");
-			return Task.FromResult(true);
-		}
+		return PlayMissile(source, target, missileIndex, MagicMissilePalette, "Magic missile");
 	}
 
 	/// <summary>蓝黄双生火焰沿相反弧线飞向同一随机目标，结算时序与魔法飞弹一致。</summary>
 	internal static Task<bool> PlayTwinFlamesMissile(Creature source, Creature target, int missileIndex)
+	{
+		return PlayMissile(source, target, missileIndex, TwinFlamesPalette, "Twin Flames missile");
+	}
+
+	private static Task<bool> PlayMissile(Creature source, Creature target, int missileIndex, MissilePalette palette, string label)
 	{
 		try
 		{
@@ -375,11 +235,11 @@ internal static partial class HextechCombatVfx
 				Mathf.Min(CreatureWidth(sourceNode), CreatureWidth(targetNode)),
 				missileIndex,
 				missileIndex * MagicMissileLaunchIntervalSeconds,
-				MissileStyle.TwinFlames);
+				palette);
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Twin Flames missile failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"{label} failed: {ex.Message}");
 			return Task.FromResult(true);
 		}
 	}
@@ -511,7 +371,7 @@ internal static partial class HextechCombatVfx
 	{
 		if (HextechRunLogBudget.TryConsume("visual.goldrend-coin-burst", 3))
 		{
-			Log.Warn($"[{ModInfo.Id}][Vfx] Goldrend coin burst failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Vfx", $"Goldrend coin burst failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

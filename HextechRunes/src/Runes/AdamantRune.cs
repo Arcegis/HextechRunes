@@ -18,8 +18,8 @@ public sealed class AdamantRune : LimitedDebuffProcRelicBase
 
 	// 负面效果多半在敌方回合收到，当场给的格挡会在玩家回合开始时被清掉。
 	// 统一记到原版的"下回合格挡"上：它在格挡清除之后发放（有壁垒时同样触发），自带显示、保存与联机同步。
-	protected override Task OnEnemyDebuffApplied(Creature target)
+	protected override Task OnDebuffProc(Player owner, Creature target)
 	{
-		return PowerCmd.Apply<BlockNextTurnPower>(Owner!.Creature, DynamicVars.Block.BaseValue, Owner!.Creature, null);
+		return PowerCmd.Apply<BlockNextTurnPower>(owner.Creature, DynamicVars.Block.BaseValue, owner.Creature, null);
 	}
 }

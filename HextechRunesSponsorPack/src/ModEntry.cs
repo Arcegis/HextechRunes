@@ -1,5 +1,4 @@
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 
 namespace HextechRunesSponsorPack;
@@ -9,19 +8,23 @@ public static class ModEntry
 {
 	private const string PrerequisiteAssemblyName = "HextechRunes";
 	private const string HarmonyId = "Natsuki.HextechRunesSponsorPack";
+	private const string LogTag = "Init";
 
 	private static readonly object InitializeLock = new();
 	private static bool _waitingForPrerequisite;
-	private static bool _contentRegistered;
-	private static bool _registered;
+
+	// "已尝试"与"已成功"分开记:初始化只尝试一次(重复调用直接返回),
+	// 但只有补丁确实全部装上才算成功,失败时不能再输出"Loaded and registered"掩盖问题。
+	private static bool _initializationAttempted;
+	private static bool _patchesApplied;
 
 	public static void Initialize()
 	{
 		lock (InitializeLock)
 		{
-			if (_registered)
+			if (_initializationAttempted)
 			{
-				Log.Info($"[{ModInfo.Id}] Initialization already completed; skipping duplicate call.");
+				SponsorLog.Info(LogTag, $"Initialization already attempted (patches applied: {_patchesApplied}); skipping duplicate call.");
 				return;
 			}
 
@@ -37,7 +40,7 @@ public static class ModEntry
 			if (!_waitingForPrerequisite)
 			{
 				_waitingForPrerequisite = true;
-				Log.Info($"[{ModInfo.Id}] HextechRunes assembly not loaded yet; deferring registration until it loads.");
+				SponsorLog.Info(LogTag, "HextechRunes assembly not loaded yet; deferring registration until it loads.");
 				AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoad;
 			}
 		}
@@ -58,7 +61,7 @@ public static class ModEntry
 			// 初始化窗口关闭后不再登记内容，避免改变已经冻结的模型与 SavedProperty 布局。
 			if (IsModelRegistrationWindowClosed())
 			{
-				Log.Warn($"[{ModInfo.Id}] HextechRunes 加载过晚(模型注册窗口已关闭),拓展包内容未注册。", 2);
+				SponsorLog.Warn(LogTag, "HextechRunes 加载过晚(模型注册窗口已关闭),拓展包内容未注册。");
 				return;
 			}
 
@@ -75,22 +78,20 @@ public static class ModEntry
 
 	private static void RegisterAll()
 	{
-		if (_registered)
+		if (_initializationAttempted)
 		{
 			return;
 		}
 
-		if (!_contentRegistered)
+		_initializationAttempted = true;
+
+		// 注册按功能组隔离(SponsorCatalog.RegisterAll:先依赖后可获得内容,依赖失败的功能整组不入池),失败条目已各自 Warn。
+		// 补丁无条件照装:注册不是事务,失败时前面的内容已经入池,此时跳过补丁反而会留下
+		// "符文抽得到、依赖的补丁没装"的半初始化状态;每个补丁都以持有对应符文为前提,内容缺席只是空转。
+		int failures = SponsorCatalog.RegisterAll();
+		if (failures > 0)
 		{
-			// 注册按功能组隔离(SponsorCatalog.RegisterAll:先依赖后可获得内容,依赖失败的功能整组不入池),失败条目已各自 Warn。
-			// 补丁无条件照装:注册不是事务,失败时前面的内容已经入池,此时跳过补丁反而会留下
-			// "符文抽得到、依赖的补丁没装"的半初始化状态;每个补丁都以持有对应符文为前提,内容缺席只是空转。
-			int failures = SponsorCatalog.RegisterAll();
-			_contentRegistered = true;
-			if (failures > 0)
-			{
-				Log.Warn($"[{ModInfo.Id}] {failures} content registration(s) failed or were skipped; remaining content stays registered and patches are still applied.", 2);
-			}
+			SponsorLog.Warn(LogTag, $"{failures} content registration(s) failed or were skipped; remaining content stays registered and patches are still applied.");
 		}
 
 		try
@@ -99,14 +100,21 @@ public static class ModEntry
 			SponsorPatcher.ApplyAll(harmony, typeof(ModEntry).Assembly);
 			SponsorPatcher.LogSummary();
 			SponsorPatcher.DumpIfRequested(harmony);
+			_patchesApplied = SponsorPatcher.RequiredFailureCount == 0;
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Patch application failed: {ex.GetType().Name}: {ex.Message}", 2);
+			SponsorLog.Error(LogTag, $"Patch application aborted: {ex}");
 		}
 
-		_registered = true;
-		Log.Info($"[{ModInfo.Id}] Loaded and registered HextechRunes sponsor-pack content.");
+		if (_patchesApplied)
+		{
+			SponsorLog.Info(LogTag, "Loaded and registered HextechRunes sponsor-pack content.");
+		}
+		else
+		{
+			SponsorLog.Error(LogTag, "Sponsor-pack content is registered, but required patches did not all apply; affected features stay inactive (see the patch summary above).");
+		}
 	}
 
 	// 兼容本体与二创(synergy)版:两者都打包了程序集名为 "HextechRunes" 的 dll(暴露同样的 HextechRunesApi)。

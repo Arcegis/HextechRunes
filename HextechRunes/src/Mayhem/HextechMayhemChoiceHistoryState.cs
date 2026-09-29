@@ -39,7 +39,7 @@ internal sealed class HextechMayhemChoiceHistoryState
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry choices decode failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Telemetry choices decode failed: {ex.Message}");
 			return [];
 		}
 	}
@@ -83,7 +83,7 @@ internal sealed class HextechMayhemChoiceHistoryState
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Seen player rune id ignored: slot={playerSlot} entry={entry} error={ex.Message}");
+				HextechLog.Warn("Mayhem", $"Seen player rune id ignored: slot={playerSlot} entry={entry} error={ex.Message}");
 			}
 		}
 
@@ -104,7 +104,7 @@ internal sealed class HextechMayhemChoiceHistoryState
 		List<string> entriesToAdd = [];
 		foreach (RelicModel relic in relics)
 		{
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			ModelId id = relic.CanonicalId();
 			if (HextechCatalog.IsHextechRelic(relic) && !string.IsNullOrWhiteSpace(id.Entry))
 			{
 				entriesToAdd.Add(id.Entry);
@@ -185,7 +185,7 @@ internal sealed class HextechMayhemChoiceHistoryState
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Seen player rune ids decode failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Seen player rune ids decode failed: {ex.Message}");
 		}
 
 		return result;

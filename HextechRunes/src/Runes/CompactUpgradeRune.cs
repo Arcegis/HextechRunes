@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 
 namespace HextechRunes;
@@ -18,10 +16,8 @@ public sealed class CompactUpgradeRune : CardUpgradeRuneBase<Compact>
 
 	internal static async Task PlayUpgraded(PlayerChoiceContext choiceContext, Compact card, CardPlay cardPlay)
 	{
-		var owner = card.Owner!;
-		var combatState = card.CombatState!;
-		PlayerCombatState? playerCombatState = owner.PlayerCombatState;
-		if (playerCombatState == null)
+		Player owner = card.Owner;
+		if (card.CombatState is not { } combatState || owner.PlayerCombatState is not { } playerCombatState)
 		{
 			return;
 		}

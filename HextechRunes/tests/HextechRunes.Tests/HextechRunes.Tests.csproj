@@ -7,30 +7,26 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <HextechSts2Target Condition="'$(HextechSts2Target)' == ''">0.107.1</HextechSts2Target>
-    <GameDataDir Condition="'$(GameDataDir)' == ''">$(MSBuildThisFileDirectory)../../versioned-dll-backups/$(HextechSts2Target)/game-refs</GameDataDir>
-  </PropertyGroup>
-
-  <!-- 测试自身也需要版本符号(如 0.108 起 SavedPropertiesTypeCache 需显式 Init)。 -->
-  <PropertyGroup Condition="'$(HextechSts2Target)' == '0.107.1'">
-    <DefineConstants>$(DefineConstants);STS2_107_1</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(HextechSts2Target)' == '0.110.0'">
-    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(HextechSts2Target)' == '0.111.0'">
-    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER;STS2_111_OR_NEWER</DefineConstants>
+    <!-- 版本符号、未知目标拦截、引用目录与 sts2/GodotSharp/0Harmony 引用见仓库根 Directory.Build.targets。 -->
+    <!-- 测试自身也需要版本符号(如 0.108 起 SavedPropertiesTypeCache 需显式 Init);测试宿主要把游戏程序集复制到输出。 -->
+    <HextechUsesVariantTargets>true</HextechUsesVariantTargets>
+    <HextechVariantTarget>$(HextechSts2Target)</HextechVariantTarget>
+    <HextechGameRefsPrivate>true</HextechGameRefsPrivate>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/HextechRunes.csproj" />
     <ProjectReference Include="../../loader/HextechRunes.Loader.csproj" />
-	<ProjectReference Include="../../../HextechRunesSponsorPack/src/HextechRunesSponsorPack.csproj" />
+    <ProjectReference Include="../../../HextechRunesSponsorPack/src/HextechRunesSponsorPack.csproj"
+                      AdditionalProperties="HextechSponsorSts2Target=$(HextechSts2Target);GameDataDir=$(GameDataDir)" />
+    <ProjectReference Include="../../../HextechRunesSponsorPack/loader/HextechRunesSponsorPack.Loader.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="saved_property_manifest.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sponsor_saved_property_manifest.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="static_state_manifest.$(HextechSts2Target).txt" Condition="Exists('$(MSBuildThisFileDirectory)static_state_manifest.$(HextechSts2Target).txt')">
@@ -42,18 +38,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="sts2">
-      <HintPath>$(GameDataDir)/sts2.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="GodotSharp">
-      <HintPath>$(GameDataDir)/GodotSharp.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>$(GameDataDir)/0Harmony.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
     <!-- 0.109 起游戏用 XxHash32 计算 net-id 表哈希,测试进程需要能加载它。 -->
     <Reference Include="System.IO.Hashing" Condition="Exists('$(GameDataDir)/System.IO.Hashing.dll')">
       <HintPath>$(GameDataDir)/System.IO.Hashing.dll</HintPath>

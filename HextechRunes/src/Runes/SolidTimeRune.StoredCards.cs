@@ -39,8 +39,8 @@ public sealed partial class SolidTimeRune
 			{
 				_lastLoggedCorruptStoredCardsJson = _removedCardsJson;
 				string preview = _removedCardsJson[..Math.Min(80, _removedCardsJson.Length)];
-				Log.Warn(
-					$"[{ModInfo.Id}][SolidTime] Stored cards JSON is corrupted; dropping {_removedCardsJson.Length} chars: "
+				HextechLog.Warn(
+					"SolidTime", $"Stored cards JSON is corrupted; dropping {_removedCardsJson.Length} chars: "
 					+ $"{ex.GetType().Name}: {ex.Message} json={preview}");
 			}
 
@@ -100,14 +100,13 @@ public sealed partial class SolidTimeRune
 
 	private static CardModel? TryGetCanonical(StoredCard stored)
 	{
-		try
-		{
-			return ModelDb.GetById<CardModel>(new ModelId(stored.Category, stored.Entry));
-		}
-		catch
+		// 存档 JSON 缺字段时反序列化出 null，不构造 ModelId；已卸载内容或类别不是卡牌时按缺失处理。
+		if (string.IsNullOrEmpty(stored.Category) || string.IsNullOrEmpty(stored.Entry))
 		{
 			return null;
 		}
+
+		return ModelDb.GetByIdOrNull<AbstractModel>(new ModelId(stored.Category, stored.Entry)) as CardModel;
 	}
 
 	private static void ApplyUpgradeLevels(CardModel card, int upgrades)

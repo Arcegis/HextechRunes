@@ -95,6 +95,19 @@ internal static class MpLabDriver
 
 	private static void Info(string text) => Log.Info($"{Tag}[{_role}] {text}", 2);
 
+	// 走原版动作队列入队(与手动操作同一路径,联机两端同步);对局已结束时 RunManager 可能不在。
+	private static void Enqueue(GameAction action)
+	{
+		RunManager? manager = RunManager.Instance;
+		if (manager == null)
+		{
+			Info($"RunManager unavailable; dropped {action.GetType().Name}");
+			return;
+		}
+
+		manager.ActionQueueSynchronizer.RequestEnqueue(action);
+	}
+
 	private static bool _faultInstalled;
 
 	// HEXTECH_MPLAB_THROW_FORM_BATCH=1:让本端的形态批处理抛异常,模拟"只有一端在回合开始钩子里出错"。
@@ -133,7 +146,7 @@ internal static class MpLabDriver
 			{
 				Info("quitting");
 				_quitAtMsec = 0;
-				_tree!.Quit();
+				_tree?.Quit();
 				return;
 			}
 
@@ -173,7 +186,12 @@ internal static class MpLabDriver
 			MegaCrit.Sts2.Core.Saves.SaveManager.Instance.SetFtuesEnabled(false);
 		}
 
-		Node root = _tree!.Root;
+		if (_tree == null)
+		{
+			return;
+		}
+
+		Node root = _tree.Root;
 		RunState? runState = RunManager.Instance?.DebugOnlyGetState();
 		// 子菜单栈里会同时挂着隐藏的选角界面,读档大厅要先于它判断。
 		NMultiplayerLoadGameScreen? loadScreen = runState == null ? FindNode<NMultiplayerLoadGameScreen>(root) : null;
@@ -203,7 +221,11 @@ internal static class MpLabDriver
 			foreach (RelicModel r in runState.Players.SelectMany(p => p.Relics).Where(r => r.GetType().Name == "EchoFormUpgradeRune"))
 			{
 				Type? t = r.GetType().BaseType;
-				while (t != null && !t.IsGenericType) { t = t.BaseType; }
+				while (t != null && !t.IsGenericType)
+				{
+					t = t.BaseType;
+				}
+
 				Type? arg = t?.GetGenericArguments()[0];
 				static string Ctx(Type? x) => x == null ? "null" : $"{x.Assembly.GetName().Name}@{System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(x.Assembly)?.Name}#{x.Assembly.GetHashCode()} loc={x.Assembly.Location}";
 				Info($"rune TCard sameAsGame={ReferenceEquals(arg, typeof(EchoForm))} runeTCard={Ctx(arg)} gameEchoForm={Ctx(typeof(EchoForm))} runeRelicModel={Ctx(r.GetType().Assembly.GetType("HextechRunes.HextechRelicBase")?.BaseType)} gameRelicModel={Ctx(typeof(RelicModel))} ownerIsPlayer={runState.Players.Any(p => ReferenceEquals(p, r.Owner))}");
@@ -265,7 +287,7 @@ internal static class MpLabDriver
 				if (me != null)
 				{
 					Info($"sending console command '{command}' at act {runState.CurrentActIndex}");
-					RunManager.Instance!.ActionQueueSynchronizer.RequestEnqueue(new MegaCrit.Sts2.Core.DevConsole.ConsoleCmdGameAction(me, command, false));
+					Enqueue(new MegaCrit.Sts2.Core.DevConsole.ConsoleCmdGameAction(me, command, false));
 					return;
 				}
 			}
@@ -694,7 +716,7 @@ internal static class MpLabDriver
 				if (toPlay != null)
 				{
 					Info($"playing {toPlay.Id.Entry} for {me.NetId}");
-					RunManager.Instance!.ActionQueueSynchronizer.RequestEnqueue(new PlayCardAction(toPlay, null));
+					Enqueue(new PlayCardAction(toPlay, null));
 				}
 			}
 
@@ -718,7 +740,7 @@ internal static class MpLabDriver
 			_turnsEnded++;
 			Info($"ending turn #{_turnsEnded} round={state.RoundNumber} for {me.NetId} {DescribePiles(me)}");
 			// 走原版结束回合动作入队:本地 PlayerCmd.EndTurn 在联机下不会同步给其他端。
-			RunManager.Instance!.ActionQueueSynchronizer.RequestEnqueue(new EndPlayerTurnAction(me, me.PlayerCombatState?.TurnNumber ?? state.RoundNumber));
+			Enqueue(new EndPlayerTurnAction(me, me.PlayerCombatState?.TurnNumber ?? state.RoundNumber));
 			// 若请求没被接受(下一次 tick 仍未就绪),隔 5 秒再发,避免每 tick 重复请求。
 			_endTurnDueMsec = now + 5000;
 			if (_turnsEnded >= 6)

@@ -64,8 +64,7 @@ public sealed class CarefulSelectionRune : HextechRelicBase
 		return creationOptions
 			.GetPossibleCards(player)
 			.Where(card => !existingIds.Contains(card.Id))
-			.GroupBy(static card => card.Id)
-			.Select(static group => group.First())
+			.DistinctBy(static card => card.Id)
 			.ToList();
 	}
 

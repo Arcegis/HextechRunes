@@ -1,65 +1,33 @@
 namespace HextechRunes;
 
-internal sealed class SwiftAndSafeEnemyHex : HextechEnemyHexEffect
+internal sealed class SwiftAndSafeEnemyHex : DrawProgressEnemyHexBase
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.SwiftAndSafe;
 
-	internal override async Task AfterCardDrawn(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
+	private int GetCardsPerArtifact(HextechEnemyHexContext context)
 	{
-		if (card.Owner?.Creature.Side != CombatSide.Player
-			|| card.Owner.Creature.CombatState?.RunState != context.RunState
-			|| HextechPlayerContextHelper.IsNetworkMultiplayerRun())
-		{
-			return;
-		}
+		return context.TierValue(Kind, 15, 12, 10);
+	}
 
-		Player owner = card.Owner;
+	protected override async Task AfterLocalCardDrawn(HextechEnemyHexContext context, Player owner, HextechCombatState combatState)
+	{
 		ulong playerId = owner.NetId;
-		int cardsPerArtifact = context.TierValue(Kind, 15, 12, 10);
 		int cardsDrawn = context.Tracking.SwiftAndSafePlayerCardsDrawnThisCombat.GetValueOrDefault(playerId, 0) + 1;
 		context.Tracking.SwiftAndSafePlayerCardsDrawnThisCombat[playerId] = cardsDrawn;
-		if (cardsDrawn % cardsPerArtifact != 0)
+		if (cardsDrawn % GetCardsPerArtifact(context) != 0)
 		{
 			return;
 		}
 
-		HextechCombatState combatState = owner.Creature.CombatState;
 		foreach (Creature enemy in context.GetAliveEnemies(combatState))
 		{
 			await PowerCmd.Apply<ArtifactPower>(enemy, 1, enemy, null);
 		}
 	}
 
-	internal override Task AfterCardPlayedLate(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
+	protected override async Task ResolveDrawProgressFromHistory(HextechEnemyHexContext context, HextechCombatState combatState)
 	{
-		return HextechPlayerContextHelper.IsNetworkMultiplayerRun() && cardPlay.Card.Owner?.Creature.CombatState is HextechCombatState combatState
-			? ResolvePlayerDraws(context, combatState)
-			: Task.CompletedTask;
-	}
-
-	internal override Task AfterPlayerTurnStartLate(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player player)
-	{
-		return HextechPlayerContextHelper.IsNetworkMultiplayerRun() && player.Creature.CombatState is HextechCombatState combatState
-			? ResolvePlayerDraws(context, combatState)
-			: Task.CompletedTask;
-	}
-
-
-	internal override Task BeforeTurnEnd(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, CombatRoom? combatRoom)
-	{
-		return side == CombatSide.Player && combatRoom != null && HextechPlayerContextHelper.IsNetworkMultiplayerRun()
-			? ResolvePlayerDraws(context, combatRoom.CombatState)
-			: Task.CompletedTask;
-	}
-
-	private static async Task ResolvePlayerDraws(HextechEnemyHexContext context, HextechCombatState combatState)
-	{
-		if (combatState.RunState != context.RunState)
-		{
-			return;
-		}
-
-		int cardsPerArtifact = context.TierValue(MonsterHexKind.SwiftAndSafe, 15, 12, 10);
+		int cardsPerArtifact = GetCardsPerArtifact(context);
 
 		// 人工制品节奏按「单人」标定,不随联机人数放大:阈值随玩家数等比放大,改用全队合计抽牌数对
 		// (阈值 × 玩家数)结算。等价于按全队「人均抽牌数」给层数,而非各玩家分别跨阈值后求和——后者
@@ -72,7 +40,7 @@ internal sealed class SwiftAndSafeEnemyHex : HextechEnemyHexEffect
 		long totalDrawnPrev = 0;
 		foreach (Player player in combatState.Players.OrderBy(static player => player.NetId))
 		{
-			int drawnCards = CountPlayerDrawnCardsFromHistory(player);
+			int drawnCards = HextechCombatHistoryHelper.CountOwnedCardsDrawn(player);
 			int previousDrawnCards = context.Tracking.SwiftAndSafePlayerCardsDrawnThisCombat.GetValueOrDefault(player.NetId, 0);
 
 			// 防御:历史计数不应回退;万一回退就按已记录值,避免负增量。
@@ -97,12 +65,4 @@ internal sealed class SwiftAndSafeEnemyHex : HextechEnemyHexEffect
 			await PowerCmd.Apply<ArtifactPower>(enemy, pendingArtifact, enemy, null);
 		}
 	}
-
-	private static int CountPlayerDrawnCardsFromHistory(Player player)
-	{
-		return CombatManager.Instance.History.Entries
-			.OfType<CardDrawnEntry>()
-			.Count(entry => entry.Card.Owner?.NetId == player.NetId);
-	}
-
 }

@@ -151,6 +151,7 @@
   "HEXTECH_COMMUNITY_DELETE": "削除",
   "HEXTECH_COMMUNITY_REPORT": "通報",
   "HEXTECH_COMMUNITY_REPORTED": "通報済み",
+  "HEXTECH_COMMUNITY_APPLY_INVALID": "この設定コードを読み込めませんでした。互換性のないバージョンのものかもしれません。",
   "HEXTECH_COMMUNITY_NEED_STEAM": "アップロード/いいねには Steam オンラインが必要です。",
   "HEXTECH_COMMUNITY_ERR_TITLE_REJECTED": "タイトルに許可されていない内容が含まれています。",
   "HEXTECH_COMMUNITY_ERR_QUOTA": "すでに 3 件アップロード済みです。先に削除してください。",

@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVictoryRune, IHextechMaxHpScalingRune
+public sealed class TankEngineRune : HextechSharedCombatVictoryRuneBase, IHextechMaxHpScalingRune
 {
 	private const decimal HpGainPercentValue = 0.06m;
 	private const decimal MaxHpGainDisplayPercentValue = HpGainPercentValue * 100m;
@@ -55,34 +55,23 @@ public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVicto
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
+		if (Owner != null)
 		{
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		}
 
 		Grow();
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return;
-		}
-
-		await ApplySharedCombatVictory(room);
-	}
-
-	public async Task ApplySharedCombatVictory(CombatRoom room)
+	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
 			return;
 		}
 
-		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
-		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		SavedStacks++;
 		Flash(Array.Empty<Creature>());
 		await HextechMaxHpScaling.ReapplyScale(Owner);

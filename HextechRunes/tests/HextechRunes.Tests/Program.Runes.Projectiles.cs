@@ -28,6 +28,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void MagicMissileUsesThreeThreePercentHits()
 	{
 		Equal(3, MagicMissileRune.MissileCount, "Magic Missile hit count");
@@ -47,12 +48,13 @@ internal static partial class Program
 		Equal(5, MagicMissileRune.CalculateMissileDamage(199), "Magic Missile should round max-HP damage down");
 	}
 
+	[HextechTest]
 	private static void TwinFlamesUsesThreeEnergyScaledHits()
 	{
 		Equal(3, TwinFlamesRune.MissileCount, "Twin Flames hit count");
-		Equal(0m, TwinFlamesRune.ResolveMissileDamage(-1m), "Twin Flames should not create negative damage");
-		Equal(0m, TwinFlamesRune.ResolveMissileDamage(0m), "zero-cost Skills should resolve to zero missile damage");
-		Equal(3m, TwinFlamesRune.ResolveMissileDamage(3m), "Twin Flames damage should equal the played Skill's Energy cost");
+		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Twin Flames should not create negative damage");
+		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(0m), "zero-cost Skills should resolve to zero missile damage");
+		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Twin Flames damage should equal the played Skill's Energy cost");
 		Expect(!TwinFlamesRune.ShouldLaunchMissiles(0m), "zero-cost Skills should not launch Twin Flames missiles");
 		Expect(TwinFlamesRune.ShouldLaunchMissiles(1m), "positive-cost Skills should launch Twin Flames missiles");
 		MethodInfo? afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
@@ -69,6 +71,7 @@ internal static partial class Program
 			"Twin Flames should expose its blue-yellow projectile VFX path");
 	}
 
+	[HextechTest]
 	private static void TwinFlamesKeepsMultiplayerDamageInsideCardAction()
 	{
 		MethodInfo afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
@@ -87,6 +90,7 @@ internal static partial class Program
 			"Twin Flames damage should be returned to the current card action");
 	}
 
+	[HextechTest]
 	private static void ProjectileRunesKeepMultiplayerDamageInsideCardAction()
 	{
 		foreach (Type runeType in new[] { typeof(MagicMissileRune), typeof(TwinFlamesRune), typeof(LightEmUpRune) })
@@ -109,12 +113,13 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void LightEmUpUsesSixEnergyScaledTwinFlameMissiles()
 	{
 		Equal(4, LightEmUpRune.AttacksPerVolley, "Light Em Up attacks per volley");
 		Equal(6, LightEmUpRune.MissileCount, "Light Em Up missile count");
-		Equal(0m, LightEmUpRune.ResolveMissileDamage(-1m), "Light Em Up should not create negative damage");
-		Equal(3m, LightEmUpRune.ResolveMissileDamage(3m), "Light Em Up damage should equal the triggering Attack's Energy cost");
+		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Light Em Up should not create negative damage");
+		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Light Em Up damage should equal the triggering Attack's Energy cost");
 
 		int progress = 0;
 		for (int attackIndex = 0; attackIndex < 3; attackIndex++)
@@ -152,6 +157,7 @@ internal static partial class Program
 			"Light Em Up should reuse the blue-yellow Twin Flames projectile VFX path");
 	}
 
+	[HextechTest]
 	private static void PiercingThreadSplitsOneDamageEventBeforeBlock()
 	{
 		Equal(50m, PiercingThreadRune.PiercingPercent, "Piercing Thread percentage");
@@ -169,7 +175,7 @@ internal static partial class Program
 		Equal(HextechRarityTier.Gold, registration.Rarity, "Piercing Thread rarity");
 		Equal("OUTPUT", registration.TagKey, "Piercing Thread tag");
 		Expect(
-			HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "DamageBlockPatch", "Prefix") != null,
+			FindPatchMethod(typeof(HextechCombatHooks), "DamageBlockPatch", "Prefix") != null,
 			"Piercing Thread should alter the blockable amount at the original block-consumption boundary");
 	}
 }

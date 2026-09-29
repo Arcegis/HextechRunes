@@ -30,6 +30,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void StuffedToRuinChallengeUsesThreeFixedActPlans()
 	{
 		SequenceEqual(
@@ -49,7 +50,7 @@ internal static partial class Program
 		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
 		{
 			Expect(
-				HextechPresetChallengeRegistry.TryGetActPlan(typeof(StuffedToRuinChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(StuffedToRuinChallengeModifier), actIndex, out HextechPresetChallengeActPlan? actualPlan),
 				$"challenge act {actIndex + 1} should exist");
 			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"challenge act {actIndex + 1} player rarity");
 			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"challenge act {actIndex + 1} enemy hexes");
@@ -67,6 +68,7 @@ internal static partial class Program
 			"challenge default rarity weights should be 1:1:1 in every act");
 	}
 
+	[HextechTest]
 	private static void DefenseCounterMasterChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -82,7 +84,7 @@ internal static partial class Program
 		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
 		{
 			Expect(
-				HextechPresetChallengeRegistry.TryGetActPlan(typeof(DefenseCounterMasterChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(DefenseCounterMasterChallengeModifier), actIndex, out HextechPresetChallengeActPlan? actualPlan),
 				$"defense counter challenge act {actIndex + 1} should exist");
 			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"defense counter challenge act {actIndex + 1} player rarity");
 			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"defense counter challenge act {actIndex + 1} enemy hexes");
@@ -94,6 +96,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "defense counter challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void BruteForceChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -109,7 +112,7 @@ internal static partial class Program
 		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
 		{
 			Expect(
-				HextechPresetChallengeRegistry.TryGetActPlan(typeof(BruteForceChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(BruteForceChallengeModifier), actIndex, out HextechPresetChallengeActPlan? actualPlan),
 				$"brute force challenge act {actIndex + 1} should exist");
 			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"brute force challenge act {actIndex + 1} player rarity");
 			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"brute force challenge act {actIndex + 1} enemy hexes");
@@ -121,6 +124,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "brute force challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void EightPennyGateChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -136,7 +140,7 @@ internal static partial class Program
 		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
 		{
 			Expect(
-				HextechPresetChallengeRegistry.TryGetActPlan(typeof(EightPennyGateChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(EightPennyGateChallengeModifier), actIndex, out HextechPresetChallengeActPlan? actualPlan),
 				$"eight-penny gate challenge act {actIndex + 1} should exist");
 			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"eight-penny gate challenge act {actIndex + 1} player rarity");
 			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"eight-penny gate challenge act {actIndex + 1} enemy hexes");
@@ -148,6 +152,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 1, 1 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "eight-penny gate challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void ListlessChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -163,7 +168,7 @@ internal static partial class Program
 		for (int actIndex = 0; actIndex < expectedPlans.Length; actIndex++)
 		{
 			Expect(
-				HextechPresetChallengeRegistry.TryGetActPlan(typeof(ListlessChallengeModifier), actIndex, out HextechPresetChallengeActPlan actualPlan),
+				HextechPresetChallengeRegistry.TryGetActPlan(typeof(ListlessChallengeModifier), actIndex, out HextechPresetChallengeActPlan? actualPlan),
 				$"listless challenge act {actIndex + 1} should exist");
 			Equal(expectedPlans[actIndex].PlayerRarity, actualPlan.PlayerRarity, $"listless challenge act {actIndex + 1} player rarity");
 			SequenceEqual(expectedPlans[actIndex].EnemyHexes, actualPlan.EnemyHexes, $"listless challenge act {actIndex + 1} enemy hexes");
@@ -175,6 +180,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "listless challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void PresetChallengesArePairwiseMutuallyExclusive()
 	{
 		foreach (Type selectedType in HextechCustomModelRegistry.CustomChallengeModifierTypes)

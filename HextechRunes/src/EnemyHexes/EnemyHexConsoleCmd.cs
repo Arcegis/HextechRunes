@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
 
@@ -30,12 +31,12 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 			return new CmdResult(success: false, usageError ?? GetUsage());
 		}
 
-		if (!TryParseMonsterHex(hexInput!, out MonsterHexKind hex))
+		if (!TryParseMonsterHex(hexInput, out MonsterHexKind hex))
 		{
 			return new CmdResult(success: false, $"未知海克斯: {hexInput}");
 		}
 
-		HextechMayhemModifier modifier = ModEntry.EnsureMayhemModifier(runState);
+		HextechMayhemModifier modifier = HextechRunLifecycleHooks.EnsureMayhemModifier(runState);
 		switch (action)
 		{
 			case EnemyHexConsoleAction.Add:
@@ -111,7 +112,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 		HextechEnemyUi.Refresh(modifier);
 	}
 
-	private static bool TryParseArguments(string[] args, out EnemyHexConsoleAction action, out string? hexInput, out string? error)
+	private static bool TryParseArguments(string[] args, out EnemyHexConsoleAction action, [NotNullWhen(true)] out string? hexInput, out string? error)
 	{
 		action = EnemyHexConsoleAction.Set;
 		hexInput = null;
@@ -169,7 +170,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 			&& player?.RunState is RunState runState
 			&& RunManager.Instance.IsInProgress)
 		{
-			return ModEntry.EnsureMayhemModifier(runState)
+			return HextechRunLifecycleHooks.EnsureMayhemModifier(runState)
 				.GetActiveMonsterHexes()
 				.Select(static hex => hex.ToString());
 		}

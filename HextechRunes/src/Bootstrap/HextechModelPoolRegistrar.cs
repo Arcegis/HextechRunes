@@ -7,10 +7,14 @@ namespace HextechRunes;
 
 internal static class HextechModelPoolRegistrar
 {
-	private const BindingFlags InstanceFields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
+	// 原版 0.107.1–0.111.0:ModHelper 私有静态字段
+	// Dictionary<Type, ModPoolContent> _moddedContentForPools,ModPoolContent 为私有嵌套类,
+	// 其 public List<Type>? modelsToAdd 是待并入各池的模组模型。只用于查重与清理 Android 首模型哨兵,
+	// 缺失时 HextechHookReflection 会进启动摘要,查重退化为“视为未登记”,清理跳过。
 	private static readonly FieldInfo? ModdedContentForPoolsField =
-		typeof(ModHelper).GetField("_moddedContentForPools", BindingFlags.NonPublic | BindingFlags.Static);
+		HextechHookReflection.TryGetField(typeof(ModHelper), "_moddedContentForPools", BindingFlags.NonPublic | BindingFlags.Static);
+
+	private static readonly FieldInfo? ModelsToAddField = GetModelsToAddField();
 
 	private static readonly List<(Type PoolType, Type ModelType)> MobileDuplicateRegistrations = new();
 
@@ -59,7 +63,7 @@ internal static class HextechModelPoolRegistrar
 	{
 		if (IsModelAlreadyQueuedForPool(poolType, modelType) && !IsMobileFirstModelWorkaroundDuplicate(poolType, modelType))
 		{
-			HextechLog.Info($"[{ModInfo.Id}] Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
+			HextechLog.Info("Bootstrap", $"Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
 			return;
 		}
 
@@ -102,7 +106,7 @@ internal static class HextechModelPoolRegistrar
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Could not inspect existing mod pool registrations: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Bootstrap", $"Could not inspect existing mod pool registrations: {ex.GetType().Name}: {ex.Message}");
 		}
 
 		return false;
@@ -132,11 +136,11 @@ internal static class HextechModelPoolRegistrar
 		{
 			ModHelper.AddModelToPool(poolType, modelType);
 			MobileDuplicateRegistrations.Add((poolType, modelType));
-			Log.Warn($"[{ModInfo.Id}] Android model registration workaround queued first-model sentinel: pool={poolType.Name} model={modelType.Name}.");
+			HextechLog.Warn("Bootstrap", $"Android model registration workaround queued first-model sentinel: pool={poolType.Name} model={modelType.Name}.");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Android model registration workaround failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Bootstrap", $"Android model registration workaround failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -156,8 +160,7 @@ internal static class HextechModelPoolRegistrar
 					continue;
 				}
 
-				FieldInfo? modelsField = entry.Value?.GetType().GetField("modelsToAdd", InstanceFields);
-				if (modelsField?.GetValue(entry.Value) is not IList models)
+				if (entry.Value == null || ModelsToAddField?.GetValue(entry.Value) is not IList models)
 				{
 					continue;
 				}
@@ -181,7 +184,7 @@ internal static class HextechModelPoolRegistrar
 
 				if (removed > 0)
 				{
-					HextechLog.Info($"[{ModInfo.Id}] Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
+					HextechLog.Info("Bootstrap", $"Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
 				}
 
 				return;
@@ -189,7 +192,7 @@ internal static class HextechModelPoolRegistrar
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Android model registration workaround cleanup failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Bootstrap", $"Android model registration workaround cleanup failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -208,8 +211,7 @@ internal static class HextechModelPoolRegistrar
 			return false;
 		}
 
-		FieldInfo? modelsField = content.GetType().GetField("modelsToAdd", InstanceFields);
-		if (modelsField?.GetValue(content) is not IEnumerable models)
+		if (ModelsToAddField?.GetValue(content) is not IEnumerable models)
 		{
 			return false;
 		}
@@ -223,5 +225,13 @@ internal static class HextechModelPoolRegistrar
 		}
 
 		return false;
+	}
+
+	private static FieldInfo? GetModelsToAddField()
+	{
+		Type? poolContentType = HextechHookReflection.TryGetNestedType(typeof(ModHelper), "ModPoolContent");
+		return poolContentType == null
+			? null
+			: HextechHookReflection.TryGetField(poolContentType, "modelsToAdd", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 	}
 }

@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVictoryRune, IHextechMaxHpScalingRune
+public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHextechMaxHpScalingRune, IHextechHealingMultiplierProvider
 {
 	private int _baseMaxHp;
 	private int _stacks;
@@ -35,9 +35,9 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-			new DynamicVar("StackBonusPercent", 1m),
-			new DynamicVar("StackOverloadThreshold", 10m)
-		];
+		new DynamicVar("StackBonusPercent", 1m),
+		new DynamicVar("StackOverloadThreshold", 10m)
+	];
 
 	public decimal SustainMultiplier => StackMultiplier;
 
@@ -45,33 +45,22 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
+		if (Owner != null)
 		{
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		}
 
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public async Task ApplySharedCombatVictory(CombatRoom room)
+	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
 			return;
 		}
 
-		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
-		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		SavedStacks++;
 		Flash(Array.Empty<Creature>());
 		await HextechMaxHpScaling.ReapplyScale(Owner);
@@ -85,6 +74,11 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
 		return target == Owner?.Creature ? StackMultiplier : 1m;
+	}
+
+	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
+	{
+		return IsFirstOwnedInstance(player) ? SustainMultiplier : 1m;
 	}
 
 	private decimal StackMultiplier

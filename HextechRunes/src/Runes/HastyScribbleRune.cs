@@ -4,7 +4,7 @@ public sealed class HastyScribbleRune : HextechRelicBase
 {
 	public override async Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		var combatState = player.PlayerCombatState;
+		PlayerCombatState? combatState = player.PlayerCombatState;
 		if (player != Owner || combatState == null)
 		{
 			return;

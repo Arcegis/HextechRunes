@@ -151,6 +151,7 @@
   "HEXTECH_COMMUNITY_DELETE": "ลบ",
   "HEXTECH_COMMUNITY_REPORT": "รายงาน",
   "HEXTECH_COMMUNITY_REPORTED": "รายงานแล้ว",
+  "HEXTECH_COMMUNITY_APPLY_INVALID": "ไม่สามารถอ่านรหัสการตั้งค่านี้ได้ อาจมาจากเวอร์ชันที่เข้ากันไม่ได้",
   "HEXTECH_COMMUNITY_NEED_STEAM": "ต้องออนไลน์ Steam จึงจะอัปโหลด/กดถูกใจได้",
   "HEXTECH_COMMUNITY_ERR_TITLE_REJECTED": "ชื่อมีเนื้อหาที่ไม่อนุญาต โปรดแก้ไข",
   "HEXTECH_COMMUNITY_ERR_QUOTA": "คุณอัปโหลดครบ 3 รายการแล้ว โปรดลบก่อน",

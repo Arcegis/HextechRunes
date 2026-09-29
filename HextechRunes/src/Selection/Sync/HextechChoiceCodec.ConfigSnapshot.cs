@@ -4,7 +4,7 @@ internal static partial class HextechChoiceCodec
 {
 	private static void AppendDisabledPlayerRuneConfig(List<int> payload, IReadOnlySet<string> disabledPlayerRuneIds)
 	{
-		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal;
 		int wordCount = ids.Count / PlayerRuneConfigBitsPerWord
 			+ (ids.Count % PlayerRuneConfigBitsPerWord == 0 ? 0 : 1);
 		ValidateProtocolCount(wordCount, MaxPlayerRuneConfigBitsetWords, nameof(disabledPlayerRuneIds));
@@ -52,7 +52,7 @@ internal static partial class HextechChoiceCodec
 			return false;
 		}
 
-		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal;
 		for (int i = 0; i < ids.Count; i++)
 		{
 			int wordIndex = i / PlayerRuneConfigBitsPerWord;
@@ -80,14 +80,13 @@ internal static partial class HextechChoiceCodec
 		}
 		payload.Add(snapshot.PreventConsecutiveSilverRunes ? 1 : 0);
 		payload.Add(HextechRuneConfiguration.ClampGoldenRerollChancePercent(snapshot.GoldenRerollChancePercent));
-		AppendForgeRarityWeights(payload, snapshot.ForgeRarityWeights);
+		AppendRarityWeights(payload, snapshot.ForgeRarityWeights);
 		payload.Add(HextechRuneConfiguration.ClampRandomForgeShopPrice(snapshot.RandomForgeShopPrice));
 		payload.Add(snapshot.RandomForgeDirectGrant ? 1 : 0);
 
 		MonsterHexKind[] disabledMonsterHexes = snapshot.DisabledMonsterHexIds
 			.Select(static id => Enum.TryParse(id, out MonsterHexKind kind) ? (MonsterHexKind?)kind : null)
-			.Where(static kind => kind.HasValue)
-			.Select(static kind => kind!.Value)
+			.OfType<MonsterHexKind>()
 			.OrderBy(static kind => (int)kind)
 			.ToArray();
 		ValidateProtocolCount(disabledMonsterHexes.Length, MaxDisabledMonsterHexes, nameof(snapshot));
@@ -100,10 +99,12 @@ internal static partial class HextechChoiceCodec
 				.Select(static entry => new ModelId(ModInfo.Id, entry))
 				.OrderBy(static id => id.Entry, StringComparer.Ordinal));
 
-		// 模组总开关:作为尾部可选 int 追加,避免改 snapshot 版本号/定长计数。
-		// 旧 payload 无此尾巴时解码端回退到 fallback(默认开启)。
+		// 未版本化的尾部可选 int,按追加顺序解码,避免改 snapshot 版本号/定长计数:
+		// 1) 模组总开关:旧 payload 没有时解码端回退到 fallback(默认开启);
+		// 2) 混沌海克斯概率:旧 payload 没有时回退到 DefaultChaosRuneChancePercent。
+		// 以后再加尾部字段只能继续往后追加,不能插入或重排。
 		payload.Add(snapshot.ModEnabled ? 1 : 0);
-		payload.Add(snapshot.ChaosRuneChancePercent);
+		payload.Add(HextechRuneConfiguration.ClampChaosRuneChancePercent(snapshot.ChaosRuneChancePercent));
 	}
 
 	private static bool TryDecodeRunConfigurationSnapshot(
@@ -154,9 +155,72 @@ internal static partial class HextechChoiceCodec
 			monsterHexRerollLimit = HextechRuneConfiguration.ClampRerollLimit(payload[cursor++]);
 		}
 
-		HextechRarityWeights[] runeWeightsByAct;
-		bool preventConsecutiveSilverRunes;
-		int goldenRerollChancePercent = HextechRuneConfiguration.GetDefaultGoldenRerollChancePercent();
+		ReadRuneRarityFields(
+			payload,
+			ref cursor,
+			snapshotVersion,
+			out HextechRarityWeights[] runeWeightsByAct,
+			out bool preventConsecutiveSilverRunes,
+			out int goldenRerollChancePercent);
+
+		HextechRarityWeights forgeWeights = ReadRarityWeights(payload, ref cursor);
+		int forgePrice = payload[cursor++];
+		bool randomForgeDirectGrant = fallback.RandomForgeDirectGrant;
+		if (snapshotVersion is RunConfigurationSnapshotVersion or PreviousSingleRarityRunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion or LegacyRerollRunConfigurationSnapshotVersion)
+		{
+			randomForgeDirectGrant = payload[cursor++] != 0;
+		}
+
+		if (!TryReadDisabledMonsterHexIds(payload, ref cursor, out HashSet<string> disabledMonsterHexIds))
+		{
+			return false;
+		}
+
+		if (!HextechStableModelIdListCodec.TryDecode(payload, cursor, out List<ModelId> disabledForgeIds, out int forgeListNextCursor))
+		{
+			return false;
+		}
+
+		// 尾部可选 int(见 AppendRunConfigurationSnapshot):模组总开关、混沌海克斯概率。
+		bool modEnabled = fallback.ModEnabled;
+		if (payload.Count > forgeListNextCursor)
+		{
+			modEnabled = payload[forgeListNextCursor] != 0;
+		}
+
+		int chaosRuneChancePercent = payload.Count > forgeListNextCursor + 1
+			? payload[forgeListNextCursor + 1]
+			: HextechRuneConfiguration.DefaultChaosRuneChancePercent;
+
+		snapshot = HextechRuneConfiguration.NormalizeSnapshot(new HextechRunConfigurationSnapshot(
+			playerHexCounts,
+			enemyHexCounts,
+			playerRuneRerollLimit,
+			monsterHexRerollLimit,
+			fallback.DisabledPlayerRuneIds,
+			disabledMonsterHexIds,
+			disabledForgeIds.Select(static id => id.Entry).ToHashSet(StringComparer.Ordinal),
+			runeWeightsByAct,
+			preventConsecutiveSilverRunes,
+			goldenRerollChancePercent,
+			forgeWeights,
+			forgePrice,
+			randomForgeDirectGrant,
+			modEnabled,
+			chaosRuneChancePercent));
+		return true;
+	}
+
+	/// <summary>各快照版本的海克斯稀有度段:当前版为分幕三组权重 + 防连续银 + 金色重掷;更早的版本按旧布局读取。</summary>
+	private static void ReadRuneRarityFields(
+		List<int> payload,
+		ref int cursor,
+		int snapshotVersion,
+		out HextechRarityWeights[] runeWeightsByAct,
+		out bool preventConsecutiveSilverRunes,
+		out int goldenRerollChancePercent)
+	{
+		goldenRerollChancePercent = HextechRuneConfiguration.GetDefaultGoldenRerollChancePercent();
 		if (snapshotVersion == RunConfigurationSnapshotVersion)
 		{
 			runeWeightsByAct =
@@ -186,15 +250,12 @@ internal static partial class HextechChoiceCodec
 			runeWeightsByAct = [ legacyNormalWeights, legacyNormalWeights, legacyNormalWeights ];
 			preventConsecutiveSilverRunes = HextechRuneConfiguration.GetDefaultPreventConsecutiveSilverRunes();
 		}
+	}
 
-		HextechForgeRarityWeights forgeWeights = ReadForgeRarityWeights(payload, ref cursor);
-		int forgePrice = payload[cursor++];
-		bool randomForgeDirectGrant = fallback.RandomForgeDirectGrant;
-		if (snapshotVersion is RunConfigurationSnapshotVersion or PreviousSingleRarityRunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion or LegacyRerollRunConfigurationSnapshotVersion)
-		{
-			randomForgeDirectGrant = payload[cursor++] != 0;
-		}
-
+	/// <summary>禁用敌方海克斯列表:计数 + 枚举编号;本版本不认识的编号跳过(对端可能是更新的版本)。</summary>
+	private static bool TryReadDisabledMonsterHexIds(List<int> payload, ref int cursor, out HashSet<string> disabledMonsterHexIds)
+	{
+		disabledMonsterHexIds = [];
 		if (payload.Count <= cursor)
 		{
 			return false;
@@ -208,7 +269,6 @@ internal static partial class HextechChoiceCodec
 			return false;
 		}
 
-		HashSet<string> disabledMonsterHexIds = [];
 		for (int i = 0; i < disabledMonsterHexCount; i++)
 		{
 			int value = payload[cursor + i];
@@ -219,34 +279,6 @@ internal static partial class HextechChoiceCodec
 		}
 
 		cursor += disabledMonsterHexCount;
-		if (!HextechStableModelIdListCodec.TryDecode(payload, cursor, out List<ModelId> disabledForgeIds, out int forgeListNextCursor))
-		{
-			return false;
-		}
-
-		// 模组总开关:尾部可选 int。旧 payload 没有这一项时回退到 fallback(默认开启)。
-		bool modEnabled = fallback.ModEnabled;
-		if (payload.Count > forgeListNextCursor)
-		{
-			modEnabled = payload[forgeListNextCursor] != 0;
-		}
-
-		snapshot = HextechRuneConfiguration.NormalizeSnapshot(new HextechRunConfigurationSnapshot(
-			playerHexCounts,
-			enemyHexCounts,
-			playerRuneRerollLimit,
-			monsterHexRerollLimit,
-			fallback.DisabledPlayerRuneIds,
-			disabledMonsterHexIds,
-			disabledForgeIds.Select(static id => id.Entry).ToHashSet(StringComparer.Ordinal),
-			runeWeightsByAct,
-			preventConsecutiveSilverRunes,
-			goldenRerollChancePercent,
-			forgeWeights,
-			forgePrice,
-			randomForgeDirectGrant,
-			modEnabled,
-			payload.Count > forgeListNextCursor + 1 ? payload[forgeListNextCursor + 1] : 33));
 		return true;
 	}
 
@@ -257,23 +289,9 @@ internal static partial class HextechChoiceCodec
 		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Prismatic));
 	}
 
-	private static void AppendForgeRarityWeights(List<int> payload, HextechForgeRarityWeights weights)
-	{
-		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Silver));
-		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Gold));
-		payload.Add(HextechRuneConfiguration.ClampRarityWeight(weights.Prismatic));
-	}
-
 	private static HextechRarityWeights ReadRarityWeights(List<int> payload, ref int cursor)
 	{
 		HextechRarityWeights weights = new(payload[cursor], payload[cursor + 1], payload[cursor + 2]);
-		cursor += 3;
-		return weights;
-	}
-
-	private static HextechForgeRarityWeights ReadForgeRarityWeights(List<int> payload, ref int cursor)
-	{
-		HextechForgeRarityWeights weights = new(payload[cursor], payload[cursor + 1], payload[cursor + 2]);
 		cursor += 3;
 		return weights;
 	}

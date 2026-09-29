@@ -48,14 +48,7 @@ public sealed class HextechGalvanicPower : HextechPowerBase
 		if (cardPlay.Card.Owner?.Creature == Owner && cardPlay.Card.Affliction is Galvanized)
 		{
 			await CreatureCmd.Damage(choiceContext, Owner, Amount, ValueProp.Unpowered | ValueProp.Move, null, null);
-			try
-			{
-				VfxCmd.PlayOnCreature(Owner, "vfx/vfx_attack_lightning");
-			}
-			catch (Exception ex)
-			{
-				Log.Warn($"[{ModInfo.Id}][Galvanic] Lightning visual failed: {ex.Message}");
-			}
+			HextechPresentation.TryRun("Galvanic", "Lightning visual failed", () => VfxCmd.PlayOnCreature(Owner, "vfx/vfx_attack_lightning"));
 		}
 	}
 

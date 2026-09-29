@@ -18,11 +18,11 @@ internal sealed partial class HextechMayhemModifier
 
 		if (ShouldDeferImmediateActSelection(RunState.CurrentRoom))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: deferring act selection until room/event flow is stable actIndex={actIndex} currentRoom={RunState.CurrentRoom?.GetType().Name ?? "null"}");
+			HextechLog.Info("Mayhem", $"AfterActEntered: deferring act selection until room/event flow is stable actIndex={actIndex} currentRoom={RunState.CurrentRoom?.GetType().Name ?? "null"}");
 			return;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] AfterActEntered: resolving act selection before first room actIndex={actIndex}");
+		HextechLog.Info("Mayhem", $"AfterActEntered: resolving act selection before first room actIndex={actIndex}");
 		await HextechRuneSelectionCoordinator.HandleStageSelection(RunState, this, actIndex);
 	}
 
@@ -44,11 +44,11 @@ internal sealed partial class HextechMayhemModifier
 
 		if (RunState.CurrentActIndex == 0 && string.IsNullOrWhiteSpace(extraStageId))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] BeforeRoomEntered: skipping unsafe act0 selection before room={room.GetType().Name}; waiting for post-Neow or map path");
+			HextechLog.Warn("Mayhem", $"BeforeRoomEntered: skipping unsafe act0 selection before room={room.GetType().Name}; waiting for post-Neow or map path");
 			return;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] BeforeRoomEntered: resolving pending act selection before room={room.GetType().Name} actIndex={actIndex}");
+		HextechLog.Info("Mayhem", $"BeforeRoomEntered: resolving pending act selection before room={room.GetType().Name} actIndex={actIndex}");
 		await HextechRuneSelectionCoordinator.HandleStageSelection(RunState, this, actIndex);
 	}
 

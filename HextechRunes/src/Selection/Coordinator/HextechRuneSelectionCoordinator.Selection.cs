@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using static HextechRunes.HextechRunePoolBuilder;
 using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
@@ -17,8 +18,49 @@ internal static partial class HextechRuneSelectionCoordinator
 		RelicModel? monsterHexRelic,
 		HextechEnemyHexAdjustmentOptions? enemyHexOptions = null)
 	{
+		HextechRuneSelectionScreen screen = await CreateLocalRuneSelectionScreenAsync(
+			modifier,
+			player,
+			actIndex,
+			choiceOrdinal,
+			options,
+			monsterHexRelic,
+			enemyHexOptions,
+			offeredOptionIds: null,
+			CancellationToken.None);
+		RelicModel? selectedRelic = (await screen.RelicsSelected()).FirstOrDefault();
+		if (selectedRelic != null)
+		{
+			// 自选模式的最终候选不经过重随,这里补记;普通三选一的候选已在展示/重随时记过,重复记录无副作用。
+			modifier.RecordSeenPlayerRunes(player, screen.CurrentRelics);
+		}
+
+		return new RuneSelectionResult(selectedRelic, HextechWeightedRuneOptions.Copy(screen.CurrentRelics), screen.RerollHistory.Count, screen.CurrentMonsterHexes);
+	}
+
+	/// <summary>
+	/// 本机玩家的符文选择界面(单机与联机共用):记“已见”、建金色重掷会话、推入界面。
+	/// 单机推进原版 Niche 随机流,展示和重随时立即写入存档的已见记录;
+	/// 联机(传入 offeredOptionIds)用各端一致的稳定哈希,本次展示过的候选(含被重随替换的)只累积到 offeredOptionIds,
+	/// 确认后随选择结果同步,由两端经 CommitSeenRuneSelection 统一写入存档。
+	/// </summary>
+	private static async Task<HextechRuneSelectionScreen> CreateLocalRuneSelectionScreenAsync(
+		HextechMayhemModifier modifier,
+		Player player,
+		int actIndex,
+		int choiceOrdinal,
+		IReadOnlyList<RelicModel> options,
+		RelicModel? monsterHexRelic,
+		HextechEnemyHexAdjustmentOptions? enemyHexOptions,
+		HashSet<ModelId>? offeredOptionIds,
+		CancellationToken cancellationToken)
+	{
 		MarkRelicsSeen(options);
-		modifier.RecordSeenPlayerRunes(player, options);
+		if (offeredOptionIds == null)
+		{
+			modifier.RecordSeenPlayerRunes(player, options);
+		}
+
 		HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(options, modifier.GetSeenPlayerRuneIds(player));
 		HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
 			modifier,
@@ -26,22 +68,34 @@ internal static partial class HextechRuneSelectionCoordinator
 			actIndex,
 			choiceOrdinal,
 			options);
-		HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
-			options,
-			monsterHexRelic,
-			(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrack(
+		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>> rerollFunc = offeredOptionIds is { } multiplayerOfferedOptionIds
+			? (relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(
+				modifier,
+				player,
+				relics,
+				slotIndex,
+				actIndex,
+				rerollOrdinal,
+				seenOptionIds,
+				multiplayerOfferedOptionIds,
+				GetGoldenRerollOverride(goldenReroll))
+			: (relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrack(
 				modifier,
 				player,
 				relics,
 				slotIndex,
 				seenOptionIds,
-				GetGoldenRerollOverride(goldenReroll), rerollOrdinal),
+				GetGoldenRerollOverride(goldenReroll),
+				rerollOrdinal);
+		return await CreateRuneSelectionScreenAsync(
+			options,
+			monsterHexRelic,
+			rerollFunc,
 			enemyHexOptions,
 			modifier.PlayerRuneRerollLimit,
 			goldenRerollSession: goldenReroll,
+			cancellationToken: cancellationToken,
 			selfPickPool: BuildSelfPickPool(modifier, player, options));
-		RelicModel? selectedRelic = (await screen.RelicsSelected()).FirstOrDefault();
-		return new RuneSelectionResult(selectedRelic, HextechWeightedRuneOptions.Copy(screen.CurrentRelics), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes);
 	}
 
 	private static async Task<RuneSelectionResult> SelectRuneMultiplayer(
@@ -61,32 +115,18 @@ internal static partial class HextechRuneSelectionCoordinator
 		cancellationToken.ThrowIfCancellationRequested();
 		if (selection.IsLocal)
 		{
-			MarkRelicsSeen(selection.Options);
-			modifier.RecordSeenPlayerRunes(selection.Player, selection.Options);
-			HashSet<ModelId> seenOptionIds = CreateSeenOptionIds(selection.Options, modifier.GetSeenPlayerRuneIds(selection.Player));
-			HextechGoldenRerollSession goldenReroll = CreateGoldenRerollSession(
+			// 初始候选在 pending 阶段已由各端按同一种子记为已见;这里只累积本次展示过的完整候选,确认后统一提交。
+			HashSet<ModelId> offeredOptionIds = CreateSeenOptionIds(selection.Options);
+			HextechRuneSelectionScreen screen = await CreateLocalRuneSelectionScreenAsync(
 				modifier,
 				selection.Player,
 				actIndex,
 				choiceOrdinal,
-				selection.Options);
-			HextechRuneSelectionScreen screen = await CreateRuneSelectionScreenAsync(
 				selection.Options,
 				monsterHexRelic,
-				(relics, slotIndex, rerollOrdinal) => RerollSingleOptionAndTrackMultiplayer(
-					modifier,
-					selection.Player,
-					relics,
-					slotIndex,
-					actIndex,
-					rerollOrdinal,
-					seenOptionIds,
-					GetGoldenRerollOverride(goldenReroll)),
 				enemyHexOptions,
-				modifier.PlayerRuneRerollLimit,
-				goldenRerollSession: goldenReroll,
-				cancellationToken: cancellationToken,
-				selfPickPool: BuildSelfPickPool(modifier, selection.Player, selection.Options));
+				offeredOptionIds,
+				cancellationToken);
 			screenCreated?.Invoke(screen);
 			RelicModel? selectedRelic;
 			try
@@ -100,16 +140,15 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			catch (OperationCanceledException)
 			{
-				if (IsMultiplayerConnected())
+				if (HextechPlayerContextHelper.IsMultiplayerConnected())
 				{
 					uint canceledChoiceId = SyncLocalHextechChoice(
 						synchronizer,
 						selection.Player,
 						selection.ChoiceId,
-						CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, selectedRelic: null),
+						CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, offeredOptionIds, selectedRelic: null),
 						context);
-					modifier.RecordSeenPlayerRunes(selection.Player, screen.CurrentRelics);
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice sync canceled: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={canceledChoiceId}");
+					HextechLog.Info("Mayhem", $"RuneChoice sync canceled: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={canceledChoiceId}");
 				}
 
 				throw;
@@ -119,26 +158,24 @@ internal static partial class HextechRuneSelectionCoordinator
 				synchronizer,
 				selection.Player,
 				selection.ChoiceId,
-				CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, selectedRelic),
+				CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, offeredOptionIds, selectedRelic),
 				context);
-			// 存档里的"已见"参与双端比对：联机各端对每名玩家只记初始候选（各端同种子生成）与同步来的最终候选，
-			// 重随中途刷出又被换掉的只在本机界面记为已见（见 RerollSingleOptionAndTrackMultiplayer），这里与
-			// 远端 ResolveRemoteRuneChoice 的记法对齐。
-			modifier.RecordSeenPlayerRunes(selection.Player, screen.CurrentRelics);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice sync local: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={sentChoiceId}");
+			HextechLog.Info("Mayhem", $"RuneChoice sync local: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={sentChoiceId}");
 			_ = RequireCompletedSelection(
 				selectedRelic,
 				$"local {context} player={selection.Player.NetId} choiceId={sentChoiceId}");
+			// 存档里的"已见"参与双端比对:本机与远端 ResolveRemoteRuneChoice 都在确认后按同步的完整候选历史写入。
+			CommitSeenRuneSelection(modifier, selection.Player, offeredOptionIds, screen.CurrentRelics);
 
 			if (afterLocalSelection != null)
 			{
 				await afterLocalSelection(screen).WaitAsync(cancellationToken);
 			}
 
-			return new RuneSelectionResult(selectedRelic, HextechWeightedRuneOptions.Copy(screen.CurrentRelics), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes, screen);
+			return new RuneSelectionResult(selectedRelic, HextechWeightedRuneOptions.Copy(screen.CurrentRelics), screen.RerollHistory.Count, screen.CurrentMonsterHexes);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={selection.ChoiceId}");
+		HextechLog.Info("Mayhem", $"RuneChoice wait remote: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={selection.ChoiceId}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId)? received = await TryWaitForRemoteHextechChoice(
 			synchronizer,
 			(RunState)selection.Player.RunState,
@@ -156,13 +193,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = received.Value;
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={receivedChoiceId}");
+		HextechLog.Info("Mayhem", $"RuneChoice remote received: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={receivedChoiceId}");
 		return ResolveRemoteRuneChoice(modifier, selection.Player, actIndex, choiceOrdinal, remoteChoice);
 	}
 
 	private static bool ShouldKeepWaitingForRemoteRuneChoice(RunState runState)
 	{
-		return IsCurrentRun(runState) && IsMultiplayerConnected();
+		return IsCurrentRun(runState) && HextechPlayerContextHelper.IsMultiplayerConnected();
 	}
 
 	private static async Task<HextechRuneSelectionScreen> CreateRuneSelectionScreenAsync(
@@ -210,7 +247,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			screen = await CreateRuneSelectionScreenAsync(
 				[],
 				null,
-				titleOverride: new LocString("relic_collection", "HEXTECH_NO_RUNE_OPTIONS_TITLE").GetRawText(),
+				titleOverride: new LocString(HextechRuneLabels.LocTable, "HEXTECH_NO_RUNE_OPTIONS_TITLE").GetRawText(),
 				cancellationToken: cancellationToken,
 				continueOnly: true);
 			// 联机批次被取消(断线、换局)时不能一直等玩家点继续。
@@ -232,7 +269,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	/// <summary>
 	/// 玩家海克斯重随次数为无限时,选择界面改为自选:列出本次候选稀有度的全部合法海克斯。
 	/// 合法池与重随同一套规则(配置启用、版本可用、本幕允许、角色可用、已拥有与互斥排除),不排除"已见",不消耗随机数。
-	/// 只在本机构造给界面用;远端只收到最终候选与选中序号,按 ID 还原,不需要这份池。
+	/// 只在本机构造给界面用;远端只收到最终候选、本次展示历史与选中序号,按 ID 还原,不需要这份池。
 	/// </summary>
 	private static IReadOnlyList<RelicModel>? BuildSelfPickPool(HextechMayhemModifier modifier, Player player, IReadOnlyList<RelicModel> options)
 	{
@@ -252,16 +289,30 @@ internal static partial class HextechRuneSelectionCoordinator
 		catch (Exception ex)
 		{
 			// 构造失败就退回普通的三选一界面,不阻断本幕选择。
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex.GetType().Name}: {ex.Message}");
 			return null;
 		}
 	}
 
-	private static PlayerChoiceResult CreateRuneChoiceResult(int actIndex, int choiceOrdinal, HextechRuneSelectionScreen screen, RelicModel? selectedRelic)
+	private static PlayerChoiceResult CreateRuneChoiceResult(int actIndex, int choiceOrdinal, HextechRuneSelectionScreen screen, IEnumerable<ModelId> offeredOptionIds, RelicModel? selectedRelic)
 	{
 		int selectedIndex = IndexOfRelicInstance(screen.CurrentRelics, selectedRelic);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] CreateRuneChoiceResult: act={actIndex} ordinal={choiceOrdinal} selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
-		return HextechChoiceCodec.CreateRuneSelection(actIndex, choiceOrdinal, selectedIndex, screen.RerollHistory, screen.CurrentRelics);
+		HextechLog.Info("Mayhem", $"CreateRuneChoiceResult: act={actIndex} ordinal={choiceOrdinal} selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
+		return HextechChoiceCodec.CreateRuneSelection(actIndex, choiceOrdinal, selectedIndex, screen.RerollHistory, screen.CurrentRelics, offeredOptionIds);
+	}
+
+	/// <summary>
+	/// 联机确认后把本次展示过的完整候选(含被重随替换的)与最终候选写入存档的已见记录。
+	/// 自选模式的最终单候选也计入;本次历史与重随排除集合独立,排除池耗尽时的清空不会抹掉历史。
+	/// </summary>
+	private static void CommitSeenRuneSelection(
+		HextechMayhemModifier modifier,
+		Player player,
+		IEnumerable<ModelId> offeredOptionIds,
+		IReadOnlyList<RelicModel> finalOptions)
+	{
+		IEnumerable<ModelId> ids = offeredOptionIds.Concat(finalOptions.Select(static relic => relic.CanonicalId()));
+		modifier.RecordSeenPlayerRunes(player, ids.Distinct().Select(static id => ModelDb.GetById<RelicModel>(id)));
 	}
 
 	private static RuneSelectionResult ResolveRemoteRuneChoice(
@@ -271,7 +322,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		int choiceOrdinal,
 		PlayerChoiceResult remoteChoice)
 	{
-		if (!HextechChoiceCodec.TryDecodeRuneSelection(remoteChoice, actIndex, choiceOrdinal, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> syncedOptionIds))
+		if (!HextechChoiceCodec.TryDecodeRuneSelection(remoteChoice, actIndex, choiceOrdinal, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> syncedOptionIds, out List<ModelId> offeredOptionIds))
 		{
 			string message =
 				$"Malformed rune selection payload: act={actIndex} ordinal={choiceOrdinal} " +
@@ -287,6 +338,22 @@ internal static partial class HextechRuneSelectionCoordinator
 			throw CreateProtocolFailure($"rune-choice act={actIndex} ordinal={choiceOrdinal}", message);
 		}
 
+		if (!AreRegisteredPlayerRuneIds(syncedOptionIds))
+		{
+			string message =
+				$"Rune selection payload contains non-hextech rune options: act={actIndex} ordinal={choiceOrdinal} " +
+				$"player={player.NetId} ids={string.Join(",", syncedOptionIds.Select(static id => id.ToString()))}";
+			throw CreateProtocolFailure($"rune-choice act={actIndex} ordinal={choiceOrdinal}", message);
+		}
+
+		if (!AreRegisteredPlayerRuneIds(offeredOptionIds))
+		{
+			string message =
+				$"Rune selection payload contains non-hextech seen history: act={actIndex} ordinal={choiceOrdinal} " +
+				$"player={player.NetId} ids={string.Join(",", offeredOptionIds.Select(static id => id.ToString()))}";
+			throw CreateProtocolFailure($"rune-choice act={actIndex} ordinal={choiceOrdinal}", message);
+		}
+
 		if (!TryCreateSyncedRuneOptions(player, syncedOptionIds, actIndex, choiceOrdinal, out List<RelicModel> syncedOptions))
 		{
 			string message =
@@ -296,9 +363,14 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		if (!HextechGeneratedRuneDataCodec.Restore(remoteChoice, syncedOptions))
+		{
 			throw CreateProtocolFailure("generated rune data", "Invalid or missing generated rune recipe.");
+		}
+
 		if (!HextechRuneWeightCodec.TryRestore(remoteChoice, syncedOptions, out syncedOptions))
+		{
 			throw CreateProtocolFailure("character rune weight", "Rune selection omitted a valid final character weight.");
+		}
 
 		if (selectedIndex < -1 || selectedIndex >= syncedOptions.Count)
 		{
@@ -309,12 +381,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		MarkRelicsSeen(syncedOptions);
-		modifier.RecordSeenPlayerRunes(player, syncedOptions);
 		RelicModel syncedSelectedRelic = RequireCompletedSelection(
 			selectedIndex >= 0 ? syncedOptions[selectedIndex] : null,
 			$"remote rune-choice act={actIndex} ordinal={choiceOrdinal} player={player.NetId}");
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)} syncedOptions={string.Join(",", syncedOptions.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
-		return new RuneSelectionResult(syncedSelectedRelic, syncedOptions, rerollHistory.Count, null);
+		CommitSeenRuneSelection(modifier, player, offeredOptionIds, syncedOptions);
+		HextechLog.Info("Mayhem", $"ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)} syncedOptions={string.Join(",", syncedOptions.Select(static o => o.CanonicalId().Entry))}");
+		return new RuneSelectionResult(syncedSelectedRelic, syncedOptions, rerollHistory.Count);
 	}
 
 	private static async Task<T> WaitForSelectionWithConcurrentFailure<T>(
@@ -355,6 +427,16 @@ internal static partial class HextechRuneSelectionCoordinator
 		await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
 	}
 
+	/// <summary>
+	/// 远端同步来的候选必须全部是已登记的海克斯玩家符文(内置或外部 API 登记):候选会原样发放给各端,
+	/// 畸形或恶意载荷不能借此让各端发放任意原版遗物。稀有度不做一致性校验——金色重掷会把单个槽位升一档。
+	/// </summary>
+	internal static bool AreRegisteredPlayerRuneIds(IReadOnlyList<ModelId> optionIds)
+	{
+		return optionIds.Count > 0
+			&& optionIds.All(static id => HextechCatalog.TryGetPlayerRuneRarityById(id, out _));
+	}
+
 	private static bool TryCreateSyncedRuneOptions(
 		Player player,
 		IReadOnlyList<ModelId> optionIds,
@@ -375,7 +457,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: failed to load synced option model: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} ids={string.Join(",", optionIds)} error={ex}");
+			HextechLog.Error("Mayhem", $"ResolveRemoteRuneChoice: failed to load synced option model: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} ids={string.Join(",", optionIds)} error={ex}");
 			options.Clear();
 			return false;
 		}

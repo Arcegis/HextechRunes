@@ -2,15 +2,17 @@ using HextechRunes;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunesSponsorPack;
 
 // 战斗胜利后为随机牌添加合法附魔。合法性由 CanEnchant 判断，多重附魔的规则交由相应模组处理。
 public sealed class EnchantmentMasterRune : HextechRelicBase
 {
+	internal const string LogTag = "EnchantmentMaster";
+
 	private static readonly HashSet<Type> GoldEnchantmentForgeTypes =
 	[
 		typeof(GlamForge),
@@ -88,21 +90,22 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
+		RunState runState = (RunState)Owner.RunState;
 		string netId = Owner.NetId.ToString();
-		int cardIndex = SponsorStableRandom.Roll(Owner, candidates.Count, "enchantment-master", netId, "card");
+		int cardIndex = HextechRunesApi.StableIndex(runState, candidates.Count, "enchantment-master", netId, "card");
 		CardModel target = candidates[cardIndex];
 		IReadOnlyList<EnchantmentModel> options = candidateOptions[cardIndex];
-		EnchantmentModel canonical = options[SponsorStableRandom.Roll(Owner, options.Count, "enchantment-master", netId, "enchant")];
+		EnchantmentModel canonical = options[HextechRunesApi.StableIndex(runState, options.Count, "enchantment-master", netId, "enchant")];
 
 		// 选完再核一次:CardCmd.Enchant 对不合法的组合会抛,这里宁可放弃本次触发也不打断战斗结算。
 		if (!canonical.CanEnchant(target))
 		{
-			Log.Warn($"[{ModInfo.Id}] EnchantmentMaster: {canonical.Id.Entry} is no longer legal for {target.Id.Entry}; skipping this combat.", 2);
+			SponsorLog.Warn(LogTag, $"{canonical.Id.Entry} is no longer legal for {target.Id.Entry}; skipping this combat.");
 			return Task.CompletedTask;
 		}
 
 		CardCmd.Enchant(canonical.ToMutable(), target, 1m);
-		Log.Info($"[{ModInfo.Id}] EnchantmentMaster enchanted {target.Id.Entry} with {canonical.Id.Entry}");
+		SponsorLog.Info(LogTag, $"Enchanted {target.Id.Entry} with {canonical.Id.Entry}");
 		Flash();
 		CardCmd.Preview(target);
 		return Task.CompletedTask;

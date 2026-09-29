@@ -6,7 +6,8 @@ namespace HextechRunes;
 // 会让整个选择界面或配置菜单构建失败，所以这里先查键，缺失时退回显示键名本身。
 internal static class HextechRuneLabels
 {
-	private const string Table = "relic_collection";
+	/// <summary>本模组 UI 文案所在的原版 loc 表(模组的 relic_collection.json 合并进去)。</summary>
+	internal const string LocTable = "relic_collection";
 
 	internal static string GetPoolText(string poolKey)
 	{
@@ -20,7 +21,7 @@ internal static class HextechRuneLabels
 
 	internal static string? TryGetText(string key)
 	{
-		return LocString.Exists(Table, key) ? new LocString(Table, key).GetRawText() : null;
+		return LocString.Exists(LocTable, key) ? new LocString(LocTable, key).GetRawText() : null;
 	}
 
 	private static string GetRawTextOrFallback(string key, string fallback)

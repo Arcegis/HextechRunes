@@ -1,7 +1,10 @@
 namespace HextechRunes;
 
-public sealed class SpeedDemonRune : HextechRelicBase
+public sealed class SpeedDemonRune : TurnScopedRelicBase
 {
+	// 文案写的是字面值，改数值要同步九语言。
+	private const decimal CardsToDraw = 2m;
+
 	private bool _triggeredThisTurn;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -16,57 +19,24 @@ public sealed class SpeedDemonRune : HextechRelicBase
 		}
 	}
 
-	public override Task BeforeCombatStart()
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTurnState(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
-
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (HasTurnProcTriggered(nameof(SpeedDemonRune), _triggeredThisTurn)
-			|| Owner == null
+		EnsureTurnScopedStateCurrent();
+		if (Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0
-			|| (!IsOwnerOrPet(dealer) && cardSource?.Owner != Owner))
-		{
-			return;
-		}
-
-		if (!TryConsumeTurnProc(nameof(SpeedDemonRune), ref _triggeredThisTurn))
+			|| (!IsOwnerOrPet(dealer) && cardSource?.Owner != Owner)
+			|| !TryConsumeTurnProc(nameof(SpeedDemonRune), ref _triggeredThisTurn))
 		{
 			return;
 		}
 
 		Flash([target]);
-		await CardPileCmd.Draw(choiceContext, 2m, Owner);
+		await CardPileCmd.Draw(choiceContext, CardsToDraw, Owner);
 	}
 
-	private void ResetTurnState()
-	{
-		ResetTurnState(null);
-	}
-
-	private void ResetTurnState(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_triggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

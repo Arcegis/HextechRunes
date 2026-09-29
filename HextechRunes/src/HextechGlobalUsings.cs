@@ -14,3 +14,6 @@ global using MegaCrit.Sts2.Core.Saves.Runs;
 // 差异 API(NetIdBitSize→PropertyIdBitSize、InjectTypeIntoCache 移除)在各消费点逐一 #if。
 global using SavedPropertiesTypeCache = MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache;
 #endif
+// 锻造稀有度权重与海克斯稀有度权重结构相同(银/金/棱彩三个 int),合并为同一类型;
+// 保留旧名作别名,锻造侧代码与存档 JSON 形状(Silver/Gold/Prismatic)都不变。
+global using HextechForgeRarityWeights = HextechRunes.HextechRarityWeights;

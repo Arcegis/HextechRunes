@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-using MegaCrit.Sts2.Core.Nodes.Combat;
-
 namespace HextechRunes;
 
 public sealed class BigKnifeRune : HextechRelicBase
@@ -175,7 +172,7 @@ public sealed class BigKnifeRune : HextechRelicBase
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] AddGeneratedCardsToCombat prefix failed; passing cards through unmodified: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"AddGeneratedCardsToCombat prefix failed; passing cards through unmodified: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 	}

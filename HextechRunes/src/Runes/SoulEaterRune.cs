@@ -5,14 +5,13 @@ public sealed class SoulEaterRune : HextechRelicBase
 	private const decimal MaxHpGainPercentValue = 0.05m;
 	private const decimal MaxHpGainDisplayPercentValue = MaxHpGainPercentValue * 100m;
 
-	private const int CreatureStatHardCap = 999999999;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("MaxHpGainPercent", MaxHpGainPercentValue),
 		new DynamicVar("MaxHpGainDisplayPercent", MaxHpGainDisplayPercentValue)
 	];
 
+	// 旧版本存档兼容占位：原为本场已获得生命与本场上限记账，已不再使用；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedHpGainedThisCombat
 	{
@@ -20,6 +19,7 @@ public sealed class SoulEaterRune : HextechRelicBase
 		set { }
 	}
 
+	// 旧版本存档兼容占位，同上。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedMaxHpGainCapThisCombat
 	{
@@ -40,11 +40,6 @@ public sealed class SoulEaterRune : HextechRelicBase
 
 		int rewardMaxHp = GetRewardMaxHpForDeath(target);
 		int hpGain = Math.Max(1, FloorToInt(rewardMaxHp * DynamicVars["MaxHpGainPercent"].BaseValue));
-		if (hpGain <= 0)
-		{
-			return;
-		}
-
 		// 吸魂特效不在这里派发:Hook.AfterDeath 链条会被前面的监听器拖住(非最后一只怪时魂"卡一下"
 		// 才飞出),已移到 NCreature.StartDeathAnim 的 postfix(死亡动画开始瞬间,见 HextechCombatVfxHooks)。
 		Flash();
@@ -67,7 +62,7 @@ public sealed class SoulEaterRune : HextechRelicBase
 	private static bool IsTransientInfiniteHpState(Creature target)
 	{
 		return target.HpDisplay is HpDisplay.InfiniteWithNumbers or HpDisplay.InfiniteWithoutNumbers
-			|| target.MaxHp >= CreatureStatHardCap;
+			|| target.MaxHp >= HextechCreatureStatLimits.StatHardCap;
 	}
 
 	private static int GetScaledInitialMonsterMaxHp(Creature target)
@@ -88,6 +83,6 @@ public sealed class SoulEaterRune : HextechRelicBase
 			target.CombatState.Encounter,
 			target.CombatState.Players.Count,
 			target.CombatState.RunState.CurrentActIndex);
-		return Math.Clamp(FloorToInt(scaledMaxHp), 1, CreatureStatHardCap);
+		return Math.Clamp(FloorToInt(scaledMaxHp), 1, HextechCreatureStatLimits.StatHardCap);
 	}
 }

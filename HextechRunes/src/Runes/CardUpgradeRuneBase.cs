@@ -63,8 +63,10 @@ public abstract class CardUpgradeRuneBase<TCard> : HextechRelicBase, IHextechSel
 			footer.Add("CardName", ModelDb.Card<TCard>().Title);
 			return footer.GetFormattedText();
 		}
-		catch
+		catch (LocException ex)
 		{
+			// 只是选择界面的小字：缺文案(第三方语言包或目标牌标题缺失)时不显示，不打断界面。
+			HextechLog.Warn("CardUpgradeRune", $"Selection footer skipped for {GetType().Name}: {ex.Message}");
 			return null;
 		}
 	}

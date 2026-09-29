@@ -177,13 +177,9 @@ public sealed class GoldFocusForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead || !IsDefectOwner)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<FocusPower>(Owner.Creature, Stacked(DynamicVars["FocusPower"].BaseValue), Owner.Creature, null);
+		return IsDefectOwner
+			? ApplyStackedPowerAtCombatStart<FocusPower>(DynamicVars["FocusPower"].BaseValue)
+			: Task.CompletedTask;
 	}
 }
 
@@ -331,13 +327,7 @@ public sealed class FleshForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<SleightOfFleshPower>(Owner.Creature, Stacked(DynamicVars["SleightOfFleshPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<SleightOfFleshPower>(DynamicVars["SleightOfFleshPower"].BaseValue);
 	}
 }
 
@@ -403,13 +393,7 @@ public sealed class VenomForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<EnvenomPower>(Owner.Creature, Stacked(DynamicVars["EnvenomPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<EnvenomPower>(DynamicVars["EnvenomPower"].BaseValue);
 	}
 }
 
@@ -459,13 +443,7 @@ public sealed class PlatingForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<PlatingPower>(Owner.Creature, Stacked(DynamicVars["PlatingPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<PlatingPower>(DynamicVars["PlatingPower"].BaseValue);
 	}
 }
 
@@ -483,13 +461,7 @@ public sealed class ThornsForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<ThornsPower>(Owner.Creature, Stacked(DynamicVars["ThornsPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<ThornsPower>(DynamicVars["ThornsPower"].BaseValue);
 	}
 }
 
@@ -507,12 +479,6 @@ public sealed class ArtifactForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, Stacked(DynamicVars["ArtifactPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<ArtifactPower>(DynamicVars["ArtifactPower"].BaseValue);
 	}
 }

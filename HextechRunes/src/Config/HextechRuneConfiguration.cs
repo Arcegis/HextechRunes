@@ -3,8 +3,8 @@ namespace HextechRunes;
 internal static partial class HextechRuneConfiguration
 {
 	private const string ConfigFileName = "rune_config.json";
-	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
 	private const int CurrentConfigVersion = 39;
+	// v15(0.8.4):一次性强制重置——旧版本配置载入时整体丢弃回默认(含禁用池/数量/权重/重随/价格/总开关)。
 	private const int ForceResetBelowConfigVersion = 15;
 	private const int HexActCount = 3;
 	private const int MinActHexCount = 0;
@@ -22,6 +22,10 @@ internal static partial class HextechRuneConfiguration
 	private const int DefaultGoldenRerollChancePercent = 5;
 	private const int MinGoldenRerollChancePercent = 0;
 	private const int MaxGoldenRerollChancePercent = 100;
+	// 混沌海克斯概率:record 默认参数与联机/分享码的缺省值都引用它,因此是 const 且 internal。
+	internal const int DefaultChaosRuneChancePercent = 33;
+	private const int MinChaosRuneChancePercent = 0;
+	private const int MaxChaosRuneChancePercent = 100;
 	// 模组总开关默认开启:关闭后本局表现得与原版一致(开局时快照,联机按房主)。
 	private const bool DefaultModEnabled = true;
 	private const int DefaultPlayerRuneRerollLimit = 1;
@@ -38,7 +42,7 @@ internal static partial class HextechRuneConfiguration
 
 	public static bool IsPlayerRuneEnabled(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return IsPlayerRuneEnabled(id.Entry);
 	}
 
@@ -94,7 +98,7 @@ internal static partial class HextechRuneConfiguration
 				ToRarityWeightsByAct(_config.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
 				_config.PreventConsecutiveSilverRunes,
 				_config.GoldenRerollChancePercent,
-				ToForgeRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
+				ToRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
 				_config.RandomForgeShopPrice,
 				_config.RandomForgeDirectGrant,
 				_config.ModEnabled,
@@ -104,7 +108,7 @@ internal static partial class HextechRuneConfiguration
 
 	internal static HashSet<string> NormalizeDisabledPlayerRuneIds(IEnumerable<string>? ids)
 	{
-		return NormalizeConfigDisabledIds(ids);
+		return HextechPlayerRuneConfigIds.Normalize(ids);
 	}
 
 	internal static HashSet<string> NormalizeDisabledMonsterHexIds(IEnumerable<string>? ids)
@@ -165,7 +169,7 @@ internal static partial class HextechRuneConfiguration
 			_config.FirstActRuneRarityWeights = null;
 			_config.NormalRuneRarityWeights = null;
 			_config.SecondActAfterSilverRuneRarityWeights = null;
-			_config.ForgeRarityWeights = FromForgeRarityWeights(normalized.ForgeRarityWeights);
+			_config.ForgeRarityWeights = FromRarityWeights(normalized.ForgeRarityWeights);
 			_config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
 			_config.RandomForgeDirectGrant = normalized.RandomForgeDirectGrant;
 			_config.ModEnabled = normalized.ModEnabled;
@@ -183,28 +187,18 @@ internal static partial class HextechRuneConfiguration
 		}
 	}
 
-	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)
-	{
-		return HextechPlayerRuneConfigIds.Normalize(ids);
-	}
-
 	private static HashSet<string> NormalizeStringIds(IEnumerable<string>? ids, IReadOnlySet<string> validIds)
 	{
-		return (ids ?? [])
-			.Where(static id => !string.IsNullOrWhiteSpace(id))
-			.Select(static id => id.Trim())
-			.Distinct(StringComparer.Ordinal)
-			.Where(validIds.Contains)
-			.OrderBy(static id => id, StringComparer.Ordinal)
-			.ToHashSet(StringComparer.Ordinal);
+		return NormalizeConfigStringIds(ids).Where(validIds.Contains).ToHashSet(StringComparer.Ordinal);
 	}
 
+	// ToHashSet 自己去重;排序不是多余的:只插入不删除的 HashSet 按插入顺序枚举,
+	// 排好序才能让 rune_config.json 的数组顺序与日志输出稳定。
 	private static HashSet<string> NormalizeConfigStringIds(IEnumerable<string>? ids)
 	{
 		return (ids ?? [])
 			.Where(static id => !string.IsNullOrWhiteSpace(id))
 			.Select(static id => id.Trim())
-			.Distinct(StringComparer.Ordinal)
 			.OrderBy(static id => id, StringComparer.Ordinal)
 			.ToHashSet(StringComparer.Ordinal);
 	}

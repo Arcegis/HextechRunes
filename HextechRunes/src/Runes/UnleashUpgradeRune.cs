@@ -6,7 +6,7 @@ public sealed class UnleashUpgradeRune : CardUpgradeRuneBase<Unleash>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Unleash>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<Protector>()
 	];
 

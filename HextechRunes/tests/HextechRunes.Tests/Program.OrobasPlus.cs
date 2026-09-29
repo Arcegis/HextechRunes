@@ -13,6 +13,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void OrobasSecondUpgradePreservesNativeAndForeignMappings()
 	{
 		WithOrobasModels(() =>
@@ -26,7 +27,7 @@ internal static partial class Program
 				(typeof(CrackedCore), typeof(InfusedCore), typeof(HextechInfusedCorePlus))
 			];
 			TouchOfOrobas touch = new();
-			foreach (var row in upgrades)
+			foreach ((Type Starter, Type Ancient, Type Plus) row in upgrades)
 			{
 				RelicModel starter = ModelDb.GetById<RelicModel>(ModelDb.GetId(row.Starter));
 				RelicModel ancient = touch.GetUpgradedStarterRelic(starter);
@@ -86,6 +87,7 @@ internal static partial class Program
 		});
 	}
 
+	[HextechTest]
 	private static void OrobasPlusDrawAndLightningStayOwnerScoped()
 	{
 		Player owner = CreateOrdinalTestPlayer(1);
@@ -114,6 +116,7 @@ internal static partial class Program
 		Equal(2m, core.ModifyOrbValue(frost, 2m), "other orb types are unchanged");
 	}
 
+	[HextechTest]
 	private static void OrobasPlusUsesNativeAssetsAndVersionedValues()
 	{
 		WithOrobasModels(() =>

@@ -1,4 +1,3 @@
-using HarmonyLib;
 namespace HextechRunes;
 
 public sealed class DrawYourSwordRune : AttributeConversionRelicBase
@@ -41,25 +40,20 @@ public sealed class DrawYourSwordRune : AttributeConversionRelicBase
 		return Array.Empty<Creature>();
 	}
 
-	protected override bool ShouldConvert(PowerModel canonicalPower)
-	{
-		return IsDefectOwner && !HasConflictingFocusConverter && canonicalPower is FocusPower;
-	}
-
-	protected override bool ShouldConvertAppliedPower(PowerModel power)
+	protected override bool ShouldConvert(PowerModel power)
 	{
 		return IsDefectOwner && !HasConflictingFocusConverter && power is FocusPower;
 	}
 
-	protected override async Task ApplyConvertedPower(decimal amount, Creature? applier, CardModel? cardSource)
+	protected override async Task ApplyConvertedPower(Creature owner, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		await PowerCmd.Apply<StrengthPower>(Owner!.Creature, amount, applier, cardSource);
-		await PowerCmd.Apply<DexterityPower>(Owner.Creature, amount, applier, cardSource);
+		await PowerCmd.Apply<StrengthPower>(owner, amount, applier, cardSource);
+		await PowerCmd.Apply<DexterityPower>(owner, amount, applier, cardSource);
 	}
 
-	protected override Task RevertOriginalPower(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
+	protected override Task RevertOriginalPower(Creature owner, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		return PowerCmd.Apply<FocusPower>(Owner!.Creature, -amount, applier, cardSource);
+		return PowerCmd.Apply<FocusPower>(owner, -amount, applier, cardSource);
 	}
 
 	private bool HasConflictingFocusConverter => Owner?.GetRelic<DexterityStrengthToFocusRune>() != null;
@@ -67,24 +61,19 @@ public sealed class DrawYourSwordRune : AttributeConversionRelicBase
 	[HextechPatch("rune.draw-your-sword.evoke", "亮出你的剑", Rune = typeof(DrawYourSwordRune))]
 	private static class DrawYourSwordEvokePatch
 	{
+		// 跳过型前缀按设计哲学用 Priority.Low：别的模组的前缀先跑；若它们已跳过原方法，本前缀（返回 bool、
+		// 不读 __runOriginal）会被 Harmony 一并跳过，把替换让给对方。本模组没有别的 Evoke 前缀，Low 不会让亮剑自己失效。
+		// FindLoadedOrbEvokeMethods 只返回原版程序集里的 Evoke，安装失败由 HextechPatcher 按补丁归因报告。
 		private static void Apply(Harmony harmony)
 		{
-			Assembly coreAssembly = typeof(OrbModel).Assembly;
 			HarmonyMethod prefix = new(typeof(HextechPlayerRuneHooks), nameof(HextechPlayerRuneHooks.OrbEvokePrefix))
 			{
-				priority = Priority.First
+				priority = Priority.Low
 			};
 
-			foreach (MethodInfo method in HextechPlayerRuneHooks.FindLoadedOrbEvokeMethods())
+			foreach (MethodInfo method in HextechPlayerRuneHooks.FindOrbEvokeMethods())
 			{
-				try
-				{
-					harmony.Patch(method, prefix: prefix);
-				}
-				catch (Exception ex) when (method.DeclaringType?.Assembly != coreAssembly)
-				{
-					Log.Warn($"[{ModInfo.Id}][Compat] Could not replace evoke for external Orb {method.DeclaringType?.FullName}: {ex.Message}");
-				}
+				harmony.Patch(method, prefix: prefix);
 			}
 		}
 	}

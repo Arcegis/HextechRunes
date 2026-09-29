@@ -10,6 +10,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void StormReplacementRequiresMayhemAndUpgradeRune()
 	{
 		Expect(
@@ -26,16 +27,16 @@ internal static partial class Program
 			"Storm replacement should run only for the upgraded Mayhem path");
 	}
 
+	[HextechTest]
 	private static void EntomancerFallbackIsVersionScopedAndMissingHiveOnly()
 	{
-		MethodInfo? prefix = HextechPatcher.FindPatchMethod(typeof(HextechEncounterCompatibilityHooks), "EntomancerSpitMovePatch", "Prefix");
-
 #if STS2_110_OR_NEWER
-		Expect(
-			HextechEncounterCompatibilityHooks.ShouldRunOriginalEntomancerSpitMove(hasPersonalHive: false),
-			"0.110 should always use its corrected official Entomancer move");
-		Equal<MethodInfo?>(null, prefix, "0.110 build should not contain the private SpitMove patch");
+		Equal<Type?>(
+			null,
+			typeof(ModEntry).Assembly.GetType("HextechRunes.HextechEncounterCompatibilityHooks"),
+			"0.110 build should not contain the Entomancer SpitMove compatibility patch");
 #else
+		MethodInfo? prefix = FindPatchMethod(typeof(HextechEncounterCompatibilityHooks), "EntomancerSpitMovePatch", "Prefix");
 		Expect(
 			!HextechEncounterCompatibilityHooks.ShouldRunOriginalEntomancerSpitMove(hasPersonalHive: false),
 			"0.107 missing-hive state should use the official 0.110 Strength fallback");
@@ -49,9 +50,10 @@ internal static partial class Program
 				typeof(CompatibilityEntomancerSignatureFixture),
 				warnIfMissing: false),
 			"0.107 missing private SpitMove target should disable only the compatibility patch");
-	#endif
+#endif
 	}
 
+	[HextechTest]
 	private static void EnemyPowerScalingDoesNotPatchOfficialModifierPipeline()
 	{
 		BindingFlags flags = BindingFlags.Static | BindingFlags.NonPublic;
@@ -83,6 +85,7 @@ internal static partial class Program
 			"retained enemy scaling targets must be limited to GetScaledAmountForMultiplayer");
 	}
 
+	[HextechTest]
 	private static void EndlessMonsterPowerNormalizationUsesCapturedBaseAmounts()
 	{
 		Equal(9, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(9m, 1m), "unscaled Exoskeleton base amount");
@@ -93,7 +96,7 @@ internal static partial class Program
 		Harmony harmony = new("Natsuki.HextechRunes.Tests.EndlessPowerOrder");
 		try
 		{
-			HextechPatcher.ApplyNested(harmony, typeof(HextechEndlessModeCompatibilityHooks));
+			ApplyNestedPatches(harmony, typeof(HextechEndlessModeCompatibilityHooks));
 			MethodInfo applyPower = typeof(MegaCrit.Sts2.Core.Commands.PowerCmd).GetMethod(
 				nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.Apply),
 				BindingFlags.Public | BindingFlags.Static,
@@ -132,6 +135,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void HealCompositionUsesActualHpDelta()
 	{
 		Equal(5m, HextechCombatHooks.CalculateActualHealAmount(20, 25), "uncapped actual heal delta");
@@ -140,6 +144,7 @@ internal static partial class Program
 		Equal(0m, HextechCombatHooks.CalculateActualHealAmount(20, 15), "concurrent HP loss must not become healing");
 	}
 
+	[HextechTest]
 	private static void GlassCannonHealCapRunsAfterHealingMultipliers()
 	{
 		decimal capBeforeMultiplier = HextechCombatHooks.ClampHealAmountToCap(
@@ -190,7 +195,7 @@ internal static partial class Program
 
 		try
 		{
-			HextechPatcher.ApplyNested(harmony, typeof(HextechCombatHooks), "HealPatch");
+			ApplyNestedPatches(harmony, typeof(HextechCombatHooks), "HealPatch");
 			IEnumerable<Patch> prefixes = Harmony.GetPatchInfo(heal)?.Prefixes.AsEnumerable()
 				?? Enumerable.Empty<Patch>();
 			Patch finalCap = prefixes

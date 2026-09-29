@@ -3,13 +3,17 @@ namespace HextechRunes;
 internal static class HextechMultiplayerScalingCompat
 {
 	private const string BetterMultiplayerScalingAssemblyName = "BetterMultiplayerScaling";
+
+	// 每只敌人进场都会问一次，按名缓存，不再每次扫全部程序集。
+	private static readonly HextechLoadedAssemblyLookup BetterMultiplayerScalingAssembly =
+		new(BetterMultiplayerScalingAssemblyName, StringComparison.OrdinalIgnoreCase);
+
 	private static bool _warnedClientExtraScaling;
 	private static bool _warnedHostOnlyScaling;
 
 	public static bool IsBetterMultiplayerScalingLoaded()
 	{
-		return AppDomain.CurrentDomain.GetAssemblies().Any(static assembly =>
-			string.Equals(assembly.GetName().Name, BetterMultiplayerScalingAssemblyName, StringComparison.OrdinalIgnoreCase));
+		return BetterMultiplayerScalingAssembly.Find() != null;
 	}
 
 	public static void RefreshHostScalingFlagForLocalHost(HextechMayhemModifier modifier)
@@ -36,7 +40,7 @@ internal static class HextechMultiplayerScalingCompat
 		}
 
 		NetGameType gameType = RunManager.Instance?.NetService?.Type ?? NetGameType.None;
-		if (gameType is not (NetGameType.Host or NetGameType.Client))
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 		{
 			return;
 		}
@@ -60,7 +64,7 @@ internal static class HextechMultiplayerScalingCompat
 			if (!_warnedHostOnlyScaling)
 			{
 				_warnedHostOnlyScaling = true;
-				Log.Warn($"[{ModInfo.Id}][Mayhem] BetterMultiplayerScaling is active on the host only; normalized local enemy HP to host scaling.");
+				HextechLog.Warn("Mayhem", $"BetterMultiplayerScaling is active on the host only; normalized local enemy HP to host scaling.");
 			}
 
 			return;
@@ -70,14 +74,14 @@ internal static class HextechMultiplayerScalingCompat
 		if (!_warnedClientExtraScaling)
 		{
 			_warnedClientExtraScaling = true;
-			Log.Warn($"[{ModInfo.Id}][Mayhem] BetterMultiplayerScaling is active locally but not on the host; normalized local enemy HP down to host scaling.");
+			HextechLog.Warn("Mayhem", $"BetterMultiplayerScaling is active locally but not on the host; normalized local enemy HP down to host scaling.");
 		}
 	}
 
 	private static async Task ScaleEnemyHpUpToHostExternalScaling(Creature creature, int playerCount)
 	{
 		int baseMaxHp = GetBaseMonsterMaxHp(creature, playerCount, currentlyScaled: false);
-		int expectedMaxHp = Math.Max(1, baseMaxHp * Math.Clamp(playerCount, 1, 16));
+		int expectedMaxHp = Math.Max(1, baseMaxHp * HextechEnemyHexContext.ClampScalingPlayerCount(playerCount));
 		int missingMaxHp = expectedMaxHp - creature.MaxHp;
 		if (missingMaxHp > 0)
 		{

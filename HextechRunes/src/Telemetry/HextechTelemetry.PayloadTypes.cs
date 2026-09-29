@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace HextechRunes;
 
 internal static partial class HextechTelemetry
@@ -17,7 +19,9 @@ internal static partial class HextechTelemetry
 		int SchemaVersion,
 		string ModId,
 		string ModVersion,
-		string GameVersion,
+		// 服务端契约字段名是 gameVersion,但填的是本变体编译目标版本(ModInfo.TargetGameVersion),
+		// 不是运行时读到的宿主游戏版本;代码内按真实含义命名,上报 JSON 键名保持不变。
+		[property: JsonPropertyName("gameVersion")] string TargetGameVersion,
 		string UploadedAtUtc,
 		RunTelemetry Run,
 		IReadOnlyList<PlayerTelemetry> Players,

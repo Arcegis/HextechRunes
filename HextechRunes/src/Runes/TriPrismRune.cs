@@ -1,34 +1,12 @@
 namespace HextechRunes;
 
-public sealed class TriPrismRune : HextechRelicBase
+public sealed class TriPrismRune : TurnScopedRelicBase
 {
 	private bool _triggeredThisTurn;
 
 	public override bool IsAvailableForPlayer(Player player)
 	{
 		return IsRegentPlayer(player);
-	}
-
-	public override Task BeforeCombatStart()
-	{
-		ResetTriggered(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTriggered(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTriggered(combatState);
-		}
-
-		return Task.CompletedTask;
 	}
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
@@ -62,12 +40,9 @@ public sealed class TriPrismRune : HextechRelicBase
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (ShouldTrigger(card))
+		if (ShouldTrigger(card) && TryConsumeTurnProc(nameof(TriPrismRune), ref _triggeredThisTurn))
 		{
-			if (TryConsumeTurnProc(nameof(TriPrismRune), ref _triggeredThisTurn))
-			{
-				Flash();
-			}
+			Flash();
 		}
 
 		return Task.CompletedTask;
@@ -75,20 +50,14 @@ public sealed class TriPrismRune : HextechRelicBase
 
 	private bool ShouldTrigger(CardModel card)
 	{
-		EnsureTurnScopedStateCurrent(ResetTriggered);
+		EnsureTurnScopedStateCurrent();
 		return !HasTurnProcTriggered(nameof(TriPrismRune), _triggeredThisTurn)
 			&& card.Owner == Owner
 			&& HextechColorlessCardHelper.IsColorlessCard(card);
 	}
 
-	private void ResetTriggered()
-	{
-		ResetTriggered(null);
-	}
-
-	private void ResetTriggered(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_triggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

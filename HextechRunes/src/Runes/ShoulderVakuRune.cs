@@ -53,17 +53,18 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		}
 
 		_lastHealRound = round;
-		int heal = Math.Max(1, FloorToInt(Owner!.Creature.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
+		// IsOddOwnerTurn 已确认 player 就是持有者。
+		int heal = Math.Max(1, FloorToInt(player.Creature.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
 		Flash();
-		await CreatureCmd.Heal(Owner.Creature, heal);
+		await CreatureCmd.Heal(player.Creature, heal);
 	}
 
 	public override Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		return ControlOddTurnWithVakuu(choiceContext, player);
+		return ControlOddTurnWithVakuu(player);
 	}
 
-	private async Task ControlOddTurnWithVakuu(PlayerChoiceContext choiceContext, Player player)
+	private async Task ControlOddTurnWithVakuu(Player player)
 	{
 		if (!IsOddOwnerTurn(player, out int round) || _lastControlledRound == round || _controllingTurn)
 		{
@@ -80,8 +81,8 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		try
 		{
 			Flash();
-			int cardsPlayed = await VakuuTurnController.AutoPlayPlayableHand(Owner!);
-			VakuuTurnController.PlayLineIfCardsPlayed(Owner!, cardsPlayed);
+			int cardsPlayed = await VakuuTurnController.AutoPlayPlayableHand(player);
+			VakuuTurnController.PlayLineIfCardsPlayed(player, cardsPlayed);
 		}
 		finally
 		{
@@ -104,6 +105,6 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	private bool OwnerHasWhisperingEarring()
 	{
 		return Owner?.Relics.Any(static relic =>
-			(relic.CanonicalInstance?.Id ?? relic.Id) == WhisperingEarringId) == true;
+			relic.CanonicalId() == WhisperingEarringId) == true;
 	}
 }

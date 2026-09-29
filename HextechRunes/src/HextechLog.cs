@@ -1,39 +1,44 @@
 namespace HextechRunes;
 
 /// <summary>
-/// 可由 <c>HEXTECH_VERBOSE_LOG=1</c> 或 <c>true</c> 开启的诊断 Info 日志，默认关闭。
-/// Warn/Error 与加载确认仍直接输出。此包装接收已构造的字符串；需要避免格式化开销时，
-/// 调用方应先检查 <see cref="Verbose"/>。
+/// 统一带 <c>[HextechRunes][Tag]</c> 前缀的日志入口。Info 为诊断日志，默认关闭，可由
+/// <c>HEXTECH_VERBOSE_LOG=1</c> 或 <c>true</c> 开启；Warn/Error 始终输出。消息由调用方构造好传入；
+/// 需要避免 Info 的格式化开销时，调用方应先检查 <see cref="Verbose"/>。
 /// </summary>
 internal static class HextechLog
 {
-	private static bool _verbose = ReadVerboseFlagFromEnvironment();
+	// 原版 Log.* 的默认 skipFrames=2 指向直接调用方；经本包装多一层，所以传 3，
+	// 让 Error 的堆栈从真正的调用点开始。
+	private const int CallerSkipFrames = 3;
 
-	internal static bool Verbose
+	internal static bool Verbose { get; } = ReadVerboseFlagFromEnvironment();
+
+	internal static void Info(string tag, string message)
 	{
-		get => _verbose;
-		set => _verbose = value;
+		if (Verbose)
+		{
+			Log.Info(Format(tag, message), CallerSkipFrames);
+		}
 	}
 
-	internal static void Info(string text)
+	internal static void Warn(string tag, string message)
 	{
-		if (_verbose)
-		{
-			// skipFrames=2：跳过本包装方法，让日志归因到真正的调用点。
-			Log.Info(text, 2);
-		}
+		Log.Warn(Format(tag, message), CallerSkipFrames);
+	}
+
+	internal static void Error(string tag, string message)
+	{
+		Log.Error(Format(tag, message), CallerSkipFrames);
+	}
+
+	internal static string Format(string tag, string message)
+	{
+		return $"[{ModInfo.Id}][{tag}] {message}";
 	}
 
 	private static bool ReadVerboseFlagFromEnvironment()
 	{
-		try
-		{
-			string? value = Environment.GetEnvironmentVariable("HEXTECH_VERBOSE_LOG");
-			return value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
-		}
-		catch
-		{
-			return false;
-		}
+		string? value = Environment.GetEnvironmentVariable("HEXTECH_VERBOSE_LOG");
+		return value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
 	}
 }

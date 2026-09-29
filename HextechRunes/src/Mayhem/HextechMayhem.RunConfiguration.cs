@@ -39,7 +39,7 @@ internal sealed partial class HextechMayhemModifier
 		if (_runContext.ModActiveForRun == null)
 		{
 			_runContext.ModActiveForRun = ModEnabled;
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] Mod-active frozen for run: active={_runContext.ModActiveForRun}");
+			HextechLog.Info("Mayhem", $"Mod-active frozen for run: active={_runContext.ModActiveForRun}");
 		}
 
 		return _runContext.ModActiveForRun == false;
@@ -86,7 +86,7 @@ internal sealed partial class HextechMayhemModifier
 		_runContext.EnemyHexCounts.Set(normalized.EnemyHexCountsByAct);
 		_runContext.PlayerRuneConfig.Set(normalized.DisabledPlayerRuneIds);
 		string runeWeights = string.Join("/", normalized.RuneRarityWeightsByAct.Select(static weights => $"{weights.Silver},{weights.Gold},{weights.Prismatic}"));
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Run config snapshot set: reason={reason} playerCounts={string.Join(",", PlayerHexCountsByAct)} enemyCounts={string.Join(",", EnemyHexCountsByAct)} playerRerolls={normalized.PlayerRuneRerollLimit} monsterRerolls={normalized.MonsterHexRerollLimit} runeWeightsByAct={runeWeights} preventConsecutiveSilver={normalized.PreventConsecutiveSilverRunes} goldenRerollChance={normalized.GoldenRerollChancePercent}% playerDisabled={PlayerRuneConfigDisabledIds.Count} enemyDisabled={normalized.DisabledMonsterHexIds.Count} forgeDisabled={normalized.DisabledForgeIds.Count} forgePrice={normalized.RandomForgeShopPrice} forgeDirect={normalized.RandomForgeDirectGrant}");
+		HextechLog.Info("Mayhem", $"Run config snapshot set: reason={reason} playerCounts={string.Join(",", PlayerHexCountsByAct)} enemyCounts={string.Join(",", EnemyHexCountsByAct)} playerRerolls={normalized.PlayerRuneRerollLimit} monsterRerolls={normalized.MonsterHexRerollLimit} runeWeightsByAct={runeWeights} preventConsecutiveSilver={normalized.PreventConsecutiveSilverRunes} goldenRerollChance={normalized.GoldenRerollChancePercent}% playerDisabled={PlayerRuneConfigDisabledIds.Count} enemyDisabled={normalized.DisabledMonsterHexIds.Count} forgeDisabled={normalized.DisabledForgeIds.Count} forgePrice={normalized.RandomForgeShopPrice} forgeDirect={normalized.RandomForgeDirectGrant}");
 	}
 
 	private static HextechRunConfigurationSnapshot CreateNewRunConfigurationSnapshot()
@@ -268,7 +268,7 @@ internal sealed partial class HextechMayhemModifier
 		catch (Exception ex)
 		{
 			_runContext.RunConfigurationSnapshot = null;
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Run config snapshot restore failed; using runtime fallback: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Run config snapshot restore failed; using runtime fallback: {ex.Message}");
 		}
 	}
 }

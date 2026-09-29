@@ -3,7 +3,6 @@ using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 using MegaCrit.Sts2.addons.mega_text;
-using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
@@ -73,29 +72,13 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public IReadOnlyList<int> RerollHistory => _rerollHistory;
 
-	public MonsterHexKind? CurrentMonsterHex
-	{
-		get
-		{
-			IReadOnlyList<MonsterHexKind> currentMonsterHexes = CurrentMonsterHexes;
-			return currentMonsterHexes.Count > 0 ? currentMonsterHexes[0] : null;
-		}
-	}
-
 	public IReadOnlyList<MonsterHexKind> CurrentMonsterHexes => _monsterHexKinds
-		.Where(static hex => hex.HasValue)
-		.Select(static hex => hex!.Value)
+		.OfType<MonsterHexKind>()
 		.ToArray();
 
 	public IReadOnlyList<MonsterHexKind?> CurrentMonsterHexSlots => _monsterHexKinds.ToArray();
 
-	public bool EnemyHexRemoved => _monsterHexKinds.Count > 0 && _monsterHexKinds.All(static hex => !hex.HasValue);
-
 	public IReadOnlyList<int> EnemyHexRerollCounts => _enemyHexRerollCounts.ToArray();
-
-	public int EnemyHexRerollCount => _enemyHexRerollCounts.Sum();
-
-	internal int? PendingPlayerRuneSlot => _pendingPlayerRuneSlot;
 
 	private bool UsesPlayerRuneConfirmation => ShouldUsePlayerRuneConfirmation(
 		_metadataMode,
@@ -159,14 +142,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_titleOverride = titleOverride;
 		_metadataMode = metadataMode;
 		_goldenRerollSession = goldenRerollSession;
-		_confirmRuneSelectionPreference = HextechRelicVisibilityHooks.GetConfirmRuneSelection();
+		_confirmRuneSelectionPreference = HextechUiPreferences.ConfirmRuneSelection;
 		_enemyHexControlsEnabled = enemyHexOptions?.ControlsEnabled == true || enemyHexOptions?.RerollFunc != null;
 		_enemyOnly = relics.Count == 0 && (enemyHexOptions != null || _continueOnly);
 		List<MonsterHexKind> initialMonsterHexes = enemyHexOptions?.InitialHexes?.ToList() ?? [];
-		if (initialMonsterHexes.Count == 0 && enemyHexOptions?.InitialHex is { } initialHex)
-		{
-			initialMonsterHexes.Add(initialHex);
-		}
 		if (initialMonsterHexes.Count == 0 && monsterHexRelic != null && MonsterHexCatalog.TryGetMonsterHexKind(monsterHexRelic, out MonsterHexKind monsterHexKind))
 		{
 			initialMonsterHexes.Add(monsterHexKind);
@@ -203,7 +182,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		IReadOnlyList<RelicModel>? selfPickPool = null,
 		bool continueOnly = false)
 	{
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count} selfPickPool={selfPickPool?.Count ?? 0} continueOnly={continueOnly}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.Create: count={relics.Count} selfPickPool={selfPickPool?.Count ?? 0} continueOnly={continueOnly}");
 		return new HextechRuneSelectionScreen(
 			relics,
 			monsterHexRelic,

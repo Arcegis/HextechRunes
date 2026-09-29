@@ -1,16 +1,71 @@
-using System.Text;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static partial class HextechCombatVfx
 {
+	/// <summary>飞弹的一套配色：魔法飞弹是红黑、双生火焰是蓝黄；数值与拆分前逐项一致。</summary>
+	private sealed record MissilePalette(
+		string EffectName,
+		Color Shadow,
+		Color Core,
+		Color InnerCore,
+		float[] OuterTrailOffsets,
+		Color[] OuterTrailColors,
+		float[] InnerTrailOffsets,
+		Color[] InnerTrailColors,
+		Color ImpactFlash,
+		Color ImpactRing);
+
+	private static readonly MissilePalette MagicMissilePalette = new(
+		EffectName: "MagicMissile",
+		Shadow: new Color(0.015f, 0.005f, 0.01f, 0.95f),
+		Core: new Color(1f, 0.045f, 0.025f, 0.98f),
+		InnerCore: new Color(1f, 0.32f, 0.12f, 0.9f),
+		OuterTrailOffsets: [0f, 0.45f, 1f],
+		OuterTrailColors:
+		[
+			new Color(0.08f, 0.005f, 0.008f, 0.9f),
+			new Color(0.015f, 0.002f, 0.004f, 0.65f),
+			new Color(0f, 0f, 0f, 0f)
+		],
+		InnerTrailOffsets: [0f, 0.35f, 0.78f, 1f],
+		InnerTrailColors:
+		[
+			new Color(1f, 0.08f, 0.025f, 0.95f),
+			new Color(0.72f, 0.015f, 0.018f, 0.75f),
+			new Color(0.12f, 0.002f, 0.006f, 0.32f),
+			new Color(0f, 0f, 0f, 0f)
+		],
+		ImpactFlash: new Color(1f, 0.06f, 0.025f),
+		ImpactRing: new Color(0.16f, 0.002f, 0.008f));
+
+	private static readonly MissilePalette TwinFlamesPalette = new(
+		EffectName: "TwinFlamesMissile",
+		Shadow: new Color(0.015f, 0.055f, 0.13f, 0.92f),
+		Core: new Color(0.12f, 0.58f, 1f, 0.98f),
+		InnerCore: new Color(1f, 0.84f, 0.18f, 0.96f),
+		OuterTrailOffsets: [0f, 0.42f, 1f],
+		OuterTrailColors:
+		[
+			new Color(0.08f, 0.55f, 1f, 0.94f),
+			new Color(0.015f, 0.16f, 0.52f, 0.68f),
+			new Color(0f, 0.02f, 0.12f, 0f)
+		],
+		InnerTrailOffsets: [0f, 0.32f, 0.76f, 1f],
+		InnerTrailColors:
+		[
+			new Color(1f, 0.92f, 0.28f, 0.98f),
+			new Color(0.98f, 0.66f, 0.08f, 0.88f),
+			new Color(0.14f, 0.5f, 1f, 0.4f),
+			new Color(0f, 0.05f, 0.2f, 0f)
+		],
+		ImpactFlash: new Color(1f, 0.84f, 0.18f),
+		ImpactRing: new Color(0.06f, 0.42f, 1f));
+
 	private static Task<bool> SpawnMissile(
 		Node parent,
 		Vector2 from,
@@ -18,104 +73,29 @@ internal static partial class HextechCombatVfx
 		float creatureWidth,
 		int missileIndex,
 		float launchDelaySeconds,
-		MissileStyle style)
+		MissilePalette palette)
 	{
-		bool twinFlames = style == MissileStyle.TwinFlames;
-		string effectName = twinFlames ? "TwinFlamesMissile" : "MagicMissile";
 		TaskCompletionSource<bool> arrival = new();
-		Node2D head = new() { Name = $"HextechRunes_{effectName}" };
+		Node2D head = new() { Name = $"HextechRunes_{palette.EffectName}" };
 		parent.AddChildSafely(head);
 		PlaceAboveCreatures(parent, head);
 		head.GlobalPosition = from;
 		head.TreeExiting += () => arrival.TrySetResult(false);
 
 		float diameter = Mathf.Clamp(creatureWidth * 0.15f, 20f, 40f);
-		Sprite2D shadow = new()
-		{
-			Texture = GetGlowTexture(),
-			Centered = true,
-			Modulate = twinFlames
-				? new Color(0.015f, 0.055f, 0.13f, 0.92f)
-				: new Color(0.015f, 0.005f, 0.01f, 0.95f),
-			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Mix }
-		};
-		Sprite2D core = MakeSprite(
-			GetGlowTexture(),
-			twinFlames ? new Color(0.12f, 0.58f, 1f, 0.98f) : new Color(1f, 0.045f, 0.025f, 0.98f));
-		Sprite2D innerCore = MakeSprite(
-			GetGlowTexture(),
-			twinFlames ? new Color(1f, 0.84f, 0.18f, 0.96f) : new Color(1f, 0.32f, 0.12f, 0.9f));
-		head.AddChild(shadow);
-		head.AddChild(core);
-		head.AddChild(innerCore);
-		SetSpriteDiameter(shadow, diameter * 1.5f);
-		SetSpriteDiameter(core, diameter);
-		SetSpriteDiameter(innerCore, diameter * 0.38f);
-
-		Line2D outerTrail = new()
-		{
-			Name = $"HextechRunes_{effectName}OuterTrail",
-			Width = diameter * 0.72f,
-			BeginCapMode = Line2D.LineCapMode.Round,
-			EndCapMode = Line2D.LineCapMode.Round,
-			JointMode = Line2D.LineJointMode.Round,
-			WidthCurve = MakeTrailWidthCurve(),
-			Gradient = twinFlames
-				? new Gradient
-				{
-					Offsets = [0f, 0.42f, 1f],
-					Colors =
-					[
-						new Color(0.08f, 0.55f, 1f, 0.94f),
-						new Color(0.015f, 0.16f, 0.52f, 0.68f),
-						new Color(0f, 0.02f, 0.12f, 0f)
-					]
-				}
-				: new Gradient
-				{
-					Offsets = [0f, 0.45f, 1f],
-					Colors =
-					[
-						new Color(0.08f, 0.005f, 0.008f, 0.9f),
-						new Color(0.015f, 0.002f, 0.004f, 0.65f),
-						new Color(0f, 0f, 0f, 0f)
-					]
-				},
-			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Mix }
-		};
-		Line2D innerTrail = new()
-		{
-			Name = $"HextechRunes_{effectName}InnerTrail",
-			Width = diameter * 0.34f,
-			BeginCapMode = Line2D.LineCapMode.Round,
-			EndCapMode = Line2D.LineCapMode.Round,
-			JointMode = Line2D.LineJointMode.Round,
-			WidthCurve = MakeTrailWidthCurve(),
-			Gradient = twinFlames
-				? new Gradient
-				{
-					Offsets = [0f, 0.32f, 0.76f, 1f],
-					Colors =
-					[
-						new Color(1f, 0.92f, 0.28f, 0.98f),
-						new Color(0.98f, 0.66f, 0.08f, 0.88f),
-						new Color(0.14f, 0.5f, 1f, 0.4f),
-						new Color(0f, 0.05f, 0.2f, 0f)
-					]
-				}
-				: new Gradient
-				{
-					Offsets = [0f, 0.35f, 0.78f, 1f],
-					Colors =
-					[
-						new Color(1f, 0.08f, 0.025f, 0.95f),
-						new Color(0.72f, 0.015f, 0.018f, 0.75f),
-						new Color(0.12f, 0.002f, 0.006f, 0.32f),
-						new Color(0f, 0f, 0f, 0f)
-					]
-				},
-			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add }
-		};
+		AddMissileHead(head, palette, diameter);
+		Line2D outerTrail = MakeMissileTrail(
+			$"HextechRunes_{palette.EffectName}OuterTrail",
+			diameter * 0.72f,
+			palette.OuterTrailOffsets,
+			palette.OuterTrailColors,
+			CanvasItemMaterial.BlendModeEnum.Mix);
+		Line2D innerTrail = MakeMissileTrail(
+			$"HextechRunes_{palette.EffectName}InnerTrail",
+			diameter * 0.34f,
+			palette.InnerTrailOffsets,
+			palette.InnerTrailColors,
+			CanvasItemMaterial.BlendModeEnum.Add);
 		parent.AddChildSafely(outerTrail);
 		PlaceAboveCreatures(parent, outerTrail);
 		parent.AddChildSafely(innerTrail);
@@ -132,6 +112,7 @@ internal static partial class HextechCombatVfx
 		{
 			tween.TweenInterval(launchDelaySeconds);
 		}
+
 		tween.TweenMethod(Callable.From((float t) =>
 		{
 			if (!GodotObject.IsInstanceValid(head))
@@ -150,10 +131,8 @@ internal static partial class HextechCombatVfx
 		{
 			if (GodotObject.IsInstanceValid(parent))
 			{
-				Color flashColor = twinFlames ? new Color(1f, 0.84f, 0.18f) : new Color(1f, 0.06f, 0.025f);
-				Color ringColor = twinFlames ? new Color(0.06f, 0.42f, 1f) : new Color(0.16f, 0.002f, 0.008f);
-				SpawnFlash(parent, to, diameter * 2.4f, flashColor, 0.22f, 0.8f, aboveCreaturesOnly: true);
-				SpawnRing(parent, to, diameter * 0.45f, diameter * 2.1f, 0.26f, 0.85f, ringColor, aboveCreaturesOnly: true);
+				SpawnFlash(parent, to, diameter * 2.4f, palette.ImpactFlash, 0.22f, 0.8f, aboveCreaturesOnly: true);
+				SpawnRing(parent, to, diameter * 0.45f, diameter * 2.1f, 0.26f, 0.85f, palette.ImpactRing, aboveCreaturesOnly: true);
 			}
 
 			arrival.TrySetResult(true);
@@ -163,6 +142,44 @@ internal static partial class HextechCombatVfx
 		}));
 
 		return arrival.Task;
+	}
+
+	private static void AddMissileHead(Node2D head, MissilePalette palette, float diameter)
+	{
+		Sprite2D shadow = new()
+		{
+			Texture = GetGlowTexture(),
+			Centered = true,
+			Modulate = palette.Shadow,
+			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Mix }
+		};
+		Sprite2D core = MakeSprite(GetGlowTexture(), palette.Core);
+		Sprite2D innerCore = MakeSprite(GetGlowTexture(), palette.InnerCore);
+		head.AddChild(shadow);
+		head.AddChild(core);
+		head.AddChild(innerCore);
+		SetSpriteDiameter(shadow, diameter * 1.5f);
+		SetSpriteDiameter(core, diameter);
+		SetSpriteDiameter(innerCore, diameter * 0.38f);
+	}
+
+	private static Line2D MakeMissileTrail(string name, float width, float[] offsets, Color[] colors, CanvasItemMaterial.BlendModeEnum blendMode)
+	{
+		return new Line2D
+		{
+			Name = name,
+			Width = width,
+			BeginCapMode = Line2D.LineCapMode.Round,
+			EndCapMode = Line2D.LineCapMode.Round,
+			JointMode = Line2D.LineJointMode.Round,
+			WidthCurve = MakeTrailWidthCurve(),
+			Gradient = new Gradient
+			{
+				Offsets = offsets,
+				Colors = colors
+			},
+			Material = new CanvasItemMaterial { BlendMode = blendMode }
+		};
 	}
 
 	private static void AppendTrailPoint(Line2D trail, Vector2 globalPosition)

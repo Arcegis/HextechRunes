@@ -65,13 +65,6 @@ internal static class HextechAncientRelicHelper
 		return ModelDb.GetById<RelicModel>(ModelDb.GetId(relicType)).ToMutable();
 	}
 
-	public static RelicModel CreateWaxRelicFromRewardPool(Player player)
-	{
-		RelicModel relic = RelicFactory.PullNextRelicFromFront(player);
-		relic.IsWax = true;
-		return relic;
-	}
-
 	public static RelicModel CreateRepeatableWaxRelic(Player player, string source, int ordinal)
 	{
 		RunState runState = (RunState)player.RunState;
@@ -118,6 +111,6 @@ internal static class HextechAncientRelicHelper
 	private static bool HasRelic(Player player, Type relicType)
 	{
 		ModelId relicId = ModelDb.GetId(relicType);
-		return player.Relics.Any(relic => (relic.CanonicalInstance?.Id ?? relic.Id) == relicId);
+		return player.Relics.Any(relic => relic.CanonicalId() == relicId);
 	}
 }

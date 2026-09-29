@@ -17,6 +17,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void ColorDiscoveryRewardUsesPublicCardsAndMissingSpecialFieldKeepsOriginal()
 	{
 		PropertyInfo? cardsProperty = typeof(CardReward).GetProperty(
@@ -49,10 +50,11 @@ internal static partial class Program
 		Expect(ReferenceEquals(original, finalReward), "failed conversion must preserve the original reward instance");
 	}
 
+	[HextechTest]
 	private static void ColorDiscoveryIncludesThirdPartyCharacterPools()
 	{
-		var ownerPool = new CompatibilityOwnerCardPool();
-		var externalPool = new CompatibilityExternalCardPool();
+		CompatibilityOwnerCardPool ownerPool = new();
+		CompatibilityExternalCardPool externalPool = new();
 
 		CardPoolModel[] pools = ColorDiscoveryRune.GetOtherCharacterPools(
 			[ownerPool, externalPool],
@@ -72,6 +74,7 @@ internal static partial class Program
 			"production Color Discovery should enumerate every registered character, including locked and external characters");
 	}
 
+	[HextechTest]
 	private static void MapLengthReducerRejectsGoldenPathAndThirdPartyMapTypes()
 	{
 		Expect(HextechMapLengthReducer.IsSupportedMapType(typeof(ActMap)), "vanilla ActMap hierarchy should be recognized");
@@ -83,6 +86,7 @@ internal static partial class Program
 			"third-party ActMap subclasses must fail open without rewriting.");
 	}
 
+	[HextechTest]
 	private static void JeweledGauntletReflectionTargetsFailClosedAsAGroup()
 	{
 		FieldInfo? intents = typeof(MoveState).GetField(
@@ -106,6 +110,7 @@ internal static partial class Program
 			"changed field signatures must disable the whole Jeweled Gauntlet hook group");
 	}
 
+	[HextechTest]
 	private static void TestSubjectRespawnReflectionMissingFallsBackToZero()
 	{
 		Equal(0, HextechMayhemModifier.NormalizeTestSubjectRespawns(null), "missing TestSubject respawn field");
@@ -114,6 +119,7 @@ internal static partial class Program
 		Equal(2, HextechMayhemModifier.NormalizeTestSubjectRespawns(2), "valid TestSubject respawn field");
 	}
 
+	[HextechTest]
 	private static void InspectOpenScopesToHextechAndPreservesExternalPrefixChanges()
 	{
 		RelicModel requested = new ColorDiscoveryRune();
@@ -144,6 +150,7 @@ internal static partial class Program
 		Equal(requestedIndex, existingIndex, "existing Hextech inspect index");
 	}
 
+	[HextechTest]
 	private static void TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives()
 	{
 		Equal(
@@ -206,7 +213,7 @@ internal static partial class Program
 	{
 		public sealed class SharedDebuffRune : LimitedDebuffProcRelicBase
 		{
-			protected override Task OnEnemyDebuffApplied(Creature target)
+			protected override Task OnDebuffProc(Player owner, Creature target)
 			{
 				return Task.CompletedTask;
 			}
@@ -217,7 +224,7 @@ internal static partial class Program
 	{
 		public sealed class SharedDebuffRune : LimitedDebuffProcRelicBase
 		{
-			protected override Task OnEnemyDebuffApplied(Creature target)
+			protected override Task OnDebuffProc(Player owner, Creature target)
 			{
 				return Task.CompletedTask;
 			}

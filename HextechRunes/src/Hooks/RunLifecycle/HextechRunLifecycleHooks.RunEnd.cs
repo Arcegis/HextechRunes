@@ -5,8 +5,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-
-
 	private static void EnsureCombatHistoryBeforeLossSave(RunManager runManager, bool isVictory)
 	{
 		if (isVictory)
@@ -34,13 +32,13 @@ internal static partial class HextechRunLifecycleHooks
 					ModelId = combatRoom.ModelId
 				};
 				mapPointHistory.Rooms.Add(roomHistory);
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Added missing combat room history before loss save: encounter={combatRoom.ModelId.Entry}");
+				HextechLog.Warn("Mayhem", $"Added missing combat room history before loss save: encounter={combatRoom.ModelId.Entry}");
 			}
 
 			if (roomHistory.ModelId == null)
 			{
 				roomHistory.ModelId = combatRoom.ModelId;
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Filled missing combat encounter id before loss save: encounter={combatRoom.ModelId.Entry}");
+				HextechLog.Warn("Mayhem", $"Filled missing combat encounter id before loss save: encounter={combatRoom.ModelId.Entry}");
 			}
 
 			if (roomHistory.MonsterIds == null)
@@ -54,12 +52,12 @@ internal static partial class HextechRunLifecycleHooks
 				{
 					roomHistory.MonsterIds.Add(monster.Id);
 				}
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Filled missing combat monster ids before loss save: encounter={combatRoom.ModelId.Entry} count={roomHistory.MonsterIds.Count}");
+				HextechLog.Warn("Mayhem", $"Filled missing combat monster ids before loss save: encounter={combatRoom.ModelId.Entry} count={roomHistory.MonsterIds.Count}");
 			}
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] Failed to sanitize combat history before loss save: {ex}");
+			HextechLog.Error("Mayhem", $"Failed to sanitize combat history before loss save: {ex}");
 		}
 	}
 
@@ -77,8 +75,7 @@ internal static partial class HextechRunLifecycleHooks
 		[HarmonyPostfix]
 		private static void Postfix(RunState? __state, bool isVictory, SerializableRun __result)
 		{
-			HextechCombatHooks.ResetTransientCombatState();
-			HextechEnemyHexEffects.ResetAllRunScopedState();
+			ResetTransientRunState();
 			HextechGoldrendSync.ClearRun(__state);
 			HextechTelemetry.OnRunEnded(__state, __result, isVictory);
 		}

@@ -137,6 +137,19 @@ class SecondCard : CardModel
                 dev.sync_localization(args)
             self.assertTrue(all(path.read_bytes() == content for path, content in originals.items()))
 
+    def test_registered_tests_are_methods_marked_with_hextech_test(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            tests = root / "tests/HextechRunes.Tests"
+            tests.mkdir(parents=True)
+            (tests / "Program.A.cs").write_text(
+                "\t[HextechTest]\n\tprivate static void Zeta()\n\t{\n\t}\n\n"
+                "\tprivate static void Helper()\n\t{\n\t}\n", encoding="utf-8")
+            (tests / "Program.B.cs").write_text(
+                "\t/// <summary>doc</summary>\n\t[HextechTest]\n\tstatic void Alpha() { }\n", encoding="utf-8")
+            with patch.object(dev, "ROOT", root):
+                self.assertEqual(dev.registered_tests(), ["Alpha", "Zeta"])
+
     def test_focused_runner_rejects_typo_and_stops_after_build_failure(self):
         args = argparse.Namespace(list=False, name=["MisspelledTest"], target="0.111.0", run=True, match="")
         with patch.object(dev.subprocess, "run") as run:
@@ -149,7 +162,9 @@ class SecondCard : CardModel
                 with self.assertRaises(subprocess.CalledProcessError):
                     dev.focused_tests(args)
             self.assertEqual(run.call_count, 1)
-            self.assertEqual(run.call_args.args[0][1], "build")
+            command = run.call_args.args[0]
+            self.assertTrue(command[1].endswith("run_tests.sh"))
+            self.assertEqual(command[2:5], ["--target", "0.111.0", "HopperEscapeSurvivesTheNextNativeMoveRoll"])
 
     def make_bundle(self, root):
         dist = root / "dist"

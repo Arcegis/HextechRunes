@@ -2,6 +2,9 @@ namespace HextechRunes;
 
 internal sealed class GiantSlayerEnemyHex : HextechEnemyHexEffect
 {
+	// 敌方版让敌人体型缩小（纯视觉，呼应「体型变小」的设定，无机制意义）。
+	internal const float BodyScaleShrink = 0.25f;
+
 	internal const int PlayerMaxHpPerPercent = 2;
 	internal const decimal MaxBonus = 1.00m;
 

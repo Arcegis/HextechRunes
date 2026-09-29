@@ -1,5 +1,4 @@
 using System.Text.Json;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
@@ -52,11 +51,11 @@ public sealed class SponsorCompositeEnchantment : EnchantmentModel
 			card.EnchantInternal(inner, inner.Amount);
 			inner.ModifyCard();
 			card.FinalizeUpgradeInternal();
-			Log.Warn($"[{ModInfo.Id}] 旧版复合附魔已迁移为 {inner.Id.Entry},其余 {saved.Length - 1} 个附魔已丢失。", 2);
+			SponsorLog.Warn(EnchantmentMasterRune.LogTag, $"旧版复合附魔已迁移为 {inner.Id.Entry},其余 {saved.Length - 1} 个附魔已丢失。");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] 旧版复合附魔迁移失败,该牌的附魔已丢弃:{ex.GetType().Name}: {ex.Message}", 2);
+			SponsorLog.Warn(EnchantmentMasterRune.LogTag, $"旧版复合附魔迁移失败,该牌的附魔已丢弃:{ex.GetType().Name}: {ex.Message}");
 		}
 		finally
 		{

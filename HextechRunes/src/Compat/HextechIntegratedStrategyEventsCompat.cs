@@ -5,7 +5,12 @@ internal static class HextechIntegratedStrategyEventsCompat
 	private const string AssemblyName = "IntegratedStrategyEvents";
 	private const string InteropTypeName = "IntegratedStrategyEvents.IntegratedStrategyEventsInterop";
 	private const string MethodName = "GetCurrentExtraActId";
+
+	private static readonly HextechLoadedAssemblyLookup IntegratedStrategyAssembly = new(AssemblyName, StringComparison.Ordinal);
+
+	// 找到程序集后只解析一次方法（包括"程序集在但方法缺失"的结果）；没装 ISE 时由上面的查找缓存负责。
 	private static MethodInfo? _getCurrentExtraActId;
+	private static bool _extraActMethodResolved;
 
 	public static void Install()
 	{
@@ -14,7 +19,18 @@ internal static class HextechIntegratedStrategyEventsCompat
 
 	private static string? GetCurrentExtraActId(IRunState runState)
 	{
-		MethodInfo? method = _getCurrentExtraActId ??= ResolveMethod();
+		if (IntegratedStrategyAssembly.Find() is not Assembly assembly)
+		{
+			return null;
+		}
+
+		if (!_extraActMethodResolved)
+		{
+			_getCurrentExtraActId = ResolveMethod(assembly);
+			_extraActMethodResolved = true;
+		}
+
+		MethodInfo? method = _getCurrentExtraActId;
 		if (method == null)
 		{
 			return null;
@@ -28,27 +44,25 @@ internal static class HextechIntegratedStrategyEventsCompat
 		{
 			if (HextechRunLogBudget.TryConsume("compat.integrated-strategy-extra-act", 1))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Integrated Strategy extra-act query failed: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Integrated Strategy extra-act query failed: {ex.Message}");
 			}
+
 			return null;
 		}
 	}
 
-	private static MethodInfo? ResolveMethod()
+	private static MethodInfo? ResolveMethod(Assembly assembly)
 	{
-		Assembly? assembly = AppDomain.CurrentDomain.GetAssemblies()
-			.FirstOrDefault(static candidate =>
-				string.Equals(candidate.GetName().Name, AssemblyName, StringComparison.Ordinal));
-		Type? interopType = assembly?.GetType(InteropTypeName, throwOnError: false);
+		Type? interopType = assembly.GetType(InteropTypeName, throwOnError: false);
 		MethodInfo? method = interopType?.GetMethod(
 			MethodName,
 			BindingFlags.Public | BindingFlags.Static,
 			binder: null,
 			types: [ typeof(IRunState) ],
 			modifiers: null);
-		if (assembly != null && method == null && HextechRunLogBudget.TryConsume("compat.integrated-strategy-extra-act-api-missing", 1))
+		if (method == null && HextechRunLogBudget.TryConsume("compat.integrated-strategy-extra-act-api-missing", 1))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Integrated Strategy is loaded but does not expose {InteropTypeName}.{MethodName}(IRunState); finale acts cannot trigger Hextech acquisition until Integrated Strategy is updated.");
+			HextechLog.Warn("Mayhem", $"Integrated Strategy is loaded but does not expose {InteropTypeName}.{MethodName}(IRunState); finale acts cannot trigger Hextech acquisition until Integrated Strategy is updated.");
 		}
 
 		return method;

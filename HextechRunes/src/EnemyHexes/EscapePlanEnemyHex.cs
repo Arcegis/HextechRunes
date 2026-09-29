@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 internal sealed class EscapePlanEnemyHex : HextechEnemyHexEffect
 {
+	private const decimal BlockPercent = 0.6m;
+
 	internal override MonsterHexKind Kind => MonsterHexKind.EscapePlan;
 
 	internal override async Task BeforePlayerSideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players)
@@ -11,7 +13,7 @@ internal sealed class EscapePlanEnemyHex : HextechEnemyHexEffect
 		{
 			if (creature.CombatId == null
 				|| context.Tracking.EscapePlanTriggered.Contains(creature.CombatId.Value)
-				|| creature.CurrentHp >= creature.MaxHp * HextechMayhemModifier.EscapePlanHealthThresholdPercent)
+				|| creature.CurrentHp >= creature.MaxHp * EnemyHealthThresholdPercent)
 			{
 				continue;
 			}
@@ -33,7 +35,7 @@ internal sealed class EscapePlanEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		int blockAmount = (int)Math.Floor(creature.MaxHp * HextechMayhemModifier.EscapePlanBlockPercent);
+		int blockAmount = (int)Math.Floor(creature.MaxHp * BlockPercent);
 		if (blockAmount > 0)
 		{
 			await CreatureCmd.GainBlock(creature, blockAmount, ValueProp.Unpowered, null);

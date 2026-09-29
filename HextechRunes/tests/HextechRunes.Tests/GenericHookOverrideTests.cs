@@ -15,6 +15,7 @@ internal static partial class Program
 	// 首个被补实例的类型参数写死给全部实例(WhoCarried 让五个形态符文只认同一种形态牌)。
 	// 泛型模型类里声明的 Task 钩子重写因此只能转发到本类实例方法:体内不得出现类型参数、
 	// 泛型方法实例或 async 状态机。
+	[HextechTest]
 	private static void GenericModelHookOverridesDoNotUseTypeParameters()
 	{
 		List<string> violations = [];

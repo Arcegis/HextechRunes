@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 internal sealed class ShrinkEngineEnemyHex : HextechEnemyHexEffect
 {
+	internal const float BodyScalePerStack = 0.02f;
+
 	internal override MonsterHexKind Kind => MonsterHexKind.ShrinkEngine;
 
 	internal override async Task BeforePlayerSideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players)

@@ -1,10 +1,9 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-using MegaCrit.Sts2.Core.Nodes.Combat;
-
 namespace HextechRunes;
 
 public sealed class WhirlwindUpgradeRune : CardUpgradeRuneBase<Whirlwind>
 {
+	private const int MinXToDouble = 3;
+
 	protected override bool IsAvailableForCharacter(Player player)
 	{
 		return IsIroncladPlayer(player);
@@ -12,7 +11,7 @@ public sealed class WhirlwindUpgradeRune : CardUpgradeRuneBase<Whirlwind>
 
 	internal static void TryDoubleResolvedX(CardModel card, ref int xValue)
 	{
-		if (xValue < 3
+		if (xValue < MinXToDouble
 			|| card is not Whirlwind
 			|| card.Owner?.GetRelic<WhirlwindUpgradeRune>() == null)
 		{

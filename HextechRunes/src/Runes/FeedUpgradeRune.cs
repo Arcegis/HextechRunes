@@ -51,8 +51,7 @@ public sealed class FeedUpgradeRune : CardUpgradeRuneBase<Feed>, IHextechMaxHpSc
 		if (Owner != null)
 		{
 			MigrateLegacyStackCount();
-			IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		}
 
 		return Task.CompletedTask;
@@ -70,8 +69,7 @@ public sealed class FeedUpgradeRune : CardUpgradeRuneBase<Feed>, IHextechMaxHpSc
 		}
 
 		MigrateLegacyStackCount();
-		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
-		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		SavedStacks++;
 		Flash();
 		await HextechMaxHpScaling.ReapplyScale(Owner);

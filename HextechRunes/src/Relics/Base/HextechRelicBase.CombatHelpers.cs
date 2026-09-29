@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 
 namespace HextechRunes;
@@ -8,12 +9,32 @@ public abstract partial class HextechRelicBase
 		where TCard : CardModel
 	{
 		ModelId cardId = ModelDb.GetId<TCard>();
-		return player.Deck.Cards.Any(card => (card.CanonicalInstance?.Id ?? card.Id) == cardId);
+		return player.Deck.Cards.Any(card => card.CanonicalId() == cardId);
 	}
 
 	protected static int FloorToInt(decimal value)
 	{
 		return (int)decimal.Floor(value);
+	}
+
+	// "每 N 次触发一次"的进度从 previous 推进到 current 时跨过的阈值个数；读档或联机历史回放时一次可能跨过多个。
+	internal static int CountThresholdCrossings(int previous, int current, int threshold)
+	{
+		int step = Math.Max(1, threshold);
+		return Math.Max(0, Math.Max(0, current) / step - Math.Max(0, previous) / step);
+	}
+
+	// 旧版本按"本场累计、战后发放"记金币，新触发已改为直接发放；SavedCountThisCombat 只剩旧存档里尚未领取的值。
+	// 战后把它补进奖励并清零，战斗开始时直接清零（传 null）。
+	protected void SettleLegacyCombatGold(CombatRoom? room, ref int legacyCount)
+	{
+		if (room != null && Owner != null && legacyCount > 0)
+		{
+			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, legacyCount);
+		}
+
+		legacyCount = 0;
+		InvokeDisplayAmountChanged();
 	}
 
 	protected bool IsOwnedCard(CardModel? card)
@@ -23,22 +44,22 @@ public abstract partial class HextechRelicBase
 
 	protected bool IsOwnedAttack(CardModel? card)
 	{
-		return Owner != null && card?.Owner == Owner && IllusoryWeaponRune.IsAttackForEffects(card, Owner);
+		return Owner != null && card?.Owner == Owner && HextechCardEffectTypes.IsAttackForEffects(card, Owner);
 	}
 
 	protected bool IsOwnedSkill(CardModel? card)
 	{
-		return card != null && card.Owner == Owner && IllusoryWeaponRune.IsSkillForEffects(card);
+		return card != null && card.Owner == Owner && HextechCardEffectTypes.IsSkillForEffects(card);
 	}
 
 	protected bool IsAttackDamageForRuneEffects(ValueProp props, CardModel? cardSource)
 	{
-		if (HextechSts2Compat.IsPoweredAttack(props))
+		if (props.IsPoweredAttack())
 		{
 			return true;
 		}
 
-		return Owner != null && IllusoryWeaponRune.IsOriginalOwnedSkill(cardSource, Owner);
+		return Owner != null && HextechCardEffectTypes.IsOriginalOwnedSkill(cardSource, Owner);
 	}
 
 	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
@@ -100,7 +121,7 @@ public abstract partial class HextechRelicBase
 		}
 	}
 
-	protected bool TryGetOwnedEnemyDebuffTarget(PowerModel power, decimal amount, Creature? applier, out Creature? target)
+	protected bool TryGetOwnedEnemyDebuffTarget(PowerModel power, decimal amount, Creature? applier, [NotNullWhen(true)] out Creature? target)
 	{
 		target = power.Owner;
 		return amount > 0m
@@ -112,7 +133,7 @@ public abstract partial class HextechRelicBase
 
 	// 与上面对称：持有者自己实际收到负面效果，来源不限（敌人、敌方海克斯、自己的牌或海克斯）。
 	// 同样排除临时属性的包装 Power，它们到期会自行回收，不算一次真正的负面效果。
-	protected bool TryGetOwnerReceivedDebuff(PowerModel power, decimal amount, out Creature? target)
+	protected bool TryGetOwnerReceivedDebuff(PowerModel power, decimal amount, [NotNullWhen(true)] out Creature? target)
 	{
 		target = power.Owner;
 		return amount > 0m

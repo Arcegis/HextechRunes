@@ -1,8 +1,6 @@
-using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves;
-using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
 
@@ -51,6 +49,34 @@ public sealed partial class DoubleVisionRune
 		if (suppressionState is int previousDepth)
 		{
 			CommandDuplicationSuppressionDepth.Value = previousDepth;
+		}
+	}
+
+	/// <summary>
+	/// Harmony Finalizer 专用：被包住的原命令同步抛异常、Postfix 没有执行时，只在调用方执行流上恢复
+	/// Begin* 设置的 AsyncLocal，并结清事件事务批次的计数；不做任何复制或补救结算。
+	/// </summary>
+	internal static void AbandonScopeAfterSynchronousFailure(object? state)
+	{
+		switch (state)
+		{
+			case int previousDepth:
+				CommandDuplicationSuppressionDepth.Value = previousDepth;
+				break;
+			case CardRewardTrackingScope trackingScope:
+				CurrentCardRewardTracker.Value = trackingScope.PreviousTracker;
+				break;
+			case DirectCommandRewardScope commandScope:
+				RestoreCommandRewardScope(commandScope);
+				break;
+			case EventRelicRecordScope recordScope:
+				EventRelicObtainDepth.Value = recordScope.PreviousObtainDepth;
+				break;
+			case EventRelicTransactionScope transactionScope:
+				CurrentEventRelicTransaction.Value = transactionScope.Previous;
+				transactionScope.Transaction.CloseForRecording();
+				transactionScope.Transaction.Batch.Complete(committedRewards: false, canSaveFinishedAncientEvent: false);
+				break;
 		}
 	}
 
@@ -118,9 +144,9 @@ public sealed partial class DoubleVisionRune
 				throw;
 			}
 
-			Log.Warn(
-				$"[{ModInfo.Id}][DoubleVision] Skipped duplication after recovering a failed custom event relic obtain: "
-				+ $"player={scope.Player.NetId} relic={(recovered.CanonicalInstance?.Id ?? recovered.Id).Entry}.");
+			HextechLog.Warn(
+				"DoubleVision", $"Skipped duplication after recovering a failed custom event relic obtain: "
+				+ $"player={scope.Player.NetId} relic={recovered.CanonicalId().Entry}.");
 			return recovered;
 		}
 
@@ -134,9 +160,9 @@ public sealed partial class DoubleVisionRune
 
 		if (!scope.Transaction.TryRecord(new EventRelicIntent(scope.Player, obtained, scope.Runes)))
 		{
-			Log.Warn(
-				$"[{ModInfo.Id}][DoubleVision] Skipped late event relic duplication after its option transaction closed: "
-				+ $"player={scope.Player.NetId} relic={(obtained.CanonicalInstance?.Id ?? obtained.Id).Entry}.");
+			HextechLog.Warn(
+				"DoubleVision", $"Skipped late event relic duplication after its option transaction closed: "
+				+ $"player={scope.Player.NetId} relic={obtained.CanonicalId().Entry}.");
 		}
 
 		return obtained;
@@ -153,9 +179,9 @@ public sealed partial class DoubleVisionRune
 	{
 		RelicModel relic = scope.AttemptedRelic;
 		Player player = scope.Player;
-		ModelId relicId = relic.CanonicalInstance?.Id ?? relic.Id;
-		Log.Warn(
-			$"[{ModInfo.Id}][DoubleVision] Custom event relic obtain failed; attempting a history-independent fallback: "
+		ModelId relicId = relic.CanonicalId();
+		HextechLog.Warn(
+			"DoubleVision", $"Custom event relic obtain failed; attempting a history-independent fallback: "
 			+ $"player={player.NetId} relic={relicId.Entry} type={relic.GetType().FullName} "
 			+ $"error={originalException.GetType().Name}: {originalException.Message}");
 
@@ -205,23 +231,23 @@ public sealed partial class DoubleVisionRune
 				catch (Exception afterObtainedException)
 				{
 					string message =
-						$"[{ModInfo.Id}][DoubleVision]{(failureIsDesyncRisk ? "[DESYNC-RISK]" : "")} "
+						$"{(failureIsDesyncRisk ? "[DESYNC-RISK] " : "")}"
 						+ $"{context} kept the relic but its pickup effect failed: "
 						+ $"player={player.NetId} relic={relicId.Entry} "
 						+ $"error={afterObtainedException.GetType().Name}: {afterObtainedException.Message}";
 					if (failureIsDesyncRisk)
 					{
-						Log.Error(message);
+						HextechLog.Error("DoubleVision", message);
 					}
 					else
 					{
-						Log.Warn(message);
+						HextechLog.Warn("DoubleVision", message);
 					}
 				}
 			}
 
-			Log.Warn(
-				$"[{ModInfo.Id}][DoubleVision] {context} completed without duplicating run-history writes: "
+			HextechLog.Warn(
+				"DoubleVision", $"{context} completed without duplicating run-history writes: "
 				+ $"player={player.NetId} relic={relicId.Entry}.");
 			return relic;
 		}
@@ -232,16 +258,16 @@ public sealed partial class DoubleVisionRune
 		catch (Exception recoveryException)
 		{
 			string message =
-				$"[{ModInfo.Id}][DoubleVision]{(failureIsDesyncRisk ? "[DESYNC-RISK]" : "")} {context} failed: "
+				$"{(failureIsDesyncRisk ? "[DESYNC-RISK] " : "")}{context} failed: "
 				+ $"player={player.NetId} relic={relicId.Entry} "
 				+ $"error={recoveryException.GetType().Name}: {recoveryException.Message}";
 			if (failureIsDesyncRisk)
 			{
-				Log.Error(message);
+				HextechLog.Error("DoubleVision", message);
 			}
 			else
 			{
-				Log.Warn(message);
+				HextechLog.Warn("DoubleVision", message);
 			}
 
 			return null;
@@ -334,10 +360,10 @@ public sealed partial class DoubleVisionRune
 			}
 			catch (Exception exception)
 			{
-				ModelId sourceId = sourceRelic.CanonicalInstance?.Id ?? sourceRelic.Id;
+				ModelId sourceId = sourceRelic.CanonicalId();
 				RelicModel? recoveryCopy = player.Relics.FirstOrDefault(
 					relic => !relicsBefore.Contains(relic)
-						&& (relic.CanonicalInstance?.Id ?? relic.Id) == sourceId);
+						&& relic.CanonicalId() == sourceId);
 				Exception? recoveryCopyException = null;
 				if (recoveryCopy == null)
 				{
@@ -349,8 +375,8 @@ public sealed partial class DoubleVisionRune
 					string recoveryFailure = recoveryCopyException == null
 						? "canonical recovery model unavailable"
 						: $"{recoveryCopyException.GetType().Name}: {recoveryCopyException.Message}";
-					Log.Error(
-						$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Event relic copy failed and no deterministic recovery copy could be created: "
+					HextechLog.Error(
+						"DoubleVision", $"[DESYNC-RISK] Event relic copy failed and no deterministic recovery copy could be created: "
 						+ $"player={player.NetId} relic={sourceId.Entry} "
 						+ $"error={exception.GetType().Name}: {exception.Message} recoveryError={recoveryFailure}");
 					continue;
@@ -365,8 +391,8 @@ public sealed partial class DoubleVisionRune
 					failureIsDesyncRisk: true);
 				if (recovered != null)
 				{
-					Log.Error(
-						$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Recovered an event relic copy after its normal obtain path failed; "
+					HextechLog.Error(
+						"DoubleVision", $"[DESYNC-RISK] Recovered an event relic copy after its normal obtain path failed; "
 						+ "inventory was preserved but pickup side effects may differ between peers: "
 						+ $"player={player.NetId} relic={sourceId.Entry} "
 						+ $"error={exception.GetType().Name}: {exception.Message}");

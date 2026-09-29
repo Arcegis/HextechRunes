@@ -16,8 +16,8 @@ internal static class HextechForgeShopPriceHelper
 		{
 			if (HextechRunLogBudget.TryConsume("forge.shop-price-config-fallback", 3))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Forge] Could not read synchronized random forge shop price; "
+				HextechLog.Warn(
+					"Forge", $"Could not read synchronized random forge shop price; "
 					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
@@ -27,9 +27,9 @@ internal static class HextechForgeShopPriceHelper
 
 	public static int GetRandomForgeShopPriceFor(RunState? runState)
 	{
-		return TryGetRandomForgeShopPrice(runState, out int price)
+		return HextechRunesApi.ApplyForgeShopPriceModifiers(runState, TryGetRandomForgeShopPrice(runState, out int price)
 			? price
-			: GetCurrentRandomForgeShopPrice();
+			: GetCurrentRandomForgeShopPrice());
 	}
 
 	public static void RefreshRandomForgeShopRelic(RandomForgeShopRelic shopRelic, RunState? runState = null)
@@ -40,7 +40,7 @@ internal static class HextechForgeShopPriceHelper
 	private static bool TryGetRandomForgeShopPrice(RunState? runState, out int price)
 	{
 		price = 0;
-		HextechMayhemModifier? modifier = runState?.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault();
+		HextechMayhemModifier? modifier = HextechMayhemModifier.FindIn(runState);
 		if (modifier == null)
 		{
 			return false;

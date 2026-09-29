@@ -1,5 +1,3 @@
-using HarmonyLib;
-
 namespace HextechRunes;
 
 internal static class HextechVitalSparkCompatibilityHooks

@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Models.Exceptions;
+using static HextechRunes.HextechContentRegistry;
 
 namespace HextechRunes;
 
@@ -10,20 +11,6 @@ internal static partial class HextechCatalog
 	public static IReadOnlyList<RelicModel> GetCanonicalRunes()
 	{
 		return AllRuneTypes
-			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
-			.ToArray();
-	}
-
-	public static IReadOnlyList<RelicModel> GetCanonicalSelectableRunes()
-	{
-		return GetAllSelectableRuneTypes()
-			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
-			.ToArray();
-	}
-
-	public static IReadOnlyList<RelicModel> GetCanonicalGenericSelectableRunes()
-	{
-		return GetGenericSelectableRuneTypes()
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
 			.ToArray();
 	}
@@ -58,13 +45,6 @@ internal static partial class HextechCatalog
 			.ToArray();
 	}
 
-	public static IReadOnlyList<RelicModel> GetCanonicalCustomRelics()
-	{
-		return AllCustomRelicTypes
-			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
-			.ToArray();
-	}
-
 	public static IReadOnlyList<RelicModel> GetCanonicalVisibleCustomRelics()
 	{
 		return AllCustomRelicTypes
@@ -89,7 +69,7 @@ internal static partial class HextechCatalog
 			{
 				if (MissingVisibleCustomRelicLogs.Add(type))
 				{
-					Log.Warn($"[{ModInfo.Id}] Skipping missing visible custom relic during inspect list build: type={type.FullName} id={id.Entry}: {ex.Message}");
+					HextechLog.Warn("Inspect", $"Skipping missing visible custom relic during inspect list build: type={type.FullName} id={id.Entry}: {ex.Message}");
 				}
 			}
 
@@ -99,7 +79,7 @@ internal static partial class HextechCatalog
 
 	public static IReadOnlyList<RuneSeriesGroup> GetRuneSeriesGroups(IReadOnlyList<RelicModel> relics)
 	{
-		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalInstance?.Id ?? relic.Id);
+		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalId());
 
 		IReadOnlyList<RelicModel> BuildGroup(IEnumerable<Type> runeTypes)
 		{
@@ -126,34 +106,6 @@ internal static partial class HextechCatalog
 			new RuneSeriesGroup("SILVER", BuildGroup(SilverRuneTypes)),
 			new RuneSeriesGroup("GOLD", BuildGroup(GoldRuneTypes)),
 			new RuneSeriesGroup("PRISMATIC", BuildGroup(PrismaticRuneTypes))
-		];
-	}
-
-	public static IReadOnlyList<RuneSeriesGroup> GetForgeSeriesGroups()
-	{
-		IReadOnlyList<RelicModel> relics = GetCanonicalForges();
-		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalInstance?.Id ?? relic.Id);
-
-		IReadOnlyList<RelicModel> BuildGroup(IEnumerable<Type> forgeTypes)
-		{
-			List<RelicModel> group = new();
-			foreach (Type forgeType in forgeTypes)
-			{
-				ModelId id = ModelDb.GetId(forgeType);
-				if (byId.TryGetValue(id, out RelicModel? relic))
-				{
-					group.Add(relic);
-				}
-			}
-
-			return group;
-		}
-
-		return
-		[
-			new RuneSeriesGroup("SILVER", BuildGroup(SilverForgeTypes)),
-			new RuneSeriesGroup("GOLD", BuildGroup(GoldForgeTypes)),
-			new RuneSeriesGroup("PRISMATIC", BuildGroup(PrismaticForgeTypes))
 		];
 	}
 

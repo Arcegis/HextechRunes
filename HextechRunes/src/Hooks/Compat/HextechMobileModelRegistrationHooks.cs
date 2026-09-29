@@ -1,17 +1,12 @@
-using HarmonyLib;
-using static HextechRunes.HextechHookReflection;
-
 namespace HextechRunes;
 
 internal static class HextechMobileModelRegistrationHooks
 {
-
-
-	#if STS2_109_OR_NEWER
+#if STS2_109_OR_NEWER
 	[HarmonyPatch(typeof(ModelDb), nameof(ModelDb.Init), typeof(Type[]))]
-	#else
+#else
 	[HarmonyPatch(typeof(ModelDb), nameof(ModelDb.Init), new Type[0])]
-	#endif
+#endif
 	[HextechPatch("compat.mobile-model-registration", "移动端模型注册兜底")]
 	private static class ModelDbInitPatch
 	{
@@ -20,11 +15,11 @@ internal static class HextechMobileModelRegistrationHooks
 		{
 			try
 			{
-				HextechModelBootstrap.CleanupMobileFirstModelRegistrationWorkaround();
+				HextechModelPoolRegistrar.CleanupMobileFirstModelRegistrationWorkaround();
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}] Android model registration workaround cleanup skipped: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("Bootstrap", $"Android model registration workaround cleanup skipped: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 	}

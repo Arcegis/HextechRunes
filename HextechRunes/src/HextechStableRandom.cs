@@ -87,42 +87,6 @@ internal static class HextechStableRandom
 		return selected;
 	}
 
-	public static CardModel CreateMinionCard(HextechCombatState combatState, Player owner, string source, int ordinal)
-	{
-		int index = Index((RunState)owner.RunState, 3,
-			source,
-			PlayerKey(owner),
-			"round",
-			combatState.RoundNumber.ToString(),
-			"ordinal",
-			ordinal.ToString());
-		return index switch
-		{
-			0 => combatState.CreateCard<MinionStrike>(owner),
-			1 => combatState.CreateCard<MinionDiveBomb>(owner),
-			_ => combatState.CreateCard<MinionSacrifice>(owner)
-		};
-	}
-
-	public static OrbModel CreateOrb(RunState runState, Player owner, string source, int ordinal, int roundNumber)
-	{
-		int index = Index(runState, 5,
-			source,
-			PlayerKey(owner),
-			"round",
-			roundNumber.ToString(),
-			"ordinal",
-			ordinal.ToString());
-		return index switch
-		{
-			0 => ModelDb.Orb<LightningOrb>().ToMutable(),
-			1 => ModelDb.Orb<FrostOrb>().ToMutable(),
-			2 => ModelDb.Orb<DarkOrb>().ToMutable(),
-			3 => ModelDb.Orb<PlasmaOrb>().ToMutable(),
-			_ => ModelDb.Orb<GlassOrb>().ToMutable()
-		};
-	}
-
 	public static string PlayerKey(Player player)
 	{
 		RunState runState = (RunState)player.RunState;
@@ -216,7 +180,7 @@ internal static class HextechStableRandom
 		}
 	}
 
-	private static string?[] AppendSalt(string?[] saltParts, params string?[] extra)
+	internal static string?[] AppendSalt(string?[] saltParts, params string?[] extra)
 	{
 		string?[] result = new string?[saltParts.Length + extra.Length];
 		Array.Copy(saltParts, result, saltParts.Length);

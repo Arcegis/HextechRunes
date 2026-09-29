@@ -31,6 +31,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void CombatTrackingPerTurnProcLimitsResetOncePerRound()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
@@ -98,6 +99,7 @@ internal static partial class Program
 		Equal(0, tracking.GripPlayersTriggeredThisTurn.Count, "player side start should reset grip proc count");
 	}
 
+	[HextechTest]
 	private static void MindOverMatterFirstDrawTrackingResetsPerPlayerTurn()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
@@ -118,6 +120,7 @@ internal static partial class Program
 		Expect(MindOverMatterEnemyHex.TryConsumeFirstDraw(restored, 11), "the next player turn should trigger again");
 	}
 
+	[HextechTest]
 	private static void CombatTrackingGlobalProcOrdinalsSerializeAndReset()
 	{
 		Expect(!HextechRoundInterval.IsDue(1, 3), "round intervals should not trigger on round one");
@@ -152,6 +155,7 @@ internal static partial class Program
 		Equal(0, restored.GlobalProcsThisCombat.Count, "global proc count should clear on combat tracking reset");
 	}
 
+	[HextechTest]
 	private static void CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
@@ -170,6 +174,7 @@ internal static partial class Program
 		Equal(2, HextechCombatProcTracker.GetPlayerRuneProcsInCombat(tracking, player, procKey), "ordinal should advance exactly once per real play, never per peek");
 	}
 
+	[HextechTest]
 	private static void CombatTrackingSerializationIsCultureInvariant()
 	{
 		HextechMayhemCombatTrackingState tracking = new();
@@ -211,20 +216,20 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void SavedPropertyManifestMatchesCheckedInList()
 	{
-		string manifestPath = Path.Combine(AppContext.BaseDirectory, "saved_property_manifest.txt");
-		Expect(File.Exists(manifestPath), $"saved_property_manifest.txt should exist at {manifestPath}");
+		ExpectSavedPropertyManifest("saved_property_manifest.txt", CollectSavedPropertyNames(typeof(HextechCatalog).Assembly, declaredInAssemblyOnly: false));
+	}
 
-		string[] expected = File.ReadAllLines(manifestPath)
-			.Select(static line => line.Trim())
-			.Where(static line => line.Length > 0 && !line.StartsWith('#'))
-			.ToArray();
-
+	// declaredInAssemblyOnly=false 时也收入从原版基类继承的属性(本体清单一直如此,含 IsMelted/IsWax);
+	// 拓展包清单只收本程序集声明的属性,继承自本体基类的由本体清单负责。
+	private static string[] CollectSavedPropertyNames(Assembly assembly, bool declaredInAssemblyOnly)
+	{
 		Type abstractModelType = typeof(AbstractModel);
 		const BindingFlags propertyFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 		HashSet<string> names = new(StringComparer.Ordinal);
-		foreach (Type type in typeof(HextechCatalog).Assembly.GetTypes())
+		foreach (Type type in assembly.GetTypes())
 		{
 			if (type.IsAbstract || !type.IsClass || !abstractModelType.IsAssignableFrom(type))
 			{
@@ -233,6 +238,11 @@ internal static partial class Program
 
 			foreach (PropertyInfo property in type.GetProperties(propertyFlags))
 			{
+				if (declaredInAssemblyOnly && property.DeclaringType?.Assembly != assembly)
+				{
+					continue;
+				}
+
 				bool isSavedProperty = property
 					.GetCustomAttributes(inherit: true)
 					.Any(static attr => attr.GetType().Name == "SavedPropertyAttribute");
@@ -243,13 +253,25 @@ internal static partial class Program
 			}
 		}
 
-		string[] actual = names.OrderBy(static name => name, StringComparer.Ordinal).ToArray();
+		return names.OrderBy(static name => name, StringComparer.Ordinal).ToArray();
+	}
+
+	private static void ExpectSavedPropertyManifest(string manifestFileName, string[] actual)
+	{
+		string manifestPath = Path.Combine(AppContext.BaseDirectory, manifestFileName);
+		Expect(File.Exists(manifestPath), $"{manifestFileName} should exist at {manifestPath}");
+
+		string[] expected = File.ReadAllLines(manifestPath)
+			.Select(static line => line.Trim())
+			.Where(static line => line.Length > 0 && !line.StartsWith('#'))
+			.ToArray();
 		SequenceEqual(
 			expected,
 			actual,
-			$"SavedProperty manifest drift; actual list:\n{string.Join("\n", actual)}");
+			$"SavedProperty manifest drift ({manifestFileName}); actual list:\n{string.Join("\n", actual)}");
 	}
 
+	[HextechTest]
 	private static void SavedPropertyPreInitRegistrationLeavesWireTablesUntouched()
 	{
 #if STS2_109_OR_NEWER
@@ -296,6 +318,7 @@ internal static partial class Program
 #endif
 	}
 
+	[HextechTest]
 	private static void SavedPropertyLateCarrierRegistrationFailsClosed()
 	{
 #if STS2_109_OR_NEWER
@@ -305,6 +328,7 @@ internal static partial class Program
 #endif
 	}
 
+	[HextechTest]
 	private static void SavedPropertySameNameCarrierStillRequiresPerTypeCache()
 	{
 #if STS2_109_OR_NEWER
@@ -336,6 +360,7 @@ internal static partial class Program
 #endif
 	}
 
+	[HextechTest]
 	private static void SavedPropertyLateExternalRegistrationLeavesNoPartialState()
 	{
 #if STS2_109_OR_NEWER
@@ -373,6 +398,7 @@ internal static partial class Program
 #endif
 	}
 
+	[HextechTest]
 	private static void StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot()
 	{
 		Equal("net:123456789", HextechStableRandom.PlayerIdentityKey(0, 123456789UL), "host-local slot");
@@ -380,6 +406,7 @@ internal static partial class Program
 		Equal("slot:2", HextechStableRandom.PlayerIdentityKey(2, 0UL), "local fallback");
 	}
 
+	[HextechTest]
 	private static void StableRandomSequentialFloorsAvoidExcessClustering()
 	{
 		const int seedCount = 2048;
@@ -444,6 +471,7 @@ internal static partial class Program
 		Expect(Math.Abs(lagCorrelation) < 0.02, $"stable random lag-1 correlation should stay near zero, got {lagCorrelation:F4}");
 	}
 
+	[HextechTest]
 	private static void StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle()
 	{
 		int[] circleTargets = Enumerable.Range(0, 8)
@@ -486,28 +514,7 @@ internal static partial class Program
 		Expect(!IsModuloStepCycle(miseryTargets, 4), $"misery target sequence should not be a fixed modulo cycle: [{string.Join(", ", miseryTargets)}]");
 	}
 
-	private static void ColorDiscoveryCandidateOrderIsPermutationInvariant()
-	{
-		CardModel[] candidates =
-		[
-			CreateMutableTestModel<SearingAttackCard>(),
-			CreateMutableTestModel<FeelTheBurnCard>(),
-			CreateMutableTestModel<WhiteHoleCard>()
-		];
-		string[] forward = ColorDiscoveryRune.OrderCandidatesForStableSelection(candidates)
-			.Select(HextechStableRandom.CardKey)
-			.ToArray();
-		string[] reversed = ColorDiscoveryRune.OrderCandidatesForStableSelection(candidates.Reverse())
-			.Select(HextechStableRandom.CardKey)
-			.ToArray();
-
-		SequenceEqual(forward, reversed, "Color Discovery candidates should ignore source enumeration order");
-		SequenceEqual(
-			forward.OrderBy(static key => key, StringComparer.Ordinal),
-			forward,
-			"Color Discovery candidates should use ordinal CardKey order");
-	}
-
+	[HextechTest]
 	private static void PlayerRuneMetadataHasUniqueTypes()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -525,6 +532,7 @@ internal static partial class Program
 			"all player rune metadata types");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneMetadataMatchesContentRegistrySlices()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -548,6 +556,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void PlayerRuneMetadataPreservesCharacterOrder()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -563,6 +572,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void PlayerRuneMetadataClassifiesConfigStates()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -588,6 +598,7 @@ internal static partial class Program
 		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(selectionExcluded.Type), "catalog selection excluded selectability");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneMetadataCatalogOutputsMatchCatalogQueries()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -605,6 +616,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void PlayerRuneMetadataFallbacksAreStable()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -616,6 +628,7 @@ internal static partial class Program
 		Equal(HextechPlayerRuneRegistry.DefaultTagKey, metadata.GetTagKey(typeof(Program)), "unknown type tag key");
 	}
 
+	[HextechTest]
 	private static void ForgeMetadataHasUniqueTypes()
 	{
 		ForgeMetadataCatalog metadata = HextechContentRegistry.ForgeMetadata;
@@ -626,12 +639,18 @@ internal static partial class Program
 			.ToArray();
 
 		Expect(duplicatedTypes.Length == 0, $"duplicate forge registrations: {string.Join(", ", duplicatedTypes.Select(static type => type.Name))}");
+		Type[] registeredTypes = metadata.Registrations.Select(static registration => registration.Type).Distinct().ToArray();
+		// 内置锻造器按稀有度顺序登记，AllTypes 与登记顺序一致；外部登记的先后取决于调用方
+		// （测试进程里取决于其他测试的执行顺序），只比较集合。
+		static bool IsBuiltIn(Type type) => type.Assembly == typeof(HextechForgeBase).Assembly;
 		SequenceEqual(
-			metadata.Registrations.Select(static registration => registration.Type).Distinct(),
-			metadata.AllTypes,
-			"all forge metadata types");
+			registeredTypes.Where(IsBuiltIn),
+			metadata.AllTypes.Where(IsBuiltIn),
+			"built-in forge metadata types");
+		Expect(registeredTypes.ToHashSet().SetEquals(metadata.AllTypes), "all forge metadata types");
 	}
 
+	[HextechTest]
 	private static void ForgeMetadataMatchesContentRegistrySlices()
 	{
 		ForgeMetadataCatalog metadata = HextechContentRegistry.ForgeMetadata;
@@ -642,6 +661,7 @@ internal static partial class Program
 		SequenceEqual(metadata.AllTypes, HextechContentRegistry.AllForgeTypes, "all forges");
 	}
 
+	[HextechTest]
 	private static void ForgeMetadataFallbacksAreStable()
 	{
 		ForgeMetadataCatalog metadata = HextechContentRegistry.ForgeMetadata;
@@ -650,6 +670,7 @@ internal static partial class Program
 		Expect(!metadata.TryGetRarity(typeof(Program), out _), "unknown forge type rarity lookup should fail");
 	}
 
+	[HextechTest]
 	private static void MonsterHexMetadataHasUniqueKinds()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
@@ -666,6 +687,7 @@ internal static partial class Program
 			"all monster hex metadata kinds");
 	}
 
+	[HextechTest]
 	private static void MonsterHexMetadataMatchesContentRegistrySlices()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
@@ -684,6 +706,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
@@ -708,6 +731,7 @@ internal static partial class Program
 		Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
 	}
 
+	[HextechTest]
 	private static void NewEnemyHexesReusePlayerRuneIconsAndRarities()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
@@ -730,6 +754,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void EnemyHexHoverTipsUseExpectedPowerModels()
 	{
 		SequenceEqual(
@@ -780,6 +805,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void NewRuneHookTargetsMatchSupportedGameApis()
 	{
 #if STS2_110_OR_NEWER
@@ -792,13 +818,13 @@ internal static partial class Program
 			]) != null,
 			"0.110 outbreak card response guard target");
 		Expect(
-			HextechFormVfxSafetyHooks.ResolveAddFormVfxTarget().GetParameters()
+			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "AddFormVfxPatch").GetParameters()
 				.Select(static parameter => parameter.ParameterType)
 				.SequenceEqual([typeof(MegaCrit.Sts2.Core.Nodes.Vfx.Forms.NFormVfx)]),
 			"0.110 form VFX add safety target");
 		Equal(
 			0,
-			HextechFormVfxSafetyHooks.ResolveRemoveFormVfxTarget().GetParameters().Length,
+			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "RemoveFormVfxPatch").GetParameters().Length,
 			"0.110 form VFX removal safety target arity");
 #else
 		Expect(typeof(OutbreakPower).GetMethods(BindingFlags.Instance | BindingFlags.Public)
@@ -884,12 +910,14 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void IllusoryWeaponPenNibPrefixesCanReturnSkippedTask()
 	{
 		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPatch");
 		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibAfterCardPlayedPatch");
 	}
 
+	[HextechTest]
 	private static void AttackCommandCompatibilityRestoresNullExecuteResult()
 	{
 		AttackCommand command = new(1m);
@@ -900,6 +928,7 @@ internal static partial class Program
 		Expect(ReferenceEquals(command, completed), "non-null AttackCommand.Execute result should be preserved");
 	}
 
+	[HextechTest]
 	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
 	{
 		string gameplaySignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
@@ -922,6 +951,7 @@ internal static partial class Program
 		Expect(!string.Equals(gameplaySignature, diagnosticSignature, StringComparison.Ordinal), "diagnostic signature should remain more detailed than gameplay signature");
 	}
 
+	[HextechTest]
 	private static void SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent()
 	{
 		IReadOnlySet<string> vanilla = new HashSet<string>(StringComparer.Ordinal) { "V0", "V1", "V2" };
@@ -948,6 +978,7 @@ internal static partial class Program
 		Expect(HextechSavedPropertyNetIdCanonicalizer.Canonicalize(null, vanilla) == null, "null map should abort canonicalization");
 	}
 
+	[HextechTest]
 	private static void SavedPropertyNetIdBitSizeMatchesGameFormula()
 	{
 		// 必须与游戏 / RitsuLib 的 CeilToInt(Log2(count)) 完全一致。

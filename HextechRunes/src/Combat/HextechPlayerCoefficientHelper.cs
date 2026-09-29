@@ -24,63 +24,14 @@ internal static class HextechPlayerCoefficientHelper
 
 	public static decimal GetHealingMultiplier(Player player)
 	{
-		if (NearDeathFeastRune.ShouldPreventSustain(player.Creature))
+		if (NearDeathFeastRune.IsDyingButAlive(player.Creature))
 		{
 			return 0m;
 		}
 
-		decimal multiplier = 1m;
-		if (player.GetRelic<OverflowRune>() != null)
-		{
-			multiplier *= 2m;
-		}
-
-		if (player.GetRelic<FirstAidKitRune>() != null)
-		{
-			multiplier *= 1.25m;
-		}
-
-		if (player.GetRelic<SacrificeRune>() is SacrificeRune sacrificeRune)
-		{
-			multiplier *= sacrificeRune.SustainMultiplier;
-		}
-
-		if (player.GetRelic<BackToBasicsRune>() != null)
-		{
-			multiplier *= 1.4m;
-		}
-
-		if (player.GetRelic<GoliathRune>() != null)
-		{
-			multiplier *= 1.2m;
-		}
-
-		if (player.GetRelic<ProteinShakeRune>() is ProteinShakeRune proteinShakeRune)
-		{
-			multiplier *= proteinShakeRune.SustainMultiplier;
-		}
-
-		multiplier *= HextechForgeCoefficientHelper.GetSustainMultiplier(player);
-
-		if (player.GetRelic<MoreTheMerrierRune>() is MoreTheMerrierRune moreTheMerrierRune)
-		{
-			multiplier *= moreTheMerrierRune.SustainMultiplier;
-		}
-
-		if (player.GetRelic<GoldenSpatulaRune>() is GoldenSpatulaRune goldenSpatulaRune)
-		{
-			multiplier *= goldenSpatulaRune.SustainMultiplier;
-		}
-
-		if (player.GetRelic<AnthonyBiasRune>() is AnthonyBiasRune anthonyBiasRune)
-		{
-			multiplier *= anthonyBiasRune.SustainMultiplier;
-		}
-
-		if (player.GetRelic<NineDragonPowerRune>() is NineDragonPowerRune nineDragonPowerRune)
-		{
-			multiplier *= nineDragonPowerRune.SustainMultiplier;
-		}
+		// 自带治疗系数的符文实现 IHextechHealingMultiplierProvider，由末尾的遍历统一相乘；
+		// 这里只做 decimal 连乘、不取整，乘法可交换，结果与各项的先后无关。
+		decimal multiplier = HextechForgeCoefficientHelper.GetSustainMultiplier(player);
 
 		// 全心为你是全队效果,按全队存活持有者计,不只看自己的遗物。
 		multiplier *= AllForYouRune.GetTeamHealingMultiplier(player);
@@ -170,8 +121,8 @@ internal static class HextechPlayerCoefficientHelper
 			}
 		}
 
-		Log.Warn(
-			$"[{ModInfo.Id}][Coefficient] Ignored {coefficient} multiplier failure from " +
+		HextechLog.Warn(
+			"Coefficient", $"Ignored {coefficient} multiplier failure from " +
 			$"{providerType.FullName}: {exception.GetType().Name}: {exception.Message}");
 	}
 }

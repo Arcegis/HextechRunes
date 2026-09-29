@@ -31,12 +31,11 @@ public sealed class FrostWraithRune : HextechRelicBase
 			|| Owner.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| !ShouldTriggerForRound(combatState.RoundNumber, DynamicVars["TurnsNeeded"].IntValue)
-			|| _lastProcRound == combatState.RoundNumber)
+			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))
 		{
 			return;
 		}
 
-		_lastProcRound = combatState.RoundNumber;
 		await ApplySlow(combatState);
 	}
 

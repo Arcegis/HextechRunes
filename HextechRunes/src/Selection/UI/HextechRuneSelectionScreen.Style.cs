@@ -97,7 +97,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		Texture2D? texture = HextechTextures.LoadUiTexture(path);
 		if (texture == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.GetCardFrameTexture: failed to load frame path={path}");
+			HextechLog.Warn("Mayhem", $"SelectionScreen.GetCardFrameTexture: failed to load frame path={path}");
 		}
 		return texture;
 	}
@@ -106,7 +106,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private static Texture2D? GetDisplayTexture(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		try
 		{
 			Texture2D? bigIcon = relic.BigIcon;
@@ -136,7 +136,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		string key = id.ToString();
 		if (DisplayTextureFallbackWarnings.Add(key))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.GetDisplayTexture: using fallback id={key} reason={reason}");
+			HextechLog.Warn("Mayhem", $"SelectionScreen.GetDisplayTexture: using fallback id={key} reason={reason}");
 		}
 	}
 

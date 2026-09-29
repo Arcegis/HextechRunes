@@ -1,49 +1,11 @@
-using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace HextechRunes;
 
-internal readonly record struct HextechForgeRarityWeights(int Silver, int Gold, int Prismatic)
-{
-	public int Total => Silver + Gold + Prismatic;
-}
-
-public sealed class RandomForgeShopRelic : HextechRelicBase
-{
-	private const string PriceVarName = "Price";
-
-	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-	public int SavedPurchaseCount
-	{
-		get => PurchaseCount;
-		set => PurchaseCount = Math.Max(0, value);
-	}
-
-	public int PurchaseCount { get; private set; }
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar(PriceVarName, HextechRuneConfiguration.GetDefaultRandomForgeShopPrice())
-	];
-
-	public override bool IsAvailableForPlayer(Player player)
-	{
-		return false;
-	}
-
-	public void SetDisplayedPrice(int price)
-	{
-		DynamicVars[PriceVarName].BaseValue = HextechRuneConfiguration.ClampRandomForgeShopPrice(price);
-	}
-
-	public void IncrementPurchaseCount()
-	{
-		PurchaseCount++;
-	}
-}
-
 internal static class HextechForgeGrantHelper
 {
+	private const int ForgeChoiceOptionCount = 3;
+
 	public static async Task ObtainRandomForges(Player player, int count)
 	{
 		_ = await TryObtainRandomForges(player, count);
@@ -142,7 +104,7 @@ internal static class HextechForgeGrantHelper
 		// 这唯一落地点再用最新的有效禁用集兜底校验一次,挡掉任何漏网的被禁锻造器。
 		if (IsForgeDisabledForPlayer(player, forge))
 		{
-			Log.Warn($"[{ModInfo.Id}][ForgeChoice] Blocked obtaining a config-disabled forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}");
+			HextechLog.Warn("ForgeChoice", $"Blocked obtaining a config-disabled forge: player={player.NetId} relic={forge.CanonicalId().Entry}");
 			return;
 		}
 
@@ -150,25 +112,24 @@ internal static class HextechForgeGrantHelper
 		bool syncedBeforePickup = false;
 		if (syncObtainedRelic)
 		{
-			INetGameService netService = RunManager.Instance.NetService;
-			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
+			if (HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
 				// Enchantment forges open a nested deck choice during pickup; remote clients must know about the forge first.
-				ModelId forgeId = forge.CanonicalInstance?.Id ?? forge.Id;
+				ModelId forgeId = forge.CanonicalId();
 				RelicModel syncCopy = ModelDb.GetById<RelicModel>(forgeId).ToMutable();
 				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(syncCopy);
 				syncedBeforePickup = true;
 			}
-			else if (netService.Type is NetGameType.Host or NetGameType.Client)
+			else if (HextechPlayerContextHelper.IsNetworkMultiplayerRun())
 			{
-				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
+				HextechLog.Warn("ForgeChoice", $"Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
 			}
 		}
 
 		await RelicCmd.Obtain(forge, player);
 		if (syncedBeforePickup)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
+			HextechLog.Info("ForgeChoice", $"Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
 		}
 	}
 
@@ -204,27 +165,7 @@ internal static class HextechForgeGrantHelper
 			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
 		}
 
-		if (pool.Count == 0)
-		{
-			options = [];
-			return false;
-		}
-
-		List<Type> forgeTypes = HextechStableRandom.PickDistinct(
-			pool,
-			Math.Min(3, pool.Count),
-			(RunState)player.RunState,
-			HextechStableRandom.TypeModelKey,
-			source,
-			"forge-choice",
-			HextechStableRandom.PlayerKey(player),
-			ordinal.ToString(),
-			((int)rarity).ToString(),
-			player.Relics.Count.ToString());
-		options = forgeTypes
-			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)).ToMutable())
-			.ToList();
-		return options.Count > 0;
+		return TryPickForgeChoiceOptions(player, pool, rarity, source, "forge-choice", ordinal, out options);
 	}
 
 	private static bool TryCreateStableRandomForgeChoice(
@@ -236,6 +177,19 @@ internal static class HextechForgeGrantHelper
 		out List<RelicModel> options)
 	{
 		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity).Where(forgeTypePredicate));
+		return TryPickForgeChoiceOptions(player, pool, rarity, source, "filtered-forge-choice", ordinal, out options);
+	}
+
+	// choiceTag 是稳定随机的盐值之一，两种入口各自保留原值，不能合并（否则同样输入抽出的候选会变）。
+	private static bool TryPickForgeChoiceOptions(
+		Player player,
+		List<Type> pool,
+		HextechRarityTier rarity,
+		string source,
+		string choiceTag,
+		int ordinal,
+		out List<RelicModel> options)
+	{
 		if (pool.Count == 0)
 		{
 			options = [];
@@ -244,11 +198,11 @@ internal static class HextechForgeGrantHelper
 
 		List<Type> forgeTypes = HextechStableRandom.PickDistinct(
 			pool,
-			Math.Min(3, pool.Count),
+			Math.Min(ForgeChoiceOptionCount, pool.Count),
 			(RunState)player.RunState,
 			HextechStableRandom.TypeModelKey,
 			source,
-			"filtered-forge-choice",
+			choiceTag,
 			HextechStableRandom.PlayerKey(player),
 			ordinal.ToString(),
 			((int)rarity).ToString(),
@@ -332,7 +286,7 @@ internal static class HextechForgeGrantHelper
 		try
 		{
 			if (player.RunState is RunState runState
-				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 			{
 				return modifier.ForgeRarityWeights;
 			}
@@ -341,8 +295,8 @@ internal static class HextechForgeGrantHelper
 		{
 			if (HextechRunLogBudget.TryConsume("forge.rarity-config-fallback", 3))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Forge] Could not read synchronized forge rarity weights; "
+				HextechLog.Warn(
+					"Forge", $"Could not read synchronized forge rarity weights; "
 					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
@@ -352,7 +306,7 @@ internal static class HextechForgeGrantHelper
 
 	internal static bool IsForgeDisabledForPlayer(Player player, RelicModel forge)
 	{
-		string entry = (forge.CanonicalInstance?.Id ?? forge.Id).Entry;
+		string entry = forge.CanonicalId().Entry;
 		return GetEffectiveDisabledForgeIds(player).Contains(entry);
 	}
 
@@ -361,7 +315,7 @@ internal static class HextechForgeGrantHelper
 		try
 		{
 			if (player.RunState is RunState runState
-				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 			{
 				return modifier.DisabledForgeIdsForPool;
 			}
@@ -370,8 +324,8 @@ internal static class HextechForgeGrantHelper
 		{
 			if (HextechRunLogBudget.TryConsume("forge.disabled-config-fallback", 3))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Forge] Could not read synchronized disabled forge IDs; "
+				HextechLog.Warn(
+					"Forge", $"Could not read synchronized disabled forge IDs; "
 					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
 			}
 		}

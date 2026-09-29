@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Models.CardPools;
 
@@ -21,28 +22,7 @@ public sealed class CrossOrbRune : HextechRelicBase
 			return false;
 		}
 
-		bool modified = false;
-		for (int i = 0; i < cardRewardOptions.Count; i++)
-		{
-			CardCreationResult result = cardRewardOptions[i];
-			if (result.Card.Rarity != CardRarity.Common
-				|| !ShouldReplaceCommon(player, "card-reward", i.ToString(), result.Card.Id.Entry)
-				|| !TryCreateNonCommonCard(player, result.Card, creationOptions, cardRewardOptions, i, out CardCreationResult? replacement)
-				|| replacement == null)
-			{
-				continue;
-			}
-
-			result.ModifyCard(replacement.Card, this);
-			modified = true;
-		}
-
-		if (modified)
-		{
-			Flash();
-		}
-
-		return modified;
+		return ReplaceCommonCards(player, cardRewardOptions, creationOptions, "card-reward");
 	}
 
 	public override void ModifyMerchantCardCreationResults(Player player, List<CardCreationResult> cards)
@@ -60,14 +40,22 @@ public sealed class CrossOrbRune : HextechRelicBase
 				.ToList(),
 			CardCreationSource.Shop,
 			CardRarityOddsType.Uniform);
+		ReplaceCommonCards(player, cards, creationOptions, "merchant-card");
+	}
+
+	private bool ReplaceCommonCards(
+		Player player,
+		List<CardCreationResult> results,
+		CardCreationOptions creationOptions,
+		string saltScope)
+	{
 		bool modified = false;
-		for (int i = 0; i < cards.Count; i++)
+		for (int i = 0; i < results.Count; i++)
 		{
-			CardCreationResult result = cards[i];
+			CardCreationResult result = results[i];
 			if (result.Card.Rarity != CardRarity.Common
-				|| !ShouldReplaceCommon(player, "merchant-card", i.ToString(), result.Card.Id.Entry)
-				|| !TryCreateNonCommonCard(player, result.Card, creationOptions, cards, i, out CardCreationResult? replacement)
-				|| replacement == null)
+				|| !ShouldReplaceCommon(player, saltScope, i.ToString(), result.Card.Id.Entry)
+				|| !TryCreateNonCommonCard(player, result.Card, creationOptions, results, out CardCreationResult? replacement))
 			{
 				continue;
 			}
@@ -80,6 +68,8 @@ public sealed class CrossOrbRune : HextechRelicBase
 		{
 			Flash();
 		}
+
+		return modified;
 	}
 
 	public override bool TryModifyRewards(Player player, List<Reward> rewards, AbstractRoom? room)
@@ -95,8 +85,7 @@ public sealed class CrossOrbRune : HextechRelicBase
 			if (rewards[i] is PotionReward potionReward
 				&& potionReward.Potion?.Rarity == PotionRarity.Common
 				&& ShouldReplaceCommon(player, "potion-reward", i.ToString(), potionReward.Potion.Id.Entry)
-				&& TryCreateNonCommonPotionReward(player, i, out PotionReward? potionReplacement)
-				&& potionReplacement != null)
+				&& TryCreateNonCommonPotionReward(player, i, out PotionReward? potionReplacement))
 			{
 				rewards[i] = potionReplacement;
 				modified = true;
@@ -133,8 +122,7 @@ public sealed class CrossOrbRune : HextechRelicBase
 		CardModel sourceCard,
 		CardCreationOptions creationOptions,
 		IEnumerable<CardCreationResult> currentResults,
-		int rewardIndex,
-		out CardCreationResult? result)
+		[NotNullWhen(true)] out CardCreationResult? result)
 	{
 		if (!TryGetCardPoolId(sourceCard, out ModelId sourcePoolId))
 		{
@@ -180,14 +168,16 @@ public sealed class CrossOrbRune : HextechRelicBase
 			id = card.Pool.Id;
 			return true;
 		}
-		catch
+		catch (InvalidProgramException)
 		{
+			// 原版 CardModel.Pool(0.111.0 反编译)在卡不属于任何卡池时抛 InvalidProgramException；
+			// 第三方或事件生成的这类卡不参与同池替换。
 			id = ModelId.none;
 			return false;
 		}
 	}
 
-	private static bool TryCreateNonCommonPotionReward(Player player, int rewardIndex, out PotionReward? reward)
+	private static bool TryCreateNonCommonPotionReward(Player player, int rewardIndex, [NotNullWhen(true)] out PotionReward? reward)
 	{
 		List<PotionModel> candidates = HextechGameApiCompat.GetPotionOptions(player)
 			.Where(static potion => potion.Rarity != PotionRarity.Common)

@@ -1,9 +1,13 @@
 namespace HextechRunes;
 
-public sealed class RedEnvelopeRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class RedEnvelopeRune : HextechSharedCombatVictoryRuneBase
 {
 	internal const int BaseForgeChance = 25;
 	internal const int ForgeChanceStep = 5;
+
+	// 金币分支的区间；文案写的是字面值（20~50），改数值要同步九语言。
+	private const int MinGold = 20;
+	private const int MaxGold = 50;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -23,17 +27,7 @@ public sealed class RedEnvelopeRune : HextechRelicBase, IHextechSharedCombatVict
 
 	internal int CurrentForgeChance => HextechDynamicDropChance.CurrentChance(_forgeChanceOffset, BaseForgeChance);
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
@@ -57,8 +51,8 @@ public sealed class RedEnvelopeRune : HextechRelicBase, IHextechSharedCombatVict
 			HextechGoldRewardHelper.AddStableRangedExtraGoldReward(
 				room,
 				Owner,
-				20,
-				50,
+				MinGold,
+				MaxGold,
 				"red-envelope-gold",
 				Owner.Relics.Count.ToString());
 		}

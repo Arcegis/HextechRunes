@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 {
+	private const decimal BaseCostReduction = 1m;
+
 	private int _deathsThisCombat;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -54,7 +56,7 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 			return false;
 		}
 
-		decimal reducedCost = Math.Max(0m, originalCost - 1m - _deathsThisCombat);
+		decimal reducedCost = Math.Max(0m, originalCost - BaseCostReduction - _deathsThisCombat);
 		if (reducedCost == originalCost)
 		{
 			return false;
@@ -81,7 +83,7 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 				}
 				catch (Exception ex)
 				{
-					Log.Warn($"[{ModInfo.Id}][ReanimateUpgrade] Cost visual refresh failed: {ex.Message}");
+					HextechLog.Warn("ReanimateUpgrade", $"Cost visual refresh failed: {ex.Message}");
 				}
 			}
 		}

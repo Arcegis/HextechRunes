@@ -151,6 +151,7 @@
   "HEXTECH_COMMUNITY_DELETE": "删除",
   "HEXTECH_COMMUNITY_REPORT": "举报",
   "HEXTECH_COMMUNITY_REPORTED": "已举报",
+  "HEXTECH_COMMUNITY_APPLY_INVALID": "该配置码无法解析，可能来自不兼容的版本。",
   "HEXTECH_COMMUNITY_NEED_STEAM": "需要 Steam 在线才能上传/点赞。",
   "HEXTECH_COMMUNITY_ERR_TITLE_REJECTED": "标题包含不允许的内容，请修改后重试。",
   "HEXTECH_COMMUNITY_ERR_QUOTA": "你已上传 3 个配置，请先删除一个再上传。",

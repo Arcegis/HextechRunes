@@ -1,4 +1,8 @@
 {
   "HEXTECH_CONFIG_BUTTON": "ตั้งค่ารูนเฮกซ์เทค",
-  "HEXTECH_CONFIG_BUTTON_TOOLTIP": "ตั้งค่ากฎของเฮกซ์เทค เฮกซ์ศัตรู และช่างหลอมค่าสถานะ ที่ใช้เมื่อเล่นคนเดียวหรือเป็นเจ้าของห้องในโหมดหลายคน"
+  "HEXTECH_CONFIG_BUTTON_TOOLTIP": "ตั้งค่ากฎของเฮกซ์เทค เฮกซ์ศัตรู และช่างหลอมค่าสถานะ ที่ใช้เมื่อเล่นคนเดียวหรือเป็นเจ้าของห้องในโหมดหลายคน",
+  "HEXTECH_UPDATE_CHECKING": "Checking the Hextech Mayhem mod version...",
+  "HEXTECH_UPDATE_UNAVAILABLE": "Hextech Mayhem update check is currently unavailable",
+  "HEXTECH_UPDATE_AVAILABLE": "Hextech Mayhem {Latest} is available (current version: {Current})",
+  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})"
 }

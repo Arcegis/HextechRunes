@@ -35,10 +35,18 @@ public sealed class BloodDebtRune : HextechRelicBase
 
 	internal void GrowAttacks(IEnumerable<CardModel> cards, decimal amount)
 	{
-		if (Owner == null || amount <= 0m) return;
+		if (Owner == null || amount <= 0m)
+		{
+			return;
+		}
+
 		foreach (CardModel card in cards.Distinct())
 		{
-			if (card.Owner != Owner || card.Type != CardType.Attack) continue;
+			if (card.Owner != Owner || card.Type != CardType.Attack)
+			{
+				continue;
+			}
+
 			_damageBonuses ??= [];
 			_damageBonuses[card] = _damageBonuses.GetValueOrDefault(card) + amount;
 		}
@@ -49,7 +57,7 @@ public sealed class BloodDebtRune : HextechRelicBase
 	{
 		// 用卡牌实例记录战斗内成长，换牌堆不清零；统一伤害 Hook 同时支持多段、动态伤害和预览。
 		return cardSource?.Owner == Owner && cardSource?.Type == CardType.Attack
-			&& HextechSts2Compat.IsPoweredAttack(props)
+			&& props.IsPoweredAttack()
 			&& IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource)
 			? _damageBonuses?.GetValueOrDefault(cardSource) ?? 0m : 0m;
 	}

@@ -1,3 +1,5 @@
+using static HextechRunes.HextechContentRegistry;
+
 namespace HextechRunes;
 
 internal static partial class HextechCatalog
@@ -13,7 +15,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.RuneIds.Contains(id);
 	}
 
@@ -24,7 +26,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.ForgeIds.Contains(id);
 	}
 
@@ -35,7 +37,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.ShopOnlyRelicIds.Contains(id);
 	}
 
@@ -46,7 +48,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.EnemyHexIconRelicIds.Contains(id);
 	}
 
@@ -63,7 +65,13 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
+		return ModelIdLookups.PlayerRuneRarityById.TryGetValue(id, out rarity);
+	}
+
+	/// <summary>按规范 ModelId 查已登记玩家符文(内置 + 外部 API)的稀有度;不是玩家符文时返回 false。</summary>
+	internal static bool TryGetPlayerRuneRarityById(ModelId id, out HextechRarityTier rarity)
+	{
 		return ModelIdLookups.PlayerRuneRarityById.TryGetValue(id, out rarity);
 	}
 
@@ -75,13 +83,13 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.ForgeRarityById.TryGetValue(id, out rarity);
 	}
 
 	public static string GetPlayerRuneTagKey(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.PlayerRuneTagKeyById.TryGetValue(id, out string? tagKey)
 			? tagKey
 			: HextechPlayerRuneRegistry.DefaultTagKey;

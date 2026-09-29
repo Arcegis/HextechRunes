@@ -1,14 +1,8 @@
-using System.Runtime.CompilerServices;
-using MegaCrit.Sts2.Core.Helpers;
-
 namespace HextechRunes;
 
 public sealed class NearDeathFeastRune : HextechRelicBase
 {
 	private const int DeathNegativeMaxHpDivisor = 2;
-	private static readonly object MissingDamageResultMemberLogLock = new();
-	private static readonly HashSet<string> LoggedMissingDamageResultMembers = [];
-	private static readonly ConditionalWeakTable<NearDeathFeastRune, SemaphoreSlim> StrengthSyncGates = new();
 	private bool _nearDeathActive;
 	private int _nearDeathDebt;
 	private int _nearDeathStrengthBonus;
@@ -57,7 +51,7 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 
 	internal static bool HasDyingState(Creature creature)
 	{
-		return creature.Player?.GetRelic<NearDeathFeastRune>() != null;
+		return GetRune(creature) != null;
 	}
 
 	internal static bool IsDyingButAlive(Creature creature)
@@ -87,11 +81,6 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		return true;
 	}
 
-	internal static bool ShouldPreventSustain(Creature creature)
-	{
-		return IsDyingButAlive(creature);
-	}
-
 	internal static bool ShouldInterceptLoseHp(Creature creature, decimal amount)
 	{
 		NearDeathFeastRune? rune = GetRune(creature);
@@ -100,49 +89,31 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 			return false;
 		}
 
-		int hpLoss = (int)Math.Min(amount, 999999999m);
-		return rune._nearDeathActive || creature.CurrentHp - hpLoss < 1;
+		return rune._nearDeathActive || creature.CurrentHp - HextechNearDeathHpLoss.ToHpLoss(amount) < 1;
 	}
 
+	// 在 Creature.LoseHpInternal 的同步前缀里运行：这里只改生命与负血债务，不发命令。
+	// 力量补差放在 AfterCurrentHpChanged：原版 CreatureCmd.Damage 只要 UnblockedDamage > 0 就会派发它
+	// （不看生命是否真的变化，0.107.1 / 0.110.0 / 0.111.0 相同），本方法返回的 UnblockedDamage 就是本次失血，
+	// 所以"生命钉在 1、只有债务增加"时同样会走到那里并被等待。
 	internal static DamageResult LoseHpAllowingDying(Creature creature, decimal amount, ValueProp props)
 	{
 		NearDeathFeastRune? rune = GetRune(creature);
-		if (rune == null)
+		if (rune == null || amount <= 0m)
 		{
-			return CreateDamageResult(creature, props, 0, false, 0);
+			return new DamageResult(creature, props);
 		}
 
-		if (amount <= 0m)
-		{
-			return CreateDamageResult(creature, props, 0, false, 0);
-		}
-
-		int oldEffectiveHp = rune._nearDeathActive ? -rune._nearDeathDebt : creature.CurrentHp;
-		int hpLoss = (int)Math.Min(amount, 999999999m);
-		int newEffectiveHp = oldEffectiveHp - hpLoss;
-		int deathLimit = GetDeathNegativeHpLimit(creature);
-		bool killed = newEffectiveHp <= -deathLimit;
-
-		if (killed)
-		{
-			rune._nearDeathActive = false;
-			rune._nearDeathDebt = deathLimit;
-			creature.SetCurrentHpInternal(0);
-			return CreateDamageResult(creature, props, hpLoss, true, Math.Max(0, -deathLimit - newEffectiveHp));
-		}
-
-		rune._nearDeathActive = newEffectiveHp < 1;
-		rune._nearDeathDebt = Math.Max(0, -newEffectiveHp);
-		int safeHp = rune._nearDeathActive ? 1 : newEffectiveHp;
-		bool hpChanged = creature.CurrentHp != safeHp;
-		creature.SetCurrentHpInternal(safeHp);
-		if (!hpChanged)
-		{
-			// 同步伤害 hook 不能等待异步力量命令；交给安全任务包装保留异常证据。
-			_ = TaskHelper.RunSafely(rune.SyncNearDeathStrength());
-		}
-
-		return CreateDamageResult(creature, props, hpLoss, false, 0);
+		HextechNearDeathHpLoss outcome = HextechNearDeathHpLoss.Resolve(
+			rune._nearDeathActive,
+			rune._nearDeathDebt,
+			creature.CurrentHp,
+			amount,
+			GetDeathNegativeHpLimit(creature));
+		rune._nearDeathActive = outcome.Dying;
+		rune._nearDeathDebt = outcome.Debt;
+		creature.SetCurrentHpInternal(outcome.CurrentHp);
+		return outcome.ToDamageResult(creature, props);
 	}
 
 	internal static void ForceDeathThresholdForKill(Creature creature)
@@ -175,10 +146,11 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 			return;
 		}
 
+		// 力量补差同样交给 AfterCurrentHpChanged：负值来自 CreatureCmd.SetCurrentHp 时，请求值与旧生命必然不同，
+		// 原版会在写入后派发该 Hook。
 		rune._nearDeathActive = true;
 		rune._nearDeathDebt = debt;
 		creature.SetCurrentHpInternal(1);
-		_ = TaskHelper.RunSafely(rune.SyncNearDeathStrength());
 	}
 
 	internal static int GetDeathNegativeHpLimit(Creature creature)
@@ -253,52 +225,41 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature && ShouldPreventSustain(target) ? 0m : 1m;
+		return target == Owner?.Creature && IsDyingButAlive(target) ? 0m : 1m;
 	}
 
+	// 先预留目标加成再发命令：命令链里若再次触发失血（重入本方法），只会补新的差额。
 	private async Task SyncNearDeathStrength()
 	{
-		SemaphoreSlim syncGate = StrengthSyncGates.GetValue(this, static _ => new SemaphoreSlim(1, 1));
-		await syncGate.WaitAsync();
-		int previousBonus = 0;
-		int reservedBonus = 0;
-		bool bonusReserved = false;
+		if (Owner is not Player owner)
+		{
+			return;
+		}
+
+		int desiredBonus = _nearDeathActive
+			? _nearDeathDebt * (int)DynamicVars["StrengthPerNegativeHp"].BaseValue
+			: 0;
+		int previousBonus = _nearDeathStrengthBonus;
+		int delta = desiredBonus - previousBonus;
+		_nearDeathStrengthBonus = desiredBonus;
+		if (delta <= 0)
+		{
+			return;
+		}
+
 		try
 		{
-			if (Owner is not Player owner)
-			{
-				return;
-			}
-
-			int desiredBonus = _nearDeathActive
-				? _nearDeathDebt * (int)DynamicVars["StrengthPerNegativeHp"].BaseValue
-				: 0;
-			previousBonus = _nearDeathStrengthBonus;
-			int delta = desiredBonus - previousBonus;
-			if (delta <= 0)
-			{
-				_nearDeathStrengthBonus = desiredBonus;
-				return;
-			}
-
-			reservedBonus = desiredBonus;
-			_nearDeathStrengthBonus = reservedBonus;
-			bonusReserved = true;
 			Flash();
 			await PowerCmd.Apply<StrengthPower>(owner.Creature, delta, owner.Creature, null);
 		}
 		catch
 		{
-			if (bonusReserved && _nearDeathStrengthBonus == reservedBonus)
+			if (_nearDeathStrengthBonus == desiredBonus)
 			{
 				_nearDeathStrengthBonus = previousBonus;
 			}
 
 			throw;
-		}
-		finally
-		{
-			syncGate.Release();
 		}
 	}
 
@@ -312,53 +273,5 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 	private static NearDeathFeastRune? GetRune(Creature creature)
 	{
 		return creature.Player?.GetRelic<NearDeathFeastRune>();
-	}
-
-	// 供敌方濒死狂宴(HextechEnemyNearDeath)复用同一套反射构造。
-	internal static DamageResult CreateDamageResult(Creature creature, ValueProp props, int unblockedDamage, bool wasTargetKilled, int overkillDamage)
-	{
-		DamageResult result = new(creature, props);
-		object boxed = result;
-		SetDamageResultValue(boxed, nameof(DamageResult.UnblockedDamage), unblockedDamage);
-		SetDamageResultValue(boxed, nameof(DamageResult.WasTargetKilled), wasTargetKilled);
-		SetDamageResultValue(boxed, nameof(DamageResult.OverkillDamage), overkillDamage);
-		return (DamageResult)boxed;
-	}
-
-	private static void SetDamageResultValue(object result, string memberName, object value)
-	{
-		Type type = result.GetType();
-		const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-		PropertyInfo? property = type.GetProperty(memberName, flags);
-		if (property?.SetMethod != null)
-		{
-			property.SetValue(result, ConvertDamageResultValue(value, property.PropertyType));
-			return;
-		}
-
-		FieldInfo? field = type.GetField($"<{memberName}>k__BackingField", flags)
-			?? type.GetField(memberName, flags)
-			?? type.GetField($"_{char.ToLowerInvariant(memberName[0])}{memberName[1..]}", flags);
-		if (field != null)
-		{
-			field.SetValue(result, ConvertDamageResultValue(value, field.FieldType));
-			return;
-		}
-
-		lock (MissingDamageResultMemberLogLock)
-		{
-			if (!LoggedMissingDamageResultMembers.Add($"{type.AssemblyQualifiedName}:{memberName}"))
-			{
-				return;
-			}
-		}
-
-		Log.Warn($"[{ModInfo.Id}][Reflection] Missing writable DamageResult member {type.FullName}.{memberName}; result field left at its default.");
-	}
-
-	private static object ConvertDamageResultValue(object value, Type targetType)
-	{
-		Type actualType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-		return Convert.ChangeType(value, actualType);
 	}
 }

@@ -2,47 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	private static List<RelicModel> BuildSelectableRunePool(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
-	{
-		return HextechRunePoolBuilder.BuildSelectableRunePool(player, rarity, runState, excludedIds);
-	}
-
-	private static List<RelicModel> BuildSelectableRunesForRarity(
-		Player player,
-		HextechRarityTier rarity,
-		RunState runState,
-		IReadOnlySet<ModelId>? excludedIds = null,
-		bool useEndlessTagWindow = false)
-	{
-		return HextechRunePoolBuilder.BuildSelectableRunesForRarity(player, rarity, runState, excludedIds, useEndlessTagWindow);
-	}
-
-	private static List<RelicModel> BuildStableSelectableRunesForRarity(
-		Player player,
-		HextechRarityTier rarity,
-		RunState runState,
-		int selectionStageIndex,
-		IReadOnlySet<ModelId>? excludedIds = null,
-		bool useEndlessTagWindow = false)
-	{
-		return HextechRunePoolBuilder.BuildStableSelectableRunesForRarity(player, rarity, runState, selectionStageIndex, excludedIds, useEndlessTagWindow);
-	}
-
-	private static Dictionary<string, int> BuildOwnedRuneTagCounts(Player player, bool useEndlessTagWindow)
-	{
-		return HextechRunePoolBuilder.BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
-	}
-
-	private static int SelectWeightedIndex(IReadOnlyList<int> weights, int roll)
-	{
-		return HextechRunePoolBuilder.SelectWeightedIndex(weights, roll);
-	}
-
-	private static RelicModel CreateSelectableRuneOption(Player player, RelicModel relic)
-	{
-		return HextechRunePoolBuilder.CreateSelectableRuneOption(player, relic);
-	}
-
 	// 玩家候选只排除本局已见过的符文。敌我同名不再互相回避:敌方持有的海克斯照样可以出现在玩家候选里。
 	private static HashSet<ModelId> CreateBaseExcludedIds(HextechMayhemModifier modifier, Player player)
 	{
@@ -52,7 +11,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static HashSet<ModelId> CreateSeenOptionIds(IEnumerable<RelicModel> options, IEnumerable<ModelId>? alreadySeenIds = null)
 	{
 		HashSet<ModelId> seenOptionIds = options
-			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.Select(static relic => relic.CanonicalId())
 			.ToHashSet();
 		if (alreadySeenIds != null)
 		{
@@ -83,18 +42,13 @@ internal static partial class HextechRuneSelectionCoordinator
 		HashSet<ModelId> excludedIds = [];
 		for (int i = 0; i < currentMonsterHexes.Count; i++)
 		{
-			if (i != rerollSlotIndex && currentMonsterHexes[i].HasValue)
+			if (i != rerollSlotIndex && currentMonsterHexes[i] is MonsterHexKind hex)
 			{
-				excludedIds.Add(GetMonsterHexIconRelicId(currentMonsterHexes[i]!.Value));
+				excludedIds.Add(GetMonsterHexIconRelicId(hex));
 			}
 		}
 
 		return excludedIds;
-	}
-
-	private static HextechRarityTier GetRarityForOptions(IReadOnlyList<RelicModel> relics)
-	{
-		return HextechRunePoolBuilder.GetRarityForOptions(relics);
 	}
 
 	public static void RemoveRunesFromGrabBags(Player player)

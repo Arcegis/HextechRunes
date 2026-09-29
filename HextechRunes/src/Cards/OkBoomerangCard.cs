@@ -66,7 +66,7 @@ public sealed class OkBoomerangCard : HextechOwnerPoolTokenCard
 			.Execute(choiceContext);
 	}
 
-	// 打出后返回手牌:回力镖掷出必归。(0.108.0 起该虚方法改为返回含位置的元组,0.109.0 起改为 CardLocation)
+	// 打出后返回手牌:回力镖掷出必归。(原版虚方法签名:0.107.1 返回 PileType,0.109.0 起返回 CardLocation)
 #if STS2_109_OR_NEWER
 	protected override CardLocation GetResultLocationForCardPlay()
 	{
@@ -74,11 +74,6 @@ public sealed class OkBoomerangCard : HextechOwnerPoolTokenCard
 		location.pileType = PileType.Hand;
 		location.position = CardPilePosition.Bottom;
 		return location;
-	}
-#elif STS2_108_OR_NEWER
-	protected override (PileType, CardPilePosition) GetResultPileTypeAndPositionForCardPlay()
-	{
-		return (PileType.Hand, CardPilePosition.Bottom);
 	}
 #else
 	protected override PileType GetResultPileTypeForCardPlay()

@@ -1,5 +1,3 @@
-using HarmonyLib;
-
 namespace HextechRunes;
 
 public sealed class GoldrendRune : HextechRelicBase
@@ -10,7 +8,7 @@ public sealed class GoldrendRune : HextechRelicBase
 	// 夺金每次命中都发钱,多段攻击时金币音效连响;只在本次发钱的异步作用域内静音,别处的金币音效不受影响。
 	private static readonly AsyncLocal<bool> SuppressGoldSfx = new();
 
-	// 仅保留旧存档尚未领取的战后奖励；新的触发直接发放金币。
+	// 仅保留旧存档尚未领取的战后奖励（见 SettleLegacyCombatGold）；新的触发直接发放金币。
 	private int _countThisCombat;
 	private bool _grantingGold;
 	// 本回合是否已经响过一次金币音效;纯本地表现,不进存档、不参与联机。
@@ -32,27 +30,20 @@ public sealed class GoldrendRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical && _countThisCombat > 0;
+	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
 
 	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
 
 	public override Task BeforeCombatStart()
 	{
-		_countThisCombat = 0;
 		_goldSfxPlayedThisTurn = false;
-		InvokeDisplayAmountChanged();
+		SettleLegacyCombatGold(null, ref _countThisCombat);
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		if (Owner != null && _countThisCombat > 0)
-		{
-			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, _countThisCombat);
-		}
-
-		_countThisCombat = 0;
-		InvokeDisplayAmountChanged();
+		SettleLegacyCombatGold(room, ref _countThisCombat);
 		return Task.CompletedTask;
 	}
 
@@ -93,10 +84,11 @@ public sealed class GoldrendRune : HextechRelicBase
 
 	// 只在夺金发钱的作用域里、且是金币音效时跳过;其余音效与其他来源的金币音效照常播放。
 	[HarmonyPatch(typeof(SfxCmd), nameof(SfxCmd.Play), typeof(string), typeof(float))]
-	[HextechPatch("rune.goldrend.gold-sfx", "夺金")]
+	[HextechPatch("rune.goldrend.gold-sfx", "夺金", Rune = typeof(GoldrendRune))]
 	private static class GoldSfxPatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(string sfx)
 		{
 			return !ShouldSuppressSfx(sfx);

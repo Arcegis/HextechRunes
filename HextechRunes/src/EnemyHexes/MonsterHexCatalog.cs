@@ -75,6 +75,21 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.CeremonialBeast] = [typeof(StrengthPower)],
 			[MonsterHexKind.ThievingHopper] = [typeof(SwipePower)],
 			[MonsterHexKind.ReforgedHelmet] = [typeof(StrengthPower)],
+			[MonsterHexKind.Compensation] = [typeof(HextechNextTurnDamagePower)],
+			[MonsterHexKind.SolidTime] = [typeof(HextechGalvanicPower)],
+			[MonsterHexKind.FossilStalker] = [typeof(SuckPower)],
+			[MonsterHexKind.AncientStatue] = [typeof(HextechPlayerSlowPower)],
+			[MonsterHexKind.HundredRefinements] = [typeof(HextechPlayerSlowPower)],
+		};
+
+	// 能力之外的补充悬浮提示（卡牌、关键词），排在灼烧提示之后。
+	private static readonly IReadOnlyDictionary<MonsterHexKind, Func<IHoverTip>[]> EnemyHexExtraHoverTips =
+		new Dictionary<MonsterHexKind, Func<IHoverTip>[]>
+		{
+			[MonsterHexKind.SoulFysh] = [static () => HoverTipFactory.FromCard<Beckon>()],
+			[MonsterHexKind.HauntedShip] = [static () => HoverTipFactory.FromCard<Dazed>()],
+			[MonsterHexKind.SomethingForNothing] = [static () => HoverTipFactory.FromKeyword(CardKeyword.Exhaust)],
+			[MonsterHexKind.CorruptedBranch] = [static () => HoverTipFactory.FromKeyword(CardKeyword.Exhaust)],
 		};
 
 	private static readonly Lazy<IReadOnlyDictionary<MonsterHexKind, HextechRarityTier>> RarityByMonsterHex = new(BuildRarityByMonsterHex);
@@ -114,7 +129,7 @@ internal static class MonsterHexCatalog
 
 	public static bool TryGetMonsterHexKind(RelicModel relic, out MonsterHexKind hex)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return MonsterHexByIconRelicId.Value.TryGetValue(id, out hex);
 	}
 
@@ -138,6 +153,7 @@ internal static class MonsterHexCatalog
 	private static readonly IReadOnlyDictionary<MonsterHexKind, (string Var, int Base)> PlayerCountScaledThresholds =
 		new Dictionary<MonsterHexKind, (string, int)>
 		{
+			// 同 Porcupine：字面量供 TXT 同步脚本渲染，测试断言与各效果类的 HpPerPercentPerPlayer 一致。
 			[MonsterHexKind.HeavyHitter] = ("HpPerPercent", 15),
 			[MonsterHexKind.VitalitySurge] = ("HpPerPercent", 20),
 			[MonsterHexKind.ProteinShake] = ("HpPerPercent", 5),
@@ -171,14 +187,14 @@ internal static class MonsterHexCatalog
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
+			HextechLog.Warn("Mayhem", $"Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
 			try
 			{
 				return relic.DynamicDescription.GetFormattedText();
 			}
 			catch (Exception fallbackEx)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Enemy hex description fallback failed: hex={hex} relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry} error={fallbackEx.Message}");
+				HextechLog.Warn("Mayhem", $"Enemy hex description fallback failed: hex={hex} relic={relic.CanonicalId().Entry} error={fallbackEx.Message}");
 				return relic.Title.GetFormattedText();
 			}
 		}
@@ -201,31 +217,12 @@ internal static class MonsterHexCatalog
 			tips.Add(HoverTipFactory.FromPower<HextechBurnPower>());
 		}
 
-		if (hex == MonsterHexKind.SoulFysh)
-			tips.Add(HoverTipFactory.FromCard<Beckon>());
-		if (hex == MonsterHexKind.HauntedShip)
-			tips.Add(HoverTipFactory.FromCard<Dazed>());
-		if (hex is MonsterHexKind.SomethingForNothing or MonsterHexKind.CorruptedBranch)
-			tips.Add(HoverTipFactory.FromKeyword(CardKeyword.Exhaust));
-
-		if (hex == MonsterHexKind.Compensation)
+		if (EnemyHexExtraHoverTips.TryGetValue(hex, out Func<IHoverTip>[]? extraTips))
 		{
-			tips.Add(HoverTipFactory.FromPower<HextechNextTurnDamagePower>());
-		}
-
-		if (hex == MonsterHexKind.SolidTime)
-		{
-			tips.Add(HoverTipFactory.FromPower<HextechGalvanicPower>());
-		}
-
-		if (hex == MonsterHexKind.FossilStalker)
-		{
-			tips.Add(HoverTipFactory.FromPower<SuckPower>());
-		}
-
-		if (hex is MonsterHexKind.AncientStatue or MonsterHexKind.HundredRefinements)
-		{
-			tips.Add(HoverTipFactory.FromPower<HextechPlayerSlowPower>());
+			foreach (Func<IHoverTip> createTip in extraTips)
+			{
+				tips.Add(createTip());
+			}
 		}
 
 		return tips;
@@ -246,30 +243,25 @@ internal static class MonsterHexCatalog
 
 	private static string GetEnemyHexDescriptionKey(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return HextechAssets.ToImageFileStem(id.Entry) + ".enemyDescription";
 	}
 
 	/// <summary>
 	/// 用于描述显示的玩家数：单人（或非联机/取不到状态）为 1，联机时取本局玩家数并夹到 [1,16]，
 	/// 与 <c>HextechEnemyPowerScalingHooks.MultiplyByPlayerCount</c> 的实际缩放保持一致。
+	/// 原版 RunManager 没有公开的当前 RunState 取法（只有 DebugOnlyGetState，本体其它入口也都用它）；
+	/// 它只读字段、不会抛异常，所以这里不再包裸 catch。
 	/// </summary>
 	private static int GetScalingPlayerCount()
 	{
-		try
-		{
-			if (!HextechPlayerContextHelper.IsNetworkMultiplayerRun())
-			{
-				return 1;
-			}
-
-			int count = RunManager.Instance.DebugOnlyGetState() is RunState runState ? runState.Players.Count : 1;
-			return Math.Clamp(count, 1, 16);
-		}
-		catch
+		if (!HextechPlayerContextHelper.IsNetworkMultiplayerRun())
 		{
 			return 1;
 		}
+
+		int count = RunManager.Instance.DebugOnlyGetState() is RunState runState ? runState.Players.Count : 1;
+		return HextechEnemyHexContext.ClampScalingPlayerCount(count);
 	}
 
 	private static IReadOnlyDictionary<MonsterHexKind, HextechRarityTier> BuildRarityByMonsterHex()
@@ -298,7 +290,7 @@ internal static class MonsterHexCatalog
 		foreach (KeyValuePair<MonsterHexKind, Type> pair in MonsterHexIconRelicTypes)
 		{
 			RelicModel iconRelic = ModelDb.GetById<RelicModel>(ModelDb.GetId(pair.Value));
-			ModelId id = iconRelic.CanonicalInstance?.Id ?? iconRelic.Id;
+			ModelId id = iconRelic.CanonicalId();
 			byId[id] = pair.Key;
 		}
 

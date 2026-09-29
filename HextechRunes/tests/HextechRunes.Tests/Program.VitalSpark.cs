@@ -17,26 +17,32 @@ internal static partial class Program
 {
 	private static readonly List<(Creature Target, decimal Amount)> VitalSparkApplications = [];
 
+	[HextechTest]
 	private static void PlayerVitalSparkScopesCardsAndCleansUp()
 	{
 		Harmony harmony = new("HextechRunes.Tests.VitalSpark");
 		Type[] added = new[] { typeof(Tainted), typeof(TaintedPower) }.Where(type => !ModelDb.Contains(type)).ToArray();
 		try
 		{
-			foreach (Type type in added) ModelDb.Inject(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Inject(type);
+			}
 			foreach (Type patch in typeof(HextechVitalSparkCompatibilityHooks).GetNestedTypes(System.Reflection.BindingFlags.NonPublic))
 			{
 				if (patch.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0)
+				{
 					harmony.CreateClassProcessor(patch).Patch();
+				}
 			}
 			// 隔离命令所需的场景/历史；实际运行 Power 的完整生命周期与原版清除侵蚀命令。
-			var afflict = typeof(CardCmd).GetMethods().Single(m => m.Name == "Afflict" && !m.IsGenericMethodDefinition);
+			System.Reflection.MethodInfo afflict = typeof(CardCmd).GetMethods().Single(m => m.Name == "Afflict" && !m.IsGenericMethodDefinition);
 			harmony.Patch(afflict, prefix: new HarmonyMethod(typeof(Program), nameof(ApplyVitalSparkTestAffliction)));
-			var apply = typeof(PowerCmd).GetMethods().Single(m => m.Name == "Apply" && !m.IsGenericMethodDefinition);
+			System.Reflection.MethodInfo apply = typeof(PowerCmd).GetMethods().Single(m => m.Name == "Apply" && !m.IsGenericMethodDefinition);
 			harmony.Patch(apply, prefix: new HarmonyMethod(typeof(Program), nameof(CaptureVitalSparkPollution)));
-			var (_, first, second) = CreatePrismaticEnemyFixture();
-			AccessTools.Field(typeof(Creature), "<Player>k__BackingField").SetValue(first.Creature, first);
-			AccessTools.Field(typeof(Creature), "<Player>k__BackingField").SetValue(second.Creature, second);
+			(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
+			SetAutoProperty(first.Creature, nameof(Creature.Player), first);
+			SetAutoProperty(second.Creature, nameof(Creature.Player), second);
 			AccessTools.Field(typeof(Creature), "_powers").SetValue(first.Creature, new List<PowerModel>());
 			AccessTools.Field(typeof(Creature), "_powers").SetValue(second.Creature, new List<PowerModel>());
 			CardModel AddCard<T>(Player player, CardPile pile) where T : CardModel, new()
@@ -70,7 +76,7 @@ internal static partial class Program
 			Equal(1, generated.Affliction!.Amount, "new skills receive current stacks");
 			power.AfterCardEnteredCombat(teammate).GetAwaiter().GetResult();
 			Expect(teammate.Affliction == null, "teammate's new skills stay untouched");
-			var foreignTainted = ModelDb.Affliction<Tainted>().ToMutable();
+			AfflictionModel foreignTainted = ModelDb.Affliction<Tainted>().ToMutable();
 			foreignTainted.Card = teammate;
 			foreignTainted.Amount = 7;
 			AccessTools.Property(typeof(CardModel), nameof(CardModel.Affliction)).SetValue(teammate, foreignTainted);
@@ -90,8 +96,8 @@ internal static partial class Program
 				AccessTools.Field(typeof(Creature), "_powers").SetValue(creature, new List<PowerModel>());
 				combat.AddCreature(creature);
 			}
-			var playerPowers = (List<PowerModel>)AccessTools.Field(typeof(Creature), "_powers").GetValue(first.Creature)!;
-			var enemyPowers = (List<PowerModel>)AccessTools.Field(typeof(Creature), "_powers").GetValue(enemy)!;
+			List<PowerModel> playerPowers = (List<PowerModel>)AccessTools.Field(typeof(Creature), "_powers").GetValue(first.Creature)!;
+			List<PowerModel> enemyPowers = (List<PowerModel>)AccessTools.Field(typeof(Creature), "_powers").GetValue(enemy)!;
 			playerPowers.Add(power);
 			VitalSparkPower native = CreateMutableTestModel<VitalSparkPower>();
 			AccessTools.Property(typeof(PowerModel), nameof(PowerModel.Owner)).SetValue(native, enemy);
@@ -120,7 +126,10 @@ internal static partial class Program
 		{
 			harmony.UnpatchAll(harmony.Id);
 			VitalSparkApplications.Clear();
-			foreach (Type type in added) ModelDb.Remove(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Remove(type);
+			}
 		}
 	}
 

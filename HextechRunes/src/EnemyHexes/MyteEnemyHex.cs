@@ -12,11 +12,7 @@ internal sealed class MyteEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		foreach (Player player in players
-			.Where(static creature => !creature.IsDead)
-			.Select(static creature => creature.Player)
-			.OfType<Player>()
-			.OrderBy(static player => player.NetId))
+		foreach (Player player in HextechEnemyHexContext.GetAlivePlayersByNetId(players))
 		{
 			for (int i = 0; i < count; i++)
 			{

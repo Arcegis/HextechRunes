@@ -3,7 +3,6 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
-using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunesSponsorPack;
@@ -29,15 +28,9 @@ internal sealed class RegentContract : AbyssalContractBase
 			return;
 		}
 
-		RelicModel? starter = owner.Character switch
-		{
-			Ironclad => (RelicModel?)owner.GetRelic<BurningBlood>() ?? owner.GetRelic<BlackBlood>(),
-			Silent => (RelicModel?)owner.GetRelic<RingOfTheSnake>() ?? owner.GetRelic<RingOfTheDrake>(),
-			Regent => (RelicModel?)owner.GetRelic<DivineRight>() ?? owner.GetRelic<DivineDestiny>(),
-			Necrobinder => (RelicModel?)owner.GetRelic<BoundPhylactery>() ?? owner.GetRelic<PhylacteryUnbound>(),
-			Defect => (RelicModel?)owner.GetRelic<CrackedCore>() ?? owner.GetRelic<InfusedCore>(),
-			_ => null
-		};
+		RelicModel? starter = AbyssalContractCatalog.TryGetStarterRelics(owner.Character, out AbyssalContractCatalog.StarterRelicUpgrade relics)
+			? AbyssalContractCatalog.FindOwnedRelic(owner, relics.Starter) ?? AbyssalContractCatalog.FindOwnedRelic(owner, relics.Upgraded)
+			: null;
 		FencingManual replacement = (FencingManual)ModelDb.Relic<FencingManual>().ToMutable();
 		if (starter != null)
 		{

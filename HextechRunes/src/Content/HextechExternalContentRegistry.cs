@@ -32,6 +32,11 @@ internal static class HextechExternalContentRegistry
 		string? assetModId,
 		Func<Player, bool>? availability = null)
 	{
+		if (RejectBuiltInType(registration.Type, "player rune"))
+		{
+			return;
+		}
+
 		lock (SyncRoot)
 		{
 			int existingIndex = PlayerRuneRegistrations.FindIndex(
@@ -49,8 +54,8 @@ internal static class HextechExternalContentRegistry
 			string? existingAssetModId = GetStoredAssetModId(registration.Type);
 			if (!HasSamePlayerRuneMetadata(existing, registration))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate player rune registration for {registration.Type.FullName}; first metadata retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate player rune registration for {registration.Type.FullName}; first metadata retained: "
 					+ $"existing=({Describe(existing)}, assetModId={DescribeValue(existingAssetModId)}) "
 					+ $"incoming=({Describe(registration)}, assetModId={DescribeValue(assetModId)}) "
 					+ $"callerAssembly={registration.Type.Assembly.GetName().Name ?? "<unknown>"}");
@@ -86,6 +91,11 @@ internal static class HextechExternalContentRegistry
 
 	internal static void RegisterForge(ForgeRegistration registration, string? assetModId)
 	{
+		if (RejectBuiltInType(registration.Type, "forge"))
+		{
+			return;
+		}
+
 		lock (SyncRoot)
 		{
 			int existingIndex = ForgeRegistrations.FindIndex(
@@ -102,8 +112,8 @@ internal static class HextechExternalContentRegistry
 			string? existingAssetModId = GetStoredAssetModId(registration.Type);
 			if (existing.Rarity != registration.Rarity)
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate forge registration for {registration.Type.FullName}; first metadata retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate forge registration for {registration.Type.FullName}; first metadata retained: "
 					+ $"existing=(rarity={existing.Rarity}, assetModId={DescribeValue(existingAssetModId)}) "
 					+ $"incoming=(rarity={registration.Rarity}, assetModId={DescribeValue(assetModId)}) "
 					+ $"callerAssembly={registration.Type.Assembly.GetName().Name ?? "<unknown>"}");
@@ -126,8 +136,8 @@ internal static class HextechExternalContentRegistry
 				if (!string.Equals(existingPath, iconPath, StringComparison.Ordinal)
 					&& HextechRunLogBudget.TryConsume("external-content.enchantment-icon-conflict", 12))
 				{
-					Log.Warn(
-						$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate enchantment icon registration for {enchantmentType.FullName}; first path retained: "
+					HextechLog.Warn(
+						"ExternalContent", $"Conflicting duplicate enchantment icon registration for {enchantmentType.FullName}; first path retained: "
 						+ $"existingPath={DescribeValue(existingPath)} incomingPath={DescribeValue(iconPath)} "
 						+ $"callerAssembly={enchantmentType.Assembly.GetName().Name ?? "<unknown>"}");
 				}
@@ -170,7 +180,7 @@ internal static class HextechExternalContentRegistry
 		{
 			return AssetModIdsByModelId.TryGetValue(id, out string? modId)
 				? modId
-					: null;
+				: null;
 		}
 	}
 
@@ -240,6 +250,30 @@ internal static class HextechExternalContentRegistry
 		}
 	}
 
+	/// <summary>
+	/// 外部 API 不能重新登记本体内置的符文/锻造:内置与外部列表会被拼接后按类型 ToDictionary,
+	/// 同一类型出现两次会让注册表查找永久抛 ArgumentException。前置的 ModelId 检查按 IsSame 放行同一类型,
+	/// 所以必须对内置清单单独拦截。<see cref="HextechRunesApi"/> 在池登记与 SavedProperty 注入之前先调用一次,
+	/// 这里的最终登记处再兜底一次。
+	/// </summary>
+	internal static bool RejectBuiltInType(Type modelType, string kind)
+	{
+		bool isBuiltIn = HextechPlayerRuneRegistry.Registrations.Any(builtIn => HextechModelTypeIdentity.IsSame(builtIn.Type, modelType))
+			|| HextechForgeRegistry.Registrations.Any(builtIn => HextechModelTypeIdentity.IsSame(builtIn.Type, modelType));
+		if (!isBuiltIn)
+		{
+			return false;
+		}
+
+		if (HextechRunLogBudget.TryConsume("external-content.built-in-rejected", 12))
+		{
+			HextechLog.Warn(
+				"ExternalContent", $"Rejected external {kind} registration for built-in type {modelType.FullName}; built-in metadata retained.");
+		}
+
+		return true;
+	}
+
 	private static bool TryStoreAssetModId(Type modelType, string? assetModId)
 	{
 		if (string.IsNullOrWhiteSpace(assetModId))
@@ -253,8 +287,8 @@ internal static class HextechExternalContentRegistry
 			if (!string.Equals(existingAssetModId, assetModId, StringComparison.Ordinal)
 				&& HextechRunLogBudget.TryConsume("external-content.asset-owner-conflict", 12))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting asset owner registration for {modelType.FullName}; first owner retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting asset owner registration for {modelType.FullName}; first owner retained: "
 					+ $"existingAssetModId={DescribeValue(existingAssetModId)} "
 					+ $"incomingAssetModId={DescribeValue(assetModId)} "
 					+ $"callerAssembly={modelType.Assembly.GetName().Name ?? "<unknown>"}");
@@ -281,8 +315,8 @@ internal static class HextechExternalContentRegistry
 			if (existing != availability
 				&& HextechRunLogBudget.TryConsume("external-content.availability-conflict", 12))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate availability predicate for {runeType.FullName}; first predicate retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate availability predicate for {runeType.FullName}; first predicate retained: "
 					+ $"callerAssembly={runeType.Assembly.GetName().Name ?? "<unknown>"}");
 			}
 
@@ -306,8 +340,8 @@ internal static class HextechExternalContentRegistry
 			if (!string.Equals(existing, value, StringComparison.Ordinal)
 				&& HextechRunLogBudget.TryConsume(logBudgetKey, 12))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate {description}; first value retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate {description}; first value retained: "
 					+ $"existing={DescribeValue(existing)} incoming={DescribeValue(value)}");
 			}
 

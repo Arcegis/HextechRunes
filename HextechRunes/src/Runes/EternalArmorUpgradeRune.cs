@@ -10,7 +10,7 @@ public sealed class EternalArmorUpgradeRune : CardUpgradeRuneBase<EternalArmor>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<EternalArmor>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromPower<PlatingPower>()
 	];
 

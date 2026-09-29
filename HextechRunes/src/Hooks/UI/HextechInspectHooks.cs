@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Helpers;
@@ -8,55 +7,78 @@ using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Unlocks;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static class HextechInspectHooks
 {
-	private static readonly MethodInfo? InspectRelicScreenOpenMethod = TryGetMethod(typeof(NInspectRelicScreen), nameof(NInspectRelicScreen.Open), BindingFlags.Instance | BindingFlags.Public, typeof(IReadOnlyList<RelicModel>), typeof(RelicModel));
-	private static readonly FieldInfo? InspectRelicScreenUnlockedRelicsField = TryGetField(typeof(NInspectRelicScreen), "_allUnlockedRelics");
-	private static readonly FieldInfo? InspectRelicScreenRelicsField = TryGetField(typeof(NInspectRelicScreen), "_relics");
-	private static readonly FieldInfo? InspectRelicScreenIndexField = TryGetField(typeof(NInspectRelicScreen), "_index");
-	private static readonly FieldInfo? RelicCanonicalInstanceField = TryGetField(typeof(RelicModel), "_canonicalInstance");
-	private static readonly MethodInfo? InspectRelicScreenUpdateRelicDisplayMethod = TryGetMethod(typeof(NInspectRelicScreen), "UpdateRelicDisplay", BindingFlags.Instance | BindingFlags.NonPublic);
-	private static readonly MethodInfo? InspectRelicScreenSetRelicMethod = TryGetMethod(typeof(NInspectRelicScreen), "SetRelic", BindingFlags.Instance | BindingFlags.NonPublic, typeof(int));
-	private static readonly FieldInfo? InspectRelicScreenNameLabelField = TryGetField(typeof(NInspectRelicScreen), "_nameLabel");
-	private static readonly FieldInfo? InspectRelicScreenRarityLabelField = TryGetField(typeof(NInspectRelicScreen), "_rarityLabel");
-	private static readonly FieldInfo? InspectRelicScreenDescriptionField = TryGetField(typeof(NInspectRelicScreen), "_description");
-	private static readonly FieldInfo? InspectRelicScreenFlavorField = TryGetField(typeof(NInspectRelicScreen), "_flavor");
-	private static readonly FieldInfo? InspectRelicScreenImageField = TryGetField(typeof(NInspectRelicScreen), "_relicImage");
-	private static readonly FieldInfo? InspectRelicScreenHoverTipRectField = TryGetField(typeof(NInspectRelicScreen), "_hoverTipRect");
-	private static readonly MethodInfo? InspectRelicScreenSetRarityVisualsMethod = TryGetMethod(typeof(NInspectRelicScreen), "SetRarityVisuals", BindingFlags.Instance | BindingFlags.NonPublic, typeof(RelicRarity));
-
-	private static bool _inspectScreenHooksInstalled;
-	private static bool? _inspectScreenHooksAvailable;
-
-	/// <summary>检视界面改写依赖 NInspectRelicScreen 的一批私有成员;任一缺失整体停用,只告警一次。</summary>
-	private static bool InspectScreenHooksAvailable
-	{
-		get
-		{
-			if (_inspectScreenHooksAvailable is bool cached)
-			{
-				return cached;
-			}
-
-			if (!HasInspectScreenMembers(out string missingMembers))
-			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Inspect relic screen hooks disabled: missing {missingMembers}.");
-				_inspectScreenHooksAvailable = false;
-				return false;
-			}
-
-			_inspectScreenHooksInstalled = true;
-			_inspectScreenHooksAvailable = true;
-			return true;
-		}
-	}
+	// 检视界面改写依赖的原版私有成员;任一缺失时两个检视补丁都不安装(缺失项已进启动摘要)。
+	private static readonly InspectScreenMembers? Members = InspectScreenMembers.TryResolve();
 
 	private readonly record struct InspectOpenState(RelicModel? RequestedRelic);
 
+	/// <summary>原版 <c>NInspectRelicScreen</c> 的私有成员(0.107.1 / 0.110.0 / 0.111.0 同名同签名)。</summary>
+	private sealed record InspectScreenMembers(
+		FieldInfo UnlockedRelics,
+		FieldInfo Relics,
+		FieldInfo Index,
+		FieldInfo NameLabel,
+		FieldInfo RarityLabel,
+		FieldInfo Description,
+		FieldInfo Flavor,
+		FieldInfo Image,
+		FieldInfo HoverTipRect,
+		MethodInfo UpdateRelicDisplay,
+		MethodInfo SetRelic,
+		MethodInfo SetRarityVisuals)
+	{
+		internal static InspectScreenMembers? TryResolve()
+		{
+			Type type = typeof(NInspectRelicScreen);
+			const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+			FieldInfo? unlockedRelics = HextechHookReflection.TryGetField(type, "_allUnlockedRelics");
+			FieldInfo? relics = HextechHookReflection.TryGetField(type, "_relics");
+			FieldInfo? index = HextechHookReflection.TryGetField(type, "_index");
+			FieldInfo? nameLabel = HextechHookReflection.TryGetField(type, "_nameLabel");
+			FieldInfo? rarityLabel = HextechHookReflection.TryGetField(type, "_rarityLabel");
+			FieldInfo? description = HextechHookReflection.TryGetField(type, "_description");
+			FieldInfo? flavor = HextechHookReflection.TryGetField(type, "_flavor");
+			FieldInfo? image = HextechHookReflection.TryGetField(type, "_relicImage");
+			FieldInfo? hoverTipRect = HextechHookReflection.TryGetField(type, "_hoverTipRect");
+			MethodInfo? updateRelicDisplay = HextechHookReflection.TryGetMethod(type, "UpdateRelicDisplay", PrivateInstance);
+			MethodInfo? setRelic = HextechHookReflection.TryGetMethod(type, "SetRelic", PrivateInstance, typeof(int));
+			MethodInfo? setRarityVisuals = HextechHookReflection.TryGetMethod(type, "SetRarityVisuals", PrivateInstance, typeof(RelicRarity));
+			if (unlockedRelics == null
+				|| relics == null
+				|| index == null
+				|| nameLabel == null
+				|| rarityLabel == null
+				|| description == null
+				|| flavor == null
+				|| image == null
+				|| hoverTipRect == null
+				|| updateRelicDisplay == null
+				|| setRelic == null
+				|| setRarityVisuals == null)
+			{
+				return null;
+			}
+
+			return new InspectScreenMembers(
+				unlockedRelics,
+				relics,
+				index,
+				nameLabel,
+				rarityLabel,
+				description,
+				flavor,
+				image,
+				hoverTipRect,
+				updateRelicDisplay,
+				setRelic,
+				setRarityVisuals);
+		}
+	}
 
 	internal static bool ShouldHandleInspectRequest(RelicModel relic)
 	{
@@ -85,10 +107,13 @@ internal static class HextechInspectHooks
 		return merged;
 	}
 
-
-	private static void EnsureInspectRelicsUnlocked(NInspectRelicScreen screen, IReadOnlyList<RelicModel> relics)
+	/// <summary>
+	/// 把海克斯遗物的规范实例补进检视界面的"已解锁"集合。只改检视界面自己的集合,不回写遗物模型:
+	/// 可变副本缺规范实例时按 ID 取规范模型放进集合即可(海克斯遗物的显示本就由 <see cref="UpdateRelicDisplayPatch"/> 接管)。
+	/// </summary>
+	private static void EnsureInspectRelicsUnlocked(InspectScreenMembers members, NInspectRelicScreen screen, IReadOnlyList<RelicModel> relics)
 	{
-		if (InspectRelicScreenUnlockedRelicsField?.GetValue(screen) is not HashSet<RelicModel> unlockedRelics)
+		if (members.UnlockedRelics.GetValue(screen) is not HashSet<RelicModel> unlockedRelics)
 		{
 			return;
 		}
@@ -100,35 +125,22 @@ internal static class HextechInspectHooks
 
 		foreach (RelicModel relic in relics)
 		{
-			if (!HextechCatalog.IsHextechCustomRelic(relic))
+			if (HextechCatalog.IsHextechCustomRelic(relic))
 			{
-				continue;
+				unlockedRelics.Add(relic.CanonicalInstance ?? ModelDb.GetById<RelicModel>(relic.Id));
 			}
-
-			unlockedRelics.Add(EnsureCanonicalInstance(relic));
 		}
 	}
 
-	private static RelicModel EnsureCanonicalInstance(RelicModel relic)
+	/// <summary>按原版"已解锁且已发现"分支渲染海克斯遗物(名称、稀有度、描述、风味、大图、提示)。</summary>
+	private static void RenderHextechInspect(InspectScreenMembers members, NInspectRelicScreen screen, RelicModel relic)
 	{
-		if (relic.CanonicalInstance != null)
-		{
-			return relic.CanonicalInstance;
-		}
-
-		RelicModel canonical = ModelDb.GetById<RelicModel>(relic.Id);
-		RelicCanonicalInstanceField?.SetValue(relic, canonical);
-		return canonical;
-	}
-
-	private static void RenderHextechInspect(NInspectRelicScreen screen, RelicModel relic)
-	{
-		if (InspectRelicScreenNameLabelField?.GetValue(screen) is not MegaLabel nameLabel
-			|| InspectRelicScreenRarityLabelField?.GetValue(screen) is not MegaLabel rarityLabel
-			|| InspectRelicScreenDescriptionField?.GetValue(screen) is not MegaRichTextLabel description
-			|| InspectRelicScreenFlavorField?.GetValue(screen) is not MegaRichTextLabel flavor
-			|| InspectRelicScreenImageField?.GetValue(screen) is not TextureRect image
-			|| InspectRelicScreenHoverTipRectField?.GetValue(screen) is not Control hoverTipRect)
+		if (members.NameLabel.GetValue(screen) is not MegaLabel nameLabel
+			|| members.RarityLabel.GetValue(screen) is not MegaLabel rarityLabel
+			|| members.Description.GetValue(screen) is not MegaRichTextLabel description
+			|| members.Flavor.GetValue(screen) is not MegaRichTextLabel flavor
+			|| members.Image.GetValue(screen) is not TextureRect image
+			|| members.HoverTipRect.GetValue(screen) is not Control hoverTipRect)
 		{
 			return;
 		}
@@ -139,44 +151,13 @@ internal static class HextechInspectHooks
 		image.SelfModulate = Colors.White;
 		description.SetTextAutoSize(relic.DynamicDescription.GetFormattedText());
 		flavor.SetTextAutoSize(relic.Flavor.GetFormattedText());
-		InspectRelicScreenSetRarityVisualsMethod?.Invoke(screen, [relic.Rarity]);
+		members.SetRarityVisuals.Invoke(screen, [relic.Rarity]);
 		image.Texture = relic.BigIcon;
 
 		NHoverTipSet.Clear();
 		NHoverTipSet? hoverTipSet = NHoverTipSet.CreateAndShow(screen, relic.HoverTipsExcludingRelic);
 		hoverTipSet?.SetAlignment(hoverTipRect, HoverTip.GetHoverTipAlignment(screen));
 	}
-
-	private static bool HasInspectScreenMembers(out string missingMembers)
-	{
-		List<string> missing = [];
-		AddMissing(InspectRelicScreenOpenMethod != null, "NInspectRelicScreen.Open");
-		AddMissing(InspectRelicScreenUnlockedRelicsField != null, "NInspectRelicScreen._allUnlockedRelics");
-		AddMissing(InspectRelicScreenRelicsField != null, "NInspectRelicScreen._relics");
-		AddMissing(InspectRelicScreenIndexField != null, "NInspectRelicScreen._index");
-		AddMissing(RelicCanonicalInstanceField != null, "RelicModel._canonicalInstance");
-		AddMissing(InspectRelicScreenUpdateRelicDisplayMethod != null, "NInspectRelicScreen.UpdateRelicDisplay");
-		AddMissing(InspectRelicScreenSetRelicMethod != null, "NInspectRelicScreen.SetRelic");
-		AddMissing(InspectRelicScreenNameLabelField != null, "NInspectRelicScreen._nameLabel");
-		AddMissing(InspectRelicScreenRarityLabelField != null, "NInspectRelicScreen._rarityLabel");
-		AddMissing(InspectRelicScreenDescriptionField != null, "NInspectRelicScreen._description");
-		AddMissing(InspectRelicScreenFlavorField != null, "NInspectRelicScreen._flavor");
-		AddMissing(InspectRelicScreenImageField != null, "NInspectRelicScreen._relicImage");
-		AddMissing(InspectRelicScreenHoverTipRectField != null, "NInspectRelicScreen._hoverTipRect");
-		AddMissing(InspectRelicScreenSetRarityVisualsMethod != null, "NInspectRelicScreen.SetRarityVisuals");
-
-		missingMembers = string.Join(", ", missing);
-		return missing.Count == 0;
-
-		void AddMissing(bool present, string memberName)
-		{
-			if (!present)
-			{
-				missing.Add(memberName);
-			}
-		}
-	}
-
 
 	[HarmonyPatch(typeof(UnlockState), nameof(UnlockState.Relics), MethodType.Getter)]
 	[HextechPatch("ui.inspect.unlock-state-relics", "遗物检视界面", Optional = true)]
@@ -222,14 +203,14 @@ internal static class HextechInspectHooks
 	private static class OpenPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare() => InspectScreenHooksAvailable;
+		private static bool Prepare() => Members != null;
 
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Last)]
 		private static void Prefix(ref IReadOnlyList<RelicModel> relics, ref RelicModel relic, out InspectOpenState __state)
 		{
 			__state = default;
-			if (!_inspectScreenHooksInstalled || !ShouldHandleInspectRequest(relic))
+			if (!ShouldHandleInspectRequest(relic))
 			{
 				return;
 			}
@@ -245,9 +226,9 @@ internal static class HextechInspectHooks
 		[HarmonyPriority(Priority.Last)]
 		private static void Postfix(NInspectRelicScreen __instance, InspectOpenState __state)
 		{
-			if (!_inspectScreenHooksInstalled
+			if (Members is not { } members
 				|| __state.RequestedRelic == null
-				|| InspectRelicScreenRelicsField?.GetValue(__instance) is not IReadOnlyList<RelicModel> finalRelics)
+				|| members.Relics.GetValue(__instance) is not IReadOnlyList<RelicModel> finalRelics)
 			{
 				return;
 			}
@@ -256,42 +237,47 @@ internal static class HextechInspectHooks
 				finalRelics,
 				__state.RequestedRelic,
 				out int requestedIndex);
-			EnsureInspectRelicsUnlocked(__instance, mergedRelics);
+			EnsureInspectRelicsUnlocked(members, __instance, mergedRelics);
 			if (!ReferenceEquals(mergedRelics, finalRelics))
 			{
-				InspectRelicScreenRelicsField.SetValue(__instance, mergedRelics);
+				members.Relics.SetValue(__instance, mergedRelics);
 			}
 
-			InspectRelicScreenSetRelicMethod?.Invoke(__instance, [requestedIndex]);
-			InspectRelicScreenUpdateRelicDisplayMethod?.Invoke(__instance, null);
+			members.SetRelic.Invoke(__instance, [requestedIndex]);
+			members.UpdateRelicDisplay.Invoke(__instance, null);
 		}
 	}
 
+	/// <summary>检视界面当前是海克斯遗物时,按"已解锁且已发现"渲染它。</summary>
+	/// <remarks>
+	/// 跳过型前缀:原版私有 <c>NInspectRelicScreen.UpdateRelicDisplay</c> 按 <c>_allUnlockedRelics.Contains(relic.CanonicalInstance)</c>
+	/// 与 <c>SaveManager.IsRelicSeen</c> 硬分"未解锁/未发现/正常"三支,没有 Hook 能改这个分支判定;
+	/// 海克斯的隐藏遗物(不进 UnlockState)与缺规范实例的可变副本会落进"未解锁"分支。
+	/// 替换体逐项复刻原版"正常"分支(名称、稀有度、描述、风味、稀有度视觉、大图、提示)。
+	/// 激活条件:当前索引的遗物属于海克斯(<see cref="HextechCatalog.IsHextechCustomRelic"/>);其它遗物交给原版。
+	/// 版本:0.107.1 / 0.110.0 / 0.111.0 原方法一致,已进原版拷贝守卫;<see cref="Priority.Low"/> 让他人前缀先跑。
+	/// </remarks>
 	[HarmonyPatch(typeof(NInspectRelicScreen), "UpdateRelicDisplay")]
 	[HextechPatch("ui.inspect.update-display", "遗物检视界面", Optional = true)]
 	private static class UpdateRelicDisplayPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare() => InspectScreenHooksAvailable;
+		private static bool Prepare() => Members != null;
 
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NInspectRelicScreen __instance)
 		{
-			if (!_inspectScreenHooksInstalled)
-			{
-				return true;
-			}
-
-			if (InspectRelicScreenRelicsField?.GetValue(__instance) is IReadOnlyList<RelicModel> relics
-				&& InspectRelicScreenIndexField?.GetValue(__instance) is int index
+			if (Members is { } members
+				&& members.Relics.GetValue(__instance) is IReadOnlyList<RelicModel> relics
+				&& members.Index.GetValue(__instance) is int index
 				&& index >= 0
 				&& index < relics.Count)
 			{
 				RelicModel relic = relics[index];
 				if (HextechCatalog.IsHextechCustomRelic(relic))
 				{
-					RenderHextechInspect(__instance, relic);
+					RenderHextechInspect(members, __instance, relic);
 					return false;
 				}
 			}

@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HextechRunes;
 
@@ -15,7 +15,6 @@ namespace HextechRunes;
 internal static class HextechEnemyNearDeath
 {
 	private const decimal LimitPercentPerTier = 0.05m;
-	private static readonly ConditionalWeakTable<Creature, SemaphoreSlim> StrengthSyncGates = new();
 
 	/// <summary>敌人是否具备濒死狂宴(本场海克斯激活且可参与追踪)。</summary>
 	internal static bool HasDyingState(Creature creature)
@@ -35,11 +34,6 @@ internal static class HextechEnemyNearDeath
 			&& debt < GetDeathNegativeHpLimit(creature, modifier);
 	}
 
-	internal static bool ShouldPreventSustain(Creature creature)
-	{
-		return IsDyingButAlive(creature);
-	}
-
 	internal static bool ShouldInterceptLoseHp(Creature creature, decimal amount)
 	{
 		if (amount <= 0m || !TryGetContext(creature, out HextechMayhemModifier? modifier, out uint combatId))
@@ -47,50 +41,38 @@ internal static class HextechEnemyNearDeath
 			return false;
 		}
 
-		int hpLoss = (int)Math.Min(amount, 999999999m);
 		return modifier.CombatTracking.NearDeathFeastEnemyDebt.ContainsKey(combatId)
-			|| creature.CurrentHp - hpLoss < 1;
+			|| creature.CurrentHp - HextechNearDeathHpLoss.ToHpLoss(amount) < 1;
 	}
 
+	// 与玩家版相同：同步前缀里只记债务，力量补差由 NearDeathFeastEnemyHex.AfterCurrentHpChanged 等待执行。
 	internal static DamageResult LoseHpAllowingDying(Creature creature, decimal amount, ValueProp props)
 	{
 		if (amount <= 0m || !TryGetContext(creature, out HextechMayhemModifier? modifier, out uint combatId))
 		{
-			return NearDeathFeastRune.CreateDamageResult(creature, props, 0, false, 0);
+			return new DamageResult(creature, props);
 		}
 
 		HextechMayhemCombatTrackingState tracking = modifier.CombatTracking;
 		bool wasDying = tracking.NearDeathFeastEnemyDebt.TryGetValue(combatId, out int debt);
-		int oldEffectiveHp = wasDying ? -debt : creature.CurrentHp;
-		int hpLoss = (int)Math.Min(amount, 999999999m);
-		int newEffectiveHp = oldEffectiveHp - hpLoss;
-		int deathLimit = GetDeathNegativeHpLimit(creature, modifier);
-
-		if (newEffectiveHp <= -deathLimit)
+		HextechNearDeathHpLoss outcome = HextechNearDeathHpLoss.Resolve(
+			wasDying,
+			debt,
+			creature.CurrentHp,
+			amount,
+			GetDeathNegativeHpLimit(creature, modifier));
+		if (outcome.Dying)
 		{
-			// 负血打满:退出濒死、走标准死亡链(转阶段/接续/掉魂等在上层照常发生)。
-			ClearState(tracking, combatId);
-			creature.SetCurrentHpInternal(0);
-			return NearDeathFeastRune.CreateDamageResult(creature, props, hpLoss, true, Math.Max(0, -deathLimit - newEffectiveHp));
-		}
-
-		bool dying = newEffectiveHp < 1;
-		if (dying)
-		{
-			tracking.NearDeathFeastEnemyDebt[combatId] = Math.Max(0, -newEffectiveHp);
+			tracking.NearDeathFeastEnemyDebt[combatId] = outcome.Debt;
 		}
 		else
 		{
+			// 恢复到正血或负血打满都退出濒死；后者走标准死亡链(转阶段/接续/掉魂等在上层照常发生)。
 			ClearState(tracking, combatId);
 		}
 
-		creature.SetCurrentHpInternal(dying ? 1 : newEffectiveHp);
-		if (dying)
-		{
-			_ = SyncStrength(creature, modifier, combatId);
-		}
-
-		return NearDeathFeastRune.CreateDamageResult(creature, props, hpLoss, false, 0);
+		creature.SetCurrentHpInternal(outcome.CurrentHp);
+		return outcome.ToDamageResult(creature, props);
 	}
 
 	/// <summary>斩杀/处决类命令(CreatureCmd.Kill 系)无视濒死,直接判死。</summary>
@@ -124,7 +106,6 @@ internal static class HextechEnemyNearDeath
 
 		tracking.NearDeathFeastEnemyDebt[combatId] = debt;
 		creature.SetCurrentHpInternal(1);
-		_ = SyncStrength(creature, modifier, combatId);
 	}
 
 	/// <summary>
@@ -174,9 +155,9 @@ internal static class HextechEnemyNearDeath
 		return Math.Max(1, (int)Math.Floor(creature.MaxHp * LimitPercentPerTier * tier));
 	}
 
-	private static bool TryGetContext(Creature creature, out HextechMayhemModifier modifier, out uint combatId)
+	private static bool TryGetContext(Creature creature, [NotNullWhen(true)] out HextechMayhemModifier? modifier, out uint combatId)
 	{
-		modifier = null!;
+		modifier = null;
 		combatId = 0;
 		if (creature.Side != CombatSide.Enemy
 			|| creature.CombatId is not { } id
@@ -185,7 +166,7 @@ internal static class HextechEnemyNearDeath
 			return false;
 		}
 
-		HextechMayhemModifier? found = runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault();
+		HextechMayhemModifier? found = HextechMayhemModifier.FindIn(runState);
 		if (found == null || !found.HasActiveMonsterHex(MonsterHexKind.NearDeathFeast))
 		{
 			return false;
@@ -202,39 +183,39 @@ internal static class HextechEnemyNearDeath
 		tracking.NearDeathFeastEnemyStrength.Remove(combatId);
 	}
 
-	/// <summary>把力量补到"每 1 负血 1 层"的目标值(只补差额、只增不减,与玩家版一致)。</summary>
-	private static async Task SyncStrength(Creature creature, HextechMayhemModifier modifier, uint combatId)
+	/// <summary>
+	/// 生命变化后把力量补到"每 1 负血 1 层"的目标值(只补差额、只增不减,与玩家版一致)。
+	/// 先预留目标值再发命令:命令链里若再次失血(重入本方法),只会补新的差额。
+	/// </summary>
+	internal static async Task SyncStrengthAfterHpChanged(Creature creature)
 	{
-		SemaphoreSlim syncGate = StrengthSyncGates.GetValue(creature, static _ => new SemaphoreSlim(1, 1));
-		await syncGate.WaitAsync();
-		HextechMayhemCombatTrackingState? tracking = null;
-		int previousGranted = 0;
-		int reservedGranted = 0;
-		bool hadPreviousEntry = false;
+		if (!TryGetContext(creature, out HextechMayhemModifier? modifier, out uint combatId))
+		{
+			return;
+		}
+
+		HextechMayhemCombatTrackingState tracking = modifier.CombatTracking;
+		if (!tracking.NearDeathFeastEnemyDebt.TryGetValue(combatId, out int debt))
+		{
+			return;
+		}
+
+		bool hadPreviousEntry = tracking.NearDeathFeastEnemyStrength.TryGetValue(combatId, out int previousGranted);
+		int delta = debt - previousGranted;
+		if (delta <= 0)
+		{
+			return;
+		}
+
+		tracking.NearDeathFeastEnemyStrength[combatId] = debt;
 		try
 		{
-			tracking = modifier.CombatTracking;
-			if (!tracking.NearDeathFeastEnemyDebt.TryGetValue(combatId, out int debt))
-			{
-				return;
-			}
-
-			hadPreviousEntry = tracking.NearDeathFeastEnemyStrength.TryGetValue(combatId, out previousGranted);
-			int delta = debt - previousGranted;
-			if (delta <= 0)
-			{
-				return;
-			}
-
-			reservedGranted = debt;
-			tracking.NearDeathFeastEnemyStrength[combatId] = reservedGranted;
 			await PowerCmd.Apply<StrengthPower>(creature, delta, creature, null);
 		}
-		catch (Exception ex)
+		catch
 		{
-			if (tracking != null
-				&& tracking.NearDeathFeastEnemyStrength.TryGetValue(combatId, out int currentGranted)
-				&& currentGranted == reservedGranted)
+			if (tracking.NearDeathFeastEnemyStrength.TryGetValue(combatId, out int currentGranted)
+				&& currentGranted == debt)
 			{
 				if (hadPreviousEntry)
 				{
@@ -246,11 +227,7 @@ internal static class HextechEnemyNearDeath
 				}
 			}
 
-			Log.Warn($"[{ModInfo.Id}][NearDeathFeast] Enemy strength sync failed: {ex.Message}");
-		}
-		finally
-		{
-			syncGate.Release();
+			throw;
 		}
 	}
 }

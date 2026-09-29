@@ -8,8 +8,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRelicVisibilityHooks
 {
-	private const string LocTable = "relic_collection";
-
 	private static Control CreateToggleRoot()
 	{
 		Control root = new()
@@ -42,7 +40,7 @@ internal static partial class HextechRelicVisibilityHooks
 		Label label = new()
 		{
 			Name = ToggleLabelNodeName,
-			Text = new LocString(LocTable, "HEXTECH_HIDE_UI_LABEL").GetRawText(),
+			Text = new LocString(HextechRuneLabels.LocTable, "HEXTECH_HIDE_UI_LABEL").GetRawText(),
 			CustomMinimumSize = new Vector2(ToggleRootSize.X, 16f),
 			HorizontalAlignment = HorizontalAlignment.Center,
 			VerticalAlignment = VerticalAlignment.Center,
@@ -69,13 +67,14 @@ internal static partial class HextechRelicVisibilityHooks
 		Control visuals = CreateTickboxVisuals();
 		box.AddChild(visuals);
 
-		Button button = new()
+		// 手柄可聚焦(FocusMode.All):用翻译 ui_select 的按钮,A 键才能按下。
+		HextechSelectAcceptButton button = new()
 		{
 			Name = ToggleButtonNodeName,
 			ToggleMode = true,
 			Flat = true,
 			Text = string.Empty,
-			TooltipText = new LocString(LocTable, "HEXTECH_HIDE_UI_TOOLTIP").GetRawText(),
+			TooltipText = new LocString(HextechRuneLabels.LocTable, "HEXTECH_HIDE_UI_TOOLTIP").GetRawText(),
 			MouseFilter = Control.MouseFilterEnum.Stop,
 			FocusMode = Control.FocusModeEnum.All
 		};
@@ -108,7 +107,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to read cached tickbox scene; using ResourceLoader: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Failed to read cached tickbox scene; using ResourceLoader: {ex.Message}");
 		}
 
 		return ResourceLoader.Load<PackedScene>(TickboxVisualScenePath, cacheMode: ResourceLoader.CacheMode.Reuse)

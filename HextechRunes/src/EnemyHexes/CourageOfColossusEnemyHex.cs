@@ -14,5 +14,5 @@ internal sealed class CourageOfColossusEnemyHex : HextechEnemyHexEffect
 	}
 
 	internal static int ResolvePlating(int maxHp, int tier)
-		=> Math.Max(1, (int)Math.Floor(maxHp * (tier <= 1 ? 0.01m : tier == 2 ? 0.02m : 0.03m)));
+		=> HextechEnemyHexContext.FractionOfMaxHp(maxHp, tier <= 1 ? 0.01m : tier == 2 ? 0.02m : 0.03m);
 }

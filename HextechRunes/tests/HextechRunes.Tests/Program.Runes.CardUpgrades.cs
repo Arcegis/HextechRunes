@@ -29,12 +29,13 @@ internal static partial class Program
 	private static T UpgradeTestPower<T>(Creature owner, int amount) where T : PowerModel
 	{
 		T power = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
-		AccessTools.Field(typeof(AbstractModel), "<IsMutable>k__BackingField").SetValue(power, true);
+		SetAutoProperty(power, nameof(AbstractModel.IsMutable), true);
 		AccessTools.Property(typeof(PowerModel), nameof(PowerModel.Owner)).SetValue(power, owner);
 		AccessTools.Field(typeof(PowerModel), "_amount").SetValue(power, amount);
 		return power;
 	}
 
+	[HextechTest]
 	private static void RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual()
 	{
 		WithImmediateGoldFixture((first, second, _, listener) =>
@@ -82,9 +83,10 @@ internal static partial class Program
 		return false;
 	}
 
+	[HextechTest]
 	private static void PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		BulletTimeUpgradeRune bullet = CreateMutableTestModel<BulletTimeUpgradeRune>(); bullet.Owner = first;
 		BulletTime card = CreateMutableTestModel<BulletTime>(); card.Owner = first;
 		NoDrawPower noDraw = UpgradeTestPower<NoDrawPower>(first.Creature, 1);
@@ -109,9 +111,10 @@ internal static partial class Program
 		Equal(8, 4 + HangUpgradeRune.NextIncrease(4), "repeated Hang doubles the multiplier");
 	}
 
+	[HextechTest]
 	private static void ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		ClawUpgradeRune rune = CreateMutableTestModel<ClawUpgradeRune>(); rune.Owner = first;
 		Claw deck = CreateMutableTestModel<Claw>(); deck.Owner = first;
 		Claw combat = CreateMutableTestModel<Claw>(); combat.Owner = first; combat.DeckVersion = deck;
@@ -133,18 +136,19 @@ internal static partial class Program
 		Equal(4m, loaded.DynamicVars.Damage.BaseValue, "loading restores only permanent growth");
 	}
 
+	[HextechTest]
 	private static void PersistentPowerUpgradesDoNotAffectOtherPlayers()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		foreach (Player player in new[] { first, second })
 		{
-			AccessTools.Field(typeof(Creature), "<Player>k__BackingField").SetValue(player.Creature, player);
+			SetAutoProperty(player.Creature, nameof(Creature.Player), player);
 			AccessTools.Field(typeof(Player), "_relics").SetValue(player, new List<RelicModel>());
 		}
 		RageUpgradeRune rage = CreateMutableTestModel<RageUpgradeRune>(); rage.Owner = first;
 		ReflectUpgradeRune reflect = CreateMutableTestModel<ReflectUpgradeRune>(); reflect.Owner = first;
 		((List<RelicModel>)AccessTools.Field(typeof(Player), "_relics").GetValue(first)!).AddRange([rage, reflect]);
-		foreach (var (runeType, power, foreignPower) in new (Type, PowerModel, PowerModel)[]
+		foreach ((Type runeType, PowerModel power, PowerModel foreignPower) in new (Type, PowerModel, PowerModel)[]
 		{
 			(typeof(RageUpgradeRune), UpgradeTestPower<RagePower>(first.Creature, 3), UpgradeTestPower<RagePower>(second.Creature, 3)),
 			(typeof(ReflectUpgradeRune), UpgradeTestPower<ReflectPower>(first.Creature, 3), UpgradeTestPower<ReflectPower>(second.Creature, 3))
@@ -158,6 +162,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void CardUpgradeReplacementBodiesMatchReviewedVanilla()
 	{
 		(Type Type, string Name)[] targets =
@@ -169,9 +174,9 @@ internal static partial class Program
 			(typeof(InfernoPower), nameof(InfernoPower.AfterDamageReceived)),
 			(typeof(FlameBarrierPower), nameof(FlameBarrierPower.AfterDamageReceived))
 		];
-		var expected = HextechVanillaCopyGuard.LoadExpectedHashes();
+		IReadOnlyDictionary<string, string> expected = HextechVanillaCopyGuard.LoadExpectedHashes();
 		List<string> rows = [];
-		foreach (var (type, name) in targets)
+		foreach ((Type type, string name) in targets)
 		{
 			MethodInfo entry = AccessTools.Method(type, name);
 			IEnumerable<MethodInfo> methods = entry.GetCustomAttribute<AsyncStateMachineAttribute>() == null
@@ -182,7 +187,9 @@ internal static partial class Program
 				string hash = HextechVanillaCopyGuard.ComputeIlHash(method)!;
 				rows.Add($"{key}={hash}");
 				if (Environment.GetEnvironmentVariable("HEXTECH_WRITE_UPGRADE_GUARD") != "1")
+				{
 					Expect(expected.TryGetValue(key, out string? frozen) && frozen == hash, "review native upgrade target after IL drift: " + key);
+				}
 			}
 		}
 		if (Environment.GetEnvironmentVariable("HEXTECH_WRITE_UPGRADE_GUARD") == "1")
@@ -193,6 +200,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void SearingAttackRuneGrantsUpgradedCard()
 	{
 		Expect(typeof(HextechOwnerPoolTokenCard).IsAbstract, "owner-pool token card base should stay abstract");
@@ -213,6 +221,7 @@ internal static partial class Program
 		Equal(16m, card.DynamicVars.Damage.BaseValue, "granted Searing Attack damage");
 	}
 
+	[HextechTest]
 	private static void CardUpgradePickupAndAvailabilityRules()
 	{
 		BloodlettingUpgradeRune singleForm = new();
@@ -259,6 +268,7 @@ internal static partial class Program
 		Expect(DefendUpgradeRune.HasBasicDefend([new DefendIronclad()]), "Defend upgrade should accept a basic Defend");
 	}
 
+	[HextechTest]
 	private static void BashUpgradeStrengthMatchesVulnerableApplied()
 	{
 		Bash bash = CreateMutableTestModel<Bash>();
@@ -274,6 +284,7 @@ internal static partial class Program
 		Equal(0m, BashUpgradeRune.CalculateStrengthGain(new StrikeIronclad()), "unrelated card Strength");
 	}
 
+	[HextechTest]
 	private static void StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops()
 	{
 		Equal(999, HextechStarterUpgradeHooks.UpgradeLevelCap, "starter multi-upgrade cap");
@@ -316,6 +327,7 @@ internal static partial class Program
 		Equal(999, searingAttack.MaxUpgradeLevel, "Searing Attack cap");
 	}
 
+	[HextechTest]
 	private static void CreativeAiUpgradeRuneUpgradesGeneratedPowerCards()
 	{
 		CreativeAi card = CreateMutableTestModel<CreativeAi>();
@@ -341,6 +353,7 @@ internal static partial class Program
 			nameof(ColorDiscoveryRune));
 	}
 
+	[HextechTest]
 	private static void SubroutineUpgradeCombatMoveGateResetsAcrossCombats()
 	{
 		SubroutineUpgradeRune rune = new();
@@ -355,6 +368,7 @@ internal static partial class Program
 		Expect(rune.TryConsumeCombatStartMove(), "combat end should clear the move gate");
 	}
 
+	[HextechTest]
 	private static void DualcastUpgradeReturnsBothCastCardsToHand()
 	{
 		Expect(
@@ -377,6 +391,7 @@ internal static partial class Program
 		Expect(!rune.HasUponPickupEffect, "Dualcast Upgrade should not advertise a pickup effect");
 	}
 
+	[HextechTest]
 	private static void PactsEndUpgradeDamageScalesWithExhaustPile()
 	{
 		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(0, 6m), "empty exhaust pile bonus");
@@ -384,6 +399,7 @@ internal static partial class Program
 		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(-1, 6m), "negative exhaust count clamps");
 	}
 
+	[HextechTest]
 	private static void BrandUpgradeDamageScalesWithPermanentPlayCount()
 	{
 		Equal(3, BrandUpgradeRune.DamagePercentPerBrand, "Brand damage percent per play");
@@ -392,15 +408,16 @@ internal static partial class Program
 		Equal(1.30m, BrandUpgradeRune.CalculateDamageMultiplier(10, BrandUpgradeRune.DamagePercentPerBrand), "ten brand plays");
 	}
 
+	[HextechTest]
 	private static void NewCardUpgradeRunesUseExpectedTriggerRules()
 	{
 		Equal(0, ThornmailRune.CalculateThorns(19m), "Thornmail should floor partial Max HP steps");
 		Equal(1, ThornmailRune.CalculateThorns(20m), "Thornmail should grant one Thorns per twenty Max HP");
 		Equal(4, ThornmailRune.CalculateThorns(99m), "Thornmail should have no legacy bonus cap");
-		var waveOwner = CreateOrdinalTestPlayer(1);
-		var ownWave = CreateMutableTestModel<CorrosiveWave>();
-		var teammateWave = CreateMutableTestModel<CorrosiveWave>();
-		var ownStrike = CreateMutableTestModel<StrikeIronclad>();
+		Player waveOwner = CreateOrdinalTestPlayer(1);
+		CorrosiveWave ownWave = CreateMutableTestModel<CorrosiveWave>();
+		CorrosiveWave teammateWave = CreateMutableTestModel<CorrosiveWave>();
+		StrikeIronclad ownStrike = CreateMutableTestModel<StrikeIronclad>();
 		ownWave.Owner = ownStrike.Owner = waveOwner;
 		teammateWave.Owner = CreateOrdinalTestPlayer(2);
 		Expect(CorrosiveWaveUpgradeRune.GrantsExhaust(ownWave, waveOwner), "the owner's Corrosive Wave gains the Exhaust keyword");
@@ -422,6 +439,7 @@ internal static partial class Program
 		Equal(4, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(2, 3), "Decisions replay count should combine additively with another replay");
 	}
 
+	[HextechTest]
 	private static void HiddenGemUpgradeMovesNewReplayTargetToHand()
 	{
 		StrikeIronclad target = CreateMutableTestModel<StrikeIronclad>();
@@ -436,6 +454,7 @@ internal static partial class Program
 		Equal(PileType.Hand, HiddenGemUpgradeRune.ReplayTargetPile, "Hidden Gem upgraded replay target pile");
 	}
 
+	[HextechTest]
 	private static void DragonSoulAndMikaelsUseUpdatedUpgradeValues()
 	{
 		MikaelsBlessingCard mikaels = CreateMutableTestModel<MikaelsBlessingCard>();

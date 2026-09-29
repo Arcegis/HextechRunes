@@ -22,48 +22,37 @@ internal sealed partial class HextechMayhemModifier
 			(effect, enemyHexContext) => effect.AfterCardPlayed(enemyHexContext, context, cardPlay));
 	}
 
+	// 洗牌/抽牌类敌方海克斯都只对本局战斗中的玩家生效，在分发层统一过滤。
 	public override async Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
 	{
+		if (shuffler.Creature.Side != CombatSide.Player
+			|| shuffler.Creature.IsDead
+			|| shuffler.Creature.CombatState?.RunState != RunState)
+		{
+			return;
+		}
+
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterShuffle(context, choiceContext, shuffler));
 	}
 
-	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
+	public override Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
-		if (card.Owner?.Creature.CombatState?.RunState == RunState && card is WhiteHoleCard whiteHole)
+		if (card.Owner?.Creature.Side != CombatSide.Player
+			|| card.Owner.Creature.CombatState?.RunState != RunState)
 		{
-			await whiteHole.AfterDrawn();
+			return Task.CompletedTask;
 		}
 
-		await HextechEnemyHexDispatcher.ForEachActive(
+		return HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterCardDrawn(context, choiceContext, card, fromHandDraw));
 	}
 
-	// 记录每张会触发 Storm 的牌「开始打出时」玩家的 Storm 层数(在该牌 OnPlay 应用/叠加 StormPower 之前记录)。
-	// 用于在 AfterCardPlayedLate 补发闪电时复刻原版 StormPower 的自排除:首次打出雷暴时此刻还没有
-	// StormPower → 不记录 → 不会对雷暴自己发闪电;后续打出雷暴发的也是「打出前」的层数,与原版一致。
-	private readonly Dictionary<CardModel, int> _stormLightningAtCardStart = new();
-
 	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
-		Player? owner = cardPlay.Card.Owner;
-		if (owner != null
-			&& owner.GetRelic<StormUpgradeRune>() != null
-			&& StormUpgradeRune.ShouldTrigger(
-				cardPlay.Card.Type,
-				hasUpgradeRune: true)
-			&& owner.Creature.CombatState?.RunState == RunState
-			&& owner.Creature.GetPower<StormPower>() is StormPower stormPower)
-		{
-			int lightning = Math.Max(0, (int)Math.Floor((decimal)stormPower.Amount));
-			if (lightning > 0)
-			{
-				_stormLightningAtCardStart[cardPlay.Card] = lightning;
-			}
-		}
-
+		StormUpgradeRune.FindForCardPlay(cardPlay, RunState)?.RecordStormBeforeCardPlayed(cardPlay);
 		return HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.BeforeCardPlayed(context, cardPlay));
@@ -75,22 +64,10 @@ internal sealed partial class HextechMayhemModifier
 			this,
 			(effect, context) => effect.AfterCardPlayedLate(context, choiceContext, cardPlay));
 
-		// 只对「打出前就已持有 Storm」且通过类型判定的牌补发闪电;发的是打出前记录的层数(排除雷暴自身首次触发)。
-		if (!_stormLightningAtCardStart.Remove(cardPlay.Card, out int lightningCount) || lightningCount <= 0)
+		// 升级雷暴在所有监听者之后补发闪电；为何不由符文自己覆写钩子见 StormUpgradeRune。
+		if (StormUpgradeRune.FindForCardPlay(cardPlay, RunState) is StormUpgradeRune stormRune)
 		{
-			return;
-		}
-
-		Player? owner = cardPlay.Card.Owner;
-		if (owner == null || owner.Creature.CombatState?.RunState != RunState)
-		{
-			return;
-		}
-
-		for (int i = 0; i < lightningCount; i++)
-		{
-			OrbModel orb = ModelDb.Orb<LightningOrb>().ToMutable();
-			await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, owner);
+			await stormRune.ChannelRecordedLightningAsync(choiceContext, cardPlay);
 		}
 	}
 
@@ -103,7 +80,7 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		_combatTracking.EnterPlayerPlayPhase(player.NetId);
+		CombatTracking.EnterPlayerPlayPhase(player.NetId);
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterAutoPrePlayPhaseEnteredLate(context, choiceContext, player));

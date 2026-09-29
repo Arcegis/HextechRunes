@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class CerberusRune : HextechRelicBase
+public sealed class CerberusRune : TurnScopedRelicBase
 {
 	private int _attacksPlayedThisTurn;
 
@@ -9,7 +9,9 @@ public sealed class CerberusRune : HextechRelicBase
 	{
 		get
 		{
-			EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
+			// 序列化可能发生在回合钩子之外（例如读档后的首个回合钩子之前）：先按持有者回合号懒清零，
+			// 保证写出的是本回合的计数而不是上一回合的残值。
+			EnsureTurnScopedStateCurrent();
 			return GetTurnProcCount(nameof(CerberusRune), _attacksPlayedThisTurn);
 		}
 		set
@@ -20,7 +22,7 @@ public sealed class CerberusRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+	public override bool ShowCounter => IsInLiveCombat;
 
 	public override int DisplayAmount => !IsCanonical ? Math.Max(0, DynamicVars["FreeAttacks"].IntValue - GetTurnProcCount(nameof(CerberusRune), _attacksPlayedThisTurn)) : 0;
 
@@ -28,28 +30,6 @@ public sealed class CerberusRune : HextechRelicBase
 	[
 		new DynamicVar("FreeAttacks", 3m)
 	];
-
-	public override Task BeforeCombatStart()
-	{
-		ResetAttacksPlayedThisTurn(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetAttacksPlayedThisTurn(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetAttacksPlayedThisTurn(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
@@ -77,7 +57,7 @@ public sealed class CerberusRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
+		EnsureTurnScopedStateCurrent();
 		if (!cardPlay.IsFirstInSeries || cardPlay.IsAutoPlay || !IsOwnedAttack(cardPlay.Card))
 		{
 			return Task.CompletedTask;
@@ -98,7 +78,7 @@ public sealed class CerberusRune : HextechRelicBase
 
 	private bool ShouldPlayAttackForFree(CardModel card)
 	{
-		EnsureTurnScopedStateCurrent(ResetAttacksPlayedThisTurn);
+		EnsureTurnScopedStateCurrent();
 		return Owner != null
 			&& card.Owner == Owner
 			&& IsOwnedAttack(card)
@@ -107,15 +87,9 @@ public sealed class CerberusRune : HextechRelicBase
 			&& !HasTurnProcReachedLimit(nameof(CerberusRune), _attacksPlayedThisTurn, DynamicVars["FreeAttacks"].IntValue);
 	}
 
-	private void ResetAttacksPlayedThisTurn()
-	{
-		ResetAttacksPlayedThisTurn(null);
-	}
-
-	private void ResetAttacksPlayedThisTurn(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_attacksPlayedThisTurn = 0;
 		InvokeDisplayAmountChanged();
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

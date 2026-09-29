@@ -2,7 +2,9 @@ namespace HextechRunes;
 
 public sealed class HappyAccidentRune : HextechRelicBase
 {
-	private int _statusOrbsThisCombat;
+	// 单机稳定随机的本地序号（见 ConsumeCombatProcOrdinal）：不在战斗开始清零，跨战斗累加、读档归零；
+	// 联机改用 Mayhem 的每场计数。改成每场清零会改变单机的随机结果，按现状保留。
+	private int _localStatusOrbOrdinal;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -34,8 +36,8 @@ public sealed class HappyAccidentRune : HextechRelicBase
 		Flash();
 		for (int i = 0; i < orbCount; i++)
 		{
-			int orbOrdinal = ConsumeCombatProcOrdinal(nameof(HappyAccidentRune), ref _statusOrbsThisCombat);
-			OrbModel orb = HextechStableRandom.CreateOrb(
+			int orbOrdinal = ConsumeCombatProcOrdinal(nameof(HappyAccidentRune), ref _localStatusOrbOrdinal);
+			OrbModel orb = HextechStableCombatSpawns.CreateOrb(
 				(RunState)Owner.RunState,
 				Owner,
 				"happy-accident-exhaust-status-orb",

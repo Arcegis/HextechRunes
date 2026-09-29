@@ -5,48 +5,56 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
+	private static readonly RunManagerEventSubscription RoomEnteredSubscription = new(
+		static (manager, handler) => manager.RoomEntered += handler,
+		static (manager, handler) => manager.RoomEntered -= handler,
+		OnRoomEntered);
+
+	private static readonly RunManagerEventSubscription RoomExitedSubscription = new(
+		static (manager, handler) => manager.RoomExited += handler,
+		static (manager, handler) => manager.RoomExited -= handler,
+		OnRoomExited);
+
 	private static void SubscribeRoomEnteredIfNeeded(bool force = false)
 	{
-		RunManager manager = RunManager.Instance;
-		if (_subscribedRoomEntered && ReferenceEquals(_subscribedRoomEnteredManager, manager))
-		{
-			if (!force)
-			{
-				return;
-			}
-
-			manager.RoomEntered -= OnRoomEntered;
-		}
-		else if (_subscribedRoomEnteredManager != null)
-		{
-			_subscribedRoomEnteredManager.RoomEntered -= OnRoomEntered;
-		}
-
-		manager.RoomEntered += OnRoomEntered;
-		_subscribedRoomEntered = true;
-		_subscribedRoomEnteredManager = manager;
+		RoomEnteredSubscription.Ensure(RunManager.Instance, force);
 	}
 
 	private static void SubscribeRoomExitedIfNeeded(bool force = false)
 	{
-		RunManager manager = RunManager.Instance;
-		if (_subscribedRoomExited && ReferenceEquals(_subscribedRoomExitedManager, manager))
+		RoomExitedSubscription.Ensure(RunManager.Instance, force);
+	}
+
+	/// <summary>
+	/// 对当前 RunManager 实例保持恰好一次订阅：实例换了就从旧实例退订再订阅新实例；
+	/// force（无尽循环重置）时对同一实例先退订再重新订阅。
+	/// </summary>
+	private sealed class RunManagerEventSubscription(
+		Action<RunManager, Action> subscribe,
+		Action<RunManager, Action> unsubscribe,
+		Action handler)
+	{
+		private RunManager? _manager;
+
+		internal void Ensure(RunManager manager, bool force)
 		{
-			if (!force)
+			if (ReferenceEquals(_manager, manager))
 			{
-				return;
+				if (!force)
+				{
+					return;
+				}
+
+				unsubscribe(manager, handler);
+			}
+			else if (_manager != null)
+			{
+				unsubscribe(_manager, handler);
 			}
 
-			manager.RoomExited -= OnRoomExited;
+			subscribe(manager, handler);
+			_manager = manager;
 		}
-		else if (_subscribedRoomExitedManager != null)
-		{
-			_subscribedRoomExitedManager.RoomExited -= OnRoomExited;
-		}
-
-		manager.RoomExited += OnRoomExited;
-		_subscribedRoomExited = true;
-		_subscribedRoomExitedManager = manager;
 	}
 
 	private static void OnRoomEntered()
@@ -58,7 +66,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered failed: {ex}");
+			HextechLog.Error("Mayhem", $"OnRoomEntered failed: {ex}");
 		}
 	}
 
@@ -66,7 +74,7 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: no run state");
+			HextechLog.Info("Mayhem", $"OnRoomEntered: no run state");
 			return;
 		}
 
@@ -95,18 +103,27 @@ internal static partial class HextechRunLifecycleHooks
 			RefreshEnemyUiSafely(modifier);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} stageIndex={stageIndex} stageResolved={modifier?.IsStageResolved(stageIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
+		HextechLog.Info("Mayhem", $"OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} stageIndex={stageIndex} stageResolved={modifier?.IsStageResolved(stageIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
 		if (runState.CurrentRoom is EventRoom { CanonicalEvent: AncientEventModel ancientEvent }
 			&& modifier != null
 			&& runState.CurrentActIndex >= 0
 			&& !modifier.IsStageResolved(stageIndex))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: pending act selection is deferred until ancient event proceed. act={runState.CurrentActIndex} event={ancientEvent.Id.Entry} {DescribeCurrentEventState(runState)}");
+			HextechLog.Info("Mayhem", $"OnRoomEntered: pending act selection is deferred until ancient event proceed. act={runState.CurrentActIndex} event={ancientEvent.Id.Entry} {DescribeCurrentEventState(runState)}");
 		}
 		if (modifier != null && ShouldScheduleActSelectionOnRoomEntered(runState, modifier, stageIndex))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+			HextechLog.Info("Mayhem", $"OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+			// RunManager.RoomEntered 是同步 C# 事件，处理器无法等待；每个客户端都在自己的 RoomEntered 里对同一阶段
+			// 启动选择，两端的同步由选择协议（等待远端/确认）完成。异常由 RunSafely 记录，不中断事件委托链。
 			TaskHelper.RunSafely(HextechRuneSelectionCoordinator.HandleStageSelection(runState, modifier, stageIndex));
+		}
+
+		// Refresh 内部已先隐藏 Mayhem 顶栏徽标；只有没有 Modifier 时才需要单独隐藏。
+		if (modifier != null)
+		{
+			RefreshEnemyUiSafely(modifier);
+			return;
 		}
 
 		try
@@ -115,12 +132,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered badge refresh failed: {ex}");
-		}
-
-		if (modifier != null)
-		{
-			RefreshEnemyUiSafely(modifier);
+			HextechLog.Error("Mayhem", $"OnRoomEntered badge refresh failed: {ex}");
 		}
 	}
 
@@ -133,7 +145,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered enemy UI refresh failed: {ex}");
+			HextechLog.Error("Mayhem", $"OnRoomEntered enemy UI refresh failed: {ex}");
 		}
 	}
 
@@ -143,7 +155,7 @@ internal static partial class HextechRunLifecycleHooks
 		{
 			if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: no run state");
+				HextechLog.Info("Mayhem", $"OnRoomExited: no run state");
 				return;
 			}
 
@@ -151,11 +163,11 @@ internal static partial class HextechRunLifecycleHooks
 			IReadOnlyList<MapPointRoomHistoryEntry>? rooms = currentHistory?.Rooms;
 			MapPointRoomHistoryEntry? roomHistory = rooms != null && rooms.Count > 0 ? rooms[^1] : null;
 			string modelEntry = roomHistory?.ModelId?.Entry ?? "null";
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: currentRoom={(runState.CurrentRoom?.GetType().Name ?? "null")} lastHistoryRoom={roomHistory?.RoomType} model={modelEntry}");
+			HextechLog.Info("Mayhem", $"OnRoomExited: currentRoom={(runState.CurrentRoom?.GetType().Name ?? "null")} lastHistoryRoom={roomHistory?.RoomType} model={modelEntry}");
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomExited failed: {ex}");
+			HextechLog.Error("Mayhem", $"OnRoomExited failed: {ex}");
 		}
 	}
 
@@ -166,6 +178,6 @@ internal static partial class HextechRunLifecycleHooks
 			return false;
 		}
 
-		return runState.CurrentRoom is MapRoom || runState.CurrentRoom is not null and not EventRoom;
+		return runState.CurrentRoom is not null and not EventRoom;
 	}
 }

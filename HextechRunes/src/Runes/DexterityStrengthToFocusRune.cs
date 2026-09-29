@@ -22,38 +22,23 @@ public sealed class DexterityStrengthToFocusRune : AttributeConversionRelicBase
 		return PowerCmd.Apply<FocusPower>(Owner.Creature, DynamicVars["FocusPower"].BaseValue, Owner.Creature, null);
 	}
 
-	protected override bool ShouldConvert(PowerModel canonicalPower)
+	protected override bool ShouldConvert(PowerModel power)
 	{
-		return IsDefectOwner && (canonicalPower is DexterityPower || canonicalPower is StrengthPower);
+		return IsDefectOwner && power is DexterityPower or StrengthPower;
 	}
 
-	protected override bool ShouldConvertAppliedPower(PowerModel power)
+	protected override Task ApplyConvertedPower(Creature owner, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		return IsDefectOwner && (power is DexterityPower || power is StrengthPower);
+		return PowerCmd.Apply<FocusPower>(owner, amount, applier, cardSource);
 	}
 
-	protected override Task ApplyConvertedPower(decimal amount, Creature? applier, CardModel? cardSource)
+	protected override Task RevertOriginalPower(Creature owner, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		return PowerCmd.Apply<FocusPower>(Owner!.Creature, amount, applier, cardSource);
-	}
-
-	protected override Task RevertOriginalPower(PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
-	{
-		if (Owner == null)
+		return power switch
 		{
-			return Task.CompletedTask;
-		}
-
-		if (power is DexterityPower)
-		{
-			return PowerCmd.Apply<DexterityPower>(Owner.Creature, -amount, applier, cardSource);
-		}
-
-		if (power is StrengthPower)
-		{
-			return PowerCmd.Apply<StrengthPower>(Owner.Creature, -amount, applier, cardSource);
-		}
-
-		return Task.CompletedTask;
+			DexterityPower => PowerCmd.Apply<DexterityPower>(owner, -amount, applier, cardSource),
+			StrengthPower => PowerCmd.Apply<StrengthPower>(owner, -amount, applier, cardSource),
+			_ => Task.CompletedTask
+		};
 	}
 }

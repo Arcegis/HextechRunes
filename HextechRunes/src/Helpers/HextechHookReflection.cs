@@ -71,10 +71,50 @@ internal static class HextechHookReflection
 		return field;
 	}
 
+	public static Type? TryGetNestedType(Type type, string name, BindingFlags flags = BindingFlags.NonPublic)
+	{
+		Type? nested = type.GetNestedType(name, flags);
+		if (nested == null)
+		{
+			WarnMissingMember(
+				$"nested-type:{type.AssemblyQualifiedName}:{name}:{flags}",
+				$"nested type {type.FullName}+{name}");
+		}
+
+		return nested;
+	}
+
 	public static MethodInfo RequireGetter(Type type, string propertyName, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 	{
 		return type.GetProperty(propertyName, flags)?.GetMethod
 			?? throw new InvalidOperationException($"Could not find property getter {type.FullName}.{propertyName}.");
+	}
+
+	/// <summary>取属性的（可能非公开的）setter；缺失时进启动摘要。</summary>
+	public static MethodInfo? TryGetPropertySetter(Type type, string propertyName, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+	{
+		MethodInfo? setter = type.GetProperty(propertyName, flags)?.GetSetMethod(nonPublic: true);
+		if (setter == null)
+		{
+			WarnMissingMember(
+				$"setter:{type.AssemblyQualifiedName}:{propertyName}:{flags}",
+				$"property setter {type.FullName}.{propertyName}");
+		}
+
+		return setter;
+	}
+
+	public static PropertyInfo? TryGetProperty(Type type, string name, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+	{
+		PropertyInfo? property = type.GetProperty(name, flags);
+		if (property == null)
+		{
+			WarnMissingMember(
+				$"property:{type.AssemblyQualifiedName}:{name}:{flags}",
+				$"property {type.FullName}.{name}");
+		}
+
+		return property;
 	}
 
 	private static void WarnMissingMember(string key, string description)
@@ -89,6 +129,6 @@ internal static class HextechHookReflection
 			MissingMemberDescriptions.Add(description);
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Reflection] Missing {description}; dependent feature degraded.");
+		HextechLog.Warn("Reflection", $"Missing {description}; dependent feature degraded.");
 	}
 }

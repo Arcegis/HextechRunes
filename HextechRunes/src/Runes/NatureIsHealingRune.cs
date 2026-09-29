@@ -64,7 +64,7 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 		Node? root = NGame.Instance?.GetTree()?.Root;
 		if (root == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][NatureIsHealing] Timer skipped: scene tree root unavailable.", 2);
+			HextechLog.Warn("NatureIsHealing", $"Timer skipped: scene tree root unavailable.");
 			return;
 		}
 
@@ -117,7 +117,7 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][NatureIsHealing] Timer heal failed: {ex.Message}", 2);
+			HextechLog.Warn("NatureIsHealing", $"Timer heal failed: {ex.Message}");
 		}
 		finally
 		{
@@ -136,6 +136,8 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 
 	private Task HealOwner()
 	{
-		return CreatureCmd.Heal(Owner!.Creature, DynamicVars.Heal.BaseValue);
+		return Owner == null
+			? Task.CompletedTask
+			: CreatureCmd.Heal(Owner.Creature, DynamicVars.Heal.BaseValue);
 	}
 }

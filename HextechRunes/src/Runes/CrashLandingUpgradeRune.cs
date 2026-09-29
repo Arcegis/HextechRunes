@@ -4,7 +4,7 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<CrashLanding>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<CollisionCourse>()
 	];
 
@@ -20,14 +20,14 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 
 	internal static async Task PlayUpgraded(PlayerChoiceContext choiceContext, CrashLanding card, CardPlay cardPlay)
 	{
-		var combatState = card.CombatState;
+		HextechCombatState? combatState = card.CombatState;
 		if (combatState == null)
 		{
 			return;
 		}
 
 		card.Owner.GetRelic<CrashLandingUpgradeRune>()?.Flash();
-		HextechLog.Info($"[{ModInfo.Id}][CrashLanding] Upgraded play for {card.Owner.NetId}: hand={CardPile.GetCards(card.Owner, PileType.Hand).Count()}/{CardPile.MaxCardsInHand}");
+		HextechLog.Info("CrashLanding", $"Upgraded play for {card.Owner.NetId}: hand={CardPile.GetCards(card.Owner, PileType.Hand).Count()}/{CardPile.MaxCardsInHand}");
 		await DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
 			.FromCardCompat(card, cardPlay)
 			.TargetingAllOpponents(combatState)

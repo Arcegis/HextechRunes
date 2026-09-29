@@ -39,13 +39,13 @@ internal static partial class HextechRuneConfiguration
 			}
 
 			RuneConfig? parsed = JsonSerializer.Deserialize<RuneConfig>(File.ReadAllText(configPath), JsonOptions);
-			bool fromNewerVersion = parsed != null && parsed.ConfigVersion > CurrentConfigVersion;
+			int? parsedVersion = parsed?.ConfigVersion;
 			RuneConfig config = NormalizeLoadedConfig(parsed ?? new RuneConfig());
-			if (fromNewerVersion)
+			if (parsedVersion > CurrentConfigVersion)
 			{
 				// 更新版本写的配置退回本版本读取:类型化模型不保留未知字段,回写会把版本号压回并丢掉未来字段。
 				// 只在内存里使用规范化结果,不覆盖文件;用户在本版本改设置时才会重写。
-				Log.Warn($"[{ModInfo.Id}][RuneConfig] Config version {parsed!.ConfigVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.", 2);
+				HextechLog.Warn("RuneConfig", $"Config version {parsedVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.");
 				return config;
 			}
 
@@ -54,7 +54,7 @@ internal static partial class HextechRuneConfiguration
 		}
 		catch (JsonException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config JSON is invalid; using defaults: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config JSON is invalid; using defaults: {ex.Message}");
 			RuneConfig config = CreateDefaultConfig();
 			if (configPath != null && TryBackupCorruptConfig(configPath))
 			{
@@ -65,17 +65,17 @@ internal static partial class HextechRuneConfiguration
 		}
 		catch (UnauthorizedAccessException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config read was denied; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config read was denied; using in-memory defaults without overwriting the file: {ex.Message}");
 			return CreateDefaultConfig();
 		}
 		catch (IOException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}");
 			return CreateDefaultConfig();
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][RuneConfig] Unexpected config read failure; using in-memory defaults without overwriting the file: {ex}");
+			HextechLog.Error("RuneConfig", $"Unexpected config read failure; using in-memory defaults without overwriting the file: {ex}");
 			return CreateDefaultConfig();
 		}
 	}
@@ -89,17 +89,17 @@ internal static partial class HextechRuneConfiguration
 		}
 		catch (UnauthorizedAccessException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Could not back up corrupt config; original file will not be overwritten: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Could not back up corrupt config; original file will not be overwritten: {ex.Message}");
 			return false;
 		}
 		catch (IOException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Could not back up corrupt config; original file will not be overwritten: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Could not back up corrupt config; original file will not be overwritten: {ex.Message}");
 			return false;
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][RuneConfig] Unexpected corrupt-config backup failure; original file will not be overwritten: {ex}");
+			HextechLog.Error("RuneConfig", $"Unexpected corrupt-config backup failure; original file will not be overwritten: {ex}");
 			return false;
 		}
 	}
@@ -119,7 +119,7 @@ internal static partial class HextechRuneConfiguration
 			RuneRarityWeightsByAct = FromRarityWeightsByAct(DefaultRuneRarityWeightsByAct),
 			PreventConsecutiveSilverRunes = DefaultPreventConsecutiveSilverRunes,
 			GoldenRerollChancePercent = DefaultGoldenRerollChancePercent,
-			ForgeRarityWeights = FromForgeRarityWeights(DefaultForgeRarityWeights),
+			ForgeRarityWeights = FromRarityWeights(DefaultForgeRarityWeights),
 			RandomForgeShopPrice = DefaultRandomForgeShopPrice,
 			RandomForgeDirectGrant = DefaultRandomForgeDirectGrant,
 			ModEnabled = DefaultModEnabled
@@ -144,13 +144,6 @@ internal static partial class HextechRuneConfiguration
 			.ToArray();
 	}
 
-	private static HextechForgeRarityWeights ToForgeRarityWeights(RarityWeightConfig? config, HextechForgeRarityWeights fallback)
-	{
-		return config == null
-			? fallback
-			: new HextechForgeRarityWeights(config.Silver, config.Gold, config.Prismatic);
-	}
-
 	private static RarityWeightConfig FromRarityWeights(HextechRarityWeights weights)
 	{
 		return new RarityWeightConfig
@@ -166,28 +159,21 @@ internal static partial class HextechRuneConfiguration
 		return weightsByAct.Select(FromRarityWeights).ToArray();
 	}
 
-	private static RarityWeightConfig FromForgeRarityWeights(HextechForgeRarityWeights weights)
-	{
-		return new RarityWeightConfig
-		{
-			Silver = weights.Silver,
-			Gold = weights.Gold,
-			Prismatic = weights.Prismatic
-		};
-	}
-
 	private static void SaveConfig(RuneConfig config)
 	{
 		try
 		{
 			string configPath = GetConfigPath();
-			Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+			Directory.CreateDirectory(HextechDataPaths.GetDataDirectory());
 			string serialized = JsonSerializer.Serialize(config, JsonOptions);
-			File.WriteAllText(configPath, serialized);
+			// 先写临时文件再原子替换:写到一半崩溃/断电不会留下截断的 JSON(否则下次载入会被当作损坏配置回落默认)。
+			string tempPath = configPath + ".tmp";
+			File.WriteAllText(tempPath, serialized);
+			File.Move(tempPath, configPath, overwrite: true);
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config write failed: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config write failed: {ex.Message}");
 		}
 	}
 
@@ -235,7 +221,11 @@ internal static partial class HextechRuneConfiguration
 		[JsonPropertyName("golden_reroll_chance_percent")]
 		public int GoldenRerollChancePercent { get; set; } = DefaultGoldenRerollChancePercent;
 
-		public int ChaosRuneChancePercent { get; set; } = 33;
+		// 刻意保持 PascalCase 键名(其余字段是 snake_case):该字段首次发布时没有 JsonPropertyName,
+		// 已发布的 rune_config.json 里存的就是 "ChaosRuneChancePercent"。改成 snake_case 会让降级到旧版本的
+		// 玩家读不到该值;显式写出特性是为了把现有键名钉住,不受日后命名策略变更影响。
+		[JsonPropertyName("ChaosRuneChancePercent")]
+		public int ChaosRuneChancePercent { get; set; } = DefaultChaosRuneChancePercent;
 
 		[JsonPropertyName("first_act_rune_rarity_weights")]
 		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

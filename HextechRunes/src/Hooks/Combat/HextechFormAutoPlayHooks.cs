@@ -1,4 +1,3 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Models.Afflictions;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Hooks;
@@ -23,12 +22,19 @@ internal static class HextechFormAutoPlayHooks
 {
 	private static readonly AsyncLocal<bool> SuppressEndTurn = new();
 	private static readonly AsyncLocal<HextechFormAutoPlayBatchState?> ActiveBatch = new();
-	private static readonly MethodInfo GeneratePlayCountMethod = RequireMethod(
+
+	// CardModel.GeneratePlayCount(ICombatState, Creature?)（protected）与 PlayPowerCardFlyVfx()（private），
+	// 0.107.1/0.110.0/0.111.0 原版成员。前者缺失时不合并结算、回退逐张原版自动打出；后者缺失时跳过批量飞行动画。
+	private static readonly MethodInfo? GeneratePlayCountMethod = TryGetMethod(
 		typeof(CardModel),
 		"GeneratePlayCount",
 		BindingFlags.Instance | BindingFlags.NonPublic,
 		typeof(ICombatState),
 		typeof(Creature));
+	private static readonly MethodInfo? PlayPowerCardFlyVfxMethod = TryGetMethod(
+		typeof(CardModel),
+		"PlayPowerCardFlyVfx",
+		BindingFlags.Instance | BindingFlags.NonPublic);
 
 	internal static IDisposable BeginEndTurnSuppression()
 	{
@@ -43,7 +49,7 @@ internal static class HextechFormAutoPlayHooks
 	internal static async Task PlayCardBatchVfx(IReadOnlyList<CardModel> cards)
 	{
 		HextechFormAutoPlayBatchState? batch = ActiveBatch.Value;
-		if (batch == null || cards.Count < 2)
+		if (batch == null || cards.Count < 2 || PlayPowerCardFlyVfxMethod is not MethodInfo flyVfxMethod)
 		{
 			return;
 		}
@@ -67,17 +73,17 @@ internal static class HextechFormAutoPlayHooks
 		await Cmd.CustomScaledWait(0.2f, 0.35f);
 		using (batch.BeginPowerCardFlyVfxPreview(visuals.Select(entry => entry.Card)))
 		{
-			Task[] tasks = visuals
-				.Select(entry => InvokePowerCardFlyVfx(entry.Card))
-				.ToArray();
 			try
 			{
+				Task[] tasks = visuals
+					.Select(entry => InvokePowerCardFlyVfx(flyVfxMethod, entry.Card))
+					.ToArray();
 				await Task.WhenAll(tasks);
 			}
 			catch (Exception ex)
 			{
 				// 视觉失败不能中断形态牌结算;后续逻辑仍按同一确定性批次执行。
-				Log.Warn($"[{ModInfo.Id}][FormBatch] Group power-card VFX failed: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("FormBatch", $"Group power-card VFX failed: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 	}
@@ -91,6 +97,7 @@ internal static class HextechFormAutoPlayHooks
 	{
 		HextechFormAutoPlayBatchState? batch = ActiveBatch.Value;
 		if (batch == null
+			|| GeneratePlayCountMethod is not MethodInfo generatePlayCount
 			|| cards.Count < 2
 			|| cards.Any(card => card.Pile?.Type != PileType.Play)
 			|| !CanCombine(cards))
@@ -122,12 +129,12 @@ internal static class HextechFormAutoPlayHooks
 		List<(decimal Amount, int PlayCount)> contributions = [];
 		foreach (CardModel card in secondaries)
 		{
-			results.Add(card, await ResolveResultLocation(combatState, card, CreateAutoPlayResources(card)));
-			contributions.Add((GetFormAmount(card), await GeneratePlayCount(card, combatState)));
+			results.Add(card, await HextechCardPlayResultCompat.ResolveAutoPlayResult(combatState, card, CreateAutoPlayResources(card)));
+			contributions.Add((GetFormAmount(card), await GeneratePlayCount(generatePlayCount, card, combatState)));
 		}
 
 		decimal secondaryAmount = SumSecondaryContribution(contributions);
-		HextechLog.Info($"[{ModInfo.Id}][FormBatch] Combining {cards.Count}x {primary.GetType().Name}: primary plays via vanilla AutoPlay, secondary contribution={secondaryAmount}");
+		HextechLog.Info("FormBatch", $"Combining {cards.Count}x {primary.GetType().Name}: primary plays via vanilla AutoPlay, secondary contribution={secondaryAmount}");
 
 		// 代表牌完整走原版自动打出:它自己的数值 × 自己的出牌次数由原版结算,事件只发这一次。
 		await CardCmd.AutoPlay(choiceContext, primary, target: null, AutoPlayType.Default, skipXCapture: false, skipCardPileVisuals: true);
@@ -161,14 +168,9 @@ internal static class HextechFormAutoPlayHooks
 		return total;
 	}
 
-	private static MethodInfo GetPlayPowerCardFlyVfxMethod()
+	private static Task InvokePowerCardFlyVfx(MethodInfo playPowerCardFlyVfx, CardModel card)
 	{
-		return RequireMethod(typeof(CardModel), "PlayPowerCardFlyVfx", BindingFlags.Instance | BindingFlags.NonPublic);
-	}
-
-	private static Task InvokePowerCardFlyVfx(CardModel card)
-	{
-		return (Task)(GetPlayPowerCardFlyVfxMethod().Invoke(card, null) ?? Task.CompletedTask);
+		return playPowerCardFlyVfx.Invoke(card, null) as Task ?? Task.CompletedTask;
 	}
 
 	private static Type[] GetSupportedFormTypes()
@@ -209,10 +211,9 @@ internal static class HextechFormAutoPlayHooks
 		};
 	}
 
-	private static async Task<int> GeneratePlayCount(CardModel card, ICombatState combatState)
+	private static async Task<int> GeneratePlayCount(MethodInfo generatePlayCount, CardModel card, ICombatState combatState)
 	{
-		return await (Task<int>)(GeneratePlayCountMethod.Invoke(card, [combatState, null])
-			?? Task.FromResult(1));
+		return await (generatePlayCount.Invoke(card, [combatState, null]) as Task<int> ?? Task.FromResult(1));
 	}
 
 	internal static decimal GetFormAmount(CardModel card)
@@ -245,41 +246,6 @@ internal static class HextechFormAutoPlayHooks
 		};
 	}
 
-	private static async Task<HextechFormCardResult> ResolveResultLocation(
-		ICombatState combatState,
-		CardModel card,
-		ResourceInfo resources)
-	{
-#if STS2_109_OR_NEWER
-		CardLocation location = Hook.ModifyCardPlayResultLocation(
-			combatState,
-			card,
-			isAutoPlay: true,
-			resources,
-			new CardLocation(card.Owner, PileType.None, CardPilePosition.Bottom),
-			out IEnumerable<AbstractModel> modifiers);
-		foreach (AbstractModel modifier in modifiers)
-		{
-			await modifier.AfterModifyingCardPlayResultLocation(card, location);
-		}
-		return new HextechFormCardResult(location.player, location.pileType, location.position);
-#else
-		(PileType pileType, CardPilePosition position) = Hook.ModifyCardPlayResultPileTypeAndPosition(
-			combatState,
-			card,
-			isAutoPlay: true,
-			resources,
-			PileType.None,
-			CardPilePosition.Bottom,
-			out IEnumerable<AbstractModel> modifiers);
-		foreach (AbstractModel modifier in modifiers)
-		{
-			await modifier.AfterModifyingCardPlayResultPileOrPosition(card, pileType, position);
-		}
-		return new HextechFormCardResult(card.Owner, pileType, position);
-#endif
-	}
-
 	private static async Task MoveSecondaryCardsToResults(
 		PlayerChoiceContext choiceContext,
 		IEnumerable<CardModel> cards,
@@ -294,13 +260,10 @@ internal static class HextechFormAutoPlayHooks
 			}
 
 			HextechFormCardResult result = results[card];
-#if STS2_109_OR_NEWER
-			if (result.Player != card.Owner && result.PileType != PileType.None)
+			if (await HextechCardPlayResultCompat.TryGiveToAnotherPlayer(card, result))
 			{
-				await CardPileCmd.GiveToAnotherPlayer(card, result.Player, result.PileType, result.Position);
 				continue;
 			}
-#endif
 
 			switch (result.PileType)
 			{
@@ -354,7 +317,9 @@ internal static class HextechFormAutoPlayHooks
 		}
 	}
 
-	// 虚空形态 OnPlay 自带 EndTurn;批次作用域内压掉,不吃掉首回合。作用域由 AsyncLocal 限定,手动出牌不受影响。
+	// 跳过型前缀（已裁决保留，见 architecture.md）：虚空形态 OnPlay 自带 PlayerCmd.EndTurn，开局批量自动打出时
+	// 会吃掉首回合；EndTurn 没有 Hook 可否决。只在本模组形态批次的 AsyncLocal 作用域内跳过，手动出牌不受影响；
+	// 目标 IL 由原版拷贝守卫冻结（0.107.1/0.110.0/0.111.0）。
 	[HarmonyPatch(typeof(PlayerCmd), nameof(PlayerCmd.EndTurn), typeof(Player), typeof(bool), typeof(Func<Task>))]
 	[HextechPatch("combat.form-auto-play.end-turn", "形态开局自动打出批处理")]
 	private static class EndTurnPatch

@@ -6,11 +6,20 @@ public sealed class ScapegoatRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		_transferCount = 0;
+		ResetTransferCount();
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room) => BeforeCombatStart();
+	public override Task AfterCombatEnd(CombatRoom room)
+	{
+		ResetTransferCount();
+		return Task.CompletedTask;
+	}
+
+	private void ResetTransferCount()
+	{
+		_transferCount = 0;
+	}
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
@@ -21,22 +30,40 @@ public sealed class ScapegoatRune : HextechRelicBase
 		}
 
 		PowerModel[] debuffs = SnapshotDebuffs(Owner.Creature.Powers);
-		if (debuffs.Length == 0) return;
+		if (debuffs.Length == 0)
+		{
+			return;
+		}
+
 		int ordinal = ConsumeCombatProcOrdinal(nameof(ScapegoatRune), ref _transferCount);
 		Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(Owner,
 			Owner.Creature.CombatState, "scapegoat-target", ordinal.ToString());
-		if (target == null) return;
+		if (target == null)
+		{
+			return;
+		}
 
 		Flash();
 		foreach (PowerModel debuff in debuffs)
 		{
-			if (CombatManager.Instance.IsOverOrEnding || target.IsDead || Owner.Creature.IsDead) break;
-			if (!Owner.Creature.Powers.Contains(debuff) || !IsDebuff(debuff)) continue;
+			if (CombatManager.Instance.IsOverOrEnding || target.IsDead || Owner.Creature.IsDead)
+			{
+				break;
+			}
+
+			if (!Owner.Creature.Powers.Contains(debuff) || !IsDebuff(debuff))
+			{
+				continue;
+			}
 
 			int amount = debuff.Amount;
 			PowerModel? transferred = CreateEnemyTransfer(debuff);
 			await PowerCmd.Remove(debuff);
-			if (transferred == null) continue;
+			if (transferred == null)
+			{
+				continue;
+			}
+
 			await MegaCrit.Sts2.Core.Commands.PowerCmd.Apply(choiceContext, transferred,
 				target, amount, Owner.Creature, null);
 		}

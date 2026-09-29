@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
 	[HarmonyPatch(typeof(Creature), nameof(Creature.DamageBlockInternal), typeof(decimal), typeof(ValueProp))]
 	[HextechPatch("combat.piercing-thread.block", "穿刺之线")]
 	private static class DamageBlockPatch

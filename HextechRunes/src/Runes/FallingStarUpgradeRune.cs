@@ -11,7 +11,7 @@ public sealed class FallingStarUpgradeRune : CardUpgradeRuneBase<FallingStar>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<FallingStar>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<MeteorShower>()
 	];
 

@@ -161,6 +161,21 @@ public abstract partial class HextechRelicBase : RelicModel
 
 	public virtual bool IsAvailableForPlayer(Player player) => true;
 
+	// 作为某玩家的候选项生成时调用（此时尚未被持有，Owner 为空）：描述依赖该玩家状态的符文覆写它，
+	// 按该玩家刷新动态变量。
+	internal virtual void RefreshDescriptionForPlayer(Player player)
+	{
+	}
+
+	// 战斗内计数器的显示条件：战斗进行中，且是持有中的实例（规范模型不读实例状态）。
+	protected bool IsInLiveCombat => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+
+	// 捆包类符文（获得时发放一组原版遗物）的悬浮提示，按发放列表依次取规范遗物的提示，与发放列表同源维护。
+	protected static IEnumerable<IHoverTip> BundledRelicHoverTips(IEnumerable<Type> relicTypes)
+	{
+		return [.. relicTypes.SelectMany(static type => HoverTipFactory.FromRelic(ModelDb.GetById<RelicModel>(ModelDb.GetId(type))))];
+	}
+
 	private static readonly HashSet<string> WarnedMissingIconPaths = new(StringComparer.Ordinal);
 
 	private string GetResolvedIconPath()
@@ -174,7 +189,7 @@ public abstract partial class HextechRelicBase : RelicModel
 		// 缺图会静默落到原版占位图,肉眼难归因;每路径告警一次,把问题从"玩家看到占位"提前到日志。
 		if (!string.IsNullOrEmpty(customPath) && WarnedMissingIconPaths.Add(customPath))
 		{
-			Log.Warn($"[{ModInfo.Id}][Assets] Relic icon missing, falling back to placeholder: {GetType().Name} -> {customPath}");
+			HextechLog.Warn("Assets", $"Relic icon missing, falling back to placeholder: {GetType().Name} -> {customPath}");
 		}
 
 		return PlaceholderIconPath;

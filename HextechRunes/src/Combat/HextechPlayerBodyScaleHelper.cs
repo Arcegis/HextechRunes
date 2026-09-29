@@ -4,7 +4,8 @@ namespace HextechRunes;
 
 internal static class HextechPlayerBodyScaleHelper
 {
-	private const float MinScale = 0.2f;
+	// 生物体型缩放下限（体型再小就看不清了）；玩家与敌方（HextechMonsterMaxHpCoefficients.UpdateEnemyScale）共用。
+	internal const float MinCreatureBodyScale = 0.2f;
 
 	internal static void Update(Player? player)
 	{
@@ -22,11 +23,11 @@ internal static class HextechPlayerBodyScaleHelper
 
 		try
 		{
-			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.SetDefaultScaleTo(Math.Max(MinScale, scale), 0f);
+			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.SetDefaultScaleTo(Math.Max(MinCreatureBodyScale, scale), 0f);
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][BodyScale] Creature visual failed: {ex.Message}");
+			HextechLog.Warn("BodyScale", $"Creature visual failed: {ex.Message}");
 		}
 	}
 }

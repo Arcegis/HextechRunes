@@ -12,6 +12,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void SavedPropertyLateRegistrationFailsClosedOn0107WithoutPartialState()
 	{
 #if !STS2_109_OR_NEWER
@@ -78,6 +79,7 @@ internal static partial class Program
 #endif
 	}
 
+	[HextechTest]
 	private static void ExternalRegistrationValidationPrecedesAllSideEffects()
 	{
 		int registryVersion = HextechExternalContentRegistry.Version;
@@ -170,6 +172,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void ExternalResourceOwnershipIsFirstWriterWinsAndIdempotent()
 	{
 		Action restoreLogBudget = SuppressCompatibilityWarnings(
@@ -242,6 +245,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void SavedForgeRewardRestoreFiltersUnavailableExternalContent()
 	{
 		Action restoreLogBudget = SuppressCompatibilityWarnings("rewards.forge-choice-restore-skip");
@@ -283,6 +287,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void SavedForgeRewardRestoreKeepsGoldFallbackWhenAllOptionsInvalid()
 	{
 		Action restoreLogBudget = SuppressCompatibilityWarnings("rewards.forge-choice-restore-skip");

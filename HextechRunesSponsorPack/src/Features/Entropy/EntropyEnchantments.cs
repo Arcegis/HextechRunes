@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Rooms;
@@ -12,6 +11,8 @@ namespace HextechRunesSponsorPack;
 
 public sealed class EntropyIncrease : EnchantmentModel
 {
+	internal const string LogTag = "Entropy";
+
 	public override bool ShouldGlowGold => true;
 
 	public override bool CanEnchant(CardModel card)
@@ -40,9 +41,9 @@ public sealed class EntropyIncrease : EnchantmentModel
 
 		if (transformResult is { success: true } result)
 		{
-			Log.Info(
-				$"[{ModInfo.Id}] EntropyIncrease transformed {Card.Id.Entry} into "
-				+ $"{result.cardAdded.Id.Entry} after obtaining {card.Id.Entry}.");
+			SponsorLog.Info(
+				LogTag,
+				$"EntropyIncrease transformed {Card.Id.Entry} into {result.cardAdded.Id.Entry} after obtaining {card.Id.Entry}.");
 		}
 	}
 }
@@ -105,7 +106,7 @@ public sealed class EntropyDecrease : EnchantmentModel
 
 		foreach (CardModel card in cardsToRemove)
 		{
-			Log.Info($"[{ModInfo.Id}] EntropyDecrease removing {card.Id.Entry} from the deck after combat.");
+			SponsorLog.Info(EntropyIncrease.LogTag, $"EntropyDecrease removing {card.Id.Entry} from the deck after combat.");
 		}
 
 		await CardPileCmd.RemoveFromDeck(cardsToRemove, showPreview: true);

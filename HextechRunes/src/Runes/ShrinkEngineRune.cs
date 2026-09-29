@@ -1,7 +1,12 @@
 namespace HextechRunes;
 
-public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class ShrinkEngineRune : HextechSharedCombatVictoryRuneBase
 {
+	// 每层缩小体型、每若干层多抽 1 张 / 多 1 点能量；文案写的是字面值，改数值要同步九语言。
+	private const float BodyScaleStepPerStack = 0.02f;
+	private const decimal StacksPerExtraDraw = 4m;
+	private const decimal StacksPerExtraEnergy = 8m;
+
 	private int _stacks;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -19,7 +24,7 @@ public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVic
 
 	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
 
-	internal float BodyScaleDelta => -_stacks * 0.02f;
+	internal float BodyScaleDelta => -_stacks * BodyScaleStepPerStack;
 
 	public override Task AfterObtained()
 	{
@@ -33,17 +38,7 @@ public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVic
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
@@ -58,12 +53,12 @@ public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVic
 
 	public override decimal ModifyHandDraw(Player player, decimal count)
 	{
-		return player == Owner ? count + FloorToInt(_stacks / 4m) : count;
+		return player == Owner ? count + FloorToInt(_stacks / StacksPerExtraDraw) : count;
 	}
 
 	public override decimal ModifyMaxEnergy(Player player, decimal amount)
 	{
-		return player == Owner ? amount + FloorToInt(_stacks / 8m) : amount;
+		return player == Owner ? amount + FloorToInt(_stacks / StacksPerExtraEnergy) : amount;
 	}
 
 	private void Shrink()

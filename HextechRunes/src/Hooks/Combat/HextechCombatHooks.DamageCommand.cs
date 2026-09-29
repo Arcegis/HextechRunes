@@ -14,7 +14,6 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-
 	// 只负责命令结束后的账目清理。AsyncLocal 的出栈不能放在这里:async 方法内对 AsyncLocal 的赋值只作用于
 	// 它自己的执行上下文副本,不会回写到调用方;调用方的上下文由 Postfix 在同步返回前恢复(见 DamageCommandPatch)。
 	private static async Task<T> CompleteWithActualDamageCommandReset<T>(Task<T> task, long commandId)
@@ -28,8 +27,15 @@ internal static partial class HextechCombatHooks
 			CompensationRune.ClearPendingCompensations(commandId);
 			CompensationEnemyHex.ClearPendingCompensations(commandId);
 			PiercingThreadRune.ClearPendingDamage(commandId);
-			await ConsumeOstyRedirectedSlippery(commandId);
-			ClearSlipperyReductions(commandId);
+			try
+			{
+				await ConsumeOstyRedirectedSlippery(commandId);
+			}
+			finally
+			{
+				// 补扣滑溜走 PowerCmd.Decrement，可能抛异常；本命令的滑溜账目无论如何都要清掉。
+				ClearSlipperyReductions(commandId);
+			}
 		}
 	}
 
@@ -54,11 +60,11 @@ internal static partial class HextechCombatHooks
 		ActualDamageCommandIds.Value = next.Length == 0 ? null : next;
 	}
 
-	#if STS2_108_OR_NEWER
+#if STS2_108_OR_NEWER
 	[HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.Damage), typeof(PlayerChoiceContext), typeof(IEnumerable<Creature>), typeof(decimal), typeof(ValueProp), typeof(Creature), typeof(CardModel), typeof(CardPlay))]
-	#else
+#else
 	[HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.Damage), typeof(PlayerChoiceContext), typeof(IEnumerable<Creature>), typeof(decimal), typeof(ValueProp), typeof(Creature), typeof(CardModel))]
-	#endif
+#endif
 	[HextechPatch("combat.damage-command", "伤害命令作用域")]
 	private static class DamageCommandPatch
 	{
@@ -79,19 +85,15 @@ internal static partial class HextechCombatHooks
 		[HarmonyPostfix]
 		private static void Postfix(long __state, ref Task<IEnumerable<DamageResult>> __result)
 		{
-			if (__state == 0L)
-			{
-				return;
-			}
-
 			__result = CompleteWithActualDamageCommandReset(__result, __state);
 			PopActualDamageCommand(__state);
 		}
 
+		// 原方法同步段抛异常时 Postfix 不会执行;这里兜底出栈,避免调用方带着残留 ID 继续。
+		// __state 为 0 表示排在前面的补丁抛异常、本前缀没有入栈；出栈按 ID 删除，Postfix 之后再执行也不会误删别的命令。
 		[HarmonyFinalizer]
 		private static Exception? Finalizer(long __state, Exception? __exception)
 		{
-			// 原方法同步段抛异常时 Postfix 不会执行;这里兜底出栈,避免调用方带着残留 ID 继续。
 			if (__exception != null && __state != 0L)
 			{
 				PopActualDamageCommand(__state);

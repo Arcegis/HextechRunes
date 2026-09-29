@@ -1,6 +1,4 @@
-using Godot;
 using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Nodes;
 using static HextechRunes.HextechSelectionHelpers;
 
@@ -29,7 +27,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					choiceId,
 					HextechChoiceCodec.CreateActSelectionApplied(actIndex, choiceOrdinal),
 					$"act-selection-applied act={actIndex} ordinal={choiceOrdinal}");
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={sentChoiceId}");
+				HextechLog.Info("Mayhem", $"ActSelectionApplied sync local: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={sentChoiceId}");
 				continue;
 			}
 
@@ -48,9 +46,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} ordinal={choiceOrdinal} remoteCount={pendingAcks.Count}");
+		HextechLog.Info("Mayhem", $"ActSelectionApplied waiting: act={actIndex} ordinal={choiceOrdinal} remoteCount={pendingAcks.Count}");
 		await Task.WhenAll(pendingAcks);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex} ordinal={choiceOrdinal}");
+		HextechLog.Info("Mayhem", $"ActSelectionApplied complete: act={actIndex} ordinal={choiceOrdinal}");
 	}
 
 	private static async Task WaitForRemoteActSelectionApplied(
@@ -62,7 +60,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		int choiceOrdinal,
 		CancellationToken cancellationToken)
 	{
-		(PlayerChoiceResult remoteAck, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+		// isExpected 已完整解码校验;等待只会在它返回 true 时结束,不再二次解码。
+		(_, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
 			runState,
 			player,
@@ -70,13 +69,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			result => HextechChoiceCodec.TryDecodeActSelectionApplied(result, actIndex, choiceOrdinal),
 			$"act-selection-applied act={actIndex} ordinal={choiceOrdinal}",
 			cancellationToken: cancellationToken);
-		if (!HextechChoiceCodec.TryDecodeActSelectionApplied(remoteAck, actIndex, choiceOrdinal))
-		{
-			throw new HextechChoiceProtocolException(
-				$"Malformed act-selection-applied ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
-		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
+		HextechLog.Info("Mayhem", $"ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
 	}
 
 	private static async Task WaitForFramesOrRunChangeAsync(
@@ -93,7 +87,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		DateTimeOffset deadline = DateTimeOffset.UtcNow + timeout;
 		while (!cancellationToken.IsCancellationRequested
 			&& IsCurrentRun(runState)
-			&& IsMultiplayerConnected()
+			&& HextechPlayerContextHelper.IsMultiplayerConnected()
 			&& DateTimeOffset.UtcNow < deadline)
 		{
 			// Multiplayer timer mods can accelerate process frames; keep network choice
@@ -102,12 +96,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		cancellationToken.ThrowIfCancellationRequested();
-	}
-
-	private static bool IsMultiplayerConnected()
-	{
-		INetGameService netService = RunManager.Instance.NetService;
-		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
 	}
 
 	internal static TimeSpan GetNetworkChoiceTimeoutDuration(int frameCount)
@@ -125,9 +113,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			return Task.FromResult(synchronizer);
 		}
 
-		const string message = "PlayerChoiceSynchronizer is unavailable during an active multiplayer transaction.";
-		AbortMultiplayerChoiceTransaction("player-choice-synchronizer", message);
-		throw new HextechChoiceProtocolException(message);
+		throw CreateProtocolFailure(
+			"player-choice-synchronizer",
+			"PlayerChoiceSynchronizer is unavailable during an active multiplayer transaction.");
 	}
 
 	internal static bool IsLocalPlayer(RunManager runManager, Player player)

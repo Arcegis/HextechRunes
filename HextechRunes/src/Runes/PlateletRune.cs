@@ -18,7 +18,7 @@ public sealed class PlateletRune : HextechRelicBase
 			|| creature != Owner.Creature
 			|| delta >= 0m
 			|| Owner.Creature.IsDead
-			|| !HextechSts2Compat.IsPartOfPlayerTurn(Owner))
+			|| !CombatManager.Instance.IsPartOfPlayerTurn(Owner))
 		{
 			return Task.CompletedTask;
 		}

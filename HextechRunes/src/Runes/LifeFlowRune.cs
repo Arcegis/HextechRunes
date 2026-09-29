@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class LifeFlowRune : HextechRelicBase
+public sealed class LifeFlowRune : TurnScopedRelicBase
 {
 	private const decimal HealPercentValue = 0.05m;
 	private const decimal HealDisplayPercentValue = HealPercentValue * 100m;
@@ -12,7 +12,7 @@ public sealed class LifeFlowRune : HextechRelicBase
 	{
 		get
 		{
-			EnsureTurnScopedStateCurrent(ResetProcs);
+			EnsureTurnScopedStateCurrent();
 			return GetTurnProcCount(nameof(LifeFlowRune), _procsThisTurn);
 		}
 		set
@@ -23,7 +23,7 @@ public sealed class LifeFlowRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+	public override bool ShowCounter => IsInLiveCombat;
 
 	public override int DisplayAmount => !IsCanonical ? Math.Max(0, DynamicVars["MaxProcsPerTurn"].IntValue - GetTurnProcCount(nameof(LifeFlowRune), _procsThisTurn)) : 0;
 
@@ -39,40 +39,13 @@ public sealed class LifeFlowRune : HextechRelicBase
 		return IsIroncladPlayer(player);
 	}
 
-	public override Task BeforeCombatStart()
-	{
-		ResetProcs(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetProcs(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetProcs(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
-
 	public override Task AfterCardExhausted(PlayerChoiceContext choiceContext, CardModel card, bool causedByEthereal)
 	{
-		EnsureTurnScopedStateCurrent(ResetProcs);
+		EnsureTurnScopedStateCurrent();
 		if (!IsOwnedCard(card)
 			|| Owner == null
 			|| Owner.Creature.IsDead
-			|| HasTurnProcReachedLimit(nameof(LifeFlowRune), _procsThisTurn, DynamicVars["MaxProcsPerTurn"].IntValue))
-		{
-			return Task.CompletedTask;
-		}
-
-		if (!TryConsumeTurnProc(nameof(LifeFlowRune), ref _procsThisTurn, DynamicVars["MaxProcsPerTurn"].IntValue))
+			|| !TryConsumeTurnProc(nameof(LifeFlowRune), ref _procsThisTurn, DynamicVars["MaxProcsPerTurn"].IntValue))
 		{
 			return Task.CompletedTask;
 		}
@@ -82,15 +55,9 @@ public sealed class LifeFlowRune : HextechRelicBase
 		return CreatureCmd.Heal(Owner.Creature, healAmount);
 	}
 
-	private void ResetProcs()
-	{
-		ResetProcs(null);
-	}
-
-	private void ResetProcs(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_procsThisTurn = 0;
 		InvokeDisplayAmountChanged();
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

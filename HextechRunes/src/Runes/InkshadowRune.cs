@@ -1,4 +1,3 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 
 namespace HextechRunes;
@@ -74,7 +73,7 @@ public sealed class InkshadowRune : HextechRelicBase
 	}
 
 	[HarmonyPatch(typeof(BladeOfInk), "OnPlay", typeof(PlayerChoiceContext), typeof(CardPlay))]
-	[HextechPatch("rune.inkshadow", "墨影")]
+	[HextechPatch("rune.inkshadow", "墨影", Rune = typeof(InkshadowRune))]
 	private static class BladeOfInkPatch
 	{
 		[HarmonyPrefix]

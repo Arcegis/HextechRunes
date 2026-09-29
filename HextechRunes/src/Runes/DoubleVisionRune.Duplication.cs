@@ -1,8 +1,6 @@
 using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves;
-using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
 
@@ -80,7 +78,7 @@ public sealed partial class DoubleVisionRune
 
 	private async Task DuplicateObtainedPotion(Player player, PotionModel sourcePotion)
 	{
-		PotionModel copy = ModelDb.GetById<PotionModel>(sourcePotion.CanonicalInstance?.Id ?? sourcePotion.Id).ToMutable();
+		PotionModel copy = ModelDb.GetById<PotionModel>(sourcePotion.CanonicalId()).ToMutable();
 		PotionProcureResult result = await RunWithCommandDuplicationSuppressed(
 			() => PotionCmd.TryToProcure(copy, player));
 		if (!result.success)
@@ -105,12 +103,15 @@ public sealed partial class DoubleVisionRune
 
 	private async Task DuplicateObtainedRelic(Player player, RelicModel sourceRelic, bool syncReward = true)
 	{
-		// 此通道排除海克斯基类、内容注册表成员及 HextechRunes* 程序集中的遗物，
+		// 此通道排除海克斯基类、内容注册表成员及本模组系列程序集中的遗物，
 		// 避免重复执行符文与锻造器的拾取流程；锻造奖励和商店锻造另有专用复制入口。
+		// 三项并不互相覆盖：注册表只认已登记的 ID(外部基于 HextechRelicBase 的符文登记失败时查不到)，
+		// 欧洛巴斯二次升级等本体遗物既不继承 HextechRelicBase 也不在符文注册表里，
+		// 程序集前缀同时覆盖本体与拓展包(HextechRunesSponsorPack)。
 		// 其他原版或外部遗物继续接受下方的逐类限制，并非只允许原版遗物。
 		if (sourceRelic is HextechRelicBase
 			|| HextechCatalog.IsHextechCustomRelic(sourceRelic)
-			|| sourceRelic.GetType().Assembly.GetName().Name?.StartsWith("HextechRunes", StringComparison.Ordinal) == true)
+			|| sourceRelic.GetType().Assembly.GetName().Name?.StartsWith(ModInfo.Id, StringComparison.Ordinal) == true)
 		{
 			return;
 		}
@@ -132,14 +133,14 @@ public sealed partial class DoubleVisionRune
 			return;
 		}
 
-		ModelId sourceId = sourceRelic.CanonicalInstance?.Id ?? sourceRelic.Id;
+		ModelId sourceId = sourceRelic.CanonicalId();
 		RelicModel? canonical = sourceId == ModelId.none
 			? null
 			: ModelDb.GetByIdOrNull<RelicModel>(sourceId);
 		if (canonical == null)
 		{
-			Log.Warn(
-				$"[{ModInfo.Id}][DoubleVision] Skipped relic duplication because its model is not registered: "
+			HextechLog.Warn(
+				"DoubleVision", $"Skipped relic duplication because its model is not registered: "
 				+ $"player={player.NetId} relic={sourceId.Entry} type={sourceRelic.GetType().FullName}.");
 			return;
 		}
@@ -162,7 +163,7 @@ public sealed partial class DoubleVisionRune
 	{
 		if (sourceTome.AncientCard == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][DoubleVision] Refused to duplicate Dusty Tome without an AncientCard.");
+			HextechLog.Warn("DoubleVision", $"Refused to duplicate Dusty Tome without an AncientCard.");
 			return;
 		}
 
@@ -228,7 +229,7 @@ public sealed partial class DoubleVisionRune
 
 		DustyTome copy = createCopy?.Invoke()
 			?? (DustyTome)ModelDb
-				.GetById<RelicModel>(sourceTome.CanonicalInstance?.Id ?? sourceTome.Id)
+				.GetById<RelicModel>(sourceTome.CanonicalId())
 				.ToMutable();
 		CopyWaxState(sourceTome, copy);
 		assignAncientCard ??= static (dustyTome, cardId) => dustyTome.AncientCard = cardId;
@@ -281,7 +282,7 @@ public sealed partial class DoubleVisionRune
 	// ObtainSelectedForge(syncObtainedRelic) 路径。GetActiveRunes 已含「本地持有者」联机闸门(远端由广播兜底)。
 	internal static async Task DuplicatePurchasedForge(Player player, RelicModel forge)
 	{
-		ModelId forgeId = forge.CanonicalInstance?.Id ?? forge.Id;
+		ModelId forgeId = forge.CanonicalId();
 		if (forgeId == ModelId.none)
 		{
 			return;

@@ -11,8 +11,8 @@ public sealed class SlapRune : LimitedDebuffProcRelicBase
 		new PowerVar<StrengthPower>(1m)
 	];
 
-	protected override Task OnEnemyDebuffApplied(Creature target)
+	protected override Task OnDebuffProc(Player owner, Creature target)
 	{
-		return PowerCmd.Apply<StrengthPower>(Owner!.Creature, DynamicVars.Strength.BaseValue, Owner!.Creature, null);
+		return PowerCmd.Apply<StrengthPower>(owner.Creature, DynamicVars.Strength.BaseValue, owner.Creature, null);
 	}
 }

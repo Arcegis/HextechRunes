@@ -1,11 +1,10 @@
 using Godot;
 using MegaCrit.Sts2.Core.Assets;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using MegaCrit.Sts2.Core.Nodes.Vfx;
 using MegaCrit.Sts2.Core.Nodes.Vfx.Cards;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -20,8 +19,8 @@ internal static class HextechMyriadSwordsVfx
 	private const float BladeLift = 180f;
 	private const float BladeScale = 0.55f;
 
-	private static readonly FieldInfo? FanSpawnPositionField = typeof(NFanOfKnivesVfx)
-		.GetField("_spawnPosition", BindingFlags.Instance | BindingFlags.NonPublic);
+	// NFanOfKnivesVfx._spawnPosition（0.107.1/0.110.0/0.111.0 原版私有字段）：缺失时跳过整段特效。
+	private static readonly FieldInfo? FanSpawnPositionField = TryGetField(typeof(NFanOfKnivesVfx), "_spawnPosition");
 
 	internal static void Play(Creature owner)
 	{
@@ -30,6 +29,7 @@ internal static class HextechMyriadSwordsVfx
 			return;
 		}
 
+		// 纯表现层：推到主线程帧末执行、不等待，战斗命令不受特效时长影响；PlayDeferred 自行兜底异常。
 		Callable.From(() => PlayDeferred(owner)).CallDeferred();
 	}
 
@@ -84,7 +84,7 @@ internal static class HextechMyriadSwordsVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][MyriadSwordsVfx] Could not play Sovereign Blade fan: {ex.Message}", 2);
+			HextechLog.Warn("MyriadSwordsVfx", $"Could not play Sovereign Blade fan: {ex.Message}");
 		}
 	}
 

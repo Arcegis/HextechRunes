@@ -21,13 +21,8 @@ internal sealed partial class HextechMayhemCombatTrackingState
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to restore combat tracking snapshot: {ex}");
+			HextechLog.Warn("Mayhem", $"Failed to restore combat tracking snapshot: {ex}");
 			HextechMayhemCombatTrackingSerializer.Clear(this);
 		}
-	}
-
-	private void Clear()
-	{
-		HextechMayhemCombatTrackingSerializer.Clear(this);
 	}
 }

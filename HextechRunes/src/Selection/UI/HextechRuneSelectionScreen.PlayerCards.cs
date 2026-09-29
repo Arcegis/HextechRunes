@@ -49,7 +49,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		bool useImageFrame = cardFrameTexture != null;
 		Button button = new()
 		{
-			Name = $"{(relic.CanonicalInstance?.Id ?? relic.Id).Entry}_Card",
+			Name = $"{relic.CanonicalId().Entry}_Card",
 			CustomMinimumSize = PlayerRuneCardSize,
 			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,
@@ -193,7 +193,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		ApplyRerollButtonVisualState(button, icon, disabled, hovered: false);
 		if (icon.Texture == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.CreateRerollButton: failed to load reroll button texture path={RerollButtonTexturePath}");
+			HextechLog.Warn("Mayhem", $"SelectionScreen.CreateRerollButton: failed to load reroll button texture path={RerollButtonTexturePath}");
 		}
 		button.AddChild(icon);
 		HextechGoldenRerollVisual? goldenVisual = includeGoldenVisual
@@ -254,8 +254,8 @@ internal sealed partial class HextechRuneSelectionScreen
 			GoldenRerollSourceScale);
 		if (visual == null)
 		{
-			Log.Warn(
-				$"[{ModInfo.Id}][Mayhem] SelectionScreen.CreateGoldenRerollVisual: " +
+			HextechLog.Warn(
+				"Mayhem", $"SelectionScreen.CreateGoldenRerollVisual: " +
 				$"failed to load masks outer={GoldenRerollOuterMaskPath} fill={GoldenRerollFillMaskPath}");
 			return null;
 		}

@@ -1,4 +1,4 @@
-using HarmonyLib;
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 
@@ -6,49 +6,77 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static HextechMayhemModifier? GetEnemyUpgradeModifier(Creature creature)
+	private static bool TryGetLivingEnemyHexModifier(
+		Creature creature,
+		MonsterHexKind kind,
+		[NotNullWhen(true)] out HextechMayhemModifier? modifier)
 	{
-		return creature.Side == CombatSide.Enemy && !creature.IsDead
-			&& creature.CombatState?.RunState is RunState run
-			? HextechMayhemModifier.FindIn(run) : null;
+		modifier = null;
+		return !creature.IsDead && TryGetActiveEnemyHexModifier(creature, kind, out modifier);
 	}
 
 	private static void AddMonsterUpgradeIntents(MonsterModel monster, MoveState move, bool rollTheft)
 	{
-		HextechMayhemModifier? modifier = GetEnemyUpgradeModifier(monster.Creature);
-		if (modifier == null || MoveStateIntentsField == null) return;
+		Creature creature = monster.Creature;
+		if (creature.Side != CombatSide.Enemy
+			|| creature.IsDead
+			|| MoveStateIntentsField == null
+			|| HextechMayhemModifier.FindIn(creature.CombatState?.RunState) is not HextechMayhemModifier modifier)
+		{
+			return;
+		}
+
 		HextechEnemyHexContext context = new(modifier);
 		bool strength = context.IsActive(MonsterHexKind.CeremonialBeast);
 		bool theft = context.IsActive(MonsterHexKind.ThievingHopper);
-		if (!strength && !theft) return;
-		// 沿用集中解析的 MoveState.Intents 字段（0.107.1/0.110.0/0.111.0）。
+		if (!strength && !theft)
+		{
+			return;
+		}
+
 		// 原版没有改写意图的 Hook；保留行动对象及原委托，避免破坏怪物状态机的引用判定。
-		bool planTheft = rollTheft && theft && ThievingHopperEnemyHex.CanPlanTheft(monster.Creature, context)
-			&& ThievingHopperEnemyHex.RollTheft(context, monster.Creature);
-		MoveStateIntentsField.SetValue(move, ComposeMonsterUpgradeIntents(move.Intents, monster.Creature,
-			strength ? context.TierValue(MonsterHexKind.CeremonialBeast, 1, 2, 3) : 0, planTheft));
+		bool planTheft = rollTheft
+			&& theft
+			&& ThievingHopperEnemyHex.CanPlanTheft(creature, context)
+			&& ThievingHopperEnemyHex.RollTheft(context, creature);
+		int strengthAmount = strength ? context.TierValue(MonsterHexKind.CeremonialBeast, 1, 2, 3) : 0;
+		MoveStateIntentsField.SetValue(move, ComposeMonsterUpgradeIntents(move.Intents, creature, strengthAmount, planTheft));
 	}
 
-	internal static AbstractIntent[] ComposeMonsterUpgradeIntents(IReadOnlyList<AbstractIntent> original,
-		Creature source, int strength, bool theft)
+	internal static AbstractIntent[] ComposeMonsterUpgradeIntents(
+		IReadOnlyList<AbstractIntent> original,
+		Creature source,
+		int strength,
+		bool theft)
 	{
-		List<AbstractIntent> intents = original.Where(i => i is not CeremonialBeastStrengthIntent
-			&& i is not ThievingHopperTheftIntent).ToList();
-		if (strength > 0 && intents.Any(i => i is AttackIntent))
+		List<AbstractIntent> intents = original
+			.Where(static intent => intent is not CeremonialBeastStrengthIntent and not ThievingHopperTheftIntent)
+			.ToList();
+		if (strength > 0 && intents.Any(static intent => intent is AttackIntent))
+		{
 			intents.Add(new CeremonialBeastStrengthIntent(source, strength));
-		if (theft) intents.Add(new ThievingHopperTheftIntent(source));
+		}
+
+		if (theft)
+		{
+			intents.Add(new ThievingHopperTheftIntent(source));
+		}
+
 		return intents.ToArray();
 	}
 
 	internal static async Task CompleteMonsterUpgradeMove(Task original, CeremonialBeastStrengthIntent? strength, ThievingHopperTheftIntent? theft)
 	{
 		await original;
-		if (strength != null && GetEnemyUpgradeModifier(strength.Source) is { } strengthModifier
-			&& strengthModifier.HasActiveMonsterHex(MonsterHexKind.CeremonialBeast))
+		if (strength != null && TryGetLivingEnemyHexModifier(strength.Source, MonsterHexKind.CeremonialBeast, out _))
+		{
 			await PowerCmd.Apply<StrengthPower>(strength.Source, strength.Strength, strength.Source, null);
-		if (theft != null && GetEnemyUpgradeModifier(theft.Source) is { } theftModifier
-			&& theftModifier.HasActiveMonsterHex(MonsterHexKind.ThievingHopper))
-			await ThievingHopperEnemyHex.StealAndPlanEscape(new(theftModifier), theft.Source);
+		}
+
+		if (theft != null && TryGetLivingEnemyHexModifier(theft.Source, MonsterHexKind.ThievingHopper, out HextechMayhemModifier? theftModifier))
+		{
+			await ThievingHopperEnemyHex.StealAndPlanEscape(new HextechEnemyHexContext(theftModifier), theft.Source);
+		}
 	}
 
 	[HarmonyPatch(typeof(MonsterModel), nameof(MonsterModel.RollMove), typeof(IEnumerable<Creature>))]
@@ -74,10 +102,12 @@ internal static partial class HextechCombatHooks
 		[HarmonyPostfix]
 		private static void Postfix(MoveState __instance, ref Task __result)
 		{
-			var strength = __instance.Intents.OfType<CeremonialBeastStrengthIntent>().FirstOrDefault();
-			var theft = __instance.Intents.OfType<ThievingHopperTheftIntent>().FirstOrDefault();
+			CeremonialBeastStrengthIntent? strength = __instance.Intents.OfType<CeremonialBeastStrengthIntent>().FirstOrDefault();
+			ThievingHopperTheftIntent? theft = __instance.Intents.OfType<ThievingHopperTheftIntent>().FirstOrDefault();
 			if (strength != null || theft != null)
+			{
 				__result = CompleteMonsterUpgradeMove(__result, strength, theft);
+			}
 		}
 	}
 }

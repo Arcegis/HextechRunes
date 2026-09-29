@@ -113,13 +113,7 @@ public sealed class RitualForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<RitualPower>(Owner.Creature, Stacked(DynamicVars["RitualPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<RitualPower>(DynamicVars["RitualPower"].BaseValue);
 	}
 }
 
@@ -137,13 +131,7 @@ public sealed class RegenForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<RegenPower>(Owner.Creature, Stacked(DynamicVars["RegenPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<RegenPower>(DynamicVars["RegenPower"].BaseValue);
 	}
 }
 
@@ -161,13 +149,7 @@ public sealed class BufferForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<BufferPower>(Owner.Creature, Stacked(DynamicVars["BufferPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<BufferPower>(DynamicVars["BufferPower"].BaseValue);
 	}
 }
 
@@ -185,13 +167,7 @@ public sealed class SlipperyForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<SlipperyPower>(Owner.Creature, Stacked(DynamicVars["SlipperyPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<SlipperyPower>(DynamicVars["SlipperyPower"].BaseValue);
 	}
 }
 
@@ -209,13 +185,7 @@ public sealed class PrismaticArtifactForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<ArtifactPower>(Owner.Creature, Stacked(DynamicVars["ArtifactPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<ArtifactPower>(DynamicVars["ArtifactPower"].BaseValue);
 	}
 }
 
@@ -253,12 +223,6 @@ public sealed class VoidForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<VoidFormPower>(Owner.Creature, Stacked(DynamicVars["VoidFormPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<VoidFormPower>(DynamicVars["VoidFormPower"].BaseValue);
 	}
 }

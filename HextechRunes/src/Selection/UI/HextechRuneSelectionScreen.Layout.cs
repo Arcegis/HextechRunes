@@ -10,6 +10,59 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 {
 	private void BuildUi()
 	{
+		VBoxContainer root = BuildContentRoot();
+		root.AddChild(CreateTitleLabel());
+		if (_monsterHexKinds.Count > 0 || _enemyHexControlsEnabled)
+		{
+			_enemyPreviewHost = new VBoxContainer()
+			{
+				Name = "EnemyPreviewHost",
+				MouseFilter = MouseFilterEnum.Ignore,
+				SizeFlagsHorizontal = SizeFlags.ExpandFill
+			};
+			root.AddChild(_enemyPreviewHost);
+			RebuildEnemyPreview();
+		}
+
+		HBoxContainer row = new()
+		{
+			Name = "PlayerCardsRow",
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			SizeFlagsVertical = SizeFlags.ExpandFill,
+			MouseFilter = MouseFilterEnum.Ignore
+		};
+		row.AddThemeConstantOverride("separation", 28);
+		root.AddChild(row);
+		_cardsRow = row;
+		row.Visible = !_enemyOnly && !SelfPickMode;
+
+		if (SelfPickMode)
+		{
+			root.AddChild(CreateSelfPickPanel());
+		}
+
+		RebuildCards();
+		if (_continueOnly)
+		{
+			root.AddChild(CreateContinueHint());
+		}
+
+		if (_enemyOnly)
+		{
+			root.AddChild(CreateEnemyOnlyConfirm());
+		}
+		else if (UsesPlayerRuneConfirmation)
+		{
+			root.AddChild(CreatePlayerRuneSelectionActions());
+		}
+
+		AddStatusLabel(root);
+	}
+
+	// 遮罩 + 居中内容面板,返回放置标题、敌方预览、候选卡与按钮的纵向容器。
+	private VBoxContainer BuildContentRoot()
+	{
 		ColorRect backdrop = new()
 		{
 			Name = "DimOverlay",
@@ -55,7 +108,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		};
 		root.AddThemeConstantOverride("separation", 20);
 		contentMargin.AddChild(root);
+		return root;
+	}
 
+	private MegaLabel CreateTitleLabel()
+	{
 		MegaLabel title = new()
 		{
 			HorizontalAlignment = HorizontalAlignment.Center,
@@ -66,95 +123,69 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		HextechUiTheme.ApplyDefaultMegaLabelTheme(title);
 		title.Modulate = new Color(0.96f, 0.97f, 0.99f, 0.98f);
 		title.SetTextAutoSize(_titleOverride ?? new LocString(LocTable, "HEXTECH_SELECTION_TITLE").GetRawText());
-		root.AddChild(title);
+		return title;
+	}
 
-		if (_monsterHexKinds.Count > 0 || _enemyHexControlsEnabled)
+	private static MegaLabel CreateContinueHint()
+	{
+		MegaLabel hint = new()
 		{
-			_enemyPreviewHost = new VBoxContainer()
-			{
-				Name = "EnemyPreviewHost",
-				MouseFilter = MouseFilterEnum.Ignore,
-				SizeFlagsHorizontal = SizeFlags.ExpandFill
-			};
-			root.AddChild(_enemyPreviewHost);
-			RebuildEnemyPreview();
-		}
-
-		HBoxContainer row = new()
-		{
-			Name = "PlayerCardsRow",
-			Alignment = BoxContainer.AlignmentMode.Center,
+			HorizontalAlignment = HorizontalAlignment.Center,
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ExpandFill,
+			MaxFontSize = 24,
+			MinFontSize = 16
+		};
+		HextechUiTheme.ApplyDefaultMegaLabelTheme(hint);
+		hint.Modulate = new Color(0.88f, 0.92f, 0.97f, 0.86f);
+		hint.SetTextAutoSize(new LocString(LocTable, "HEXTECH_NO_RUNE_OPTIONS_HINT").GetRawText());
+		return hint;
+	}
+
+	private Button CreateEnemyOnlyConfirm()
+	{
+		bool confirmEnabled = _enemyHexControlsEnabled || _continueOnly;
+		Button confirm = CreateConfirmButton("EnemyOnlyConfirm", new Vector2(260f, 60f), out MegaLabel confirmLabel);
+		_enemyOnlyConfirm = confirm;
+		confirmLabel.SetTextAutoSize(new LocString(LocTable, _continueOnly ? "HEXTECH_CONTINUE" : "HEXTECH_ENEMY_CONFIRM").GetRawText());
+		confirm.Disabled = !confirmEnabled;
+		confirm.Pressed += () =>
+		{
+			if (confirmEnabled && !IsSelectionConfirmGuardActive())
+			{
+				GetViewport()?.SetInputAsHandled();
+				CompleteEnemyOnlySelection();
+			}
+		};
+		return confirm;
+	}
+
+	private HBoxContainer CreatePlayerRuneSelectionActions()
+	{
+		HBoxContainer selectionActions = new()
+		{
+			Name = "PlayerRuneSelectionActions",
+			Alignment = BoxContainer.AlignmentMode.Center,
+			SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
 			MouseFilter = MouseFilterEnum.Ignore
 		};
-		row.AddThemeConstantOverride("separation", 28);
-		root.AddChild(row);
-		_cardsRow = row;
-		row.Visible = !_enemyOnly && !SelfPickMode;
+		selectionActions.AddThemeConstantOverride("separation", 16);
 
-		if (SelfPickMode)
-		{
-			root.AddChild(CreateSelfPickPanel());
-		}
+		_playerRuneConfirm = CreateConfirmButton("PlayerRuneConfirm", new Vector2(240f, 60f), out MegaLabel playerConfirmLabel);
+		playerConfirmLabel.SetTextAutoSize(new LocString(LocTable, "HEXTECH_ENEMY_CONFIRM").GetRawText());
+		_playerRuneConfirm.Disabled = true;
+		_playerRuneConfirm.Pressed += OnPlayerRuneConfirmPressed;
+		selectionActions.AddChild(_playerRuneConfirm);
 
-		RebuildCards();
-		if (_continueOnly)
-		{
-			MegaLabel hint = new()
-			{
-				HorizontalAlignment = HorizontalAlignment.Center,
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				MaxFontSize = 24,
-				MinFontSize = 16
-			};
-			HextechUiTheme.ApplyDefaultMegaLabelTheme(hint);
-			hint.Modulate = new Color(0.88f, 0.92f, 0.97f, 0.86f);
-			hint.SetTextAutoSize(new LocString(LocTable, "HEXTECH_NO_RUNE_OPTIONS_HINT").GetRawText());
-			root.AddChild(hint);
-		}
+		_playerRuneCancel = CreateConfirmButton("PlayerRuneCancel", new Vector2(240f, 60f), out MegaLabel playerCancelLabel, secondary: true);
+		playerCancelLabel.SetTextAutoSize(new LocString(LocTable, "HEXTECH_CONFIG_CANCEL").GetRawText());
+		_playerRuneCancel.Disabled = true;
+		_playerRuneCancel.Pressed += OnPlayerRuneCancelPressed;
+		selectionActions.AddChild(_playerRuneCancel);
+		return selectionActions;
+	}
 
-		if (_enemyOnly)
-		{
-			bool confirmEnabled = _enemyHexControlsEnabled || _continueOnly;
-			_enemyOnlyConfirm = CreateConfirmButton("EnemyOnlyConfirm", new Vector2(260f, 60f), out MegaLabel confirmLabel);
-			confirmLabel.SetTextAutoSize(new LocString(LocTable, _continueOnly ? "HEXTECH_CONTINUE" : "HEXTECH_ENEMY_CONFIRM").GetRawText());
-			_enemyOnlyConfirm.Disabled = !confirmEnabled;
-			_enemyOnlyConfirm.Pressed += () =>
-			{
-				if (confirmEnabled && !IsSelectionConfirmGuardActive())
-				{
-					GetViewport()?.SetInputAsHandled();
-					CompleteEnemyOnlySelection();
-				}
-			};
-			root.AddChild(_enemyOnlyConfirm);
-		}
-		else if (UsesPlayerRuneConfirmation)
-		{
-			HBoxContainer selectionActions = new()
-			{
-				Name = "PlayerRuneSelectionActions",
-				Alignment = BoxContainer.AlignmentMode.Center,
-				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
-				MouseFilter = MouseFilterEnum.Ignore
-			};
-			selectionActions.AddThemeConstantOverride("separation", 16);
-
-			_playerRuneConfirm = CreateConfirmButton("PlayerRuneConfirm", new Vector2(240f, 60f), out MegaLabel playerConfirmLabel);
-			playerConfirmLabel.SetTextAutoSize(new LocString(LocTable, "HEXTECH_ENEMY_CONFIRM").GetRawText());
-			_playerRuneConfirm.Disabled = true;
-			_playerRuneConfirm.Pressed += OnPlayerRuneConfirmPressed;
-			selectionActions.AddChild(_playerRuneConfirm);
-
-			_playerRuneCancel = CreateConfirmButton("PlayerRuneCancel", new Vector2(240f, 60f), out MegaLabel playerCancelLabel, secondary: true);
-			playerCancelLabel.SetTextAutoSize(new LocString(LocTable, "HEXTECH_CONFIG_CANCEL").GetRawText());
-			_playerRuneCancel.Disabled = true;
-			_playerRuneCancel.Pressed += OnPlayerRuneCancelPressed;
-			selectionActions.AddChild(_playerRuneCancel);
-			root.AddChild(selectionActions);
-		}
-
+	private void AddStatusLabel(VBoxContainer root)
+	{
 		_statusLabel = new MegaLabel()
 		{
 			HorizontalAlignment = HorizontalAlignment.Center,
@@ -166,7 +197,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		HextechUiTheme.ApplyDefaultMegaLabelTheme(_statusLabel);
 		_statusLabel.Modulate = new Color(0.88f, 0.92f, 0.97f, 0.82f);
 		root.AddChild(_statusLabel);
-		if (_enemyOnly && !_enemyHexControlsEnabled && !_continueOnly) ShowWaitingForRemotePlayers();
+		if (_enemyOnly && !_enemyHexControlsEnabled && !_continueOnly)
+		{
+			ShowWaitingForRemotePlayers();
+		}
 	}
 
 	private void RebuildEnemyPreview()

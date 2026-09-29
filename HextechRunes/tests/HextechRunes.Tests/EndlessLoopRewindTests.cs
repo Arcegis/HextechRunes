@@ -2,6 +2,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void EndlessLoopRewindIsDetectedOnlyForRevisitedFirstAct()
 	{
 		static Func<int, bool> Resolved(params int[] stages) => stage => stages.Contains(stage);

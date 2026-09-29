@@ -2,8 +2,14 @@ namespace HextechRunes;
 
 public sealed partial class SolidTimeRune
 {
-	private static readonly MethodInfo CardOnPlayMethod = typeof(CardModel).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("CardModel.OnPlay was not found.");
+	// 原版 protected virtual CardModel.OnPlay(PlayerChoiceContext, CardPlay)(0.107.1~0.111.0)。经基类 MethodInfo 反射调用
+	// 按虚分派进入各卡的覆写，无需沿继承链逐级查找；缺失时进启动摘要，本次回放跳过 OnPlay。
+	private static readonly MethodInfo? CardOnPlayMethod = HextechHookReflection.TryGetMethod(
+		typeof(CardModel),
+		"OnPlay",
+		BindingFlags.Instance | BindingFlags.NonPublic,
+		typeof(PlayerChoiceContext),
+		typeof(CardPlay));
 
 	private Creature? PickTarget(CardModel card, HextechCombatState combatState, int index)
 	{
@@ -31,38 +37,26 @@ public sealed partial class SolidTimeRune
 			addedToTemporaryPlayPile = card.Pile?.Type == PileType.Play;
 			if (!addedToTemporaryPlayPile)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] SolidTime skipped stored power without combat pile: card={card.Id}");
+				HextechLog.Warn("SolidTime", $"Skipped stored power without combat pile: card={card.Id}");
 				return;
 			}
 		}
 
-		CardPlay cardPlay = new()
-		{
-			Card = card,
-#if STS2_109_OR_NEWER
-			// 0.109.0 起 CardPlay 新增 required Player(打出者);回放存储 power 的打出者即卡牌所有者。
-			Player = card.Owner,
-#endif
-			Target = target,
-			ResultPile = PileType.None,
-			Resources = new ResourceInfo
-			{
-				EnergySpent = 0,
-				EnergyValue = 0,
-				StarsSpent = 0,
-				StarValue = 0
-			},
-			IsAutoPlay = true,
-			PlayIndex = 0,
-			PlayCount = 1
-		};
+		CardPlay cardPlay = HextechRuneApiCompat.CreateFreeAutoPlay(card, target);
 
 		choiceContext.PushModel(card);
 		try
 		{
 			if (!await TryApplySolidTimeSpecialCase(card))
 			{
-				await (Task)GetOnPlayMethod(card).Invoke(card, [choiceContext, cardPlay])!;
+				if (CardOnPlayMethod == null)
+				{
+					HextechLog.Warn("SolidTime", $"Skipped stored power OnPlay because CardModel.OnPlay is unavailable: card={card.Id}");
+				}
+				else if (CardOnPlayMethod.Invoke(card, [choiceContext, cardPlay]) is Task onPlay)
+				{
+					await onPlay;
+				}
 			}
 
 			if (!card.Owner.Creature.IsDead)
@@ -93,22 +87,5 @@ public sealed partial class SolidTimeRune
 		}
 
 		return false;
-	}
-
-	private static MethodInfo GetOnPlayMethod(CardModel card)
-	{
-		Type? type = card.GetType();
-		while (type != null)
-		{
-			MethodInfo? method = type.GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-			if (method != null)
-			{
-				return method;
-			}
-
-			type = type.BaseType;
-		}
-
-		return CardOnPlayMethod;
 	}
 }

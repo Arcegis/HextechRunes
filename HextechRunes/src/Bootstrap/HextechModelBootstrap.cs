@@ -11,7 +11,7 @@ internal static class HextechModelBootstrap
 		{
 			if (_installed)
 			{
-				HextechLog.Info($"[{ModInfo.Id}] Model bootstrap already installed; skipping duplicate registration.");
+				HextechLog.Info("Bootstrap", "Model bootstrap already installed; skipping duplicate registration.");
 				return;
 			}
 
@@ -19,10 +19,5 @@ internal static class HextechModelBootstrap
 			HextechModelPoolRegistrar.RegisterModels();
 			_installed = true;
 		}
-	}
-
-	internal static void CleanupMobileFirstModelRegistrationWorkaround()
-	{
-		HextechModelPoolRegistrar.CleanupMobileFirstModelRegistrationWorkaround();
 	}
 }

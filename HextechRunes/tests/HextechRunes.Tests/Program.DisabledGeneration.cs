@@ -9,6 +9,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void NaturalRelicPoolPreservesVanillaRngAndForeignContent()
 	{
 		// 保留原版 Starter，确保过滤依据是内容归属而非稀有度。
@@ -44,6 +45,7 @@ internal static partial class Program
 #endif
 	}
 
+	[HextechTest]
 	private static void RunActivationUsesSnapshotBeforeFreezeAndPreservesFrozenValue()
 	{
 		// ModifierModel 构造器接触 Godot 本地化；这里只检查托管的本局配置状态。
@@ -60,6 +62,7 @@ internal static partial class Program
 		Expect(modifier.IsModActiveForRun, "disabling does not change an already active run");
 	}
 
+	[HextechTest]
 	private static void DisabledStageBranchesBeforeEnemyGeneration()
 	{
 		MethodInfo method = typeof(HextechRuneSelectionCoordinator).GetMethod(nameof(HextechRuneSelectionCoordinator.HandleStageSelection))!;

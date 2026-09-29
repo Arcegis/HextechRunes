@@ -2,7 +2,9 @@ namespace HextechRunes;
 
 public sealed class ArchmageRune : HextechRelicBase
 {
-	private int _freeCardRollsThisCombat;
+	// 单机稳定随机的本地序号（见 ConsumeCombatProcOrdinal）：不在战斗开始清零，跨战斗累加、读档归零；
+	// 联机改用 Mayhem 的每场计数。改成每场清零会改变单机的随机结果，按现状保留。
+	private int _localFreeCardRollOrdinal;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -33,7 +35,7 @@ public sealed class ArchmageRune : HextechRelicBase
 			return false;
 		}
 
-		rollOrdinal = ConsumeCombatProcOrdinal(nameof(ArchmageRune), ref _freeCardRollsThisCombat);
+		rollOrdinal = ConsumeCombatProcOrdinal(nameof(ArchmageRune), ref _localFreeCardRollOrdinal);
 		return HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
 			DynamicVars["ChancePercent"].IntValue,
@@ -57,22 +59,22 @@ public sealed class ArchmageRune : HextechRelicBase
 					.Where(static card => (card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
 						&& card.CostsEnergyOrStars(includeGlobalModifiers: true))
 					.ToList(),
-					sourceCard,
-					rollOrdinal,
-					"base-cost")
-				?? PickFromCandidates(
-					handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
-					sourceCard,
-					rollOrdinal,
-					"global-cost")
+				sourceCard,
+				rollOrdinal,
+				"base-cost")
+			?? PickFromCandidates(
+				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
+				sourceCard,
+				rollOrdinal,
+				"global-cost")
 			?? PickFromCandidates(
 				handCards
 					.Where(static card => card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
 					.ToList(),
-					sourceCard,
-					rollOrdinal,
-					"base-any")
-				?? PickFromCandidates(handCards.ToList(), sourceCard, rollOrdinal, "any");
+				sourceCard,
+				rollOrdinal,
+				"base-any")
+			?? PickFromCandidates(handCards.ToList(), sourceCard, rollOrdinal, "any");
 	}
 
 	private CardModel? PickFromCandidates(IReadOnlyList<CardModel> candidates, CardModel sourceCard, int rollOrdinal, string tier)
@@ -85,11 +87,11 @@ public sealed class ArchmageRune : HextechRelicBase
 		int index = HextechStableRandom.Index(
 			(RunState)Owner.RunState,
 			candidates.Count,
-				"archmage-pick-card",
-				HextechStableRandom.PlayerKey(Owner),
-				Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
-				rollOrdinal.ToString(),
-				HextechStableRandom.CardKey(sourceCard),
+			"archmage-pick-card",
+			HextechStableRandom.PlayerKey(Owner),
+			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			rollOrdinal.ToString(),
+			HextechStableRandom.CardKey(sourceCard),
 			tier,
 			HextechStableRandom.CardPileKey(candidates));
 		return candidates[index];

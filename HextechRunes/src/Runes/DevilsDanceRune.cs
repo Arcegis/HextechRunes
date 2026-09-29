@@ -44,10 +44,7 @@ public sealed class DevilsDanceRune : HextechRelicBase
 
 		int previousAttacksPlayed = _attacksPlayedThisCombat;
 		_attacksPlayedThisCombat++;
-		if (CountMaxHpTriggers(
-				previousAttacksPlayed,
-				_attacksPlayedThisCombat,
-				DynamicVars["AttacksPerMaxHp"].IntValue) > 0)
+		if (CountThresholdCrossings(previousAttacksPlayed, _attacksPlayedThisCombat, DynamicVars["AttacksPerMaxHp"].IntValue) > 0)
 		{
 			await GainMaxHpForAttackThreshold();
 		}
@@ -71,10 +68,7 @@ public sealed class DevilsDanceRune : HextechRelicBase
 		}
 
 		_attacksPlayedThisCombat = attacksPlayed;
-		int triggers = CountMaxHpTriggers(
-			previousAttacksPlayed,
-			attacksPlayed,
-			DynamicVars["AttacksPerMaxHp"].IntValue);
+		int triggers = CountThresholdCrossings(previousAttacksPlayed, attacksPlayed, DynamicVars["AttacksPerMaxHp"].IntValue);
 		for (int i = 0; i < triggers; i++)
 		{
 			await GainMaxHpForAttackThreshold();
@@ -90,11 +84,5 @@ public sealed class DevilsDanceRune : HextechRelicBase
 
 		Flash();
 		await CreatureCmd.GainMaxHp(Owner.Creature, DynamicVars.MaxHp.BaseValue);
-	}
-
-	internal static int CountMaxHpTriggers(int previousAttacksPlayed, int attacksPlayed, int attacksPerTrigger)
-	{
-		int threshold = Math.Max(1, attacksPerTrigger);
-		return Math.Max(0, attacksPlayed / threshold - Math.Max(0, previousAttacksPlayed) / threshold);
 	}
 }

@@ -28,12 +28,10 @@ public sealed class SonataRune : HextechRelicBase
 		if (player != Owner
 			|| Owner.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
-			|| _lastProcRound == combatState.RoundNumber)
+			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))
 		{
 			return;
 		}
-
-		_lastProcRound = combatState.RoundNumber;
 
 		List<Player> players = combatState.Players
 			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)

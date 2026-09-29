@@ -60,7 +60,7 @@ internal sealed class NatureIsHealingEnemyHex : HextechEnemyHexEffect
 		Node? root = NGame.Instance?.GetTree()?.Root;
 		if (root == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][EnemyNatureIsHealing] Timer skipped: scene tree root unavailable.", 2);
+			HextechLog.Warn("EnemyNatureIsHealing", $"Timer skipped: scene tree root unavailable.");
 			return;
 		}
 
@@ -133,7 +133,7 @@ internal sealed class NatureIsHealingEnemyHex : HextechEnemyHexEffect
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][EnemyNatureIsHealing] Timer heal failed: {ex.Message}", 2);
+			HextechLog.Warn("EnemyNatureIsHealing", $"Timer heal failed: {ex.Message}");
 		}
 		finally
 		{

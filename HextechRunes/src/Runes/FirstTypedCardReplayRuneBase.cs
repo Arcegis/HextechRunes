@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
+public abstract class FirstTypedCardReplayRuneBase : TurnScopedRelicBase
 {
 	private bool _triggeredThisTurn;
 
@@ -11,31 +11,9 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 		new DynamicVar("Replays", 1m)
 	];
 
-	public override Task BeforeCombatStart()
-	{
-		ResetTriggered(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTriggered(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTriggered(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
-
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		EnsureTurnScopedStateCurrent(ResetTriggered);
+		EnsureTurnScopedStateCurrent();
 		if (HasTurnProcTriggered(GetStableTurnProcKey(), _triggeredThisTurn) || !IsOwnedTargetType(card))
 		{
 			return playCount;
@@ -46,14 +24,10 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		EnsureTurnScopedStateCurrent(ResetTriggered);
-		string procKey = GetStableTurnProcKey();
-		if (!HasTurnProcTriggered(procKey, _triggeredThisTurn) && IsOwnedTargetType(card))
+		EnsureTurnScopedStateCurrent();
+		if (IsOwnedTargetType(card) && TryConsumeTurnProc(GetStableTurnProcKey(), ref _triggeredThisTurn))
 		{
-			if (TryConsumeTurnProc(procKey, ref _triggeredThisTurn))
-			{
-				Flash();
-			}
+			Flash();
 		}
 
 		return Task.CompletedTask;
@@ -74,14 +48,8 @@ public abstract class FirstTypedCardReplayRuneBase : HextechRelicBase
 		return card?.Owner == Owner && card.Type == TargetCardType;
 	}
 
-	private void ResetTriggered()
-	{
-		ResetTriggered(null);
-	}
-
-	private void ResetTriggered(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_triggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

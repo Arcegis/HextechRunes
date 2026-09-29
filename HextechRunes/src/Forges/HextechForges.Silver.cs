@@ -9,13 +9,7 @@ public sealed class StrengthForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<StrengthPower>(Owner.Creature, Stacked(DynamicVars.Strength.BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<StrengthPower>(DynamicVars.Strength.BaseValue);
 	}
 }
 
@@ -28,13 +22,7 @@ public sealed class DexterityForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<DexterityPower>(Owner.Creature, Stacked(DynamicVars.Dexterity.BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<DexterityPower>(DynamicVars.Dexterity.BaseValue);
 	}
 }
 
@@ -52,13 +40,7 @@ public sealed class SilverPlatingForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<PlatingPower>(Owner.Creature, Stacked(DynamicVars["PlatingPower"].BaseValue), Owner.Creature, null);
+		return ApplyStackedPowerAtCombatStart<PlatingPower>(DynamicVars["PlatingPower"].BaseValue);
 	}
 }
 
@@ -126,13 +108,9 @@ public sealed class FocusForge : HextechForgeBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead || !IsDefectOwner)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		return PowerCmd.Apply<FocusPower>(Owner.Creature, Stacked(DynamicVars["FocusPower"].BaseValue), Owner.Creature, null);
+		return IsDefectOwner
+			? ApplyStackedPowerAtCombatStart<FocusPower>(DynamicVars["FocusPower"].BaseValue)
+			: Task.CompletedTask;
 	}
 }
 
@@ -455,7 +433,7 @@ public sealed class SilverOrbForge : HextechForgeBase
 		int orbCount = Math.Max(0, FloorToInt(Stacked(DynamicVars["OrbCount"].BaseValue)));
 		for (int i = 0; i < orbCount; i++)
 		{
-			OrbModel orb = HextechStableRandom.CreateOrb((RunState)Owner.RunState, Owner, "silver-orb-forge", i, combatState.RoundNumber);
+			OrbModel orb = HextechStableCombatSpawns.CreateOrb((RunState)Owner.RunState, Owner, "silver-orb-forge", i, combatState.RoundNumber);
 			await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, Owner);
 		}
 	}

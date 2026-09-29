@@ -4,8 +4,6 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Characters;
-using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
@@ -93,14 +91,9 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 	// 未签约时把五种契约的提示全列出来,签约后只留自己那一条。
 	protected override IEnumerable<IHoverTip> ExtraHoverTips => Strategy?.ExtraHoverTips
-		??
-		[
-			.. HoverTipFactory.FromRelic<WarriorContractChoiceRelic>(),
-			.. HoverTipFactory.FromRelic<HunterContractChoiceRelic>(),
-			.. HoverTipFactory.FromRelic<RegentContractChoiceRelic>(),
-			.. HoverTipFactory.FromRelic<NecrobinderContractChoiceRelic>(),
-			.. HoverTipFactory.FromRelic<AutomatonContractChoiceRelic>()
-		];
+		?? AbyssalContractCatalog.ChoiceRelicTypes
+			.SelectMany(static type => HoverTipFactory.FromRelic(AbyssalContractCatalog.GetCanonicalRelic(type)))
+			.ToArray();
 
 	public override async Task AfterObtained()
 	{
@@ -109,19 +102,14 @@ public sealed class AbyssalContractRune : HextechRelicBase
 			return;
 		}
 
-		IReadOnlyList<RelicModel> choices =
-		[
-			ModelDb.Relic<WarriorContractChoiceRelic>(),
-			ModelDb.Relic<HunterContractChoiceRelic>(),
-			ModelDb.Relic<RegentContractChoiceRelic>(),
-			ModelDb.Relic<NecrobinderContractChoiceRelic>(),
-			ModelDb.Relic<AutomatonContractChoiceRelic>()
-		];
+		IReadOnlyList<RelicModel> choices = AbyssalContractCatalog.ChoiceRelicTypes
+			.Select(AbyssalContractCatalog.GetCanonicalRelic)
+			.ToArray();
 		RelicModel? selected = await HextechRunesApi.SelectRelicOption(
 			Owner,
 			choices,
 			"abyssal-contract-choice");
-		AbyssalContractKind contract = GetContractKindForChoice(selected);
+		AbyssalContractKind contract = AbyssalContractCatalog.GetKindForChoice(selected);
 		if (contract == AbyssalContractKind.None)
 		{
 			return;
@@ -258,43 +246,5 @@ public sealed class AbyssalContractRune : HextechRelicBase
 		eliteKills -= requiredKills;
 		strengthBonuses++;
 		return true;
-	}
-
-	internal static AbyssalContractKind GetContractKindForChoice(RelicModel? selected)
-	{
-		return selected switch
-		{
-			WarriorContractChoiceRelic => AbyssalContractKind.Warrior,
-			HunterContractChoiceRelic => AbyssalContractKind.Hunter,
-			RegentContractChoiceRelic => AbyssalContractKind.Regent,
-			NecrobinderContractChoiceRelic => AbyssalContractKind.Necrobinder,
-			AutomatonContractChoiceRelic => AbyssalContractKind.Automaton,
-			_ => AbyssalContractKind.None
-		};
-	}
-
-	internal static Type? GetStarterUpgradeType(Type characterType)
-	{
-		if (characterType == typeof(Ironclad))
-		{
-			return typeof(BlackBlood);
-		}
-		if (characterType == typeof(Silent))
-		{
-			return typeof(RingOfTheDrake);
-		}
-		if (characterType == typeof(Regent))
-		{
-			return typeof(DivineDestiny);
-		}
-		if (characterType == typeof(Necrobinder))
-		{
-			return typeof(PhylacteryUnbound);
-		}
-		if (characterType == typeof(Defect))
-		{
-			return typeof(InfusedCore);
-		}
-		return null;
 	}
 }

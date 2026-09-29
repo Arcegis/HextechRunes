@@ -2,15 +2,17 @@ namespace HextechRunes;
 
 public sealed class CircleOfDeathRune : HextechRelicBase
 {
-	private int _sustainDamageTargetsThisCombat;
+	// 单机稳定随机的本地序号（见 ConsumeCombatProcOrdinal）：不在战斗开始清零，跨战斗累加、读档归零；
+	// 联机改用 Mayhem 的每场计数。改成每场清零会改变单机的随机结果，按现状保留。
+	private int _localTargetRollOrdinal;
 
 	public Task HandleSustainGained(decimal amount)
 	{
-		if (Owner == null ||
-			Owner.Creature.IsDead ||
-			Owner.Creature.CombatState == null ||
-			!CombatManager.Instance.IsInProgress ||
-			amount <= 0m)
+		if (Owner == null
+			|| Owner.Creature.IsDead
+			|| Owner.Creature.CombatState == null
+			|| !CombatManager.Instance.IsInProgress
+			|| amount <= 0m)
 		{
 			return Task.CompletedTask;
 		}
@@ -29,7 +31,9 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		int targetOrdinal = ConsumeCombatProcOrdinal(nameof(CircleOfDeathRune), ref _sustainDamageTargetsThisCombat);
+		// 候选保持 HittableEnemies 的原顺序（不按 CombatId 排序），与 HextechRuneTargeting.PickRandomHittableEnemy
+		// 不同口径；换用它会改变同一盐值选中的目标，所以不合并。
+		int targetOrdinal = ConsumeCombatProcOrdinal(nameof(CircleOfDeathRune), ref _localTargetRollOrdinal);
 		Creature target = enemies[HextechStableRandom.Index(
 			(RunState)Owner.RunState,
 			enemies.Count,

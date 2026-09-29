@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.addons.mega_text;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using static HextechRunes.HextechHookReflection;
 
@@ -7,22 +6,16 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	private static FieldInfo? HealthBarCreatureField;
-	private static FieldInfo? HealthBarHpLabelField;
-
-	private static void EnsureNearDeathFeastFields()
-	{
-		HealthBarCreatureField ??= RequireField(typeof(NHealthBar), "_creature");
-		HealthBarHpLabelField ??= RequireField(typeof(NHealthBar), "_hpLabel");
-	}
-
+	// NHealthBar._creature 与 _hpLabel（0.107.1/0.110.0/0.111.0 原版私有字段）：濒死时血条显示负血量用；
+	// 缺失时只跳过这段显示（Prepare 返回 false），不再连带把濒死狂宴整个标为不可用。
+	private static readonly FieldInfo? HealthBarCreatureField = TryGetField(typeof(NHealthBar), "_creature");
+	private static readonly FieldInfo? HealthBarHpLabelField = TryGetField(typeof(NHealthBar), "_hpLabel");
 
 	private static void NearDeathFeastKillPrefix(Creature creature)
 	{
 		NearDeathFeastRune.ForceDeathThresholdForKill(creature);
 		HextechEnemyNearDeath.ForceDeathThresholdForKill(creature);
 	}
-
 
 	[HarmonyPatch(typeof(Creature), nameof(Creature.LoseHpInternal), typeof(decimal), typeof(ValueProp))]
 	[HextechPatch("combat.near-death-feast.lose-hp", "濒死狂宴", Rune = typeof(NearDeathFeastRune))]
@@ -121,7 +114,7 @@ internal static partial class HextechCombatHooks
 		[HarmonyPriority(Priority.Low)]
 		internal static bool Prefix(Creature creature, ref Task<decimal> __result)
 		{
-			if (!NearDeathFeastRune.ShouldPreventSustain(creature) && !HextechEnemyNearDeath.ShouldPreventSustain(creature))
+			if (!NearDeathFeastRune.IsDyingButAlive(creature) && !HextechEnemyNearDeath.IsDyingButAlive(creature))
 			{
 				return true;
 			}
@@ -160,8 +153,7 @@ internal static partial class HextechCombatHooks
 		{
 			foreach (Creature creature in creatures)
 			{
-				NearDeathFeastRune.ForceDeathThresholdForKill(creature);
-				HextechEnemyNearDeath.ForceDeathThresholdForKill(creature);
+				NearDeathFeastKillPrefix(creature);
 			}
 		}
 	}
@@ -179,11 +171,7 @@ internal static partial class HextechCombatHooks
 	private static class NearDeathFeastHealthBarTextPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare()
-		{
-			EnsureNearDeathFeastFields();
-			return true;
-		}
+		private static bool Prepare() => HealthBarCreatureField != null && HealthBarHpLabelField != null;
 
 		[HarmonyPostfix]
 		private static void Postfix(NHealthBar __instance)

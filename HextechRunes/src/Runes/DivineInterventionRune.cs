@@ -33,12 +33,10 @@ public sealed class DivineInterventionRune : HextechRelicBase
 			|| Owner.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| !HextechRoundInterval.IsDue(combatState.RoundNumber, DynamicVars["TurnsNeeded"].IntValue)
-			|| _lastProcRound == combatState.RoundNumber)
+			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))
 		{
 			return;
 		}
-
-		_lastProcRound = combatState.RoundNumber;
 
 		IReadOnlyList<Creature> players = combatState.Players
 			.Where(static combatPlayer => combatPlayer.Creature.IsAlive)

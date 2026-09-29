@@ -23,7 +23,7 @@ internal sealed class MountainSoulEnemyHex : HextechEnemyHexEffect
 			if (context.Tracking.MountainSoulHasPreviousTurn.Contains(combatId)
 				&& !context.Tracking.MountainSoulDamagedSinceLastTurn.Contains(combatId))
 			{
-				int block = Math.Max(1, (int)Math.Floor(enemy.MaxHp * 0.1m));
+				int block = HextechEnemyHexContext.FractionOfMaxHp(enemy, 0.1m);
 				await CreatureCmd.GainBlock(enemy, block, ValueProp.Unpowered, null);
 			}
 

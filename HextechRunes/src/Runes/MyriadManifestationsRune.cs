@@ -8,7 +8,7 @@ public sealed class MyriadManifestationsRune : HextechRelicBase
 		IEnumerable<Creature> participants)
 	{
 		if (Owner?.PlayerCombatState == null || Owner.Creature.Side != side || Owner.Creature.IsDead
-			|| !participants.Contains(Owner.Creature))
+			|| !HextechTurnParticipants.Includes(participants, Owner))
 		{
 			return;
 		}

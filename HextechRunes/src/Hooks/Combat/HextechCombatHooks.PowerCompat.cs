@@ -4,8 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
-
 	private static async Task SafeEntropyAfterPlayerTurnStart(EntropyPower entropyPower, PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != entropyPower.Owner.Player)
@@ -46,8 +44,7 @@ internal static partial class HextechCombatHooks
 	{
 		Player? owner = stormPower.Owner?.Player;
 		return ShouldUseHextechStormHandling(
-			owner?.Creature.CombatState?.RunState is RunState runState
-				&& HextechMayhemModifier.FindIn(runState) != null,
+			HextechMayhemModifier.FindIn(owner?.Creature.CombatState?.RunState) != null,
 			owner?.GetRelic<StormUpgradeRune>() != null);
 	}
 
@@ -56,22 +53,26 @@ internal static partial class HextechCombatHooks
 		return hasMayhemModifier && hasStormUpgradeRune;
 	}
 
+	// 升级雷暴由 Modifier 的出牌事件（HextechMayhem.CardEvents）补发闪电，持有者的原版雷暴出牌前/后回调都要跳过；
+	// 两个补丁 ID 分别保留，只共用方法体。
+	private static bool RunStormCallbackUnlessUpgraded(StormPower storm, ref Task result)
+	{
+		if (!ShouldUseHextechStormHandling(storm))
+		{
+			return true;
+		}
+
+		result = Task.CompletedTask;
+		return false;
+	}
+
 	[HarmonyPatch(typeof(StormPower), nameof(StormPower.BeforeCardPlayed), typeof(CardPlay))]
 	[HextechPatch("combat.storm.before-card-played", "升级雷暴")]
 	private static class StormBeforeCardPlayedPatch
 	{
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
-		private static bool Prefix(StormPower __instance, ref Task __result)
-		{
-			if (ShouldUseHextechStormHandling(__instance))
-			{
-				__result = Task.CompletedTask;
-				return false;
-			}
-
-			return true;
-		}
+		private static bool Prefix(StormPower __instance, ref Task __result) => RunStormCallbackUnlessUpgraded(__instance, ref __result);
 	}
 
 	[HarmonyPatch(typeof(StormPower), nameof(StormPower.AfterCardPlayed), typeof(PlayerChoiceContext), typeof(CardPlay))]
@@ -80,16 +81,7 @@ internal static partial class HextechCombatHooks
 	{
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
-		private static bool Prefix(StormPower __instance, ref Task __result)
-		{
-			if (ShouldUseHextechStormHandling(__instance))
-			{
-				__result = Task.CompletedTask;
-				return false;
-			}
-
-			return true;
-		}
+		private static bool Prefix(StormPower __instance, ref Task __result) => RunStormCallbackUnlessUpgraded(__instance, ref __result);
 	}
 
 	[HarmonyPatch(typeof(EntropyPower), nameof(EntropyPower.AfterPlayerTurnStart), typeof(PlayerChoiceContext), typeof(Player))]

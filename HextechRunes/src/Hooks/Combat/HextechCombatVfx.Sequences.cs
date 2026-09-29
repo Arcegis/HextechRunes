@@ -1,11 +1,7 @@
-using System.Text;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -29,28 +25,7 @@ internal static partial class HextechCombatVfx
 
 			// 位置全部快照:飞行途中敌人会被伤害击杀,节点随时失效。
 			Vector2 ownerPos = CreatureCenter(ownerNode);
-			List<Vector2> hitPoints = [];
-			foreach (Creature target in targets)
-			{
-				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
-				if (node != null)
-				{
-					hitPoints.Add(CreatureCenter(node));
-				}
-			}
-
-			List<Vector2> waypoints = [ownerPos, .. hitPoints];
-			int outboundSegments = hitPoints.Count;
-			if (roundTrip)
-			{
-				// 回程:在最远敌人处打个转(自身回环段)后逆序再扫一遍。
-				for (int i = hitPoints.Count - 1; i >= 0; i--)
-				{
-					waypoints.Add(hitPoints[i]);
-				}
-			}
-
-			waypoints.Add(ownerPos);
+			List<Vector2> waypoints = BuildBoomerangWaypoints(ownerPos, targets, roundTrip, out int outboundSegments);
 			if (waypoints.Count < 3)
 			{
 				return;
@@ -69,21 +44,7 @@ internal static partial class HextechCombatVfx
 			boomerang.GlobalPosition = ownerPos;
 			SetSpriteDiameter(boomerang, width * 0.42f);
 
-			Line2D trail = new()
-			{
-				Name = "HextechRunes_BoomerangTrail",
-				Width = width * 0.16f,
-				BeginCapMode = Line2D.LineCapMode.Round,
-				EndCapMode = Line2D.LineCapMode.Round,
-				JointMode = Line2D.LineJointMode.Round,
-				WidthCurve = MakeTrailWidthCurve(),
-				Gradient = new Gradient
-				{
-					Offsets = [0f, 0.6f, 1f],
-					Colors = [new Color(0.62f, 0.9f, 1f, 0.55f), new Color(0.62f, 0.9f, 1f, 0.25f), new Color(0.62f, 0.9f, 1f, 0f)]
-				},
-				Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add }
-			};
+			Line2D trail = MakeBoomerangTrail(width);
 			parent.AddChildSafely(trail);
 			PlaceAboveCreatures(parent, trail);
 
@@ -98,49 +59,21 @@ internal static partial class HextechCombatVfx
 			// 逐段贝塞尔飞行:段末命中闪光。转速恒定,拖尾逐帧跟随。
 			for (int segment = 0; segment + 1 < waypoints.Count; segment++)
 			{
-				Vector2 from = waypoints[segment];
-				Vector2 to = waypoints[segment + 1];
-				bool isFirst = segment == 0;
 				bool isReturn = segment == waypoints.Count - 2;
-				bool isInbound = segment >= outboundSegments;
-				float duration = isFirst ? BoomerangFirstArrivalSeconds
+				float duration = segment == 0 ? BoomerangFirstArrivalSeconds
 					: isReturn ? 0.3f
 					: BoomerangPerTargetSeconds;
-				Vector2 mid = (from + to) * 0.5f;
 				// 回程段(含最远处的折返回环)走下弧,与去程的上弧区分开。
-				float liftDirection = isReturn || isInbound ? 1f : -1f;
-				Vector2 control = mid + new Vector2(0f, liftDirection * Mathf.Max(60f, from.DistanceTo(to) * 0.25f));
-
-				float elapsed = 0f;
-				while (elapsed < duration)
+				float liftDirection = isReturn || segment >= outboundSegments ? 1f : -1f;
+				if (!await FlyBoomerangSegment(tree, boomerang, trail, waypoints[segment], waypoints[segment + 1], duration, liftDirection))
 				{
-					if (!GodotObject.IsInstanceValid(boomerang))
-					{
-						FreeNode(trail);
-						return;
-					}
-
-					float dt = Mathf.Clamp((float)boomerang.GetProcessDeltaTime(), 1f / 240f, 0.05f);
-					elapsed += dt;
-					float t = Mathf.Clamp(elapsed / duration, 0f, 1f);
-					Vector2 position = Bezier(from, control, to, t);
-					boomerang.GlobalPosition = position;
-					boomerang.Rotation += dt * Mathf.Tau * 2.2f;
-					if (GodotObject.IsInstanceValid(trail))
-					{
-						trail.AddPoint(trail.ToLocal(position), 0);
-						if (trail.GetPointCount() > 14)
-						{
-							trail.RemovePoint(trail.GetPointCount() - 1);
-						}
-					}
-
-					await boomerang.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+					FreeNode(trail);
+					return;
 				}
 
 				if (!isReturn && GodotObject.IsInstanceValid(parent))
 				{
-					SpawnFlash(parent, to, CreatureWidth(ownerNode) * 0.7f, new Color(0.75f, 0.92f, 1f), 0.28f, 0.55f, aboveCreaturesOnly: true);
+					SpawnFlash(parent, waypoints[segment + 1], CreatureWidth(ownerNode) * 0.7f, new Color(0.75f, 0.92f, 1f), 0.28f, 0.55f, aboveCreaturesOnly: true);
 				}
 			}
 
@@ -154,8 +87,96 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Boomerang sweep failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Boomerang sweep failed: {ex.Message}");
 		}
+	}
+
+	/// <summary>施法者 → 各敌人（取得到节点的）[→ 逆序再扫一遍] → 施法者；返回去程段数。</summary>
+	private static List<Vector2> BuildBoomerangWaypoints(Vector2 ownerPos, Creature[] targets, bool roundTrip, out int outboundSegments)
+	{
+		List<Vector2> hitPoints = [];
+		foreach (Creature target in targets)
+		{
+			NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
+			if (node != null)
+			{
+				hitPoints.Add(CreatureCenter(node));
+			}
+		}
+
+		List<Vector2> waypoints = [ownerPos, .. hitPoints];
+		outboundSegments = hitPoints.Count;
+		if (roundTrip)
+		{
+			// 回程:在最远敌人处打个转(自身回环段)后逆序再扫一遍。
+			for (int i = hitPoints.Count - 1; i >= 0; i--)
+			{
+				waypoints.Add(hitPoints[i]);
+			}
+		}
+
+		waypoints.Add(ownerPos);
+		return waypoints;
+	}
+
+	private static Line2D MakeBoomerangTrail(float width)
+	{
+		return new Line2D
+		{
+			Name = "HextechRunes_BoomerangTrail",
+			Width = width * 0.16f,
+			BeginCapMode = Line2D.LineCapMode.Round,
+			EndCapMode = Line2D.LineCapMode.Round,
+			JointMode = Line2D.LineJointMode.Round,
+			WidthCurve = MakeTrailWidthCurve(),
+			Gradient = new Gradient
+			{
+				Offsets = [0f, 0.6f, 1f],
+				Colors = [new Color(0.62f, 0.9f, 1f, 0.55f), new Color(0.62f, 0.9f, 1f, 0.25f), new Color(0.62f, 0.9f, 1f, 0f)]
+			},
+			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add }
+		};
+	}
+
+	/// <summary>沿一段上/下拱的贝塞尔弧逐帧飞行并旋转；镖体中途被销毁时返回 false。</summary>
+	private static async Task<bool> FlyBoomerangSegment(
+		SceneTree tree,
+		Sprite2D boomerang,
+		Line2D trail,
+		Vector2 from,
+		Vector2 to,
+		float duration,
+		float liftDirection)
+	{
+		Vector2 mid = (from + to) * 0.5f;
+		Vector2 control = mid + new Vector2(0f, liftDirection * Mathf.Max(60f, from.DistanceTo(to) * 0.25f));
+		float elapsed = 0f;
+		while (elapsed < duration)
+		{
+			if (!GodotObject.IsInstanceValid(boomerang))
+			{
+				return false;
+			}
+
+			float dt = Mathf.Clamp((float)boomerang.GetProcessDeltaTime(), 1f / 240f, 0.05f);
+			elapsed += dt;
+			float t = Mathf.Clamp(elapsed / duration, 0f, 1f);
+			Vector2 position = Bezier(from, control, to, t);
+			boomerang.GlobalPosition = position;
+			boomerang.Rotation += dt * Mathf.Tau * 2.2f;
+			if (GodotObject.IsInstanceValid(trail))
+			{
+				trail.AddPoint(trail.ToLocal(position), 0);
+				if (trail.GetPointCount() > 14)
+				{
+					trail.RemovePoint(trail.GetPointCount() - 1);
+				}
+			}
+
+			await boomerang.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+		}
+
+		return true;
 	}
 
 	private static readonly Color OmegaWarnColor = new(1f, 0.22f, 0.16f);
@@ -166,61 +187,85 @@ internal static partial class HextechCombatVfx
 	{
 		try
 		{
-			List<(Vector2 Center, Vector2 Bottom, float Width, float Height, Node Parent)> spots = [];
-			foreach (Creature target in targets)
-			{
-				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
-				Node? parent = node?.GetParent();
-				if (node == null || !GodotObject.IsInstanceValid(parent))
-				{
-					continue;
-				}
-
-				Vector2 bottom = node.GetBottomOfHitbox();
-				float height = Mathf.Max(bottom.Y - node.GetTopOfHitbox().Y, 120f);
-				spots.Add((CreatureCenter(node), bottom, CreatureWidth(node), height, parent!));
-			}
-
+			List<BeamSpot> spots = CollectBeamSpots(targets);
 			if (spots.Count == 0)
 			{
 				return;
 			}
 
-			// 预警:所有敌人脚下同时亮起红色警戒环。
-			foreach ((Vector2 center, Vector2 bottom, float width, _, Node parent) in spots)
-			{
-				SpawnRing(parent, center, width * 1.2f, width * 0.55f, 0.34f, 0.7f, OmegaWarnColor, aboveCreaturesOnly: true);
-			}
-
-			SceneTree? tree = (spots[0].Parent as Node2D)?.GetTree() ?? (Engine.GetMainLoop() as SceneTree);
+			// 预警:所有敌人脚下同时亮起红色警戒环;审判:赤红光柱依次砸下,命中爆闪+扩散环。
+			SceneTree? tree = await WarnThenResolveTree(spots, OmegaWarnColor);
 			if (tree == null)
 			{
 				return;
 			}
 
-			await WaitSeconds(tree, 0.3f);
-
-			// 审判:赤红光柱依次砸下,命中爆闪+扩散环。
-			Texture2D? rayTexture = LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
-			foreach ((Vector2 center, Vector2 bottom, float width, float height, Node parent) in spots)
-			{
-				if (rayTexture != null && GodotObject.IsInstanceValid(parent))
-				{
-					SpawnOmegaBeam(parent, bottom, width, height, rayTexture);
-				}
-
-				if (GodotObject.IsInstanceValid(parent))
-				{
-					SpawnFlash(parent, center, width * 1.2f, OmegaFlashColor, 0.3f, 0.75f, aboveCreaturesOnly: true);
-					SpawnRing(parent, center, width * 0.3f, width * 1.35f, 0.4f, 0.85f, OmegaBeamColor, aboveCreaturesOnly: true);
-				}
-
-				await WaitSeconds(tree, 0.06f);
-			}
+			await StrikeBeamsInSequence(tree, spots, OmegaBeamColor, OmegaFlashColor, intervalSeconds: 0.06f);
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Omega judgment failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Omega judgment failed: {ex.Message}");
+		}
+	}
+
+	/// <summary>欧米伽/量子计算的逐敌光柱落点快照（节点在后续伤害中可能被移除）。</summary>
+	private readonly record struct BeamSpot(Vector2 Center, Vector2 Bottom, float Width, float Height, Node Parent);
+
+	private static List<BeamSpot> CollectBeamSpots(Creature[] targets)
+	{
+		List<BeamSpot> spots = [];
+		foreach (Creature target in targets)
+		{
+			NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
+			Node? parent = node?.GetParent();
+			if (node == null || !GodotObject.IsInstanceValid(parent))
+			{
+				continue;
+			}
+
+			Vector2 bottom = node.GetBottomOfHitbox();
+			float height = Mathf.Max(bottom.Y - node.GetTopOfHitbox().Y, 120f);
+			spots.Add(new BeamSpot(CreatureCenter(node), bottom, CreatureWidth(node), height, parent!));
+		}
+
+		return spots;
+	}
+
+	/// <summary>所有落点同时亮起收缩的预警环，留 0.3 秒后返回用于计时的 SceneTree（取不到时返回 null）。</summary>
+	private static async Task<SceneTree?> WarnThenResolveTree(List<BeamSpot> spots, Color warnColor)
+	{
+		foreach (BeamSpot spot in spots)
+		{
+			SpawnRing(spot.Parent, spot.Center, spot.Width * 1.2f, spot.Width * 0.55f, 0.34f, 0.7f, warnColor, aboveCreaturesOnly: true);
+		}
+
+		SceneTree? tree = (spots[0].Parent as Node2D)?.GetTree() ?? (Engine.GetMainLoop() as SceneTree);
+		if (tree != null)
+		{
+			await WaitSeconds(tree, 0.3f);
+		}
+
+		return tree;
+	}
+
+	/// <summary>逐个落点砸下光柱（原版天降射线贴图）+ 爆闪 + 扩散环，每个之间间隔 <paramref name="intervalSeconds"/>。</summary>
+	private static async Task StrikeBeamsInSequence(SceneTree tree, List<BeamSpot> spots, Color beamColor, Color flashColor, float intervalSeconds)
+	{
+		Texture2D? rayTexture = HextechTextures.LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
+		foreach (BeamSpot spot in spots)
+		{
+			if (rayTexture != null && GodotObject.IsInstanceValid(spot.Parent))
+			{
+				SpawnOmegaBeam(spot.Parent, spot.Bottom, spot.Width, spot.Height, rayTexture, beamColor);
+			}
+
+			if (GodotObject.IsInstanceValid(spot.Parent))
+			{
+				SpawnFlash(spot.Parent, spot.Center, spot.Width * 1.2f, flashColor, 0.3f, 0.75f, aboveCreaturesOnly: true);
+				SpawnRing(spot.Parent, spot.Center, spot.Width * 0.3f, spot.Width * 1.35f, 0.4f, 0.85f, beamColor, aboveCreaturesOnly: true);
+			}
+
+			await WaitSeconds(tree, intervalSeconds);
 		}
 	}
 
@@ -306,7 +351,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Corpse bloom burst failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Corpse bloom burst failed: {ex.Message}");
 		}
 	}
 
@@ -314,102 +359,70 @@ internal static partial class HextechCombatVfx
 	{
 		try
 		{
-			List<(Vector2 Center, Vector2 Bottom, float Width, float Height, Node Parent)> spots = [];
-			foreach (Creature target in targets)
-			{
-				NCreature? node = HextechCreatureNodeRegistry.TryGet(target);
-				Node? parent = node?.GetParent();
-				if (node == null || !GodotObject.IsInstanceValid(parent))
-				{
-					continue;
-				}
-
-				Vector2 bottom = node.GetBottomOfHitbox();
-				float height = Mathf.Max(bottom.Y - node.GetTopOfHitbox().Y, 120f);
-				spots.Add((CreatureCenter(node), bottom, CreatureWidth(node), height, parent!));
-			}
-
+			List<BeamSpot> spots = CollectBeamSpots(targets);
 			if (spots.Count == 0)
 			{
 				return;
 			}
 
-			// 预警:蓝紫量子警戒环同时亮起。
-			foreach ((Vector2 center, _, float width, _, Node parent) in spots)
-			{
-				SpawnRing(parent, center, width * 1.2f, width * 0.55f, 0.34f, 0.7f, QuantumWarnColor, aboveCreaturesOnly: true);
-			}
-
-			SceneTree? tree = (spots[0].Parent as Node2D)?.GetTree() ?? (Engine.GetMainLoop() as SceneTree);
+			// 预警:蓝紫量子警戒环同时亮起;光柱逐敌贯穿,0.2s 间隔与逻辑侧逐敌伤害结算的标准尾巴对齐。
+			SceneTree? tree = await WarnThenResolveTree(spots, QuantumWarnColor);
 			if (tree == null)
 			{
 				return;
 			}
 
-			await WaitSeconds(tree, 0.3f);
-
-			// 量子光柱逐敌贯穿:0.2s 间隔与逻辑侧逐敌伤害结算的标准尾巴对齐。
-			Texture2D? rayTexture = LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
-			foreach ((Vector2 center, Vector2 bottom, float width, float height, Node parent) in spots)
-			{
-				if (rayTexture != null && GodotObject.IsInstanceValid(parent))
-				{
-					SpawnOmegaBeam(parent, bottom, width, height, rayTexture, QuantumBeamColor);
-				}
-
-				if (GodotObject.IsInstanceValid(parent))
-				{
-					SpawnFlash(parent, center, width * 1.2f, QuantumFlashColor, 0.3f, 0.75f, aboveCreaturesOnly: true);
-					SpawnRing(parent, center, width * 0.3f, width * 1.35f, 0.4f, 0.85f, QuantumBeamColor, aboveCreaturesOnly: true);
-				}
-
-				await WaitSeconds(tree, 0.2f);
-			}
-
-			// 吸血回流:每敌一缕青绿数据流弧线汇回施法者。
-			NCreature? ownerNode = HextechCreatureNodeRegistry.TryGet(owner);
-			if (ownerNode == null || !GodotObject.IsInstanceValid(ownerNode))
-			{
-				return;
-			}
-
-			Vector2 ownerPos = CreatureCenter(ownerNode);
-			int index = 0;
-			foreach ((Vector2 center, _, float width, _, Node parent) in spots)
-			{
-				if (!GodotObject.IsInstanceValid(parent))
-				{
-					continue;
-				}
-
-				Node flashParent = parent;
-				SpawnSoulWisp(
-					parent,
-					center,
-					ownerPos,
-					width * 0.3f,
-					0.5f,
-					index * 0.07f,
-					-width * 0.6f,
-					QuantumHealColor,
-					() =>
-					{
-						if (GodotObject.IsInstanceValid(flashParent))
-						{
-							SpawnFlash(flashParent, ownerPos, width * 0.9f, QuantumHealColor.Lightened(0.3f), 0.3f, 0.5f, aboveCreaturesOnly: true);
-						}
-					});
-				index++;
-			}
+			await StrikeBeamsInSequence(tree, spots, QuantumBeamColor, QuantumFlashColor, intervalSeconds: 0.2f);
+			SpawnQuantumHealReturn(owner, spots);
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Quantum pulse failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Quantum pulse failed: {ex.Message}");
+		}
+	}
+
+	/// <summary>吸血回流:每个落点一缕青绿数据流弧线汇回施法者,到达时在施法者处闪光。</summary>
+	private static void SpawnQuantumHealReturn(Creature owner, List<BeamSpot> spots)
+	{
+		NCreature? ownerNode = HextechCreatureNodeRegistry.TryGet(owner);
+		if (ownerNode == null || !GodotObject.IsInstanceValid(ownerNode))
+		{
+			return;
+		}
+
+		Vector2 ownerPos = CreatureCenter(ownerNode);
+		int index = 0;
+		foreach (BeamSpot spot in spots)
+		{
+			if (!GodotObject.IsInstanceValid(spot.Parent))
+			{
+				continue;
+			}
+
+			Node flashParent = spot.Parent;
+			float width = spot.Width;
+			SpawnSoulWisp(
+				spot.Parent,
+				spot.Center,
+				ownerPos,
+				width * 0.3f,
+				0.5f,
+				index * 0.07f,
+				-width * 0.6f,
+				QuantumHealColor,
+				() =>
+				{
+					if (GodotObject.IsInstanceValid(flashParent))
+					{
+						SpawnFlash(flashParent, ownerPos, width * 0.9f, QuantumHealColor.Lightened(0.3f), 0.3f, 0.5f, aboveCreaturesOnly: true);
+					}
+				});
+			index++;
 		}
 	}
 
 	/// <summary>欧米伽的赤红审判光柱:窄而急促(0.08s 闪现全亮,0.3s 收束消退)。</summary>
-	private static void SpawnOmegaBeam(Node parent, Vector2 bottom, float width, float height, Texture2D rayTexture, Color? beamColor = null)
+	private static void SpawnOmegaBeam(Node parent, Vector2 bottom, float width, float height, Texture2D rayTexture, Color beamColor)
 	{
 		float beamHeight = height * 2.4f;
 		Sprite2D beam = new()
@@ -417,7 +430,7 @@ internal static partial class HextechCombatVfx
 			Name = "HextechRunes_OmegaBeam",
 			Texture = rayTexture,
 			Centered = true,
-			Modulate = (beamColor ?? OmegaBeamColor) with { A = 0f },
+			Modulate = beamColor with { A = 0f },
 			Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add }
 		};
 		parent.AddChildSafely(beam);
@@ -487,7 +500,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Flying kick strike failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Flying kick strike failed: {ex.Message}");
 		}
 	}
 
@@ -528,7 +541,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Death ring lash failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Death ring lash failed: {ex.Message}");
 		}
 	}
 
@@ -556,7 +569,7 @@ internal static partial class HextechCombatVfx
 				float height = Mathf.Max(bottom.Y - node.GetTopOfHitbox().Y, width);
 
 				// 主角是从天而降的光柱;柔光与单环收敛为落地反馈,光尘自身体升起。
-				Texture2D? rayTexture = LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
+				Texture2D? rayTexture = HextechTextures.LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
 				if (rayTexture != null)
 				{
 					SpawnLightShaft(parent!, bottom, width, height, rayTexture);
@@ -569,7 +582,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Divine pulse failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Divine pulse failed: {ex.Message}");
 		}
 	}
 
@@ -618,7 +631,7 @@ internal static partial class HextechCombatVfx
 			Explosiveness = 0.2f,
 			Randomness = 0.6f,
 			LocalCoords = false,
-			Texture = LoadVanillaTexture("res://images/vfx/characters/regent_sparkle.png") ?? GetGlowTexture(),
+			Texture = HextechTextures.LoadVanillaTexture("res://images/vfx/characters/regent_sparkle.png") ?? GetGlowTexture(),
 			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
 			EmissionRectExtents = new Vector2(width * 0.45f, height * 0.35f),
 			Direction = new Vector2(0f, -1f),
@@ -697,7 +710,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Soul drain failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Soul drain failed: {ex.Message}");
 		}
 	}
 }

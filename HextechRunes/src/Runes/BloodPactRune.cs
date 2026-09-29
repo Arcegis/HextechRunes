@@ -40,5 +40,5 @@ public sealed class BloodPactRune : HextechRelicBase
 	}
 
 	internal static bool ShouldGainStrength(CombatSide? dealerSide, decimal hpLost, ValueProp props)
-		=> dealerSide == CombatSide.Enemy && hpLost > 0m && HextechSts2Compat.IsPoweredAttack(props);
+		=> dealerSide == CombatSide.Enemy && hpLost > 0m && props.IsPoweredAttack();
 }

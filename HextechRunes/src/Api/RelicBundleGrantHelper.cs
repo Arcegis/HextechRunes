@@ -18,7 +18,7 @@ public static class RelicBundleGrantHelper
 			// 判定只读已同步的 player.Deck/Relics,各端结论一致,不引入联机分叉;不改任何 SavedProperty/序列化。
 			if (!CanGrantBundledRelic(relic, player))
 			{
-				HextechLog.Info($"[{ModInfo.Id}] RelicBundleGrant: skipped {relic.Id.Entry} for player {player.NetId} (not applicable to this character)");
+				HextechLog.Info("RelicBundle", $"RelicBundleGrant: skipped {relic.Id.Entry} for player {player.NetId} (not applicable to this character)");
 				continue;
 			}
 

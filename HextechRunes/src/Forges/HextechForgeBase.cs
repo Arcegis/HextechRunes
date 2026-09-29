@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 public abstract class HextechForgeBase : HextechRelicBase
 {
-
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedStackCount
 	{
@@ -37,6 +36,19 @@ public abstract class HextechForgeBase : HextechRelicBase
 	protected decimal StackedMultiplier(decimal value)
 	{
 		return 1m + (value - 1m) * StackAmount;
+	}
+
+	// 锻造器最常见的效果：战斗开始时按叠层给存活的持有者施加一个 Power。
+	protected Task ApplyStackedPowerAtCombatStart<TPower>(decimal amountPerStack)
+		where TPower : PowerModel
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash();
+		return PowerCmd.Apply<TPower>(Owner.Creature, Stacked(amountPerStack), Owner.Creature, null);
 	}
 
 	public void AddForgeStack(bool flash = true)

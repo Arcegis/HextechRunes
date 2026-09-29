@@ -1,5 +1,4 @@
 using System.Text;
-using HarmonyLib;
 
 namespace HextechRunes;
 
@@ -28,6 +27,12 @@ internal static class HextechPatcher
 		{
 			HextechPatchAttribute? meta = type.GetCustomAttribute<HextechPatchAttribute>();
 			bool hasHarmonyAttributes = HarmonyMethodExtensions.GetFromType(type).Any();
+			if (hasHarmonyAttributes && meta == null)
+			{
+				// 缺元数据的补丁照常应用，但失败无法归因到功能/符文，清单与冲突报告也认不出它：显形防回归。
+				HextechLog.Warn("Patch", $"[HarmonyPatch] class without [HextechPatch] metadata: {type.FullName}");
+			}
+
 			MethodInfo? dynamicApply = hasHarmonyAttributes || meta == null
 				? null
 				: type.GetMethod("Apply", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, [typeof(Harmony)]);
@@ -37,7 +42,7 @@ internal static class HextechPatcher
 				{
 					// 声明了元数据却没有任何目标:属性挂错了类。这类错误静默跳过等于补丁凭空消失,必须显形。
 					Results.Add(new PatchResult(meta.Id, meta.Feature, type, Applied: false, Error: "no [HarmonyPatch] target and no Apply(Harmony)"));
-					Log.Warn($"[{ModInfo.Id}][Patch] Patch declared but has no target: {meta.Id} ({meta.Feature}) on {type.FullName}");
+					HextechLog.Warn("Patch", $"Patch declared but has no target: {meta.Id} ({meta.Feature}) on {type.FullName}");
 				}
 
 				continue;
@@ -73,67 +78,57 @@ internal static class HextechPatcher
 					_ => ex
 				};
 				Results.Add(new PatchResult(id, feature, type, Applied: false, Error: $"{root.GetType().Name}: {root.Message}"));
-				Type[] runes = meta?.AffectedRunes.ToArray() ?? [];
-				if (runes.Length > 0)
-				{
-					foreach (Type rune in runes)
-					{
-						HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed(rune, id, root);
-					}
-				}
-				else if (meta?.Optional == true)
-				{
-					HextechLog.Info($"[{ModInfo.Id}][Patch] Optional patch skipped: {id} ({feature}): {root.GetType().Name}: {root.Message}");
-				}
-				else
-				{
-					Log.Warn($"[{ModInfo.Id}][Patch] Patch failed: {id} ({feature}): {root.GetType().Name}: {root.Message}");
-				}
+				ReportFailure(meta, id, feature, root);
 			}
 		}
 	}
 
 	/// <summary>
-	/// 只应用 <paramref name="outerType"/> 里声明的嵌套补丁类(测试用:隔离验证某一功能组的补丁)。
-	/// 给了 <paramref name="nestedNames"/> 就只应用点名的那几个。
+	/// 关联符文的补丁失败时把符文标为本运行时不可用；未关联符文时，可选目标缺失记 Info，其余记 Warn。
+	/// 动态 <c>Apply(Harmony)</c> 与属性式补丁走同一条归因路径，所以动态安装失败必须抛异常而不是自行吞掉。
 	/// </summary>
-	internal static void ApplyNested(Harmony harmony, Type outerType, params string[] nestedNames)
+	private static void ReportFailure(HextechPatchAttribute? meta, string id, string feature, Exception root)
 	{
-		foreach (Type nested in outerType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+		Type[] runes = meta?.AffectedRunes.ToArray() ?? [];
+		foreach (Type rune in runes)
 		{
-			if (nestedNames.Length > 0 && !nestedNames.Contains(nested.Name, StringComparer.Ordinal))
-			{
-				continue;
-			}
-
-			if (HarmonyMethodExtensions.GetFromType(nested).Any())
-			{
-				harmony.CreateClassProcessor(nested).Patch();
-			}
+			HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed(rune, id, root);
 		}
+
+		if (runes.Length > 0)
+		{
+			return;
+		}
+
+		if (meta?.Optional == true)
+		{
+			HextechLog.Info("Patch", $"Optional patch skipped: {id} ({feature}): {root.GetType().Name}: {root.Message}");
+			return;
+		}
+
+		HextechLog.Warn("Patch", $"Patch failed: {id} ({feature}): {root.GetType().Name}: {root.Message}");
 	}
 
-	/// <summary>测试用:按外层类型 + 嵌套补丁类名定位补丁方法。</summary>
-	internal static MethodInfo? FindPatchMethod(Type outerType, string nestedName, string methodName)
+	/// <summary>返回 bool 的前缀可以跳过原方法（以及优先级更低的前缀）。</summary>
+	internal static bool IsSkipCapable(Patch patch)
 	{
-		return outerType.GetNestedType(nestedName, BindingFlags.Public | BindingFlags.NonPublic)
-			?.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+		return patch.PatchMethod.ReturnType == typeof(bool);
 	}
 
 	/// <summary>启动汇总:应用/失败计数,失败项逐条列出。</summary>
 	internal static void LogSummary()
 	{
 		int failed = Results.Count(result => !result.Applied);
-		HextechLog.Info($"[{ModInfo.Id}][Patch] Applied {Results.Count - failed}/{Results.Count} patch classes.");
+		HextechLog.Info("Patch", $"Applied {Results.Count - failed}/{Results.Count} patch classes.");
 		foreach (PatchResult result in Results.Where(result => !result.Applied))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Patch]   failed {result.Id} ({result.Feature}): {result.Error}");
+			HextechLog.Info("Patch", $"  failed {result.Id} ({result.Feature}): {result.Error}");
 		}
 
 		IReadOnlyList<string> missingMembers = HextechHookReflection.MissingMembers;
 		if (missingMembers.Count > 0)
 		{
-			Log.Warn($"[{ModInfo.Id}][Patch] {missingMembers.Count} vanilla private member(s) missing in this game build (dependent features degraded):\n  {string.Join("\n  ", missingMembers)}");
+			HextechLog.Warn("Patch", $"{missingMembers.Count} vanilla private member(s) missing in this game build (dependent features degraded):\n  {string.Join("\n  ", missingMembers)}");
 		}
 	}
 
@@ -176,7 +171,7 @@ internal static class HextechPatcher
 
 				// bool 前缀可能跳过原方法并影响后续前缀；这里只按优先级与安装序报告潜在冲突，不代表必然跳过。
 				Patch[] ourSkippingPrefixes = info.Prefixes
-					.Where(patch => patch.owner == harmony.Id && patch.PatchMethod.ReturnType == typeof(bool))
+					.Where(patch => patch.owner == harmony.Id && IsSkipCapable(patch))
 					.ToArray();
 				foreach (Patch other in info.Prefixes.Where(patch => patch.owner != harmony.Id))
 				{
@@ -191,21 +186,21 @@ internal static class HextechPatcher
 
 			if (lines.Count == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Patch] No patch targets are shared with other mods.");
+				HextechLog.Info("Patch", $"No patch targets are shared with other mods.");
 				return;
 			}
 
 			lines.Sort(StringComparer.Ordinal);
-			Log.Info($"[{ModInfo.Id}][Patch] {lines.Count} patch target(s) shared with other mods:\n  {string.Join("\n  ", lines)}");
+			HextechLog.Info("Patch", $"{lines.Count} patch target(s) shared with other mods:\n  {string.Join("\n  ", lines)}");
 			if (shadowed.Count > 0)
 			{
 				shadowed.Sort(StringComparer.Ordinal);
-				Log.Warn($"[{ModInfo.Id}][Patch] {shadowed.Count} third-party prefix(es) may be skipped by this mod's prefixes:\n  {string.Join("\n  ", shadowed)}");
+				HextechLog.Warn("Patch", $"{shadowed.Count} third-party prefix(es) may be skipped by this mod's prefixes:\n  {string.Join("\n  ", shadowed)}");
 			}
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Patch] Shared patch target scan failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Patch", $"Shared patch target scan failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -224,11 +219,11 @@ internal static class HextechPatcher
 		try
 		{
 			File.WriteAllText(path, BuildPatchTable(harmony.Id), Encoding.UTF8);
-			Log.Info($"[{ModInfo.Id}][Patch] Patch table written to {path}.");
+			HextechLog.Info("Patch", $"Patch table written to {path}.");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Patch] Patch table dump failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Patch", $"Patch table dump failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -285,7 +280,7 @@ internal static class HextechPatcher
 				extras += $" after={string.Join("|", patch.after)}";
 			}
 
-			if (kind == "prefix" && patch.PatchMethod.ReturnType == typeof(bool))
+			if (kind == "prefix" && IsSkipCapable(patch))
 			{
 				extras += " skip=true";
 			}

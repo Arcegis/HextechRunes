@@ -79,19 +79,14 @@ public sealed class LingeringMightRune : HextechRelicBase
 			return;
 		}
 
-		PowerModel? canonical;
-		try
+		// 上一局带过来的 power 可能来自已卸载的第三方内容,放弃比炸战斗开始流程好。
+		if (ModelDb.GetByIdOrNull<AbstractModel>(new ModelId(parts[0], parts[1])) is not PowerModel canonical)
 		{
-			canonical = ModelDb.GetById<PowerModel>(new ModelId(parts[0], parts[1]));
-		}
-		catch (Exception ex)
-		{
-			// 上一局带过来的 power 可能来自已卸载的第三方内容,静默放弃比炸战斗开始流程好。
-			Log.Warn($"[{ModInfo.Id}][LingeringMight] Failed to resolve carried buff '{parts[0]}|{parts[1]}': {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("LingeringMight", $"Carried buff '{parts[0]}|{parts[1]}' is not a registered power; dropped.");
 			return;
 		}
 
-		if (canonical == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

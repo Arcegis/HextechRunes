@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Models.Enchantments;
@@ -10,8 +11,6 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechAssetHooks
 {
-	private static readonly FieldInfo? HoverTipIconField = AccessTools.Field(typeof(HoverTip), "<Icon>k__BackingField");
-
 	// PowerModel.PackedIconPath 不是 virtual,自定义能力图标只能在 getter 后替换。
 	[HarmonyPatch(typeof(PowerModel), nameof(PowerModel.Icon), MethodType.Getter)]
 	[HextechPatch("assets.power-icon", "自定义能力图标")]
@@ -22,7 +21,7 @@ internal static class HextechAssetHooks
 		{
 			if (TryGetHextechPowerTexture(__instance, out Texture2D? texture))
 			{
-				__result = texture!;
+				__result = texture;
 			}
 		}
 	}
@@ -36,7 +35,7 @@ internal static class HextechAssetHooks
 		{
 			if (TryGetHextechPowerTexture(__instance, out Texture2D? texture))
 			{
-				__result = texture!;
+				__result = texture;
 			}
 		}
 	}
@@ -49,22 +48,24 @@ internal static class HextechAssetHooks
 	private static class PowerDumbHoverTipPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare() => HoverTipIconField != null;
+		private static bool Prepare() => HextechHoverTipAccess.CanSetIcon;
 
 		[HarmonyPostfix]
 		private static void Postfix(PowerModel __instance, ref HoverTip __result)
 		{
 			try
 			{
-				if (!TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
+				if (!TryGetHextechPowerTexture(__instance, out Texture2D? texture))
 				{
 					return;
 				}
 
 				// record struct:装箱→反射改字段→拆箱赋回。
 				object boxed = __result;
-				HoverTipIconField!.SetValue(boxed, texture);
-				__result = (HoverTip)boxed;
+				if (HextechHoverTipAccess.TrySetIcon(boxed, texture))
+				{
+					__result = (HoverTip)boxed;
+				}
 			}
 			catch (Exception ex)
 			{
@@ -78,14 +79,14 @@ internal static class HextechAssetHooks
 	private static class PowerHoverTipsPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare() => HoverTipIconField != null;
+		private static bool Prepare() => HextechHoverTipAccess.CanSetIcon;
 
 		[HarmonyPostfix]
 		private static void Postfix(PowerModel __instance, ref IEnumerable<IHoverTip> __result)
 		{
 			try
 			{
-				if (!TryGetHextechPowerTexture(__instance, out Texture2D? texture) || texture == null)
+				if (!TryGetHextechPowerTexture(__instance, out Texture2D? texture))
 				{
 					return;
 				}
@@ -97,7 +98,7 @@ internal static class HextechAssetHooks
 					// 接口引用即装箱实例,SetValue 直接写箱内字段;只修本 power 自己的 tip。
 					if (tip is HoverTip concrete && concrete.Id == ownId)
 					{
-						HoverTipIconField!.SetValue(tip, texture);
+						HextechHoverTipAccess.TrySetIcon(tip, texture);
 					}
 				}
 
@@ -120,7 +121,7 @@ internal static class HextechAssetHooks
 		{
 			try
 			{
-				ModelId id = __instance.CanonicalInstance?.Id ?? __instance.Id;
+				ModelId id = __instance.CanonicalId();
 				if (HextechExternalContentRegistry.GetEnchantmentIconPath(id) is { } iconPath
 					&& HextechTextures.LoadCompressedTexture(iconPath) is { } texture)
 				{
@@ -173,12 +174,12 @@ internal static class HextechAssetHooks
 
 	// 以下 TryGet*Texture 助手承诺永不抛出:它们被图标 postfix 直接调用,而这些 getter
 	// 位于联机同步敏感路径(历史上 RestSiteOption.Icon 异常曾致 ChooseOption 校验和分叉)。
-	private static bool TryGetHextechPowerTexture(PowerModel self, out Texture2D? texture)
+	private static bool TryGetHextechPowerTexture(PowerModel self, [NotNullWhen(true)] out Texture2D? texture)
 	{
-		texture = null;
 		try
 		{
-			return TryGetHextechPowerTextureCore(self, out texture);
+			texture = ResolveHextechPowerTexture(self);
+			return texture != null;
 		}
 		catch (Exception ex)
 		{
@@ -188,49 +189,28 @@ internal static class HextechAssetHooks
 		}
 	}
 
-	private static bool TryGetHextechPowerTextureCore(PowerModel self, out Texture2D? texture)
+	private static Texture2D? ResolveHextechPowerTexture(PowerModel self)
 	{
-		texture = null;
-		if (self is HextechPlayerSlowPower)
+		// 复用原版能力图标的自定义能力:直接取对应原版能力的图标。
+		Texture2D? vanillaIcon = self switch
 		{
-			texture = ModelDb.Power<SlowPower>().Icon;
-			return texture != null;
-		}
-
-		if (self is HextechGalvanicPower)
+			HextechPlayerSlowPower => ModelDb.Power<SlowPower>().Icon,
+			HextechGalvanicPower => ModelDb.Power<GalvanicPower>().Icon,
+			HextechNextTurnDamagePower => ModelDb.Power<BlockNextTurnPower>().Icon,
+			HextechVitalSparkPower => ModelDb.Power<VitalSparkPower>().Icon,
+			HextechHangPower => ModelDb.Power<HangPower>().Icon,
+			HextechNeurosurgePower => ModelDb.Power<NeurosurgePower>().Icon,
+			_ => null
+		};
+		if (vanillaIcon != null)
 		{
-			texture = ModelDb.Power<GalvanicPower>().Icon;
-			return texture != null;
-		}
-
-		if (self is HextechNextTurnDamagePower)
-		{
-			texture = ModelDb.Power<BlockNextTurnPower>().Icon;
-			return texture != null;
-		}
-
-		if (self is HextechVitalSparkPower)
-		{
-			texture = ModelDb.Power<VitalSparkPower>().Icon;
-			return texture != null;
-		}
-
-		if (self is HextechHangPower)
-		{
-			texture = ModelDb.Power<HangPower>().Icon;
-			return texture != null;
-		}
-
-		if (self is HextechNeurosurgePower)
-		{
-			texture = ModelDb.Power<NeurosurgePower>().Icon;
-			return texture != null;
+			return vanillaIcon;
 		}
 
 		string? path = self switch
 		{
-			HextechBurnPower => $"res://{ModInfo.Id}/images/powers/hextechBurnPower.png",
-			HextechAttackReplayPower => $"res://{ModInfo.Id}/images/powers/hextechAttackReplayPower.png",
+			HextechBurnPower => HextechAssets.BurnPowerIconPath,
+			HextechAttackReplayPower => HextechAssets.AttackReplayPowerIconPath,
 			HextechOceanDragonSoulPower => HextechAssets.OceanDragonSoulPowerIconPath,
 			HextechInfernalDragonSoulPower => HextechAssets.InfernalDragonSoulPowerIconPath,
 			HextechDragonSoulPower => HextechAssets.HextechDragonSoulPowerIconPath,
@@ -239,12 +219,6 @@ internal static class HextechAssetHooks
 			HextechCloudDragonSoulPower => HextechAssets.CloudDragonSoulPowerIconPath,
 			_ => null
 		};
-		if (path == null)
-		{
-			return false;
-		}
-
-		texture = HextechTextures.LoadPortableTexture(path);
-		return texture != null;
+		return path == null ? null : HextechTextures.LoadUiTexture(path);
 	}
 }

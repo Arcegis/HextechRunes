@@ -20,7 +20,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public void AfterOverlayOpened()
 	{
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayOpened");
+		HextechLog.Info("Mayhem", $"SelectionScreen.AfterOverlayOpened");
 		EnsureSelectionConfirmGuardStarted();
 		EnsureMapButtonEnabled();
 		Modulate = Colors.White;
@@ -49,7 +49,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		_mapButtonForceEnabled = true;
 		mapButton.Enable();
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen: temporarily enabled top bar map button for selection map preview");
+		HextechLog.Info("Mayhem", $"SelectionScreen: temporarily enabled top bar map button for selection map preview");
 	}
 
 	private void RestoreMapButtonState()
@@ -84,10 +84,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		_closed = true;
 		_blockMapUntilDismissed = false;
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed");
+		HextechLog.Info("Mayhem", $"SelectionScreen.AfterOverlayClosed");
 		if (!_choiceLocked)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayClosed: cancelling unresolved selection");
+			HextechLog.Info("Mayhem", $"SelectionScreen.AfterOverlayClosed: cancelling unresolved selection");
 			_completionSource.TrySetCanceled();
 		}
 
@@ -111,7 +111,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.AfterOverlayHidden: choiceLocked={_choiceLocked} capstoneOpen={NCapstoneContainer.Instance?.InUse == true} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.AfterOverlayHidden: choiceLocked={_choiceLocked} capstoneOpen={NCapstoneContainer.Instance?.InUse == true} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 		Visible = false;
 
 		// 选择尚未完成、且玩家打开了地图 → 进入只读地图预览：禁止行进、显示提示，保留地图打开。
@@ -146,7 +146,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		map.SetTravelEnabled(enabled: false);   // 只读：禁止在地图上选节点前进，杜绝靠地图跳过海克斯选择
 		map.Closed += OnMapPreviewClosed;        // 玩家关闭地图后把选择界面恢复回来
 		ShowMapPreviewHint(map);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.BeginMapPreview: read-only map preview, selection still pending");
+		HextechLog.Info("Mayhem", $"SelectionScreen.BeginMapPreview: read-only map preview, selection still pending");
 	}
 
 	private void OnMapPreviewClosed()
@@ -243,7 +243,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 				return;
 			}
 
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RestoreAfterMapReopen: closing map reopened over blocking selection");
+			HextechLog.Info("Mayhem", $"SelectionScreen.RestoreAfterMapReopen: closing map reopened over blocking selection");
 			NMapScreen.Instance?.Close(animateOut: false);
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 			NOverlayStack.Instance?.ShowOverlays();

@@ -1,29 +1,46 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes;
-using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-	private static bool _subscribedRoomEntered;
-	private static bool _subscribedRoomExited;
-	private static RunManager? _subscribedRoomEnteredManager;
-	private static RunManager? _subscribedRoomExitedManager;
-	private static HashSet<RunState>? _runsInsideStartRunOrig;
+	// 按帧轮询的预算与日志间隔（帧数随帧率变化，只作为"足够久"的上限，不承担时序语义）。
+	private const int EnemyUiRefreshFrameBudget = 45;
+	private const int ResumeAfterLoadFrameBudget = 300;
+	private const int EndlessLoopActTransitionTimeoutFrames = 3600;
+	private const int EndlessLoopRoomReadyTimeoutFrames = 600;
+	private const int EndlessLoopWaitLogIntervalFrames = 120;
+	private const int RemoteEventsWaitLogIntervalFrames = 300;
+	// 等待其他玩家完成远古事件超过这个帧数时告警一次，但继续等待：超时由各端独立判定，单端放弃会让
+	// 先放弃的一端等下一房间、后完成的一端等它完成选择，互相卡住，所以只能换局时退出。
+	private const int RemoteEventsSlowWaitWarnFrames = 18000;
 
-	private static HashSet<RunState> RunsInsideStartRunOrig => _runsInsideStartRunOrig ??= new HashSet<RunState>();
+	private static readonly HashSet<RunState> RunsInsideStartRunOrig = [];
 
-	private readonly record struct EventRoomProceedState(bool ShouldSelectAfterProceed, RunState RunState, int ActIndex, string EventId);
+	private readonly record struct EventRoomProceedState(RunState RunState, int ActIndex, string EventId);
+
+	/// <summary>跑局开始与读档共用：清空日志预算、战斗与敌方海克斯的跑局临时状态，并按新跑局重置夺金同步。</summary>
+	private static void ResetRunScopedState(RunState runState)
+	{
+		HextechRunLogBudget.Reset();
+		ResetTransientRunState();
+		HextechGoldrendSync.ResetForRun(runState);
+	}
+
+	/// <summary>跑局开始、读档与结束都要清的战斗/敌方海克斯临时状态。</summary>
+	private static void ResetTransientRunState()
+	{
+		HextechCombatHooks.ResetTransientCombatState();
+		HextechEnemyHexEffects.ResetAllRunScopedState();
+	}
 
 	internal static HextechMayhemModifier EnsureMayhemModifier(RunState runState)
 	{
 		if (HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier existing)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: existing state preserved {existing.DescribeActState()}");
+			HextechLog.Info("Mayhem", $"EnsureMayhemModifier: existing state preserved {existing.DescribeActState()}");
 			return existing;
 		}
 
@@ -31,7 +48,7 @@ internal static partial class HextechRunLifecycleHooks
 		modifier.ResetForNewRun();
 		modifier.OnRunLoaded(runState);
 		runState.AddModifierDebug(modifier);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: added");
+		HextechLog.Info("Mayhem", $"EnsureMayhemModifier: added");
 		return modifier;
 	}
 
@@ -42,7 +59,7 @@ internal static partial class HextechRunLifecycleHooks
 			return existing;
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Mayhem] {reason}; reattaching");
+		HextechLog.Warn("Mayhem", $"{reason}; reattaching");
 		return EnsureMayhemModifier(runState);
 	}
 

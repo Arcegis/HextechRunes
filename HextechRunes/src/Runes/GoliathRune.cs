@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune
+public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune, IHextechHealingMultiplierProvider
 {
 	private const decimal ScaleValue = 1.35m;
 	private const decimal MaxHpBonusPercentValue = (ScaleValue - 1m) * 100m;
@@ -26,7 +26,6 @@ public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("HpGainPercent", 0.35m),
 		new DynamicVar("DamageMultiplier", StatMultiplierValue),
 		new DynamicVar("SustainMultiplier", StatMultiplierValue),
 		new DynamicVar("Scale", ScaleValue),
@@ -55,9 +54,9 @@ public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
+		if (Owner != null)
 		{
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		}
 
 		Grow();
@@ -72,6 +71,11 @@ public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
 		return target == Owner?.Creature ? DynamicVars["SustainMultiplier"].BaseValue : 1m;
+	}
+
+	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
+	{
+		return IsFirstOwnedInstance(player) ? DynamicVars["SustainMultiplier"].BaseValue : 1m;
 	}
 
 	private void Grow()

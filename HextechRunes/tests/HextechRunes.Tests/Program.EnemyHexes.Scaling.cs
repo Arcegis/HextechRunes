@@ -30,6 +30,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void EnemyCoefficientAddsWithinHexAndMultipliesAcrossHexes()
 	{
 		decimal oneHex = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
@@ -50,6 +51,7 @@ internal static partial class Program
 		Equal(1.56m, crossHex, "different enemy hex sectors should multiply");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpCoefficientSectorsUseBaseHp()
 	{
 		decimal scale = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
@@ -64,6 +66,7 @@ internal static partial class Program
 		Equal(126m, Math.Floor(100m * scale), "enemy max HP should derive once from the tracked base HP");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpLegacyMigrationRecoversMixedSinglePlayerEffects()
 	{
 		Equal(
@@ -106,6 +109,7 @@ internal static partial class Program
 			"rawless legacy migration should preserve the observed max HP after the new coefficient projection");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpLegacyMigrationPreservesMultiplayerScaling()
 	{
 		Equal(
@@ -128,6 +132,7 @@ internal static partial class Program
 			"a fresh externally-scaled enemy should keep its current max HP as the coefficient base");
 	}
 
+	[HextechTest]
 	private static void EnemyAttributeBoostsUseExpectedTiersAndCrossHexMultiplication()
 	{
 		Equal(0m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.Stats, 1), "Stats tier one bonus");
@@ -149,6 +154,7 @@ internal static partial class Program
 		Equal(1.21m, combined, "attribute bonuses should add within one hex and multiply across hexes");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount()
 	{
 		Equal(1m, HeavyHitterEnemyHex.ResolveMultiplier(29m, 2), "two-player Heavy Hitter below 30-HP threshold");
@@ -159,11 +165,12 @@ internal static partial class Program
 		Equal(1.01m, VitalitySurgeEnemyHex.ResolveMultiplier(40m, 2), "two-player Vitality Surge first threshold");
 		Equal(1.30m, VitalitySurgeEnemyHex.ResolveMultiplier(1200m, 2), "two-player Vitality Surge cap");
 
-		Equal(1m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(9m, 2), "two-player Protein Shake below 10-HP threshold");
-		Equal(1.01m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(10m, 2), "two-player Protein Shake first threshold");
-		Equal(2m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(1000m, 2), "two-player Protein Shake at 100 percent bonus");
+		Equal(1m, ProteinShakeEnemyHex.ResolveMultiplier(9m, 2), "two-player Protein Shake below 10-HP threshold");
+		Equal(1.01m, ProteinShakeEnemyHex.ResolveMultiplier(10m, 2), "two-player Protein Shake first threshold");
+		Equal(2m, ProteinShakeEnemyHex.ResolveMultiplier(1000m, 2), "two-player Protein Shake at 100 percent bonus");
 	}
 
+	[HextechTest]
 	private static void EnemyBalanceUsesNewTierPercentagesAndUncappedSustain()
 	{
 		Equal(20, ExoskeletonEnemyHex.ResolveHardToKill(100, 1), "act one Hard to Kill threshold");
@@ -177,9 +184,9 @@ internal static partial class Program
 		}
 		Equal(25, SoulEaterEnemyHex.ResolveMaxHpGain(100), "Soul Eater gains one quarter of the dead enemy's Max HP");
 		Equal(24, SoulEaterEnemyHex.ResolveMaxHpGain(99), "Soul Eater rounds the Max HP gain down");
-		Equal(5m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(2000, 1), "Protein Shake exceeds the old 100-percent cap");
-		Equal(3m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(2000, 2), "Protein Shake divides its threshold by player count consistently");
-		Equal(1.01m, HextechMonsterSustainHelper.ResolveProteinShakeSustainMultiplier(20, 4), "four-player Protein Shake first threshold");
+		Equal(5m, ProteinShakeEnemyHex.ResolveMultiplier(2000, 1), "Protein Shake exceeds the old 100-percent cap");
+		Equal(3m, ProteinShakeEnemyHex.ResolveMultiplier(2000, 2), "Protein Shake divides its threshold by player count consistently");
+		Equal(1.01m, ProteinShakeEnemyHex.ResolveMultiplier(20, 4), "four-player Protein Shake first threshold");
 		Equal(30m, VantomEnemyHex.MaxHpPerStack, "Vantom requires thirty Max HP per Slippery");
 	}
 }

@@ -20,6 +20,7 @@ public sealed class ServantMasterRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
+		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
 		if (Owner == null || Owner.Creature.IsDead || !IsNecrobinderPlayer(Owner))
 		{
 			return Task.CompletedTask;
@@ -31,6 +32,7 @@ public sealed class ServantMasterRune : HextechRelicBase
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
+		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
 		if (player != Owner || Owner.Creature.IsDead || player.Creature.CombatState == null || !IsNecrobinderPlayer(player))
 		{
 			return;

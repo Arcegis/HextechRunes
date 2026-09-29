@@ -9,8 +9,8 @@ public sealed class CourageOfColossusRune : LimitedDebuffProcRelicBase
 		new DynamicVar("Plating", 3m)
 	];
 
-	protected override Task OnEnemyDebuffApplied(Creature target)
+	protected override Task OnDebuffProc(Player owner, Creature target)
 	{
-		return PowerCmd.Apply<PlatingPower>(Owner!.Creature, DynamicVars["Plating"].BaseValue, Owner!.Creature, null);
+		return PowerCmd.Apply<PlatingPower>(owner.Creature, DynamicVars["Plating"].BaseValue, owner.Creature, null);
 	}
 }

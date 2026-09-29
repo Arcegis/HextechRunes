@@ -9,7 +9,7 @@ public sealed class ShriekUpgradeRune : CardUpgradeRuneBase<PiercingWail>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<PiercingWail>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromPower<StrengthPower>()
 	];
 

@@ -4,6 +4,8 @@ namespace HextechRunes;
 
 internal static partial class HextechUpdateChecker
 {
+	private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(3);
+
 	private static async Task<UpdateCheckResult> CheckLatestVersionAsync()
 	{
 		List<string> failures = [];
@@ -20,12 +22,12 @@ internal static partial class HextechUpdateChecker
 
 			if (attempt < MaxCheckAttempts)
 			{
-				await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+				await Task.Delay(RetryDelay).ConfigureAwait(false);
 			}
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Mayhem] Update check failed: {string.Join("; ", failures)}");
-		return new UpdateCheckResult("海克斯大乱斗模组更新检查暂不可用", false);
+		HextechLog.Warn("Mayhem", $"Update check failed: {string.Join("; ", failures)}");
+		return new UpdateCheckResult(UpdateCheckStatus.Unavailable, ModInfo.Version, LatestVersion: null, Cacheable: false);
 	}
 
 	private static async Task<UpdateCheckResult?> TryCheckEndpointAsync(string endpoint, List<string> failures)
@@ -62,11 +64,11 @@ internal static partial class HextechUpdateChecker
 	{
 		string normalizedLatest = latestVersion.Trim();
 		string currentVersion = ModInfo.Version;
-		string text = CompareVersions(normalizedLatest, currentVersion) > 0
-			? $"海克斯大乱斗模组有新版{normalizedLatest}，当前版本为{currentVersion}"
-			: $"海克斯大乱斗模组为最新版{currentVersion}";
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update check succeeded: latest={normalizedLatest}, current={currentVersion}");
-		return new UpdateCheckResult(text, true);
+		UpdateCheckStatus status = CompareVersions(normalizedLatest, currentVersion) > 0
+			? UpdateCheckStatus.UpdateAvailable
+			: UpdateCheckStatus.UpToDate;
+		HextechLog.Info("Mayhem", $"Update check succeeded: latest={normalizedLatest}, current={currentVersion}");
+		return new UpdateCheckResult(status, currentVersion, normalizedLatest, Cacheable: true);
 	}
 
 	private static UpdateCheckResult CacheResult(UpdateCheckResult result)

@@ -151,6 +151,7 @@
   "HEXTECH_COMMUNITY_DELETE": "Excluir",
   "HEXTECH_COMMUNITY_REPORT": "Denunciar",
   "HEXTECH_COMMUNITY_REPORTED": "Denunciado",
+  "HEXTECH_COMMUNITY_APPLY_INVALID": "Não foi possível ler este código de configuração; ele pode ser de uma versão incompatível.",
   "HEXTECH_COMMUNITY_NEED_STEAM": "É necessário Steam online para enviar ou curtir.",
   "HEXTECH_COMMUNITY_ERR_TITLE_REJECTED": "O título contém conteúdo não permitido.",
   "HEXTECH_COMMUNITY_ERR_QUOTA": "Você já tem 3 envios. Exclua um primeiro.",

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
@@ -33,8 +35,8 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 	internal override decimal ModifyHpLostAfterOsty(HextechEnemyHexContext context, Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
+		// 分发层已限定 target 在本局战斗中。
 		if (target.Side != CombatSide.Enemy
-			|| target.CombatState?.RunState != context.RunState
 			|| target.IsDead
 			|| ShouldSkipDamageReplacement()
 			|| amount <= 0m)
@@ -61,12 +63,11 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 	internal override async Task AfterEnemyDamageReceivedAny(HextechEnemyHexContext context, Creature target, DamageResult result, Creature? dealer, CardModel? cardSource)
 	{
 		long commandId = HextechCombatHooks.CurrentActualDamageCommandId;
-		if (commandId == 0L || !TryTakePendingCompensation(commandId, target, out PendingCompensation? pending))
+		if (commandId == 0L || !TryTakePendingCompensation(commandId, target, out PendingCompensation? compensation))
 		{
 			return;
 		}
 
-		PendingCompensation compensation = pending!;
 		if (!CanApplyPendingCompensation(context, target, compensation))
 		{
 			return;
@@ -89,7 +90,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 			return (damage, 0);
 		}
 
-		int nextTurnDamage = (int)Math.Min(Math.Floor(damage / 2m), 999999999m);
+		int nextTurnDamage = (int)Math.Min(Math.Floor(damage / 2m), HextechCreatureStatLimits.StatHardCap);
 		return (damage - nextTurnDamage, nextTurnDamage);
 	}
 
@@ -126,7 +127,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		_effectWithPendingCompensation = this;
 	}
 
-	private bool TryTakePendingCompensation(long commandId, Creature target, out PendingCompensation? pending)
+	private bool TryTakePendingCompensation(long commandId, Creature target, [NotNullWhen(true)] out PendingCompensation? pending)
 	{
 		for (int i = 0; i < _pendingCompensations.Count; i++)
 		{

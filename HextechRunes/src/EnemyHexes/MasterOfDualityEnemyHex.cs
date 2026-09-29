@@ -4,6 +4,7 @@ internal sealed class MasterOfDualityEnemyHex : HextechEnemyHexEffect
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.MasterOfDuality;
 
+	// 与 IsManualPlayerCardPlay 的统一口径不同：这里自动打出与同一张牌的重放也会触发。是否本意待设计确认，保持原行为。
 	internal override async Task AfterCardPlayed(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		if (cardPlay.Card.Owner?.Creature.Side != CombatSide.Player)
@@ -17,11 +18,11 @@ internal sealed class MasterOfDualityEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		if (IllusoryWeaponRune.IsSkillForEffects(cardPlay.Card))
+		if (HextechCardEffectTypes.IsSkillForEffects(cardPlay.Card))
 		{
 			await PowerCmd.Apply<HextechTemporaryStrengthLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
 		}
-		if (IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
+		if (HextechCardEffectTypes.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
 		{
 			await PowerCmd.Apply<HextechTemporaryDexterityLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
 		}

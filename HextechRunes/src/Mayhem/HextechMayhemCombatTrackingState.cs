@@ -60,7 +60,8 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.EveryTurnBoundary)]
 	public readonly Dictionary<ulong, int> BackToBasicsCardsPlayedThisTurn = new();
-	public readonly Dictionary<ulong, int> PlayerCardsDrawnThisCombat = new();
+	// 沃格莫特之灵(敌方)的每玩家累计抽牌数;快照里的 JSON 键保持旧名 PlayerCardsDrawnThisCombat。
+	public readonly Dictionary<ulong, int> WarmogsSpiritPlayerCardsDrawnThisCombat = new();
 	public readonly Dictionary<ulong, int> SwiftAndSafePlayerCardsDrawnThisCombat = new();
 	public readonly Dictionary<ulong, int> NightstalkingPlayerCardsDrawnThisCombat = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
@@ -82,8 +83,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<ulong> PlayersAwaitingPlayPhase = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly HashSet<ulong> GripPlayersTriggeredThisTurn = new();
-	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart | CombatTrackingClearPhase.PlayerTurnEnd)]
-	public int ArcanePunchPlayerAttackCardsPlayed;
 	[CombatTrackingTransient]
 	public string? LastEnemyThresholdTriggerKey;
 	[CombatTrackingTransient]
@@ -140,6 +139,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 
 	public void Reset()
 	{
-		Clear();
+		HextechMayhemCombatTrackingSerializer.Clear(this);
 	}
 }

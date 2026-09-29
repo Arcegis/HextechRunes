@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 public sealed class JeweledGauntletRune : HextechRelicBase
 {
+	private const int ReplayChancePercent = 33;
+
 	private int _replayRollsThisCombat;
 
 	// 按 card 实例分槽存放待定判定,而非单一共享槽位:引擎/UI 可能在同一张牌的
@@ -34,7 +36,7 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 		int ordinal = PeekCombatProcOrdinal(nameof(JeweledGauntletRune), _replayRollsThisCombat);
 		bool shouldReplay = HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
-			33,
+			ReplayChancePercent,
 			"jeweled-gauntlet-replay",
 			HextechStableRandom.PlayerKey(Owner),
 			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",

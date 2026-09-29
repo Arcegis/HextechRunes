@@ -74,19 +74,12 @@ public sealed class DieForYouRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		int roundNumber = combatState.RoundNumber;
-		if (_lastRecordedRound == roundNumber)
-		{
-			return Task.CompletedTask;
-		}
-
 		int amount = FloorToInt(target.MaxHp);
-		if (amount <= 0)
+		if (amount <= 0 || !HextechRoundInterval.TryClaimRound(ref _lastRecordedRound, combatState.RoundNumber))
 		{
 			return Task.CompletedTask;
 		}
 
-		_lastRecordedRound = roundNumber;
 		_pendingWishAmount = amount;
 		Flash();
 

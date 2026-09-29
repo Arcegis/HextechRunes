@@ -142,7 +142,7 @@ internal static class HextechMonsterMaxHpCoefficients
 			madScientistLossFraction,
 			tankEngineStacks);
 		HextechLog.Info(
-			$"[{ModInfo.Id}][Mayhem] Migrated legacy enemy max HP base: combatId={combatId} current={creature.MaxHp} raw={rawMonsterMaxHp?.ToString() ?? "unknown"} fixedBonuses={string.Join(",", appliedFixedBonusFractions)} madLoss={madScientistLossFraction} tankStacks={tankEngineStacks} base={migratedBaseMaxHp}");
+			"Mayhem", $"Migrated legacy enemy max HP base: combatId={combatId} current={creature.MaxHp} raw={rawMonsterMaxHp?.ToString() ?? "unknown"} fixedBonuses={string.Join(",", appliedFixedBonusFractions)} madLoss={madScientistLossFraction} tankStacks={tankEngineStacks} base={migratedBaseMaxHp}");
 		return migratedBaseMaxHp;
 	}
 
@@ -192,7 +192,7 @@ internal static class HextechMonsterMaxHpCoefficients
 			int.MaxValue);
 		modifier.CombatTracking.MonsterMaxHpCoefficientBase[combatId] = adjustedBaseMaxHp;
 		HextechLog.Info(
-			$"[{ModInfo.Id}][Mayhem] Reconciled enemy max HP base after an external change: "
+			"Mayhem", $"Reconciled enemy max HP base after an external change: "
 			+ $"combatId={combatId} base={baseMaxHp} projected={projectedMaxHp} "
 			+ $"observed={creature.MaxHp} adjustedBase={adjustedBaseMaxHp}");
 		return adjustedBaseMaxHp;
@@ -278,19 +278,19 @@ internal static class HextechMonsterMaxHpCoefficients
 
 	internal static void UpdateEnemyScale(HextechMayhemModifier modifier, Creature creature)
 	{
-		float baseScale = modifier.HasActiveMonsterHex(MonsterHexKind.Goliath) ? 1.35f : 1f;
-		// 巨人杀手敌方版让敌人体型缩小(纯视觉,呼应「体型变小」的设定,无机制意义)。
-		float giantSlayerShrink = modifier.HasActiveMonsterHex(MonsterHexKind.GiantSlayer) ? 0.25f : 0f;
+		float baseScale = modifier.HasActiveMonsterHex(MonsterHexKind.Goliath) ? GoliathEnemyHex.BodyScale : 1f;
+		float giantSlayerShrink = modifier.HasActiveMonsterHex(MonsterHexKind.GiantSlayer) ? GiantSlayerEnemyHex.BodyScaleShrink : 0f;
 		int tankStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.TankEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
 		int shrinkStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.ShrinkEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
-		float finalScale = Math.Max(0.2f, baseScale + tankStacks * 0.05f - shrinkStacks * 0.02f - giantSlayerShrink);
-		try
-		{
-			NCombatRoom.Instance?.GetCreatureNode(creature)?.SetDefaultScaleTo(finalScale, 0f);
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Enemy scale visual failed: {ex.Message}");
-		}
+		float finalScale = Math.Max(
+			HextechPlayerBodyScaleHelper.MinCreatureBodyScale,
+			baseScale
+				+ tankStacks * TankEngineEnemyHex.BodyScalePerStack
+				- shrinkStacks * ShrinkEngineEnemyHex.BodyScalePerStack
+				- giantSlayerShrink);
+		HextechPresentation.TryRun(
+			"Mayhem",
+			"Enemy scale visual failed",
+			() => NCombatRoom.Instance?.GetCreatureNode(creature)?.SetDefaultScaleTo(finalScale, 0f));
 	}
 }

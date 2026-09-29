@@ -1,9 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -12,7 +12,9 @@ internal static partial class HextechUpdateChecker
 	private const string NoticeName = "HextechRunesUpdateNotice";
 	private const int MaxCheckAttempts = 2;
 	private const int MaxNoticeAttachAttempts = 30;
+	private const string NoticeLocTable = "main_menu_ui";
 
+	// 写全名:本文件 using Godot,Godot.HttpClient 与 System.Net.Http.HttpClient 同名。
 	private static readonly System.Net.Http.HttpClient HttpClient = new()
 	{
 		Timeout = TimeSpan.FromSeconds(12)
@@ -28,8 +30,15 @@ internal static partial class HextechUpdateChecker
 	private static Task<UpdateCheckResult>? _checkTask;
 	private static UpdateCheckResult? _cachedResult;
 
-	private sealed record UpdateCheckResult(string Text, bool Cacheable);
+	private enum UpdateCheckStatus
+	{
+		Unavailable,
+		UpToDate,
+		UpdateAvailable
+	}
 
+	// 只存结构化结果,文案在主线程显示时按当前语言格式化(检查在后台线程完成)。
+	private sealed record UpdateCheckResult(UpdateCheckStatus Status, string CurrentVersion, string? LatestVersion, bool Cacheable);
 
 	/// <summary>
 	/// 配置菜单保存后即时同步主页版本更新说明的显隐:开则(重新)挂上,关则移除现有提示。
@@ -42,11 +51,11 @@ internal static partial class HextechUpdateChecker
 			return;
 		}
 
-		if (HextechRelicVisibilityHooks.GetShowUpdateNotice())
+		if (HextechUiPreferences.ShowUpdateNotice)
 		{
 			if (FindMainMenu(root) is { } mainMenu)
 			{
-				_ = ShowNoticeWhenStatusLayerReadyAsync(mainMenu);
+				TaskHelper.RunSafely(ShowNoticeWhenStatusLayerReadyAsync(mainMenu));
 			}
 		}
 		else
@@ -91,7 +100,7 @@ internal static partial class HextechUpdateChecker
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI failed: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Update checker UI failed: {ex.Message}");
 				return;
 			}
 
@@ -101,32 +110,36 @@ internal static partial class HextechUpdateChecker
 			}
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI skipped: vanilla mod status label not found after {MaxNoticeAttachAttempts} frames.");
+		HextechLog.Warn("Mayhem", $"Update checker UI skipped: vanilla mod status label not found after {MaxNoticeAttachAttempts} frames.");
 	}
 
 	private static bool TryShowNotice(NMainMenu mainMenu, int attempt)
 	{
-		if (!TryFindNoticeLayer(mainMenu, out Node searchRoot, out Label template, out Node noticeHost))
+		if (!TryFindNoticeLayer(mainMenu, out Node searchRoot, out Label? template, out Node? noticeHost))
 		{
 			if (attempt is 1 or MaxNoticeAttachAttempts || attempt % 10 == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update checker UI waiting for vanilla mod status label: attempt={attempt} root={DescribeNode(searchRoot)}.");
+				HextechLog.Info("Mayhem", $"Update checker UI waiting for vanilla mod status label: attempt={attempt} root={DescribeNode(searchRoot)}.");
 			}
 
 			return false;
 		}
 
 		ShowNotice(searchRoot, template, noticeHost);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
+		HextechLog.Info("Mayhem", $"Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
 		return true;
 	}
 
-	internal static bool TryFindNoticeLayer(NMainMenu mainMenu, out Node searchRoot, out Label template, out Node noticeHost)
+	internal static bool TryFindNoticeLayer(
+		NMainMenu mainMenu,
+		out Node searchRoot,
+		[NotNullWhen(true)] out Label? template,
+		[NotNullWhen(true)] out Node? noticeHost)
 	{
 		searchRoot = ResolveNoticeSearchRoot(mainMenu);
 		template = mainMenu.GetNodeOrNull<Label>("%ModdedWarning")
-			?? FindVanillaModStatusLabel(searchRoot)!;
-		noticeHost = template?.GetParent()!;
+			?? FindVanillaModStatusLabel(searchRoot);
+		noticeHost = template?.GetParent();
 		return template != null && noticeHost != null;
 	}
 
@@ -141,7 +154,7 @@ internal static partial class HextechUpdateChecker
 			cachedResult = _cachedResult;
 			if (cachedResult != null)
 			{
-				SetNoticeText(label, cachedResult.Text);
+				SetNoticeText(label, FormatNoticeText(cachedResult));
 				return;
 			}
 
@@ -149,14 +162,14 @@ internal static partial class HextechUpdateChecker
 			checkTask = _checkTask;
 		}
 
-		_ = ApplyCheckResultAsync(label, checkTask);
+		TaskHelper.RunSafely(ApplyCheckResultAsync(label, checkTask));
 	}
 
 	private static Label CreateNotice(Label template, Node noticeHost)
 	{
 		Label label = CreateNoticeLabel(template);
 		ConfigureNoticePlacement(label);
-		SetNoticeText(label, "正在检查海克斯大乱斗模组版本");
+		SetNoticeText(label, new LocString(NoticeLocTable, "HEXTECH_UPDATE_CHECKING").GetFormattedText());
 		noticeHost.AddChild(label);
 		MoveNoticeNextToTemplate(label, template, noticeHost);
 		return label;
@@ -268,11 +281,13 @@ internal static partial class HextechUpdateChecker
 		string normalized = text.Trim();
 		if (MatchesLocalizedTemplate(
 			normalized,
-			new LocString("main_menu_ui", "MODDED_WARNING").GetRawText()))
+			new LocString(NoticeLocTable, "MODDED_WARNING").GetRawText()))
 		{
 			return true;
 		}
 
+		// 兜底的文本猜测:只在按节点名(%ModdedWarning / ModdedWarning)与原版本地化模板都找不到状态标签时才用到,
+		// 覆盖场景节点改名或本地化表尚未载入的版本。原版这条标签没有专用类型可判定,只能看文本。
 		if (normalized.Contains("模组", StringComparison.Ordinal) && normalized.Contains("已加载", StringComparison.Ordinal))
 		{
 			return true;
@@ -368,9 +383,23 @@ internal static partial class HextechUpdateChecker
 		}
 	}
 
+	private static string FormatNoticeText(UpdateCheckResult result)
+	{
+		LocString text = result.Status switch
+		{
+			UpdateCheckStatus.UpdateAvailable => new LocString(NoticeLocTable, "HEXTECH_UPDATE_AVAILABLE"),
+			UpdateCheckStatus.UpToDate => new LocString(NoticeLocTable, "HEXTECH_UPDATE_LATEST"),
+			_ => new LocString(NoticeLocTable, "HEXTECH_UPDATE_UNAVAILABLE")
+		};
+		text.Add("Current", result.CurrentVersion);
+		text.Add("Latest", result.LatestVersion ?? "");
+		return text.GetFormattedText();
+	}
+
 	private static async Task ApplyCheckResultAsync(Label label, Task<UpdateCheckResult> checkTask)
 	{
-		UpdateCheckResult result = await checkTask.ConfigureAwait(false);
+		// 不加 ConfigureAwait(false):从主线程发起,续体回到 Godot 主线程,再按当前语言格式化文案。
+		UpdateCheckResult result = await checkTask;
 		if (!result.Cacheable)
 		{
 			lock (StateLock)
@@ -384,17 +413,17 @@ internal static partial class HextechUpdateChecker
 
 		if (GodotObject.IsInstanceValid(label))
 		{
+			string text = FormatNoticeText(result);
 			if (label is MegaLabel)
 			{
-				label.CallDeferred(nameof(MegaLabel.SetTextAutoSize), result.Text);
+				label.CallDeferred(nameof(MegaLabel.SetTextAutoSize), text);
 			}
 			else
 			{
-				label.CallDeferred("set", "text", result.Text);
+				label.CallDeferred("set", "text", text);
 			}
 		}
 	}
-
 
 	[HarmonyPatch(typeof(NMainMenu), nameof(NMainMenu._Ready), new Type[0])]
 	[HextechPatch("service.update-checker", "更新检查")]
@@ -404,12 +433,12 @@ internal static partial class HextechUpdateChecker
 		private static void Postfix(NMainMenu __instance)
 		{
 			// 由「配置-杂项」里的本地开关控制是否在主页左下角显示版本更新说明(默认开)。
-			if (!HextechRelicVisibilityHooks.GetShowUpdateNotice())
+			if (!HextechUiPreferences.ShowUpdateNotice)
 			{
 				return;
 			}
 
-			_ = ShowNoticeWhenStatusLayerReadyAsync(__instance);
+			TaskHelper.RunSafely(ShowNoticeWhenStatusLayerReadyAsync(__instance));
 		}
 	}
 }

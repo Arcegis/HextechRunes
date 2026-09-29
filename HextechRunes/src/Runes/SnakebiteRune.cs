@@ -32,12 +32,11 @@ public sealed class SnakebiteRune : HextechRelicBase
 			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| combatState.RoundNumber > 1
-			|| _lastProcRound == combatState.RoundNumber)
+			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))
 		{
 			return;
 		}
 
-		_lastProcRound = combatState.RoundNumber;
 		CardModel card = combatState.CreateCard<Snakebite>(Owner);
 		card.SetToFreeThisCombat();
 		Flash();

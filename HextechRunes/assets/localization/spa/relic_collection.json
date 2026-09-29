@@ -151,6 +151,7 @@
   "HEXTECH_COMMUNITY_DELETE": "Eliminar",
   "HEXTECH_COMMUNITY_REPORT": "Denunciar",
   "HEXTECH_COMMUNITY_REPORTED": "Denunciado",
+  "HEXTECH_COMMUNITY_APPLY_INVALID": "No se pudo leer este código de configuración; puede ser de una versión incompatible.",
   "HEXTECH_COMMUNITY_NEED_STEAM": "Se requiere Steam en línea para subir o dar me gusta.",
   "HEXTECH_COMMUNITY_ERR_TITLE_REJECTED": "El título contiene contenido no permitido.",
   "HEXTECH_COMMUNITY_ERR_QUOTA": "Ya tienes 3 subidas. Elimina una primero.",
