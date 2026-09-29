@@ -178,9 +178,7 @@ internal static partial class Program
 		Equal(HextechRarityTier.Prismatic, registration.Rarity, "Something for Nothing rarity");
 		Equal("RESOURCE", registration.TagKey, "Something for Nothing tag");
 		Expect(
-			typeof(SomethingForNothingRune).GetMethod(
-				nameof(SomethingForNothingRune.BeforeSideTurnStart),
-				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly) != null,
+			typeof(TurnScopedRelicBase).IsAssignableFrom(typeof(SomethingForNothingRune)),
 			"Something for Nothing should reset its paid-card trigger each turn");
 	}
 

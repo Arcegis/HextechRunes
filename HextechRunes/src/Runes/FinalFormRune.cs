@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class FinalFormRune : HextechRelicBase
+public sealed class FinalFormRune : TurnScopedRelicBase
 {
 	private const decimal PlatingPercentValue = 0.10m;
 	private const decimal PlatingDisplayPercentValue = PlatingPercentValue * 100m;
@@ -32,37 +32,12 @@ public sealed class FinalFormRune : HextechRelicBase
 		HoverTipFactory.FromPower<PlatingPower>()
 	];
 
-	public override Task BeforeCombatStart()
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTurnState(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
-
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (HasTurnProcTriggered(nameof(FinalFormRune), _triggeredThisTurn) || Owner == null || !IsOwnedCardWithEffectiveCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue))
-		{
-			return;
-		}
-
-		if (!TryConsumeTurnProc(nameof(FinalFormRune), ref _triggeredThisTurn))
+		EnsureTurnScopedStateCurrent();
+		if (Owner == null
+			|| !IsOwnedCardWithEffectiveCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue)
+			|| !TryConsumeTurnProc(nameof(FinalFormRune), ref _triggeredThisTurn))
 		{
 			return;
 		}
@@ -73,14 +48,8 @@ public sealed class FinalFormRune : HextechRelicBase
 		await CardPileCmd.Draw(context, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
 	}
 
-	private void ResetTurnState()
-	{
-		ResetTurnState(null);
-	}
-
-	private void ResetTurnState(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_triggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

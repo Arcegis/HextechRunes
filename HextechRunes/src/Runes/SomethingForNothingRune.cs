@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class SomethingForNothingRune : HextechRelicBase
+public sealed class SomethingForNothingRune : TurnScopedRelicBase
 {
 	private bool _discountTriggeredThisTurn;
 
@@ -15,7 +15,7 @@ public sealed class SomethingForNothingRune : HextechRelicBase
 	{
 		get
 		{
-			EnsureTurnScopedStateCurrent(ResetTurnState);
+			EnsureTurnScopedStateCurrent();
 			return HasTurnProcTriggered(nameof(SomethingForNothingRune), _discountTriggeredThisTurn);
 		}
 		set
@@ -23,28 +23,6 @@ public sealed class SomethingForNothingRune : HextechRelicBase
 			_discountTriggeredThisTurn = value;
 			UpdateTurnScopedStateIdentity();
 		}
-	}
-
-	public override Task BeforeCombatStart()
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTurnState(combatState);
-		}
-
-		return Task.CompletedTask;
 	}
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
@@ -63,9 +41,8 @@ public sealed class SomethingForNothingRune : HextechRelicBase
 			return CardPileCmd.Draw(context, DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
 		}
 
-		EnsureTurnScopedStateCurrent(ResetTurnState);
+		EnsureTurnScopedStateCurrent();
 		if (cardPlay.Card.EnergyCost.CostsX
-			|| HasTurnProcTriggered(nameof(SomethingForNothingRune), _discountTriggeredThisTurn)
 			|| !TryConsumeTurnProc(nameof(SomethingForNothingRune), ref _discountTriggeredThisTurn))
 		{
 			return Task.CompletedTask;
@@ -82,6 +59,7 @@ public sealed class SomethingForNothingRune : HextechRelicBase
 		{
 			HextechLog.Warn("SomethingForNothing", $"Cost visual refresh failed: {ex.Message}");
 		}
+
 		Flash();
 		return Task.CompletedTask;
 	}
@@ -96,14 +74,8 @@ public sealed class SomethingForNothingRune : HextechRelicBase
 		return Math.Max(0, currentCost - Math.Max(0, reduction));
 	}
 
-	private void ResetTurnState()
-	{
-		ResetTurnState(null);
-	}
-
-	private void ResetTurnState(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_discountTriggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

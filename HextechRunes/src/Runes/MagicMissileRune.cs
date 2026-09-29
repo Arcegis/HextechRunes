@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Helpers;
 
 namespace HextechRunes;
 
-public sealed class MagicMissileRune : HextechRelicBase
+public sealed class MagicMissileRune : TurnScopedRelicBase
 {
 	internal const int MissileCount = 3;
 	internal const decimal MaxHpDamagePercent = 3m;
@@ -15,33 +15,10 @@ public sealed class MagicMissileRune : HextechRelicBase
 		new DynamicVar("MaxHpDamagePercent", MaxHpDamagePercent)
 	];
 
-	public override Task BeforeCombatStart()
-	{
-		ResetTriggered(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTriggered(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTriggered(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
-
 	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		EnsureTurnScopedStateCurrent(ResetTriggered);
-		if (HasTurnProcTriggered(nameof(MagicMissileRune), _triggeredThisTurn)
-			|| Owner == null
+		EnsureTurnScopedStateCurrent();
+		if (Owner == null
 			|| Owner.Creature.IsDead
 			|| !cardPlay.IsFirstInSeries
 			|| !IsOwnedAttack(cardPlay.Card))
@@ -126,14 +103,8 @@ public sealed class MagicMissileRune : HextechRelicBase
 			.ToList();
 	}
 
-	private void ResetTriggered()
-	{
-		ResetTriggered(null);
-	}
-
-	private void ResetTriggered(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_triggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

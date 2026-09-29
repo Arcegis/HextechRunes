@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 public sealed class CompensationRune : HextechRelicBase
@@ -52,7 +54,7 @@ public sealed class CompensationRune : HextechRelicBase
 			return amount;
 		}
 
-		int doom = Math.Min((int)Math.Floor(amount), 999999999);
+		int doom = Math.Min((int)Math.Floor(amount), HextechCreatureStatLimits.StatHardCap);
 		if (doom <= 0)
 		{
 			return amount;
@@ -70,12 +72,11 @@ public sealed class CompensationRune : HextechRelicBase
 		}
 
 		long commandId = HextechCombatHooks.CurrentActualDamageCommandId;
-		if (commandId == 0L || !TryTakePendingCompensation(commandId, target, out PendingCompensation? pending))
+		if (commandId == 0L || !TryTakePendingCompensation(commandId, target, out PendingCompensation? compensation))
 		{
 			return;
 		}
 
-		PendingCompensation compensation = pending!;
 		Flash();
 		await HextechCombatHooks.RunWithCompensationReplacementGuard(
 			() => PowerCmd.Apply<DoomPower>(Owner.Creature, compensation.Amount, compensation.Dealer ?? Owner.Creature, compensation.CardSource));
@@ -130,7 +131,7 @@ public sealed class CompensationRune : HextechRelicBase
 		RunesWithPendingCompensation.Add(this);
 	}
 
-	private bool TryTakePendingCompensation(long commandId, Creature target, out PendingCompensation? pending)
+	private bool TryTakePendingCompensation(long commandId, Creature target, [NotNullWhen(true)] out PendingCompensation? pending)
 	{
 		for (int i = 0; i < _pendingCompensations.Count; i++)
 		{

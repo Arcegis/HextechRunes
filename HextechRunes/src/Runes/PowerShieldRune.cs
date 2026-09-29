@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class PowerShieldRune : HextechRelicBase
+public sealed class PowerShieldRune : TurnScopedRelicBase
 {
 	private bool _triggeredThisTurn;
 
@@ -9,37 +9,13 @@ public sealed class PowerShieldRune : HextechRelicBase
 		HoverTipFactory.FromPower<StrengthPower>()
 	];
 
-	public override Task BeforeCombatStart()
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTurnState(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetTurnState(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
-
 	public override async Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
 	{
-		EnsureTurnScopedStateCurrent(ResetTurnState);
-		if (HasTurnProcTriggered(nameof(PowerShieldRune), _triggeredThisTurn) || Owner == null || creature != Owner.Creature || amount <= 0m)
-		{
-			return;
-		}
-
-		if (!TryConsumeTurnProc(nameof(PowerShieldRune), ref _triggeredThisTurn))
+		EnsureTurnScopedStateCurrent();
+		if (Owner == null
+			|| creature != Owner.Creature
+			|| amount <= 0m
+			|| !TryConsumeTurnProc(nameof(PowerShieldRune), ref _triggeredThisTurn))
 		{
 			return;
 		}
@@ -49,14 +25,8 @@ public sealed class PowerShieldRune : HextechRelicBase
 		await PowerCmd.Apply<HextechPowerShieldTemporaryStrengthPower>(Owner.Creature, strength, Owner.Creature, cardSource);
 	}
 
-	private void ResetTurnState()
-	{
-		ResetTurnState(null);
-	}
-
-	private void ResetTurnState(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_triggeredThisTurn = false;
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 }

@@ -206,7 +206,7 @@ internal static partial class Program
 	{
 		public sealed class SharedDebuffRune : LimitedDebuffProcRelicBase
 		{
-			protected override Task OnEnemyDebuffApplied(Creature target)
+			protected override Task OnDebuffProc(Player owner, Creature target)
 			{
 				return Task.CompletedTask;
 			}
@@ -217,7 +217,7 @@ internal static partial class Program
 	{
 		public sealed class SharedDebuffRune : LimitedDebuffProcRelicBase
 		{
-			protected override Task OnEnemyDebuffApplied(Creature target)
+			protected override Task OnDebuffProc(Player owner, Creature target)
 			{
 				return Task.CompletedTask;
 			}

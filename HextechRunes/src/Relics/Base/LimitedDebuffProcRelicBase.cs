@@ -1,8 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Entities.Relics;
 
 namespace HextechRunes;
 
-public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
+public abstract class LimitedDebuffProcRelicBase : TurnScopedRelicBase
 {
 	private int _procsThisTurn;
 
@@ -12,7 +13,9 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 	{
 		get
 		{
-			EnsureTurnScopedStateCurrent(ResetProcs);
+			// 序列化可能发生在回合钩子之外（例如读档后的首个回合钩子之前）：先按持有者回合号懒清零，
+			// 保证写出的是本回合的计数而不是上一回合的残值。
+			EnsureTurnScopedStateCurrent();
 			return GetTurnProcCount(GetProcKey(), _procsThisTurn);
 		}
 		set
@@ -31,53 +34,25 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 	/// <summary>true = 监听持有者自己收到的负面效果（来源不限）；false = 监听持有者给敌人施加的负面效果。</summary>
 	protected virtual bool ListensToOwnerDebuffs => false;
 
-	public override bool ShowCounter => HasTurnLimit && CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+	public override bool ShowCounter => HasTurnLimit && IsInLiveCombat;
 
 	public override int DisplayAmount => HasTurnLimit && !IsCanonical ? Math.Max(0, MaxProcsPerTurn - GetTurnProcCount(GetProcKey(), _procsThisTurn)) : 0;
-
-	public override Task BeforeCombatStart()
-	{
-		ResetProcs(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetProcs(null);
-		return Task.CompletedTask;
-	}
-
-	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
-	{
-		if (Owner != null && side == Owner.Creature.Side)
-		{
-			ResetProcs(combatState);
-		}
-
-		return Task.CompletedTask;
-	}
 
 	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
 		if (HasTurnLimit)
 		{
-			EnsureTurnScopedStateCurrent(ResetProcs);
+			EnsureTurnScopedStateCurrent();
 		}
 
-		Creature? target;
-		bool matched = ListensToOwnerDebuffs
-			? TryGetOwnerReceivedDebuff(power, amount, out target)
-			: TryGetOwnedEnemyDebuffTarget(power, amount, applier, out target);
-		if (!matched)
+		if (Owner is not { } owner || !TryMatchDebuff(power, amount, applier, out Creature? target))
 		{
 			return;
 		}
 
 		if (HasTurnLimit)
 		{
-			string procKey = GetProcKey();
-			if (HasTurnProcReachedLimit(procKey, _procsThisTurn, MaxProcsPerTurn)
-				|| !TryConsumeTurnProc(procKey, ref _procsThisTurn, MaxProcsPerTurn))
+			if (!TryConsumeTurnProc(GetProcKey(), ref _procsThisTurn, MaxProcsPerTurn))
 			{
 				return;
 			}
@@ -85,23 +60,24 @@ public abstract class LimitedDebuffProcRelicBase : HextechRelicBase
 			UpdateDisplay();
 		}
 
-		Flash(target == null ? Array.Empty<Creature>() : [target]);
-		await OnEnemyDebuffApplied(target!);
+		Flash([target]);
+		await OnDebuffProc(owner, target);
 	}
 
-	/// <summary>触发回调。监听敌方时 target 是收到负面效果的敌人；监听自身时 target 是持有者。</summary>
-	protected abstract Task OnEnemyDebuffApplied(Creature target);
+	/// <summary>触发回调。监听敌方时 target 是收到负面效果的敌人；监听自身时 target 是持有者自己。</summary>
+	protected abstract Task OnDebuffProc(Player owner, Creature target);
 
-	private void ResetProcs()
+	private bool TryMatchDebuff(PowerModel power, decimal amount, Creature? applier, [NotNullWhen(true)] out Creature? target)
 	{
-		ResetProcs(null);
+		return ListensToOwnerDebuffs
+			? TryGetOwnerReceivedDebuff(power, amount, out target)
+			: TryGetOwnedEnemyDebuffTarget(power, amount, applier, out target);
 	}
 
-	private void ResetProcs(HextechCombatState? combatState)
+	protected override void ResetTurnScopedState()
 	{
 		_procsThisTurn = 0;
 		UpdateDisplay();
-		UpdateTurnScopedStateIdentity(combatState);
 	}
 
 	private void UpdateDisplay()

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 
 namespace HextechRunes;
@@ -107,7 +108,7 @@ public abstract partial class HextechRelicBase
 		}
 	}
 
-	protected bool TryGetOwnedEnemyDebuffTarget(PowerModel power, decimal amount, Creature? applier, out Creature? target)
+	protected bool TryGetOwnedEnemyDebuffTarget(PowerModel power, decimal amount, Creature? applier, [NotNullWhen(true)] out Creature? target)
 	{
 		target = power.Owner;
 		return amount > 0m
@@ -119,7 +120,7 @@ public abstract partial class HextechRelicBase
 
 	// 与上面对称：持有者自己实际收到负面效果，来源不限（敌人、敌方海克斯、自己的牌或海克斯）。
 	// 同样排除临时属性的包装 Power，它们到期会自行回收，不算一次真正的负面效果。
-	protected bool TryGetOwnerReceivedDebuff(PowerModel power, decimal amount, out Creature? target)
+	protected bool TryGetOwnerReceivedDebuff(PowerModel power, decimal amount, [NotNullWhen(true)] out Creature? target)
 	{
 		target = power.Owner;
 		return amount > 0m
