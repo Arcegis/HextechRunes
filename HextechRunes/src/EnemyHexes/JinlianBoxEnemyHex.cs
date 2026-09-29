@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 internal sealed class JinlianBoxEnemyHex : HextechEnemyHexEffect
@@ -24,7 +26,7 @@ internal sealed class JinlianBoxEnemyHex : HextechEnemyHexEffect
 		}
 
 		HashSet<ModelId> existingIds = cardRewardOptions
-			.Select(static result => result.Card.CanonicalInstance.Id)
+			.Select(static result => result.Card.CanonicalId())
 			.ToHashSet();
 		bool modified = false;
 		for (int i = 0; i < cardRewardOptions.Count; i++)
@@ -34,11 +36,10 @@ internal sealed class JinlianBoxEnemyHex : HextechEnemyHexEffect
 				continue;
 			}
 
-			if (TryCreateNonRareCardReward(player, creationOptions, existingIds, out CardCreationResult? replacement)
-				&& replacement != null)
+			if (TryCreateNonRareCardReward(player, creationOptions, existingIds, out CardCreationResult? replacement))
 			{
 				cardRewardOptions[i] = replacement;
-				existingIds.Add(replacement.Card.CanonicalInstance.Id);
+				existingIds.Add(replacement.Card.CanonicalId());
 			}
 			else
 			{
@@ -56,7 +57,7 @@ internal sealed class JinlianBoxEnemyHex : HextechEnemyHexEffect
 		Player player,
 		CardCreationOptions creationOptions,
 		IReadOnlySet<ModelId> existingIds,
-		out CardCreationResult? reward)
+		[NotNullWhen(true)] out CardCreationResult? reward)
 	{
 		List<CardModel> nonRarePool = creationOptions
 			.GetPossibleCards(player)
@@ -68,11 +69,8 @@ internal sealed class JinlianBoxEnemyHex : HextechEnemyHexEffect
 			return false;
 		}
 
-		CardCreationOptions nonRareOptions = HextechGameApiCompat.CreateOptionsFromCards(
-				player,
-				nonRarePool,
-				creationOptions.Source,
-				CardRarityOddsType.Uniform)
+		CardCreationOptions nonRareOptions = HextechGameApiCompat
+			.CreateOptionsFromCards(player, nonRarePool, creationOptions.Source, CardRarityOddsType.Uniform)
 			.WithFlags(CardCreationFlags.NoModifyHooks);
 		reward = CardFactory.CreateForReward(player, 1, nonRareOptions).FirstOrDefault();
 		return reward != null;

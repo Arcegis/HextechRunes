@@ -14,6 +14,7 @@ internal static class HextechEnemyDrawProgress
 		{
 			return 0;
 		}
+
 		counts[playerId] = drawnCards;
 		return drawnCards / threshold - previous / threshold;
 	}
@@ -24,10 +25,10 @@ internal static class HextechEnemyDrawProgress
 		int pending = 0;
 		foreach (Player player in combatState.Players.OrderBy(static player => player.NetId))
 		{
-			int drawn = CombatManager.Instance.History.Entries.OfType<CardDrawnEntry>()
-				.Count(entry => entry.Card.Owner?.NetId == player.NetId);
+			int drawn = HextechCombatHistoryHelper.CountOwnedCardsDrawn(player);
 			pending += RecordTotal(counts, player.NetId, drawn, threshold);
 		}
+
 		return pending;
 	}
 }

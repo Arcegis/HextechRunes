@@ -71,6 +71,11 @@ internal static class HextechCombatProcTracker
 		return current;
 	}
 
+	public static int GetGlobalProcsInCombat(HextechMayhemCombatTrackingState tracking, string procKey)
+	{
+		return tracking.GlobalProcsThisCombat.GetValueOrDefault(procKey, 0);
+	}
+
 	public static int ConsumeGlobalProcInCombat(HextechMayhemCombatTrackingState tracking, string procKey)
 	{
 		int current = tracking.GlobalProcsThisCombat.GetValueOrDefault(procKey, 0);

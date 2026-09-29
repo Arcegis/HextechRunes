@@ -27,11 +27,9 @@ internal sealed class ArchmageEnemyHex : HextechEnemyHexEffect
 
 	private static bool RollTrigger(HextechEnemyHexContext context, Player owner, CardModel sourceCard, out int rollOrdinal)
 	{
-		rollOrdinal = HextechCombatProcTracker.ConsumeGlobalProcInCombat(
-			context.Tracking,
-			string.Join(":", nameof(ArchmageEnemyHex), HextechStableRandom.PlayerKey(owner)));
+		rollOrdinal = HextechCombatProcTracker.ConsumePlayerRuneProcInCombat(context.Tracking, owner, nameof(ArchmageEnemyHex));
 		return HextechStableRandom.PercentChance(
-			(RunState)context.RunState,
+			context.RunState,
 			ChancePercent,
 			"enemy-archmage-cost-up",
 			HextechStableRandom.PlayerKey(owner),
@@ -53,11 +51,11 @@ internal sealed class ArchmageEnemyHex : HextechEnemyHexEffect
 		int index = HextechStableRandom.Index(
 			(RunState)owner.RunState,
 			candidates.Count,
-				"enemy-archmage-pick-card",
-				HextechStableRandom.PlayerKey(owner),
-				owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
-				rollOrdinal.ToString(),
-				HextechStableRandom.CardKey(sourceCard),
+			"enemy-archmage-pick-card",
+			HextechStableRandom.PlayerKey(owner),
+			owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			rollOrdinal.ToString(),
+			HextechStableRandom.CardKey(sourceCard),
 			HextechStableRandom.CardPileKey(candidates));
 		return candidates[index];
 	}

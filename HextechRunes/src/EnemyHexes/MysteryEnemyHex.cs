@@ -35,7 +35,7 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 				transformations.Add(CardTransformUpgradeHelper.CreateStableOptionTransformation(
 					chosen[i],
 					CardFactory.GetDefaultTransformationOptions(chosen[i], true),
-					(RunState)context.RunState,
+					context.RunState,
 					"enemy-mystery-transform-replacement",
 					i,
 					HextechStableRandom.PlayerKey(player)));
@@ -62,7 +62,7 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 			{
 				CardModel pick = HextechStableRandom.Pick(
 					remaining,
-					(RunState)context.RunState,
+					context.RunState,
 					HextechStableRandom.CardKey,
 					"enemy-mystery-transform",
 					HextechStableRandom.PlayerKey(player),

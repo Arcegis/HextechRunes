@@ -42,11 +42,16 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier, 
 		HextechCombatState combatState,
 		int everyNRounds)
 	{
-		int roundNumber = combatState.RoundNumber;
-		return HextechRoundInterval.IsDue(roundNumber, everyNRounds)
-			&& HextechCombatProcTracker.ConsumeGlobalProcInCombat(
-				Tracking,
-				$"round-once:{kind}:{roundNumber}") <= 0;
+		return HextechRoundInterval.IsDue(combatState.RoundNumber, everyNRounds)
+			&& TryConsumeOncePerRound(kind, combatState);
+	}
+
+	// 额外回合不推进 RoundNumber 且回合开始钩子会重入：同一海克斯在同一回合号只放行一次。
+	internal bool TryConsumeOncePerRound(MonsterHexKind kind, HextechCombatState combatState)
+	{
+		return HextechCombatProcTracker.ConsumeGlobalProcInCombat(
+			Tracking,
+			$"round-once:{kind}:{combatState.RoundNumber}") <= 0;
 	}
 
 	internal decimal TierValue(MonsterHexKind kind, decimal tier1, decimal tier2, decimal tier3)

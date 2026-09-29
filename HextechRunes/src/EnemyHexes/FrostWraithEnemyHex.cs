@@ -14,10 +14,9 @@ internal sealed class FrostWraithEnemyHex : HextechEnemyHexEffect
 		IReadOnlyList<Creature> enemies)
 	{
 		// 临时缓慢在玩家回合开始时清除，因此必须在敌方回合开始时施加。
-		// 额外回合不推进 RoundNumber 且回合开始 hook 会重入，按回合防重。
-		if (ShouldTriggerForRound(combatState.RoundNumber)
-			&& players.Count > 0
-			&& HextechCombatProcTracker.ConsumeGlobalProcInCombat(context.Tracking, $"round-once:{Kind}:{combatState.RoundNumber}") == 0)
+		// 没有玩家时不消耗本回合的防重次数。
+		if (players.Count > 0
+			&& context.TryConsumeRoundInterval(Kind, combatState, TurnsNeeded))
 		{
 			await PowerCmd.Apply<HextechTemporarySlowPower>(players, TemporarySlowAmount, null, null);
 		}

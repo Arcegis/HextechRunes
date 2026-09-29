@@ -708,7 +708,7 @@ internal static partial class Program
 		Equal(0, HextechEnemyDrawProgress.RecordTotal(counts, 2, 11, threshold), "teammates do not pool incomplete groups");
 		Equal(1, HextechEnemyDrawProgress.RecordTotal(counts, 1, 12, threshold), "twelfth draw grants one proc");
 		Equal(0, HextechEnemyDrawProgress.RecordTotal(counts, 1, 12, threshold), "repeated multiplayer settlement does not repeat rewards");
-		Equal(0, state.PlayerCardsDrawnThisCombat.Count, "Warmog counter remains separate");
+		Equal(0, state.WarmogsSpiritPlayerCardsDrawnThisCombat.Count, "Warmog counter remains separate");
 		HextechMayhemCombatTrackingState restored = new();
 		HextechMayhemCombatTrackingSerializer.Restore(restored, HextechMayhemCombatTrackingSerializer.Serialize(state));
 		Equal(1, HextechEnemyDrawProgress.RecordTotal(restored.NightstalkingPlayerCardsDrawnThisCombat, 2, 12, threshold), "teammate carries eleven draws through save/load");
