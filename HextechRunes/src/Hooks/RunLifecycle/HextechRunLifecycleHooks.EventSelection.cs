@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 
@@ -5,14 +6,19 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-	private static async Task EventRoomProceedAfterOriginal(Task original, EventRoomProceedState state)
+	private static async Task EventRoomProceedAfterOriginal(Task original, EventRoomProceedState? state)
 	{
 		await original;
 
 		// mod 延续体异常不能把原版 NEventRoom.Proceed 任务链打成 faulted(单端中断即联机分叉)。
+		if (state is not EventRoomProceedState pending)
+		{
+			return;
+		}
+
 		try
 		{
-			await EventRoomProceedContinuation(state);
+			await EventRoomProceedContinuation(pending);
 		}
 		catch (Exception ex)
 		{
@@ -22,11 +28,6 @@ internal static partial class HextechRunLifecycleHooks
 
 	private static async Task EventRoomProceedContinuation(EventRoomProceedState state)
 	{
-		if (!state.ShouldSelectAfterProceed)
-		{
-			return;
-		}
-
 		RunState runState = state.RunState;
 		int actIndex = state.ActIndex;
 		string eventId = state.EventId;
@@ -52,7 +53,12 @@ internal static partial class HextechRunLifecycleHooks
 		NMapScreen.Instance?.SetTravelEnabled(enabled: false);
 		try
 		{
-			await WaitForAllCurrentEventsFinished(runState, eventId);
+			if (!await WaitForAllCurrentEventsFinished(runState, eventId))
+			{
+				// 未完成等待（换局或超时）时不在这里开选择；本幕未决的选择由下一次进入房间的调度补上。
+				return;
+			}
+
 			if (!IsCurrentRun(runState) || modifier.IsActResolved(actIndex))
 			{
 				HextechLog.Info("Mayhem", $"EventRoomProceed skip: run changed or act{actIndex} resolved after wait event={eventId}");
@@ -71,58 +77,57 @@ internal static partial class HextechRunLifecycleHooks
 		}
 	}
 
-	private static bool TryGetPendingEventProceedSelection(out RunState runState, out int actIndex, out string eventId)
+	private static bool TryGetPendingEventProceedSelection([NotNullWhen(true)] out EventRoomProceedState? state)
 	{
-		runState = null!;
-		actIndex = -1;
-		eventId = "null";
-
-		if (RunManager.Instance.DebugOnlyGetState() is not RunState currentRunState
-			|| currentRunState.CurrentActIndex < 0
-			|| currentRunState.CurrentRoom is not EventRoom { CanonicalEvent: AncientEventModel ancientEvent })
+		state = null;
+		if (RunManager.Instance.DebugOnlyGetState() is not RunState runState
+			|| runState.CurrentActIndex < 0
+			|| runState.CurrentRoom is not EventRoom { CanonicalEvent: AncientEventModel ancientEvent })
 		{
 			return false;
 		}
 
-		if (HextechMayhemModifier.FindIn(currentRunState)?.IsActResolved(currentRunState.CurrentActIndex) == true)
+		if (HextechMayhemModifier.FindIn(runState)?.IsActResolved(runState.CurrentActIndex) == true)
 		{
 			return false;
 		}
 
-		runState = currentRunState;
-		actIndex = currentRunState.CurrentActIndex;
-		eventId = ancientEvent.Id.Entry;
+		state = new EventRoomProceedState(runState, runState.CurrentActIndex, ancientEvent.Id.Entry);
 		return true;
 	}
 
-	private static async Task WaitForAllCurrentEventsFinished(RunState runState, string eventId)
+	/// <summary>等所有玩家的当前事件都结束；换局返回 false，超时记 Warn 后返回 false。</summary>
+	private static async Task<bool> WaitForAllCurrentEventsFinished(RunState runState, string eventId)
 	{
-		for (int frame = 0; IsCurrentRun(runState); frame++)
+		for (int frame = 0; frame <= RemoteEventsWaitTimeoutFrames; frame++)
 		{
-			IReadOnlyList<EventModel> events = RunManager.Instance.EventSynchronizer.Events;
-			int finishedCount = events.Count(static eventModel => eventModel.IsFinished);
-			if (AreRequiredCurrentEventsFinished(runState, events, finishedCount, out string completionReason))
+			if (!IsCurrentRun(runState))
 			{
-				HextechLog.Info("Mayhem", $"EventRoomProceed: required events finished event={eventId} count={events.Count} finished={finishedCount} reason={completionReason} waitedFrames={frame}");
-				return;
+				return false;
 			}
 
-			if (frame % 300 == 0)
+			IReadOnlyList<EventModel> events = RunManager.Instance.EventSynchronizer.Events;
+			int finishedCount = events.Count(static eventModel => eventModel.IsFinished);
+			if (AreAllPlayerEventsFinished(runState, events, finishedCount))
+			{
+				HextechLog.Info("Mayhem", $"EventRoomProceed: required events finished event={eventId} count={events.Count} finished={finishedCount} reason=all-player-events waitedFrames={frame}");
+				return true;
+			}
+
+			if (frame % RemoteEventsWaitLogIntervalFrames == 0)
 			{
 				HextechLog.Info("Mayhem", $"EventRoomProceed: waiting for remote events event={eventId} finished={finishedCount}/{events.Count} players={runState.Players.Count}");
 			}
 
 			await WaitOneFrame();
 		}
+
+		HextechLog.Warn("Mayhem", $"EventRoomProceed: timed out waiting for remote events after {RemoteEventsWaitTimeoutFrames} frames event={eventId} players={runState.Players.Count}; selection deferred to the next room.");
+		return false;
 	}
 
-	private static bool AreRequiredCurrentEventsFinished(
-		RunState runState,
-		IReadOnlyList<EventModel> events,
-		int finishedCount,
-		out string completionReason)
+	private static bool AreAllPlayerEventsFinished(RunState runState, IReadOnlyList<EventModel> events, int finishedCount)
 	{
-		completionReason = "all-player-events";
 		return events.Count >= runState.Players.Count && finishedCount == events.Count;
 	}
 
@@ -131,18 +136,17 @@ internal static partial class HextechRunLifecycleHooks
 	private static class EventRoomProceedPatch
 	{
 		[HarmonyPrefix]
-		private static void Prefix(out EventRoomProceedState __state)
+		private static void Prefix(out EventRoomProceedState? __state)
 		{
-			bool shouldSelectAfterProceed = TryGetPendingEventProceedSelection(out RunState runState, out int actIndex, out string eventId);
-			__state = new EventRoomProceedState(shouldSelectAfterProceed, runState, actIndex, eventId);
-			if (shouldSelectAfterProceed)
+			if (TryGetPendingEventProceedSelection(out __state))
 			{
-				HextechLog.Info("Mayhem", $"EventRoomProceed begin: act={actIndex} event={eventId} {DescribeCurrentEventState(runState)}");
+				EventRoomProceedState state = __state.Value;
+				HextechLog.Info("Mayhem", $"EventRoomProceed begin: act={state.ActIndex} event={state.EventId} {DescribeCurrentEventState(state.RunState)}");
 			}
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(EventRoomProceedState __state, ref Task __result)
+		private static void Postfix(EventRoomProceedState? __state, ref Task __result)
 		{
 			__result = EventRoomProceedAfterOriginal(__result, __state);
 		}

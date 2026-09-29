@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
 using MegaCrit.Sts2.Core.Nodes.Vfx.Cards;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -20,8 +21,8 @@ internal static class HextechMyriadSwordsVfx
 	private const float BladeLift = 180f;
 	private const float BladeScale = 0.55f;
 
-	private static readonly FieldInfo? FanSpawnPositionField = typeof(NFanOfKnivesVfx)
-		.GetField("_spawnPosition", BindingFlags.Instance | BindingFlags.NonPublic);
+	// NFanOfKnivesVfx._spawnPosition（0.107.1/0.110.0/0.111.0 原版私有字段）：缺失时跳过整段特效。
+	private static readonly FieldInfo? FanSpawnPositionField = TryGetField(typeof(NFanOfKnivesVfx), "_spawnPosition");
 
 	internal static void Play(Creature owner)
 	{

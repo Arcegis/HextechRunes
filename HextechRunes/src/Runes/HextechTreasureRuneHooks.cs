@@ -15,14 +15,16 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechTreasureRuneHooks
 {
-	internal static readonly FieldInfo CurrentRelicsField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_currentRelics");
-	internal static readonly FieldInfo PlayerCollectionField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_playerCollection");
+	// TreasureRoomRelicSynchronizer._currentRelics（List<RelicModel>）与 _playerCollection（IPlayerCollection），
+	// 0.107.1/0.110.0/0.111.0 原版私有字段；缺失时宝箱保持原版遗物，缺失成员进启动摘要。
+	private static readonly FieldInfo? CurrentRelicsField = TryGetField(typeof(TreasureRoomRelicSynchronizer), "_currentRelics");
+	private static readonly FieldInfo? PlayerCollectionField = TryGetField(typeof(TreasureRoomRelicSynchronizer), "_playerCollection");
 
 	internal static void ReplaceRelicsForEggOwners(TreasureRoomRelicSynchronizer synchronizer)
 	{
-		if (CurrentRelicsField.GetValue(synchronizer) is not List<RelicModel> relics
+		if (CurrentRelicsField?.GetValue(synchronizer) is not List<RelicModel> relics
 			|| relics.Count == 0
-			|| PlayerCollectionField.GetValue(synchronizer) is not IPlayerCollection playerCollection)
+			|| PlayerCollectionField?.GetValue(synchronizer) is not IPlayerCollection playerCollection)
 		{
 			return;
 		}
@@ -82,5 +84,4 @@ internal static class HextechTreasureRuneHooks
 			HextechLog.Info("Mayhem", $"PrismaticEgg replaced treasure relic: slot={slot} rune={rune.Id.Entry} eggOwners={eggOwners.Count}");
 		}
 	}
-
 }

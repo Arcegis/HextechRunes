@@ -75,8 +75,7 @@ internal static partial class HextechRunLifecycleHooks
 		[HarmonyPostfix]
 		private static void Postfix(RunState? __state, bool isVictory, SerializableRun __result)
 		{
-			HextechCombatHooks.ResetTransientCombatState();
-			HextechEnemyHexEffects.ResetAllRunScopedState();
+			ResetTransientRunState();
 			HextechGoldrendSync.ClearRun(__state);
 			HextechTelemetry.OnRunEnded(__state, __result, isVictory);
 		}

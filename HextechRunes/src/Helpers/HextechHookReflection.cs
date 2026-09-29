@@ -77,6 +77,19 @@ internal static class HextechHookReflection
 			?? throw new InvalidOperationException($"Could not find property getter {type.FullName}.{propertyName}.");
 	}
 
+	public static PropertyInfo? TryGetProperty(Type type, string name, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+	{
+		PropertyInfo? property = type.GetProperty(name, flags);
+		if (property == null)
+		{
+			WarnMissingMember(
+				$"property:{type.AssemblyQualifiedName}:{name}:{flags}",
+				$"property {type.FullName}.{name}");
+		}
+
+		return property;
+	}
+
 	private static void WarnMissingMember(string key, string description)
 	{
 		lock (MissingMemberLogLock)

@@ -7,15 +7,34 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-	private static bool _subscribedRoomEntered;
-	private static bool _subscribedRoomExited;
-	private static RunManager? _subscribedRoomEnteredManager;
-	private static RunManager? _subscribedRoomExitedManager;
-	private static HashSet<RunState>? _runsInsideStartRunOrig;
+	// 按帧轮询的预算与日志间隔（帧数随帧率变化，只作为"足够久"的上限，不承担时序语义）。
+	private const int EnemyUiRefreshFrameBudget = 45;
+	private const int ResumeAfterLoadFrameBudget = 300;
+	private const int EndlessLoopActTransitionTimeoutFrames = 3600;
+	private const int EndlessLoopRoomReadyTimeoutFrames = 600;
+	private const int EndlessLoopWaitLogIntervalFrames = 120;
+	private const int RemoteEventsWaitLogIntervalFrames = 300;
+	// 等待其他玩家完成远古事件的上限：远超正常阅读/选择时间，只防止对端异常时永远挂起。
+	private const int RemoteEventsWaitTimeoutFrames = 18000;
 
-	private static HashSet<RunState> RunsInsideStartRunOrig => _runsInsideStartRunOrig ??= new HashSet<RunState>();
+	private static readonly HashSet<RunState> RunsInsideStartRunOrig = [];
 
-	private readonly record struct EventRoomProceedState(bool ShouldSelectAfterProceed, RunState RunState, int ActIndex, string EventId);
+	private readonly record struct EventRoomProceedState(RunState RunState, int ActIndex, string EventId);
+
+	/// <summary>跑局开始与读档共用：清空日志预算、战斗与敌方海克斯的跑局临时状态，并按新跑局重置夺金同步。</summary>
+	private static void ResetRunScopedState(RunState runState)
+	{
+		HextechRunLogBudget.Reset();
+		ResetTransientRunState();
+		HextechGoldrendSync.ResetForRun(runState);
+	}
+
+	/// <summary>跑局开始、读档与结束都要清的战斗/敌方海克斯临时状态。</summary>
+	private static void ResetTransientRunState()
+	{
+		HextechCombatHooks.ResetTransientCombatState();
+		HextechEnemyHexEffects.ResetAllRunScopedState();
+	}
 
 	internal static HextechMayhemModifier EnsureMayhemModifier(RunState runState)
 	{
