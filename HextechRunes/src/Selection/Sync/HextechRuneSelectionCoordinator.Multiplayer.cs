@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Saves;
+using static HextechRunes.HextechRunePoolBuilder;
 using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
@@ -18,78 +19,22 @@ internal static partial class HextechRuneSelectionCoordinator
 		HashSet<ulong> playersNotifiedNoOptions)
 	{
 		RunManager runManager = RunManager.Instance;
-		bool localHasNoOptions = false;
 		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
 		PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
 
 		List<PendingRuneSelection> pendingSelections = [];
-		List<(Player Player, RelicModel SelectedRelic, bool Applied)> resolvedSelections = [];
-		foreach (Player player in runState.Players)
-		{
-			bool hasJournalEntry = modifier.TryGetRuneSelectionJournalEntry(
-				actIndex,
-				choiceOrdinal,
-				player.NetId,
-				out HextechRuneSelectionJournalEntry journalEntry);
-			if (!hasJournalEntry)
-			{
-				hasJournalEntry = modifier.TryRecoverRuneSelectionJournalEntryFromTelemetry(
-					actIndex,
-					choiceOrdinal,
-					player,
-					out journalEntry);
-				if (hasJournalEntry)
-				{
-					HextechLog.Info(
-						"Mayhem", $"RuneChoice journal rebuilt from saved telemetry: " +
-						$"act={actIndex} ordinal={choiceOrdinal} player={player.NetId}");
-				}
-			}
-
-			if (hasJournalEntry)
-			{
-				RelicModel recoveredRelic = ModelDb.GetById<RelicModel>(journalEntry.SelectedId).ToMutable();
-				if (!journalEntry.Applied && recoveredRelic is IHextechGeneratedRune generated
-					&& !generated.TryImportSelectionData(journalEntry.SelectionData))
-					throw CreateProtocolFailure("generated rune recovery", "Checkpoint omitted a valid generated recipe.");
-				// Applied 是不可重放的提交边界；符文之后可能自我消耗、替换或被其他机制移除，
-				// 因此当前背包缺席不能反证当时未成功发放。
-				resolvedSelections.Add((player, recoveredRelic, journalEntry.Applied));
-				HextechLog.Info(
-					"Mayhem", $"RuneChoice journal recovered: act={actIndex} " +
-					$"ordinal={choiceOrdinal} player={player.NetId} " +
-					$"relic={journalEntry.SelectedId.Category}:{journalEntry.SelectedId.Entry} " +
-					$"applied={journalEntry.Applied}");
-				continue;
-			}
-
-			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player);
-			List<RelicModel> options = BuildStableSelectableRunesForRarity(
-				player,
-				rarity,
-				runState,
-				actIndex,
-				excludedIds,
-				useEndlessTagWindow: modifier.IsEndlessLoopActive);
-			if (options.Count == 0)
-			{
-				HextechLog.Warn("Mayhem", $"No rune options for player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}; skipping this selection.");
-				// 各端对"无候选"的判断一致,都跳过这名玩家的同步选择;本机玩家额外看到一次"继续"界面(纯本机,不同步)。
-				if (IsLocalPlayer(runManager, player) && playersNotifiedNoOptions.Add(player.NetId))
-				{
-					localHasNoOptions = true;
-				}
-
-				continue;
-			}
-
-			MarkRelicsSeen(options);
-			modifier.RecordSeenPlayerRunes(player, options);
-
-			uint choiceId = synchronizer.ReserveChoiceId(player);
-			pendingSelections.Add(new PendingRuneSelection(player, options, choiceId, IsLocalPlayer(runManager, player)));
-			HextechLog.Info("Mayhem", $"RuneChoice pending: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => (o.CanonicalId()).Entry))}");
-		}
+		List<ResolvedRuneSelection> resolvedSelections = [];
+		bool localHasNoOptions = CollectRuneSelections(
+			runState,
+			modifier,
+			runManager,
+			synchronizer,
+			actIndex,
+			rarity,
+			choiceOrdinal,
+			playersNotifiedNoOptions,
+			pendingSelections,
+			resolvedSelections);
 
 		// 敌方调整由固定的权威玩家在自己的选择界面里完成;他本次没有候选(不会弹选择界面)时,
 		// 其余客户端会一直等他的调整结果,所以这种情况下本幕不开放敌方调整。各端对 pending 的判断一致。
@@ -175,7 +120,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					choiceOrdinal,
 					selection.Player.NetId,
 					selectedId, (selectedRelic as IHextechGeneratedRune)?.ExportSelectionData() ?? "");
-				resolvedSelections.Add((selection.Player, selectedRelic, Applied: false));
+				resolvedSelections.Add(new ResolvedRuneSelection(selection.Player, selectedRelic, Applied: false));
 				modifier.CommitCharacterRuneWeight(selection.Player, selectedResult.FinalOptions);
 				HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, selection.Player, selectedResult.FinalOptions, selectedRelic, selectedResult.RerollCount, choiceOrdinal);
 			}
@@ -186,62 +131,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			modifier.SetMonsterHexesForAct(actIndex, resolvedMonsterHexes);
 			await PersistRuneSelectionCheckpoint(runState, actIndex, choiceOrdinal);
 
-			foreach ((Player player, RelicModel selectedRelic, bool applied) in resolvedSelections)
-			{
-				if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
-				{
-					throw new OperationCanceledException(
-						$"Rune obtain transaction became inactive: act={actIndex} "
-						+ $"ordinal={choiceOrdinal} player={player.NetId}");
-				}
-
-				ModelId selectedId = selectedRelic.CanonicalId();
-				bool currentlyOwned = selectedRelic is IHextechGeneratedRune generatedSelection
-					? player.Relics.OfType<IHextechGeneratedRune>().Any(owned => owned.ExportSelectionData() == generatedSelection.ExportSelectionData())
-					: PlayerHasRelicId(player, selectedId);
-				if (!HextechRuneSelectionJournalState.RequiresRelicObtain(applied, currentlyOwned))
-				{
-					if (!applied)
-					{
-						modifier.MarkRuneSelectionJournalApplied(
-							actIndex,
-							choiceOrdinal,
-							player.NetId,
-							selectedId);
-					}
-					continue;
-				}
-
-				try
-				{
-					await RelicCmd.Obtain(selectedRelic, player);
-					modifier.MarkRuneSelectionJournalApplied(
-						actIndex,
-						choiceOrdinal,
-						player.NetId,
-						selectedId);
-				}
-				catch (Exception ex)
-				{
-					if (player.Relics.Any(relic => ReferenceEquals(relic, selectedRelic)))
-					{
-						modifier.MarkRuneSelectionJournalApplied(
-							actIndex,
-							choiceOrdinal,
-							player.NetId,
-							selectedId);
-					}
-
-					string message =
-						$"Rune obtain transaction failed: act={actIndex} ordinal={choiceOrdinal} " +
-						$"player={player.NetId} relic={selectedId.Category}:{selectedId.Entry}";
-					HextechLog.Error("Mayhem", $"{message}: {ex}");
-					AbortMultiplayerChoiceTransaction(
-						$"rune-choice act={actIndex} ordinal={choiceOrdinal}",
-						message);
-					throw;
-				}
-			}
+			await ObtainResolvedRuneSelectionsAsync(runState, modifier, actIndex, choiceOrdinal, resolvedSelections);
 
 			await SynchronizeActSelectionApplied(
 				runState,
@@ -283,6 +173,165 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
+	private readonly record struct ResolvedRuneSelection(Player Player, RelicModel SelectedRelic, bool Applied);
+
+	/// <summary>
+	/// 为本次选择收集每名玩家的状态:读档/遥测可恢复的已决选择进 resolvedSelections,其余生成候选并预留
+	/// choiceId 进 pendingSelections;没有候选的玩家跳过。返回本机玩家是否需要看一次“没有可选”的界面。
+	/// </summary>
+	private static bool CollectRuneSelections(
+		RunState runState,
+		HextechMayhemModifier modifier,
+		RunManager runManager,
+		PlayerChoiceSynchronizer synchronizer,
+		int actIndex,
+		HextechRarityTier rarity,
+		int choiceOrdinal,
+		HashSet<ulong> playersNotifiedNoOptions,
+		List<PendingRuneSelection> pendingSelections,
+		List<ResolvedRuneSelection> resolvedSelections)
+	{
+		bool localHasNoOptions = false;
+		foreach (Player player in runState.Players)
+		{
+			bool hasJournalEntry = modifier.TryGetRuneSelectionJournalEntry(
+				actIndex,
+				choiceOrdinal,
+				player.NetId,
+				out HextechRuneSelectionJournalEntry journalEntry);
+			if (!hasJournalEntry)
+			{
+				hasJournalEntry = modifier.TryRecoverRuneSelectionJournalEntryFromTelemetry(
+					actIndex,
+					choiceOrdinal,
+					player,
+					out journalEntry);
+				if (hasJournalEntry)
+				{
+					HextechLog.Info(
+						"Mayhem", $"RuneChoice journal rebuilt from saved telemetry: " +
+						$"act={actIndex} ordinal={choiceOrdinal} player={player.NetId}");
+				}
+			}
+
+			if (hasJournalEntry)
+			{
+				RelicModel recoveredRelic = ModelDb.GetById<RelicModel>(journalEntry.SelectedId).ToMutable();
+				if (!journalEntry.Applied && recoveredRelic is IHextechGeneratedRune generated
+					&& !generated.TryImportSelectionData(journalEntry.SelectionData))
+				{
+					throw CreateProtocolFailure("generated rune recovery", "Checkpoint omitted a valid generated recipe.");
+				}
+
+				// Applied 是不可重放的提交边界；符文之后可能自我消耗、替换或被其他机制移除，
+				// 因此当前背包缺席不能反证当时未成功发放。
+				resolvedSelections.Add(new ResolvedRuneSelection(player, recoveredRelic, journalEntry.Applied));
+				HextechLog.Info(
+					"Mayhem", $"RuneChoice journal recovered: act={actIndex} " +
+					$"ordinal={choiceOrdinal} player={player.NetId} " +
+					$"relic={journalEntry.SelectedId.Category}:{journalEntry.SelectedId.Entry} " +
+					$"applied={journalEntry.Applied}");
+				continue;
+			}
+
+			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player);
+			List<RelicModel> options = BuildStableSelectableRunesForRarity(
+				player,
+				rarity,
+				runState,
+				actIndex,
+				excludedIds,
+				useEndlessTagWindow: modifier.IsEndlessLoopActive);
+			if (options.Count == 0)
+			{
+				HextechLog.Warn("Mayhem", $"No rune options for player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}; skipping this selection.");
+				// 各端对"无候选"的判断一致,都跳过这名玩家的同步选择;本机玩家额外看到一次"继续"界面(纯本机,不同步)。
+				if (IsLocalPlayer(runManager, player) && playersNotifiedNoOptions.Add(player.NetId))
+				{
+					localHasNoOptions = true;
+				}
+
+				continue;
+			}
+
+			MarkRelicsSeen(options);
+			modifier.RecordSeenPlayerRunes(player, options);
+
+			uint choiceId = synchronizer.ReserveChoiceId(player);
+			pendingSelections.Add(new PendingRuneSelection(player, options, choiceId, IsLocalPlayer(runManager, player)));
+			HextechLog.Info("Mayhem", $"RuneChoice pending: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => (o.CanonicalId()).Entry))}");
+		}
+
+		return localHasNoOptions;
+	}
+
+	/// <summary>按选择日志逐个发放;Applied 是不可重放的提交边界,发放失败时中止联机事务。</summary>
+	private static async Task ObtainResolvedRuneSelectionsAsync(
+		RunState runState,
+		HextechMayhemModifier modifier,
+		int actIndex,
+		int choiceOrdinal,
+		IReadOnlyList<ResolvedRuneSelection> resolvedSelections)
+	{
+		foreach ((Player player, RelicModel selectedRelic, bool applied) in resolvedSelections)
+		{
+			if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
+			{
+				throw new OperationCanceledException(
+					$"Rune obtain transaction became inactive: act={actIndex} "
+					+ $"ordinal={choiceOrdinal} player={player.NetId}");
+			}
+
+			ModelId selectedId = selectedRelic.CanonicalId();
+			bool currentlyOwned = selectedRelic is IHextechGeneratedRune generatedSelection
+				? player.Relics.OfType<IHextechGeneratedRune>().Any(owned => owned.ExportSelectionData() == generatedSelection.ExportSelectionData())
+				: PlayerHasRelicId(player, selectedId);
+			if (!HextechRuneSelectionJournalState.RequiresRelicObtain(applied, currentlyOwned))
+			{
+				if (!applied)
+				{
+					modifier.MarkRuneSelectionJournalApplied(
+						actIndex,
+						choiceOrdinal,
+						player.NetId,
+						selectedId);
+				}
+				continue;
+			}
+
+			try
+			{
+				await RelicCmd.Obtain(selectedRelic, player);
+				modifier.MarkRuneSelectionJournalApplied(
+					actIndex,
+					choiceOrdinal,
+					player.NetId,
+					selectedId);
+			}
+			catch (Exception ex)
+			{
+				if (player.Relics.Any(relic => ReferenceEquals(relic, selectedRelic)))
+				{
+					modifier.MarkRuneSelectionJournalApplied(
+						actIndex,
+						choiceOrdinal,
+						player.NetId,
+						selectedId);
+				}
+
+				string message =
+					$"Rune obtain transaction failed: act={actIndex} ordinal={choiceOrdinal} " +
+					$"player={player.NetId} relic={selectedId.Category}:{selectedId.Entry}";
+				HextechLog.Error("Mayhem", $"{message}: {ex}");
+				AbortMultiplayerChoiceTransaction(
+					$"rune-choice act={actIndex} ordinal={choiceOrdinal}",
+					message);
+				throw;
+			}
+		}
+
+	}
+
 	private static bool PlayerHasRelicId(Player player, ModelId expectedId)
 	{
 		return player.Relics.Any(relic =>
@@ -306,7 +355,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					+ $"act={actIndex} ordinal={choiceOrdinal}");
 			}
 
-			await SaveManager.Instance.SaveRun(null!, saveProgress: false);
+			await SaveManager.Instance.SaveRun(preFinishedRoom: null, saveProgress: false);
 			HextechLog.Info(
 				"Mayhem", $"RuneChoice checkpoint saved: " +
 				$"act={actIndex} ordinal={choiceOrdinal}");

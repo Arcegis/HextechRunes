@@ -215,11 +215,6 @@ internal static partial class HextechRuneConfigMenuHooks
 		return [ weights.Silver, weights.Gold, weights.Prismatic ];
 	}
 
-	private static int[] ToWeightArray(HextechForgeRarityWeights weights)
-	{
-		return [ weights.Silver, weights.Gold, weights.Prismatic ];
-	}
-
 	private static HextechRarityWeights ToRarityWeights(IReadOnlyList<int> weights)
 	{
 		return new HextechRarityWeights(

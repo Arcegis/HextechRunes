@@ -10,9 +10,13 @@ internal static partial class HextechTelemetry
 	private const string PendingFileName = "telemetry_pending.jsonl";
 	private const int MaxPendingLines = 64;
 	private const long MinRunTimeForUploadSeconds = 60;
+	// 上报载荷结构版本(服务端按它解析);改字段结构时递增。
+	private const int TelemetrySchemaVersion = 1;
 
 	internal static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+	// 进程内防重:同一局可能从多条结束路径(胜利/失败结算、放弃)各触发一次 OnRunEnded。
+	// 有意不清理——每局只多一个 RunId 字符串,进程生命周期内的增长可忽略,清掉反而会让重复上传重新可能。
 	private static readonly HashSet<string> SubmittedRunIds = new(StringComparer.Ordinal);
 
 	public static void Initialize()
@@ -97,7 +101,7 @@ internal static partial class HextechTelemetry
 			}
 
 			string json = JsonSerializer.Serialize(payload, JsonOptions);
-			_ = Task.Run(() => UploadPendingThenCurrentAsync(config.Endpoint, json, payload.Run.RunId));
+			_ = Task.Run(() => UploadSerializedAsync(config.Endpoint, json, payload.Run.RunId));
 		}
 		catch (Exception ex)
 		{

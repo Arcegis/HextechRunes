@@ -11,10 +11,22 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	public void CompleteEnemyOnlySelection()
 	{
-		if (!_enemyOnly || _choiceLocked) return;
+		if (!_enemyOnly || _choiceLocked)
+		{
+			return;
+		}
+
 		_choiceLocked = true;
-		if (_enemyOnlyConfirm != null) _enemyOnlyConfirm.Disabled = true;
-		foreach (Button button in _enemyHexRerollButtons.Concat(_enemyHexRemoveButtons)) button.Disabled = true;
+		if (_enemyOnlyConfirm != null)
+		{
+			_enemyOnlyConfirm.Disabled = true;
+		}
+
+		foreach (Button button in _enemyHexRerollButtons.Concat(_enemyHexRemoveButtons))
+		{
+			button.Disabled = true;
+		}
+
 		_completionSource.TrySetResult([]);
 	}
 
@@ -214,12 +226,12 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_playerRuneRerollCounts[slotIndex]++;
 		_rerollHistory.Add(slotIndex);
 		_pendingPlayerRuneSlot = ResolvePendingSlotAfterReroll(_pendingPlayerRuneSlot, slotIndex);
-		if (goldenRerollWasActive)
+		if (goldenRerollWasActive && _goldenRerollSession is { } goldenReroll)
 		{
-			_goldenRerollSession!.Consume();
+			goldenReroll.Consume();
 			HextechLog.Info(
 				"Mayhem", $"SelectionScreen.OnRerollPressed: golden reroll consumed " +
-				$"slot={slotIndex} upgraded={_goldenRerollSession.UpgradedRarity}");
+				$"slot={slotIndex} upgraded={goldenReroll.UpgradedRarity}");
 		}
 		// RebuildCards 会在当前输入事件内销毁并重建按钮。重新开启确认保护，避免鼠标、
 		// 手柄确认键或键盘重复输入落到新生成的卡片上，表现为“刷新后直接跳过”。
@@ -346,11 +358,6 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		monsterHexes[slotIndex] = monsterHexesBeforeRemoval[slotIndex];
 		monsterHexesBeforeRemoval[slotIndex] = null;
 		return true;
-	}
-
-	public void ApplyEnemyHexAdjustment(MonsterHexKind? monsterHex, bool removed, int rerollCount)
-	{
-		ApplyEnemyHexAdjustment([ removed ? null : monsterHex ], [ rerollCount ]);
 	}
 
 	public void ApplyEnemyHexAdjustment(IReadOnlyList<MonsterHexKind?> monsterHexes, IReadOnlyList<int> rerollCounts)

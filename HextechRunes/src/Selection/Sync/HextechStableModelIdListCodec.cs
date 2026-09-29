@@ -35,11 +35,7 @@ internal static class HextechStableModelIdListCodec
 		payload.Add(ids.Length);
 		foreach (string serialized in serializedIds)
 		{
-			payload.Add(serialized.Length);
-			foreach (char ch in serialized)
-			{
-				payload.Add(ch);
-			}
+			HextechChoiceCodec.AppendLengthPrefixedString(payload, serialized);
 		}
 	}
 
@@ -47,13 +43,13 @@ internal static class HextechStableModelIdListCodec
 	{
 		modelIds = [];
 		nextCursor = cursor;
-		if (!HasRemaining(payload, cursor, 1) || payload[cursor] != Version)
+		if (!HextechChoiceCodec.HasRemaining(payload, cursor, 1) || payload[cursor] != Version)
 		{
 			return false;
 		}
 
 		cursor++;
-		if (!HasRemaining(payload, cursor, 1))
+		if (!HextechChoiceCodec.HasRemaining(payload, cursor, 1))
 		{
 			return false;
 		}
@@ -66,51 +62,24 @@ internal static class HextechStableModelIdListCodec
 
 		for (int i = 0; i < count; i++)
 		{
-			if (!HasRemaining(payload, cursor, 1))
+			if (!HextechChoiceCodec.TryReadLengthPrefixedString(payload, ref cursor, MaxSerializedLength, out string? serialized))
 			{
+				modelIds.Clear();
 				return false;
-			}
-
-			int length = payload[cursor++];
-			if (length < 0 || length > MaxSerializedLength || !HasRemaining(payload, cursor, length))
-			{
-				return false;
-			}
-
-			char[] chars = new char[length];
-			for (int j = 0; j < length; j++)
-			{
-				int value = payload[cursor + j];
-				if (value < char.MinValue || value > char.MaxValue)
-				{
-					return false;
-				}
-
-				chars[j] = (char)value;
 			}
 
 			try
 			{
-				modelIds.Add(ModelId.Deserialize(new string(chars)));
+				modelIds.Add(ModelId.Deserialize(serialized));
 			}
 			catch
 			{
 				modelIds.Clear();
 				return false;
 			}
-
-			cursor += length;
 		}
 
 		nextCursor = cursor;
 		return true;
-	}
-
-	private static bool HasRemaining(IReadOnlyList<int> payload, int cursor, int count)
-	{
-		return cursor >= 0
-			&& count >= 0
-			&& cursor <= payload.Count
-			&& count <= payload.Count - cursor;
 	}
 }

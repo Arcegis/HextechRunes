@@ -1,4 +1,8 @@
 {
   "HEXTECH_CONFIG_BUTTON": "Hextech Rune Config",
-  "HEXTECH_CONFIG_BUTTON_TOOLTIP": "Configure the Hextech, enemy hex, and stat forger rules used when playing solo or hosting multiplayer."
+  "HEXTECH_CONFIG_BUTTON_TOOLTIP": "Configure the Hextech, enemy hex, and stat forger rules used when playing solo or hosting multiplayer.",
+  "HEXTECH_UPDATE_CHECKING": "Checking the Hextech Mayhem mod version...",
+  "HEXTECH_UPDATE_UNAVAILABLE": "Hextech Mayhem update check is currently unavailable",
+  "HEXTECH_UPDATE_AVAILABLE": "Hextech Mayhem {Latest} is available (current version: {Current})",
+  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})"
 }

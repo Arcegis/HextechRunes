@@ -1,25 +1,22 @@
-using MegaCrit.Sts2.Core.GameActions;
+using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	private static HextechRarityTier RollRandomRarity(HextechMayhemModifier modifier, int actIndex, RunState runState, IReadOnlyList<HextechRarityTier> enabledRarities)
-	{
-		HextechRarityWeights weights = GetEffectiveActRarityWeights(
-			modifier.GetRuneRarityWeightsForAct(actIndex),
-			modifier.PreventConsecutiveSilverRunes,
-			actIndex,
-			modifier.GetRarityForAct(actIndex - 1));
-		IReadOnlyList<HextechRarityTier> eligibleRarities = GetEffectiveActRarityCandidates(
-			enabledRarities,
-			modifier.PreventConsecutiveSilverRunes,
-			actIndex,
-			modifier.GetRarityForAct(actIndex - 1));
-		return RollWeightedRarity(runState, weights.Silver, weights.Gold, weights.Prismatic, deterministic: false, actIndex, eligibleRarities);
-	}
+	// 无尽循环中每一轮都按第 3 幕的玩家海克斯数量结算。
+	private const int EndlessLoopPlayerHexCountSlot = 2;
 
-	private static HextechRarityTier RollStableRarity(HextechMayhemModifier modifier, int actIndex, RunState runState, IReadOnlyList<HextechRarityTier> enabledRarities)
+	/// <summary>
+	/// 本幕稀有度抽签。deterministic=true(联机)用稳定哈希,各端独立算出同一结果;
+	/// false(单机)推进原版 Niche 随机流。两条路径的 RNG 调用次数与顺序与拆分前一致。
+	/// </summary>
+	private static HextechRarityTier RollActRarity(
+		HextechMayhemModifier modifier,
+		int actIndex,
+		RunState runState,
+		IReadOnlyList<HextechRarityTier> enabledRarities,
+		bool deterministic)
 	{
 		HextechRarityWeights weights = GetEffectiveActRarityWeights(
 			modifier.GetRuneRarityWeightsForAct(actIndex),
@@ -31,7 +28,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			modifier.PreventConsecutiveSilverRunes,
 			actIndex,
 			modifier.GetRarityForAct(actIndex - 1));
-		return RollWeightedRarity(runState, weights.Silver, weights.Gold, weights.Prismatic, deterministic: true, actIndex, eligibleRarities);
+		return RollWeightedRarity(runState, weights.Silver, weights.Gold, weights.Prismatic, deterministic, actIndex, eligibleRarities);
 	}
 
 	internal static HextechRarityWeights GetEffectiveActRarityWeights(
@@ -73,11 +70,53 @@ internal static partial class HextechRuneSelectionCoordinator
 			: [ HextechRarityTier.Gold, HextechRarityTier.Prismatic ];
 	}
 
+	private sealed record LocalActRoll(
+		HextechRarityTier Rarity,
+		MonsterHexKind? MonsterHex,
+		HextechRunConfigurationSnapshot RunConfigSnapshot,
+		IReadOnlySet<string> DisabledPlayerRuneIds);
+
 	private static async Task<(HextechRarityTier Rarity, MonsterHexKind? MonsterHex, int PlayerHexCount)> ResolveActRoll(RunState runState, HextechMayhemModifier modifier, int actIndex)
 	{
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
-		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
+		LocalActRoll local = RollLocalActRoll(runState, modifier, actIndex, isMultiplayer: !HextechPlayerContextHelper.IsSinglePlayerFlow(gameType));
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
+		{
+			modifier.SetRarityForAct(actIndex, local.Rarity);
+			if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
+			{
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(local.DisabledPlayerRuneIds, $"local act-roll act={actIndex}");
+			}
+
+			modifier.SetRunConfigurationSnapshot(local.RunConfigSnapshot, $"local act-roll act={actIndex}");
+			modifier.HostUsesBetterMultiplayerScaling = false;
+			return (local.Rarity, local.MonsterHex, ResolvePlayerHexCount(local.RunConfigSnapshot, modifier, actIndex));
+		}
+
+		PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
+		Player authorityPlayer = GetActRollAuthorityPlayer(runManager, runState)
+			?? throw CreateProtocolFailure(
+				$"act-roll act={actIndex}",
+				$"No act-roll authority is available for multiplayer act={actIndex}.");
+		if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
+		{
+			throw new OperationCanceledException(
+				$"Multiplayer act-roll transaction is no longer active for act={actIndex}.");
+		}
+
+		uint choiceId = synchronizer.ReserveChoiceId(authorityPlayer);
+		return gameType == NetGameType.Host
+			? SendHostActRoll(modifier, actIndex, local, synchronizer, authorityPlayer, choiceId)
+			: await ReceiveHostActRoll(runState, modifier, actIndex, local, synchronizer, authorityPlayer, choiceId);
+	}
+
+	/// <summary>
+	/// 本机先算出的本幕结果(稀有度、首个敌方海克斯、本局配置快照)。联机客户端算完后以房主同步值为准,
+	/// 但本机的抽签仍要执行以保持 RNG 推进与拆分前一致。
+	/// </summary>
+	private static LocalActRoll RollLocalActRoll(RunState runState, HextechMayhemModifier modifier, int actIndex, bool isMultiplayer)
+	{
 		bool isPresetChallenge = HextechPresetChallengeRegistry.IsActive(runState);
 		HextechPresetChallengeActPlan? challengeAct = HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out HextechPresetChallengeActPlan? resolvedChallengeAct)
 			? resolvedChallengeAct
@@ -107,23 +146,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechRarityTier localRarity = !modifier.IsModActiveForRun ? HextechRarityTier.Silver : savedRarity
 			?? challengeAct?.PlayerRarity
 			?? effectiveForcedRarity
-			?? (isMultiplayer ? RollStableRarity(modifier, actIndex, runState, enabledRarities) : RollRandomRarity(modifier, actIndex, runState, enabledRarities));
-		if (!savedRarity.HasValue && challengeAct != null)
-		{
-			HextechLog.Info("Challenge", $"ResolveActRoll preset: act={actIndex} rarity={localRarity} enemyHexes={string.Join(",", challengeAct.EnemyHexes)}");
-		}
-		else if (!savedRarity.HasValue && effectiveForcedRarity.HasValue)
-		{
-			HextechLog.Info("Mayhem", $"ResolveActRoll forced rarity: act={actIndex} rarity={localRarity}");
-		}
-		else if (!savedRarity.HasValue && forcedRarity.HasValue)
-		{
-			HextechLog.Info("Mayhem", $"ResolveActRoll ignored disabled forced rarity: act={actIndex} forced={forcedRarity} enabled={string.Join(",", enabledRarities)} rarity={localRarity}");
-		}
-		else if (!savedRarity.HasValue && enabledRarities.Count < Enum.GetValues<HextechRarityTier>().Length)
-		{
-			HextechLog.Info("Mayhem", $"ResolveActRoll rarity pool filtered by player rune config: act={actIndex} enabled={string.Join(",", enabledRarities)} rarity={localRarity}");
-		}
+			?? RollActRarity(modifier, actIndex, runState, enabledRarities, deterministic: isMultiplayer);
+		LogLocalActRollRarity(actIndex, localRarity, savedRarity, challengeAct, forcedRarity, effectiveForcedRarity, enabledRarities);
 
 		IReadOnlyList<MonsterHexKind> previousHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
 		int newEnemyHexCount = challengeAct?.EnemyHexes.Count ?? modifier.GetEnemyHexCountForAct(actIndex);
@@ -135,87 +159,124 @@ internal static partial class HextechRuneSelectionCoordinator
 			? null
 			: savedPrimaryMonsterHex
 				?? challengeAct?.EnemyHexes.FirstOrDefault()
-				?? (isMultiplayer
-					? ChooseStableMonsterHexForAct(modifier, localRarity, runState, actIndex, previousHexes)
-					: ChooseMonsterHexForAct(modifier, localRarity, runState, previousHexes));
+				?? ChooseMonsterHexForAct(modifier, localRarity, runState, actIndex, previousHexes, deterministic: isMultiplayer);
 		HextechLog.Info("Mayhem", $"ResolveActRoll enemy count: act={actIndex} newCount={newEnemyHexCount} previous={previousHexes.Count} primary={localMonsterHex}");
+		return new LocalActRoll(localRarity, localMonsterHex, localRunConfigSnapshot, localDisabledPlayerRuneIds);
+	}
 
-		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
+	private static void LogLocalActRollRarity(
+		int actIndex,
+		HextechRarityTier localRarity,
+		HextechRarityTier? savedRarity,
+		HextechPresetChallengeActPlan? challengeAct,
+		HextechRarityTier? forcedRarity,
+		HextechRarityTier? effectiveForcedRarity,
+		IReadOnlyList<HextechRarityTier> enabledRarities)
+	{
+		if (savedRarity.HasValue)
 		{
-			modifier.SetRarityForAct(actIndex, localRarity);
+			return;
+		}
+
+		if (challengeAct != null)
+		{
+			HextechLog.Info("Challenge", $"ResolveActRoll preset: act={actIndex} rarity={localRarity} enemyHexes={string.Join(",", challengeAct.EnemyHexes)}");
+		}
+		else if (effectiveForcedRarity.HasValue)
+		{
+			HextechLog.Info("Mayhem", $"ResolveActRoll forced rarity: act={actIndex} rarity={localRarity}");
+		}
+		else if (forcedRarity.HasValue)
+		{
+			HextechLog.Info("Mayhem", $"ResolveActRoll ignored disabled forced rarity: act={actIndex} forced={forcedRarity} enabled={string.Join(",", enabledRarities)} rarity={localRarity}");
+		}
+		else if (enabledRarities.Count < Enum.GetValues<HextechRarityTier>().Length)
+		{
+			HextechLog.Info("Mayhem", $"ResolveActRoll rarity pool filtered by player rune config: act={actIndex} enabled={string.Join(",", enabledRarities)} rarity={localRarity}");
+		}
+	}
+
+	private static (HextechRarityTier Rarity, MonsterHexKind? MonsterHex, int PlayerHexCount) SendHostActRoll(
+		HextechMayhemModifier modifier,
+		int actIndex,
+		LocalActRoll local,
+		PlayerChoiceSynchronizer synchronizer,
+		Player authorityPlayer,
+		uint choiceId)
+	{
+		try
+		{
+			bool hostUsesExternalScaling = HextechMultiplayerScalingCompat.IsBetterMultiplayerScalingLoaded();
+			modifier.HostUsesBetterMultiplayerScaling = hostUsesExternalScaling;
 			if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
 			{
-				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"local act-roll act={actIndex}");
+				modifier.SetPlayerRuneConfigDisabledIdsSnapshot(local.DisabledPlayerRuneIds, $"host act-roll act={actIndex}");
 			}
 
-			modifier.SetRunConfigurationSnapshot(localRunConfigSnapshot, $"local act-roll act={actIndex}");
-			modifier.HostUsesBetterMultiplayerScaling = false;
-			return (localRarity, localMonsterHex, ResolvePlayerHexCount(localRunConfigSnapshot, modifier, actIndex));
-		}
+			HextechRunConfigurationSnapshot hostSnapshot = modifier.GetEffectiveRunConfigurationSnapshot();
+			uint sentChoiceId = SyncLocalHextechChoice(
+				synchronizer,
+				authorityPlayer,
+				choiceId,
+				HextechChoiceCodec.CreateActRoll(
+					actIndex,
+					local.Rarity,
+					local.MonsterHex,
+					hostUsesExternalScaling,
+					modifier.EnemyHexCountsByAct,
+					modifier.PlayerRuneConfigDisabledIds,
+					hostSnapshot),
+				$"act-roll act={actIndex}");
 
-		PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
-		Player authorityPlayer = GetActRollAuthorityPlayer(runManager, runState)
-			?? throw CreateProtocolFailure(
-				$"act-roll act={actIndex}",
-				$"No act-roll authority is available for multiplayer act={actIndex}.");
-		if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
+			modifier.SetRarityForAct(actIndex, local.Rarity);
+			HextechLog.Info("Mayhem", $"ResolveActRoll host sync: act={actIndex} choiceId={sentChoiceId} authority={authorityPlayer.NetId} rarity={local.Rarity} monsterHex={local.MonsterHex} playerCounts={string.Join(",", hostSnapshot.PlayerHexCountsByAct)} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} enemyConfigDisabled={hostSnapshot.DisabledMonsterHexIds.Count} forgeConfigDisabled={hostSnapshot.DisabledForgeIds.Count} betterMultiplayerScaling={hostUsesExternalScaling}");
+			return (local.Rarity, local.MonsterHex, ResolvePlayerHexCount(hostSnapshot, modifier, actIndex));
+		}
+		catch (HextechChoiceProtocolException)
 		{
-			throw new OperationCanceledException(
-				$"Multiplayer act-roll transaction is no longer active for act={actIndex}.");
+			throw;
 		}
-
-		uint choiceId = synchronizer.ReserveChoiceId(authorityPlayer);
-		if (gameType == NetGameType.Host)
+		catch (Exception ex)
 		{
-			try
-			{
-				bool hostUsesExternalScaling = HextechMultiplayerScalingCompat.IsBetterMultiplayerScalingLoaded();
-				modifier.HostUsesBetterMultiplayerScaling = hostUsesExternalScaling;
-				if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)
-				{
-					modifier.SetPlayerRuneConfigDisabledIdsSnapshot(localDisabledPlayerRuneIds, $"host act-roll act={actIndex}");
-				}
-
-				HextechRunConfigurationSnapshot hostSnapshot = modifier.GetEffectiveRunConfigurationSnapshot();
-				uint sentChoiceId = SyncLocalHextechChoice(
-					synchronizer,
-					authorityPlayer,
-					choiceId,
-					HextechChoiceCodec.CreateActRoll(
-						actIndex,
-						localRarity,
-						localMonsterHex,
-						hostUsesExternalScaling,
-						modifier.EnemyHexCountsByAct,
-						modifier.PlayerRuneConfigDisabledIds,
-						hostSnapshot),
-					$"act-roll act={actIndex}");
-
-				modifier.SetRarityForAct(actIndex, localRarity);
-				HextechLog.Info("Mayhem", $"ResolveActRoll host sync: act={actIndex} choiceId={sentChoiceId} authority={authorityPlayer.NetId} rarity={localRarity} monsterHex={localMonsterHex} playerCounts={string.Join(",", hostSnapshot.PlayerHexCountsByAct)} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} enemyConfigDisabled={hostSnapshot.DisabledMonsterHexIds.Count} forgeConfigDisabled={hostSnapshot.DisabledForgeIds.Count} betterMultiplayerScaling={hostUsesExternalScaling}");
-				return (localRarity, localMonsterHex, ResolvePlayerHexCount(hostSnapshot, modifier, actIndex));
-			}
-			catch (HextechChoiceProtocolException)
-			{
-				throw;
-			}
-			catch (Exception ex)
-			{
-				string message =
-					$"Host act-roll transaction failed after reserving choice: " +
-					$"act={actIndex} player={authorityPlayer.NetId} choiceId={choiceId}";
-				throw CreateProtocolFailure($"act-roll act={actIndex}", message, ex);
-			}
+			string message =
+				$"Host act-roll transaction failed after reserving choice: " +
+				$"act={actIndex} player={authorityPlayer.NetId} choiceId={choiceId}";
+			throw CreateProtocolFailure($"act-roll act={actIndex}", message, ex);
 		}
+	}
 
-		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+	private static async Task<(HextechRarityTier Rarity, MonsterHexKind? MonsterHex, int PlayerHexCount)> ReceiveHostActRoll(
+		RunState runState,
+		HextechMayhemModifier modifier,
+		int actIndex,
+		LocalActRoll local,
+		PlayerChoiceSynchronizer synchronizer,
+		Player authorityPlayer,
+		uint choiceId)
+	{
+		// 解码结果在 isExpected 回调里捕获:等待只会在它返回 true 时结束,之后不再二次解码。
+		HextechRarityTier syncedRarity = default;
+		MonsterHexKind? syncedMonsterHex = null;
+		bool syncedHostUsesExternalScaling = false;
+		int[] syncedEnemyHexCountsByAct = [];
+		HashSet<string> syncedDisabledPlayerRuneIds = [];
+		HextechRunConfigurationSnapshot? syncedRunConfigSnapshot = null;
+		(_, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
 			runState,
 			authorityPlayer,
 			choiceId,
-			result => HextechChoiceCodec.TryDecodeActRoll(result, actIndex, out _, out _, out _, out _, out _, out _),
+			result => HextechChoiceCodec.TryDecodeActRoll(
+				result,
+				actIndex,
+				out syncedRarity,
+				out syncedMonsterHex,
+				out syncedHostUsesExternalScaling,
+				out syncedEnemyHexCountsByAct,
+				out syncedDisabledPlayerRuneIds,
+				out syncedRunConfigSnapshot),
 			$"act-roll act={actIndex}");
-		if (!HextechChoiceCodec.TryDecodeActRoll(remoteChoice, actIndex, out HextechRarityTier syncedRarity, out MonsterHexKind? syncedMonsterHex, out bool syncedHostUsesExternalScaling, out int[] syncedEnemyHexCountsByAct, out HashSet<string> syncedDisabledPlayerRuneIds, out HextechRunConfigurationSnapshot syncedRunConfigSnapshot))
+		if (syncedRunConfigSnapshot == null)
 		{
 			throw CreateProtocolFailure(
 				$"act-roll act={actIndex}",
@@ -231,7 +292,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			DisabledPlayerRuneIds = syncedDisabledPlayerRuneIds
 		}, $"host act-roll act={actIndex}");
 		modifier.HostUsesBetterMultiplayerScaling = syncedHostUsesExternalScaling;
-		HextechLog.Info("Mayhem", $"ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} playerCounts={string.Join(",", modifier.PlayerHexCountsByAct)} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} enemyConfigDisabled={modifier.DisabledMonsterHexIdsForPool.Count} forgeConfigDisabled={modifier.DisabledForgeIdsForPool.Count} betterMultiplayerScaling={syncedHostUsesExternalScaling} localRarity={localRarity} localMonsterHex={localMonsterHex}");
+		HextechLog.Info("Mayhem", $"ResolveActRoll client sync: act={actIndex} choiceId={receivedChoiceId} authority={authorityPlayer.NetId} rarity={syncedRarity} monsterHex={syncedMonsterHex} playerCounts={string.Join(",", modifier.PlayerHexCountsByAct)} enemyCounts={string.Join(",", modifier.EnemyHexCountsByAct)} playerConfigDisabled={modifier.PlayerRuneConfigDisabledIds.Count} enemyConfigDisabled={modifier.DisabledMonsterHexIdsForPool.Count} forgeConfigDisabled={modifier.DisabledForgeIdsForPool.Count} betterMultiplayerScaling={syncedHostUsesExternalScaling} localRarity={local.Rarity} localMonsterHex={local.MonsterHex}");
 		return (syncedRarity, syncedMonsterHex, ResolvePlayerHexCount(syncedRunConfigSnapshot, modifier, actIndex));
 	}
 
@@ -241,7 +302,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		int actIndex)
 	{
 		int[] counts = HextechPlayerHexCountState.Normalize(snapshot.PlayerHexCountsByAct);
-		int slot = modifier.IsEndlessLoopActive ? 2 : Math.Clamp(actIndex, 0, counts.Length - 1);
+		int slot = modifier.IsEndlessLoopActive ? EndlessLoopPlayerHexCountSlot : Math.Clamp(actIndex, 0, counts.Length - 1);
 		return counts[slot];
 	}
 
@@ -304,13 +365,18 @@ internal static partial class HextechRuneSelectionCoordinator
 		return orderedRarities[index];
 	}
 
-	private static MonsterHexKind? ChooseMonsterHexForAct(HextechMayhemModifier modifier, HextechRarityTier rarity, RunState runState, IEnumerable<MonsterHexKind>? extraExcludedHexes = null)
-	{
-		IReadOnlyList<MonsterHexKind> pool = HextechMonsterHexRoller.BuildActPool(rarity, modifier.GetKnownMonsterHexes(), extraExcludedHexes, modifier.DisabledMonsterHexIdsForPool);
-		return pool.Count > 0 ? pool[runState.Rng.Niche.NextInt(pool.Count)] : null;
-	}
-
-	private static MonsterHexKind? ChooseStableMonsterHexForAct(HextechMayhemModifier modifier, HextechRarityTier rarity, RunState runState, int actIndex, IEnumerable<MonsterHexKind>? extraExcludedHexes = null, int ordinal = 0)
+	/// <summary>
+	/// 从本幕敌方海克斯池抽一个。deterministic=true(联机)用稳定哈希(以 ordinal 区分同幕多次抽取),
+	/// false(单机)推进原版 Niche 随机流;池为空时两条路径都不消耗随机数。
+	/// </summary>
+	private static MonsterHexKind? ChooseMonsterHexForAct(
+		HextechMayhemModifier modifier,
+		HextechRarityTier rarity,
+		RunState runState,
+		int actIndex,
+		IEnumerable<MonsterHexKind>? extraExcludedHexes,
+		bool deterministic,
+		int ordinal = 0)
 	{
 		IReadOnlyList<MonsterHexKind> pool = HextechMonsterHexRoller.BuildActPool(rarity, modifier.GetKnownMonsterHexes(), extraExcludedHexes, modifier.DisabledMonsterHexIdsForPool);
 		if (pool.Count == 0)
@@ -318,14 +384,17 @@ internal static partial class HextechRuneSelectionCoordinator
 			return null;
 		}
 
-		return pool[HextechStableRandom.Index(
-			runState,
-			pool.Count,
-			"act-roll-monster-hex",
-			actIndex.ToString(),
-			ordinal.ToString(),
-			((int)rarity).ToString(),
-			string.Join(",", pool.Select(static kind => ((int)kind).ToString()).OrderBy(static key => key, StringComparer.Ordinal)))];
+		int index = deterministic
+			? HextechStableRandom.Index(
+				runState,
+				pool.Count,
+				"act-roll-monster-hex",
+				actIndex.ToString(),
+				ordinal.ToString(),
+				((int)rarity).ToString(),
+				string.Join(",", pool.Select(static kind => ((int)kind).ToString()).OrderBy(static key => key, StringComparer.Ordinal)))
+			: runState.Rng.Niche.NextInt(pool.Count);
+		return pool[index];
 	}
 
 	private static IReadOnlyList<MonsterHexKind> ResolveNewMonsterHexesForAct(
@@ -362,15 +431,12 @@ internal static partial class HextechRuneSelectionCoordinator
 			return challengeAct.EnemyHexes;
 		}
 
-		NetGameType gameType = RunManager.Instance.NetService.Type;
-		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
+		bool isMultiplayer = !HextechPlayerContextHelper.IsSinglePlayerFlow(RunManager.Instance.NetService.Type);
 		IReadOnlyList<MonsterHexKind> resolvedNewHexes = HextechMonsterHexRoller.ResolveNewMonsterHexes(
 			newEnemyHexCount,
 			previousHexes,
 			primaryMonsterHex,
-			(excludedHexes, ordinal) => isMultiplayer
-				? ChooseStableMonsterHexForAct(modifier, rarity, runState, actIndex, excludedHexes, ordinal)
-				: ChooseMonsterHexForAct(modifier, rarity, runState, excludedHexes));
+			(excludedHexes, ordinal) => ChooseMonsterHexForAct(modifier, rarity, runState, actIndex, excludedHexes, deterministic: isMultiplayer, ordinal));
 
 		HextechLog.Info("Mayhem", $"ResolveNewMonsterHexesForAct: act={actIndex} newCount={newEnemyHexCount} previous={previousHexes.Count} primary={primaryMonsterHex} newHexes={string.Join(",", resolvedNewHexes)}");
 		return resolvedNewHexes;

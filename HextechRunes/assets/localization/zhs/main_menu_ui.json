@@ -1,4 +1,8 @@
 {
   "HEXTECH_CONFIG_BUTTON": "海克斯符文配置",
-  "HEXTECH_CONFIG_BUTTON_TOOLTIP": "配置单机或作为主机联机时使用的海克斯、敌方海克斯和属性锻造器规则。"
+  "HEXTECH_CONFIG_BUTTON_TOOLTIP": "配置单机或作为主机联机时使用的海克斯、敌方海克斯和属性锻造器规则。",
+  "HEXTECH_UPDATE_CHECKING": "正在检查海克斯大乱斗模组版本",
+  "HEXTECH_UPDATE_UNAVAILABLE": "海克斯大乱斗模组更新检查暂不可用",
+  "HEXTECH_UPDATE_AVAILABLE": "海克斯大乱斗模组有新版{Latest}，当前版本为{Current}",
+  "HEXTECH_UPDATE_LATEST": "海克斯大乱斗模组为最新版{Current}"
 }

@@ -13,6 +13,7 @@ SRC = REPO_ROOT / "src"
 LOCALIZATION = REPO_ROOT / "assets" / "localization"
 TELEMETRY_LABELS = REPO_ROOT / "server" / "hextech-telemetry" / "labels.json"
 OFFICIAL_ZHS_TITLES = REPO_ROOT / "tools" / "official_zhs_titles.json"
+MOD_ID = "HextechRunes"
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -361,6 +362,51 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
             errors.append(f"combat tracking snapshot type mismatch for {field}: expected {expected}, got {snapshot_type}")
 
 
+def resolve_string_constants(source: str) -> dict[str, str]:
+    """解析 `const string Name = 片段 + 片段;`（字符串字面量、ModInfo.Id、同文件常量）为最终字符串。"""
+    raw = dict(re.findall(r"const string (\w+)\s*=\s*([^;]+);", source))
+    resolved: dict[str, str] = {}
+
+    def evaluate(name: str, depth: int = 0) -> str | None:
+        if name in resolved:
+            return resolved[name]
+        if depth > 16 or name not in raw:
+            return None
+        parts: list[str] = []
+        for token in (part.strip() for part in raw[name].split("+")):
+            if token.startswith('"') and token.endswith('"'):
+                parts.append(token[1:-1])
+            elif token == "ModInfo.Id":
+                parts.append(MOD_ID)
+            else:
+                value = evaluate(token, depth + 1)
+                if value is None:
+                    return None
+                parts.append(value)
+        resolved[name] = "".join(parts)
+        return resolved[name]
+
+    for constant in raw:
+        evaluate(constant)
+    return resolved
+
+
+def referenced_asset_paths(source: str) -> set[str]:
+    """源码中引用的 res://<模组>/images/… 路径：字面量、常量值、`常量 + "文件名"` 表达式。"""
+    constants = resolve_string_constants(source)
+    candidates = set(re.findall(r'"(res://[^"]+)"', source))
+    candidates.update(constants.values())
+    for name, file_name in re.findall(r'\b(\w+)\s*\+\s*"([^"]+\.(?:png|jpg))"', source):
+        if name in constants:
+            candidates.add(constants[name] + file_name)
+    prefix = f"res://{MOD_ID}/"
+    return {
+        path[len(prefix):]
+        for path in candidates
+        if path.startswith(prefix + "images/") and re.search(r"\.(?:png|jpg)$", path)
+    }
+
+
 def shared_relic_icon_stems() -> dict[str, str]:
     """从 HextechAssets.TryGetCustomRelicIconPath 解析"复用其他模型图标"的分支:模型图标名 -> 实际贴图名。"""
     source = read(source_file_named("HextechAssets.cs"))
@@ -370,7 +416,7 @@ def shared_relic_icon_stems() -> dict[str, str]:
     stems: dict[str, str] = {}
     for types, stem in re.findall(
         r"if \(relic is (?P<types>\w+(?:\s+or\s+\w+)*)\)\s*\{\s*"
-        r"return \$\"res://\{ModInfo\.Id\}/images/relics/(?P<stem>\w+)\.png\";",
+        r"return (?:\$\"res://\{ModInfo\.Id\}/images/relics/|RelicImages \+ \")(?P<stem>\w+)\.png\";",
         body.group("body"),
     ):
         for type_name in re.split(r"\s+or\s+", types):
@@ -433,7 +479,7 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
     assets_root = REPO_ROOT / "assets"
     referenced = set()
     for name in ("HextechAssets.cs", "HextechAssetHooks.cs", "HextechRuneSelectionScreen.Metrics.cs"):
-        referenced.update(re.findall(r'res://HextechRunes/(images/[^"]+\.(?:png|jpg))', read(source_file_named(name))))
+        referenced.update(referenced_asset_paths(read(source_file_named(name))))
     missing_refs = sorted(ref for ref in referenced if not (assets_root / ref).exists())
     if missing_refs:
         errors.append(f"hardcoded asset path missing under assets/: {', '.join(missing_refs)}")

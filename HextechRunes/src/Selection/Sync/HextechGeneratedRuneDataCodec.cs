@@ -10,58 +10,79 @@ internal static class HextechGeneratedRuneDataCodec
 
 	public static void Append(List<int> payload, IReadOnlyList<RelicModel> options)
 	{
-		if (!options.Any(static option => option is IHextechGeneratedRune)) return;
+		if (!options.Any(static option => option is IHextechGeneratedRune))
+		{
+			return;
+		}
+
 		payload.Add(Version);
 		payload.Add(options.Count);
 		foreach (RelicModel option in options)
 		{
 			string data = (option as IHextechGeneratedRune)?.ExportSelectionData() ?? "";
-			if (data.Length > MaxDataLength) throw new ArgumentException("Generated rune data exceeds protocol limit.");
-			payload.Add(data.Length);
-			foreach (char ch in data) payload.Add(ch);
+			if (data.Length > MaxDataLength)
+			{
+				throw new ArgumentException("Generated rune data exceeds protocol limit.");
+			}
+
+			HextechChoiceCodec.AppendLengthPrefixedString(payload, data);
 		}
 	}
 
 	internal static bool TryDecode(IReadOnlyList<int> payload, int cursor, int count, out List<string> data)
 	{
 		data = [];
-		if (cursor == payload.Count) return true;
+		if (cursor == payload.Count)
+		{
+			return true;
+		}
+
 		if (cursor < 0 || payload.Count - cursor < 2 || payload[cursor++] != Version || payload[cursor++] != count)
+		{
 			return false;
+		}
+
 		for (int i = 0; i < count; i++)
 		{
-			if (cursor >= payload.Count) return false;
-			int length = payload[cursor++];
-			if (length < 0 || length > MaxDataLength || length > payload.Count - cursor) return false;
-			char[] chars = new char[length];
-			for (int j = 0; j < length; j++)
+			if (!HextechChoiceCodec.TryReadLengthPrefixedString(payload, ref cursor, MaxDataLength, out string? value))
 			{
-				int value = payload[cursor++];
-				if (value < 0 || value > char.MaxValue) return false;
-				chars[j] = (char)value;
+				return false;
 			}
-			data.Add(new string(chars));
+
+			data.Add(value);
 		}
+
 		return cursor == payload.Count;
 	}
 
 	internal static bool Restore(PlayerChoiceResult result, IReadOnlyList<RelicModel> options)
 	{
-		if (!HextechChoiceCodec.TryGetIndexPayload(result, out List<int> payload) || payload.Count < 6) return false;
-		int rerolls = payload[5];
-		if (rerolls < 0 || rerolls > payload.Count - 6) return false;
-		if (!HextechStableModelIdListCodec.TryDecode(payload, 6 + rerolls, out List<ModelId> ids, out int cursor)
-			|| ids.Count != options.Count || !HextechRuneWeightCodec.TryRead(payload, ref cursor, out _)
-			|| !TryDecode(payload, cursor, ids.Count, out List<string> data)) return false;
+		if (!HextechChoiceCodec.TryGetIndexPayload(result, out List<int> payload)
+			|| !HextechChoiceCodec.TryReadRuneSelectionHeader(payload, out int optionsCursor)
+			|| !HextechStableModelIdListCodec.TryDecode(payload, optionsCursor, out List<ModelId> ids, out int cursor)
+			|| ids.Count != options.Count
+			|| !HextechRuneWeightCodec.TryRead(payload, ref cursor, out _)
+			|| !TryDecode(payload, cursor, ids.Count, out List<string> data))
+		{
+			return false;
+		}
+
 		for (int i = 0; i < options.Count; i++)
 		{
 			string value = data.Count == 0 ? "" : data[i];
 			if (options[i] is IHextechGeneratedRune generated)
 			{
-				if (value.Length == 0 || !generated.TryImportSelectionData(value)) return false;
+				if (value.Length == 0 || !generated.TryImportSelectionData(value))
+				{
+					return false;
+				}
 			}
-			else if (value.Length != 0) return false;
+			else if (value.Length != 0)
+			{
+				return false;
+			}
 		}
+
 		return true;
 	}
 }

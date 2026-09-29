@@ -7,6 +7,11 @@ internal static class HextechRunePoolBuilder
 	private const int RuneTagBiasEndlessBonusPerMatch = 20;
 	private const int RuneTagBiasMaxBonus = 50;
 	private const int RuneTagBiasEndlessHistoryWindow = 3;
+	// 每次海克斯选择给出的候选数(三选一)。
+	private const int MaxRuneOptionCount = 3;
+
+	/// <summary>给候选池里已按权重算好的一次抽取返回 roll(0 ≤ roll &lt; totalWeight)。pickIndex 为本次是第几个候选。</summary>
+	private delegate int WeightedRoll(IReadOnlyList<RelicModel> slotCandidates, IReadOnlyList<int> weights, int totalWeight, int pickIndex);
 
 	public static List<RelicModel> BuildSelectableRunePool(Player player, HextechRarityTier rarity, RunState runState, IReadOnlySet<ModelId>? excludedIds = null)
 	{
@@ -43,30 +48,16 @@ internal static class HextechRunePoolBuilder
 		}
 
 		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
-
-		List<RelicModel> options = [];
-		int characterWeight = GetSavedCharacterWeight(player);
-		int picks = Math.Min(3, pool.Count);
-		for (int i = 0; i < picks; i++)
-		{
-			bool upgradeAlreadySelected = options.Any(IsUpgradeRune);
-			List<RelicModel> candidates = ConstrainCandidates(
-				pool,
-				upgradeAlreadySelected);
-			if (candidates.Count == 0)
-			{
-				break;
-			}
-
-			List<int> weights = BuildSelectionWeights(candidates, tagCounts, useEndlessTagWindow, GetRuneCharacterPool(player), characterWeight, out int totalWeight);
-			int index = SelectWeightedIndex(weights, runState.Rng.Niche.NextInt(totalWeight));
-			RelicModel selected = candidates[index];
-			options.Add(CreateSelectableRuneOption(player, selected));
-			characterWeight = AdvanceCharacterWeight(player, characterWeight, selected);
-			RemoveById(pool, GetRelicId(selected));
-		}
-
-		return new HextechWeightedRuneOptions(HextechRuneGeneration.Transform(player, rarity, runState, -1, options), characterWeight);
+		// 单机:候选按池原顺序,每次抽取推进一次原版 Niche 随机流。
+		HextechWeightedRuneOptions picked = PickWeightedDistinct(
+			player,
+			pool,
+			Math.Min(MaxRuneOptionCount, pool.Count),
+			tagCounts,
+			useEndlessTagWindow,
+			(_, _, totalWeight, _) => runState.Rng.Niche.NextInt(totalWeight));
+		List<RelicModel> options = picked.Select(relic => CreateSelectableRuneOption(player, relic)).ToList();
+		return new HextechWeightedRuneOptions(HextechRuneGeneration.Transform(player, rarity, runState, -1, options), picked.CharacterWeightPercent);
 	}
 
 	public static List<RelicModel> BuildStableSelectableRunesForRarity(
@@ -96,21 +87,34 @@ internal static class HextechRunePoolBuilder
 		}
 
 		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
-		int picks = Math.Min(3, pool.Count);
-		List<RelicModel> options = PickStableWeightedDistinct(
-			player,
-			pool,
-			picks,
-			runState,
-			tagCounts,
-			useEndlessTagWindow,
+		string?[] saltParts =
+		[
 			"rune-selection-options",
 			selectionStageIndex.ToString(),
 			HextechStableRandom.PlayerKey(player),
 			((int)rarity).ToString(),
-			effectiveExcludedIds == null ? "" : string.Join(",", effectiveExcludedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal)));
+			effectiveExcludedIds == null ? "" : string.Join(",", effectiveExcludedIds.Select(static id => id.Entry).OrderBy(static entry => entry, StringComparer.Ordinal))
+		];
+		// 联机:候选按 ModelId 排序,每次抽取用含候选与权重的稳定哈希,各端独立算出同一组选项。
+		HextechWeightedRuneOptions picked = PickWeightedDistinct(
+			player,
+			pool.OrderBy(static relic => relic.CanonicalId().Entry, StringComparer.Ordinal).ToList(),
+			Math.Min(MaxRuneOptionCount, pool.Count),
+			tagCounts,
+			useEndlessTagWindow,
+			(slotCandidates, weights, totalWeight, pickIndex) => HextechStableRandom.Index(
+				runState,
+				totalWeight,
+				HextechStableRandom.AppendSalt(
+					saltParts,
+					"pick",
+					pickIndex.ToString(),
+					"player",
+					HextechStableRandom.PlayerKey(player),
+					"pool",
+					BuildWeightedPoolKey(slotCandidates, weights))));
 		return new HextechWeightedRuneOptions(HextechRuneGeneration.Transform(player, rarity, runState, selectionStageIndex,
-			options.Select(relic => CreateSelectableRuneOption(player, relic)).ToList()), HextechWeightedRuneOptions.GetWeight(options));
+			picked.Select(relic => CreateSelectableRuneOption(player, relic)).ToList()), picked.CharacterWeightPercent);
 	}
 
 	public static Dictionary<string, int> BuildOwnedRuneTagCounts(Player player, bool useEndlessTagWindow)
@@ -201,6 +205,9 @@ internal static class HextechRunePoolBuilder
 		return option;
 	}
 
+	// 按类名后缀识别“升级类”符文(每次三选一最多出现一个):它们没有共同基类——多数继承
+	// CardUpgradeRuneBase,也有 AutoPlayForms/SelfUpgradeOnPlay 基类以及直接继承 HextechRelicBase 的
+	// UpgradeRune/StrikeUpgradeRune/DefendUpgradeRune,外部模组也沿用这一命名约定。换成类型判定会改变结果集合。
 	internal static bool IsUpgradeRune(RelicModel relic)
 	{
 		Type type = (relic.CanonicalInstance ?? relic).GetType();
@@ -217,6 +224,7 @@ internal static class HextechRunePoolBuilder
 		return eligible;
 	}
 
+	// 以首个候选的登记稀有度为准;不是可配置玩家符文(或列表为空)时按 Gold 处理,与原先逐个比对可配置列表的结果相同。
 	public static HextechRarityTier GetRarityForOptions(IReadOnlyList<RelicModel> relics)
 	{
 		if (relics.Count == 0)
@@ -224,18 +232,11 @@ internal static class HextechRunePoolBuilder
 			return HextechRarityTier.Gold;
 		}
 
-		ModelId id = relics[0].CanonicalInstance?.Id ?? relics[0].Id;
-		if (HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Silver).Any(type => ModelDb.GetId(type) == id))
-		{
-			return HextechRarityTier.Silver;
-		}
-
-		if (HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Prismatic).Any(type => ModelDb.GetId(type) == id))
-		{
-			return HextechRarityTier.Prismatic;
-		}
-
-		return HextechRarityTier.Gold;
+		Type runeType = (relics[0].CanonicalInstance ?? relics[0]).GetType();
+		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
+		return metadata.IsConfigurable(runeType) && metadata.TryGetRarity(runeType, out HextechRarityTier rarity)
+			? rarity
+			: HextechRarityTier.Gold;
 	}
 
 	private static List<RelicModel> ApplyPlayerRuneConfiguration(List<RelicModel> pool, RunState runState)
@@ -309,18 +310,18 @@ internal static class HextechRunePoolBuilder
 			.Any(type => !disabledIds.Contains(ModelDb.GetId(type).Entry));
 	}
 
-	private static List<RelicModel> PickStableWeightedDistinct(
+	/// <summary>
+	/// 按标签/角色权重从 pool 里不放回地抽 count 个候选(同一次选择里最多一个升级类符文)。
+	/// 单机与联机只差 roll 的来源;两者的抽取次数与顺序与拆分前一致。pool 会被消耗。
+	/// </summary>
+	private static HextechWeightedRuneOptions PickWeightedDistinct(
 		Player player,
-		IEnumerable<RelicModel> candidates,
+		List<RelicModel> pool,
 		int count,
-		RunState runState,
 		IReadOnlyDictionary<string, int> tagCounts,
 		bool useEndlessTagWindow,
-		params string?[] saltParts)
+		WeightedRoll roll)
 	{
-		List<RelicModel> pool = candidates
-			.OrderBy(static relic => (relic.CanonicalId()).Entry, StringComparer.Ordinal)
-			.ToList();
 		List<RelicModel> selected = new(Math.Min(Math.Max(0, count), pool.Count));
 		int characterWeight = GetSavedCharacterWeight(player);
 		for (int i = 0; i < count && pool.Count > 0; i++)
@@ -335,19 +336,7 @@ internal static class HextechRunePoolBuilder
 			}
 
 			List<int> weights = BuildSelectionWeights(slotCandidates, tagCounts, useEndlessTagWindow, GetRuneCharacterPool(player), characterWeight, out int totalWeight);
-			string poolKey = BuildWeightedPoolKey(slotCandidates, weights);
-			int roll = HextechStableRandom.Index(
-				runState,
-				totalWeight,
-				AppendSelectionSalt(
-					saltParts,
-					"pick",
-					i.ToString(),
-					"player",
-					HextechStableRandom.PlayerKey(player),
-					"pool",
-					poolKey));
-			int index = SelectWeightedIndex(weights, roll);
+			int index = SelectWeightedIndex(weights, roll(slotCandidates, weights, totalWeight, i));
 			RelicModel chosen = slotCandidates[index];
 			selected.Add(chosen);
 			characterWeight = AdvanceCharacterWeight(player, characterWeight, chosen);
@@ -395,8 +384,6 @@ internal static class HextechRunePoolBuilder
 			weight += Math.Min(RuneTagBiasMaxBonus, matchingCount * bonusPerMatch);
 		}
 
-		// (0.8.4 起升级卡牌类符文不再额外加权:刷新门槛已移除、改为获得时补目标卡,
-		// 全量进池后再 ×2 会让升级类淹没三选一。)
 		return weight;
 	}
 
@@ -405,14 +392,8 @@ internal static class HextechRunePoolBuilder
 		return string.Join(",", pool.Select((relic, index) => $"{(relic.CanonicalId()).Entry}:{weights[index]}"));
 	}
 
-	private static string?[] AppendSelectionSalt(string?[] saltParts, params string?[] extra)
-	{
-		string?[] result = new string?[saltParts.Length + extra.Length];
-		Array.Copy(saltParts, result, saltParts.Length);
-		Array.Copy(extra, 0, result, saltParts.Length, extra.Length);
-		return result;
-	}
-
+	// 飞踢的描述依赖持有者最大生命,生成候选时就要按该玩家刷新。单项内容特判本应由符文基类的虚方法分派,
+	// 但基类与符文文件不在本池构建器的维护范围内;新增同类需求时改为虚方法,不要继续在这里加分支。
 	private static void RefreshPlayerContextualRuneDescription(Player player, RelicModel relic)
 	{
 		if (relic is FlyingKickRune flyingKickRune)

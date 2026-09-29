@@ -1,5 +1,6 @@
-using MegaCrit.Sts2.Core.GameActions;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using MegaCrit.Sts2.Core.GameActions;
 
 namespace HextechRunes;
 
@@ -79,12 +80,53 @@ internal static partial class HextechChoiceCodec
 		}
 	}
 
-	private static bool HasRemaining(IReadOnlyList<int> payload, int cursor, int count)
+	internal static bool HasRemaining(IReadOnlyList<int> payload, int cursor, int count)
 	{
 		return cursor >= 0
 			&& count >= 0
 			&& cursor <= payload.Count
 			&& count <= payload.Count - cursor;
+	}
+
+	/// <summary>整数载荷里的字符串格式:长度后接逐个 UTF-16 码元。模型 ID 列表与生成符文配方共用。</summary>
+	internal static void AppendLengthPrefixedString(List<int> payload, string value)
+	{
+		payload.Add(value.Length);
+		foreach (char ch in value)
+		{
+			payload.Add(ch);
+		}
+	}
+
+	internal static bool TryReadLengthPrefixedString(IReadOnlyList<int> payload, ref int cursor, int maxLength, [NotNullWhen(true)] out string? value)
+	{
+		value = null;
+		if (!HasRemaining(payload, cursor, 1))
+		{
+			return false;
+		}
+
+		int length = payload[cursor];
+		if (length < 0 || length > maxLength || !HasRemaining(payload, cursor + 1, length))
+		{
+			return false;
+		}
+
+		char[] chars = new char[length];
+		for (int i = 0; i < length; i++)
+		{
+			int code = payload[cursor + 1 + i];
+			if (code < char.MinValue || code > char.MaxValue)
+			{
+				return false;
+			}
+
+			chars[i] = (char)code;
+		}
+
+		cursor += 1 + length;
+		value = new string(chars);
+		return true;
 	}
 
 	private static void ValidateProtocolCount(int count, int maximum, string parameterName)

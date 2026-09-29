@@ -2,8 +2,11 @@
 HextechRunes.CompensationEnemyHex._effectWithPendingCompensation : CompensationEnemyHex
 HextechRunes.FlyingKickCorpseLaunchDriver.LoggedAndroidSkip : Boolean
 HextechRunes.HextechBurnVisual._particleTexture : Texture2D
+HextechRunes.HextechCatalog._endlessModeLoaded : Nullable`1
 HextechRunes.HextechCatalog._modelIdLookupCache : ModelIdLookupCache
 HextechRunes.HextechCatalog._modelIdLookupCacheVersion : Int32
+HextechRunes.HextechChoiceCodec._playerRuneIdsByOrdinal : IReadOnlyList`1
+HextechRunes.HextechChoiceCodec._playerRuneIdsByOrdinalVersion : Int32
 HextechRunes.HextechCollectionHooks._loggedFlatFallback : Boolean
 HextechRunes.HextechCollectionHooks._loggedMissingFallbackContainer : Boolean
 HextechRunes.HextechCollectionHooks._starterHeaderTemplate : String

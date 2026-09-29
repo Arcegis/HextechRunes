@@ -1,14 +1,40 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.GameActions;
 
 namespace HextechRunes;
 
 internal static partial class HextechChoiceCodec
 {
-	private static readonly Lazy<IReadOnlyList<ModelId>> PlayerRuneIdsByOrdinal = new(
-		() => HextechCatalog.GetConfigurablePlayerRuneIds()
-			.OrderBy(static id => id.Category, StringComparer.Ordinal)
-			.ThenBy(static id => id.Entry, StringComparer.Ordinal)
-			.ToArray());
+	// [Magic, kind, act, ordinal, selectedIndex, rerollCount] + rerollHistory + 最终候选 ID 列表 + 可选尾部。
+	private const int RuneSelectionHeaderCount = 6;
+	private const int RuneSelectionRerollCountIndex = 5;
+
+	private static readonly object PlayerRuneIdsByOrdinalLock = new();
+	private static IReadOnlyList<ModelId>? _playerRuneIdsByOrdinal;
+	private static int _playerRuneIdsByOrdinalVersion = -1;
+
+	// 联机位图/旧格式序号按“可配置玩家符文 ID 排序后的下标”编码。外部模组登记会改变该集合,
+	// 所以缓存按 HextechContentRegistry.Version 失效:否则在外部登记完成前被访问一次就会永久错位。
+	private static IReadOnlyList<ModelId> PlayerRuneIdsByOrdinal
+	{
+		get
+		{
+			int version = HextechContentRegistry.Version;
+			lock (PlayerRuneIdsByOrdinalLock)
+			{
+				if (_playerRuneIdsByOrdinal == null || _playerRuneIdsByOrdinalVersion != version)
+				{
+					_playerRuneIdsByOrdinal = HextechCatalog.GetConfigurablePlayerRuneIds()
+						.OrderBy(static id => id.Category, StringComparer.Ordinal)
+						.ThenBy(static id => id.Entry, StringComparer.Ordinal)
+						.ToArray();
+					_playerRuneIdsByOrdinalVersion = version;
+				}
+
+				return _playerRuneIdsByOrdinal;
+			}
+		}
+	}
 
 	public static PlayerChoiceResult CreateRuneSelection(int actIndex, int choiceOrdinal, int selectedIndex, IReadOnlyList<int> rerollHistory, IReadOnlyList<RelicModel> finalOptions)
 	{
@@ -47,9 +73,7 @@ internal static partial class HextechChoiceCodec
 		rerollHistory = [];
 		finalOptionIds = [];
 		if (!TryGetIndexPayload(result, out List<int> payload)
-			|| payload.Count < 6
-			|| payload[0] != Magic
-			|| payload[1] != ChoiceKindRuneSelection
+			|| !TryReadRuneSelectionHeader(payload, out int finalOptionsCursor)
 			|| payload[2] != expectedActIndex
 			|| payload[3] != expectedChoiceOrdinal)
 		{
@@ -57,18 +81,34 @@ internal static partial class HextechChoiceCodec
 		}
 
 		selectedIndex = payload[4];
-		int rerollCount = payload[5];
-		const int headerCount = 6;
-		if (rerollCount < 0
-			|| rerollCount > MaxChoiceListCount
-			|| !HasRemaining(payload, headerCount, rerollCount))
+		rerollHistory = payload.Skip(RuneSelectionHeaderCount).Take(payload[RuneSelectionRerollCountIndex]).ToList();
+		return TryDecodeRuneSelectionFinalOptions(payload, finalOptionsCursor, out finalOptionIds);
+	}
+
+	/// <summary>
+	/// 校验符文选择载荷的头部(Magic、消息类型、重掷历史长度),返回最终候选 ID 列表的起始下标。
+	/// 候选之后的权重/配方尾部解析器用它定位,不再各自按魔法下标重解析头部。
+	/// </summary>
+	internal static bool TryReadRuneSelectionHeader(IReadOnlyList<int> payload, out int finalOptionsCursor)
+	{
+		finalOptionsCursor = -1;
+		if (payload.Count < RuneSelectionHeaderCount
+			|| payload[0] != Magic
+			|| payload[1] != ChoiceKindRuneSelection)
 		{
 			return false;
 		}
 
-		rerollHistory = payload.Skip(headerCount).Take(rerollCount).ToList();
-		int cursor = rerollCount + headerCount;
-		return TryDecodeRuneSelectionFinalOptions(payload, cursor, out finalOptionIds);
+		int rerollCount = payload[RuneSelectionRerollCountIndex];
+		if (rerollCount < 0
+			|| rerollCount > MaxChoiceListCount
+			|| !HasRemaining(payload, RuneSelectionHeaderCount, rerollCount))
+		{
+			return false;
+		}
+
+		finalOptionsCursor = RuneSelectionHeaderCount + rerollCount;
+		return true;
 	}
 
 	private static bool TryDecodeRuneSelectionFinalOptions(List<int> payload, int cursor, out List<ModelId> finalOptionIds)
@@ -97,7 +137,7 @@ internal static partial class HextechChoiceCodec
 
 		for (int i = 0; i < optionCount; i++)
 		{
-			if (!TryGetRuneIdForOrdinal(payload[cursor + i], out ModelId id))
+			if (!TryGetRuneIdForOrdinal(payload[cursor + i], out ModelId? id))
 			{
 				finalOptionIds.Clear();
 				return false;
@@ -109,12 +149,12 @@ internal static partial class HextechChoiceCodec
 		return true;
 	}
 
-	private static bool TryGetRuneIdForOrdinal(int ordinal, out ModelId id)
+	private static bool TryGetRuneIdForOrdinal(int ordinal, [NotNullWhen(true)] out ModelId? id)
 	{
-		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal;
 		if (ordinal < 0 || ordinal >= ids.Count)
 		{
-			id = null!;
+			id = null;
 			return false;
 		}
 

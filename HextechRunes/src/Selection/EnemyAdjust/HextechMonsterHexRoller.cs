@@ -14,7 +14,7 @@ internal static class HextechMonsterHexRoller
 		IEnumerable<MonsterHexKind>? extraExcludedHexes = null,
 		IReadOnlySet<string>? disabledMonsterHexIds = null)
 	{
-		IReadOnlyList<MonsterHexKind> rarityPool = ApplyConfig(FilterMultiplayerDisabled(MonsterHexCatalog.GetMonsterHexesForRarity(rarity)), disabledMonsterHexIds);
+		IReadOnlyList<MonsterHexKind> rarityPool = GetConfiguredRarityPool(rarity, disabledMonsterHexIds);
 		HashSet<MonsterHexKind> excluded = ToSet(knownHexes);
 		if (extraExcludedHexes != null)
 		{
@@ -79,7 +79,7 @@ internal static class HextechMonsterHexRoller
 		Func<MonsterHexKind, ModelId> getIconRelicId,
 		IReadOnlySet<string>? disabledMonsterHexIds = null)
 	{
-		IReadOnlyList<MonsterHexKind> rarityPool = ApplyConfig(FilterMultiplayerDisabled(MonsterHexCatalog.GetMonsterHexesForRarity(rarity)), disabledMonsterHexIds);
+		IReadOnlyList<MonsterHexKind> rarityPool = GetConfiguredRarityPool(rarity, disabledMonsterHexIds);
 		HashSet<MonsterHexKind> alreadyChosen = knownHexes
 			.Where(kind => kind != currentHex)
 			.ToHashSet();
@@ -107,6 +107,12 @@ internal static class HextechMonsterHexRoller
 			.Where(kind => kind != currentHex)
 			.ToList();
 		return pool.Count > 0 ? pool : rarityPool.ToArray();
+	}
+
+	/// <summary>本稀有度下本局可抽到的敌方海克斯:去掉联机禁用项与配置禁用项。抽取、重掷与远端校验共用。</summary>
+	public static IReadOnlyList<MonsterHexKind> GetConfiguredRarityPool(HextechRarityTier rarity, IReadOnlySet<string>? disabledMonsterHexIds)
+	{
+		return ApplyConfig(FilterMultiplayerDisabled(MonsterHexCatalog.GetMonsterHexesForRarity(rarity)), disabledMonsterHexIds);
 	}
 
 	private static HashSet<MonsterHexKind> ToSet(IEnumerable<MonsterHexKind>? hexes)

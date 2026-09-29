@@ -70,7 +70,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		scroll.AddChild(grid);
 
 		_selfPickButtons.Clear();
-		foreach (RelicModel relic in _selfPickPool!)
+		foreach (RelicModel relic in _selfPickPool ?? [])
 		{
 			Button button = CreateSelfPickIconButton(relic);
 			button.FocusEntered += () => scroll.EnsureControlVisible(button);

@@ -2,11 +2,6 @@ using MegaCrit.Sts2.Core.Saves;
 
 namespace HextechRunes;
 
-internal readonly record struct HextechForgeRarityWeights(int Silver, int Gold, int Prismatic)
-{
-	public int Total => Silver + Gold + Prismatic;
-}
-
 internal static class HextechForgeGrantHelper
 {
 	private const int ForgeChoiceOptionCount = 3;

@@ -21,6 +21,7 @@ internal static class HextechModelBootstrap
 		}
 	}
 
+	// 仅为 HextechMobileModelRegistrationHooks 保留的转发;调用方改为直接调用 HextechModelPoolRegistrar 后即可删除。
 	internal static void CleanupMobileFirstModelRegistrationWorkaround()
 	{
 		HextechModelPoolRegistrar.CleanupMobileFirstModelRegistrationWorkaround();

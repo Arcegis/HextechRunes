@@ -1,6 +1,6 @@
-using System.Collections;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Modding;
+using static HextechRunes.HextechContentRegistry;
 
 namespace HextechRunes;
 
@@ -10,22 +10,7 @@ internal static partial class HextechCatalog
 
 	private readonly record struct CharacterRunePool(string LocalizationKey, IReadOnlyList<Type> RuneTypes);
 
-	private static PlayerRuneMetadataCatalog PlayerRuneMetadata => HextechContentRegistry.PlayerRuneMetadata;
-
-	private static IReadOnlyList<Type> SilverRuneTypes => PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Silver];
-
-	private static IReadOnlyList<Type> GoldRuneTypes => PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Gold];
-
-	private static IReadOnlyList<Type> PrismaticRuneTypes => PlayerRuneMetadata.TypesByRarity[HextechRarityTier.Prismatic];
-
-	private static IReadOnlyList<Type> SilverForgeTypes => HextechContentRegistry.SilverForgeTypes;
-
-	private static IReadOnlyList<Type> GoldForgeTypes => HextechContentRegistry.GoldForgeTypes;
-
-	private static IReadOnlyList<Type> PrismaticForgeTypes => HextechContentRegistry.PrismaticForgeTypes;
-
-	private static IReadOnlyList<Type> ShopOnlyRelicTypes => HextechContentRegistry.ShopOnlyRelicTypes;
-
+	// 注册表查询统一经 HextechContentRegistry(文件头 using static),本类不再包一层同名私有属性。
 	private static IReadOnlyList<CharacterRunePool> CharacterRunePools =>
 	[
 		new("IRONCLAD", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Ironclad]),
@@ -37,25 +22,7 @@ internal static partial class HextechCatalog
 
 	private static IReadOnlySet<Type> CharacterSpecificRuneTypes => PlayerRuneMetadata.GetCharacterSpecificTypes();
 
-	private static IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes =>
-		PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive];
-
-	private static IReadOnlyList<Type> AllRuneTypes => PlayerRuneMetadata.AllTypes;
-
-	private static IReadOnlyList<Type> AllForgeTypes => HextechContentRegistry.AllForgeTypes;
-
-	private static IReadOnlyList<Type> AllCustomRelicTypes => HextechContentRegistry.AllCustomRelicTypes;
-
-	private static IReadOnlyList<Type> CustomCardTypes => HextechContentRegistry.CustomCardTypes;
-
 	public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
-
-	public static IReadOnlyList<Type> GetAllSelectableRuneTypes()
-	{
-		return Enum.GetValues<HextechRarityTier>()
-			.SelectMany(GetPlayerRuneTypesForRarity)
-			.ToArray();
-	}
 
 	public static IReadOnlyList<Type> GetAllConfigurableRuneTypes()
 	{
@@ -92,13 +59,6 @@ internal static partial class HextechCatalog
 		}
 
 		return IsPlayerRuneTypeVisible(runeType);
-	}
-
-	public static IReadOnlyList<Type> GetGenericSelectableRuneTypes()
-	{
-		return GetAllSelectableRuneTypes()
-			.Where(static type => !CharacterSpecificRuneTypes.Contains(type))
-			.ToArray();
 	}
 
 	public static IReadOnlyList<Type> GetGenericVisibleRuneTypes()
@@ -381,56 +341,31 @@ internal static partial class HextechCatalog
 		};
 	}
 
-	private static bool IsEndlessModeLoaded()
+	private const string EndlessModeModId = "EndlessMode";
+
+	// 只缓存 ModManager 完成初始化之后的结果:模组逐个加载,初始化期间查询会漏掉排在后面的 EndlessMode;
+	// 初始化完成后原版不支持运行中加载/卸载模组,结果不再变化。
+	private static bool? _endlessModeLoaded;
+
+	/// <summary>
+	/// 无尽模式(EndlessMode)是否已加载。使用原版公开 API <see cref="ModManager.GetLoadedMods"/>
+	/// 与 <c>Mod.manifest.id</c>(0.107.1–0.111.0 均为 public),不再反射私有成员。
+	/// 第 3 幕构建候选池时会对每个候选调用,结果在模组初始化完成后缓存。
+	/// </summary>
+	internal static bool IsEndlessModeLoaded()
 	{
-		foreach (object mod in EnumerateKnownMods())
+		if (_endlessModeLoaded is bool cached)
 		{
-			if (IsLoadedEndlessModeMod(mod))
-			{
-				return true;
-			}
+			return cached;
 		}
 
-		return false;
-	}
-
-	private static IEnumerable<object> EnumerateKnownMods()
-	{
-		Type modManagerType = typeof(ModManager);
-		object? mods =
-			modManagerType.GetProperty("LoadedMods", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)
-			?? modManagerType.GetField("_loadedMods", BindingFlags.NonPublic | BindingFlags.Static)?.GetValue(null)
-			?? modManagerType.GetProperty("AllMods", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)
-			?? modManagerType.GetField("_mods", BindingFlags.NonPublic | BindingFlags.Static)?.GetValue(null);
-
-		if (mods is not IEnumerable enumerable)
+		bool loaded = ModManager.GetLoadedMods()
+			.Any(static mod => string.Equals(mod.manifest?.id, EndlessModeModId, StringComparison.OrdinalIgnoreCase));
+		if (ModManager.State != ModManagerState.None)
 		{
-			yield break;
+			_endlessModeLoaded = loaded;
 		}
 
-		foreach (object? mod in enumerable)
-		{
-			if (mod != null)
-			{
-				yield return mod;
-			}
-		}
-	}
-
-	private static bool IsLoadedEndlessModeMod(object mod)
-	{
-		Type modType = mod.GetType();
-		object? manifest = modType.GetField("manifest", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(mod)
-			?? modType.GetProperty("manifest", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(mod);
-		string? id = manifest?.GetType().GetField("id", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(manifest) as string
-			?? manifest?.GetType().GetProperty("id", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(manifest) as string;
-		if (!string.Equals(id, "EndlessMode", StringComparison.OrdinalIgnoreCase))
-		{
-			return false;
-		}
-
-		object? wasLoadedValue = modType.GetField("wasLoaded", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(mod)
-			?? modType.GetProperty("wasLoaded", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(mod);
-		return wasLoadedValue is not bool wasLoaded || wasLoaded;
+		return loaded;
 	}
 }

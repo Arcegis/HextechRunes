@@ -87,6 +87,8 @@ internal static class HextechStableRandom
 		return selected;
 	}
 
+	// CreateMinionCard/CreateOrb 是个别符文的内容逻辑,本应放在各自内容文件里;调用方不在本工具类维护范围内,
+	// 暂留于此,只做“稳定下标 → 固定候选表”的映射,不引入新的随机来源。
 	public static CardModel CreateMinionCard(HextechCombatState combatState, Player owner, string source, int ordinal)
 	{
 		int index = Index((RunState)owner.RunState, 3,
@@ -216,7 +218,7 @@ internal static class HextechStableRandom
 		}
 	}
 
-	private static string?[] AppendSalt(string?[] saltParts, params string?[] extra)
+	internal static string?[] AppendSalt(string?[] saltParts, params string?[] extra)
 	{
 		string?[] result = new string?[saltParts.Length + extra.Length];
 		Array.Copy(saltParts, result, saltParts.Length);

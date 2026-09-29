@@ -59,7 +59,7 @@ internal static partial class HextechRuneConfigMenuHooks
 				context,
 				L("HEXTECH_CHAOS_RUNE_CHANCE_VALUE_LABEL"),
 				() => pending.ChaosRuneChancePercent,
-				value => pending.ChaosRuneChancePercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(value),
+				value => pending.ChaosRuneChancePercent = HextechRuneConfiguration.ClampChaosRuneChancePercent(value),
 				getDisplayText: () => $"{pending.ChaosRuneChancePercent}%"));
 	}
 

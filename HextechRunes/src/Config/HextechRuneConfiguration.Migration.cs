@@ -4,88 +4,56 @@ internal static partial class HextechRuneConfiguration
 {
 	// v4~v14 的历史迁移段与配套数组已删除:v15(0.8.4)强制重置使 ConfigVersion<15 一律整体回默认,
 	// 那些分支永不可达。活跃链从 v16 起。
-	// 腐化树枝生成分布加权(攻击40/技能20/能力40)后无限风险可控,转为默认启用。
-	private static readonly Type[] Version16DefaultEnabledRuneTypes =
+	/// <summary>
+	/// 我方海克斯默认开关迁移:ConfigVersion 低于 <see cref="PlayerRuneDefaultMigration.BelowVersion"/> 的配置
+	/// 依次把 Enable 移出禁用集、把 Disable 加入禁用集。按版本顺序逐项执行(同一符文可能先启用后禁用,
+	/// 如回力OK镖 v17 启用、v27 禁用),每项只迁移一次,之后尊重玩家的手动选择。
+	/// </summary>
+	private readonly record struct PlayerRuneDefaultMigration(int BelowVersion, Type[] Enable, Type[] Disable);
+
+	private static readonly PlayerRuneDefaultMigration[] PlayerRuneDefaultMigrations =
 	[
-		typeof(CorruptedBranchRune)
-	];
-	// 感受燃烧/回力OK镖重做为"获得时给卡"(0.8.4 数据驱动重做),转为默认启用。
-	private static readonly Type[] Version17DefaultEnabledRuneTypes =
-	[
-		typeof(FeelTheBurnRune),
-		typeof(OkBoomerangRune)
-	];
-	// 星界躯体改为百分比生命加成(50%)后强度自洽,转为默认启用。
-	private static readonly Type[] Version18DefaultEnabledRuneTypes =
-	[
-		typeof(AstralBodyRune)
-	];
-	// 设计审查批次:咔咔!(代价先付收益小)转为默认禁用。同批的和平主义者已于 0.9.6 整体移除。
-	private static readonly Type[] Version19DefaultDisabledRuneTypes =
-	[
-		typeof(KakaRune)
-	];
-	// 小猪存钱罐(鼓励挨打赚钱与防御方向相悖)转为默认禁用。
-	private static readonly Type[] Version20DefaultDisabledRuneTypes =
-	[
-		typeof(PiggyBankRune)
-	];
-	// 升级打击/防御(围绕不该保留的牌做增强,遥测垫底)与验牌(每回合选牌拖慢节奏)转为默认禁用。
-	private static readonly Type[] Version21DefaultDisabledRuneTypes =
-	[
-		typeof(StrikeUpgradeRune),
-		typeof(DefendUpgradeRune),
-		typeof(CardInspectionRune)
-	];
-	// 罪恶快感(开局+击杀双重资源滚雪球)转为默认禁用。
-	private static readonly Type[] Version22DefaultDisabledRuneTypes =
-	[
-		typeof(GetExcitedRune)
+		// 腐化树枝生成分布加权(攻击40/技能20/能力40)后无限风险可控,转为默认启用。
+		new(16, [ typeof(CorruptedBranchRune) ], []),
+		// 感受燃烧/回力OK镖重做为"获得时给卡"(0.8.4 数据驱动重做),转为默认启用。
+		new(17, [ typeof(FeelTheBurnRune), typeof(OkBoomerangRune) ], []),
+		// 星界躯体改为百分比生命加成(50%)后强度自洽,转为默认启用。
+		new(18, [ typeof(AstralBodyRune) ], []),
+		// 设计审查批次:咔咔!(代价先付收益小)转为默认禁用。同批的和平主义者已于 0.9.6 整体移除。
+		new(19, [], [ typeof(KakaRune) ]),
+		// 小猪存钱罐(鼓励挨打赚钱与防御方向相悖)转为默认禁用。
+		new(20, [], [ typeof(PiggyBankRune) ]),
+		// 升级打击/防御(围绕不该保留的牌做增强,遥测垫底)与验牌(每回合选牌拖慢节奏)转为默认禁用。
+		new(21, [], [ typeof(StrikeUpgradeRune), typeof(DefendUpgradeRune), typeof(CardInspectionRune) ]),
+		// 罪恶快感(开局+击杀双重资源滚雪球)转为默认禁用。
+		new(22, [], [ typeof(GetExcitedRune) ]),
+		// 0.8.5 遥测(69.8万局)选取率垫底批次转为默认禁用:豪猪7.7%/巨像的勇气10.6%/瓦库11.4%/
+		// 死亡收割11.5%/最终形态12.8%(全体中位数30.3%)。
+		new(23, [], [ typeof(ShoulderVakuRune), typeof(PorcupineRune), typeof(CourageOfColossusRune), typeof(DeathHarvestRune), typeof(FinalFormRune) ]),
+		// 升级:打击/防御重做为"最高+999且战后升级本场打出过的"(棱彩),转为默认启用。
+		new(24, [ typeof(StrikeUpgradeRune), typeof(DefendUpgradeRune) ], []),
+		// 安东尼的偏见转为默认启用(0.8.6)。
+		new(25, [ typeof(AnthonyBiasRune) ], []),
+		// 高风险或流程偏慢的通用海克斯转为默认禁用;豪猪已在 v23 禁用,不重复覆盖玩家后续选择。
+		new(27, [], [ typeof(OmegaRune), typeof(OkBoomerangRune), typeof(FeyMagicRune), typeof(AstralBodyRune) ]),
+		// 以进为退转为默认启用。
+		new(30, [ typeof(AdvanceToRetreatRune) ], []),
+		// 歪打正着重做为回合开始时按消耗牌堆状态牌生成充能球，转为默认启用。
+		new(31, [ typeof(HappyAccidentRune) ], []),
+		new(34, [], [ typeof(IllusoryWeaponRune) ]),
+		new(35, [], [ typeof(AutoPatrolRune) ]),
+		// 只禁用我方；敌方"无本万利"不受影响。
+		new(37, [], [ typeof(SomethingForNothingRune), typeof(SoulCallingRune) ]),
+		new(39, [], [ typeof(GhostFormRune), typeof(DieForYouRune) ])
 	];
 
-	// 0.8.5 遥测(69.8万局)选取率垫底批次转为默认禁用:豪猪7.7%/巨像的勇气10.6%/瓦库11.4%/
-	// 死亡收割11.5%/最终形态12.8%(全体中位数30.3%)。
-	private static readonly Type[] Version23DefaultDisabledRuneTypes =
+	/// <summary>敌方海克斯默认禁用迁移:只迁移一次,之后尊重玩家手动开启。</summary>
+	private static readonly (int BelowVersion, MonsterHexKind Kind)[] MonsterHexDefaultDisableMigrations =
 	[
-		typeof(ShoulderVakuRune),
-		typeof(PorcupineRune),
-		typeof(CourageOfColossusRune),
-		typeof(DeathHarvestRune),
-		typeof(FinalFormRune)
-	];
-
-	// 升级:打击/防御重做为"最高+999且战后升级本场打出过的"(棱彩),转为默认启用。
-	private static readonly Type[] Version24DefaultEnabledRuneTypes =
-	[
-		typeof(StrikeUpgradeRune),
-		typeof(DefendUpgradeRune)
-	];
-
-	// 安东尼的偏见转为默认启用(0.8.6)。
-	private static readonly Type[] Version25DefaultEnabledRuneTypes =
-	[
-		typeof(AnthonyBiasRune)
-	];
-
-	// 高风险或流程偏慢的通用海克斯转为默认禁用;豪猪已在 v23 禁用,不重复覆盖玩家后续选择。
-	private static readonly Type[] Version27DefaultDisabledRuneTypes =
-	[
-		typeof(OmegaRune),
-		typeof(OkBoomerangRune),
-		typeof(FeyMagicRune),
-		typeof(AstralBodyRune)
-	];
-
-	// 以进为退转为默认启用。
-	private static readonly Type[] Version30DefaultEnabledRuneTypes =
-	[
-		typeof(AdvanceToRetreatRune)
-	];
-
-	// 歪打正着重做为回合开始时按消耗牌堆状态牌生成充能球，转为默认启用。
-	private static readonly Type[] Version31DefaultEnabledRuneTypes =
-	[
-		typeof(HappyAccidentRune)
+		// 我方已在 v22 默认禁用。
+		(36, MonsterHexKind.GetExcited),
+		// 我方"你肩上的瓦库"早已默认禁用。
+		(38, MonsterHexKind.ShoulderVaku)
 	];
 
 	private static RuneConfig NormalizeLoadedConfig(RuneConfig config)
@@ -98,63 +66,53 @@ internal static partial class HextechRuneConfiguration
 		}
 
 		int previousConfigVersion = config.ConfigVersion;
-		HashSet<string> disabledIds = NormalizeConfigDisabledIds(config.DisabledPlayerRuneIds);
+		HashSet<string> disabledIds = NormalizeDisabledPlayerRuneIds(config.DisabledPlayerRuneIds);
 		HashSet<string> disabledMonsterHexIds = NormalizeDisabledMonsterHexIds(config.DisabledMonsterHexIds);
-		if (previousConfigVersion < 16)
-		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version16DefaultEnabledRuneTypes));
-		}
+		ApplyPlayerRuneDefaultMigrations(previousConfigVersion, disabledIds);
+		ApplyMonsterHexDefaultMigrations(previousConfigVersion, disabledMonsterHexIds);
+		MigrateLegacyScalarSettings(config, previousConfigVersion);
 
-		if (previousConfigVersion < 17)
-		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version17DefaultEnabledRuneTypes));
-		}
+		config.ConfigVersion = CurrentConfigVersion;
+		config.DisabledPlayerRuneIds = disabledIds;
+		config.DisabledMonsterHexIds = disabledMonsterHexIds;
+		ClampLoadedConfigValues(config);
+		return config;
+	}
 
-		if (previousConfigVersion < 18)
+	private static void ApplyPlayerRuneDefaultMigrations(int previousConfigVersion, HashSet<string> disabledIds)
+	{
+		foreach (PlayerRuneDefaultMigration migration in PlayerRuneDefaultMigrations)
 		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version18DefaultEnabledRuneTypes));
-		}
+			if (previousConfigVersion >= migration.BelowVersion)
+			{
+				continue;
+			}
 
-		if (previousConfigVersion < 19)
+			if (migration.Enable.Length > 0)
+			{
+				disabledIds.ExceptWith(GetPlayerRuneIds(migration.Enable));
+			}
+
+			if (migration.Disable.Length > 0)
+			{
+				disabledIds.UnionWith(GetPlayerRuneIds(migration.Disable));
+			}
+		}
+	}
+
+	private static void ApplyMonsterHexDefaultMigrations(int previousConfigVersion, HashSet<string> disabledMonsterHexIds)
+	{
+		foreach ((int belowVersion, MonsterHexKind kind) in MonsterHexDefaultDisableMigrations)
 		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version19DefaultDisabledRuneTypes));
+			if (previousConfigVersion < belowVersion)
+			{
+				disabledMonsterHexIds.Add(kind.ToString());
+			}
 		}
+	}
 
-		if (previousConfigVersion < 20)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version20DefaultDisabledRuneTypes));
-		}
-
-		if (previousConfigVersion < 21)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version21DefaultDisabledRuneTypes));
-		}
-
-		if (previousConfigVersion < 22)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version22DefaultDisabledRuneTypes));
-		}
-
-		if (previousConfigVersion < 23)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version23DefaultDisabledRuneTypes));
-		}
-
-		if (previousConfigVersion < 24)
-		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version24DefaultEnabledRuneTypes));
-		}
-
-		if (previousConfigVersion < 25)
-		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version25DefaultEnabledRuneTypes));
-		}
-
-		if (previousConfigVersion < 27)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds(Version27DefaultDisabledRuneTypes));
-		}
-
+	private static void MigrateLegacyScalarSettings(RuneConfig config, int previousConfigVersion)
+	{
 		if (previousConfigVersion < 28)
 		{
 			config.RuneRarityWeights = config.NormalRuneRarityWeights;
@@ -164,16 +122,6 @@ internal static partial class HextechRuneConfiguration
 		if (previousConfigVersion < 29)
 		{
 			config.GoldenRerollChancePercent = DefaultGoldenRerollChancePercent;
-		}
-
-		if (previousConfigVersion < 30)
-		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version30DefaultEnabledRuneTypes));
-		}
-
-		if (previousConfigVersion < 31)
-		{
-			disabledIds.ExceptWith(GetPlayerRuneIds(Version31DefaultEnabledRuneTypes));
 		}
 
 		if (previousConfigVersion < 32)
@@ -186,64 +134,28 @@ internal static partial class HextechRuneConfiguration
 		{
 			config.MonsterHexRerollLimit = DefaultMonsterHexRerollLimit;
 		}
+	}
 
-		if (previousConfigVersion < 34)
-		{
-			// 默认关闭只迁移一次，后续尊重玩家手动重新启用的选择。
-			disabledIds.UnionWith(GetPlayerRuneIds([typeof(IllusoryWeaponRune)]));
-		}
-
-		if (previousConfigVersion < 35)
-		{
-			disabledIds.UnionWith(GetPlayerRuneIds([typeof(AutoPatrolRune)]));
-		}
-
-		if (previousConfigVersion < 36)
-		{
-			// 我方已在 v22 默认禁用；敌方只迁移一次，之后尊重手动开启。
-			disabledMonsterHexIds.Add(MonsterHexKind.GetExcited.ToString());
-		}
-
-		if (previousConfigVersion < 37)
-		{
-			// 只禁用我方；敌方"无本万利"不受影响。只迁移一次，之后尊重手动开启。
-			disabledIds.UnionWith(GetPlayerRuneIds([typeof(SomethingForNothingRune), typeof(SoulCallingRune)]));
-		}
-
-		if (previousConfigVersion < 38)
-		{
-			// 我方"你肩上的瓦库"早已默认禁用；敌方只迁移一次，之后尊重手动开启。
-			disabledMonsterHexIds.Add(MonsterHexKind.ShoulderVaku.ToString());
-		}
-
-		if (previousConfigVersion < 39)
-		{
-			// 只迁移一次，之后尊重手动开启。
-			disabledIds.UnionWith(GetPlayerRuneIds([typeof(GhostFormRune), typeof(DieForYouRune)]));
-		}
-
-		config.ConfigVersion = CurrentConfigVersion;
-		config.DisabledPlayerRuneIds = disabledIds;
+	private static void ClampLoadedConfigValues(RuneConfig config)
+	{
 		config.PlayerHexCountsByAct = NormalizePlayerHexCounts(config.PlayerHexCountsByAct);
 		config.EnemyHexCountsByAct = NormalizeEnemyHexCounts(config.EnemyHexCountsByAct);
 		config.PlayerRuneRerollLimit = ClampRerollLimit(config.PlayerRuneRerollLimit);
 		config.MonsterHexRerollLimit = ClampRerollLimit(config.MonsterHexRerollLimit);
-		config.DisabledMonsterHexIds = disabledMonsterHexIds;
 		config.DisabledForgeIds = NormalizeDisabledForgeIds(config.DisabledForgeIds);
 		config.RuneRarityWeightsByAct = FromRarityWeightsByAct(NormalizeRarityWeightsByAct(
 			ToRarityWeightsByAct(config.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
 			DefaultRuneRarityWeightsByAct));
 		config.RuneRarityWeights = null;
 		config.GoldenRerollChancePercent = ClampGoldenRerollChancePercent(config.GoldenRerollChancePercent);
-		config.ChaosRuneChancePercent = Math.Clamp(config.ChaosRuneChancePercent, 0, 100);
+		config.ChaosRuneChancePercent = ClampChaosRuneChancePercent(config.ChaosRuneChancePercent);
 		config.FirstActRuneRarityWeights = null;
 		config.NormalRuneRarityWeights = null;
 		config.SecondActAfterSilverRuneRarityWeights = null;
-		config.ForgeRarityWeights = FromForgeRarityWeights(NormalizeForgeRarityWeights(
-			ToForgeRarityWeights(config.ForgeRarityWeights, DefaultForgeRarityWeights),
+		config.ForgeRarityWeights = FromRarityWeights(NormalizeRarityWeights(
+			ToRarityWeights(config.ForgeRarityWeights, DefaultForgeRarityWeights),
 			DefaultForgeRarityWeights));
 		config.RandomForgeShopPrice = ClampRandomForgeShopPrice(config.RandomForgeShopPrice);
-		return config;
 	}
 
 	// 测试钩子:用真实迁移链跑一份合成配置,返回迁移后的版本号与禁用集(仅 HextechRunes.Tests 使用)。

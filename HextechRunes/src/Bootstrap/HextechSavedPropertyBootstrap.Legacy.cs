@@ -1,4 +1,5 @@
 #if STS2_107_1
+using System.Collections;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -7,7 +8,7 @@ namespace HextechRunes;
 // 再由 HextechSavedPropertyNetIdHooks 在 ExecuteEssential 后把 net-id 表规范化;规范化之后窗口即关闭。
 internal static partial class HextechSavedPropertyBootstrap
 {
-	private const string RegistrationFreezePointName = "SavedProperty net-id 规范化";
+	private const string RegistrationFreezePointName = "SavedProperty net-id canonicalization";
 
 	// 窗口以"冻结点(ExecuteEssential 后缀)是否已过"为准,与规范化本身成功与否无关:
 	// 冻结点之后再注入都会让两端 net-id 布局分叉,规范化失败时更不能放行。
@@ -26,7 +27,7 @@ internal static partial class HextechSavedPropertyBootstrap
 		SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 	}
 
-	private static void InjectCachesCore()
+	internal static void InjectCaches()
 	{
 		foreach (Type type in HextechModelTypeIdentity.Distinct(HextechCatalog.GetAllCustomRelicTypes()))
 		{
@@ -39,6 +40,10 @@ internal static partial class HextechSavedPropertyBootstrap
 			SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 		}
 
+		// Power 与退役锻造不在任何内容注册表里(注册表只覆盖符文/锻造/敌方图标/卡牌/modifier),
+		// 只能手写:0.107.1 不会自动收录模组载体,这里漏一个就会在联机(反)序列化时抛错。
+		// 紧随其后的 WarnOnUninjectedSavedPropertyCarriers 会在启动期扫描本程序集全部带 [SavedProperty] 的
+		// 模型类型,新增载体忘了登记会直接告警。
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechBurnPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechNextTurnDamagePower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechGalvanicPower));
@@ -77,7 +82,7 @@ internal static partial class HextechSavedPropertyBootstrap
 		const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
 
 		FieldInfo? mapField = TryGetField(typeof(SavedPropertiesTypeCache), "_netIdToPropertyNameMap", flags);
-		int propertyNameCount = (mapField?.GetValue(null) as System.Collections.ICollection)?.Count ?? 0;
+		int propertyNameCount = (mapField?.GetValue(null) as ICollection)?.Count ?? 0;
 		int targetBitSize = HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(propertyNameCount);
 		int currentBitSize = SavedPropertiesTypeCache.NetIdBitSize;
 		if (currentBitSize >= targetBitSize)

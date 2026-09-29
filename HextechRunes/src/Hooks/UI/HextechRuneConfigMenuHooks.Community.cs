@@ -275,9 +275,9 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 
 		bool mine = tab == CommunityTab.Mine;
-		IReadOnlyList<HextechFeaturedConfigs.CommunityConfigEntry>? community = mine
-			? await HextechFeaturedConfigs.FetchMineAsync(mySteamId).ConfigureAwait(false)
-			: await HextechFeaturedConfigs.FetchCommunityAsync(GetCommunitySortKey(tab)).ConfigureAwait(false);
+		IReadOnlyList<HextechCommunityClient.CommunityConfigEntry>? community = mine
+			? await HextechCommunityClient.FetchMineAsync(mySteamId).ConfigureAwait(false)
+			: await HextechCommunityClient.FetchCommunityAsync(GetCommunitySortKey(tab)).ConfigureAwait(false);
 		return community?
 			.Select(entry => new CommunityDisplayEntry(
 				entry.Id, entry.Title ?? string.Empty, entry.Author ?? string.Empty, entry.Code ?? string.Empty,
@@ -425,10 +425,10 @@ internal static partial class HextechRuneConfigMenuHooks
 	private static async Task ToggleLikeAsync(Button like, string mySteamId, string entryId, int fallbackLikes)
 	{
 		bool on = !SessionLikedIds.Contains(entryId);
-		HextechFeaturedConfigs.CommunityApiResult result;
+		HextechCommunityClient.CommunityApiResult result;
 		try
 		{
-			result = await HextechFeaturedConfigs.LikeAsync(mySteamId, entryId, on);
+			result = await HextechCommunityClient.LikeAsync(mySteamId, entryId, on);
 		}
 		catch (Exception ex)
 		{
@@ -461,7 +461,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		remove.Disabled = true;
 		try
 		{
-			await HextechFeaturedConfigs.DeleteAsync(panel.MySteamId, entryId);
+			await HextechCommunityClient.DeleteAsync(panel.MySteamId, entryId);
 		}
 		catch (Exception ex)
 		{
@@ -485,7 +485,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		SetActionButtonText(report, L("HEXTECH_COMMUNITY_REPORTED"));
 		try
 		{
-			await HextechFeaturedConfigs.ReportAsync(mySteamId, entryId);
+			await HextechCommunityClient.ReportAsync(mySteamId, entryId);
 		}
 		catch (Exception ex)
 		{
@@ -551,10 +551,10 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 
 		form.Confirm.Disabled = true;
-		HextechFeaturedConfigs.CommunityApiResult result;
+		HextechCommunityClient.CommunityApiResult result;
 		try
 		{
-			result = await HextechFeaturedConfigs.UploadAsync(
+			result = await HextechCommunityClient.UploadAsync(
 				panel.MySteamId,
 				HextechSteamIdentity.GetPersonaName(),
 				uploadTitle,
@@ -563,7 +563,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		catch (Exception ex)
 		{
 			LogCommunityFailure("upload", ex);
-			result = new HextechFeaturedConfigs.CommunityApiResult(false, "network", null, -1);
+			result = new HextechCommunityClient.CommunityApiResult(false, "network", null, -1);
 		}
 
 		Callable.From(() =>

@@ -2,8 +2,6 @@ namespace HextechRunes;
 
 internal sealed class HextechEnemyHexAdjustmentOptions
 {
-	public MonsterHexKind? InitialHex { get; init; }
-
 	public IReadOnlyList<MonsterHexKind> InitialHexes { get; init; } = [];
 
 	public bool ControlsEnabled { get; init; }

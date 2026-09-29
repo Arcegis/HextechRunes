@@ -212,25 +212,25 @@ internal sealed partial class HextechGoldenRerollVisual : Control
 	private void ApplyLayerAnimation(float elapsed, float pulse)
 	{
 		float quickShimmer = 0.5f + 0.5f * MathF.Sin(elapsed * 3.8f);
-		if (GodotObject.IsInstanceValid(_haloLayer))
+		if (_haloLayer is { } haloLayer && GodotObject.IsInstanceValid(haloLayer))
 		{
 			float haloScale = 0.985f + pulse * 0.045f;
-			_haloLayer!.Scale = Vector2.One * haloScale;
-			_haloLayer.SelfModulate = new Color(1f, 0.84f, 0.42f, 0.68f + pulse * 0.14f);
+			haloLayer.Scale = Vector2.One * haloScale;
+			haloLayer.SelfModulate = new Color(1f, 0.84f, 0.42f, 0.68f + pulse * 0.14f);
 		}
 
-		if (GodotObject.IsInstanceValid(_fillLayer))
+		if (_fillLayer is { } fillLayer && GodotObject.IsInstanceValid(fillLayer))
 		{
 			float fillScale = 0.997f + quickShimmer * 0.012f;
-			_fillLayer!.Scale = Vector2.One * fillScale;
-			_fillLayer.SelfModulate = new Color(1f, 0.93f, 0.72f, 0.78f + pulse * 0.08f);
+			fillLayer.Scale = Vector2.One * fillScale;
+			fillLayer.SelfModulate = new Color(1f, 0.93f, 0.72f, 0.78f + pulse * 0.08f);
 		}
 
-		if (GodotObject.IsInstanceValid(_outerGlowLayer))
+		if (_outerGlowLayer is { } outerGlowLayer && GodotObject.IsInstanceValid(outerGlowLayer))
 		{
 			float glowScale = 0.995f + pulse * 0.025f;
-			_outerGlowLayer!.Scale = Vector2.One * glowScale;
-			_outerGlowLayer.SelfModulate = new Color(1f, 0.88f, 0.48f, 0.66f + quickShimmer * 0.10f);
+			outerGlowLayer.Scale = Vector2.One * glowScale;
+			outerGlowLayer.SelfModulate = new Color(1f, 0.88f, 0.48f, 0.66f + quickShimmer * 0.10f);
 		}
 	}
 

@@ -1,3 +1,4 @@
+using System.Collections;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -60,11 +61,6 @@ internal static partial class HextechSavedPropertyBootstrap
 		InjectModelTypeCore(type);
 	}
 
-	internal static void InjectCaches()
-	{
-		InjectCachesCore();
-	}
-
 	// 启动自检同时核对全局 net-id 名字表和每个载体自己的 PropertyInfo 缓存。前者决定 wire 布局，
 	// 后者决定保存/同步时实际枚举哪些属性；只查名字会漏掉“同名属性已存在、载体本身未缓存”的静默丢字段。
 	internal static void WarnOnUninjectedSavedPropertyCarriers()
@@ -74,15 +70,15 @@ internal static partial class HextechSavedPropertyBootstrap
 			HashSet<string>? registeredNames = TryGetRegisteredSavedPropertyNames();
 			if (registeredNames == null)
 			{
-				HextechLog.Warn("Mayhem", $"SavedProperty net-id 名字表自检跳过:取不到名字表;继续核对各载体的 per-type cache。");
+				HextechLog.Warn("Mayhem", "SavedProperty net-id name map check skipped: map unavailable; still auditing each carrier's per-type cache.");
 			}
 
-			System.Type abstractModelType = typeof(MegaCrit.Sts2.Core.Models.AbstractModel);
-			HashSet<(System.Type CarrierType, string PropertyName)> warned = [];
+			Type abstractModelType = typeof(AbstractModel);
+			HashSet<(Type CarrierType, string PropertyName)> warned = [];
 
 			foreach (Assembly assembly in GetAssembliesToAudit())
 			{
-				foreach (System.Type type in GetLoadableTypes(assembly))
+				foreach (Type type in GetLoadableTypes(assembly))
 				{
 					if (type.IsAbstract || !type.IsClass || !abstractModelType.IsAssignableFrom(type))
 					{
@@ -103,33 +99,33 @@ internal static partial class HextechSavedPropertyBootstrap
 						}
 
 						string missingPart = missingGlobalName && missingCarrierProperty
-							? "未进 net-id 名字表及该载体的 per-type cache"
+							? "is missing from both the net-id name map and the carrier's per-type cache"
 							: missingGlobalName
-								? "未进 net-id 名字表"
-								: "未进该载体的 per-type cache";
-						HextechLog.Warn("Mayhem", $"SavedProperty 注入自检:载体 {type.FullName} 的 [SavedProperty] \"{property.Name}\" {missingPart};联机(反)序列化可能抛 \"could not be mapped\" 或静默漏字段。请在模型注册窗口内显式登记该 SavedProperty 载体。");
+								? "is missing from the net-id name map"
+								: "is missing from the carrier's per-type cache";
+						HextechLog.Warn("Mayhem", $"SavedProperty injection audit: carrier {type.FullName} [SavedProperty] \"{property.Name}\" {missingPart}; multiplayer (de)serialization may throw \"could not be mapped\" or silently drop the field. Register this SavedProperty carrier explicitly inside the model registration window.");
 					}
 				}
 			}
 		}
-		catch (System.Exception ex)
+		catch (Exception ex)
 		{
 			// 纯诊断:任何反射异常都不得影响模组加载。
-			HextechLog.Warn("Mayhem", $"SavedProperty 注入自检跳过: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"SavedProperty injection audit skipped: {ex.Message}");
 		}
 	}
 
-	private static PropertyInfo[] GetSavedProperties(System.Type type)
+	// 与原版 SavedProperties 收录载体属性的判定一致(GetCustomAttribute<SavedPropertyAttribute>),
+	// 不按类名字符串匹配:同名的第三方特性原版并不认,按名字匹配只会产生误报。
+	private static PropertyInfo[] GetSavedProperties(Type type)
 	{
 		return type
 			.GetProperties(SavedPropertyFlags)
-			.Where(static property => property
-				.GetCustomAttributes(inherit: true)
-				.Any(static attr => attr.GetType().Name == "SavedPropertyAttribute"))
+			.Where(static property => property.GetCustomAttribute<SavedPropertyAttribute>() != null)
 			.ToArray();
 	}
 
-	private static IReadOnlyList<PropertyInfo>? TryGetCachedPropertiesForType(System.Type type)
+	private static IReadOnlyList<PropertyInfo>? TryGetCachedPropertiesForType(Type type)
 	{
 		try
 		{
@@ -153,7 +149,7 @@ internal static partial class HextechSavedPropertyBootstrap
 	}
 
 	private static InvalidOperationException CreateLateRegistrationException(
-		System.Type type,
+		Type type,
 		IReadOnlyList<PropertyInfo> missingProperties,
 		Exception? innerException = null)
 	{
@@ -164,8 +160,8 @@ internal static partial class HextechSavedPropertyBootstrap
 				.Distinct(StringComparer.Ordinal)
 				.OrderBy(static name => name, StringComparer.Ordinal));
 		string message =
-			$"[{ModInfo.Id}] SavedProperty 载体 {type.FullName} 在 {RegistrationFreezePointName} 之后注册，"
-			+ $"但 per-type cache 缺少属性 [{propertyNames}]。为保持联机 net-id 布局不变，已拒绝延迟注册。";
+			$"[{ModInfo.Id}] SavedProperty carrier {type.FullName} was registered after {RegistrationFreezePointName}, "
+			+ $"but its per-type cache is missing [{propertyNames}]. Late registration was rejected to keep the multiplayer net-id layout unchanged.";
 		return new InvalidOperationException(message, innerException);
 	}
 
@@ -176,7 +172,7 @@ internal static partial class HextechSavedPropertyBootstrap
 		yield return self;
 
 		string? selfName = self.GetName().Name;
-		foreach (Assembly assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+		foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
 		{
 			if (assembly == self || assembly.IsDynamic)
 			{
@@ -190,7 +186,7 @@ internal static partial class HextechSavedPropertyBootstrap
 					.GetReferencedAssemblies()
 					.Any(reference => string.Equals(reference.Name, selfName, StringComparison.Ordinal));
 			}
-			catch (System.Exception)
+			catch (Exception)
 			{
 				// 个别程序集的引用表读不出来就跳过,不影响其余扫描。
 			}
@@ -202,7 +198,7 @@ internal static partial class HextechSavedPropertyBootstrap
 		}
 	}
 
-	private static System.Type[] GetLoadableTypes(Assembly assembly)
+	private static Type[] GetLoadableTypes(Assembly assembly)
 	{
 		try
 		{
@@ -210,7 +206,7 @@ internal static partial class HextechSavedPropertyBootstrap
 		}
 		catch (ReflectionTypeLoadException ex)
 		{
-			return ex.Types.Where(static type => type != null).Cast<System.Type>().ToArray();
+			return ex.Types.Where(static type => type != null).Cast<Type>().ToArray();
 		}
 	}
 
@@ -220,7 +216,7 @@ internal static partial class HextechSavedPropertyBootstrap
 			typeof(SavedPropertiesTypeCache),
 			"_netIdToPropertyNameMap",
 			BindingFlags.NonPublic | BindingFlags.Static);
-		if (mapField?.GetValue(null) is not System.Collections.IEnumerable names)
+		if (mapField?.GetValue(null) is not IEnumerable names)
 		{
 			return null;
 		}

@@ -105,6 +105,18 @@ internal sealed partial class HextechRuneSelectionScreen
 			iconBox.AddChild(removedIcon);
 		}
 
+		AddEnemyPreviewTextColumn(row, monsterHex, monsterHexRelic);
+		if (_enemyHexControlsEnabled && slotIndex >= 0)
+		{
+			AddEnemyHexActionRow(row, slotIndex, monsterHex);
+		}
+
+		return row;
+	}
+
+	// 标题(含稀有度标签)与效果描述;槽位被移除时显示“已移除”说明。
+	private void AddEnemyPreviewTextColumn(HBoxContainer row, MonsterHexKind? monsterHex, RelicModel? monsterHexRelic)
+	{
 		VBoxContainer textColumn = new()
 		{
 			MouseFilter = MouseFilterEnum.Ignore,
@@ -150,58 +162,57 @@ internal sealed partial class HextechRuneSelectionScreen
 			SetFixedDescriptionText(body, new LocString(LocTable, "HEXTECH_ENEMY_REMOVED_DESCRIPTION").GetRawText(), 14);
 		}
 		textColumn.AddChild(body);
+	}
 
-		if (_enemyHexControlsEnabled && slotIndex >= 0)
+	// 可调整时的重掷与移除/撤销按钮;移除后只显示撤销按钮,重掷按钮保留为隐藏占位以维持按钮下标对应槽位。
+	private void AddEnemyHexActionRow(HBoxContainer row, int slotIndex, MonsterHexKind? monsterHex)
+	{
+		bool showUndoButton = ShouldShowEnemyHexUndoButton(monsterHex);
+		HBoxContainer actionRow = new()
 		{
-			bool showUndoButton = ShouldShowEnemyHexUndoButton(monsterHex);
-			HBoxContainer actionRow = new()
+			Name = $"EnemyHexActionRow{slotIndex}",
+			MouseFilter = MouseFilterEnum.Pass,
+			CustomMinimumSize = showUndoButton
+				? EnemyUndoButtonSize
+				: new Vector2(EnemyRerollButtonSize.X + EnemyRemoveButtonSize.X + 10f, EnemyRerollButtonSize.Y),
+			SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
+			Alignment = BoxContainer.AlignmentMode.Center
+		};
+		actionRow.AddThemeConstantOverride("separation", 10);
+		row.AddChild(actionRow);
+
+		Button rerollButton;
+		if (showUndoButton)
+		{
+			rerollButton = new Button
 			{
-				Name = $"EnemyHexActionRow{slotIndex}",
-				MouseFilter = MouseFilterEnum.Pass,
-				CustomMinimumSize = showUndoButton
-					? EnemyUndoButtonSize
-					: new Vector2(EnemyRerollButtonSize.X + EnemyRemoveButtonSize.X + 10f, EnemyRerollButtonSize.Y),
-				SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
-				Alignment = BoxContainer.AlignmentMode.Center
+				Name = $"EnemyHexRerollButton_{slotIndex}",
+				Visible = false,
+				Disabled = true,
+				FocusMode = FocusModeEnum.None
 			};
-			actionRow.AddThemeConstantOverride("separation", 10);
-			row.AddChild(actionRow);
-
-			Button rerollButton;
-			if (showUndoButton)
-			{
-				rerollButton = new Button
-				{
-					Name = $"EnemyHexRerollButton_{slotIndex}",
-					Visible = false,
-					Disabled = true,
-					FocusMode = FocusModeEnum.None
-				};
-			}
-			else
-			{
-				bool rerollDisabled = _enemyHexRerollFunc == null || IsEnemyHexRerollLimitReached(slotIndex);
-				rerollButton = CreateRerollIconButton(
-					$"EnemyHexRerollButton_{slotIndex}",
-					EnemyRerollButtonSize,
-					rerollDisabled,
-					includeGoldenVisual: false);
-				rerollButton.Pressed += () => OnEnemyHexRerollPressed(slotIndex);
-			}
-			actionRow.AddChild(rerollButton);
-			_enemyHexRerollButtons.Add(rerollButton);
-
-			bool canUndoRemove = !monsterHex.HasValue && GetMonsterHexBeforeRemovalSlot(slotIndex).HasValue;
-			Button removeButton = CreateEnemyHexRemovalButton(
-				slotIndex,
-				showUndoButton,
-				disabled: showUndoButton && !canUndoRemove);
-			removeButton.Pressed += () => OnEnemyHexRemovePressed(slotIndex);
-			actionRow.AddChild(removeButton);
-			_enemyHexRemoveButtons.Add(removeButton);
 		}
+		else
+		{
+			bool rerollDisabled = _enemyHexRerollFunc == null || IsEnemyHexRerollLimitReached(slotIndex);
+			rerollButton = CreateRerollIconButton(
+				$"EnemyHexRerollButton_{slotIndex}",
+				EnemyRerollButtonSize,
+				rerollDisabled,
+				includeGoldenVisual: false);
+			rerollButton.Pressed += () => OnEnemyHexRerollPressed(slotIndex);
+		}
+		actionRow.AddChild(rerollButton);
+		_enemyHexRerollButtons.Add(rerollButton);
 
-		return row;
+		bool canUndoRemove = !monsterHex.HasValue && GetMonsterHexBeforeRemovalSlot(slotIndex).HasValue;
+		Button removeButton = CreateEnemyHexRemovalButton(
+			slotIndex,
+			showUndoButton,
+			disabled: showUndoButton && !canUndoRemove);
+		removeButton.Pressed += () => OnEnemyHexRemovePressed(slotIndex);
+		actionRow.AddChild(removeButton);
+		_enemyHexRemoveButtons.Add(removeButton);
 	}
 
 	private Button CreateEnemyHexRemovalButton(int slotIndex, bool undo, bool disabled)

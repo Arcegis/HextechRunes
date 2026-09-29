@@ -39,16 +39,18 @@ public static class ModEntry
 			HextechPatcher.DumpIfRequested(harmony);
 			_initialized = true;
 			HextechMultiplayerDiagnostics.LogNetworkSignature();
-			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控。
-			HextechLog.Info(
+			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控:
+			// HextechLog.Info 默认关闭,所以这里直接用原版 Log.Info 输出同一前缀格式。
+			Log.Info(HextechLog.Format(
 				"Init", $"Loaded implementation variant for " +
-				$"Slay the Spire 2 compat target {ModInfo.TargetGameVersion}.");
+				$"Slay the Spire 2 compat target {ModInfo.TargetGameVersion}."));
 		}
 	}
 
+	// 仅为 EnemyHexConsoleCmd 与 HextechCombatHooks.Healing 保留的转发;调用方改为直接调用
+	// HextechRunLifecycleHooks.EnsureMayhemModifier 后即可删除。
 	internal static HextechMayhemModifier EnsureMayhemModifier(RunState runState)
 	{
 		return HextechRunLifecycleHooks.EnsureMayhemModifier(runState);
 	}
-
 }

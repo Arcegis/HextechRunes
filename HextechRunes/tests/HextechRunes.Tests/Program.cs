@@ -433,7 +433,18 @@ internal static partial class Program
 			new(nameof(ConfigMenuHasNoAsyncVoidHandlers), ConfigMenuHasNoAsyncVoidHandlers),
 			new(nameof(BurnHealthBarPredictionUsesSettlementFormula), BurnHealthBarPredictionUsesSettlementFormula),
 			new(nameof(CollectionHeaderFollowsStarterTemplate), CollectionHeaderFollowsStarterTemplate),
-			new(nameof(UiSkipPrefixesUseLowPriorityAndDeclarativeTargets), UiSkipPrefixesUseLowPriorityAndDeclarativeTargets)
+			new(nameof(UiSkipPrefixesUseLowPriorityAndDeclarativeTargets), UiSkipPrefixesUseLowPriorityAndDeclarativeTargets),
+			// ReviewSelection,
+			new(nameof(ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut), ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut),
+			new(nameof(ReviewConfigMigrationTableMatchesLegacyChain), ReviewConfigMigrationTableMatchesLegacyChain),
+			new(nameof(ReviewShareCodePreviewNormalizesLikeSave), ReviewShareCodePreviewNormalizesLikeSave),
+			new(nameof(ReviewExternalRegistryRejectsBuiltInTypes), ReviewExternalRegistryRejectsBuiltInTypes),
+			new(nameof(ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry), ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry),
+			new(nameof(ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes), ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes),
+			new(nameof(ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls), ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls),
+			new(nameof(ReviewRelicChoiceCodecKeepsWireFormatForBothKinds), ReviewRelicChoiceCodecKeepsWireFormatForBothKinds),
+			new(nameof(ReviewRuneSelectionTailParsersValidateHeader), ReviewRuneSelectionTailParsersValidateHeader),
+			new(nameof(ReviewChaosTransformResultIsValidated), ReviewChaosTransformResultIsValidated)
 		];
 
 		if (args.Length > 0)

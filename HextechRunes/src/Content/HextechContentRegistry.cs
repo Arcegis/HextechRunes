@@ -42,16 +42,6 @@ internal static class HextechContentRegistry
 
 	internal static IReadOnlySet<Type> SelectionExcludedPlayerRuneTypes => Lookups.SelectionExcludedPlayerRuneTypes;
 
-	internal static IReadOnlyList<Type> IroncladRuneTypes => Lookups.IroncladRuneTypes;
-
-	internal static IReadOnlyList<Type> SilentRuneTypes => Lookups.SilentRuneTypes;
-
-	internal static IReadOnlyList<Type> RegentRuneTypes => Lookups.RegentRuneTypes;
-
-	internal static IReadOnlyList<Type> DefectRuneTypes => Lookups.DefectRuneTypes;
-
-	internal static IReadOnlyList<Type> NecrobinderRuneTypes => Lookups.NecrobinderRuneTypes;
-
 	internal static IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes => Lookups.AttributeConversionExclusiveRuneTypes;
 
 	internal static IReadOnlyDictionary<Type, string> PlayerRuneTagKeys => Lookups.PlayerRuneTagKeys;
@@ -131,11 +121,6 @@ internal static class HextechContentRegistry
 			PrismaticForgeTypes = ForgeMetadata.TypesByRarity[HextechRarityTier.Prismatic];
 			DisabledPlayerRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.Disabled].ToHashSet();
 			SelectionExcludedPlayerRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.SelectionExcluded].ToHashSet();
-			IroncladRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Ironclad];
-			SilentRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Silent];
-			RegentRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Regent];
-			DefectRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Defect];
-			NecrobinderRuneTypes = PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Necrobinder];
 			AttributeConversionExclusiveRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive];
 			PlayerRuneTagKeys = PlayerRuneMetadata.TagKeys;
 			FirstActExcludedRuneTypes = PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.FirstActExcluded].ToHashSet();
@@ -165,11 +150,6 @@ internal static class HextechContentRegistry
 		public IReadOnlyList<Type> PrismaticForgeTypes { get; }
 		public IReadOnlySet<Type> DisabledPlayerRuneTypes { get; }
 		public IReadOnlySet<Type> SelectionExcludedPlayerRuneTypes { get; }
-		public IReadOnlyList<Type> IroncladRuneTypes { get; }
-		public IReadOnlyList<Type> SilentRuneTypes { get; }
-		public IReadOnlyList<Type> RegentRuneTypes { get; }
-		public IReadOnlyList<Type> DefectRuneTypes { get; }
-		public IReadOnlyList<Type> NecrobinderRuneTypes { get; }
 		public IReadOnlyList<Type> AttributeConversionExclusiveRuneTypes { get; }
 		public IReadOnlyDictionary<Type, string> PlayerRuneTagKeys { get; }
 		public PlayerRuneMetadataCatalog PlayerRuneMetadata { get; }
