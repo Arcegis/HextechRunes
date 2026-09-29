@@ -33,7 +33,7 @@ internal static partial class Program
 				prefix: new HarmonyMethod(typeof(Program), nameof(CrossOrbTestReplacement)));
 			foreach (bool tressFirst in new[] { true, false })
 			{
-				var (_, owner, other) = CreatePrismaticEnemyFixture();
+				(HextechEnemyHexContext _, Player owner, Player other) = CreatePrismaticEnemyFixture();
 				RunState run = (RunState)owner.RunState;
 				AccessTools.Field(typeof(RunState), "_allCards").SetValue(run, new List<CardModel>());
 				CrossOrbRune orb = CreateMutableTestModel<CrossOrbRune>(); orb.Owner = owner;
@@ -45,7 +45,7 @@ internal static partial class Program
 				CardCreationOptions options = new([], CardCreationSource.Other, CardRarityOddsType.Uniform);
 				options = options.WithFlags(CardCreationFlags.IsCardReward);
 				List<CardCreationResult> rewards = [new(run.CreateCard<Anger>(owner)), new(run.CreateCard<Impervious>(owner))];
-				Expect(Hook.TryModifyCardRewardOptions(run, owner, rewards, options, out var modifiers), "reward is modified");
+				Expect(Hook.TryModifyCardRewardOptions(run, owner, rewards, options, out List<AbstractModel>? modifiers), "reward is modified");
 				Expect(rewards[0].Card is Uppercut, "common reward is still replaced by Cross Orb");
 				Expect(rewards[1].Card is Impervious, "rare reward keeps its identity");
 				Expect(rewards.All(r => r.Card.Enchantment is Glam { Amount: 1 }), "all final choices retain native Glam regardless of relic order");

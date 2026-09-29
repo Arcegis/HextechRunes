@@ -53,8 +53,8 @@ internal static partial class Program
 	[HextechTest]
 	private static void ColorDiscoveryIncludesThirdPartyCharacterPools()
 	{
-		var ownerPool = new CompatibilityOwnerCardPool();
-		var externalPool = new CompatibilityExternalCardPool();
+		CompatibilityOwnerCardPool ownerPool = new();
+		CompatibilityExternalCardPool externalPool = new();
 
 		CardPoolModel[] pools = ColorDiscoveryRune.GetOtherCharacterPools(
 			[ownerPool, externalPool],

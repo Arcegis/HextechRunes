@@ -510,7 +510,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void DrawYourSwordReplacesOrbEvokeWithTwoFocus()
 	{
-		var rune = new DrawYourSwordRune();
+		DrawYourSwordRune rune = new();
 		Equal(2m, rune.DynamicVars["FocusPower"].BaseValue, "Draw Your Sword Focus per Evoke");
 
 		MethodInfo[] runeMethods = typeof(DrawYourSwordRune).GetMethods(
@@ -563,9 +563,9 @@ internal static partial class Program
 			(typeof(BloodDebtRune), HextechRarityTier.Silver, PlayerRuneCharacterPool.Ironclad),
 			(typeof(NetherSoulRune), HextechRarityTier.Gold, PlayerRuneCharacterPool.Necrobinder)
 		];
-		foreach (var entry in expected)
+		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool) entry in expected)
 		{
-			var actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
+			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
 			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
 			Equal(entry.Pool, actual.CharacterPool, entry.Type.Name + " character pool");
 			Equal(PlayerRuneFlags.None, actual.Flags, entry.Type.Name + " enabled");
@@ -577,29 +577,29 @@ internal static partial class Program
 	{
 		T Power<T>(int amount) where T : PowerModel, new()
 		{
-			var power = CreateMutableTestModel<T>();
+			T power = CreateMutableTestModel<T>();
 			typeof(PowerModel).GetField("_amount", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(power, amount);
 			return power;
 		}
-		var strength = Power<StrengthPower>(-5);
-		var dexterity = Power<DexterityPower>(-3);
-		var weak = Power<WeakPower>(2);
+		StrengthPower strength = Power<StrengthPower>(-5);
+		DexterityPower dexterity = Power<DexterityPower>(-3);
+		WeakPower weak = Power<WeakPower>(2);
 		weak.SkipNextDurationTick = true;
-		var buff = Power<StrengthPower>(4);
-		var hex = Power<HexPower>(1);
-		var ringing = Power<RingingPower>(1);
-		var confused = Power<ConfusedPower>(1);
-		var galvanic = Power<HextechGalvanicPower>(2);
+		StrengthPower buff = Power<StrengthPower>(4);
+		HexPower hex = Power<HexPower>(1);
+		RingingPower ringing = Power<RingingPower>(1);
+		ConfusedPower confused = Power<ConfusedPower>(1);
+		HextechGalvanicPower galvanic = Power<HextechGalvanicPower>(2);
 		List<PowerModel> powers = [strength, hex, buff, weak, ringing, dexterity, confused, galvanic];
-		var snapshot = ScapegoatRune.SnapshotDebuffs(powers);
+		PowerModel[] snapshot = ScapegoatRune.SnapshotDebuffs(powers);
 		Expect(snapshot.SequenceEqual(new PowerModel[] { strength, hex, weak, ringing, dexterity, confused, galvanic }),
 			"cleanse includes player-only debuffs in native order, but leaves buffs");
-		foreach (var playerOnly in new PowerModel[] { hex, ringing, confused, galvanic, buff })
+		foreach (PowerModel playerOnly in new PowerModel[] { hex, ringing, confused, galvanic, buff })
 		{
 			Expect(ScapegoatRune.CreateEnemyTransfer(playerOnly) == null,
 				playerOnly.GetType().Name + " must never reach enemy application");
 		}
-		var transfers = snapshot.Select(ScapegoatRune.CreateEnemyTransfer).OfType<PowerModel>().ToArray();
+		PowerModel[] transfers = snapshot.Select(ScapegoatRune.CreateEnemyTransfer).OfType<PowerModel>().ToArray();
 		Expect(transfers.Select(p => p.GetType()).SequenceEqual(new[] { typeof(StrengthPower), typeof(WeakPower), typeof(DexterityPower) }),
 			"unsafe effects cannot interrupt transfer of the remaining ordinary debuffs");
 		Expect(transfers.Select(p => p.Amount).SequenceEqual(new[] { -5, 2, -3 }), "preserve negative attributes and stacks");
@@ -612,13 +612,13 @@ internal static partial class Program
 	[HextechTest]
 	private static void BloodDebtAccumulatesPerCardAndExpiresAfterCombat()
 	{
-		var owner = CreateOrdinalTestPlayer(1);
-		var rune = CreateMutableTestModel<BloodDebtRune>();
+		Player owner = CreateOrdinalTestPlayer(1);
+		BloodDebtRune rune = CreateMutableTestModel<BloodDebtRune>();
 		rune.Owner = owner;
-		var first = CreateMutableTestModel<StrikeIronclad>();
-		var second = CreateMutableTestModel<StrikeIronclad>();
-		var skill = CreateMutableTestModel<DefendIronclad>();
-		var foreign = CreateMutableTestModel<StrikeIronclad>();
+		StrikeIronclad first = CreateMutableTestModel<StrikeIronclad>();
+		StrikeIronclad second = CreateMutableTestModel<StrikeIronclad>();
+		DefendIronclad skill = CreateMutableTestModel<DefendIronclad>();
+		StrikeIronclad foreign = CreateMutableTestModel<StrikeIronclad>();
 		first.Owner = second.Owner = skill.Owner = owner;
 		foreign.Owner = CreateOrdinalTestPlayer(2);
 		rune.GrowAttacks([first, skill, foreign], 7);
@@ -643,23 +643,23 @@ internal static partial class Program
 	[HextechTest]
 	private static void NetherSoulSnapshotsCurrentEtherealKeywordsOnce()
 	{
-		var owner = CreateOrdinalTestPlayer(1);
+		Player owner = CreateOrdinalTestPlayer(1);
 		SetAutoProperty(owner, nameof(Player.Creature), RuntimeHelpers.GetUninitializedObject(typeof(Creature)));
 		SetAutoProperty(owner, nameof(Player.Deck), new CardPile(PileType.Deck));
-		var addedEthereal = CreateMutableTestModel<StrikeIronclad>();
-		var ordinary = CreateMutableTestModel<StrikeIronclad>();
-		var foreign = CreateMutableTestModel<StrikeIronclad>();
+		StrikeIronclad addedEthereal = CreateMutableTestModel<StrikeIronclad>();
+		StrikeIronclad ordinary = CreateMutableTestModel<StrikeIronclad>();
+		StrikeIronclad foreign = CreateMutableTestModel<StrikeIronclad>();
 		addedEthereal.Owner = ordinary.Owner = owner;
 		foreign.Owner = CreateOrdinalTestPlayer(2);
 		addedEthereal.AddKeyword(CardKeyword.Ethereal);
 		foreign.AddKeyword(CardKeyword.Ethereal);
-		var etherealStatus = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Void>();
-		var etherealCurse = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Injury>();
+		MegaCrit.Sts2.Core.Models.Cards.Void etherealStatus = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Void>();
+		Injury etherealCurse = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Injury>();
 		etherealStatus.Owner = etherealCurse.Owner = owner;
 		etherealCurse.AddKeyword(CardKeyword.Ethereal);
 		Expect(etherealStatus.Keywords.Contains(CardKeyword.Ethereal), "Void is natively ethereal");
 		List<CardModel> exhausted = [addedEthereal, ordinary, foreign, addedEthereal, etherealStatus, etherealCurse];
-		var snapshot = NetherSoulRune.SnapshotEtherealCards(owner, exhausted);
+		CardModel[] snapshot = NetherSoulRune.SnapshotEtherealCards(owner, exhausted);
 		Equal(1, snapshot.Length, "added keywords count; ordinary, foreign, status and curse cards do not; each instance only once");
 		Expect(ReferenceEquals(addedEthereal, snapshot[0]), "play actual exhausted card rather than a copy");
 		exhausted.Clear();
@@ -671,11 +671,11 @@ internal static partial class Program
 	{
 		MethodInfo[] Calls(Type type, string method) => PatchProcessor.GetOriginalInstructions(
 			GetAsyncStateMachineMoveNext(type.GetMethod(method)!)).Select(i => i.operand).OfType<MethodInfo>().ToArray();
-		var transfer = Calls(typeof(ScapegoatRune), nameof(ScapegoatRune.AfterPlayerTurnStart));
+		MethodInfo[] transfer = Calls(typeof(ScapegoatRune), nameof(ScapegoatRune.AfterPlayerTurnStart));
 		Expect(transfer.Any(m => m.Name == "ConsumeCombatProcOrdinal"), "transfer uses synchronized proc ordinal");
 		Expect(transfer.Any(m => m.DeclaringType == typeof(HextechRuneTargeting)), "transfer chooses one stable random enemy");
 		Expect(transfer.Any(m => m.DeclaringType == typeof(MegaCrit.Sts2.Core.Commands.PowerCmd) && m.Name == "Apply"), "transfer keeps native application and artifact handling");
-		var replay = Calls(typeof(NetherSoulRune), nameof(NetherSoulRune.AfterSideTurnEndLate));
+		MethodInfo[] replay = Calls(typeof(NetherSoulRune), nameof(NetherSoulRune.AfterSideTurnEndLate));
 		Expect(replay.Any(m => m.DeclaringType == typeof(HextechAutoPlayHelper)), "exhausted cards use native autoplay");
 		Expect(!replay.Any(m => m.Name == "CanPlay"), "zero energy must not block autoplay");
 		Expect(replay.Any(m => m.Name == "Contains" && m.IsGenericMethod && m.GetGenericArguments().Contains(typeof(Creature))), "only the owner's turn including extra-turn participation");
@@ -692,7 +692,7 @@ internal static partial class Program
 			(typeof(MyriadManifestationsRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Defect),
 			(typeof(KingdomArmyRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Regent)
 		];
-		foreach (var entry in expected)
+		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool) entry in expected)
 		{
 			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
 			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
@@ -742,7 +742,7 @@ internal static partial class Program
 		Equal(0, card.CurrentStarCost, "stars are free");
 		card.EnergyCost.AfterCardPlayedCleanup();
 		Equal(0, card.EnergyCost.GetWithModifiers(CostModifiers.Local), "playing and returning the card does not clear free energy");
-		var costs = (List<TemporaryCardCost>)typeof(CardModel).GetField("_temporaryStarCosts", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(card)!;
+		List<TemporaryCardCost> costs = (List<TemporaryCardCost>)typeof(CardModel).GetField("_temporaryStarCosts", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(card)!;
 		costs.RemoveAll(cost => cost.ClearsWhenCardIsPlayed);
 		Expect(rune.TryModifyStarCost(card, card.CurrentStarCost, out decimal freeStars), "star-cost hook retains free play after native post-play cleanup");
 		Equal(0m, freeStars, "stars stay free when played again");
@@ -821,7 +821,7 @@ internal static partial class Program
 			(typeof(BlossomBladeRune), HextechRarityTier.Prismatic),
 			(typeof(OurHealingRune), HextechRarityTier.Gold)
 		];
-		foreach (var entry in expected)
+		foreach ((Type Type, HextechRarityTier Rarity) entry in expected)
 		{
 			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
 			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");

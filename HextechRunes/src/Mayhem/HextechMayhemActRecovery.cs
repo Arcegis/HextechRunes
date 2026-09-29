@@ -111,7 +111,7 @@ internal static class HextechMayhemActRecovery
 			{
 				HashSet<string> ownedRuneEntries = runState.Players[playerSlot].Relics
 					.Where(HextechCatalog.IsHextechRelic)
-					.Select(static relic => (relic.CanonicalId()).Entry)
+					.Select(static relic => relic.CanonicalId().Entry)
 					.ToHashSet(StringComparer.Ordinal);
 				for (int choiceOrdinal = 0; choiceOrdinal < requiredChoices; choiceOrdinal++)
 				{

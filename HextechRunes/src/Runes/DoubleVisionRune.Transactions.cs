@@ -146,7 +146,7 @@ public sealed partial class DoubleVisionRune
 
 			HextechLog.Warn(
 				"DoubleVision", $"Skipped duplication after recovering a failed custom event relic obtain: "
-				+ $"player={scope.Player.NetId} relic={(recovered.CanonicalId()).Entry}.");
+				+ $"player={scope.Player.NetId} relic={recovered.CanonicalId().Entry}.");
 			return recovered;
 		}
 
@@ -162,7 +162,7 @@ public sealed partial class DoubleVisionRune
 		{
 			HextechLog.Warn(
 				"DoubleVision", $"Skipped late event relic duplication after its option transaction closed: "
-				+ $"player={scope.Player.NetId} relic={(obtained.CanonicalId()).Entry}.");
+				+ $"player={scope.Player.NetId} relic={obtained.CanonicalId().Entry}.");
 		}
 
 		return obtained;
@@ -363,7 +363,7 @@ public sealed partial class DoubleVisionRune
 				ModelId sourceId = sourceRelic.CanonicalId();
 				RelicModel? recoveryCopy = player.Relics.FirstOrDefault(
 					relic => !relicsBefore.Contains(relic)
-						&& (relic.CanonicalId()) == sourceId);
+						&& relic.CanonicalId() == sourceId);
 				Exception? recoveryCopyException = null;
 				if (recoveryCopy == null)
 				{

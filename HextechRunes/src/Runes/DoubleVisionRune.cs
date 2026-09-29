@@ -76,7 +76,7 @@ public sealed partial class DoubleVisionRune : HextechRelicBase
 		{
 			// 旧格式只有 id,无法恢复真实实例身份;沿用旧语义,但成功处理一项后才移除,
 			// 避免复制/交互抛异常时把整个恢复队列提前清空。
-			RelicModel? source = Owner.Relics.FirstOrDefault(relic => (relic.CanonicalId()).Entry == idEntry);
+			RelicModel? source = Owner.Relics.FirstOrDefault(relic => relic.CanonicalId().Entry == idEntry);
 			if (source != null)
 			{
 				await DuplicateObtainedRelic(Owner, source);

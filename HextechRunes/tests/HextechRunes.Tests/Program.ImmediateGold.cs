@@ -47,7 +47,7 @@ internal static partial class Program
 				prefix: new HarmonyMethod(typeof(Program), nameof(SkipImmediateGoldFlash)));
 			harmony.Patch(AccessTools.Method(typeof(CombatRoom), nameof(CombatRoom.AddExtraReward)),
 				prefix: new HarmonyMethod(typeof(Program), nameof(CaptureUpgradeGoldReward)));
-			var (_, first, second) = CreatePrismaticEnemyFixture();
+			(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 			foreach (Player player in new[] { first, second })
 			{
 				AccessTools.Field(typeof(Player), "_relics").SetValue(player, new List<RelicModel>());

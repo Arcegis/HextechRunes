@@ -23,7 +23,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void NeurosurgeUpgradeSwapsVanillaPowerForHextechBuffOnlyForOwner()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		NeurosurgeUpgradeRune rune = CreateMutableTestModel<NeurosurgeUpgradeRune>();
 		rune.Owner = first;
 		AccessTools.Field(typeof(Player), "_relics").SetValue(first, new List<RelicModel> { rune });

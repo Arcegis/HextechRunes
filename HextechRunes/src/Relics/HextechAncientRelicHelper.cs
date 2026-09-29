@@ -111,6 +111,6 @@ internal static class HextechAncientRelicHelper
 	private static bool HasRelic(Player player, Type relicType)
 	{
 		ModelId relicId = ModelDb.GetId(relicType);
-		return player.Relics.Any(relic => (relic.CanonicalId()) == relicId);
+		return player.Relics.Any(relic => relic.CanonicalId() == relicId);
 	}
 }

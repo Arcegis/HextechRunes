@@ -49,7 +49,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		bool useImageFrame = cardFrameTexture != null;
 		Button button = new()
 		{
-			Name = $"{(relic.CanonicalId()).Entry}_Card",
+			Name = $"{relic.CanonicalId().Entry}_Card",
 			CustomMinimumSize = PlayerRuneCardSize,
 			Text = string.Empty,
 			FocusMode = FocusModeEnum.All,

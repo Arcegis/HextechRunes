@@ -90,7 +90,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	{
 		Button button = new()
 		{
-			Name = $"SelfPick_{(relic.CanonicalId()).Entry}",
+			Name = $"SelfPick_{relic.CanonicalId().Entry}",
 			CustomMinimumSize = new Vector2(SelfPickIconSize + 16f, SelfPickIconSize + 16f),
 			FocusMode = FocusModeEnum.All,
 			ToggleMode = false
@@ -171,7 +171,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_relics = _relics is HextechWeightedRuneOptions weighted
 			? new HextechWeightedRuneOptions([chosen], weighted.CharacterWeightPercent)
 			: [chosen];
-		HextechLog.Info("Mayhem", $"SelectionScreen.ConfirmSelfPick: relic={(chosen.CanonicalId()).Entry} poolSize={_selfPickPool?.Count ?? 0}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.ConfirmSelfPick: relic={chosen.CanonicalId().Entry} poolSize={_selfPickPool?.Count ?? 0}");
 		OnHolderSelected(chosen);
 	}
 

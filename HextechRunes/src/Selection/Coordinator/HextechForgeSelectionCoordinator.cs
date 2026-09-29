@@ -31,7 +31,7 @@ internal static class HextechForgeSelectionCoordinator
 		if (ShouldDirectlyGrantRandomForge(player))
 		{
 			RelicModel directGrant = PickStableRandomForge(player, options, context);
-			HextechLog.Info("ForgeChoice", $"Random direct grant (choice skipped): player={player.NetId} relic={(directGrant.CanonicalId()).Entry} context={context}");
+			HextechLog.Info("ForgeChoice", $"Random direct grant (choice skipped): player={player.NetId} relic={directGrant.CanonicalId().Entry} context={context}");
 			return directGrant;
 		}
 
@@ -50,7 +50,7 @@ internal static class HextechForgeSelectionCoordinator
 		{
 			HextechRuneSelectionScreen screen = await CreateForgeSelectionScreenAsync(options);
 			RelicModel? selected = (await screen.RelicsSelected()).FirstOrDefault();
-			HextechLog.Info("ForgeChoice", $"Local selected: player={player.NetId} relic={(selected?.CanonicalId())?.Entry ?? "null"} context={context}");
+			HextechLog.Info("ForgeChoice", $"Local selected: player={player.NetId} relic={selected?.CanonicalId()?.Entry ?? "null"} context={context}");
 			return selected;
 		}
 		catch (OperationCanceledException)

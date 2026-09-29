@@ -15,7 +15,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void TurnHooksSkipOwnersAbsentFromParticipants()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		CombatState combat = (CombatState)first.Creature.CombatState!;
 		Creature enemy = CreatePrismaticTestCreature(CombatSide.Enemy, combat);
 		IReadOnlyList<Creature> both = [first.Creature, second.Creature];
@@ -53,7 +53,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void FeyMagicKeepsPendingNoDrawForPlayersNotTakingTheTurn()
 	{
-		var (context, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext context, Player first, Player second) = CreatePrismaticEnemyFixture();
 		CombatState combat = (CombatState)first.Creature.CombatState!;
 		SetAutoProperty(first.Creature, nameof(Creature.CombatId), (uint?)11);
 		((List<Creature>)AccessTools.Field(typeof(CombatState), "_allies").GetValue(combat)!).Add(first.Creature);
@@ -66,7 +66,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void CombatStartForgesUseTheOwnersOwnTurnNumber()
 	{
-		var (_, first, _) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player _) = CreatePrismaticEnemyFixture();
 		PreparedForge forge = CreateMutableTestModel<PreparedForge>();
 		forge.Owner = first;
 		SetTurnNumber(first, 1);

@@ -52,7 +52,7 @@ internal static class HextechSelectionHelpers
 		ModelId selectedId = selected.CanonicalId();
 		for (int i = 0; i < relics.Count; i++)
 		{
-			ModelId optionId = relics[i].CanonicalInstance?.Id ?? relics[i].Id;
+			ModelId optionId = relics[i].CanonicalId();
 			if (optionId == selectedId)
 			{
 				return i;

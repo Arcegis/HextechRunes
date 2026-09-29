@@ -105,6 +105,6 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	private bool OwnerHasWhisperingEarring()
 	{
 		return Owner?.Relics.Any(static relic =>
-			(relic.CanonicalId()) == WhisperingEarringId) == true;
+			relic.CanonicalId() == WhisperingEarringId) == true;
 	}
 }

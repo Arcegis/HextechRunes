@@ -213,7 +213,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void HundredRefinementsRequiresTwoBodyForges()
 	{
-		var rune = new HundredRefinementsRune();
+		HundredRefinementsRune rune = new();
 		Equal(2, rune.DynamicVars["BodyForges"].IntValue, "Hundred Refinements body forge requirement");
 	}
 }

@@ -39,7 +39,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals()
 	{
-		var thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
+		System.Collections.IDictionary thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
 			.GetField("PlayerCountScaledThresholds", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
 		Equal(("HpPerPercent", HeavyHitterEnemyHex.HpPerPercentPerPlayer), ((string, int))thresholds[MonsterHexKind.HeavyHitter]!, "Heavy Hitter threshold");
 		Equal(("HpPerPercent", VitalitySurgeEnemyHex.HpPerPercentPerPlayer), ((string, int))thresholds[MonsterHexKind.VitalitySurge]!, "Vitality Surge threshold");

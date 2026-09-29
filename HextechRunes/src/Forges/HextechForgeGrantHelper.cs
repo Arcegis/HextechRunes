@@ -104,7 +104,7 @@ internal static class HextechForgeGrantHelper
 		// 这唯一落地点再用最新的有效禁用集兜底校验一次,挡掉任何漏网的被禁锻造器。
 		if (IsForgeDisabledForPlayer(player, forge))
 		{
-			HextechLog.Warn("ForgeChoice", $"Blocked obtaining a config-disabled forge: player={player.NetId} relic={(forge.CanonicalId()).Entry}");
+			HextechLog.Warn("ForgeChoice", $"Blocked obtaining a config-disabled forge: player={player.NetId} relic={forge.CanonicalId().Entry}");
 			return;
 		}
 
@@ -306,7 +306,7 @@ internal static class HextechForgeGrantHelper
 
 	internal static bool IsForgeDisabledForPlayer(Player player, RelicModel forge)
 	{
-		string entry = (forge.CanonicalId()).Entry;
+		string entry = forge.CanonicalId().Entry;
 		return GetEffectiveDisabledForgeIds(player).Contains(entry);
 	}
 

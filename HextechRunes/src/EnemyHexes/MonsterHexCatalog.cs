@@ -194,7 +194,7 @@ internal static class MonsterHexCatalog
 			}
 			catch (Exception fallbackEx)
 			{
-				HextechLog.Warn("Mayhem", $"Enemy hex description fallback failed: hex={hex} relic={(relic.CanonicalId()).Entry} error={fallbackEx.Message}");
+				HextechLog.Warn("Mayhem", $"Enemy hex description fallback failed: hex={hex} relic={relic.CanonicalId().Entry} error={fallbackEx.Message}");
 				return relic.Title.GetFormattedText();
 			}
 		}

@@ -393,6 +393,6 @@ internal static class HextechRunePoolBuilder
 
 	private static string BuildWeightedPoolKey(IReadOnlyList<RelicModel> pool, IReadOnlyList<int> weights)
 	{
-		return string.Join(",", pool.Select((relic, index) => $"{(relic.CanonicalId()).Entry}:{weights[index]}"));
+		return string.Join(",", pool.Select((relic, index) => $"{relic.CanonicalId().Entry}:{weights[index]}"));
 	}
 }

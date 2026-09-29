@@ -110,7 +110,7 @@ internal static partial class HextechTelemetry
 
 	private static string GetRelicId(RelicModel relic)
 	{
-		return (relic.CanonicalId()).Entry;
+		return relic.CanonicalId().Entry;
 	}
 
 	private static string Sha256Hex(string value)

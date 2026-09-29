@@ -259,7 +259,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			uint choiceId = synchronizer.ReserveChoiceId(player);
 			pendingSelections.Add(new PendingRuneSelection(player, options, choiceId, IsLocalPlayer(runManager, player)));
-			HextechLog.Info("Mayhem", $"RuneChoice pending: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => (o.CanonicalId()).Entry))}");
+			HextechLog.Info("Mayhem", $"RuneChoice pending: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => o.CanonicalId().Entry))}");
 		}
 
 		return localHasNoOptions;

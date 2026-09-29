@@ -46,7 +46,7 @@ internal static class HextechRelicOptionSelectionCoordinator
 			}
 
 			RelicModel? selected = (await screen.RelicsSelected()).FirstOrDefault();
-			HextechLog.Info("RelicOptionChoice", $"Local selected: player={player.NetId} relic={(selected?.CanonicalId())?.Entry ?? "null"} context={context}");
+			HextechLog.Info("RelicOptionChoice", $"Local selected: player={player.NetId} relic={selected?.CanonicalId()?.Entry ?? "null"} context={context}");
 			return selected;
 		}
 		catch (OperationCanceledException)

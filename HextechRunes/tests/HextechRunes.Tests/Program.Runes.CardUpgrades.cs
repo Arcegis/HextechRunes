@@ -86,7 +86,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		BulletTimeUpgradeRune bullet = CreateMutableTestModel<BulletTimeUpgradeRune>(); bullet.Owner = first;
 		BulletTime card = CreateMutableTestModel<BulletTime>(); card.Owner = first;
 		NoDrawPower noDraw = UpgradeTestPower<NoDrawPower>(first.Creature, 1);
@@ -114,7 +114,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		ClawUpgradeRune rune = CreateMutableTestModel<ClawUpgradeRune>(); rune.Owner = first;
 		Claw deck = CreateMutableTestModel<Claw>(); deck.Owner = first;
 		Claw combat = CreateMutableTestModel<Claw>(); combat.Owner = first; combat.DeckVersion = deck;
@@ -139,7 +139,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void PersistentPowerUpgradesDoNotAffectOtherPlayers()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		foreach (Player player in new[] { first, second })
 		{
 			SetAutoProperty(player.Creature, nameof(Creature.Player), player);
@@ -148,7 +148,7 @@ internal static partial class Program
 		RageUpgradeRune rage = CreateMutableTestModel<RageUpgradeRune>(); rage.Owner = first;
 		ReflectUpgradeRune reflect = CreateMutableTestModel<ReflectUpgradeRune>(); reflect.Owner = first;
 		((List<RelicModel>)AccessTools.Field(typeof(Player), "_relics").GetValue(first)!).AddRange([rage, reflect]);
-		foreach (var (runeType, power, foreignPower) in new (Type, PowerModel, PowerModel)[]
+		foreach ((Type runeType, PowerModel power, PowerModel foreignPower) in new (Type, PowerModel, PowerModel)[]
 		{
 			(typeof(RageUpgradeRune), UpgradeTestPower<RagePower>(first.Creature, 3), UpgradeTestPower<RagePower>(second.Creature, 3)),
 			(typeof(ReflectUpgradeRune), UpgradeTestPower<ReflectPower>(first.Creature, 3), UpgradeTestPower<ReflectPower>(second.Creature, 3))
@@ -174,9 +174,9 @@ internal static partial class Program
 			(typeof(InfernoPower), nameof(InfernoPower.AfterDamageReceived)),
 			(typeof(FlameBarrierPower), nameof(FlameBarrierPower.AfterDamageReceived))
 		];
-		var expected = HextechVanillaCopyGuard.LoadExpectedHashes();
+		IReadOnlyDictionary<string, string> expected = HextechVanillaCopyGuard.LoadExpectedHashes();
 		List<string> rows = [];
-		foreach (var (type, name) in targets)
+		foreach ((Type type, string name) in targets)
 		{
 			MethodInfo entry = AccessTools.Method(type, name);
 			IEnumerable<MethodInfo> methods = entry.GetCustomAttribute<AsyncStateMachineAttribute>() == null
@@ -414,10 +414,10 @@ internal static partial class Program
 		Equal(0, ThornmailRune.CalculateThorns(19m), "Thornmail should floor partial Max HP steps");
 		Equal(1, ThornmailRune.CalculateThorns(20m), "Thornmail should grant one Thorns per twenty Max HP");
 		Equal(4, ThornmailRune.CalculateThorns(99m), "Thornmail should have no legacy bonus cap");
-		var waveOwner = CreateOrdinalTestPlayer(1);
-		var ownWave = CreateMutableTestModel<CorrosiveWave>();
-		var teammateWave = CreateMutableTestModel<CorrosiveWave>();
-		var ownStrike = CreateMutableTestModel<StrikeIronclad>();
+		Player waveOwner = CreateOrdinalTestPlayer(1);
+		CorrosiveWave ownWave = CreateMutableTestModel<CorrosiveWave>();
+		CorrosiveWave teammateWave = CreateMutableTestModel<CorrosiveWave>();
+		StrikeIronclad ownStrike = CreateMutableTestModel<StrikeIronclad>();
 		ownWave.Owner = ownStrike.Owner = waveOwner;
 		teammateWave.Owner = CreateOrdinalTestPlayer(2);
 		Expect(CorrosiveWaveUpgradeRune.GrantsExhaust(ownWave, waveOwner), "the owner's Corrosive Wave gains the Exhaust keyword");

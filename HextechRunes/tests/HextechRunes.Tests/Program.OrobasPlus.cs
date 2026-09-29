@@ -27,7 +27,7 @@ internal static partial class Program
 				(typeof(CrackedCore), typeof(InfusedCore), typeof(HextechInfusedCorePlus))
 			];
 			TouchOfOrobas touch = new();
-			foreach (var row in upgrades)
+			foreach ((Type Starter, Type Ancient, Type Plus) row in upgrades)
 			{
 				RelicModel starter = ModelDb.GetById<RelicModel>(ModelDb.GetId(row.Starter));
 				RelicModel ancient = touch.GetUpgradedStarterRelic(starter);

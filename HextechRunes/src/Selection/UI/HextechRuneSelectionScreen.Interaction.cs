@@ -45,7 +45,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		if (IsSelectionConfirmGuardActive())
 		{
 			UpdatePendingPlayerRuneVisuals();
-			HextechLog.Info("Mayhem", $"SelectionScreen.OnHolderSelected: ignored early selection relic={(relic.CanonicalId()).Entry}");
+			HextechLog.Info("Mayhem", $"SelectionScreen.OnHolderSelected: ignored early selection relic={relic.CanonicalId().Entry}");
 			GetViewport()?.SetInputAsHandled();
 			return;
 		}
@@ -90,7 +90,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 		LockSelfPickControls();
 
-		HextechLog.Info("Mayhem", $"SelectionScreen.OnHolderSelected: relic={(relic.CanonicalId()).Entry}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.OnHolderSelected: relic={relic.CanonicalId().Entry}");
 		PlayRuneSelectSfx(relic);
 		GetViewport()?.SetInputAsHandled();
 		_completionSource.TrySetResult([relic]);
@@ -213,8 +213,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		string oldRelic = (_relics[slotIndex].CanonicalInstance?.Id ?? _relics[slotIndex].Id).Entry;
-		string newRelic = (rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id).Entry;
+		string oldRelic = _relics[slotIndex].CanonicalId().Entry;
+		string newRelic = rerolled[slotIndex].CanonicalId().Entry;
 		if (HextechSelectionHelpers.SameRuneCandidate(_relics[slotIndex], rerolled[slotIndex]))
 		{
 			return;

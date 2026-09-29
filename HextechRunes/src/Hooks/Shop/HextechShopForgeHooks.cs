@@ -96,7 +96,7 @@ internal static class HextechShopForgeHooks
 		// 主机权威复核:被配置禁用的锻造器即便因配置同步时序混进了候选,也要在扣钱前挡下,避免客机白花金币又拿到被禁锻造器。
 		if (HextechForgeGrantHelper.IsForgeDisabledForPlayer(player, forge))
 		{
-			HextechLog.Warn("Mayhem", $"Blocked purchasing a config-disabled forge: player={player.NetId} relic={(forge.CanonicalId()).Entry}");
+			HextechLog.Warn("Mayhem", $"Blocked purchasing a config-disabled forge: player={player.NetId} relic={forge.CanonicalId().Entry}");
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
 			return (false, 0);
 		}
@@ -134,7 +134,7 @@ internal static class HextechShopForgeHooks
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
-			HextechLog.Warn("Mayhem", $"Double Vision failed to duplicate purchased forge: player={player.NetId} relic={(forge.CanonicalId()).Entry}: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Double Vision failed to duplicate purchased forge: player={player.NetId} relic={forge.CanonicalId().Entry}: {ex.GetType().Name}: {ex.Message}");
 		}
 
 		if (shopRelic != null)

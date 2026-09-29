@@ -139,7 +139,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void BelieverForgePriceModifierSumsDeltasAndClampsAtZero()
 	{
-		var (_, first, second) = CreatePrismaticEnemyFixture();
+		(HextechEnemyHexContext _, Player first, Player second) = CreatePrismaticEnemyFixture();
 		RunState run = (RunState)first.RunState;
 		BelieverRune firstBeliever = CreateMutableTestModel<BelieverRune>();
 		BelieverRune secondBeliever = CreateMutableTestModel<BelieverRune>();

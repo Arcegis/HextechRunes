@@ -193,9 +193,9 @@ internal static partial class Program
 		string enemyId = MonsterHexKind.GetExcited.ToString();
 		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(ModelDb.GetId<GetExcitedRune>().Entry), "player default is disabled");
 		Expect(HextechRuneConfiguration.GetDefaultDisabledMonsterHexIds().Contains(enemyId), "enemy default is disabled");
-		var migrated = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(35, [MonsterHexKind.FrostWraith.ToString()]);
+		(int ConfigVersion, IReadOnlySet<string> DisabledMonsterHexIds) migrated = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(35, [MonsterHexKind.FrostWraith.ToString()]);
 		Expect(migrated.DisabledMonsterHexIds.SetEquals(new[] { enemyId, MonsterHexKind.ShoulderVaku.ToString(), MonsterHexKind.FrostWraith.ToString() }), "migration adds Get Excited and the later enemy default disables, keeps custom selections");
-		var custom = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(migrated.ConfigVersion, []);
+		(int ConfigVersion, IReadOnlySet<string> DisabledMonsterHexIds) custom = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(migrated.ConfigVersion, []);
 		Equal(0, custom.DisabledMonsterHexIds.Count, "manual re-enable persists after migration");
 		Expect(!HextechMonsterHexRegistry.Registrations.Single(row => row.Kind == MonsterHexKind.GetExcited).Disabled, "config default does not hard-remove content");
 	}

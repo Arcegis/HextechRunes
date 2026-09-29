@@ -45,7 +45,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 
 		ClaimedForgeId = selected.CanonicalId();
 		await HextechForgeGrantHelper.ObtainSelectedForge(Player, selected, syncObtainedRelic: true);
-		HextechLog.Info("ForgeChoiceReward", $"Obtained selected forge: player={Player.NetId} relic={(selected.CanonicalId()).Entry}");
+		HextechLog.Info("ForgeChoiceReward", $"Obtained selected forge: player={Player.NetId} relic={selected.CanonicalId().Entry}");
 		return true;
 	}
 
