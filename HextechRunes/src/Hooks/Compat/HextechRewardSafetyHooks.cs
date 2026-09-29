@@ -210,9 +210,8 @@ internal static class HextechRewardSafetyHooks
 	private static bool ShouldApplyForbiddenGrimoire(CardReward reward)
 	{
 		Player player = reward.Player;
-		return player.RunState is RunState runState
-			&& !player.Creature.IsDead
-			&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier
+		return !player.Creature.IsDead
+			&& HextechMayhemModifier.FindIn(player.RunState) is HextechMayhemModifier modifier
 			&& modifier.HasActiveMonsterHex(MonsterHexKind.ForbiddenGrimoire);
 	}
 
