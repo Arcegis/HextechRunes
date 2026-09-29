@@ -1,7 +1,11 @@
 using System.Runtime.InteropServices;
 using MegaCrit.Sts2.Core.Logging;
 
+#if HEXTECH_SPONSOR_LOADER
+namespace HextechRunesSponsorPack.Loader;
+#else
 namespace HextechRunes.Loader;
+#endif
 
 internal static class LinuxNativeDependencyBootstrap
 {
@@ -43,18 +47,18 @@ internal static class LinuxNativeDependencyBootstrap
 				if (_libgccHandle == IntPtr.Zero)
 				{
 					Log.Warn(
-						"[HextechRunes.Loader] Could not expose libgcc_s.so.1 globally; " +
+						$"{LoaderBootstrap.LogPrefix}Could not expose libgcc_s.so.1 globally; " +
 						"Harmony patches may fail to initialize on native Linux.");
 					return;
 				}
 
 				Log.Info(
-					"[HextechRunes.Loader] Exposed libgcc_s.so.1 to Harmony's native helper.");
+					$"{LoaderBootstrap.LogPrefix}Exposed libgcc_s.so.1 to Harmony's native helper.");
 			}
 			catch (Exception exception)
 			{
 				Log.Warn(
-					$"[HextechRunes.Loader] Failed to expose libgcc_s.so.1 globally: {exception.Message}");
+					$"{LoaderBootstrap.LogPrefix}Failed to expose libgcc_s.so.1 globally: {exception.Message}");
 			}
 		}
 	}

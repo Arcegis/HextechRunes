@@ -5,33 +5,11 @@
     <RootNamespace>HextechRunes</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <GameRoot>/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app</GameRoot>
     <HextechSts2Target Condition="'$(HextechSts2Target)' == ''">0.107.1</HextechSts2Target>
-    <OfficialGameDataDir>$(MSBuildThisFileDirectory)../versioned-dll-backups/$(HextechSts2Target)/game-refs</OfficialGameDataDir>
-    <GameDataDir Condition="'$(GameDataDir)' == '' and Exists('$(OfficialGameDataDir)/sts2.dll')">$(OfficialGameDataDir)</GameDataDir>
-    <GameDataDir Condition="'$(GameDataDir)' == ''">$(GameRoot)/Contents/Resources/data_sts2_macos_arm64</GameDataDir>
+    <!-- 版本符号、未知目标拦截、游戏引用目录与 sts2/GodotSharp/0Harmony 引用见仓库根 Directory.Build.targets。 -->
+    <HextechUsesVariantTargets>true</HextechUsesVariantTargets>
+    <HextechVariantTarget>$(HextechSts2Target)</HextechVariantTarget>
   </PropertyGroup>
-
-  <!--
-    发布目标只有 0.107.1 / 0.110.0 / 0.111.0 三个变体。
-    STS2_107_1 表示"0.107.1 分支";STS2_1xx_OR_NEWER 表示"该版本引入的 API 在本目标可用"。
-    0.104~0.107.0 的符号已随这些版本退役,代码里不再出现。
-  -->
-  <PropertyGroup Condition="'$(HextechSts2Target)' == '0.107.1'">
-    <DefineConstants>$(DefineConstants);STS2_107_1</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(HextechSts2Target)' == '0.110.0'">
-    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(HextechSts2Target)' == '0.111.0'">
-    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER;STS2_111_OR_NEWER</DefineConstants>
-  </PropertyGroup>
-
-  <Target Name="HextechValidateTarget" BeforeTargets="CoreCompile" Condition="'$(HextechSts2Target)' != '0.107.1' and '$(HextechSts2Target)' != '0.110.0' and '$(HextechSts2Target)' != '0.111.0'">
-    <Error Text="HextechSts2Target '$(HextechSts2Target)' is not a shipped variant (0.107.1 / 0.110.0 / 0.111.0)." />
-  </Target>
 
   <ItemGroup>
     <AssemblyMetadata Include="HextechCompatibilityTarget" Value="$(HextechSts2Target)" />
@@ -43,18 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="sts2">
-      <HintPath>$(GameDataDir)/sts2.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="GodotSharp">
-      <HintPath>$(GameDataDir)/GodotSharp.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>$(GameDataDir)/0Harmony.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="Steamworks.NET">
       <HintPath>$(GameDataDir)/Steamworks.NET.dll</HintPath>
       <Private>false</Private>

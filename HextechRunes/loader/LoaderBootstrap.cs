@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Security.Cryptography;
@@ -10,16 +11,22 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Saves;
 
+// 本体与拓展包共用这一份加载器源码:拓展包 loader 工程以链接方式编译本文件,并定义 HEXTECH_SPONSOR_LOADER
+// 让类型保持在各自原来的命名空间里。两边只在 LoaderBootstrap.Identity.cs 的 ModId / 清单名 / 元数据键上不同。
+#if HEXTECH_SPONSOR_LOADER
+namespace HextechRunesSponsorPack.Loader;
+#else
 namespace HextechRunes.Loader;
+#endif
 
 [ModInitializer(nameof(Initialize))]
-public static class LoaderBootstrap
+public static partial class LoaderBootstrap
 {
-	private const string ModId = "HextechRunes";
-	private const string RealDllName = "HextechRunes.dll";
-	private const string VariantManifestName = "hextech-runes-variants.manifest";
+	internal const string LogPrefix = "[" + ModId + ".Loader] ";
+	private const string RealDllName = ModId + ".dll";
+	private const string ReflectionBridgeHarmonyId = "Natsuki." + ModId + ".Loader.ReflectionBridge";
 	private const string CompatTargetMarkerName = "compat-target.txt";
-	private const string CompatTargetMetadataKey = "HextechCompatibilityTarget";
+	private const BindingFlags InstanceMembers = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
 	private static readonly object VariantAssembliesGate = new();
 	private static readonly List<Assembly> VariantAssemblies = [];
@@ -32,15 +39,15 @@ public static class LoaderBootstrap
 			[typeof(string), typeof(Assembly)],
 			modifiers: null);
 
-	private static readonly FieldInfo? ModAssembliesField =
-		typeof(Mod).GetField(
-			"assemblies",
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+	// Mod.assemblies:0.108+ 的程序集列表字段;0.107.1 没有,只有下面的单个 Mod.assembly。
+	private static readonly FieldInfo? ModAssembliesField = typeof(Mod).GetField("assemblies", InstanceMembers);
 
-	private static readonly FieldInfo? LegacyModAssemblyField =
-		typeof(Mod).GetField(
-			"assembly",
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+	private static readonly FieldInfo? LegacyModAssemblyField = typeof(Mod).GetField("assembly", InstanceMembers);
+
+	// Mod.manifest 与 ModManifest.id(0.107.1 / 0.111.0 均为字段)。加载器只针对 0.107.1 编译,所以按名字读取。
+	private static readonly FieldInfo? ModManifestField = typeof(Mod).GetField("manifest", InstanceMembers);
+
+	private static readonly FieldInfo? ManifestIdField = ModManifestField?.FieldType.GetField("id", InstanceMembers);
 
 	private static Assembly? _selectedVariantAssembly;
 	private static bool _reflectionBridgeInstalled;
@@ -53,14 +60,14 @@ public static class LoaderBootstrap
 		string? loaderDirectory = Path.GetDirectoryName(typeof(LoaderBootstrap).Assembly.Location);
 		if (string.IsNullOrWhiteSpace(loaderDirectory))
 		{
-			Log.Error("[HextechRunes.Loader] Could not resolve loader directory.");
+			Log.Error($"{LogPrefix}Could not resolve loader directory.");
 			return;
 		}
 
 		string libRoot = Path.Combine(loaderDirectory, "lib");
 		if (!Directory.Exists(libRoot))
 		{
-			Log.Error($"[HextechRunes.Loader] Missing lib directory: {libRoot}");
+			Log.Error($"{LogPrefix}Missing lib directory: {libRoot}");
 			return;
 		}
 
@@ -68,7 +75,7 @@ public static class LoaderBootstrap
 		if (host.Numeric == null)
 		{
 			Log.Warn(
-				"[HextechRunes.Loader] Host version is unknown; " +
+				$"{LogPrefix}Host version is unknown; " +
 				"using the newest bundled variant.");
 		}
 
@@ -77,13 +84,13 @@ public static class LoaderBootstrap
 		{
 			// 变体全部无效,或已知宿主没有不高于它的有效变体(对应变体缺失/哈希不符/宿主早于最低支持版本):显式停止。
 			Log.Error(
-				$"[HextechRunes.Loader] No valid variant under {libRoot} compatible with host " +
+				$"{LogPrefix}No valid variant under {libRoot} compatible with host " +
 				$"{host.ReleaseLabel ?? host.Numeric?.ToString() ?? "unknown"}; refusing to load a newer variant.");
 			return;
 		}
 
 		Log.Info(
-			$"[HextechRunes.Loader] Host version label={host.ReleaseLabel ?? "<none>"} " +
+			$"{LogPrefix}Host version label={host.ReleaseLabel ?? "<none>"} " +
 			$"numeric={host.Numeric?.ToString() ?? "<none>"}; picked variant {variant.CompatTarget}.");
 
 		try
@@ -101,7 +108,7 @@ public static class LoaderBootstrap
 		catch (Exception exception)
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Failed to load or initialize " +
+				$"{LogPrefix}Failed to load or initialize " +
 				$"{variant.DllPath}: {exception}");
 		}
 	}
@@ -116,7 +123,7 @@ public static class LoaderBootstrap
 			StringComparison.Ordinal))
 		{
 			throw new BadImageFormatException(
-				$"Variant assembly identity is {assembly.GetName().Name}, expected HextechRunes.");
+				$"Variant assembly identity is {assembly.GetName().Name}, expected {ModId}.");
 		}
 
 		string? embeddedTarget = assembly
@@ -164,7 +171,7 @@ public static class LoaderBootstrap
 			throw new MissingMethodException("ReflectionHelper.ModTypes getter was not found.");
 		}
 
-		new Harmony("Natsuki.HextechRunes.Loader.ReflectionBridge").Patch(
+		new Harmony(ReflectionBridgeHarmonyId).Patch(
 			getter,
 			postfix: new HarmonyMethod(
 				typeof(LoaderBootstrap),
@@ -198,7 +205,7 @@ public static class LoaderBootstrap
 		catch (ReflectionTypeLoadException exception)
 		{
 			Log.Warn(
-				$"[HextechRunes.Loader] Partial type load for " +
+				$"{LogPrefix}Partial type load for " +
 				$"{assembly.FullName}: {exception.Message}");
 			return exception.Types.OfType<Type>();
 		}
@@ -222,21 +229,21 @@ public static class LoaderBootstrap
 				AssociateAssemblyWithModMethod.Invoke(null, [ModId, assembly]);
 				if (IsAssemblyAssociatedWithMod(assembly))
 				{
-					Log.Info("[HextechRunes.Loader] Variant associated via ModManager.AssociateAssemblyWithMod.");
+					Log.Info($"{LogPrefix}Variant associated via ModManager.AssociateAssemblyWithMod.");
 					return;
 				}
 			}
 			catch (Exception exception)
 			{
 				Log.Warn(
-					$"[HextechRunes.Loader] AssociateAssemblyWithMod failed: " +
+					$"{LogPrefix}AssociateAssemblyWithMod failed: " +
 					$"{exception.GetBaseException().Message}");
 			}
 		}
 
 		if (TryAssociateWithAssemblyList(assembly))
 		{
-			Log.Info("[HextechRunes.Loader] Variant associated by appending to Mod.assemblies.");
+			Log.Info($"{LogPrefix}Variant associated by appending to Mod.assemblies.");
 			return;
 		}
 
@@ -249,7 +256,7 @@ public static class LoaderBootstrap
 		}
 
 		Log.Warn(
-			"[HextechRunes.Loader] Could not associate the selected variant " +
+			$"{LogPrefix}Could not associate the selected variant " +
 			"with ModManager; type discovery will rely on the reflection bridge.");
 	}
 
@@ -265,7 +272,7 @@ public static class LoaderBootstrap
 		ModManager.OnModDetected -= OnLegacyModDetected;
 		_legacyAssociationCallbackInstalled = false;
 		Log.Info(
-			$"[HextechRunes.Loader] Associated variant " +
+			$"{LogPrefix}Associated variant " +
 			$"{_selectedVariantAssembly.GetName().Name} with the STS2 0.107.x mod record.");
 	}
 
@@ -291,7 +298,7 @@ public static class LoaderBootstrap
 			&& assemblies.Cast<object>().Any(item => ReferenceEquals(item, assembly));
 	}
 
-	private static bool TryFindMod(out Mod? mod)
+	private static bool TryFindMod([NotNullWhen(true)] out Mod? mod)
 	{
 		mod = ModManager.Mods.FirstOrDefault(candidate =>
 			string.Equals(ReadManifestId(candidate), ModId, StringComparison.Ordinal));
@@ -300,14 +307,8 @@ public static class LoaderBootstrap
 
 	private static string? ReadManifestId(Mod mod)
 	{
-		FieldInfo? manifestField = typeof(Mod).GetField(
-			"manifest",
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-		object? manifest = manifestField?.GetValue(mod);
-		FieldInfo? idField = manifest?.GetType().GetField(
-			"id",
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-		return idField?.GetValue(manifest) as string;
+		object? manifest = ModManifestField?.GetValue(mod);
+		return manifest == null ? null : ManifestIdField?.GetValue(manifest) as string;
 	}
 
 	private static void InvokeRealInitializer(Assembly assembly)
@@ -338,7 +339,7 @@ public static class LoaderBootstrap
 			$"No {nameof(ModInitializerAttribute)} was found in {assembly.FullName}.");
 	}
 
-	private static VariantCandidate? PickVariant(
+	internal static VariantCandidate? PickVariant(
 		string loaderDirectory,
 		string libRoot,
 		Version? host)
@@ -351,11 +352,11 @@ public static class LoaderBootstrap
 	}
 
 	/// <summary>
-	/// 纯选择规则(不写日志,可单测):宿主未知时用最新变体;宿主已知时取不高于宿主的最新变体,
+	/// 纯选择规则(不写日志,测试直接调用):宿主未知时用最新变体;宿主已知时取不高于宿主的最新变体,
 	/// 没有就返回 null 让调用方停止加载。回退到更新的变体只会把"局部文件不可用"
 	/// 扩大成"错误版本程序集进入模型注册与补丁系统",所以不再兜底。
 	/// </summary>
-	private static VariantCandidate? SelectVariant(
+	internal static VariantCandidate? SelectVariant(
 		IReadOnlyList<VariantCandidate> sortedVariants,
 		Version? host)
 	{
@@ -379,7 +380,7 @@ public static class LoaderBootstrap
 		string path = Path.Combine(loaderDirectory, VariantManifestName);
 		if (!File.Exists(path))
 		{
-			Log.Error($"[HextechRunes.Loader] Missing variant manifest: {path}");
+			Log.Error($"{LogPrefix}Missing variant manifest: {path}");
 			return [];
 		}
 
@@ -393,14 +394,14 @@ public static class LoaderBootstrap
 		catch (Exception exception)
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Failed to read variant manifest: {exception}");
+				$"{LogPrefix}Failed to read variant manifest: {exception}");
 			return [];
 		}
 
 		if (manifest?.Variants == null || manifest.Variants.Count == 0)
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Variant manifest contains no variants: {path}");
+				$"{LogPrefix}Variant manifest contains no variants: {path}");
 			return [];
 		}
 
@@ -423,7 +424,7 @@ public static class LoaderBootstrap
 		if (!TryParseVersion(compatTarget, out Version version))
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Ignoring invalid target " +
+				$"{LogPrefix}Ignoring invalid target " +
 				$"'{entry.CompatTarget}'.");
 			return null;
 		}
@@ -440,7 +441,7 @@ public static class LoaderBootstrap
 				StringComparison.Ordinal))
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Ignoring invalid variant directory " +
+				$"{LogPrefix}Ignoring invalid variant directory " +
 				$"'{relativeDirectory}'.");
 			return null;
 		}
@@ -453,7 +454,7 @@ public static class LoaderBootstrap
 				StringComparison.Ordinal))
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Ignoring variant with missing or " +
+				$"{LogPrefix}Ignoring variant with missing or " +
 				$"mismatched marker: {markerPath}");
 			return null;
 		}
@@ -464,7 +465,7 @@ public static class LoaderBootstrap
 		if (!string.Equals(assemblyName, RealDllName, StringComparison.Ordinal))
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Ignoring unexpected assembly " +
+				$"{LogPrefix}Ignoring unexpected assembly " +
 				$"'{assemblyName}'.");
 			return null;
 		}
@@ -473,7 +474,7 @@ public static class LoaderBootstrap
 		if (!File.Exists(dllPath) || !MatchesExpectedHash(dllPath, entry.Sha256))
 		{
 			Log.Error(
-				$"[HextechRunes.Loader] Ignoring missing or hash-mismatched " +
+				$"{LogPrefix}Ignoring missing or hash-mismatched " +
 				$"variant: {dllPath}");
 			return null;
 		}
@@ -515,8 +516,10 @@ public static class LoaderBootstrap
 				return snapshot;
 			}
 		}
-		catch
+		catch (Exception exception)
 		{
+			// 真实边界:早期初始化阶段 ReleaseInfoManager 可能尚不可用;回退到下面的 release_info.json / 程序集版本。
+			Log.Info($"{LogPrefix}ReleaseInfoManager unavailable, falling back: {exception.GetType().Name}: {exception.Message}");
 		}
 
 		foreach (string path in GetPublishedReleaseInfoPaths())
@@ -583,8 +586,10 @@ public static class LoaderBootstrap
 				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 			return method?.Invoke(null, null) as string;
 		}
-		catch
+		catch (Exception exception)
 		{
+			// 真实边界:按名字反射 Godot.OS,宿主/编辑器环境不同可能取不到;取不到只少一个候选路径。
+			Log.Info($"{LogPrefix}Godot.OS.{methodName} unavailable: {exception.GetType().Name}: {exception.Message}");
 			return null;
 		}
 	}
@@ -609,8 +614,10 @@ public static class LoaderBootstrap
 					ref fallbackLabel,
 					out snapshot);
 		}
-		catch
+		catch (Exception exception)
 		{
+			// 真实边界:release_info.json 是游戏发行文件,读不到或格式不符时换下一个来源。
+			Log.Info($"{LogPrefix}Could not read host version from {path}: {exception.GetType().Name}: {exception.Message}");
 			return false;
 		}
 	}
@@ -661,7 +668,7 @@ public static class LoaderBootstrap
 		return false;
 	}
 
-	private sealed record VariantCandidate(
+	internal sealed record VariantCandidate(
 		string CompatTarget,
 		Version Version,
 		string DllPath);

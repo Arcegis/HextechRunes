@@ -1,33 +1,11 @@
 #!/usr/bin/env python3
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import tempfile
 
-
-VERSION_RE = re.compile(r"\d+(?:\.\d+){1,3}")
-
-
-def version_key(value: str) -> tuple[int, ...]:
-    if not VERSION_RE.fullmatch(value):
-        raise ValueError(f"invalid numeric compatibility target: {value!r}")
-    return tuple(int(part) for part in value.split("."))
-
-
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def require_under(path: Path, root: Path) -> None:
-    if not path.resolve().is_relative_to(root.resolve()):
-        raise ValueError(f"path escapes {root}: {path}")
+from variant_common import COMPAT_MARKER_NAME, require_under, sha256, version_key
 
 
 def main() -> int:
@@ -68,7 +46,7 @@ def main() -> int:
         if not dll.is_file():
             raise FileNotFoundError(f"missing variant DLL: {dll}")
 
-        marker = directory / "compat-target.txt"
+        marker = directory / COMPAT_MARKER_NAME
         marker.write_text(f"{target}\n", encoding="utf-8")
         variants.append(
             {

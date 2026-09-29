@@ -1,14 +1,16 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 
 namespace HextechRunesSponsorPack;
 
+// 与「集成战略事件」(IntegratedStrategyEvents,软联动,不引用其程序集)的桥:按类型全名找它的模型。
 internal static class IntegratedStrategyEventsBridge
 {
 	private const string AssemblyName = "IntegratedStrategyEvents";
@@ -16,10 +18,13 @@ internal static class IntegratedStrategyEventsBridge
 	private const string EndlessKeyRelicTypeName = "IntegratedStrategyEvents.Relics.EndlessKeyRelic";
 	private const string FinalChoraleTypeName = "IntegratedStrategyEvents.Encounters.FinalChorale";
 	private const int FinalChoraleRandomRelicRewardCount = 2;
+	private const string LogTag = "ISE";
 
-	private static Type? ProphecyProjectionRelicType;
-	private static Type? EndlessKeyRelicType;
-	private static Type? FinalChoraleType;
+	// 解析结果缓存:找到就一直用;找不到的负缓存见 TryResolveAssembly。
+	private static Type? _prophecyProjectionRelicType;
+	private static Type? _endlessKeyRelicType;
+	private static Type? _finalChoraleType;
+	private static bool _assemblyKnownMissing;
 
 	internal static bool IsAvailable => TryResolveTypes(out _, out _);
 
@@ -37,7 +42,8 @@ internal static class IntegratedStrategyEventsBridge
 
 	internal static async Task<bool> ObtainProphecyProjection(Player owner, int? choraleHp = null)
 	{
-		if (!TryCreateProphecyProjection(out RelicModel? projection))
+		if (!TryResolveTypes(out Type? projectionType, out _)
+			|| !TryCreateMutableRelic(projectionType, out RelicModel? projection))
 		{
 			return false;
 		}
@@ -45,7 +51,7 @@ internal static class IntegratedStrategyEventsBridge
 		if (choraleHp.HasValue)
 		{
 			ConfigureProjectionChoraleHp(projection, choraleHp.Value);
-			await RemoveExistingProphecyProjections(owner);
+			await RemoveExistingProphecyProjections(owner, projectionType);
 		}
 
 		await RelicCmd.Obtain(projection, owner);
@@ -61,9 +67,10 @@ internal static class IntegratedStrategyEventsBridge
 				continue;
 			}
 
-			if (!TryCreateEndlessKey(out RelicModel? endlessKey))
+			if (!TryResolveEndlessKeyType(out Type? endlessKeyType)
+				|| !TryCreateMutableRelic(endlessKeyType, out RelicModel? endlessKey))
 			{
-				Log.Warn($"[{ModInfo.Id}] Failed to add Final Chorale rewards: EndlessKeyRelic is unavailable.", 2);
+				SponsorLog.Warn(LogTag, "Failed to add Final Chorale rewards: EndlessKeyRelic is unavailable.");
 				return;
 			}
 
@@ -73,62 +80,35 @@ internal static class IntegratedStrategyEventsBridge
 			}
 
 			room.AddExtraReward(player, new RelicReward(endlessKey, player));
-			Log.Info($"[{ModInfo.Id}] Added missing Final Chorale completion rewards for player {player.NetId}.");
+			SponsorLog.Info(LogTag, $"Added missing Final Chorale completion rewards for player {player.NetId}.");
 		}
 	}
 
-	private static bool TryCreateProphecyProjection(out RelicModel projection)
+	private static bool TryCreateMutableRelic(Type relicType, [NotNullWhen(true)] out RelicModel? relic)
 	{
-		projection = null!;
-		if (!TryResolveTypes(out Type? projectionType, out _))
-		{
-			return false;
-		}
-
+		relic = null;
 		try
 		{
-			if (!ModelDb.Contains(projectionType))
+			if (!ModelDb.Contains(relicType))
 			{
-				Log.Warn($"[{ModInfo.Id}] Failed to create ProphecyProjectionRelic: model type is not registered in ModelDb.", 2);
+				SponsorLog.Warn(LogTag, $"Failed to create {relicType.Name}: model type is not registered in ModelDb.");
 				return false;
 			}
 
-			projection = ModelDb.GetById<RelicModel>(ModelDb.GetId(projectionType)).ToMutable();
+			relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(relicType)).ToMutable();
 			return true;
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Failed to create ProphecyProjectionRelic: {ex.Message}", 2);
+			// 真实边界:第三方模型的构造/ToMutable。
+			SponsorLog.Warn(LogTag, $"Failed to create {relicType.Name}: {ex.Message}");
 			return false;
 		}
 	}
 
-	private static bool TryCreateEndlessKey(out RelicModel relic)
-	{
-		relic = null!;
-		if (!TryResolveEndlessKeyType(out Type? endlessKeyType))
-		{
-			return false;
-		}
-
-		try
-		{
-			if (!ModelDb.Contains(endlessKeyType))
-			{
-				Log.Warn($"[{ModInfo.Id}] Failed to create EndlessKeyRelic: model type is not registered in ModelDb.", 2);
-				return false;
-			}
-
-			relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(endlessKeyType)).ToMutable();
-			return true;
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"[{ModInfo.Id}] Failed to create EndlessKeyRelic: {ex.Message}", 2);
-			return false;
-		}
-	}
-
+	// 按名字写 IntegratedStrategyEvents 0.5.6 ProphecyProjectionRelic 的 private [SavedProperty] 属性
+	// (SavedProphecyProjectionChoraleDefeated / ...RewardsGranted / ...UsesScaledChoraleHp / ...ChoraleHp)。
+	// 对方改名或删属性时只会部分生效并 Warn,不影响投影遗物本身的发放。
 	private static void ConfigureProjectionChoraleHp(RelicModel projection, int choraleHp)
 	{
 		int hp = Math.Max(1, choraleHp);
@@ -139,17 +119,12 @@ internal static class IntegratedStrategyEventsBridge
 		ok &= SetNonPublicProperty(projection, "SavedProphecyProjectionChoraleHp", hp);
 		if (!ok)
 		{
-			Log.Warn($"[{ModInfo.Id}] ProphecyProjectionRelic HP bonus was only partially configured.", 2);
+			SponsorLog.Warn(LogTag, "ProphecyProjectionRelic HP bonus was only partially configured.");
 		}
 	}
 
-	private static async Task RemoveExistingProphecyProjections(Player owner)
+	private static async Task RemoveExistingProphecyProjections(Player owner, Type projectionType)
 	{
-		if (!TryResolveTypes(out Type? projectionType, out _))
-		{
-			return;
-		}
-
 		List<RelicModel> existingProjections = [];
 		foreach (Player player in owner.RunState.Players)
 		{
@@ -173,7 +148,7 @@ internal static class IntegratedStrategyEventsBridge
 
 		if (existingProjections.Count > 0)
 		{
-			Log.Info($"[{ModInfo.Id}] Removed {existingProjections.Count} old ProphecyProjectionRelic instance(s) before granting the empowered projection.");
+			SponsorLog.Info(LogTag, $"Removed {existingProjections.Count} old ProphecyProjectionRelic instance(s) before granting the empowered projection.");
 		}
 	}
 
@@ -195,7 +170,7 @@ internal static class IntegratedStrategyEventsBridge
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Failed to set {propertyName} on ProphecyProjectionRelic: {ex.Message}", 2);
+			SponsorLog.Warn(LogTag, $"Failed to set {propertyName} on ProphecyProjectionRelic: {ex.Message}");
 			return false;
 		}
 	}
@@ -217,19 +192,21 @@ internal static class IntegratedStrategyEventsBridge
 			&& endlessKeyType.IsInstanceOfType(relic);
 	}
 
-	private static bool TryResolveTypes(out Type prophecyProjectionRelicType, out Type finalChoraleType)
+	private static bool TryResolveTypes(
+		[NotNullWhen(true)] out Type? prophecyProjectionRelicType,
+		[NotNullWhen(true)] out Type? finalChoraleType)
 	{
-		if (ProphecyProjectionRelicType != null && FinalChoraleType != null)
+		if (_prophecyProjectionRelicType != null && _finalChoraleType != null)
 		{
-			prophecyProjectionRelicType = ProphecyProjectionRelicType;
-			finalChoraleType = FinalChoraleType;
+			prophecyProjectionRelicType = _prophecyProjectionRelicType;
+			finalChoraleType = _finalChoraleType;
 			return true;
 		}
 
+		prophecyProjectionRelicType = null;
+		finalChoraleType = null;
 		if (!TryResolveAssembly(out Assembly? assembly))
 		{
-			prophecyProjectionRelicType = null!;
-			finalChoraleType = null!;
 			return false;
 		}
 
@@ -239,51 +216,57 @@ internal static class IntegratedStrategyEventsBridge
 			|| choraleType == null
 			|| !typeof(RelicModel).IsAssignableFrom(projectionType))
 		{
-			prophecyProjectionRelicType = null!;
-			finalChoraleType = null!;
 			return false;
 		}
 
-		ProphecyProjectionRelicType = projectionType;
-		FinalChoraleType = choraleType;
-		prophecyProjectionRelicType = projectionType;
-		finalChoraleType = choraleType;
+		_prophecyProjectionRelicType = prophecyProjectionRelicType = projectionType;
+		_finalChoraleType = finalChoraleType = choraleType;
 		return true;
 	}
 
-	private static bool TryResolveEndlessKeyType(out Type endlessKeyRelicType)
+	private static bool TryResolveEndlessKeyType([NotNullWhen(true)] out Type? endlessKeyRelicType)
 	{
-		if (EndlessKeyRelicType != null)
+		endlessKeyRelicType = _endlessKeyRelicType;
+		if (endlessKeyRelicType != null)
 		{
-			endlessKeyRelicType = EndlessKeyRelicType;
 			return true;
 		}
 
 		if (!TryResolveAssembly(out Assembly? assembly))
 		{
-			endlessKeyRelicType = null!;
 			return false;
 		}
 
 		Type? relicType = assembly.GetType(EndlessKeyRelicTypeName, throwOnError: false);
 		if (relicType == null || !typeof(RelicModel).IsAssignableFrom(relicType))
 		{
-			endlessKeyRelicType = null!;
 			return false;
 		}
 
-		EndlessKeyRelicType = relicType;
-		endlessKeyRelicType = relicType;
+		_endlessKeyRelicType = endlessKeyRelicType = relicType;
 		return true;
 	}
 
-	private static bool TryResolveAssembly(out Assembly assembly)
+	// 没装 IntegratedStrategyEvents 时,IsFinalChorale 会在 Creature.SetCurrentHpInternal 前缀里反复调用;
+	// 模组加载结束(ModManager.State 离开 None)后程序集集合不再变化,此时找不到就记负缓存,不再每次扫描全部程序集。
+	private static bool TryResolveAssembly([NotNullWhen(true)] out Assembly? assembly)
 	{
+		assembly = null;
+		if (_assemblyKnownMissing)
+		{
+			return false;
+		}
+
 		assembly = AppDomain.CurrentDomain.GetAssemblies()
 			.FirstOrDefault(static candidate => string.Equals(
 				candidate.GetName().Name,
 				AssemblyName,
-				StringComparison.Ordinal))!;
+				StringComparison.Ordinal));
+		if (assembly == null && ModManager.State != ModManagerState.None)
+		{
+			_assemblyKnownMissing = true;
+		}
+
 		return assembly != null;
 	}
 }

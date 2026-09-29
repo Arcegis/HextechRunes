@@ -35,6 +35,12 @@ import re
 import sys
 from pathlib import Path
 
+from validate_hextech_content import (
+    extract_forge_registrations,
+    extract_monster_hex_registrations,
+    extract_rune_registrations,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 SPONSOR = ROOT.parent / "HextechRunesSponsorPack"
 
@@ -164,6 +170,13 @@ def canonical_values(source: str) -> dict[str, str]:
 # 真值装载
 
 
+def sponsor_table(sponsor_src: str, name: str) -> str:
+    match = re.search(rf"{name}\s*=\s*\[(.*?)\];", sponsor_src, re.S)
+    if match is None:
+        raise SystemExit(f"SponsorCatalog.cs 里找不到 {name} 表,注册表结构变了,先更新本脚本。")
+    return match.group(1)
+
+
 class Loc:
     """本体+拓展包 zhs relics.json;类名按字段做 casefold 反查。"""
 
@@ -189,7 +202,7 @@ class Loc:
 
 class Truth:
     def __init__(self) -> None:
-        loc = self.loc = Loc()
+        self.loc = Loc()
         tags_loc = json.loads(
             read(ROOT / "assets" / "localization" / "zhs" / "relic_collection.json")
         )
@@ -198,43 +211,44 @@ class Truth:
             for key, value in tags_loc.items()
             if key.startswith("HEXTECH_TAG.")
         }
-
-        registry = read(ROOT / "src" / "Content" / "HextechPlayerRuneRegistry.cs")
-        # 拓展包的注册在 SponsorCatalog 的五张只读表里(元组表,行序即注册序)。
+        # 拓展包的注册在 SponsorCatalog 的只读表里(元组表,行序即注册序)。
         sponsor_src = read(SPONSOR / "src" / "Content" / "SponsorCatalog.cs")
+        self.player = self._load_player_runes(sponsor_src)
+        self.monster = self._load_monster_hexes()
+        self.forge = self._load_forges(sponsor_src)
+        # 事件遗物(排除选择界面用的 *ChoiceRelic:UI 伪遗物,不入清单)。
+        self.event_relics = [
+            match.group(1)
+            for match in re.finditer(r"typeof\((\w+)\)", sponsor_table(sponsor_src, "EventRelics"))
+            if not match.group(1).endswith("ChoiceRelic")
+        ]
+        # 卡牌(本体 cards.json 全部 .title)。
+        cards = json.loads(read(ROOT / "assets" / "localization" / "zhs" / "cards.json"))
+        self.cards: dict[str, dict[str, str]] = {}
+        for key, value in cards.items():
+            stem, _, field = key.rpartition(".")
+            self.cards.setdefault(stem, {})[field] = value
 
-        def sponsor_table(name: str) -> str:
-            match = re.search(rf"{name}\s*=\s*\[(.*?)\];", sponsor_src, re.S)
-            if match is None:
-                raise SystemExit(f"SponsorCatalog.cs 里找不到 {name} 表,注册表结构变了,先更新本脚本。")
-            return match.group(1)
-
-        # 玩家符文(注册表顺序 = 真值顺序;本体在前,拓展包在后)。
-        self.player: list[dict] = []
-        for match in re.finditer(
-            r"Rune<(\w+)>\(\s*HextechRarityTier\.(\w+)([^)]*)\)", registry
-        ):
-            cls, rarity, args = match.group(1), match.group(2), match.group(3)
-            flags = set(re.findall(r"PlayerRuneFlags\.(\w+)", args))
-            if "Retired" in flags:
-                continue
-            pool_match = re.search(r"characterPool:\s*PlayerRuneCharacterPool\.(\w+)", args)
-            tag_match = re.search(r'tagKey:\s*"(\w+)"', args)
-            self.player.append(
-                {
-                    "class": cls,
-                    "rarity": rarity,
-                    "pool": pool_match.group(1) if pool_match else None,
-                    "tag_key": tag_match.group(1) if tag_match else "COMPREHENSIVE",
-                    "disabled": "Disabled" in flags,
-                    "source": "main",
-                }
-            )
+    @staticmethod
+    def _load_player_runes(sponsor_src: str) -> list[dict]:
+        """玩家符文(注册表顺序 = 真值顺序;本体在前,拓展包在后)。注册解析与 validate_hextech_content 共用。"""
+        registry = read(ROOT / "src" / "Content" / "HextechPlayerRuneRegistry.cs")
+        player = [
+            {
+                "class": reg["type"],
+                "rarity": reg["rarity"],
+                "pool": reg["character_pool"],
+                "tag_key": reg["tag_key"],
+                "disabled": "Disabled" in reg["flags"],
+                "source": "main",
+            }
+            for reg in extract_rune_registrations(registry)
+        ]
         for match in re.finditer(
             r"\(\s*typeof\((\w+)\),\s*HextechRarityTier\.(\w+),\s*\"(\w+)\"\s*\)",
-            sponsor_table("PlayerRunes"),
+            sponsor_table(sponsor_src, "PlayerRunes"),
         ):
-            self.player.append(
+            player.append(
                 {
                     "class": match.group(1),
                     "rarity": match.group(2),
@@ -244,55 +258,37 @@ class Truth:
                     "source": "sponsor",
                 }
             )
+        return player
 
-        # 敌方海克斯。
+    @staticmethod
+    def _load_monster_hexes() -> list[dict]:
+        """敌方海克斯;配置里默认禁用的 kind 也按禁用处理。"""
         monster_src = read(ROOT / "src" / "Content" / "HextechMonsterHexRegistry.cs")
         config_src = read(ROOT / "src" / "Config" / "HextechRuneConfiguration.cs")
-        config_default_disabled_monsters = set(
-            re.findall(r"MonsterHexKind\.(\w+)", config_src)
-        )
-        self.monster: list[dict] = []
-        for match in re.finditer(
-            r"Monster<(\w+)>\(\s*MonsterHexKind\.(\w+),\s*HextechRarityTier\.(\w+)([^)]*)\)",
-            monster_src,
-        ):
-            self.monster.append(
-                {
-                    "class": match.group(1),
-                    "kind": match.group(2),
-                    "rarity": match.group(3),
-                    "disabled": bool(re.search(r"disabled:\s*true", match.group(4)))
-                    or match.group(2) in config_default_disabled_monsters,
-                }
-            )
-
-        # 锻造器(本体+拓展包)。
-        forge_src = read(ROOT / "src" / "Content" / "HextechForgeRegistry.cs")
-        self.forge: list[dict] = []
-        for match in re.finditer(r"Forge<(\w+)>\(\s*HextechRarityTier\.(\w+)\s*\)", forge_src):
-            self.forge.append(
-                {"class": match.group(1), "rarity": match.group(2), "source": "main"}
-            )
-        for match in re.finditer(
-            r"\(\s*typeof\((\w+)\),\s*HextechRarityTier\.(\w+)\s*\)", sponsor_table("Forges")
-        ):
-            self.forge.append(
-                {"class": match.group(1), "rarity": match.group(2), "source": "sponsor"}
-            )
-
-        # 事件遗物(排除奥术锻造器的附魔三选一 ChoiceRelic:UI 伪遗物,不入清单)。
-        self.event_relics = [
-            match.group(1)
-            for match in re.finditer(r"typeof\((\w+)\)", sponsor_table("EventRelics"))
-            if not match.group(1).endswith("ChoiceRelic")
+        config_default_disabled = set(re.findall(r"MonsterHexKind\.(\w+)", config_src))
+        return [
+            {
+                "class": reg["type"],
+                "kind": reg["kind"],
+                "rarity": reg["rarity"],
+                "disabled": reg["disabled"] or reg["kind"] in config_default_disabled,
+            }
+            for reg in extract_monster_hex_registrations(monster_src)
         ]
 
-        # 卡牌(本体 cards.json 全部 .title)。
-        cards = json.loads(read(ROOT / "assets" / "localization" / "zhs" / "cards.json"))
-        self.cards: dict[str, dict[str, str]] = {}
-        for key, value in cards.items():
-            stem, _, field = key.rpartition(".")
-            self.cards.setdefault(stem, {})[field] = value
+    @staticmethod
+    def _load_forges(sponsor_src: str) -> list[dict]:
+        """锻造器(本体+拓展包)。"""
+        forge_src = read(ROOT / "src" / "Content" / "HextechForgeRegistry.cs")
+        forge = [
+            {"class": reg["type"], "rarity": reg["rarity"], "source": "main"}
+            for reg in extract_forge_registrations(forge_src)
+        ]
+        for match in re.finditer(
+            r"\(\s*typeof\((\w+)\),\s*HextechRarityTier\.(\w+)\s*\)", sponsor_table(sponsor_src, "Forges")
+        ):
+            forge.append({"class": match.group(1), "rarity": match.group(2), "source": "sponsor"})
+        return forge
 
     def resolve_placeholders(self, cls: str, text: str) -> str:
         """离线说明使用未升级的 CanonicalVars；依赖对局的数值显示公式。"""
@@ -478,20 +474,16 @@ def flavor_truth_entries(truth: Truth) -> dict[str, list[tuple[str | None, str, 
     return sections
 
 
-def generate_flavors(truth: Truth, current_text: str, report: list[str]) -> str:
-    entries = flavor_truth_entries(truth)
-    all_titles = {title for items in entries.values() for _, title, _ in items}
+FlavorKey = tuple[str, "str | None", str]
 
-    # 现有条目顺序与现值: (章节, 品级, 标题) -> (顺位, txt flavor)。
-    lines = current_text.splitlines()
-    header: list[str] = []
+
+def parse_flavor_entries(lines: list[str], all_titles: set[str]) -> dict[FlavorKey, tuple[int, str]]:
+    """现有条目顺序与现值: (章节, 品级, 标题) -> (顺位, txt flavor)。第一个章节标题之前的头部不计入。"""
     section = sub = None
-    current: dict[tuple[str, str | None, str], tuple[int, str]] = {}
-    order_counter = 0
+    current: dict[FlavorKey, tuple[int, str]] = {}
     for line in lines:
         stripped = line.strip()
         if section is None and not stripped.startswith("- ") and not stripped.endswith("："):
-            header.append(line)
             continue
         if stripped.endswith("：") and not stripped.startswith("- "):
             name = stripped[:-1]
@@ -499,85 +491,71 @@ def generate_flavors(truth: Truth, current_text: str, report: list[str]) -> str:
                 sub = name
             else:
                 section, sub = name, None
-            if section is None:
-                header.append(line)
             continue
         if stripped.startswith("- ") and section:
             title, flavor = split_titled(stripped[2:], all_titles)
             key = (section, sub, title)
             if key not in current:
-                current[key] = (order_counter, flavor)
-                order_counter += 1
+                current[key] = (len(current), flavor)
+    return current
 
-    # 头部(到第一个章节标题前)原样保留。
-    first_section_idx = next(
-        i for i, line in enumerate(lines) if line.strip() == "玩家海克斯："
-    )
-    header_lines = lines[:first_section_idx]
 
-    out: list[str] = list(header_lines)
-    removed: list[str] = []
-    diverged: list[str] = []
-    added: list[str] = []
-    consumed: set[tuple[str, str | None, str]] = set()
+class FlavorEmitter:
+    """按真值生成一个品级块:既有条目保持旧顺位,新条目插到真值邻位;PERMANENT/PENDING 覆盖保留 txt 值。"""
 
-    def emit(section_name: str, rarity: str | None, items: list[tuple[str | None, str, str]]) -> list[str]:
-        nonlocal added
+    def __init__(self, current: dict[FlavorKey, tuple[int, str]]) -> None:
+        self.current = current
+        self.consumed: set[FlavorKey] = set()
+        self.added: list[str] = []
+        self.diverged: list[str] = []
+
+    def emit(self, section_name: str, rarity: str | None, items: list[tuple[str | None, str, str]]) -> list[str]:
         picked = [(t, f) for r, t, f in items if r == rarity]
         anchor_order = [t for t, _ in picked]
-        existing_sorted = sorted(
-            (t for t, _ in picked if (section_name, rarity, t) in current),
-            key=lambda t: current[(section_name, rarity, t)][0],
+        ordered = sorted(
+            (t for t, _ in picked if (section_name, rarity, t) in self.current),
+            key=lambda t: self.current[(section_name, rarity, t)][0],
         )
         # 跨品级漂移的旧条目沿用其旧值判断 override 之外一律 JSON。
-        ordered: list[str] = list(existing_sorted)
         for t, _ in picked:
             if t not in ordered:
                 ordered.insert(insert_position(ordered, anchor_order, t), t)
-                found_elsewhere = any(
-                    k[0] == section_name and k[2] == t for k in current
-                )
-                if not found_elsewhere:
-                    added.append(f"[{section_name}/{rarity or '-'}] {t}")
+                if not any(k[0] == section_name and k[2] == t for k in self.current):
+                    self.added.append(f"[{section_name}/{rarity or '-'}] {t}")
         flavor_of = dict(picked)
         result = []
         for t in ordered:
             key = (section_name, rarity, t)
-            consumed.add(key)
+            self.consumed.add(key)
             value = flavor_of[t]
             if key in PERMANENT_FLAVOR_OVERRIDES:
                 value = PERMANENT_FLAVOR_OVERRIDES[key]
             elif key in PENDING_FLAVOR_OVERRIDES:
                 value = PENDING_FLAVOR_OVERRIDES[key]
-                diverged.append(
+                self.diverged.append(
                     f"[{section_name}/{rarity or '-'}] {t}\n"
                     f"    txt : {value}\n    json: {flavor_of[t]}"
                 )
             result.append(f"- {t}：{value}")
         return result
 
-    for section_name in ("玩家海克斯", "敌方海克斯", "属性锻造器"):
-        out.append(f"{section_name}：")
-        out.append("")
-        for rarity in ("白银", "黄金", "棱彩"):
-            out.append(f"{rarity}：")
-            out.extend(emit(section_name, rarity, entries[section_name]))
-            out.append("")
-    for section_name in ("商店", "事件遗物"):
-        out.append(f"{section_name}：")
-        out.extend(emit(section_name, None, entries[section_name]))
-        out.append("")
 
+def classify_leftover_flavors(
+    current: dict[FlavorKey, tuple[int, str]],
+    consumed: set[FlavorKey],
+    entries: dict[str, list[tuple[str | None, str, str]]],
+) -> tuple[list[str], list[str]]:
+    """未被真值消费的旧条目:同名条目挂在别的品级(且旧文件该品级下没有同名行)算品级归位,否则是真移除。"""
     truth_keys = {
         (section_name, rarity, title)
         for section_name, items in entries.items()
         for rarity, title, _ in items
     }
     moved: list[str] = []
+    removed: list[str] = []
     for key in current:
         if key in consumed:
             continue
-        # 真值中同名条目挂在别的品级、且旧文件在那个品级下没有同名行 -> 品级归位;否则是真移除。
         relocated = any(
             truth_key[0] == key[0]
             and truth_key[2] == key[2]
@@ -589,25 +567,24 @@ def generate_flavors(truth: Truth, current_text: str, report: list[str]) -> str:
             moved.append(f"[{key[0]}] {key[2]}: {key[1]} -> 真值品级")
         else:
             removed.append(f"[{key[0]}/{key[1] or '-'}] {key[2]}")
+    return moved, removed
 
-    player_total = len(truth.player)
-    player_enabled = sum(1 for reg in truth.player if not reg["disabled"])
-    monster_total = len(truth.monster)
-    monster_enabled = sum(1 for reg in truth.monster if not reg["disabled"])
+
+def flavor_totals_line(truth: Truth) -> str:
     forge_main = sum(1 for reg in truth.forge if reg["source"] == "main")
     forge_sponsor = sum(1 for reg in truth.forge if reg["source"] == "sponsor")
     forge_by_rarity = {
         rarity: sum(1 for reg in truth.forge if reg["rarity"] == rarity)
         for rarity in ("Silver", "Gold", "Prismatic")
     }
-    out.append(
+    return (
         "总计：玩家海克斯 {} 个（可选 {} 个）；敌方海克斯 {} 个（可选 {} 个）；"
         "属性锻造器 {} 个（本体 {} + 赞助者拓展包 {}；白银 {}、黄金 {}、棱彩 {}）；"
         "商店锻造器 1 个。".format(
-            player_total,
-            player_enabled,
-            monster_total,
-            monster_enabled,
+            len(truth.player),
+            sum(1 for reg in truth.player if not reg["disabled"]),
+            len(truth.monster),
+            sum(1 for reg in truth.monster if not reg["disabled"]),
             forge_main + forge_sponsor,
             forge_main,
             forge_sponsor,
@@ -617,16 +594,42 @@ def generate_flavors(truth: Truth, current_text: str, report: list[str]) -> str:
         )
     )
 
-    if added:
-        report.append(f"flavors: 新增缺失条目 {len(added)} 条: " + "; ".join(added))
+
+def generate_flavors(truth: Truth, current_text: str, report: list[str]) -> str:
+    entries = flavor_truth_entries(truth)
+    all_titles = {title for items in entries.values() for _, title, _ in items}
+    lines = current_text.splitlines()
+    current = parse_flavor_entries(lines, all_titles)
+
+    # 头部(到第一个章节标题前)原样保留。
+    first_section_idx = next(i for i, line in enumerate(lines) if line.strip() == "玩家海克斯：")
+    out: list[str] = list(lines[:first_section_idx])
+    emitter = FlavorEmitter(current)
+    for section_name in ("玩家海克斯", "敌方海克斯", "属性锻造器"):
+        out.append(f"{section_name}：")
+        out.append("")
+        for rarity in ("白银", "黄金", "棱彩"):
+            out.append(f"{rarity}：")
+            out.extend(emitter.emit(section_name, rarity, entries[section_name]))
+            out.append("")
+    for section_name in ("商店", "事件遗物"):
+        out.append(f"{section_name}：")
+        out.extend(emitter.emit(section_name, None, entries[section_name]))
+        out.append("")
+
+    moved, removed = classify_leftover_flavors(current, emitter.consumed, entries)
+    out.append(flavor_totals_line(truth))
+
+    if emitter.added:
+        report.append(f"flavors: 新增缺失条目 {len(emitter.added)} 条: " + "; ".join(emitter.added))
     if moved:
         report.append(f"flavors: 品级归位 {len(moved)} 条: " + "; ".join(sorted(moved)))
     if removed:
         report.append(f"flavors: 移除已失效条目 {len(removed)} 条: " + "; ".join(sorted(removed)))
-    if diverged:
+    if emitter.diverged:
         report.append(
-            f"flavors: 待裁决分歧 {len(diverged)} 条(保留 txt 现状,不影响退出码):\n  "
-            + "\n  ".join(diverged)
+            f"flavors: 待裁决分歧 {len(emitter.diverged)} 条(保留 txt 现状,不影响退出码):\n  "
+            + "\n  ".join(emitter.diverged)
         )
     return "\n".join(out) + "\n"
 
@@ -704,75 +707,86 @@ def summary_truth(truth: Truth) -> dict[str, list[dict]]:
     return sections
 
 
-def sync_summary(
-    truth: Truth,
-    current_text: str,
-    report: list[str],
-    prune: bool,
-    accepts: set[str],
-) -> str:
-    sections = summary_truth(truth)
-    known_titles = {
-        entry["title"] for items in sections.values() for entry in items
-    }
+SUMMARY_PLAIN_SECTIONS = ("卡牌：", "怪物：", "属性锻造器：", "事件遗物：", "特定规则：")
+SUMMARY_RARITY_ENTRY = re.compile(r"^(#?)(白银|黄金|棱彩)：(.+)$")
 
-    lines = current_text.splitlines()
-    # 定位章节: 段名 -> (起始行号, 结束行号开区间)。
+
+def summary_section_bounds(lines: list[str]) -> dict[str, tuple[int, int]]:
+    """段名 -> (起始行号, 结束行号开区间)。"""
     marks: list[tuple[int, str]] = []
     for i, line in enumerate(lines):
         stripped = line.strip()
         if stripped in POOL_SECTION.values():
             marks.append((i, stripped))
-        elif stripped in ("卡牌：", "怪物：", "属性锻造器：", "事件遗物：", "特定规则："):
+        elif stripped in SUMMARY_PLAIN_SECTIONS:
             marks.append((i, stripped.rstrip("：")))
     bounds: dict[str, tuple[int, int]] = {}
     for idx, (start, name) in enumerate(marks):
         end = marks[idx + 1][0] if idx + 1 < len(marks) else len(lines)
         bounds[name] = (start, end)
+    return bounds
 
-    rarity_entry = re.compile(r"^(#?)(白银|黄金|棱彩)：(.+)$")
-    edits: dict[int, str | None] = {}  # 行号 -> 替换内容(None=删除)
-    inserts: dict[int, list[str]] = {}  # 在该行号之前插入
-    stale: list[dict] = []  # {anchor, rarity, title, desc, disabled, line}
-    missing: list[dict] = []  # {anchor, entry, pos, use_rarity}
-    prefix_fixed: list[str] = []
-    accepted: list[str] = []
-    unknown_accepts = set(accepts)
 
-    def handle_section(name: str, use_rarity: bool) -> None:
-        if name not in bounds:
-            report.append(f"summary: 找不到章节 {name}")
-            return
-        start, end = bounds[name]
-        want = {
-            ((entry["rarity"], entry["title"]) if use_rarity else entry["title"]): entry
-            for entry in sections[name]
-        }
+class SummarySync:
+    """summary 的增量同步:只补缺失条目、修前缀、按 --accept-json 采纳;手写描述不覆盖,删除需 --prune。"""
 
-        # 预扫: 收集本节已存在的锚,避免把“品级漂移”误判到已有同名条目的品级上。
+    def __init__(self, sections: dict[str, list[dict]], lines: list[str], accepts: set[str]) -> None:
+        self.sections = sections
+        self.lines = lines
+        self.accepts = accepts
+        self.known_titles = {entry["title"] for items in sections.values() for entry in items}
+        self.bounds = summary_section_bounds(lines)
+        self.edits: dict[int, str | None] = {}  # 行号 -> 替换内容(None=删除)
+        self.inserts: dict[int, list[str]] = {}  # 在该行号之前插入
+        self.stale: list[dict] = []  # {anchor, rarity, title, desc, line}
+        self.missing: list[dict] = []  # {anchor, entry, pos, use_rarity}
+        self.prefix_fixed: list[str] = []
+        self.accepted: list[str] = []
+        self.unknown_accepts = set(accepts)
+        self.moved_notes: list[str] = []
+        self.added: list[str] = []
+
+    def parse_section(self, start: int, end: int, use_rarity: bool) -> tuple[list[tuple], set[object]]:
+        """预扫: 收集本节已存在的锚,避免把“品级漂移”误判到已有同名条目的品级上。"""
         present: set[object] = set()
         parsed: list[tuple[int, bool, str | None, str, str, str]] = []
         for i in range(start + 1, end):
-            stripped = lines[i].strip()
+            stripped = self.lines[i].strip()
             if not stripped:
                 continue
             if use_rarity:
-                match = rarity_entry.match(stripped)
+                match = SUMMARY_RARITY_ENTRY.match(stripped)
                 if not match:
                     continue  # 章节头部说明行等,原样保留
                 has_hash, rarity, body = match.group(1) == "#", match.group(2), match.group(3)
-                title, desc = split_titled(body, known_titles)
+                title, desc = split_titled(body, self.known_titles)
                 key = (rarity, title)
             else:
                 if "：" not in stripped:
                     continue
                 has_hash, rarity = False, None
-                title, desc = split_titled(stripped, known_titles)
+                title, desc = split_titled(stripped, self.known_titles)
                 body = stripped
                 key = title
             parsed.append((i, has_hash, rarity, title, desc, body))
             present.add(key)
+        return parsed, present
 
+    def handle_section(self, name: str, use_rarity: bool, report: list[str]) -> None:
+        if name not in self.bounds:
+            report.append(f"summary: 找不到章节 {name}")
+            return
+        start, end = self.bounds[name]
+        want = {
+            ((entry["rarity"], entry["title"]) if use_rarity else entry["title"]): entry
+            for entry in self.sections[name]
+        }
+        parsed, present = self.parse_section(start, end, use_rarity)
+        seen, last_line_of_rarity = self.match_existing(name, use_rarity, want, parsed, present)
+        self.collect_missing(name, use_rarity, want, seen, last_line_of_rarity, start, end)
+
+    def match_existing(self, name: str, use_rarity: bool, want: dict, parsed: list[tuple],
+                       present: set[object]) -> tuple[dict[object, int], dict[str | None, int]]:
         seen: dict[object, int] = {}
         last_line_of_rarity: dict[str | None, int] = {}
         for i, has_hash, rarity, title, desc, body in parsed:
@@ -787,133 +801,135 @@ def sync_summary(
             else:
                 key = (rarity, title)
             last_line_of_rarity[rarity] = i
+            anchor = f"{name}:{rarity}:{title}" if use_rarity else f"{name}:{title}"
             if key in want:
                 seen.setdefault(key, i)
-                entry = want[key]
-                anchor = f"{name}:{rarity}:{title}" if use_rarity else f"{name}:{title}"
-                if use_rarity and has_hash != entry["disabled"]:
-                    new_prefix = "#" if entry["disabled"] else ""
-                    edits[i] = f"{new_prefix}{rarity}：{body}"
-                    prefix_fixed.append(anchor)
-                if anchor in accepts:
-                    unknown_accepts.discard(anchor)
-                    prefix = "#" if entry["disabled"] and use_rarity else ""
-                    head = f"{prefix}{rarity}：" if use_rarity else ""
-                    edits[i] = f"{head}{title}：{entry['desc']}{entry['suffix']}"
-                    accepted.append(anchor)
+                self.update_known_entry(i, want[key], anchor, use_rarity, has_hash, rarity, title, body)
                 continue
 
-            # 品级漂移: 同名条目真值挂在本节别的品级,且该品级下尚无同名条目。
-            drift = None
-            if use_rarity:
-                for entry in sections[name]:
-                    if entry["title"] == title and (entry["rarity"], title) not in present:
-                        drift = entry
-                        break
+            drift = self.find_rarity_drift(name, title, present) if use_rarity else None
             if drift is not None:
                 new_prefix = "#" if drift["disabled"] else ""
-                edits[i] = f"{new_prefix}{drift['rarity']}：{title}：{desc}"
-                prefix_fixed.append(f"{name}:{rarity}:{title} 品级改为 {drift['rarity']}")
+                self.edits[i] = f"{new_prefix}{drift['rarity']}：{title}：{desc}"
+                self.prefix_fixed.append(f"{name}:{rarity}:{title} 品级改为 {drift['rarity']}")
                 seen.setdefault((drift["rarity"], title), i)
             else:
-                stale.append(
-                    {
-                        "anchor": f"{name}:{rarity}:{title}" if use_rarity else f"{name}:{title}",
-                        "rarity": rarity,
-                        "title": title,
-                        "desc": desc,
-                        "line": i,
-                    }
-                )
+                self.stale.append({"anchor": anchor, "rarity": rarity, "title": title, "desc": desc, "line": i})
+        return seen, last_line_of_rarity
 
-        # 缺失条目: 记录插入点(对应品级块末尾;无该品级块则章节末尾)。
+    def update_known_entry(self, i: int, entry: dict, anchor: str, use_rarity: bool, has_hash: bool,
+                           rarity: str | None, title: str, body: str) -> None:
+        if use_rarity and has_hash != entry["disabled"]:
+            new_prefix = "#" if entry["disabled"] else ""
+            self.edits[i] = f"{new_prefix}{rarity}：{body}"
+            self.prefix_fixed.append(anchor)
+        if anchor in self.accepts:
+            self.unknown_accepts.discard(anchor)
+            prefix = "#" if entry["disabled"] and use_rarity else ""
+            head = f"{prefix}{rarity}：" if use_rarity else ""
+            self.edits[i] = f"{head}{title}：{entry['desc']}{entry['suffix']}"
+            self.accepted.append(anchor)
+
+    def find_rarity_drift(self, name: str, title: str, present: set[object]) -> dict | None:
+        """品级漂移: 同名条目真值挂在本节别的品级,且该品级下尚无同名条目。"""
+        for entry in self.sections[name]:
+            if entry["title"] == title and (entry["rarity"], title) not in present:
+                return entry
+        return None
+
+    def collect_missing(self, name: str, use_rarity: bool, want: dict, seen: dict[object, int],
+                        last_line_of_rarity: dict[str | None, int], start: int, end: int) -> None:
+        """缺失条目: 记录插入点(对应品级块末尾;无该品级块则章节末尾)。"""
         for key, entry in want.items():
             if key in seen:
                 continue
             pos = last_line_of_rarity.get(entry["rarity"] if use_rarity else None)
             if pos is None:
                 pos = end - 1
-                while pos > start and not lines[pos].strip():
+                while pos > start and not self.lines[pos].strip():
                     pos -= 1
-            anchor = (
-                f"{name}:{entry['rarity']}:{entry['title']}"
-                if use_rarity
-                else f"{name}:{entry['title']}"
+            anchor = f"{name}:{entry['rarity']}:{entry['title']}" if use_rarity else f"{name}:{entry['title']}"
+            self.missing.append({"anchor": anchor, "entry": entry, "pos": pos + 1, "use_rarity": use_rarity})
+
+    def pair_cross_section_moves(self) -> None:
+        """跨节漂移: 缺失条目与已移除条目按(品级,标题)配对 -> 移动既有手写行,不重写描述。"""
+        for miss in self.missing:
+            entry = miss["entry"]
+            match = next(
+                (item for item in self.stale if item["rarity"] == entry["rarity"] and item["title"] == entry["title"]),
+                None,
             )
-            missing.append(
-                {"anchor": anchor, "entry": entry, "pos": pos + 1, "use_rarity": use_rarity}
-            )
+            if match is None:
+                continue
+            miss["move_desc"] = match["desc"]
+            self.stale.remove(match)
+            self.edits[match["line"]] = None
+            self.moved_notes.append(f"{match['anchor']} -> {miss['anchor']}")
 
-    for name in TAG_SECTION_ORDER:
-        handle_section(name, use_rarity=True)
-    handle_section("怪物", use_rarity=True)
-    handle_section("属性锻造器", use_rarity=True)
-    handle_section("卡牌", use_rarity=False)
-    handle_section("事件遗物", use_rarity=False)
-
-    # 跨节漂移: 缺失条目与已移除条目按(品级,标题)配对 -> 移动既有手写行,不重写描述。
-    moved_notes: list[str] = []
-    for miss in missing:
-        entry = miss["entry"]
-        match = next(
-            (
-                item
-                for item in stale
-                if item["rarity"] == entry["rarity"] and item["title"] == entry["title"]
-            ),
-            None,
-        )
-        if match is None:
-            continue
-        miss["move_desc"] = match["desc"]
-        stale.remove(match)
-        edits[match["line"]] = None
-        moved_notes.append(f"{match['anchor']} -> {miss['anchor']}")
-
-    added: list[str] = []
-    for miss in missing:
-        entry = miss["entry"]
-        prefix = "#" if entry["disabled"] and miss["use_rarity"] else ""
-        head = f"{prefix}{entry['rarity']}：" if miss["use_rarity"] else ""
-        desc = miss.get("move_desc", f"{entry['desc']}{entry['suffix']}")
-        inserts.setdefault(miss["pos"], []).append(f"{head}{entry['title']}：{desc}")
-        added.append(miss["anchor"])
-
-    for item in stale:
+    def schedule_inserts(self, prune: bool) -> None:
+        for miss in self.missing:
+            entry = miss["entry"]
+            prefix = "#" if entry["disabled"] and miss["use_rarity"] else ""
+            head = f"{prefix}{entry['rarity']}：" if miss["use_rarity"] else ""
+            desc = miss.get("move_desc", f"{entry['desc']}{entry['suffix']}")
+            self.inserts.setdefault(miss["pos"], []).append(f"{head}{entry['title']}：{desc}")
+            self.added.append(miss["anchor"])
         if prune:
-            edits[item["line"]] = None
+            for item in self.stale:
+                self.edits[item["line"]] = None
 
-    out: list[str] = []
-    for i, line in enumerate(lines):
-        if i in inserts:
-            out.extend(inserts[i])
-        if i in edits:
-            if edits[i] is not None:
-                out.append(edits[i])
-        else:
-            out.append(line)
-    if len(lines) in inserts:
-        out.extend(inserts[len(lines)])
+    def render(self) -> str:
+        out: list[str] = []
+        for i, line in enumerate(self.lines):
+            if i in self.inserts:
+                out.extend(self.inserts[i])
+            if i in self.edits:
+                if self.edits[i] is not None:
+                    out.append(self.edits[i])
+            else:
+                out.append(line)
+        if len(self.lines) in self.inserts:
+            out.extend(self.inserts[len(self.lines)])
+        return "\n".join(out) + "\n"
 
-    if added:
-        report.append(f"summary: 新增缺失条目 {len(added)} 条: " + "; ".join(added))
-    if moved_notes:
-        report.append(f"summary: 跨节移动 {len(moved_notes)} 条(保留原描述): " + "; ".join(moved_notes))
-    if prefix_fixed:
-        report.append(
-            f"summary: 修正禁用/品级前缀 {len(prefix_fixed)} 条: " + "; ".join(prefix_fixed)
-        )
-    if stale:
-        action = "已删除" if prune else "保留原位(--prune 才删除)"
-        report.append(
-            f"summary: 已从注册表移除的条目 {len(stale)} 条,{action}: "
-            + "; ".join(item["anchor"] for item in stale)
-        )
-    if accepted:
-        report.append(f"summary: 按 --accept-json 采纳 JSON 描述 {len(accepted)} 条: " + "; ".join(accepted))
-    if unknown_accepts:
-        report.append(f"summary: --accept-json 未匹配到锚: {', '.join(sorted(unknown_accepts))}")
-    return "\n".join(out) + "\n"
+    def report_changes(self, report: list[str], prune: bool) -> None:
+        if self.added:
+            report.append(f"summary: 新增缺失条目 {len(self.added)} 条: " + "; ".join(self.added))
+        if self.moved_notes:
+            report.append(f"summary: 跨节移动 {len(self.moved_notes)} 条(保留原描述): " + "; ".join(self.moved_notes))
+        if self.prefix_fixed:
+            report.append(f"summary: 修正禁用/品级前缀 {len(self.prefix_fixed)} 条: " + "; ".join(self.prefix_fixed))
+        if self.stale:
+            action = "已删除" if prune else "保留原位(--prune 才删除)"
+            report.append(
+                f"summary: 已从注册表移除的条目 {len(self.stale)} 条,{action}: "
+                + "; ".join(item["anchor"] for item in self.stale)
+            )
+        if self.accepted:
+            report.append(f"summary: 按 --accept-json 采纳 JSON 描述 {len(self.accepted)} 条: " + "; ".join(self.accepted))
+        if self.unknown_accepts:
+            report.append(f"summary: --accept-json 未匹配到锚: {', '.join(sorted(self.unknown_accepts))}")
+
+
+def sync_summary(
+    truth: Truth,
+    current_text: str,
+    report: list[str],
+    prune: bool,
+    accepts: set[str],
+) -> str:
+    sync = SummarySync(summary_truth(truth), current_text.splitlines(), accepts)
+    for name in TAG_SECTION_ORDER:
+        sync.handle_section(name, True, report)
+    sync.handle_section("怪物", True, report)
+    sync.handle_section("属性锻造器", True, report)
+    sync.handle_section("卡牌", False, report)
+    sync.handle_section("事件遗物", False, report)
+    sync.pair_cross_section_moves()
+    sync.schedule_inserts(prune)
+    text = sync.render()
+    sync.report_changes(report, prune)
+    return text
 
 
 # ---------------------------------------------------------------------------

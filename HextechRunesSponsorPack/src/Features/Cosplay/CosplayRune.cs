@@ -18,6 +18,10 @@ public sealed class CosplayRune : HextechRelicBase
 
 	public override bool HasUponPickupEffect => true;
 
+	// 占位属性,自身恒为 0、不存值:本体在卡牌存档的 Props 里写入同名标记
+	// (HextechRunesApi.PersistentInnateMarkerSavedPropertyName,见 HextechThoughtOverwriteKeywordPersistenceHooks),
+	// 这个名字必须在 SavedProperty net-id 表里才能随存档/联机序列化,本属性就是它的登记载体。
+	// 名字与类型都不能改:SavedProperty 集合决定 net-id 布局,改动会与旧版本不兼容。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	private int SavedCosplayInnateMarker
 	{

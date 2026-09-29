@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using HextechRunes;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
@@ -39,9 +40,8 @@ public abstract class ConditionalEnchantmentForgeBase : HextechForgeBase
 				continue;
 			}
 
-			ConditionalEnchantmentOption resolvedOption = option!;
 			Flash();
-			CardCmd.Enchant(resolvedOption.CreateCanonical().ToMutable(), selected, resolvedOption.Amount);
+			CardCmd.Enchant(option.CreateCanonical().ToMutable(), selected, option.Amount);
 			CardCmd.Preview(selected);
 		}
 	}
@@ -61,7 +61,7 @@ public abstract class ConditionalEnchantmentForgeBase : HextechForgeBase
 		return TryGetOption(card, out _);
 	}
 
-	private bool TryGetOption(CardModel card, out ConditionalEnchantmentOption? option)
+	private bool TryGetOption(CardModel card, [NotNullWhen(true)] out ConditionalEnchantmentOption? option)
 	{
 		option = Options.FirstOrDefault(candidate =>
 			card.Type == candidate.CardType

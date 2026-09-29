@@ -27,9 +27,9 @@ internal static class HextechForgeShopPriceHelper
 
 	public static int GetRandomForgeShopPriceFor(RunState? runState)
 	{
-		return TryGetRandomForgeShopPrice(runState, out int price)
+		return HextechRunesApi.ApplyForgeShopPriceModifiers(runState, TryGetRandomForgeShopPrice(runState, out int price)
 			? price
-			: GetCurrentRandomForgeShopPrice();
+			: GetCurrentRandomForgeShopPrice());
 	}
 
 	public static void RefreshRandomForgeShopRelic(RandomForgeShopRelic shopRelic, RunState? runState = null)

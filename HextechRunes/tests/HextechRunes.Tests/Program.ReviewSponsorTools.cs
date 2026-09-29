@@ -1,0 +1,205 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text.Json;
+using HarmonyLib;
+using HextechRunesSponsorPack;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Runs;
+using MainLoader = HextechRunes.Loader.LoaderBootstrap;
+using SponsorLoader = HextechRunesSponsorPack.Loader.LoaderBootstrap;
+
+namespace HextechRunes.Tests;
+
+// 2026-09 审查整理(拓展包与工具链):共享加载器、拓展包 SavedProperty 快照、稳定哈希 golden 值、
+// 锻造器售价登记点与拓展包补丁声明。
+internal static partial class Program
+{
+	private static void SponsorSavedPropertyManifestMatchesCheckedInList()
+	{
+		ExpectSavedPropertyManifest(
+			"sponsor_saved_property_manifest.txt",
+			CollectSavedPropertyNames(typeof(SponsorCatalog).Assembly, declaredInAssemblyOnly: true));
+	}
+
+	// 两个加载器编译的是同一份 SelectVariant:宿主已知却没有不高于它的变体时必须返回 null(停止加载),
+	// 不能回退到更新的变体;宿主未知才用最新变体。
+	private static void LoaderSelectVariantNeverFallsBackToNewerVariant()
+	{
+		MainLoader.VariantCandidate[] main =
+		[
+			new("0.107.1", new Version(0, 107, 1), "a"),
+			new("0.110.0", new Version(0, 110, 0), "b"),
+			new("0.111.0", new Version(0, 111, 0), "c")
+		];
+		Equal("0.107.1", MainLoader.SelectVariant(main, new Version(0, 107, 1))?.CompatTarget, "exact oldest host");
+		Equal("0.107.1", MainLoader.SelectVariant(main, new Version(0, 109, 0))?.CompatTarget, "between targets picks the older one");
+		Equal("0.111.0", MainLoader.SelectVariant(main, new Version(0, 112, 0))?.CompatTarget, "newer host picks the newest variant");
+		Equal("0.111.0", MainLoader.SelectVariant(main, null)?.CompatTarget, "unknown host picks the newest variant");
+		Expect(MainLoader.SelectVariant(main, new Version(0, 106, 0)) == null, "host older than every variant refuses to load");
+		Expect(MainLoader.SelectVariant([], null) == null, "no variants");
+
+		SponsorLoader.VariantCandidate[] sponsor =
+		[
+			new("0.110.0", new Version(0, 110, 0), "b"),
+			new("0.111.0", new Version(0, 111, 0), "c")
+		];
+		Expect(SponsorLoader.SelectVariant(sponsor, new Version(0, 107, 1)) == null, "sponsor loader refuses a newer variant for a known older host");
+		Equal("0.110.0", SponsorLoader.SelectVariant(sponsor, new Version(0, 110, 1))?.CompatTarget, "sponsor loader picks the newest variant not above the host");
+		Equal("0.111.0", SponsorLoader.SelectVariant(sponsor, null)?.CompatTarget, "sponsor loader: unknown host picks the newest variant");
+	}
+
+	// 拓展包加载器只认自己的变体清单名与程序集名;类型留在原命名空间,两份加载器可同时存在于进程里。
+	private static void SponsorLoaderUsesItsOwnIdentity()
+	{
+		Equal("HextechRunesSponsorPack.Loader", typeof(SponsorLoader).Namespace, "sponsor loader namespace");
+		Equal("HextechRunesSponsorPack.Loader", typeof(SponsorLoader).Assembly.GetName().Name, "sponsor loader assembly name");
+		Equal("HextechRunes.Loader", typeof(MainLoader).Namespace, "main loader namespace");
+		Equal("[HextechRunesSponsorPack.Loader] ", SponsorLoader.LogPrefix, "sponsor loader log prefix");
+		Equal("[HextechRunes.Loader] ", MainLoader.LogPrefix, "main loader log prefix");
+		Equal("HextechRunesSponsorPack", SponsorLoader.ModId, "sponsor loader mod id");
+		Equal("hextech-runes-sponsor-pack-variants.manifest", SponsorLoader.VariantManifestName, "sponsor loader manifest name");
+		Equal("HextechSponsorCompatibilityTarget", SponsorLoader.CompatTargetMetadataKey, "sponsor loader metadata key");
+		Equal("HextechRunes", MainLoader.ModId, "main loader mod id");
+		Equal("hextech-runes-variants.manifest", MainLoader.VariantManifestName, "main loader manifest name");
+		Equal("HextechCompatibilityTarget", MainLoader.CompatTargetMetadataKey, "main loader metadata key");
+
+		// 只走不写日志的成功/拒绝路径:加载器的 Log.Error 在测试进程里会触碰 Godot 原生层。
+
+		string root = Path.Combine(Path.GetTempPath(), "hextech-sponsor-loader-test-" + Guid.NewGuid().ToString("N"));
+		try
+		{
+			string libRoot = Path.Combine(root, "lib");
+			string variantDirectory = Path.Combine(libRoot, "0.110.0");
+			Directory.CreateDirectory(variantDirectory);
+			File.WriteAllText(Path.Combine(variantDirectory, "compat-target.txt"), "0.110.0");
+			byte[] dll = "not a real assembly"u8.ToArray();
+			File.WriteAllBytes(Path.Combine(variantDirectory, "HextechRunesSponsorPack.dll"), dll);
+			string manifest = JsonSerializer.Serialize(new
+			{
+				variants = new[] { new { compatTarget = "0.110.0", directory = "lib/0.110.0", assembly = "HextechRunesSponsorPack.dll", sha256 = Convert.ToHexString(SHA256.HashData(dll)) } }
+			});
+
+			File.WriteAllText(Path.Combine(root, "hextech-runes-sponsor-pack-variants.manifest"), manifest);
+			Equal("0.110.0", SponsorLoader.PickVariant(root, libRoot, new Version(0, 111, 0))?.CompatTarget, "sponsor loader reads its own manifest");
+			Expect(SponsorLoader.PickVariant(root, libRoot, new Version(0, 107, 1)) == null, "known older host: sponsor loader stops instead of loading 0.110.0");
+		}
+		finally
+		{
+			if (Directory.Exists(root))
+			{
+				Directory.Delete(root, recursive: true);
+			}
+		}
+	}
+
+	// 稳定哈希的历史结果必须逐位不变(神迹事件、附魔大师的存档与联机两端都依赖它)。golden 值由已删除的
+	// 拓展包 SponsorStableRandom(0.9.x 起在用)实际算出并核对过,算法:FNV-1a(64) over seed|act:|floor:|("|" + salt)... + MurmurHash3 终混。
+	private static void StableIndexMatchesGoldenValuesAndRejectsEmptyPool()
+	{
+		Equal(
+			0x4A7ED4341511E801UL,
+			HextechStableRandom.HashRaw("SEED-1", "|act:", "2", "|floor:", "17", "|", "enchantment-master", "|", "3", "|", "card"),
+			"golden hash (act 2, floor 17)");
+
+		RunState run = (RunState)RuntimeHelpers.GetUninitializedObject(typeof(RunState));
+		FieldInfo history = AccessTools.Field(typeof(RunState), "_mapPointHistory");
+		history.SetValue(run, Activator.CreateInstance(history.FieldType));
+		AccessTools.Property(typeof(RunState), "Rng").SetValue(run, new RunRngSet("SEED-1"));
+		Equal(0, run.CurrentActIndex, "fixture act");
+		Equal(0, run.TotalFloor, "fixture floor");
+
+		(ulong Hash, string?[] Salt)[] golden =
+		[
+			(0x386496AA02236625UL, ["miracle.gift", "2", "1"]),
+			(0xAD1E1F354E18B659UL, ["miracle.forge.rarity", "forge:3:0"]),
+			(0x09BB89CC8D0D0A94UL, ["enchantment-master", "76561198000000000", "enchant"]),
+			(0x1ABA9BA114268ADAUL, ["miracle.cardpack", "2", null])
+		];
+		foreach ((ulong hash, string?[] salt) in golden)
+		{
+			string label = string.Join("|", salt.Select(static part => part ?? "<null>"));
+			foreach (int count in new[] { 1, 7, 100 })
+			{
+				int expected = (int)(hash % (ulong)count);
+				Equal(expected, HextechRunesApi.StableIndex(run, count, salt), $"public StableIndex golden ({label}, count {count})");
+				Equal(expected, HextechStableRandom.Index(run, count, salt), $"HextechStableRandom golden ({label}, count {count})");
+			}
+		}
+
+		ExpectThrows<ArgumentOutOfRangeException>(() => HextechRunesApi.StableIndex(run, 0, "empty"), "an empty pool is rejected instead of dividing by zero");
+	}
+
+	// 信徒的售价修正:叠加所有玩家的信徒,结果不低于 0;没有登记修正器时本体算价原样返回。
+	private static void BelieverForgePriceModifierSumsDeltasAndClampsAtZero()
+	{
+		var (_, first, second) = CreatePrismaticEnemyFixture();
+		RunState run = (RunState)first.RunState;
+		BelieverRune firstBeliever = CreateMutableTestModel<BelieverRune>();
+		BelieverRune secondBeliever = CreateMutableTestModel<BelieverRune>();
+		firstBeliever.SavedForgePriceDelta = 50;
+		secondBeliever.SavedForgePriceDelta = -25;
+		AccessTools.Field(typeof(Player), "_relics").SetValue(first, new List<RelicModel> { firstBeliever });
+		AccessTools.Field(typeof(Player), "_relics").SetValue(second, new List<RelicModel> { secondBeliever });
+
+		Equal(125, BelieverRune.ApplyForgePriceDeltas(run, 100), "deltas from every player's Believer are summed");
+		secondBeliever.SavedForgePriceDelta = -500;
+		Equal(0, BelieverRune.ApplyForgePriceDeltas(run, 100), "the modified price never goes below zero");
+		firstBeliever.SavedForgePriceDelta = 0;
+		secondBeliever.SavedForgePriceDelta = 0;
+		Equal(100, BelieverRune.ApplyForgePriceDeltas(run, 100), "no delta keeps the base price");
+
+		Equal(80, HextechRunesApi.ApplyForgeShopPriceModifiers(run, 80), "no registered modifier: base price unchanged");
+	}
+
+	// 拓展包补丁的声明约束(SponsorPatcher 是本体 HextechPatcher 的独立实现,本体那份是 internal):
+	// 每个 [HarmonyPatch] 类都带唯一 id 的 [SponsorPatch];跳过型前缀(返回 bool)必须 Priority.Low 或更低。
+	private static void SponsorPatchDeclarationsAreCompleteAndSkipPrefixesYield()
+	{
+		List<string> problems = [];
+		HashSet<string> ids = new(StringComparer.Ordinal);
+		foreach (Type type in typeof(SponsorCatalog).Assembly.GetTypes())
+		{
+			SponsorPatchAttribute? meta = type.GetCustomAttribute<SponsorPatchAttribute>();
+			bool hasHarmonyTarget = HarmonyMethodExtensions.GetFromType(type).Count > 0;
+			if (meta == null)
+			{
+				if (hasHarmonyTarget)
+				{
+					problems.Add($"{type.FullName}: [HarmonyPatch] without [SponsorPatch]");
+				}
+
+				continue;
+			}
+
+			if (!ids.Add(meta.Id))
+			{
+				problems.Add($"{type.FullName}: duplicate patch id {meta.Id}");
+			}
+
+			MethodInfo? dynamicApply = type.GetMethod("Apply", PatchMemberFlags, [typeof(Harmony)]);
+			if (!hasHarmonyTarget && dynamicApply == null)
+			{
+				problems.Add($"{type.FullName} ({meta.Id}): no [HarmonyPatch] target and no Apply(Harmony)");
+			}
+
+			foreach (MethodInfo method in type.GetMethods(PatchMemberFlags))
+			{
+				if (method.GetCustomAttribute<HarmonyPrefix>() == null || method.ReturnType != typeof(bool))
+				{
+					continue;
+				}
+
+				int priority = method.GetCustomAttribute<HarmonyPriority>()?.info.priority ?? Priority.Normal;
+				if (priority > Priority.Low)
+				{
+					problems.Add($"{type.FullName}.{method.Name} ({meta.Id}): skip prefix must use Priority.Low or lower, got {priority}");
+				}
+			}
+		}
+
+		Expect(ids.Count > 0, "sponsor pack declares patches");
+		Expect(problems.Count == 0, "sponsor patch declaration problems:\n  " + string.Join("\n  ", problems));
+	}
+}

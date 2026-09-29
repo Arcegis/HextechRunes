@@ -257,7 +257,13 @@ public static void RegisterExtraActProvider(Func<IRunState, string?> provider);
 | `RegisterSavedPropertyCarrier<T>()` | 为不经上述方法注册、却带 `[SavedProperty]` 的模型登记载体 |
 | `RegisterEnchantmentIcon<T>(iconPath)` | 为附魔登记图标 |
 
-运行期辅助方法：`ObtainRandomForges`（按条件随机发放锻造器）、`SelectRelicOption`（联机同步的遗物选择）、`TrackPersistentInnate` / `RestorePersistentInnate`（持久固有标记），以及 `RelicBundleGrantHelper.GrantRelics`。另有两个可实现的接口：`IHextechHealingMultiplierProvider`（治疗乘区）和 `IHextechGeneratedRune`（生成式符文的实例数据）。
+运行期辅助方法：`ObtainRandomForges`（按条件随机发放锻造器）、`SelectRelicOption`（联机同步的遗物选择）、`TrackPersistentInnate` / `RestorePersistentInnate`（持久固有标记），以及 `RelicBundleGrantHelper.GrantRelics`。
+
+| 方法 | 用途 |
+| --- | --- |
+| `RegisterForgeShopPriceModifier(Func<RunState, int, int>)` | 初始化期登记"随机锻造器"商店售价修正。算价时按登记顺序调用 `modifier(runState, currentPrice)`，返回值作为新价格；只读同步状态、自行决定下限。某个修正器抛异常时跳过它并记 Warn |
+| `IsHextechRelic(RelicModel?)` | 判断遗物是否由海克斯注册表管理（玩家海克斯、锻造器、商店锻造器、敌方海克斯展示遗物，含其他模组登记的符文）。不要用 `is HextechRelicBase` 代替 |
+| `StableIndex(RunState, count, params string?[] salt)` | 运行种子稳定随机：按本局种子、当前幕、总层数与盐取 `[0, count)` 的下标，不消耗共享 RNG，两端输入一致结果就一致；`count <= 0` 抛 `ArgumentOutOfRangeException`。同层重复抽取要在盐里放区分量。算法与结果保持不变 |另有两个可实现的接口：`IHextechHealingMultiplierProvider`（治疗乘区）和 `IHextechGeneratedRune`（生成式符文的实例数据）。
 
 硬依赖同样建议按程序集名检测、延迟注册，而不是在 manifest 里按 id 声明依赖，这样也能兼容程序集同名的二创版。
 
@@ -277,4 +283,5 @@ public static void RegisterExtraActProvider(Func<IRunState, string?> provider);
 - Registered runes are kept out of vanilla natural relic generation, are skipped by Double Vision, and appear under the Hextech category in the compendium and in the config menu.
 - UI labels: `SetPlayerRunePoolLabel(Type runeType, string poolKey)` picks the source pill on the selection screen (`HEXTECH_POOL.<poolKey>`; defaults to the character pool or `GENERIC`), and `RegisterConfigSectionTitle(string assetModId, string titleKey)` picks the config-menu group heading for everything registered with that `assetModId`. Put the texts in your mod's `relic_collection.json` (only vanilla table names are merged); a missing key is shown as the raw key instead of throwing. Tag pills read `HEXTECH_TAG.<tagKey>` the same way.
 - `isAvailableForPlayer` runs on every client and must be deterministic over synchronized state; a throwing predicate excludes the rune.
+- Hard-dependency helpers on `HextechRunesApi` also include `RegisterForgeShopPriceModifier(Func<RunState, int, int>)` (random-forge shop price modifiers, applied in registration order), `IsHextechRelic(RelicModel?)` (registry-based ownership check) and `StableIndex(RunState, int count, params string?[] salt)` (seed-stable index that never consumes shared RNG).
 - Published interop signatures never change; new capabilities come as new methods with a higher `ApiVersion`. Internal classes such as `HextechCatalog` are not part of the contract; please do not patch them.

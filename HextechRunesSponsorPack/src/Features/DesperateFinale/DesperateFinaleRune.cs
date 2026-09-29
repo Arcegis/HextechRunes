@@ -17,8 +17,8 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 	private readonly HashSet<uint> _ownerKilledChoraleCombatIds = [];
 	private readonly HashSet<uint> _ownerDoomedChoraleCombatIds = [];
 	private readonly HashSet<uint> _rewardedChoraleCombatIds = [];
+	// 本场击杀合唱团后待发放的投影遗物 HP;非空即表示战斗胜利时要补发合唱团奖励(不入存档,战斗内产生、胜利时消费)。
 	private readonly List<int> _pendingProjectionChoraleHp = [];
-	private bool _pendingFinalChoraleRewards;
 	private int _stacks;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -42,7 +42,6 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 
 	public override bool IsAvailableForPlayer(Player player)
 	{
-		_ = player;
 		return IntegratedStrategyEventsBridge.IsAvailable;
 	}
 
@@ -93,9 +92,6 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		Creature target,
 		CardModel? cardSource)
 	{
-		_ = choiceContext;
-		_ = props;
-
 		if (Owner == null
 			|| !result.WasTargetKilled
 			|| target.CombatId is not uint combatId
@@ -116,9 +112,6 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		Creature? applier,
 		CardModel? cardSource)
 	{
-		_ = choiceContext;
-		_ = cardSource;
-
 		if (Owner != null
 			&& amount > 0m
 			&& power is DoomPower
@@ -151,9 +144,6 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		bool wasRemovalPrevented,
 		float deathAnimLength)
 	{
-		_ = choiceContext;
-		_ = deathAnimLength;
-
 		if (Owner == null
 			|| wasRemovalPrevented
 			|| target.CombatId is not uint combatId
@@ -171,8 +161,6 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		PlayerChoiceContext choiceContext,
 		IReadOnlyList<Creature> creatures)
 	{
-		_ = choiceContext;
-
 		if (Owner == null)
 		{
 			return Task.CompletedTask;
@@ -203,16 +191,12 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 
 		SavedFinalChoraleKills++;
 		_pendingProjectionChoraleHp.Add(Math.Max(1, target.MaxHp + DynamicVars["ChoraleHpBonus"].IntValue));
-		_pendingFinalChoraleRewards = true;
 		Flash([Owner.Creature]);
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		_ = room;
-		_ownerKilledChoraleCombatIds.Clear();
-		_ownerDoomedChoraleCombatIds.Clear();
-		_rewardedChoraleCombatIds.Clear();
+		ClearCombatTracking();
 		return Task.CompletedTask;
 	}
 
@@ -220,21 +204,21 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 	{
 		if (Owner != null && _pendingProjectionChoraleHp.Count > 0)
 		{
-			if (_pendingFinalChoraleRewards)
-			{
-				IntegratedStrategyEventsBridge.AddFinalChoraleRewardsIfMissing(room);
-			}
-
+			IntegratedStrategyEventsBridge.AddFinalChoraleRewardsIfMissing(room);
 			foreach (int choraleHp in _pendingProjectionChoraleHp)
 			{
 				await IntegratedStrategyEventsBridge.ObtainProphecyProjection(Owner, choraleHp);
 			}
 		}
 
+		ClearCombatTracking();
+		_pendingProjectionChoraleHp.Clear();
+	}
+
+	private void ClearCombatTracking()
+	{
 		_ownerKilledChoraleCombatIds.Clear();
 		_ownerDoomedChoraleCombatIds.Clear();
 		_rewardedChoraleCombatIds.Clear();
-		_pendingProjectionChoraleHp.Clear();
-		_pendingFinalChoraleRewards = false;
 	}
 }

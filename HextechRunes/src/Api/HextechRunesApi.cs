@@ -274,4 +274,91 @@ public static class HextechRunesApi
 				$"Unknown player rune flag bits: {unknownFlags}.");
 		}
 	}
+
+	// ---- 随机锻造器售价修正 / 海克斯归属判断 / 稳定哈希(拓展包等硬依赖模组使用) ----
+
+	private static readonly object ForgeShopPriceModifiersGate = new();
+
+	// 初始化期登记、运行期只读;与 HextechExternalContentRegistry 的外部登记表同一形态。
+	private static readonly List<Func<RunState, int, int>> ForgeShopPriceModifiers = [];
+
+	/// <summary>
+	/// 登记"随机锻造器"商店售价修正。每次算价时按登记顺序依次调用 <c>modifier(runState, currentPrice)</c>,
+	/// 返回值作为新的价格传给下一个修正器;修正器应当只读同步状态(两端算价必须一致),并自行决定下限。
+	/// 必须在模组初始化阶段调用。某个修正器抛异常时跳过它并记 Warn,不影响其他修正器与原价。
+	/// </summary>
+	public static void RegisterForgeShopPriceModifier(Func<RunState, int, int> modifier)
+	{
+		ArgumentNullException.ThrowIfNull(modifier);
+		lock (ForgeShopPriceModifiersGate)
+		{
+			ForgeShopPriceModifiers.Add(modifier);
+		}
+	}
+
+	/// <summary>
+	/// 本体算价入口(HextechForgeShopPriceHelper.GetRandomForgeShopPriceFor)在得到基础价后调用。
+	/// <paramref name="runState"/> 为空时(商店算价时 shopRelic.Owner 可能为空)回退到当前对局;
+	/// 没有登记任何修正器时原样返回,不触碰对局状态。
+	/// </summary>
+	internal static int ApplyForgeShopPriceModifiers(RunState? runState, int price)
+	{
+		Func<RunState, int, int>[] modifiers;
+		lock (ForgeShopPriceModifiersGate)
+		{
+			if (ForgeShopPriceModifiers.Count == 0)
+			{
+				return price;
+			}
+
+			modifiers = ForgeShopPriceModifiers.ToArray();
+		}
+
+		RunState? state = runState ?? RunManager.Instance?.DebugOnlyGetState();
+		if (state == null)
+		{
+			return price;
+		}
+
+		foreach (Func<RunState, int, int> modifier in modifiers)
+		{
+			try
+			{
+				price = modifier(state, price);
+			}
+			catch (Exception ex)
+			{
+				// 真实边界:修正器来自外部模组。
+				if (HextechRunLogBudget.TryConsume("api.forge-shop-price-modifier", 3))
+				{
+					HextechLog.Warn(
+						"ExternalContent",
+						$"Forge shop price modifier {modifier.Method.DeclaringType?.FullName}.{modifier.Method.Name} threw; skipped: {ex.GetType().Name}: {ex.Message}");
+				}
+			}
+		}
+
+		return price;
+	}
+
+	/// <summary>
+	/// 该遗物是否属于海克斯注册表管理的内容(玩家海克斯、锻造器、商店锻造器、敌方海克斯展示遗物),
+	/// 包括其他模组经本 API 或 <c>HextechRunesInterop</c> 登记的符文;不要用 <c>is HextechRelicBase</c> 代替。
+	/// </summary>
+	public static bool IsHextechRelic(RelicModel? relic)
+	{
+		return HextechCatalog.IsHextechCustomRelic(relic);
+	}
+
+	/// <summary>
+	/// 运行种子稳定随机:在 [0, <paramref name="count"/>) 中取一个下标,不消耗任何共享 RNG。
+	/// 输入为本局种子、当前幕、当前总层数与盐(按顺序以 "|" 连接),两端输入一致就得到同一结果,可在联机两端对称执行。
+	/// 同一层内重复抽取须在盐里放入区分量(序号、玩家等)。算法与本体 HextechStableRandom 相同且保持不变。
+	/// </summary>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> 不大于 0。</exception>
+	public static int StableIndex(RunState runState, int count, params string?[] saltParts)
+	{
+		ArgumentNullException.ThrowIfNull(runState);
+		return HextechStableRandom.Index(runState, count, saltParts);
+	}
 }

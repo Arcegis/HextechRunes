@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 
@@ -61,17 +60,12 @@ internal static class RandomEnchantmentPool
 			{
 				if (LoggedCanEnchantFailures.Add(type))
 				{
-					Log.Warn($"[{ModInfo.Id}] EnchantmentMaster: {type.FullName}.CanEnchant threw on a canonical instance; treating it as illegal: {ex.GetType().Name}: {ex.Message}", 2);
+					SponsorLog.Warn(EnchantmentMasterRune.LogTag, $"{type.FullName}.CanEnchant threw on a canonical instance; treating it as illegal: {ex.GetType().Name}: {ex.Message}");
 				}
 			}
 
 			return false;
 		}
-	}
-
-	internal static List<T> SortByEntryOrdinal<T>(IEnumerable<T> items, Func<T, string?> entrySelector)
-	{
-		return items.OrderBy(entrySelector, StringComparer.Ordinal).ToList();
 	}
 
 	/// <summary>
@@ -132,6 +126,8 @@ internal static class RandomEnchantmentPool
 	{
 		List<EnchantmentModel> eligible = [];
 		List<string> excluded = [];
+		// ModelDb 只有 DebugEnchantments 一个附魔全集(0.107.1~0.111.0 都没有非 Debug 的等价 API;原版 PreloadManager
+		// 的正式加载路径同样读它)。它按类型枚举全部附魔,含测试用 mock,排除规则见上。
 		foreach (EnchantmentModel enchantment in ModelDb.DebugEnchantments)
 		{
 			if (IsExcluded(enchantment))
@@ -144,9 +140,10 @@ internal static class RandomEnchantmentPool
 			}
 		}
 
-		List<EnchantmentModel> sorted = SortByEntryOrdinal(eligible, static enchantment => enchantment.Id.Entry);
+		// 排序键是 Id.Entry,比较器必须是 Ordinal(与 OrdinalIgnoreCase 顺序不同,两端要一致)。
+		List<EnchantmentModel> sorted = eligible.OrderBy(static enchantment => enchantment.Id.Entry, StringComparer.Ordinal).ToList();
 		excluded.Sort(StringComparer.Ordinal);
-		Log.Info($"[{ModInfo.Id}] EnchantmentMaster pool built: {sorted.Count} eligible, {excluded.Count} excluded ({string.Join(", ", excluded)}).");
+		SponsorLog.Info(EnchantmentMasterRune.LogTag, $"Pool built: {sorted.Count} eligible, {excluded.Count} excluded ({string.Join(", ", excluded)}).");
 		return sorted;
 	}
 }

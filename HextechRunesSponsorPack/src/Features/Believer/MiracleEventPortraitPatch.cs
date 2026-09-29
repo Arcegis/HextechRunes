@@ -12,8 +12,6 @@ namespace HextechRunesSponsorPack;
 [HarmonyPatch(typeof(EventModel), nameof(EventModel.CreateInitialPortrait))]
 internal static class MiracleEventPortraitPatch
 {
-	private const string DoorsPortraitPath = "res://images/events/doors_of_light_and_dark.png";
-
 	[HarmonyPostfix]
 	private static void Postfix(EventModel __instance, ref Texture2D __result)
 	{
@@ -22,7 +20,7 @@ internal static class MiracleEventPortraitPatch
 			return;
 		}
 
-		Texture2D? doors = GD.Load<Texture2D>(DoorsPortraitPath);
+		Texture2D? doors = GD.Load<Texture2D>(MiracleEvent.PortraitPath);
 		if (doors != null)
 		{
 			__result = doors;

@@ -74,14 +74,11 @@ internal static partial class Program
 			});
 			File.WriteAllText(Path.Combine(root, "hextech-runes-variants.manifest"), manifest);
 
-			MethodInfo pick = AccessTools.Method(typeof(LoaderBootstrap), "PickVariant");
-			Expect(pick != null, "loader exposes PickVariant(loaderDirectory, libRoot, host)");
-			object? Pick(Version? host) => pick!.Invoke(null, [root, libRoot, host]);
-			static string Target(object candidate) => (string)AccessTools.Property(candidate.GetType(), "CompatTarget").GetValue(candidate)!;
+			LoaderBootstrap.VariantCandidate? Pick(Version? host) => LoaderBootstrap.PickVariant(root, libRoot, host);
 
-			Equal("0.110.0", Target(Pick(new Version(0, 110, 0))!), "exact host picks its own variant");
-			Equal("0.110.0", Target(Pick(new Version(0, 111, 0))!), "newer host falls back to the newest variant not above it");
-			Equal("0.110.0", Target(Pick(null)!), "unknown host keeps using the newest bundled variant");
+			Equal("0.110.0", Pick(new Version(0, 110, 0))?.CompatTarget, "exact host picks its own variant");
+			Equal("0.110.0", Pick(new Version(0, 111, 0))?.CompatTarget, "newer host falls back to the newest variant not above it");
+			Equal("0.110.0", Pick(null)?.CompatTarget, "unknown host keeps using the newest bundled variant");
 			Expect(Pick(new Version(0, 107, 1)) == null, "known older host with no compatible variant refuses to load instead of picking a newer one");
 		}
 		finally
