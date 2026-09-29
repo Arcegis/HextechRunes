@@ -164,6 +164,12 @@ public abstract partial class HextechRelicBase : RelicModel
 	// 战斗内计数器的显示条件：战斗进行中，且是持有中的实例（规范模型不读实例状态）。
 	protected bool IsInLiveCombat => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
 
+	// 捆包类符文（获得时发放一组原版遗物）的悬浮提示，按发放列表依次取规范遗物的提示，与发放列表同源维护。
+	protected static IEnumerable<IHoverTip> BundledRelicHoverTips(IEnumerable<Type> relicTypes)
+	{
+		return [.. relicTypes.SelectMany(static type => HoverTipFactory.FromRelic(ModelDb.GetById<RelicModel>(ModelDb.GetId(type))))];
+	}
+
 	private static readonly HashSet<string> WarnedMissingIconPaths = new(StringComparer.Ordinal);
 
 	private string GetResolvedIconPath()

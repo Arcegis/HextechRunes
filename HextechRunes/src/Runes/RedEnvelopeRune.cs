@@ -5,6 +5,10 @@ public sealed class RedEnvelopeRune : HextechSharedCombatVictoryRuneBase
 	internal const int BaseForgeChance = 25;
 	internal const int ForgeChanceStep = 5;
 
+	// 金币分支的区间；文案写的是字面值（20~50），改数值要同步九语言。
+	private const int MinGold = 20;
+	private const int MaxGold = 50;
+
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("BaseForgeChance", BaseForgeChance),
@@ -47,8 +51,8 @@ public sealed class RedEnvelopeRune : HextechSharedCombatVictoryRuneBase
 			HextechGoldRewardHelper.AddStableRangedExtraGoldReward(
 				room,
 				Owner,
-				20,
-				50,
+				MinGold,
+				MaxGold,
 				"red-envelope-gold",
 				Owner.Relics.Count.ToString());
 		}

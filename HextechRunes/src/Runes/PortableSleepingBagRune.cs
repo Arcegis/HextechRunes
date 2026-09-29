@@ -14,13 +14,7 @@ public sealed class PortableSleepingBagRune : HextechRelicBase
 		typeof(StoneHumidifier)
 	];
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		.. HoverTipFactory.FromRelic<RegalPillow>(),
-		.. HoverTipFactory.FromRelic<TinyMailbox>(),
-		.. HoverTipFactory.FromRelic<DreamCatcher>(),
-		.. HoverTipFactory.FromRelic<StoneHumidifier>()
-	];
+	protected override IEnumerable<IHoverTip> ExtraHoverTips => BundledRelicHoverTips(RelicTypes);
 
 	public override async Task AfterObtained()
 	{

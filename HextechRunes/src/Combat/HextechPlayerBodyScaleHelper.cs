@@ -4,7 +4,8 @@ namespace HextechRunes;
 
 internal static class HextechPlayerBodyScaleHelper
 {
-	private const float MinScale = 0.2f;
+	// 体型缩放下限；敌方体型（HextechMonsterMaxHpCoefficients.UpdateEnemyScale）用同一个值。
+	internal const float MinBodyScale = 0.2f;
 
 	internal static void Update(Player? player)
 	{
@@ -22,7 +23,7 @@ internal static class HextechPlayerBodyScaleHelper
 
 		try
 		{
-			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.SetDefaultScaleTo(Math.Max(MinScale, scale), 0f);
+			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.SetDefaultScaleTo(Math.Max(MinBodyScale, scale), 0f);
 		}
 		catch (Exception ex)
 		{

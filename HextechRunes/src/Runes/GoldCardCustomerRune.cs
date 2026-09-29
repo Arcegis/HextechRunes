@@ -12,11 +12,7 @@ public sealed class GoldCardCustomerRune : HextechRelicBase
 
 	public override bool HasUponPickupEffect => true;
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		.. HoverTipFactory.FromRelic<TheCourier>(),
-		.. HoverTipFactory.FromRelic<MembershipCard>()
-	];
+	protected override IEnumerable<IHoverTip> ExtraHoverTips => BundledRelicHoverTips(RelicTypes);
 
 	public override async Task AfterObtained()
 	{

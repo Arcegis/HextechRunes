@@ -12,11 +12,7 @@ public sealed class OrobasBlessingRune : HextechRelicBase
 
 	public override bool HasUponPickupEffect => true;
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		.. HoverTipFactory.FromRelic<ArchaicTooth>(),
-		.. HoverTipFactory.FromRelic<TouchOfOrobas>()
-	];
+	protected override IEnumerable<IHoverTip> ExtraHoverTips => BundledRelicHoverTips(RelicTypes);
 
 	public override Task AfterObtained()
 	{

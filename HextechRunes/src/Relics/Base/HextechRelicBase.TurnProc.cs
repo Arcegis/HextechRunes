@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Godot;
 
 namespace HextechRunes;
@@ -102,13 +103,18 @@ public abstract partial class HextechRelicBase
 		return $"{assemblyName}:{runtimeType.FullName ?? runtimeType.Name}";
 	}
 
+	// 联机战斗中改用 Mayhem 的共享计数（两端一致）；单机或拿不到 Modifier 时走本地计数。
+	private bool TryGetNetworkProcTracker([NotNullWhen(true)] out HextechMayhemModifier? modifier)
+	{
+		modifier = ShouldUseNetworkCombatHistory() ? HextechMayhemModifier.FindIn(Owner.RunState) : null;
+		return modifier != null;
+	}
+
 	protected bool TryGetNetworkTurnProcCount(string procKey, out int count)
 	{
-		count = 0;
-		if (!ShouldUseNetworkCombatHistory()
-			|| Owner == null
-			|| HextechMayhemModifier.FindIn(Owner.RunState) is not HextechMayhemModifier modifier)
+		if (!TryGetNetworkProcTracker(out HextechMayhemModifier? modifier))
 		{
+			count = 0;
 			return false;
 		}
 
@@ -145,9 +151,7 @@ public abstract partial class HextechRelicBase
 			return false;
 		}
 
-		if (ShouldUseNetworkCombatHistory()
-			&& Owner != null
-			&& HextechMayhemModifier.FindIn(Owner.RunState) is HextechMayhemModifier modifier)
+		if (TryGetNetworkProcTracker(out HextechMayhemModifier? modifier))
 		{
 			if (!modifier.TryConsumePlayerRuneProcThisTurn(Owner, procKey, maxPerTurn))
 			{
@@ -188,9 +192,7 @@ public abstract partial class HextechRelicBase
 	// 否则联机各端序号推进次数不一致会导致稳定随机结果分叉。
 	protected int PeekCombatProcOrdinal(string procKey, int localCount)
 	{
-		if (ShouldUseNetworkCombatHistory()
-			&& Owner != null
-			&& HextechMayhemModifier.FindIn(Owner.RunState) is HextechMayhemModifier modifier)
+		if (TryGetNetworkProcTracker(out HextechMayhemModifier? modifier))
 		{
 			return modifier.GetPlayerRuneProcsInCombat(Owner, procKey);
 		}
@@ -201,9 +203,7 @@ public abstract partial class HextechRelicBase
 	// 联机读写 Mayhem 的每场计数（战斗结束清零）；单机用调用方的 localCount，它的清零时机由调用方决定。
 	protected int ConsumeCombatProcOrdinal(string procKey, ref int localCount)
 	{
-		if (ShouldUseNetworkCombatHistory()
-			&& Owner != null
-			&& HextechMayhemModifier.FindIn(Owner.RunState) is HextechMayhemModifier modifier)
+		if (TryGetNetworkProcTracker(out HextechMayhemModifier? modifier))
 		{
 			int ordinal = modifier.ConsumePlayerRuneProcInCombat(Owner, procKey);
 			localCount = ordinal + 1;

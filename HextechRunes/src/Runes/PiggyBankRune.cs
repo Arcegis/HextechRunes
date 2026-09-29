@@ -19,7 +19,7 @@ public sealed class PiggyBankRune : HextechSharedCombatVictoryRuneBase
 
 	public override bool HasUponPickupEffect => true;
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical && _counter > 0;
+	public override bool ShowCounter => IsInLiveCombat && _counter > 0;
 
 	public override int DisplayAmount => _counter;
 
