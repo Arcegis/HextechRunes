@@ -4,7 +4,7 @@ internal static partial class HextechChoiceCodec
 {
 	private static void AppendDisabledPlayerRuneConfig(List<int> payload, IReadOnlySet<string> disabledPlayerRuneIds)
 	{
-		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal;
 		int wordCount = ids.Count / PlayerRuneConfigBitsPerWord
 			+ (ids.Count % PlayerRuneConfigBitsPerWord == 0 ? 0 : 1);
 		ValidateProtocolCount(wordCount, MaxPlayerRuneConfigBitsetWords, nameof(disabledPlayerRuneIds));
@@ -52,7 +52,7 @@ internal static partial class HextechChoiceCodec
 			return false;
 		}
 
-		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal.Value;
+		IReadOnlyList<ModelId> ids = PlayerRuneIdsByOrdinal;
 		for (int i = 0; i < ids.Count; i++)
 		{
 			int wordIndex = i / PlayerRuneConfigBitsPerWord;

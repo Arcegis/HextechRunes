@@ -1,5 +1,7 @@
 global using HextechForgeRarityWeights = HextechRunes.HextechRarityWeights;
+using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes.Tests;
 
@@ -160,4 +162,95 @@ internal static partial class Program
 		SetEqual(derived, HextechCustomModelRegistry.EnemyHexIconRelicTypes, "enemy-only hex icon carriers must be listed in HextechCustomModelRegistry");
 		Equal(HextechCustomModelRegistry.EnemyHexIconRelicTypes.Count, HextechCustomModelRegistry.EnemyHexIconRelicTypes.Distinct().Count(), "enemy hex icon carriers are unique");
 	}
+
+	private static void ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes()
+	{
+		ModelId slap = ModelDb.GetId<SlapRune>();
+		ModelId goldrend = ModelDb.GetId<GoldrendRune>();
+		Expect(HextechRuneSelectionCoordinator.AreRegisteredPlayerRuneIds([ slap, goldrend ]), "registered player runes are accepted");
+		Expect(!HextechRuneSelectionCoordinator.AreRegisteredPlayerRuneIds([ slap, ModelDb.GetId<Vajra>() ]), "vanilla relic in synced options is rejected");
+		Expect(!HextechRuneSelectionCoordinator.AreRegisteredPlayerRuneIds([ ModelDb.GetId<StrengthForge>() ]), "forge in synced rune options is rejected");
+		Expect(!HextechRuneSelectionCoordinator.AreRegisteredPlayerRuneIds([ new ModelId("HEXTECH_TEST", "UNKNOWN_RUNE") ]), "unknown id is rejected");
+		Expect(!HextechRuneSelectionCoordinator.AreRegisteredPlayerRuneIds([]), "empty synced options are rejected");
+	}
+
+	private static void ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls()
+	{
+		MonsterHexKind[] initial = [ MonsterHexKind.Slap, MonsterHexKind.HeavyHitter ];
+		MonsterHexKind[] candidates = [ MonsterHexKind.Tormentor, MonsterHexKind.Repulsor ];
+		EnemyHexAdjustmentPayload Payload(MonsterHexKind?[] hexes, int[] rerolls)
+		{
+			return new EnemyHexAdjustmentPayload(0, 0, hexes, rerolls, IsFinal: false);
+		}
+
+		Expect(HextechRuneSelectionCoordinator.IsValidEnemyHexAdjustment(Payload([ MonsterHexKind.Slap, MonsterHexKind.Tormentor ], [ 0, 1 ]), initial, candidates, 1), "initial hex and reroll candidate within limit are valid");
+		Expect(HextechRuneSelectionCoordinator.IsValidEnemyHexAdjustment(Payload([ MonsterHexKind.Repulsor, null ], [ 5, 9 ]), initial, candidates, HextechRuneConfiguration.InfiniteRerollLimit), "infinite limit accepts any reroll count");
+		Expect(!HextechRuneSelectionCoordinator.IsValidEnemyHexAdjustment(Payload([ MonsterHexKind.Slap ], [ 0 ]), initial, candidates, 1), "slot count must match");
+		Expect(!HextechRuneSelectionCoordinator.IsValidEnemyHexAdjustment(Payload([ MonsterHexKind.Slap, MonsterHexKind.HeavyHitter ], [ 0, 0, 0 ]), initial, candidates, 1), "reroll count list must match slots");
+		Expect(!HextechRuneSelectionCoordinator.IsValidEnemyHexAdjustment(Payload([ MonsterHexKind.Slap, MonsterHexKind.CorruptHeart ], [ 0, 1 ]), initial, candidates, 1), "hex outside initial and reroll pool is rejected");
+		Expect(!HextechRuneSelectionCoordinator.IsValidEnemyHexAdjustment(Payload([ MonsterHexKind.Slap, MonsterHexKind.Tormentor ], [ 0, 2 ]), initial, candidates, 1), "reroll count above limit is rejected");
+	}
+
+	private static void ReviewRelicChoiceCodecKeepsWireFormatForBothKinds()
+	{
+		const int Token = 424242;
+		RelicModel[] options = CreateRuneSelectionTestOptions(3);
+		(HextechRelicChoiceKind Kind, int MessageKind)[] kinds =
+		[
+			(HextechRelicChoiceKind.Forge, ChoiceKindForgeSelection),
+			(HextechRelicChoiceKind.RelicOption, ChoiceKindRelicOptionSelection)
+		];
+		foreach ((HextechRelicChoiceKind kind, int messageKind) in kinds)
+		{
+			PlayerChoiceResult result = HextechChoiceCodec.CreateRelicChoice(kind, Token, 2, options);
+			Expect(HextechChoiceCodec.TryGetIndexPayload(result, out List<int> payload), $"{kind} payload is an index list");
+			SequenceEqual(new[] { Magic, messageKind, Token, 2, StableModelIdListVersion }, payload.Take(5), $"{kind} header layout");
+			Expect(HextechChoiceCodec.TryDecodeRelicChoice(kind, result, Token, out int selectedIndex, out List<ModelId> ids), $"{kind} round trip decodes");
+			Equal(2, selectedIndex, $"{kind} selected index");
+			SequenceEqual(options.Select(static relic => relic.CanonicalId()), ids, $"{kind} option ids");
+			Expect(HextechChoiceCodec.IsRelicChoice(kind, result, Token, options), $"{kind} matches same options");
+			Expect(!HextechChoiceCodec.IsRelicChoice(kind, result, Token, options.Reverse().ToArray()), $"{kind} rejects reordered options");
+			HextechRelicChoiceKind other = kind == HextechRelicChoiceKind.Forge ? HextechRelicChoiceKind.RelicOption : HextechRelicChoiceKind.Forge;
+			Expect(!HextechChoiceCodec.TryDecodeRelicChoice(other, result, Token, out _, out _), $"{kind} payload is not decoded as {other}");
+			Expect(!HextechChoiceCodec.IsMalformedRelicChoiceEnvelope(kind, result, Token), $"{kind} valid payload is not malformed");
+		}
+
+		// 旧入口与共享实现产出完全相同的载荷。
+		SequenceEqual(
+			Payload(HextechChoiceCodec.CreateRelicChoice(HextechRelicChoiceKind.Forge, Token, 0, options)),
+			Payload(HextechChoiceCodec.CreateForgeSelection(Token, 0, options)),
+			"forge wrapper payload");
+		SequenceEqual(
+			Payload(HextechChoiceCodec.CreateRelicChoice(HextechRelicChoiceKind.RelicOption, Token, 0, options)),
+			Payload(HextechChoiceCodec.CreateRelicOptionSelection(Token, 0, options)),
+			"relic option wrapper payload");
+
+		static List<int> Payload(PlayerChoiceResult result)
+		{
+			return HextechChoiceCodec.TryGetIndexPayload(result, out List<int> payload) ? payload : [];
+		}
+	}
+
+	private static void ReviewRuneSelectionTailParsersValidateHeader()
+	{
+		RelicModel[] options = [ new GeneratedTestRelic { Data = "recipe:a" }, new GeneratedTestRelic { Data = "recipe:b" } ];
+		HextechWeightedRuneOptions weighted = new(options, 140);
+		PlayerChoiceResult valid = HextechChoiceCodec.CreateRuneSelection(1, 0, 0, [ 1 ], weighted);
+		Expect(HextechChoiceCodec.TryGetIndexPayload(valid, out List<int> payload), "rune selection payload");
+		Expect(HextechChoiceCodec.TryReadRuneSelectionHeader(payload, out int cursor), "valid header parses");
+		Equal(7, cursor, "final options start after header and one reroll entry");
+		Expect(HextechRuneWeightCodec.TryRestore(valid, options, out List<RelicModel> restored), "weight restores from valid payload");
+		Equal(140, HextechWeightedRuneOptions.GetWeight(restored), "restored weight");
+
+		List<int> wrongKind = payload.ToList();
+		wrongKind[1] = ChoiceKindForgeSelection;
+		PlayerChoiceResult wrongKindResult = PlayerChoiceResult.FromIndexes(wrongKind);
+		Expect(!HextechRuneWeightCodec.TryRestore(wrongKindResult, options, out _), "weight tail parser rejects non rune-selection kind");
+		Expect(!HextechGeneratedRuneDataCodec.Restore(wrongKindResult, options), "recipe tail parser rejects non rune-selection kind");
+
+		List<int> wrongMagic = payload.ToList();
+		wrongMagic[0] = Magic + 1;
+		Expect(!HextechRuneWeightCodec.TryRestore(PlayerChoiceResult.FromIndexes(wrongMagic), options, out _), "weight tail parser rejects wrong magic");
+	}
 }
+

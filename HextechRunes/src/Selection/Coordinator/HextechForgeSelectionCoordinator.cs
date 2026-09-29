@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using static HextechRunes.HextechSelectionHelpers;
@@ -38,99 +37,13 @@ internal static class HextechForgeSelectionCoordinator
 			return directGrant;
 		}
 
-		RunManager runManager = RunManager.Instance;
-		NetGameType gameType = runManager.NetService.Type;
-		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
-		{
-			return await SelectLocalForge(player, options, context);
-		}
-
-		if (!syncMultiplayerChoice)
-		{
-			if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
-			{
-				return await SelectLocalForge(player, options, context);
-			}
-
-			HextechLog.Warn("ForgeChoice", $"Unsynced forge selection ignored for remote player={player.NetId} context={context}");
-			return null;
-		}
-
-		PlayerChoiceSynchronizer synchronizer = await HextechRuneSelectionCoordinator.WaitForPlayerChoiceSynchronizerAsync(runManager);
-
-		uint choiceId = synchronizer.ReserveChoiceId(player);
-		int operationToken = HextechChoiceCodec.ComputeOperationToken(
-			"forge-selection",
-			choiceId,
-			player.NetId,
-			context);
-		if (HextechRuneSelectionCoordinator.IsLocalPlayer(runManager, player))
-		{
-			try
-			{
-				RelicModel? selected = await SelectLocalForge(player, options, context);
-				if (selected == null)
-				{
-					uint canceledChoiceId = HextechRuneSelectionCoordinator.SyncLocalHextechChoice(
-						synchronizer,
-						player,
-						choiceId,
-						HextechChoiceCodec.CreateForgeSelection(operationToken, selectedIndex: -1, options),
-						$"forge-choice {context}");
-					HextechLog.Info("ForgeChoice", $"Local selection canceled: player={player.NetId} choiceId={canceledChoiceId} context={context}");
-					return null;
-				}
-
-				int selectedIndex = IndexOfRelicById(options, selected);
-				if (selectedIndex < 0)
-				{
-					string message = $"Local forge selection is not in the synchronized option set: player={player.NetId} context={context}";
-					throw HextechRuneSelectionCoordinator.CreateProtocolFailure($"forge-choice {context}", message);
-				}
-
-				if (!runManager.NetService.IsConnected)
-				{
-					throw new OperationCanceledException(
-						$"Local forge selection ended after multiplayer disconnected: player={player.NetId} context={context}");
-				}
-
-				uint sentChoiceId = HextechRuneSelectionCoordinator.SyncLocalHextechChoice(
-					synchronizer,
-					player,
-					choiceId,
-					HextechChoiceCodec.CreateForgeSelection(operationToken, selectedIndex, options),
-					$"forge-choice {context}");
-
-				HextechLog.Info("ForgeChoice", $"Sync local: player={player.NetId} choiceId={sentChoiceId} index={selectedIndex} context={context}");
-				return selected;
-			}
-			catch (HextechChoiceProtocolException)
-			{
-				throw;
-			}
-			catch (OperationCanceledException) when (!runManager.NetService.IsConnected)
-			{
-				throw;
-			}
-			catch (Exception ex)
-			{
-				string message =
-					$"Local forge transaction failed after reserving choice: " +
-					$"player={player.NetId} choiceId={choiceId} context={context}";
-				throw HextechRuneSelectionCoordinator.CreateProtocolFailure($"forge-choice {context}", message, ex);
-			}
-		}
-
-		HextechLog.Info("ForgeChoice", $"Wait remote: player={player.NetId} choiceId={choiceId} context={context}");
-		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(
-			synchronizer,
-			(RunState)player.RunState,
+		return await HextechSyncedRelicChoice.SelectAsync(
+			HextechSyncedRelicChoice.Forge,
 			player,
-			choiceId,
-			choice => HextechChoiceCodec.IsForgeSelection(choice, operationToken, options),
-			$"forge-choice {context}");
-		HextechLog.Info("ForgeChoice", $"Remote received: player={player.NetId} choiceId={receivedChoiceId} context={context}");
-		return ResolveRemoteForgeChoice(player, options, remoteChoice, operationToken, context);
+			options,
+			context,
+			syncMultiplayerChoice,
+			() => SelectLocalForge(player, options, context));
 	}
 
 	private static async Task<RelicModel?> SelectLocalForge(Player player, IReadOnlyList<RelicModel> options, string context)
@@ -168,63 +81,6 @@ internal static class HextechForgeSelectionCoordinator
 		return screen;
 	}
 
-	private static RelicModel? ResolveRemoteForgeChoice(
-		Player player,
-		IReadOnlyList<RelicModel> expectedOptions,
-		PlayerChoiceResult remoteChoice,
-		int expectedOperationToken,
-		string context)
-	{
-		string payloadDump = HextechChoiceCodec.TryGetIndexPayload(remoteChoice, out List<int> payload)
-			? $"[{string.Join(",", payload)}]"
-			: remoteChoice.ToString();
-		if (!HextechChoiceCodec.TryDecodeForgeSelection(
-			remoteChoice,
-			expectedOperationToken,
-			out int selectedIndex,
-			out List<ModelId> optionIds))
-		{
-			string message = $"[{ModInfo.Id}][ForgeChoice] Malformed payload: player={player.NetId} context={context} payload={payloadDump}";
-			Log.Error(message);
-			throw HextechRuneSelectionCoordinator.CreateProtocolFailure($"forge-choice {context}", message);
-		}
-
-		if (selectedIndex == -1)
-		{
-			HextechLog.Info("ForgeChoice", $"Remote selection canceled: player={player.NetId} context={context}");
-			return null;
-		}
-
-		if (optionIds.Count != expectedOptions.Count)
-		{
-			string message =
-				$"[{ModInfo.Id}][ForgeChoice] Synced option count mismatch: player={player.NetId} " +
-				$"expected={expectedOptions.Count} actual={optionIds.Count} context={context} payload={payloadDump}";
-			Log.Error(message);
-			throw HextechRuneSelectionCoordinator.CreateProtocolFailure($"forge-choice {context}", message);
-		}
-
-		if (selectedIndex < 0 || selectedIndex >= optionIds.Count)
-		{
-			string message = $"[{ModInfo.Id}][ForgeChoice] Invalid selected index: player={player.NetId} index={selectedIndex} count={optionIds.Count} context={context} payload={payloadDump}";
-			Log.Error(message);
-			throw HextechRuneSelectionCoordinator.CreateProtocolFailure($"forge-choice {context}", message);
-		}
-
-		try
-		{
-			return ModelDb.GetById<RelicModel>(optionIds[selectedIndex]).ToMutable();
-		}
-		catch (Exception ex)
-		{
-			string message =
-				$"[{ModInfo.Id}][ForgeChoice] Failed to load synced selected model: player={player.NetId} " +
-				$"index={selectedIndex} context={context} id={optionIds[selectedIndex]}";
-			Log.Error($"{message} error={ex}");
-			throw HextechRuneSelectionCoordinator.CreateProtocolFailure($"forge-choice {context}", message, ex);
-		}
-	}
-
 	private static bool ShouldDirectlyGrantRandomForge(Player player)
 	{
 		try
@@ -234,14 +90,17 @@ internal static class HextechForgeSelectionCoordinator
 			{
 				return modifier.RandomForgeDirectGrant;
 			}
+
+			// 没有本局 modifier(外部模组在未启用本模组的局里调用 API 等)时与 HextechMayhemModifier.IsEnabledForRun
+			// 同一口径:联机缺少本局快照,不能用各端本地菜单值决定共享结果,一律不直发;单机才读本地配置。
+			return !HextechPlayerContextHelper.IsNetworkMultiplayerRun()
+				&& HextechRuneConfiguration.GetSnapshot().RandomForgeDirectGrant;
 		}
 		catch (Exception ex)
 		{
 			HextechLog.Error("ForgeChoice", $"Failed to read synchronized random-forge setting; using deterministic false fallback: player={player.NetId} error={ex}");
 			return false;
 		}
-
-		return HextechRuneConfiguration.GetSnapshot().RandomForgeDirectGrant;
 	}
 
 	private static RelicModel PickStableRandomForge(Player player, IReadOnlyList<RelicModel> options, string context)

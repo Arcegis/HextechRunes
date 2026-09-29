@@ -11,16 +11,14 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private readonly record struct PendingRuneSelection(Player Player, List<RelicModel> Options, uint ChoiceId, bool IsLocal);
 
+	// FinalMonsterHexes 只有本机界面(可调整敌方海克斯)的结果才带;远端还原的选择为 null。
 	private readonly record struct RuneSelectionResult(
 		RelicModel? SelectedRelic,
 		IReadOnlyList<RelicModel> FinalOptions,
 		int RerollCount,
-		MonsterHexKind? FinalMonsterHex,
-		IReadOnlyList<MonsterHexKind>? FinalMonsterHexes = null,
-		HextechRuneSelectionScreen? BlockingScreen = null)
+		IReadOnlyList<MonsterHexKind>? FinalMonsterHexes = null)
 	{
-		public IReadOnlyList<MonsterHexKind> ResolvedMonsterHexes => FinalMonsterHexes
-			?? (FinalMonsterHex.HasValue ? [ FinalMonsterHex.Value ] : []);
+		public IReadOnlyList<MonsterHexKind> ResolvedMonsterHexes => FinalMonsterHexes ?? [];
 	}
 
 	private sealed class EnemyHexAdjustmentSyncContext(
@@ -35,6 +33,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		public uint NextChoiceId { get; set; } = initialChoiceId;
 		public int ActIndex { get; } = actIndex;
 		public int Sequence { get; set; }
+		public IReadOnlyList<MonsterHexKind> InitialMonsterHexes { get; } = initialMonsterHexes.ToArray();
 		public List<MonsterHexKind?> CurrentMonsterHexSlots { get; } = initialMonsterHexes.Select(static hex => (MonsterHexKind?)hex).ToList();
 		public List<int> RerollCounts { get; } = initialMonsterHexes.Select(static _ => 0).ToList();
 		public IReadOnlyList<MonsterHexKind> CurrentMonsterHexes => CurrentMonsterHexSlots
@@ -45,8 +44,5 @@ internal static partial class HextechRuneSelectionCoordinator
 		public Task? RemoteReceiveTask { get; set; }
 	}
 
-	private const int FirstActSilverWeight = 20;
-	private const int FirstActGoldWeight = 50;
-	private const int FirstActPrismaticWeight = 30;
 	private const int RemoteRuneChoicePollFrames = 1800;
 }

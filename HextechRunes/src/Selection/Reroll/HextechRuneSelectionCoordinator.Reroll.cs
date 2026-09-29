@@ -1,9 +1,13 @@
+using static HextechRunes.HextechRunePoolBuilder;
 using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
+	/// <summary>按候选与权重给出本次重掷选中的下标;单机与联机只在这一步的随机来源不同。</summary>
+	private delegate int RerollIndexRoller(IReadOnlyList<RelicModel> pool, IReadOnlyList<int> weights, int totalWeight, HextechRarityTier rarity);
+
 	private static IReadOnlyList<RelicModel> RerollSingleOptionAndTrack(
 		HextechMayhemModifier modifier,
 		Player player,
@@ -13,74 +17,29 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechRarityTier? rarityOverride = null,
 		int chaosRerollOrdinal = 0)
 	{
+		RunState runState = (RunState)player.RunState;
+		// 单机:候选按池原顺序,推进原版 Niche 随机流。
 		IReadOnlyList<RelicModel> rerolled = RerollSingleOption(
 			player,
-			(RunState)player.RunState,
+			runState,
 			currentOptions,
 			slotIndex,
 			seenOptionIds,
 			modifier.IsEndlessLoopActive,
-			rarityOverride, chaosRerollOrdinal);
+			rarityOverride,
+			sortCandidates: false,
+			(_, weights, totalWeight, _) => SelectWeightedIndex(weights, runState.Rng.Niche.NextInt(totalWeight)),
+			transformStageIndex: -1,
+			transformRerollOrdinal: chaosRerollOrdinal);
 		if (!ReferenceEquals(rerolled, currentOptions))
 		{
-			ModelId rerolledId = rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id;
+			ModelId rerolledId = rerolled[slotIndex].CanonicalId();
 			seenOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);
 			modifier.RecordSeenPlayerRunes(player, [ rerolled[slotIndex] ]);
 		}
 
 		return rerolled;
-	}
-
-	private static IReadOnlyList<RelicModel> RerollSingleOption(
-		Player player,
-		RunState runState,
-		IReadOnlyList<RelicModel> currentOptions,
-		int slotIndex,
-		HashSet<ModelId> seenOptionIds,
-		bool useEndlessTagWindow,
-		HextechRarityTier? rarityOverride, int chaosRerollOrdinal)
-	{
-		if (slotIndex < 0 || slotIndex >= currentOptions.Count)
-		{
-			return currentOptions;
-		}
-
-		HashSet<ModelId> currentOptionIds = currentOptions
-			.Select(static relic => relic.CanonicalId())
-			.ToHashSet();
-		HashSet<ModelId> excludedIds = new(currentOptionIds);
-		excludedIds.UnionWith(seenOptionIds);
-		HextechRarityTier rarity = rarityOverride ?? GetRarityForOption(currentOptions[slotIndex]);
-		List<RelicModel> candidates = ConstrainRerollCandidates(
-			player,
-			BuildSelectableRunePool(player, rarity, runState, excludedIds),
-			currentOptions,
-			slotIndex);
-		if (candidates.Count == 0 && seenOptionIds.Count > 0)
-		{
-			// 池被「已见」清空:重置(清空)已见集,让重随能重新刷到此前见过的符文(仍排除当前选项)。
-			seenOptionIds.Clear();
-			candidates = ConstrainRerollCandidates(
-				player,
-				BuildSelectableRunePool(player, rarity, runState, currentOptionIds),
-				currentOptions,
-				slotIndex);
-		}
-
-		if (candidates.Count == 0)
-		{
-			return currentOptions;
-		}
-
-		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
-		List<int> weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tagCounts, useEndlessTagWindow,
-			HextechRunePoolBuilder.GetRuneCharacterPool(player), HextechWeightedRuneOptions.GetWeight(currentOptions), out int totalWeight);
-		int selectedIndex = SelectWeightedIndex(weights, runState.Rng.Niche.NextInt(totalWeight));
-		List<RelicModel> updated = currentOptions.ToList();
-		updated[slotIndex] = CreateSelectableRuneOption(player, candidates[selectedIndex]);
-		return new HextechWeightedRuneOptions(HextechRuneGeneration.Transform(player, rarity, runState, -1, updated, slotIndex, chaosRerollOrdinal),
-			HextechRunePoolBuilder.AdvanceCharacterWeight(player, HextechWeightedRuneOptions.GetWeight(currentOptions), candidates[selectedIndex]));
 	}
 
 	private static IReadOnlyList<RelicModel> RerollSingleOptionAndTrackMultiplayer(
@@ -93,18 +52,23 @@ internal static partial class HextechRuneSelectionCoordinator
 		HashSet<ModelId> seenOptionIds,
 		HextechRarityTier? rarityOverride = null)
 	{
-		IReadOnlyList<RelicModel> rerolled = RerollSingleOptionMultiplayer(
+		RunState runState = (RunState)player.RunState;
+		// 联机:候选按 ModelId 排序后用各端一致的稳定哈希抽取,不消耗共享 RNG。
+		IReadOnlyList<RelicModel> rerolled = RerollSingleOption(
 			player,
+			runState,
 			currentOptions,
 			slotIndex,
-			selectionStageIndex,
-			rerollOrdinal,
 			seenOptionIds,
 			modifier.IsEndlessLoopActive,
-			rarityOverride);
+			rarityOverride,
+			sortCandidates: true,
+			(pool, weights, totalWeight, rarity) => GetMultiplayerRerollIndex(player, pool, weights, totalWeight, rarity, slotIndex, selectionStageIndex, rerollOrdinal),
+			transformStageIndex: selectionStageIndex,
+			transformRerollOrdinal: rerollOrdinal);
 		if (!ReferenceEquals(rerolled, currentOptions))
 		{
-			ModelId rerolledId = rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id;
+			ModelId rerolledId = rerolled[slotIndex].CanonicalId();
 			// 只进本机界面的已见集合；存档里的已见在选定后按最终候选记，其他客户端看不到中途重随结果。
 			seenOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);
@@ -114,15 +78,18 @@ internal static partial class HextechRuneSelectionCoordinator
 		return rerolled;
 	}
 
-	private static IReadOnlyList<RelicModel> RerollSingleOptionMultiplayer(
+	private static IReadOnlyList<RelicModel> RerollSingleOption(
 		Player player,
+		RunState runState,
 		IReadOnlyList<RelicModel> currentOptions,
 		int slotIndex,
-		int selectionStageIndex,
-		int rerollOrdinal,
 		HashSet<ModelId> seenOptionIds,
 		bool useEndlessTagWindow,
-		HextechRarityTier? rarityOverride)
+		HextechRarityTier? rarityOverride,
+		bool sortCandidates,
+		RerollIndexRoller rollIndex,
+		int transformStageIndex,
+		int transformRerollOrdinal)
 	{
 		if (slotIndex < 0 || slotIndex >= currentOptions.Count)
 		{
@@ -134,71 +101,62 @@ internal static partial class HextechRuneSelectionCoordinator
 			.ToHashSet();
 		HashSet<ModelId> excludedIds = new(currentOptionIds);
 		excludedIds.UnionWith(seenOptionIds);
-
-		HextechRarityTier rarity = rarityOverride ?? GetRarityForOption(currentOptions[slotIndex]);
-		RunState runState = (RunState)player.RunState;
-		List<RelicModel> pool = ConstrainRerollCandidates(
-				player,
-				BuildSelectableRunePool(player, rarity, runState, excludedIds),
-				currentOptions,
-				slotIndex)
-			.OrderBy(static relic => (relic.CanonicalId()).Entry, StringComparer.Ordinal)
-			.ToList();
-		if (pool.Count == 0 && seenOptionIds.Count > 0)
+		HextechRarityTier rarity = rarityOverride ?? GetRarityForOptions([ currentOptions[slotIndex] ]);
+		List<RelicModel> candidates = BuildRerollCandidates(player, rarity, runState, excludedIds, currentOptions, slotIndex, sortCandidates);
+		if (candidates.Count == 0 && seenOptionIds.Count > 0)
 		{
 			// 池被「已见」清空:重置(清空)已见集,让重随能重新刷到此前见过的符文(仍排除当前选项)。
 			seenOptionIds.Clear();
-			pool = ConstrainRerollCandidates(
-					player,
-					BuildSelectableRunePool(player, rarity, runState, currentOptionIds),
-					currentOptions,
-					slotIndex)
-				.OrderBy(static relic => (relic.CanonicalId()).Entry, StringComparer.Ordinal)
-				.ToList();
+			candidates = BuildRerollCandidates(player, rarity, runState, currentOptionIds, currentOptions, slotIndex, sortCandidates);
 		}
 
-		if (pool.Count == 0)
+		if (candidates.Count == 0)
 		{
 			return currentOptions;
 		}
 
-		int index = GetMultiplayerRerollIndex(player, pool, rarity, slotIndex, selectionStageIndex, rerollOrdinal, useEndlessTagWindow, HextechWeightedRuneOptions.GetWeight(currentOptions));
+		int characterWeight = HextechWeightedRuneOptions.GetWeight(currentOptions);
+		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
+		List<int> weights = BuildSelectionWeights(candidates, tagCounts, useEndlessTagWindow, GetRuneCharacterPool(player), characterWeight, out int totalWeight);
+		int selectedIndex = rollIndex(candidates, weights, totalWeight, rarity);
 		List<RelicModel> updated = currentOptions.ToList();
-		updated[slotIndex] = CreateSelectableRuneOption(player, pool[index]);
-		return new HextechWeightedRuneOptions(HextechRuneGeneration.Transform(player, rarity, runState, selectionStageIndex, updated, slotIndex, rerollOrdinal),
-			HextechRunePoolBuilder.AdvanceCharacterWeight(player, HextechWeightedRuneOptions.GetWeight(currentOptions), pool[index]));
+		updated[slotIndex] = CreateSelectableRuneOption(player, candidates[selectedIndex]);
+		return new HextechWeightedRuneOptions(
+			HextechRuneGeneration.Transform(player, rarity, runState, transformStageIndex, updated, slotIndex, transformRerollOrdinal),
+			AdvanceCharacterWeight(player, characterWeight, candidates[selectedIndex]));
 	}
 
-	private static HextechRarityTier GetRarityForOption(RelicModel relic)
-	{
-		return GetRarityForOptions([ relic ]);
-	}
-
-	private static List<RelicModel> ConstrainRerollCandidates(
+	private static List<RelicModel> BuildRerollCandidates(
 		Player player,
-		IEnumerable<RelicModel> candidates,
+		HextechRarityTier rarity,
+		RunState runState,
+		IReadOnlySet<ModelId> excludedIds,
 		IReadOnlyList<RelicModel> currentOptions,
-		int slotIndex)
+		int slotIndex,
+		bool sortCandidates)
 	{
 		bool upgradeAlreadyPresent = currentOptions
 			.Where((_, index) => index != slotIndex)
-			.Any(HextechRunePoolBuilder.IsUpgradeRune);
-		return HextechRunePoolBuilder.ConstrainCandidates(candidates, upgradeAlreadyPresent);
+			.Any(IsUpgradeRune);
+		List<RelicModel> candidates = ConstrainCandidates(
+			BuildSelectableRunePool(player, rarity, runState, excludedIds),
+			upgradeAlreadyPresent);
+		return sortCandidates
+			? candidates.OrderBy(static relic => relic.CanonicalId().Entry, StringComparer.Ordinal).ToList()
+			: candidates;
 	}
 
 	private static int GetMultiplayerRerollIndex(
 		Player player,
 		IReadOnlyList<RelicModel> pool,
+		IReadOnlyList<int> weights,
+		int totalWeight,
 		HextechRarityTier rarity,
 		int slotIndex,
 		int selectionStageIndex,
-		int rerollOrdinal,
-		bool useEndlessTagWindow, int characterWeightPercent)
+		int rerollOrdinal)
 	{
 		RunState runState = (RunState)player.RunState;
-		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
-		List<int> weights = HextechRunePoolBuilder.BuildSelectionWeights(pool, tagCounts, useEndlessTagWindow,
-			HextechRunePoolBuilder.GetRuneCharacterPool(player), characterWeightPercent, out int totalWeight);
 		List<string> parts =
 		[
 			runState.Rng.StringSeed,
@@ -216,7 +174,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		for (int i = 0; i < pool.Count; i++)
 		{
 			parts.Add("|pool:");
-			parts.Add((pool[i].CanonicalInstance?.Id ?? pool[i].Id).Entry);
+			parts.Add(pool[i].CanonicalId().Entry);
 			parts.Add(":");
 			parts.Add(weights[i].ToString());
 		}

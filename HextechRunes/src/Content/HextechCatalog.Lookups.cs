@@ -69,6 +69,12 @@ internal static partial class HextechCatalog
 		return ModelIdLookups.PlayerRuneRarityById.TryGetValue(id, out rarity);
 	}
 
+	/// <summary>按规范 ModelId 查已登记玩家符文(内置 + 外部 API)的稀有度;不是玩家符文时返回 false。</summary>
+	internal static bool TryGetPlayerRuneRarityById(ModelId id, out HextechRarityTier rarity)
+	{
+		return ModelIdLookups.PlayerRuneRarityById.TryGetValue(id, out rarity);
+	}
+
 	public static bool TryGetForgeRarity(RelicModel? relic, out HextechRarityTier rarity)
 	{
 		rarity = default;

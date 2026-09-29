@@ -62,7 +62,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		int choiceOrdinal,
 		CancellationToken cancellationToken)
 	{
-		(PlayerChoiceResult remoteAck, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
+		// isExpected 已完整解码校验;等待只会在它返回 true 时结束,不再二次解码。
+		(_, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
 			runState,
 			player,
@@ -70,11 +71,6 @@ internal static partial class HextechRuneSelectionCoordinator
 			result => HextechChoiceCodec.TryDecodeActSelectionApplied(result, actIndex, choiceOrdinal),
 			$"act-selection-applied act={actIndex} ordinal={choiceOrdinal}",
 			cancellationToken: cancellationToken);
-		if (!HextechChoiceCodec.TryDecodeActSelectionApplied(remoteAck, actIndex, choiceOrdinal))
-		{
-			throw new HextechChoiceProtocolException(
-				$"Malformed act-selection-applied ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
-		}
 
 		HextechLog.Info("Mayhem", $"ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
 	}
@@ -104,12 +100,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		cancellationToken.ThrowIfCancellationRequested();
 	}
 
-	private static bool IsMultiplayerConnected()
-	{
-		INetGameService netService = RunManager.Instance.NetService;
-		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
-	}
-
 	internal static TimeSpan GetNetworkChoiceTimeoutDuration(int frameCount)
 	{
 		return frameCount <= 0
@@ -125,9 +115,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			return Task.FromResult(synchronizer);
 		}
 
-		const string message = "PlayerChoiceSynchronizer is unavailable during an active multiplayer transaction.";
-		AbortMultiplayerChoiceTransaction("player-choice-synchronizer", message);
-		throw new HextechChoiceProtocolException(message);
+		throw CreateProtocolFailure(
+			"player-choice-synchronizer",
+			"PlayerChoiceSynchronizer is unavailable during an active multiplayer transaction.");
 	}
 
 	internal static bool IsLocalPlayer(RunManager runManager, Player player)

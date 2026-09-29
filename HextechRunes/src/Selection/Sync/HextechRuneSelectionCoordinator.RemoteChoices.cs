@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Nodes;
@@ -104,11 +105,10 @@ internal static partial class HextechRuneSelectionCoordinator
 				return (remoteChoice, receivedChoiceId);
 			}
 
-			string message =
+			throw CreateProtocolFailure(
+				context,
 				$"Unexpected choice payload context={context} player={player.NetId} " +
-				$"choiceId={initialChoiceId} type={remoteChoice.ChoiceType} result={remoteChoice}";
-			AbortMultiplayerChoiceTransaction(context, message);
-			throw new HextechChoiceProtocolException(message);
+				$"choiceId={initialChoiceId} type={remoteChoice.ChoiceType} result={remoteChoice}");
 		}
 	}
 
@@ -126,12 +126,10 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			string message =
-				$"Failed to send local choice context={context} player={player.NetId} " +
-				$"choiceId={choiceId}";
-			HextechLog.Error("Mayhem", $"{message}: {ex}");
-			AbortMultiplayerChoiceTransaction(context, message);
-			throw new HextechChoiceProtocolException(message, ex);
+			throw CreateProtocolFailure(
+				context,
+				$"Failed to send local choice context={context} player={player.NetId} choiceId={choiceId}",
+				ex);
 		}
 	}
 
@@ -277,11 +275,10 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		try
 		{
-			INetGameService netService = RunManager.Instance.NetService;
-			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
+			if (IsMultiplayerConnected())
 			{
 				HextechLog.Error("Mayhem", $"Aborting multiplayer choice transaction: context={context} reason={reason}");
-				netService.Disconnect(NetError.InternalError, now: true);
+				RunManager.Instance.NetService.Disconnect(NetError.InternalError, now: true);
 			}
 		}
 		catch (Exception disconnectError)
@@ -290,12 +287,16 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
+	/// <summary>
+	/// 联机选择协议失败的唯一出口:断开本次联机事务、记录一次原因(含内层异常),返回待抛出的异常。
+	/// 调用方直接 <c>throw CreateProtocolFailure(...)</c>,不要再自行记录同一条错误。
+	/// </summary>
 	internal static HextechChoiceProtocolException CreateProtocolFailure(
 		string context,
 		string reason,
 		Exception? innerException = null)
 	{
-		AbortMultiplayerChoiceTransaction(context, reason);
+		AbortMultiplayerChoiceTransaction(context, innerException == null ? reason : $"{reason}: {innerException}");
 		return innerException == null
 			? new HextechChoiceProtocolException(reason)
 			: new HextechChoiceProtocolException(reason, innerException);
@@ -310,7 +311,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		result = default;
 		try
 		{
-			if (!TryGetBufferedChoices(synchronizer, out IList receivedChoices))
+			if (!TryGetBufferedChoices(synchronizer, out IList? receivedChoices))
 			{
 				return false;
 			}
@@ -342,16 +343,10 @@ internal static partial class HextechRuneSelectionCoordinator
 			: TryGetField(ReceivedChoiceType, name, BufferedChoiceFieldFlags);
 	}
 
-	private static bool TryGetBufferedChoices(PlayerChoiceSynchronizer synchronizer, out IList receivedChoices)
+	private static bool TryGetBufferedChoices(PlayerChoiceSynchronizer synchronizer, [NotNullWhen(true)] out IList? receivedChoices)
 	{
-		if (ReceivedChoicesField?.GetValue(synchronizer) is IList choices)
-		{
-			receivedChoices = choices;
-			return true;
-		}
-
-		receivedChoices = null!;
-		return false;
+		receivedChoices = ReceivedChoicesField?.GetValue(synchronizer) as IList;
+		return receivedChoices != null;
 	}
 
 	private static IEnumerable<(int Index, ulong SenderId, uint ChoiceId, Task<NetPlayerChoiceResult> Task)> EnumerateBufferedChoices(IList receivedChoices)
@@ -395,13 +390,13 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		if (ReceivedChoiceType == null)
 		{
-			HextechLog.Warn("Mayhem", $"RemoteChoice buffered reflection unavailable: could not resolve ReceivedChoice type; using event path.");
+			HextechLog.Warn("Mayhem", "RemoteChoice buffered reflection unavailable: could not resolve ReceivedChoice type; using event path.");
 			return false;
 		}
 
 		if (ReceivedChoiceTaskProperty == null)
 		{
-			HextechLog.Warn("Mayhem", $"RemoteChoice buffered reflection unavailable: could not resolve completionSource.Task; using event path.");
+			HextechLog.Warn("Mayhem", "RemoteChoice buffered reflection unavailable: could not resolve completionSource.Task; using event path.");
 			return false;
 		}
 

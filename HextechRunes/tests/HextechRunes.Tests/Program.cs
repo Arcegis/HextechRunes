@@ -418,7 +418,11 @@ internal static partial class Program
 			new(nameof(ReviewConfigMigrationTableMatchesLegacyChain), ReviewConfigMigrationTableMatchesLegacyChain),
 			new(nameof(ReviewShareCodePreviewNormalizesLikeSave), ReviewShareCodePreviewNormalizesLikeSave),
 			new(nameof(ReviewExternalRegistryRejectsBuiltInTypes), ReviewExternalRegistryRejectsBuiltInTypes),
-			new(nameof(ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry), ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry)
+			new(nameof(ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry), ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry),
+			new(nameof(ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes), ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes),
+			new(nameof(ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls), ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls),
+			new(nameof(ReviewRelicChoiceCodecKeepsWireFormatForBothKinds), ReviewRelicChoiceCodecKeepsWireFormatForBothKinds),
+			new(nameof(ReviewRuneSelectionTailParsersValidateHeader), ReviewRuneSelectionTailParsersValidateHeader)
 		];
 
 		if (args.Length > 0)
