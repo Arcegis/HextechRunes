@@ -4,8 +4,8 @@ namespace HextechRunes;
 
 internal static class HextechPlayerBodyScaleHelper
 {
-	// 体型缩放下限；敌方体型（HextechMonsterMaxHpCoefficients.UpdateEnemyScale）用同一个值。
-	internal const float MinBodyScale = 0.2f;
+	// 生物体型缩放下限（体型再小就看不清了）；玩家与敌方（HextechMonsterMaxHpCoefficients.UpdateEnemyScale）共用。
+	internal const float MinCreatureBodyScale = 0.2f;
 
 	internal static void Update(Player? player)
 	{
@@ -23,7 +23,7 @@ internal static class HextechPlayerBodyScaleHelper
 
 		try
 		{
-			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.SetDefaultScaleTo(Math.Max(MinBodyScale, scale), 0f);
+			NCombatRoom.Instance?.GetCreatureNode(player.Creature)?.SetDefaultScaleTo(Math.Max(MinCreatureBodyScale, scale), 0f);
 		}
 		catch (Exception ex)
 		{

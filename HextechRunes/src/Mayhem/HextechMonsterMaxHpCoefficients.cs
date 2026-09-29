@@ -276,9 +276,6 @@ internal static class HextechMonsterMaxHpCoefficients
 		return false;
 	}
 
-	// 与 HextechPlayerBodyScaleHelper.MinScale 同值：体型再小就看不清了。
-	private const float MinEnemyBodyScale = 0.2f;
-
 	internal static void UpdateEnemyScale(HextechMayhemModifier modifier, Creature creature)
 	{
 		float baseScale = modifier.HasActiveMonsterHex(MonsterHexKind.Goliath) ? GoliathEnemyHex.BodyScale : 1f;
@@ -286,7 +283,7 @@ internal static class HextechMonsterMaxHpCoefficients
 		int tankStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.TankEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
 		int shrinkStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.ShrinkEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
 		float finalScale = Math.Max(
-			MinEnemyBodyScale,
+			HextechPlayerBodyScaleHelper.MinCreatureBodyScale,
 			baseScale
 				+ tankStacks * TankEngineEnemyHex.BodyScalePerStack
 				- shrinkStacks * ShrinkEngineEnemyHex.BodyScalePerStack
