@@ -1,0 +1,25 @@
+{
+  "source": "s1f102500012/sts2mod",
+  "source_tip": "54bc1c08f92f0955b0fb39e22e2d1691bbfffef4",
+  "filtered_tip": "af06c567dbaef0d64fe6375caf69583368412dae",
+  "related_commits": 104,
+  "verified_commits": 104,
+  "metadata_preserved": true,
+  "all_projected_trees_match": true,
+  "authors": [
+    "1F10250001",
+    "David Katz",
+    "Mreakukushko",
+    "Natsuki",
+    "PnLament",
+    "RainBreath",
+    "RainBreath7th",
+    "mouzs2020",
+    "oatone-textcat",
+    "s1f102500012",
+    "時穂"
+  ],
+  "author_identity_count": 11,
+  "parent_edges": 117,
+  "current_files": 1667
+}

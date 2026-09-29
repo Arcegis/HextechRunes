@@ -1,0 +1,18 @@
+{
+  "source": "private development history",
+  "source_tip": "b45913a4c4d1b96eebe95a9f716687d8dcf96593",
+  "filtered_tip": "97c0ce7edc5e0b82409fd8fa4d99b7293a12ea13",
+  "related_commits": 661,
+  "verified_commits": 661,
+  "metadata_preserved": true,
+  "all_projected_trees_match": true,
+  "authors": [
+    "1F10250001",
+    "Natsuki",
+    "PnLament",
+    "mouzs2020"
+  ],
+  "author_identity_count": 4,
+  "parent_edges": 660,
+  "current_files": 1723
+}
