@@ -422,7 +422,8 @@ internal static partial class Program
 			new(nameof(ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes), ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes),
 			new(nameof(ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls), ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls),
 			new(nameof(ReviewRelicChoiceCodecKeepsWireFormatForBothKinds), ReviewRelicChoiceCodecKeepsWireFormatForBothKinds),
-			new(nameof(ReviewRuneSelectionTailParsersValidateHeader), ReviewRuneSelectionTailParsersValidateHeader)
+			new(nameof(ReviewRuneSelectionTailParsersValidateHeader), ReviewRuneSelectionTailParsersValidateHeader),
+			new(nameof(ReviewChaosTransformResultIsValidated), ReviewChaosTransformResultIsValidated)
 		];
 
 		if (args.Length > 0)

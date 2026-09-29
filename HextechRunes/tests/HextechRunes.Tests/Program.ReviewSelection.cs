@@ -252,5 +252,17 @@ internal static partial class Program
 		wrongMagic[0] = Magic + 1;
 		Expect(!HextechRuneWeightCodec.TryRestore(PlayerChoiceResult.FromIndexes(wrongMagic), options, out _), "weight tail parser rejects wrong magic");
 	}
+
+	private static void ReviewChaosTransformResultIsValidated()
+	{
+		RelicModel slap = new SlapRune();
+		RelicModel goldrend = new GoldrendRune();
+		List<RelicModel> options = [ slap, goldrend ];
+		Expect(HextechRuneGeneration.TryAcceptTransformResult(options, [ goldrend, slap ], out _), "same-size hextech result is accepted");
+		Expect(!HextechRuneGeneration.TryAcceptTransformResult(options, null, out _), "null result is rejected");
+		Expect(!HextechRuneGeneration.TryAcceptTransformResult(options, [ slap ], out _), "count change is rejected");
+		Expect(!HextechRuneGeneration.TryAcceptTransformResult(options, [ slap, new Vajra() ], out _), "vanilla relic is rejected");
+		Expect(!HextechRuneGeneration.TryAcceptTransformResult(options, [ slap, null! ], out _), "null entry is rejected");
+	}
 }
 

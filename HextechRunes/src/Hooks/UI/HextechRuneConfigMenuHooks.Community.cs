@@ -208,9 +208,9 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 		else
 		{
-			IReadOnlyList<HextechFeaturedConfigs.CommunityConfigEntry>? community = tab == "mine"
-				? await HextechFeaturedConfigs.FetchMineAsync(mySteamId).ConfigureAwait(false)
-				: await HextechFeaturedConfigs.FetchCommunityAsync(tab).ConfigureAwait(false);
+			IReadOnlyList<HextechCommunityClient.CommunityConfigEntry>? community = tab == "mine"
+				? await HextechCommunityClient.FetchMineAsync(mySteamId).ConfigureAwait(false)
+				: await HextechCommunityClient.FetchCommunityAsync(tab).ConfigureAwait(false);
 			if (community == null)
 			{
 				failed = true;
@@ -341,7 +341,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			like.Pressed += async () =>
 			{
 				bool on = !SessionLikedIds.Contains(entry.Id);
-				HextechFeaturedConfigs.CommunityApiResult result = await HextechFeaturedConfigs.LikeAsync(mySteamId, entry.Id, on);
+				HextechCommunityClient.CommunityApiResult result = await HextechCommunityClient.LikeAsync(mySteamId, entry.Id, on);
 				Callable.From(() =>
 				{
 					if (!GodotObject.IsInstanceValid(like) || !result.Ok)
@@ -382,7 +382,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			remove.Pressed += async () =>
 			{
 				remove.Disabled = true;
-				await HextechFeaturedConfigs.DeleteAsync(mySteamId, entry.Id);
+				await HextechCommunityClient.DeleteAsync(mySteamId, entry.Id);
 				Callable.From(reloadTab).CallDeferred();
 			};
 			actions.AddChild(remove);
@@ -396,7 +396,7 @@ internal static partial class HextechRuneConfigMenuHooks
 				// 乐观 UI:点击立即置灰改字(Pressed 在主线程),网络结果不影响展示。
 				report.Disabled = true;
 				SetActionButtonText(report, L("HEXTECH_COMMUNITY_REPORTED"));
-				await HextechFeaturedConfigs.ReportAsync(mySteamId, entry.Id);
+				await HextechCommunityClient.ReportAsync(mySteamId, entry.Id);
 			};
 			actions.AddChild(report);
 		}
@@ -480,7 +480,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			}
 
 			confirm.Disabled = true;
-			HextechFeaturedConfigs.CommunityApiResult result = await HextechFeaturedConfigs.UploadAsync(
+			HextechCommunityClient.CommunityApiResult result = await HextechCommunityClient.UploadAsync(
 				mySteamId,
 				HextechSteamIdentity.GetPersonaName(),
 				uploadTitle,
