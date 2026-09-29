@@ -117,7 +117,7 @@ internal static partial class HextechPlayerRuneHooks
 
 			if (__result.Contains(CardTag.Strike)
 				|| owner?.GetRelic<DeviantCognitionRune>() == null
-				|| !IllusoryWeaponRune.IsAttackForEffects(__instance, owner))
+				|| !HextechCardEffectTypes.IsAttackForEffects(__instance, owner))
 			{
 				return;
 			}

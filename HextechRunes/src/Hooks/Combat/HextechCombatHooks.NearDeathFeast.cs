@@ -114,7 +114,7 @@ internal static partial class HextechCombatHooks
 		[HarmonyPriority(Priority.Low)]
 		internal static bool Prefix(Creature creature, ref Task<decimal> __result)
 		{
-			if (!NearDeathFeastRune.ShouldPreventSustain(creature) && !HextechEnemyNearDeath.ShouldPreventSustain(creature))
+			if (!NearDeathFeastRune.IsDyingButAlive(creature) && !HextechEnemyNearDeath.IsDyingButAlive(creature))
 			{
 				return true;
 			}

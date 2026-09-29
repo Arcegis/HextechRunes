@@ -81,12 +81,6 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		return true;
 	}
 
-	// 与 IsDyingButAlive 同义，名字表达调用方意图（禁疗、禁格挡）；保留给回复与格挡补丁使用。
-	internal static bool ShouldPreventSustain(Creature creature)
-	{
-		return IsDyingButAlive(creature);
-	}
-
 	internal static bool ShouldInterceptLoseHp(Creature creature, decimal amount)
 	{
 		NearDeathFeastRune? rune = GetRune(creature);

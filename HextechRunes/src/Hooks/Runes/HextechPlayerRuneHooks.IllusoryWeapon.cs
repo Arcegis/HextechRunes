@@ -136,7 +136,7 @@ internal static partial class HextechPlayerRuneHooks
 		return owner != null
 			&& cardPlay.Card.Type != CardType.Attack
 			&& cardPlay.Card.Owner == owner
-			&& IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, owner);
+			&& HextechCardEffectTypes.IsAttackForEffects(cardPlay.Card, owner);
 	}
 
 	private static int IncrementIntProperty(object instance, PropertyInfo? property)

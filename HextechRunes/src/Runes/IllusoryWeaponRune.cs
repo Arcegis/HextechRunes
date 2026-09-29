@@ -51,15 +51,6 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		}
 	}
 
-	// 分类逻辑在 HextechCardEffectTypes；这里保留转发给尚未迁移的调用方。
-	internal static bool ShouldTreatSkillAsAttack(Player? owner) => HextechCardEffectTypes.ShouldTreatSkillAsAttack(owner);
-
-	internal static bool IsOriginalOwnedSkill(CardModel? card, Player owner) => HextechCardEffectTypes.IsOriginalOwnedSkill(card, owner);
-
-	internal static bool IsAttackForEffects(CardModel? card, Player? owner) => HextechCardEffectTypes.IsAttackForEffects(card, owner);
-
-	internal static bool IsSkillForEffects(CardModel? card) => HextechCardEffectTypes.IsSkillForEffects(card);
-
 	[HarmonyPatch(typeof(Finisher), "CanonicalVars", MethodType.Getter)]
 	[HextechPatch("rune.illusory-weapon.finisher", "幻影武器", Rune = typeof(IllusoryWeaponRune))]
 	private static class FinisherCanonicalVarsPatch

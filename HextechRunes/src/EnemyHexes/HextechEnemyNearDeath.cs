@@ -34,12 +34,6 @@ internal static class HextechEnemyNearDeath
 			&& debt < GetDeathNegativeHpLimit(creature, modifier);
 	}
 
-	// 与 IsDyingButAlive 同义，名字表达调用方意图（禁疗、禁格挡）；保留给回复与格挡补丁使用。
-	internal static bool ShouldPreventSustain(Creature creature)
-	{
-		return IsDyingButAlive(creature);
-	}
-
 	internal static bool ShouldInterceptLoseHp(Creature creature, decimal amount)
 	{
 		if (amount <= 0m || !TryGetContext(creature, out HextechMayhemModifier? modifier, out uint combatId))

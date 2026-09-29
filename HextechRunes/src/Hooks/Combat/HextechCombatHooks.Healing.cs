@@ -98,7 +98,7 @@ internal static partial class HextechCombatHooks
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 		{
 			__state = default;
-			if (NearDeathFeastRune.ShouldPreventSustain(creature) || HextechEnemyNearDeath.ShouldPreventSustain(creature))
+			if (NearDeathFeastRune.IsDyingButAlive(creature) || HextechEnemyNearDeath.IsDyingButAlive(creature))
 			{
 				return SkipHeal(ref __result);
 			}
