@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 internal sealed class GiantSlayerEnemyHex : HextechEnemyHexEffect
 {
-	// 每 2 点最大生命值 +1%:常见 66~100 血对应 +33%~+50%,整局高于白银大力的固定 +20%。
 	internal const int PlayerMaxHpPerPercent = 2;
 	internal const decimal MaxBonus = 1.00m;
 

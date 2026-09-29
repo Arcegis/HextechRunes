@@ -4,9 +4,8 @@ using MegaCrit.Sts2.Core.Nodes.Combat;
 namespace HextechRunes;
 
 /// <summary>
-/// 升级：大奖——大奖的随机牌部分改为:3 张不限费用的随机牌加入手牌,
-/// 且在本场战斗内可以免费打出(原版只选 0 费牌)。伤害部分保持原版。
-/// 由 HextechPlayerRuneHooks 对 Jackpot.OnPlay 做 prefix 替换驱动。
+/// 保留大奖的伤害结算与生成张数，取消生成牌的费用限制，并令其本场免费。
+/// 升级后的大奖仍会升级生成牌；替换入口是本类的 <c>JackpotPatch</c>。
 /// </summary>
 public sealed class JackpotUpgradeRune : CardUpgradeRuneBase<Jackpot>
 {

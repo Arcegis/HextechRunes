@@ -166,7 +166,9 @@ internal static partial class Program
 		Equal(1, restored.GlobalProcsThisCombat[ThievingHopperEnemyHex.TheftKey(7)], "thief quota survives serialization");
 		Equal(0, restored.GlobalProcsThisCombat.GetValueOrDefault(ThievingHopperEnemyHex.TheftKey(8)), "another enemy can still steal");
 		restored.PreparePlayerSideTurnStart();
+		restored.BeginPlayerTurnStart([first.NetId]);
 		Equal(0, HextechCombatProcTracker.GetPlayerRuneProcsThisTurn(restored, first, LivingFogEnemyHex.ProcKey), "next turn resets skill budget");
+		Equal(1, HextechCombatProcTracker.GetPlayerRuneProcsThisTurn(restored, second, LivingFogEnemyHex.ProcKey), "a player not starting this turn keeps their budget");
 		Equal(1, restored.GlobalProcsThisCombat[ThievingHopperEnemyHex.TheftKey(7)], "next turn does not reset thief quota");
 	}
 

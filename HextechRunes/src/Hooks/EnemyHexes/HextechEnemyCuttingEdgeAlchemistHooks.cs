@@ -20,7 +20,7 @@ internal static class HextechEnemyCuttingEdgeAlchemistHooks
 
 	internal readonly record struct PotionRollState(bool Active, float OriginalValue);
 
-	// 0.107.1 的 Roll 多一个 AscensionManager 参数(重构前的两参声明在 0.107.1 上从未装上,由声明校验测试抓出)。
+	// 0.107.1 的 PotionRewardOdds.Roll 多一个 AscensionManager 参数。
 #if STS2_107_1
 	[HarmonyPatch(typeof(PotionRewardOdds), nameof(PotionRewardOdds.Roll), typeof(Player), typeof(MegaCrit.Sts2.Core.Entities.Ascension.AscensionManager), typeof(RoomType))]
 #else

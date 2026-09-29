@@ -16,9 +16,8 @@ namespace HextechRunes;
 ///    且这几张是 sealed 原版卡、无法加 <c>[SavedProperty]</c> 属性。于是仿照本模组 ThoughtOverwrite 的做法,在
 ///    <see cref="CardModel.ToSerializable"/> 后缀把每张卡累计的加成写进它的 <see cref="SerializableCard.Props"/>,
 ///    在 <see cref="CardModel.FromSerializable"/> 后缀读回并重新加到 <c>BaseValue</c> 上,实现存档持久。
-///  - Props 里用到的两个键名通过 <see cref="SelfUpgradeOnPlayRuneBase{TCard}"/> 上的哑 <c>[SavedProperty]</c>
-///    属性注册进 <c>SavedPropertiesTypeCache</c>(符文是 AbstractModel,经 InjectModelType 自动注册、被 BaseLib 支持),
-///    保证联机下属性名能正确编号。
+///  - Props 的两个键名由 <see cref="SelfUpgradeOnPlayRuneBase{TCard}"/> 的占位 SavedProperty 登记，
+///    确保联机序列化可识别；版本差异由 <see cref="HextechSavedPropertyBootstrap"/> 处理。
 /// </summary>
 internal static class HextechSelfUpgradeCardStore
 {

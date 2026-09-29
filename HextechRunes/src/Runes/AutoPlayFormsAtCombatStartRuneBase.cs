@@ -1,11 +1,10 @@
 namespace HextechRunes;
 
 /// <summary>
-/// 「升级：XX形态」系共用基类:每场战斗开始时,自动打出你所有的目标能力牌(TCard),
-/// 类似注能附魔——形态不再占用手牌与抽牌流。触发时机照抄固态时间:首个玩家回合开始后
-/// (牌堆与打出管线就绪),以每场一次标志防重复;普通形态牌合并结算最终 Power,
-/// 仅有克隆附魔的牌也可合并;其他附魔/负面附着牌回退原版逐张路径,整批只派发一次打出牌钩子。
-/// 补卡/无刷新门槛由 CardUpgradeRuneBase 提供。
+/// 在持有者本场首次回合开始后自动打出抽牌堆、手牌和弃牌堆中的目标形态牌。
+/// 牌堆与出牌管线此时已就绪；每场一次标志防止额外回合重复触发。
+/// 满足合并条件时由代表牌派发一次出牌事件，其余牌汇总效果；不满足时逐张打出并分别派发事件。
+/// 获得时的补卡行为由 <see cref="CardUpgradeRuneBase{TCard}"/> 提供。
 /// </summary>
 public abstract class AutoPlayFormsAtCombatStartRuneBase<TCard> : CardUpgradeRuneBase<TCard>
 	where TCard : CardModel

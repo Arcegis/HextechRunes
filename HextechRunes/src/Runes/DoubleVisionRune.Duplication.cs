@@ -105,13 +105,9 @@ public sealed partial class DoubleVisionRune
 
 	private async Task DuplicateObtainedRelic(Player player, RelicModel sourceRelic, bool syncReward = true)
 	{
-		// 复视不复制海克斯模组自己的符文/遗物/锻造；原版及已注册的外部遗物仍按其模型 ID 复制。
-		// 复杂且对多人敏感,重复获得易引发分叉/卡死(玩家实测黑屏的一类来源)。按需求收窄复视作用域为原版遗物。
-		// 判据取并,覆盖本体 + 拓展包(HextechRunesSponsorPack)且不硬引用拓展包程序集:
-		//   ① 继承 HextechRelicBase 的——本体+拓展包的符文、以及 HextechForgeBase 锻造;
-		//   ② 注册表里的符文/锻造/商店/敌方图标载体——覆盖经 HextechRunesInterop 注册、只继承 RelicModel 的外部符文;
-		//   ③ 程序集名以 "HextechRunes" 开头的——覆盖拓展包里直接继承 RelicModel 的事件遗物(如 GoldStarRelic)。
-		// 原版遗物程序集名为 "sts2" 且不在注册表中,故不受影响,复视照常复制;其他模组注册的事件遗物也照常复制。
+		// 此通道排除海克斯基类、内容注册表成员及 HextechRunes* 程序集中的遗物，
+		// 避免重复执行符文与锻造器的拾取流程；锻造奖励和商店锻造另有专用复制入口。
+		// 其他原版或外部遗物继续接受下方的逐类限制，并非只允许原版遗物。
 		if (sourceRelic is HextechRelicBase
 			|| HextechCatalog.IsHextechCustomRelic(sourceRelic)
 			|| sourceRelic.GetType().Assembly.GetName().Name?.StartsWith("HextechRunes", StringComparison.Ordinal) == true)

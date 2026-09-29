@@ -42,6 +42,7 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
+	// 联机禁用前已拿到本符文的存档读进联机时仍会持有它：墙钟计时关闭，改为每回合开始回复一次，保证两端一致。
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (!IsNetworkMultiplayer() || player != Owner || !ShouldHeal())

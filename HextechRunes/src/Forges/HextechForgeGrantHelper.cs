@@ -172,18 +172,6 @@ internal static class HextechForgeGrantHelper
 		}
 	}
 
-	internal static bool TryCreateRandomForge(Player player, Rng rng, out RelicModel? forge)
-	{
-		HextechRarityTier rarity = RollForgeRarity(player, rng);
-		return TryCreateRandomForge(player, rarity, rng, out forge);
-	}
-
-	internal static bool TryCreateRandomForgeChoice(Player player, Rng rng, out List<RelicModel> options)
-	{
-		HextechRarityTier rarity = RollForgeRarity(player, rng);
-		return TryCreateRandomForgeChoice(player, rarity, rng, out options);
-	}
-
 	internal static bool TryCreateStableShopForgeChoice(Player player, int purchaseOrdinal, out List<RelicModel> options)
 	{
 		return TryCreateStableRandomForgeChoice(player, "shop-random-forge", purchaseOrdinal, out options);
@@ -271,52 +259,6 @@ internal static class HextechForgeGrantHelper
 		return options.Count > 0;
 	}
 
-	private static bool TryCreateRandomForge(Player player, HextechRarityTier rarity, Rng rng, out RelicModel? forge)
-	{
-		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
-		if (pool.Count == 0)
-		{
-			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
-		}
-
-		if (pool.Count == 0)
-		{
-			forge = null;
-			return false;
-		}
-
-		Type forgeType = pool[rng.NextInt(pool.Count)];
-		forge = ModelDb.GetById<RelicModel>(ModelDb.GetId(forgeType)).ToMutable();
-		return true;
-	}
-
-	private static bool TryCreateRandomForgeChoice(Player player, HextechRarityTier rarity, Rng rng, out List<RelicModel> options)
-	{
-		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
-		if (pool.Count == 0)
-		{
-			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
-		}
-
-		if (pool.Count == 0)
-		{
-			options = [];
-			return false;
-		}
-
-		List<RelicModel> selected = new(Math.Min(3, pool.Count));
-		for (int i = 0; i < 3 && pool.Count > 0; i++)
-		{
-			int index = rng.NextInt(pool.Count);
-			Type forgeType = pool[index];
-			pool.RemoveAt(index);
-			selected.Add(ModelDb.GetById<RelicModel>(ModelDb.GetId(forgeType)).ToMutable());
-		}
-
-		options = selected;
-		return options.Count > 0;
-	}
-
 	private static List<Type> BuildAvailableForgePool(Player player, IEnumerable<Type> candidateTypes)
 	{
 		IReadOnlySet<string> disabledForgeIds = GetEffectiveDisabledForgeIds(player);
@@ -339,18 +281,6 @@ internal static class HextechForgeGrantHelper
 			Gold = weights.Gold * DiceManiacRune.ForgeRarityMultiplier,
 			Prismatic = weights.Prismatic * DiceManiacRune.ForgeRarityMultiplier
 		};
-	}
-
-	private static HextechRarityTier RollForgeRarity(Player player, Rng rng)
-	{
-		HextechForgeRarityWeights baseWeights = GetBaseForgeRarityWeights(player);
-		HextechForgeRarityWeights weights = GetModifiedForgeRarityWeights(player, baseWeights.Silver, baseWeights.Gold, baseWeights.Prismatic);
-		if (weights.Total <= 0)
-		{
-			return HextechRarityTier.Silver;
-		}
-
-		return ResolveForgeRarity(weights, rng.NextInt(weights.Total));
 	}
 
 	private static HextechRarityTier RollStableForgeRarity(Player player, string source, int ordinal)

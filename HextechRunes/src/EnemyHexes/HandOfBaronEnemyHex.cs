@@ -16,9 +16,6 @@ internal sealed class HandOfBaronEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		await context.RunGroupedPlayerDebuffBurst(async () =>
-		{
-			await PowerCmd.Apply<ShrinkPower>(players, 2m, null, null);
-		});
+		await PowerCmd.Apply<ShrinkPower>(players, 2m, null, null);
 	}
 }

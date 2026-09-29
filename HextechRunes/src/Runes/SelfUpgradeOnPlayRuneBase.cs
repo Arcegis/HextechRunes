@@ -7,9 +7,9 @@ namespace HextechRunes;
 public abstract class SelfUpgradeOnPlayRuneBase<TCard> : CardUpgradeRuneBase<TCard>
 	where TCard : CardModel
 {
-	// 这两个哑 [SavedProperty] 属性唯一作用:把 HextechSelfUpgradeCardStore 写进卡牌 Props 的两个键名注册进
-	// SavedPropertiesTypeCache。符文是 AbstractModel、会被 InjectModelType 自动注入,这条注册路径被 BaseLib 支持。
-	// 属性本身恒为 0、写入忽略,不承载任何数据(真正的逐卡计数写在被打出那张卡自己的 Props 里)。
+	// 两个占位 SavedProperty 为卡牌 Props 中的累计值登记属性名：0.107.1 手动注入缓存，
+	// 新版由官方序列化缓存初始化收录。具体版本处理见 HextechSavedPropertyBootstrap。
+	// 属性本身恒为 0、写入忽略；真正的逐卡计数存放在卡牌 Props 中。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	protected int HextechSelfUpgradeDamageBonus
 	{

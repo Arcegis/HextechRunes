@@ -82,19 +82,8 @@ public sealed class LightEmUpRune : HextechRelicBase
 
 		Flash(targets);
 		Creature source = Owner.Creature;
-		if (HextechPlayerContextHelper.IsNetworkMultiplayerRun())
-		{
-			_ = TaskHelper.RunSafely(PlayVolleyVfxAsync(source, targets));
-			return ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, targets, damage);
-		}
-
-		_ = TaskHelper.RunSafely(ResolveVolleyAfterCardSettlesAsync(
-			source,
-			combatState,
-			cardPlay.Card,
-			targets,
-			damage));
-		return Task.CompletedTask;
+		_ = TaskHelper.RunSafely(PlayVolleyVfxAsync(source, targets));
+		return ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, targets, damage);
 	}
 
 	private static async Task PlayVolleyVfxAsync(Creature source, IReadOnlyList<Creature> targets)
@@ -127,54 +116,6 @@ public sealed class LightEmUpRune : HextechRelicBase
 
 				await HextechGameApiCompat.Damage(
 					choiceContext,
-					target,
-					damage,
-					ValueProp.Unpowered,
-					source,
-					null);
-			}
-		}
-	}
-
-	private static async Task ResolveVolleyAfterCardSettlesAsync(
-		Creature source,
-		HextechCombatState combatState,
-		CardModel triggeringCard,
-		IReadOnlyList<Creature> targets,
-		decimal damage)
-	{
-		if (!await HextechCardPlayTiming.WaitForCardPlayFinishedAsync(source, combatState, triggeringCard))
-		{
-			return;
-		}
-
-		Task<bool>[][] arrivalTasks = Enumerable.Range(0, MissileCount)
-			.Select(missileIndex => targets
-				.Select(target => HextechCombatVfx.PlayTwinFlamesMissile(source, target, missileIndex))
-				.ToArray())
-			.ToArray();
-		PlayerChoiceContext damageContext = new BlockingPlayerChoiceContext();
-
-		for (int missileIndex = 0; missileIndex < MissileCount; missileIndex++)
-		{
-			bool[] arrivals = await Task.WhenAll(arrivalTasks[missileIndex]);
-			if (source.IsDead || !ReferenceEquals(source.CombatState, combatState))
-			{
-				return;
-			}
-
-			for (int targetIndex = 0; targetIndex < targets.Count; targetIndex++)
-			{
-				Creature target = targets[targetIndex];
-				if (!arrivals[targetIndex]
-					|| !target.IsAlive
-					|| !ReferenceEquals(target.CombatState, combatState))
-				{
-					continue;
-				}
-
-				await HextechGameApiCompat.Damage(
-					damageContext,
 					target,
 					damage,
 					ValueProp.Unpowered,

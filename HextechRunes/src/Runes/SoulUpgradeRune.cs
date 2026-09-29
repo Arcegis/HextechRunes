@@ -1,6 +1,5 @@
 namespace HextechRunes;
 
-// 升级：灵魂(仅骨妹) —— 打出灵魂后,获得1点能量。获得时若牌组没有灵魂,补 1 张(升级系基类行为)。
 public sealed class SoulUpgradeRune : CardUpgradeRuneBase<Soul>
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>

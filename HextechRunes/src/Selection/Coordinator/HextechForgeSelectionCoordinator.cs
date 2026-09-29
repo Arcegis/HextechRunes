@@ -40,7 +40,7 @@ internal static class HextechForgeSelectionCoordinator
 
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
-		if (gameType is NetGameType.Singleplayer or NetGameType.None)
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 		{
 			return await SelectLocalForge(player, options, context);
 		}

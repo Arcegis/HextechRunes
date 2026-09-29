@@ -14,7 +14,7 @@ internal enum CombatTrackingClearPhase
 }
 
 // 标注一个战斗追踪字段在哪些回合边界被清空。与 [CombatTrackingTransient] 正交:
-// 字段可以既不存档(transient)又每回合清(如 MonsterDebuffActionProcKeysThisTurn)。
+// 字段可以既不存档(transient)又每回合清。
 [AttributeUsage(AttributeTargets.Field)]
 internal sealed class CombatTrackingClearAttribute : Attribute
 {

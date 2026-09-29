@@ -35,11 +35,6 @@ internal static partial class HextechRunLifecycleHooks
 		return modifier;
 	}
 
-	internal static Task HandleHextechActStarted(HextechMayhemModifier modifier)
-	{
-		return HextechRuneSelectionCoordinator.HandleActStarted(modifier);
-	}
-
 	private static HextechMayhemModifier GetOrRecoverMayhemModifier(RunState runState, string reason)
 	{
 		if (HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier existing)

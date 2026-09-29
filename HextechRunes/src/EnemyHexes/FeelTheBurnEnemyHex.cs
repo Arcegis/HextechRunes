@@ -30,12 +30,9 @@ internal sealed class FeelTheBurnEnemyHex : HextechEnemyHexEffect
 				continue;
 			}
 
-			await context.RunGroupedPlayerDebuffBurst(async () =>
-			{
-				await PowerCmd.Apply<WeakPower>(players, 1m, creature, null);
-				await PowerCmd.Apply<VulnerablePower>(players, 1m, creature, null);
-				await PowerCmd.Apply<HextechBurnPower>(players, context.TierValue(Kind, 3, 4, 5), creature, null);
-			});
+			await PowerCmd.Apply<WeakPower>(players, 1m, creature, null);
+			await PowerCmd.Apply<VulnerablePower>(players, 1m, creature, null);
+			await PowerCmd.Apply<HextechBurnPower>(players, context.TierValue(Kind, 3, 4, 5), creature, null);
 		}
 	}
 }

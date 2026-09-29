@@ -122,7 +122,7 @@ internal static partial class HextechCombatVfx
 	internal const float MagicMissileBaseFlightSeconds = 0.28f;
 	internal const float MagicMissileFlightStepSeconds = 0.025f;
 
-	// 死亡之环改用 LoL 卡尔萨斯式幽绿光环色调(原血色已弃用)。
+	// 死亡之环使用幽绿色调。
 	private static readonly Color DeathRingColor = new(0.24f, 0.96f, 0.45f);
 	private static readonly Color DeathFlashColor = new(0.62f, 1f, 0.64f);
 	private static readonly Color DivineRingColor = new(1f, 0.9f, 0.55f);
@@ -294,13 +294,13 @@ internal static partial class HextechCombatVfx
 		return builder.ToString();
 	}
 
-	/// <summary>死亡之环:从施法者甩向目标的血色光束 + 目标身上炸开的死亡环与闪光。</summary>
+	/// <summary>死亡之环：幽绿光束连接施法者与目标，目标处播放光环与闪光。</summary>
 	internal static void DeathRingLash(Creature source, Creature target)
 	{
 		Callable.From(() => RunDeathRingLash(source, target)).CallDeferred();
 	}
 
-	/// <summary>神圣干预:为每个受益玩家罩上一圈金色圣光脉冲与柔光。</summary>
+	/// <summary>神圣干预：为受益玩家播放金色光柱、上升光尘与落地光环。</summary>
 	internal static void DivinePulse(IReadOnlyList<Creature> allies)
 	{
 		Creature[] snapshot = [.. allies];

@@ -57,8 +57,7 @@ internal static class HextechEnemyUi
 
 		IReadOnlyList<MonsterHexKind> activeHexes = modifier.GetActiveMonsterHexes();
 
-		// 折叠模式(配置「折叠敌方海克斯」,默认开):敌方海克斯收进顶栏地图按钮左侧的折叠按钮 + 下方展开窗口,
-		// 不再平铺进 modifiers 容器(那正是数量多/药水栏长时会溢出屏幕的旧行为)。
+		// 折叠模式将敌方海克斯收进独立按钮和展开面板，避免大量图标挤出顶栏。
 		if (GetCollapseEnemyHexesConfig())
 		{
 			RemoveAllEnemyHexStrips(container);
@@ -69,7 +68,7 @@ internal static class HextechEnemyUi
 			return;
 		}
 
-		// 旧版:平铺在顶栏 modifiers 里。先确保折叠按钮/面板已移除,避免两套并存。
+		// 平铺模式先移除折叠视图，避免两套界面同时存在。
 		HextechEnemyHexCollapseView.Remove();
 
 		if (activeHexes.Count == 0)

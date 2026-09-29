@@ -36,24 +36,17 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier, 
 		};
 	}
 
-	// “每过 N 回合”在 RoundNumber % (N + 1) == 0 时触发；额外回合不推进回合号，按海克斯和回合防重。
+	// 口径见 HextechRoundInterval；额外回合不推进回合号，按海克斯和回合防重。
 	internal bool TryConsumeRoundInterval(
 		MonsterHexKind kind,
 		HextechCombatState combatState,
 		int everyNRounds)
 	{
 		int roundNumber = combatState.RoundNumber;
-		return IsRoundIntervalDue(roundNumber, everyNRounds)
+		return HextechRoundInterval.IsDue(roundNumber, everyNRounds)
 			&& HextechCombatProcTracker.ConsumeGlobalProcInCombat(
 				Tracking,
 				$"round-once:{kind}:{roundNumber}") <= 0;
-	}
-
-	internal static bool IsRoundIntervalDue(int roundNumber, int everyNRounds)
-	{
-		return everyNRounds > 0
-			&& roundNumber > 1
-			&& roundNumber % (everyNRounds + 1) == 0;
 	}
 
 	internal decimal TierValue(MonsterHexKind kind, decimal tier1, decimal tier2, decimal tier3)
@@ -97,11 +90,6 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier, 
 		return participants == null
 			? creatures
 			: creatures.Where(creature => HextechTurnParticipants.Includes(participants, creature)).ToList();
-	}
-
-	internal Task RunGroupedPlayerDebuffBurst(Func<Task> action)
-	{
-		return modifier.RunGroupedPlayerDebuffBurst(action);
 	}
 
 	internal Task TryApplyServantMasterIllusion(Creature creature, Creature? applier, CardModel? cardSource)

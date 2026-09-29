@@ -20,10 +20,8 @@ internal sealed partial class HextechMayhemModifier
 			await ApplyCombatStartEnemyHexes(combatRoom);
 		}
 
-		_combatTracking.EnemyProtectiveVeilTurnCounter = 0;
-
-		// R1:纯表现刷新移到所有会进 checksum 的同步写入(HP 归一化/持久 hex/起手 hex)之后,
-		// 保证同步命令先于任何 UI 刷新发出;Refresh 自身已 throw-safe,双重保险。
+		// HP 归一化、持久海克斯和开局效果先完成共享状态写入，再刷新本机 UI。
+		// Refresh 自行隔离表现层异常，避免它中断同步流程。
 		HextechEnemyUi.Refresh(this);
 	}
 
@@ -68,20 +66,6 @@ internal sealed partial class HextechMayhemModifier
 		}
 
 		await HextechMultiplayerScalingCompat.NormalizeEnemyHpIfNeeded(this, creature);
-
-		if (RunState.CurrentRoom is CombatRoom combatRoom
-			&& await TryApplyDeferredBossStartHexes(creature, combatRoom))
-		{
-			HextechEnemyUi.Refresh(this);
-			return;
-		}
-
-		if (ShouldDeferInitialBossStartHexes(creature))
-		{
-			HextechEnemyUi.Refresh(this);
-			return;
-		}
-
 		await ApplyPersistentMonsterHexes(creature);
 		HextechEnemyUi.Refresh(this);
 	}
@@ -95,11 +79,6 @@ internal sealed partial class HextechMayhemModifier
 
 		foreach (Creature enemy in combatRoom.CombatState.Enemies.Where(static creature => creature.IsAlive))
 		{
-			if (ShouldDeferInitialBossStartHexes(enemy))
-			{
-				continue;
-			}
-
 			await ApplyPersistentMonsterHexes(enemy);
 		}
 
@@ -109,7 +88,6 @@ internal sealed partial class HextechMayhemModifier
 	public override async Task BeforeSideTurnStartForParticipants(PlayerChoiceContext choiceContext, CombatSide side, IReadOnlyList<Creature> participants, HextechCombatState combatState)
 	{
 		HextechCombatHooks.ClearPendingManualPlayState();
-		await ApplyDeferredBossStartHexes(combatState);
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			participants,

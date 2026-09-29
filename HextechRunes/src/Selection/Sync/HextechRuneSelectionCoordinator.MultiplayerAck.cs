@@ -104,21 +104,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		cancellationToken.ThrowIfCancellationRequested();
 	}
 
-	private static async Task WaitForRunChangeOrMultiplayerDisconnectAsync(RunState runState, CancellationToken cancellationToken)
-	{
-		while (!cancellationToken.IsCancellationRequested && IsCurrentRun(runState) && IsMultiplayerConnected())
-		{
-			try
-			{
-				await WaitForProcessFrameOrDelayAsync(cancellationToken);
-			}
-			catch (OperationCanceledException)
-			{
-				return;
-			}
-		}
-	}
-
 	private static bool IsMultiplayerConnected()
 	{
 		INetGameService netService = RunManager.Instance.NetService;

@@ -170,7 +170,7 @@ python3 \
 	--mod-id "$FILE_STEM" \
 	--manifest-name "$VARIANT_MANIFEST_NAME"
 
-# 更新检查只看 latestVersion;构建指纹校验已移除(2026-09)。
+# 更新检查读取 latestVersion。
 if [[ "${HEXTECH_UPDATE_LATEST:-1}" != "0" ]]; then
 	python3 "$ROOT/tools/update_latest_version.py" \
 		--latest-json "$ROOT/server/hextech-telemetry/public/latest-version.json" \

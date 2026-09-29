@@ -10,7 +10,9 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<uint, int> CourageProcsThisTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly Dictionary<uint, int> BloodPactProcsThisTurn = new();
-	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
+	// 键为"玩家 NetId:计次键"。只在该玩家自己开始回合时清（见 ResetPlayerRuneProcsThisTurn）：
+	// 队友的额外回合不重置别人的每回合次数，自己的额外回合算新回合，与本地按 TurnNumber 计数一致。
+	[CombatTrackingClear(CombatTrackingClearPhase.None)]
 	public readonly Dictionary<string, int> PlayerRuneProcsThisTurn = new();
 	public readonly Dictionary<string, int> PlayerRuneProcsThisCombat = new();
 	public readonly Dictionary<string, int> GlobalProcsThisCombat = new();
@@ -19,9 +21,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
 	public readonly Dictionary<uint, int> ClownCollegeProcsThisTurn = new();
 	public readonly HashSet<uint> EscapePlanTriggered = new();
-	public readonly HashSet<uint> EscapePlanPending = new();
 	public readonly HashSet<uint> RepulsorTriggered = new();
-	public readonly HashSet<uint> RepulsorPending = new();
 	public readonly HashSet<uint> DawnTriggered = new();
 	// 敌方濒死狂宴:负血债务(含 key=濒死激活中)与已发放的力量层数(差额补给)。
 	public readonly Dictionary<uint, int> NearDeathFeastEnemyDebt = new();
@@ -53,7 +53,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly Dictionary<uint, int> TankEngineStacks = new();
 	public readonly Dictionary<uint, int> TankEngineLastAppliedRound = new();
 	public readonly Dictionary<uint, int> ShrinkEngineStacks = new();
-	public readonly Dictionary<uint, int> GetExcitedPending = new();
 	public readonly HashSet<uint> FeelTheBurnPending = new();
 	public readonly HashSet<uint> MountainSoulHasPreviousTurn = new();
 	public readonly HashSet<uint> MountainSoulDamagedSinceLastTurn = new();
@@ -85,20 +84,12 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public readonly HashSet<ulong> GripPlayersTriggeredThisTurn = new();
 	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart | CombatTrackingClearPhase.PlayerTurnEnd)]
 	public int ArcanePunchPlayerAttackCardsPlayed;
-	[CombatTrackingClear(CombatTrackingClearPhase.PlayerTurnStart)]
-	[CombatTrackingTransient]
-	public readonly HashSet<string> MonsterDebuffActionProcKeysThisTurn = new();
-	[CombatTrackingTransient]
-	public readonly HashSet<string> GroupedPlayerDebuffProcKeys = new();
 	[CombatTrackingTransient]
 	public string? LastEnemyThresholdTriggerKey;
 	[CombatTrackingTransient]
 	public bool HandlingMonsterTormentorBurn;
 	[CombatTrackingTransient]
 	public bool HandlingServantMasterIllusion;
-	[CombatTrackingTransient]
-	public bool HandlingGroupedPlayerDebuffs;
-	public int EnemyProtectiveVeilTurnCounter;
 
 	public void PreparePlayerSideTurnStart()
 	{
@@ -109,7 +100,20 @@ internal sealed partial class HextechMayhemCombatTrackingState
 	public void BeginPlayerTurnStart(IEnumerable<ulong> playerIds)
 	{
 		PlayersAwaitingPlayPhase.Clear();
-		PlayersAwaitingPlayPhase.UnionWith(playerIds);
+		foreach (ulong playerId in playerIds)
+		{
+			PlayersAwaitingPlayPhase.Add(playerId);
+			ResetPlayerRuneProcsThisTurn(playerId);
+		}
+	}
+
+	private void ResetPlayerRuneProcsThisTurn(ulong playerId)
+	{
+		string prefix = playerId.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":";
+		foreach (string key in PlayerRuneProcsThisTurn.Keys.Where(key => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+		{
+			PlayerRuneProcsThisTurn.Remove(key);
+		}
 	}
 
 	public void EnterPlayerPlayPhase(ulong playerId)
@@ -129,8 +133,7 @@ internal sealed partial class HextechMayhemCombatTrackingState
 
 	public void PrepareEnemySideTurnStart()
 	{
-		// 自增计数器无法用清空标注表达,保留显式;其余字段按 EnemyTurnStart 标注反射清空。
-		EnemyProtectiveVeilTurnCounter++;
+		// 字段按 EnemyTurnStart 标注反射清空。
 		PlayersAwaitingPlayPhase.Clear();
 		HextechMayhemCombatTrackingSerializer.ClearPhase(this, CombatTrackingClearPhase.EnemyTurnStart);
 	}

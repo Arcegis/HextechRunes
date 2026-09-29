@@ -38,7 +38,8 @@ internal static partial class Program
 		tracking.TormentorProcsThisTurn[2] = 1;
 		tracking.CourageProcsThisTurn[3] = 1;
 		tracking.BloodPactProcsThisTurn[4] = 1;
-		tracking.PlayerRuneProcsThisTurn["player:rune"] = 1;
+		tracking.PlayerRuneProcsThisTurn["1:rune"] = 1;
+		tracking.PlayerRuneProcsThisTurn["2:rune"] = 1;
 		tracking.ClownCollegeProcsThisTurn[5] = 1;
 		tracking.DevilsDanceTriggeredThisTurn.Add(6);
 		tracking.FinalFormTriggeredThisTurn.Add(7);
@@ -48,7 +49,6 @@ internal static partial class Program
 		tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Add(10);
 		tracking.InspectExtraDrawsPreventedThisTurn[11] = 2;
 		tracking.GripPlayersTriggeredThisTurn.Add(12);
-		tracking.MonsterDebuffActionProcKeysThisTurn.Add("debuff-action");
 
 		tracking.PreparePlayerSideTurnEnd();
 
@@ -65,7 +65,7 @@ internal static partial class Program
 		Equal(1, tracking.TormentorProcsThisTurn.Count, "enemy side start should keep tormentor round proc count");
 		Equal(1, tracking.CourageProcsThisTurn.Count, "enemy side start should keep courage round proc count");
 		Equal(1, tracking.BloodPactProcsThisTurn.Count, "enemy side start should keep blood pact round proc count");
-		Equal(1, tracking.PlayerRuneProcsThisTurn.Count, "enemy side start should keep player rune round proc count");
+		Equal(2, tracking.PlayerRuneProcsThisTurn.Count, "enemy side start should keep player rune round proc count");
 		Equal(1, tracking.ClownCollegeProcsThisTurn.Count, "enemy side start should keep clown college round proc count");
 		Equal(1, tracking.DevilsDanceTriggeredThisTurn.Count, "enemy side start should keep devil's dance round proc count");
 		Equal(1, tracking.FinalFormTriggeredThisTurn.Count, "enemy side start should keep final form round proc count");
@@ -74,9 +74,13 @@ internal static partial class Program
 		Equal(1, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "enemy side start should keep eight penny gate second round proc count");
 		Equal(1, tracking.InspectExtraDrawsPreventedThisTurn.Count, "enemy side start should keep inspect draw count");
 		Equal(1, tracking.GripPlayersTriggeredThisTurn.Count, "enemy side start should keep grip proc count");
-		Equal(1, tracking.MonsterDebuffActionProcKeysThisTurn.Count, "enemy side start should keep monster debuff round guard");
 
 		tracking.PreparePlayerSideTurnStart();
+		Equal(2, tracking.PlayerRuneProcsThisTurn.Count, "player rune per-turn counts are not cleared for everyone at once");
+		tracking.BeginPlayerTurnStart([2UL]);
+		Expect(tracking.PlayerRuneProcsThisTurn.ContainsKey("1:rune"), "a teammate's extra turn keeps this player's per-turn count");
+		Expect(!tracking.PlayerRuneProcsThisTurn.ContainsKey("2:rune"), "the player starting a turn gets fresh per-turn counts");
+		tracking.BeginPlayerTurnStart([1UL, 2UL]);
 
 		Equal(0, tracking.SlapProcsThisTurn.Count, "player side start should reset slap round proc count");
 		Equal(0, tracking.TormentorProcsThisTurn.Count, "player side start should reset tormentor round proc count");
@@ -92,7 +96,6 @@ internal static partial class Program
 		Equal(0, tracking.EightPennyGatePlayersTriggeredSecondThisTurn.Count, "player side start should reset eight penny gate second round proc count");
 		Equal(0, tracking.InspectExtraDrawsPreventedThisTurn.Count, "player side start should reset inspect draw count");
 		Equal(0, tracking.GripPlayersTriggeredThisTurn.Count, "player side start should reset grip proc count");
-		Equal(0, tracking.MonsterDebuffActionProcKeysThisTurn.Count, "player side start should reset monster debuff round guard");
 	}
 
 	private static void MindOverMatterFirstDrawTrackingResetsPerPlayerTurn()
@@ -117,13 +120,15 @@ internal static partial class Program
 
 	private static void CombatTrackingGlobalProcOrdinalsSerializeAndReset()
 	{
-		Expect(!HextechEnemyHexContext.IsRoundIntervalDue(1, 3), "round intervals should not trigger on round one");
-		Expect(!HextechEnemyHexContext.IsRoundIntervalDue(3, 3), "three-round interval should wait until round four");
-		Expect(HextechEnemyHexContext.IsRoundIntervalDue(4, 3), "three-round interval should trigger on round four");
-		Expect(HextechEnemyHexContext.IsRoundIntervalDue(8, 3), "three-round interval should trigger again on round eight");
-		Expect(HextechEnemyHexContext.IsRoundIntervalDue(3, 2), "two-round interval should trigger on round three");
-		Expect(HextechEnemyHexContext.IsRoundIntervalDue(2, 1), "one-round interval should trigger on round two");
-		Expect(!HextechEnemyHexContext.IsRoundIntervalDue(4, 0), "nonpositive round intervals should stay disabled");
+		Expect(!HextechRoundInterval.IsDue(1, 3), "round intervals should not trigger on round one");
+		Expect(!HextechRoundInterval.IsDue(2, 3), "every-3 interval waits until round three");
+		Expect(HextechRoundInterval.IsDue(3, 3), "every-3 interval triggers on round three");
+		Expect(!HextechRoundInterval.IsDue(4, 3), "every-3 interval skips round four");
+		Expect(HextechRoundInterval.IsDue(6, 3), "every-3 interval triggers again on round six");
+		Expect(HextechRoundInterval.IsDue(2, 2), "every-2 interval triggers on round two");
+		Expect(!HextechRoundInterval.IsDue(1, 1), "every-1 interval still skips round one");
+		Expect(HextechRoundInterval.IsDue(2, 1) && HextechRoundInterval.IsDue(3, 1), "every-1 interval triggers every round after the first");
+		Expect(!HextechRoundInterval.IsDue(4, 0), "nonpositive round intervals should stay disabled");
 
 		HextechMayhemCombatTrackingState tracking = new();
 		Equal(0, HextechCombatProcTracker.ConsumeGlobalProcInCombat(tracking, "enemy-archmage:net:1"), "first global proc ordinal");

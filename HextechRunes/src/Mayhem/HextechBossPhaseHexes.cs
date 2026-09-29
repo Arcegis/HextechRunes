@@ -4,9 +4,8 @@ using static HextechRunes.HextechHookReflection;
 namespace HextechRunes;
 
 /// <summary>
-/// Boss 转阶段/延迟补发开局海克斯的判定与补发流程。由 <see cref="HextechMayhemModifier"/> 的分部转发进来。
-/// Doormaker 延迟补发链目前是死分支（两个判定恒返回 false），但其 DoormakerRealStartApplied 字段在存档 JSON 形状里，
-/// 原样保留，不做清理。
+/// Boss 转阶段后补发开局海克斯的判定与流程。由 <see cref="HextechMayhemModifier"/> 的分部转发进来。
+/// 战斗追踪里的 DoormakerRealStartApplied 是已删除的 Doormaker 延迟补发留下的存档字段，保留以维持 JSON 形状。
 /// </summary>
 internal static class HextechBossPhaseHexes
 {
@@ -41,51 +40,6 @@ internal static class HextechBossPhaseHexes
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Reapplying boss start hexes after TestSubject revive: combatId={combatId} respawns={respawns}");
 		await modifier.ApplyBossStartHexesToEnemy(osty, room);
 		HextechEnemyUi.Refresh(modifier);
-	}
-
-	internal static async Task ApplyDeferredBossStartHexes(HextechMayhemModifier modifier, HextechCombatState combatState)
-	{
-		if (modifier.ActiveRunState.CurrentRoom is not CombatRoom room)
-		{
-			return;
-		}
-
-		foreach (Creature enemy in HextechCombatCreatureHelper.GetAliveEnemies(combatState))
-		{
-			await TryApplyDeferredBossStartHexes(modifier, enemy, room);
-		}
-	}
-
-	internal static async Task<bool> TryApplyDeferredBossStartHexes(HextechMayhemModifier modifier, Creature creature, CombatRoom room)
-	{
-		if (creature.Side != CombatSide.Enemy
-			|| !creature.IsAlive
-			|| creature.CombatState?.RunState != modifier.ActiveRunState
-			|| !IsDoormakerReadyForDeferredStart(creature)
-			|| creature.CombatId == null)
-		{
-			return false;
-		}
-
-		uint combatId = creature.CombatId.Value;
-		if (!modifier.CombatTracking.DoormakerRealStartApplied.Add(combatId))
-		{
-			return false;
-		}
-
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Applying deferred boss start hexes to Doormaker: combatId={combatId} maxHp={creature.MaxHp}");
-		await modifier.ApplyBossStartHexesToEnemy(creature, room);
-		return true;
-	}
-
-	internal static bool ShouldDeferInitialBossStartHexes(Creature creature)
-	{
-		return false;
-	}
-
-	private static bool IsDoormakerReadyForDeferredStart(Creature creature)
-	{
-		return false;
 	}
 
 	private static int GetTestSubjectRespawns(TestSubject testSubject)

@@ -263,6 +263,7 @@ internal static partial class Program
 			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
 			new(nameof(PatchManifestMatchesCheckedInList), PatchManifestMatchesCheckedInList),
 			new(nameof(PatchDeclarationsResolveToRealTargets), PatchDeclarationsResolveToRealTargets),
+			new(nameof(VanillaCopyGuardFreezesEntriesAndAsyncBodies), VanillaCopyGuardFreezesEntriesAndAsyncBodies),
 			new(nameof(StaticStateManifestMatchesCheckedInList), StaticStateManifestMatchesCheckedInList),
 			new(nameof(CardPlayBlockersUseOfficialShouldPlayHook), CardPlayBlockersUseOfficialShouldPlayHook),
 			new(nameof(SavedPropertyPreInitRegistrationLeavesWireTablesUntouched), SavedPropertyPreInitRegistrationLeavesWireTablesUntouched),
@@ -353,6 +354,7 @@ internal static partial class Program
 			new(nameof(EnemyCompensationSkipsSleightOfFleshResponse), EnemyCompensationSkipsSleightOfFleshResponse),
 			new(nameof(WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics), WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics),
 			new(nameof(UniversalScopeChancesAddBeforeSingleRoll), UniversalScopeChancesAddBeforeSingleRoll),
+			new(nameof(UniversalScopeRefundsOnlyTheSyncedSpend), UniversalScopeRefundsOnlyTheSyncedSpend),
 			new(nameof(UniversalScopeUpgradeRestorationKeepsCapturedLevels), UniversalScopeUpgradeRestorationKeepsCapturedLevels),
 			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
 			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
@@ -451,9 +453,6 @@ internal static partial class Program
 		return failed == 0 ? 0 : 1;
 	}
 
-	// (PR#18)回归测试:镶宝铁拳符文曾在 ModifyCardPlayCount(引擎/UI 可能对同一次出牌重复求值)里直接调用
-	// 会推进计数的 ConsumePlayerRuneProcInCombat,导致联机各端序号推进次数不一致、稳定随机结果分叉出即时断线。
-	// 修复后 ModifyCardPlayCount 只应 peek(GetPlayerRuneProcsInCombat),真正消费放在每次真实出牌只触发一次的钩子里。
 	// v15(0.8.4 出厂)默认禁用集的冻结快照。这是历史事实,不随注册表演进——注册表每次翻转默认启停
 	// 都必须新增迁移链段,链走完应恰好落在当前出厂默认上(由下方测试守护)。
 	private static readonly Type[] Version15FactoryDisabledRuneTypes =
@@ -481,10 +480,6 @@ internal static partial class Program
 		typeof(WarmogsSpiritRune)
 	];
 
-	// 「迁移链终点 == 新用户默认」双真值源守护:v15(0.8.4 出厂)默认禁用集是冻结基线,勿随注册表更新。
-	// 若未来翻转某符文默认启停时只改了注册表旗标、忘了加迁移链段,此测试即红。
-	// SavedProperty 属性名集合直接决定联机 net-id 布局(规范化按名排序):任何新增/改名/删除都必须是
-	// 有意为之并同步更新清单文件,否则与线上旧版联机会 1014。此测试把该风险面从线上提前到 CI。
 	private static (object? Value, int? Count) SnapshotStaticCollection(Type type, string fieldName)
 	{
 		FieldInfo field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static)
@@ -799,7 +794,7 @@ internal static partial class Program
 		return new ModelId("HEXTECH_TEST", $"MONSTER_HEX_{(int)kind}");
 	}
 
-	// (PR#18)Player 的构造函数会触达 SaveManager/PlatformUtil 等只在真实 Godot 运行时下可用的原生绑定,
+	// Player 的构造函数会触达 SaveManager/PlatformUtil 等只在真实 Godot 运行时下可用的原生绑定,
 	// 纯 CLI 测试进程里直接 new 会段错误。这里只需要一个能承载稳定 NetId 的壳子来复用
 	// GetPlayerRuneProcKey 的联机计费键,故跳过构造函数,直接反射写入 NetId 的自动属性支持字段。
 	private static Player CreateOrdinalTestPlayer(ulong netId)

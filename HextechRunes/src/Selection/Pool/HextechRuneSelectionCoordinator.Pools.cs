@@ -33,15 +33,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		return HextechRunePoolBuilder.BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
 	}
 
-	private static List<int> BuildRuneTagWeights(
-		IReadOnlyList<RelicModel> pool,
-		IReadOnlyDictionary<string, int> tagCounts,
-		bool useEndlessTagWindow,
-		out int totalWeight)
-	{
-		return HextechRunePoolBuilder.BuildRuneTagWeights(pool, tagCounts, useEndlessTagWindow, out totalWeight);
-	}
-
 	private static int SelectWeightedIndex(IReadOnlyList<int> weights, int roll)
 	{
 		return HextechRunePoolBuilder.SelectWeightedIndex(weights, roll);

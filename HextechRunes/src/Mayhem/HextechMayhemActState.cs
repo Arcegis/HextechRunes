@@ -175,21 +175,10 @@ internal sealed class HextechMayhemActState
 		return true;
 	}
 
-	public MonsterHexKind? GetMonsterHex(int actIndex)
-	{
-		IReadOnlyList<MonsterHexKind> hexes = GetMonsterHexes(actIndex);
-		return hexes.Count > 0 ? hexes[0] : null;
-	}
-
 	public IReadOnlyList<MonsterHexKind> GetMonsterHexes(int actIndex)
 	{
 		int slot = ToExistingActSlotOrInvalid(actIndex);
 		return slot >= 0 ? _monsterHexesByAct[slot].ToArray() : [];
-	}
-
-	public void SetMonsterHex(int actIndex, MonsterHexKind hex)
-	{
-		SetMonsterHexes(actIndex, [ hex ]);
 	}
 
 	public void SetMonsterHexes(int actIndex, IEnumerable<MonsterHexKind> hexes)
@@ -198,16 +187,6 @@ internal sealed class HextechMayhemActState
 		if (slot >= 0)
 		{
 			_monsterHexesByAct[slot] = NormalizeMonsterHexList(hexes.Select(static hex => (int)hex));
-			MarkChanged();
-		}
-	}
-
-	public void ClearMonsterHex(int actIndex)
-	{
-		int slot = ToExistingActSlotOrInvalid(actIndex);
-		if (slot >= 0)
-		{
-			_monsterHexesByAct[slot].Clear();
 			MarkChanged();
 		}
 	}
@@ -352,11 +331,6 @@ internal sealed class HextechMayhemActState
 		return stageIndex;
 	}
 
-	public int LastActIndexFor(int maxActIndex)
-	{
-		return maxActIndex;
-	}
-
 	public void Reset()
 	{
 		_rarityByAct = NewUnknownArray();
@@ -366,11 +340,6 @@ internal sealed class HextechMayhemActState
 		_carriedMonsterHexes.Clear();
 		_extraStageIndexes.Clear();
 		MarkChanged();
-	}
-
-	public void ResetForEndlessLoop()
-	{
-		// 无尽模式继续沿用单调递增的阶段序号，保留每次获得敌方海克斯的分组。
 	}
 
 	public void DebugSetOnlyMonsterHex(int actIndex, MonsterHexKind hex, HextechRarityTier rarity)

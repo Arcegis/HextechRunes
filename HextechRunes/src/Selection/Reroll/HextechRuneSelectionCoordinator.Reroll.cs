@@ -106,6 +106,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		if (!ReferenceEquals(rerolled, currentOptions))
 		{
 			ModelId rerolledId = rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id;
+			// 重随排除集合与完整候选历史分别记录；选定后同步历史，并由两端统一写入存档。
 			seenOptionIds.Add(rerolledId);
 			offeredOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);

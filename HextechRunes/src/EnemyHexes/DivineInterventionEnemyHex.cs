@@ -6,7 +6,7 @@ internal sealed class DivineInterventionEnemyHex : HextechEnemyHexEffect
 
 	internal override Task BeforePlayerSideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
-		if (!context.TryConsumeRoundInterval(Kind, combatState, everyNRounds: 3))
+		if (!context.TryConsumeRoundInterval(Kind, combatState, everyNRounds: 4))
 		{
 			return Task.CompletedTask;
 		}

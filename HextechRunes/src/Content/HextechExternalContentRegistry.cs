@@ -267,7 +267,7 @@ internal static class HextechExternalContentRegistry
 		return true;
 	}
 
-	// 与资源归属同一口径：首个登记者生效，重复登记只告警，发放池不随模组加载顺序变化。
+	// 首个非空可用性委托生效，冲突登记只告警，不覆盖先前的委托。
 	private static bool TryStorePlayerRuneAvailability(Type runeType, Func<Player, bool>? availability)
 	{
 		if (availability == null)

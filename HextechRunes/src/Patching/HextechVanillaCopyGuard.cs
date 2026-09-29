@@ -9,8 +9,10 @@ namespace HextechRunes;
 /// 游戏更新后这些拷贝会静默失真,因此启动时比对目标方法 IL 的 SHA1 与冻结表,漂移即告警。
 /// </summary>
 /// <remarks>
-/// 冻结表由 <c>HEXTECH_DUMP_PATCHES</c> 的补丁表导出生成(每个目标附 <c>il=</c> 列),
-/// 以嵌入资源 <c>vanilla_copy_guard.txt</c> 随各变体打包;没有表的变体跳过校验。
+/// 目标清单来自 0.111.0 的 <c>HEXTECH_DUMP_PATCHES</c> 补丁表导出;各维护版本的行(含异步方法的
+/// <c>MoveNext</c>)由测试 <c>VanillaCopyGuardFreezesEntriesAndAsyncBodies</c> 在对应 sts2.dll 上
+/// 用 <c>HEXTECH_WRITE_PATCH_MANIFEST=1</c> 补齐,漂移行只报告不刷新。以嵌入资源
+/// <c>vanilla_copy_guard.txt</c> 随各变体打包;没有表的变体跳过校验。
 /// 行格式:<c>Namespace.Type::Method(ParamType,...)=sha1</c>。
 /// </remarks>
 internal static class HextechVanillaCopyGuard
@@ -27,6 +29,23 @@ internal static class HextechVanillaCopyGuard
 	{
 		byte[]? il = method.GetMethodBody()?.GetILAsByteArray();
 		return il == null ? null : Convert.ToHexString(SHA1.HashData(il)).ToLowerInvariant();
+	}
+
+	// 异步方法本体只是启动状态机的桩，原版逻辑改动几乎都落在编译器生成的 MoveNext 里；
+	// 只哈希入口会让"跳过原方法并复制其逻辑"的前缀在游戏更新后静默失真。
+	internal static IEnumerable<MethodBase> WithAsyncBody(MethodBase method)
+	{
+		yield return method;
+		if (TryGetAsyncMoveNext(method) is MethodInfo moveNext)
+		{
+			yield return moveNext;
+		}
+	}
+
+	internal static MethodInfo? TryGetAsyncMoveNext(MethodBase method)
+	{
+		Type? stateMachine = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>()?.StateMachineType;
+		return stateMachine?.GetMethod("MoveNext", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 	}
 
 	/// <summary>本模组挂了可跳过原方法的前缀的所有目标。</summary>
@@ -80,7 +99,7 @@ internal static class HextechVanillaCopyGuard
 
 			List<string> drifted = [];
 			List<string> unregistered = [];
-			foreach (MethodBase method in EnumerateSkipCapableTargets(ownerId))
+			foreach (MethodBase method in EnumerateSkipCapableTargets(ownerId).SelectMany(WithAsyncBody))
 			{
 				string key = DescribeTarget(method);
 				string? actual = ComputeIlHash(method);

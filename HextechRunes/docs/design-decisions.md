@@ -12,8 +12,13 @@
 - **森罗万象先确认持有者在本次结束回合的 participants 里再冻结球队列。** 避免队友额外回合触发；已离场的球不再触发，新生成的球不扩大本批次。`MyriadManifestationsRune`
 - **祸水东引只转移逐个核对过支持敌人 Owner 的 Power 类型。** 原版没有统一的目标适用性接口；Hex、Ringing 等依赖玩家牌堆的效果只从玩家侧移除、不给敌人，否则会在敌人侧访问不存在的 Player 或带入卡牌引用。按实际层数判定类型，负数力量/敏捷也在范围内；转移时清除玩家侧 SkipNextDurationTick。`ScapegoatRune`
 - **血债血偿的成长按卡牌实例记在遗物的战斗内字典里。** 牌离开手牌仍保留，同名的另一张不共享，不写回永久牌组、不给之后生成的牌补发；通过伤害加算 Hook 同时作用于预览与实际，不新增伤害事件。`BloodDebtRune`
+- **瞄准镜类返还的能量/辉星只读随出牌同步的 `CardPlay.Resources`（手动出牌为实付，自动打出为 0），不读本机静态记账栈。** 玩家报告（2026-09-29）：一呼百应连打同名攻击牌 + 最万用的瞄准镜返还时，客机的能量总比房主多"被自动打出并返还的张数"，六次分叉都只有房主能量不同。旧实现在记账栈缺值时退回牌面费用，自动打出（实付 0）就多退 1；原版手动出牌的 `EnergySpent` 本来就是 `SpendResources` 的实付（X 费即实付 X）。星尘保留的辉星上报为已花费但未扣除，不返还。`HextechCombatHooks.GetResourceSpend`、`UniversalScopeRuneBase`
+- **双生火焰、魔法飞弹、点亮他们！的伤害单人与联机都在出牌动作内等待结算，弹道只做视觉。** 此前单人等牌结算完、弹道命中后才用独立任务扣血，脱离命令链且目标选取时机与联机不同；代价是伤害数字先于弹道出现。`TwinFlamesRune`、`MagicMissileRune`、`LightEmUpRune`
 - **冥土追魂挂在 `AfterSideTurnEndLate`（回合弃牌与虚无消耗之后），并要求持有者属于本次 participants。** 否则队友的额外回合会触发它。`NetherSoulRune`
 - **自有基类的四个回合钩子（开始前/后、结束前/后）统一按 participants 过滤：持有者阵营的回合里、持有者不在本次参与者中就不转发。** 队友的额外回合（佩尔之眼等）只带那名玩家重入回合钩子，阵营检查照样通过、`RoundNumber` 也不推进，此前约 20 个符文/锻造器与几种龙魂、灼烧会在队友额外回合里多结算一次（公开仓库 PR #35 修了符文与 Power 基类）。原版传入的集合不统一：普通回合开始含宠物，额外回合开始与玩家侧回合结束只含玩家本人，所以宠物身上的 Power 按主人判定（否则奥斯提身上的灼烧永远不结算）。异阵营触发不过滤。Modifier 没有持有者，敌方海克斯改由 `HextechMayhemModifier` 把"本次参与回合的玩家"传下去：`BeforePlayerSideTurnStart` 的玩家列表、回合结束时逐玩家生效的遗忘之魂/达夫的陈年佳酿、精灵魔法的待结算无法抽牌都只作用于参与者；作用于敌人的回合开始效果照旧每个玩家侧回合都触发；按回合清空的记账仍整体清空。`HextechTurnParticipants`、`HextechRelicBase`、`HextechPowerBase`、`HextechModifierBase`
+- **"每回合最多 N 次"按持有者自己的回合计：额外回合算新回合、给新次数，队友的额外回合不影响。** 本地计数按 `PlayerCombatState.TurnNumber` 判断新回合；联机计数 `PlayerRuneProcsThisTurn` 不再在每个玩家侧回合开始时整体清空，只在参与本次回合的玩家开始回合时清掉该玩家的键，两条路径口径一致。`HextechRelicBase.TurnProc`、`HextechMayhemCombatTrackingState.BeginPlayerTurnStart`
+- **缩小、滑溜、人工制品三处原版漏洞修正只在本局启用海克斯时生效。** 它们修的是原版就有、但海克斯内容更易触发的问题（临时缩小叠永久缩小丢失永久效果；钨合金棍/奥斯提替身让滑溜不扣层；人工制品挡掉包围/夹击），不改没开模组功能的对局。`HextechCombatHooks.IsVanillaFixActiveFor`
+- **原版对局重放（`NetGameType.Replay`）一律按单人流程处理。** 它没有联机连接，此前在部分入口被当成联机、走到需要同步通道的分支就抛异常；统一走 `HextechPlayerContextHelper.IsSinglePlayerFlow`，候选池始终套用本局配置。
 - **"战斗第一回合"类的持有者效果看持有者自己的 `PlayerCombatState.TurnNumber == 1`（`IsOwnersFirstTurn`），不看 `RoundNumber`。** 持有者在第 1 回合拿到额外回合时回合号仍为 1，开局多抽、开局锻造器会再结算一次；原版 TurnNumber 只在该玩家开始新回合（含额外回合）时递增。已有 `_lastProcRound`/本场标记防重的、以及语义是"第 1 回合内"的持续效果（死神收割、卡卡）不改。`PreparedForge`、`OrbSlotForge`、`SilverStarsForge`、`SilverOrbForge`、`ForgingForge`、`NecrobinderForge`、`HubrisRune`、`ZealotRune`、`BrutalForceRune`
 - **玩家侧活力火花必须走 `PowerCmd.Apply<HextechVitalSparkPower>`，不能把原版敌方增益直接施加到玩家。** 牌上污染层数 = 本玩家模组层数 + 场上原版活力火花总层数，但打出时每个 Power 只施加自己那份，避免重复乘算。原版 `BeforeCombatStart` / `AfterPowerAmountChanged` / `AfterRemoved` 会覆盖或清空侵蚀，普通模型 Hook 保证不了执行在原版写入之后，因此这三处用等待原 Task 的 postfix 重算。`HextechVitalSparkPower`
 - **百炼成钢的临时缓慢在官方 `BeforeSideTurnStart` 清理，并按"变化后总量减本次新增量"识别旧层。** 叠层回调会刷新整个实例的 `_appliedRound`，让旧层连续多个回合逃过清理（水银沙漏的回合开始伤害是触发链）。修正依赖 `PowerCmd.ModifyAmount` 的公开契约：先改层数 → 派发 `AfterPowerAmountChanged` → 最后才检查移除零层实例。不为沙漏或冰淇淋写特例。`HextechTemporarySlowPower`
@@ -26,6 +31,7 @@
 ## 敌方海克斯
 
 - **`MonsterHexKind` 一律尾部追加，不重排旧编号。** 编号是保存与联机契约。
+- **"每 N 回合"= 第 N、2N、3N… 回合触发，第 1 回合不触发（N=1 即从第 2 回合起每回合）。** 与英文 "Every N turns" 一致，中文文案写"每 N 回合"（2026-09 起不再用"每过 N 回合"及其 `%(N+1)` 口径）。敌我双方统一走 `HextechRoundInterval.IsDue`，调用处直接传文案里的数字；额外回合不推进回合号，调用方仍按回合号防重。改口径时黏液史莱姆、拉加维林女族长保持文案 3/2/1、实际触发变频繁，冰霜幽魂（我方）从第 3、5、7 回合改为第 2、4、6 回合。`HextechRoundInterval`、`HextechEnemyHexContext.TryConsumeRoundInterval`
 - **敌方蓝烛药箱（玩家状态/诅咒牌耗能 +1）优先级最低，视同加在基础费用上。** 原版费用 = 基础 → 卡牌临时修正 → 常规 Hook → Late Hook，敌方修饰器在监听顺序里排在遗物、能力、卡牌之后。所以 +1 在常规阶段按卡牌临时修正折算后再加（轮转不息一类的本回合 0 费会吃掉它，相对减费照常叠加）；我方蓝烛药箱的 0 费因此移到 Late 阶段，否则会被加回 1；敌方开悟的 1 费下限同在 Late 且排在遗物之后，仍最优先。原版无法打出的状态/诅咒基础费用是 -1，原版 Hook 直接跳过，这类牌不受影响。`BlueCandleMedkitEnemyHex`、`BlueCandleMedkitRune`
 - **豪猪（每 3N 次）与百炼成钢（每 N 次）的"未被格挡伤害"按敌人 CombatId 计数，整场战斗累积、余数带到下回合，战斗结束才清空；获得的荆棘与临时缓慢仍只到本回合。** N 为联机人数。描述里的 `{HitsNeeded}` 由 `MonsterHexCatalog` 的按人数缩放阈值表填值，表里必须写字面量（`sync_content_txt.py` 按字面量渲染 TXT 的"3N"），测试断言它与效果类常数一致。`PorcupineEnemyHex`、`HundredRefinementsEnemyHex`
 - **偷窃草蜢：AsleepPower / SlumberPower 不属于原版 `IsStunned`，必须单独排除。** 计划偷牌和行动结束实际偷牌两处都要排。`ThievingHopperEnemyHex`
@@ -83,7 +89,7 @@
 - **倍率为零且合法池只剩专属时回退到原有标签权重，避免空选项。** 没有映射到原版角色池的模组角色不推进专属权重。
 - **权重确认后提交绝对值，不按最后三个候选反推被重掷覆盖的历史。** 远端缺倍率或格式错误时中止该选择，禁止默默回退到 150%。`HextechWeightedRuneOptions`
 - **权重存进既有 `SavedRuneSelectionJournalJson` 的 `characterWeights`（按玩家 ID 排序），没有新增或改名 SavedProperty。** 旧存档缺这部分数据时从 150% 开始；无尽循环清理选择流水时保留倍率。
-- **每名玩家本局见过的海克斯（展示过、重随刷出过的）不再出现在之后的候选里；未见过的抽完后才回到见过没选的，再抽完就只给"继续"界面。** "已见"按玩家存进 `SavedSeenPlayerRuneIdsJson`，只记条目名，还原时必须用遗物的真实分类（`RELIC`）；2026-04 起误用模组名作分类，排除从未生效（遥测 0.9.5 后续幕约 10% 的候选含早幕见过的）。单人与联机的每幕生成、玩家重随都是"未见池为空才放开已见"。"继续"界面是纯本机界面、不同步、不发放；每名玩家每幕最多弹一次；单人若本幕还能调整敌方海克斯，就用仅敌方界面代替。联机时敌方调整的权威玩家若本次没有候选，本幕不开放敌方调整，否则其余客户端会一直等他的调整结果。`HextechMayhemChoiceHistoryState`、`ShowNoRuneOptionsScreenAsync`
+- **每名玩家本局见过的海克斯（展示过、重随刷出过的）不再出现在之后的候选里；未见过的抽完后才回到见过没选的，再抽完就只给"继续"界面。** "已见"按玩家存进 `SavedSeenPlayerRuneIdsJson`，只记条目名，还原时必须用遗物的真实分类（`RELIC`）；这份 JSON 参与双端比对，所以联机时各端对每名玩家只记初始候选（各端同种子生成）与同步来的最终候选，重随中途刷出又被换掉的只进本机界面的已见集合（单人照记）；2026-04 起误用模组名作分类，排除从未生效（遥测 0.9.5 后续幕约 10% 的候选含早幕见过的）。单人与联机的每幕生成、玩家重随都是"未见池为空才放开已见"。"继续"界面是纯本机界面、不同步、不发放；每名玩家每幕最多弹一次；单人若本幕还能调整敌方海克斯，就用仅敌方界面代替。联机时敌方调整的权威玩家若本次没有候选，本幕不开放敌方调整，否则其余客户端会一直等他的调整结果。`HextechMayhemChoiceHistoryState`、`ShowNoRuneOptionsScreenAsync`
 - **敌我海克斯不再互相回避同名（2026-09 删除）。** 玩家三选一与重随只排除本局已见过的符文；敌方每幕掷骰只排除敌方已出现过的，敌方重掷只避开同一界面上其他敌方槽位和已见过的敌方海克斯。原先玩家候选会排除敌方当前海克斯的同名、敌方重掷会避开玩家当前候选，但敌方首掷从不看玩家已持有的，遥测 0.9.5 仍有约 1.9% 的对局出现同名，规则不完整也不直观，因此整体去掉。
 - **玩家重随次数设为无限时，每幕选择界面改成直接自选：列出本稀有度的全部合法海克斯，与配置界面的启用开关同一套过滤（配置、幕、角色、已拥有、互斥）。** 判定读本局冻结配置（联机是房主的）；三候选照常先按权重生成，所以候选 RNG 与角色倍率照常推进，稀有度也由候选决定。自选池只在本机用 `BuildSelectableRunePool` 构造，不消耗 RNG；提交时把最终候选换成所选的一个（序号 0、无重随历史、倍率原样），远端按 ID 还原，同步格式不变。锻造器选择与只选敌方海克斯的界面不受影响。`HextechRuneSelectionScreen.SelfPick.cs`、`BuildSelfPickPool`
 - **海克斯选择二次确认（来自公开仓库 PR #33）是本机界面偏好，默认关，放在配置-杂项。** 开启后普通每幕三选一点卡片只标记待定，按确认才提交；待定时仍可重随，重随待定的那张会清掉待定。它只改变本机何时提交，提交内容与同步协议不变，所以存在 UI 偏好文件而不是本局冻结配置，联机各端可以不同；界面打开时读一次。锻造器、只选敌方海克斯、自选模式都不启用：自选本身就是点选加确认，而且它的确认走同一个选定入口、不带卡槽，若启用会被当成无效待定而吞掉。`ShouldUsePlayerRuneConfirmation`

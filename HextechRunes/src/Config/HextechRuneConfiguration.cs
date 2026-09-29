@@ -31,39 +31,9 @@ internal static partial class HextechRuneConfiguration
 	private static RuneConfig _config = new();
 	private static bool _loaded;
 
-	public static bool HasDisabledPlayerRunes
-	{
-		get
-		{
-			EnsureLoaded();
-			lock (SyncRoot)
-			{
-				return _config.DisabledPlayerRuneIds.Count > 0;
-			}
-		}
-	}
-
 	public static void Initialize()
 	{
 		EnsureLoaded();
-	}
-
-	public static int[] GetEnemyHexCountsByAct()
-	{
-		EnsureLoaded();
-		lock (SyncRoot)
-		{
-			return NormalizeEnemyHexCounts(_config.EnemyHexCountsByAct);
-		}
-	}
-
-	public static int[] GetPlayerHexCountsByAct()
-	{
-		EnsureLoaded();
-		lock (SyncRoot)
-		{
-			return NormalizePlayerHexCounts(_config.PlayerHexCountsByAct);
-		}
 	}
 
 	public static bool IsPlayerRuneEnabled(RelicModel relic)
@@ -173,28 +143,6 @@ internal static partial class HextechRuneConfiguration
 		return new HashSet<string>(StringComparer.Ordinal);
 	}
 
-	public static void SaveDisabledPlayerRuneIds(IEnumerable<string> disabledIds)
-	{
-		EnsureLoaded();
-		lock (SyncRoot)
-		{
-			_config.ConfigVersion = CurrentConfigVersion;
-			_config.DisabledPlayerRuneIds = NormalizeConfigDisabledIds(disabledIds);
-			SaveConfig(_config);
-		}
-	}
-
-	public static void SaveEnemyHexCountsByAct(IReadOnlyList<int> counts)
-	{
-		EnsureLoaded();
-		lock (SyncRoot)
-		{
-			_config.ConfigVersion = CurrentConfigVersion;
-			_config.EnemyHexCountsByAct = NormalizeEnemyHexCounts(counts);
-			SaveConfig(_config);
-		}
-	}
-
 	public static void SaveSnapshot(HextechRunConfigurationSnapshot snapshot)
 	{
 		EnsureLoaded();
@@ -233,11 +181,6 @@ internal static partial class HextechRuneConfiguration
 		{
 			return _config.ModEnabled;
 		}
-	}
-
-	public static bool GetDefaultModEnabled()
-	{
-		return DefaultModEnabled;
 	}
 
 	private static HashSet<string> NormalizeConfigDisabledIds(IEnumerable<string>? ids)

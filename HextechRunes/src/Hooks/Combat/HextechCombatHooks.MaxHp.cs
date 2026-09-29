@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
+	private static readonly HextechScopedDepthGuard GoliathMaxHpGuard = new();
 
 	private static void ResetGoliathTaskPostfix(Creature creature, bool __state, ref Task __result)
 	{

@@ -46,7 +46,7 @@ internal static class HextechGoldrendSync
 	public static async Task HandleEnemyGoldrendHit(Player targetPlayer)
 	{
 		NetGameType gameType = RunManager.Instance.NetService.Type;
-		if (gameType is NetGameType.Singleplayer or NetGameType.None)
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 		{
 			int singlePlayerAmount = Math.Min(GoldrendStealAmount, Math.Max(0, targetPlayer.Gold));
 			if (singlePlayerAmount > 0)

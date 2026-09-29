@@ -7,9 +7,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-// Orb 容量/布局相关的玩家符文 hook:疯狂科学家(扩容)、
-// 大容量环形布局、电动力学(闪电球溅射)。从 HextechPlayerRuneHooks 主文件拆出,
-// 自带 orb 布局常量与反射字段,便于独立维护。
+// 充能球容量、环形布局及电动力学溅射的补丁入口。
 internal static partial class HextechPlayerRuneHooks
 {
 	private const int OrbLayoutRadiusSoftCapSlots = 10;

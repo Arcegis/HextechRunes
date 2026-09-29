@@ -2,11 +2,6 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	internal Task RunGroupedPlayerDebuffBurst(Func<Task> action)
-	{
-		return HextechEnemyTriggerGuard.RunGroupedPlayerDebuffBurst(_combatTracking, action);
-	}
-
 	internal async Task TryApplyServantMasterIllusion(Creature creature, Creature? applier, CardModel? cardSource)
 	{
 		await HextechServantMasterIllusionService.TryApply(RunState, _combatTracking, creature, applier, cardSource);

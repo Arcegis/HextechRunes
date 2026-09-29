@@ -61,11 +61,6 @@ internal abstract class HextechEnemyHexEffect
 		return true;
 	}
 
-	internal virtual bool ShouldEtherealTrigger(HextechEnemyHexContext context, CardModel card)
-	{
-		return true;
-	}
-
 	/// <summary>给该敌人的命中计数 +1,返回这一次是否恰好凑满一个阈值(每满 threshold 次返回一次 true)。</summary>
 	internal static bool ReachesHitThreshold(Dictionary<uint, int> counters, uint combatId, int threshold)
 	{
@@ -272,11 +267,6 @@ internal abstract class HextechEnemyHexEffect
 	internal virtual Task AfterGoldGained(HextechEnemyHexContext context, Player player)
 	{
 		return Task.CompletedTask;
-	}
-
-	internal virtual bool ShouldAllowSelectingMoreCardRewards(HextechEnemyHexContext context, Player player, CardReward cardReward)
-	{
-		return false;
 	}
 
 	internal virtual CardCreationOptions ModifyCardRewardCreationOptions(HextechEnemyHexContext context, Player player, CardCreationOptions options)

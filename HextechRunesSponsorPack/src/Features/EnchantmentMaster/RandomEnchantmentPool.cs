@@ -22,7 +22,7 @@ internal static class RandomEnchantmentPool
 		new(BuildPool, LazyThreadSafetyMode.ExecutionAndPublication);
 
 	// 第三方附魔的 CanEnchant 覆写在 canonical 实例上抛异常时,把它当作「这张牌不合法」,每种类型只报一次。
-	// 抛不抛只取决于代码与卡面状态,两个联机客户端的模组集合一致时结论相同,不引入分叉。
+	// 两端一致仍依赖第三方 CanEnchant 只读取同步状态；异常兜底不替代这一契约。
 	private static readonly HashSet<Type> LoggedCanEnchantFailures = [];
 
 	/// <summary>
@@ -33,7 +33,7 @@ internal static class RandomEnchantmentPool
 		return GetLegalEnchantments(card, LazyPool.Value);
 	}
 
-	// 纯函数版本:池由调用方给出,便于单元测试(构建真实池需要 ModelDb / Godot 资源层)。
+	// 调用方可提供候选池进行隔离测试；仍会调用各附魔的 CanEnchant，并记录首次异常。
 	internal static IReadOnlyList<EnchantmentModel> GetLegalEnchantments(CardModel card, IReadOnlyList<EnchantmentModel> pool)
 	{
 		List<EnchantmentModel> legal = [];

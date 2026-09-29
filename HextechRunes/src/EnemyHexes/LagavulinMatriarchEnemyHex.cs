@@ -19,10 +19,7 @@ internal sealed class LagavulinMatriarchEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		await context.RunGroupedPlayerDebuffBurst(async () =>
-		{
-			await PowerCmd.Apply<StrengthPower>(players, -1, null, null);
-			await PowerCmd.Apply<DexterityPower>(players, -1, null, null);
-		});
+		await PowerCmd.Apply<StrengthPower>(players, -1, null, null);
+		await PowerCmd.Apply<DexterityPower>(players, -1, null, null);
 	}
 }

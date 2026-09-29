@@ -16,11 +16,7 @@ internal static class HextechRunePoolBuilder
 			.ToHashSet();
 		HashSet<ModelId> blockedOwnedIds = ownedIds.ToHashSet();
 		blockedOwnedIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedIds));
-		bool applyConfiguration = ShouldApplyPlayerRuneConfiguration(player);
-
-		List<RelicModel> pool = (applyConfiguration
-				? HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity)
-				: HextechCatalog.GetPlayerRuneTypesForRarity(rarity))
+		List<RelicModel> pool = HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity)
 			.Where(HextechRuntimeRuneCompatibility.IsPlayerRuneAvailableForCurrentRuntime)
 			.Where(type => HextechCatalog.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
@@ -29,7 +25,7 @@ internal static class HextechRunePoolBuilder
 				&& (excludedIds == null || !excludedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)))
 			.ToList();
 
-		return applyConfiguration ? ApplyPlayerRuneConfiguration(pool, runState) : pool;
+		return ApplyPlayerRuneConfiguration(pool, runState);
 	}
 
 	public static List<RelicModel> BuildSelectableRunesForRarity(
@@ -81,11 +77,11 @@ internal static class HextechRunePoolBuilder
 		IReadOnlySet<ModelId>? excludedIds = null,
 		bool useEndlessTagWindow = false)
 	{
-		// excludedIds 在这里是「已展示过(seen)」的룬集合,用来避免同一局里反复刷到见过的룬。但在长局/无尽里,
-		// 当某稀有度的룬几乎都被展示过时,这层排除会把可选池清空——返回 0 个选项。空选项会在后续 options[0]
-		// 之类访问处崩溃/中断,在联机重连、重开、重掷导致选择重建时表现为「选项被全部清掉 / 选择被初始化」。
-		// 兜底:若「已见」排除清空了池,就放宽到忽略「已见」(仍排除已拥有/互斥/禁用),保证始终有可选项;
+		// excludedIds 在这里是「已展示过(seen)」的符文集合,用来避免同一局里反复刷到见过的符文。长局/无尽里
+		// 某稀有度的符文几乎都被展示过时,这层排除会把可选池清空。
+		// 兜底:若「已见」排除清空了池,就放宽到忽略「已见」(仍排除已拥有/互斥/禁用),未见的抽完才回到见过没选的;
 		// 同时把用于稳定随机的 salt 也一致地忽略「已见」,使重连/重开重建时能复现同一组选项(幂等、不再跳变)。
+		// 真正一个都不剩时由调用方显示"继续"界面。
 		IReadOnlySet<ModelId>? effectiveExcludedIds = excludedIds;
 		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, effectiveExcludedIds);
 		if (pool.Count == 0 && excludedIds is { Count: > 0 })
@@ -264,19 +260,6 @@ internal static class HextechRunePoolBuilder
 				return !disabledIds.Contains(id.Entry);
 			})
 			.ToList();
-	}
-
-	internal static bool ShouldApplyPlayerRuneConfiguration(Player player)
-	{
-		RunManager runManager = RunManager.Instance;
-		NetGameType gameType = runManager.NetService.Type;
-		if (gameType is NetGameType.Singleplayer or NetGameType.None
-			or NetGameType.Host or NetGameType.Client)
-		{
-			return true;
-		}
-
-		return false;
 	}
 
 	internal static IReadOnlySet<string> GetEffectiveDisabledPlayerRuneIds(RunState runState)

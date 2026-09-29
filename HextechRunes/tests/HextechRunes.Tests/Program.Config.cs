@@ -371,7 +371,7 @@ internal static partial class Program
 		HextechMayhemRunContext context = new();
 		context.ActState.SetResolved(0, true);
 		context.ChoiceHistory.SavedTelemetryChoicesJson = "[1]";
-		context.CombatTracking.EnemyProtectiveVeilTurnCounter = 7;
+		context.CombatTracking.ArcanePunchPlayerAttackCardsPlayed = 7;
 		context.HexCountRecoveryBaseline = 5;
 		context.MonsterHexStrengthTierFloor = 3;
 		context.EnemyTezcatarasMercyCombatCounter = 4;
@@ -391,7 +391,7 @@ internal static partial class Program
 		Equal(0, context.EnemyTezcatarasMercyCombatCounter, "new-run tezcataras counter");
 		Expect(!context.ActState.IsResolved(0), "new-run act state should reset");
 		Equal("", context.ChoiceHistory.SavedTelemetryChoicesJson, "new-run telemetry choices should reset");
-		Equal(0, context.CombatTracking.EnemyProtectiveVeilTurnCounter, "new-run combat tracking should reset");
+		Equal(0, context.CombatTracking.ArcanePunchPlayerAttackCardsPlayed, "new-run combat tracking should reset");
 		Equal(true, context.HostUsesBetterMultiplayerScaling, "new-run should preserve host scaling flag until act roll refreshes it");
 		Expect(
 			!context.RuneSelectionJournal.TryGet(0, 0, 11, out _),
@@ -407,7 +407,7 @@ internal static partial class Program
 		context.ActState.SetMonsterHexes(1, [ MonsterHexKind.ShrinkRay, MonsterHexKind.PandorasBox ]);
 		context.ActState.SetResolved(1, true);
 		context.ChoiceHistory.SavedSeenPlayerRuneIdsJson = "{\"0\":[\"A\"]}";
-		context.CombatTracking.EnemyProtectiveVeilTurnCounter = 9;
+		context.CombatTracking.ArcanePunchPlayerAttackCardsPlayed = 9;
 
 		context.ResetForEndlessLoop(6);
 
@@ -428,7 +428,7 @@ internal static partial class Program
 		Equal(3, rowsAfterNextLoop.Count, "fourth acquisition should create a new collapse row");
 		SequenceEqual(new[] { MonsterHexKind.FrostWraith }, rowsAfterNextLoop[2], "next-loop acquisition row");
 		Equal("", context.ChoiceHistory.SavedSeenPlayerRuneIdsJson, "endless reset should clear seen runes");
-		Equal(0, context.CombatTracking.EnemyProtectiveVeilTurnCounter, "endless reset should clear combat tracking");
+		Equal(0, context.CombatTracking.ArcanePunchPlayerAttackCardsPlayed, "endless reset should clear combat tracking");
 	}
 
 	// "已见"只存条目名;还原出的 ID 必须和候选池里遗物的真实 ID 相等,否则跨幕排除永远匹配不上。

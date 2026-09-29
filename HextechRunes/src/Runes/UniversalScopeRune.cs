@@ -51,7 +51,8 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 			return;
 		}
 
-		HextechCardPlayResourceSpend resourceSpend = HextechCombatHooks.GetResourceSpendForCurrentCardPlay(cardPlay.Card);
+		// 返还本次实付：自动打出（一呼百应、地狱狂徒等）实付 0，不返还能量。
+		HextechCardPlayResourceSpend resourceSpend = HextechCombatHooks.GetResourceSpend(cardPlay);
 		foreach (UniversalScopeRuneBase scope in activeScopes)
 		{
 			scope.Flash();

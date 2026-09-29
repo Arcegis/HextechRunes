@@ -175,7 +175,7 @@ internal sealed partial class HextechMayhemModifier
 		set => _hostUsesBetterMultiplayerScaling = value;
 	}
 
-	// 模组总开关的本局冻结值。空字符串=未冻结(默认开启);"True"/"False"=已冻结。
+	// 模组总开关的本局冻结值。空字符串表示未冻结，按本局有效配置判断；"True"/"False" 表示已冻结。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedModActiveForRun
 	{

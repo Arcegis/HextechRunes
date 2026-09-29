@@ -354,7 +354,8 @@ internal static partial class HextechCatalog
 			return true;
 		}
 
-		// 外部委托在两端同样执行；抛异常按不可用处理，保证两端候选池仍然一致。
+		// 外部委托抛异常时排除该项并记录日志。委托仍须只依赖同步状态，
+		// catch 无法保证读取本机状态的第三方实现会在两端得出相同结果。
 		try
 		{
 			return availability(player);

@@ -34,9 +34,4 @@ public sealed class MiserableFateRune : HextechRelicBase
 		Flash();
 		return CreatureCmd.GainBlock(Owner.Creature, block * DynamicVars.Block.BaseValue, ValueProp.Unpowered, null);
 	}
-
-	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
-	{
-		return Task.CompletedTask;
-	}
 }
