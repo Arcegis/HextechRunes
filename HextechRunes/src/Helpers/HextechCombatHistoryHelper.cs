@@ -6,19 +6,11 @@ internal static class HextechCombatHistoryHelper
 {
 	public static int CountOwnedAttackCardsPlayed(Player? owner, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
 	{
-		if (owner == null)
-		{
-			return 0;
-		}
-
-		ulong ownerId = owner.NetId;
-		return CombatManager.Instance.History.Entries
-			.OfType<CardPlayFinishedEntry>()
-			.Count(entry =>
-				(!firstInSeriesOnly || entry.CardPlay.IsFirstInSeries)
-				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
-				&& entry.CardPlay.Card.Owner?.NetId == ownerId
-				&& IllusoryWeaponRune.IsAttackForEffects(entry.CardPlay.Card, owner));
+		return CountOwnedCardsPlayed(
+			owner,
+			card => HextechCardEffectTypes.IsAttackForEffects(card, owner),
+			firstInSeriesOnly,
+			includeAutoPlay);
 	}
 
 	public static int CountOwnedCardsPlayed(Player? owner, Func<CardModel, bool> matches, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
@@ -52,7 +44,7 @@ internal static class HextechCombatHistoryHelper
 				&& (!firstInSeriesOnly || entry.CardPlay.IsFirstInSeries)
 				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
 				&& entry.CardPlay.Card.Owner?.NetId == ownerId
-				&& IllusoryWeaponRune.IsAttackForEffects(entry.CardPlay.Card, owner));
+				&& HextechCardEffectTypes.IsAttackForEffects(entry.CardPlay.Card, owner));
 	}
 
 	private static bool HappenedThisTurn(CombatHistoryEntry entry, HextechCombatState? combatState)
