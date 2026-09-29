@@ -43,14 +43,7 @@ public sealed class MiseryUpgradeRune : CardUpgradeRuneBase<Misery>
 			Flash([cardPlay.Target]);
 			foreach (PowerModel debuff in debuffs)
 			{
-#if !STS2_108_OR_NEWER
-				// 0.108.0 起 ITemporaryPower.IgnoreNextInstance 被移除，临时能力的实例追踪由引擎处理。
-				if (debuff is ITemporaryPower temporaryPower)
-				{
-					temporaryPower.IgnoreNextInstance();
-				}
-#endif
-
+				HextechRuneApiCompat.PrepareTemporaryPowerReapply(debuff);
 				await HextechPowerCmdCompat.Apply(debuff, cardPlay.Target, debuff.Amount, Owner.Creature, cardPlay.Card);
 			}
 		}

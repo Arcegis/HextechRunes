@@ -1,3 +1,4 @@
+using static HextechRunes.HextechHookReflection;
 using MegaCrit.Sts2.Core.Models.Exceptions;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 
@@ -12,20 +13,32 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 {
 	private const int TriggerThreshold = 10;
 
-	private static readonly Type AutomationDataType = typeof(AutomationPower).GetNestedType("Data", BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("AutomationPower.Data was not found.");
-	private static readonly MethodInfo PowerGetInternalDataMethod = typeof(PowerModel)
-		.GetMethod("GetInternalData", BindingFlags.Instance | BindingFlags.NonPublic)
-		?.MakeGenericMethod(AutomationDataType)
-		?? throw new InvalidOperationException("PowerModel.GetInternalData was not found.");
-	private static readonly MethodInfo PowerInvokeDisplayAmountChangedMethod = typeof(PowerModel)
-		.GetMethod("InvokeDisplayAmountChanged", BindingFlags.Instance | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("PowerModel.InvokeDisplayAmountChanged was not found.");
-	private static readonly FieldInfo AutomationCardsLeftField = AutomationDataType.GetField("cardsLeft", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-		?? throw new InvalidOperationException("AutomationPower.Data.cardsLeft was not found.");
-	private static readonly MethodInfo PowerFlashMethod = typeof(PowerModel)
-		.GetMethod("Flash", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, Type.EmptyTypes)
-		?? throw new InvalidOperationException("PowerModel.Flash was not found.");
+	// 私有访问均对照原版 0.107.1~0.111.0：AutomationPower 私有嵌套类 Data 的公有字段 cardsLeft，
+	// PowerModel 的 protected GetInternalData<T>()、InvokeDisplayAmountChanged()、Flash()。
+	// 任一缺失时进启动摘要，ShouldUseUpgradedDraw 返回 false，自动化回落原版(不追加抽牌)。
+	private static readonly Type? AutomationDataType = TryGetNestedType(typeof(AutomationPower), "Data");
+	private static readonly MethodInfo? PowerGetInternalDataMethod = AutomationDataType == null
+		? null
+		: TryGetMethod(typeof(PowerModel), "GetInternalData", BindingFlags.Instance | BindingFlags.NonPublic, Type.EmptyTypes)
+			?.MakeGenericMethod(AutomationDataType);
+	private static readonly FieldInfo? AutomationCardsLeftField = AutomationDataType == null
+		? null
+		: TryGetField(AutomationDataType, "cardsLeft", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+	private static readonly MethodInfo? PowerInvokeDisplayAmountChangedMethod = TryGetMethod(
+		typeof(PowerModel),
+		"InvokeDisplayAmountChanged",
+		BindingFlags.Instance | BindingFlags.NonPublic,
+		Type.EmptyTypes);
+	private static readonly MethodInfo? PowerFlashMethod = TryGetMethod(
+		typeof(PowerModel),
+		"Flash",
+		BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+		Type.EmptyTypes);
+
+	private static bool IsReflectionAvailable => PowerGetInternalDataMethod != null
+		&& AutomationCardsLeftField != null
+		&& PowerInvokeDisplayAmountChangedMethod != null
+		&& PowerFlashMethod != null;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -40,7 +53,8 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 	internal static bool ShouldUseUpgradedDraw(AutomationPower power, CardModel card)
 	{
 		Player? owner = power.Owner?.Player;
-		return owner != null
+		return IsReflectionAvailable
+			&& owner != null
 			&& card.Owner == owner
 			&& owner.GetRelic<AutomationUpgradeRune>() != null;
 	}
@@ -48,13 +62,18 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 	internal static async Task AfterCardDrawnUpgraded(PlayerChoiceContext choiceContext, AutomationPower power, CardModel card, bool fromHandDraw)
 	{
 		Player? owner = power.Owner.Player;
-		if (owner == null)
+		if (owner == null
+			|| PowerGetInternalDataMethod == null
+			|| AutomationCardsLeftField == null
+			|| PowerInvokeDisplayAmountChangedMethod == null
+			|| PowerFlashMethod == null
+			|| PowerGetInternalDataMethod.Invoke(power, null) is not { } data
+			|| AutomationCardsLeftField.GetValue(data) is not int storedCardsLeft)
 		{
 			return;
 		}
 
-		object data = PowerGetInternalDataMethod.Invoke(power, null)!;
-		int cardsLeft = Math.Max(0, (int)AutomationCardsLeftField.GetValue(data)! - 1);
+		int cardsLeft = Math.Max(0, storedCardsLeft - 1);
 		AutomationCardsLeftField.SetValue(data, cardsLeft);
 		PowerInvokeDisplayAmountChangedMethod.Invoke(power, null);
 		if (cardsLeft > 0)

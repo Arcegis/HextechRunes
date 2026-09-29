@@ -59,21 +59,7 @@ public sealed class TerminalIllnessRune : HextechRelicBase
 			decimal totalDamage = 0m;
 			for (int i = 0; i < triggerCount; i++)
 			{
-	#if STS2_108_OR_NEWER
-				decimal damage = Hook.ModifyDamage(
-					combatState.RunState,
-					combatState,
-					__instance.Owner,
-					null,
-					__instance.Amount,
-					ValueProp.Unblockable | ValueProp.Unpowered,
-					null,
-					null,
-					ModifyDamageHookType.All,
-					CardPreviewMode.None,
-					out _);
-	#else
-				decimal damage = Hook.ModifyDamage(
+				decimal damage = HextechRuneApiCompat.ModifyDamage(
 					combatState.RunState,
 					combatState,
 					__instance.Owner,
@@ -82,9 +68,7 @@ public sealed class TerminalIllnessRune : HextechRelicBase
 					ValueProp.Unblockable | ValueProp.Unpowered,
 					null,
 					ModifyDamageHookType.All,
-					CardPreviewMode.None,
-					out _);
-	#endif
+					CardPreviewMode.None);
 				totalDamage += damage;
 			}
 
