@@ -142,7 +142,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		_titleOverride = titleOverride;
 		_metadataMode = metadataMode;
 		_goldenRerollSession = goldenRerollSession;
-		_confirmRuneSelectionPreference = HextechRelicVisibilityHooks.GetConfirmRuneSelection();
+		_confirmRuneSelectionPreference = HextechUiPreferences.ConfirmRuneSelection;
 		_enemyHexControlsEnabled = enemyHexOptions?.ControlsEnabled == true || enemyHexOptions?.RerollFunc != null;
 		_enemyOnly = relics.Count == 0 && (enemyHexOptions != null || _continueOnly);
 		List<MonsterHexKind> initialMonsterHexes = enemyHexOptions?.InitialHexes?.ToList() ?? [];

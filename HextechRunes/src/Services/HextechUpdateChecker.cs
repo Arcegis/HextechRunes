@@ -51,7 +51,7 @@ internal static partial class HextechUpdateChecker
 			return;
 		}
 
-		if (HextechRelicVisibilityHooks.GetShowUpdateNotice())
+		if (HextechUiPreferences.ShowUpdateNotice)
 		{
 			if (FindMainMenu(root) is { } mainMenu)
 			{
@@ -433,7 +433,7 @@ internal static partial class HextechUpdateChecker
 		private static void Postfix(NMainMenu __instance)
 		{
 			// 由「配置-杂项」里的本地开关控制是否在主页左下角显示版本更新说明(默认开)。
-			if (!HextechRelicVisibilityHooks.GetShowUpdateNotice())
+			if (!HextechUiPreferences.ShowUpdateNotice)
 			{
 				return;
 			}
