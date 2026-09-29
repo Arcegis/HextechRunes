@@ -47,7 +47,7 @@ public static class ModEntry
 		}
 	}
 
-	// 仅为 EnemyHexConsoleCmd 与 HextechCombatHooks.Healing 保留的转发;调用方改为直接调用
+	// 仅为 HextechCombatHooks.Healing 保留的转发;该调用方改为直接调用
 	// HextechRunLifecycleHooks.EnsureMayhemModifier 后即可删除。
 	internal static HextechMayhemModifier EnsureMayhemModifier(RunState runState)
 	{

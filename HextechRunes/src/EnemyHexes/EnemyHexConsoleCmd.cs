@@ -36,7 +36,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 			return new CmdResult(success: false, $"未知海克斯: {hexInput}");
 		}
 
-		HextechMayhemModifier modifier = ModEntry.EnsureMayhemModifier(runState);
+		HextechMayhemModifier modifier = HextechRunLifecycleHooks.EnsureMayhemModifier(runState);
 		switch (action)
 		{
 			case EnemyHexConsoleAction.Add:
@@ -170,7 +170,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 			&& player?.RunState is RunState runState
 			&& RunManager.Instance.IsInProgress)
 		{
-			return ModEntry.EnsureMayhemModifier(runState)
+			return HextechRunLifecycleHooks.EnsureMayhemModifier(runState)
 				.GetActiveMonsterHexes()
 				.Select(static hex => hex.ToString());
 		}
