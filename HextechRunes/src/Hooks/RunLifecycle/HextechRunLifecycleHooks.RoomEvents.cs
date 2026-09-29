@@ -119,6 +119,13 @@ internal static partial class HextechRunLifecycleHooks
 			TaskHelper.RunSafely(HextechRuneSelectionCoordinator.HandleStageSelection(runState, modifier, stageIndex));
 		}
 
+		// Refresh 内部已先隐藏 Mayhem 顶栏徽标；只有没有 Modifier 时才需要单独隐藏。
+		if (modifier != null)
+		{
+			RefreshEnemyUiSafely(modifier);
+			return;
+		}
+
 		try
 		{
 			HextechEnemyUi.HideMayhemModifierBadge();
@@ -126,11 +133,6 @@ internal static partial class HextechRunLifecycleHooks
 		catch (Exception ex)
 		{
 			HextechLog.Error("Mayhem", $"OnRoomEntered badge refresh failed: {ex}");
-		}
-
-		if (modifier != null)
-		{
-			RefreshEnemyUiSafely(modifier);
 		}
 	}
 

@@ -46,7 +46,6 @@ internal static partial class HextechRunLifecycleHooks
 			HextechLog.Info("Mayhem", $"StartRun end: currentRoom={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} {DescribeCurrentEventState(runState)}");
 			try
 			{
-				HextechEnemyUi.HideMayhemModifierBadge();
 				HextechEnemyUi.Refresh(modifier);
 			}
 			catch (Exception ex)
@@ -95,7 +94,6 @@ internal static partial class HextechRunLifecycleHooks
 			ResetRunScopedState(runState);
 			HextechRuneSelectionCoordinator.ResetActSelectionState();
 			HextechEnemyUi.Clear();
-			HextechEnemyUi.HideMayhemModifierBadge();
 			SubscribeRoomEnteredIfNeeded();
 			SubscribeRoomExitedIfNeeded();
 			HextechLog.Info("Mayhem", $"StartRun begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
