@@ -69,11 +69,24 @@ Platform/Hooks/Config/Localization/Telemetry
 - 形态批次 `PlayerCmd.EndTurn`（`Combat/HextechFormAutoPlayHooks.cs`）：虚空形态 OnPlay 自带结束回合，开局批量自动打出会吃掉首回合；只在本模组形态批次的 AsyncLocal 作用域内跳过。
 - 形态特效容器 `NCreatureVisuals.AddFormVfx/RemoveFormVfx`（`Compat/HextechFormVfxSafetyHooks.Official.cs`，0.110+）：自定义角色缺 `%FormVfx` 容器时原版空引用；优先级已从 `Priority.First` 改为默认 `Priority.Low`（没有必须抢先执行的理由）。
 - 珠光护手 `MonsterModel.PerformMove` Postfix（`Combat/HextechCombatHooks.JeweledGauntlet.cs`）：不跳过原方法，但在原版行动完成后按原版步骤再执行一次行动（刻意不推进 `MoveStateMachine`）；声明 `CopiesVanillaLogic = true` 纳入原版拷贝守卫。
-- 敌方能力联机缩放 `GetScaledAmountForMultiplayer` 跳过前缀（`combat.enemy-power-scaling`）**保留 `Priority.First`**：只在本模组 `HextechEnemyPowerScalingHooks.Apply/ApplyExact` 的 AsyncLocal 窗口内、目标为敌人时生效，窗口外恒 `return true` 对其他模组透明；窗口内层数已按最终口径算好，排在第三方缩放前缀之后会被重复缩放或被其跳过。亮出你的剑的 `OrbModel.Evoke` 前缀（`Runes/DrawYourSwordRune.cs`）也用 `Priority.First`，不在本次 Hooks 范围内，待该符文维护者补理由。
+- 敌方能力联机缩放 `GetScaledAmountForMultiplayer` 跳过前缀（`combat.enemy-power-scaling`）**保留 `Priority.First`**：只在本模组 `HextechEnemyPowerScalingHooks.Apply/ApplyExact` 的 AsyncLocal 窗口内、目标为敌人时生效，窗口外恒 `return true` 对其他模组透明；窗口内层数已按最终口径算好，排在第三方缩放前缀之后会被重复缩放或被其跳过。亮出你的剑的 `OrbModel.Evoke` 跳过前缀（`Runes/DrawYourSwordRune.cs`）已改为 `Priority.Low`：本模组没有其他 Evoke 前缀，别的模组若已跳过原方法就让给对方。
+
+- 符文专属跳过前缀（均只对持有者生效、`Priority.Low`、进原版拷贝守卫）：科学狂人 `OrbCmd.AddSlots`（上限 10 写死，没有 Hook）；升级循环 `LoopPower.AfterPlayerTurnStart`（原版只触发 `Orbs[0]`；替换体未保留原版每次触发后的 0.25 秒等待，已在注释写明）；升级狂怒/升级遗忘 `RagePower/OblivionPower.AfterSideTurnEnd`（`PowerCmd.Remove` 不经过任何 Hook）；升级倒映 `ReflectPower.AfterSideTurnStart`（`Decrement` 虽经过 `ModifyPowerAmountReceived`，但区分不出衰减来源且会写历史）。
+- UI 跳过型前缀（均 `Priority.Low`，三个版本原方法一致）：`NRelicBasicHolder.OnFocus/OnUnfocus`——原版固定展示图标遗物自身提示，没有 Hook 能换成敌方海克斯提示，只对本模组 `EnemyHex-` 图标节点生效；`NInspectRelicScreen.UpdateRelicDisplay`——原版按已解锁/已见硬分三支，海克斯隐藏遗物会落进“未解锁”，只对海克斯遗物复刻“正常”分支；`NRelicInventoryHolder.PlayNewlyAcquiredAnimation`——持有者离开场景树时原版空引用且无取消入口，只对海克斯遗物跳过或吞异常；`NMultiplayerPlayerIntentHandler.BeforeActionReadyToResumeAfterPlayerChoice` / `NCardPlayQueue.BeforeRemoteCardPlayResumedAfterPlayerChoice`——卡牌节点脱树时原版 Reparent 抛异常打断联机恢复，只在节点失效时跳过；`NRelicInventoryHolder.DoFlash`——闪光挂在顶栏特效层，隐藏持有者挡不住，只在玩家勾选隐藏遗物时跳过；`NHealthBar.RefreshForeground`——原版只认中毒/灾厄两段前景，有灼烧预测时整段替换。
+- 纯表现补丁（飞踢尸体击飞、夺金音效）不设 `Rune =`：补丁失败时不把玩法符文标为不可用。
 
 ### SavedProperty net-id 规范化（仅 0.107.1）
 
 `Compat/HextechSavedPropertyNetIdHooks.cs` 在 `OneTimeInitialization.ExecuteEssential` 后缀里把 `SavedPropertiesTypeCache` 的 net-id 表按"原版前缀 + 模组条目确定性排序"重排，并重写位宽。设计哲学第 2 节原则上禁止重排 net-id 表；**裁决：0.107.1 变体保留，0.109+ 不存在**。原因：0.107.1 的 net-id 按注册先后分配，本模组与 RitsuLib 等模组在 ModInitializer 与 LocManager 两个阶段注入 SavedProperty 载体，两端加载顺序不同就会得到错位的 net-id，序列化抛异常后被断连兜底报成 1014 模组不匹配；0.109 起游戏自己的 `ModelIdSerializationCache.Init` 做确定性排序与哈希，本补丁随之只编译进 0.107.1。删除它会让 0.107.1 联机在装有其他 SavedProperty 模组时重新随机失败，且与已发布的 0.107.1 变体 net-id 布局不一致，因此不删。维护约束：只在冻结点之前注册载体（冻结后注入会告警）；规范化失败只记错误、不宣称完成（`IsCanonicalized`）。
+
+## 共享边界（2026-09 代码审查整理）
+
+- **加载器单源码**：`HextechRunes/loader/` 是两个包唯一的加载器源码，拓展包 loader 以链接方式编译并用 `HEXTECH_SPONSOR_LOADER` 保持命名空间；宿主版本已知却没有不高于它的变体时两个包都停止加载。
+- **拓展包只走公开 API**：售价修正（`RegisterForgeShopPriceModifier`）、归属判定（`IsHextechRelic`）、稳定哈希（`StableIndex`）都经 `HextechRunesApi`，不反射 internal 类型、不复制实现。`SponsorPatcher` 仍独立实现（公开 `HextechPatcher` 会把大量内部类型带进 API 面），约定对齐本体，由声明完整性测试守护。
+- **选择同步**：锻造选择与遗物选项选择共用 `HextechSyncedRelicChoice` 事务和 `HextechChoiceCodec.RelicChoice`（消息类型 5/7，线格式不变）；远端核对候选 ID 后返回本端同位置的候选实例。远端载荷先做内容校验：符文候选必须是已登记的玩家符文；敌方调整校验槽位数、海克斯来源与每槽重掷上限。任何一项不通过都走 `CreateProtocolFailure`——协议失败的唯一出口，只记录一次。
+- **外部扩展点**：`HextechRuneGeneration` 对第三方混沌变换的结果做校验（同条数、全部是已登记玩家符文），异常或不合法时回退原候选并告警；外部 API 登记本体内置的符文/锻造在任何副作用之前被拒绝。
+- **敌方海克斯分发**：洗牌、抽牌、能否打出三类事件只对本局战斗中的玩家侧分发，效果层不再重复判断；回合钩子在 Power 与 Modifier 基类两边都有 `*ForParticipants` 入口，兼容桥不再吞掉 participants。
+- **Modifier 不承载单项内容**：白洞由牌自己监听 `AfterCardDrawn`；雷暴升级的算法与按牌层数在 `StormUpgradeRune` 里，只有调用时机仍由 Modifier 分发（保证补发闪电排在所有监听者之后）。
 
 ## Source of truth 方向
 

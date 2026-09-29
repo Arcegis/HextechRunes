@@ -6,9 +6,10 @@
 
 - 安装 .NET 9 SDK 和 Python 3。Godot 资源导入与 PCK 打包需要支持 .NET 的 Godot 编辑器；可通过 `GODOT_EDITOR` 指定其可执行文件。
 - 按 `.csproj` 和构建脚本声明的目标版本准备游戏程序集。本体的版本化引用目录为 `HextechRunes/versioned-dll-backups/<游戏版本>/game-refs/`，拓展包默认复用该目录。程序集必须来自对应版本的本机游戏安装，不提交到 Git。
-- `.csproj` 支持通过 `-p:GameDataDir=<程序集目录>` 指定引用目录。直接构建时，本体使用 `HextechSts2Target`，拓展包使用 `HextechSponsorSts2Target`；完整打包脚本会逐个构建它们声明支持的版本。
-- 两个 `build_and_deploy.sh` 都是面向 macOS 的 Zsh 脚本，目前仍含维护者本机的默认游戏安装路径。使用前核对脚本中的 `GAME_APP`；其它系统应使用适合本机的构建、资源导入与部署方式，不直接照搬 macOS 路径。
-- 本体用 `HEXTECH_DEPLOY=0` 关闭部署，拓展包用 `HEXTECH_SPONSOR_DEPLOY=0`。只设置其中一个不会改变另一个脚本的行为。
+- `.csproj` 支持通过 `-p:GameDataDir=<程序集目录>` 指定引用目录。直接构建时，本体使用 `HextechSts2Target`，拓展包使用 `HextechSponsorSts2Target`；完整打包脚本会逐个构建它们声明支持的版本。版本符号、目标校验（未知目标直接报错）与游戏引用集中在仓库根 `Directory.Build.targets`，只对声明 `HextechUsesVariantTargets=true` 的工程生效，loader 与 mplab 不受影响。
+- 游戏安装位置默认是维护者本机路径，可用环境变量 `STS2_GAME_APP` 覆盖（两个构建脚本、csproj 与 mplab 一致）。两个 `build_and_deploy.sh` 是面向 macOS 的 Zsh 脚本，共用步骤在 `tools/lib_build.sh`；其它系统应使用适合本机的构建、资源导入与部署方式，不直接照搬 macOS 路径。
+- 本体用 `HEXTECH_DEPLOY=0` 关闭部署，拓展包用 `HEXTECH_SPONSOR_DEPLOY=0`。只设置其中一个不会改变另一个脚本的行为。`HEXTECH_UPDATE_LATEST` 默认 0，本地构建不改写已跟踪的 `server/hextech-telemetry/public/latest-version.json`；发布时显式设 1。
+- 两个包的加载器只有一份源码 `HextechRunes/loader/`：拓展包 loader 工程以链接方式编译它，身份常量在各自的 `LoaderBootstrap.Identity.cs`。拓展包没有自己的 `multi_version` 脚本，直接调用本体的。
 - 原工作区的 `tools/sts2-inspect` 未包含在此仓库。需要原版 API 证据时，使用本机另行配置的反编译工具读取对应版本的 `sts2.dll` 与同目录依赖；不把旧工具路径当作本仓库提供的命令。
 
 ## 内容定位
@@ -58,7 +59,9 @@ python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEs
 python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEscapeSurvivesTheNextNativeMoveRoll --run
 ```
 
-执行前校验维护目标和精确测试名，避免名称拼错变成“运行 0 项也成功”；构建失败后不运行残留 DLL。目标从 csproj 读取，名称从现有 Program 注册读取。测试项目仍会编译其工程依赖，但只执行指定案例，不构建 loader、不部署、不跑内容/发行检查。命令列出的是静态注册候选，最终是否可用由对应版本的测试程序判定。
+执行前校验维护目标和精确测试名，避免名称拼错变成“运行 0 项也成功”；构建失败后不运行残留 DLL。`--run` 实际调用 `bash tools/run_tests.sh --target <T> <名称…>`。目标从仓库根 `Directory.Build.targets` 读取，名称从测试目录里标了 `[HextechTest]` 的方法读取（与测试程序的收集规则一致）。测试项目仍会编译其工程依赖，但只执行指定案例，不构建 loader、不部署、不跑内容/发行检查。命令列出的是静态注册候选，最终是否可用由对应版本的测试程序判定。
+
+新增测试：在 `tests/HextechRunes.Tests/` 任一 `partial class Program` 文件里写无参 `private static void 名称()` 并标 `[HextechTest]`，不需要在 Program.cs 注册。测试程序用反射收集这些方法、按名称 Ordinal 排序执行，所以测试之间不得依赖执行顺序（依赖全局登记状态时只比较集合，或自己准备前置状态）；特性标在非 Program 类型上或签名不对时启动直接报错。夹具写只读自动属性统一用 `Program.Fixtures.cs` 的 `SetAutoProperty`。
 
 不同目标共用 bin/obj，**串行执行**。测试中不要调用依赖 Godot 原生层的 API；确实需要时按已有隔离 fixture/`TestMode` 方法处理，真实界面/战斗验证仍交用户。
 
@@ -67,10 +70,10 @@ python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEs
 | 工具 | 用途/副作用 |
 | --- | --- |
 | `tools/validate_hextech_content.py` | 全量内容/注册/本地化检查；不是每次小改必跑 |
-| `tools/run_tests.sh` | Bash 脚本，默认全套、多目标、loader 和已有 bundle 检查；`HEXTECH_STS2_TARGET` 可限目标。仍是完整检查入口，不用于定向调用 |
+| `tools/run_tests.sh` | Bash 脚本，默认全套、多目标，并构建两个包的 loader、做已有 bundle 检查；`HEXTECH_STS2_TARGET` 可限目标；`--target <T> <名称…>` 为定向模式，只构建该目标并运行所列测试 |
 | 本机反编译工具（外部依赖） | 原版 API 取证；目标 `sts2.dll` 与依赖必须来自同一游戏版本，见上方环境说明 |
 | `tools/multi_version/validate_variant_bundle.py` | loader/manifest/变体路径、目标、DLL 哈希校验 |
-| `tools/build_and_deploy.sh` | Zsh 脚本，重建 `.build` 和 `dist`、导入、构建、打包；默认替换本机模组目录，设 `HEXTECH_DEPLOY=0` 才不部署 |
+| `tools/build_and_deploy.sh` | Zsh 脚本，重建 `.build` 和 `dist`、导入、构建、打包；默认替换本机模组目录，设 `HEXTECH_DEPLOY=0` 才不部署；`HEXTECH_UPDATE_LATEST=1` 才改写 latest-version |
 | `tools/package_release_zip.sh [输出绝对路径]` | 只打包现有 dist，不构建、不部署；调用下面的 Python 实现 |
 | `tools/package_release.py [输出绝对路径] --dist <目录>` | 校验 bundle，再按变体清单打 ZIP；包含 loader、PCK、manifest、各变体 DLL 和必要 `compat-target.txt`，不含更新日志 TXT；成功后才替换原 ZIP |
 | `tools/extract_near_death_feast_glow.gd -- <原版PCK> <输出PNG>` | 用 Godot `--headless --path tools -s <脚本绝对路径>` 运行，提取 SOUL_NEXUS 红光并写入指定 PNG；区域与来源见 [设计裁决 · 视觉](design-decisions.md#视觉) |
@@ -82,19 +85,32 @@ python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEs
 
 | 需求 | 入口 | 使用边界 |
 | --- | --- | --- |
-| 归属、攻击/技能判定、伤害预览 | `src/Relics/Base/HextechRelicBase.CombatHelpers.cs` | `IsOwnedAttack/IsOwnedSkill` 含模组特殊判定；预览不得产生副作用 |
-| 角色/联网上下文 | `src/Helpers/HextechPlayerContextHelper.cs` | 本地玩家判断不能控制共享战斗结算 |
+| 归属、攻击/技能判定、伤害预览 | `src/Relics/Base/HextechRelicBase.CombatHelpers.cs`、`src/Helpers/HextechCardEffectTypes.cs` | `IsOwnedAttack/IsOwnedSkill` 含模组特殊判定；幻影武器等“按效果算攻击/技能”的分类统一走 `HextechCardEffectTypes`；预览不得产生副作用 |
+| 符文共享基类 | `src/Relics/Base/TurnScopedRelicBase.cs`、`DrawThresholdRuneBase.cs`、`src/Runes/HextechSharedCombatVictoryRune.cs` | 每回合状态只实现 `ResetTurnScopedState()`，由基类在开战/战后/持有者回合开始统一清零；每 N 张阈值与跨阈值计数（`HextechRelicBase.CountThresholdCrossings`）；单机战后共享结算继承 `HextechSharedCombatVictoryRuneBase`。SavedProperty 仍声明在各子类上 |
+| 按回合号防重、每 N 回合 | `src/Combat/HextechRoundInterval.cs` | `IsDue` 按文案里的 N 判定；`TryClaimRound` 替代手写 `_lastProcRound`，仍按 RoundNumber（见设计裁决） |
+| 弹幕与选敌 | `src/Runes/HextechMissileVolley.cs`、`HextechRuneTargeting.cs` | 飞弹类伤害在出牌动作内同步结算；`FirstHittableEnemy` 按 CombatId 取稳定目标 |
+| 治疗系数 | `src/Api/IHextechHealingMultiplierProvider.cs`、`HextechRelicBase.IsFirstOwnedInstance` | 符文自报系数，同类只乘一次；`HextechPlayerCoefficientHelper.GetHealingMultiplier` 不再写单个符文的分支（全队效果除外） |
+| 最大生命基值、数值上限、体型下限 | `src/Combat/HextechMaxHpScaling.cs`、`HextechCreatureStatLimits.cs`、`HextechPlayerBodyScaleHelper.cs` | `EnsureScaledBaseInitialized` 替代手写初始化；`StatHardCap` 替代 `999999999`；`MinCreatureBodyScale` 敌我共用 |
+| 濒死狂宴失血推演 | `src/Combat/HextechNearDeathHpLoss.cs` | 玩家与敌方共用；同步前缀只记债务，力量补差在 `AfterCurrentHpChanged` 里等待执行 |
+| 角色/联网上下文 | `src/Helpers/HextechPlayerContextHelper.cs` | 本地玩家判断不能控制共享战斗结算；“已连接的联机”用 `IsMultiplayerConnected()`，只判断联机类型用 `IsNetworkMultiplayerRun()` |
 | 出牌/抽牌历史和宠物来源 | `src/Helpers/HextechCombatHistoryHelper.cs` | 核对 `firstInSeriesOnly/includeAutoPlay`；历史读取不等于自动保证跨端一致 |
 | 小刀识别 | `src/Helpers/HextechKnifeHelper.cs` | 用当前项目的小刀规则，不到处另写 `card is Shiv` |
-| 敌方三档数值/存活目标 | `src/EnemyHexes/HextechEnemyHexContext.cs` | `TierValue` 按该海克斯强度算；目标池用已有 helper；别以幕号替代强度 |
-| 次数与战斗追踪 | `src/Mayhem/HextechCombatProcTracker.cs`、`HextechMayhemCombatTrackingState.cs` | 挑选玩家/敌人/全局及本回合/整场范围；新增字段还要接序列化和重置 |
-| 确定性抽选 | `src/HextechStableRandom.cs` | 稳定身份、排序、盐值和触发序号是调用者契约；不擅自替换原流程 RNG |
+| 敌方三档数值/存活目标 | `src/EnemyHexes/HextechEnemyHexContext.cs` | `TierValue` 按该海克斯强度算；`IsManualPlayerCardPlay`、`FractionOfMaxHp`、`GetAlivePlayersByNetId`、`TryConsumeRoundInterval`/`TryConsumeOncePerRound` 是统一口径；别以幕号替代强度 |
+| 敌方海克斯共享基类 | `src/EnemyHexes/DrawProgressEnemyHexBase.cs`、`AttributeBoostEnemyHexBase.cs`、`EnemyMaxHpStepMultiplier.cs` | 抽牌进度联机补记、属性增益三档、按最大生命阶梯加成；`MonsterHexCatalog` 的阈值保留字面量供 TXT 脚本读取，由测试守一致 |
+| 次数与战斗追踪 | `src/Mayhem/HextechCombatProcTracker.cs`、`HextechMayhemCombatTrackingState.cs` | 挑选玩家/敌人/全局及本回合/整场范围，键一律经计次器拼接；`TryConsumeOwnerTurnProc` 与遗物基类同口径；新增字段还要接序列化和重置 |
+| 确定性抽选 | `src/HextechStableRandom.cs`、`src/Helpers/HextechStableCombatSpawns.cs` | 稳定身份、排序、盐值和触发序号是调用者契约；不擅自替换原流程 RNG。随从牌/充能球的稳定候选表在 `HextechStableCombatSpawns` |
 | 随机获得符文 | `src/Helpers/HextechRuneGrantHelper.cs` | 包含联机 ID 同步及奖励生命周期限制；不要自行抽一个类型再只在本机发奖 |
 | 防递归执行范围 | `src/Helpers/HextechScopedDepthGuard.cs` | `RunAsync` 管理进入/退出；只约束执行流，不是保存数据或联机协议 |
-| 等待卡牌结算/下一帧 | `src/Helpers/HextechCardPlayTiming.cs`、`HextechGodotAsync.cs` | 用于已有时序需求；返回 false 表示生命周期已结束；帧数不能决定伤害或随机结果 |
-| 私有 API/跨版本签名 | `src/Helpers/HextechHookReflection.cs`、`src/Compat` | 优先公开 API；新反射集中登记，版本差异隔离；缺成员要可诊断 |
-| 图片资源/界面样式 | `src/Assets/HextechAssets.cs`、`HextechTextures.cs`、`src/UI/HextechUiTheme.cs` | 复用命名、加载与主题；不硬编码另一套路径和字号 |
-| 对外扩展 | `src/Api` | 保持现有公共契约；只有调用方确实需要时才增加 API |
+| 等待下一帧 | `src/Helpers/HextechGodotAsync.cs` | 用于已有时序需求；返回 false 表示生命周期已结束；帧数不能决定伤害或随机结果 |
+| 私有 API/跨版本签名 | `src/Helpers/HextechHookReflection.cs`、`src/Compat` | 优先公开 API；新反射集中用 `TryGetField/TryGetMethod/TryGetProperty/TryGetPropertySetter/TryGetNestedType`，缺失时降级并进启动摘要，不在静态字段初始化里抛异常；版本差异放 `Compat`（如 `HextechRuneApiCompat`、`HextechGameApiCompat`） |
+| 软依赖探测 | `src/Compat/HextechLoadedAssemblyLookup.cs`、`HextechCatalog.IsEndlessModeLoaded` | 连“没找到”也缓存，新程序集加载时失效；不要每次扫描全部程序集 |
+| 日志与模型 ID | `src/HextechLog.cs`、`src/Helpers/HextechModelIdExtensions.cs` | `HextechLog.Info/Warn/Error(tag, message)` 统一 `[HextechRunes][Tag]` 前缀，Info 默认关闭；规范 ID 用 `x.CanonicalId()` |
+| 表现层兜底 | `src/Helpers/HextechPresentation.cs` | `TryRun` 包住特效、音效、节点查找；放在共享状态写入之后 |
+| 卡牌持久标记 | `src/Hooks/Runes/HextechCardSavedProps.cs` | 卡牌 Props 上的整数/标记读写；键名是存档契约 |
+| 图片资源/界面样式 | `src/Assets/HextechAssets.cs`、`HextechTextures.cs`、`src/UI/HextechUiTheme.cs` | 资源路径从 `HextechAssets` 的根常量拼接（校验器会解析这些常量）；复用加载与主题颜色；不硬编码另一套路径和字号 |
+| 战斗视觉附件 | `src/Hooks/UI/HextechCreatureAttachedVisual.cs`（含 `HextechBehindCreatureVisual`、`HextechAuraLayer`） | 挂在生物节点上的逐帧特效共用生命周期与图层工具；挂载顺序在 `HextechCreatureVisualHost` |
+| UI 偏好、手柄确认、悬浮提示 | `src/UI/HextechUiPreferences.cs`、`HextechSelectAcceptButton.cs`、`HextechHoverTipAccess.cs` | 本机偏好只从 `HextechUiPreferences` 读写并批量保存；自定义按钮用 `HextechSelectAcceptButton` 接 `ui_select` |
+| 对外扩展 | `src/Api` | 保持现有公共契约；只有调用方确实需要时才增加 API。拓展包只经 `HextechRunesApi` 使用本体能力（售价修正登记、`IsHextechRelic`、`StableIndex`），不反射 internal 类型 |
 
 ## 维护这些工具
 

@@ -263,7 +263,13 @@ public static void RegisterExtraActProvider(Func<IRunState, string?> provider);
 | --- | --- |
 | `RegisterForgeShopPriceModifier(Func<RunState, int, int>)` | 初始化期登记"随机锻造器"商店售价修正。算价时按登记顺序调用 `modifier(runState, currentPrice)`，返回值作为新价格；只读同步状态、自行决定下限。某个修正器抛异常时跳过它并记 Warn |
 | `IsHextechRelic(RelicModel?)` | 判断遗物是否由海克斯注册表管理（玩家海克斯、锻造器、商店锻造器、敌方海克斯展示遗物，含其他模组登记的符文）。不要用 `is HextechRelicBase` 代替 |
-| `StableIndex(RunState, count, params string?[] salt)` | 运行种子稳定随机：按本局种子、当前幕、总层数与盐取 `[0, count)` 的下标，不消耗共享 RNG，两端输入一致结果就一致；`count <= 0` 抛 `ArgumentOutOfRangeException`。同层重复抽取要在盐里放区分量。算法与结果保持不变 |另有两个可实现的接口：`IHextechHealingMultiplierProvider`（治疗乘区）和 `IHextechGeneratedRune`（生成式符文的实例数据）。
+| `StableIndex(RunState, count, params string?[] salt)` | 运行种子稳定随机：按本局种子、当前幕、总层数与盐取 `[0, count)` 的下标，不消耗共享 RNG，两端输入一致结果就一致；`count <= 0` 抛 `ArgumentOutOfRangeException`。同层重复抽取要在盐里放区分量。算法与结果保持不变 |
+
+另有两个可实现的接口：`IHextechHealingMultiplierProvider`（治疗乘区）和 `IHextechGeneratedRune`（生成式符文的实例数据）。
+
+候选生成扩展点 `HextechRuneGeneration`：`RegisterChaosTransform(CandidateTransform)` 登记一个混沌变换（候选生成完成后调用；已有别的变换时抛 `InvalidOperationException`），`UnregisterChaosTransform` 注销同一个委托。变换不得消耗共享 RNG、不得修改已有候选实例；返回结果必须与输入同条数且全部是已登记的玩家海克斯，否则（包括抛异常、返回 null）本次回退原候选并记 Warn。结果会进入联机选择协议，两端必须算出相同结果。
+
+通过上述任何入口登记本体内置的符文或锻造器都会被拒绝（只告警，不抛异常，也不产生池登记等副作用）。
 
 硬依赖同样建议按程序集名检测、延迟注册，而不是在 manifest 里按 id 声明依赖，这样也能兼容程序集同名的二创版。
 
