@@ -57,7 +57,7 @@ internal static partial class Program
 	private static void RandomGenerationClassesMatchReviewedManifest()
 	{
 		// 保守地登记命中生成入口文件中的所有类；包括具体符文及共用工厂，新增路径必须人工复核。
-		string generation = @"\b(?:CardFactory|RelicFactory|PotionFactory)\s*\.|\b(?:TransformToStableRandom|CreateStableOptionTransformation|PickStableGeneratedCard|BuildStableCombatGenerationPool|CreateMinionCard|CreateRepeatableWaxRelic|CreateWaxRelicFromRewardPool|CreateRandomNonupeipeRelic|GetPotionOptions|ObtainRandomRunes|ConsumeAndObtainRandomRunes|ReplaceOwnedHextechRunesWithRandomRunes|ObtainRandomForges|TryObtainRandomForges|AddRandomForgeReward|AddWeightedRandomForgeReward)\s*\(";
+		string generation = @"\b(?:CardFactory|RelicFactory|PotionFactory)\s*\.|\b(?:TransformToStableRandom|CreateStableOptionTransformation|PickStableGeneratedCard|BuildStableCombatGenerationPool|CreateMinionCard|CreateRepeatableWaxRelic|CreateRandomNonupeipeRelic|GetPotionOptions|ObtainRandomRunes|ConsumeAndObtainRandomRunes|ReplaceOwnedHextechRunesWithRandomRunes|ObtainRandomForges|TryObtainRandomForges|AddRandomForgeReward|AddWeightedRandomForgeReward)\s*\(";
 		List<string> actual = [];
 		foreach (string file in Directory.EnumerateFiles(Path.Combine(AuditRoot, "src"), "*.cs", SearchOption.AllDirectories))
 		{
