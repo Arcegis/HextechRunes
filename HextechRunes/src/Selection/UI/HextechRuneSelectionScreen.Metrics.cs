@@ -4,7 +4,7 @@ namespace HextechRunes;
 
 internal sealed partial class HextechRuneSelectionScreen
 {
-	private const string LocTable = "relic_collection";
+	private const string LocTable = HextechRuneLabels.LocTable;
 	private const string RerollButtonTexturePath = "res://HextechRunes/images/ui/hextechRerollButton.png";
 	private const string RerollButtonHoverTexturePath = "res://HextechRunes/images/ui/hextechRerollButtonHover.png";
 	private const string RerollButtonUsedTexturePath = "res://HextechRunes/images/ui/hextechRerollButtonUsed.png";

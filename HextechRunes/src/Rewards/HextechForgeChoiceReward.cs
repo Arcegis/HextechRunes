@@ -18,7 +18,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 
 	public override int RewardsSetIndex => 4;
 
-	public override LocString Description => new("relic_collection", "HEXTECH_FORGE_CHOICE_REWARD");
+	public override LocString Description => new(HextechRuneLabels.LocTable, "HEXTECH_FORGE_CHOICE_REWARD");
 
 	public override bool IsPopulated => _options.Count > 0;
 

@@ -6,8 +6,6 @@ namespace HextechRunes;
 
 internal static class HextechForgeSelectionCoordinator
 {
-	private const string LocTable = "relic_collection";
-
 	public static async Task<RelicModel?> SelectForge(Player player, IReadOnlyList<RelicModel> options, string context, bool syncMultiplayerChoice = true)
 	{
 		if (options.Count > HextechStableModelIdListCodec.MaxCount)
@@ -70,7 +68,7 @@ internal static class HextechForgeSelectionCoordinator
 			monsterHexRelic: null,
 			rerollFunc: null,
 			enemyHexOptions: null,
-			titleOverride: new LocString(LocTable, "HEXTECH_FORGE_SELECTION_TITLE").GetRawText(),
+			titleOverride: new LocString(HextechRuneLabels.LocTable, "HEXTECH_FORGE_SELECTION_TITLE").GetRawText(),
 			metadataMode: HextechSelectionMetadataMode.Forge);
 		if (NOverlayStack.Instance == null)
 		{

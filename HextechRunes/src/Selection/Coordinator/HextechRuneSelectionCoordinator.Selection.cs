@@ -235,7 +235,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			screen = await CreateRuneSelectionScreenAsync(
 				[],
 				null,
-				titleOverride: new LocString("relic_collection", "HEXTECH_NO_RUNE_OPTIONS_TITLE").GetRawText(),
+				titleOverride: new LocString(HextechRuneLabels.LocTable, "HEXTECH_NO_RUNE_OPTIONS_TITLE").GetRawText(),
 				cancellationToken: cancellationToken,
 				continueOnly: true);
 			// 联机批次被取消(断线、换局)时不能一直等玩家点继续。

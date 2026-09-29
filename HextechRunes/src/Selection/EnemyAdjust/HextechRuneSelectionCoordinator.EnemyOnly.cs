@@ -39,7 +39,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				cancellation.Token);
 			// 空的玩家候选只显示敌方调整和确认，不抽取、同步或发放虚拟的玩家遗物。
 			screen = await CreateRuneSelectionScreenAsync([], null, enemyHexOptions: options,
-				titleOverride: titleOverride ?? new LocString("relic_collection", "HEXTECH_ENEMY_PREVIEW_LABEL").GetRawText(),
+				titleOverride: titleOverride ?? new LocString(HextechRuneLabels.LocTable, "HEXTECH_ENEMY_PREVIEW_LABEL").GetRawText(),
 				cancellationToken: cancellation.Token);
 			if (!authority)
 			{

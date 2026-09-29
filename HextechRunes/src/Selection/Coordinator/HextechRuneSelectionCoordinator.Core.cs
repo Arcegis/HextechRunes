@@ -272,7 +272,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			if (allowEnemyHexAdjustment && stageHexes.New.Count > 0)
 			{
 				stageHexes.SetNew(await SelectEnemyHexesOnly(runState, modifier, actIndex, rarity, stageHexes.Previous, stageHexes.New,
-					new LocString("relic_collection", "HEXTECH_NO_RUNE_OPTIONS_TITLE").GetRawText()));
+					new LocString(HextechRuneLabels.LocTable, "HEXTECH_NO_RUNE_OPTIONS_TITLE").GetRawText()));
 			}
 			else
 			{
