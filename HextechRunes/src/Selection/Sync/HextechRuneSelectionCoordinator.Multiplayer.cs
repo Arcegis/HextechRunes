@@ -299,10 +299,6 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		try
 		{
-			if (RunManager.Instance.NetService.Type == NetGameType.Replay)
-			{
-				return;
-			}
 			if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
 			{
 				throw new OperationCanceledException(

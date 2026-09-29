@@ -7,8 +7,7 @@ namespace HextechRunes;
 /// 属性式补丁的统一应用入口:逐类应用、逐条汇报、失败按功能归因,并在启动时列出与其他模组共享的补丁点。
 /// </summary>
 /// <remarks>
-/// 同一目标上本模组的多个补丁,执行序只由 <c>[HarmonyPriority]</c> 决定,不依赖类的声明顺序;
-/// 需要先后关系的地方必须显式标优先级。
+/// 需要先后关系的补丁必须显式声明优先级或 before/after 约束，不能依赖类型枚举或声明顺序。
 /// </remarks>
 internal static class HextechPatcher
 {
@@ -21,7 +20,7 @@ internal static class HextechPatcher
 	/// <summary>
 	/// 应用 <paramref name="assembly"/> 中所有补丁类:带 <c>[HarmonyPatch]</c> 的走 Harmony 类处理器;
 	/// 只带 <c>[HextechPatch]</c> 且声明 <c>static void Apply(Harmony)</c> 的是"动态目标"补丁
-	/// (目标集合只能在运行时枚举,如所有已加载程序集里的 Orb 子类),由该方法自行逐个 Patch。
+	/// (目标需在运行时解析)，由该方法自行逐个 Patch。
 	/// </summary>
 	internal static void ApplyAll(Harmony harmony, Assembly assembly)
 	{
@@ -175,7 +174,7 @@ internal static class HextechPatcher
 				string target = $"{method.DeclaringType?.FullName}.{method.Name}";
 				lines.Add($"{target} <- {string.Join(", ", others)}");
 
-				// 本模组的 bool 前缀会跳过原方法,优先级比它低的第三方前缀就跑不到了:单独点名,给冲突排查一个直接答案。
+				// bool 前缀可能跳过原方法并影响后续前缀；这里只按优先级与安装序报告潜在冲突，不代表必然跳过。
 				Patch[] ourSkippingPrefixes = info.Prefixes
 					.Where(patch => patch.owner == harmony.Id && patch.PatchMethod.ReturnType == typeof(bool))
 					.ToArray();
@@ -272,7 +271,7 @@ internal static class HextechPatcher
 
 	private static void AppendKind(List<string> lines, string kind, IReadOnlyCollection<Patch> patches, string ownerId)
 	{
-		// Harmony 执行序:优先级降序,同优先级按加入序。before/after 只影响跨 owner 的相对序,这里按 owner 内视角记录。
+		// 导出按优先级、安装序排列并附带 before/after；这是比对视图，不模拟跨 owner 的完整执行序。
 		foreach (Patch patch in patches.Where(patch => patch.owner == ownerId).OrderByDescending(patch => patch.priority).ThenBy(patch => patch.index))
 		{
 			string extras = string.Empty;

@@ -49,7 +49,7 @@ internal static class SponsorPatchTable
 
 	private static void AppendKind(List<string> lines, string kind, IReadOnlyCollection<Patch> patches, string ownerPrefix)
 	{
-		// Harmony 执行序:优先级降序,同优先级按加入序。
+		// 导出按优先级、安装序排列并附带 before/after；不模拟跨 owner 的完整执行序。
 		foreach (Patch patch in patches
 			.Where(patch => patch.owner.StartsWith(ownerPrefix, StringComparison.Ordinal))
 			.OrderByDescending(patch => patch.priority)

@@ -32,8 +32,8 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		TryGrabOverlayFocus();
 	}
 
-	// 第二/三层的海克斯选择发生在「刚进新幕、还没进房间」时，顶栏地图键被游戏置灰禁用，
-	// 玩家点不开地图。选择期间临时点亮它，让上面的只读地图预览能被触发；选择结束时还原。
+	// 后续幕的海克斯选择发生在刚进新幕、尚未进房间时，顶栏地图键可能被禁用。
+	// 选择期间临时启用只读地图预览，选择结束后还原。
 	private void EnsureMapButtonEnabled()
 	{
 		if (_closed)

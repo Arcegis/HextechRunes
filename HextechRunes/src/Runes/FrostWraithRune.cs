@@ -42,9 +42,7 @@ public sealed class FrostWraithRune : HextechRelicBase
 
 	internal static bool ShouldTriggerForRound(int roundNumber, int turnsNeeded)
 	{
-		return roundNumber > 1
-			&& turnsNeeded > 0
-			&& (roundNumber - 1) % turnsNeeded == 0;
+		return HextechRoundInterval.IsDue(roundNumber, turnsNeeded);
 	}
 
 	private async Task ApplySlow(HextechCombatState combatState)

@@ -9,6 +9,13 @@ internal static partial class HextechCombatHooks
 	private static readonly Dictionary<long, HashSet<SlipperyPower>> SlipperyReductionsByCommand = new();
 
 
+	// 缩小、滑溜、人工制品这几处是原版机制的漏洞修正，海克斯内容让它们更容易触发；
+	// 按设计哲学只在本局启用海克斯时生效，不改没开模组功能的对局。
+	internal static bool IsVanillaFixActiveFor(Creature creature)
+	{
+		return HextechMayhemModifier.IsEnabledForRun(creature.CombatState?.RunState);
+	}
+
 	private static async Task AppendSlipperyConsumption(Task original, SlipperyPower power)
 	{
 		await original;
@@ -51,7 +58,7 @@ internal static partial class HextechCombatHooks
 		private static void Postfix(SlipperyPower __instance, Creature target, decimal amount, ref decimal __result)
 		{
 			// target!=Owner(如伤害分摊给 Osty)或伤害本就 <1、或滑溜没把它压低,都不算「滑溜减伤」。
-			if (target != __instance.Owner || amount < 1m || __result >= amount)
+			if (target != __instance.Owner || amount < 1m || __result >= amount || !IsVanillaFixActiveFor(target))
 			{
 				return;
 			}
@@ -106,7 +113,10 @@ internal static partial class HextechCombatHooks
 		{
 			// 替死生效 = 把原本指向主人(玩家)的伤害目标改成了 Osty 自己(__instance.Owner)。
 			Creature? petOwnerCreature = __instance.Owner.PetOwner?.Creature;
-			if (petOwnerCreature == null || __result != __instance.Owner || target != petOwnerCreature)
+			if (petOwnerCreature == null
+				|| __result != __instance.Owner
+				|| target != petOwnerCreature
+				|| !IsVanillaFixActiveFor(petOwnerCreature))
 			{
 				return;
 			}

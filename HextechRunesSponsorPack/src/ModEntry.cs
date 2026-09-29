@@ -33,8 +33,7 @@ public static class ModEntry
 				return;
 			}
 
-			// 前置程序集可能晚于本拓展包加载(尤其二创版:mod id 不同、按字母序可能排在本包之后)——
-			// 订阅程序集加载事件,待 HextechRunes 程序集载入后再注册,与加载顺序无关。注册发生在任何 run 开始前,内容仍及时入池。
+			// 本体可能晚于拓展包载入；通过 AssemblyLoad 延迟注册，但仍须赶在模型注册窗口关闭前完成。
 			if (!_waitingForPrerequisite)
 			{
 				_waitingForPrerequisite = true;
@@ -56,9 +55,7 @@ public static class ModEntry
 			AppDomain.CurrentDomain.AssemblyLoad -= OnAssemblyLoad;
 			_waitingForPrerequisite = false;
 
-			// 延迟路径的失败模式:本体若在模组初始化阶段结束后才载入,模型与 SavedProperty 的注册窗口已经关闭,
-			// HextechRunesApi 的注册会抛 InvalidOperationException,并从 AssemblyLoad 事件处理器里冒出去。
-			// 符文不入池比崩溃好:这里只警告并退出。
+			// 初始化窗口关闭后不再登记内容，避免改变已经冻结的模型与 SavedProperty 布局。
 			if (IsModelRegistrationWindowClosed())
 			{
 				Log.Warn($"[{ModInfo.Id}] HextechRunes 加载过晚(模型注册窗口已关闭),拓展包内容未注册。", 2);

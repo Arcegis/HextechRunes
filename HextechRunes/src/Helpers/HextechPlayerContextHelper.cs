@@ -16,6 +16,13 @@ internal static class HextechPlayerContextHelper
 		}
 	}
 
+	// 海克斯流程只分"联机（Host/Client）"和"单人"两种：原版对局重放（Replay）没有联机连接，
+	// 按单人走，不能掉进需要同步通道的联机分支。
+	public static bool IsSinglePlayerFlow(NetGameType gameType)
+	{
+		return gameType is not (NetGameType.Host or NetGameType.Client);
+	}
+
 	public static bool IsClientRun(bool fallbackWhenUnavailable = false)
 	{
 		try

@@ -23,7 +23,7 @@ internal static partial class HextechPlayerRuneHooks
 				?? throw new MissingMethodException(typeof(OrbModel).FullName, nameof(OrbModel.Evoke))
 		];
 
-		foreach (Type type in GetLoadableTypes(coreAssembly, coreAssembly))
+		foreach (Type type in GetLoadableTypes(coreAssembly))
 		{
 			if (type == typeof(OrbModel) || !typeof(OrbModel).IsAssignableFrom(type))
 			{
@@ -47,25 +47,7 @@ internal static partial class HextechPlayerRuneHooks
 			.ToArray();
 	}
 
-	internal static bool CanContainOrbModels(Assembly assembly, Assembly coreAssembly, string? coreAssemblyName)
-	{
-		if (assembly == coreAssembly)
-		{
-			return true;
-		}
-
-		try
-		{
-			return assembly.GetReferencedAssemblies()
-				.Any(reference => string.Equals(reference.Name, coreAssemblyName, StringComparison.Ordinal));
-		}
-		catch (Exception)
-		{
-			return false;
-		}
-	}
-
-	internal static IEnumerable<Type> GetLoadableTypes(Assembly assembly, Assembly coreAssembly)
+	internal static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
 	{
 		try
 		{
@@ -74,11 +56,6 @@ internal static partial class HextechPlayerRuneHooks
 		catch (ReflectionTypeLoadException ex)
 		{
 			return ex.Types.Where(static type => type != null).Cast<Type>();
-		}
-		catch (Exception ex) when (assembly != coreAssembly)
-		{
-			Log.Warn($"[{ModInfo.Id}][Compat] Could not inspect external assembly {assembly.FullName} for Orb models: {ex.Message}");
-			return Array.Empty<Type>();
 		}
 	}
 

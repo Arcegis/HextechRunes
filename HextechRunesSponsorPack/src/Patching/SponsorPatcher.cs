@@ -7,7 +7,7 @@ namespace HextechRunesSponsorPack;
 
 /// <summary>
 /// 属性式补丁的统一应用入口:本体 <c>HextechPatcher</c> 的最小同构副本(本体那份是 internal,拓展包无法复用)。
-/// 逐类应用、逐条汇报,失败按功能归因;同一目标上的执行序只由 <c>[HarmonyPriority]</c> 决定,不依赖类的声明顺序。
+/// 逐类应用、逐条汇报，失败按功能归因；先后关系须显式声明 Harmony 顺序约束，不依赖类型枚举顺序。
 /// </summary>
 internal static class SponsorPatcher
 {

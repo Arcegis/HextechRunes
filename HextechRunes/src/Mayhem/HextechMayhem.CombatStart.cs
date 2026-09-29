@@ -16,14 +16,6 @@ internal sealed partial class HextechMayhemModifier
 			return;
 		}
 
-		enemies = enemies
-			.Where(static enemy => !ShouldDeferInitialBossStartHexes(enemy))
-			.ToList();
-		if (enemies.Count == 0)
-		{
-			return;
-		}
-
 		foreach (Creature enemy in enemies)
 		{
 			await ApplyInitialMonsterCombatStartHexesToEnemy(enemy, room);

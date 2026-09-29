@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 /// <summary>
 /// 药水掉落式的动态掉率:以基础概率起步,每次掉落把概率往下调一档,每次没掉落往上调一档。
-/// 只保存相对基础值的偏移(默认 0 = 基础概率),偏移限制在 [0, 100] 概率区间内。
+/// 只保存相对基础值的偏移(默认 0 = 基础概率)，将偏移与基础值之和限制在 [0, 100]。
 /// </summary>
 internal static class HextechDynamicDropChance
 {

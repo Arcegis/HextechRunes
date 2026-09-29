@@ -1,6 +1,5 @@
 namespace HextechRunes;
 
-// 0.8.4 重做:战斗开始时获得 100 层致死性和 6 层倒数计时(原 25 致死性+1 死神形态)。
 public sealed class BeginningAndEndRune : HextechRelicBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>

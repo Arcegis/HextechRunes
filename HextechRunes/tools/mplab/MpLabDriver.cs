@@ -29,10 +29,9 @@ using MegaCrit.Sts2.Core.Runs;
 namespace HextechMpLab;
 
 /// <summary>
-/// 本机双客户端联机实验的自动驾驶。按 HEXTECH_MPLAB_ROLE(host/client)在角色选择、地图投票、
-/// 海克斯符文选择、战斗回合上替玩家做最简单的确定性选择,并在每个玩家的牌组里塞三张恶魔形态、
-/// 给一个"升级恶魔形态"(开局自动打出所有形态)符文,让形态批处理在第一场战斗开局必然触发。
-/// 不做任何 Harmony 补丁;所有驱动都发生在两端一致执行的本地入口上。
+/// 本机联机实验驱动：按 HEXTECH_MPLAB_ROLE 操作选择、地图与回合流程。
+/// 场景和赠卡由 HEXTECH_MPLAB_FORM / HEXTECH_MPLAB_FORMS 等变量决定，默认测试形态开局自动打出。
+/// HEXTECH_MPLAB_THROW_FORM_BATCH=1 会安装本端异常注入补丁；该模式仅用于故障实验。
 /// </summary>
 [ModInitializer(nameof(Initialize))]
 public static class MpLabEntry

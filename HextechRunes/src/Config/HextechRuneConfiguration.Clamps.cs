@@ -65,11 +65,6 @@ internal static partial class HextechRuneConfiguration
 		return current;
 	}
 
-	public static int GetDefaultPlayerRuneRerollLimit()
-	{
-		return DefaultPlayerRuneRerollLimit;
-	}
-
 	public static int GetDefaultMonsterHexRerollLimit()
 	{
 		return DefaultMonsterHexRerollLimit;

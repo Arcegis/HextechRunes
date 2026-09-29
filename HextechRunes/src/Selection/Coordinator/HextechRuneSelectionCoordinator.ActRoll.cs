@@ -140,7 +140,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					: ChooseMonsterHexForAct(modifier, localRarity, runState, previousHexes));
 		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResolveActRoll enemy count: act={actIndex} newCount={newEnemyHexCount} previous={previousHexes.Count} primary={localMonsterHex}");
 
-		if (gameType is NetGameType.Singleplayer or NetGameType.None or NetGameType.Replay)
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 		{
 			modifier.SetRarityForAct(actIndex, localRarity);
 			if (!modifier.HasPlayerRuneConfigDisabledIdsSnapshot)

@@ -4,7 +4,7 @@ namespace HextechRunes;
 
 /// <summary>
 /// 模组自建 UI 与特效用的纹理加载:原始 PNG/JPG 手动解码进模组私有缓存,不设 ResourcePath、不进原版 AssetCache
-/// (原版 Cache 会对"路径相同但类型不符"的资源显式 Dispose,见 sts2-resourcepath-assetcache-dispose)。
+/// （原版 Cache 会 Dispose 路径相同但类型不符的资源，不能将自建纹理挂到其路径上）。
 /// 走原版模型 getter 的图标(遗物/卡牌/能力)不经这里,直接由 PCK 内已导入资源满足。
 /// </summary>
 internal static class HextechTextures

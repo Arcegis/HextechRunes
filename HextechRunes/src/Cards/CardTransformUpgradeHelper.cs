@@ -34,20 +34,6 @@ internal static class CardTransformUpgradeHelper
 		}
 	}
 
-	public static CardTransformation CreateRandomOptionTransformation(
-		CardModel original,
-		IEnumerable<CardModel> replacementOptions,
-		Rng rng)
-	{
-		CardModel replacement = CardFactory.CreateRandomCardForTransform(
-			original,
-			replacementOptions,
-			original.CombatState != null,
-			rng);
-		PreserveUpgradeLevel(original, replacement);
-		return new CardTransformation(original, replacement);
-	}
-
 	public static CardTransformation CreateStableOptionTransformation(
 		CardModel original,
 		IEnumerable<CardModel> replacementOptions,

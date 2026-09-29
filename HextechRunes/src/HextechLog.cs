@@ -1,12 +1,9 @@
 namespace HextechRunes;
 
 /// <summary>
-/// 诊断日志门控:模组冗长的 <c>Log.Info</c> 经此收敛到一个开关后面，默认静默以降噪
-/// （事件级路径如 EnemyUi 刷新原本每次都打多行）。<c>Warn</c>/<c>Error</c> 仍直接走
-/// <see cref="Log"/> 始终输出，模组加载确认行也保持始终输出。
-///
-/// 需要排错时设环境变量 <c>HEXTECH_VERBOSE_LOG=1</c>（或 <c>true</c>）即可恢复全部 Info；
-/// 也可在运行时通过 <see cref="Verbose"/> 切换。门控在调用前判断，关闭时连日志字符串都不再产出。
+/// 可由 <c>HEXTECH_VERBOSE_LOG=1</c> 或 <c>true</c> 开启的诊断 Info 日志，默认关闭。
+/// Warn/Error 与加载确认仍直接输出。此包装接收已构造的字符串；需要避免格式化开销时，
+/// 调用方应先检查 <see cref="Verbose"/>。
 /// </summary>
 internal static class HextechLog
 {

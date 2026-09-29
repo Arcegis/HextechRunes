@@ -9,7 +9,7 @@ namespace HextechRunesSponsorPack;
 /// <list type="bullet">
 /// <item><see cref="Id"/> 稳定且唯一,形如 <c>abyssal.regent-forge</c>,日志与补丁表 dump 都按它定位。</item>
 /// <item><see cref="Feature"/> 是玩家可感知的功能名(符文名 / 事件名),失败时日志按功能归因。</item>
-/// <item><see cref="Optional"/> 表示目标在某些游戏版本或某些模组组合下可能不存在;它只决定失败日志级别,不改变是否安装。</item>
+/// <item><see cref="Optional"/> 允许类处理器未安装任何目标；安装异常仍计入失败，以 Info 记录。</item>
 /// </list>
 /// 本体 <c>HextechPatchAttribute</c> 的 <c>Rune</c>/<c>Runes</c> 在这里没有对应物:拓展包没有"运行时符文可用性登记"的口子。
 /// </remarks>

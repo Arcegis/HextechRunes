@@ -19,15 +19,12 @@ internal sealed class FrostWraithEnemyHex : HextechEnemyHexEffect
 			&& players.Count > 0
 			&& HextechCombatProcTracker.ConsumeGlobalProcInCombat(context.Tracking, $"round-once:{Kind}:{combatState.RoundNumber}") == 0)
 		{
-			await context.RunGroupedPlayerDebuffBurst(async () =>
-			{
-				await PowerCmd.Apply<HextechTemporarySlowPower>(players, TemporarySlowAmount, null, null);
-			});
+			await PowerCmd.Apply<HextechTemporarySlowPower>(players, TemporarySlowAmount, null, null);
 		}
 	}
 
 	internal static bool ShouldTriggerForRound(int roundNumber)
 	{
-		return roundNumber > 0 && roundNumber % TurnsNeeded == 0;
+		return HextechRoundInterval.IsDue(roundNumber, TurnsNeeded);
 	}
 }

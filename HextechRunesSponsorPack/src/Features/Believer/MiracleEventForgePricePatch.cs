@@ -5,14 +5,8 @@ using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunesSponsorPack;
 
-// 神迹事件的「锻造器售价」本局临时修正:主 mod 的 HextechForgeShopPriceHelper.GetRandomForgeShopPriceFor
-// 是 internal,拓展包用 Harmony(反射定位)postfix,把本局 BelieverRune 累计的售价修正叠加到算出的价格上。
-// 纯拓展包,主 mod 源码一行不动。
-// 目标按全名字符串 TypeByName("HextechRunes.HextechForgeShopPriceHelper") 定位:主 mod 若把这个 internal 类
-// 挪进子命名空间,本补丁会静默失效(Install 只 Log.Warn)。
-// 目标是本体的 internal 类,只能在运行时按全名枚举,所以这是"动态目标"补丁:只带 [SponsorPatch] + Apply(Harmony)。
-// 目标缺失(本体挪走了这个 internal 类)时抛出,由 SponsorPatcher 按 Optional 记 Info 并列进启动摘要的失败项——
-// 比原先各自 Log.Warn 更显形:补丁不会静默消失,但也不会污染玩家日志的 Warn 级别。
+// 本体售价助手是 internal，因此按完整类型名和签名反射安装 postfix，叠加信徒的本局价格修正。
+// 目标缺失时抛出，由 SponsorPatcher 按 Optional 记录 Info，并纳入启动失败摘要。
 [SponsorPatch("believer.forge-price", "信徒·锻造器售价修正", Optional = true)]
 internal static class MiracleEventForgePricePatch
 {

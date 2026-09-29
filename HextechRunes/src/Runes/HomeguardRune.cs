@@ -5,7 +5,7 @@ public sealed class HomeguardRune : HextechRelicBase
 	private bool _tookUnblockedDamageSinceLastTurn;
 	private bool _hasPreviousTurn;
 
-	// (C/rank1)联机下不把"本回合是否受未格挡伤害/是否有上一回合"这两个本地推算 bool 写进 checksum:
+	// 联机下不把"本回合是否受未格挡伤害/是否有上一回合"这两个本地推算 bool 写进 checksum:
 	// getter 在 IsNetworkMultiplayer() 返回类型默认值(false)→ SaveIfNotTypeDefault 下根本不序列化 → 退出
 	// NetFullCombatState 校验,避免上游(掉线/超时/rejoin)的一次瞬时跨端差异被这两个无归一化的 checksummed bool
 	// 永久锁存成 "After player turn start" 分叉。对齐本 mod 既有计数鲁恩(SwiftAndSafe/Nightstalking)的 MP 安全约定。

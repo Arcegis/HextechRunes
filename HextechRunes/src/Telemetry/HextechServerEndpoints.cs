@@ -13,15 +13,4 @@ internal static class HextechServerEndpoints
 	public const string CommunityNewEndpoint = OfficialServerBase + "/community-new.json";
 	public const string CommunityApiBase = OfficialServerBase + "/api/hextech-runes/community/";
 
-	public static bool IsOfficialEndpoint(string endpoint)
-	{
-		if (!Uri.TryCreate(endpoint, UriKind.Absolute, out Uri? uri))
-		{
-			return false;
-		}
-
-		return string.Equals(uri.Host, OfficialServerHost, StringComparison.OrdinalIgnoreCase)
-			&& (string.Equals(uri.AbsolutePath, "/latest-version.json", StringComparison.Ordinal)
-				|| uri.AbsolutePath.StartsWith("/api/hextech-runes/", StringComparison.Ordinal));
-	}
 }

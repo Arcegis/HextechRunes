@@ -22,7 +22,7 @@ internal static class HextechRelicOptionSelectionCoordinator
 		MarkRelicsSeen(options);
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
-		if (gameType is NetGameType.Singleplayer or NetGameType.None)
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 		{
 			return await SelectLocalRelic(player, options, context);
 		}

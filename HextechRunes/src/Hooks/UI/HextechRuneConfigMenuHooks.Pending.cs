@@ -3,8 +3,7 @@ namespace HextechRunes;
 internal static partial class HextechRuneConfigMenuHooks
 {
 	/// <summary>
-	/// 配置菜单要写入 <see cref="PendingConfig"/> 的字段分组。四路「重置当前页」、导入分享码
-	/// 各自只写自己那一组,语义与拆出 <see cref="PendingConfig"/> 之前逐字段一致。
+	/// 配置菜单的字段分组：重置当前页或导入分享码时，只覆盖对应组。
 	/// </summary>
 	[Flags]
 	private enum PendingFields
@@ -26,7 +25,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		/// <summary>模组总开关。</summary>
 		ModEnabled = 1 << 4,
 
-		/// <summary>三个 UI 偏好(隐藏遗物开关、更新提示、折叠敌方海克斯),不进快照,取值由调用方给出。</summary>
+		/// <summary>本机 UI 偏好：隐藏遗物开关、更新提示、敌方海克斯折叠、选择二次确认；不进运行配置快照。</summary>
 		UiPreferences = 1 << 5,
 
 		/// <summary>导入分享码写入的集合:刻意排除 <see cref="ModEnabled"/> 与 <see cref="UiPreferences"/>。</summary>
@@ -201,7 +200,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			target.UnionWith(source);
 		}
 
-		// 就地逐元素赋值,按较短的一方截断,与拆出本类之前的行为一致。
+		// 就地逐元素赋值，按较短的一方截断，保留绑定所持有的数组实例。
 		private static void CopyArray(IReadOnlyList<int> source, int[] target)
 		{
 			for (int i = 0; i < Math.Min(source.Count, target.Length); i++)

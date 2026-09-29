@@ -80,11 +80,11 @@ internal static partial class Program
 			.OfType<MethodInfo>()
 			.ToArray();
 		Expect(
-			calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
-			"Twin Flames should use its multiplayer lockstep path in network runs");
+			!calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
+			"Twin Flames uses one damage path for single player and multiplayer");
 		Expect(
 			calls.Any(static method => method.Name == "ResolveVolleyDamageInLockstepAsync"),
-			"Twin Flames multiplayer damage should be returned to the current card action");
+			"Twin Flames damage should be returned to the current card action");
 	}
 
 	private static void ProjectileRunesKeepMultiplayerDamageInsideCardAction()
@@ -99,12 +99,13 @@ internal static partial class Program
 				.Select(static instruction => instruction.operand)
 				.OfType<MethodInfo>()
 				.ToArray();
+			// 伤害不能交给独立任务在牌结算后再改血量：单人与联机都在出牌动作里等待结算，弹道只做视觉。
 			Expect(
-				calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
-				$"{runeType.Name} should select a multiplayer lockstep path");
+				!calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
+				$"{runeType.Name} should not branch its damage path on multiplayer");
 			Expect(
 				calls.Any(static method => method.Name == "ResolveVolleyDamageInLockstepAsync"),
-				$"{runeType.Name} should return its multiplayer damage task to the card action");
+				$"{runeType.Name} should return its damage task to the card action");
 		}
 	}
 

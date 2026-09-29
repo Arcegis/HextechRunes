@@ -4,8 +4,7 @@ namespace HextechRunes;
 
 /// <summary>
 /// 模组入口,只做编排:模型注册 → 配置/遥测 → 补丁应用 → 诊断输出。
-/// 所有 Harmony 补丁以 <c>[HarmonyPatch]</c> + <c>[HextechPatch]</c> 补丁类的形式分布在各功能文件里,
-/// 由 <see cref="HextechPatcher"/> 统一应用;同一目标上的执行序只由 <c>[HarmonyPriority]</c> 决定。
+/// 功能补丁由 <see cref="HextechPatcher"/> 按元数据统一应用；需要先后关系时显式声明 Harmony 顺序约束。
 /// </summary>
 [ModInitializer(nameof(Initialize))]
 public static class ModEntry
@@ -26,7 +25,7 @@ public static class ModEntry
 				return;
 			}
 
-			// 模型注册必须先于任何补丁:0.107.1 的 SavedProperty net-id 规范化以此刻的名字集合为最终集合。
+			// 先登记模型与 SavedProperty 载体，再安装依赖这些模型的补丁；net-id 冻结在后续启动收尾进行。
 			HextechModelBootstrap.Install();
 			HextechRuneConfiguration.Initialize();
 			HextechTelemetry.Initialize();
@@ -52,8 +51,4 @@ public static class ModEntry
 		return HextechRunLifecycleHooks.EnsureMayhemModifier(runState);
 	}
 
-	internal static Task HandleHextechActStarted(HextechMayhemModifier modifier)
-	{
-		return HextechRunLifecycleHooks.HandleHextechActStarted(modifier);
-	}
 }

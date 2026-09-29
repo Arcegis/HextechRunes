@@ -41,8 +41,6 @@ public sealed class DuffsVintageRune : HextechRelicBase
 			// 星辉牌:用与能量同一套「直到打出」的临时费用机制减费(原版 SetStarCostUntilPlayed →
 			// TemporaryCardCost.UntilPlayed,打出时随其它 until-played 临时费一并清除),逐回合留在手累减、
 			// 与描述「回合结束时仍在手的牌费用-1 直到打出」及能量路径一致。
-			// 此前星辉减费走持续型 TryModifyStarCost 修饰(按 (RoundNumber-1) 每次查询都减),会持续整场战斗、
-			// 打出后也不消耗——已移除。
 			if (!card.HasStarCostX && card.CurrentStarCost > 0)
 			{
 				int nextStarCost = Math.Max(0, card.CurrentStarCost - reduction);

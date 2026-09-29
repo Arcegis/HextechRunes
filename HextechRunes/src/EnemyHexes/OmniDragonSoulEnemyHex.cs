@@ -22,20 +22,17 @@ internal sealed class OmniDragonSoulEnemyHex : HextechEnemyHexEffect
 			"enemy-omni-dragon-soul-debuff",
 			combatState.RoundNumber.ToString());
 
-		await context.RunGroupedPlayerDebuffBurst(async () =>
+		switch (roll)
 		{
-			switch (roll)
-			{
-				case 0:
-					await PowerCmd.Apply<WeakPower>(players, stacks, null, null);
-					break;
-				case 1:
-					await PowerCmd.Apply<FrailPower>(players, stacks, null, null);
-					break;
-				default:
-					await PowerCmd.Apply<VulnerablePower>(players, stacks, null, null);
-					break;
-			}
-		});
+			case 0:
+				await PowerCmd.Apply<WeakPower>(players, stacks, null, null);
+				break;
+			case 1:
+				await PowerCmd.Apply<FrailPower>(players, stacks, null, null);
+				break;
+			default:
+				await PowerCmd.Apply<VulnerablePower>(players, stacks, null, null);
+				break;
+		}
 	}
 }

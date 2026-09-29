@@ -1,7 +1,5 @@
 namespace HextechRunes;
 
-// 0.8.4 重做:回合结束时,把每个玩家消耗牌堆里的所有状态牌与诅咒牌移回其弃牌堆
-// (原效果为"状态/诅咒牌不因打出或回合结束而消耗",实现已整体替换)。
 internal sealed class ForgottenSoulEnemyHex : HextechEnemyHexEffect
 {
 	internal override MonsterHexKind Kind => MonsterHexKind.ForgottenSoul;

@@ -1,6 +1,5 @@
 namespace HextechRunes;
 
-// 蓄能(仅储君) —— 当你花费辉星时,获得相同数值的活力(VigorPower)。
 public sealed class ChargeUpRune : HextechRelicBase
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>

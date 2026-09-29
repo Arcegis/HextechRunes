@@ -44,8 +44,7 @@ public sealed class MiseryUpgradeRune : CardUpgradeRuneBase<Misery>
 			foreach (PowerModel debuff in debuffs)
 			{
 #if !STS2_108_OR_NEWER
-				// 0.108.0 起 ITemporaryPower.IgnoreNextInstance 被移除,实例追踪由引擎侧自动处理
-				// (2026-07-05 已在 0.108.0 实机验证:复制临时型 debuff 行为正常)。
+				// 0.108.0 起 ITemporaryPower.IgnoreNextInstance 被移除，临时能力的实例追踪由引擎处理。
 				if (debuff is ITemporaryPower temporaryPower)
 				{
 					temporaryPower.IgnoreNextInstance();

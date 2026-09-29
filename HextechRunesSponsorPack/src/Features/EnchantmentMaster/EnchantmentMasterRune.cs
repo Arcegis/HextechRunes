@@ -8,9 +8,7 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HextechRunesSponsorPack;
 
-// 0.9.2 起附魔大师不再实现「多重附魔」机制(整套自建引擎已删除),改为战斗结束时给牌组里的随机牌
-// 加一个随机的合法附魔。「合法」的定义只来自 enchantment.CanEnchant(card):没装多重附魔类模组时
-// 只有空槽位与原版可叠层的同类会被放行,装了这类模组时由它们放宽——拓展包既不解释也不探测。
+// 战斗胜利后为随机牌添加合法附魔。合法性由 CanEnchant 判断，多重附魔的规则交由相应模组处理。
 public sealed class EnchantmentMasterRune : HextechRelicBase
 {
 	private static readonly HashSet<Type> GoldEnchantmentForgeTypes =

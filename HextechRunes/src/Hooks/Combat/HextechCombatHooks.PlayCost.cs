@@ -2,22 +2,16 @@ using MegaCrit.Sts2.Core.Hooks;
 
 namespace HextechRunes;
 
-internal readonly record struct HextechCardPlayResourceSpend(decimal Energy, decimal Stars)
-{
-	public bool HasAny => Energy > 0m || Stars > 0m;
-}
+internal readonly record struct HextechCardPlayResourceSpend(decimal Energy, decimal Stars);
 
 internal static partial class HextechCombatHooks
 {
 	private static readonly Dictionary<CardModel, Stack<int>> ActivePlayEnergyValues = new();
 	private static readonly Dictionary<CardModel, int> PendingManualPlayEnergyValues = new();
-	private static readonly Dictionary<CardModel, Stack<HextechCardPlayResourceSpend>> ActivePlayResourceSpends = new();
-	private static readonly Dictionary<CardModel, HextechCardPlayResourceSpend> PendingManualPlayResourceSpends = new();
 
 	internal static void ResetTransientCombatState()
 	{
 		ActivePlayEnergyValues.Clear();
-		ActivePlayResourceSpends.Clear();
 		ClearPendingManualPlayState();
 		PendingInstantDeathDoomKills.Clear();
 	}
@@ -25,7 +19,6 @@ internal static partial class HextechCombatHooks
 	internal static void ClearPendingManualPlayState()
 	{
 		PendingManualPlayEnergyValues.Clear();
-		PendingManualPlayResourceSpends.Clear();
 	}
 
 	internal static bool TryGetActivePlayEnergyValue(CardModel? card, out decimal energyValue)
@@ -52,35 +45,14 @@ internal static partial class HextechCombatHooks
 			: card.EnergyCost.GetAmountToSpend();
 	}
 
-	internal static HextechCardPlayResourceSpend GetResourceSpendForCurrentCardPlay(CardModel card)
+	// 本次出牌实付的能量与辉星，取自随出牌动作同步的 CardPlay.Resources：两端执行同一动作，值必然一致。
+	// 不能读本机静态记账栈：栈缺值时只能退回牌面费用，自动打出（实付 0）的牌就会在一端多退能量，
+	// 联机校验和分叉（一呼百应连打 + 最万用的瞄准镜返还）。星尘保留的辉星上报为已花费但并未扣除，不退。
+	internal static HextechCardPlayResourceSpend GetResourceSpend(CardPlay cardPlay)
 	{
-		if (ActivePlayResourceSpends.TryGetValue(card, out Stack<HextechCardPlayResourceSpend>? resourceSpends)
-			&& resourceSpends.Count > 0)
-		{
-			return resourceSpends.Peek();
-		}
-
-		return CaptureResourceSpend(card);
-	}
-
-
-	private static HextechCardPlayResourceSpend CaptureResourceSpend(CardModel card)
-	{
-		int energyToSpend = card.EnergyCost.GetAmountToSpend();
-		int starsToSpend = card.Owner == null ? 0 : Math.Max(0, card.GetStarCostWithModifiers());
-		if (card.Owner?.PlayerCombatState == null || card.CombatState == null)
-		{
-			return new HextechCardPlayResourceSpend(Math.Max(0, energyToSpend), starsToSpend);
-		}
-
-		int currentEnergy = card.Owner.PlayerCombatState.Energy;
-		if (energyToSpend > currentEnergy && Hook.ShouldPayExcessEnergyCostWithStars(card.CombatState, card.Owner))
-		{
-			starsToSpend += (energyToSpend - currentEnergy) * 2;
-			energyToSpend = currentEnergy;
-		}
-
-		return new HextechCardPlayResourceSpend(Math.Max(0, energyToSpend), Math.Max(0, starsToSpend));
+		ResourceInfo resources = cardPlay.Resources;
+		int stars = StardustUpgradeRune.ShouldPreserveStars(cardPlay.Card) ? 0 : resources.StarsSpent;
+		return new HextechCardPlayResourceSpend(Math.Max(0, resources.EnergySpent), Math.Max(0, stars));
 	}
 
 	private static async Task<ValueTuple<int, int>> SpendResourcesPreservingStars(CardModel card)
@@ -126,17 +98,6 @@ internal static partial class HextechCombatHooks
 		energyValues.Push(Math.Max(0, energyValue));
 	}
 
-	private static void PushActivePlayResourceSpend(CardModel card, HextechCardPlayResourceSpend resourceSpend)
-	{
-		if (!ActivePlayResourceSpends.TryGetValue(card, out Stack<HextechCardPlayResourceSpend>? resourceSpends))
-		{
-			resourceSpends = new Stack<HextechCardPlayResourceSpend>();
-			ActivePlayResourceSpends[card] = resourceSpends;
-		}
-
-		resourceSpends.Push(resourceSpend);
-	}
-
 	private static async Task PopActivePlayEnergyValueWhenDone(CardModel card, PlayerChoiceContext choiceContext, Task task)
 	{
 		try
@@ -147,7 +108,6 @@ internal static partial class HextechCombatHooks
 		finally
 		{
 			PopActivePlayEnergyValue(card);
-			PopActivePlayResourceSpend(card);
 		}
 	}
 
@@ -181,7 +141,6 @@ internal static partial class HextechCombatHooks
 
 	private static bool ShouldForceExhaustStuckPlayCard(CardModel card)
 	{
-		// (0.8.4 遗忘之魂重做后不再阻止消耗,原 ShouldPreventPlayExhaust 短路已移除。)
 		return card.ExhaustOnNextPlay
 			|| card.Keywords.Contains(CardKeyword.Exhaust)
 			|| card.Owner?.GetRelic<EightPennyGateRune>() != null;
@@ -201,20 +160,6 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-	private static void PopActivePlayResourceSpend(CardModel card)
-	{
-		if (!ActivePlayResourceSpends.TryGetValue(card, out Stack<HextechCardPlayResourceSpend>? resourceSpends) || resourceSpends.Count == 0)
-		{
-			return;
-		}
-
-		resourceSpends.Pop();
-		if (resourceSpends.Count == 0)
-		{
-			ActivePlayResourceSpends.Remove(card);
-		}
-	}
-
 	[HarmonyPatch(typeof(CardModel), nameof(CardModel.SpendResources), new Type[0])]
 	[HextechPatch("combat.spend-resources", "出牌费用记账")]
 	private static class SpendResourcesPatch
@@ -224,14 +169,11 @@ internal static partial class HextechCombatHooks
 		private static bool Prefix(CardModel __instance, ref Task<ValueTuple<int, int>> __result)
 		{
 			PendingManualPlayEnergyValues[__instance] = __instance.EnergyCost.GetAmountToSpend();
-			HextechCardPlayResourceSpend resourceSpend = CaptureResourceSpend(__instance);
 			if (!StardustUpgradeRune.ShouldPreserveStars(__instance))
 			{
-				PendingManualPlayResourceSpends[__instance] = resourceSpend;
 				return true;
 			}
 
-			PendingManualPlayResourceSpends[__instance] = resourceSpend with { Stars = 0m };
 			__result = SpendResourcesPreservingStars(__instance);
 			return false;
 		}
@@ -242,7 +184,7 @@ internal static partial class HextechCombatHooks
 	private static class OnPlayWrapperPatch
 	{
 		[HarmonyPrefix]
-		private static void Prefix(CardModel __instance, ResourceInfo resources, bool isAutoPlay)
+		private static void Prefix(CardModel __instance, ResourceInfo resources)
 		{
 			int energyValue = resources.EnergyValue;
 			if (PendingManualPlayEnergyValues.Remove(__instance, out int pendingEnergyValue))
@@ -250,20 +192,7 @@ internal static partial class HextechCombatHooks
 				energyValue = pendingEnergyValue;
 			}
 
-			// 本次实付能量:自动打出(Hellraiser 等)实际花 0 能量(EnergySpent=0),其 EnergyValue 只是名义费用,
-			// 不能用来返还,否则免费打的牌会凭空返还能量。非自动打出的牌用 energyValue:对 X 费牌是实付的 X,
-			// 对普通牌等于费用(EnergySpent 对 X 费牌会退化成 1,故不用它)。星费仍走精确路径(下方 pending 覆盖)。
-			int spentEnergy = isAutoPlay ? Math.Max(0, resources.EnergySpent) : Math.Max(0, energyValue);
-			HextechCardPlayResourceSpend resourceSpend = new(
-				spentEnergy,
-				Math.Max(0, resources.StarsSpent));
-			if (PendingManualPlayResourceSpends.Remove(__instance, out HextechCardPlayResourceSpend pendingResourceSpend))
-			{
-				resourceSpend = pendingResourceSpend;
-			}
-
 			PushActivePlayEnergyValue(__instance, energyValue);
-			PushActivePlayResourceSpend(__instance, resourceSpend);
 		}
 
 		[HarmonyPostfix]

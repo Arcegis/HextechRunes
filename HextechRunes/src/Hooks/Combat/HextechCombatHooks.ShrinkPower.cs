@@ -13,7 +13,8 @@ internal static partial class HextechCombatHooks
 			&& offset < 0m
 			&& power.Owner.Side == CombatSide.Player
 			&& applier?.Side == CombatSide.Enemy
-			&& power.Owner.GetPowerAmount<ArtifactPower>() <= 0;
+			&& power.Owner.GetPowerAmount<ArtifactPower>() <= 0
+			&& IsVanillaFixActiveFor(power.Owner);
 	}
 
 	private static async Task<int> ReplaceTemporaryShrinkWithPermanent(
@@ -56,11 +57,8 @@ internal static partial class HextechCombatHooks
 				return true;
 			}
 
-			object? effectiveChoiceContext = null;
-			effectiveChoiceContext = choiceContext;
-
 			__result = ReplaceTemporaryShrinkWithPermanent(
-				effectiveChoiceContext,
+				choiceContext,
 				power,
 				offset,
 				applier,

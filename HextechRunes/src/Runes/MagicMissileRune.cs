@@ -60,19 +60,8 @@ public sealed class MagicMissileRune : HextechRelicBase
 		Flash(targets);
 		Creature source = Owner.Creature;
 		decimal damagePercent = DynamicVars["MaxHpDamagePercent"].BaseValue;
-		if (HextechPlayerContextHelper.IsNetworkMultiplayerRun())
-		{
-			_ = TaskHelper.RunSafely(PlayVolleyVfxAsync(source, targets));
-			return ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, targets, damagePercent);
-		}
-
-		_ = TaskHelper.RunSafely(ResolveVolleyAfterCardSettlesAsync(
-			source,
-			combatState,
-			cardPlay.Card,
-			targets,
-			damagePercent));
-		return Task.CompletedTask;
+		_ = TaskHelper.RunSafely(PlayVolleyVfxAsync(source, targets));
+		return ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, targets, damagePercent);
 	}
 
 	private static async Task PlayVolleyVfxAsync(Creature source, IReadOnlyList<Creature> targets)
@@ -107,63 +96,6 @@ public sealed class MagicMissileRune : HextechRelicBase
 					choiceContext,
 					target,
 					CalculateMissileDamage(target.MaxHp, damagePercent),
-					ValueProp.Unpowered,
-					source,
-					null);
-			}
-		}
-	}
-
-	private static async Task ResolveVolleyAfterCardSettlesAsync(
-		Creature source,
-		HextechCombatState combatState,
-		CardModel triggeringCard,
-		IReadOnlyList<Creature> targets,
-		decimal damagePercent)
-	{
-		if (!await HextechCardPlayTiming.WaitForCardPlayFinishedAsync(source, combatState, triggeringCard))
-		{
-			return;
-		}
-
-		await ResolveVolleyAsync(source, combatState, targets, damagePercent);
-	}
-
-	private static async Task ResolveVolleyAsync(
-		Creature source,
-		HextechCombatState combatState,
-		IReadOnlyList<Creature> targets,
-		decimal damagePercent)
-	{
-		// 弹道不能占住 AfterCardPlayed；玩家继续操作时，独立任务仍按命中顺序串行结算伤害命令。
-		Task<bool>[][] arrivalTasks = Enumerable.Range(0, MissileCount)
-			.Select(missileIndex => targets
-				.Select(target => HextechCombatVfx.PlayMagicMissile(source, target, missileIndex))
-				.ToArray())
-			.ToArray();
-		PlayerChoiceContext damageContext = new BlockingPlayerChoiceContext();
-
-		for (int missileIndex = 0; missileIndex < MissileCount; missileIndex++)
-		{
-			bool[] arrivals = await Task.WhenAll(arrivalTasks[missileIndex]);
-			if (source.IsDead || !ReferenceEquals(source.CombatState, combatState))
-			{
-				return;
-			}
-
-			for (int targetIndex = 0; targetIndex < targets.Count; targetIndex++)
-			{
-				Creature target = targets[targetIndex];
-				if (!arrivals[targetIndex] || !target.IsAlive || !ReferenceEquals(target.CombatState, combatState))
-				{
-					continue;
-				}
-
-				int damage = CalculateMissileDamage(target.MaxHp, damagePercent);
-				await HextechGameApiCompat.Damage(
-					damageContext,
-					target,
-					damage,
 					ValueProp.Unpowered,
 					source,
 					null);

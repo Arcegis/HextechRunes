@@ -82,7 +82,7 @@ internal static class HextechMayhemActRecovery
 		int maxActIndex,
 		IReadOnlyList<int> playerHexCountsByAct)
 	{
-		int lastActIndex = actState.LastActIndexFor(maxActIndex);
+		int lastActIndex = maxActIndex;
 		if (lastActIndex < 0 || runState.Players.Count == 0)
 		{
 			return -1;
@@ -152,7 +152,7 @@ internal static class HextechMayhemActRecovery
 		int hexCountRecoveryBaseline,
 		IReadOnlyList<int> playerHexCountsByAct)
 	{
-		int lastActIndex = actState.LastActIndexFor(maxActIndex);
+		int lastActIndex = maxActIndex;
 		if (lastActIndex < 0)
 		{
 			return -1;

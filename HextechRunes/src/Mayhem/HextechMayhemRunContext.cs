@@ -18,8 +18,8 @@ internal sealed class HextechMayhemRunContext
 	public int EnemyTezcatarasMercyCombatCounter { get; set; }
 	public bool HostUsesBetterMultiplayerScaling { get; set; }
 
-	// 模组总开关的「本局冻结值」:null=未冻结(使用本局配置快照)。开局 act1 首次 act-roll 后冻结一次,
-	// 之后不变;载入存档时由 SavedProperty 恢复,联机里客户端从房主同步的快照值冻结。
+	// null 表示尚未冻结，使用本局有效配置；首次 act-roll 同步后冻结一次。
+	// 载入时由 SavedProperty 恢复，客户端使用房主同步的快照值。
 	public bool? ModActiveForRun { get; set; }
 
 	public bool IsEndlessLoopActive => MonsterHexStrengthTierFloor >= 3;
@@ -43,7 +43,7 @@ internal sealed class HextechMayhemRunContext
 		ActSelectionIndexOffset = Math.Max(ActState.ActCount, ActSelectionIndexOffset + 1);
 		ActiveExtraStageIndex = null;
 		ResetProgressState(hexCountRecoveryBaseline, monsterHexStrengthTierFloor: 3);
-		ActState.ResetForEndlessLoop();
+		// 幕状态不清：无尽继续沿用单调递增的阶段序号，保留每次获得敌方海克斯的分组。
 		ChoiceHistory.Reset();
 		RuneSelectionJournal.Reset(preserveCharacterWeights: true);
 		ResetCombatTracking();

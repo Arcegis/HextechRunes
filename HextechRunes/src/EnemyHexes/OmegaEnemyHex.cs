@@ -16,9 +16,6 @@ internal sealed class OmegaEnemyHex : HextechEnemyHexEffect
 		}
 
 		context.Tracking.PlayerRuneProcsThisCombat[TriggerKey] = 1;
-		await context.RunGroupedPlayerDebuffBurst(async () =>
-		{
-			await PowerCmd.Apply<DisintegrationPower>(players, context.TierValue(Kind, 5, 8, 12), null, null);
-		});
+		await PowerCmd.Apply<DisintegrationPower>(players, context.TierValue(Kind, 5, 8, 12), null, null);
 	}
 }

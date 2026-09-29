@@ -105,9 +105,9 @@ internal static partial class HextechRuneSelectionCoordinator
 		if (!ReferenceEquals(rerolled, currentOptions))
 		{
 			ModelId rerolledId = rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id;
+			// 只进本机界面的已见集合；存档里的已见在选定后按最终候选记，其他客户端看不到中途重随结果。
 			seenOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);
-			modifier.RecordSeenPlayerRunes(player, [ rerolled[slotIndex] ]);
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RerollSingleOptionMultiplayer: player={player.NetId} slot={slotIndex} ordinal={rerollOrdinal} relic={rerolledId.Entry}");
 		}
 

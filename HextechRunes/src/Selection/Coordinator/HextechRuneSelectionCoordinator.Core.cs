@@ -18,11 +18,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		ActSelectionGate.Reset();
 	}
 
-	public static Task HandleActStarted(HextechMayhemModifier modifier)
-	{
-		return HandleActSelection(modifier.ActiveRunState, modifier);
-	}
-
 	public static Task HandleActSelection(RunState runState, HextechMayhemModifier modifier)
 	{
 		return HandleStageSelection(runState, modifier, modifier.GetCurrentActSelectionIndex());
@@ -119,7 +114,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			{
 				bool allowEnemyHexAdjustment = choiceOrdinal == 0
 					&& !HextechPresetChallengeRegistry.IsActive(runState);
-				if (gameType is NetGameType.Singleplayer or NetGameType.None)
+				if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 				{
 					foreach (Player player in runState.Players)
 					{
@@ -270,13 +265,9 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			// R2:任何非取消异常都不得冒泡出 HandleActSelection。否则会 fault 掉把本方法 await 进去的
-			// 开局/进幕任务链(StartRun 续体、AfterActEntered/BeforeRoomEntered 等 lockstep 钩子),
-			// 造成「单端被踢出/任务挂起、另一端继续」式分叉。此处捕获后:抛点通常早于 SetActResolved,
-			// 故该幕仍为未解析,后续 room-entered/load 会经 ActSelectionGate 重入重试(两端对称、可自愈);
-			// 若确属两端内容/资源不一致的真分叉,会在战斗开始时由游戏自带 NetFullCombatState checksum
-			// (StateDivergence)统一、干净地断连——不在此自造断连,避免对可自愈的瞬时/对称失败过度踢人。
-			// 用 Log.Error 保证可诊断,绝不静默吞掉。
+			// 记录异常，避免它继续打断开局/进幕的调用链。这里不回滚已经完成的状态写入；
+			// 只有尚未 SetStageResolved 的阶段才会在后续进入或读档时重新尝试选择。
+			// 捕获异常本身不保证两端恢复一致，联机状态仍由原版校验。
 			Log.Error($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection failed act={actIndex} networkMp={HextechRelicBase.IsNetworkMultiplayerRun()}: {ex}");
 		}
 		finally

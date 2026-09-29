@@ -19,12 +19,14 @@ internal static class HextechArtifactCompatibilityHooks
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(
+			ArtifactPower __instance,
 			PowerModel canonicalPower,
 			decimal amount,
 			ref decimal modifiedAmount,
 			ref bool __result)
 		{
-			if (!IsEncounterMechanicPower(canonicalPower))
+			if (!IsEncounterMechanicPower(canonicalPower)
+				|| !HextechCombatHooks.IsVanillaFixActiveFor(__instance.Owner))
 			{
 				return true;
 			}

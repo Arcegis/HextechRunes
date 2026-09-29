@@ -44,8 +44,10 @@ public abstract partial class HextechRelicBase
 	}
 
 	private HextechCombatState? _turnScopedCombatState;
-	private int _turnScopedRoundNumber = -1;
+	private int _turnScopedTurnNumber = -1;
 
+	// "每回合 N 次"按持有者自己的回合计：原版 TurnNumber 在该玩家开始新回合（含额外回合）时递增，
+	// 队友的额外回合不变。联机计数（Modifier 记账）按同一口径只在参与回合的玩家开始回合时清零。
 	protected void EnsureTurnScopedStateCurrent(Action resetState)
 	{
 		HextechCombatState? combatState = Owner?.Creature.CombatState;
@@ -53,12 +55,12 @@ public abstract partial class HextechRelicBase
 		{
 			resetState();
 			_turnScopedCombatState = null;
-			_turnScopedRoundNumber = -1;
+			_turnScopedTurnNumber = -1;
 			return;
 		}
 
 		if (!ReferenceEquals(_turnScopedCombatState, combatState)
-			|| _turnScopedRoundNumber != combatState.RoundNumber)
+			|| _turnScopedTurnNumber != GetOwnerTurnNumber(combatState))
 		{
 			resetState();
 			UpdateTurnScopedStateIdentity(combatState);
@@ -69,7 +71,12 @@ public abstract partial class HextechRelicBase
 	{
 		combatState ??= Owner?.Creature.CombatState;
 		_turnScopedCombatState = combatState;
-		_turnScopedRoundNumber = combatState?.RoundNumber ?? -1;
+		_turnScopedTurnNumber = combatState == null ? -1 : GetOwnerTurnNumber(combatState);
+	}
+
+	private int GetOwnerTurnNumber(HextechCombatState combatState)
+	{
+		return Owner?.PlayerCombatState?.TurnNumber ?? combatState.RoundNumber;
 	}
 
 	protected bool ShouldUseNetworkCombatHistory()
@@ -176,7 +183,7 @@ public abstract partial class HextechRelicBase
 		return true;
 	}
 
-	// (PR#18)只读、不消费。ModifyCardPlayCount 等引擎可能针对同一次出牌重复调用的钩子只应在这里取序号;
+	// 只读、不消费。ModifyCardPlayCount 等引擎可能针对同一次出牌重复调用的钩子只应在这里取序号;
 	// 真正的消费(推进共享计数)必须放在每次真实出牌只触发一次的钩子里调用 ConsumeCombatProcOrdinal,
 	// 否则联机各端序号推进次数不一致会导致稳定随机结果分叉。
 	protected int PeekCombatProcOrdinal(string procKey, int localCount)

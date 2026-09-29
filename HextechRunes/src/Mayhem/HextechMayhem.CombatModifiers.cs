@@ -74,13 +74,6 @@ internal sealed partial class HextechMayhemModifier
 			(effect, context) => effect.ShouldFlush(context, player));
 	}
 
-	public override bool ShouldEtherealTrigger(CardModel card)
-	{
-		return HextechEnemyHexDispatcher.All(
-			this,
-			(effect, context) => effect.ShouldEtherealTrigger(context, card));
-	}
-
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
 		modifiedCost = originalCost;

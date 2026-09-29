@@ -16,7 +16,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		RunManager manager = RunManager.Instance;
 		EnemyHexAdjustmentSyncContext? sync = null;
-		if (manager.NetService.Type is not (NetGameType.Singleplayer or NetGameType.None))
+		if (!HextechPlayerContextHelper.IsSinglePlayerFlow(manager.NetService.Type))
 		{
 			PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(manager);
 			sync = CreateEnemyHexAdjustmentSyncContext(manager, runState, synchronizer, actIndex, newHexes)

@@ -12,9 +12,7 @@ internal sealed class CombatTrackingSnapshot
 	public Dictionary<uint, int> BloodArmorHpLossThisPlayerTurn { get; set; } = new();
 	public Dictionary<uint, int> ClownCollegeProcsThisTurn { get; set; } = new();
 	public List<uint> EscapePlanTriggered { get; set; } = [];
-	public List<uint> EscapePlanPending { get; set; } = [];
 	public List<uint> RepulsorTriggered { get; set; } = [];
-	public List<uint> RepulsorPending { get; set; } = [];
 	public List<uint> DawnTriggered { get; set; } = [];
 	public Dictionary<uint, int> NearDeathFeastEnemyDebt { get; set; } = new();
 	public Dictionary<uint, int> NearDeathFeastEnemyStrength { get; set; } = new();
@@ -43,7 +41,6 @@ internal sealed class CombatTrackingSnapshot
 	public Dictionary<uint, int> TankEngineStacks { get; set; } = new();
 	public Dictionary<uint, int> TankEngineLastAppliedRound { get; set; } = new();
 	public Dictionary<uint, int> ShrinkEngineStacks { get; set; } = new();
-	public Dictionary<uint, int> GetExcitedPending { get; set; } = new();
 	public List<uint> FeelTheBurnPending { get; set; } = [];
 	public List<uint> MountainSoulHasPreviousTurn { get; set; } = [];
 	public List<uint> MountainSoulDamagedSinceLastTurn { get; set; } = [];
@@ -62,5 +59,4 @@ internal sealed class CombatTrackingSnapshot
 	public Dictionary<ulong, int> InspectExtraDrawsPreventedThisTurn { get; set; } = new();
 	public List<ulong> GripPlayersTriggeredThisTurn { get; set; } = [];
 	public int ArcanePunchPlayerAttackCardsPlayed { get; set; }
-	public int EnemyProtectiveVeilTurnCounter { get; set; }
 }

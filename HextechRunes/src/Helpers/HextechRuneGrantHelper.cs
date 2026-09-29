@@ -182,10 +182,7 @@ internal static class HextechRuneGrantHelper
 		IReadOnlySet<ModelId>? blockedIds,
 		IReadOnlySet<ModelId> selectedIds)
 	{
-		bool applyConfiguration = HextechRunePoolBuilder.ShouldApplyPlayerRuneConfiguration(player);
-		IReadOnlySet<string> disabledIds = applyConfiguration
-			? HextechRunePoolBuilder.GetEffectiveDisabledPlayerRuneIds((RunState)player.RunState)
-			: new HashSet<string>(StringComparer.Ordinal);
+		IReadOnlySet<string> disabledIds = HextechRunePoolBuilder.GetEffectiveDisabledPlayerRuneIds((RunState)player.RunState);
 		HashSet<ModelId> ownedAndSelectedIds = player.Relics
 			.Where(HextechCatalog.IsHextechRelic)
 			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
@@ -199,10 +196,8 @@ internal static class HextechRuneGrantHelper
 		}
 
 		return candidateTypes
-			.Where(type => applyConfiguration
-				? HextechCatalog.IsPlayerRuneTypeConfigurable(type)
-				: HextechCatalog.IsPlayerRuneTypeSelectable(type))
-			.Where(type => !applyConfiguration || !disabledIds.Contains(ModelDb.GetId(type).Entry))
+			.Where(HextechCatalog.IsPlayerRuneTypeConfigurable)
+			.Where(type => !disabledIds.Contains(ModelDb.GetId(type).Entry))
 			.Where(type => !IsDestructiveRandomRewardRuneType(type))
 			.Where(type => !unavailableIds.Contains(ModelDb.GetId(type)))
 			.Where(type =>

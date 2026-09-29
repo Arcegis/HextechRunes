@@ -94,29 +94,14 @@ internal sealed partial class HextechMayhemModifier
 		_actState.SetRarity(actIndex, rarity);
 	}
 
-	public MonsterHexKind? GetMonsterHexForAct(int actIndex)
-	{
-		return _actState.GetMonsterHex(actIndex);
-	}
-
 	public IReadOnlyList<MonsterHexKind> GetMonsterHexesForAct(int actIndex)
 	{
 		return _actState.GetMonsterHexes(actIndex);
 	}
 
-	public void SetMonsterHexForAct(int actIndex, MonsterHexKind hex)
-	{
-		_actState.SetMonsterHex(actIndex, hex);
-	}
-
 	public void SetMonsterHexesForAct(int actIndex, IEnumerable<MonsterHexKind> hexes)
 	{
 		_actState.SetMonsterHexes(actIndex, hexes);
-	}
-
-	public void ClearMonsterHexForAct(int actIndex)
-	{
-		_actState.ClearMonsterHex(actIndex);
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexes()
