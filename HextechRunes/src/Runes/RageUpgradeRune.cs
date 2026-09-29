@@ -6,7 +6,7 @@ public sealed class RageUpgradeRune : CardUpgradeRuneBase<Rage>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Rage>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromKeyword(CardKeyword.Exhaust)
 	];
 

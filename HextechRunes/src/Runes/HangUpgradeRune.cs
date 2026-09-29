@@ -6,7 +6,8 @@ public sealed class HangUpgradeRune : CardUpgradeRuneBase<Hang>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Hang>(), HoverTipFactory.FromKeyword(CardKeyword.Exhaust),
+		.. base.ExtraHoverTips,
+		HoverTipFactory.FromKeyword(CardKeyword.Exhaust),
 		HoverTipFactory.FromPower<HextechHangPower>()
 	];
 

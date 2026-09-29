@@ -6,7 +6,7 @@ public sealed class DualcastUpgradeRune : CardUpgradeRuneBase<Dualcast>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Dualcast>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<Quadcast>()
 	];
 

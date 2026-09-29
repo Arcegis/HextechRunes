@@ -6,7 +6,7 @@ public sealed class OblivionUpgradeRune : CardUpgradeRuneBase<Oblivion>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Oblivion>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromPower<OblivionPower>()
 	];
 

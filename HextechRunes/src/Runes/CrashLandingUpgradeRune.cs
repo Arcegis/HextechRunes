@@ -4,7 +4,7 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<CrashLanding>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<CollisionCourse>()
 	];
 

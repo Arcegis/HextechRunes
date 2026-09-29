@@ -8,7 +8,8 @@ public sealed class FlakCannonUpgradeRune : CardUpgradeRuneBase<FlakCannon>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<FlakCannon>(), HoverTipFactory.FromCard<Fuel>()
+		.. base.ExtraHoverTips,
+		HoverTipFactory.FromCard<Fuel>()
 	];
 
 	internal static CardModel[] GetStatuses(Player player) => player.PlayerCombatState!.AllCards

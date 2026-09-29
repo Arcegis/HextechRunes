@@ -15,7 +15,7 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Undeath>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromKeyword(CardKeyword.Ethereal)
 	];
 

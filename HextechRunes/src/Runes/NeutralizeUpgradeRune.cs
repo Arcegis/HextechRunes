@@ -13,7 +13,7 @@ public sealed class NeutralizeUpgradeRune : CardUpgradeRuneBase<Neutralize>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Neutralize>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<Suppress>()
 	];
 

@@ -10,7 +10,8 @@ public sealed class InfernoUpgradeRune : CardUpgradeRuneBase<Inferno>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Inferno>(), HoverTipFactory.FromPower<HextechBurnPower>()
+		.. base.ExtraHoverTips,
+		HoverTipFactory.FromPower<HextechBurnPower>()
 	];
 
 	internal static async Task DamageAndBurn(PlayerChoiceContext context, InfernoPower power, Creature target, DamageResult result)

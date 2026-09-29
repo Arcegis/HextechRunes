@@ -8,7 +8,7 @@ public sealed class NeurosurgeUpgradeRune : CardUpgradeRuneBase<Neurosurge>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Neurosurge>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromPower<HextechNeurosurgePower>(),
 		HoverTipFactory.FromPower<DoomPower>()
 	];

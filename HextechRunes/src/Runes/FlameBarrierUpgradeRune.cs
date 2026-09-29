@@ -6,7 +6,8 @@ public sealed class FlameBarrierUpgradeRune : CardUpgradeRuneBase<FlameBarrier>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<FlameBarrier>(), HoverTipFactory.FromPower<HextechBurnPower>()
+		.. base.ExtraHoverTips,
+		HoverTipFactory.FromPower<HextechBurnPower>()
 	];
 
 	[HarmonyPatch(typeof(FlameBarrierPower), nameof(FlameBarrierPower.AfterDamageReceived))]
