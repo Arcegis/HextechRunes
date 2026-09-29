@@ -5,9 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Enchantments;
-using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Rooms;
 
 namespace HextechRunesSponsorPack;
@@ -110,18 +108,15 @@ internal abstract class AbyssalContractBase : IAbyssalContract
 			return;
 		}
 
-		(RelicModel? original, RelicModel? replacement) = owner.Character switch
+		if (!AbyssalContractCatalog.TryGetStarterRelics(owner.Character, out AbyssalContractCatalog.StarterRelicUpgrade starter))
 		{
-			Ironclad => ((RelicModel?)owner.GetRelic<BurningBlood>(), ModelDb.Relic<BlackBlood>().ToMutable()),
-			Silent => ((RelicModel?)owner.GetRelic<RingOfTheSnake>(), ModelDb.Relic<RingOfTheDrake>().ToMutable()),
-			Regent => ((RelicModel?)owner.GetRelic<DivineRight>(), ModelDb.Relic<DivineDestiny>().ToMutable()),
-			Necrobinder => ((RelicModel?)owner.GetRelic<BoundPhylactery>(), ModelDb.Relic<PhylacteryUnbound>().ToMutable()),
-			Defect => ((RelicModel?)owner.GetRelic<CrackedCore>(), ModelDb.Relic<InfusedCore>().ToMutable()),
-			_ => (null, null)
-		};
-		if (original != null && replacement != null)
+			return;
+		}
+
+		RelicModel? original = AbyssalContractCatalog.FindOwnedRelic(owner, starter.Starter);
+		if (original != null)
 		{
-			await RelicCmd.Replace(original, replacement);
+			await RelicCmd.Replace(original, AbyssalContractCatalog.GetCanonicalRelic(starter.Upgraded).ToMutable());
 		}
 	}
 }

@@ -25,7 +25,8 @@ public sealed class RegretRune : HextechRelicBase
 		get => 0;
 		set
 		{
-			// Legacy save compatibility: the reworked rune no longer has permanent damage scaling.
+			// 旧档兼容:重做后的符文不再有永久增伤。属性名与类型必须保留(SavedProperty 集合决定联机 net-id 布局),
+			// 读档时丢弃旧值、恒为 0。
 		}
 	}
 
@@ -144,26 +145,12 @@ public sealed class RegretRune : HextechRelicBase
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldMakeCardFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		return TryMakeFree(card, originalCost, out modifiedCost);
 	}
 
 	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldMakeCardFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		return TryMakeFree(card, originalCost, out modifiedCost);
 	}
 
 	private async Task ApplyReviveRewards(PlayerChoiceContext choiceContext)
@@ -190,10 +177,23 @@ public sealed class RegretRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		int cardsToDraw = Math.Max(0, 10 - PileType.Hand.GetPile(Owner).Cards.Count);
+		int cardsToDraw = Math.Max(0, CardPile.MaxCardsInHand - PileType.Hand.GetPile(Owner).Cards.Count);
 		return cardsToDraw > 0
 			? CardPileCmd.Draw(choiceContext, cardsToDraw, Owner, fromHandDraw: false)
 			: Task.CompletedTask;
+	}
+
+	// 能量与辉星费用共用同一判定:复活后到本人回合结束前,手牌/出牌区里自己的牌全部免费。
+	private bool TryMakeFree(CardModel card, decimal originalCost, out decimal modifiedCost)
+	{
+		modifiedCost = originalCost;
+		if (!ShouldMakeCardFree(card))
+		{
+			return false;
+		}
+
+		modifiedCost = 0m;
+		return true;
 	}
 
 	private bool ShouldMakeCardFree(CardModel card)

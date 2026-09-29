@@ -2,6 +2,7 @@ using HextechRunes;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves;
@@ -47,18 +48,18 @@ public sealed class DollysMirrorForge : HextechForgeBase
 			"dollys-mirror-category-choice");
 		if (selectedCategory is DollyCardChoiceRelic)
 		{
-			await CopySelectedCard();
+			await CopySelectedCard(Owner);
 		}
 		else if (selectedCategory is DollyRelicChoiceRelic)
 		{
-			await CopySelectedRelic();
+			await CopySelectedRelic(Owner);
 		}
 	}
 
-	private async Task CopySelectedCard()
+	private async Task CopySelectedCard(Player owner)
 	{
 		IEnumerable<CardModel> selectedCards = await CardSelectCmd.FromDeckGeneric(
-			Owner!,
+			owner,
 			new CardSelectorPrefs(CardSelectorPrefs.TransformSelectionPrompt, 1),
 			static _ => true);
 		CardModel? selected = selectedCards.FirstOrDefault();
@@ -68,7 +69,7 @@ public sealed class DollysMirrorForge : HextechForgeBase
 		}
 
 		Flash();
-		CardModel copy = Owner!.RunState.CloneCard(selected);
+		CardModel copy = owner.RunState.CloneCard(selected);
 		CardPileAddResult result = await CardPileCmd.Add(copy, PileType.Deck);
 		if (result.success)
 		{
@@ -77,7 +78,7 @@ public sealed class DollysMirrorForge : HextechForgeBase
 		}
 	}
 
-	private async Task CopySelectedRelic()
+	private async Task CopySelectedRelic(Player owner)
 	{
 		IReadOnlyList<RelicModel> options = CreateRelicOptions();
 		int pageIndex = 0;
@@ -86,7 +87,7 @@ public sealed class DollysMirrorForge : HextechForgeBase
 		{
 			DollyRelicPage page = CreateRelicPage(options, pageIndex);
 			selected = await HextechRunesApi.SelectRelicOption(
-				Owner!,
+				owner,
 				page.Options,
 				$"dollys-mirror-relic-choice page={page.PageIndex + 1}/{page.PageCount}");
 			if (selected is DollyPreviousPageRelic)
@@ -109,7 +110,7 @@ public sealed class DollysMirrorForge : HextechForgeBase
 
 		Flash();
 		RelicModel canonical = ModelDb.GetById<RelicModel>(selected.CanonicalInstance?.Id ?? selected.Id);
-		await RelicCmd.Obtain(canonical.ToMutable(), Owner!);
+		await RelicCmd.Obtain(canonical.ToMutable(), owner);
 	}
 
 	private IReadOnlyList<RelicModel> CreateRelicOptions()
@@ -165,17 +166,15 @@ public sealed class DollysMirrorForge : HextechForgeBase
 			pageCount);
 	}
 
+	// 不可复制:海克斯注册表管理的遗物(含第三方经 HextechRunesApi / HextechRunesInterop 登记、不继承 HextechRelicBase
+	// 的符文)、任何 HextechRelicBase,以及本体/拓展包程序集里的其余遗物(事件遗物、选项遗物等)。
 	private static bool IsNonHextechRelic(RelicModel relic)
 	{
 		Type relicType = (relic.CanonicalInstance ?? relic).GetType();
-		return !typeof(HextechRelicBase).IsAssignableFrom(relicType) && !IsHextechType(relicType);
-	}
-
-	private static bool IsHextechType(Type type)
-	{
-		string assemblyName = type.Assembly.GetName().Name ?? string.Empty;
-		return assemblyName is "HextechRunes" or "HextechRunesSponsorPack"
-			|| type.Namespace?.StartsWith("HextechRunes", StringComparison.Ordinal) is true;
+		return !HextechRunesApi.IsHextechRelic(relic)
+			&& !typeof(HextechRelicBase).IsAssignableFrom(relicType)
+			&& relicType.Assembly != typeof(HextechRelicBase).Assembly
+			&& relicType.Assembly != typeof(DollysMirrorForge).Assembly;
 	}
 }
 

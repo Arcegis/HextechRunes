@@ -12,6 +12,8 @@ namespace HextechRunesSponsorPack;
 // 两个补丁都只在深渊契约实际持有对应契约时才改变行为:
 // - ForgeCmd.Forge:摄政契约「只有击剑手册能锻造」的门控。原版这条路径上只有事后的 Hook.AfterForge
 //   (0.111 ForgeCmd 第 56 行),没有事前拦截口子,所以是跳过型前缀;它不复制任何原版逻辑。
+//   按设计哲学第 3 节,跳过型前缀用 Priority.Low:让其他模组的前缀先跑(它们仍能观察/改写这次锻造),
+//   本补丁最后才决定是否跳过原方法。
 // - OrbCmd.Channel:自动机契约把充能球一律换成闪电。原版没有 ModifyOrbBeingChanneled 之类的钩子,
 //   这是非跳过的参数改写前缀。
 internal static class AbyssalContractPatches
@@ -21,6 +23,7 @@ internal static class AbyssalContractPatches
 	internal static class RegentForgePatch
 	{
 		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
 		private static bool ForgePrefix(
 			Player player,
 			AbstractModel? source,

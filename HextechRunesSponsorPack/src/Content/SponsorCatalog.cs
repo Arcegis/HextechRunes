@@ -1,5 +1,4 @@
 using HextechRunes;
-using MegaCrit.Sts2.Core.Logging;
 
 namespace HextechRunesSponsorPack;
 
@@ -12,6 +11,8 @@ namespace HextechRunesSponsorPack;
 /// </remarks>
 internal static class SponsorCatalog
 {
+	private const string LogTag = "Registration";
+
 	// 迁移壳 SponsorCompositeEnchantment 仍带 [SavedProperty],载体注册保留;它不再有图标(不注册、不进随机附魔池)。
 	private static readonly Type[] SavedPropertyCarriers =
 	[
@@ -65,11 +66,7 @@ internal static class SponsorCatalog
 		typeof(DollyNextPageRelic),
 		typeof(EntropyIncreaseChoiceRelic),
 		typeof(EntropyDecreaseChoiceRelic),
-		typeof(WarriorContractChoiceRelic),
-		typeof(HunterContractChoiceRelic),
-		typeof(RegentContractChoiceRelic),
-		typeof(NecrobinderContractChoiceRelic),
-		typeof(AutomatonContractChoiceRelic)
+		.. AbyssalContractCatalog.ChoiceRelicTypes
 	];
 
 	// 可获得内容(锻造器 / 符文)在运行期硬引用的依赖:选择用的事件遗物、附魔载体与图标。
@@ -82,7 +79,7 @@ internal static class SponsorCatalog
 		[typeof(DollysMirrorForge)] = [typeof(DollyCardChoiceRelic), typeof(DollyRelicChoiceRelic), typeof(DollyPreviousPageRelic), typeof(DollyNextPageRelic)],
 		[typeof(EvolutionForge)] = [typeof(Evolution)],
 		[typeof(StarlightSparkleRune)] = [typeof(GoldStarRelic)],
-		[typeof(AbyssalContractRune)] = [typeof(WarriorContractChoiceRelic), typeof(HunterContractChoiceRelic), typeof(RegentContractChoiceRelic), typeof(NecrobinderContractChoiceRelic), typeof(AutomatonContractChoiceRelic)]
+		[typeof(AbyssalContractRune)] = [.. AbyssalContractCatalog.ChoiceRelicTypes]
 	};
 
 	// 供清单一致性测试用:依赖表里的每个可获得类型都必须在锻造器/符文表里,每个依赖都必须在载体/图标/事件遗物表里。
@@ -143,7 +140,10 @@ internal static class SponsorCatalog
 			Register("player rune", rune, failed, () => HextechRunesApi.RegisterPlayerRune(rune, rarity, tagKey: tagKey, assetModId: ModInfo.Id));
 		}
 
-		Log.Info($"[{ModInfo.Id}] Registered IntegratedStrategyEvents soft-collab rune content with runtime availability gating.");
+		// 信徒的锻造器售价修正走本体公开登记点;本体过旧(没有该方法)时只记失败,不影响其他内容。
+		Register("forge shop price modifier", typeof(BelieverRune), failed, RegisterBelieverForgePriceModifier);
+
+		SponsorLog.Info(LogTag, $"Registered sponsor-pack content ({PlayerRunes.Length} runes, {Forges.Length} forges, {EventRelics.Length} event relics); {failed.Count} failed, {skipped} skipped.");
 		return failed.Count + skipped;
 	}
 
@@ -160,7 +160,7 @@ internal static class SponsorCatalog
 			return false;
 		}
 
-		Log.Warn($"[{ModInfo.Id}] Skipped {kind} {obtainable.Name}: dependency registration failed for {string.Join(", ", missing.Select(static type => type.Name))}.", 2);
+		SponsorLog.Warn(LogTag, $"Skipped {kind} {obtainable.Name}: dependency registration failed for {string.Join(", ", missing.Select(static type => type.Name))}.");
 		return true;
 	}
 
@@ -173,7 +173,13 @@ internal static class SponsorCatalog
 		catch (Exception ex)
 		{
 			failed.Add(type);
-			Log.Warn($"[{ModInfo.Id}] Failed to register {kind} {type.Name}: {ex.GetType().Name}: {ex.Message}", 2);
+			SponsorLog.Warn(LogTag, $"Failed to register {kind} {type.Name}: {ex.GetType().Name}: {ex.Message}");
 		}
+	}
+
+	// 单独成方法:本体缺少 RegisterForgeShopPriceModifier 时,MissingMethodException 在调用本方法时抛出,由 Register 接住。
+	private static void RegisterBelieverForgePriceModifier()
+	{
+		HextechRunesApi.RegisterForgeShopPriceModifier(BelieverRune.ApplyForgePriceDeltas);
 	}
 }

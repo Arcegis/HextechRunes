@@ -1,8 +1,8 @@
 using HextechRunes;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HextechRunesSponsorPack;
@@ -55,7 +55,7 @@ public sealed class BelieverRune : HextechRelicBase
 	public override int DisplayAmount => !IsCanonical ? _charge : 0;
 
 	// 本局锻造器售价的临时修正(可正可负),由神迹事件的选择累加;逐局持久。
-	// 由 MiracleEventForgePricePatch 在主 mod 算价后叠加(纯拓展包,不动主 mod)。
+	// 经 HextechRunesApi.RegisterForgeShopPriceModifier 在本体算出随机锻造器售价后叠加(见 ApplyForgePriceDeltas)。
 	private int _forgePriceDelta;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -70,7 +70,17 @@ public sealed class BelieverRune : HextechRelicBase
 	internal void AddForgePriceDelta(int delta)
 	{
 		SavedForgePriceDelta = _forgePriceDelta + delta;
-		Log.Info($"[{ModInfo.Id}] BelieverRune forge-price delta {(delta >= 0 ? "+" : "")}{delta} -> total {_forgePriceDelta}.");
+		SponsorLog.Info("Believer", $"Forge-price delta {(delta >= 0 ? "+" : "")}{delta} -> total {_forgePriceDelta}.");
+	}
+
+	// 登记给本体的随机锻造器售价修正:叠加本局所有玩家的信徒修正,结果不低于 0;总修正为 0 时原价不变。
+	internal static int ApplyForgePriceDeltas(RunState runState, int price)
+	{
+		int delta = runState.Players
+			.SelectMany(static player => player.Relics)
+			.OfType<BelieverRune>()
+			.Sum(static believer => believer.ForgePriceDelta);
+		return delta != 0 ? Math.Max(0, price + delta) : price;
 	}
 
 	// 仅单人游戏出现。

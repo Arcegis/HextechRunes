@@ -1,12 +1,10 @@
-using System.Runtime.CompilerServices;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Logging;
-using MegaCrit.Sts2.Core.Rooms;
-using MegaCrit.Sts2.Core.Runs; // 只有 STS2_107_1 分支用(RunManager.Instance),0.108+ 目标下 IDE0005 会报它多余,不要删
 
 namespace HextechRunesSponsorPack;
 
-// 0.108.0 起 PotionRewardOdds.Roll 去掉了 AscensionManager 参数;版本差异收在这个分部文件里,GoldStarRelic 主体不带 #if。
+// 0.108.0 起 PotionRewardOdds.Roll 去掉了 AscensionManager 参数;两种签名的调用分别在
+// GoldStarRelic.Roll.Legacy.cs(STS2_107_1)与 GoldStarRelic.Roll.Official.cs(STS2_108_OR_NEWER)整文件隔离,
+// GoldStarRelic 主体与本文件都不带 #if。
 //
 // 加载器按"不高于宿主的最大打包目标"选变体:宿主是 0.108.x / 0.109.x 时会拿到 0.107.1 变体,
 // 这时三参 Roll 不存在,JIT 编译 RollPotionRewardCore 会抛 MissingMethodException。把真正的调用
@@ -26,20 +24,10 @@ public sealed partial class GoldStarRelic
 			if (!_loggedRollSignatureMismatch)
 			{
 				_loggedRollSignatureMismatch = true;
-				Log.Warn($"[{ModInfo.Id}] GoldStar potion roll unavailable on this game version (variant compiled for {ModInfo.TargetGameVersion}): {ex.Message}", 2);
+				SponsorLog.Warn("GoldStar", $"Potion roll unavailable on this game version (variant compiled for {ModInfo.TargetGameVersion}): {ex.Message}");
 			}
 
 			return false;
 		}
-	}
-
-	[MethodImpl(MethodImplOptions.NoInlining)]
-	private static bool RollPotionRewardCore(Player owner)
-	{
-#if STS2_107_1
-		return owner.PlayerOdds.PotionReward.Roll(owner, RunManager.Instance!.AscensionManager, RoomType.Monster);
-#else
-		return owner.PlayerOdds.PotionReward.Roll(owner, RoomType.Monster);
-#endif
 	}
 }

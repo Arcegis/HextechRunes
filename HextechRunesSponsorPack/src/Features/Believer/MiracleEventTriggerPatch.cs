@@ -2,7 +2,6 @@ using Godot;
 using HarmonyLib;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Rooms;
@@ -18,6 +17,8 @@ namespace HextechRunesSponsorPack;
 [HarmonyPatch(typeof(RunManager), nameof(RunManager.ProceedFromTerminalRewardsScreen))]
 internal static class MiracleEventTriggerPatch
 {
+	private const string LogTag = "Believer";
+
 	[HarmonyPostfix]
 	private static void Postfix(RunManager __instance, ref Task __result)
 	{
@@ -72,7 +73,7 @@ internal static class MiracleEventTriggerPatch
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Miracle trigger postfix error: {ex.GetType().Name}: {ex.Message}", 2);
+			SponsorLog.Warn(LogTag, $"Miracle trigger postfix error: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -88,15 +89,17 @@ internal static class MiracleEventTriggerPatch
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] BelieverRune failed to enter Miracle event: {ex.GetType().Name}: {ex.Message}", 2);
+			SponsorLog.Warn(LogTag, $"Failed to enter Miracle event: {ex.GetType().Name}: {ex.Message}");
 			// 兜底:进事件失败时确保地图可用,玩家不至于卡死。
 			try
 			{
 				NMapScreen.Instance?.SetTravelEnabled(true);
 				NMapScreen.Instance?.Open();
 			}
-			catch
+			catch (Exception mapException)
 			{
+				// 真实边界:Godot 节点可能已在换房中途销毁;兜底本身失败只记录,不再向上抛。
+				SponsorLog.Warn(LogTag, $"Map fallback after the failed Miracle entry also failed: {mapException.GetType().Name}: {mapException.Message}");
 			}
 		}
 	}
