@@ -264,14 +264,14 @@ internal static partial class HextechRuneSelectionCoordinator
 					out payload),
 				$"enemy-hex-adjustment act={syncContext.ActIndex}",
 				RemoteRuneChoicePollFrames,
-				() => screen.IsInsideTree() && IsCurrentRun(runState) && IsMultiplayerConnected(),
+				() => screen.IsInsideTree() && IsCurrentRun(runState) && HextechPlayerContextHelper.IsMultiplayerConnected(),
 				cancellationToken: cancellationToken);
 			if (!received.HasValue)
 			{
 				HextechLog.Warn(
 					"Mayhem", $"EnemyHexAdjustmentSync interrupted: " +
 					$"act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} " +
-					$"screenActive={screen.IsInsideTree()} runActive={IsCurrentRun(runState)} connected={IsMultiplayerConnected()}");
+					$"screenActive={screen.IsInsideTree()} runActive={IsCurrentRun(runState)} connected={HextechPlayerContextHelper.IsMultiplayerConnected()}");
 				return;
 			}
 

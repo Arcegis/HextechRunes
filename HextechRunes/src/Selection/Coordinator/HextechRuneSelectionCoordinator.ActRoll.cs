@@ -1,5 +1,3 @@
-using static HextechRunes.HextechSelectionHelpers;
-
 namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
@@ -99,7 +97,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			?? throw CreateProtocolFailure(
 				$"act-roll act={actIndex}",
 				$"No act-roll authority is available for multiplayer act={actIndex}.");
-		if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
+		if (!IsCurrentRun(runState) || !HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
 			throw new OperationCanceledException(
 				$"Multiplayer act-roll transaction is no longer active for act={actIndex}.");

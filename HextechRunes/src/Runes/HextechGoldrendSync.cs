@@ -110,7 +110,7 @@ internal static class HextechGoldrendSync
 				continue;
 			}
 
-			if (!CanBroadcastGoldLoss())
+			if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
 				Log.Warn(
 					$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Retaining transaction while multiplayer is disconnected "
@@ -123,7 +123,7 @@ internal static class HextechGoldrendSync
 				continue;
 			}
 
-			if (!CanBroadcastGoldLoss())
+			if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
 				Log.Warn(
 					$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Retaining pending transaction after connection changed "
@@ -185,15 +185,9 @@ internal static class HextechGoldrendSync
 		transaction.PendingAmount = alreadyPending + amount;
 	}
 
-	private static bool CanBroadcastGoldLoss()
-	{
-		INetGameService netService = RunManager.Instance.NetService;
-		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
-	}
-
 	private static bool TryBroadcastAppliedGoldLoss(ulong targetNetId, LocalGoldLossTransaction transaction)
 	{
-		if (!CanBroadcastGoldLoss())
+		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
 			Log.Warn(
 				$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Retaining locally applied transaction before broadcast "

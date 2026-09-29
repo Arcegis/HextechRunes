@@ -87,7 +87,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		DateTimeOffset deadline = DateTimeOffset.UtcNow + timeout;
 		while (!cancellationToken.IsCancellationRequested
 			&& IsCurrentRun(runState)
-			&& IsMultiplayerConnected()
+			&& HextechPlayerContextHelper.IsMultiplayerConnected()
 			&& DateTimeOffset.UtcNow < deadline)
 		{
 			// Multiplayer timer mods can accelerate process frames; keep network choice

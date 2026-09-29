@@ -116,12 +116,7 @@ public sealed partial class DoubleVisionRune
 		// 联机时只由奖励所属玩家本机复制：原版奖励领取本就只在领取者本机执行，再经
 		// RewardSynchronizer 广播给其他端(见下方 Sync* 调用)。这里的 LocalContext 判断跟随原版奖励流程，
 		// 共享结果仍由同步消息决定，不属于"用 LocalContext 决定只在本机结算共享效果"。
-		RunManager? runManager = RunManager.Instance;
-		INetGameService? netService = runManager?.NetService;
-		if (netService != null
-			&& netService.Type is NetGameType.Host or NetGameType.Client
-			&& netService.IsConnected
-			&& !LocalContext.IsMe(player))
+		if (HextechPlayerContextHelper.IsMultiplayerConnected() && !LocalContext.IsMe(player))
 		{
 			return false;
 		}
@@ -129,18 +124,9 @@ public sealed partial class DoubleVisionRune
 		return true;
 	}
 
-	private static bool ShouldSyncReward()
-	{
-		RunManager? runManager = RunManager.Instance;
-		INetGameService? netService = runManager?.NetService;
-		return netService != null
-			&& netService.Type is NetGameType.Host or NetGameType.Client
-			&& netService.IsConnected;
-	}
-
 	private static void TrySyncObtainedCard(CardModel card)
 	{
-		if (!ShouldSyncReward())
+		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
 			return;
 		}
@@ -159,7 +145,7 @@ public sealed partial class DoubleVisionRune
 
 	private static void TrySyncObtainedGold(int amount)
 	{
-		if (!ShouldSyncReward())
+		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
 			return;
 		}
@@ -178,7 +164,7 @@ public sealed partial class DoubleVisionRune
 
 	private static void TrySyncObtainedPotion(PotionModel potion)
 	{
-		if (!ShouldSyncReward())
+		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
 			return;
 		}
@@ -197,7 +183,7 @@ public sealed partial class DoubleVisionRune
 
 	private static void TrySyncObtainedRelic(RelicModel relic)
 	{
-		if (!ShouldSyncReward())
+		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
 			return;
 		}

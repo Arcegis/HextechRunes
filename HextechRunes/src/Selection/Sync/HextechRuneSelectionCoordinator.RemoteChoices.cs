@@ -81,7 +81,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			if (!remote.HasValue)
 			{
 				if (!IsCurrentRun(runState)
-					|| !IsMultiplayerConnected()
+					|| !HextechPlayerContextHelper.IsMultiplayerConnected()
 					|| shouldContinueAfterTimeout?.Invoke() == false)
 				{
 					throw new OperationCanceledException(
@@ -231,7 +231,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		string context)
 	{
 		if (!IsCurrentRun(runState)
-			|| !IsMultiplayerConnected()
+			|| !HextechPlayerContextHelper.IsMultiplayerConnected()
 			|| shouldRemainActive?.Invoke() == false)
 		{
 			throw new OperationCanceledException(
@@ -246,7 +246,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		while (!cancellationToken.IsCancellationRequested
 			&& IsCurrentRun(runState)
-			&& IsMultiplayerConnected()
+			&& HextechPlayerContextHelper.IsMultiplayerConnected()
 			&& shouldRemainActive?.Invoke() != false)
 		{
 			await WaitForProcessFrameOrDelayAsync(cancellationToken);
@@ -277,7 +277,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		try
 		{
-			if (IsMultiplayerConnected())
+			if (HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
 				HextechLog.Error("Mayhem", $"Aborting multiplayer choice transaction: context={context} reason={reason}");
 				RunManager.Instance.NetService.Disconnect(NetError.InternalError, now: true);

@@ -9,13 +9,6 @@ internal static class HextechSelectionHelpers
 	// 没有场景树可等(或节点尚未入树)时,用约一帧(60 FPS)的延迟代替等待 ProcessFrame。
 	private static readonly TimeSpan FrameFallbackDelay = TimeSpan.FromMilliseconds(16);
 
-	/// <summary>当前是已连接的联机(房主或客户端)。断线后的联机局与单机/回放都返回 false。</summary>
-	internal static bool IsMultiplayerConnected()
-	{
-		INetGameService netService = RunManager.Instance.NetService;
-		return netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected;
-	}
-
 	internal static bool SameRuneCandidate(RelicModel left, RelicModel right)
 	{
 		if (left.CanonicalId() != right.CanonicalId())

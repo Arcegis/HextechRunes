@@ -275,7 +275,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		foreach ((Player player, RelicModel selectedRelic, bool applied) in resolvedSelections)
 		{
-			if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
+			if (!IsCurrentRun(runState) || !HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
 				throw new OperationCanceledException(
 					$"Rune obtain transaction became inactive: act={actIndex} "
@@ -348,7 +348,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		try
 		{
-			if (!IsCurrentRun(runState) || !IsMultiplayerConnected())
+			if (!IsCurrentRun(runState) || !HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
 				throw new OperationCanceledException(
 					$"RuneChoice checkpoint canceled because the multiplayer transaction is inactive: "

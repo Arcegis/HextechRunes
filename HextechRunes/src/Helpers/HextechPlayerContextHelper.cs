@@ -29,6 +29,13 @@ internal static class HextechPlayerContextHelper
 		return !IsNetworkGameType(gameType);
 	}
 
+	/// <summary>当前是已连接的联机(房主或客户端)。断线后的联机局、单机/回放以及联机服务尚未建立时都返回 false。</summary>
+	public static bool IsMultiplayerConnected()
+	{
+		INetGameService? netService = RunManager.Instance?.NetService;
+		return netService != null && IsNetworkGameType(netService.Type) && netService.IsConnected;
+	}
+
 	public static bool IsClientRun(bool fallbackWhenUnavailable = false)
 	{
 		try

@@ -125,7 +125,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			catch (OperationCanceledException)
 			{
-				if (IsMultiplayerConnected())
+				if (HextechPlayerContextHelper.IsMultiplayerConnected())
 				{
 					uint canceledChoiceId = SyncLocalHextechChoice(
 						synchronizer,
@@ -187,7 +187,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static bool ShouldKeepWaitingForRemoteRuneChoice(RunState runState)
 	{
-		return IsCurrentRun(runState) && IsMultiplayerConnected();
+		return IsCurrentRun(runState) && HextechPlayerContextHelper.IsMultiplayerConnected();
 	}
 
 	private static async Task<HextechRuneSelectionScreen> CreateRuneSelectionScreenAsync(
