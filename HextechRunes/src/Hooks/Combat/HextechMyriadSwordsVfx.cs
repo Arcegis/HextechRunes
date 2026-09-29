@@ -1,10 +1,8 @@
 using Godot;
 using MegaCrit.Sts2.Core.Assets;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using MegaCrit.Sts2.Core.Nodes.Vfx;
 using MegaCrit.Sts2.Core.Nodes.Vfx.Cards;
 using static HextechRunes.HextechHookReflection;
 
