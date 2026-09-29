@@ -2,7 +2,16 @@ namespace HextechRunes;
 
 public sealed class OmniDragonSoulRune : HextechRelicBase
 {
-	private const int DragonSoulCardKinds = 6;
+	// 六种龙魂卡。下标即稳定随机的 roll 编号，顺序不能调整：同一种子下抽到哪张卡依赖它。
+	private static readonly Func<CardModel>[] DragonSoulCards =
+	[
+		ModelDb.Card<OceanDragonSoulCard>,
+		ModelDb.Card<InfernalDragonSoulCard>,
+		ModelDb.Card<HextechDragonSoulCard>,
+		ModelDb.Card<MountainDragonSoulCard>,
+		ModelDb.Card<ChemtechDragonSoulCard>,
+		ModelDb.Card<CloudDragonSoulCard>
+	];
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -11,12 +20,7 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<OceanDragonSoulCard>(),
-		HoverTipFactory.FromCard<InfernalDragonSoulCard>(),
-		HoverTipFactory.FromCard<HextechDragonSoulCard>(),
-		HoverTipFactory.FromCard<MountainDragonSoulCard>(),
-		HoverTipFactory.FromCard<ChemtechDragonSoulCard>(),
-		HoverTipFactory.FromCard<CloudDragonSoulCard>()
+		.. DragonSoulCards.Select(static card => HoverTipFactory.FromCard(card()))
 	];
 
 	public override async Task BeforeCombatStart()
@@ -31,71 +35,38 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 		}
 
 		Flash();
-		await AddRandomUpgradedDragonSoulCardsToCombatHand(DynamicVars.Cards.IntValue, combatState);
+		await AddRandomUpgradedDragonSoulCardsToCombatHand(Owner, DynamicVars.Cards.IntValue, combatState);
 	}
 
-	private async Task AddRandomUpgradedDragonSoulCardsToCombatHand(int count, HextechCombatState combatState)
+	private static async Task AddRandomUpgradedDragonSoulCardsToCombatHand(Player owner, int count, HextechCombatState combatState)
 	{
-		if (Owner == null || count <= 0)
+		if (count <= 0)
 		{
 			return;
 		}
 
-		IReadOnlyList<int> dragonSoulRolls = RollDistinctDragonSoulCardKinds(count, combatState);
+		IReadOnlyList<int> dragonSoulRolls = RollDistinctDragonSoulCardKinds(owner, count, combatState);
 		List<CardModel> cards = new(dragonSoulRolls.Count);
 		foreach (int roll in dragonSoulRolls)
 		{
-			cards.Add(CreateUpgradedDragonSoulCard(combatState, roll));
+			CardModel card = combatState.CreateCard(DragonSoulCards[roll](), owner);
+			CardCmd.Upgrade(card);
+			cards.Add(card);
 		}
 
 		await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
 	}
 
-	private IReadOnlyList<int> RollDistinctDragonSoulCardKinds(int count, HextechCombatState? combatState)
+	private static IReadOnlyList<int> RollDistinctDragonSoulCardKinds(Player owner, int count, HextechCombatState combatState)
 	{
-		Player owner = Owner ?? throw new InvalidOperationException("Omni Dragon Soul rolled cards without an owner.");
 		return HextechStableRandom.PickDistinct(
-			Enumerable.Range(0, DragonSoulCardKinds),
+			Enumerable.Range(0, DragonSoulCards.Length),
 			count,
 			(RunState)owner.RunState,
 			static roll => roll.ToString(),
 			"omni-dragon-soul-card",
 			HextechStableRandom.PlayerKey(owner),
-			combatState?.RoundNumber.ToString() ?? "-1",
+			combatState.RoundNumber.ToString(),
 			owner.Deck.Cards.Count.ToString());
-	}
-
-	private CardModel CreateUpgradedDragonSoulCard(HextechCombatState? combatState, int roll)
-	{
-		CardModel card = CreateDragonSoulCard(combatState, roll);
-		CardCmd.Upgrade(card);
-		return card;
-	}
-
-	private CardModel CreateDragonSoulCard(HextechCombatState? combatState, int roll)
-	{
-		Player owner = Owner ?? throw new InvalidOperationException("Omni Dragon Soul created a card without an owner.");
-		if (combatState != null)
-		{
-			return roll switch
-			{
-				0 => combatState.CreateCard<OceanDragonSoulCard>(owner),
-				1 => combatState.CreateCard<InfernalDragonSoulCard>(owner),
-				2 => combatState.CreateCard<HextechDragonSoulCard>(owner),
-				3 => combatState.CreateCard<MountainDragonSoulCard>(owner),
-				4 => combatState.CreateCard<ChemtechDragonSoulCard>(owner),
-				_ => combatState.CreateCard<CloudDragonSoulCard>(owner)
-			};
-		}
-
-		return roll switch
-		{
-			0 => owner.RunState.CreateCard<OceanDragonSoulCard>(owner),
-			1 => owner.RunState.CreateCard<InfernalDragonSoulCard>(owner),
-			2 => owner.RunState.CreateCard<HextechDragonSoulCard>(owner),
-			3 => owner.RunState.CreateCard<MountainDragonSoulCard>(owner),
-			4 => owner.RunState.CreateCard<ChemtechDragonSoulCard>(owner),
-			_ => owner.RunState.CreateCard<CloudDragonSoulCard>(owner)
-		};
 	}
 }
