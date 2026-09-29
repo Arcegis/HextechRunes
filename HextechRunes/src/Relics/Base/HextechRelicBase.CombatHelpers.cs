@@ -16,6 +16,13 @@ public abstract partial class HextechRelicBase
 		return (int)decimal.Floor(value);
 	}
 
+	// "每 N 次触发一次"的进度从 previous 推进到 current 时跨过的阈值个数；读档或联机历史回放时一次可能跨过多个。
+	internal static int CountThresholdCrossings(int previous, int current, int threshold)
+	{
+		int step = Math.Max(1, threshold);
+		return Math.Max(0, Math.Max(0, current) / step - Math.Max(0, previous) / step);
+	}
+
 	protected bool IsOwnedCard(CardModel? card)
 	{
 		return card?.Owner == Owner;

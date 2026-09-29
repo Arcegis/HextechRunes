@@ -161,6 +161,9 @@ public abstract partial class HextechRelicBase : RelicModel
 
 	public virtual bool IsAvailableForPlayer(Player player) => true;
 
+	// 战斗内计数器的显示条件：战斗进行中，且是持有中的实例（规范模型不读实例状态）。
+	protected bool IsInLiveCombat => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+
 	private static readonly HashSet<string> WarnedMissingIconPaths = new(StringComparer.Ordinal);
 
 	private string GetResolvedIconPath()

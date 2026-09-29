@@ -23,6 +23,23 @@ internal static class HextechCombatHistoryHelper
 				&& IllusoryWeaponRune.IsAttackForEffects(entry.CardPlay.Card, owner));
 	}
 
+	public static int CountOwnedCardsPlayed(Player? owner, Func<CardModel, bool> matches, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	{
+		if (owner == null)
+		{
+			return 0;
+		}
+
+		ulong ownerId = owner.NetId;
+		return CombatManager.Instance.History.Entries
+			.OfType<CardPlayFinishedEntry>()
+			.Count(entry =>
+				(!firstInSeriesOnly || entry.CardPlay.IsFirstInSeries)
+				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
+				&& entry.CardPlay.Card.Owner?.NetId == ownerId
+				&& matches(entry.CardPlay.Card));
+	}
+
 	public static int CountOwnedAttackCardsPlayedThisTurn(Player? owner, HextechCombatStateCompat? combatState, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
 	{
 		if (owner == null || combatState == null)

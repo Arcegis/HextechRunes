@@ -214,10 +214,10 @@ internal static partial class Program
 				.Any(static method => method.Name == "IsSilentPlayer"),
 			"Death Warrant availability should use the Silent character gate");
 		Equal(8, DeathWarrantRune.CardsNeeded, "Death Warrant draw threshold");
-		Equal(0, DeathWarrantRune.ResolveThresholdCrossings(0, 7), "Death Warrant should wait for eight draws");
-		Equal(1, DeathWarrantRune.ResolveThresholdCrossings(7, 8), "Death Warrant should trigger on the eighth draw");
-		Equal(0, DeathWarrantRune.ResolveThresholdCrossings(8, 15), "Death Warrant should preserve progress after triggering");
-		Equal(2, DeathWarrantRune.ResolveThresholdCrossings(8, 24), "Death Warrant should recover every missed threshold after load or network delay");
+		Equal(0, HextechRelicBase.CountThresholdCrossings(0, 7, DeathWarrantRune.CardsNeeded), "Death Warrant should wait for eight draws");
+		Equal(1, HextechRelicBase.CountThresholdCrossings(7, 8, DeathWarrantRune.CardsNeeded), "Death Warrant should trigger on the eighth draw");
+		Equal(0, HextechRelicBase.CountThresholdCrossings(8, 15, DeathWarrantRune.CardsNeeded), "Death Warrant should preserve progress after triggering");
+		Equal(2, HextechRelicBase.CountThresholdCrossings(8, 24, DeathWarrantRune.CardsNeeded), "Death Warrant should recover every missed threshold after load or network delay");
 
 		MethodInfo trigger = typeof(DeathWarrantRune).GetMethod(
 			"TriggerPoisonCompat",
@@ -445,9 +445,9 @@ internal static partial class Program
 
 	private static void PlayerSustainRunesUseExpectedMaxHpRules()
 	{
-		Equal(0, DevilsDanceRune.CountMaxHpTriggers(0, 2, 3), "Devil's Dance should wait for three Attacks");
-		Equal(1, DevilsDanceRune.CountMaxHpTriggers(2, 3, 3), "Devil's Dance should trigger on the third Attack");
-		Equal(2, DevilsDanceRune.CountMaxHpTriggers(2, 7, 3), "Devil's Dance should preserve thresholds across turns");
+		Equal(0, HextechRelicBase.CountThresholdCrossings(0, 2, 3), "Devil's Dance should wait for three Attacks");
+		Equal(1, HextechRelicBase.CountThresholdCrossings(2, 3, 3), "Devil's Dance should trigger on the third Attack");
+		Equal(2, HextechRelicBase.CountThresholdCrossings(2, 7, 3), "Devil's Dance should preserve thresholds across turns");
 		Equal(1, AncientWineRune.CalculateHealAmount(99, 2m), "Ancient Wine should floor two-percent healing with a minimum of one");
 		Equal(5, AncientWineRune.CalculateHealAmount(250, 2m), "Ancient Wine should heal two percent of Max HP");
 		Equal(2, SturdyRune.CalculateHealAmount(100, 50, 2m, 50m, 5m), "Sturdy should use two percent at exactly half HP");

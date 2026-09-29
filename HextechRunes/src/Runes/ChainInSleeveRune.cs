@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 public sealed class ChainInSleeveRune : HextechRelicBase
 {
-	private const int ShivsNeeded = 3;
+	private const int CanonicalShivsNeeded = 3;
 
 	private int _shivsPlayedThisCombat;
 
@@ -17,7 +17,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+	public override bool ShowCounter => IsInLiveCombat;
 
 	public override int DisplayAmount
 	{
@@ -28,16 +28,19 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 				return 0;
 			}
 
-			int remainder = GetShivsPlayedThisCombat() % ShivsNeeded;
-			return remainder == 0 ? ShivsNeeded : ShivsNeeded - remainder;
+			int shivsNeeded = ShivsNeeded;
+			int remainder = GetShivsPlayedThisCombat() % shivsNeeded;
+			return remainder == 0 ? shivsNeeded : shivsNeeded - remainder;
 		}
 	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
-		new DynamicVar("ShivsNeeded", ShivsNeeded),
+		new DynamicVar("ShivsNeeded", CanonicalShivsNeeded),
 		new CardsVar(1)
 	];
+
+	private int ShivsNeeded => DynamicVars["ShivsNeeded"].IntValue;
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
@@ -107,7 +110,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 	private async Task ResolveShivRewards(int previousShivsPlayed, int currentShivsPlayed)
 	{
 		InvokeDisplayAmountChanged();
-		int rewards = currentShivsPlayed / ShivsNeeded - previousShivsPlayed / ShivsNeeded;
+		int rewards = CountThresholdCrossings(previousShivsPlayed, currentShivsPlayed, ShivsNeeded);
 		if (rewards <= 0 || Owner == null || Owner.Creature.IsDead)
 		{
 			return;
@@ -127,19 +130,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 
 	private int CountOwnedShivCardsPlayedFromHistory()
 	{
-		if (Owner == null)
-		{
-			return 0;
-		}
-
-		ulong ownerId = Owner.NetId;
-		return CombatManager.Instance.History.Entries
-			.OfType<CardPlayFinishedEntry>()
-			.Count(entry =>
-				entry.CardPlay.IsFirstInSeries
-				&& !entry.CardPlay.IsAutoPlay
-				&& entry.CardPlay.Card.Owner?.NetId == ownerId
-				&& HextechKnifeHelper.IsShivLike(entry.CardPlay.Card, Owner));
+		return HextechCombatHistoryHelper.CountOwnedCardsPlayed(Owner, card => HextechKnifeHelper.IsShivLike(card, Owner));
 	}
 
 	private async Task AddShivRewardCards(int count)

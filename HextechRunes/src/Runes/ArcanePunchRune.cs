@@ -15,7 +15,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
+	public override bool ShowCounter => IsInLiveCombat;
 
 	public override int DisplayAmount
 	{
@@ -26,8 +26,9 @@ public sealed class ArcanePunchRune : HextechRelicBase
 				return 0;
 			}
 
-			int remainder = GetAttacksPlayedThisCombat() % 2;
-			return remainder == 0 ? 2 : 1;
+			int attacksPerEnergy = AttacksPerEnergy;
+			int remainder = GetAttacksPlayedThisCombat() % attacksPerEnergy;
+			return remainder == 0 ? attacksPerEnergy : attacksPerEnergy - remainder;
 		}
 	}
 
@@ -36,6 +37,8 @@ public sealed class ArcanePunchRune : HextechRelicBase
 		new DynamicVar("AttacksPerEnergy", 2m),
 		new EnergyVar(1)
 	];
+
+	private int AttacksPerEnergy => DynamicVars["AttacksPerEnergy"].IntValue;
 
 	public override Task BeforeCombatStart()
 	{
@@ -67,7 +70,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 		int attacksPlayed = _attacksPlayedThisCombat + 1;
 		_attacksPlayedThisCombat = attacksPlayed;
 		InvokeDisplayAmountChanged();
-		if (attacksPlayed % 2 != 0)
+		if (attacksPlayed % AttacksPerEnergy != 0)
 		{
 			return;
 		}
@@ -94,7 +97,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 
 		_attacksPlayedThisCombat = attacksPlayed;
 		InvokeDisplayAmountChanged();
-		int energyTriggers = attacksPlayed / 2 - previousAttacksPlayed / 2;
+		int energyTriggers = CountThresholdCrossings(previousAttacksPlayed, attacksPlayed, AttacksPerEnergy);
 		for (int i = 0; i < energyTriggers; i++)
 		{
 			await GainEnergyForAttackThreshold();
@@ -109,7 +112,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 		}
 
 		Flash();
-		await PlayerCmd.GainEnergy(1m, Owner);
+		await PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, Owner);
 	}
 
 	private int GetAttacksPlayedThisCombat()
