@@ -7,7 +7,7 @@ internal sealed class AncientWineEnemyHex : HextechEnemyHexEffect
 	internal override async Task AfterCardPlayed(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		if (!context.IsManualPlayerCardPlay(cardPlay, out _, out HextechCombatState? combatState)
-			|| !IllusoryWeaponRune.IsSkillForEffects(cardPlay.Card))
+			|| !HextechCardEffectTypes.IsSkillForEffects(cardPlay.Card))
 		{
 			return;
 		}

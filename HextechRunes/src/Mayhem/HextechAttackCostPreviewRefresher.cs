@@ -23,7 +23,7 @@ internal static class HextechAttackCostPreviewRefresher
 
 			foreach (CardModel card in PileType.Hand.GetPile(player).Cards)
 			{
-				if (IllusoryWeaponRune.IsAttackForEffects(card, player) && !card.EnergyCost.CostsX)
+				if (HextechCardEffectTypes.IsAttackForEffects(card, player) && !card.EnergyCost.CostsX)
 				{
 					HextechPresentation.TryRun("AttackCostPreview", $"Cost visual refresh failed for {card.Id}", card.InvokeEnergyCostChanged);
 				}

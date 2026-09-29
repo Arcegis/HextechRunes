@@ -127,7 +127,7 @@ internal static class HextechCombatProcTracker
 		if (!cardPlay.IsFirstInSeries
 			|| cardPlay.IsAutoPlay
 			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
-			|| !IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
+			|| !HextechCardEffectTypes.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
 		{
 			return false;
 		}

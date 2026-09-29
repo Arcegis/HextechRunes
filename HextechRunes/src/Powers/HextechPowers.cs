@@ -171,7 +171,7 @@ public sealed class HextechAttackReplayPower : HextechPowerBase
 	{
 		return Amount > 0m
 			&& card.Owner?.Creature == Owner
-			&& IllusoryWeaponRune.IsAttackForEffects(card, card.Owner);
+			&& HextechCardEffectTypes.IsAttackForEffects(card, card.Owner);
 	}
 }
 

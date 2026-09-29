@@ -16,7 +16,7 @@ public sealed class KakaRune : HextechRelicBase
 	{
 		Player? owner = card.Owner;
 		return owner != null
-			&& IllusoryWeaponRune.IsAttackForEffects(card, owner)
+			&& HextechCardEffectTypes.IsAttackForEffects(card, owner)
 			&& owner.GetRelic<KakaRune>() != null
 			&& owner.Creature.CombatState?.RoundNumber == 1;
 	}

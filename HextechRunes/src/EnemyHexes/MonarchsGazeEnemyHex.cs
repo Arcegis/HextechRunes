@@ -7,7 +7,7 @@ internal sealed class MonarchsGazeEnemyHex : HextechEnemyHexEffect
 	internal override Task AfterCardPlayed(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		if (!context.IsManualPlayerCardPlay(cardPlay, out Player? owner, out _)
-			|| !IllusoryWeaponRune.IsAttackForEffects(cardPlay.Card, owner)
+			|| !HextechCardEffectTypes.IsAttackForEffects(cardPlay.Card, owner)
 			|| !owner.Creature.IsAlive)
 		{
 			return Task.CompletedTask;
