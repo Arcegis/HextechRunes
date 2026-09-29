@@ -21,7 +21,7 @@ internal static partial class Program
 		Expect(typeof(HextechMayhemModifier).GetMethod("ShouldPlay", declared) != null, "enemy hexes should block via the modifier's ShouldPlay");
 		Expect(typeof(BackToBasicsEnemyHex).GetMethod("ShouldPlay", declared) != null, "enemy Back to Basics should implement the hex-level ShouldPlay");
 		Expect(typeof(BlueCandleMedkitRune).GetMethod("TryModifyKeywordsInCombat", declared) != null, "Blue Candle should clear Unplayable through the keyword hook");
-		Expect(HextechPatcher.FindPatchMethod(typeof(GrandFinaleUpgradeRune), "GrandFinalePlayablePatch", "Postfix") != null, "Grand Finale allowance should be a narrow IsPlayable patch");
+		Expect(FindPatchMethod(typeof(GrandFinaleUpgradeRune), "GrandFinalePlayablePatch", "Postfix") != null, "Grand Finale allowance should be a narrow IsPlayable patch");
 		Expect(typeof(GrandFinale).GetProperty("IsPlayable", declared) != null, "Grand Finale should still own its IsPlayable override");
 
 		Expect(

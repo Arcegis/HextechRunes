@@ -77,7 +77,6 @@ HextechRunes.HextechRuneGeneration._chaosTransform : CandidateTransform
 HextechRunes.HextechRuneSelectionScreen.RerollSfxPlayer : AudioStreamPlayer
 HextechRunes.HextechRuneSelectionScreen.SelectSfxPlayer : AudioStreamPlayer
 HextechRunes.HextechSavedPropertyBootstrap._officialCacheAudited : Boolean
-HextechRunes.HextechShopForgeHooks._randomForgeShopHooksAvailable : Nullable`1
 HextechRunes.HextechTextures._missingTexture : Texture2D
 HextechRunes.HextechUpdateChecker._cachedResult : UpdateCheckResult
 HextechRunes.HextechUpdateChecker._checkTask : Task`1

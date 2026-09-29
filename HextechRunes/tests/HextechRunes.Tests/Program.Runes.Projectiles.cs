@@ -169,7 +169,7 @@ internal static partial class Program
 		Equal(HextechRarityTier.Gold, registration.Rarity, "Piercing Thread rarity");
 		Equal("OUTPUT", registration.TagKey, "Piercing Thread tag");
 		Expect(
-			HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "DamageBlockPatch", "Prefix") != null,
+			FindPatchMethod(typeof(HextechCombatHooks), "DamageBlockPatch", "Prefix") != null,
 			"Piercing Thread should alter the blockable amount at the original block-consumption boundary");
 	}
 }

@@ -42,7 +42,6 @@ MegaCrit.Sts2.Core.Entities.Merchant.MerchantRelicEntry+<OnTryPurchase>d__11::Mo
 MegaCrit.Sts2.Core.Entities.Merchant.MerchantRelicEntry::OnTryPurchase(MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory,System.Boolean)=bd8f11c08c0db436a1581c9bb764275cb35fd35f
 MegaCrit.Sts2.Core.Entities.Merchant.MerchantRelicEntry::RestockAfterPurchase(MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory)=3bfd01d1a43865b4f71279f9eb801ecd4913a179
 MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption::get_Icon()=ec0f0d6a34ea3f702a8534399c96bcbe681d5756
-MegaCrit.Sts2.Core.Hooks.Hook::ShouldRefillMerchantEntry(MegaCrit.Sts2.Core.Runs.IRunState,MegaCrit.Sts2.Core.Entities.Merchant.MerchantEntry,MegaCrit.Sts2.Core.Entities.Players.Player)=21e8711f4ff09c1fa0328c4b6dc5074994af6b9d
 MegaCrit.Sts2.Core.Models.CardModel+<PlayPowerCardFlyVfx>d__341::MoveNext()=8355f73b6fb7911d15c7b029066587c6de8ce9e5
 MegaCrit.Sts2.Core.Models.CardModel+<SpendResources>d__336::MoveNext()=0e1dd0a561fa699296b00d2e4ab230de73280180
 MegaCrit.Sts2.Core.Models.CardModel::PlayPowerCardFlyVfx()=a3195a1f806474308028dc05d3ac95d2f8505236
@@ -133,3 +132,6 @@ MegaCrit.Sts2.Core.Nodes.Relics.NRelicInventoryHolder::DoFlash()=fc33dbbfc8e6117
 MegaCrit.Sts2.Core.Nodes.Relics.NRelicInventoryHolder::PlayNewlyAcquiredAnimation(System.Nullable`1[[Godot.Vector2, GodotSharp, Version=4.5.1.0, Culture=neutral, PublicKeyToken=null]],System.Nullable`1[[Godot.Vector2, GodotSharp, Version=4.5.1.0, Culture=neutral, PublicKeyToken=null]])=30e9aefe5d85aedb49fd94cbf943837ccc4073fb
 MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens.NInspectRelicScreen::UpdateRelicDisplay()=f89a0f7991eba4dc7db92db1980a65aa0ecabb90
 MegaCrit.Sts2.Core.Nodes.Screens.Shops.NMerchantRelic::OnSuccessfulPurchase(MegaCrit.Sts2.Core.Entities.Merchant.PurchaseStatus,MegaCrit.Sts2.Core.Entities.Merchant.MerchantEntry)=7ba557d50182ded12bbdc0e45ceec752549c0897
+MegaCrit.Sts2.Core.Entities.Merchant.MerchantRelicEntry::ClearAfterPurchase()=6f7677ed28816748238791689244abe307fa44ec
+MegaCrit.Sts2.Core.Models.MonsterModel+<PerformMove>d__103::MoveNext()=b35e216ecd100580b3c20ab07cb6a1f569ec2543
+MegaCrit.Sts2.Core.Models.MonsterModel::PerformMove()=0c20b4b3f30493f0768e67d6e061cad1c3904458

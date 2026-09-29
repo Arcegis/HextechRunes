@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using MegaCrit.Sts2.Core.Models.Monsters;
+using VanillaPowerCmd = MegaCrit.Sts2.Core.Commands.PowerCmd;
 
 namespace HextechRunes;
 
@@ -111,6 +112,7 @@ internal static class HextechEndlessModeCompatibilityHooks
 			return 0;
 		}
 
+		// 两个乘数都来自外部（能力施加量、无尽模式倍率），decimal 乘法可能超过 decimal.MaxValue 而溢出。
 		try
 		{
 			return ClampPowerAmountToInt(Math.Ceiling(rawAmount * multiplier));
@@ -226,7 +228,7 @@ internal static class HextechEndlessModeCompatibilityHooks
 		HextechLog.Warn("EndlessCompat", $"Monster power normalization failed: {cause.GetType().Name}: {cause.Message}");
 	}
 
-	[HarmonyPatch(typeof(MegaCrit.Sts2.Core.Commands.PowerCmd), nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.Apply), typeof(PlayerChoiceContext), typeof(PowerModel), typeof(Creature), typeof(decimal), typeof(Creature), typeof(CardModel), typeof(bool))]
+	[HarmonyPatch(typeof(VanillaPowerCmd), nameof(VanillaPowerCmd.Apply), typeof(PlayerChoiceContext), typeof(PowerModel), typeof(Creature), typeof(decimal), typeof(Creature), typeof(CardModel), typeof(bool))]
 	[HextechPatch("compat.endless.apply-power", "无尽模式兼容")]
 	private static class ApplyPowerCapturePatch
 	{

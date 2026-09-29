@@ -165,7 +165,7 @@ internal static partial class Program
 		Harmony neutralTypeHarmony = new("Natsuki.HextechRunes.Tests.SlowPowerType");
 		neutralTypeHarmony.Patch(
 			AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), [typeof(decimal)]),
-			prefix: new HarmonyMethod(HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "PowerTypeForAmountPatch", "Prefix")));
+			prefix: new HarmonyMethod(FindPatchMethod(typeof(HextechCombatHooks), "PowerTypeForAmountPatch", "Prefix")));
 		try
 		{
 			Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, slow.GetTypeForAmount(8m), "positive custom Slow should remain neutral");

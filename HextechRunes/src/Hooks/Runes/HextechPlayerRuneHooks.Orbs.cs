@@ -187,6 +187,10 @@ internal static partial class HextechPlayerRuneHooks
 		return targets;
 	}
 
+	// 跳过型前缀（已裁决保留，见 architecture.md）：原版 NOrbManager.TweenLayout 的半径是
+	// Mathf.Lerp(225, 300, (槽位-3)/7)，超过 10 槽后外插继续放大，且逐槽补间所有槽位；没有布局 Hook。
+	// 只在槽位数超过软上限时替换为半径封顶的同一环形布局（疯狂科学家另省去超量球的补间），纯本地表现层；
+	// 替换体沿用原版的补间写法（杀旧补间、并行 TweenProperty position），目标 IL 由原版拷贝守卫冻结。
 	[HarmonyPatch(typeof(NOrbManager), "TweenLayout")]
 	[HextechPatch("rune.orb-layout-soft-cap", "充能球布局软上限")]
 	internal static class OrbLayoutSoftCapPatch

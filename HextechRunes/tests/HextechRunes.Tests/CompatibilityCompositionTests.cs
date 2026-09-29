@@ -28,7 +28,7 @@ internal static partial class Program
 
 	private static void EntomancerFallbackIsVersionScopedAndMissingHiveOnly()
 	{
-		MethodInfo? prefix = HextechPatcher.FindPatchMethod(typeof(HextechEncounterCompatibilityHooks), "EntomancerSpitMovePatch", "Prefix");
+		MethodInfo? prefix = FindPatchMethod(typeof(HextechEncounterCompatibilityHooks), "EntomancerSpitMovePatch", "Prefix");
 
 #if STS2_110_OR_NEWER
 		Expect(
@@ -93,7 +93,7 @@ internal static partial class Program
 		Harmony harmony = new("Natsuki.HextechRunes.Tests.EndlessPowerOrder");
 		try
 		{
-			HextechPatcher.ApplyNested(harmony, typeof(HextechEndlessModeCompatibilityHooks));
+			ApplyNestedPatches(harmony, typeof(HextechEndlessModeCompatibilityHooks));
 			MethodInfo applyPower = typeof(MegaCrit.Sts2.Core.Commands.PowerCmd).GetMethod(
 				nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.Apply),
 				BindingFlags.Public | BindingFlags.Static,
@@ -190,7 +190,7 @@ internal static partial class Program
 
 		try
 		{
-			HextechPatcher.ApplyNested(harmony, typeof(HextechCombatHooks), "HealPatch");
+			ApplyNestedPatches(harmony, typeof(HextechCombatHooks), "HealPatch");
 			IEnumerable<Patch> prefixes = Harmony.GetPatchInfo(heal)?.Prefixes.AsEnumerable()
 				?? Enumerable.Empty<Patch>();
 			Patch finalCap = prefixes

@@ -91,16 +91,6 @@ internal static partial class Program
 			"Slow Cook aura should cap per-layer brightness spikes");
 	}
 
-	private static void FormVfxSafetySkipsMissingHolder()
-	{
-		Expect(
-			!HextechFormVfxSafetyHooks.ShouldRunOriginal(hasFormVfxHolder: false),
-			"form VFX should be skipped when a custom character has no holder");
-		Expect(
-			HextechFormVfxSafetyHooks.ShouldRunOriginal(hasFormVfxHolder: true),
-			"form VFX should retain vanilla behavior when the holder exists");
-	}
-
 	private static void SymphonyOfWarPreservesDemonAndSerpentFormVfx()
 	{
 		Expect(

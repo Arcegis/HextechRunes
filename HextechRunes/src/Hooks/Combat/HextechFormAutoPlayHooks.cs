@@ -353,7 +353,9 @@ internal static class HextechFormAutoPlayHooks
 		}
 	}
 
-	// 虚空形态 OnPlay 自带 EndTurn;批次作用域内压掉,不吃掉首回合。作用域由 AsyncLocal 限定,手动出牌不受影响。
+	// 跳过型前缀（已裁决保留，见 architecture.md）：虚空形态 OnPlay 自带 PlayerCmd.EndTurn，开局批量自动打出时
+	// 会吃掉首回合；EndTurn 没有 Hook 可否决。只在本模组形态批次的 AsyncLocal 作用域内跳过，手动出牌不受影响；
+	// 目标 IL 由原版拷贝守卫冻结（0.107.1/0.110.0/0.111.0）。
 	[HarmonyPatch(typeof(PlayerCmd), nameof(PlayerCmd.EndTurn), typeof(Player), typeof(bool), typeof(Func<Task>))]
 	[HextechPatch("combat.form-auto-play.end-turn", "形态开局自动打出批处理")]
 	private static class EndTurnPatch

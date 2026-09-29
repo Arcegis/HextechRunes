@@ -792,13 +792,13 @@ internal static partial class Program
 			]) != null,
 			"0.110 outbreak card response guard target");
 		Expect(
-			HextechFormVfxSafetyHooks.ResolveAddFormVfxTarget().GetParameters()
+			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "AddFormVfxPatch").GetParameters()
 				.Select(static parameter => parameter.ParameterType)
 				.SequenceEqual([typeof(MegaCrit.Sts2.Core.Nodes.Vfx.Forms.NFormVfx)]),
 			"0.110 form VFX add safety target");
 		Equal(
 			0,
-			HextechFormVfxSafetyHooks.ResolveRemoveFormVfxTarget().GetParameters().Length,
+			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "RemoveFormVfxPatch").GetParameters().Length,
 			"0.110 form VFX removal safety target arity");
 #else
 		Expect(typeof(OutbreakPower).GetMethods(BindingFlags.Instance | BindingFlags.Public)

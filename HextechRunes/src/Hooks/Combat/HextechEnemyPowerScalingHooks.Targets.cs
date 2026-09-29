@@ -4,10 +4,10 @@ namespace HextechRunes;
 
 internal static partial class HextechEnemyPowerScalingHooks
 {
-	private static IEnumerable<MethodInfo> ResolveGetScaledAmountForMultiplayerTargets()
+	private static List<MethodInfo> ResolveGetScaledAmountForMultiplayerTargets()
 	{
-		List<MethodInfo> targets = new();
-		foreach (Type powerType in GetPowerTypesWithScalingOverride())
+		List<MethodInfo> targets = [];
+		foreach (Type powerType in ScalingOverrides.Keys)
 		{
 			MethodInfo? method = TryGetMethod(
 				powerType,
@@ -46,23 +46,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 			}
 		}
 
-		if (targets.Count == 0)
-		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem][Compat] Enemy power multiplayer scaling hook skipped: GetScaledAmountForMultiplayer targets not found in this runtime.");
-		}
-
 		return targets;
-	}
-
-	private static IEnumerable<Type> GetPowerTypesWithScalingOverride()
-	{
-		yield return typeof(ArtifactPower);
-		yield return typeof(SlipperyPower);
-		yield return typeof(HardenedShellPower);
-		yield return typeof(RegenPower);
-		yield return typeof(PlatingPower);
-		yield return typeof(ReflectPower);
-		yield return typeof(SkittishPower);
 	}
 
 	private static bool ContainsMethod(IEnumerable<MethodInfo> methods, MethodInfo candidate)

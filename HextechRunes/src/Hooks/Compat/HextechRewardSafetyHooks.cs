@@ -20,11 +20,7 @@ internal static class HextechRewardSafetyHooks
 			alternatives.Add(new CardRewardAlternative("Skip", PostAlternateCardRewardAction.EndSelectionAndDoNotCompleteReward));
 		}
 
-		if (cardReward.CanReroll)
-		{
-			alternatives.Add(CreateDriftwoodRerollAlternative(cardReward));
-		}
-		else if (GetRemainingDriftwoodRerolls(cardReward) > 0)
+		if (cardReward.CanReroll || GetRemainingDriftwoodRerolls(cardReward) > 0)
 		{
 			alternatives.Add(CreateDriftwoodRerollAlternative(cardReward));
 		}
@@ -236,6 +232,10 @@ internal static class HextechRewardSafetyHooks
 		return true;
 	}
 
+	// 跳过型前缀（已裁决保留，见 architecture.md）：原版 Generate 在 Hook.ModifyCardRewardAlternatives 之后
+	// 对超过 2 个备选项直接抛异常，本模组的多次浮木重掷与多份佩尔之翼献祭会超过这个上限，没有可用的 Hook 放宽它。
+	// 只在本局启用海克斯时替换；替换体逐步复制原版（跳过/重掷 → Hook.ModifyCardRewardAlternatives），
+	// 仅去掉数量上限并合并重复的献祭项。目标 IL 由原版拷贝守卫冻结（0.107.1/0.110.0/0.111.0）。
 	[HarmonyPatch(typeof(CardRewardAlternative), nameof(CardRewardAlternative.Generate), typeof(CardReward))]
 	[HextechPatch("reward.card-alternatives", "卡牌奖励备选项")]
 	private static class CardRewardAlternativesPatch

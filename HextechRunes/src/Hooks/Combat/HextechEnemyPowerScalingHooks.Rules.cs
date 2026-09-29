@@ -2,23 +2,22 @@ namespace HextechRunes;
 
 internal static partial class HextechEnemyPowerScalingHooks
 {
+	// 本模组施加给敌人时改写原版联机缩放口径的能力：PlayerCount 按玩家数放大（原版对它们不缩放或缩放口径不同），
+	// Unscaled 不随玩家数放大。补丁目标（各类型的 GetScaledAmountForMultiplayer 声明处）也由这张表派生。
+	private static readonly Dictionary<Type, ScalingOverride> ScalingOverrides = new()
+	{
+		[typeof(ArtifactPower)] = ScalingOverride.PlayerCount,
+		[typeof(SlipperyPower)] = ScalingOverride.PlayerCount,
+		[typeof(HardenedShellPower)] = ScalingOverride.Unscaled,
+		[typeof(RegenPower)] = ScalingOverride.Unscaled,
+		[typeof(PlatingPower)] = ScalingOverride.Unscaled,
+		[typeof(ReflectPower)] = ScalingOverride.Unscaled,
+		[typeof(SkittishPower)] = ScalingOverride.Unscaled
+	};
+
 	private static ScalingOverride? GetScalingOverride(Type powerType)
 	{
-		if (powerType == typeof(ArtifactPower) || powerType == typeof(SlipperyPower))
-		{
-			return ScalingOverride.PlayerCount;
-		}
-
-		if (powerType == typeof(HardenedShellPower)
-			|| powerType == typeof(RegenPower)
-			|| powerType == typeof(PlatingPower)
-			|| powerType == typeof(ReflectPower)
-			|| powerType == typeof(SkittishPower))
-		{
-			return ScalingOverride.Unscaled;
-		}
-
-		return null;
+		return ScalingOverrides.TryGetValue(powerType, out ScalingOverride scalingOverride) ? scalingOverride : null;
 	}
 
 	private static int GetPlayerCount(Creature? giver, Creature target)
@@ -40,19 +39,14 @@ internal static partial class HextechEnemyPowerScalingHooks
 		{
 			return int.MaxValue;
 		}
+
 		if (amount <= int.MinValue / scale)
 		{
 			return int.MinValue;
 		}
 
-		try
-		{
-			return ClampPowerAmount(amount * scale);
-		}
-		catch (OverflowException)
-		{
-			return amount < 0m ? int.MinValue : int.MaxValue;
-		}
+		// 上面两道边界已保证乘积落在 int 范围内，decimal 乘法不会溢出。
+		return ClampPowerAmount(amount * scale);
 	}
 
 	private static decimal ClampPowerAmount(decimal amount)
@@ -61,6 +55,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 		{
 			return int.MaxValue;
 		}
+
 		if (amount < int.MinValue)
 		{
 			return int.MinValue;

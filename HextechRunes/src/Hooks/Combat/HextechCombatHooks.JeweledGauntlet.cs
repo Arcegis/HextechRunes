@@ -282,7 +282,7 @@ internal static partial class HextechCombatHooks
 		IReadOnlyList<AbstractIntent> DisplayedIntents);
 
 	[HarmonyPatch(typeof(MonsterModel), nameof(MonsterModel.PerformMove), new Type[0])]
-	[HextechPatch("combat.jeweled-gauntlet.perform-move", "珠光护手")]
+	[HextechPatch("combat.jeweled-gauntlet.perform-move", "珠光护手", CopiesVanillaLogic = true)]
 	private static class JeweledGauntletPerformMovePatch
 	{
 		[HarmonyPrepare]
