@@ -10,7 +10,7 @@ namespace HextechRunes;
 public sealed class PrismaticEggRune : HextechRelicBase
 {
 	[HarmonyPatch(typeof(TreasureRoomRelicSynchronizer), "BeginRelicPicking")]
-	[HextechPatch("rune.prismatic-egg", "棱彩之卵")]
+	[HextechPatch("rune.prismatic-egg", "棱彩之卵", Rune = typeof(PrismaticEggRune))]
 	private static class BeginRelicPickingPatch
 	{
 		[HarmonyPostfix]
