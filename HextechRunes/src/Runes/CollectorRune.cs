@@ -9,7 +9,7 @@ public sealed class CollectorRune : HextechRelicBase
 	private const string CountPerExecuteVar = "CountPerExecute";
 
 	private readonly HashSet<Creature> _creditedExecutions = new(ReferenceEqualityComparer.Instance);
-	// 仅保留旧存档尚未领取的战后奖励；新的触发直接发放金币。
+	// 仅保留旧存档尚未领取的战后奖励（见 SettleLegacyCombatGold）；新的触发直接发放金币。
 	private int _countThisCombat;
 	private bool _executing;
 
@@ -24,7 +24,7 @@ public sealed class CollectorRune : HextechRelicBase
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical && _countThisCombat > 0;
+	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
 
 	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
 
@@ -90,18 +90,15 @@ public sealed class CollectorRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		ResetCount();
+		_creditedExecutions.Clear();
+		SettleLegacyCombatGold(null, ref _countThisCombat);
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		if (Owner != null && _countThisCombat > 0)
-		{
-			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, _countThisCombat);
-		}
-
-		ResetCount();
+		_creditedExecutions.Clear();
+		SettleLegacyCombatGold(room, ref _countThisCombat);
 		return Task.CompletedTask;
 	}
 
@@ -124,12 +121,5 @@ public sealed class CollectorRune : HextechRelicBase
 		return maxHp > 0m
 			&& executePercent > 0m
 			&& currentHp < maxHp * executePercent / 100m;
-	}
-
-	private void ResetCount()
-	{
-		_countThisCombat = 0;
-		_creditedExecutions.Clear();
-		InvokeDisplayAmountChanged();
 	}
 }

@@ -24,6 +24,19 @@ public abstract partial class HextechRelicBase
 		return Math.Max(0, Math.Max(0, current) / step - Math.Max(0, previous) / step);
 	}
 
+	// 旧版本按"本场累计、战后发放"记金币，新触发已改为直接发放；SavedCountThisCombat 只剩旧存档里尚未领取的值。
+	// 战后把它补进奖励并清零，战斗开始时直接清零（传 null）。
+	protected void SettleLegacyCombatGold(CombatRoom? room, ref int legacyCount)
+	{
+		if (room != null && Owner != null && legacyCount > 0)
+		{
+			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, legacyCount);
+		}
+
+		legacyCount = 0;
+		InvokeDisplayAmountChanged();
+	}
+
 	protected bool IsOwnedCard(CardModel? card)
 	{
 		return card?.Owner == Owner;
@@ -31,12 +44,12 @@ public abstract partial class HextechRelicBase
 
 	protected bool IsOwnedAttack(CardModel? card)
 	{
-		return Owner != null && card?.Owner == Owner && IllusoryWeaponRune.IsAttackForEffects(card, Owner);
+		return Owner != null && card?.Owner == Owner && HextechCardEffectTypes.IsAttackForEffects(card, Owner);
 	}
 
 	protected bool IsOwnedSkill(CardModel? card)
 	{
-		return card != null && card.Owner == Owner && IllusoryWeaponRune.IsSkillForEffects(card);
+		return card != null && card.Owner == Owner && HextechCardEffectTypes.IsSkillForEffects(card);
 	}
 
 	protected bool IsAttackDamageForRuneEffects(ValueProp props, CardModel? cardSource)
@@ -46,7 +59,7 @@ public abstract partial class HextechRelicBase
 			return true;
 		}
 
-		return Owner != null && IllusoryWeaponRune.IsOriginalOwnedSkill(cardSource, Owner);
+		return Owner != null && HextechCardEffectTypes.IsOriginalOwnedSkill(cardSource, Owner);
 	}
 
 	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
