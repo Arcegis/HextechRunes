@@ -42,9 +42,9 @@ internal static partial class HextechRuneSelectionCoordinator
 		HashSet<ModelId> excludedIds = [];
 		for (int i = 0; i < currentMonsterHexes.Count; i++)
 		{
-			if (i != rerollSlotIndex && currentMonsterHexes[i].HasValue)
+			if (i != rerollSlotIndex && currentMonsterHexes[i] is MonsterHexKind hex)
 			{
-				excludedIds.Add(GetMonsterHexIconRelicId(currentMonsterHexes[i]!.Value));
+				excludedIds.Add(GetMonsterHexIconRelicId(hex));
 			}
 		}
 

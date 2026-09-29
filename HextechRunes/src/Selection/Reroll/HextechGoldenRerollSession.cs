@@ -164,19 +164,18 @@ internal static class HextechGoldenRerollDebug
 		}
 	}
 
-	internal static bool ForceCurrentOrNext(out bool activatedCurrent)
+	internal static void ForceCurrentOrNext(out bool activatedCurrent)
 	{
 		if (_currentScreen != null
 			&& _currentScreen.TryGetTarget(out HextechRuneSelectionScreen? screen)
 			&& screen.ActivateGoldenRerollForDebug())
 		{
 			activatedCurrent = true;
-			return true;
+			return;
 		}
 
 		_forceNextEligible = true;
 		activatedCurrent = false;
-		return true;
 	}
 
 	internal static bool ConsumeNextEligibleForce()

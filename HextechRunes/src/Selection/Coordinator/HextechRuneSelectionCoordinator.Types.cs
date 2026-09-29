@@ -37,8 +37,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		public List<MonsterHexKind?> CurrentMonsterHexSlots { get; } = initialMonsterHexes.Select(static hex => (MonsterHexKind?)hex).ToList();
 		public List<int> RerollCounts { get; } = initialMonsterHexes.Select(static _ => 0).ToList();
 		public IReadOnlyList<MonsterHexKind> CurrentMonsterHexes => CurrentMonsterHexSlots
-			.Where(static hex => hex.HasValue)
-			.Select(static hex => hex!.Value)
+			.OfType<MonsterHexKind>()
 			.ToArray();
 		public bool FinalSent { get; set; }
 		public Task? RemoteReceiveTask { get; set; }

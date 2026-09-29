@@ -1,6 +1,4 @@
-using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Localization;
-using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
 
@@ -45,7 +43,9 @@ internal static partial class HextechRuneSelectionCoordinator
 				cancellationToken: cancellation.Token);
 			if (!authority)
 			{
-				await sync!.RemoteReceiveTask!;
+				// 非权威端必有 sync,且推入界面时 ScreenCreated 已启动接收任务。
+				await (sync?.RemoteReceiveTask
+					?? throw new InvalidOperationException("Enemy hex adjustment receiver was not started."));
 				if (!screen.EnemyOnlySelectionConfirmed)
 				{
 					throw new OperationCanceledException("Enemy hex selection interrupted before confirmation.");

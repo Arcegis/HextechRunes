@@ -2,7 +2,6 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.GameActions;
-using MegaCrit.Sts2.Core.Nodes;
 using static HextechRunes.HextechHookReflection;
 using static HextechRunes.HextechSelectionHelpers;
 

@@ -65,9 +65,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			reopenMapAfterSelection = CloseMapForSelection();
-			if (reopenMapAfterSelection)
+			if (reopenMapAfterSelection && NGame.Instance is NGame game)
 			{
-				await NGame.Instance!.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
+				await game.ToSignal(game.GetTree(), SceneTree.SignalName.ProcessFrame);
 			}
 
 			if (!IsCurrentRun(runState))

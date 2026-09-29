@@ -39,13 +39,13 @@ internal static partial class HextechRuneConfiguration
 			}
 
 			RuneConfig? parsed = JsonSerializer.Deserialize<RuneConfig>(File.ReadAllText(configPath), JsonOptions);
-			bool fromNewerVersion = parsed != null && parsed.ConfigVersion > CurrentConfigVersion;
+			int? parsedVersion = parsed?.ConfigVersion;
 			RuneConfig config = NormalizeLoadedConfig(parsed ?? new RuneConfig());
-			if (fromNewerVersion)
+			if (parsedVersion > CurrentConfigVersion)
 			{
 				// 更新版本写的配置退回本版本读取:类型化模型不保留未知字段,回写会把版本号压回并丢掉未来字段。
 				// 只在内存里使用规范化结果,不覆盖文件;用户在本版本改设置时才会重写。
-				HextechLog.Warn("RuneConfig", $"Config version {parsed!.ConfigVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.");
+				HextechLog.Warn("RuneConfig", $"Config version {parsedVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.");
 				return config;
 			}
 
@@ -164,7 +164,7 @@ internal static partial class HextechRuneConfiguration
 		try
 		{
 			string configPath = GetConfigPath();
-			Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+			Directory.CreateDirectory(HextechDataPaths.GetDataDirectory());
 			string serialized = JsonSerializer.Serialize(config, JsonOptions);
 			// 先写临时文件再原子替换:写到一半崩溃/断电不会留下截断的 JSON(否则下次载入会被当作损坏配置回落默认)。
 			string tempPath = configPath + ".tmp";

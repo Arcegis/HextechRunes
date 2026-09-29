@@ -86,8 +86,7 @@ internal static partial class HextechChoiceCodec
 
 		MonsterHexKind[] disabledMonsterHexes = snapshot.DisabledMonsterHexIds
 			.Select(static id => Enum.TryParse(id, out MonsterHexKind kind) ? (MonsterHexKind?)kind : null)
-			.Where(static kind => kind.HasValue)
-			.Select(static kind => kind!.Value)
+			.OfType<MonsterHexKind>()
 			.OrderBy(static kind => (int)kind)
 			.ToArray();
 		ValidateProtocolCount(disabledMonsterHexes.Length, MaxDisabledMonsterHexes, nameof(snapshot));
@@ -156,38 +155,13 @@ internal static partial class HextechChoiceCodec
 			monsterHexRerollLimit = HextechRuneConfiguration.ClampRerollLimit(payload[cursor++]);
 		}
 
-		HextechRarityWeights[] runeWeightsByAct;
-		bool preventConsecutiveSilverRunes;
-		int goldenRerollChancePercent = HextechRuneConfiguration.GetDefaultGoldenRerollChancePercent();
-		if (snapshotVersion == RunConfigurationSnapshotVersion)
-		{
-			runeWeightsByAct =
-			[
-				ReadRarityWeights(payload, ref cursor),
-				ReadRarityWeights(payload, ref cursor),
-				ReadRarityWeights(payload, ref cursor)
-			];
-			preventConsecutiveSilverRunes = payload[cursor++] != 0;
-			goldenRerollChancePercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(payload[cursor++]);
-		}
-		else if (snapshotVersion is PreviousSingleRarityRunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion)
-		{
-			HextechRarityWeights singleWeights = ReadRarityWeights(payload, ref cursor);
-			runeWeightsByAct = [ singleWeights, singleWeights, singleWeights ];
-			preventConsecutiveSilverRunes = payload[cursor++] != 0;
-			if (snapshotVersion == PreviousSingleRarityRunConfigurationSnapshotVersion)
-			{
-				goldenRerollChancePercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(payload[cursor++]);
-			}
-		}
-		else
-		{
-			_ = ReadRarityWeights(payload, ref cursor);
-			HextechRarityWeights legacyNormalWeights = ReadRarityWeights(payload, ref cursor);
-			_ = ReadRarityWeights(payload, ref cursor);
-			runeWeightsByAct = [ legacyNormalWeights, legacyNormalWeights, legacyNormalWeights ];
-			preventConsecutiveSilverRunes = HextechRuneConfiguration.GetDefaultPreventConsecutiveSilverRunes();
-		}
+		ReadRuneRarityFields(
+			payload,
+			ref cursor,
+			snapshotVersion,
+			out HextechRarityWeights[] runeWeightsByAct,
+			out bool preventConsecutiveSilverRunes,
+			out int goldenRerollChancePercent);
 
 		HextechRarityWeights forgeWeights = ReadRarityWeights(payload, ref cursor);
 		int forgePrice = payload[cursor++];
@@ -197,30 +171,11 @@ internal static partial class HextechChoiceCodec
 			randomForgeDirectGrant = payload[cursor++] != 0;
 		}
 
-		if (payload.Count <= cursor)
+		if (!TryReadDisabledMonsterHexIds(payload, ref cursor, out HashSet<string> disabledMonsterHexIds))
 		{
 			return false;
 		}
 
-		int disabledMonsterHexCount = payload[cursor++];
-		if (disabledMonsterHexCount < 0
-			|| disabledMonsterHexCount > MaxDisabledMonsterHexes
-			|| !HasRemaining(payload, cursor, disabledMonsterHexCount))
-		{
-			return false;
-		}
-
-		HashSet<string> disabledMonsterHexIds = [];
-		for (int i = 0; i < disabledMonsterHexCount; i++)
-		{
-			int value = payload[cursor + i];
-			if (Enum.IsDefined(typeof(MonsterHexKind), value))
-			{
-				disabledMonsterHexIds.Add(((MonsterHexKind)value).ToString());
-			}
-		}
-
-		cursor += disabledMonsterHexCount;
 		if (!HextechStableModelIdListCodec.TryDecode(payload, cursor, out List<ModelId> disabledForgeIds, out int forgeListNextCursor))
 		{
 			return false;
@@ -253,6 +208,77 @@ internal static partial class HextechChoiceCodec
 			randomForgeDirectGrant,
 			modEnabled,
 			chaosRuneChancePercent));
+		return true;
+	}
+
+	/// <summary>各快照版本的海克斯稀有度段:当前版为分幕三组权重 + 防连续银 + 金色重掷;更早的版本按旧布局读取。</summary>
+	private static void ReadRuneRarityFields(
+		List<int> payload,
+		ref int cursor,
+		int snapshotVersion,
+		out HextechRarityWeights[] runeWeightsByAct,
+		out bool preventConsecutiveSilverRunes,
+		out int goldenRerollChancePercent)
+	{
+		goldenRerollChancePercent = HextechRuneConfiguration.GetDefaultGoldenRerollChancePercent();
+		if (snapshotVersion == RunConfigurationSnapshotVersion)
+		{
+			runeWeightsByAct =
+			[
+				ReadRarityWeights(payload, ref cursor),
+				ReadRarityWeights(payload, ref cursor),
+				ReadRarityWeights(payload, ref cursor)
+			];
+			preventConsecutiveSilverRunes = payload[cursor++] != 0;
+			goldenRerollChancePercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(payload[cursor++]);
+		}
+		else if (snapshotVersion is PreviousSingleRarityRunConfigurationSnapshotVersion or PreviousRunConfigurationSnapshotVersion)
+		{
+			HextechRarityWeights singleWeights = ReadRarityWeights(payload, ref cursor);
+			runeWeightsByAct = [ singleWeights, singleWeights, singleWeights ];
+			preventConsecutiveSilverRunes = payload[cursor++] != 0;
+			if (snapshotVersion == PreviousSingleRarityRunConfigurationSnapshotVersion)
+			{
+				goldenRerollChancePercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(payload[cursor++]);
+			}
+		}
+		else
+		{
+			_ = ReadRarityWeights(payload, ref cursor);
+			HextechRarityWeights legacyNormalWeights = ReadRarityWeights(payload, ref cursor);
+			_ = ReadRarityWeights(payload, ref cursor);
+			runeWeightsByAct = [ legacyNormalWeights, legacyNormalWeights, legacyNormalWeights ];
+			preventConsecutiveSilverRunes = HextechRuneConfiguration.GetDefaultPreventConsecutiveSilverRunes();
+		}
+	}
+
+	/// <summary>禁用敌方海克斯列表:计数 + 枚举编号;本版本不认识的编号跳过(对端可能是更新的版本)。</summary>
+	private static bool TryReadDisabledMonsterHexIds(List<int> payload, ref int cursor, out HashSet<string> disabledMonsterHexIds)
+	{
+		disabledMonsterHexIds = [];
+		if (payload.Count <= cursor)
+		{
+			return false;
+		}
+
+		int disabledMonsterHexCount = payload[cursor++];
+		if (disabledMonsterHexCount < 0
+			|| disabledMonsterHexCount > MaxDisabledMonsterHexes
+			|| !HasRemaining(payload, cursor, disabledMonsterHexCount))
+		{
+			return false;
+		}
+
+		for (int i = 0; i < disabledMonsterHexCount; i++)
+		{
+			int value = payload[cursor + i];
+			if (Enum.IsDefined(typeof(MonsterHexKind), value))
+			{
+				disabledMonsterHexIds.Add(((MonsterHexKind)value).ToString());
+			}
+		}
+
+		cursor += disabledMonsterHexCount;
 		return true;
 	}
 

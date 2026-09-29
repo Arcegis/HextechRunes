@@ -219,8 +219,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static async Task ObserveEnemyHexAdjustmentReceiveTask(EnemyHexAdjustmentSyncContext? syncContext)
 	{
-		Task? receiveTask = syncContext?.RemoteReceiveTask;
-		if (receiveTask == null)
+		if (syncContext?.RemoteReceiveTask is not Task receiveTask)
 		{
 			return;
 		}
@@ -236,7 +235,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			HextechLog.Error(
 				"Mayhem", $"Enemy hex adjustment receiver failed during transaction cleanup: " +
-				$"act={syncContext!.ActIndex} error={ex}");
+				$"act={syncContext.ActIndex} error={ex}");
 		}
 	}
 
