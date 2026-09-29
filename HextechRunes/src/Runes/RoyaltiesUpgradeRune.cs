@@ -18,7 +18,7 @@ public sealed class RoyaltiesUpgradeRune : CardUpgradeRuneBase<Royalties>
 		}
 	}
 
-	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical && _countThisCombat > 0;
+	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
 	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
 
 	public override Task BeforeCombatStart()
