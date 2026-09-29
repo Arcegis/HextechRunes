@@ -114,7 +114,7 @@ internal static class HextechSovereignBladeVfxSync
 				continue;
 			}
 
-			vfx.OrbitProgress = expected.Count == 0 ? 0d : (double)i / expected.Count;
+			vfx.OrbitProgress = (double)i / expected.Count;
 			Node2D? spineNode = vfx.GetNodeOrNull<Node2D>("SpineSword");
 			if (spineNode != null)
 			{

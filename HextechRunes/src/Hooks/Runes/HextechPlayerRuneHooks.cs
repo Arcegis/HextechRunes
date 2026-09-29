@@ -1,5 +1,4 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-using MegaCrit.Sts2.Core.Nodes.Combat;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HextechRunes;
 
@@ -22,9 +21,7 @@ internal static partial class HextechPlayerRuneHooks
 		await CreatureCmd.Damage(new ThrowingPlayerChoiceContext(), targets, power.Amount, ValueProp.Unpowered, power.Owner);
 	}
 
-	// 形参按游戏真实签名用 HextechCombatState(0.104+ 为 ICombatState);helper 需要具体 CombatState,
-	// 拿不到时放行原版(与旧行为一致,不吞小刀)。
-
+	// 刀扇打出君王之剑：DamageCmd 的 TargetingAllOpponents 需要具体 CombatState，拿不到时不出手。
 	internal static async Task PlayFanOfKnivesSovereignBlade(PlayerChoiceContext choiceContext, SovereignBlade card)
 	{
 		if (card.CombatState is not CombatState combatState)
@@ -32,7 +29,7 @@ internal static partial class HextechPlayerRuneHooks
 			return;
 		}
 
-		var attack = DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
+		AttackCommand attack = DamageCmd.Attack(card.DynamicVars.Damage.BaseValue)
 			.FromCardCompat(card)
 			.WithHitCount(card.DynamicVars.Repeat.IntValue)
 			.WithAttackerAnim("Cast", card.Owner.Character.AttackAnimDelay)
@@ -62,7 +59,7 @@ internal static partial class HextechPlayerRuneHooks
 
 			rewritten ??= cards.Take(i).ToList();
 			rewritten.Add(card);
-			if (TryCreateManipulateRealityStatusCopy(card, out CardModel copy))
+			if (TryCreateManipulateRealityStatusCopy(card, out CardModel? copy))
 			{
 				rewritten.Add(copy);
 			}
@@ -79,9 +76,9 @@ internal static partial class HextechPlayerRuneHooks
 			&& HextechMayhemModifier.FindIn(card.Owner.RunState)?.HasActiveMonsterHex(MonsterHexKind.ManipulateReality) == true;
 	}
 
-	internal static bool TryCreateManipulateRealityStatusCopy(CardModel card, out CardModel copy)
+	internal static bool TryCreateManipulateRealityStatusCopy(CardModel card, [NotNullWhen(true)] out CardModel? copy)
 	{
-		copy = null!;
+		copy = null;
 		try
 		{
 			if (card.Owner?.Creature.CombatState is not HextechCombatState combatState)
@@ -99,16 +96,10 @@ internal static partial class HextechPlayerRuneHooks
 		}
 	}
 
+	// 卡牌标签 getter 是热路径，图鉴/第三方会在规范模型上读它；规范模型的 Owner 会抛 CanonicalModelException，先判 IsCanonical。
 	internal static Player? TryGetMutableCardOwner(CardModel card)
 	{
-		try
-		{
-			return card.Owner;
-		}
-		catch (CanonicalModelException)
-		{
-			return null;
-		}
+		return card.IsCanonical ? null : card.Owner;
 	}
 
 	[HarmonyPatch(typeof(CardModel), nameof(CardModel.Tags), MethodType.Getter)]

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Godot;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
@@ -65,6 +66,25 @@ internal static class HextechGameOverCompatibilityHooks
 		return label;
 	}
 
+	/// <summary>
+	/// 只兜住 NScoreLine.Create 自身按类型取场景节点失败的情形：InvalidCastException 由 Godot 的
+	/// PackedScene.Instantiate&lt;T&gt; / Node.GetNode&lt;T&gt; 抛出（记分行场景根或 %Label/%Score/%Icon 节点类型不符；
+	/// 小泛型方法被内联时抛出点显示为 NScoreLine 自身，它也是 Node），且本局启用了海克斯。其他来源的类型转换失败（第三方补丁、别的代码路径）、以及未启用海克斯的对局一律原样抛出。
+	/// </summary>
+	internal static bool IsScoreLineSceneTypeMismatch([NotNullWhen(true)] Exception? exception)
+	{
+		if (exception is not InvalidCastException invalidCast)
+		{
+			return false;
+		}
+
+		Type? thrower = invalidCast.TargetSite?.DeclaringType;
+		bool fromGodotTypedNodeLookup = thrower != null
+			&& (typeof(PackedScene).IsAssignableFrom(thrower) || typeof(Node).IsAssignableFrom(thrower));
+		return fromGodotTypedNodeLookup
+			&& HextechMayhemModifier.IsEnabledForRun(RunManager.Instance.DebugOnlyGetState());
+	}
+
 	[HarmonyPatch(typeof(NScoreLine), nameof(NScoreLine.Create), typeof(string), typeof(string), typeof(Texture2D))]
 	[HextechPatch("compat.game-over-score-line", "结算记分行兼容", Optional = true)]
 	private static class ScoreLineCreatePatch
@@ -77,12 +97,7 @@ internal static class HextechGameOverCompatibilityHooks
 			ref NScoreLine __result,
 			Exception? __exception)
 		{
-			if (__exception == null)
-			{
-				return null;
-			}
-
-			if (__exception is not InvalidCastException)
+			if (!IsScoreLineSceneTypeMismatch(__exception))
 			{
 				return __exception;
 			}
