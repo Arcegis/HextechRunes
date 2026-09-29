@@ -5,8 +5,6 @@ public sealed class SoulEaterRune : HextechRelicBase
 	private const decimal MaxHpGainPercentValue = 0.05m;
 	private const decimal MaxHpGainDisplayPercentValue = MaxHpGainPercentValue * 100m;
 
-	private const int CreatureStatHardCap = 999999999;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("MaxHpGainPercent", MaxHpGainPercentValue),
@@ -64,7 +62,7 @@ public sealed class SoulEaterRune : HextechRelicBase
 	private static bool IsTransientInfiniteHpState(Creature target)
 	{
 		return target.HpDisplay is HpDisplay.InfiniteWithNumbers or HpDisplay.InfiniteWithoutNumbers
-			|| target.MaxHp >= CreatureStatHardCap;
+			|| target.MaxHp >= HextechCreatureStatLimits.StatHardCap;
 	}
 
 	private static int GetScaledInitialMonsterMaxHp(Creature target)
@@ -85,6 +83,6 @@ public sealed class SoulEaterRune : HextechRelicBase
 			target.CombatState.Encounter,
 			target.CombatState.Players.Count,
 			target.CombatState.RunState.CurrentActIndex);
-		return Math.Clamp(FloorToInt(scaledMaxHp), 1, CreatureStatHardCap);
+		return Math.Clamp(FloorToInt(scaledMaxHp), 1, HextechCreatureStatLimits.StatHardCap);
 	}
 }

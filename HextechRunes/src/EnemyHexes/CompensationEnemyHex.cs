@@ -90,7 +90,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 			return (damage, 0);
 		}
 
-		int nextTurnDamage = (int)Math.Min(Math.Floor(damage / 2m), 999999999m);
+		int nextTurnDamage = (int)Math.Min(Math.Floor(damage / 2m), HextechCreatureStatLimits.StatHardCap);
 		return (damage - nextTurnDamage, nextTurnDamage);
 	}
 

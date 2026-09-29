@@ -11,7 +11,7 @@ internal sealed class OminousPactEnemyHex : HextechEnemyHexEffect
 			return Task.CompletedTask;
 		}
 
-		int doom = Math.Min(result.UnblockedDamage, 999999999);
+		int doom = Math.Min(result.UnblockedDamage, HextechCreatureStatLimits.StatHardCap);
 		return doom > 0
 			? PowerCmd.Apply<DoomPower>(target, doom, dealer, cardSource)
 			: Task.CompletedTask;

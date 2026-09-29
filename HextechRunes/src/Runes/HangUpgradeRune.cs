@@ -16,7 +16,7 @@ public sealed class HangUpgradeRune : CardUpgradeRuneBase<Hang>
 		return Owner != null && card.Owner == Owner && card is Hang && keywords.Add(CardKeyword.Exhaust);
 	}
 
-	internal static int NextIncrease(int current) => Math.Min(Math.Max(2, current), 999999999 - current);
+	internal static int NextIncrease(int current) => Math.Min(Math.Max(2, current), HextechCreatureStatLimits.StatHardCap - current);
 
 	internal static async Task PlayUpgraded(PlayerChoiceContext context, Hang card, CardPlay play)
 	{
