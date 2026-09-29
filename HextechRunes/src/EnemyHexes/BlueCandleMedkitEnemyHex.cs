@@ -1,11 +1,15 @@
+using static HextechRunes.HextechHookReflection;
+
 namespace HextechRunes;
 
 internal sealed class BlueCandleMedkitEnemyHex : HextechEnemyHexEffect
 {
 	internal const int CostIncrease = 1;
 
-	private static readonly FieldInfo BaseCostField = HextechHookReflection.RequireField(typeof(CardEnergyCost), "_base");
-	private static readonly FieldInfo LocalModifiersField = HextechHookReflection.RequireField(typeof(CardEnergyCost), "_localModifiers");
+	// 原版私有字段 CardEnergyCost._base（int）与 _localModifiers（List<LocalCostModifier>），0.107.1 与 0.111.0 同名。
+	// 缺失时进启动摘要并降级为直接加在规范费用上，不能让类型初始化失败连带整张敌方海克斯效果表。
+	private static readonly FieldInfo? BaseCostField = TryGetField(typeof(CardEnergyCost), "_base");
+	private static readonly FieldInfo? LocalModifiersField = TryGetField(typeof(CardEnergyCost), "_localModifiers");
 
 	internal override MonsterHexKind Kind => MonsterHexKind.BlueCandleMedkit;
 
@@ -31,7 +35,9 @@ internal sealed class BlueCandleMedkitEnemyHex : HextechEnemyHexEffect
 	/// </summary>
 	internal static int GetIncreaseSurvivingLocalModifiers(CardEnergyCost energyCost, int increase)
 	{
-		int baseCost = (int)BaseCostField.GetValue(energyCost)!;
+		int baseCost = BaseCostField?.GetValue(energyCost) is int reflectedBase
+			? reflectedBase
+			: energyCost.Canonical;
 		if (baseCost < 0)
 		{
 			return 0;
@@ -39,7 +45,7 @@ internal sealed class BlueCandleMedkitEnemyHex : HextechEnemyHexEffect
 
 		int withIncrease = baseCost + increase;
 		int withoutIncrease = baseCost;
-		if (LocalModifiersField.GetValue(energyCost) is IEnumerable<LocalCostModifier> modifiers)
+		if (LocalModifiersField?.GetValue(energyCost) is IEnumerable<LocalCostModifier> modifiers)
 		{
 			foreach (LocalCostModifier modifier in modifiers)
 			{

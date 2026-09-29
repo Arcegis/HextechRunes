@@ -9,10 +9,7 @@ internal sealed class PandorasBoxEnemyHex : HextechEnemyHexEffect
 		if (player.RunState != context.RunState
 			|| options.Source != CardCreationSource.Encounter
 			|| options.Flags.HasFlag(CardCreationFlags.NoCardPoolModifications)
-#if !STS2_108_OR_NEWER
-			// 0.108.0 起 CardCreationOptions 不再有自定义卡列表模式,该守卫无意义。
-			|| options.CustomCardPool != null
-#endif
+			|| HextechGameApiCompat.HasCustomCardList(options)
 			|| options.CardPools.All(static pool => pool.IsColorless))
 		{
 			return options;

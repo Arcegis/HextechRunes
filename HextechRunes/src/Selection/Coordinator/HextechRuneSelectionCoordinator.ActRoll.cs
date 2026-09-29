@@ -79,7 +79,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		NetGameType gameType = runManager.NetService.Type;
 		bool isMultiplayer = gameType is NetGameType.Host or NetGameType.Client;
 		bool isPresetChallenge = HextechPresetChallengeRegistry.IsActive(runState);
-		HextechPresetChallengeActPlan? challengeAct = HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out HextechPresetChallengeActPlan resolvedChallengeAct)
+		HextechPresetChallengeActPlan? challengeAct = HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out HextechPresetChallengeActPlan? resolvedChallengeAct)
 			? resolvedChallengeAct
 			: null;
 		HextechRunConfigurationSnapshot localRunConfigSnapshot = isPresetChallenge
@@ -349,7 +349,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return checkpointedNewHexes;
 		}
 
-		if (HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out HextechPresetChallengeActPlan challengeAct))
+		if (HextechPresetChallengeRegistry.TryGetActPlan(runState, actIndex, out HextechPresetChallengeActPlan? challengeAct))
 		{
 			if (challengeAct.EnemyHexes.Count != newEnemyHexCount)
 			{

@@ -9,7 +9,9 @@ namespace HextechRunes;
 /// 0.107.1↔0.108.0 直接调用类 API 差异的集中适配(签名统一为 0.107 形态,0.108 下补齐新参数):
 /// CreatureCmd.Damage 带 cardSource 的重载追加 CardPlay、AttackCommand.FromCard 追加 CardPlay、
 /// PotionFactory.GetPotionOptions 移除 blacklist、CardCreationOptions 移除自定义卡列表构造器
-/// (改为池+过滤器)与 WithCardPools 的过滤器参数分离。
+/// (改为池+过滤器)与 WithCardPools 的过滤器参数分离、0.108.0 新增 HibernatePower;
+/// 以及 0.109.0 SavedPropertiesTypeCache 的 NetIdBitSize 改名 PropertyIdBitSize。
+/// 共享代码不写行内 #if,版本差异都收在这里。
 /// </summary>
 internal static class HextechGameApiCompat
 {
@@ -82,6 +84,51 @@ internal static class HextechGameApiCompat
 		_ = player;
 		return new CardCreationOptions(cards, source, rarityOdds);
 #endif
+	}
+
+	/// <summary>只出指定这一张牌的创建选项:0.107 用自定义卡列表,0.108 起用该卡所属池 + 按 Id 过滤等价表达。</summary>
+	internal static CardCreationOptions CreateOptionsForSingleCard(CardModel canonicalCard, CardCreationSource source, CardRarityOddsType rarityOdds)
+	{
+#if STS2_108_OR_NEWER
+		ModelId cardId = canonicalCard.Id;
+		return new CardCreationOptions([canonicalCard.Pool], source, rarityOdds, card => card.Id.Equals(cardId));
+#else
+		return new CardCreationOptions([canonicalCard], source, rarityOdds);
+#endif
+	}
+
+	/// <summary>是否为自定义卡列表模式的选项;0.108.0 起没有这种模式,恒为 false。</summary>
+	internal static bool HasCustomCardList(CardCreationOptions options)
+	{
+#if STS2_108_OR_NEWER
+		_ = options;
+		return false;
+#else
+		return options.CustomCardPool != null;
+#endif
+	}
+
+	/// <summary>HibernatePower 自 0.108.0 起才存在。</summary>
+	internal static bool IsHibernatePower(PowerModel power)
+	{
+#if STS2_108_OR_NEWER
+		return power is HibernatePower;
+#else
+		_ = power;
+		return false;
+#endif
+	}
+
+	internal static int SavedPropertyIdBitSize
+	{
+		get
+		{
+#if STS2_109_OR_NEWER
+			return SavedPropertiesTypeCache.PropertyIdBitSize;
+#else
+			return SavedPropertiesTypeCache.NetIdBitSize;
+#endif
+		}
 	}
 
 	internal static CardCreationOptions WithCardPoolsCompat(this CardCreationOptions options, IEnumerable<CardPoolModel> pools, Func<CardModel, bool>? cardPoolFilter)

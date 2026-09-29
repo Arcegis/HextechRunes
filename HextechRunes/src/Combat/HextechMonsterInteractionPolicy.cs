@@ -98,9 +98,6 @@ internal static class HextechMonsterInteractionPolicy
 			|| power is SkittishPower
 				or SmoggyPower
 				or BurrowedPower
-#if STS2_108_OR_NEWER
-				or HibernatePower
-#endif
 				or CurlUpPower
 				or HardenedShellPower
 				or SentryModePower
@@ -118,7 +115,8 @@ internal static class HextechMonsterInteractionPolicy
 				// 机器人「库存」(Stock):囤积-释放机制与敌人行动脚本耦合,薄暮法衣镜像到玩家会卡死(玩家实报)。
 				or StockPower
 				// 敌我共用的缓慢系数带有正负层数语义,不应作为普通怪物增益镜像到玩家。
-				or HextechPlayerSlowPower;
+				or HextechPlayerSlowPower
+			|| HextechGameApiCompat.IsHibernatePower(power);
 	}
 
 	/// <summary>

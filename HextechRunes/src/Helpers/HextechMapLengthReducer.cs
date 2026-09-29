@@ -4,8 +4,9 @@ namespace HextechRunes;
 
 internal static class HextechMapLengthReducer
 {
-	private static readonly System.Reflection.MethodInfo? SetSpoilsCoordMethod =
-		typeof(SpoilsMap).GetProperty(nameof(SpoilsMap.SpoilsCoord))?.GetSetMethod(nonPublic: true);
+	// 原版 SpoilsMap.SpoilsCoord 为 { get; private set; }（0.107.1 与 0.111.0 相同）。缺失时进启动摘要，缩图后藏宝图坐标不再平移。
+	private static readonly MethodInfo? SetSpoilsCoordMethod =
+		HextechHookReflection.TryGetPropertySetter(typeof(SpoilsMap), nameof(SpoilsMap.SpoilsCoord));
 
 	internal static ActMap ReduceNodeLength(IRunState runState, ActMap map, MapCoord? currentCoord, int rowsToRemove)
 	{
@@ -121,9 +122,9 @@ internal static class HextechMapLengthReducer
 
 	private static void SetSpoilsCoord(SpoilsMap spoilsMap, MapCoord coord)
 	{
+		// setter 缺失已在启动摘要里报告过，这里不再逐次告警。
 		if (SetSpoilsCoordMethod == null)
 		{
-			HextechLog.Warn("Mayhem", $"Hasty Scribble could not update SpoilsMap coord: setter missing.");
 			return;
 		}
 
