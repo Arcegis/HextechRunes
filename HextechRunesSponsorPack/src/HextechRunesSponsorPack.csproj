@@ -6,45 +6,17 @@
     <Version>0.9.2</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <GameRoot>/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app</GameRoot>
-    <VersionedRefsRoot>$(MSBuildThisFileDirectory)../../HextechRunes/versioned-dll-backups</VersionedRefsRoot>
     <HextechSponsorSts2Target Condition="'$(HextechSponsorSts2Target)' == ''">0.107.1</HextechSponsorSts2Target>
-    <!-- 引用目录与目标版本联动，保证程序集 API 与条件编译符号匹配。 -->
-    <OfficialGameDataDir>$(VersionedRefsRoot)/$(HextechSponsorSts2Target)/game-refs</OfficialGameDataDir>
-    <GameDataDir Condition="'$(GameDataDir)' == '' and Exists('$(OfficialGameDataDir)/sts2.dll')">$(OfficialGameDataDir)</GameDataDir>
-    <GameDataDir Condition="'$(GameDataDir)' == ''">$(GameRoot)/Contents/Resources/data_sts2_macos_arm64</GameDataDir>
-  </PropertyGroup>
-
-  <!-- 支持 0.107.1 / 0.110.0 / 0.111.0；各目标的 API 兼容符号与本体保持一致。 -->
-  <PropertyGroup Condition="'$(HextechSponsorSts2Target)' == '0.107.1'">
-    <DefineConstants>$(DefineConstants);STS2_107_1</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(HextechSponsorSts2Target)' == '0.110.0'">
-    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(HextechSponsorSts2Target)' == '0.111.0'">
-    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER;STS2_111_OR_NEWER</DefineConstants>
+    <!--
+      支持 0.107.1 / 0.110.0 / 0.111.0;版本符号、未知目标拦截、引用目录(与目标版本联动)
+      以及 sts2/GodotSharp/0Harmony 引用都与本体共用仓库根 Directory.Build.targets。
+    -->
+    <HextechUsesVariantTargets>true</HextechUsesVariantTargets>
+    <HextechVariantTarget>$(HextechSponsorSts2Target)</HextechVariantTarget>
   </PropertyGroup>
 
   <ItemGroup>
     <AssemblyMetadata Include="HextechSponsorCompatibilityTarget" Value="$(HextechSponsorSts2Target)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="sts2">
-      <HintPath>$(GameDataDir)/sts2.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="GodotSharp">
-      <HintPath>$(GameDataDir)/GodotSharp.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>$(GameDataDir)/0Harmony.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>

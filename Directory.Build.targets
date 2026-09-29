@@ -1,0 +1,65 @@
+<Project>
+  <!--
+    本体、拓展包与测试三个"按游戏版本出变体"的工程共用的版本符号、目标校验与游戏引用。
+    MSBuild 会把本文件自动导入仓库内所有工程,所以全部内容以 HextechUsesVariantTargets=true 为前提:
+    只有显式声明它的工程才会被套用;加载器(固定对 0.107.1 编译)、mplab 驱动等工程不受影响。
+
+    声明方需在自己的 PropertyGroup 里设置:
+      HextechUsesVariantTargets = true
+      HextechVariantTarget      = 本工程的目标版本(本体/测试取 HextechSts2Target,拓展包取 HextechSponsorSts2Target)
+      HextechGameRefsPrivate    = 是否把游戏程序集复制到输出(测试进程要 true,模组要 false;默认 false)
+  -->
+
+  <!--
+    发布目标只有 0.107.1 / 0.110.0 / 0.111.0 三个变体。
+    STS2_107_1 表示"0.107.1 分支";STS2_1xx_OR_NEWER 表示"该版本引入的 API 在本目标可用"。
+    0.104~0.107.0 的符号已随这些版本退役,代码里不再出现。
+  -->
+  <PropertyGroup Condition="'$(HextechUsesVariantTargets)' == 'true' and '$(HextechVariantTarget)' == '0.107.1'">
+    <DefineConstants>$(DefineConstants);STS2_107_1</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(HextechUsesVariantTargets)' == 'true' and '$(HextechVariantTarget)' == '0.110.0'">
+    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(HextechUsesVariantTargets)' == 'true' and '$(HextechVariantTarget)' == '0.111.0'">
+    <DefineConstants>$(DefineConstants);STS2_108_OR_NEWER;STS2_109_OR_NEWER;STS2_110_OR_NEWER;STS2_111_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+
+  <!-- 未知目标不能静默落进 #else(最新 API)分支编译。 -->
+  <Target Name="HextechValidateTarget"
+          BeforeTargets="CoreCompile"
+          Condition="'$(HextechUsesVariantTargets)' == 'true' and '$(HextechVariantTarget)' != '0.107.1' and '$(HextechVariantTarget)' != '0.110.0' and '$(HextechVariantTarget)' != '0.111.0'">
+    <Error Text="$(MSBuildProjectName): target '$(HextechVariantTarget)' is not a shipped variant (0.107.1 / 0.110.0 / 0.111.0)." />
+  </Target>
+
+  <!--
+    游戏引用:优先使用仓库内按版本备份的引用目录,缺失时回退到本机游戏安装目录。
+    安装目录可用环境变量 STS2_GAME_APP 覆盖(与 tools/mplab/run_mplab.sh、tools/lib_build.sh 一致)。
+  -->
+  <PropertyGroup Condition="'$(HextechUsesVariantTargets)' == 'true'">
+    <GameRoot Condition="'$(GameRoot)' == ''">$(STS2_GAME_APP)</GameRoot>
+    <GameRoot Condition="'$(GameRoot)' == ''">/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app</GameRoot>
+    <HextechVersionedRefsRoot>$(MSBuildThisFileDirectory)HextechRunes/versioned-dll-backups</HextechVersionedRefsRoot>
+    <OfficialGameDataDir>$(HextechVersionedRefsRoot)/$(HextechVariantTarget)/game-refs</OfficialGameDataDir>
+    <GameDataDir Condition="'$(GameDataDir)' == '' and Exists('$(OfficialGameDataDir)/sts2.dll')">$(OfficialGameDataDir)</GameDataDir>
+    <GameDataDir Condition="'$(GameDataDir)' == ''">$(GameRoot)/Contents/Resources/data_sts2_macos_arm64</GameDataDir>
+    <HextechGameRefsPrivate Condition="'$(HextechGameRefsPrivate)' == ''">false</HextechGameRefsPrivate>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(HextechUsesVariantTargets)' == 'true'">
+    <Reference Include="sts2">
+      <HintPath>$(GameDataDir)/sts2.dll</HintPath>
+      <Private>$(HextechGameRefsPrivate)</Private>
+    </Reference>
+    <Reference Include="GodotSharp">
+      <HintPath>$(GameDataDir)/GodotSharp.dll</HintPath>
+      <Private>$(HextechGameRefsPrivate)</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(GameDataDir)/0Harmony.dll</HintPath>
+      <Private>$(HextechGameRefsPrivate)</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
