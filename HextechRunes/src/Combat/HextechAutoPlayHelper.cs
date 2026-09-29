@@ -53,7 +53,7 @@ internal static class HextechAutoPlayHelper
 		catch (Exception ex) when (IsKnownExternalAutoPlayCompatibilityFailure(ex))
 		{
 			HextechLog.Warn("AutoPlay", $"Skipped autoplay for {card.Id} after external compatibility failure: {ex.GetType().Name}: {ex.Message}");
-			await MoveToResultPile(choiceContext, card);
+			await card.MoveToResultPileWithoutPlaying(choiceContext);
 		}
 	}
 
@@ -61,10 +61,5 @@ internal static class HextechAutoPlayHelper
 	{
 		return ex is TypeLoadException or MissingMethodException
 			|| ex is AggregateException aggregate && aggregate.InnerExceptions.Any(IsKnownExternalAutoPlayCompatibilityFailure);
-	}
-
-	private static async Task MoveToResultPile(PlayerChoiceContext choiceContext, CardModel card)
-	{
-		await card.MoveToResultPileWithoutPlaying(choiceContext);
 	}
 }

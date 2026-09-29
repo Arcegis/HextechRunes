@@ -20,9 +20,15 @@ public sealed class WhiteHoleCard : HextechOwnerPoolTokenCard
 	{
 	}
 
-	internal Task AfterDrawn()
+	// 与原版 Void 一样由牌自己监听抽牌（牌在战斗牌堆中即是 Hook 监听者）。
+	public override Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
-		return Owner == null ? Task.CompletedTask : PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, Owner);
+		if (card != this || Owner == null)
+		{
+			return Task.CompletedTask;
+		}
+
+		return PlayerCmd.GainEnergy(DynamicVars.Energy.BaseValue, Owner);
 	}
 
 	protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

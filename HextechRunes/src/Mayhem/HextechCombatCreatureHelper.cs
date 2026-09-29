@@ -1,21 +1,11 @@
 using MegaCrit.Sts2.Core.Hooks;
+using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 
 namespace HextechRunes;
 
 internal static class HextechCombatCreatureHelper
 {
-	public static void DowngradePlayerCombatCards(HextechCombatState combatState)
-	{
-		foreach (CardModel card in combatState.Players
-			.SelectMany(static player => player.PlayerCombatState?.AllCards ?? Array.Empty<CardModel>())
-			.Where(static card => card.IsUpgraded)
-			.ToList())
-		{
-			CardCmd.Downgrade(card);
-		}
-	}
-
 	public static IReadOnlyList<Creature> GetAliveEnemies(HextechCombatState combatState)
 	{
 		return combatState.Enemies.Where(static creature => creature.IsAlive).ToList();
@@ -80,7 +70,7 @@ internal static class HextechCombatCreatureHelper
 		combatState.RemoveCreature(enemy);
 		try
 		{
-			var node = NCombatRoom.Instance?.GetCreatureNode(enemy);
+			NCreature? node = NCombatRoom.Instance?.GetCreatureNode(enemy);
 			if (node != null)
 			{
 				NCombatRoom.Instance?.RemoveCreatureNode(node);

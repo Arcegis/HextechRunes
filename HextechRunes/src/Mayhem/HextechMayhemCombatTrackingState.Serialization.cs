@@ -25,9 +25,4 @@ internal sealed partial class HextechMayhemCombatTrackingState
 			HextechMayhemCombatTrackingSerializer.Clear(this);
 		}
 	}
-
-	private void Clear()
-	{
-		HextechMayhemCombatTrackingSerializer.Clear(this);
-	}
 }

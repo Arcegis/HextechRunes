@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace HextechRunes;
 
 internal sealed class CombatTrackingSnapshot
@@ -46,7 +48,9 @@ internal sealed class CombatTrackingSnapshot
 	public List<uint> MountainSoulDamagedSinceLastTurn { get; set; } = [];
 	public Dictionary<ulong, int> PlayerAttackCardsPlayedThisTurn { get; set; } = new();
 	public Dictionary<ulong, int> BackToBasicsCardsPlayedThisTurn { get; set; } = new();
-	public Dictionary<ulong, int> PlayerCardsDrawnThisCombat { get; set; } = new();
+	// 旧存档与旧版本写出的键名,改名只改 C# 标识符。
+	[JsonPropertyName("PlayerCardsDrawnThisCombat")]
+	public Dictionary<ulong, int> WarmogsSpiritPlayerCardsDrawnThisCombat { get; set; } = new();
 	public Dictionary<ulong, int> SwiftAndSafePlayerCardsDrawnThisCombat { get; set; } = new();
 	public Dictionary<ulong, int> NightstalkingPlayerCardsDrawnThisCombat { get; set; } = new();
 	public List<ulong> MindOverMatterPlayersTriggeredThisTurn { get; set; } = [];
@@ -58,5 +62,4 @@ internal sealed class CombatTrackingSnapshot
 	public List<ulong> EightPennyGatePlayersTriggeredSecondThisTurn { get; set; } = [];
 	public Dictionary<ulong, int> InspectExtraDrawsPreventedThisTurn { get; set; } = new();
 	public List<ulong> GripPlayersTriggeredThisTurn { get; set; } = [];
-	public int ArcanePunchPlayerAttackCardsPlayed { get; set; }
 }

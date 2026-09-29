@@ -4,6 +4,9 @@ namespace HextechRunes;
 
 internal abstract class HextechEnemyHexEffect
 {
+	/// <summary>敌人当前生命低于最大生命的这个比例时分发 <see cref="AfterEnemyHealthThreshold"/>（逃跑计划、排斥、黎明等共用）。</summary>
+	internal const decimal EnemyHealthThresholdPercent = 0.5m;
+
 	internal abstract MonsterHexKind Kind { get; }
 
 	internal virtual bool AffectsPlayerAttackCostPreview => false;

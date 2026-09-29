@@ -42,7 +42,7 @@ internal sealed partial class HextechMayhemModifier
 			this,
 			(effect, context) => effect.AfterCombatVictory(context, room));
 
-		if (HextechRelicBase.IsNetworkMultiplayerRun())
+		if (HextechPlayerContextHelper.IsNetworkMultiplayerRun())
 		{
 			await ApplySharedCombatVictoryRunes(room);
 		}

@@ -11,8 +11,8 @@ internal sealed partial class HextechMayhemModifier
 		IReadOnlyList<Creature> playersTakingTurn,
 		IReadOnlyList<Creature> participants)
 	{
-		_combatTracking.PreparePlayerSideTurnStart();
-		_combatTracking.BeginPlayerTurnStart(combatState.Players
+		CombatTracking.PreparePlayerSideTurnStart();
+		CombatTracking.BeginPlayerTurnStart(combatState.Players
 			.Where(player => HextechTurnParticipants.Includes(participants, player))
 			.Select(static player => player.NetId));
 		RefreshPlayerAttackCostDoublingPreviews(players);
@@ -27,7 +27,7 @@ internal sealed partial class HextechMayhemModifier
 
 	private async Task BeforeEnemySideTurnStart(HextechCombatState combatState, IReadOnlyList<Creature> players)
 	{
-		_combatTracking.PrepareEnemySideTurnStart();
+		CombatTracking.PrepareEnemySideTurnStart();
 		RefreshPlayerAttackCostDoublingPreviews(players);
 
 		IReadOnlyList<Creature> enemies = HextechCombatCreatureHelper.GetAliveEnemies(combatState);

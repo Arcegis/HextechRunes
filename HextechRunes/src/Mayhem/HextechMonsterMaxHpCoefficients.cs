@@ -276,21 +276,24 @@ internal static class HextechMonsterMaxHpCoefficients
 		return false;
 	}
 
+	// 与 HextechPlayerBodyScaleHelper.MinScale 同值：体型再小就看不清了。
+	private const float MinEnemyBodyScale = 0.2f;
+
 	internal static void UpdateEnemyScale(HextechMayhemModifier modifier, Creature creature)
 	{
-		float baseScale = modifier.HasActiveMonsterHex(MonsterHexKind.Goliath) ? 1.35f : 1f;
-		// 巨人杀手敌方版让敌人体型缩小(纯视觉,呼应「体型变小」的设定,无机制意义)。
-		float giantSlayerShrink = modifier.HasActiveMonsterHex(MonsterHexKind.GiantSlayer) ? 0.25f : 0f;
+		float baseScale = modifier.HasActiveMonsterHex(MonsterHexKind.Goliath) ? GoliathEnemyHex.BodyScale : 1f;
+		float giantSlayerShrink = modifier.HasActiveMonsterHex(MonsterHexKind.GiantSlayer) ? GiantSlayerEnemyHex.BodyScaleShrink : 0f;
 		int tankStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.TankEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
 		int shrinkStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.ShrinkEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
-		float finalScale = Math.Max(0.2f, baseScale + tankStacks * 0.05f - shrinkStacks * 0.02f - giantSlayerShrink);
-		try
-		{
-			NCombatRoom.Instance?.GetCreatureNode(creature)?.SetDefaultScaleTo(finalScale, 0f);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"Enemy scale visual failed: {ex.Message}");
-		}
+		float finalScale = Math.Max(
+			MinEnemyBodyScale,
+			baseScale
+				+ tankStacks * TankEngineEnemyHex.BodyScalePerStack
+				- shrinkStacks * ShrinkEngineEnemyHex.BodyScalePerStack
+				- giantSlayerShrink);
+		HextechPresentation.TryRun(
+			"Mayhem",
+			"Enemy scale visual failed",
+			() => NCombatRoom.Instance?.GetCreatureNode(creature)?.SetDefaultScaleTo(finalScale, 0f));
 	}
 }

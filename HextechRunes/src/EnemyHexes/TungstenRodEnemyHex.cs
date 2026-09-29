@@ -12,8 +12,8 @@ internal sealed class TungstenRodEnemyHex : HextechEnemyHexEffect
 		Creature? dealer,
 		CardModel? cardSource)
 	{
+		// 分发层已限定 target 在本局战斗中。
 		if (target.Side != CombatSide.Enemy
-			|| target.CombatState?.RunState != context.RunState
 			|| target.IsDead
 			|| amount <= 0m)
 		{

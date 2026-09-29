@@ -12,7 +12,7 @@ internal sealed class HauntedShipEnemyHex : HextechEnemyHexEffect
 		{
 			return;
 		}
-		foreach (Player player in players.Where(c => !c.IsDead).Select(c => c.Player).OfType<Player>().OrderBy(p => p.NetId))
+		foreach (Player player in HextechEnemyHexContext.GetAlivePlayersByNetId(players))
 		{
 			for (int i = 0; i < context.TierValue(Kind, 2, 3, 4); i++)
 			{

@@ -57,7 +57,7 @@ public sealed class BloodDebtRune : HextechRelicBase
 	{
 		// 用卡牌实例记录战斗内成长，换牌堆不清零；统一伤害 Hook 同时支持多段、动态伤害和预览。
 		return cardSource?.Owner == Owner && cardSource?.Type == CardType.Attack
-			&& HextechSts2Compat.IsPoweredAttack(props)
+			&& props.IsPoweredAttack()
 			&& IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource)
 			? _damageBonuses?.GetValueOrDefault(cardSource) ?? 0m : 0m;
 	}

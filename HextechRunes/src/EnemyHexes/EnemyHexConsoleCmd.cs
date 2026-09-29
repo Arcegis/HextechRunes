@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
 
@@ -30,7 +31,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 			return new CmdResult(success: false, usageError ?? GetUsage());
 		}
 
-		if (!TryParseMonsterHex(hexInput!, out MonsterHexKind hex))
+		if (!TryParseMonsterHex(hexInput, out MonsterHexKind hex))
 		{
 			return new CmdResult(success: false, $"未知海克斯: {hexInput}");
 		}
@@ -111,7 +112,7 @@ public sealed class EnemyHexConsoleCmd : AbstractConsoleCmd
 		HextechEnemyUi.Refresh(modifier);
 	}
 
-	private static bool TryParseArguments(string[] args, out EnemyHexConsoleAction action, out string? hexInput, out string? error)
+	private static bool TryParseArguments(string[] args, out EnemyHexConsoleAction action, [NotNullWhen(true)] out string? hexInput, out string? error)
 	{
 		action = EnemyHexConsoleAction.Set;
 		hexInput = null;

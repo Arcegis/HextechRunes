@@ -38,7 +38,7 @@ public sealed class HextechInfernalDragonSoulPower : HextechPowerBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (HasTriggeredThisTurn()
+		if (HextechCombatProcTracker.HasOwnerTurnProcTriggered(Owner.Player, nameof(HextechInfernalDragonSoulPower), _triggeredThisTurn)
 			|| Amount <= 0m
 			|| !Owner.IsAlive
 			|| !cardPlay.IsFirstInSeries
@@ -55,52 +55,13 @@ public sealed class HextechInfernalDragonSoulPower : HextechPowerBase
 			return;
 		}
 
-		if (!TryConsumeTriggerThisTurn())
+		if (!HextechCombatProcTracker.TryConsumeOwnerTurnProc(Owner.Player, nameof(HextechInfernalDragonSoulPower), ref _triggeredThisTurn))
 		{
 			return;
 		}
 
 		Flash();
 		await PowerCmd.Apply<HextechBurnPower>(targets, Amount, Owner, cardPlay.Card);
-	}
-
-	private bool HasTriggeredThisTurn()
-	{
-		return TryGetNetworkTriggerCount(out int count) ? count > 0 : _triggeredThisTurn;
-	}
-
-	private bool TryConsumeTriggerThisTurn()
-	{
-		if (Owner.Player is Player player
-			&& HextechPlayerContextHelper.IsNetworkMultiplayerRun()
-			&& CombatManager.Instance?.IsInProgress == true
-			&& HextechMayhemModifier.FindIn(player.RunState) is HextechMayhemModifier modifier)
-		{
-			return modifier.TryConsumePlayerRuneProcThisTurn(player, nameof(HextechInfernalDragonSoulPower), 1);
-		}
-
-		if (_triggeredThisTurn)
-		{
-			return false;
-		}
-
-		_triggeredThisTurn = true;
-		return true;
-	}
-
-	private bool TryGetNetworkTriggerCount(out int count)
-	{
-		count = 0;
-		if (Owner.Player is not Player player
-			|| !HextechPlayerContextHelper.IsNetworkMultiplayerRun()
-			|| CombatManager.Instance?.IsInProgress != true
-			|| HextechMayhemModifier.FindIn(player.RunState) is not HextechMayhemModifier modifier)
-		{
-			return false;
-		}
-
-		count = modifier.GetPlayerRuneProcsThisTurn(player, nameof(HextechInfernalDragonSoulPower));
-		return true;
 	}
 
 	private IEnumerable<Creature> GetTargets(CardPlay cardPlay)
@@ -123,7 +84,7 @@ public sealed class HextechInfernalDragonSoulPower : HextechPowerBase
 	}
 }
 
-public sealed class HextechDragonSoulPower : PowerModel
+public sealed class HextechDragonSoulPower : HextechPowerBase
 {
 	public override PowerType Type => PowerType.Buff;
 
@@ -137,14 +98,7 @@ public sealed class HextechDragonSoulPower : PowerModel
 		}
 
 		await PlayerCmd.GainEnergy(Amount, player);
-		try
-		{
-			Flash();
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("DragonSoul", $"Flash failed: {ex.Message}");
-		}
+		Flash();
 	}
 }
 
@@ -201,7 +155,7 @@ public sealed class HextechChemtechDragonSoulPower : HextechPowerBase
 	}
 }
 
-public sealed class HextechCloudDragonSoulPower : PowerModel
+public sealed class HextechCloudDragonSoulPower : HextechPowerBase
 {
 	public override PowerType Type => PowerType.Buff;
 

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using Godot;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.CustomRun;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
@@ -90,12 +92,22 @@ internal static class HextechPresetChallengeRegistry
 		new(HextechRarityTier.Prismatic, [ MonsterHexKind.LagavulinMatriarch, MonsterHexKind.MasterOfDuality ])
 	];
 
+	private static readonly IReadOnlyDictionary<Type, IReadOnlyList<HextechPresetChallengeActPlan>> ActsByModifierType =
+		new Dictionary<Type, IReadOnlyList<HextechPresetChallengeActPlan>>
+		{
+			[typeof(StuffedToRuinChallengeModifier)] = StuffedToRuinActs,
+			[typeof(DefenseCounterMasterChallengeModifier)] = DefenseCounterMasterActs,
+			[typeof(BruteForceChallengeModifier)] = BruteForceActs,
+			[typeof(EightPennyGateChallengeModifier)] = EightPennyGateActs,
+			[typeof(ListlessChallengeModifier)] = ListlessActs
+		};
+
 	internal static bool IsActive(RunState runState)
 	{
 		return runState.Modifiers.Any(static modifier => IsChallengeModifierType(modifier.GetType()));
 	}
 
-	internal static bool TryGetActPlan(RunState runState, int actIndex, out HextechPresetChallengeActPlan plan)
+	internal static bool TryGetActPlan(RunState runState, int actIndex, [NotNullWhen(true)] out HextechPresetChallengeActPlan? plan)
 	{
 		foreach (ModifierModel modifier in runState.Modifiers)
 		{
@@ -105,40 +117,26 @@ internal static class HextechPresetChallengeRegistry
 			}
 		}
 
-		plan = null!;
+		plan = null;
 		return false;
 	}
 
-	internal static bool TryGetActPlan(Type modifierType, int actIndex, out HextechPresetChallengeActPlan plan)
+	internal static bool TryGetActPlan(Type modifierType, int actIndex, [NotNullWhen(true)] out HextechPresetChallengeActPlan? plan)
 	{
-		IReadOnlyList<HextechPresetChallengeActPlan>? acts = modifierType == typeof(StuffedToRuinChallengeModifier)
-			? StuffedToRuinActs
-			: modifierType == typeof(DefenseCounterMasterChallengeModifier)
-				? DefenseCounterMasterActs
-				: modifierType == typeof(BruteForceChallengeModifier)
-					? BruteForceActs
-					: modifierType == typeof(EightPennyGateChallengeModifier)
-						? EightPennyGateActs
-						: modifierType == typeof(ListlessChallengeModifier)
-							? ListlessActs
-							: null;
-		if (acts != null && (uint)actIndex < (uint)acts.Count)
+		if (ActsByModifierType.TryGetValue(modifierType, out IReadOnlyList<HextechPresetChallengeActPlan>? acts)
+			&& (uint)actIndex < (uint)acts.Count)
 		{
 			plan = acts[actIndex];
 			return true;
 		}
 
-		plan = null!;
+		plan = null;
 		return false;
 	}
 
 	internal static bool IsChallengeModifierType(Type modifierType)
 	{
-		return modifierType == typeof(StuffedToRuinChallengeModifier)
-			|| modifierType == typeof(DefenseCounterMasterChallengeModifier)
-			|| modifierType == typeof(BruteForceChallengeModifier)
-			|| modifierType == typeof(EightPennyGateChallengeModifier)
-			|| modifierType == typeof(ListlessChallengeModifier);
+		return ActsByModifierType.ContainsKey(modifierType);
 	}
 
 	internal static bool AreMutuallyExclusiveChallengeTypes(Type selectedType, Type candidateType)
@@ -175,20 +173,22 @@ internal static class HextechPresetChallengeHooks
 	[HextechPatch("custom-run.preset-challenges.exclusivity", "预设挑战", Optional = true)]
 	private static class ExclusivityPatch
 	{
+		// 原版把勾选框同时存进私有列表 _modifierTickboxes 和容器节点（_Ready 里 AddChildSafely），
+		// 这里经公开的节点树取同级勾选框，不注入私有字段。
 		[HarmonyPostfix]
-		private static void Postfix(
-			NRunModifierTickbox tickbox,
-			List<NRunModifierTickbox> ____modifierTickboxes)
+		private static void Postfix(NRunModifierTickbox tickbox)
 		{
 			ModifierModel? selectedModifier = tickbox.Modifier;
+			Node? container = tickbox.GetParent();
 			if (!tickbox.IsTicked
+				|| container == null
 				|| selectedModifier == null
 				|| !HextechPresetChallengeRegistry.IsChallengeModifierType(selectedModifier.GetType()))
 			{
 				return;
 			}
 
-			foreach (NRunModifierTickbox otherTickbox in ____modifierTickboxes)
+			foreach (NRunModifierTickbox otherTickbox in container.GetChildren().OfType<NRunModifierTickbox>())
 			{
 				ModifierModel? otherModifier = otherTickbox.Modifier;
 				if (otherModifier != null

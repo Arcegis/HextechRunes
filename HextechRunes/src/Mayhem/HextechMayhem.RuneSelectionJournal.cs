@@ -7,7 +7,9 @@ internal sealed partial class HextechMayhemModifier
 	internal void CommitCharacterRuneWeight(Player player, IReadOnlyList<RelicModel> options)
 	{
 		if (options is HextechWeightedRuneOptions weighted)
+		{
 			_runContext.RuneSelectionJournal.CommitCharacterWeight(player.NetId, weighted.CharacterWeightPercent);
+		}
 	}
 
 	internal bool HasRuneSelectionJournalEntriesForAct(int actIndex)
@@ -50,7 +52,7 @@ internal sealed partial class HextechMayhemModifier
 			return false;
 		}
 
-		HextechTelemetry.RuneChoiceRecord[] matchingRecords = _choiceHistory.GetTelemetryChoiceRecords()
+		HextechTelemetry.RuneChoiceRecord[] matchingRecords = ChoiceHistory.GetTelemetryChoiceRecords()
 			.Where(record =>
 				record.ActIndex == actIndex
 				&& record.ChoiceOrdinal == choiceOrdinal
@@ -64,13 +66,13 @@ internal sealed partial class HextechMayhemModifier
 		}
 
 		HextechTelemetry.RuneChoiceRecord matchingRecord = matchingRecords[0];
-		string selectedEntry = matchingRecord.Selected!;
-		if (!matchingRecord.Options.Contains(selectedEntry, StringComparer.Ordinal)
+		if (matchingRecord.Selected is not string selectedEntry
+			|| !matchingRecord.Options.Contains(selectedEntry, StringComparer.Ordinal)
 			|| !Enum.TryParse(
 				matchingRecord.Rarity,
 				ignoreCase: false,
 				out HextechRarityTier recordedRarity)
-			|| _actState.GetRarity(actIndex) != recordedRarity)
+			|| ActState.GetRarity(actIndex) != recordedRarity)
 		{
 			return false;
 		}

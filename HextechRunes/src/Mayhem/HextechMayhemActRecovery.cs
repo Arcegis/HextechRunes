@@ -120,8 +120,9 @@ internal static class HextechMayhemActRecovery
 						.Take(2)
 						.ToArray();
 					if (matchingChoices.Length != 1
-						|| string.IsNullOrWhiteSpace(matchingChoices[0].Selected)
-						|| !ownedRuneEntries.Contains(matchingChoices[0].Selected!))
+						|| matchingChoices[0].Selected is not string selected
+						|| string.IsNullOrWhiteSpace(selected)
+						|| !ownedRuneEntries.Contains(selected))
 					{
 						allPlayersRecorded = false;
 						break;

@@ -54,7 +54,7 @@ public abstract partial class HextechRelicBase
 
 	protected bool IsAttackDamageForRuneEffects(ValueProp props, CardModel? cardSource)
 	{
-		if (HextechSts2Compat.IsPoweredAttack(props))
+		if (props.IsPoweredAttack())
 		{
 			return true;
 		}

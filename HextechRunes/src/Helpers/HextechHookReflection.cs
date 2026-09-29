@@ -90,6 +90,20 @@ internal static class HextechHookReflection
 			?? throw new InvalidOperationException($"Could not find property getter {type.FullName}.{propertyName}.");
 	}
 
+	/// <summary>取属性的（可能非公开的）setter；缺失时进启动摘要。</summary>
+	public static MethodInfo? TryGetPropertySetter(Type type, string propertyName, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+	{
+		MethodInfo? setter = type.GetProperty(propertyName, flags)?.GetSetMethod(nonPublic: true);
+		if (setter == null)
+		{
+			WarnMissingMember(
+				$"setter:{type.AssemblyQualifiedName}:{propertyName}:{flags}",
+				$"property setter {type.FullName}.{propertyName}");
+		}
+
+		return setter;
+	}
+
 	private static void WarnMissingMember(string key, string description)
 	{
 		lock (MissingMemberLogLock)

@@ -8,11 +8,7 @@ internal sealed class ArchmageEnemyHex : HextechEnemyHexEffect
 
 	internal override Task AfterCardPlayed(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		Player? owner = cardPlay.Card.Owner;
-		if (owner?.Creature.Side != CombatSide.Player
-			|| owner.Creature.CombatState?.RunState != context.RunState
-			|| !cardPlay.IsFirstInSeries
-			|| cardPlay.IsAutoPlay
+		if (!context.IsManualPlayerCardPlay(cardPlay, out Player? owner, out _)
 			|| !IllusoryWeaponRune.IsSkillForEffects(cardPlay.Card)
 			|| !RollTrigger(context, owner, cardPlay.Card, out int rollOrdinal)
 			|| PickCard(owner, cardPlay.Card, rollOrdinal) is not CardModel card
@@ -27,11 +23,9 @@ internal sealed class ArchmageEnemyHex : HextechEnemyHexEffect
 
 	private static bool RollTrigger(HextechEnemyHexContext context, Player owner, CardModel sourceCard, out int rollOrdinal)
 	{
-		rollOrdinal = HextechCombatProcTracker.ConsumeGlobalProcInCombat(
-			context.Tracking,
-			string.Join(":", nameof(ArchmageEnemyHex), HextechStableRandom.PlayerKey(owner)));
+		rollOrdinal = HextechCombatProcTracker.ConsumePlayerRuneProcInCombat(context.Tracking, owner, nameof(ArchmageEnemyHex));
 		return HextechStableRandom.PercentChance(
-			(RunState)context.RunState,
+			context.RunState,
 			ChancePercent,
 			"enemy-archmage-cost-up",
 			HextechStableRandom.PlayerKey(owner),
@@ -53,11 +47,11 @@ internal sealed class ArchmageEnemyHex : HextechEnemyHexEffect
 		int index = HextechStableRandom.Index(
 			(RunState)owner.RunState,
 			candidates.Count,
-				"enemy-archmage-pick-card",
-				HextechStableRandom.PlayerKey(owner),
-				owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
-				rollOrdinal.ToString(),
-				HextechStableRandom.CardKey(sourceCard),
+			"enemy-archmage-pick-card",
+			HextechStableRandom.PlayerKey(owner),
+			owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			rollOrdinal.ToString(),
+			HextechStableRandom.CardKey(sourceCard),
 			HextechStableRandom.CardPileKey(candidates));
 		return candidates[index];
 	}

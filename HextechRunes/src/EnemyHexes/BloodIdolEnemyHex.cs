@@ -18,7 +18,10 @@ internal sealed class BloodIdolEnemyHex : HextechEnemyHexEffect
 			// 仍走原版命令通知生命变化；不让战斗伤害修正把这次扣血放大至致死。
 			int hp = NonCombatHpAfterGold(player.Creature.CurrentHp);
 			if (hp != player.Creature.CurrentHp)
+			{
 				await CreatureCmd.SetCurrentHp(player.Creature, hp);
+			}
+
 			return;
 		}
 

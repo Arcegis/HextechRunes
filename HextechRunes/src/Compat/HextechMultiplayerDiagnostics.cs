@@ -2,6 +2,7 @@ using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
 using MegaCrit.Sts2.Core.Modding;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -13,6 +14,13 @@ internal static class HextechMultiplayerDiagnostics
 {
 	private const string SponsorPackModId = "HextechRunesSponsorPack";
 	private static readonly string[] DiagnosedModIds = [ ModInfo.Id, SponsorPackModId ];
+
+	// 原版私有静态字段 SavedPropertiesTypeCache._netIdToPropertyNameMap(0.107.1;0.109.0 起类型并入
+	// ModelIdSerializationCache,字段同名保留,见 HextechGlobalUsings)。缺失时签名里的属性列表为空,只影响诊断输出。
+	private static readonly FieldInfo? NetIdToPropertyNameMapField = TryGetField(
+		typeof(SavedPropertiesTypeCache),
+		"_netIdToPropertyNameMap",
+		BindingFlags.NonPublic | BindingFlags.Static);
 
 	private static string? _cachedNetworkSignature;
 
@@ -85,11 +93,8 @@ internal static class HextechMultiplayerDiagnostics
 
 	private static string BuildSavedPropertiesSignature()
 	{
-		const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
 		List<string> propertyNames = [];
-		object? rawMap = typeof(SavedPropertiesTypeCache)
-			.GetField("_netIdToPropertyNameMap", flags)
-			?.GetValue(null);
+		object? rawMap = NetIdToPropertyNameMapField?.GetValue(null);
 
 		if (rawMap is IEnumerable enumerable)
 		{
@@ -99,11 +104,7 @@ internal static class HextechMultiplayerDiagnostics
 			}
 		}
 
-#if STS2_109_OR_NEWER
-		int netIdBitSize = SavedPropertiesTypeCache.PropertyIdBitSize;
-#else
-		int netIdBitSize = SavedPropertiesTypeCache.NetIdBitSize;
-#endif
+		int netIdBitSize = HextechGameApiCompat.SavedPropertyIdBitSize;
 		string payload = $"{netIdBitSize}\n{string.Join("\n", propertyNames)}";
 		return $"{netIdBitSize}/{propertyNames.Count}/{ShortHash(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant())}";
 	}

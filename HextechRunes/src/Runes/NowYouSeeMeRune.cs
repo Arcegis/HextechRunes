@@ -21,7 +21,7 @@ public sealed class NowYouSeeMeRune : HextechRelicBase
 			|| card.Pile?.Type != PileType.Discard
 			|| card.IsSlyThisTurn
 			|| CombatManager.Instance.IsOverOrEnding
-			|| !HextechSts2Compat.IsPartOfPlayerTurn(Owner))
+			|| !CombatManager.Instance.IsPartOfPlayerTurn(Owner))
 		{
 			return;
 		}

@@ -1,9 +1,27 @@
 using System.Collections;
+using System.Collections.Concurrent;
 
 namespace HextechRunes;
 
 internal static partial class HextechMayhemCombatTrackingSerializer
 {
+	// Tracking 字段只有 Dictionary（走非泛型 IDictionary）、HashSet<T> 与几种标量。HashSet<T> 没有非泛型集合接口，
+	// 按集合类型缓存一次 Clear/Add/Count 反射句柄；ClearPhase 每个回合边界都会跑，不能每次 GetMethod。
+	private sealed record HashSetAccessor(MethodInfo Clear, MethodInfo Add, PropertyInfo Count);
+
+	private static readonly ConcurrentDictionary<Type, HashSetAccessor> HashSetAccessors = new();
+
+	private static HashSetAccessor GetHashSetAccessor(Type setType)
+	{
+		return HashSetAccessors.GetOrAdd(setType, static type => new HashSetAccessor(
+			type.GetMethod(nameof(HashSet<object>.Clear), Type.EmptyTypes)
+				?? throw new InvalidOperationException($"Combat tracking collection {type} does not expose Clear()."),
+			type.GetMethod(nameof(HashSet<object>.Add), [type.GetGenericArguments()[0]])
+				?? throw new InvalidOperationException($"Combat tracking collection {type} does not expose Add()."),
+			type.GetProperty(nameof(HashSet<object>.Count), BindingFlags.Instance | BindingFlags.Public)
+				?? throw new InvalidOperationException($"Combat tracking collection {type} does not expose Count.")));
+	}
+
 	private static object? CopyStateValue(object? source, Type snapshotType)
 	{
 		if (source == null)
@@ -67,12 +85,13 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 
 		if (target != null && IsHashSet(target.GetType()))
 		{
-			ClearCollection(target);
+			HashSetAccessor accessor = GetHashSetAccessor(target.GetType());
+			accessor.Clear.Invoke(target, null);
 			if (snapshotValue is IEnumerable sourceValues)
 			{
 				foreach (object value in sourceValues)
 				{
-					AddToCollection(target, value);
+					accessor.Add.Invoke(target, [value]);
 				}
 			}
 
@@ -88,8 +107,15 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 	private static void ClearStateField(FieldInfo field, HextechMayhemCombatTrackingState state)
 	{
 		object? target = field.GetValue(state);
-		if (target != null && TryInvokeClear(target))
+		if (target is IDictionary dictionary)
 		{
+			dictionary.Clear();
+			return;
+		}
+
+		if (target != null && IsHashSet(target.GetType()))
+		{
+			GetHashSetAccessor(target.GetType()).Clear.Invoke(target, null);
 			return;
 		}
 
@@ -129,10 +155,10 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 			return true;
 		}
 
-		PropertyInfo? countProperty = value.GetType().GetProperty(nameof(ICollection.Count), BindingFlags.Instance | BindingFlags.Public);
-		if (countProperty?.GetValue(value) is int propertyCount)
+		if (IsHashSet(value.GetType())
+			&& GetHashSetAccessor(value.GetType()).Count.GetValue(value) is int setCount)
 		{
-			count = propertyCount;
+			count = setCount;
 			return true;
 		}
 
@@ -177,38 +203,5 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 		return left is IComparable comparable
 			? comparable.CompareTo(right)
 			: string.CompareOrdinal(left.ToString(), right.ToString());
-	}
-
-	private static bool TryInvokeClear(object target)
-	{
-		MethodInfo? clear = target.GetType().GetMethod(nameof(List<object>.Clear), Type.EmptyTypes);
-		if (clear == null)
-		{
-			return false;
-		}
-
-		clear.Invoke(target, null);
-		return true;
-	}
-
-	private static void ClearCollection(object target)
-	{
-		if (!TryInvokeClear(target))
-		{
-			throw new InvalidOperationException($"Combat tracking collection {target.GetType()} does not expose Clear().");
-		}
-	}
-
-	private static void AddToCollection(object target, object value)
-	{
-		MethodInfo? add = target.GetType()
-			.GetMethods(BindingFlags.Instance | BindingFlags.Public)
-			.FirstOrDefault(static method => method.Name == nameof(List<object>.Add) && method.GetParameters().Length == 1);
-		if (add == null)
-		{
-			throw new InvalidOperationException($"Combat tracking collection {target.GetType()} does not expose Add().");
-		}
-
-		add.Invoke(target, [value]);
 	}
 }

@@ -16,7 +16,7 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 		}
 
 		int count = context.TierValue(Kind, 2, 4, 6);
-		foreach (Player player in players.Where(c => !c.IsDead).Select(c => c.Player).OfType<Player>().OrderBy(p => p.NetId))
+		foreach (Player player in HextechEnemyHexContext.GetAlivePlayersByNetId(players))
 		{
 			if (player.PlayerCombatState == null)
 			{
@@ -35,7 +35,7 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 				transformations.Add(CardTransformUpgradeHelper.CreateStableOptionTransformation(
 					chosen[i],
 					CardFactory.GetDefaultTransformationOptions(chosen[i], true),
-					(RunState)context.RunState,
+					context.RunState,
 					"enemy-mystery-transform-replacement",
 					i,
 					HextechStableRandom.PlayerKey(player)));
@@ -48,7 +48,13 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 
 	private static List<CardModel> ChooseCards(HextechEnemyHexContext context, Player player, int count)
 	{
-		List<CardModel> candidates = player.PlayerCombatState!.AllCards
+		// 调用方已跳过没有 PlayerCombatState 的玩家。
+		if (player.PlayerCombatState is not { } playerCombatState)
+		{
+			return [];
+		}
+
+		List<CardModel> candidates = playerCombatState.AllCards
 			.Where(card => card.Owner == player && CardTransformUpgradeHelper.CanTransformToRandomCardInCombatPiles(card))
 			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
 			.ToList();
@@ -62,7 +68,7 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 			{
 				CardModel pick = HextechStableRandom.Pick(
 					remaining,
-					(RunState)context.RunState,
+					context.RunState,
 					HextechStableRandom.CardKey,
 					"enemy-mystery-transform",
 					HextechStableRandom.PlayerKey(player),

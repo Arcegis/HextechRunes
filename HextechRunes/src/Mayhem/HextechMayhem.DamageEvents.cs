@@ -20,7 +20,7 @@ internal sealed partial class HextechMayhemModifier
 			this,
 			(effect, context) => effect.AfterEnemyDamageReceived(context, target, combatId, result, dealer, cardSource));
 
-		if (!HextechEnemyTriggerGuard.ShouldSuppressDuplicateEnemyThresholdTrigger(_combatTracking, target, result, dealer, cardSource)
+		if (!HextechEnemyTriggerGuard.ShouldSuppressDuplicateEnemyThresholdTrigger(CombatTracking, target, result, dealer, cardSource)
 			&& IsBelowEnemyHealthThreshold(target))
 		{
 			await HextechEnemyHexDispatcher.ForEachActive(
@@ -71,6 +71,6 @@ internal sealed partial class HextechMayhemModifier
 
 	private static bool IsBelowEnemyHealthThreshold(Creature target)
 	{
-		return target.CurrentHp < target.MaxHp * EscapePlanHealthThresholdPercent;
+		return target.CurrentHp < target.MaxHp * HextechEnemyHexEffect.EnemyHealthThresholdPercent;
 	}
 }

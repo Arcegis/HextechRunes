@@ -56,7 +56,7 @@ internal static class HextechRuneGrantHelper
 	{
 		RunManager runManager = RunManager.Instance;
 		NetGameType gameType = runManager.NetService.Type;
-		if (gameType is not (NetGameType.Host or NetGameType.Client) || player.NetId == 0UL)
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType) || player.NetId == 0UL)
 		{
 			return false;
 		}

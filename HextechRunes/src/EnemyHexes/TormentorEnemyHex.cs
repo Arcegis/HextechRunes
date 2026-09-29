@@ -7,7 +7,8 @@ internal sealed class TormentorEnemyHex : HextechEnemyHexEffect
 	internal override async Task AfterEnemyDebuffReceived(HextechEnemyHexContext context, Creature target)
 	{
 		if (context.Tracking.HandlingMonsterTormentorBurn
-			|| !HextechCombatProcTracker.TryConsumeLimitedProc(context.Tracking.TormentorProcsThisTurn, target, 3))
+			|| !HextechCombatProcTracker.TryConsumeLimitedProc(context.Tracking.TormentorProcsThisTurn, target, 3)
+			|| target.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
@@ -15,7 +16,7 @@ internal sealed class TormentorEnemyHex : HextechEnemyHexEffect
 		try
 		{
 			context.Tracking.HandlingMonsterTormentorBurn = true;
-			foreach (Player player in target.CombatState!.Players)
+			foreach (Player player in combatState.Players)
 			{
 				if (player.Creature.IsAlive)
 				{

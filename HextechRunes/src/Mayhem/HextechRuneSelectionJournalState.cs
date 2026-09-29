@@ -19,15 +19,23 @@ internal sealed class HextechRuneSelectionJournalState
 	internal int GetCharacterWeight(ulong playerNetId)
 	{
 		lock (_syncRoot)
+		{
 			return _characterWeights.GetValueOrDefault(playerNetId, HextechWeightedRuneOptions.InitialCharacterWeightPercent);
+		}
 	}
 
 	internal void CommitCharacterWeight(ulong playerNetId, int weight)
 	{
 		if (weight < 0 || weight % HextechWeightedRuneOptions.WeightStep != 0)
+		{
 			throw new ArgumentOutOfRangeException(nameof(weight));
+		}
+
 		// 提交绝对值而非增量：恢复检查点或重复确认不能再次推进掉落权重。
-		lock (_syncRoot) _characterWeights[playerNetId] = weight;
+		lock (_syncRoot)
+		{
+			_characterWeights[playerNetId] = weight;
+		}
 	}
 
 	internal static bool RequiresRelicObtain(bool applied, bool currentlyOwned)
@@ -189,9 +197,14 @@ internal sealed class HextechRuneSelectionJournalState
 			if (snapshot.CharacterWeights != null)
 			{
 				foreach ((ulong playerId, int weight) in snapshot.CharacterWeights)
+				{
 					if (weight >= 0 && weight % HextechWeightedRuneOptions.WeightStep == 0)
+					{
 						_characterWeights[playerId] = weight;
+					}
+				}
 			}
+
 			HashSet<JournalKey> conflictedKeys = [];
 			foreach (JournalJsonEntry? serialized in snapshot.Entries)
 			{
@@ -215,7 +228,10 @@ internal sealed class HextechRuneSelectionJournalState
 		lock (_syncRoot)
 		{
 			_entries.Clear();
-			if (!preserveCharacterWeights) _characterWeights.Clear();
+			if (!preserveCharacterWeights)
+			{
+				_characterWeights.Clear();
+			}
 		}
 	}
 

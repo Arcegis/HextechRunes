@@ -4,22 +4,22 @@ internal sealed partial class HextechMayhemModifier
 {
 	public IReadOnlyList<HextechTelemetry.RuneChoiceRecord> GetTelemetryChoiceRecords()
 	{
-		return _choiceHistory.GetTelemetryChoiceRecords();
+		return ChoiceHistory.GetTelemetryChoiceRecords();
 	}
 
 	public void RecordTelemetryChoice(HextechTelemetry.RuneChoiceRecord record)
 	{
-		_choiceHistory.RecordTelemetryChoice(record);
+		ChoiceHistory.RecordTelemetryChoice(record);
 	}
 
 	public HashSet<ModelId> GetSeenPlayerRuneIds(Player player)
 	{
-		return _choiceHistory.GetSeenPlayerRuneIds(player, RunState);
+		return ChoiceHistory.GetSeenPlayerRuneIds(player, RunState);
 	}
 
 	public void RecordSeenPlayerRunes(Player player, IEnumerable<RelicModel> relics)
 	{
-		_choiceHistory.RecordSeenPlayerRunes(player, relics, RunState);
+		ChoiceHistory.RecordSeenPlayerRunes(player, relics, RunState);
 	}
 
 	private string DescribePlayerHexCounts()
@@ -29,6 +29,6 @@ internal sealed partial class HextechMayhemModifier
 
 	private string DescribeTelemetryChoiceCounts()
 	{
-		return HextechMayhemActRecovery.DescribeTelemetryChoiceCounts(_choiceHistory);
+		return HextechMayhemActRecovery.DescribeTelemetryChoiceCounts(ChoiceHistory);
 	}
 }

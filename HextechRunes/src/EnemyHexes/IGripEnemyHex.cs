@@ -9,13 +9,9 @@ internal sealed class IGripEnemyHex : HextechEnemyHexEffect
 		PlayerChoiceContext choiceContext,
 		CardPlay cardPlay)
 	{
-		Player? owner = cardPlay.Card.Owner;
-		if (cardPlay.IsAutoPlay
-			|| !cardPlay.IsFirstInSeries
-			|| owner?.Creature.Side != CombatSide.Player
+		if (!context.IsManualPlayerCardPlay(cardPlay, out Player? owner, out _)
 			|| owner.Creature.IsDead
-			|| owner.Creature.CombatState?.RunState != context.RunState
-			|| owner.PlayerCombatState == null)
+			|| owner.PlayerCombatState is not { } playerCombatState)
 		{
 			return Task.CompletedTask;
 		}
@@ -23,7 +19,7 @@ internal sealed class IGripEnemyHex : HextechEnemyHexEffect
 		int amount = context.TierValue(Kind, 0, 1, 2);
 		if (TryConsumeFirstCard(context.Tracking, owner.NetId, amount))
 		{
-			owner.PlayerCombatState.LoseEnergy(amount);
+			playerCombatState.LoseEnergy(amount);
 		}
 
 		return Task.CompletedTask;

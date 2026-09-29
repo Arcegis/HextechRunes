@@ -24,5 +24,5 @@ internal sealed class SoulEaterEnemyHex : HextechEnemyHexEffect
 		}
 	}
 
-	internal static int ResolveMaxHpGain(int deadEnemyMaxHp) => Math.Max(1, (int)Math.Floor(deadEnemyMaxHp * 0.25m));
+	internal static int ResolveMaxHpGain(int deadEnemyMaxHp) => HextechEnemyHexContext.FractionOfMaxHp(deadEnemyMaxHp, 0.25m);
 }

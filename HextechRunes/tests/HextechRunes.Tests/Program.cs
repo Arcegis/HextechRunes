@@ -422,7 +422,13 @@ internal static partial class Program
 			new(nameof(RuneFamilyHelpersKeepThresholdAndRoundSemantics), RuneFamilyHelpersKeepThresholdAndRoundSemantics),
 			new(nameof(RuneFamilyTypesUseSharedBases), RuneFamilyTypesUseSharedBases),
 			new(nameof(RuneReflectionTargetsResolveOnCurrentGameVersion), RuneReflectionTargetsResolveOnCurrentGameVersion),
-			new(nameof(RetiredRuneSavedPropertiesStayInertPlaceholders), RetiredRuneSavedPropertiesStayInertPlaceholders)
+			new(nameof(RetiredRuneSavedPropertiesStayInertPlaceholders), RetiredRuneSavedPropertiesStayInertPlaceholders),
+			new(nameof(ReviewCombatTrackingSnapshotKeepsLegacyJsonKeys), ReviewCombatTrackingSnapshotKeepsLegacyJsonKeys),
+			new(nameof(ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals), ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals),
+			new(nameof(ReviewEnemyHexHoverTipTablesCoverFormerIfChain), ReviewEnemyHexHoverTipTablesCoverFormerIfChain),
+			new(nameof(ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown), ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown),
+			new(nameof(ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat), ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat),
+			new(nameof(ReviewModelHooksLiveOnTheirOwnModels), ReviewModelHooksLiveOnTheirOwnModels)
 		];
 
 		if (args.Length > 0)
@@ -810,7 +816,7 @@ internal static partial class Program
 		return player;
 	}
 
-	private static void Expect(bool condition, string message)
+	private static void Expect([System.Diagnostics.CodeAnalysis.DoesNotReturnIf(false)] bool condition, string message)
 	{
 		if (!condition)
 		{

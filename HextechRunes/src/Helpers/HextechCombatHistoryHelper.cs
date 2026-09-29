@@ -1,7 +1,5 @@
 using MegaCrit.Sts2.Core.Combat.History;
 
-using HextechCombatStateCompat = MegaCrit.Sts2.Core.Combat.ICombatState;
-
 namespace HextechRunes;
 
 internal static class HextechCombatHistoryHelper
@@ -40,7 +38,7 @@ internal static class HextechCombatHistoryHelper
 				&& matches(entry.CardPlay.Card));
 	}
 
-	public static int CountOwnedAttackCardsPlayedThisTurn(Player? owner, HextechCombatStateCompat? combatState, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	public static int CountOwnedAttackCardsPlayedThisTurn(Player? owner, HextechCombatState? combatState, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
 	{
 		if (owner == null || combatState == null)
 		{
@@ -57,22 +55,7 @@ internal static class HextechCombatHistoryHelper
 				&& IllusoryWeaponRune.IsAttackForEffects(entry.CardPlay.Card, owner));
 	}
 
-	public static bool HasOwnedCardPlayedThisTurn(Player? owner, HextechCombatStateCompat? combatState, bool includeAutoPlay = true)
-	{
-		if (owner == null || combatState == null)
-		{
-			return false;
-		}
-
-		ulong ownerId = owner.NetId;
-		return CombatManager.Instance.History.CardPlaysFinished
-			.Any(entry =>
-				HappenedThisTurn(entry, combatState)
-				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
-				&& entry.CardPlay.Card.Owner?.NetId == ownerId);
-	}
-
-	private static bool HappenedThisTurn(CombatHistoryEntry entry, HextechCombatStateCompat? combatState)
+	private static bool HappenedThisTurn(CombatHistoryEntry entry, HextechCombatState? combatState)
 	{
 		return entry.HappenedThisTurn(combatState);
 	}
