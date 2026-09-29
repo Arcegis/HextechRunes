@@ -34,15 +34,14 @@ def source_file_named(name: str) -> Path:
 
 
 def registry_source_text() -> str:
-    registry_files = list(SRC.glob("HextechContentRegistry*.cs"))
-    content_dir = SRC / "Content"
-    if content_dir.exists():
-        registry_files.extend(content_dir.glob("*.cs"))
-    return "\n".join(read(path) for path in sorted(set(registry_files)))
+    """全部注册表都在 src/Content/ 下(HextechContentRegistry.cs 与各 *Registry.cs)。"""
+    return "\n".join(read(path) for path in sorted((SRC / "Content").glob("*.cs")))
 
 
-def fail(errors: list[str], message: str) -> None:
-    errors.append(message)
+def player_rune_enum_values(enum_name: str) -> list[str]:
+    """PlayerRuneFlags / PlayerRuneCharacterPool 的成员以 C# 枚举为唯一来源(去掉 None)。"""
+    values = extract_enum_values(read(SRC / "Content" / "PlayerRuneRegistration.cs"), enum_name)
+    return [value for value in values if value != "None"]
 
 
 def lower_first(value: str) -> str:
@@ -100,13 +99,13 @@ def extract_rune_registrations(text: str) -> list[dict[str, object]]:
     )
     for match in pattern.finditer(text):
         args = match.group("args")
-        character_pool_match = re.search(r"characterPool:\s*(?:HextechCharacterPool|PlayerRuneCharacterPool)\.(\w+)", args)
+        character_pool_match = re.search(r"characterPool:\s*PlayerRuneCharacterPool\.(\w+)", args)
         character_order_match = re.search(r"characterOrder:\s*(\d+)", args)
         registrations.append(
             {
                 "type": match.group("type"),
                 "rarity": match.group("rarity"),
-                "flags": set(re.findall(r"(?:RuneFlags|PlayerRuneFlags)\.(\w+)", args)),
+                "flags": set(re.findall(r"PlayerRuneFlags\.(\w+)", args)),
                 "character_pool": character_pool_match.group(1) if character_pool_match else None,
                 "character_order": int(character_order_match.group(1)) if character_order_match else 0,
                 "tag_key": (re.search(r'tagKey:\s*"([^"]+)"', args) or [None, "COMPREHENSIVE"])[1],
@@ -145,14 +144,9 @@ def extract_monster_hex_registrations(text: str) -> list[dict[str, object]]:
 
 
 def check_duplicates(errors: list[str], label: str, values: list[str]) -> None:
-    seen: set[str] = set()
-    duplicates: list[str] = []
-    for value in values:
-        if value in seen:
-            duplicates.append(value)
-        seen.add(value)
+    duplicates = sorted(value for value, count in Counter(values).items() if count > 1)
     if duplicates:
-        fail(errors, f"{label} has duplicates: {', '.join(sorted(set(duplicates)))}")
+        errors.append(f"{label} has duplicates: {', '.join(duplicates)}")
 
 
 def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> None:
@@ -162,7 +156,7 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
     enum_values = extract_enum_values(types_text, "MonsterHexKind")
     monster_regs = extract_monster_hex_registrations(registry_text)
     if not monster_regs:
-        fail(errors, "MonsterHexRegistrations block not found")
+        errors.append("MonsterHexRegistrations block not found")
         return
 
     registry_values = [str(reg["kind"]) for reg in monster_regs]
@@ -176,16 +170,16 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
     unknown_in_rarity = sorted(set(rarity_values) - set(enum_values))
     unknown_disabled = sorted(set(disabled_values) - set(enum_values))
     if missing_from_rarity:
-        fail(errors, f"MonsterHexKind missing from rarity or disabled registry: {', '.join(missing_from_rarity)}")
+        errors.append(f"MonsterHexKind missing from rarity or disabled registry: {', '.join(missing_from_rarity)}")
     if unknown_in_rarity:
-        fail(errors, f"Unknown MonsterHexKind in rarity registry: {', '.join(unknown_in_rarity)}")
+        errors.append(f"Unknown MonsterHexKind in rarity registry: {', '.join(unknown_in_rarity)}")
     if unknown_disabled:
-        fail(errors, f"Unknown MonsterHexKind in disabled registry: {', '.join(unknown_disabled)}")
+        errors.append(f"Unknown MonsterHexKind in disabled registry: {', '.join(unknown_disabled)}")
 
     icon_pairs = {str(reg["kind"]): str(reg["type"]) for reg in monster_regs}
     missing_from_icons = sorted(set(enum_values) - set(icon_pairs))
     if missing_from_icons:
-        fail(errors, f"MonsterHexKind missing from MonsterHexIconRelicTypes: {', '.join(missing_from_icons)}")
+        errors.append(f"MonsterHexKind missing from MonsterHexIconRelicTypes: {', '.join(missing_from_icons)}")
 
     for locale in ("zhs", "eng"):
         loc = json.loads(read(LOCALIZATION / locale / "relics.json"))
@@ -198,7 +192,7 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
             if key not in loc:
                 missing.append(key)
         if missing:
-            fail(errors, f"{locale} relics.json missing enemy descriptions: {', '.join(missing)}")
+            errors.append(f"{locale} relics.json missing enemy descriptions: {', '.join(missing)}")
 
     # 敌方专属图标 relic（类名 *Hex）必须同时登记在 EnemyHexIconRelicTypes，
     # 否则图标路径不被 TryGetCustomRelicIconPath 认定，游戏内显示 NOPE。
@@ -206,7 +200,7 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
     hex_icon_types = {str(reg["type"]) for reg in monster_regs if str(reg["type"]).endswith("Hex")}
     missing_icon_types = sorted(hex_icon_types - enemy_icon_types)
     if missing_icon_types:
-        fail(errors, f"Enemy hex icon relic types missing from EnemyHexIconRelicTypes: {', '.join(missing_icon_types)}")
+        errors.append(f"Enemy hex icon relic types missing from EnemyHexIconRelicTypes: {', '.join(missing_icon_types)}")
 
 
 def validate_relic_registry(errors: list[str]) -> None:
@@ -215,10 +209,10 @@ def validate_relic_registry(errors: list[str]) -> None:
     rune_regs = extract_rune_registrations(registry_text)
     forge_regs = extract_forge_registrations(registry_text)
     if not rune_regs:
-        fail(errors, "RuneRegistrations block not found")
+        errors.append("RuneRegistrations block not found")
         return
     if not forge_regs:
-        fail(errors, "ForgeRegistrations block not found")
+        errors.append("ForgeRegistrations block not found")
         return
 
     all_types: list[str] = []
@@ -237,16 +231,16 @@ def validate_relic_registry(errors: list[str]) -> None:
     check_duplicates(errors, "ShopOnlyRelicTypes", values)
     all_types.extend(values)
 
-    for character_pool in ("Ironclad", "Silent", "Regent", "Defect", "Necrobinder"):
+    for character_pool in player_rune_enum_values("PlayerRuneCharacterPool"):
         values = [str(reg["type"]) for reg in rune_regs if reg["character_pool"] == character_pool]
         orders = [str(reg["character_order"]) for reg in rune_regs if reg["character_pool"] == character_pool]
         check_duplicates(errors, f"{character_pool}RuneTypes", values)
         check_duplicates(errors, f"{character_pool}RuneTypes character order", orders)
         missing_order = [str(reg["type"]) for reg in rune_regs if reg["character_pool"] == character_pool and reg["character_order"] == 0]
         if missing_order:
-            fail(errors, f"{character_pool}RuneTypes missing character order: {', '.join(missing_order)}")
+            errors.append(f"{character_pool}RuneTypes missing character order: {', '.join(missing_order)}")
 
-    for flag in ("Disabled", "AttributeConversionExclusive", "FirstActExcluded", "ThirdActExcluded", "Retired"):
+    for flag in player_rune_enum_values("PlayerRuneFlags"):
         values = [str(reg["type"]) for reg in rune_regs if flag in reg["flags"]]
         check_duplicates(errors, f"{flag} rune registry", values)
 
@@ -255,7 +249,7 @@ def validate_relic_registry(errors: list[str]) -> None:
         loc = json.loads(read(LOCALIZATION / locale / "relic_collection.json"))
         missing_tags = [tag_key for tag_key in tag_keys if f"HEXTECH_TAG.{tag_key}" not in loc]
         if missing_tags:
-            fail(errors, f"{locale} relic_collection.json missing rune tag localization: {', '.join(missing_tags)}")
+            errors.append(f"{locale} relic_collection.json missing rune tag localization: {', '.join(missing_tags)}")
 
     check_duplicates(errors, "all custom relic registries", all_types)
 
@@ -263,7 +257,7 @@ def validate_relic_registry(errors: list[str]) -> None:
     declared_relics = set(re.findall(r"\bclass\s+(\w+)\s*:", source_text))
     missing_declarations = sorted(set(all_types) - declared_relics)
     if missing_declarations:
-        fail(errors, f"registered relic types not declared: {', '.join(missing_declarations)}")
+        errors.append(f"registered relic types not declared: {', '.join(missing_declarations)}")
 
 
 def validate_rune_file_layout(errors: list[str]) -> None:
@@ -271,11 +265,11 @@ def validate_rune_file_layout(errors: list[str]) -> None:
         text = read(path)
         rune_classes = re.findall(r"^public\s+sealed\s+class\s+(\w+Rune)\b", text, re.M)
         if len(rune_classes) > 1:
-            fail(errors, f"{path.relative_to(REPO_ROOT)} contains multiple rune classes: {', '.join(rune_classes)}")
+            errors.append(f"{path.relative_to(REPO_ROOT)} contains multiple rune classes: {', '.join(rune_classes)}")
             continue
 
         if len(rune_classes) == 1 and path.stem != rune_classes[0]:
-            fail(errors, f"{path.relative_to(REPO_ROOT)} should be named {rune_classes[0]}.cs")
+            errors.append(f"{path.relative_to(REPO_ROOT)} should be named {rune_classes[0]}.cs")
 
 
 def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
@@ -283,7 +277,7 @@ def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
     effect_registry_text = read(SRC / "EnemyHexes" / "HextechEnemyHexEffects.cs")
     monster_regs = extract_monster_hex_registrations(registry_text)
     if not monster_regs:
-        fail(errors, "MonsterHexRegistrations block not found for enemy hex effect layout")
+        errors.append("MonsterHexRegistrations block not found for enemy hex effect layout")
         return
 
     for reg in monster_regs:
@@ -291,20 +285,20 @@ def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
         expected_class = f"{kind}EnemyHex"
         expected_path = SRC / "EnemyHexes" / f"{expected_class}.cs"
         if not expected_path.exists():
-            fail(errors, f"enemy hex effect file missing: {expected_path.relative_to(REPO_ROOT)}")
+            errors.append(f"enemy hex effect file missing: {expected_path.relative_to(REPO_ROOT)}")
             continue
 
         text = read(expected_path)
         class_pattern = rf"\binternal\s+sealed\s+class\s+{expected_class}\s*:\s*HextechEnemyHexEffect\b"
         if not re.search(class_pattern, text):
-            fail(errors, f"{expected_path.relative_to(REPO_ROOT)} should declare {expected_class} : HextechEnemyHexEffect")
+            errors.append(f"{expected_path.relative_to(REPO_ROOT)} should declare {expected_class} : HextechEnemyHexEffect")
 
         kind_pattern = rf"\bKind\s*=>\s*MonsterHexKind\.{kind}\b"
         if not re.search(kind_pattern, text):
-            fail(errors, f"{expected_path.relative_to(REPO_ROOT)} should bind Kind to MonsterHexKind.{kind}")
+            errors.append(f"{expected_path.relative_to(REPO_ROOT)} should bind Kind to MonsterHexKind.{kind}")
 
         if f"new {expected_class}()" not in effect_registry_text:
-            fail(errors, f"enemy hex effect registry missing {expected_class}")
+            errors.append(f"enemy hex effect registry missing {expected_class}")
 
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
@@ -334,11 +328,11 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
         )
     )
     if not declared:
-        fail(errors, "combat tracking field block not found")
+        errors.append("combat tracking field block not found")
         return
 
     if not persistent:
-        fail(errors, "combat tracking snapshot properties not found")
+        errors.append("combat tracking snapshot properties not found")
         return
 
     classified = persistent | transient
@@ -346,11 +340,11 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
     snapshot_without_state = sorted(persistent - declared)
     transient_and_persistent = sorted(transient & persistent)
     if unclassified:
-        fail(errors, f"combat tracking fields need classification: {', '.join(unclassified)}")
+        errors.append(f"combat tracking fields need classification: {', '.join(unclassified)}")
     if snapshot_without_state:
-        fail(errors, f"combat tracking snapshot properties missing state fields: {', '.join(snapshot_without_state)}")
+        errors.append(f"combat tracking snapshot properties missing state fields: {', '.join(snapshot_without_state)}")
     if transient_and_persistent:
-        fail(errors, f"combat tracking fields marked both persistent and transient: {', '.join(transient_and_persistent)}")
+        errors.append(f"combat tracking fields marked both persistent and transient: {', '.join(transient_and_persistent)}")
 
     for field in sorted(persistent & declared):
         state_type = state_fields[field]
@@ -363,7 +357,24 @@ def validate_combat_tracking_state(errors: list[str]) -> None:
             expected = state_type
 
         if snapshot_type != expected:
-            fail(errors, f"combat tracking snapshot type mismatch for {field}: expected {expected}, got {snapshot_type}")
+            errors.append(f"combat tracking snapshot type mismatch for {field}: expected {expected}, got {snapshot_type}")
+
+
+def shared_relic_icon_stems() -> dict[str, str]:
+    """从 HextechAssets.TryGetCustomRelicIconPath 解析"复用其他模型图标"的分支:模型图标名 -> 实际贴图名。"""
+    source = read(source_file_named("HextechAssets.cs"))
+    body = re.search(r"TryGetCustomRelicIconPath\(RelicModel relic\)\s*\{(?P<body>.*?)\n\t\}", source, re.S)
+    if body is None:
+        raise ValueError("HextechAssets.TryGetCustomRelicIconPath not found")
+    stems: dict[str, str] = {}
+    for types, stem in re.findall(
+        r"if \(relic is (?P<types>\w+(?:\s+or\s+\w+)*)\)\s*\{\s*"
+        r"return \$\"res://\{ModInfo\.Id\}/images/relics/(?P<stem>\w+)\.png\";",
+        body.group("body"),
+    ):
+        for type_name in re.split(r"\s+or\s+", types):
+            stems[model_loc_stem(type_name)] = stem
+    return stems
 
 
 def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
@@ -371,14 +382,7 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
     同时对 relics 目录做孤儿资源告警。路径规则复刻 HextechAssets.TryGetCustomRelicIconPath。"""
     relics_dir = REPO_ROOT / "assets" / "images" / "relics"
     registry_text = registry_source_text()
-    # 与 HextechAssets.TryGetCustomRelicIconPath 中显式复用其他模型图标的分支保持一致。
-    shared_icon_stems = {
-        "hundredRefinementsHex": "hundredRefinementsRune",
-        "hungryHex": "eightPennyGateRune",
-        "inspectHex": "eightPennyGateRune",
-        "gripHex": "eightPennyGateRune",
-        "somethingForNothingRune": "acceleratingSorceryRune",
-    }
+    shared_icon_stems = shared_relic_icon_stems()
 
     expected_stems: set[str] = set()
     # 这些事件遗物通过原版 IconBaseName 复用 atlas/大图，不应要求模组再复制 PNG。
@@ -408,12 +412,12 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
         if not (relics_dir / f"{shared_icon_stems.get(stem, stem)}.png").exists()
     )
     if missing:
-        fail(errors, f"registered relic icon png missing under assets/images/relics: {', '.join(missing)}")
+        errors.append(f"registered relic icon png missing under assets/images/relics: {', '.join(missing)}")
 
     # 锻造器三档与商店占位图标是共享固定名。
     for shared in ("silverForge", "goldForge", "prismaticForge"):
         if not (relics_dir / f"{shared}.png").exists():
-            fail(errors, f"shared forge icon missing: assets/images/relics/{shared}.png")
+            errors.append(f"shared forge icon missing: assets/images/relics/{shared}.png")
         expected_stems.add(shared)
 
     orphans = sorted(
@@ -431,14 +435,14 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
         referenced.update(re.findall(r'res://HextechRunes/(images/[^"]+\.(?:png|jpg))', read(source_file_named(name))))
     missing_refs = sorted(ref for ref in referenced if not (assets_root / ref).exists())
     if missing_refs:
-        fail(errors, f"hardcoded asset path missing under assets/: {', '.join(missing_refs)}")
+        errors.append(f"hardcoded asset path missing under assets/: {', '.join(missing_refs)}")
 
 
 def validate_localization_key_parity(errors: list[str]) -> None:
     """9 语言逐文件键集一致性(以 eng 为基准):漏译键会静默回退,这里提前到构建期报出。"""
     baseline_dir = LOCALIZATION / "eng"
     if not baseline_dir.exists():
-        fail(errors, "localization baseline directory eng missing")
+        errors.append("localization baseline directory eng missing")
         return
 
     baseline = {
@@ -452,22 +456,22 @@ def validate_localization_key_parity(errors: list[str]) -> None:
         for file_name, baseline_keys in baseline.items():
             locale_file = locale_dir / file_name
             if not locale_file.exists():
-                fail(errors, f"{locale_dir.name} missing localization file {file_name}")
+                errors.append(f"{locale_dir.name} missing localization file {file_name}")
                 continue
 
             locale_keys = set(json.loads(read(locale_file)).keys())
             missing = sorted(baseline_keys - locale_keys)
             extra = sorted(locale_keys - baseline_keys)
             if missing:
-                fail(errors, f"{locale_dir.name}/{file_name} missing keys vs eng: {', '.join(missing[:8])}{'…' if len(missing) > 8 else ''}")
+                errors.append(f"{locale_dir.name}/{file_name} missing keys vs eng: {', '.join(missing[:8])}{'…' if len(missing) > 8 else ''}")
             if extra:
-                fail(errors, f"{locale_dir.name}/{file_name} extra keys vs eng: {', '.join(extra[:8])}{'…' if len(extra) > 8 else ''}")
+                errors.append(f"{locale_dir.name}/{file_name} extra keys vs eng: {', '.join(extra[:8])}{'…' if len(extra) > 8 else ''}")
 
 
 def validate_telemetry_labels(errors: list[str]) -> None:
     """统计服务使用稳定模型 ID 与敌方枚举名，中文名必须和简中标题保持同步。"""
     if not TELEMETRY_LABELS.exists():
-        fail(errors, f"telemetry labels missing: {TELEMETRY_LABELS.relative_to(REPO_ROOT)}")
+        errors.append(f"telemetry labels missing: {TELEMETRY_LABELS.relative_to(REPO_ROOT)}")
         return
 
     labels = json.loads(read(TELEMETRY_LABELS))
@@ -482,9 +486,9 @@ def validate_telemetry_labels(errors: list[str]) -> None:
         expected = zhs_relics.get(title_key)
         actual = rune_labels.get(model_id)
         if expected is None:
-            fail(errors, f"zhs relic title missing for telemetry rune: {title_key}")
+            errors.append(f"zhs relic title missing for telemetry rune: {title_key}")
         elif actual != expected:
-            fail(errors, f"telemetry rune label mismatch for {model_id}: expected {expected!r}, got {actual!r}")
+            errors.append(f"telemetry rune label mismatch for {model_id}: expected {expected!r}, got {actual!r}")
 
     for registration in extract_monster_hex_registrations(registry_text):
         kind = str(registration["kind"])
@@ -492,9 +496,9 @@ def validate_telemetry_labels(errors: list[str]) -> None:
         expected = zhs_relics.get(title_key)
         actual = monster_labels.get(kind)
         if expected is None:
-            fail(errors, f"zhs relic title missing for telemetry monster hex: {title_key}")
+            errors.append(f"zhs relic title missing for telemetry monster hex: {title_key}")
         elif actual != expected:
-            fail(errors, f"telemetry monster label mismatch for {kind}: expected {expected!r}, got {actual!r}")
+            errors.append(f"telemetry monster label mismatch for {kind}: expected {expected!r}, got {actual!r}")
 
 
 def validate_official_name_references(errors: list[str]) -> None:
@@ -518,16 +522,16 @@ def validate_official_name_references(errors: list[str]) -> None:
                 continue
             for term in re.findall(r"\[gold\]([^\[\]{}]+)\[/gold\]", value):
                 if term not in official | custom | emphasis:
-                    fail(errors, f"zhs/{table}.{key}: unrecognized model reference {term!r}; check official_zhs_titles.json or the custom glossary")
+                    errors.append(f"zhs/{table}.{key}: unrecognized model reference {term!r}; check official_zhs_titles.json or the custom glossary")
     relics = tables["relics"]
     for path in sorted((SRC / "Runes").glob("*.cs")):
         for rune, card in re.findall(r"\bclass\s+(\w+)\s*:\s*CardUpgradeRuneBase<(\w+)>", read(path)):
             expected_card = snapshot["cards"].get(model_id_entry(card))
             key = f"{model_id_entry(rune)}.title"
             if expected_card is None:
-                fail(errors, f"{path.relative_to(REPO_ROOT)}: official card title missing from snapshot for {card}")
+                errors.append(f"{path.relative_to(REPO_ROOT)}: official card title missing from snapshot for {card}")
             elif relics.get(key) != f"升级：{expected_card}":
-                fail(errors, f"zhs/relics.{key}: expected official card name 升级：{expected_card!s}, got {relics.get(key)!r}")
+                errors.append(f"zhs/relics.{key}: expected official card name 升级：{expected_card!s}, got {relics.get(key)!r}")
 
 
 def localization_format(text: str) -> tuple[set[str], Counter, list[str]]:
@@ -556,13 +560,13 @@ def validate_localization_format_parity(errors: list[str]) -> None:
     languages = ("zhs", "eng", "esp", "spa", "jpn", "kor", "ptb", "rus", "tha")
     for language in languages:
         if not (LOCALIZATION / language).is_dir():
-            fail(errors, f"required localization directory missing: {language}")
+            errors.append(f"required localization directory missing: {language}")
     for baseline_path in sorted((LOCALIZATION / "zhs").glob("*.json")):
         baseline = json.loads(read(baseline_path))
         for language in languages:
             path = LOCALIZATION / language / baseline_path.name
             if not path.exists():
-                fail(errors, f"required localization file missing: {language}/{baseline_path.name}")
+                errors.append(f"required localization file missing: {language}/{baseline_path.name}")
                 continue
             entries = json.loads(read(path))
             for key, value in entries.items():
@@ -572,9 +576,9 @@ def validate_localization_format_parity(errors: list[str]) -> None:
                 expected_variables, expected_tags, _ = localization_format(baseline[key])
                 label = f"{language}/{baseline_path.name}:{key}"
                 if problems:
-                    fail(errors, f"{label}: BBCode unbalanced: {'; '.join(problems)}")
+                    errors.append(f"{label}: BBCode unbalanced: {'; '.join(problems)}")
                 if variables != expected_variables:
-                    fail(errors, f"{label}: placeholders {sorted(variables)} != zhs {sorted(expected_variables)}")
+                    errors.append(f"{label}: placeholders {sorted(variables)} != zhs {sorted(expected_variables)}")
                 # 各语言高亮哪些词由译文决定，标签数量不要求与中文一致；只要求配平。
 
 

@@ -127,10 +127,11 @@ def registered_tests() -> list[str]:
 
 
 def targets() -> list[str]:
-    project = ET.parse(ROOT / "src/HextechRunes.csproj")
+    """维护中的目标 = 仓库根 Directory.Build.targets 里定义了版本符号的目标。"""
+    project = ET.parse(ROOT.parent / "Directory.Build.targets")
     return [match[1] for group in project.findall("PropertyGroup")
-            if (match := re.fullmatch(r"'\$\(HextechSts2Target\)' == '([^']+)'",
-                                      group.get("Condition", "")))]
+            if (match := re.search(r"'\$\(HextechVariantTarget\)' == '([^']+)'",
+                                   group.get("Condition", "")))]
 
 
 def focused_tests(args: argparse.Namespace) -> int:
@@ -152,19 +153,11 @@ def focused_tests(args: argparse.Namespace) -> int:
     refs = ROOT / "versioned-dll-backups" / args.target / "game-refs"
     if args.run and not (refs / "sts2.dll").is_file():
         raise ValueError(f"缺少目标引用: {refs}")
-    commands = [
-        ["dotnet", "build", str(ROOT / "tests/HextechRunes.Tests/HextechRunes.Tests.csproj"),
-         "--configuration", "Release", "--no-incremental", "-m:1", "-nodeReuse:false",
-         "-p:UseSharedCompilation=false", "-p:NuGetAudit=false", "-p:RestoreIgnoreFailedSources=true",
-         f"-p:HextechSts2Target={args.target}", f"-p:HextechSponsorSts2Target={args.target}",
-         f"-p:GameDataDir={refs}"],
-        ["dotnet", str(ROOT / "tests/HextechRunes.Tests/bin/Release/net9.0/HextechRunes.Tests.dll"),
-         *dict.fromkeys(args.name)],
-    ]
-    for command in commands:
-        print(shlex.join(command), flush=True)
-        if args.run:
-            subprocess.run(command, cwd=ROOT, check=True)
+    # 构建参数与测试程序路径只在 run_tests.sh 里维护,这里只转交目标与测试名。
+    command = ["bash", str(ROOT / "tools/run_tests.sh"), "--target", args.target, *dict.fromkeys(args.name)]
+    print(shlex.join(command), flush=True)
+    if args.run:
+        subprocess.run(command, cwd=ROOT, check=True)
     return 0
 
 

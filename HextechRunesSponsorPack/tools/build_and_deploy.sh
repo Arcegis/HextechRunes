@@ -1,216 +1,35 @@
 #!/bin/zsh
 set -euo pipefail
 
+# 构建 HextechRunesSponsorPack 三个变体 + 加载器 + PCK,默认部署到游戏 mods 目录。
+#   HEXTECH_SPONSOR_DEPLOY=0          只构建,不部署。
+#   HEXTECH_SPONSOR_REFS_ROOT=<dir>   覆盖按版本备份的游戏引用目录。
+#   STS2_GAME_APP=<.app>              覆盖游戏安装位置。
+# 加载器与本体共用源码(见 loader/HextechRunesSponsorPack.Loader.csproj),构建步骤与多版本清单工具
+# 直接使用本体的 tools/lib_build.sh 与 tools/multi_version/。
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+HEXTECH_TOOLS_DIR="$(cd "$ROOT/../HextechRunes/tools" && pwd)"
+source "$HEXTECH_TOOLS_DIR/lib_build.sh"
+
 FILE_STEM="HextechRunesSponsorPack"
 VARIANT_MANIFEST_NAME="hextech-runes-sponsor-pack-variants.manifest"
-TARGETS=(0.107.1 0.110.0 0.111.0)
-
-UPSTREAM_LOADER="$ROOT/../HextechRunes/loader"
-
-# 两份 loader 必须共源:除 mod id / 变体清单名 / 元数据键三个常量外完全一致。
-# 拓展包 loader 曾是本体的旧拷贝,静默落后一轮(无条件装 ReflectionHelper.ModTypes 后缀 →
-# 类型被贡献两次 → "Two AbstractModels X and X share an ID")。这道检查让"落后"在构建期显形。
-check_loader_drift() {
-	local file normalized
-	for file in LoaderBootstrap.cs LinuxNativeDependencyBootstrap.cs; do
-		if [[ ! -f "$UPSTREAM_LOADER/$file" ]]; then
-			print -u2 "Missing upstream loader source: $UPSTREAM_LOADER/$file"
-			exit 1
-		fi
-		normalized="$(sed \
-			-e 's/HextechRunesSponsorPack/HextechRunes/g' \
-			-e 's/hextech-runes-sponsor-pack-variants\.manifest/hextech-runes-variants.manifest/g' \
-			-e 's/HextechSponsorCompatibilityTarget/HextechCompatibilityTarget/g' \
-			"$ROOT/loader/$file")"
-		if ! diff -u "$UPSTREAM_LOADER/$file" <(print -r -- "$normalized"); then
-			print -u2 "Loader drift detected in $file (normalized diff above, upstream on the left)."
-			print -u2 "Re-sync $ROOT/loader/$file with $UPSTREAM_LOADER/$file."
-			exit 1
-		fi
-	done
-	echo "Loader parity with HextechRunes confirmed."
-}
-
-check_loader_drift
-
-MANIFEST_SRC="$ROOT/assets/$FILE_STEM.json"
-VARIANT_PROJECT="$ROOT/src/$FILE_STEM.csproj"
-LOADER_PROJECT="$ROOT/loader/$FILE_STEM.Loader.csproj"
 REFS_ROOT="${HEXTECH_SPONSOR_REFS_ROOT:-$ROOT/../HextechRunes/versioned-dll-backups}"
 BUILD_ROOT="$ROOT/.build"
 DIST="$ROOT/dist"
-PACK_TOOL_PROJECT="$ROOT/../HextechRunes/tools"
-
-GAME_APP="/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app"
-GAME_BIN="$GAME_APP/Contents/MacOS/Slay the Spire 2"
-GAME_RELEASE_INFO="$GAME_APP/Contents/Resources/release_info.json"
 MOD_DIR="$GAME_APP/Contents/MacOS/mods/$FILE_STEM"
-IMPORT_PROJECT="$BUILD_ROOT/import_project"
 HEXTECH_SPONSOR_DEPLOY="${HEXTECH_SPONSOR_DEPLOY:-1}"
 
-DEFAULT_GODOT_EDITOR="$ROOT/../.tools/godot-4.5.1/Godot_mono.app/Contents/MacOS/Godot"
-if [[ -z "${GODOT_EDITOR:-}" && -x "$DEFAULT_GODOT_EDITOR" ]]; then
-	GODOT_EDITOR="$DEFAULT_GODOT_EDITOR"
-else
-	GODOT_EDITOR="${GODOT_EDITOR:-/opt/homebrew/bin/godot}"
-fi
+hextech_resolve_tools
+hextech_check_prerequisites
+hextech_prepare_output
 
-if (( ${+commands[dotnet]} )); then
-	DOTNET_BIN="${commands[dotnet]}"
-elif [[ -x "/opt/homebrew/bin/dotnet" ]]; then
-	DOTNET_BIN="/opt/homebrew/bin/dotnet"
-else
-	print -u2 "Could not find a usable .NET 9 SDK."
-	exit 1
-fi
-
-major_minor_version() {
-	sed -E 's/^([0-9]+[.][0-9]+).*/\1/' <<< "$1"
-}
-
-clean_directory() {
-	local directory="$1"
-	mkdir -p "$directory"
-	find "$directory" -mindepth 1 -depth -delete
-}
-
-clean_macos_metadata() {
-	local target="$1"
-	[[ -d "$target" ]] || return 0
-
-	find "$target" -name "__MACOSX" -type d -prune -exec rm -rf {} +
-	find "$target" -name ".DS_Store" -type f -delete
-	find "$target" -name "._*" -type f -delete
-}
-
-require_references() {
-	local target="$1"
-	local refs="$REFS_ROOT/$target/game-refs"
-	for reference in sts2.dll GodotSharp.dll 0Harmony.dll Steamworks.NET.dll; do
-		if [[ ! -f "$refs/$reference" ]]; then
-			print -u2 "Missing reference for STS2 $target: $refs/$reference"
-			exit 1
-		fi
-	done
-}
-
-deploy_bundle_atomically() {
-	local stage="$MOD_DIR.tmp.$$"
-	local previous="$MOD_DIR.previous.$$"
-
-	rm -rf "$stage" "$previous"
-	mkdir -p "$stage"
-	rsync -a --delete "$DIST/" "$stage/"
-	if [[ -d "$MOD_DIR" ]]; then
-		mv "$MOD_DIR" "$previous"
-	fi
-	mv "$stage" "$MOD_DIR"
-	rm -rf "$previous"
-}
-
-for target in "${TARGETS[@]}"; do
-	require_references "$target"
-done
-
-if [[ ! -x "$GAME_BIN" ]]; then
-	print -u2 "Missing Slay the Spire 2 executable: $GAME_BIN"
-	exit 1
-fi
-if [[ ! -x "$GODOT_EDITOR" ]]; then
-	print -u2 "Missing Godot editor: $GODOT_EDITOR"
-	exit 1
-fi
-
-GAME_GODOT_VERSION="$("$GAME_BIN" --version 2>/dev/null | head -n 1)"
-IMPORT_GODOT_VERSION="$("$GODOT_EDITOR" --version 2>/dev/null | head -n 1)"
-if [[ -n "$GAME_GODOT_VERSION" && -n "$IMPORT_GODOT_VERSION" \
-	&& "$(major_minor_version "$GAME_GODOT_VERSION")" != "$(major_minor_version "$IMPORT_GODOT_VERSION")" ]]; then
-	print -u2 "Warning: asset import Godot version ($IMPORT_GODOT_VERSION) differs from game runtime ($GAME_GODOT_VERSION)."
-	print -u2 "Set GODOT_EDITOR to a matching 4.5.x editor if mobile/runtime texture compatibility regresses."
-fi
-
-clean_directory "$BUILD_ROOT"
-clean_directory "$DIST"
-rm -rf "$ROOT/src/bin" "$ROOT/src/obj" "$ROOT/loader/bin" "$ROOT/loader/obj"
-
-for target in "${TARGETS[@]}"; do
-	refs="$REFS_ROOT/$target/game-refs"
-	output="$BUILD_ROOT/variants/$target"
-	mkdir -p "$output"
-
-	echo "Building $FILE_STEM implementation for STS2 $target using $refs"
-	"$DOTNET_BIN" clean "$VARIANT_PROJECT" -c Release \
-		--disable-build-servers \
-		-p:HextechSponsorSts2Target="$target" \
-		-p:HextechSts2Target="$target" \
-		-p:GameDataDir="$refs" >/dev/null
-	"$DOTNET_BIN" build "$VARIANT_PROJECT" -c Release \
-		--disable-build-servers \
-		-p:HextechSponsorSts2Target="$target" \
-		-p:HextechSts2Target="$target" \
-		-p:GameDataDir="$refs" \
-		-o "$output"
-
-	variant_dir="$DIST/lib/$target"
-	mkdir -p "$variant_dir"
-	cp "$output/$FILE_STEM.dll" "$variant_dir/$FILE_STEM.dll"
-done
-
-loader_refs="$REFS_ROOT/0.107.1/game-refs"
-loader_output="$BUILD_ROOT/loader"
-mkdir -p "$loader_output"
-echo "Building stable $FILE_STEM loader against STS2 0.107.1 references"
-"$DOTNET_BIN" clean "$LOADER_PROJECT" -c Release --disable-build-servers >/dev/null
-"$DOTNET_BIN" build "$LOADER_PROJECT" -c Release \
-	--disable-build-servers \
-	-p:GameDataDir="$loader_refs" \
-	-o "$loader_output"
-cp "$loader_output/$FILE_STEM.Loader.dll" "$DIST/$FILE_STEM.dll"
-
-python3 \
-	"$ROOT/tools/multi_version/generate_variant_manifest.py" \
-	--dist "$DIST" \
-	--mod-id "$FILE_STEM" \
-	--manifest-name "$VARIANT_MANIFEST_NAME" \
-	--target "0.107.1" \
-	--target "0.110.0" \
-	--target "0.111.0"
-
-mkdir -p "$IMPORT_PROJECT/$FILE_STEM"
-cp "$PACK_TOOL_PROJECT/project.godot" "$IMPORT_PROJECT/project.godot"
-rsync -a --exclude "$FILE_STEM.json" "$ROOT/assets/" "$IMPORT_PROJECT/$FILE_STEM/"
-clean_macos_metadata "$IMPORT_PROJECT"
-
-"$GODOT_EDITOR" --headless \
-	--path "$IMPORT_PROJECT" \
-	--import
-
-cp "$MANIFEST_SRC" "$DIST/$FILE_STEM.json"
-"$GAME_BIN" --headless \
-	--path "$PACK_TOOL_PROJECT" \
-	-s res://pack_mod.gd -- \
-	"$MANIFEST_SRC" \
-	"$DIST/$FILE_STEM.pck" \
-	"$IMPORT_PROJECT"
-
-clean_macos_metadata "$DIST"
-python3 \
-	"$ROOT/tools/multi_version/validate_variant_bundle.py" \
-	--dist "$DIST" \
-	--mod-id "$FILE_STEM" \
-	--manifest-name "$VARIANT_MANIFEST_NAME"
-
-if [[ "$HEXTECH_SPONSOR_DEPLOY" != "0" ]]; then
-	deploy_bundle_atomically
-	clean_macos_metadata "$MOD_DIR"
-	echo "Deployed multi-version package to $MOD_DIR"
-else
-	echo "Built multi-version package in $DIST without deploying."
-fi
-
-if [[ -f "$GAME_RELEASE_INFO" ]]; then
-	CURRENT_GAME_VERSION="$(sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"v([^"]+)".*/\1/p' "$GAME_RELEASE_INFO" | head -n 1)"
-	echo "Installed STS2 version: ${CURRENT_GAME_VERSION:-unknown}; loader will choose the greatest bundled target not newer than the host."
-fi
+# 拓展包工程引用本体工程,两个目标属性要同时设置,否则本体会按默认目标编译。
+hextech_build_variants "$ROOT/src/$FILE_STEM.csproj" HextechSponsorSts2Target HextechSts2Target
+hextech_build_loader "$ROOT/loader/$FILE_STEM.Loader.csproj"
+hextech_generate_variant_manifest
+hextech_pack_assets
+hextech_validate_bundle
+hextech_deploy_or_skip "$HEXTECH_SPONSOR_DEPLOY"
+hextech_report_installed_version

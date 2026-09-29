@@ -37,7 +37,14 @@ for dir in "$REAL_SAVE_ROOT"/steam/*/ "$REAL_SAVE_ROOT"/default/*/; do
 done
 
 print "== 构建驱动"
-dotnet build "$LAB_DIR/HextechMpLab.csproj" -c Release -nologo -v q -p:NuGetAudit=false 2>&1 | grep -E "error|Error\(s\)" || true
+# 先落日志再判 dotnet 自身的退出码:管道接 grep 会吞掉构建失败。
+BUILD_LOG="$OUT/mplab-build.log"
+if ! dotnet build "$LAB_DIR/HextechMpLab.csproj" -c Release -nologo -v q -p:NuGetAudit=false > "$BUILD_LOG" 2>&1; then
+  grep -E "error|Error\(s\)" "$BUILD_LOG" >&2 || true
+  print -u2 "驱动构建失败,完整日志: $BUILD_LOG"
+  exit 1
+fi
+grep -E "error|Error\(s\)" "$BUILD_LOG" || true
 LAB_DLL="$LAB_DIR/bin/Release/net9.0/HextechMpLab.dll"
 [[ -f "$LAB_DLL" ]] || { print -u2 "驱动 DLL 未生成: $LAB_DLL"; exit 1; }
 

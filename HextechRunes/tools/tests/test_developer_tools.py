@@ -149,7 +149,9 @@ class SecondCard : CardModel
                 with self.assertRaises(subprocess.CalledProcessError):
                     dev.focused_tests(args)
             self.assertEqual(run.call_count, 1)
-            self.assertEqual(run.call_args.args[0][1], "build")
+            command = run.call_args.args[0]
+            self.assertTrue(command[1].endswith("run_tests.sh"))
+            self.assertEqual(command[2:5], ["--target", "0.111.0", "HopperEscapeSurvivesTheNextNativeMoveRoll"])
 
     def make_bundle(self, root):
         dist = root / "dist"
