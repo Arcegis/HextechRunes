@@ -57,13 +57,11 @@ public sealed class TranscendentEvilRune : HextechSharedCombatVictoryRuneBase
 		if (Owner == null
 			|| side != Owner.Creature.Side
 			|| combatState.RoundNumber > 1
-			|| _lastProcRound == combatState.RoundNumber
-			|| !IsDefectOwner)
+			|| !IsDefectOwner
+			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))
 		{
 			return;
 		}
-
-		_lastProcRound = combatState.RoundNumber;
 
 		int bonus = FloorToInt(_stacks / DynamicVars["StacksPerBonus"].BaseValue);
 		if (bonus <= 0)

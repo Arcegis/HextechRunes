@@ -50,9 +50,9 @@ internal static partial class Program
 	private static void TwinFlamesUsesThreeEnergyScaledHits()
 	{
 		Equal(3, TwinFlamesRune.MissileCount, "Twin Flames hit count");
-		Equal(0m, TwinFlamesRune.ResolveMissileDamage(-1m), "Twin Flames should not create negative damage");
-		Equal(0m, TwinFlamesRune.ResolveMissileDamage(0m), "zero-cost Skills should resolve to zero missile damage");
-		Equal(3m, TwinFlamesRune.ResolveMissileDamage(3m), "Twin Flames damage should equal the played Skill's Energy cost");
+		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Twin Flames should not create negative damage");
+		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(0m), "zero-cost Skills should resolve to zero missile damage");
+		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Twin Flames damage should equal the played Skill's Energy cost");
 		Expect(!TwinFlamesRune.ShouldLaunchMissiles(0m), "zero-cost Skills should not launch Twin Flames missiles");
 		Expect(TwinFlamesRune.ShouldLaunchMissiles(1m), "positive-cost Skills should launch Twin Flames missiles");
 		MethodInfo? afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
@@ -113,8 +113,8 @@ internal static partial class Program
 	{
 		Equal(4, LightEmUpRune.AttacksPerVolley, "Light Em Up attacks per volley");
 		Equal(6, LightEmUpRune.MissileCount, "Light Em Up missile count");
-		Equal(0m, LightEmUpRune.ResolveMissileDamage(-1m), "Light Em Up should not create negative damage");
-		Equal(3m, LightEmUpRune.ResolveMissileDamage(3m), "Light Em Up damage should equal the triggering Attack's Energy cost");
+		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Light Em Up should not create negative damage");
+		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Light Em Up damage should equal the triggering Attack's Energy cost");
 
 		int progress = 0;
 		for (int attackIndex = 0; attackIndex < 3; attackIndex++)

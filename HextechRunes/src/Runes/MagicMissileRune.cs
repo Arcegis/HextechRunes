@@ -26,9 +26,8 @@ public sealed class MagicMissileRune : TurnScopedRelicBase
 			return Task.CompletedTask;
 		}
 
-		HextechCombatState? combatState = Owner.Creature.CombatState;
-		List<Creature> targets = ResolveTargets(cardPlay, combatState);
-		if (combatState == null || targets.Count == 0
+		if (Owner.Creature.CombatState is not HextechCombatState combatState
+			|| HextechRuneTargeting.ResolveCardPlayEnemyTargets(cardPlay, combatState) is not { Count: > 0 } targets
 			|| !TryConsumeTurnProc(nameof(MagicMissileRune), ref _triggeredThisTurn))
 		{
 			return Task.CompletedTask;
@@ -37,70 +36,19 @@ public sealed class MagicMissileRune : TurnScopedRelicBase
 		Flash(targets);
 		Creature source = Owner.Creature;
 		decimal damagePercent = DynamicVars["MaxHpDamagePercent"].BaseValue;
-		_ = TaskHelper.RunSafely(PlayVolleyVfxAsync(source, targets));
-		return ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, targets, damagePercent);
-	}
-
-	private static async Task PlayVolleyVfxAsync(Creature source, IReadOnlyList<Creature> targets)
-	{
-		await Task.WhenAll(Enumerable.Range(0, MissileCount)
-			.SelectMany(missileIndex => targets
-				.Select(target => HextechCombatVfx.PlayMagicMissile(source, target, missileIndex))));
-	}
-
-	private static async Task ResolveVolleyDamageInLockstepAsync(
-		PlayerChoiceContext choiceContext,
-		Creature source,
-		HextechCombatState combatState,
-		IReadOnlyList<Creature> targets,
-		decimal damagePercent)
-	{
-		for (int missileIndex = 0; missileIndex < MissileCount; missileIndex++)
-		{
-			if (source.IsDead || !ReferenceEquals(source.CombatState, combatState))
-			{
-				return;
-			}
-
-			foreach (Creature target in targets)
-			{
-				if (!target.IsAlive || !ReferenceEquals(target.CombatState, combatState))
-				{
-					continue;
-				}
-
-				await HextechGameApiCompat.Damage(
-					choiceContext,
-					target,
-					CalculateMissileDamage(target.MaxHp, damagePercent),
-					ValueProp.Unpowered,
-					source,
-					null);
-			}
-		}
+		_ = TaskHelper.RunSafely(HextechMissileVolley.PlayVfxAsync(source, targets, MissileCount, HextechCombatVfx.PlayMagicMissile));
+		return HextechMissileVolley.ResolveVolleyDamageInLockstepAsync(
+			choiceContext,
+			source,
+			combatState,
+			targets,
+			MissileCount,
+			target => CalculateMissileDamage(target.MaxHp, damagePercent));
 	}
 
 	internal static int CalculateMissileDamage(decimal targetMaxHp, decimal damagePercent = MaxHpDamagePercent)
 	{
 		return Math.Max(1, FloorToInt(Math.Max(0m, targetMaxHp) * Math.Max(0m, damagePercent) / 100m));
-	}
-
-	private List<Creature> ResolveTargets(CardPlay cardPlay, HextechCombatState? combatState)
-	{
-		if (combatState == null)
-		{
-			return [];
-		}
-
-		IEnumerable<Creature> targets = cardPlay.Card.TargetType == TargetType.AllEnemies
-			? combatState.HittableEnemies
-			: cardPlay.Target is { Side: CombatSide.Enemy } target
-				? [target]
-				: [];
-		return targets
-			.Where(static target => target.IsAlive && target.Side == CombatSide.Enemy)
-			.OrderBy(static target => target.CombatId ?? uint.MaxValue)
-			.ToList();
 	}
 
 	protected override void ResetTurnScopedState()

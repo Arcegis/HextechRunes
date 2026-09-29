@@ -2,7 +2,9 @@ namespace HextechRunes;
 
 public sealed class ArchmageRune : HextechRelicBase
 {
-	private int _freeCardRollsThisCombat;
+	// 单机稳定随机的本地序号（见 ConsumeCombatProcOrdinal）：不在战斗开始清零，跨战斗累加、读档归零；
+	// 联机改用 Mayhem 的每场计数。改成每场清零会改变单机的随机结果，按现状保留。
+	private int _localFreeCardRollOrdinal;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -33,7 +35,7 @@ public sealed class ArchmageRune : HextechRelicBase
 			return false;
 		}
 
-		rollOrdinal = ConsumeCombatProcOrdinal(nameof(ArchmageRune), ref _freeCardRollsThisCombat);
+		rollOrdinal = ConsumeCombatProcOrdinal(nameof(ArchmageRune), ref _localFreeCardRollOrdinal);
 		return HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
 			DynamicVars["ChancePercent"].IntValue,

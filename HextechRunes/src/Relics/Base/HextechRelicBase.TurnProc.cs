@@ -198,6 +198,7 @@ public abstract partial class HextechRelicBase
 		return localCount;
 	}
 
+	// 联机读写 Mayhem 的每场计数（战斗结束清零）；单机用调用方的 localCount，它的清零时机由调用方决定。
 	protected int ConsumeCombatProcOrdinal(string procKey, ref int localCount)
 	{
 		if (ShouldUseNetworkCombatHistory()

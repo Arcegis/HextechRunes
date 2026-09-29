@@ -55,9 +55,9 @@ public sealed class TankEngineRune : HextechSharedCombatVictoryRuneBase, IHextec
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
+		if (Owner != null)
 		{
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		}
 
 		Grow();
@@ -71,8 +71,7 @@ public sealed class TankEngineRune : HextechSharedCombatVictoryRuneBase, IHextec
 			return;
 		}
 
-		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
-		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		SavedStacks++;
 		Flash(Array.Empty<Creature>());
 		await HextechMaxHpScaling.ReapplyScale(Owner);

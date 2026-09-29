@@ -36,7 +36,7 @@ public sealed class TwinFlamesRune : HextechRelicBase
 		}
 
 		Creature source = Owner.Creature;
-		decimal damage = ResolveMissileDamage(HextechCombatHooks.GetEnergyCostForCurrentCardPlay(cardPlay.Card));
+		decimal damage = HextechMissileVolley.DamageFromEnergyCost(HextechCombatHooks.GetEnergyCostForCurrentCardPlay(cardPlay.Card));
 		if (!ShouldLaunchMissiles(damage))
 		{
 			return Task.CompletedTask;
@@ -57,47 +57,9 @@ public sealed class TwinFlamesRune : HextechRelicBase
 		}
 
 		Flash([target]);
-		_ = TaskHelper.RunSafely(PlayVolleyVfxAsync(source, target));
-		return ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, target, damage);
-	}
-
-	private static async Task PlayVolleyVfxAsync(Creature source, Creature target)
-	{
-		await Task.WhenAll(Enumerable.Range(0, MissileCount)
-			.Select(missileIndex => HextechCombatVfx.PlayTwinFlamesMissile(source, target, missileIndex)));
-	}
-
-	private static async Task ResolveVolleyDamageInLockstepAsync(
-		PlayerChoiceContext choiceContext,
-		Creature source,
-		HextechCombatState combatState,
-		Creature target,
-		decimal damage)
-	{
-		// 伤害留在当前卡牌动作内结算（单人与联机同一路径）；弹道只做视觉，不能在独立任务中稍后改血量。
-		for (int missileIndex = 0; missileIndex < MissileCount; missileIndex++)
-		{
-			if (source.IsDead
-				|| !target.IsAlive
-				|| !ReferenceEquals(source.CombatState, combatState)
-				|| !ReferenceEquals(target.CombatState, combatState))
-			{
-				return;
-			}
-
-			await HextechGameApiCompat.Damage(
-				choiceContext,
-				target,
-				damage,
-				ValueProp.Unpowered,
-				source,
-				null);
-		}
-	}
-
-	internal static decimal ResolveMissileDamage(decimal energyCost)
-	{
-		return Math.Max(0m, energyCost);
+		Creature[] targets = [target];
+		_ = TaskHelper.RunSafely(HextechMissileVolley.PlayVfxAsync(source, targets, MissileCount, HextechCombatVfx.PlayTwinFlamesMissile));
+		return HextechMissileVolley.ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, targets, MissileCount, _ => damage);
 	}
 
 	internal static bool ShouldLaunchMissiles(decimal damage)

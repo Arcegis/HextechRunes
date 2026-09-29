@@ -45,9 +45,9 @@ public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHex
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
+		if (Owner != null)
 		{
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		}
 
 		return Task.CompletedTask;
@@ -60,8 +60,7 @@ public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHex
 			return;
 		}
 
-		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
-		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		SavedStacks++;
 		Flash(Array.Empty<Creature>());
 		await HextechMaxHpScaling.ReapplyScale(Owner);

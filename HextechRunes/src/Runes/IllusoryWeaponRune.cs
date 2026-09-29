@@ -1,12 +1,13 @@
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Models.Exceptions;
 
 namespace HextechRunes;
 
 public sealed class IllusoryWeaponRune : HextechRelicBase
 {
-	private int _damageTargetsThisCombat;
+	// 单机稳定随机的本地序号（见 ConsumeCombatProcOrdinal）：不在战斗开始清零，跨战斗累加、读档归零；
+	// 联机改用 Mayhem 的每场计数。改成每场清零会改变单机的随机结果，按现状保留。
+	private int _localDamageTargetOrdinal;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -17,7 +18,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 	{
 		if (Owner == null
 			|| Owner.Creature.IsDead
-			|| !IsOriginalOwnedSkill(cardPlay.Card, Owner)
+			|| !HextechCardEffectTypes.IsOriginalOwnedSkill(cardPlay.Card, Owner)
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
@@ -25,7 +26,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 
 		try
 		{
-			int targetOrdinal = ConsumeCombatProcOrdinal(nameof(IllusoryWeaponRune), ref _damageTargetsThisCombat);
+			int targetOrdinal = ConsumeCombatProcOrdinal(nameof(IllusoryWeaponRune), ref _localDamageTargetOrdinal);
 			Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
 				Owner,
 				combatState,
@@ -51,49 +52,14 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 		}
 	}
 
-	internal static bool ShouldTreatSkillAsAttack(Player? owner)
-	{
-		return owner?.GetRelic<IllusoryWeaponRune>() != null;
-	}
+	// 分类逻辑在 HextechCardEffectTypes；这里保留转发给尚未迁移的调用方。
+	internal static bool ShouldTreatSkillAsAttack(Player? owner) => HextechCardEffectTypes.ShouldTreatSkillAsAttack(owner);
 
-	internal static bool IsOriginalOwnedSkill(CardModel? card, Player owner)
-	{
-		return card?.Owner == owner && IsSkillForEffects(card);
-	}
+	internal static bool IsOriginalOwnedSkill(CardModel? card, Player owner) => HextechCardEffectTypes.IsOriginalOwnedSkill(card, owner);
 
-	internal static bool IsAttackForEffects(CardModel? card, Player? owner)
-	{
-		if (card == null)
-		{
-			return false;
-		}
+	internal static bool IsAttackForEffects(CardModel? card, Player? owner) => HextechCardEffectTypes.IsAttackForEffects(card, owner);
 
-		if (card.Type == CardType.Attack)
-		{
-			return true;
-		}
-
-		return owner != null
-			&& ShouldTreatSkillAsAttack(owner)
-			&& IsOriginalOwnedSkill(card, owner);
-	}
-
-	internal static bool IsSkillForEffects(CardModel? card)
-	{
-		if (card == null)
-		{
-			return false;
-		}
-
-		try
-		{
-			return (card.CanonicalInstance?.Type ?? card.Type) == CardType.Skill;
-		}
-		catch (CanonicalModelException)
-		{
-			return card.Type == CardType.Skill;
-		}
-	}
+	internal static bool IsSkillForEffects(CardModel? card) => HextechCardEffectTypes.IsSkillForEffects(card);
 
 	[HarmonyPatch(typeof(Finisher), "CanonicalVars", MethodType.Getter)]
 	[HextechPatch("rune.illusory-weapon.finisher", "幻影武器", Rune = typeof(IllusoryWeaponRune))]

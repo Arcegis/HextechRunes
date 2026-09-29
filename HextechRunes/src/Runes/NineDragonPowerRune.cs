@@ -52,9 +52,9 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
+		if (Owner != null)
 		{
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		}
 
 		Grow();
@@ -78,8 +78,7 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 			return;
 		}
 
-		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
-		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		SavedStacks++;
 		Flash();
 		await HextechMaxHpScaling.ReapplyScale(Owner);

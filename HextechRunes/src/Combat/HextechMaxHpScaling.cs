@@ -75,6 +75,18 @@ internal static class HextechMaxHpScaling
 	}
 
 	/// <summary>
+	/// 当前最大生命已按系数放大时补齐基础值（进房、叠层前调用）：主符文取遗物列表里第一个持有者，
+	/// 没有时用 <paramref name="fallback"/>（调用方自己）；两者都没有就不处理。
+	/// </summary>
+	public static void EnsureScaledBaseInitialized(Player owner, IHextechMaxHpBaseHolder? fallback = null)
+	{
+		if ((GetPrimary(owner) ?? fallback) is IHextechMaxHpBaseHolder primary)
+		{
+			EnsureBaseInitialized(owner, primary, assumeAlreadyScaled: true);
+		}
+	}
+
+	/// <summary>
 	/// 系数参与者获得/叠层后重算实际最大生命并补上差值的当前生命。
 	/// 基础值未初始化 ⟺ 此前没有任何参与者生效过,此时当前最大生命就是未缩放的基础值。
 	/// </summary>

@@ -34,8 +34,7 @@ public sealed class NetherSoulRune : HextechRelicBase
 					|| !IsPlayableEtherealCard(card)) continue;
 
 				Creature? target = card.TargetType == TargetType.AnyEnemy
-					? Owner.Creature.CombatState.HittableEnemies
-						.OrderBy(static enemy => enemy.CombatId ?? uint.MaxValue).FirstOrDefault()
+					? HextechRuneTargeting.FirstHittableEnemy(Owner.Creature.CombatState)
 					: null;
 				if (card.TargetType == TargetType.AnyEnemy && target == null) break;
 				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);

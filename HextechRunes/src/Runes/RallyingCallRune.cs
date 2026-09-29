@@ -41,9 +41,9 @@ public sealed class RallyingCallRune : HextechRelicBase
 				Creature? target = cardPlay.Target;
 				if (card.TargetType == TargetType.AnyEnemy)
 				{
-					var enemies = Owner.Creature.CombatState.HittableEnemies;
-					target = target != null && enemies.Contains(target) ? target
-						: enemies.OrderBy(static enemy => enemy.CombatId ?? uint.MaxValue).FirstOrDefault();
+					target = target != null && Owner.Creature.CombatState.HittableEnemies.Contains(target)
+						? target
+						: HextechRuneTargeting.FirstHittableEnemy(Owner.Creature.CombatState);
 					if (target == null)
 					{
 						break;

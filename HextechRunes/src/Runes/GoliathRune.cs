@@ -54,9 +54,9 @@ public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune, IH
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null && HextechMaxHpScaling.GetPrimary(Owner) is { } primary)
+		if (Owner != null)
 		{
-			HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: true);
+			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		}
 
 		Grow();
