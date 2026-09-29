@@ -416,7 +416,9 @@ internal static partial class Program
 			// ReviewSelection
 			new(nameof(ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut), ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut),
 			new(nameof(ReviewConfigMigrationTableMatchesLegacyChain), ReviewConfigMigrationTableMatchesLegacyChain),
-			new(nameof(ReviewShareCodePreviewNormalizesLikeSave), ReviewShareCodePreviewNormalizesLikeSave)
+			new(nameof(ReviewShareCodePreviewNormalizesLikeSave), ReviewShareCodePreviewNormalizesLikeSave),
+			new(nameof(ReviewExternalRegistryRejectsBuiltInTypes), ReviewExternalRegistryRejectsBuiltInTypes),
+			new(nameof(ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry), ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry)
 		];
 
 		if (args.Length > 0)

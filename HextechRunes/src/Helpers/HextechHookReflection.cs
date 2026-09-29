@@ -71,6 +71,19 @@ internal static class HextechHookReflection
 		return field;
 	}
 
+	public static Type? TryGetNestedType(Type type, string name, BindingFlags flags = BindingFlags.NonPublic)
+	{
+		Type? nestedType = type.GetNestedType(name, flags);
+		if (nestedType == null)
+		{
+			WarnMissingMember(
+				$"nested-type:{type.AssemblyQualifiedName}:{name}:{flags}",
+				$"nested type {type.FullName}+{name}");
+		}
+
+		return nestedType;
+	}
+
 	public static MethodInfo RequireGetter(Type type, string propertyName, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 	{
 		return type.GetProperty(propertyName, flags)?.GetMethod

@@ -1,3 +1,5 @@
+using static HextechRunes.HextechContentRegistry;
+
 namespace HextechRunes;
 
 internal static partial class HextechCatalog

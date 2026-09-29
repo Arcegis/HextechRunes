@@ -123,4 +123,41 @@ internal static partial class Program
 		Equal(100, preview.Snapshot.ChaosRuneChancePercent, "chaos chance clamped in preview");
 		Equal(HextechRuneConfiguration.GetDefaultForgeRarityWeights(), preview.Snapshot.ForgeRarityWeights, "forge fallback is default");
 	}
+
+	private static void ReviewExternalRegistryRejectsBuiltInTypes()
+	{
+		int runeCount = HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count;
+		int forgeCount = HextechExternalContentRegistry.GetForgeRegistrations().Count;
+		int version = HextechExternalContentRegistry.Version;
+
+		// 测试进程没有 Godot 原生层,真实 Warn 在 0.107.1 会崩溃;先耗尽该告警的日志预算。
+		Action restoreWarnings = SuppressCompatibilityWarnings("external-content.built-in-rejected");
+		try
+		{
+			HextechExternalContentRegistry.RegisterPlayerRune(new PlayerRuneRegistration(typeof(SlapRune), HextechRarityTier.Gold), assetModId: null);
+			HextechExternalContentRegistry.RegisterForge(new ForgeRegistration(typeof(StrengthForge), HextechRarityTier.Gold), assetModId: null);
+		}
+		finally
+		{
+			restoreWarnings();
+		}
+
+		Equal(runeCount, HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count, "built-in rune not added to external list");
+		Equal(forgeCount, HextechExternalContentRegistry.GetForgeRegistrations().Count, "built-in forge not added to external list");
+		Equal(version, HextechExternalContentRegistry.Version, "rejected registration does not bump version");
+		Equal(HextechRarityTier.Silver, HextechContentRegistry.PlayerRuneMetadata.GetRegistration(typeof(SlapRune)).Rarity, "built-in rune metadata retained and lookups still build");
+		Expect(HextechContentRegistry.SilverForgeTypes.Contains(typeof(StrengthForge)), "built-in forge metadata retained");
+	}
+
+	private static void ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry()
+	{
+		HashSet<Type> playerRuneTypes = HextechPlayerRuneRegistry.Registrations.Select(static registration => registration.Type).ToHashSet();
+		Type[] derived = HextechMonsterHexRegistry.Registrations
+			.Select(static registration => registration.IconRelicType)
+			.Where(type => !playerRuneTypes.Contains(type))
+			.Distinct()
+			.ToArray();
+		SetEqual(derived, HextechCustomModelRegistry.EnemyHexIconRelicTypes, "enemy-only hex icon carriers must be listed in HextechCustomModelRegistry");
+		Equal(HextechCustomModelRegistry.EnemyHexIconRelicTypes.Count, HextechCustomModelRegistry.EnemyHexIconRelicTypes.Distinct().Count(), "enemy hex icon carriers are unique");
+	}
 }

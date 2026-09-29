@@ -9,6 +9,7 @@ HextechRunes.HextechBurnHealthBarHooks._hpLabelField : FieldInfo
 HextechRunes.HextechBurnHealthBarHooks._maxFgWidthProp : PropertyInfo
 HextechRunes.HextechBurnHealthBarHooks._poisonForegroundField : FieldInfo
 HextechRunes.HextechBurnVisual._particleTexture : Texture2D
+HextechRunes.HextechCatalog._endlessModeLoaded : Nullable`1
 HextechRunes.HextechCatalog._modelIdLookupCache : ModelIdLookupCache
 HextechRunes.HextechCatalog._modelIdLookupCacheVersion : Int32
 HextechRunes.HextechCollectionHooks._loggedFlatFallback : Boolean

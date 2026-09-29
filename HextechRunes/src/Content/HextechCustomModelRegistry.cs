@@ -41,6 +41,8 @@ internal static class HextechCustomModelRegistry
 
 	// 敌方专属海克斯的图标/文案载体 relic：注册进 ModelDb 但不进任何玩家获取池。
 	// 注意：新增敌方专属 relic 时这里必须同步登记，否则图标路径不被认定（游戏内显示 NOPE）。
+	// 不从 HextechMonsterHexRegistry 派生：本列表顺序就是模型进 SharedRelicPool 的登记顺序，
+	// 派生会改变既有顺序。集合一致性由测试 ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry 守住。
 	internal static IReadOnlyList<Type> EnemyHexIconRelicTypes { get; } =
 	[
 		typeof(SkulkingColonyHex),

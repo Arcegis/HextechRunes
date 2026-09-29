@@ -32,6 +32,11 @@ internal static class HextechExternalContentRegistry
 		string? assetModId,
 		Func<Player, bool>? availability = null)
 	{
+		if (RejectBuiltInType(registration.Type, "player rune"))
+		{
+			return;
+		}
+
 		lock (SyncRoot)
 		{
 			int existingIndex = PlayerRuneRegistrations.FindIndex(
@@ -86,6 +91,11 @@ internal static class HextechExternalContentRegistry
 
 	internal static void RegisterForge(ForgeRegistration registration, string? assetModId)
 	{
+		if (RejectBuiltInType(registration.Type, "forge"))
+		{
+			return;
+		}
+
 		lock (SyncRoot)
 		{
 			int existingIndex = ForgeRegistrations.FindIndex(
@@ -170,7 +180,7 @@ internal static class HextechExternalContentRegistry
 		{
 			return AssetModIdsByModelId.TryGetValue(id, out string? modId)
 				? modId
-					: null;
+				: null;
 		}
 	}
 
@@ -238,6 +248,29 @@ internal static class HextechExternalContentRegistry
 				? path
 				: null;
 		}
+	}
+
+	/// <summary>
+	/// 外部 API 不能重新登记本体内置的符文/锻造:内置与外部列表会被拼接后按类型 ToDictionary,
+	/// 同一类型出现两次会让注册表查找永久抛 ArgumentException。前置的 ModelId 检查按 IsSame 放行同一类型,
+	/// 所以必须在这里对内置清单单独拦截。
+	/// </summary>
+	private static bool RejectBuiltInType(Type modelType, string kind)
+	{
+		bool isBuiltIn = HextechPlayerRuneRegistry.Registrations.Any(builtIn => HextechModelTypeIdentity.IsSame(builtIn.Type, modelType))
+			|| HextechForgeRegistry.Registrations.Any(builtIn => HextechModelTypeIdentity.IsSame(builtIn.Type, modelType));
+		if (!isBuiltIn)
+		{
+			return false;
+		}
+
+		if (HextechRunLogBudget.TryConsume("external-content.built-in-rejected", 12))
+		{
+			HextechLog.Warn(
+				"ExternalContent", $"Rejected external {kind} registration for built-in type {modelType.FullName}; built-in metadata retained.");
+		}
+
+		return true;
 	}
 
 	private static bool TryStoreAssetModId(Type modelType, string? assetModId)

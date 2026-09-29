@@ -26,7 +26,7 @@ internal static partial class HextechSavedPropertyBootstrap
 		}
 
 		throw new InvalidOperationException(
-			$"[{ModInfo.Id}] 无法读取 ModelIdSerializationCache._initialized；为避免污染 SavedProperty net-id 表，已拒绝外部模型注册。");
+			$"[{ModInfo.Id}] Could not read ModelIdSerializationCache._initialized; external model registration was rejected to avoid corrupting the SavedProperty net-id map.");
 	}
 
 	private static void InjectModelTypeCore(Type type)
@@ -34,9 +34,9 @@ internal static partial class HextechSavedPropertyBootstrap
 		// 只做窗口校验(已在 InjectModelType 里完成),不注入。
 	}
 
-	private static void InjectCachesCore()
+	internal static void InjectCaches()
 	{
-		HextechLog.Info("Mayhem", $"SavedProperty 注入跳过:0.109+ 由 ModelIdSerializationCache.Init 自动收录 ModelDb 载体。");
+		HextechLog.Info("Mayhem", "SavedProperty injection skipped: on 0.109+ ModelIdSerializationCache.Init collects ModelDb carriers itself.");
 	}
 
 	/// <summary>
