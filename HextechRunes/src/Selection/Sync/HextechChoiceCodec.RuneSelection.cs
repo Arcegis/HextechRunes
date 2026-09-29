@@ -12,7 +12,6 @@ internal static partial class HextechChoiceCodec
 
 	public static PlayerChoiceResult CreateRuneSelection(int actIndex, int choiceOrdinal, int selectedIndex, IReadOnlyList<int> rerollHistory, IReadOnlyList<RelicModel> finalOptions, IEnumerable<ModelId>? seenOptionIds = null)
 	{
-		ValidateProtocolCount(rerollHistory.Count, MaxChoiceListCount, nameof(rerollHistory));
 		List<int> payload = [ Magic, ChoiceKindRuneSelection, actIndex, choiceOrdinal, selectedIndex, rerollHistory.Count ];
 		payload.AddRange(rerollHistory);
 		ModelId[] finalIds = finalOptions.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id).ToArray();
@@ -75,8 +74,8 @@ internal static partial class HextechChoiceCodec
 		selectedIndex = payload[4];
 		int rerollCount = payload[5];
 		const int headerCount = 6;
+		// 无限重随可超过单次候选列表的 64 项限制，历史长度由实际载荷约束。
 		if (rerollCount < 0
-			|| rerollCount > MaxChoiceListCount
 			|| !HasRemaining(payload, headerCount, rerollCount))
 		{
 			return false;

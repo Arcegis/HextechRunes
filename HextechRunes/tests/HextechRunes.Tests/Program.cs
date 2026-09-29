@@ -117,6 +117,8 @@ internal static partial class Program
 			new(nameof(RuneSelectionSynchronizesIntermediateSeenCandidates), RuneSelectionSynchronizesIntermediateSeenCandidates),
 			new(nameof(RuneSelectionSeenHistoryIncludesSelfPickAndRejectsLegacyPayloads), RuneSelectionSeenHistoryIncludesSelfPickAndRejectsLegacyPayloads),
 			new(nameof(RuneSelectionSeenHistoryEnforcesProtocolLimits), RuneSelectionSeenHistoryEnforcesProtocolLimits),
+			new(nameof(RuneSelectionSeenHistoryPreservesMultipleChunks), RuneSelectionSeenHistoryPreservesMultipleChunks),
+			new(nameof(RuneSelectionPreservesLongRerollHistory), RuneSelectionPreservesLongRerollHistory),
 			new(nameof(RuneSelectionRejectsWrongActOrOrdinal), RuneSelectionRejectsWrongActOrOrdinal),
 			new(nameof(ActSelectionAppliedRejectsWrongActOrOrdinal), ActSelectionAppliedRejectsWrongActOrOrdinal),
 			new(nameof(EnemyHexAdjustmentRoundTripKeepsAllSlots), EnemyHexAdjustmentRoundTripKeepsAllSlots),

@@ -193,30 +193,89 @@ internal static partial class Program
 		Expect(!HextechGeneratedRuneDataCodec.Restore(oldChoice, finalOptions), "legacy recipe restore is rejected");
 	}
 
+	private static void RuneSelectionSeenHistoryPreservesMultipleChunks()
+	{
+		foreach (int count in new[] { 64, 65, 128, 129, 1025 })
+		{
+			HextechWeightedRuneOptions options = new([new GeneratedTestRelic { Data = "recipe:chunked" }], 170);
+			ModelId[] seen = Enumerable.Range(0, count - 1)
+				.Select(static index => new ModelId("HEXTECH_TEST", $"SEEN_{index}"))
+				.Append(options[0].Id).ToArray();
+			PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], options, seen);
+			Expect(HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out _, out _, out _, out List<ModelId> decoded),
+				$"{count} seen IDs decode across chunk boundaries");
+			Equal(count, decoded.Count, "no IDs are truncated");
+			Expect(decoded.ToHashSet().SetEquals(seen), "every seen ID survives");
+			Expect(HextechRuneWeightCodec.TryRestore(choice, [new GeneratedTestRelic()], out List<RelicModel> restored),
+				"weight follows all seen chunks");
+			Equal(170, HextechWeightedRuneOptions.GetWeight(restored), "weight survives chunking");
+			Expect(HextechGeneratedRuneDataCodec.Restore(choice, restored), "recipe follows all seen chunks");
+			Equal("recipe:chunked", ((GeneratedTestRelic)restored[0]).Data, "recipe survives chunking");
+			PlayerChoiceResult reordered = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], options, seen.Reverse().Concat(seen));
+			SequenceEqual(choice.AsIndexes(), reordered.AsIndexes(), "deduplication and ordering are stable across chunks");
+		}
+	}
+
+	private static void RuneSelectionPreservesLongRerollHistory()
+	{
+		foreach (int count in new[] { 65, 257 })
+		{
+			HextechWeightedRuneOptions options = new([new GeneratedTestRelic { Data = "recipe:rerolled" }], 170);
+			int[] history = Enumerable.Range(0, count).Select(static index => index % 3).ToArray();
+			ModelId[] seen = Enumerable.Range(0, count).Select(static index => new ModelId("HEXTECH_TEST", $"REROLL_{index}")).ToArray();
+			PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, history, options, seen);
+			Expect(HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out _, out List<int> decoded, out _),
+				$"{count} rerolls decode");
+			SequenceEqual(history, decoded, "all rerolls retain their original order and count");
+			Expect(HextechRuneWeightCodec.TryRestore(choice, [new GeneratedTestRelic()], out List<RelicModel> restored),
+				"weight follows long reroll history");
+			Expect(HextechGeneratedRuneDataCodec.Restore(choice, restored), "recipe follows long reroll history");
+			Equal("recipe:rerolled", ((GeneratedTestRelic)restored[0]).Data, "recipe survives long reroll history");
+			foreach (int invalidCount in new[] { -1, int.MaxValue })
+			{
+				List<int> malformed = choice.AsIndexes().ToList();
+				malformed[5] = invalidCount;
+				PlayerChoiceResult invalid = PlayerChoiceResult.FromIndexes(malformed);
+				Expect(!HextechChoiceCodec.TryDecodeRuneSelection(invalid, 1, 2, out _, out _, out _), "invalid reroll count rejected");
+				Expect(!HextechRuneWeightCodec.TryRestore(invalid, options, out _), "weight rejects invalid reroll count");
+				Expect(!HextechGeneratedRuneDataCodec.Restore(invalid, options), "recipe rejects invalid reroll count");
+			}
+		}
+	}
+
 	private static void RuneSelectionSeenHistoryEnforcesProtocolLimits()
 	{
 		RelicModel[] finalOptions = CreateRuneSelectionTestOptions(1);
-		ModelId[] maximumSeen = Enumerable.Range(0, HextechStableModelIdListCodec.MaxCount - 1)
+		ModelId[] seen = Enumerable.Range(0, HextechStableModelIdListCodec.MaxCount * 2)
 			.Select(static index => new ModelId("HEXTECH_TEST", $"SEEN_{index}"))
 			.ToArray();
-		PlayerChoiceResult maximum = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], finalOptions, maximumSeen);
-		Expect(HextechChoiceCodec.TryDecodeRuneSelection(maximum, 1, 2, out _, out _, out _, out List<ModelId> decoded),
-			"64 distinct seen IDs including final options are supported");
-		Equal(HextechStableModelIdListCodec.MaxCount, decoded.Count, "maximum seen count");
-		ExpectThrows<ArgumentOutOfRangeException>(
-			() => HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], finalOptions,
-				maximumSeen.Append(new ModelId("HEXTECH_TEST", "OVERFLOW"))),
-			"65 distinct seen IDs are rejected by the encoder");
-
-		List<int> malformed = maximum.AsIndexes().ToList();
-		Expect(HextechStableModelIdListCodec.TryDecode(malformed, 6, out _, out int seenCursor), "find seen section");
-		malformed[seenCursor + 2] = HextechStableModelIdListCodec.MaxCount + 1;
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(malformed), 1, 2, out _, out _, out _),
-			"oversized seen count is rejected by the decoder");
-		List<int> truncated = maximum.AsIndexes().Take(maximum.AsIndexes().Count - 1).ToList();
+		PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], finalOptions, seen);
+		List<int> payload = choice.AsIndexes();
+		Expect(HextechStableModelIdListCodec.TryDecode(payload, 6, out _, out int seenCursor), "find seen section");
+		foreach (int invalidCount in new[] { -1, 0, 1, int.MaxValue })
+		{
+			List<int> malformed = payload.ToList();
+			malformed[seenCursor + 1] = invalidCount;
+			Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(malformed), 1, 2, out _, out _, out _),
+				"negative, inconsistent or impossible total is rejected");
+		}
+		foreach (int invalidCount in new[] { 0, HextechStableModelIdListCodec.MaxCount + 1 })
+		{
+			List<int> malformed = payload.ToList();
+			malformed[seenCursor + 3] = invalidCount;
+			Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(malformed), 1, 2, out _, out _, out _),
+				"empty or oversized chunk is rejected");
+		}
+		List<int> duplicateChunks = [HextechRuneSeenHistoryCodec.Version, 2];
+		HextechStableModelIdListCodec.Append(duplicateChunks, [finalOptions[0].Id]);
+		HextechStableModelIdListCodec.Append(duplicateChunks, [finalOptions[0].Id]);
+		int cursor = 0;
+		Expect(!HextechRuneSeenHistoryCodec.TryRead(duplicateChunks, ref cursor, out _), "duplicates across chunks are rejected");
+		Equal(0, cursor, "failed decoding does not consume the caller's cursor");
+		List<int> truncated = payload.Take(payload.Count - 1).ToList();
 		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(truncated), 1, 2, out _, out _, out _),
 			"truncated seen data is rejected");
-		List<int> trailing = maximum.AsIndexes().Append(12345).ToList();
+		List<int> trailing = payload.Append(12345).ToList();
 		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(trailing), 1, 2, out _, out _, out _),
 			"unknown trailing payload is rejected");
 	}
