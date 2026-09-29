@@ -152,6 +152,25 @@ internal static class HextechRewardSafetyHooks
 	// 承载 OnSelect 前后所需状态:DoubleVision 的追踪 scope + 进入 OnSelect 前的卡数(供禁忌魔典判别是否真选走了卡)。
 	private sealed record CardRewardOnSelectState(object? DoubleVisionScope, int CardCountBeforeSelect);
 
+	// 复视的事务作用域都是 AsyncLocal：Prefix 在调用方执行流里入栈，Postfix 同步恢复并把 __state 清空，
+	// 异步续体只负责清账。原命令（或排在后面的补丁）同步抛异常时 Postfix 不执行，由 Finalizer 恢复；
+	// Postfix 已处理过的调用 __state 为 null，Finalizer 不会重复出栈。
+	private static void CompleteSuppression(ref object? state)
+	{
+		DoubleVisionRune.CompleteRewardCommandSuppression(state);
+		state = null;
+	}
+
+	private static Exception? AbandonScopeAfterSynchronousFailure(object? state, Exception? exception)
+	{
+		if (exception != null && state != null)
+		{
+			DoubleVisionRune.AbandonScopeAfterSynchronousFailure(state);
+		}
+
+		return exception;
+	}
+
 	private static async Task<bool> CompleteForbiddenGrimoireCardRewardAsync(CardReward reward, Task<bool> originalTask, int cardCountBeforeSelect)
 	{
 		bool rewardComplete = await originalTask;
@@ -295,10 +314,10 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(object? __state)
-		{
-			DoubleVisionRune.CompleteRewardCommandSuppression(__state);
-		}
+		private static void Postfix(ref object? __state) => CompleteSuppression(ref __state);
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) => AbandonScopeAfterSynchronousFailure(__state, __exception);
 	}
 
 	// 巨口储蓄罐的每层收入不是奖励,不该被复视翻倍。它在进房钩子里发钱,钩子在所有端执行,
@@ -315,10 +334,10 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(object? __state)
-		{
-			DoubleVisionRune.CompleteRewardCommandSuppression(__state);
-		}
+		private static void Postfix(ref object? __state) => CompleteSuppression(ref __state);
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) => AbandonScopeAfterSynchronousFailure(__state, __exception);
 	}
 
 	[HarmonyPatch(typeof(EventOption), nameof(EventOption.Chosen), new Type[0])]
@@ -332,10 +351,14 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(object? __state, ref Task __result)
+		private static void Postfix(ref object? __state, ref Task __result)
 		{
 			__result = DoubleVisionRune.CompleteEventOptionRelicTransactionAsync(__result, __state);
+			__state = null;
 		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) => AbandonScopeAfterSynchronousFailure(__state, __exception);
 	}
 
 	[HarmonyPatch(typeof(DustyTome), nameof(DustyTome.AfterObtained), new Type[0])]
@@ -369,7 +392,7 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(CardReward __instance, object? __state, ref Task<bool> __result)
+		private static void Postfix(CardReward __instance, ref object? __state, ref Task<bool> __result)
 		{
 			CardRewardOnSelectState? state = __state as CardRewardOnSelectState;
 			Task<bool> result = __result;
@@ -380,7 +403,12 @@ internal static class HextechRewardSafetyHooks
 			}
 
 			__result = DoubleVisionRune.CompleteCardRewardAsync(result, state?.DoubleVisionScope);
+			__state = null;
 		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) =>
+			AbandonScopeAfterSynchronousFailure((__state as CardRewardOnSelectState)?.DoubleVisionScope, __exception);
 	}
 
 	[HarmonyPatch(typeof(SpecialCardReward), "OnSelect")]
@@ -394,10 +422,14 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(object? __state, ref Task<bool> __result)
+		private static void Postfix(ref object? __state, ref Task<bool> __result)
 		{
 			__result = DoubleVisionRune.CompleteCardRewardAsync(__result, __state);
+			__state = null;
 		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) => AbandonScopeAfterSynchronousFailure(__state, __exception);
 	}
 
 	[HarmonyPatch(typeof(RelicReward), "OnSelect")]
@@ -440,10 +472,14 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(object? __state, ref Task<RelicModel> __result)
+		private static void Postfix(ref object? __state, ref Task<RelicModel> __result)
 		{
 			__result = DoubleVisionRune.CompleteDirectRelicRewardAsync(__result, __state);
+			__state = null;
 		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) => AbandonScopeAfterSynchronousFailure(__state, __exception);
 	}
 
 	[HarmonyPatch(typeof(PotionCmd), nameof(PotionCmd.TryToProcure), typeof(PotionModel), typeof(Player), typeof(int))]
@@ -457,10 +493,14 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(object? __state, ref Task<PotionProcureResult> __result)
+		private static void Postfix(ref object? __state, ref Task<PotionProcureResult> __result)
 		{
 			__result = DoubleVisionRune.CompleteDirectPotionRewardAsync(__result, __state);
+			__state = null;
 		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) => AbandonScopeAfterSynchronousFailure(__state, __exception);
 	}
 
 	[HarmonyPatch(typeof(PlayerCmd), nameof(PlayerCmd.GainGold), typeof(decimal), typeof(Player), typeof(bool))]
@@ -474,9 +514,13 @@ internal static class HextechRewardSafetyHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(object? __state, ref Task __result)
+		private static void Postfix(ref object? __state, ref Task __result)
 		{
 			__result = DoubleVisionRune.CompleteDirectGoldRewardAsync(__result, __state);
+			__state = null;
 		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(object? __state, Exception? __exception) => AbandonScopeAfterSynchronousFailure(__state, __exception);
 	}
 }

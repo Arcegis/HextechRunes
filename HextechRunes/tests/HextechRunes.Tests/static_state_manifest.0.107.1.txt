@@ -14,11 +14,8 @@ HextechRunes.HextechCatalog._modelIdLookupCacheVersion : Int32
 HextechRunes.HextechCollectionHooks._loggedFlatFallback : Boolean
 HextechRunes.HextechCollectionHooks._loggedMissingFallbackContainer : Boolean
 HextechRunes.HextechCollectionHooks._starterHeaderTemplate : String
-HextechRunes.HextechCombatHooks.DualWieldDamagePerHitField : FieldInfo
-HextechRunes.HextechCombatHooks.DualWieldHitCountField : FieldInfo
 HextechRunes.HextechCombatHooks.HealthBarCreatureField : FieldInfo
 HextechRunes.HextechCombatHooks.HealthBarHpLabelField : FieldInfo
-HextechRunes.HextechCombatHooks._dualWieldFieldsAvailable : Nullable`1
 HextechRunes.HextechCombatHooks._jeweledGauntletHooksAvailable : Nullable`1
 HextechRunes.HextechCombatHooks._nextActualDamageCommandId : Int64
 HextechRunes.HextechCombatVfx._glowTexture : Texture2D

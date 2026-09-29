@@ -6,10 +6,6 @@ internal static partial class HextechCombatHooks
 	private static readonly HextechScopedDepthGuard SleightOfFleshPowerDebuffResponseGuard = new();
 	private static readonly HextechScopedDepthGuard CompensationReplacementGuard = new();
 
-	// 即死符文在血肉戏法/疫情响应链内不能同步 DoomKill(死亡处理与进行中的
-	// power hook 链撞车会卡死游戏),先挂账,响应链退出后统一补杀。
-	private static readonly List<Creature> PendingInstantDeathDoomKills = [];
-
 	internal static bool IsResolvingOutbreakPowerPoisonResponse => OutbreakPowerPoisonResponseGuard.IsActive;
 	internal static bool IsResolvingSleightOfFleshPowerDebuffResponse => SleightOfFleshPowerDebuffResponseGuard.IsActive;
 	internal static bool IsApplyingCompensationReplacement => CompensationReplacementGuard.IsActive;
@@ -47,6 +43,7 @@ internal static partial class HextechCombatHooks
 	[HextechPatch("combat.outbreak", "即死与补偿安全边界")]
 	private static class OutbreakPatch
 	{
+		// __state 标记本前缀确实入栈：排在前面的补丁抛异常时本前缀不会执行，Finalizer 不能出栈。
 		[HarmonyPrefix]
 		private static void Prefix(out bool __state)
 		{
@@ -55,15 +52,10 @@ internal static partial class HextechCombatHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(bool __state, ref Task __result)
-		{
-			if (__state)
-			{
-				__result = OutbreakPowerPoisonResponseGuard.WrapEnteredTask(
-					__result,
-					FlushPendingInstantDeathDoomKillsIfSafe);
-			}
-		}
+		private static void Postfix(ref bool __state, ref Task __result) => WrapOutbreakResponse(ref __state, ref __result);
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(bool __state, Exception? __exception) => ExitGuardAfterSynchronousFailure(OutbreakPowerPoisonResponseGuard, __state, __exception);
 	}
 #else
 	[HarmonyPatch(typeof(OutbreakPower), nameof(OutbreakPower.AfterPowerAmountChanged), typeof(PlayerChoiceContext), typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel))]
@@ -83,17 +75,23 @@ internal static partial class HextechCombatHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(bool __state, ref Task __result)
-		{
-			if (__state)
-			{
-				__result = OutbreakPowerPoisonResponseGuard.WrapEnteredTask(
-					__result,
-					FlushPendingInstantDeathDoomKillsIfSafe);
-			}
-		}
+		private static void Postfix(ref bool __state, ref Task __result) => WrapOutbreakResponse(ref __state, ref __result);
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(bool __state, Exception? __exception) => ExitGuardAfterSynchronousFailure(OutbreakPowerPoisonResponseGuard, __state, __exception);
 	}
 #endif
+
+	private static void WrapOutbreakResponse(ref bool entered, ref Task result)
+	{
+		if (!entered)
+		{
+			return;
+		}
+
+		result = OutbreakPowerPoisonResponseGuard.WrapEnteredTask(result, FlushPendingInstantDeathDoomKillsIfSafe);
+		entered = false;
+	}
 
 	private static bool IsSleightOfFleshPowerDebuffResponse(SleightOfFleshPower instance, PowerModel power, decimal amount, Creature? applier)
 	{
@@ -150,14 +148,18 @@ internal static partial class HextechCombatHooks
 		}
 
 		[HarmonyPostfix]
-		private static void Postfix(bool __state, ref Task __result)
+		private static void Postfix(ref bool __state, ref Task __result)
 		{
-			if (__state)
+			if (!__state)
 			{
-				__result = SleightOfFleshPowerDebuffResponseGuard.WrapEnteredTask(
-					__result,
-					FlushPendingInstantDeathDoomKillsIfSafe);
+				return;
 			}
+
+			__result = SleightOfFleshPowerDebuffResponseGuard.WrapEnteredTask(__result, FlushPendingInstantDeathDoomKillsIfSafe);
+			__state = false;
 		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(bool __state, Exception? __exception) => ExitGuardAfterSynchronousFailure(SleightOfFleshPowerDebuffResponseGuard, __state, __exception);
 	}
 }
