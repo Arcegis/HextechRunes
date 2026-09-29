@@ -28,20 +28,16 @@ internal sealed partial class HextechMayhemModifier
 
 		runState.Map = modifiedMap;
 		runState.RemoveStaleVisitedMapCoords(modifiedMap);
-		try
-		{
-			NMapScreen.Instance?.SetMap(modifiedMap, runState.Rng.Seed, clearDrawings: true);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"Failed to refresh map screen after map modifiers: {ex.Message}");
-		}
+		HextechPresentation.TryRun(
+			"Mayhem",
+			"Failed to refresh map screen after map modifiers",
+			() => NMapScreen.Instance?.SetMap(modifiedMap, runState.Rng.Seed, clearDrawings: true));
 		HextechLog.Info("Mayhem", $"Applied map modifiers to current act: reason={reason} act={runState.CurrentActIndex} stage={effectiveStageIndex} activeHexes={string.Join(",", GetActiveMonsterHexes())}");
 	}
 
 	private ActMap ApplyMapModifiers(ActMap map, IRunState runState, int actIndex)
 	{
-		var context = new HextechEnemyHexContext(this);
+		HextechEnemyHexContext context = new(this);
 		ActMap modifiedMap = map;
 		foreach (HextechEnemyHexEffect effect in HextechEnemyHexEffects.GetActive(this))
 		{

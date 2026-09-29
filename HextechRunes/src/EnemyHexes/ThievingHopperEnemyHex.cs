@@ -55,7 +55,6 @@ internal sealed class ThievingHopperEnemyHex : HextechEnemyHexEffect
 			return 3;
 		}
 
-
 		return card.Rarity switch
 		{
 			CardRarity.Uncommon => 0,

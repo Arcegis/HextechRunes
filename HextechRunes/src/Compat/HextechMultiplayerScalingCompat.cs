@@ -3,13 +3,17 @@ namespace HextechRunes;
 internal static class HextechMultiplayerScalingCompat
 {
 	private const string BetterMultiplayerScalingAssemblyName = "BetterMultiplayerScaling";
+
+	// 每只敌人进场都会问一次，按名缓存，不再每次扫全部程序集。
+	private static readonly HextechLoadedAssemblyLookup BetterMultiplayerScalingAssembly =
+		new(BetterMultiplayerScalingAssemblyName, StringComparison.OrdinalIgnoreCase);
+
 	private static bool _warnedClientExtraScaling;
 	private static bool _warnedHostOnlyScaling;
 
 	public static bool IsBetterMultiplayerScalingLoaded()
 	{
-		return AppDomain.CurrentDomain.GetAssemblies().Any(static assembly =>
-			string.Equals(assembly.GetName().Name, BetterMultiplayerScalingAssemblyName, StringComparison.OrdinalIgnoreCase));
+		return BetterMultiplayerScalingAssembly.Find() != null;
 	}
 
 	public static void RefreshHostScalingFlagForLocalHost(HextechMayhemModifier modifier)

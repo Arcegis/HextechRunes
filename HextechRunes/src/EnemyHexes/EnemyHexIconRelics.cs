@@ -6,188 +6,168 @@ namespace HextechRunes;
 // HextechRelicBase.GetResolvedIconPath 回退占位图，不会崩。
 // loc：relics.json 的 {stem}.title/.description/.flavor/.enemyDescription。
 
-/// <summary>升级：鬼祟珊瑚群</summary>
-public sealed class SkulkingColonyHex : HextechRelicBase
+/// <summary>敌方海克斯图标载体的共同基类：永不进玩家池。</summary>
+public abstract class EnemyHexIconRelicBase : HextechRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
+	public sealed override bool IsAvailableForPlayer(Player player) => false;
+}
+
+/// <summary>升级：鬼祟珊瑚群</summary>
+public sealed class SkulkingColonyHex : EnemyHexIconRelicBase
+{
 }
 
 /// <summary>升级：花园幽灵鳗</summary>
-public sealed class PhantasmalGardenerHex : HextechRelicBase
+public sealed class PhantasmalGardenerHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：女王</summary>
-public sealed class QueenHex : HextechRelicBase
+public sealed class QueenHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：乐加维林族母</summary>
-public sealed class LagavulinMatriarchHex : HextechRelicBase
+public sealed class LagavulinMatriarchHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：外骨骼虫</summary>
-public sealed class ExoskeletonHex : HextechRelicBase
+public sealed class ExoskeletonHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：实验体</summary>
-public sealed class TestSubjectHex : HextechRelicBase
+public sealed class TestSubjectHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：树叶史莱姆</summary>
-public sealed class LeafSlimeHex : HextechRelicBase
+public sealed class LeafSlimeHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：缩小甲虫</summary>
-public sealed class ShrinkerBeetleHex : HextechRelicBase
+public sealed class ShrinkerBeetleHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：墨宝</summary>
-public sealed class InkletHex : HextechRelicBase
+public sealed class InkletHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：异蛙寄生虫</summary>
-public sealed class PhrogParasiteHex : HextechRelicBase
+public sealed class PhrogParasiteHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：墨影幻灵</summary>
-public sealed class VantomHex : HextechRelicBase
+public sealed class VantomHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：永世沙漏</summary>
-public sealed class AeonglassHex : HextechRelicBase
+public sealed class AeonglassHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：失落之物</summary>
-public sealed class TheLostHex : HextechRelicBase
+public sealed class TheLostHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：遗忘之物</summary>
-public sealed class TheForgottenHex : HextechRelicBase
+public sealed class TheForgottenHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：史莱姆狂战士</summary>
-public sealed class SlimedBerserkerHex : HextechRelicBase
+public sealed class SlimedBerserkerHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：电球头</summary>
-public sealed class GlobeHeadHex : HextechRelicBase
+public sealed class GlobeHeadHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：异螨</summary>
-public sealed class MyteHex : HextechRelicBase
+public sealed class MyteHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：化石追踪者</summary>
-public sealed class FossilStalkerHex : HextechRelicBase
+public sealed class FossilStalkerHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：钨合金棍</summary>
-public sealed class TungstenRodHex : HextechRelicBase
+public sealed class TungstenRodHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>百炼成钢</summary>
-public sealed class HundredRefinementsHex : HextechRelicBase
+public sealed class HundredRefinementsHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：旧日雕像</summary>
-public sealed class AncientStatueHex : HextechRelicBase
+public sealed class AncientStatueHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：多尼斯异鸟</summary>
-public sealed class ByrdonisHex : HextechRelicBase
+public sealed class ByrdonisHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>我饥饿</summary>
-public sealed class HungryHex : HextechRelicBase
+public sealed class HungryHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>我细看</summary>
-public sealed class InspectHex : HextechRelicBase
+public sealed class InspectHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>我紧握</summary>
-public sealed class GripHex : HextechRelicBase
+public sealed class GripHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：活雾</summary>
-public sealed class LivingFogHex : HextechRelicBase
+public sealed class LivingFogHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：仪式兽</summary>
-public sealed class CeremonialBeastHex : HextechRelicBase
+public sealed class CeremonialBeastHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：灵魂异鱼</summary>
-public sealed class SoulFyshHex : HextechRelicBase
+public sealed class SoulFyshHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：偷窃草蜢</summary>
-public sealed class ThievingHopperHex : HextechRelicBase
+public sealed class ThievingHopperHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：幽灵船</summary>
-public sealed class HauntedShipHex : HextechRelicBase
+public sealed class HauntedShipHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
 }
 
 /// <summary>升级：腐化之心</summary>
-public sealed class CorruptHeartHex : HextechRelicBase
+public sealed class CorruptHeartHex : EnemyHexIconRelicBase
 {
-	public override bool IsAvailableForPlayer(Player player) => false;
+}
+
+/// <summary>MonsterHexKind.ArcanePunch 的图标载体</summary>
+public sealed class InfestedPrismHex : EnemyHexIconRelicBase
+{
 }

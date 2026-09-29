@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
@@ -61,12 +63,11 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 	internal override async Task AfterEnemyDamageReceivedAny(HextechEnemyHexContext context, Creature target, DamageResult result, Creature? dealer, CardModel? cardSource)
 	{
 		long commandId = HextechCombatHooks.CurrentActualDamageCommandId;
-		if (commandId == 0L || !TryTakePendingCompensation(commandId, target, out PendingCompensation? pending))
+		if (commandId == 0L || !TryTakePendingCompensation(commandId, target, out PendingCompensation? compensation))
 		{
 			return;
 		}
 
-		PendingCompensation compensation = pending!;
 		if (!CanApplyPendingCompensation(context, target, compensation))
 		{
 			return;
@@ -126,7 +127,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		_effectWithPendingCompensation = this;
 	}
 
-	private bool TryTakePendingCompensation(long commandId, Creature target, out PendingCompensation? pending)
+	private bool TryTakePendingCompensation(long commandId, Creature target, [NotNullWhen(true)] out PendingCompensation? pending)
 	{
 		for (int i = 0; i < _pendingCompensations.Count; i++)
 		{

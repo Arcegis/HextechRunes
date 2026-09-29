@@ -412,7 +412,13 @@ internal static partial class Program
 			new(nameof(JeweledGauntletReflectionTargetsFailClosedAsAGroup), JeweledGauntletReflectionTargetsFailClosedAsAGroup),
 			new(nameof(TestSubjectRespawnReflectionMissingFallsBackToZero), TestSubjectRespawnReflectionMissingFallsBackToZero),
 			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
-			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives)
+			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives),
+			new(nameof(ReviewCombatTrackingSnapshotKeepsLegacyJsonKeys), ReviewCombatTrackingSnapshotKeepsLegacyJsonKeys),
+			new(nameof(ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals), ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals),
+			new(nameof(ReviewEnemyHexHoverTipTablesCoverFormerIfChain), ReviewEnemyHexHoverTipTablesCoverFormerIfChain),
+			new(nameof(ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown), ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown),
+			new(nameof(ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat), ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat),
+			new(nameof(ReviewModelHooksLiveOnTheirOwnModels), ReviewModelHooksLiveOnTheirOwnModels)
 		];
 
 		if (args.Length > 0)

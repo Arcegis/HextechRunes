@@ -295,9 +295,10 @@ def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
             continue
 
         text = read(expected_path)
-        class_pattern = rf"\binternal\s+sealed\s+class\s+{expected_class}\s*:\s*HextechEnemyHexEffect\b"
+        # 同类效果可共用 src/EnemyHexes/*EnemyHexBase.cs 里的抽象基类（它们本身继承 HextechEnemyHexEffect）。
+        class_pattern = rf"\binternal\s+sealed\s+class\s+{expected_class}\s*:\s*(?:HextechEnemyHexEffect|\w+EnemyHexBase)\b"
         if not re.search(class_pattern, text):
-            fail(errors, f"{expected_path.relative_to(REPO_ROOT)} should declare {expected_class} : HextechEnemyHexEffect")
+            fail(errors, f"{expected_path.relative_to(REPO_ROOT)} should declare {expected_class} : HextechEnemyHexEffect (or an *EnemyHexBase)")
 
         kind_pattern = rf"\bKind\s*=>\s*MonsterHexKind\.{kind}\b"
         if not re.search(kind_pattern, text):
@@ -309,7 +310,7 @@ def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
 
 def validate_combat_tracking_state(errors: list[str]) -> None:
     state_text = read(source_file_named("HextechMayhemCombatTrackingState.cs"))
-    snapshot_text = read(source_file_named("HextechMayhemCombatTrackingSnapshot.cs"))
+    snapshot_text = read(source_file_named("CombatTrackingSnapshot.cs"))
     state_fields = {
         name: field_type
         for field_type, name in re.findall(

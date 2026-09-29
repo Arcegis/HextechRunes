@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 internal static class HextechCombatProcTracker
@@ -81,6 +83,43 @@ internal static class HextechCombatProcTracker
 		int current = tracking.GlobalProcsThisCombat.GetValueOrDefault(procKey, 0);
 		tracking.GlobalProcsThisCombat[procKey] = current + 1;
 		return current;
+	}
+
+	// 非遗物模型（Power）的「持有者每回合 1 次」：联机战斗中记在 Modifier 的共享账上（两端一致、随战斗快照恢复），
+	// 否则用调用方自己的本地标记（由调用方在持有者回合开始时清）。与 HextechRelicBase.TryConsumeTurnProc 同口径。
+	public static bool HasOwnerTurnProcTriggered(Player? owner, string procKey, bool localTriggered)
+	{
+		return TryGetNetworkLedger(owner, out HextechMayhemModifier? modifier)
+			? modifier.GetPlayerRuneProcsThisTurn(owner, procKey) > 0
+			: localTriggered;
+	}
+
+	public static bool TryConsumeOwnerTurnProc(Player? owner, string procKey, ref bool localTriggered)
+	{
+		if (TryGetNetworkLedger(owner, out HextechMayhemModifier? modifier))
+		{
+			return modifier.TryConsumePlayerRuneProcThisTurn(owner, procKey, 1);
+		}
+
+		if (localTriggered)
+		{
+			return false;
+		}
+
+		localTriggered = true;
+		return true;
+	}
+
+	private static bool TryGetNetworkLedger(
+		[NotNullWhen(true)] Player? owner,
+		[NotNullWhen(true)] out HextechMayhemModifier? modifier)
+	{
+		modifier = owner != null
+			&& HextechPlayerContextHelper.IsNetworkMultiplayerRun()
+			&& CombatManager.Instance?.IsInProgress == true
+				? HextechMayhemModifier.FindIn(owner.RunState)
+				: null;
+		return modifier != null;
 	}
 
 	public static bool TrackPlayerAttackCardPlayedThisTurn(HextechMayhemCombatTrackingState tracking, CardPlay cardPlay)

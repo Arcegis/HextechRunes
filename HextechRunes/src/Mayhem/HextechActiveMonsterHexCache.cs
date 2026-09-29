@@ -39,6 +39,6 @@ internal sealed class HextechActiveMonsterHexCache
 		MonsterHexKind hex)
 	{
 		_ = Get(actState, actIndex, shouldRecoverMonsterHexInCombat);
-		return _activeHexSet!.Contains(hex);
+		return _activeHexSet?.Contains(hex) == true;
 	}
 }

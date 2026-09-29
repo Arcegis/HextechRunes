@@ -48,7 +48,13 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 
 	private static List<CardModel> ChooseCards(HextechEnemyHexContext context, Player player, int count)
 	{
-		List<CardModel> candidates = player.PlayerCombatState!.AllCards
+		// 调用方已跳过没有 PlayerCombatState 的玩家。
+		if (player.PlayerCombatState is not { } playerCombatState)
+		{
+			return [];
+		}
+
+		List<CardModel> candidates = playerCombatState.AllCards
 			.Where(card => card.Owner == player && CardTransformUpgradeHelper.CanTransformToRandomCardInCombatPiles(card))
 			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
 			.ToList();

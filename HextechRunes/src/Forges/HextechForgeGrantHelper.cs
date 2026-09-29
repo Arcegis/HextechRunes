@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace HextechRunes;

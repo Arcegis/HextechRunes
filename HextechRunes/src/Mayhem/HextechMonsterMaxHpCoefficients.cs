@@ -291,13 +291,9 @@ internal static class HextechMonsterMaxHpCoefficients
 				+ tankStacks * TankEngineEnemyHex.BodyScalePerStack
 				- shrinkStacks * ShrinkEngineEnemyHex.BodyScalePerStack
 				- giantSlayerShrink);
-		try
-		{
-			NCombatRoom.Instance?.GetCreatureNode(creature)?.SetDefaultScaleTo(finalScale, 0f);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"Enemy scale visual failed: {ex.Message}");
-		}
+		HextechPresentation.TryRun(
+			"Mayhem",
+			"Enemy scale visual failed",
+			() => NCombatRoom.Instance?.GetCreatureNode(creature)?.SetDefaultScaleTo(finalScale, 0f));
 	}
 }

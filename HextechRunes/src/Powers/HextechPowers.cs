@@ -134,7 +134,7 @@ public sealed class HextechPowerShieldTemporaryStrengthPower : TemporaryStrength
 	protected override bool IsVisibleInternal => false;
 }
 
-public sealed class HextechAttackReplayPower : PowerModel
+public sealed class HextechAttackReplayPower : HextechPowerBase
 {
 	public override PowerType Type => PowerType.Buff;
 
@@ -158,14 +158,7 @@ public sealed class HextechAttackReplayPower : PowerModel
 		}
 
 		await PowerCmd.Remove(this);
-		try
-		{
-			Flash();
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("AttackReplay", $"Flash failed: {ex.Message}");
-		}
+		Flash();
 	}
 
 	private bool ShouldReplay(CardModel card)

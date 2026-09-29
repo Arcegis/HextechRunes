@@ -154,7 +154,7 @@ internal static class HextechMapLengthReducer
 		{
 			_rowToRemove = rowToRemove;
 			Grid = new MapPoint[original.GetColumnCount(), original.GetRowCount() - 1];
-			var cloneLookup = new Dictionary<MapCoord, MapPoint>();
+			Dictionary<MapCoord, MapPoint> cloneLookup = new();
 
 			foreach (MapPoint originalPoint in original.GetAllMapPoints())
 			{
@@ -244,7 +244,7 @@ internal static class HextechMapLengthReducer
 
 		private static MapPoint ClonePoint(MapPoint original, int row)
 		{
-			var clone = new MapPoint(original.coord.col, row)
+			MapPoint clone = new(original.coord.col, row)
 			{
 				PointType = original.PointType,
 				CanBeModified = original.CanBeModified

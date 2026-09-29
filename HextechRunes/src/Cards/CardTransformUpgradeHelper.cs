@@ -42,15 +42,31 @@ internal static class CardTransformUpgradeHelper
 		int ordinal,
 		params string?[] saltParts)
 	{
+		return new CardTransformation(original, CreateStableReplacement(original, replacementOptions, runState, source, ordinal, saltParts));
+	}
+
+	// 被变化的牌必然在牌组或战斗中、有持有者；缺失即调用方用错，直接报错。
+	private static CardModel CreateStableReplacement(
+		CardModel original,
+		IEnumerable<CardModel> replacementOptions,
+		RunState runState,
+		string source,
+		int ordinal,
+		string?[] saltParts)
+	{
 		CardModel[] filteredOptions = GetStableTransformationOptions(original, replacementOptions, original.CombatState != null);
 		CardModel canonicalReplacement = HextechStableRandom.Pick(
 			filteredOptions,
 			runState,
 			HextechStableRandom.CardKey,
 			BuildStableTransformSalt(original, source, ordinal, saltParts));
-		CardModel replacement = original.CardScope!.CreateCard(canonicalReplacement, original.Owner!);
+		ICardScope cardScope = original.CardScope
+			?? throw new InvalidOperationException($"Cannot transform {original.Id}: card has no scope.");
+		Player owner = original.Owner
+			?? throw new InvalidOperationException($"Cannot transform {original.Id}: card has no owner.");
+		CardModel replacement = cardScope.CreateCard(canonicalReplacement, owner);
 		PreserveUpgradeLevel(original, replacement);
-		return new CardTransformation(original, replacement);
+		return replacement;
 	}
 
 	public static Task<CardPileAddResult?> TransformToStableRandom(
@@ -61,14 +77,14 @@ internal static class CardTransformUpgradeHelper
 		CardPreviewStyle style = CardPreviewStyle.HorizontalLayout,
 		params string?[] saltParts)
 	{
-		CardTransformation transformation = CreateStableOptionTransformation(
+		CardModel replacement = CreateStableReplacement(
 			original,
 			CardFactory.GetDefaultTransformationOptions(original, original.CombatState != null),
 			runState,
 			source,
 			ordinal,
 			saltParts);
-		return CardCmd.Transform(transformation.Original, transformation.Replacement!, style);
+		return CardCmd.Transform(original, replacement, style);
 	}
 
 	public static CardTransformation CreateFixedReplacementTransformation(CardModel original, CardModel replacement)
@@ -126,7 +142,9 @@ internal static class CardTransformUpgradeHelper
 		}
 
 		source = source.Where(card => card.Id != original.Id);
-		CardModel[] options = FilterForPlayerCount(original.Owner!.RunState, source)
+		Player owner = original.Owner
+			?? throw new InvalidOperationException($"Cannot transform {original.Id}: card has no owner.");
+		CardModel[] options = FilterForPlayerCount(owner.RunState, source)
 			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
 			.ToArray();
 		if (options.Length == 0)

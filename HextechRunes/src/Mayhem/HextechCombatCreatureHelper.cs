@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Hooks;
+using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 
 namespace HextechRunes;
@@ -69,7 +70,7 @@ internal static class HextechCombatCreatureHelper
 		combatState.RemoveCreature(enemy);
 		try
 		{
-			var node = NCombatRoom.Instance?.GetCreatureNode(enemy);
+			NCreature? node = NCombatRoom.Instance?.GetCreatureNode(enemy);
 			if (node != null)
 			{
 				NCombatRoom.Instance?.RemoveCreatureNode(node);
