@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class CuttingEdgeAlchemistRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class CuttingEdgeAlchemistRune : HextechSharedCombatVictoryRuneBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -8,17 +8,7 @@ public sealed class CuttingEdgeAlchemistRune : HextechRelicBase, IHextechSharedC
 		new DynamicVar("UncommonPotionCount", 1m)
 	];
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

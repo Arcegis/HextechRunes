@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class DiceManiacRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class DiceManiacRune : HextechSharedCombatVictoryRuneBase
 {
 	private const int SilverForgeWeight = 65;
 	private const int GoldForgeWeight = 25;
@@ -28,17 +28,7 @@ public sealed class DiceManiacRune : HextechRelicBase, IHextechSharedCombatVicto
 		new DynamicVar("DropChanceStep", DropChanceStep)
 	];
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

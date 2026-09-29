@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class PiggyBankRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class PiggyBankRune : HextechSharedCombatVictoryRuneBase
 {
 	// 仅保留旧存档尚未领取的战后奖励；新的触发直接发放金币。
 	private int _counter;
@@ -74,17 +74,7 @@ public sealed class PiggyBankRune : HextechRelicBase, IHextechSharedCombatVictor
 		}
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || _counter <= 0)
 		{

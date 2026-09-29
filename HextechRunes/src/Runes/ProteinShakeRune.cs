@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class ProteinShakeRune : HextechRelicBase
+public sealed class ProteinShakeRune : HextechRelicBase, IHextechHealingMultiplierProvider
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -15,5 +15,10 @@ public sealed class ProteinShakeRune : HextechRelicBase
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
 		return target == Owner?.Creature ? SustainMultiplier : 1m;
+	}
+
+	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
+	{
+		return IsFirstOwnedInstance(player) ? SustainMultiplier : 1m;
 	}
 }

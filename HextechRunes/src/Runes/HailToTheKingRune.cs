@@ -11,6 +11,7 @@ public sealed class HailToTheKingRune : InitialForgeGrantRune, IHextechSharedCom
 
 	protected override int InitialForgeCount => DynamicVars["InitialForgeCount"].IntValue;
 
+	// 已继承 InitialForgeGrantRune，不能用 HextechSharedCombatVictoryRuneBase，单机入口按同一写法手写。
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
 		if (IsNetworkMultiplayer())

@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class InfiniteLoopRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class InfiniteLoopRune : HextechSharedCombatVictoryRuneBase
 {
 	private int _stacks;
 
@@ -35,17 +35,7 @@ public sealed class InfiniteLoopRune : HextechRelicBase, IHextechSharedCombatVic
 		return amount + DynamicVars.Energy.BaseValue + FloorToInt(_stacks / DynamicVars["StacksPerEnergy"].BaseValue);
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner != null && !Owner.Creature.IsDead)
 		{

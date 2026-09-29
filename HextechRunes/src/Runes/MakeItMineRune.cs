@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class MakeItMineRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class MakeItMineRune : HextechSharedCombatVictoryRuneBase
 {
 	private int _stacks;
 
@@ -29,17 +29,7 @@ public sealed class MakeItMineRune : HextechRelicBase, IHextechSharedCombatVicto
 		return IsNecrobinderPlayer(player);
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

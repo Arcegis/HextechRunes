@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class SacrificeRune : HextechRelicBase
+public sealed class SacrificeRune : HextechRelicBase, IHextechHealingMultiplierProvider
 {
 	private const decimal SustainMultiplierValue = 1.1m;
 	private const decimal SustainBonusPercentValue = (SustainMultiplierValue - 1m) * 100m;
@@ -67,4 +67,8 @@ public sealed class SacrificeRune : HextechRelicBase
 		return target == Owner?.Creature ? SustainMultiplier : 1m;
 	}
 
+	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
+	{
+		return IsFirstOwnedInstance(player) ? SustainMultiplier : 1m;
+	}
 }

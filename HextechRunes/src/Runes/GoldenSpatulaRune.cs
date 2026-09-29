@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVictoryRune, IHextechMaxHpScalingRune
+public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHextechMaxHpScalingRune, IHextechHealingMultiplierProvider
 {
 	private int _baseMaxHp;
 	private int _stacks;
@@ -53,17 +53,7 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public async Task ApplySharedCombatVictory(CombatRoom room)
+	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{
@@ -85,6 +75,11 @@ public sealed class GoldenSpatulaRune : HextechRelicBase, IHextechSharedCombatVi
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
 		return target == Owner?.Creature ? StackMultiplier : 1m;
+	}
+
+	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
+	{
+		return IsFirstOwnedInstance(player) ? SustainMultiplier : 1m;
 	}
 
 	private decimal StackMultiplier

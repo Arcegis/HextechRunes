@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVictoryRune, IHextechMaxHpScalingRune
+public sealed class TankEngineRune : HextechSharedCombatVictoryRuneBase, IHextechMaxHpScalingRune
 {
 	private const decimal HpGainPercentValue = 0.06m;
 	private const decimal MaxHpGainDisplayPercentValue = HpGainPercentValue * 100m;
@@ -64,17 +64,7 @@ public sealed class TankEngineRune : HextechRelicBase, IHextechSharedCombatVicto
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return;
-		}
-
-		await ApplySharedCombatVictory(room);
-	}
-
-	public async Task ApplySharedCombatVictory(CombatRoom room)
+	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

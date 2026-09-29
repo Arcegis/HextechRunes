@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class RedEnvelopeRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class RedEnvelopeRune : HextechSharedCombatVictoryRuneBase
 {
 	internal const int BaseForgeChance = 25;
 	internal const int ForgeChanceStep = 5;
@@ -23,17 +23,7 @@ public sealed class RedEnvelopeRune : HextechRelicBase, IHextechSharedCombatVict
 
 	internal int CurrentForgeChance => HextechDynamicDropChance.CurrentChance(_forgeChanceOffset, BaseForgeChance);
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

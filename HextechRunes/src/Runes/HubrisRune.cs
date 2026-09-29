@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class HubrisRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class HubrisRune : HextechSharedCombatVictoryRuneBase
 {
 	private int _stacks;
 
@@ -26,17 +26,7 @@ public sealed class HubrisRune : HextechRelicBase, IHextechSharedCombatVictoryRu
 		new CardsVar(1)
 	];
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner != null && !Owner.Creature.IsDead)
 		{

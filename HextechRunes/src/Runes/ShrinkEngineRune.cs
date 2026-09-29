@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVictoryRune
+public sealed class ShrinkEngineRune : HextechSharedCombatVictoryRuneBase
 {
 	private int _stacks;
 
@@ -33,17 +33,7 @@ public sealed class ShrinkEngineRune : HextechRelicBase, IHextechSharedCombatVic
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatVictory(CombatRoom room)
-	{
-		if (IsNetworkMultiplayer())
-		{
-			return Task.CompletedTask;
-		}
-
-		return ApplySharedCombatVictory(room);
-	}
-
-	public Task ApplySharedCombatVictory(CombatRoom room)
+	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
 		if (Owner == null || Owner.Creature.IsDead)
 		{

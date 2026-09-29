@@ -1,6 +1,6 @@
 namespace HextechRunes;
 
-public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScalingRune
+public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScalingRune, IHextechHealingMultiplierProvider
 {
 	private int _baseMaxHp;
 	private int _stacks;
@@ -84,6 +84,11 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 		Flash();
 		await HextechMaxHpScaling.ReapplyScale(Owner);
 		Grow();
+	}
+
+	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
+	{
+		return IsFirstOwnedInstance(player) ? SustainMultiplier : 1m;
 	}
 
 	private void Grow()
