@@ -32,7 +32,7 @@ public sealed class MarkovBabbleRune : HextechRelicBase
 		Flash();
 		for (int i = 0; i < emptySlots; i++)
 		{
-			OrbModel orb = HextechStableRandom.CreateOrb(
+			OrbModel orb = HextechStableCombatSpawns.CreateOrb(
 				(RunState)Owner.RunState,
 				Owner,
 				"markov-babble-turn-start",

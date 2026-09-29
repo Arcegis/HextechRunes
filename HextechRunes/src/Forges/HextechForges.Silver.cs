@@ -433,7 +433,7 @@ public sealed class SilverOrbForge : HextechForgeBase
 		int orbCount = Math.Max(0, FloorToInt(Stacked(DynamicVars["OrbCount"].BaseValue)));
 		for (int i = 0; i < orbCount; i++)
 		{
-			OrbModel orb = HextechStableRandom.CreateOrb((RunState)Owner.RunState, Owner, "silver-orb-forge", i, combatState.RoundNumber);
+			OrbModel orb = HextechStableCombatSpawns.CreateOrb((RunState)Owner.RunState, Owner, "silver-orb-forge", i, combatState.RoundNumber);
 			await OrbCmd.Channel(new BlockingPlayerChoiceContext(), orb, Owner);
 		}
 	}

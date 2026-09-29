@@ -22,7 +22,7 @@ public sealed class EmergenceRune : HextechRelicBase
 		Flash();
 		for (int i = 0; i < DynamicVars["OrbCount"].IntValue; i++)
 		{
-			OrbModel orb = HextechStableRandom.CreateOrb(
+			OrbModel orb = HextechStableCombatSpawns.CreateOrb(
 				(RunState)Owner.RunState,
 				Owner,
 				"emergence-turn-start-orb",

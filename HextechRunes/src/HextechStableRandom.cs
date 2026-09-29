@@ -87,44 +87,6 @@ internal static class HextechStableRandom
 		return selected;
 	}
 
-	// CreateMinionCard/CreateOrb 是个别符文的内容逻辑,本应放在各自内容文件里;调用方不在本工具类维护范围内,
-	// 暂留于此,只做“稳定下标 → 固定候选表”的映射,不引入新的随机来源。
-	public static CardModel CreateMinionCard(HextechCombatState combatState, Player owner, string source, int ordinal)
-	{
-		int index = Index((RunState)owner.RunState, 3,
-			source,
-			PlayerKey(owner),
-			"round",
-			combatState.RoundNumber.ToString(),
-			"ordinal",
-			ordinal.ToString());
-		return index switch
-		{
-			0 => combatState.CreateCard<MinionStrike>(owner),
-			1 => combatState.CreateCard<MinionDiveBomb>(owner),
-			_ => combatState.CreateCard<MinionSacrifice>(owner)
-		};
-	}
-
-	public static OrbModel CreateOrb(RunState runState, Player owner, string source, int ordinal, int roundNumber)
-	{
-		int index = Index(runState, 5,
-			source,
-			PlayerKey(owner),
-			"round",
-			roundNumber.ToString(),
-			"ordinal",
-			ordinal.ToString());
-		return index switch
-		{
-			0 => ModelDb.Orb<LightningOrb>().ToMutable(),
-			1 => ModelDb.Orb<FrostOrb>().ToMutable(),
-			2 => ModelDb.Orb<DarkOrb>().ToMutable(),
-			3 => ModelDb.Orb<PlasmaOrb>().ToMutable(),
-			_ => ModelDb.Orb<GlassOrb>().ToMutable()
-		};
-	}
-
 	public static string PlayerKey(Player player)
 	{
 		RunState runState = (RunState)player.RunState;

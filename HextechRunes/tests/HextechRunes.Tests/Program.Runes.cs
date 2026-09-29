@@ -767,7 +767,7 @@ internal static partial class Program
 			|| m.DeclaringType == typeof(MegaCrit.Sts2.Core.Commands.OrbCmd) && m.Name == "Passive"), "native passive entry preserves trigger modifiers");
 		MethodInfo[] forge = Calls(typeof(KingdomArmyRune), nameof(KingdomArmyRune.AfterForge));
 		Equal(1, forge.Count(m => m.Name == "ConsumeCombatProcOrdinal"), "one synchronized ordinal per forge event");
-		Equal(1, forge.Count(m => m.Name == nameof(HextechStableRandom.CreateMinionCard)), "one minion per forge event");
+		Equal(1, forge.Count(m => m.Name == nameof(HextechStableCombatSpawns.CreateMinionCard)), "one minion per forge event");
 		Expect(forge.Any(m => m.Name == nameof(HextechCardGeneration.AddGeneratedCardToCombat)), "generated minions use normal hand and overflow handling");
 	}
 

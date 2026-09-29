@@ -6,7 +6,7 @@ src/EnemyHexes/JinlianBoxEnemyHex.cs | JinlianBoxEnemyHex
 src/EnemyHexes/MysteryEnemyHex.cs | MysteryEnemyHex
 src/Forges/HextechForgeGrantHelper.cs | HextechForgeGrantHelper
 src/Helpers/HextechRuneGrantHelper.cs | HextechRuneGrantHelper
-src/HextechStableRandom.cs | HextechStableRandom
+src/Helpers/HextechStableCombatSpawns.cs | HextechStableCombatSpawns
 src/Hooks/Combat/HextechCombatHooks.PowerCompat.cs | EntropyTurnStartPatch
 src/Hooks/Combat/HextechCombatHooks.PowerCompat.cs | HextechCombatHooks
 src/Hooks/Combat/HextechCombatHooks.PowerCompat.cs | StormAfterCardPlayedPatch

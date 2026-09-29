@@ -37,7 +37,7 @@ public sealed class HappyAccidentRune : HextechRelicBase
 		for (int i = 0; i < orbCount; i++)
 		{
 			int orbOrdinal = ConsumeCombatProcOrdinal(nameof(HappyAccidentRune), ref _localStatusOrbOrdinal);
-			OrbModel orb = HextechStableRandom.CreateOrb(
+			OrbModel orb = HextechStableCombatSpawns.CreateOrb(
 				(RunState)Owner.RunState,
 				Owner,
 				"happy-accident-exhaust-status-orb",
