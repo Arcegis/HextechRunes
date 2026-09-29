@@ -2,45 +2,28 @@ namespace HextechRunes;
 
 public sealed class TapDanceRune : HextechRelicBase
 {
-	private int _pendingDraw;
+	private const decimal CardsDrawnPerAttack = 1m;
 
+	// 旧版本存档兼容占位：原为待抽牌计数，已不再使用；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedPendingDraw
 	{
-		get => _pendingDraw;
-		set
-		{
-			_pendingDraw = Math.Max(0, value);
-			InvokeDisplayAmountChanged();
-		}
+		get => 0;
+		set { }
 	}
 
 	public override bool ShowCounter => false;
 
 	public override int DisplayAmount => 0;
 
-	public override Task BeforeCombatStart()
-	{
-		_pendingDraw = 0;
-		InvokeDisplayAmountChanged();
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_pendingDraw = 0;
-		InvokeDisplayAmountChanged();
-		return Task.CompletedTask;
-	}
-
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!IsOwnedAttack(cardPlay.Card))
+		if (Owner == null || !IsOwnedAttack(cardPlay.Card))
 		{
 			return Task.CompletedTask;
 		}
 
 		Flash();
-		return CardPileCmd.Draw(context, 1m, Owner!, fromHandDraw: false);
+		return CardPileCmd.Draw(context, CardsDrawnPerAttack, Owner, fromHandDraw: false);
 	}
 }

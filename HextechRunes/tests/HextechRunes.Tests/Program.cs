@@ -225,7 +225,7 @@ internal static partial class Program
 			new(nameof(StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot), StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot),
 			new(nameof(StableRandomSequentialFloorsAvoidExcessClustering), StableRandomSequentialFloorsAvoidExcessClustering),
 			new(nameof(StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle), StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle),
-			new(nameof(ColorDiscoveryCandidateOrderIsPermutationInvariant), ColorDiscoveryCandidateOrderIsPermutationInvariant),
+			new(nameof(ColorDiscoveryCandidatesUseSharedStableCombatPool), ColorDiscoveryCandidatesUseSharedStableCombatPool),
 			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
@@ -412,7 +412,9 @@ internal static partial class Program
 			new(nameof(JeweledGauntletReflectionTargetsFailClosedAsAGroup), JeweledGauntletReflectionTargetsFailClosedAsAGroup),
 			new(nameof(TestSubjectRespawnReflectionMissingFallsBackToZero), TestSubjectRespawnReflectionMissingFallsBackToZero),
 			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
-			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives)
+			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives),
+			new(nameof(RuneReflectionTargetsResolveOnCurrentGameVersion), RuneReflectionTargetsResolveOnCurrentGameVersion),
+			new(nameof(RetiredRuneSavedPropertiesStayInertPlaceholders), RetiredRuneSavedPropertiesStayInertPlaceholders)
 		];
 
 		if (args.Length > 0)
