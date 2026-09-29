@@ -2,9 +2,9 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	internal int StageCount => _actState.ActCount;
+	internal int StageCount => ActState.ActCount;
 
-	public int[] EnemyHexCountsByAct => _enemyHexCounts.Snapshot;
+	public int[] EnemyHexCountsByAct => EnemyHexCounts.Snapshot;
 
 	public bool IsActResolved(int actIndex)
 	{
@@ -13,12 +13,12 @@ internal sealed partial class HextechMayhemModifier
 
 	internal bool IsStageResolved(int stageIndex)
 	{
-		return _actState.IsResolved(stageIndex);
+		return ActState.IsResolved(stageIndex);
 	}
 
 	internal void SetStageResolved(int stageIndex, bool resolved)
 	{
-		_actState.SetResolved(stageIndex, resolved);
+		ActState.SetResolved(stageIndex, resolved);
 	}
 
 	internal int GetSelectionIndexForAct(int actIndex)
@@ -41,8 +41,8 @@ internal sealed partial class HextechMayhemModifier
 		string scopedKey = $"{_runContext.ActSelectionIndexOffset}:{stageKey}";
 		int minimumIndex = Math.Max(
 			GetSelectionIndexForAct(RunState.Acts.Count),
-			_actState.ActCount);
-		int stageIndex = _actState.GetOrCreateExtraStageIndex(scopedKey, minimumIndex);
+			ActState.ActCount);
+		int stageIndex = ActState.GetOrCreateExtraStageIndex(scopedKey, minimumIndex);
 		_runContext.ActiveExtraStageIndex = stageIndex;
 		return stageIndex;
 	}
@@ -60,15 +60,15 @@ internal sealed partial class HextechMayhemModifier
 			: stageIndex;
 		HextechMayhemActRecoveryResult recovery = HextechMayhemActRecovery.RecoverResolvedActs(
 			RunState,
-			_actState,
-			_choiceHistory,
-			_hexCountRecoveryBaseline,
+			ActState,
+			ChoiceHistory,
+			HexCountRecoveryBaseline,
 			PlayerHexCountsByAct,
 			maxRecoverActIndex,
 			stageIndex);
 		if (recovery.Changed)
 		{
-			HextechLog.Info("Mayhem", $"Recovered resolved stages from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} currentStage={stageIndex} recoverThrough={recovery.RecoverThroughAct} telemetryThrough={recovery.TelemetryRecoverThroughAct} countThrough={recovery.CountRecoverThroughAct} baseline={_hexCountRecoveryBaseline} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
+			HextechLog.Info("Mayhem", $"Recovered resolved stages from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} currentStage={stageIndex} recoverThrough={recovery.RecoverThroughAct} telemetryThrough={recovery.TelemetryRecoverThroughAct} countThrough={recovery.CountRecoverThroughAct} baseline={HexCountRecoveryBaseline} {ActState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
 		return recovery.Changed;
@@ -76,47 +76,47 @@ internal sealed partial class HextechMayhemModifier
 
 	public string DescribeActState()
 	{
-		return $"offset={_runContext.ActSelectionIndexOffset} activeExtra={_runContext.ActiveExtraStageIndex?.ToString() ?? "none"} {_actState.Describe()}";
+		return $"offset={_runContext.ActSelectionIndexOffset} activeExtra={_runContext.ActiveExtraStageIndex?.ToString() ?? "none"} {ActState.Describe()}";
 	}
 
 	public HextechRarityTier? GetRarityForAct(int actIndex)
 	{
-		return _actState.GetRarity(actIndex);
+		return ActState.GetRarity(actIndex);
 	}
 
 	public void SetRarityForAct(int actIndex, HextechRarityTier rarity)
 	{
-		_actState.SetRarity(actIndex, rarity);
+		ActState.SetRarity(actIndex, rarity);
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetMonsterHexesForAct(int actIndex)
 	{
-		return _actState.GetMonsterHexes(actIndex);
+		return ActState.GetMonsterHexes(actIndex);
 	}
 
 	public void SetMonsterHexesForAct(int actIndex, IEnumerable<MonsterHexKind> hexes)
 	{
-		_actState.SetMonsterHexes(actIndex, hexes);
+		ActState.SetMonsterHexes(actIndex, hexes);
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexes()
 	{
-		return _activeMonsterHexCache.Get(_actState, GetCurrentStageIndex(), ShouldRecoverMonsterHexInCombat);
+		return ActiveMonsterHexCache.Get(ActState, GetCurrentStageIndex(), ShouldRecoverMonsterHexInCombat);
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetActiveMonsterHexesBeforeAct(int actIndex)
 	{
-		return _actState.GetActiveMonsterHexesBeforeAct(actIndex);
+		return ActState.GetActiveMonsterHexesBeforeAct(actIndex);
 	}
 
 	public IReadOnlyList<MonsterHexKind> GetKnownMonsterHexes()
 	{
-		return _actState.GetKnownMonsterHexes();
+		return ActState.GetKnownMonsterHexes();
 	}
 
 	internal IReadOnlyList<IReadOnlyList<MonsterHexKind>> GetMonsterHexRows()
 	{
-		return _actState.GetMonsterHexRows();
+		return ActState.GetMonsterHexRows();
 	}
 
 	private bool ShouldRecoverMonsterHexInCombat(int actIndex)
@@ -137,7 +137,7 @@ internal sealed partial class HextechMayhemModifier
 	{
 		HextechEnemyHexEffects.ResetAllRunScopedState();
 		_runContext.ResetForEndlessLoop(HextechMayhemActRecovery.GetMinimumPlayerHexCount(RunState));
-		HextechLog.Info("Mayhem", $"Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} enemyCounts={string.Join(",", EnemyHexCountsByAct)} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
+		HextechLog.Info("Mayhem", $"Reset for endless loop: reason={reason} baseline={HexCountRecoveryBaseline} strengthTierFloor={MonsterHexStrengthTierFloor} enemyCounts={string.Join(",", EnemyHexCountsByAct)} counts={DescribePlayerHexCounts()} {ActState.Describe()}");
 		HextechRunLifecycleHooks.HandleEndlessLoopReset(this, reason);
 	}
 
@@ -149,17 +149,17 @@ internal sealed partial class HextechMayhemModifier
 
 	public bool DebugAddMonsterHex(MonsterHexKind hex)
 	{
-		return _actState.AddCarriedMonsterHex(hex);
+		return ActState.AddCarriedMonsterHex(hex);
 	}
 
 	public bool DebugRemoveMonsterHex(MonsterHexKind hex)
 	{
-		return _actState.RemoveMonsterHexEverywhere(hex);
+		return ActState.RemoveMonsterHexEverywhere(hex);
 	}
 
 	public bool HasActiveMonsterHex(MonsterHexKind hex)
 	{
-		return _activeMonsterHexCache.Contains(_actState, GetCurrentStageIndex(), ShouldRecoverMonsterHexInCombat, hex);
+		return ActiveMonsterHexCache.Contains(ActState, GetCurrentStageIndex(), ShouldRecoverMonsterHexInCombat, hex);
 	}
 
 	public int GetMonsterHexStrengthTier(MonsterHexKind hex)
@@ -172,29 +172,29 @@ internal sealed partial class HextechMayhemModifier
 		_ = hex;
 		// Enemy hex strength tracks the active act, even for hexes obtained in earlier acts.
 		int actStrengthTier = Math.Clamp(actIndex + 1, 1, 3);
-		return Math.Max(actStrengthTier, _monsterHexStrengthTierFloor);
+		return Math.Max(actStrengthTier, MonsterHexStrengthTierFloor);
 	}
 
 	public int GetEnemyHexCountForAct(int actIndex)
 	{
-		return _enemyHexCounts.GetForAct(actIndex, IsEndlessLoopActive);
+		return EnemyHexCounts.GetForAct(actIndex, IsEndlessLoopActive);
 	}
 
 	public void SetEnemyHexCountsByActSnapshot(IReadOnlyList<int> counts, string reason)
 	{
-		_enemyHexCounts.Set(counts);
+		EnemyHexCounts.Set(counts);
 		HextechLog.Info("Mayhem", $"EnemyHexCountsByAct snapshot set: reason={reason} counts={string.Join(",", EnemyHexCountsByAct)}");
 	}
 
 	internal bool IncrementEnemyTezcatarasMercyCombatCounter(int interval)
 	{
-		_enemyTezcatarasMercyCombatCounter++;
-		if (_enemyTezcatarasMercyCombatCounter < interval)
+		EnemyTezcatarasMercyCombatCounter++;
+		if (EnemyTezcatarasMercyCombatCounter < interval)
 		{
 			return false;
 		}
 
-		_enemyTezcatarasMercyCombatCounter = 0;
+		EnemyTezcatarasMercyCombatCounter = 0;
 		return true;
 	}
 }

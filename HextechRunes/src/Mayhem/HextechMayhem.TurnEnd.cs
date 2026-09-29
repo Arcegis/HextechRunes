@@ -14,7 +14,7 @@ internal sealed partial class HextechMayhemModifier
 
 		if (side == CombatSide.Player)
 		{
-			_combatTracking.PreparePlayerSideTurnEnd();
+			CombatTracking.PreparePlayerSideTurnEnd();
 			if (combatRoom != null)
 			{
 				RefreshPlayerAttackCostDoublingPreviews(HextechCombatCreatureHelper.GetAlivePlayerSideCreatures(combatRoom.CombatState));

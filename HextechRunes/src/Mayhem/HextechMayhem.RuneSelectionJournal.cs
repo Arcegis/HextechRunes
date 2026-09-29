@@ -50,7 +50,7 @@ internal sealed partial class HextechMayhemModifier
 			return false;
 		}
 
-		HextechTelemetry.RuneChoiceRecord[] matchingRecords = _choiceHistory.GetTelemetryChoiceRecords()
+		HextechTelemetry.RuneChoiceRecord[] matchingRecords = ChoiceHistory.GetTelemetryChoiceRecords()
 			.Where(record =>
 				record.ActIndex == actIndex
 				&& record.ChoiceOrdinal == choiceOrdinal
@@ -70,7 +70,7 @@ internal sealed partial class HextechMayhemModifier
 				matchingRecord.Rarity,
 				ignoreCase: false,
 				out HextechRarityTier recordedRarity)
-			|| _actState.GetRarity(actIndex) != recordedRarity)
+			|| ActState.GetRarity(actIndex) != recordedRarity)
 		{
 			return false;
 		}

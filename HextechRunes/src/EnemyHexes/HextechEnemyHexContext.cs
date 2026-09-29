@@ -9,7 +9,15 @@ internal readonly struct HextechEnemyHexContext(HextechMayhemModifier modifier, 
 
 	internal HextechMayhemCombatTrackingState Tracking => modifier.CombatTracking;
 
-	internal int ScalingPlayerCount => Math.Clamp(RunState.Players.Count, 1, 16);
+	// 敌方海克斯按人数缩放时的人数上下限；本体各处缩放（含 HextechEnemyPowerScalingHooks.Rules）同一口径。
+	internal const int MaxScalingPlayerCount = 16;
+
+	internal int ScalingPlayerCount => ClampScalingPlayerCount(RunState.Players.Count);
+
+	internal static int ClampScalingPlayerCount(int playerCount)
+	{
+		return Math.Clamp(playerCount, 1, MaxScalingPlayerCount);
+	}
 
 	internal bool IsActive(MonsterHexKind kind)
 	{

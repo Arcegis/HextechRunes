@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 internal sealed class TankEngineEnemyHex : HextechEnemyHexEffect, IHextechEnemyMaxHpCoefficientProvider
 {
+	internal const float BodyScalePerStack = 0.05f;
+
 	internal override MonsterHexKind Kind => MonsterHexKind.TankEngine;
 
 	internal override async Task BeforeEnemySideTurnStart(HextechEnemyHexContext context, HextechCombatState combatState, IReadOnlyList<Creature> players, IReadOnlyList<Creature> enemies)

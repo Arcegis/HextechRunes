@@ -8,42 +8,10 @@ internal readonly record struct HextechForgeRarityWeights(int Silver, int Gold, 
 	public int Total => Silver + Gold + Prismatic;
 }
 
-public sealed class RandomForgeShopRelic : HextechRelicBase
-{
-	private const string PriceVarName = "Price";
-
-	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-	public int SavedPurchaseCount
-	{
-		get => PurchaseCount;
-		set => PurchaseCount = Math.Max(0, value);
-	}
-
-	public int PurchaseCount { get; private set; }
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar(PriceVarName, HextechRuneConfiguration.GetDefaultRandomForgeShopPrice())
-	];
-
-	public override bool IsAvailableForPlayer(Player player)
-	{
-		return false;
-	}
-
-	public void SetDisplayedPrice(int price)
-	{
-		DynamicVars[PriceVarName].BaseValue = HextechRuneConfiguration.ClampRandomForgeShopPrice(price);
-	}
-
-	public void IncrementPurchaseCount()
-	{
-		PurchaseCount++;
-	}
-}
-
 internal static class HextechForgeGrantHelper
 {
+	private const int ForgeChoiceOptionCount = 3;
+
 	public static async Task ObtainRandomForges(Player player, int count)
 	{
 		_ = await TryObtainRandomForges(player, count);
@@ -204,27 +172,7 @@ internal static class HextechForgeGrantHelper
 			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
 		}
 
-		if (pool.Count == 0)
-		{
-			options = [];
-			return false;
-		}
-
-		List<Type> forgeTypes = HextechStableRandom.PickDistinct(
-			pool,
-			Math.Min(3, pool.Count),
-			(RunState)player.RunState,
-			HextechStableRandom.TypeModelKey,
-			source,
-			"forge-choice",
-			HextechStableRandom.PlayerKey(player),
-			ordinal.ToString(),
-			((int)rarity).ToString(),
-			player.Relics.Count.ToString());
-		options = forgeTypes
-			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)).ToMutable())
-			.ToList();
-		return options.Count > 0;
+		return TryPickForgeChoiceOptions(player, pool, rarity, source, "forge-choice", ordinal, out options);
 	}
 
 	private static bool TryCreateStableRandomForgeChoice(
@@ -236,6 +184,19 @@ internal static class HextechForgeGrantHelper
 		out List<RelicModel> options)
 	{
 		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity).Where(forgeTypePredicate));
+		return TryPickForgeChoiceOptions(player, pool, rarity, source, "filtered-forge-choice", ordinal, out options);
+	}
+
+	// choiceTag 是稳定随机的盐值之一，两种入口各自保留原值，不能合并（否则同样输入抽出的候选会变）。
+	private static bool TryPickForgeChoiceOptions(
+		Player player,
+		List<Type> pool,
+		HextechRarityTier rarity,
+		string source,
+		string choiceTag,
+		int ordinal,
+		out List<RelicModel> options)
+	{
 		if (pool.Count == 0)
 		{
 			options = [];
@@ -244,11 +205,11 @@ internal static class HextechForgeGrantHelper
 
 		List<Type> forgeTypes = HextechStableRandom.PickDistinct(
 			pool,
-			Math.Min(3, pool.Count),
+			Math.Min(ForgeChoiceOptionCount, pool.Count),
 			(RunState)player.RunState,
 			HextechStableRandom.TypeModelKey,
 			source,
-			"filtered-forge-choice",
+			choiceTag,
 			HextechStableRandom.PlayerKey(player),
 			ordinal.ToString(),
 			((int)rarity).ToString(),

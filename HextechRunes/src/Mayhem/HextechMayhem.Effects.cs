@@ -4,37 +4,37 @@ internal sealed partial class HextechMayhemModifier
 {
 	internal async Task TryApplyServantMasterIllusion(Creature creature, Creature? applier, CardModel? cardSource)
 	{
-		await HextechServantMasterIllusionService.TryApply(RunState, _combatTracking, creature, applier, cardSource);
+		await HextechServantMasterIllusionService.TryApply(RunState, CombatTracking, creature, applier, cardSource);
 	}
 
 	internal int GetPlayerRuneProcsThisTurn(Player player, string procKey)
 	{
-		return HextechCombatProcTracker.GetPlayerRuneProcsThisTurn(_combatTracking, player, procKey);
+		return HextechCombatProcTracker.GetPlayerRuneProcsThisTurn(CombatTracking, player, procKey);
 	}
 
 	internal bool TryConsumePlayerRuneProcThisTurn(Player player, string procKey, int maxPerTurn)
 	{
-		return HextechCombatProcTracker.TryConsumePlayerRuneProcThisTurn(_combatTracking, player, procKey, maxPerTurn);
+		return HextechCombatProcTracker.TryConsumePlayerRuneProcThisTurn(CombatTracking, player, procKey, maxPerTurn);
 	}
 
 	internal int GetPlayerRuneProcsInCombat(Player player, string procKey)
 	{
-		return HextechCombatProcTracker.GetPlayerRuneProcsInCombat(_combatTracking, player, procKey);
+		return HextechCombatProcTracker.GetPlayerRuneProcsInCombat(CombatTracking, player, procKey);
 	}
 
 	internal int ConsumePlayerRuneProcInCombat(Player player, string procKey)
 	{
-		return HextechCombatProcTracker.ConsumePlayerRuneProcInCombat(_combatTracking, player, procKey);
+		return HextechCombatProcTracker.ConsumePlayerRuneProcInCombat(CombatTracking, player, procKey);
 	}
 
 	internal int ConsumeGlobalProcInCombat(string procKey)
 	{
-		return HextechCombatProcTracker.ConsumeGlobalProcInCombat(_combatTracking, procKey);
+		return HextechCombatProcTracker.ConsumeGlobalProcInCombat(CombatTracking, procKey);
 	}
 
 	private bool TrackPlayerAttackCardPlayedThisTurn(CardPlay cardPlay)
 	{
-		return HextechCombatProcTracker.TrackPlayerAttackCardPlayedThisTurn(_combatTracking, cardPlay);
+		return HextechCombatProcTracker.TrackPlayerAttackCardPlayedThisTurn(CombatTracking, cardPlay);
 	}
 
 	internal void RefreshPlayerAttackCostDoublingPreviews(IEnumerable<Creature> playerCreatures)
@@ -44,7 +44,7 @@ internal sealed partial class HextechMayhemModifier
 
 	internal int GetPlayerAttacksPlayedThisTurn(CardModel card)
 	{
-		return HextechCombatProcTracker.GetPlayerAttacksPlayedThisTurn(_combatTracking, card);
+		return HextechCombatProcTracker.GetPlayerAttacksPlayedThisTurn(CombatTracking, card);
 	}
 
 	public decimal ModifyEnemyHealAmount(Creature creature, decimal amount)

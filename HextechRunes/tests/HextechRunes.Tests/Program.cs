@@ -800,7 +800,7 @@ internal static partial class Program
 		return player;
 	}
 
-	private static void Expect(bool condition, string message)
+	private static void Expect([System.Diagnostics.CodeAnalysis.DoesNotReturnIf(false)] bool condition, string message)
 	{
 		if (!condition)
 		{

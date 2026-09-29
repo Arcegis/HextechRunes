@@ -4,84 +4,84 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
+	// 本局全部 Modifier 状态都在 _runContext；下面是各分部常用的转发，SavedProperty 经它们读写。
 	private readonly HextechMayhemRunContext _runContext = new();
-	private HextechMayhemActState _actState => _runContext.ActState;
-	private HextechMayhemCombatTrackingState _combatTracking => _runContext.CombatTracking;
-	private HextechMayhemChoiceHistoryState _choiceHistory => _runContext.ChoiceHistory;
-	private HextechActiveMonsterHexCache _activeMonsterHexCache => _runContext.ActiveMonsterHexCache;
-	private HextechPlayerHexCountState _playerHexCounts => _runContext.PlayerHexCounts;
-	private HextechEnemyHexCountState _enemyHexCounts => _runContext.EnemyHexCounts;
-	private int _hexCountRecoveryBaseline
+
+	private HextechMayhemActState ActState => _runContext.ActState;
+
+	private HextechMayhemChoiceHistoryState ChoiceHistory => _runContext.ChoiceHistory;
+
+	private HextechActiveMonsterHexCache ActiveMonsterHexCache => _runContext.ActiveMonsterHexCache;
+
+	private HextechPlayerHexCountState PlayerHexCounts => _runContext.PlayerHexCounts;
+
+	private HextechEnemyHexCountState EnemyHexCounts => _runContext.EnemyHexCounts;
+
+	private int HexCountRecoveryBaseline
 	{
 		get => _runContext.HexCountRecoveryBaseline;
 		set => _runContext.HexCountRecoveryBaseline = value;
 	}
 
-	private int _monsterHexStrengthTierFloor
+	private int MonsterHexStrengthTierFloor
 	{
 		get => _runContext.MonsterHexStrengthTierFloor;
 		set => _runContext.MonsterHexStrengthTierFloor = value;
 	}
 
-	private int _enemyTezcatarasMercyCombatCounter
+	private int EnemyTezcatarasMercyCombatCounter
 	{
 		get => _runContext.EnemyTezcatarasMercyCombatCounter;
 		set => _runContext.EnemyTezcatarasMercyCombatCounter = value;
 	}
 
-	private bool _hostUsesBetterMultiplayerScaling
-	{
-		get => _runContext.HostUsesBetterMultiplayerScaling;
-		set => _runContext.HostUsesBetterMultiplayerScaling = value;
-	}
-
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedRarityByAct
 	{
-		get => _actState.SavedRarityByAct;
-		set => _actState.SavedRarityByAct = value;
+		get => ActState.SavedRarityByAct;
+		set => ActState.SavedRarityByAct = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedMonsterHexByAct
 	{
-		get => _actState.SavedMonsterHexByAct;
-		set => _actState.SavedMonsterHexByAct = value;
+		get => ActState.SavedMonsterHexByAct;
+		set => ActState.SavedMonsterHexByAct = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedMonsterHexesByActJson
 	{
-		get => _actState.SavedMonsterHexesByActJson;
-		set => _actState.SavedMonsterHexesByActJson = value;
+		get => ActState.SavedMonsterHexesByActJson;
+		set => ActState.SavedMonsterHexesByActJson = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedCarriedMonsterHexes
 	{
-		get => _actState.SavedCarriedMonsterHexes;
-		set => _actState.SavedCarriedMonsterHexes = value;
+		get => ActState.SavedCarriedMonsterHexes;
+		set => ActState.SavedCarriedMonsterHexes = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedResolvedActs
 	{
-		get => _actState.SavedResolvedActs;
-		set => _actState.SavedResolvedActs = value;
+		get => ActState.SavedResolvedActs;
+		set => ActState.SavedResolvedActs = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedMapLengthReducedActs
 	{
-		get => _actState.SavedMapLengthReducedActs;
-		set => _actState.SavedMapLengthReducedActs = value;
+		get => ActState.SavedMapLengthReducedActs;
+		set => ActState.SavedMapLengthReducedActs = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedExtraStageIndexesJson
 	{
-		get => _actState.SavedExtraStageIndexesJson;
-		set => _actState.SavedExtraStageIndexesJson = value;
+		get => ActState.SavedExtraStageIndexesJson;
+		set => ActState.SavedExtraStageIndexesJson = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -94,15 +94,15 @@ internal sealed partial class HextechMayhemModifier
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedPlayerHexCountsByAct
 	{
-		get => _playerHexCounts.Snapshot;
-		set => _playerHexCounts.Set(value);
+		get => PlayerHexCounts.Snapshot;
+		set => PlayerHexCounts.Set(value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int[] SavedEnemyHexCountsByAct
 	{
-		get => _enemyHexCounts.Snapshot;
-		set => _enemyHexCounts.Set(value);
+		get => EnemyHexCounts.Snapshot;
+		set => EnemyHexCounts.Set(value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -122,15 +122,15 @@ internal sealed partial class HextechMayhemModifier
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedTelemetryChoicesJson
 	{
-		get => _choiceHistory.SavedTelemetryChoicesJson;
-		set => _choiceHistory.SavedTelemetryChoicesJson = value;
+		get => ChoiceHistory.SavedTelemetryChoicesJson;
+		set => ChoiceHistory.SavedTelemetryChoicesJson = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedSeenPlayerRuneIdsJson
 	{
-		get => _choiceHistory.SavedSeenPlayerRuneIdsJson;
-		set => _choiceHistory.SavedSeenPlayerRuneIdsJson = value;
+		get => ChoiceHistory.SavedSeenPlayerRuneIdsJson;
+		set => ChoiceHistory.SavedSeenPlayerRuneIdsJson = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -143,36 +143,36 @@ internal sealed partial class HextechMayhemModifier
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedHexCountRecoveryBaseline
 	{
-		get => _hexCountRecoveryBaseline;
-		set => _hexCountRecoveryBaseline = Math.Max(0, value);
+		get => HexCountRecoveryBaseline;
+		set => HexCountRecoveryBaseline = Math.Max(0, value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedMonsterHexStrengthTierFloor
 	{
-		get => _monsterHexStrengthTierFloor;
-		set => _monsterHexStrengthTierFloor = Math.Clamp(value, 0, 3);
+		get => MonsterHexStrengthTierFloor;
+		set => MonsterHexStrengthTierFloor = Math.Clamp(value, 0, 3);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public string SavedCombatTrackingJson
 	{
-		get => _combatTracking.Serialize();
-		set => _combatTracking.Restore(value);
+		get => CombatTracking.Serialize();
+		set => CombatTracking.Restore(value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedEnemyTezcatarasMercyCombatCounter
 	{
-		get => _enemyTezcatarasMercyCombatCounter;
-		set => _enemyTezcatarasMercyCombatCounter = Math.Max(0, value);
+		get => EnemyTezcatarasMercyCombatCounter;
+		set => EnemyTezcatarasMercyCombatCounter = Math.Max(0, value);
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedHextechHostUsesBetterMultiplayerScaling
 	{
-		get => _hostUsesBetterMultiplayerScaling;
-		set => _hostUsesBetterMultiplayerScaling = value;
+		get => HostUsesBetterMultiplayerScaling;
+		set => HostUsesBetterMultiplayerScaling = value;
 	}
 
 	// 模组总开关的本局冻结值。空字符串表示未冻结，按本局有效配置判断；"True"/"False" 表示已冻结。
@@ -195,13 +195,11 @@ internal sealed partial class HextechMayhemModifier
 
 	public RunState ActiveRunState => RunState;
 
-	internal HextechMayhemCombatTrackingState CombatTracking => _combatTracking;
-
 	internal bool IsEndlessLoopActive => _runContext.IsEndlessLoopActive;
 
 	internal bool HostUsesBetterMultiplayerScaling
 	{
-		get => _hostUsesBetterMultiplayerScaling;
-		set => _hostUsesBetterMultiplayerScaling = value;
+		get => _runContext.HostUsesBetterMultiplayerScaling;
+		set => _runContext.HostUsesBetterMultiplayerScaling = value;
 	}
 }

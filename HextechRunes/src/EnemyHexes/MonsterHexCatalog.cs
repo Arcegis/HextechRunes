@@ -138,6 +138,7 @@ internal static class MonsterHexCatalog
 	private static readonly IReadOnlyDictionary<MonsterHexKind, (string Var, int Base)> PlayerCountScaledThresholds =
 		new Dictionary<MonsterHexKind, (string, int)>
 		{
+			// 同 Porcupine：字面量供 TXT 同步脚本渲染，测试断言与各效果类的 HpPerPercentPerPlayer 一致。
 			[MonsterHexKind.HeavyHitter] = ("HpPerPercent", 15),
 			[MonsterHexKind.VitalitySurge] = ("HpPerPercent", 20),
 			[MonsterHexKind.ProteinShake] = ("HpPerPercent", 5),
@@ -264,7 +265,7 @@ internal static class MonsterHexCatalog
 			}
 
 			int count = RunManager.Instance.DebugOnlyGetState() is RunState runState ? runState.Players.Count : 1;
-			return Math.Clamp(count, 1, 16);
+			return HextechEnemyHexContext.ClampScalingPlayerCount(count);
 		}
 		catch
 		{

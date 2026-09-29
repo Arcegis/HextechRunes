@@ -77,7 +77,7 @@ internal static class HextechMultiplayerScalingCompat
 	private static async Task ScaleEnemyHpUpToHostExternalScaling(Creature creature, int playerCount)
 	{
 		int baseMaxHp = GetBaseMonsterMaxHp(creature, playerCount, currentlyScaled: false);
-		int expectedMaxHp = Math.Max(1, baseMaxHp * Math.Clamp(playerCount, 1, 16));
+		int expectedMaxHp = Math.Max(1, baseMaxHp * HextechEnemyHexContext.ClampScalingPlayerCount(playerCount));
 		int missingMaxHp = expectedMaxHp - creature.MaxHp;
 		if (missingMaxHp > 0)
 		{

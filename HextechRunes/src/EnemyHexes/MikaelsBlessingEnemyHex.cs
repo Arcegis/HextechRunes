@@ -2,11 +2,13 @@ namespace HextechRunes;
 
 internal sealed class MikaelsBlessingEnemyHex : HextechEnemyHexEffect
 {
+	private const int MaxTriggers = 2;
+
 	internal override MonsterHexKind Kind => MonsterHexKind.MikaelsBlessing;
 
 	internal override async Task AfterEnemyHealthThreshold(HextechEnemyHexContext context, Creature target, uint combatId)
 	{
-		if (context.Tracking.MikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) >= HextechMayhemModifier.MikaelsBlessingMaxTriggers)
+		if (context.Tracking.MikaelsBlessingTriggers.GetValueOrDefault(combatId, 0) >= MaxTriggers)
 		{
 			return;
 		}

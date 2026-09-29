@@ -66,7 +66,7 @@ internal sealed partial class HextechMayhemModifier
 
 	public override async Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		_combatTracking.EnterPlayerPlayPhase(player.NetId);
+		CombatTracking.EnterPlayerPlayPhase(player.NetId);
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterAutoPrePlayPhaseEnteredLate(context, choiceContext, player));

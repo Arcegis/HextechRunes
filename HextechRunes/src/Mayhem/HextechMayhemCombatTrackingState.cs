@@ -139,6 +139,6 @@ internal sealed partial class HextechMayhemCombatTrackingState
 
 	public void Reset()
 	{
-		Clear();
+		HextechMayhemCombatTrackingSerializer.Clear(this);
 	}
 }
