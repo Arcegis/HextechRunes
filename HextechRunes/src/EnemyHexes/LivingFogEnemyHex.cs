@@ -8,10 +8,10 @@ internal sealed class LivingFogEnemyHex : HextechEnemyHexEffect
 
 	internal override bool ShouldPlay(HextechEnemyHexContext context, CardModel card, AutoPlayType autoPlayType)
 	{
+		// 分发层已限定本局战斗中的玩家侧卡牌。
 		return card.Type != CardType.Skill
-			|| card.Owner?.Creature.Side != CombatSide.Player
-			|| card.Owner.Creature.CombatState?.RunState != context.RunState
-			|| HextechCombatProcTracker.GetPlayerRuneProcsThisTurn(context.Tracking, card.Owner, ProcKey) < SkillLimit;
+			|| card.Owner is not Player owner
+			|| HextechCombatProcTracker.GetPlayerRuneProcsThisTurn(context.Tracking, owner, ProcKey) < SkillLimit;
 	}
 
 	internal override Task BeforeCardPlayed(HextechEnemyHexContext context, CardPlay cardPlay)

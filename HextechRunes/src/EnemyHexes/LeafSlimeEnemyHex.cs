@@ -14,11 +14,7 @@ internal sealed class LeafSlimeEnemyHex : HextechEnemyHexEffect
 			return;
 		}
 
-		foreach (Player player in players
-			.Where(static creature => !creature.IsDead)
-			.Select(static creature => creature.Player)
-			.OfType<Player>()
-			.OrderBy(static player => player.NetId))
+		foreach (Player player in HextechEnemyHexContext.GetAlivePlayersByNetId(players))
 		{
 			CardModel slimed = combatState.CreateCard<Slimed>(player);
 			await HextechCardGeneration.AddGeneratedCardToCombat(

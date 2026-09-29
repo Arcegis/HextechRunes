@@ -12,7 +12,7 @@ internal sealed class HailToTheKingEnemyHex : HextechEnemyHexEffect
 		}
 
 		decimal sustainPercent = context.TierValue(Kind, 0.03m, 0.05m, 0.08m);
-		int sustain = Math.Max(1, (int)Math.Floor(enemy.MaxHp * sustainPercent));
+		int sustain = HextechEnemyHexContext.FractionOfMaxHp(enemy, sustainPercent);
 		await HextechEnemyPowerScalingHooks.Apply<ArtifactPower>(enemy, 3m, enemy, null);
 		await HextechEnemyPowerScalingHooks.Apply<PlatingPower>(enemy, sustain, enemy, null);
 		await HextechEnemyPowerScalingHooks.Apply<RegenPower>(enemy, sustain, enemy, null);

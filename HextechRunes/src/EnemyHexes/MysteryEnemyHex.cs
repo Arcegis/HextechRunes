@@ -16,7 +16,7 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 		}
 
 		int count = context.TierValue(Kind, 2, 4, 6);
-		foreach (Player player in players.Where(c => !c.IsDead).Select(c => c.Player).OfType<Player>().OrderBy(p => p.NetId))
+		foreach (Player player in HextechEnemyHexContext.GetAlivePlayersByNetId(players))
 		{
 			if (player.PlayerCombatState == null)
 			{

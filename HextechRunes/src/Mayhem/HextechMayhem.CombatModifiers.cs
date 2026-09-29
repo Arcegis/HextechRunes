@@ -60,8 +60,15 @@ internal sealed partial class HextechMayhemModifier
 			(effect, context) => effect.ShouldDraw(context, player, fromHandDraw));
 	}
 
+	// 能否打出只管本局战斗中玩家侧的牌。
 	public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
 	{
+		if (card.Owner?.Creature.Side != CombatSide.Player
+			|| card.Owner.Creature.CombatState?.RunState != RunState)
+		{
+			return true;
+		}
+
 		return HextechEnemyHexDispatcher.All(
 			this,
 			(effect, context) => effect.ShouldPlay(context, card, autoPlayType));

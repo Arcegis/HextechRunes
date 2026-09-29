@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
-using MegaCrit.Sts2.Core.Models.Exceptions;
 
 namespace HextechRunes;
 
@@ -12,12 +11,7 @@ internal static class HextechKnifeHelper
 			return false;
 		}
 
-		if (card is SovereignBlade && owner?.GetRelic<BigKnifeRune>() != null)
-		{
-			return true;
-		}
-
-		return card.Tags.Contains(CardTag.Shiv);
+		return ShouldTreatSovereignBladeAsShiv(card, owner) || card.Tags.Contains(CardTag.Shiv);
 	}
 
 	public static bool ShouldTreatSovereignBladeAsShiv(CardModel card, Player? owner)
@@ -25,40 +19,29 @@ internal static class HextechKnifeHelper
 		return card is SovereignBlade && owner?.GetRelic<BigKnifeRune>() != null;
 	}
 
+	// 规范模型读 Owner 会抛 CanonicalModelException（图鉴等会遍历规范卡），先判 IsCanonical。
 	public static bool ShouldFanOfKnivesAffectSovereignBlade(SovereignBlade card)
 	{
-		Player? owner;
-		try
-		{
-			owner = card.Owner;
-		}
-		catch (CanonicalModelException)
+		if (card.IsCanonical)
 		{
 			return false;
 		}
 
-		return ShouldTreatSovereignBladeAsShiv(card, owner)
+		Player? owner = card.Owner;
+		return owner != null
+			&& ShouldTreatSovereignBladeAsShiv(card, owner)
 			&& owner.Creature.HasPower<FanOfKnivesPower>();
 	}
 
 	public static bool TryCreateBigKnifeReplacement(CardModel card, out CardModel replacement)
 	{
 		replacement = card;
-		if (card is not Shiv)
+		if (card is not Shiv || card.IsCanonical)
 		{
 			return false;
 		}
 
-		Player? owner;
-		try
-		{
-			owner = card.Owner;
-		}
-		catch (CanonicalModelException)
-		{
-			return false;
-		}
-
+		Player? owner = card.Owner;
 		if (owner?.GetRelic<BigKnifeRune>() == null || owner.Creature.CombatState is not CombatState combatState)
 		{
 			return false;
@@ -83,6 +66,7 @@ internal static class HextechKnifeHelper
 		{
 			card.AddKeyword(CardKeyword.Exhaust);
 		}
+
 		InkshadowRune.TryApplyForOwner(card, card.Owner);
 		try
 		{

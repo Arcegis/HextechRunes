@@ -23,7 +23,7 @@ internal sealed class GlassCannonEnemyHex : HextechEnemyHexEffect
 
 	internal override Task ApplyPersistentToEnemy(HextechEnemyHexContext context, Creature creature, int? maxHpBaseOverride, bool replayOneShotPowers)
 	{
-		int hpCap = Math.Max(1, (int)Math.Floor(creature.MaxHp * HealCapPercent));
+		int hpCap = HextechEnemyHexContext.FractionOfMaxHp(creature, HealCapPercent);
 		return creature.CurrentHp > hpCap ? CreatureCmd.SetCurrentHp(creature, hpCap) : Task.CompletedTask;
 	}
 }

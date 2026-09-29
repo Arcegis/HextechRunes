@@ -36,7 +36,7 @@ internal static class HextechMultiplayerScalingCompat
 		}
 
 		NetGameType gameType = RunManager.Instance?.NetService?.Type ?? NetGameType.None;
-		if (gameType is not (NetGameType.Host or NetGameType.Client))
+		if (HextechPlayerContextHelper.IsSinglePlayerFlow(gameType))
 		{
 			return;
 		}

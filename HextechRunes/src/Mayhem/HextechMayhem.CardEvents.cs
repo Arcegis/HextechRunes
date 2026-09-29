@@ -22,8 +22,16 @@ internal sealed partial class HextechMayhemModifier
 			(effect, enemyHexContext) => effect.AfterCardPlayed(enemyHexContext, context, cardPlay));
 	}
 
+	// 洗牌/抽牌类敌方海克斯都只对本局战斗中的玩家生效，在分发层统一过滤。
 	public override async Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
 	{
+		if (shuffler.Creature.Side != CombatSide.Player
+			|| shuffler.Creature.IsDead
+			|| shuffler.Creature.CombatState?.RunState != RunState)
+		{
+			return;
+		}
+
 		await HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterShuffle(context, choiceContext, shuffler));
@@ -31,6 +39,12 @@ internal sealed partial class HextechMayhemModifier
 
 	public override Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
+		if (card.Owner?.Creature.Side != CombatSide.Player
+			|| card.Owner.Creature.CombatState?.RunState != RunState)
+		{
+			return Task.CompletedTask;
+		}
+
 		return HextechEnemyHexDispatcher.ForEachActive(
 			this,
 			(effect, context) => effect.AfterCardDrawn(context, choiceContext, card, fromHandDraw));

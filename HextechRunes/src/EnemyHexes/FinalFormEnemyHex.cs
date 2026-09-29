@@ -16,5 +16,5 @@ internal sealed class FinalFormEnemyHex : HextechEnemyHexEffect
 	}
 
 	internal static int ResolvePlating(int maxHp, int tier)
-		=> Math.Max(1, (int)Math.Floor(maxHp * (tier <= 1 ? 0.03m : tier == 2 ? 0.04m : 0.05m)));
+		=> HextechEnemyHexContext.FractionOfMaxHp(maxHp, tier <= 1 ? 0.03m : tier == 2 ? 0.04m : 0.05m);
 }

@@ -33,8 +33,8 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 	internal override decimal ModifyHpLostAfterOsty(HextechEnemyHexContext context, Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
+		// 分发层已限定 target 在本局战斗中。
 		if (target.Side != CombatSide.Enemy
-			|| target.CombatState?.RunState != context.RunState
 			|| target.IsDead
 			|| ShouldSkipDamageReplacement()
 			|| amount <= 0m)

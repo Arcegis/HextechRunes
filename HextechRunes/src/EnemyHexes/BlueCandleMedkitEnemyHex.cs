@@ -18,10 +18,8 @@ internal sealed class BlueCandleMedkitEnemyHex : HextechEnemyHexEffect
 	// 原版无法打出的状态/诅咒基础费用是 -1(无费用标记),原版费用 Hook 对负费用直接跳过,这里也不处理。
 	internal override int GetBaseEnergyCostIncrease(HextechEnemyHexContext context, CardModel card)
 	{
-		if (card.Type is not (CardType.Status or CardType.Curse)
-			|| card.Owner?.Creature.Side != CombatSide.Player
-			|| card.Owner.Creature.CombatState?.RunState != context.RunState
-			|| card.EnergyCost.CostsX)
+		// 分发层（Modifier.TryModifyEnergyCostInCombat）已限定玩家侧、本局战斗、非 X 费。
+		if (card.Type is not (CardType.Status or CardType.Curse))
 		{
 			return 0;
 		}

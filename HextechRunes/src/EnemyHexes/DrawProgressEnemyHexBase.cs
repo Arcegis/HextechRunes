@@ -9,11 +9,9 @@ internal abstract class DrawProgressEnemyHexBase : HextechEnemyHexEffect
 {
 	internal sealed override Task AfterCardDrawn(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
-		Player? owner = card.Owner;
-		if (owner == null
-			|| owner.Creature.Side != CombatSide.Player
+		// 分发层已限定本局战斗中的玩家侧卡牌。
+		if (card.Owner is not Player owner
 			|| owner.Creature.CombatState is not HextechCombatState combatState
-			|| combatState.RunState != context.RunState
 			|| HextechPlayerContextHelper.IsNetworkMultiplayerRun())
 		{
 			return Task.CompletedTask;

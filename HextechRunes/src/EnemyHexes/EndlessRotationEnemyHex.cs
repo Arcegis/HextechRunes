@@ -6,12 +6,6 @@ internal sealed class EndlessRotationEnemyHex : HextechEnemyHexEffect
 
 	internal override Task AfterShuffle(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player shuffler)
 	{
-		if (shuffler.Creature.Side != CombatSide.Player || shuffler.Creature.IsDead
-			|| shuffler.Creature.CombatState?.RunState != context.RunState)
-		{
-			return Task.CompletedTask;
-		}
-
 		foreach (CardModel card in PileType.Hand.GetPile(shuffler).Cards)
 		{
 			if (!card.EnergyCost.CostsX)

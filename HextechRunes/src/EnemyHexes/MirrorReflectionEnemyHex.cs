@@ -6,12 +6,8 @@ internal sealed class MirrorReflectionEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task AfterCardPlayed(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (!cardPlay.IsFirstInSeries
-			|| cardPlay.IsAutoPlay
-			|| !cardPlay.Card.IsBasicStrikeOrDefend
-			|| cardPlay.Card.Owner?.Creature.Side != CombatSide.Player
-			|| cardPlay.Card.Owner.Creature.CombatState is not HextechCombatState combatState
-			|| combatState.RunState != context.RunState)
+		if (!context.IsManualPlayerCardPlay(cardPlay, out _, out HextechCombatState? combatState)
+			|| !cardPlay.Card.IsBasicStrikeOrDefend)
 		{
 			return;
 		}

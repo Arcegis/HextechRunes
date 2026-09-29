@@ -6,10 +6,7 @@ internal sealed class DizzySpinningEnemyHex : HextechEnemyHexEffect
 
 	internal override async Task AfterShuffle(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, Player shuffler)
 	{
-		if (shuffler.Creature.Side != CombatSide.Player
-			|| shuffler.Creature.IsDead
-			|| shuffler.Creature.CombatState is not HextechCombatState combatState
-			|| combatState.RunState != context.RunState)
+		if (shuffler.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}

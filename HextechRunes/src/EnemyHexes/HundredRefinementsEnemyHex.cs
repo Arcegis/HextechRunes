@@ -14,9 +14,8 @@ internal sealed class HundredRefinementsEnemyHex : HextechEnemyHexEffect
 		Creature? dealer,
 		CardModel? cardSource)
 	{
+		// 分发层已限定 target 为本局战斗中的敌人。
 		if (!target.IsAlive
-			|| target.Side != CombatSide.Enemy
-			|| target.CombatState?.RunState != context.RunState
 			|| result.UnblockedDamage <= 0m
 			|| target.CombatId is not uint combatId
 			|| !ReachesHitThreshold(context.Tracking.EnemyHundredRefinementsUnblockedHitsThisCombat, combatId, HitsPerTriggerPerPlayer * context.ScalingPlayerCount))

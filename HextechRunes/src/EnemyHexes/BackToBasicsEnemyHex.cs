@@ -11,11 +11,7 @@ internal sealed class BackToBasicsEnemyHex : HextechEnemyHexEffect
 
 	internal override Task AfterCardPlayed(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		Player? owner = cardPlay.Card.Owner;
-		if (cardPlay.IsAutoPlay
-			|| !cardPlay.IsFirstInSeries
-			|| owner?.Creature.Side != CombatSide.Player
-			|| owner.Creature.CombatState?.RunState != context.RunState
+		if (!context.IsManualPlayerCardPlay(cardPlay, out Player? owner, out _)
 			|| owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
@@ -29,10 +25,8 @@ internal sealed class BackToBasicsEnemyHex : HextechEnemyHexEffect
 	// 达到本回合上限后其余牌不可再打出;只管玩家的手动出牌,自动打出不计也不拦。
 	internal override bool ShouldPlay(HextechEnemyHexContext context, CardModel card, AutoPlayType autoPlayType)
 	{
-		Player? owner = card.Owner;
-		if (autoPlayType != AutoPlayType.None
-			|| owner?.Creature.Side != CombatSide.Player
-			|| owner.Creature.CombatState?.RunState != context.RunState)
+		// 分发层已限定本局战斗中的玩家侧卡牌。
+		if (autoPlayType != AutoPlayType.None || card.Owner is not Player owner)
 		{
 			return true;
 		}

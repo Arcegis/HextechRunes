@@ -119,7 +119,7 @@ internal static class HextechForgeGrantHelper
 		if (syncObtainedRelic)
 		{
 			INetGameService netService = RunManager.Instance.NetService;
-			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
+			if (HextechPlayerContextHelper.IsNetworkGameType(netService.Type) && netService.IsConnected)
 			{
 				// Enchantment forges open a nested deck choice during pickup; remote clients must know about the forge first.
 				ModelId forgeId = forge.CanonicalId();
@@ -127,7 +127,7 @@ internal static class HextechForgeGrantHelper
 				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(syncCopy);
 				syncedBeforePickup = true;
 			}
-			else if (netService.Type is NetGameType.Host or NetGameType.Client)
+			else if (HextechPlayerContextHelper.IsNetworkGameType(netService.Type))
 			{
 				HextechLog.Warn("ForgeChoice", $"Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
 			}

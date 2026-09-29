@@ -8,11 +8,7 @@ internal sealed class ArchmageEnemyHex : HextechEnemyHexEffect
 
 	internal override Task AfterCardPlayed(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		Player? owner = cardPlay.Card.Owner;
-		if (owner?.Creature.Side != CombatSide.Player
-			|| owner.Creature.CombatState?.RunState != context.RunState
-			|| !cardPlay.IsFirstInSeries
-			|| cardPlay.IsAutoPlay
+		if (!context.IsManualPlayerCardPlay(cardPlay, out Player? owner, out _)
 			|| !IllusoryWeaponRune.IsSkillForEffects(cardPlay.Card)
 			|| !RollTrigger(context, owner, cardPlay.Card, out int rollOrdinal)
 			|| PickCard(owner, cardPlay.Card, rollOrdinal) is not CardModel card

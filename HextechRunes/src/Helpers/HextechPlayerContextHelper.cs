@@ -4,13 +4,14 @@ namespace HextechRunes;
 
 internal static class HextechPlayerContextHelper
 {
+	// 两个取联机类型的入口口径一致：只兜住联机服务在拆除过程中的空引用，其余异常照常抛出。
 	public static bool IsNetworkMultiplayerRun()
 	{
 		try
 		{
-			return RunManager.Instance?.NetService?.Type is NetGameType.Host or NetGameType.Client;
+			return RunManager.Instance?.NetService?.Type is NetGameType gameType && IsNetworkGameType(gameType);
 		}
-		catch
+		catch (NullReferenceException)
 		{
 			return false;
 		}
@@ -18,16 +19,21 @@ internal static class HextechPlayerContextHelper
 
 	// 海克斯流程只分"联机（Host/Client）"和"单人"两种：原版对局重放（Replay）没有联机连接，
 	// 按单人走，不能掉进需要同步通道的联机分支。
+	public static bool IsNetworkGameType(NetGameType gameType)
+	{
+		return gameType is NetGameType.Host or NetGameType.Client;
+	}
+
 	public static bool IsSinglePlayerFlow(NetGameType gameType)
 	{
-		return gameType is not (NetGameType.Host or NetGameType.Client);
+		return !IsNetworkGameType(gameType);
 	}
 
 	public static bool IsClientRun(bool fallbackWhenUnavailable = false)
 	{
 		try
 		{
-			var netService = RunManager.Instance?.NetService;
+			INetGameService? netService = RunManager.Instance?.NetService;
 			return netService == null
 				? fallbackWhenUnavailable
 				: netService.Type == NetGameType.Client;

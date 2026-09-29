@@ -6,10 +6,8 @@ internal sealed class MindOverMatterEnemyHex : HextechEnemyHexEffect
 
 	internal override Task AfterCardDrawn(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
-		Player? owner = card.Owner;
-		if (owner?.Creature.Side != CombatSide.Player
+		if (card.Owner is not Player owner
 			|| owner.Creature.IsDead
-			|| owner.Creature.CombatState?.RunState != context.RunState
 			|| !TryConsumeFirstDraw(context.Tracking, owner.NetId))
 		{
 			return Task.CompletedTask;
