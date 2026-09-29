@@ -1,8 +1,6 @@
 using Godot;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
@@ -114,7 +112,7 @@ internal static class HextechSovereignBladeVfxSync
 				continue;
 			}
 
-			vfx.OrbitProgress = expected.Count == 0 ? 0d : (double)i / expected.Count;
+			vfx.OrbitProgress = (double)i / expected.Count;
 			Node2D? spineNode = vfx.GetNodeOrNull<Node2D>("SpineSword");
 			if (spineNode != null)
 			{

@@ -4,10 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-	internal const string EndlessModeHarmonyId = "Natsuki.EndlessMode";
-	internal const string RitsuLibCoreHarmonyId = "com.ritsukage.sts2-RitsuLib.framework-core";
-	internal const string BaseLibHarmonyId = "BaseLib";
-
 	private readonly record struct HealPostState(Player? Player, Creature Creature, int CurrentHpBefore, bool ShouldProcess);
 
 	internal static decimal ClampHealAmountToCap(int currentHp, int maxHp, decimal amount, decimal capPercent)
@@ -101,11 +97,10 @@ internal static partial class HextechCombatHooks
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out HealPostState __state)
 		{
+			__state = default;
 			if (NearDeathFeastRune.ShouldPreventSustain(creature) || HextechEnemyNearDeath.ShouldPreventSustain(creature))
 			{
-				__state = default;
-				__result = Task.CompletedTask;
-				return false;
+				return SkipHeal(ref __result);
 			}
 
 			Player? player = creature.Player;
@@ -116,16 +111,14 @@ internal static partial class HextechCombatHooks
 
 			if (player?.GetRelic<GlassCannonRune>() is GlassCannonRune glassCannonRune && creature == player.Creature)
 			{
-				int healCap = (int)Math.Floor(creature.MaxHp * glassCannonRune.HealCapPercent);
-				amount = Math.Min(amount, Math.Max(0, healCap - creature.CurrentHp));
+				amount = ClampHealAmountToCap(creature.CurrentHp, creature.MaxHp, amount, glassCannonRune.HealCapPercent);
 				if (amount <= 0m)
 				{
-					__state = default;
-					__result = Task.CompletedTask;
-					return false;
+					return SkipHeal(ref __result);
 				}
 			}
 
+			// 延迟格挡要按具体 RunState 挂回本局 Modifier（ModEntry.EnsureMayhemModifier 只接受 RunState）。
 			RunState? currentRunState = creature.CombatState?.RunState as RunState;
 			HextechMayhemModifier? modifier = null;
 			bool isEnemyReviveHeal = IsEnemyReviveHeal(creature, amount);
@@ -138,28 +131,29 @@ internal static partial class HextechCombatHooks
 				amount = modifier.ModifyEnemyHealAmount(creature, amount);
 				if (amount <= 0m)
 				{
-					__state = default;
-					__result = Task.CompletedTask;
-					return false;
+					return SkipHeal(ref __result);
 				}
 			}
 
 			if (!isEnemyReviveHeal && TryQueueEnemyHealAsDelayedBlock(creature, amount, currentRunState, modifier))
 			{
-				__state = default;
-				__result = Task.CompletedTask;
-				return false;
+				return SkipHeal(ref __result);
 			}
 
 			if (amount <= 0m)
 			{
-				__state = default;
-				__result = Task.CompletedTask;
-				return false;
+				return SkipHeal(ref __result);
 			}
 
 			__state = new HealPostState(player, creature, creature.CurrentHp, ShouldProcess: true);
 			return true;
+		}
+
+		// 原版 Heal 对 0 也播音效/特效，禁止或被吃掉的回血只能跳过原方法（见 architecture.md 已裁决保留）。
+		private static bool SkipHeal(ref Task result)
+		{
+			result = Task.CompletedTask;
+			return false;
 		}
 
 		// 封顶必须是治疗前缀链的最后一环:别的模组(无尽/RitsuLib/BaseLib)的加减乘都算完,再按当前生命封顶。
@@ -181,10 +175,7 @@ internal static partial class HextechCombatHooks
 			{
 				capPercent = glassCannonRune.HealCapPercent;
 			}
-			else if (creature.Side == CombatSide.Enemy
-				&& creature.CombatState?.RunState is RunState runState
-				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier
-				&& modifier.HasActiveMonsterHex(MonsterHexKind.GlassCannon))
+			else if (TryGetActiveEnemyHexModifier(creature, MonsterHexKind.GlassCannon, out _))
 			{
 				capPercent = GlassCannonEnemyHex.HealCapPercent;
 			}

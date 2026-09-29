@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Orbs;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -16,9 +15,11 @@ internal static partial class HextechPlayerRuneHooks
 	private const float OrbLayoutMaxRadius = 300f;
 	private const float OrbLayoutTweenSpeed = 0.45f;
 
-	internal static FieldInfo? OrbManagerOrbsField;
-	internal static FieldInfo? OrbManagerCreatureField;
-	internal static FieldInfo? OrbManagerCurrentTweenField;
+	// NOrbManager._orbs（List<NOrb>）、_creatureNode（NCreature）、_curTween（Tween），0.107.1/0.110.0/0.111.0 原版私有字段。
+	// 前两者缺失时软上限布局不安装、走原版；_curTween 缺失只是不能杀掉上一段补间。
+	private static readonly FieldInfo? OrbManagerOrbsField = TryGetField(typeof(NOrbManager), "_orbs");
+	private static readonly FieldInfo? OrbManagerCreatureField = TryGetField(typeof(NOrbManager), "_creatureNode");
+	private static readonly FieldInfo? OrbManagerCurrentTweenField = TryGetField(typeof(NOrbManager), "_curTween");
 	private static readonly ConditionalWeakTable<NOrbManager, OrbLayoutFrameState> OrbLayoutFrameStates = new();
 
 	private sealed class OrbLayoutFrameState
@@ -74,13 +75,6 @@ internal static partial class HextechPlayerRuneHooks
 				Array.Clear(_orbs, _orbCount, previousCount - _orbCount);
 			}
 		}
-	}
-
-	internal static void EnsureOrbLayoutFields()
-	{
-		OrbManagerOrbsField ??= RequireField(typeof(NOrbManager), "_orbs");
-		OrbManagerCreatureField ??= RequireField(typeof(NOrbManager), "_creatureNode");
-		OrbManagerCurrentTweenField ??= RequireField(typeof(NOrbManager), "_curTween");
 	}
 
 	internal static bool OrbTweenLayoutPrefixCore(NOrbManager __instance)
@@ -187,16 +181,16 @@ internal static partial class HextechPlayerRuneHooks
 		return targets;
 	}
 
+	// 跳过型前缀（已裁决保留，见 architecture.md）：原版 NOrbManager.TweenLayout 的半径是
+	// Mathf.Lerp(225, 300, (槽位-3)/7)，超过 10 槽后外插继续放大，且逐槽补间所有槽位；没有布局 Hook。
+	// 只在槽位数超过软上限时替换为半径封顶的同一环形布局（疯狂科学家另省去超量球的补间），纯本地表现层；
+	// 替换体沿用原版的补间写法（杀旧补间、并行 TweenProperty position），目标 IL 由原版拷贝守卫冻结。
 	[HarmonyPatch(typeof(NOrbManager), "TweenLayout")]
 	[HextechPatch("rune.orb-layout-soft-cap", "充能球布局软上限")]
 	internal static class OrbLayoutSoftCapPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare()
-		{
-			EnsureOrbLayoutFields();
-			return true;
-		}
+		private static bool Prepare() => OrbManagerOrbsField != null && OrbManagerCreatureField != null;
 
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]

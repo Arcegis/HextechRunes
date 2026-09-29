@@ -165,7 +165,7 @@ internal static partial class Program
 		Harmony neutralTypeHarmony = new("Natsuki.HextechRunes.Tests.SlowPowerType");
 		neutralTypeHarmony.Patch(
 			AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), [typeof(decimal)]),
-			prefix: new HarmonyMethod(HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "PowerTypeForAmountPatch", "Prefix")));
+			prefix: new HarmonyMethod(FindPatchMethod(typeof(HextechCombatHooks), "PowerTypeForAmountPatch", "Prefix")));
 		try
 		{
 			Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, slow.GetTypeForAmount(8m), "positive custom Slow should remain neutral");
@@ -308,11 +308,10 @@ internal static partial class Program
 
 	private static void EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls()
 	{
-		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0f), "successful potion roll should be kept below fifty percent");
-		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0.499999f), "successful potion roll should be kept just below fifty percent");
-		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0.5f), "successful potion roll should be removed at fifty percent boundary");
-		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: false, 0.999999f), "successful potion roll should be removed above fifty percent");
-		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(wasForced: true, 0.999999f), "forced potion reward should remain guaranteed");
+		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0f), "successful potion roll should be kept below fifty percent");
+		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.499999f), "successful potion roll should be kept just below fifty percent");
+		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.5f), "successful potion roll should be removed at fifty percent boundary");
+		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.999999f), "successful potion roll should be removed above fifty percent");
 	}
 
 	private static void EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes()

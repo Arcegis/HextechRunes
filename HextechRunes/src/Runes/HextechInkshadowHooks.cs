@@ -27,5 +27,4 @@ internal static class HextechInkshadowHooks
 			}
 		}
 	}
-
 }

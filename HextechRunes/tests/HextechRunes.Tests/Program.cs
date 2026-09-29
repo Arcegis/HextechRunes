@@ -175,7 +175,6 @@ internal static partial class Program
 			new(nameof(PlayerSustainRunesUseExpectedMaxHpRules), PlayerSustainRunesUseExpectedMaxHpRules),
 			new(nameof(CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions), CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions),
 			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
-			new(nameof(FormVfxSafetySkipsMissingHolder), FormVfxSafetySkipsMissingHolder),
 			new(nameof(SymphonyOfWarPreservesDemonAndSerpentFormVfx), SymphonyOfWarPreservesDemonAndSerpentFormVfx),
 			new(nameof(FormAutoPlayBatchOnlySuppressesDuplicateFlyVfx), FormAutoPlayBatchOnlySuppressesDuplicateFlyVfx),
 			new(nameof(FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay), FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay),
@@ -434,7 +433,6 @@ internal static partial class Program
 			new(nameof(BurnHealthBarPredictionUsesSettlementFormula), BurnHealthBarPredictionUsesSettlementFormula),
 			new(nameof(CollectionHeaderFollowsStarterTemplate), CollectionHeaderFollowsStarterTemplate),
 			new(nameof(UiSkipPrefixesUseLowPriorityAndDeclarativeTargets), UiSkipPrefixesUseLowPriorityAndDeclarativeTargets),
-			// ReviewSelection,
 			new(nameof(ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut), ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut),
 			new(nameof(ReviewConfigMigrationTableMatchesLegacyChain), ReviewConfigMigrationTableMatchesLegacyChain),
 			new(nameof(ReviewShareCodePreviewNormalizesLikeSave), ReviewShareCodePreviewNormalizesLikeSave),
@@ -444,7 +442,8 @@ internal static partial class Program
 			new(nameof(ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls), ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls),
 			new(nameof(ReviewRelicChoiceCodecKeepsWireFormatForBothKinds), ReviewRelicChoiceCodecKeepsWireFormatForBothKinds),
 			new(nameof(ReviewRuneSelectionTailParsersValidateHeader), ReviewRuneSelectionTailParsersValidateHeader),
-			new(nameof(ReviewChaosTransformResultIsValidated), ReviewChaosTransformResultIsValidated)
+			new(nameof(ReviewChaosTransformResultIsValidated), ReviewChaosTransformResultIsValidated),
+			.. ReviewHooksTestCases()
 		];
 
 		if (args.Length > 0)

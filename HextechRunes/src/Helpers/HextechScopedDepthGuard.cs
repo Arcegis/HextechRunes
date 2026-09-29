@@ -44,6 +44,30 @@ internal sealed class HextechScopedDepthGuard
 		}
 	}
 
+	internal Task<T> WrapEnteredTask<T>(Task<T> task)
+	{
+		try
+		{
+			return CompleteEnteredTask(task);
+		}
+		finally
+		{
+			Exit();
+		}
+	}
+
+	private async Task<T> CompleteEnteredTask<T>(Task<T> task)
+	{
+		try
+		{
+			return await task;
+		}
+		finally
+		{
+			Exit();
+		}
+	}
+
 	private async Task CompleteEnteredTask(Task task, Func<Task>? afterCompletion)
 	{
 		try

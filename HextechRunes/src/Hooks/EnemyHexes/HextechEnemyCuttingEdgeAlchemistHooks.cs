@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Odds;
 using MegaCrit.Sts2.Core.Random;
+using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -7,17 +8,18 @@ internal static class HextechEnemyCuttingEdgeAlchemistHooks
 {
 	private const float PotionRewardMultiplier = 0.5f;
 	private const float FloatTolerance = 0.000001f;
-	private static readonly AccessTools.FieldRef<AbstractOdds, Rng> OddsRngRef =
-		AccessTools.FieldRefAccess<AbstractOdds, Rng>("_rng");
+	// AbstractOdds._rng（0.107.1/0.110.0/0.111.0 原版私有字段）：药水掉落共用的奖励 RNG。
+	// 缺失时本敌方海克斯不再减半药水掉落（保持原版结果），缺失成员进启动摘要。
+	private static readonly FieldInfo? OddsRngField = TryGetField(typeof(AbstractOdds), "_rng");
 
-	internal static bool ShouldKeepRolledPotion(bool wasForced, float secondaryRoll)
+	internal static bool ShouldKeepRolledPotion(float secondaryRoll)
 	{
-		return wasForced || secondaryRoll < PotionRewardMultiplier;
+		return secondaryRoll < PotionRewardMultiplier;
 	}
 
 	internal readonly record struct PotionRollState(bool Active, float OriginalValue);
 
-	// 0.107.1 的 PotionRewardOdds.Roll 多一个 AscensionManager 参数。
+	// 0.107.1 的 PotionRewardOdds.Roll 多一个 AscensionManager 参数（补丁目标签名随版本变化，允许行内 #if）。
 #if STS2_107_1
 	[HarmonyPatch(typeof(PotionRewardOdds), nameof(PotionRewardOdds.Roll), typeof(Player), typeof(MegaCrit.Sts2.Core.Entities.Ascension.AscensionManager), typeof(RoomType))]
 #else
@@ -29,13 +31,9 @@ internal static class HextechEnemyCuttingEdgeAlchemistHooks
 		[HarmonyPrefix]
 		private static void Prefix(PotionRewardOdds __instance, Player player, out PotionRollState __state)
 		{
-			if (!CuttingEdgeAlchemistEnemyHex.IsActiveFor(player))
-			{
-				__state = default;
-				return;
-			}
-
-			__state = new PotionRollState(true, __instance.CurrentValue);
+			__state = OddsRngField != null && CuttingEdgeAlchemistEnemyHex.IsActiveFor(player)
+				? new PotionRollState(true, __instance.CurrentValue)
+				: default;
 		}
 
 		[HarmonyPostfix]
@@ -46,13 +44,14 @@ internal static class HextechEnemyCuttingEdgeAlchemistHooks
 				return;
 			}
 
+			// 概率值没变说明这次是保底强制掉落，保底不减半；否则用同一奖励 RNG 再掷一次决定是否保留。
 			bool wasForced = MathF.Abs(__instance.CurrentValue - __state.OriginalValue) <= FloatTolerance;
-			if (wasForced)
+			if (wasForced || OddsRngField?.GetValue(__instance) is not Rng rng)
 			{
 				return;
 			}
 
-			__result = ShouldKeepRolledPotion(wasForced: false, OddsRngRef(__instance).NextFloat());
+			__result = ShouldKeepRolledPotion(rng.NextFloat());
 		}
 	}
 }

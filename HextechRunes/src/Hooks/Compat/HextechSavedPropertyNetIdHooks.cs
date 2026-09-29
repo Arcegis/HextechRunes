@@ -1,4 +1,5 @@
 #if STS2_107_1
+using MegaCrit.Sts2.Core.Helpers;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -18,7 +19,6 @@ internal static class HextechSavedPropertyNetIdHooks
 {
 	private const BindingFlags StaticNonPublic = BindingFlags.NonPublic | BindingFlags.Static;
 
-	private static bool _installed;
 	private static bool _registrationFrozen;
 	private static bool _canonicalized;
 
@@ -49,6 +49,7 @@ internal static class HextechSavedPropertyNetIdHooks
 				return;
 			}
 
+			// SavedPropertiesTypeCache._netIdToPropertyNameMap / _propertyNameToNetIdMap（0.107.1 原版私有静态字段）。
 			FieldInfo? netIdToNameField = TryGetField(typeof(SavedPropertiesTypeCache), "_netIdToPropertyNameMap", StaticNonPublic);
 			FieldInfo? nameToNetIdField = TryGetField(typeof(SavedPropertiesTypeCache), "_propertyNameToNetIdMap", StaticNonPublic);
 			if (netIdToNameField?.GetValue(null) is not List<string> netIdToName
@@ -125,6 +126,7 @@ internal static class HextechSavedPropertyNetIdHooks
 
 	private static bool TrySetNetIdBitSize(int bitSize)
 	{
+		// SavedPropertiesTypeCache.NetIdBitSize 的自动属性后备字段（0.107.1 原版只有 private set）。
 		FieldInfo? backing = TryGetField(typeof(SavedPropertiesTypeCache), "<NetIdBitSize>k__BackingField", StaticNonPublic);
 		if (backing == null)
 		{
@@ -135,35 +137,14 @@ internal static class HextechSavedPropertyNetIdHooks
 		return SavedPropertiesTypeCache.NetIdBitSize == bitSize;
 	}
 
+	// 仅 0.107.1：原版在固定启动状态机里调用一次 OneTimeInitialization.ExecuteEssential（public static）。
+	// 以前靠 TypeByName 动态安装、找不到目标只告警，会让 Patcher 误报成功；现在由属性声明目标，缺失即安装失败。
+	[HarmonyPatch(typeof(OneTimeInitialization), nameof(OneTimeInitialization.ExecuteEssential))]
 	[HextechPatch("compat.saved-property-net-id", "SavedProperty net-id 规范化")]
 	private static class CanonicalizePatch
 	{
-		public static void Apply(Harmony harmony)
-		{
-			if (_installed)
-			{
-				return;
-			}
-
-			_installed = true;
-
-			Type? oneTimeInit = AccessTools.TypeByName("MegaCrit.Sts2.Core.Helpers.OneTimeInitialization");
-			MethodInfo? essential = oneTimeInit == null ? null : AccessTools.Method(oneTimeInit, "ExecuteEssential");
-			if (essential == null)
-			{
-				HextechLog.Warn("MultiplayerCompat", $"Could not patch OneTimeInitialization.ExecuteEssential; SavedProperty net-id canonicalization is disabled (multiplayer may desync with other SavedProperty mods such as RitsuLib).");
-				return;
-			}
-
-			try
-			{
-				harmony.Patch(essential, postfix: new HarmonyMethod(typeof(HextechSavedPropertyNetIdHooks), nameof(CanonicalizeNetIdMapPostfix)));
-			}
-			catch (Exception ex)
-			{
-				HextechLog.Warn("MultiplayerCompat", $"Skipped SavedProperty net-id canonicalization: {ex.GetType().Name}: {ex.Message}");
-			}
-		}
+		[HarmonyPostfix]
+		private static void Postfix() => CanonicalizeNetIdMapPostfix();
 	}
 }
 #endif

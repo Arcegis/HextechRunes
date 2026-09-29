@@ -5,48 +5,56 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
+	private static readonly RunManagerEventSubscription RoomEnteredSubscription = new(
+		static (manager, handler) => manager.RoomEntered += handler,
+		static (manager, handler) => manager.RoomEntered -= handler,
+		OnRoomEntered);
+
+	private static readonly RunManagerEventSubscription RoomExitedSubscription = new(
+		static (manager, handler) => manager.RoomExited += handler,
+		static (manager, handler) => manager.RoomExited -= handler,
+		OnRoomExited);
+
 	private static void SubscribeRoomEnteredIfNeeded(bool force = false)
 	{
-		RunManager manager = RunManager.Instance;
-		if (_subscribedRoomEntered && ReferenceEquals(_subscribedRoomEnteredManager, manager))
-		{
-			if (!force)
-			{
-				return;
-			}
-
-			manager.RoomEntered -= OnRoomEntered;
-		}
-		else if (_subscribedRoomEnteredManager != null)
-		{
-			_subscribedRoomEnteredManager.RoomEntered -= OnRoomEntered;
-		}
-
-		manager.RoomEntered += OnRoomEntered;
-		_subscribedRoomEntered = true;
-		_subscribedRoomEnteredManager = manager;
+		RoomEnteredSubscription.Ensure(RunManager.Instance, force);
 	}
 
 	private static void SubscribeRoomExitedIfNeeded(bool force = false)
 	{
-		RunManager manager = RunManager.Instance;
-		if (_subscribedRoomExited && ReferenceEquals(_subscribedRoomExitedManager, manager))
+		RoomExitedSubscription.Ensure(RunManager.Instance, force);
+	}
+
+	/// <summary>
+	/// 对当前 RunManager 实例保持恰好一次订阅：实例换了就从旧实例退订再订阅新实例；
+	/// force（无尽循环重置）时对同一实例先退订再重新订阅。
+	/// </summary>
+	private sealed class RunManagerEventSubscription(
+		Action<RunManager, Action> subscribe,
+		Action<RunManager, Action> unsubscribe,
+		Action handler)
+	{
+		private RunManager? _manager;
+
+		internal void Ensure(RunManager manager, bool force)
 		{
-			if (!force)
+			if (ReferenceEquals(_manager, manager))
 			{
-				return;
+				if (!force)
+				{
+					return;
+				}
+
+				unsubscribe(manager, handler);
+			}
+			else if (_manager != null)
+			{
+				unsubscribe(_manager, handler);
 			}
 
-			manager.RoomExited -= OnRoomExited;
+			subscribe(manager, handler);
+			_manager = manager;
 		}
-		else if (_subscribedRoomExitedManager != null)
-		{
-			_subscribedRoomExitedManager.RoomExited -= OnRoomExited;
-		}
-
-		manager.RoomExited += OnRoomExited;
-		_subscribedRoomExited = true;
-		_subscribedRoomExitedManager = manager;
 	}
 
 	private static void OnRoomEntered()
@@ -106,6 +114,8 @@ internal static partial class HextechRunLifecycleHooks
 		if (modifier != null && ShouldScheduleActSelectionOnRoomEntered(runState, modifier, stageIndex))
 		{
 			HextechLog.Info("Mayhem", $"OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+			// RunManager.RoomEntered 是同步 C# 事件，处理器无法等待；每个客户端都在自己的 RoomEntered 里对同一阶段
+			// 启动选择，两端的同步由选择协议（等待远端/确认）完成。异常由 RunSafely 记录，不中断事件委托链。
 			TaskHelper.RunSafely(HextechRuneSelectionCoordinator.HandleStageSelection(runState, modifier, stageIndex));
 		}
 
@@ -166,6 +176,6 @@ internal static partial class HextechRunLifecycleHooks
 			return false;
 		}
 
-		return runState.CurrentRoom is MapRoom || runState.CurrentRoom is not null and not EventRoom;
+		return runState.CurrentRoom is not null and not EventRoom;
 	}
 }

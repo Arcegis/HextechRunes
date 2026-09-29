@@ -11,7 +11,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 
 	private static readonly AsyncLocal<ScalingOverride?> CurrentOverride = new();
 
-	public static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
+	internal static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
 		where T : PowerModel
 	{
 		ScalingOverride? scalingOverride = GetScalingOverride(typeof(T));
@@ -38,7 +38,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 	/// 按原值应用,绕过原版联机缩放。原版 PowerCmd.Apply 对敌方目标且 ShouldScaleInMultiplayer
 	/// 的 power(Slippery/Artifact 等)会自动 ×玩家数;层数已按最终口径算好的调用方(墨影幻灵)走这里。
 	/// </summary>
-	public static async Task<T?> ApplyExact<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
+	internal static async Task<T?> ApplyExact<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
 		where T : PowerModel
 	{
 		decimal finalAmount = ClampPowerOffsetForApply<T>(target, amount);
@@ -130,17 +130,28 @@ internal static partial class HextechEnemyPowerScalingHooks
 			&& (target.IsPrimaryEnemy || target.IsSecondaryEnemy);
 	}
 
+	// 跳过型前缀用 Priority.First（已裁决保留，见 architecture.md）：只在本模组 Apply/ApplyExact 的 AsyncLocal
+	// 窗口内（CurrentOverride == FinalAmount）且目标是敌人时生效，窗口外恒 return true、对其他模组透明；
+	// 窗口内层数已按最终口径算好，若排在第三方缩放前缀之后，会被它们再缩放一次或被它们的跳过前缀挡掉。
+	// 目标由 ScalingOverrides 各类型的 GetScaledAmountForMultiplayer 声明处派生（需运行时去重，故动态安装）。
 	[HextechPatch("combat.enemy-power-scaling", "敌方能力联机缩放")]
 	private static class ScaledAmountPatch
 	{
-		public static void Apply(Harmony harmony)
+		private static void Apply(Harmony harmony)
 		{
+			List<MethodInfo> targets = ResolveGetScaledAmountForMultiplayerTargets();
+			if (targets.Count == 0)
+			{
+				// 抛给 HextechPatcher 统一记失败，不能静默当作已安装。
+				throw new InvalidOperationException("GetScaledAmountForMultiplayer targets not found in this runtime.");
+			}
+
 			HarmonyMethod scaledPrefix = new(typeof(HextechEnemyPowerScalingHooks), nameof(GetScaledAmountForMultiplayerPrefix))
 			{
 				priority = Priority.First
 			};
 
-			foreach (MethodInfo scaledTarget in ResolveGetScaledAmountForMultiplayerTargets())
+			foreach (MethodInfo scaledTarget in targets)
 			{
 				harmony.Patch(scaledTarget, prefix: scaledPrefix);
 			}

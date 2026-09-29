@@ -4,35 +4,52 @@ internal static partial class HextechCombatHooks
 {
 	private static readonly HextechScopedDepthGuard GoliathMaxHpGuard = new();
 
-	private static void ResetGoliathTaskPostfix(Creature creature, bool __state, ref Task __result)
+	/// <summary>
+	/// Gain/LoseMaxHp 共用：先改主符文记录的基础最大生命，再把本次增减量换算成按系数缩放后的实际变化。
+	/// 返回 false 表示换算后实际值不变，调用方跳过原方法；<paramref name="entered"/> 表示已进入守卫。
+	/// </summary>
+	private static bool ScaleMaxHpDelta(Creature creature, ref decimal amount, int sign, out bool entered)
 	{
-		if (__state)
+		entered = false;
+		if (GoliathMaxHpGuard.IsActive
+			|| creature.Player is not Player player
+			|| HextechMaxHpScaling.GetPrimary(player) is not IHextechMaxHpBaseHolder primary)
 		{
-			__result = GoliathMaxHpGuard.WrapEnteredTask(__result);
+			return true;
 		}
 
-		if (__state || creature.Player?.GetRelic<NearDeathFeastRune>() != null)
+		HextechMaxHpScaling.EnsureBaseInitialized(player, primary, assumeAlreadyScaled: true);
+		int oldActual = creature.MaxHp;
+		primary.BaseMaxHp += sign * (int)amount;
+		int newActual = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
+		int delta = Math.Max(0, sign * (newActual - oldActual));
+		if (delta == 0)
 		{
-			__result = CompleteWithMaxHpPostfix(__result, creature);
+			return false;
+		}
+
+		GoliathMaxHpGuard.Enter();
+		entered = true;
+		amount = delta;
+		return true;
+	}
+
+	private static void CompleteMaxHpTaskPostfix(Creature creature, ref bool entered, ref Task result)
+	{
+		bool wasEntered = entered;
+		if (entered)
+		{
+			result = GoliathMaxHpGuard.WrapEnteredTask(result);
+			entered = false;
+		}
+
+		if (wasEntered || creature.Player?.GetRelic<NearDeathFeastRune>() != null)
+		{
+			result = RefreshDeathLimitAfter(result, creature);
 		}
 	}
 
-	private static void ResetGoliathDecimalTaskPostfix(Creature creature, bool __state, ref Task<decimal> __result)
-	{
-		Task<decimal> original = __result;
-		Task? guarded = null;
-		if (__state)
-		{
-			guarded = GoliathMaxHpGuard.WrapEnteredTask(original);
-		}
-
-		if (__state || creature.Player?.GetRelic<NearDeathFeastRune>() != null)
-		{
-			__result = CompleteWithMaxHpPostfix(original, guarded, creature);
-		}
-	}
-
-	private static async Task CompleteWithMaxHpPostfix(Task task, Creature creature)
+	private static async Task RefreshDeathLimitAfter(Task task, Creature creature)
 	{
 		try
 		{
@@ -44,16 +61,10 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-	private static async Task<decimal> CompleteWithMaxHpPostfix(Task<decimal> task, Task? guarded, Creature creature)
+	private static async Task<T> RefreshDeathLimitAfter<T>(Task<T> task, Creature creature)
 	{
 		try
 		{
-			if (guarded != null)
-			{
-				await guarded;
-				return task.GetAwaiter().GetResult();
-			}
-
 			return await task;
 		}
 		finally
@@ -66,83 +77,54 @@ internal static partial class HextechCombatHooks
 	[HextechPatch("combat.gain-max-hp", "最大生命换算")]
 	private static class GainMaxHpPatch
 	{
-		[HarmonyPostfix]
-		private static void Postfix(Creature creature, bool __state, ref Task __result) => ResetGoliathTaskPostfix(creature, __state, ref __result);
-
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 		{
-			__state = false;
-			if (GoliathMaxHpGuard.IsActive
-				|| creature.Player is not Player player
-				|| HextechMaxHpScaling.GetPrimary(player) is not IHextechMaxHpBaseHolder primary)
+			if (ScaleMaxHpDelta(creature, ref amount, sign: 1, out __state))
 			{
 				return true;
 			}
 
-			HextechMaxHpScaling.EnsureBaseInitialized(player, primary, assumeAlreadyScaled: true);
-			int oldActual = creature.MaxHp;
-			primary.BaseMaxHp += (int)amount;
-			int newActual = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
-			int delta = Math.Max(0, newActual - oldActual);
-			if (delta == 0)
-			{
-				__result = Task.CompletedTask;
-				return false;
-			}
-
-			GoliathMaxHpGuard.Enter();
-			__state = true;
-			amount = delta;
-			return true;
+			__result = Task.CompletedTask;
+			return false;
 		}
+
+		[HarmonyPostfix]
+		private static void Postfix(Creature creature, ref bool __state, ref Task __result) => CompleteMaxHpTaskPostfix(creature, ref __state, ref __result);
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(bool __state, Exception? __exception) => ExitGuardAfterSynchronousFailure(GoliathMaxHpGuard, __state, __exception);
 	}
 
 	[HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.LoseMaxHp), typeof(PlayerChoiceContext), typeof(Creature), typeof(decimal), typeof(bool))]
 	[HextechPatch("combat.lose-max-hp", "最大生命换算")]
 	private static class LoseMaxHpPatch
 	{
-		[HarmonyPostfix]
-		private static void Postfix(Creature creature, bool __state, ref Task __result) => ResetGoliathTaskPostfix(creature, __state, ref __result);
-
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, ref Task __result, out bool __state)
 		{
-			__state = false;
-			if (GoliathMaxHpGuard.IsActive
-				|| creature.Player is not Player player
-				|| HextechMaxHpScaling.GetPrimary(player) is not IHextechMaxHpBaseHolder primary)
+			if (ScaleMaxHpDelta(creature, ref amount, sign: -1, out __state))
 			{
 				return true;
 			}
 
-			HextechMaxHpScaling.EnsureBaseInitialized(player, primary, assumeAlreadyScaled: true);
-			int oldActual = creature.MaxHp;
-			primary.BaseMaxHp -= (int)amount;
-			int newActual = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
-			int loss = Math.Max(0, oldActual - newActual);
-			if (loss == 0)
-			{
-				__result = Task.CompletedTask;
-				return false;
-			}
-
-			GoliathMaxHpGuard.Enter();
-			__state = true;
-			amount = loss;
-			return true;
+			__result = Task.CompletedTask;
+			return false;
 		}
+
+		[HarmonyPostfix]
+		private static void Postfix(Creature creature, ref bool __state, ref Task __result) => CompleteMaxHpTaskPostfix(creature, ref __state, ref __result);
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(bool __state, Exception? __exception) => ExitGuardAfterSynchronousFailure(GoliathMaxHpGuard, __state, __exception);
 	}
 
 	[HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.SetMaxHp), typeof(Creature), typeof(decimal))]
 	[HextechPatch("combat.set-max-hp", "最大生命换算")]
 	private static class SetMaxHpPatch
 	{
-		[HarmonyPostfix]
-		private static void Postfix(Creature creature, bool __state, ref Task<decimal> __result) => ResetGoliathDecimalTaskPostfix(creature, __state, ref __result);
-
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Creature creature, ref decimal amount, out bool __state)
@@ -161,5 +143,24 @@ internal static partial class HextechCombatHooks
 			amount = HextechMaxHpScaling.GetScaledMaxHp(player, primary);
 			return true;
 		}
+
+		[HarmonyPostfix]
+		private static void Postfix(Creature creature, ref bool __state, ref Task<decimal> __result)
+		{
+			bool wasEntered = __state;
+			if (__state)
+			{
+				__result = GoliathMaxHpGuard.WrapEnteredTask(__result);
+				__state = false;
+			}
+
+			if (wasEntered || creature.Player?.GetRelic<NearDeathFeastRune>() != null)
+			{
+				__result = RefreshDeathLimitAfter(__result, creature);
+			}
+		}
+
+		[HarmonyFinalizer]
+		private static Exception? Finalizer(bool __state, Exception? __exception) => ExitGuardAfterSynchronousFailure(GoliathMaxHpGuard, __state, __exception);
 	}
 }

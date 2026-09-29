@@ -3,64 +3,11 @@ using Godot;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx.Forms;
-using static HextechRunes.HextechHookReflection;
-#endif
 
 namespace HextechRunes;
 
-// 自定义角色场景不一定提供 0.110 起新增的 %FormVfx 容器。形态能力本身不依赖该节点，
-// 因此容器缺失时只跳过纯视觉挂载与清理，避免战斗结算和放弃流程被 VFX 异常中断。
-internal static class HextechFormVfxSafetyHooks
+internal static partial class HextechFormVfxSafetyHooks
 {
-	internal enum FormVfxKind
-	{
-		Other,
-		Demon,
-		Serpent
-	}
-
-	internal static bool ShouldRunOriginal(bool hasFormVfxHolder)
-	{
-		return hasFormVfxHolder;
-	}
-
-	internal static bool ShouldPreserveExistingForSymphony(
-		bool hasSymphonyOfWar,
-		FormVfxKind incoming,
-		FormVfxKind existing)
-	{
-		return hasSymphonyOfWar
-			&& existing is FormVfxKind.Demon or FormVfxKind.Serpent
-			&& existing != incoming;
-	}
-
-#if STS2_110_OR_NEWER
-	internal static MethodInfo ResolveAddFormVfxTarget()
-	{
-		return RequireMethod(
-			typeof(NCreatureVisuals),
-			nameof(NCreatureVisuals.AddFormVfx),
-			BindingFlags.Instance | BindingFlags.Public,
-			typeof(NFormVfx));
-	}
-
-	internal static MethodInfo ResolveRemoveFormVfxTarget()
-	{
-		return RequireMethod(
-			typeof(NCreatureVisuals),
-			nameof(NCreatureVisuals.RemoveFormVfx),
-			BindingFlags.Instance | BindingFlags.Public);
-	}
-
-	private static Control? GetFormVfxHolder(NCreatureVisuals visuals)
-	{
-#if STS2_111_OR_NEWER
-		return visuals.FormVfxHolder;
-#else
-		return visuals._formVfxHolder;
-#endif
-	}
-
 	private static bool HasSymphonyOfWar(NCreatureVisuals visuals)
 	{
 		NCombatRoom? room = NCombatRoom.Instance;
@@ -78,22 +25,24 @@ internal static class HextechFormVfxSafetyHooks
 			_ => FormVfxKind.Other
 		};
 	}
-#endif
 
-	#if STS2_110_OR_NEWER
+	// 跳过型前缀：原版 AddFormVfx 直接往 %FormVfx 容器挂节点，缺容器即空引用，且没有"挂载形态特效"的 Hook。
+	// 激活条件：容器缺失（跳过纯视觉挂载），或持有战争交响乐（按保留规则自行挂载）；其余情况走原版。
+	// 默认 Priority.Low，让其他模组的前缀先执行；目标 IL 由原版拷贝守卫冻结（0.110.0/0.111.0）。
 	[HarmonyPatch(typeof(NCreatureVisuals), nameof(NCreatureVisuals.AddFormVfx), typeof(NFormVfx))]
 	[HextechPatch("compat.form-vfx.add", "形态特效容器安全")]
 	private static class AddFormVfxPatch
 	{
 		[HarmonyPrefix]
-		[HarmonyPriority(Priority.First)]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NCreatureVisuals __instance, NFormVfx formVfx)
 		{
-			Control? holder = GetFormVfxHolder(__instance);
-			if (!ShouldRunOriginal(holder != null))
+			Control? holder = HextechCreatureVisualsCompat.GetFormVfxHolder(__instance);
+			if (holder == null)
 			{
 				return false;
 			}
+
 			if (!HasSymphonyOfWar(__instance))
 			{
 				return true;
@@ -101,7 +50,7 @@ internal static class HextechFormVfxSafetyHooks
 
 			// 战争交响乐固定保留恶魔与群蛇两层视觉；其他形态之间仍维持原版的后到覆盖先到。
 			FormVfxKind incoming = GetFormVfxKind(formVfx);
-			foreach (Node child in holder!.GetChildren())
+			foreach (Node child in holder.GetChildren())
 			{
 				FormVfxKind existing = child is NFormVfx existingFormVfx
 					? GetFormVfxKind(existingFormVfx)
@@ -121,16 +70,17 @@ internal static class HextechFormVfxSafetyHooks
 		}
 	}
 
+	// 跳过型前缀：原版 RemoveFormVfx 同样直接访问 %FormVfx 容器；只在容器缺失时跳过，Priority.Low。
 	[HarmonyPatch(typeof(NCreatureVisuals), nameof(NCreatureVisuals.RemoveFormVfx), new Type[0])]
 	[HextechPatch("compat.form-vfx.remove", "形态特效容器安全")]
 	private static class RemoveFormVfxPatch
 	{
 		[HarmonyPrefix]
-		[HarmonyPriority(Priority.First)]
+		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NCreatureVisuals __instance)
 		{
-			return ShouldRunOriginal(GetFormVfxHolder(__instance) != null);
+			return HextechCreatureVisualsCompat.GetFormVfxHolder(__instance) != null;
 		}
 	}
-#endif
 }
+#endif

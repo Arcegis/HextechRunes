@@ -6,7 +6,7 @@ internal static partial class Program
 {
 	private static void ActualDamageHookCannotSuppressOutOfCombatCalls()
 	{
-		MethodInfo prefix = HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Prefix")
+		MethodInfo prefix = FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Prefix")
 			?? throw new InvalidOperationException("Actual damage command prefix is missing.");
 
 		Equal(typeof(void), prefix.ReturnType, "actual damage prefix return type");

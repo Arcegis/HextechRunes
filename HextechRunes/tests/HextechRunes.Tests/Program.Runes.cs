@@ -298,7 +298,7 @@ internal static partial class Program
 
 	private static void NightmareHooksEveryDarkOrbPassiveTrigger()
 	{
-		MethodInfo target = HextechNightmareHooks.ResolvePassiveHookTarget();
+		MethodBase target = ResolveDeclaredPatchTarget(typeof(NightmareRune), "PassivePatch");
 		Equal(typeof(DarkOrb), target.DeclaringType, "nightmare hook declaring type");
 		Equal(nameof(DarkOrb.Passive), target.Name, "nightmare hook method");
 		SequenceEqual(
@@ -492,10 +492,10 @@ internal static partial class Program
 		MethodInfo[] hookMethods = typeof(HextechPlayerRuneHooks).GetMethods(
 			BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 		Expect(hookMethods.All(method => method.Name != "OrbChannelPrefix"), "Draw Your Sword should no longer intercept Orb channeling");
-		Expect(HextechPatcher.FindPatchMethod(typeof(DrawYourSwordRune), "DrawYourSwordEvokePatch", "Apply") != null, "Draw Your Sword should install an Orb Evoke replacement hook");
+		Expect(FindPatchMethod(typeof(DrawYourSwordRune), "DrawYourSwordEvokePatch", "Apply") != null, "Draw Your Sword should install an Orb Evoke replacement hook");
 		Expect(hookMethods.Any(method => method.Name == "OrbEvokePrefix"), "Draw Your Sword should intercept Orb Evoke effects");
 
-		IReadOnlyList<MethodInfo> evokeMethods = HextechPlayerRuneHooks.FindLoadedOrbEvokeMethods();
+		IReadOnlyList<MethodInfo> evokeMethods = HextechPlayerRuneHooks.FindOrbEvokeMethods();
 		Expect(evokeMethods.Any(method => method.DeclaringType == typeof(OrbModel)), "Orb Evoke replacement should include the base implementation");
 		Expect(evokeMethods.Any(method => method.DeclaringType == typeof(LightningOrb)), "Orb Evoke replacement should include concrete Orb implementations");
 	}

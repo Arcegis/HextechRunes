@@ -52,6 +52,34 @@ public sealed partial class DoubleVisionRune
 		}
 	}
 
+	/// <summary>
+	/// Harmony Finalizer 专用：被包住的原命令同步抛异常、Postfix 没有执行时，只在调用方执行流上恢复
+	/// Begin* 设置的 AsyncLocal，并结清事件事务批次的计数；不做任何复制或补救结算。
+	/// </summary>
+	internal static void AbandonScopeAfterSynchronousFailure(object? state)
+	{
+		switch (state)
+		{
+			case int previousDepth:
+				CommandDuplicationSuppressionDepth.Value = previousDepth;
+				break;
+			case CardRewardTrackingScope trackingScope:
+				CurrentCardRewardTracker.Value = trackingScope.PreviousTracker;
+				break;
+			case DirectCommandRewardScope commandScope:
+				RestoreCommandRewardScope(commandScope);
+				break;
+			case EventRelicRecordScope recordScope:
+				EventRelicObtainDepth.Value = recordScope.PreviousObtainDepth;
+				break;
+			case EventRelicTransactionScope transactionScope:
+				CurrentEventRelicTransaction.Value = transactionScope.Previous;
+				transactionScope.Transaction.CloseForRecording();
+				transactionScope.Transaction.Batch.Complete(committedRewards: false, canSaveFinishedAncientEvent: false);
+				break;
+		}
+	}
+
 	internal static object? BeginDirectRelicReward(RelicModel relic, Player player)
 	{
 		return BeginEventRelicRecording(relic, player) ?? (object?)BeginDirectCommandReward(player);

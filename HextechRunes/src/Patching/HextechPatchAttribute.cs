@@ -12,6 +12,8 @@ namespace HextechRunes;
 /// <item><see cref="Rune"/> 指定后，补丁失败会由 <see cref="HextechRuntimeRuneCompatibility"/> 将该符文标为本运行时不可用。</item>
 /// <item><see cref="Optional"/> 允许类处理器未安装任何目标；安装异常仍计入失败，
 /// 未关联符文时以诊断 Info 记录，关联符文时仍标记其不可用。</item>
+/// <item><see cref="CopiesVanillaLogic"/> 标记不跳过原方法、却在 Postfix 里复制了原方法内部步骤的补丁，
+/// 让 <see cref="HextechVanillaCopyGuard"/> 同样冻结其目标 IL。</item>
 /// </list>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
@@ -33,6 +35,9 @@ internal sealed class HextechPatchAttribute : Attribute
 	public Type[]? Runes { get; init; }
 
 	public bool Optional { get; init; }
+
+	/// <summary>补丁虽不跳过原方法，但复制了原方法内部步骤（如在 Postfix 里重放一遍）；目标纳入原版拷贝守卫。</summary>
+	public bool CopiesVanillaLogic { get; init; }
 
 	internal IEnumerable<Type> AffectedRunes
 	{

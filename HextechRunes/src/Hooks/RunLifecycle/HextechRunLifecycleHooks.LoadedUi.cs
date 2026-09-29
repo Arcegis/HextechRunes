@@ -8,8 +8,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-	private const int EnemyUiRefreshFrameBudget = 45;
-
 	private static async Task LoadRunAfterOriginal(Task original, RunState runState)
 	{
 		await original;
@@ -17,7 +15,10 @@ internal static partial class HextechRunLifecycleHooks
 		// mod 延续体异常不能把原版 LoadRun 任务链打成 faulted。
 		try
 		{
-			await RefreshEnemyUiForRunWhenReady(runState, "LoadRun", EnemyUiRefreshFrameBudget);
+			await RefreshEnemyUiWhenReady(() => runState, "LoadRun", EnemyUiRefreshFrameBudget);
+			// 不能 await：原版读档入口（主菜单继续/各联机读档界面）在 LoadRun 返回后才 FadeIn，
+			// 恢复中的锻造器/海克斯选择要等玩家操作，等它会让画面一直停在淡出状态。
+			// 两端都在各自的 LoadRun 延续里启动这段恢复，选择结果由选择协议同步；异常由 RunSafely 记录。
 			_ = TaskHelper.RunSafely(ResumePendingSelectionTransactionsAfterLoad(runState));
 		}
 		catch (Exception ex)
@@ -47,8 +48,7 @@ internal static partial class HextechRunLifecycleHooks
 			return true;
 		}
 
-		const int frameBudget = 300;
-		for (int frame = 0; frame <= frameBudget; frame++)
+		for (int frame = 0; frame <= ResumeAfterLoadFrameBudget; frame++)
 		{
 			if (!IsCurrentRun(runState))
 			{
@@ -112,8 +112,7 @@ internal static partial class HextechRunLifecycleHooks
 
 	private static async Task ResumePendingActSelectionAfterLoad(RunState runState)
 	{
-		const int frameBudget = 300;
-		for (int frame = 0; frame <= frameBudget; frame++)
+		for (int frame = 0; frame <= ResumeAfterLoadFrameBudget; frame++)
 		{
 			if (!IsCurrentRun(runState))
 			{
@@ -151,41 +150,17 @@ internal static partial class HextechRunLifecycleHooks
 		HextechLog.Warn("Mayhem", $"ResumePendingActSelectionAfterLoad timed out: currentRun={IsCurrentRun(runState)} act={runState.CurrentActIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
 	}
 
-	private static void ScheduleEnemyUiRefresh(RunState runState, string reason, int frameBudget)
+	// 顶栏初始化是同步回调，只能启动不能等待；刷新只读本局状态并更新本地 UI，两端各自执行，不影响共享状态。
+	private static void ScheduleEnemyUiRefresh(Func<RunState?> resolveRun, string reason, int frameBudget)
 	{
-		TaskHelper.RunSafely(RefreshEnemyUiForRunWhenReady(runState, reason, frameBudget));
+		TaskHelper.RunSafely(RefreshEnemyUiWhenReady(resolveRun, reason, frameBudget));
 	}
 
-	private static void ScheduleEnemyUiRefreshForCurrentRun(string reason, int frameBudget)
-	{
-		TaskHelper.RunSafely(RefreshEnemyUiForCurrentRunWhenReady(reason, frameBudget));
-	}
-
-	private static async Task RefreshEnemyUiForCurrentRunWhenReady(string reason, int frameBudget)
+	private static async Task RefreshEnemyUiWhenReady(Func<RunState?> resolveRun, string reason, int frameBudget)
 	{
 		for (int frame = 0; frame <= frameBudget; frame++)
 		{
-			if (RunManager.Instance.DebugOnlyGetState() is RunState runState)
-			{
-				bool refreshed = TryRefreshEnemyUiForRun(runState, reason, frame);
-				if (refreshed)
-				{
-					return;
-				}
-			}
-
-			await WaitOneFrame();
-		}
-
-		HextechEnemyUi.HideMayhemModifierBadge();
-		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh skipped: reason={reason} no current run after {frameBudget} frames");
-	}
-
-	private static async Task RefreshEnemyUiForRunWhenReady(RunState runState, string reason, int frameBudget)
-	{
-		for (int frame = 0; frame <= frameBudget; frame++)
-		{
-			if (TryRefreshEnemyUiForRun(runState, reason, frame))
+			if (resolveRun() is RunState runState && TryRefreshEnemyUiForRun(runState, reason, frame))
 			{
 				return;
 			}
@@ -194,7 +169,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		HextechEnemyUi.HideMayhemModifierBadge();
-		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh skipped: reason={reason} topbar/modifier not ready after {frameBudget} frames");
+		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh skipped: reason={reason} run/topbar/modifier not ready after {frameBudget} frames");
 	}
 
 	private static bool TryRefreshEnemyUiForRun(RunState runState, string reason, int frame)
@@ -233,13 +208,8 @@ internal static partial class HextechRunLifecycleHooks
 		[HarmonyPostfix]
 		private static void Postfix(RunState runState, ref Task __result)
 		{
-	#if STS2_109_OR_NEWER
-			HextechSavedPropertyBootstrap.RunOfficialCacheAuditOnce();
-	#endif
-			HextechRunLogBudget.Reset();
-			HextechCombatHooks.ResetTransientCombatState();
-			HextechEnemyHexEffects.ResetAllRunScopedState();
-			HextechGoldrendSync.ResetForRun(runState);
+			HextechSavedPropertyAuditCompat.RunAuditOnRunStartOnce();
+			ResetRunScopedState(runState);
 			__result = LoadRunAfterOriginal(__result, runState);
 		}
 	}
@@ -253,11 +223,11 @@ internal static partial class HextechRunLifecycleHooks
 		{
 			if (runState is RunState concreteRunState)
 			{
-				ScheduleEnemyUiRefresh(concreteRunState, "NTopBar.Initialize", EnemyUiRefreshFrameBudget);
+				ScheduleEnemyUiRefresh(() => concreteRunState, "NTopBar.Initialize", EnemyUiRefreshFrameBudget);
 				return;
 			}
 
-			ScheduleEnemyUiRefreshForCurrentRun("NTopBar.Initialize", EnemyUiRefreshFrameBudget);
+			ScheduleEnemyUiRefresh(static () => RunManager.Instance.DebugOnlyGetState(), "NTopBar.Initialize", EnemyUiRefreshFrameBudget);
 		}
 	}
 }

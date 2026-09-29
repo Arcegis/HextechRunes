@@ -71,7 +71,7 @@ public sealed class DrawYourSwordRune : AttributeConversionRelicBase
 				priority = Priority.Low
 			};
 
-			foreach (MethodInfo method in HextechPlayerRuneHooks.FindLoadedOrbEvokeMethods())
+			foreach (MethodInfo method in HextechPlayerRuneHooks.FindOrbEvokeMethods())
 			{
 				harmony.Patch(method, prefix: prefix);
 			}

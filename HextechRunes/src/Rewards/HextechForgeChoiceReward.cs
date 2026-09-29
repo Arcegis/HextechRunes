@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Saves;
@@ -72,7 +73,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 	internal static bool TryFromSavedReward(
 		SerializableReward save,
 		Player player,
-		out HextechForgeChoiceReward? reward)
+		[NotNullWhen(true)] out HextechForgeChoiceReward? reward)
 	{
 		reward = null;
 		int requestedCount = Math.Clamp(save.OptionCount, 0, HextechStableModelIdListCodec.MaxCount);

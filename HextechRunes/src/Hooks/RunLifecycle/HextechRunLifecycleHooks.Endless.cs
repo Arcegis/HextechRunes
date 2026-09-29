@@ -5,9 +5,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-	private const int EndlessLoopActTransitionTimeoutFrames = 3600;
-	private const int EndlessLoopRoomReadyTimeoutFrames = 600;
-
 	private static bool IsUnannouncedEndlessLoopRewind(RunState runState, HextechMayhemModifier modifier, int stageIndex)
 	{
 		return IsUnannouncedEndlessLoopRewind(runState.CurrentActIndex, stageIndex, modifier.IsStageResolved);
@@ -31,6 +28,8 @@ internal static partial class HextechRunLifecycleHooks
 		SubscribeRoomEnteredIfNeeded(force: true);
 		SubscribeRoomExitedIfNeeded(force: true);
 		HextechRuneSelectionCoordinator.ResetActSelectionState();
+		// 由 Modifier.ResetForEndlessLoop 同步调用（房间进入回调或无尽模组的同步通知），调用方无法等待；
+		// 所有端都在同一逻辑点重置并启动这段等待，真正的海克斯选择由选择协议同步，异常由 RunSafely 记录。
 		TaskHelper.RunSafely(HandleEndlessLoopActSelection(modifier, reason));
 	}
 
@@ -43,7 +42,7 @@ internal static partial class HextechRunLifecycleHooks
 			int actIndex = runState.CurrentActIndex;
 			if (actIndex != 0)
 			{
-				if (frame % 120 == 0)
+				if (frame % EndlessLoopWaitLogIntervalFrames == 0)
 				{
 					HextechLog.Info("Mayhem", $"Endless loop selection waiting for act transition: reason={reason} frame={frame} act={actIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 				}
@@ -71,7 +70,7 @@ internal static partial class HextechRunLifecycleHooks
 				return;
 			}
 
-			if (roomReadyFrames % 120 == 0)
+			if (roomReadyFrames % EndlessLoopWaitLogIntervalFrames == 0)
 			{
 				HextechLog.Info("Mayhem", $"Endless loop selection waiting for room: reason={reason} frame={frame} readyFrame={roomReadyFrames} act={actIndex} room=null mapOpen={NMapScreen.Instance?.IsOpen == true}");
 			}

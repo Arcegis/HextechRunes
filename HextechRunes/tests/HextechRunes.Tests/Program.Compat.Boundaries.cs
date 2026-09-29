@@ -94,9 +94,9 @@ internal static partial class Program
 	// 而原方法内部(在 Postfix 之前捕获了上下文的 await 续体)仍然看得到自己的命令 ID。
 	private static void DamageCommandScopeRestoresCallerContextAndKeepsTaskContext()
 	{
-		MethodInfo prefix = HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Prefix")
+		MethodInfo prefix = FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Prefix")
 			?? throw new InvalidOperationException("damage command prefix missing");
-		MethodInfo postfix = HextechPatcher.FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Postfix")
+		MethodInfo postfix = FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Postfix")
 			?? throw new InvalidOperationException("damage command postfix missing");
 		Equal(0L, HextechCombatHooks.CurrentActualDamageCommandId, "clean caller context before the command");
 

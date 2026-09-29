@@ -15,6 +15,8 @@ internal static partial class HextechCombatHooks
 		return false;
 	}
 
+	// 跳过型前缀（已裁决保留，见 architecture.md）：原版 GetTypeForAmount 对 Counter+AllowNegative 的负层数一律判 Debuff，
+	// 且不是虚方法、没有 Hook。只对本模组的两种缓慢能力返回 None，其余能力走原版。目标 IL 由原版拷贝守卫冻结。
 	[HarmonyPatch(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), typeof(decimal))]
 	[HextechPatch("combat.power-type-for-amount", "中性能力类型")]
 	private static class PowerTypeForAmountPatch
