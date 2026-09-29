@@ -33,16 +33,6 @@ internal static class HextechPlayerCoefficientHelper
 		// 这里只做 decimal 连乘、不取整，乘法可交换，结果与各项的先后无关。
 		decimal multiplier = HextechForgeCoefficientHelper.GetSustainMultiplier(player);
 
-		if (player.GetRelic<MoreTheMerrierRune>() is MoreTheMerrierRune moreTheMerrierRune)
-		{
-			multiplier *= moreTheMerrierRune.SustainMultiplier;
-		}
-
-		if (player.GetRelic<AnthonyBiasRune>() is AnthonyBiasRune anthonyBiasRune)
-		{
-			multiplier *= anthonyBiasRune.SustainMultiplier;
-		}
-
 		// 全心为你是全队效果,按全队存活持有者计,不只看自己的遗物。
 		multiplier *= AllForYouRune.GetTeamHealingMultiplier(player);
 
