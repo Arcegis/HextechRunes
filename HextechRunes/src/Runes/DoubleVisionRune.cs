@@ -1,7 +1,4 @@
-using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Saves;
 using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
@@ -14,7 +11,8 @@ public sealed partial class DoubleVisionRune : HextechRelicBase
 	private static readonly AsyncLocal<int> EventRelicObtainDepth = new();
 	private static readonly AsyncLocal<DustyTome?> SuppressedDustyTomeAfterObtained = new();
 	private static readonly ConditionalWeakTable<EventRoom, EventRelicTransactionBatch> EventRelicTransactionBatches = new();
-	private static readonly FieldInfo? GoldRewardWasStolenBackField = typeof(GoldReward).GetField("_wasGoldStolenBack", BindingFlags.Instance | BindingFlags.NonPublic);
+	// 原版 GoldReward 私有字段 _wasGoldStolenBack(0.107.1~0.111.0)；缺失时进启动摘要，复制金币按"非夺回"处理。
+	private static readonly FieldInfo? GoldRewardWasStolenBackField = HextechHookReflection.TryGetField(typeof(GoldReward), "_wasGoldStolenBack");
 
 	// 0.109.0 以前的版本会把事件遗物写进此字段。新代码只将它作为旧存档恢复队列:
 	// 正常事件获得由 EventOption.Chosen 外层事务在原选项 Task 完成后立即结算,不再新增 pending。
@@ -113,5 +111,4 @@ public sealed partial class DoubleVisionRune : HextechRelicBase
 				break;
 		}
 	}
-
 }

@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Rooms;
 
 namespace HextechRunes;
 
@@ -14,14 +13,7 @@ public sealed class HextechBlackBloodPlus : OrobasPlusRelicBase
 		if (!Owner.Creature.IsDead)
 		{
 			await CreatureCmd.Heal(Owner.Creature, DynamicVars.Heal.BaseValue);
-			try
-			{
-				Flash();
-			}
-			catch (Exception ex)
-			{
-				HextechLog.Warn("BlackBloodPlus", $"Flash failed: {ex.Message}");
-			}
+			Flash();
 		}
 	}
 }

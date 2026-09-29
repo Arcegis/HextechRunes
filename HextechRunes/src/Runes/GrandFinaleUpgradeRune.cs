@@ -1,6 +1,3 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-using MegaCrit.Sts2.Core.Nodes.Combat;
-
 namespace HextechRunes;
 
 public sealed class GrandFinaleUpgradeRune : CardUpgradeRuneBase<GrandFinale>
@@ -17,7 +14,7 @@ public sealed class GrandFinaleUpgradeRune : CardUpgradeRuneBase<GrandFinale>
 
 	internal static async Task PlayUpgradedSafely(PlayerChoiceContext choiceContext, GrandFinale card)
 	{
-		var combatState = card.CombatState;
+		HextechCombatState? combatState = card.CombatState;
 		if (combatState == null)
 		{
 			return;

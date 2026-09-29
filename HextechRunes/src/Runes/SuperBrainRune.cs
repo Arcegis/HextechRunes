@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 public sealed class SuperBrainRune : HextechRelicBase
 {
+	private const int DeckCardsPerPlating = 3;
+
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
 		if (room is not CombatRoom || Owner == null)
@@ -9,7 +11,7 @@ public sealed class SuperBrainRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		int plating = Owner.Deck.Cards.Count / 3;
+		int plating = Owner.Deck.Cards.Count / DeckCardsPerPlating;
 		if (plating <= 0)
 		{
 			return Task.CompletedTask;

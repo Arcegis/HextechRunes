@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 public sealed class KnowThyPlaceUpgradeRune : CardUpgradeRuneBase<KnowThyPlace>
 {
+	private const decimal ExtraStatLoss = 1m;
+
 	protected override bool IsAvailableForCharacter(Player player)
 	{
 		return IsRegentPlayer(player);
@@ -19,7 +21,7 @@ public sealed class KnowThyPlaceUpgradeRune : CardUpgradeRuneBase<KnowThyPlace>
 		}
 
 		Flash([cardPlay.Target]);
-		await PowerCmd.Apply<StrengthPower>(cardPlay.Target, -1m, Owner.Creature, cardPlay.Card);
-		await PowerCmd.Apply<DexterityPower>(cardPlay.Target, -1m, Owner.Creature, cardPlay.Card);
+		await PowerCmd.Apply<StrengthPower>(cardPlay.Target, -ExtraStatLoss, Owner.Creature, cardPlay.Card);
+		await PowerCmd.Apply<DexterityPower>(cardPlay.Target, -ExtraStatLoss, Owner.Creature, cardPlay.Card);
 	}
 }

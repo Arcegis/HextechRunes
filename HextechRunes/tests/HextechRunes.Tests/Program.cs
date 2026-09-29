@@ -225,7 +225,7 @@ internal static partial class Program
 			new(nameof(StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot), StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot),
 			new(nameof(StableRandomSequentialFloorsAvoidExcessClustering), StableRandomSequentialFloorsAvoidExcessClustering),
 			new(nameof(StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle), StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle),
-			new(nameof(ColorDiscoveryCandidateOrderIsPermutationInvariant), ColorDiscoveryCandidateOrderIsPermutationInvariant),
+			new(nameof(ColorDiscoveryCandidatesUseSharedStableCombatPool), ColorDiscoveryCandidatesUseSharedStableCombatPool),
 			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
 			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
 			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
@@ -420,7 +420,9 @@ internal static partial class Program
 			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives),
 			new(nameof(NearDeathHpLossResolvesDyingAndKillThresholds), NearDeathHpLossResolvesDyingAndKillThresholds),
 			new(nameof(RuneFamilyHelpersKeepThresholdAndRoundSemantics), RuneFamilyHelpersKeepThresholdAndRoundSemantics),
-			new(nameof(RuneFamilyTypesUseSharedBases), RuneFamilyTypesUseSharedBases)
+			new(nameof(RuneFamilyTypesUseSharedBases), RuneFamilyTypesUseSharedBases),
+			new(nameof(RuneReflectionTargetsResolveOnCurrentGameVersion), RuneReflectionTargetsResolveOnCurrentGameVersion),
+			new(nameof(RetiredRuneSavedPropertiesStayInertPlaceholders), RetiredRuneSavedPropertiesStayInertPlaceholders)
 		];
 
 		if (args.Length > 0)

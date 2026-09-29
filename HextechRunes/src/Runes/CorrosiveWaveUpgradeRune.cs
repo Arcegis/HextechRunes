@@ -1,12 +1,10 @@
-using MegaCrit.Sts2.Core.Hooks;
-
 namespace HextechRunes;
 
 public sealed class CorrosiveWaveUpgradeRune : CardUpgradeRuneBase<CorrosiveWave>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<CorrosiveWave>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromPower<CorrosiveWavePower>(),
 		HoverTipFactory.FromKeyword(CardKeyword.Exhaust)
 	];

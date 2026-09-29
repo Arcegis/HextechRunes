@@ -6,7 +6,8 @@ public sealed class HangUpgradeRune : CardUpgradeRuneBase<Hang>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Hang>(), HoverTipFactory.FromKeyword(CardKeyword.Exhaust),
+		.. base.ExtraHoverTips,
+		HoverTipFactory.FromKeyword(CardKeyword.Exhaust),
 		HoverTipFactory.FromPower<HextechHangPower>()
 	];
 
@@ -19,7 +20,11 @@ public sealed class HangUpgradeRune : CardUpgradeRuneBase<Hang>
 
 	internal static async Task PlayUpgraded(PlayerChoiceContext context, Hang card, CardPlay play)
 	{
-		Creature target = play.Target!;
+		if (play.Target is not { } target)
+		{
+			return;
+		}
+
 		await DamageCmd.Attack(card.DynamicVars.Damage.BaseValue).FromCardCompat(card, play)
 			.Targeting(target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
 		await PowerCmd.Apply<HextechHangPower>(context, target, NextIncrease(target.GetPowerAmount<HextechHangPower>()), card.Owner.Creature, card);
@@ -33,7 +38,11 @@ public sealed class HangUpgradeRune : CardUpgradeRuneBase<Hang>
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Hang __instance, PlayerChoiceContext choiceContext, CardPlay cardPlay, ref Task __result)
 		{
-			if (__instance.Owner?.GetRelic<HangUpgradeRune>() == null) return true;
+			if (__instance.Owner?.GetRelic<HangUpgradeRune>() == null)
+			{
+				return true;
+			}
+
 			__result = PlayUpgraded(choiceContext, __instance, cardPlay);
 			return false;
 		}

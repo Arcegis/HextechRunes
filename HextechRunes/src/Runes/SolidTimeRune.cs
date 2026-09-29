@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 public sealed partial class SolidTimeRune : HextechRelicBase
@@ -39,9 +41,9 @@ public sealed partial class SolidTimeRune : HextechRelicBase
 			return;
 		}
 
-		AppendStoredCard(deckCard!);
+		AppendStoredCard(deckCard);
 		Flash();
-		await CardPileCmd.RemoveFromDeck(deckCard!, showPreview: false);
+		await CardPileCmd.RemoveFromDeck(deckCard, showPreview: false);
 	}
 
 	private async Task TriggerStoredPowersAtCombatStart(PlayerChoiceContext choiceContext, Player player)
@@ -82,7 +84,7 @@ public sealed partial class SolidTimeRune : HextechRelicBase
 		}
 	}
 
-	private bool TryGetDeckPower(CardModel combatCard, out CardModel? deckCard)
+	private bool TryGetDeckPower(CardModel combatCard, [NotNullWhen(true)] out CardModel? deckCard)
 	{
 		deckCard = combatCard.DeckVersion;
 		return deckCard != null

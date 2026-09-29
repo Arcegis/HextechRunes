@@ -4,10 +4,11 @@ namespace HextechRunes;
 
 public sealed class ThoughtOverwriteRune : HextechRelicBase
 {
-	internal const string EtherealMarkerSavedPropertyName = "SavedThoughtOverwriteEtherealMarker";
+	internal const string EtherealMarkerSavedPropertyName = nameof(SavedThoughtOverwriteEtherealMarker);
 
 	public override bool HasUponPickupEffect => true;
 
+	// 只为在 SavedProperty 名称表里登记这个名字，供卡牌存档写入关键词标记(见 HextechThoughtOverwriteKeywordPersistenceHooks)；自身不存值，名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	private int SavedThoughtOverwriteEtherealMarker
 	{
@@ -32,6 +33,7 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
+		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
 		if (Owner == null || !IsNecrobinderPlayer(Owner))
 		{
 			return;

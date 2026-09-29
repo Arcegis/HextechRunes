@@ -4,6 +4,7 @@ namespace HextechRunes;
 
 public sealed class SweepingBladeRune : HextechRelicBase
 {
+	// 原版 AttackCommand 私有字段 _singleTarget / _combatState(0.107.1~0.111.0)；缺失时进启动摘要，横扫不改目标。
 	private static readonly FieldInfo? AttackCommandSingleTargetField = TryGetField(typeof(AttackCommand), "_singleTarget");
 	private static readonly FieldInfo? AttackCommandCombatStateField = TryGetField(typeof(AttackCommand), "_combatState");
 	private SweepingBladeContext? _activeContext;

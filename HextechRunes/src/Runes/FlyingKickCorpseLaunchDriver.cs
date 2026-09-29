@@ -81,7 +81,7 @@ internal sealed class FlyingKickCorpseLaunchDriver
 			{
 				if (!LoggedAndroidSkip)
 				{
-					Log.Warn($"[{ModInfo.Id}][Mayhem][Compat] Flying Kick corpse launch visual skipped on Android runtime.");
+					HextechLog.Warn("Compat", "Flying Kick corpse launch visual skipped on Android runtime.");
 					LoggedAndroidSkip = true;
 				}
 

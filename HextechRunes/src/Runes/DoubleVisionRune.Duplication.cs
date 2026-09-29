@@ -1,8 +1,6 @@
 using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves;
-using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
 
@@ -105,12 +103,15 @@ public sealed partial class DoubleVisionRune
 
 	private async Task DuplicateObtainedRelic(Player player, RelicModel sourceRelic, bool syncReward = true)
 	{
-		// 此通道排除海克斯基类、内容注册表成员及 HextechRunes* 程序集中的遗物，
+		// 此通道排除海克斯基类、内容注册表成员及本模组系列程序集中的遗物，
 		// 避免重复执行符文与锻造器的拾取流程；锻造奖励和商店锻造另有专用复制入口。
+		// 三项并不互相覆盖：注册表只认已登记的 ID(外部基于 HextechRelicBase 的符文登记失败时查不到)，
+		// 欧洛巴斯二次升级等本体遗物既不继承 HextechRelicBase 也不在符文注册表里，
+		// 程序集前缀同时覆盖本体与拓展包(HextechRunesSponsorPack)。
 		// 其他原版或外部遗物继续接受下方的逐类限制，并非只允许原版遗物。
 		if (sourceRelic is HextechRelicBase
 			|| HextechCatalog.IsHextechCustomRelic(sourceRelic)
-			|| sourceRelic.GetType().Assembly.GetName().Name?.StartsWith("HextechRunes", StringComparison.Ordinal) == true)
+			|| sourceRelic.GetType().Assembly.GetName().Name?.StartsWith(ModInfo.Id, StringComparison.Ordinal) == true)
 		{
 			return;
 		}

@@ -4,7 +4,7 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<CrashLanding>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<CollisionCourse>()
 	];
 
@@ -20,7 +20,7 @@ public sealed class CrashLandingUpgradeRune : CardUpgradeRuneBase<CrashLanding>
 
 	internal static async Task PlayUpgraded(PlayerChoiceContext choiceContext, CrashLanding card, CardPlay cardPlay)
 	{
-		var combatState = card.CombatState;
+		HextechCombatState? combatState = card.CombatState;
 		if (combatState == null)
 		{
 			return;

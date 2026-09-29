@@ -1,8 +1,6 @@
-using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Saves;
-using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
 
@@ -205,17 +203,17 @@ public sealed partial class DoubleVisionRune
 				catch (Exception afterObtainedException)
 				{
 					string message =
-						$"[{ModInfo.Id}][DoubleVision]{(failureIsDesyncRisk ? "[DESYNC-RISK]" : "")} "
+						$"{(failureIsDesyncRisk ? "[DESYNC-RISK] " : "")}"
 						+ $"{context} kept the relic but its pickup effect failed: "
 						+ $"player={player.NetId} relic={relicId.Entry} "
 						+ $"error={afterObtainedException.GetType().Name}: {afterObtainedException.Message}";
 					if (failureIsDesyncRisk)
 					{
-						Log.Error(message);
+						HextechLog.Error("DoubleVision", message);
 					}
 					else
 					{
-						Log.Warn(message);
+						HextechLog.Warn("DoubleVision", message);
 					}
 				}
 			}
@@ -232,16 +230,16 @@ public sealed partial class DoubleVisionRune
 		catch (Exception recoveryException)
 		{
 			string message =
-				$"[{ModInfo.Id}][DoubleVision]{(failureIsDesyncRisk ? "[DESYNC-RISK]" : "")} {context} failed: "
+				$"{(failureIsDesyncRisk ? "[DESYNC-RISK] " : "")}{context} failed: "
 				+ $"player={player.NetId} relic={relicId.Entry} "
 				+ $"error={recoveryException.GetType().Name}: {recoveryException.Message}";
 			if (failureIsDesyncRisk)
 			{
-				Log.Error(message);
+				HextechLog.Error("DoubleVision", message);
 			}
 			else
 			{
-				Log.Warn(message);
+				HextechLog.Warn("DoubleVision", message);
 			}
 
 			return null;
@@ -349,8 +347,8 @@ public sealed partial class DoubleVisionRune
 					string recoveryFailure = recoveryCopyException == null
 						? "canonical recovery model unavailable"
 						: $"{recoveryCopyException.GetType().Name}: {recoveryCopyException.Message}";
-					Log.Error(
-						$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Event relic copy failed and no deterministic recovery copy could be created: "
+					HextechLog.Error(
+						"DoubleVision", $"[DESYNC-RISK] Event relic copy failed and no deterministic recovery copy could be created: "
 						+ $"player={player.NetId} relic={sourceId.Entry} "
 						+ $"error={exception.GetType().Name}: {exception.Message} recoveryError={recoveryFailure}");
 					continue;
@@ -365,8 +363,8 @@ public sealed partial class DoubleVisionRune
 					failureIsDesyncRisk: true);
 				if (recovered != null)
 				{
-					Log.Error(
-						$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Recovered an event relic copy after its normal obtain path failed; "
+					HextechLog.Error(
+						"DoubleVision", $"[DESYNC-RISK] Recovered an event relic copy after its normal obtain path failed; "
 						+ "inventory was preserved but pickup side effects may differ between peers: "
 						+ $"player={player.NetId} relic={sourceId.Entry} "
 						+ $"error={exception.GetType().Name}: {exception.Message}");

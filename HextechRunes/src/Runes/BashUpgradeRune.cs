@@ -6,7 +6,7 @@ public sealed class BashUpgradeRune : CardUpgradeRuneBase<Bash>
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<Bash>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<Break>(),
 		HoverTipFactory.FromPower<VulnerablePower>(),
 		HoverTipFactory.FromPower<StrengthPower>()

@@ -4,7 +4,7 @@ public sealed class MoltenFistUpgradeRune : CardUpgradeRuneBase<MoltenFist>
 {
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
 	[
-		HoverTipFactory.FromCard<MoltenFist>(),
+		.. base.ExtraHoverTips,
 		HoverTipFactory.FromCard<Dominate>()
 	];
 

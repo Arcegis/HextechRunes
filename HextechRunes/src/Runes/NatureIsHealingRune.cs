@@ -136,6 +136,8 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 
 	private Task HealOwner()
 	{
-		return CreatureCmd.Heal(Owner!.Creature, DynamicVars.Heal.BaseValue);
+		return Owner == null
+			? Task.CompletedTask
+			: CreatureCmd.Heal(Owner.Creature, DynamicVars.Heal.BaseValue);
 	}
 }

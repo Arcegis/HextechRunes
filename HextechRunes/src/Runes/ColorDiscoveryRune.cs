@@ -86,7 +86,7 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 			return [];
 		}
 
-		List<CardModel> candidates = GetOtherCharacterCards(Owner).ToList();
+		List<CardModel> candidates = GetOtherCharacterCards(Owner);
 		List<CardModel> options = [];
 		for (int i = 0; i < DynamicVars.Cards.IntValue && candidates.Count > 0; i++)
 		{
@@ -111,26 +111,15 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 		return options;
 	}
 
-	private static IEnumerable<CardModel> GetOtherCharacterCards(Player player)
+	// 同一张卡可能出现在多个池里：按 Id 去重保留首次出现，再交给基类统一做战斗过滤、生成许可与 CardKey 稳定排序。
+	private static List<CardModel> GetOtherCharacterCards(Player player)
 	{
 		ModelId ownerPoolId = player.Character.CardPool.Id;
-		IEnumerable<CardModel> candidates = GetOtherCharacterPools(
-			ModelDb.AllCharacters.Select(static character => character.CardPool),
-			ownerPoolId)
-			.SelectMany(pool => CardFactory.FilterForCombat(
-				pool.GetUnlockedCards(player.UnlockState, player.RunState.CardMultiplayerConstraint)))
-			.Where(static card => card.CanBeGeneratedByModifiers)
-			.GroupBy(static card => card.Id)
-			.Select(static group => group.First());
-		return OrderCandidatesForStableSelection(candidates);
-	}
-
-	internal static IReadOnlyList<CardModel> OrderCandidatesForStableSelection(
-		IEnumerable<CardModel> candidates)
-	{
-		return candidates
-			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
-			.ToArray();
+		return BuildStableCombatGenerationPool(GetOtherCharacterPools(
+				ModelDb.AllCharacters.Select(static character => character.CardPool),
+				ownerPoolId)
+			.SelectMany(pool => pool.GetUnlockedCards(player.UnlockState, player.RunState.CardMultiplayerConstraint))
+			.DistinctBy(static card => card.Id));
 	}
 
 	internal static IEnumerable<CardPoolModel> GetOtherCharacterPools(

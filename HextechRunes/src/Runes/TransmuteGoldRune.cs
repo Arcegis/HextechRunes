@@ -11,8 +11,7 @@ public sealed class TransmuteGoldRune : HextechRelicBase
 			return;
 		}
 
-		Player player = Owner;
 		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, player, HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Gold), 1);
+		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, Owner, HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Gold), 1);
 	}
 }

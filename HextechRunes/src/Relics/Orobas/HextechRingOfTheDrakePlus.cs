@@ -14,7 +14,9 @@ public sealed class HextechRingOfTheDrakePlus : OrobasPlusRelicBase
 
 	public override decimal ModifyHandDraw(Player player, decimal count)
 	{
-		return player == Owner && player.PlayerCombatState!.TurnNumber <= DynamicVars["Turns"].BaseValue
+		return player == Owner
+			&& player.PlayerCombatState is { } combatState
+			&& combatState.TurnNumber <= DynamicVars["Turns"].BaseValue
 			? count + DynamicVars.Cards.BaseValue
 			: count;
 	}

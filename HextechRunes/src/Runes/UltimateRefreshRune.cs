@@ -2,34 +2,24 @@ namespace HextechRunes;
 
 public sealed class UltimateRefreshRune : HextechRelicBase
 {
+	private const decimal MinEffectiveCost = 2m;
+
+	// 旧版本存档兼容占位：原为瞬时闪光标记，已不再使用；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
 		get => false;
-		set
-		{
-			// Legacy save compatibility: this was a transient flash flag.
-		}
+		set { }
 	}
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		if (card.Owner != Owner)
-		{
-			return playCount;
-		}
-
-		if (!IsOwnedCardWithEffectiveCostAtLeast(card, 2m))
-		{
-			return playCount;
-		}
-
-		return playCount + 1;
+		return IsOwnedCardWithEffectiveCostAtLeast(card, MinEffectiveCost) ? playCount + 1 : playCount;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (IsOwnedCardWithEffectiveCostAtLeast(card, 2m))
+		if (IsOwnedCardWithEffectiveCostAtLeast(card, MinEffectiveCost))
 		{
 			Flash();
 		}

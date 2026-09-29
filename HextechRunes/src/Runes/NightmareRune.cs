@@ -7,7 +7,7 @@ public sealed class NightmareRune : HextechRelicBase
 	public override bool IsAvailableForPlayer(Player player) => IsDefectPlayer(player);
 
 	[HarmonyPatch(typeof(DarkOrb), nameof(DarkOrb.Passive), typeof(PlayerChoiceContext), typeof(Creature))]
-	[HextechPatch("rune.nightmare", "梦魇")]
+	[HextechPatch("rune.nightmare", "梦魇", Rune = typeof(NightmareRune))]
 	private static class PassivePatch
 	{
 		[HarmonyPostfix]

@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 public sealed class ReprogramRune : HextechRelicBase
 {
+	private const int PickupCardCopies = 2;
+
 	public override bool HasUponPickupEffect => true;
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -22,6 +24,6 @@ public sealed class ReprogramRune : HextechRelicBase
 		}
 
 		Flash();
-		await AddCardCopiesToDeckOrHand<ReprogramCard>(2);
+		await AddCardCopiesToDeckOrHand<ReprogramCard>(PickupCardCopies);
 	}
 }

@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Models.Exceptions;
 
 namespace HextechRunes;
 
@@ -21,22 +20,13 @@ public sealed class FlyingKickRune : HextechRelicBase
 
 	public void RefreshExecutePercentFromOwner()
 	{
-		Player? owner;
-		try
-		{
-			owner = Owner;
-		}
-		catch (CanonicalModelException)
+		// 图鉴与第三方会在规范模型上读描述；规范模型的 Owner 直接抛异常，先判 IsCanonical。
+		if (IsCanonical || Owner == null)
 		{
 			return;
 		}
 
-		if (owner == null)
-		{
-			return;
-		}
-
-		RefreshExecutePercent(owner.Creature.MaxHp);
+		RefreshExecutePercent(Owner.Creature.MaxHp);
 	}
 
 	public decimal RefreshExecutePercent(decimal ownerMaxHp)
@@ -67,7 +57,7 @@ public sealed class FlyingKickRune : HextechRelicBase
 
 		if (result.WasTargetKilled)
 		{
-			await TriggerFlyingKick(choiceContext, target, killTarget: false);
+			await TriggerFlyingKick(target, killTarget: false);
 			return;
 		}
 
@@ -77,16 +67,15 @@ public sealed class FlyingKickRune : HextechRelicBase
 		}
 
 		decimal executePercent = RefreshExecutePercent(Owner.Creature.MaxHp);
-		decimal threshold = target.MaxHp * executePercent / 100m;
-		if (target.CurrentHp >= threshold)
+		if (!CollectorRune.IsBelowExecuteThreshold(target.CurrentHp, target.MaxHp, executePercent))
 		{
 			return;
 		}
 
-		await TriggerFlyingKick(choiceContext, target, killTarget: true);
+		await TriggerFlyingKick(target, killTarget: true);
 	}
 
-	private async Task TriggerFlyingKick(PlayerChoiceContext choiceContext, Creature target, bool killTarget)
+	private async Task TriggerFlyingKick(Creature target, bool killTarget)
 	{
 		if (_executing || Owner == null || Owner.Creature.IsDead)
 		{
@@ -149,6 +138,7 @@ public sealed class FlyingKickRune : HextechRelicBase
 	}
 
 	[HarmonyPatch(typeof(NCreature), nameof(NCreature.StartDeathAnim), typeof(bool))]
+	// 纯表现补丁，故意不关联 Rune：失败只丢尸体击飞视觉，不应让飞踢符文整体标为不可用(与夺金音效补丁同一约定)。
 	[HextechPatch("rune.flying-kick.corpse-launch", "飞踢尸体击飞视觉")]
 	private static class FlyingKickCorpseLaunchPatch
 	{
@@ -157,7 +147,7 @@ public sealed class FlyingKickRune : HextechRelicBase
 		{
 			if (HextechRuntimeRuneCompatibility.IsAndroidRuntime)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem][Compat] Flying Kick corpse launch visual hook skipped on Android runtime.");
+				HextechLog.Warn("Compat", "Flying Kick corpse launch visual hook skipped on Android runtime.");
 				return false;
 			}
 

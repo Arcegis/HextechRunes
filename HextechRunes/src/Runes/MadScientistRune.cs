@@ -1,7 +1,3 @@
-using System.Runtime.CompilerServices;
-using Godot;
-using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Nodes.Orbs;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 
 namespace HextechRunes;
@@ -35,6 +31,9 @@ public sealed class MadScientistRune : HextechRelicBase
 		await OrbCmd.AddSlots(Owner, orbSlots);
 	}
 
+	// 跳过理由：原版 OrbCmd.AddSlots(三个版本一致)写死 amount = Min(10 - Capacity, amount)，充能球栏位上限 10
+	// 没有任何 Hook 可改。激活条件：仅对持有本符文的玩家替换为不封顶的同一流程(IsOverOrEnding 判断 → AddCapacity →
+	// 栏位动画)，其他玩家走原版；战斗外(PlayerCombatState 为空)回落原版。原方法 IL 由 vanilla_copy_guard 冻结。
 	[HarmonyPatch(typeof(OrbCmd), nameof(OrbCmd.AddSlots), typeof(Player), typeof(int))]
 	[HextechPatch("rune.mad-scientist", "科学狂人", Rune = typeof(MadScientistRune))]
 	private static class MadScientistPatch

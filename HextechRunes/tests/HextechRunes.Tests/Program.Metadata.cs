@@ -501,28 +501,6 @@ internal static partial class Program
 		Expect(!IsModuloStepCycle(miseryTargets, 4), $"misery target sequence should not be a fixed modulo cycle: [{string.Join(", ", miseryTargets)}]");
 	}
 
-	private static void ColorDiscoveryCandidateOrderIsPermutationInvariant()
-	{
-		CardModel[] candidates =
-		[
-			CreateMutableTestModel<SearingAttackCard>(),
-			CreateMutableTestModel<FeelTheBurnCard>(),
-			CreateMutableTestModel<WhiteHoleCard>()
-		];
-		string[] forward = ColorDiscoveryRune.OrderCandidatesForStableSelection(candidates)
-			.Select(HextechStableRandom.CardKey)
-			.ToArray();
-		string[] reversed = ColorDiscoveryRune.OrderCandidatesForStableSelection(candidates.Reverse())
-			.Select(HextechStableRandom.CardKey)
-			.ToArray();
-
-		SequenceEqual(forward, reversed, "Color Discovery candidates should ignore source enumeration order");
-		SequenceEqual(
-			forward.OrderBy(static key => key, StringComparer.Ordinal),
-			forward,
-			"Color Discovery candidates should use ordinal CardKey order");
-	}
-
 	private static void PlayerRuneMetadataHasUniqueTypes()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;

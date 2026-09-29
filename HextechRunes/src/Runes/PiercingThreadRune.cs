@@ -1,9 +1,15 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HextechRunes;
 
 public sealed class PiercingThreadRune : HextechRelicBase
 {
 	internal const decimal PiercingPercent = 50m;
 
+	// 静态登记表：TryTakeBlockableDamage 由静态伤害补丁调用，拿不到符文实例，只能从这里找有待结算记录的符文。
+	// 清理：每条伤害命令结束时在 finally 里按命令 ID 清掉(HextechCombatHooks.DamageCommand)，战斗开始/结束再整体清空。
+	// 中途退出对局时被放弃的命令不会走到 finally，符文实例会留到进程结束；命令 ID 单调递增不复用，残留记录不会误匹配，
+	// 只占内存。改成实例字段需要在静态补丁里遍历所有玩家遗物，收益不抵改动风险，暂保持静态。
 	private static readonly HashSet<PiercingThreadRune> RunesWithPendingDamage = new();
 
 	private readonly List<PendingPiercingDamage> _pendingDamage = [];
@@ -87,9 +93,8 @@ public sealed class PiercingThreadRune : HextechRelicBase
 				continue;
 			}
 
-			PendingPiercingDamage damage = pending!;
-			blockableDamage = Math.Max(0m, amount - damage.PiercingDamage);
-			rune.Flash([damage.EffectTarget]);
+			blockableDamage = Math.Max(0m, amount - pending.PiercingDamage);
+			rune.Flash([pending.EffectTarget]);
 			return true;
 		}
 
@@ -117,7 +122,7 @@ public sealed class PiercingThreadRune : HextechRelicBase
 		Creature blockReceiver,
 		decimal amount,
 		ValueProp props,
-		out PendingPiercingDamage? pending)
+		[NotNullWhen(true)] out PendingPiercingDamage? pending)
 	{
 		for (int i = _pendingDamage.Count - 1; i >= 0; i--)
 		{

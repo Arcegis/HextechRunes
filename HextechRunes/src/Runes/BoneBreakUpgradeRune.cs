@@ -4,11 +4,6 @@ public sealed class BoneBreakUpgradeRune : CardUpgradeRuneBase<BoneShards>
 {
 	private int _pendingOstyHp;
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromCard<BoneShards>()
-	];
-
 	protected override bool IsAvailableForCharacter(Player player)
 	{
 		return IsNecrobinderPlayer(player);

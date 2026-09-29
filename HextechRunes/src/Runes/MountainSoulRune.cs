@@ -2,6 +2,8 @@ namespace HextechRunes;
 
 public sealed class MountainSoulRune : HextechRelicBase
 {
+	private const decimal BlockMaxHpRatio = 0.1m;
+
 	private bool _tookUnblockedDamageSinceLastTurn;
 	private bool _hasPreviousTurn;
 
@@ -58,7 +60,7 @@ public sealed class MountainSoulRune : HextechRelicBase
 		if (_hasPreviousTurn && !_tookUnblockedDamageSinceLastTurn)
 		{
 			Flash();
-			decimal block = Math.Max(1, FloorToInt(player.Creature.MaxHp * 0.1m));
+			decimal block = Math.Max(1, FloorToInt(player.Creature.MaxHp * BlockMaxHpRatio));
 			await CreatureCmd.GainBlock(player.Creature, block, ValueProp.Unpowered, null);
 		}
 

@@ -12,11 +12,6 @@ public sealed class SubroutineUpgradeRune : CardUpgradeRuneBase<Subroutine>
 		set => _addedThisCombat = value;
 	}
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromCard<Subroutine>()
-	];
-
 	protected override bool IsAvailableForCharacter(Player player) => IsDefectPlayer(player);
 
 	public override Task BeforeCombatStart()
