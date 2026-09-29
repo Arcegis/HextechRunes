@@ -151,6 +151,7 @@
   "HEXTECH_COMMUNITY_DELETE": "Delete",
   "HEXTECH_COMMUNITY_REPORT": "Report",
   "HEXTECH_COMMUNITY_REPORTED": "Reported",
+  "HEXTECH_COMMUNITY_APPLY_INVALID": "This config code could not be read; it may come from an incompatible version.",
   "HEXTECH_COMMUNITY_NEED_STEAM": "Steam must be online to upload or like.",
   "HEXTECH_COMMUNITY_ERR_TITLE_REJECTED": "The title contains disallowed content. Please change it.",
   "HEXTECH_COMMUNITY_ERR_QUOTA": "You already have 3 uploads. Delete one first.",

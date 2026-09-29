@@ -17,30 +17,55 @@ internal static class HextechEnemyUi
 	private const int EnemyHexSeparation = 2;
 	private const float EnemyHexScale = 0.72f;
 
+	// 原版 NTopBar._modifiersContainer(0.107.1 / 0.110.0 / 0.111.0);缺失时由 TryGetField 进启动摘要,顶栏海克斯整体停用。
 	private static readonly FieldInfo? ModifiersContainerField = TryGetField(
 		typeof(NTopBar),
 		"_modifiersContainer",
 		BindingFlags.Instance | BindingFlags.NonPublic);
 
+	// 原版 NTopBarModifier._modifier(同上版本)。
 	private static readonly FieldInfo? TopBarModifierModelField = TryGetField(
 		typeof(NTopBarModifier),
 		"_modifier",
 		BindingFlags.Instance | BindingFlags.NonPublic);
 
-	private static bool _reportedMissingTopBarMembers;
-
 	public static void Refresh(HextechMayhemModifier modifier)
 	{
 		// 纯表现层硬保证:本方法被多个 lockstep 同步钩子(BeforeCombatStart 等)调用,
 		// 任何 UI/资源/节点异常都绝不能冒泡进同步路径——否则单端中断、与另一端命令流分叉被踢。
+		// 模型钩子不一定跑在主线程,节点读写一律在主线程执行;已在主线程时同步刷新,保持调用方看到的先后顺序。
+		try
+		{
+			if (NGame.IsMainThread())
+			{
+				RefreshOnMainThread(modifier);
+			}
+			else
+			{
+				Callable.From(() => RefreshOnMainThread(modifier)).CallDeferred();
+			}
+		}
+		catch (Exception ex)
+		{
+			LogRefreshFailure(ex);
+		}
+	}
+
+	private static void RefreshOnMainThread(HextechMayhemModifier modifier)
+	{
 		try
 		{
 			RefreshInternal(modifier);
 		}
 		catch (Exception ex)
 		{
-			HextechLog.Warn("Mayhem", $"EnemyUi.Refresh suppressed (UI-only failure, multiplayer sync protected): {ex}");
+			LogRefreshFailure(ex);
 		}
+	}
+
+	private static void LogRefreshFailure(Exception ex)
+	{
+		HextechLog.Warn("Mayhem", $"EnemyUi.Refresh suppressed (UI-only failure, multiplayer sync protected): {ex}");
 	}
 
 	private static void RefreshInternal(HextechMayhemModifier modifier)
@@ -57,11 +82,12 @@ internal static class HextechEnemyUi
 		IReadOnlyList<MonsterHexKind> activeHexes = modifier.GetActiveMonsterHexes();
 
 		// 折叠模式将敌方海克斯收进独立按钮和展开面板，避免大量图标挤出顶栏。
-		if (GetCollapseEnemyHexesConfig())
+		if (HextechUiPreferences.CollapseEnemyHexes)
 		{
 			RemoveAllEnemyHexStrips(container);
 			UpdateContainerVisibility(container);
-			List<IReadOnlyList<MonsterHexKind>> hexRows = BuildHexRowsByAct(modifier);
+			// 折叠面板按获得批次分行。阶段序号跨额外幕与无尽轮次单调递增，不能再按三幕配置数组截断。
+			IReadOnlyList<IReadOnlyList<MonsterHexKind>> hexRows = modifier.GetMonsterHexRows();
 			HextechEnemyHexCollapseView.Show(hexRows, ComputeReservedColumns(modifier, hexRows));
 			HextechLog.Info("Mayhem", $"EnemyUi.Refresh(collapsed): rows={hexRows.Count} active={string.Join(",", activeHexes)}");
 			return;
@@ -108,19 +134,8 @@ internal static class HextechEnemyUi
 		UpdateContainerVisibility(container);
 	}
 
-	private static bool GetCollapseEnemyHexesConfig()
-	{
-		return HextechRelicVisibilityHooks.GetCollapseEnemyHexes();
-	}
-
-	// 折叠面板按获得批次分行。阶段序号跨额外幕与无尽轮次单调递增，不能再按三幕配置数组截断。
-	private static List<IReadOnlyList<MonsterHexKind>> BuildHexRowsByAct(HextechMayhemModifier modifier)
-	{
-		return modifier.GetMonsterHexRows().Select(static row => row).ToList();
-	}
-
 	// 深色底保留列数 = 各幕海克斯数量的最大值(既看配置每幕数量,也兜住实际行长),钳到 [1,6]。
-	private static int ComputeReservedColumns(HextechMayhemModifier modifier, List<IReadOnlyList<MonsterHexKind>> rows)
+	private static int ComputeReservedColumns(HextechMayhemModifier modifier, IReadOnlyList<IReadOnlyList<MonsterHexKind>> rows)
 	{
 		int max = 1;
 		foreach (int count in modifier.EnemyHexCountsByAct)
@@ -148,8 +163,7 @@ internal static class HextechEnemyUi
 		foreach (Node child in container.GetChildren())
 		{
 			if (child is NTopBarModifier topBarModifier
-				&& TopBarModifierModelField != null
-				&& TopBarModifierModelField.GetValue(topBarModifier) is HextechMayhemModifier)
+				&& TopBarModifierModelField?.GetValue(topBarModifier) is HextechMayhemModifier)
 			{
 				HextechLog.Info("Mayhem", $"EnemyUi.HideMayhemModifierBadge: removed top bar modifier badge");
 				topBarModifier.QueueFree();
@@ -157,43 +171,16 @@ internal static class HextechEnemyUi
 		}
 	}
 
+	// 两个私有字段缺一即停用顶栏海克斯:缺失已由 TryGetField 记入启动摘要,这里不再重复告警。
 	private static Control? GetModifiersContainer()
 	{
-		FieldInfo? modifiersContainerField = ModifiersContainerField;
-		if (!HasTopBarMembers() || modifiersContainerField == null)
+		if (ModifiersContainerField == null || TopBarModifierModelField == null)
 		{
 			return null;
 		}
 
 		NTopBar? topBar = NRun.Instance?.GlobalUi?.TopBar;
-		return topBar == null ? null : modifiersContainerField.GetValue(topBar) as Control;
-	}
-
-	private static bool HasTopBarMembers()
-	{
-		if (ModifiersContainerField != null && TopBarModifierModelField != null)
-		{
-			return true;
-		}
-
-		if (!_reportedMissingTopBarMembers)
-		{
-			List<string> missing = [];
-			if (ModifiersContainerField == null)
-			{
-				missing.Add("NTopBar._modifiersContainer");
-			}
-
-			if (TopBarModifierModelField == null)
-			{
-				missing.Add("NTopBarModifier._modifier");
-			}
-
-			HextechLog.Warn("Mayhem", $"EnemyUi disabled: missing {string.Join(", ", missing)}.");
-			_reportedMissingTopBarMembers = true;
-		}
-
-		return false;
+		return topBar == null ? null : ModifiersContainerField.GetValue(topBar) as Control;
 	}
 
 	private static HBoxContainer GetOrCreateStrip(Control container)
@@ -261,9 +248,11 @@ internal static class HextechEnemyUi
 
 	private static StyleBoxFlat CreateEnemyHexStripStyle()
 	{
-		StyleBoxFlat style = new();
-		style.BgColor = new Color(0.035f, 0.045f, 0.07f, 0.72f);
-		style.BorderColor = new Color(0.36f, 0.42f, 0.52f, 0.24f);
+		StyleBoxFlat style = new()
+		{
+			BgColor = new Color(0.035f, 0.045f, 0.07f, 0.72f),
+			BorderColor = new Color(0.36f, 0.42f, 0.52f, 0.24f)
+		};
 		style.SetBorderWidthAll(1);
 		style.SetCornerRadiusAll(10);
 		style.ContentMarginLeft = 8;
@@ -369,6 +358,15 @@ internal static class HextechEnemyUi
 		return true;
 	}
 
+	/// <summary>
+	/// 顶栏/折叠面板里的敌方海克斯图标(节点名以 <c>EnemyHex-</c> 开头、由本模组创建)聚焦时,展示敌方海克斯的提示集合。
+	/// </summary>
+	/// <remarks>
+	/// 跳过型前缀:原版 <c>NRelicBasicHolder.OnFocus</c> 固定展示 <c>_relic.Model.HoverTips</c>(图标遗物自己的提示),
+	/// 没有 Hook 或虚成员能换成敌方海克斯的提示;被跳过的原版步骤只有图标放大 tween 与提示展示。
+	/// 激活条件:仅本模组的敌方海克斯图标节点,其它遗物持有者完全交给原版。
+	/// 版本:0.107.1 / 0.110.0 / 0.111.0 原方法一致,已进原版拷贝守卫;<see cref="Priority.Low"/> 让他人前缀先跑。
+	/// </remarks>
 	[HarmonyPatch(typeof(NRelicBasicHolder), "OnFocus", new Type[0])]
 	[HextechPatch("ui.enemy-hex.holder-focus", "敌方海克斯顶栏悬浮")]
 	private static class HolderFocusPatch
@@ -377,8 +375,6 @@ internal static class HextechEnemyUi
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NRelicBasicHolder __instance)
 		{
-			NHoverTipSet.Remove(__instance);
-
 			if (!TryGetHexFromHolder(__instance, out MonsterHexKind hex))
 			{
 				return true;
@@ -389,6 +385,11 @@ internal static class HextechEnemyUi
 		}
 	}
 
+	/// <summary>敌方海克斯图标失焦时收起提示。</summary>
+	/// <remarks>
+	/// 跳过型前缀:与 <see cref="HolderFocusPatch"/> 成对——聚焦时跳过了原版放大 tween,失焦时也跳过原版的缩回 tween,
+	/// 只保留原版同样会做的 <c>NHoverTipSet.Remove</c>。激活条件、版本与优先级同上。
+	/// </remarks>
 	[HarmonyPatch(typeof(NRelicBasicHolder), "OnUnfocus", new Type[0])]
 	[HextechPatch("ui.enemy-hex.holder-unfocus", "敌方海克斯顶栏悬浮")]
 	private static class HolderUnfocusPatch

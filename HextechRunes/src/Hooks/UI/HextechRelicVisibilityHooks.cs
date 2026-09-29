@@ -1,16 +1,17 @@
-using System.Text.Json;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Relics;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
+/// <summary>
+/// 战斗界面「隐藏遗物」开关:勾选后隐藏遗物栏与联机玩家状态栏,并压掉遗物闪光特效。
+/// 开关本身只在配置菜单打开「显示隐藏遗物开关」后出现;偏好与勾选状态存在 <see cref="HextechUiPreferences"/>。
+/// </summary>
 internal static partial class HextechRelicVisibilityHooks
 {
-	private const string ConfigFileName = "ui_config.json";
 	private const string ToggleRootNodeName = "HextechHideRelicsToggleRoot";
 	private const string ToggleColumnNodeName = "HextechHideRelicsToggleColumn";
 	private const string ToggleBoxNodeName = "HextechHideRelicsToggleBox";
@@ -19,30 +20,21 @@ internal static partial class HextechRelicVisibilityHooks
 	private const string ToggleLabelNodeName = "HextechHideRelicsToggleLabel";
 	private const string PositionTimerNodeName = "HextechHideRelicsTogglePositionTimer";
 	private const string TickboxVisualScenePath = "res://scenes/ui/tickbox.tscn";
-	private const BindingFlags CombatUiFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 	private static readonly Vector2 ToggleRootSize = new(72f, 80f);
 	private static readonly Vector2 ToggleBoxSize = new(64f, 64f);
 	private const float DrawPileGap = 10f;
 	private const float BottomFallbackPadding = 34f;
 	private const float LeftFallbackPadding = 150f;
 
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = true,
-		PropertyNameCaseInsensitive = true
-	};
-
-	private static bool _installed;
 	private static bool _multiplayerStateHiddenByToggle;
 	private static NDrawPileButton? _drawPileAnchor;
-	private static ModUiConfig _config = new();
 
-	private static void NGlobalUiInitializePostfix(NGlobalUi __instance)
+	private static void OnGlobalUiInitialized(NGlobalUi globalUiNode)
 	{
 		try
 		{
-			InstallToggle(__instance);
-			ApplyHiddenState(__instance);
+			InstallToggle(globalUiNode);
+			ApplyHiddenState(globalUiNode);
 		}
 		catch (Exception ex)
 		{
@@ -50,11 +42,11 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 	}
 
-	private static void NCombatUiVisiblePostfix(NCombatUi __instance)
+	private static void OnCombatUiShown(NCombatUi combatUi)
 	{
 		try
 		{
-			_drawPileAnchor = __instance.DrawPile;
+			_drawPileAnchor = combatUi.DrawPile;
 			NGlobalUi? globalUi = NRun.Instance?.GlobalUi;
 			if (globalUi == null || !GodotObject.IsInstanceValid(globalUi))
 			{
@@ -70,17 +62,17 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 	}
 
-	private static void NCombatUiHiddenPostfix()
+	private static void OnCombatUiHidden()
 	{
 		_drawPileAnchor = null;
 		RefreshToggleRootPosition();
 	}
 
-	private static void NRelicInventoryRefreshPostfix(NRelicInventory __instance)
+	private static void OnRelicInventoryRefreshed(NRelicInventory inventory)
 	{
 		try
 		{
-			ApplyHiddenState(__instance);
+			ApplyHiddenState(inventory);
 		}
 		catch (Exception ex)
 		{
@@ -88,14 +80,9 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 	}
 
-	private static bool NRelicInventoryHolderDoFlashPrefix()
-	{
-		return !ShouldHideUi();
-	}
-
 	private static void InstallToggle(NGlobalUi globalUi)
 	{
-		if (!_config.ShowHiddenRelicsToggle)
+		if (!HextechUiPreferences.ShowHiddenRelicsToggle)
 		{
 			RemoveToggleRoot(globalUi);
 			return;
@@ -117,8 +104,9 @@ internal static partial class HextechRelicVisibilityHooks
 			button = root.GetNode<Button>($"{ToggleColumnNodeName}/{ToggleBoxNodeName}/{ToggleButtonNodeName}");
 		}
 
-		button.SetPressedNoSignal(_config.HideRelics);
-		UpdateToggleVisualState(root, _config.HideRelics);
+		bool hideRelics = HextechUiPreferences.HideRelics;
+		button.SetPressedNoSignal(hideRelics);
+		UpdateToggleVisualState(root, hideRelics);
 		root.Visible = true;
 		EnsurePositionTimer(globalUi, root);
 		PositionToggleRoot(root);
@@ -127,8 +115,7 @@ internal static partial class HextechRelicVisibilityHooks
 
 	private static void OnToggleChanged(bool hideUi)
 	{
-		_config.HideRelics = hideUi;
-		SaveConfig(_config);
+		HextechUiPreferences.SetHideRelics(hideUi);
 		NGlobalUi? globalUi = NRun.Instance?.GlobalUi;
 		if (globalUi?.GetNodeOrNull<Control>(ToggleRootNodeName) is { } root && GodotObject.IsInstanceValid(root))
 		{
@@ -136,7 +123,6 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 
 		ApplyHiddenState(globalUi);
-		HextechLog.Info("Mayhem", $"hide_ui={hideUi}.");
 	}
 
 	private static void RemoveToggleRoot(NGlobalUi globalUi)
@@ -200,59 +186,112 @@ internal static partial class HextechRelicVisibilityHooks
 
 	private static bool ShouldHideUi()
 	{
-		return _config.ShowHiddenRelicsToggle && _config.HideRelics;
+		return HextechUiPreferences.ShowHiddenRelicsToggle && HextechUiPreferences.HideRelics;
 	}
 
-	[HextechPatch("ui.relic-visibility", "遗物栏隐藏开关")]
-	private static class VisibilityPatches
+	private const string Feature = "遗物栏隐藏开关";
+
+	[HarmonyPatch(typeof(NGlobalUi), nameof(NGlobalUi.Initialize), typeof(RunState))]
+	[HextechPatch("ui.relic-visibility.global-ui-init", Feature)]
+	private static class GlobalUiInitializePatch
 	{
-		public static void Apply(Harmony harmony)
-		{
-			if (_installed)
-			{
-				return;
-			}
+		[HarmonyPostfix]
+		private static void Postfix(NGlobalUi __instance) => OnGlobalUiInitialized(__instance);
+	}
 
-			_config = LoadOrCreateConfig();
-			harmony.Patch(
-				RequireMethod(typeof(NGlobalUi), nameof(NGlobalUi.Initialize), BindingFlags.Instance | BindingFlags.Public, typeof(RunState)),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NGlobalUiInitializePostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatUi), nameof(NCombatUi._Ready), CombatUiFlags),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NCombatUiVisiblePostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatUi), "AnimIn", CombatUiFlags),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NCombatUiVisiblePostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatUi), nameof(NCombatUi.Enable), CombatUiFlags),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NCombatUiVisiblePostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatUi), "AnimOut", CombatUiFlags),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NCombatUiHiddenPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatUi), nameof(NCombatUi.Disable), CombatUiFlags),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NCombatUiHiddenPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NCombatUi), nameof(NCombatUi._ExitTree), CombatUiFlags),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NCombatUiHiddenPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NRelicInventory), nameof(NRelicInventory.Initialize), BindingFlags.Instance | BindingFlags.Public, typeof(RunState)),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryRefreshPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NRelicInventory), "Add", BindingFlags.Instance | BindingFlags.NonPublic, typeof(RelicModel), typeof(bool), typeof(int)),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryRefreshPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NRelicInventory), nameof(NRelicInventory.AnimShow), BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryRefreshPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NRelicInventory), nameof(NRelicInventory.ShowImmediately), BindingFlags.Instance | BindingFlags.Public),
-				postfix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryRefreshPostfix)));
-			harmony.Patch(
-				RequireMethod(typeof(NRelicInventoryHolder), "DoFlash", BindingFlags.Instance | BindingFlags.NonPublic),
-				prefix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryHolderDoFlashPrefix)));
+	[HarmonyPatch(typeof(NCombatUi), nameof(NCombatUi._Ready), new Type[0])]
+	[HextechPatch("ui.relic-visibility.combat-ui-ready", Feature)]
+	private static class CombatUiReadyPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NCombatUi __instance) => OnCombatUiShown(__instance);
+	}
 
-			_installed = true;
-			HextechLog.Info("Mayhem", $"UI visibility toggle loaded: hide_ui={_config.HideRelics}.");
-		}
+	[HarmonyPatch(typeof(NCombatUi), "AnimIn", new Type[0])]
+	[HextechPatch("ui.relic-visibility.combat-ui-anim-in", Feature)]
+	private static class CombatUiAnimInPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NCombatUi __instance) => OnCombatUiShown(__instance);
+	}
+
+	[HarmonyPatch(typeof(NCombatUi), nameof(NCombatUi.Enable), new Type[0])]
+	[HextechPatch("ui.relic-visibility.combat-ui-enable", Feature)]
+	private static class CombatUiEnablePatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NCombatUi __instance) => OnCombatUiShown(__instance);
+	}
+
+	[HarmonyPatch(typeof(NCombatUi), "AnimOut", new Type[0])]
+	[HextechPatch("ui.relic-visibility.combat-ui-anim-out", Feature)]
+	private static class CombatUiAnimOutPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix() => OnCombatUiHidden();
+	}
+
+	[HarmonyPatch(typeof(NCombatUi), nameof(NCombatUi.Disable), new Type[0])]
+	[HextechPatch("ui.relic-visibility.combat-ui-disable", Feature)]
+	private static class CombatUiDisablePatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix() => OnCombatUiHidden();
+	}
+
+	[HarmonyPatch(typeof(NCombatUi), nameof(NCombatUi._ExitTree), new Type[0])]
+	[HextechPatch("ui.relic-visibility.combat-ui-exit-tree", Feature)]
+	private static class CombatUiExitTreePatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix() => OnCombatUiHidden();
+	}
+
+	[HarmonyPatch(typeof(NRelicInventory), nameof(NRelicInventory.Initialize), typeof(RunState))]
+	[HextechPatch("ui.relic-visibility.inventory-init", Feature)]
+	private static class RelicInventoryInitializePatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NRelicInventory __instance) => OnRelicInventoryRefreshed(__instance);
+	}
+
+	[HarmonyPatch(typeof(NRelicInventory), "Add", typeof(RelicModel), typeof(bool), typeof(int))]
+	[HextechPatch("ui.relic-visibility.inventory-add", Feature)]
+	private static class RelicInventoryAddPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NRelicInventory __instance) => OnRelicInventoryRefreshed(__instance);
+	}
+
+	[HarmonyPatch(typeof(NRelicInventory), nameof(NRelicInventory.AnimShow), new Type[0])]
+	[HextechPatch("ui.relic-visibility.inventory-anim-show", Feature)]
+	private static class RelicInventoryAnimShowPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NRelicInventory __instance) => OnRelicInventoryRefreshed(__instance);
+	}
+
+	[HarmonyPatch(typeof(NRelicInventory), nameof(NRelicInventory.ShowImmediately), new Type[0])]
+	[HextechPatch("ui.relic-visibility.inventory-show-immediately", Feature)]
+	private static class RelicInventoryShowImmediatelyPatch
+	{
+		[HarmonyPostfix]
+		private static void Postfix(NRelicInventory __instance) => OnRelicInventoryRefreshed(__instance);
+	}
+
+	/// <summary>隐藏遗物时压掉遗物闪光特效。</summary>
+	/// <remarks>
+	/// 跳过型前缀:原版私有 <c>NRelicInventoryHolder.DoFlash</c> 把闪光粒子实例化进 <c>GlobalUi.AboveTopBarVfxContainer</c>
+	/// (不是持有者的子节点),隐藏持有者挡不住它,原版也没有 Hook 或开关能阻止这一次实例化。
+	/// 激活条件:玩家打开了「显示隐藏遗物开关」并勾选隐藏(<see cref="ShouldHideUi"/>);未勾选时原样执行原版。
+	/// 版本:0.107.1 / 0.110.0 / 0.111.0 原方法一致,已进原版拷贝守卫;<see cref="Priority.Low"/> 让他人前缀先跑。
+	/// </remarks>
+	[HarmonyPatch(typeof(NRelicInventoryHolder), "DoFlash", new Type[0])]
+	[HextechPatch("ui.relic-visibility.holder-do-flash", Feature)]
+	private static class RelicHolderDoFlashPatch
+	{
+		[HarmonyPrefix]
+		[HarmonyPriority(Priority.Low)]
+		private static bool Prefix() => !ShouldHideUi();
 	}
 }

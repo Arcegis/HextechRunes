@@ -149,6 +149,7 @@
   "HEXTECH_COMMUNITY_DELETE": "Удалить",
   "HEXTECH_COMMUNITY_REPORT": "Пожаловаться",
   "HEXTECH_COMMUNITY_REPORTED": "Отправлено",
+  "HEXTECH_COMMUNITY_APPLY_INVALID": "Не удалось прочитать этот код конфигурации: возможно, он из несовместимой версии.",
   "HEXTECH_COMMUNITY_NEED_STEAM": "Для загрузки/лайков нужен Steam онлайн.",
   "HEXTECH_COMMUNITY_ERR_TITLE_REJECTED": "Название содержит недопустимое содержимое.",
   "HEXTECH_COMMUNITY_ERR_QUOTA": "У вас уже 3 загрузки. Сначала удалите одну.",

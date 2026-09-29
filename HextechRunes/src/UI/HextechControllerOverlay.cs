@@ -268,12 +268,7 @@ internal static class HextechControllerInput
 	/// 游戏自己判定的输入模式:手柄或纯键盘时为方向导航。模组据此决定是否给默认焦点,鼠标玩家不会看到焦点框。
 	/// 不能自己从事件类型猜:Steam Input 下手柄按键到达时已经是合成的动作事件,没有原始 JoypadButton。
 	/// </summary>
-#if STS2_110_OR_NEWER
-	internal static bool IsDirectionalNavigation => NControllerManager.Instance?.IsUsingDirectionalNavigation == true;
-#else
-	// 0.107.1 只有手柄/鼠标两种模式,没有纯键盘方向导航。
-	internal static bool IsDirectionalNavigation => NControllerManager.Instance?.IsUsingController == true;
-#endif
+	internal static bool IsDirectionalNavigation => HextechControllerCompat.IsUsingDirectionalNavigation(NControllerManager.Instance);
 
 	/// <summary>
 	/// 原版把手柄确认键(A/×)映射为 <c>ui_select</c>,只有原版可点击控件认它;Godot 的 Button 与本模组
@@ -293,14 +288,15 @@ internal static class HextechControllerInput
 			return false;
 		}
 
-		Viewport? viewport = root.GetViewport();
-		Control? focus = viewport?.GuiGetFocusOwner();
-		if (focus == null || focus is NClickableControl || (focus != root && !root.IsAncestorOf(focus)))
+		if (root.GetViewport() is not { } viewport
+			|| viewport.GuiGetFocusOwner() is not { } focus
+			|| focus is NClickableControl
+			|| (focus != root && !root.IsAncestorOf(focus)))
 		{
 			return false;
 		}
 
-		viewport!.SetInputAsHandled();
+		viewport.SetInputAsHandled();
 		// 延后派发:在本事件的传播过程中嵌套派发新事件会重置视口的"已处理"标记,让原事件继续漏给后面的节点。
 		Callable.From(() => Input.ParseInputEvent(new InputEventAction { Action = GodotAccept, Pressed = pressed })).CallDeferred();
 		return true;

@@ -1,17 +1,12 @@
 using Godot;
-using MegaCrit.Sts2.addons.mega_text;
-using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
-using MegaCrit.Sts2.Core.Nodes.HoverTips;
-using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 
 namespace HextechRunes;
 
 internal static partial class HextechRuneConfigMenuHooks
 {
-	private const string LocTable = "relic_collection";
 	private const string ButtonName = "HextechRuneConfigButton";
 	private const string OverlayName = "HextechRuneConfigOverlay";
 	private const int NativeDuplicateFlags = 14;

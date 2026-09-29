@@ -15,8 +15,6 @@ internal static class HextechEnemyHexCollapseView
 	private const string ButtonName = "HextechEnemyHexCollapseButton";
 	private const string PanelName = "HextechEnemyHexCollapsePanel";
 	private const string GridName = "HextechEnemyHexCollapseGrid";
-	private const string MapButtonTypeName = "NTopBarMapButton";
-	private const string DeckButtonTypeName = "NTopBarDeckButton";
 	private static readonly Vector2 FallbackButtonSize = new(52f, 52f);
 	private static readonly Vector2 FallbackCellSize = new(68f, 68f);
 
@@ -72,8 +70,14 @@ internal static class HextechEnemyHexCollapseView
 		{
 			_linkedMapControl.FocusNeighborLeft = _previousMapFocusNeighborLeft;
 		}
+
 		QueueFreeIfValid(_button);
 		QueueFreeIfValid(_panel);
+		ResetState();
+	}
+
+	private static void ResetState()
+	{
 		_button = null;
 		_iconRect = null;
 		_countBadge = null;
@@ -119,7 +123,8 @@ internal static class HextechEnemyHexCollapseView
 			iconSize = FallbackButtonSize;
 		}
 
-		Button button = new()
+		// 顶栏里的可聚焦按钮:用翻译 ui_select 的按钮,手柄 A 键才能展开/收起。
+		HextechSelectAcceptButton button = new()
 		{
 			Name = ButtonName,
 			FocusMode = Control.FocusModeEnum.All,
@@ -193,15 +198,7 @@ internal static class HextechEnemyHexCollapseView
 		}
 
 		QueueFreeIfValid(_panel);
-		_button = null;
-		_iconRect = null;
-		_countBadge = null;
-		_panel = null;
-		_grid = null;
-		_firstHolder = null;
-		_open = false;
-		_linkedMapControl = null;
-		_previousMapFocusNeighborLeft = new NodePath();
+		ResetState();
 	}
 
 	// 把原版牌组按钮计数标签的字体/字号/颜色/描边照抄到角标,使数字与牌组「10」渲染一致。取不到就保留角标自带兜底样式。
@@ -209,7 +206,7 @@ internal static class HextechEnemyHexCollapseView
 	{
 		try
 		{
-			Node? deckButton = FindDeckButton();
+			Node? deckButton = NRun.Instance?.GlobalUi?.TopBar?.Deck;
 			Label? deckLabel = deckButton == null ? null : FindFirstLabel(deckButton);
 			if (deckLabel == null || !GodotObject.IsInstanceValid(deckLabel))
 			{
@@ -236,12 +233,6 @@ internal static class HextechEnemyHexCollapseView
 		{
 			HextechLog.Warn("Mayhem", $"CollapseView: copy deck count font failed: {ex.Message}");
 		}
-	}
-
-	private static Node? FindDeckButton()
-	{
-		Node? topBar = NRun.Instance?.GlobalUi?.TopBar;
-		return topBar == null ? null : FindDescendantByTypeName(topBar, DeckButtonTypeName);
 	}
 
 	private static Label? FindFirstLabel(Node node)
@@ -471,6 +462,7 @@ internal static class HextechEnemyHexCollapseView
 			{
 				_button.FocusNeighborBottom = _firstHolder.GetPath();
 			}
+
 			PositionPanel();
 		}
 		else if (_button != null
@@ -480,7 +472,7 @@ internal static class HextechEnemyHexCollapseView
 			_button.FocusNeighborBottom = _button.GetPath();
 			_button.GrabFocus();
 		}
-		else if (!_open && _button != null)
+		else if (_button != null)
 		{
 			_button.FocusNeighborBottom = _button.GetPath();
 		}
@@ -514,27 +506,7 @@ internal static class HextechEnemyHexCollapseView
 
 	private static Node? FindMapButton()
 	{
-		Node? topBar = NRun.Instance?.GlobalUi?.TopBar;
-		return topBar == null ? null : FindDescendantByTypeName(topBar, MapButtonTypeName);
-	}
-
-	private static Node? FindDescendantByTypeName(Node node, string typeName)
-	{
-		foreach (Node child in node.GetChildren())
-		{
-			if (child.GetType().Name == typeName)
-			{
-				return child;
-			}
-
-			Node? found = FindDescendantByTypeName(child, typeName);
-			if (found != null)
-			{
-				return found;
-			}
-		}
-
-		return null;
+		return NRun.Instance?.GlobalUi?.TopBar?.Map;
 	}
 
 	private static StyleBoxFlat CreateButtonStyle(float bgAlpha)

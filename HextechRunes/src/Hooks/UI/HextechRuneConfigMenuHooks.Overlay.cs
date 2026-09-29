@@ -1,36 +1,25 @@
 using Godot;
-using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
-using MegaCrit.Sts2.Core.Nodes.HoverTips;
-using MegaCrit.Sts2.Core.Nodes.Relics;
-using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 
 namespace HextechRunes;
 
 internal static partial class HextechRuneConfigMenuHooks
 {
-	private const string OpenerMetaKey = "hextech_opener";
-
 	private static void OpenOverlay(Node source)
 	{
 		Node root = ResolveRoot(source);
 		RemoveExistingOverlay(root);
-		Control overlay = CreateOverlay(out RuneConfigOverlayState state);
+		HextechControllerOverlay overlay = CreateOverlay(out RuneConfigOverlayState state);
 		if (source is Control opener)
 		{
 			overlay.SetMeta(OpenerMetaKey, opener);
 		}
 
 		root.AddChild(overlay);
-		if (overlay is HextechControllerOverlay controllerOverlay)
-		{
-			controllerOverlay.InitialFocus = state.InitialFocus;
-		}
+		overlay.InitialFocus = state.InitialFocus;
 		ConfigureHorizontalFocus(state.TabButtons);
 		WireControllerFocusScrolling(overlay);
-		TaskHelper.RunSafely(PopulateRuneIconsAsync(overlay, state));
+		TaskHelper.RunSafely(PopulateRuneIconsAsync(state.Context));
 		TaskHelper.RunSafely(AnimateOverlayInAsync(overlay));
 	}
 
@@ -41,7 +30,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			return;
 		}
 
-		overlay.Modulate = new Color(1f, 1f, 1f, 0f);
+		overlay.Modulate = HextechUiTheme.TransparentWhite;
 		Control? panel = overlay.GetNodeOrNull<Control>(ConfigPanelName);
 		if (panel != null)
 		{
@@ -60,6 +49,17 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 	}
 
+	private static void CloseWithoutSaving(Control overlay)
+	{
+		if (!GodotObject.IsInstanceValid(overlay))
+		{
+			return;
+		}
+
+		overlay.GetViewport()?.SetInputAsHandled();
+		CloseOverlayAnimated(overlay);
+	}
+
 	private static void CloseOverlayAnimated(Control overlay)
 	{
 		if (!GodotObject.IsInstanceValid(overlay))
@@ -67,13 +67,13 @@ internal static partial class HextechRuneConfigMenuHooks
 			return;
 		}
 
-		// Guard against double-trigger (e.g. save + cancel in quick succession).
-		if (overlay.HasMeta("hextech_closing"))
+		// 防止「保存」与「取消」连点触发两次关闭动画。
+		if (overlay.HasMeta(ClosingMetaKey))
 		{
 			return;
 		}
 
-		overlay.SetMeta("hextech_closing", true);
+		overlay.SetMeta(ClosingMetaKey, true);
 		overlay.MouseFilter = Control.MouseFilterEnum.Ignore;
 		(overlay as HextechControllerOverlay)?.ReleaseHostFocusBlock();
 		Control? panel = overlay.GetNodeOrNull<Control>(ConfigPanelName);
@@ -107,7 +107,92 @@ internal static partial class HextechRuneConfigMenuHooks
 		}));
 	}
 
-	private static Control CreateOverlay(out RuneConfigOverlayState state)
+	private static HextechControllerOverlay CreateOverlay(out RuneConfigOverlayState state)
+	{
+		bool compactLayout = IsCompactConfigLayout();
+		HextechControllerOverlay overlay = CreateOverlayRoot(compactLayout, out VBoxContainer content);
+
+		Label title = CreateLabel(L("HEXTECH_CONFIG_TITLE"), compactLayout ? 26 : 30, new Color(0.98f, 0.94f, 0.82f, 1f));
+		title.HorizontalAlignment = HorizontalAlignment.Center;
+		content.AddChild(title);
+
+		PendingConfig pending = PendingConfig.From(
+			HextechRuneConfiguration.GetSnapshot(),
+			HextechUiPreferences.ShowHiddenRelicsToggle,
+			HextechUiPreferences.ShowUpdateNotice,
+			HextechUiPreferences.CollapseEnemyHexes,
+			HextechUiPreferences.ConfirmRuneSelection);
+		List<RuneConfigEntry> playerEntries = BuildRuneEntries();
+		List<RuneConfigEntry> enemyEntries = BuildEnemyHexEntries();
+		List<RuneConfigEntry> forgeEntries = BuildForgeEntries();
+		Label summary = CreateLabel(string.Empty, compactLayout ? 15 : 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
+		ConfigMenuContext context = new(
+			overlay,
+			pending,
+			playerEntries,
+			enemyEntries,
+			forgeEntries,
+			ConfigPoolIds.FromEntries(playerEntries, enemyEntries, forgeEntries),
+			summary,
+			compactLayout);
+
+		Label description = CreateLabel(string.Empty, compactLayout ? 13 : 15, new Color(0.82f, 0.86f, 0.92f, 0.92f));
+		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		description.HorizontalAlignment = HorizontalAlignment.Center;
+		content.AddChild(description);
+
+		Control[] pages =
+		[
+			CreateSelectionPage(context),
+			CreateRunePoolPage(context),
+			CreateIconPoolPage(context, context.ForgeEntries, context.Pending.DisabledForgeIds, context.ForgeIconBindings, L("HEXTECH_CONFIG_TAB_FORGES")),
+			CreateDetailsPage(context)
+		];
+
+		List<Button> tabButtons = [];
+		Action<ConfigPage>? updatePageActions = null;
+		ConfigPage? previousPage = null;
+		void SelectPage(ConfigPage page)
+		{
+			bool changed = page != previousPage;
+			previousPage = page;
+			context.SelectedPage = page;
+			for (int i = 0; i < pages.Length; i++)
+			{
+				pages[i].Visible = i == (int)page;
+			}
+
+			if (changed)
+			{
+				AnimatePageIn(pages[(int)page]);
+			}
+
+			UpdateTabButtonStates(tabButtons, (int)page, compactLayout);
+			AnimateTabIndicator(tabButtons, (int)page, changed);
+			UpdatePageDescription(description, page);
+			updatePageActions?.Invoke(page);
+			context.UpdateSummary();
+		}
+
+		content.AddChild(CreateTabBar(tabButtons, SelectPage, compactLayout));
+		overlay.CycleTab = delta => SelectPage((ConfigPage)((((int)context.SelectedPage + delta) % pages.Length + pages.Length) % pages.Length));
+
+		VBoxContainer pageHost = CreatePageHost(content, compactLayout);
+		content.AddChild(CreateBottomBar(context, out updatePageActions));
+		foreach (Control page in pages)
+		{
+			page.Visible = false;
+			pageHost.AddChild(page);
+		}
+
+		SelectPage(ConfigPage.Counts);
+		context.UpdateSummary();
+		state = new RuneConfigOverlayState(context, tabButtons[0], tabButtons);
+		return overlay;
+	}
+
+	/// <summary>覆盖层骨架:全屏遮罩 + 居中面板 + 内容列;返回覆盖层,内容列从 <paramref name="content"/> 取。</summary>
+	private static HextechControllerOverlay CreateOverlayRoot(bool compactLayout, out VBoxContainer content)
 	{
 		HextechControllerOverlay overlay = new()
 		{
@@ -135,7 +220,6 @@ internal static partial class HextechRuneConfigMenuHooks
 		center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 		overlay.AddChild(center);
 
-		bool compactLayout = IsCompactConfigLayout();
 		PanelContainer panel = new()
 		{
 			Name = ConfigPanelName,
@@ -152,86 +236,44 @@ internal static partial class HextechRuneConfigMenuHooks
 		margin.AddThemeConstantOverride("margin_bottom", compactLayout ? 16 : 24);
 		panel.AddChild(margin);
 
-		VBoxContainer content = new()
+		content = new VBoxContainer
 		{
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
 		content.AddThemeConstantOverride("separation", compactLayout ? 8 : 14);
 		margin.AddChild(content);
+		return overlay;
+	}
 
-		Label title = CreateLabel(L("HEXTECH_CONFIG_TITLE"), compactLayout ? 26 : 30, new Color(0.98f, 0.94f, 0.82f, 1f));
-		title.HorizontalAlignment = HorizontalAlignment.Center;
-		content.AddChild(title);
-
-		PendingConfig pending = PendingConfig.From(
-			HextechRuneConfiguration.GetSnapshot(),
-			HextechRelicVisibilityHooks.GetShowHiddenRelicsToggle(),
-			HextechRelicVisibilityHooks.GetShowUpdateNotice(),
-			HextechRelicVisibilityHooks.GetCollapseEnemyHexes(),
-			HextechRelicVisibilityHooks.GetConfirmRuneSelection());
-		List<NumericValueBinding> numericBindings = [];
-		List<BooleanValueBinding> booleanBindings = [];
-		bool configReadOnly = IsEnemyHexCountConfigReadOnly();
-
-		Label description = CreateLabel(string.Empty, compactLayout ? 13 : 15, new Color(0.82f, 0.86f, 0.92f, 0.92f));
-		description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-		description.HorizontalAlignment = HorizontalAlignment.Center;
-		content.AddChild(description);
-		void UpdateDescription(int pageIndex)
+	private static void UpdatePageDescription(Label description, ConfigPage page)
+	{
+		string text = page switch
 		{
-			string text = pageIndex switch
-			{
-				0 => L(configReadOnly ? "HEXTECH_CONFIG_CLIENT_READONLY" : "HEXTECH_CONFIG_DESCRIPTION"),
-				1 or 2 => L("HEXTECH_CONFIG_POOL_HINT"),
-				3 => L("HEXTECH_CONFIG_MISC_HINT"),
-				_ => string.Empty
-			};
-			SetLabelText(description, text);
-			description.Visible = text.Length > 0;
-		}
-
-		List<RuneConfigEntry> playerEntries = BuildRuneEntries();
-		List<RuneConfigEntry> enemyEntries = BuildEnemyHexEntries();
-		List<RuneConfigEntry> forgeEntries = BuildForgeEntries();
-		List<RuneIconBinding> playerIconBindings = [];
-		List<RuneIconBinding> enemyIconBindings = [];
-		List<RuneIconBinding> forgeIconBindings = [];
-		List<RuneConfigLoadTarget> loadTargets = [];
-		List<Action> badgeRefreshers = [];
-		int selectedPageIndex = 0;
-		Label summary = CreateLabel(string.Empty, compactLayout ? 15 : 16, new Color(0.92f, 0.88f, 0.7f, 0.95f));
-		Action updateSummary = () =>
-		{
-			UpdateSummary(summary, selectedPageIndex, pending.DisabledPlayerRuneIds, pending.DisabledMonsterHexIds, pending.DisabledForgeIds);
-			foreach (Action refresh in badgeRefreshers)
-			{
-				refresh();
-			}
+			ConfigPage.Counts => L(IsEnemyHexCountConfigReadOnly() ? "HEXTECH_CONFIG_CLIENT_READONLY" : "HEXTECH_CONFIG_DESCRIPTION"),
+			ConfigPage.RunePools or ConfigPage.Forges => L("HEXTECH_CONFIG_POOL_HINT"),
+			ConfigPage.Details => L("HEXTECH_CONFIG_MISC_HINT"),
+			_ => string.Empty
 		};
+		SetLabelText(description, text);
+		description.Visible = text.Length > 0;
+	}
 
-		// 分享区(杂项页)按钮的动作在 CreateBottomBar 里才能构建(依赖全部 pending 与 summary),延迟绑定。
-		Action?[] shareActions = new Action?[3];
-		Control countsPage = CreateSelectionPage(pending, numericBindings, compactLayout);
-		Control runePoolPage = CreateRunePoolPage(playerEntries, pending.DisabledPlayerRuneIds, enemyEntries, pending.DisabledMonsterHexIds, loadTargets, badgeRefreshers, compactLayout);
-		Control forgePoolPage = CreateIconPoolPage(forgeEntries, pending.DisabledForgeIds, loadTargets, badgeRefreshers, L("HEXTECH_CONFIG_TAB_FORGES"), compactLayout);
-		Control detailsPage = CreateDetailsPage(
-			pending,
-			numericBindings,
-			booleanBindings,
-			shareActions,
-			compactLayout);
-		Control[] pageArray = [ countsPage, runePoolPage, forgePoolPage, detailsPage ];
+	private static bool IsEnemyHexCountConfigReadOnly()
+	{
+		return HextechPlayerContextHelper.IsClientRun();
+	}
 
+	/// <summary>页签条:四个页签按钮 + 滑动的金色下划线。</summary>
+	private static Control CreateTabBar(List<Button> tabButtons, Action<ConfigPage> selectPage, bool compactLayout)
+	{
 		PanelContainer tabShell = new()
 		{
 			SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
 			MouseFilter = Control.MouseFilterEnum.Pass
 		};
 		tabShell.AddThemeStyleboxOverride("panel", CreateTabShellStyle());
-		content.AddChild(tabShell);
 
-		// Holder lets the sliding indicator overlay sit over the tab row without the
-		// HBox laying it out as a sibling cell.
+		// 下划线叠在页签行上方,不作为 HBox 的一格参与排版,所以另套一层普通 Control。
 		Control tabHolder = new()
 		{
 			SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
@@ -248,8 +290,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		tabs.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 		tabHolder.AddChild(tabs);
 
-		// Added after the tabs so the gold underline draws on top of the active tab's
-		// highlighted background instead of behind it.
+		// 在页签之后添加,金色下划线才画在激活页签的高亮底色之上。
 		ColorRect tabIndicator = new()
 		{
 			Name = TabIndicatorName,
@@ -258,41 +299,30 @@ internal static partial class HextechRuneConfigMenuHooks
 		};
 		tabHolder.AddChild(tabIndicator);
 
+		(ConfigPage Page, string LocKey)[] tabDefinitions =
+		[
+			(ConfigPage.Counts, "HEXTECH_CONFIG_TAB_COUNTS"),
+			(ConfigPage.RunePools, "HEXTECH_CONFIG_TAB_RUNE_POOLS"),
+			(ConfigPage.Forges, "HEXTECH_CONFIG_TAB_FORGES"),
+			(ConfigPage.Details, "HEXTECH_CONFIG_TAB_DETAILS")
+		];
 		Vector2 tabButtonSize = GetTabButtonSize(compactLayout);
-		tabHolder.CustomMinimumSize = new Vector2(tabButtonSize.X * 4f, tabButtonSize.Y);
+		tabHolder.CustomMinimumSize = new Vector2(tabButtonSize.X * tabDefinitions.Length, tabButtonSize.Y);
 		tabIndicator.Size = new Vector2(tabButtonSize.X, 3f);
 		tabIndicator.Position = new Vector2(0f, tabButtonSize.Y - 3f);
-
-		List<Button> tabButtons = [];
-		Action<int>? updatePageActions = null;
-		int previousPageIndex = -1;
-		Action<int> selectPage = pageIndex =>
+		foreach ((ConfigPage page, string locKey) in tabDefinitions)
 		{
-			bool changed = pageIndex != previousPageIndex;
-			previousPageIndex = pageIndex;
-			selectedPageIndex = pageIndex;
-			for (int i = 0; i < pageArray.Length; i++)
-			{
-				pageArray[i].Visible = i == pageIndex;
-			}
+			Button button = CreateTabButton(L(locKey), () => selectPage(page), compactLayout);
+			tabButtons.Add(button);
+			tabs.AddChild(button);
+		}
 
-			if (changed)
-			{
-				AnimatePageIn(pageArray[pageIndex]);
-			}
+		return tabShell;
+	}
 
-			UpdateTabButtonStates(tabButtons, pageIndex, compactLayout);
-			AnimateTabIndicator(tabButtons, pageIndex, changed);
-			UpdateDescription(pageIndex);
-			updatePageActions?.Invoke(pageIndex);
-			updateSummary();
-		};
-		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_COUNTS"), () => selectPage(0), compactLayout);
-		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_RUNE_POOLS"), () => selectPage(1), compactLayout);
-		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_FORGES"), () => selectPage(2), compactLayout);
-		AddConfigTab(tabs, tabButtons, L("HEXTECH_CONFIG_TAB_DETAILS"), () => selectPage(3), compactLayout);
-		overlay.CycleTab = delta => selectPage(((selectedPageIndex + delta) % pageArray.Length + pageArray.Length) % pageArray.Length);
-
+	/// <summary>页面滚动区:内宽钉在最宽的符文网格上,切页签时面板边框不跳动。</summary>
+	private static VBoxContainer CreatePageHost(VBoxContainer content, bool compactLayout)
+	{
 		ScrollContainer scroll = new()
 		{
 			SizeFlagsVertical = Control.SizeFlags.ExpandFill,
@@ -303,82 +333,24 @@ internal static partial class HextechRuneConfigMenuHooks
 		VBoxContainer pages = new()
 		{
 			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-			// Pin a constant inner width to the widest page (the rune grid) so the panel
-			// border does not resize when switching tabs.
 			CustomMinimumSize = new Vector2(GetRuneGridMinWidth(compactLayout), 0f)
 		};
 		pages.AddThemeConstantOverride("separation", compactLayout ? 12 : 16);
 		scroll.AddChild(pages);
 		content.AddChild(scroll);
+		return pages;
+	}
 
-		content.AddChild(CreateBottomBar(
-			overlay,
-			playerEntries,
-			enemyEntries,
-			forgeEntries,
-			pending,
-			numericBindings,
-			booleanBindings,
-			playerIconBindings,
-			enemyIconBindings,
-			forgeIconBindings,
-			summary,
-			updateSummary,
-			() => selectedPageIndex,
-			compactLayout,
-			shareActions,
-			out updatePageActions));
-
-		foreach (Control page in pageArray)
+	private static void RemoveExistingOverlay(Node root)
+	{
+		if (root.GetNodeOrNull<Control>(OverlayName) is { } overlay && GodotObject.IsInstanceValid(overlay))
 		{
-			page.Visible = false;
-			pages.AddChild(page);
+			overlay.QueueFree();
 		}
-
-		selectPage(0);
-		updateSummary();
-		state = new RuneConfigOverlayState(
-			loadTargets,
-			pending.DisabledPlayerRuneIds,
-			pending.DisabledMonsterHexIds,
-			pending.DisabledForgeIds,
-			playerIconBindings,
-			enemyIconBindings,
-			forgeIconBindings,
-			tabButtons[0],
-			tabButtons,
-			updateSummary);
-		return overlay;
 	}
 
-	private static int[] ToWeightArray(HextechRarityWeights weights)
+	private static Node ResolveRoot(Node node)
 	{
-		return [ weights.Silver, weights.Gold, weights.Prismatic ];
-	}
-
-	private static int[] ToWeightArray(HextechForgeRarityWeights weights)
-	{
-		return [ weights.Silver, weights.Gold, weights.Prismatic ];
-	}
-
-	private static HextechRarityWeights ToRarityWeights(IReadOnlyList<int> weights)
-	{
-		return new HextechRarityWeights(
-			weights.Count > 0 ? weights[0] : 0,
-			weights.Count > 1 ? weights[1] : 0,
-			weights.Count > 2 ? weights[2] : 0);
-	}
-
-	private static HextechRarityWeights[] ToRarityWeightsByAct(IEnumerable<IReadOnlyList<int>> weightsByAct)
-	{
-		return weightsByAct.Select(ToRarityWeights).ToArray();
-	}
-
-	private static HextechForgeRarityWeights ToForgeRarityWeights(IReadOnlyList<int> weights)
-	{
-		return new HextechForgeRarityWeights(
-			weights.Count > 0 ? weights[0] : 0,
-			weights.Count > 1 ? weights[1] : 0,
-			weights.Count > 2 ? weights[2] : 0);
+		return node.GetTree()?.Root is Node root ? root : node;
 	}
 }
