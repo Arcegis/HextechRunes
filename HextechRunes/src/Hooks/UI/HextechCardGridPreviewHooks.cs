@@ -1,5 +1,4 @@
 using System.Collections;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 
@@ -14,29 +13,30 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechCardGridPreviewHooks
 {
-	private static readonly FieldInfo? CardRowsField = typeof(NCardGrid).GetField("_cardRows", BindingFlags.Instance | BindingFlags.NonPublic);
-	private static readonly FieldInfo? PreviewFlagField = typeof(NGridCardHolder).GetField("_isPreviewingUpgrade", BindingFlags.Instance | BindingFlags.NonPublic);
-	private static readonly FieldInfo? BaseCardField = typeof(NGridCardHolder).GetField("_baseCard", BindingFlags.Instance | BindingFlags.NonPublic);
+	// 原版 NCardGrid._cardRows(0.107.1 / 0.110.0 / 0.111.0)。
+	private static readonly FieldInfo? CardRowsField = HextechHookReflection.TryGetField(typeof(NCardGrid), "_cardRows");
+
+	// 原版 NGridCardHolder._isPreviewingUpgrade(同上)。
+	private static readonly FieldInfo? PreviewFlagField = HextechHookReflection.TryGetField(typeof(NGridCardHolder), "_isPreviewingUpgrade");
+
+	// 原版 NGridCardHolder._baseCard(同上)。
+	private static readonly FieldInfo? BaseCardField = HextechHookReflection.TryGetField(typeof(NGridCardHolder), "_baseCard");
 
 	[HarmonyPatch(typeof(NCardGrid), nameof(NCardGrid.IsShowingUpgrades), MethodType.Setter)]
 	[HextechPatch("ui.card-grid-preview", "牌组升级预览还原")]
 	private static class ShowUpgradesPatch
 	{
+		// 私有成员缺一即不安装(缺失已进启动摘要),原版行为不受影响。
 		[HarmonyPrepare]
-		private static bool Prepare()
-		{
-			if (CardRowsField == null || PreviewFlagField == null || BaseCardField == null)
-			{
-				throw new MissingFieldException("NCardGrid/NGridCardHolder preview fields not found in this runtime.");
-			}
-
-			return true;
-		}
+		private static bool Prepare() => CardRowsField != null && PreviewFlagField != null && BaseCardField != null;
 
 		[HarmonyPostfix]
 		private static void Postfix(NCardGrid __instance, bool value)
 		{
-			if (value || CardRowsField!.GetValue(__instance) is not IEnumerable rows)
+			if (value
+				|| PreviewFlagField is not { } previewFlagField
+				|| BaseCardField is not { } baseCardField
+				|| CardRowsField?.GetValue(__instance) is not IEnumerable rows)
 			{
 				return;
 			}
@@ -50,8 +50,8 @@ internal static class HextechCardGridPreviewHooks
 
 				foreach (NGridCardHolder holder in row.OfType<NGridCardHolder>())
 				{
-					if (PreviewFlagField!.GetValue(holder) is not true
-						|| BaseCardField!.GetValue(holder) is not CardModel baseCard
+					if (previewFlagField.GetValue(holder) is not true
+						|| baseCardField.GetValue(holder) is not CardModel baseCard
 						|| holder.CardNode == null)
 					{
 						continue;
@@ -59,7 +59,7 @@ internal static class HextechCardGridPreviewHooks
 
 					holder.CardNode.Model = baseCard;
 					holder.CardNode.UpdateVisuals(holder.CardNode.DisplayingPile, CardPreviewMode.Normal);
-					PreviewFlagField.SetValue(holder, false);
+					previewFlagField.SetValue(holder, false);
 				}
 			}
 		}

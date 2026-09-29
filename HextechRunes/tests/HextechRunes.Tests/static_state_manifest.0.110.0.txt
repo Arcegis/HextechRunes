@@ -1,13 +1,6 @@
 ﻿# 由 HEXTECH_WRITE_PATCH_MANIFEST=1 生成;每行 = 类型.字段 : 字段类型(可变静态字段)。
 HextechRunes.CompensationEnemyHex._effectWithPendingCompensation : CompensationEnemyHex
 HextechRunes.FlyingKickCorpseLaunchDriver.LoggedAndroidSkip : Boolean
-HextechRunes.HextechBurnHealthBarHooks._creatureField : FieldInfo
-HextechRunes.HextechBurnHealthBarHooks._doomForegroundField : FieldInfo
-HextechRunes.HextechBurnHealthBarHooks._getFgWidthMethod : MethodInfo
-HextechRunes.HextechBurnHealthBarHooks._hpForegroundField : FieldInfo
-HextechRunes.HextechBurnHealthBarHooks._hpLabelField : FieldInfo
-HextechRunes.HextechBurnHealthBarHooks._maxFgWidthProp : PropertyInfo
-HextechRunes.HextechBurnHealthBarHooks._poisonForegroundField : FieldInfo
 HextechRunes.HextechBurnVisual._particleTexture : Texture2D
 HextechRunes.HextechCatalog._modelIdLookupCache : ModelIdLookupCache
 HextechRunes.HextechCatalog._modelIdLookupCacheVersion : Int32
@@ -38,7 +31,6 @@ HextechRunes.HextechEnemyHexCollapseView._linkedMapControl : Control
 HextechRunes.HextechEnemyHexCollapseView._open : Boolean
 HextechRunes.HextechEnemyHexCollapseView._panel : PanelContainer
 HextechRunes.HextechEnemyHexCollapseView._previousMapFocusNeighborLeft : NodePath
-HextechRunes.HextechEnemyUi._reportedMissingTopBarMembers : Boolean
 HextechRunes.HextechExternalContentRegistry._version : Int32
 HextechRunes.HextechFeaturedConfigs._cached : IReadOnlyList`1
 HextechRunes.HextechFeaturedConfigs._cachedAtUtc : DateTime
@@ -46,8 +38,6 @@ HextechRunes.HextechGlassCannonHealthBarVisual._hatchTexture : Texture2D
 HextechRunes.HextechGoldenRerollDebug._currentScreen : WeakReference`1
 HextechRunes.HextechGoldenRerollDebug._forceNextEligible : Boolean
 HextechRunes.HextechGoldrendSync._trackedRunState : RunState
-HextechRunes.HextechInspectHooks._inspectScreenHooksAvailable : Nullable`1
-HextechRunes.HextechInspectHooks._inspectScreenHooksInstalled : Boolean
 HextechRunes.HextechIntegratedStrategyEventsCompat._extraActMethodResolved : Boolean
 HextechRunes.HextechIntegratedStrategyEventsCompat._getCurrentExtraActId : MethodInfo
 HextechRunes.HextechModelBootstrap._installed : Boolean
@@ -66,9 +56,7 @@ HextechRunes.HextechPlayerRuneHooks.PenNibAttackToDoubleProperty : PropertyInfo
 HextechRunes.HextechPlayerRuneHooks.ShurikenAttacksPlayedThisTurnProperty : PropertyInfo
 HextechRunes.HextechPlayerRuneHooks.ShurikenDoActivateVisualsMethod : MethodInfo
 HextechRunes.HextechPlayerRuneHooks._illusoryWeaponReflectionReady : Nullable`1
-HextechRunes.HextechRelicVisibilityHooks._config : ModUiConfig
 HextechRunes.HextechRelicVisibilityHooks._drawPileAnchor : NDrawPileButton
-HextechRunes.HextechRelicVisibilityHooks._installed : Boolean
 HextechRunes.HextechRelicVisibilityHooks._multiplayerStateHiddenByToggle : Boolean
 HextechRunes.HextechRunLifecycleHooks._runsInsideStartRunOrig : HashSet`1
 HextechRunes.HextechRunLifecycleHooks._subscribedRoomEntered : Boolean
@@ -83,8 +71,10 @@ HextechRunes.HextechRuneSelectionScreen.SelectSfxPlayer : AudioStreamPlayer
 HextechRunes.HextechSavedPropertyBootstrap._officialCacheAudited : Boolean
 HextechRunes.HextechShopForgeHooks._randomForgeShopHooksAvailable : Nullable`1
 HextechRunes.HextechTextures._missingTexture : Texture2D
+HextechRunes.HextechUiPreferences._config : ModUiConfig
 HextechRunes.HextechUpdateChecker._cachedResult : UpdateCheckResult
 HextechRunes.HextechUpdateChecker._checkTask : Task`1
 HextechRunes.ModEntry._harmony : Harmony
 HextechRunes.ModEntry._initialized : Boolean
+HextechRunes.SlowCookAuraVisual._flowShader : Shader
 HextechRunes.StokeRestSiteOption._icon : Texture2D

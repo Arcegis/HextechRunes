@@ -6,19 +6,22 @@ using MegaCrit.Sts2.Core.Nodes.Vfx;
 
 namespace HextechRunes;
 
-internal sealed class HextechBurnVisual
+/// <summary>「灼烧」的持续火焰:身后火焰与烟、身前小火与火星,强度随层数平滑变化。</summary>
+internal sealed class HextechBurnVisual : HextechCreatureAttachedVisual
 {
 	private const string NodeName = "HextechRunes_BurnFlames";
+	private const string LogTag = "Burn";
 	private const float BurnAmountForFullIntensity = 12f;
 	// 强度平滑:约 0.2-0.4s 从熄灭到全强(或反向);低于该值视为完全熄灭。
 	private const float IntensityLerpPerSecond = 4f;
 	private const float ExtinguishedEpsilon = 0.02f;
 
-	private static readonly HashSet<ulong> ActiveCreatureNodes = [];
+	private const string SmokeParticleTexturePath = "res://images/vfx/fire/mecha_knight_fire_particle.png";
+	private const string SparkParticleTexturePath = "res://images/vfx/fire/cinder_particle.png";
+
 	private static readonly Random VisualRng = new();
 	private static Texture2D? _particleTexture;
 
-	private readonly NCreature _creature;
 	private Node2D? _backRoot;
 	private Node2D? _frontRoot;
 	private CpuParticles2D? _flames;
@@ -36,41 +39,22 @@ internal sealed class HextechBurnVisual
 	private float _smoothIntensity;
 
 	private HextechBurnVisual(NCreature creature)
+		: base(creature, LogTag, "Burn flames visual")
 	{
-		_creature = creature;
 	}
+
+	protected override Node? FrameNode => _backRoot;
+
+	protected override bool IsAlive => base.IsAlive && GodotObject.IsInstanceValid(_frontRoot);
 
 	internal static void TryAttach(NCreature? creature)
 	{
-		try
-		{
-			if (!GodotObject.IsInstanceValid(creature)
-				|| !creature.IsNodeReady()
-				|| creature.Hitbox == null
-				|| creature.Entity == null)
-			{
-				return;
-			}
-
-			ulong creatureInstanceId = creature.GetInstanceId();
-			if (!ActiveCreatureNodes.Add(creatureInstanceId))
-			{
-				return;
-			}
-
-			HextechBurnVisual visual = new(creature);
-			if (!visual.Start())
-			{
-				ActiveCreatureNodes.Remove(creatureInstanceId);
-				return;
-			}
-
-			TaskHelper.RunSafely(visual.RunAsync(creatureInstanceId));
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Burn", $"Could not attach burn flames visual: {ex.Message}");
-		}
+		TryAttach(
+			creature,
+			LogTag,
+			"Burn flames visual",
+			static node => node.Hitbox != null && node.Entity != null,
+			static node => new HextechBurnVisual(node));
 	}
 
 	private static bool TryGetIntensity(NCreature creature, out float intensity)
@@ -91,15 +75,15 @@ internal sealed class HextechBurnVisual
 		return true;
 	}
 
-	private bool Start()
+	protected override bool Start()
 	{
-		if (_creature.Hitbox == null)
+		if (Creature.Hitbox == null)
 		{
 			return false;
 		}
 
-		float width = Mathf.Clamp(_creature.Hitbox.Size.X, 100f, 360f);
-		float height = Mathf.Abs(_creature.GetTopOfHitbox().Y - _creature.GetBottomOfHitbox().Y);
+		float width = Mathf.Clamp(Creature.Hitbox.Size.X, 100f, 360f);
+		float height = Mathf.Abs(Creature.GetTopOfHitbox().Y - Creature.GetBottomOfHitbox().Y);
 
 		// 火焰主体与烟画在生物身后,火星画在身前——形成"被火包裹"的前后层次。
 		// 不能用负 ZIndex 表达"身后":Godot 2D 的 z 排序是全局比较,z=-1 无论挂在哪都会沉到
@@ -108,9 +92,9 @@ internal sealed class HextechBurnVisual
 		// front 追加在末尾 → 后画 → 盖在立绘上)。顺带天然跟随受击闪烁与死亡淡出的 modulate。
 		_backRoot = new Node2D { Name = NodeName + "_Back", Visible = false };
 		_frontRoot = new Node2D { Name = NodeName + "_Front", Visible = false };
-		_creature.AddChildSafely(_backRoot);
-		_creature.AddChildSafely(_frontRoot);
-		_creature.MoveChild(_backRoot, 0);
+		Creature.AddChildSafely(_backRoot);
+		Creature.AddChildSafely(_frontRoot);
+		Creature.MoveChild(_backRoot, 0);
 
 		_flames = CreateFlames(width, height);
 		// 高大立绘会把身后的火焰完全挡死(实测法师类敌人几乎看不到火);身前再叠一层
@@ -126,43 +110,30 @@ internal sealed class HextechBurnVisual
 		return true;
 	}
 
-	private async Task RunAsync(ulong creatureInstanceId)
+	protected override bool Tick()
 	{
-		try
+		if (_backRoot == null)
 		{
-			while (GodotObject.IsInstanceValid(_creature) && GodotObject.IsInstanceValid(_backRoot) && GodotObject.IsInstanceValid(_frontRoot))
-			{
-				float dt = Mathf.Clamp((float)_backRoot!.GetProcessDeltaTime(), 1f / 120f, 0.05f);
-				float target = TryGetIntensity(_creature, out float intensity) ? intensity : 0f;
-				_smoothIntensity = Mathf.MoveToward(_smoothIntensity, target, IntensityLerpPerSecond * dt);
-				ApplyIntensity(target > 0f);
-
-				SceneTree tree = _backRoot.GetTree();
-				if (!GodotObject.IsInstanceValid(tree))
-				{
-					return;
-				}
-
-				await _backRoot.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
-			}
+			return false;
 		}
-		catch (Exception ex)
+
+		float dt = ClampedFrameDelta(_backRoot);
+		float target = TryGetIntensity(Creature, out float intensity) ? intensity : 0f;
+		_smoothIntensity = Mathf.MoveToward(_smoothIntensity, target, IntensityLerpPerSecond * dt);
+		ApplyIntensity(target > 0f);
+		return true;
+	}
+
+	protected override void Release()
+	{
+		if (GodotObject.IsInstanceValid(_backRoot))
 		{
-			HextechLog.Warn("Burn", $"Burn flames visual stopped after runtime error: {ex.Message}");
+			_backRoot.QueueFree();
 		}
-		finally
+
+		if (GodotObject.IsInstanceValid(_frontRoot))
 		{
-			if (GodotObject.IsInstanceValid(_backRoot))
-			{
-				_backRoot.QueueFree();
-			}
-
-			if (GodotObject.IsInstanceValid(_frontRoot))
-			{
-				_frontRoot.QueueFree();
-			}
-
-			ActiveCreatureNodes.Remove(creatureInstanceId);
+			_frontRoot.QueueFree();
 		}
 	}
 
@@ -186,7 +157,7 @@ internal sealed class HextechBurnVisual
 			return;
 		}
 
-		Vector2 bottom = _creature.GetBottomOfHitbox();
+		Vector2 bottom = Creature.GetBottomOfHitbox();
 		_backRoot.GlobalPosition = bottom;
 		_frontRoot.GlobalPosition = bottom;
 		_backRoot.Visible = true;
@@ -272,7 +243,7 @@ internal sealed class HextechBurnVisual
 	{
 		try
 		{
-			GodotObject? sprite = _creature.Visuals?.SpineBody?.BoundObject;
+			GodotObject? sprite = Creature.Visuals?.SpineBody?.BoundObject;
 			if (sprite is not Node2D spriteNode || !GodotObject.IsInstanceValid(spriteNode) || !spriteNode.HasMethod("get_skeleton"))
 			{
 				return;
@@ -332,7 +303,7 @@ internal sealed class HextechBurnVisual
 		// 立绘被释放或替换(死亡、变身):骨骼包装指向的底层数据同时失效,必须立即停用,
 		// 避免悬垂指针访问;下一帧会用新立绘重新初始化。
 		if (!GodotObject.IsInstanceValid(_spineSpriteNode)
-			|| _creature.Visuals?.SpineBody?.BoundObject is not { } current
+			|| Creature.Visuals?.SpineBody?.BoundObject is not { } current
 			|| current.GetInstanceId() != _spineSpriteInstanceId)
 		{
 			DisableBoneEmission();
@@ -342,15 +313,15 @@ internal sealed class HextechBurnVisual
 
 		try
 		{
-			Vector2 bottom = _creature.GetBottomOfHitbox();
-			Vector2 top = _creature.GetTopOfHitbox();
+			Vector2 bottom = Creature.GetBottomOfHitbox();
+			Vector2 top = Creature.GetTopOfHitbox();
 			float height = bottom.Y - top.Y;
 			// 只取下半身的骨骼点:火从腿部/下身烧起,不糊脸。底边收到脚底略上方,
 			// 剔掉贴地的 root/地面控制骨(它们固定在脚下空处,会形成一个不动的悬空火点)。
 			float lowerBodyTop = top.Y + height * 0.45f;
 			float floorCutoff = bottom.Y - height * 0.02f;
 			// 网格去重:骨骼扎堆的关节处只留一个发射点,发射概率在空间上大致均匀。
-			float cellSize = Mathf.Max(12f, Mathf.Clamp(_creature.Hitbox?.Size.X ?? 200f, 100f, 360f) * 0.09f);
+			float cellSize = Mathf.Max(12f, Mathf.Clamp(Creature.Hitbox?.Size.X ?? 200f, 100f, 360f) * 0.09f);
 			HashSet<Vector2I> cells = [];
 			List<Vector2> points = new(_emissionBones.Length);
 			foreach (GodotObject bone in _emissionBones)
@@ -454,7 +425,7 @@ internal sealed class HextechBurnVisual
 		smoke.Gravity = new Vector2(0f, -height * 0.22f);
 		smoke.Position = new Vector2(0f, -height * 0.5f);
 		// 机甲骑士喷火器的碎裂烟火团贴图,比圆形渐变更有翻滚烟感。
-		Texture2D? smokeTex = LoadVanillaTexture("res://images/vfx/fire/mecha_knight_fire_particle.png");
+		Texture2D? smokeTex = HextechTextures.LoadVanillaTexture(SmokeParticleTexturePath);
 		if (smokeTex != null)
 		{
 			smoke.Texture = smokeTex;
@@ -489,7 +460,7 @@ internal sealed class HextechBurnVisual
 		sparks.Gravity = new Vector2(0f, -height * 0.65f);
 		sparks.Spread = 22f;
 		// 官方余烬点贴图(24px 实心亮点)。
-		Texture2D? sparkTex = LoadVanillaTexture("res://images/vfx/fire/cinder_particle.png");
+		Texture2D? sparkTex = HextechTextures.LoadVanillaTexture(SparkParticleTexturePath);
 		if (sparkTex != null)
 		{
 			sparks.Texture = sparkTex;
@@ -522,7 +493,7 @@ internal sealed class HextechBurnVisual
 		particles.Spread = 14f;
 		if (additive)
 		{
-			particles.Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
+			particles.Material = HextechAuraLayer.CreateAdditiveMaterial();
 		}
 
 		return particles;
@@ -546,21 +517,6 @@ internal sealed class HextechBurnVisual
 			Offsets = stops.Select(static s => s.Offset).ToArray(),
 			Colors = stops.Select(static s => s.Color).ToArray()
 		};
-	}
-
-	private static readonly System.Collections.Generic.Dictionary<string, Texture2D?> _vanillaTextureCache = [];
-
-	/// <summary>加载原版 PCK 内贴图;失败时返回 null(调用方回退到程序化渐变圆)。</summary>
-	private static Texture2D? LoadVanillaTexture(string resPath)
-	{
-		if (_vanillaTextureCache.TryGetValue(resPath, out Texture2D? cached))
-		{
-			return cached != null && GodotObject.IsInstanceValid(cached) ? cached : null;
-		}
-
-		Texture2D? texture = ResourceLoader.Load(resPath) as Texture2D;
-		_vanillaTextureCache[resPath] = texture;
-		return texture;
 	}
 
 	private static Texture2D GetParticleTexture()

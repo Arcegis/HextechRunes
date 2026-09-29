@@ -25,20 +25,18 @@ internal static partial class HextechCollectionHooks
 		HashSet<RelicModel> seenWithHextech = seenRelics.Concat(visibleHextechRelics).ToHashSet();
 		HashSet<RelicModel> unlockedWithHextech = allUnlockedRelics.Concat(visibleHextechRelics).ToHashSet();
 
-		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
+		if (CreateAndLoadSubcategory(
 			self,
 			collection,
 			HextechAssets.HextechSubcategoryKey,
 			genericRunes,
 			seenWithHextech,
-			unlockedWithHextech);
-		ApplyCustomHeaderText(
-			subCategory,
-			HextechAssets.HextechSubcategoryKey,
-			HextechHeaderZh,
-			HextechHeaderZhBody,
-			HextechHeaderEn,
-			HextechHeaderEnBody);
+			unlockedWithHextech) is not { } subCategory)
+		{
+			return;
+		}
+
+		ApplyCustomHeaderText(subCategory, HextechAssets.HextechSubcategoryKey);
 
 		NRelicCollectionCategory? firstCharacterSubcategory = null;
 		foreach (HextechCatalog.RuneSeriesGroup group in characterGroups)
@@ -73,20 +71,16 @@ internal static partial class HextechCollectionHooks
 		HashSet<RelicModel> seenWithForges = seenRelics.Concat(visibleForgeRelics).ToHashSet();
 		HashSet<RelicModel> unlockedWithForges = allUnlockedRelics.Concat(visibleForgeRelics).ToHashSet();
 
-		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
+		if (CreateAndLoadSubcategory(
 			self,
 			collection,
 			HextechAssets.ForgeSubcategoryKey,
 			HextechCatalog.GetCanonicalForges(),
 			seenWithForges,
-			unlockedWithForges);
-		ApplyCustomHeaderText(
-			subCategory,
-			HextechAssets.ForgeSubcategoryKey,
-			ForgeHeaderZh,
-			ForgeHeaderZhBody,
-			ForgeHeaderEn,
-			ForgeHeaderEnBody);
+			unlockedWithForges) is { } subCategory)
+		{
+			ApplyCustomHeaderText(subCategory, HextechAssets.ForgeSubcategoryKey);
+		}
 	}
 
 	private static NRelicCollectionCategory? AddCharacterRuneSubcategory(
@@ -102,22 +96,23 @@ internal static partial class HextechCollectionHooks
 		}
 
 		string localizationKey = $"HEXTECH_{group.LocalizationKey}";
-		NRelicCollectionCategory subCategory = CreateAndLoadSubcategory(
+		NRelicCollectionCategory? subCategory = CreateAndLoadSubcategory(
 			hextechCategory,
 			collection,
 			localizationKey,
 			group.Relics,
 			seenRelics,
 			allUnlockedRelics);
-		if (CharacterHeaderTexts.TryGetValue(group.LocalizationKey, out SubcategoryHeaderText text))
+		if (subCategory != null)
 		{
-			ApplyCustomHeaderText(subCategory, localizationKey, text.ZhHeader, text.ZhBody, text.EnHeader, text.EnBody);
+			ApplyCustomHeaderText(subCategory, localizationKey);
 		}
 
 		return subCategory;
 	}
 
-	private static NRelicCollectionCategory CreateAndLoadSubcategory(
+	/// <summary>在 <paramref name="parent"/> 标题下插入一个子分类并载入遗物;私有成员取不到时返回 null。</summary>
+	private static NRelicCollectionCategory? CreateAndLoadSubcategory(
 		NRelicCollectionCategory parent,
 		NRelicCollection collection,
 		string localizationKey,
@@ -125,18 +120,24 @@ internal static partial class HextechCollectionHooks
 		HashSet<RelicModel> seenRelics,
 		HashSet<RelicModel> allUnlockedRelics)
 	{
-		List<NRelicCollectionCategory> subCategories = GetSubCategories(parent);
-		NRelicCollectionCategory subCategory = (NRelicCollectionCategory)CreateForSubcategoryMethod!.Invoke(parent, null)!;
-		int insertIndex = ((Control)HeaderLabelField!.GetValue(parent)!).GetIndex() + subCategories.Count + 1;
+		if (SubCategoriesField?.GetValue(parent) is not List<NRelicCollectionCategory> subCategories
+			|| HeaderLabelField?.GetValue(parent) is not Control headerLabel
+			|| LoadSubcategoryMethod == null
+			|| CreateForSubcategoryMethod?.Invoke(parent, null) is not NRelicCollectionCategory subCategory)
+		{
+			return null;
+		}
+
+		int insertIndex = headerLabel.GetIndex() + subCategories.Count + 1;
 		subCategories.Add(subCategory);
 		parent.AddChild(subCategory);
 		parent.MoveChild(subCategory, insertIndex);
 
-		LoadSubcategoryMethod!.Invoke(
+		LoadSubcategoryMethod.Invoke(
 			subCategory,
 			[
 				collection,
-				new LocString("relic_collection", localizationKey),
+				new LocString(HextechRuneLabels.LocTable, localizationKey),
 				relics,
 				seenRelics,
 				allUnlockedRelics

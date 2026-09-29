@@ -428,7 +428,12 @@ internal static partial class Program
 			new(nameof(ReviewEnemyHexHoverTipTablesCoverFormerIfChain), ReviewEnemyHexHoverTipTablesCoverFormerIfChain),
 			new(nameof(ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown), ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown),
 			new(nameof(ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat), ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat),
-			new(nameof(ReviewModelHooksLiveOnTheirOwnModels), ReviewModelHooksLiveOnTheirOwnModels)
+			new(nameof(ReviewModelHooksLiveOnTheirOwnModels), ReviewModelHooksLiveOnTheirOwnModels),
+			new(nameof(PlayerStatsHoverUsesLocalPortraitOwner), PlayerStatsHoverUsesLocalPortraitOwner),
+			new(nameof(ConfigMenuHasNoAsyncVoidHandlers), ConfigMenuHasNoAsyncVoidHandlers),
+			new(nameof(BurnHealthBarPredictionUsesSettlementFormula), BurnHealthBarPredictionUsesSettlementFormula),
+			new(nameof(CollectionHeaderFollowsStarterTemplate), CollectionHeaderFollowsStarterTemplate),
+			new(nameof(UiSkipPrefixesUseLowPriorityAndDeclarativeTargets), UiSkipPrefixesUseLowPriorityAndDeclarativeTargets)
 		];
 
 		if (args.Length > 0)

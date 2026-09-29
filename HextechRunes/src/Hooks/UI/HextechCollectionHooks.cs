@@ -10,43 +10,10 @@ namespace HextechRunes;
 
 internal static partial class HextechCollectionHooks
 {
-	private readonly record struct SubcategoryHeaderText(string ZhHeader, string ZhBody, string EnHeader, string EnBody);
-
 	private const float GenericToCharacterPoolSpacing = 96f;
 
-	private const string StarterHeaderZh = "初始：";
-
-	private const string StarterHeaderZhBody = "角色们开始游戏时自身携带的遗物。";
-
-	private const string HextechHeaderZh = "海克斯：";
-
-	private const string HextechHeaderZhBody = "来自海克斯符文池的自定义遗物。";
-
-	private const string ForgeHeaderZh = "属性锻造器：";
-
-	private const string ForgeHeaderZhBody = "来自属性锻造系统的自定义遗物。";
-
-	private const string StarterHeaderEn = "Starter:";
-
-	private const string StarterHeaderEnBody = "Relics that characters start the game with.";
-
-	private const string HextechHeaderEn = "Hextech:";
-
-	private const string HextechHeaderEnBody = "Custom relics from the Hextech rune pool.";
-
-	private const string ForgeHeaderEn = "Stat Forgers:";
-
-	private const string ForgeHeaderEnBody = "Custom relics from the stat forging system.";
-
-	private static readonly IReadOnlyDictionary<string, SubcategoryHeaderText> CharacterHeaderTexts = new Dictionary<string, SubcategoryHeaderText>
-	{
-		["CHARACTER.IRONCLAD"] = new("铁甲战士海克斯：", "仅铁甲战士可抽取的海克斯符文。", "Ironclad Hexes:", "Hextech runes only available to Ironclad."),
-		["CHARACTER.SILENT"] = new("静默猎手海克斯：", "仅静默猎手可抽取的海克斯符文。", "Silent Hexes:", "Hextech runes only available to Silent."),
-		["CHARACTER.REGENT"] = new("储君海克斯：", "仅储君可抽取的海克斯符文。", "Regent Hexes:", "Hextech runes only available to Regent."),
-		["CHARACTER.DEFECT"] = new("故障机器人海克斯：", "仅故障机器人可抽取的海克斯符文。", "Defect Hexes:", "Hextech runes only available to Defect."),
-		["CHARACTER.NECROBINDER"] = new("亡灵契约师海克斯：", "仅亡灵契约师可抽取的海克斯符文。", "Necrobinder Hexes:", "Hextech runes only available to Necrobinder.")
-	};
-
+	// 以下均为原版 NRelicCollectionCategory / NRelicCollection 的私有成员(0.107.1 / 0.110.0 / 0.111.0 同名同签名)。
+	// 缺失时不逐项告警,由 CollectionHooksAvailable 按"整体停用/退化为平铺"汇总一次。
 	private static readonly FieldInfo? HeaderLabelField = TryGetField(
 		typeof(NRelicCollectionCategory),
 		"_headerLabel",

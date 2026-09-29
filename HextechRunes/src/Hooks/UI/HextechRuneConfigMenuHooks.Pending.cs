@@ -74,7 +74,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		internal bool PreventConsecutiveSilverRunes;
 		internal bool ModEnabled;
 
-		// UI 偏好不属于运行配置快照,单独走 HextechRelicVisibilityHooks 的持久化路径。
+		// UI 偏好不属于运行配置快照,单独走 HextechUiPreferences 的持久化路径。
 		internal bool ShowHiddenRelicsToggle;
 		internal bool ShowUpdateNotice;
 		internal bool CollapseEnemyHexes;
@@ -208,5 +208,36 @@ internal static partial class HextechRuneConfigMenuHooks
 				target[i] = source[i];
 			}
 		}
+	}
+
+	private static int[] ToWeightArray(HextechRarityWeights weights)
+	{
+		return [ weights.Silver, weights.Gold, weights.Prismatic ];
+	}
+
+	private static int[] ToWeightArray(HextechForgeRarityWeights weights)
+	{
+		return [ weights.Silver, weights.Gold, weights.Prismatic ];
+	}
+
+	private static HextechRarityWeights ToRarityWeights(IReadOnlyList<int> weights)
+	{
+		return new HextechRarityWeights(
+			weights.Count > 0 ? weights[0] : 0,
+			weights.Count > 1 ? weights[1] : 0,
+			weights.Count > 2 ? weights[2] : 0);
+	}
+
+	private static HextechRarityWeights[] ToRarityWeightsByAct(IEnumerable<IReadOnlyList<int>> weightsByAct)
+	{
+		return weightsByAct.Select(ToRarityWeights).ToArray();
+	}
+
+	private static HextechForgeRarityWeights ToForgeRarityWeights(IReadOnlyList<int> weights)
+	{
+		return new HextechForgeRarityWeights(
+			weights.Count > 0 ? weights[0] : 0,
+			weights.Count > 1 ? weights[1] : 0,
+			weights.Count > 2 ? weights[2] : 0);
 	}
 }

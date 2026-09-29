@@ -104,6 +104,19 @@ internal static class HextechHookReflection
 		return setter;
 	}
 
+	public static PropertyInfo? TryGetProperty(Type type, string name, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+	{
+		PropertyInfo? property = type.GetProperty(name, flags);
+		if (property == null)
+		{
+			WarnMissingMember(
+				$"property:{type.AssemblyQualifiedName}:{name}:{flags}",
+				$"property {type.FullName}.{name}");
+		}
+
+		return property;
+	}
+
 	private static void WarnMissingMember(string key, string description)
 	{
 		lock (MissingMemberLogLock)
