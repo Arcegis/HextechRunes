@@ -1,4 +1,3 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using static HextechRunes.HextechHookReflection;
@@ -62,7 +61,6 @@ internal static partial class HextechPlayerRuneHooks
 			?? throw new InvalidOperationException($"Could not find required property {type.FullName}.{name}.");
 	}
 
-
 	internal static decimal CountFinisherAttackCardsPlayedThisTurn(CardModel card, Creature? _)
 	{
 			return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
@@ -71,7 +69,6 @@ internal static partial class HextechPlayerRuneHooks
 				firstInSeriesOnly: false,
 				includeAutoPlay: true);
 	}
-
 
 	internal static async Task ResolveIllusoryWeaponNunchaku(Nunchaku nunchaku)
 	{
@@ -86,7 +83,6 @@ internal static partial class HextechPlayerRuneHooks
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(nunchaku, NunchakuDoActivateVisualsMethod, nameof(Nunchaku)));
 	}
 
-
 	internal static async Task ResolveIllusoryWeaponKunai(Kunai kunai)
 	{
 		int attacksPlayed = IncrementIntProperty(kunai, KunaiAttacksPlayedThisTurnProperty);
@@ -99,7 +95,6 @@ internal static partial class HextechPlayerRuneHooks
 		await PowerCmd.Apply<DexterityPower>(kunai.Owner.Creature, kunai.DynamicVars.Dexterity.BaseValue, kunai.Owner.Creature, null);
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(kunai, KunaiDoActivateVisualsMethod, nameof(Kunai)));
 	}
-
 
 	internal static async Task ResolveIllusoryWeaponShuriken(Shuriken shuriken)
 	{
@@ -114,7 +109,6 @@ internal static partial class HextechPlayerRuneHooks
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(shuriken, ShurikenDoActivateVisualsMethod, nameof(Shuriken)));
 	}
 
-
 	internal static async Task ResolveIllusoryWeaponOrnamentalFan(OrnamentalFan ornamentalFan)
 	{
 		int attacksPlayed = IncrementIntProperty(ornamentalFan, OrnamentalFanAttacksPlayedThisTurnProperty);
@@ -127,7 +121,6 @@ internal static partial class HextechPlayerRuneHooks
 		await CreatureCmd.GainBlock(ornamentalFan.Owner.Creature, ornamentalFan.DynamicVars.Block, null);
 		_ = TaskHelper.RunSafely(InvokePrivateRelicVisuals(ornamentalFan, OrnamentalFanDoActivateVisualsMethod, nameof(OrnamentalFan)));
 	}
-
 
 	internal static void ClearIllusoryWeaponPendingPenNib(Player? owner, CardModel card)
 	{
@@ -179,14 +172,14 @@ internal static partial class HextechPlayerRuneHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][IllusoryWeapon] Failed to run {relicName} activation visuals: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("IllusoryWeapon", $"Failed to run {relicName} activation visuals: {ex.GetType().Name}: {ex.Message}");
 			try
 			{
 				relic.Flash();
 			}
 			catch (Exception flashException)
 			{
-				Log.Warn($"[{ModInfo.Id}][IllusoryWeapon] Fallback flash failed for {relicName}: {flashException.Message}");
+				HextechLog.Warn("IllusoryWeapon", $"Fallback flash failed for {relicName}: {flashException.Message}");
 			}
 		}
 	}

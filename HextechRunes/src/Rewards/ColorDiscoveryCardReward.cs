@@ -59,15 +59,15 @@ internal sealed class ColorDiscoveryCardReward : CardReward
 				&& restoredReward != null
 				&& HextechRunLogBudget.TryConsume("rewards.color-discovery-special-card-restore", 1))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Rewards] Color Discovery reward kept as the original SpecialCardReward because its restored card could not be read; "
+				HextechLog.Warn(
+					"Rewards", $"Color Discovery reward kept as the original SpecialCardReward because its restored card could not be read; "
 					+ $"rewardType={restoredReward.GetType().FullName} fieldAvailable={SpecialCardRewardCardField != null}.");
 			}
 
 			return false;
 		}
 
-		ModelId cardId = card.CanonicalInstance?.Id ?? card.Id;
+		ModelId cardId = card.CanonicalId();
 		reward = new ColorDiscoveryCardReward(card, cardId, player, save.Source, save.RarityOdds);
 		return true;
 	}
@@ -133,8 +133,8 @@ internal sealed class ColorDiscoveryCardReward : CardReward
 		{
 			if (HextechRunLogBudget.TryConsume("rewards.color-discovery-special-card-field-read", 1))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Rewards] SpecialCardReward card field read failed; keeping the original reward: "
+				HextechLog.Warn(
+					"Rewards", $"SpecialCardReward card field read failed; keeping the original reward: "
 					+ $"rewardType={restoredReward.GetType().FullName} error={ex.GetType().Name}: {ex.Message}");
 			}
 

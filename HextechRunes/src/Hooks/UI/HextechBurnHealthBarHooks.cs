@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 
 namespace HextechRunes;
@@ -318,7 +317,7 @@ internal static class HextechBurnHealthBarHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Burn health bar render failed; falling back to vanilla: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Burn health bar render failed; falling back to vanilla: {ex.GetType().Name}: {ex.Message}");
 				return true;
 			}
 		}
@@ -396,7 +395,7 @@ internal static class HextechBurnHealthBarHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Burn health bar text recolor failed; leaving vanilla color: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Burn health bar text recolor failed; leaving vanilla color: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 	}

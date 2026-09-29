@@ -23,7 +23,7 @@ internal static partial class HextechTelemetry
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry config init failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Telemetry config init failed: {ex.Message}");
 		}
 	}
 
@@ -58,7 +58,7 @@ internal static partial class HextechTelemetry
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry choice record failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Telemetry choice record failed: {ex.Message}");
 		}
 	}
 
@@ -74,14 +74,14 @@ internal static partial class HextechTelemetry
 
 			if (serializableRun.RunTime < MinRunTimeForUploadSeconds)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Telemetry upload skipped for short run runTime={serializableRun.RunTime}s");
+				HextechLog.Info("Mayhem", $"Telemetry upload skipped for short run runTime={serializableRun.RunTime}s");
 				return;
 			}
 
 			NetGameType gameType = RunManager.Instance.NetService.Type;
 			if (gameType is NetGameType.Client or NetGameType.Replay)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Telemetry upload skipped for netMode={gameType}");
+				HextechLog.Info("Mayhem", $"Telemetry upload skipped for netMode={gameType}");
 				return;
 			}
 
@@ -101,7 +101,7 @@ internal static partial class HextechTelemetry
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry upload scheduling failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Telemetry upload scheduling failed: {ex.Message}");
 		}
 	}
 }

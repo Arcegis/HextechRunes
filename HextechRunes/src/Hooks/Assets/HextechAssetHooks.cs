@@ -120,7 +120,7 @@ internal static class HextechAssetHooks
 		{
 			try
 			{
-				ModelId id = __instance.CanonicalInstance?.Id ?? __instance.Id;
+				ModelId id = __instance.CanonicalId();
 				if (HextechExternalContentRegistry.GetEnchantmentIconPath(id) is { } iconPath
 					&& HextechTextures.LoadCompressedTexture(iconPath) is { } texture)
 				{

@@ -40,7 +40,7 @@ internal static class HextechPlayerContextHelper
 
 	public static int GetActNumberForScaling(Player? owner)
 	{
-		if (owner?.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()?.IsEndlessLoopActive == true)
+		if (HextechMayhemModifier.FindIn(owner?.RunState)?.IsEndlessLoopActive == true)
 		{
 			return 3;
 		}

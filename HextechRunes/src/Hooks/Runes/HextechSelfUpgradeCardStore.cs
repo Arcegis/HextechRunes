@@ -1,6 +1,4 @@
 using System.Runtime.CompilerServices;
-using HarmonyLib;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -89,7 +87,6 @@ internal static class HextechSelfUpgradeCardStore
 			card.DynamicVars.Block.BaseValue += amount;
 		}
 	}
-
 
 	private static void SetInt(SerializableCard card, string name, int value)
 	{

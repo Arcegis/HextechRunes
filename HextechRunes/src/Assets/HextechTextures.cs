@@ -122,7 +122,7 @@ internal static class HextechTextures
 	{
 		if (HextechRunLogBudget.TryConsume("assets.hook-failure", 10))
 		{
-			Log.Error($"[{ModInfo.Id}][Assets] {site} failed; keeping original result: {ex}");
+			HextechLog.Error("Assets", $"{site} failed; keeping original result: {ex}");
 		}
 	}
 
@@ -194,7 +194,7 @@ internal static class HextechTextures
 	{
 		if (WarnedTextureMissPaths.Add(path))
 		{
-			Log.Warn($"[{ModInfo.Id}][Assets] Texture load miss ({reason}): {path}");
+			HextechLog.Warn("Assets", $"Texture load miss ({reason}): {path}");
 		}
 	}
 }

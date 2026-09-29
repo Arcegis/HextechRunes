@@ -33,7 +33,7 @@ public sealed class InfernoUpgradeRune : CardUpgradeRuneBase<Inferno>
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][InfernoUpgrade] Fire burst visual failed: {ex.Message}");
+			HextechLog.Warn("InfernoUpgrade", $"Fire burst visual failed: {ex.Message}");
 		}
 	}
 

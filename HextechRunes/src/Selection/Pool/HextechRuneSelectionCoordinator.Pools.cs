@@ -52,7 +52,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static HashSet<ModelId> CreateSeenOptionIds(IEnumerable<RelicModel> options, IEnumerable<ModelId>? alreadySeenIds = null)
 	{
 		HashSet<ModelId> seenOptionIds = options
-			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.Select(static relic => relic.CanonicalId())
 			.ToHashSet();
 		if (alreadySeenIds != null)
 		{

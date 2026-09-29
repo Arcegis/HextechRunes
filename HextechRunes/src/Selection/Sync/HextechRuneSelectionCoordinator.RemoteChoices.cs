@@ -87,11 +87,11 @@ internal static partial class HextechRuneSelectionCoordinator
 
 				if (shouldContinueAfterTimeout?.Invoke() == true)
 				{
-					Log.Warn($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: still waiting context={context} player={player.NetId} choiceId={initialChoiceId}");
+					HextechLog.Warn("Mayhem", $"WaitForRemoteHextechChoice: still waiting context={context} player={player.NetId} choiceId={initialChoiceId}");
 					continue;
 				}
 
-				Log.Warn($"[{ModInfo.Id}][Mayhem] WaitForRemoteHextechChoice: interrupted context={context} player={player.NetId} choiceId={initialChoiceId}");
+				HextechLog.Warn("Mayhem", $"WaitForRemoteHextechChoice: interrupted context={context} player={player.NetId} choiceId={initialChoiceId}");
 				return null;
 			}
 
@@ -129,7 +129,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			string message =
 				$"Failed to send local choice context={context} player={player.NetId} " +
 				$"choiceId={choiceId}";
-			Log.Error($"[{ModInfo.Id}][Mayhem] {message}: {ex}");
+			HextechLog.Error("Mayhem", $"{message}: {ex}");
 			AbortMultiplayerChoiceTransaction(context, message);
 			throw new HextechChoiceProtocolException(message, ex);
 		}
@@ -150,7 +150,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (TryTakeBufferedRemoteChoice(synchronizer, player, choiceId, out NetPlayerChoiceResult bufferedResult))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed buffered choice context={context} player={player.NetId} choiceId={choiceId}");
+			HextechLog.Info("Mayhem", $"RemoteChoice event wait: consumed buffered choice context={context} player={player.NetId} choiceId={choiceId}");
 			return (PlayerChoiceResult.FromNetData(player, runState, bufferedResult), choiceId);
 		}
 
@@ -174,7 +174,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			ThrowIfSelectionTransactionInactive(runState, shouldRemainActive, context);
 			if (TryTakeBufferedRemoteChoice(synchronizer, player, choiceId, out NetPlayerChoiceResult lateBufferedResult))
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: consumed late buffered choice context={context} player={player.NetId} choiceId={choiceId}");
+				HextechLog.Info("Mayhem", $"RemoteChoice event wait: consumed late buffered choice context={context} player={player.NetId} choiceId={choiceId}");
 				return (PlayerChoiceResult.FromNetData(player, runState, lateBufferedResult), choiceId);
 			}
 
@@ -216,7 +216,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				ObserveCompletion(timeout, $"{context} timeout observer");
 			}
 			TryTakeBufferedRemoteChoice(synchronizer, player, receivedChoiceId, out _);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RemoteChoice event wait: received choice context={context} player={player.NetId} expectedChoiceId={choiceId} receivedChoiceId={receivedChoiceId}");
+			HextechLog.Info("Mayhem", $"RemoteChoice event wait: received choice context={context} player={player.NetId} expectedChoiceId={choiceId} receivedChoiceId={receivedChoiceId}");
 			return (PlayerChoiceResult.FromNetData(player, runState, result), receivedChoiceId);
 		}
 		finally
@@ -269,7 +269,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] Background choice observer failed: context={context} error={ex}");
+			HextechLog.Error("Mayhem", $"Background choice observer failed: context={context} error={ex}");
 		}
 	}
 
@@ -280,13 +280,13 @@ internal static partial class HextechRuneSelectionCoordinator
 			INetGameService netService = RunManager.Instance.NetService;
 			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
 			{
-				Log.Error($"[{ModInfo.Id}][Mayhem] Aborting multiplayer choice transaction: context={context} reason={reason}");
+				HextechLog.Error("Mayhem", $"Aborting multiplayer choice transaction: context={context} reason={reason}");
 				netService.Disconnect(NetError.InternalError, now: true);
 			}
 		}
 		catch (Exception disconnectError)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] Failed to abort multiplayer choice transaction: context={context} error={disconnectError}");
+			HextechLog.Error("Mayhem", $"Failed to abort multiplayer choice transaction: context={context} error={disconnectError}");
 		}
 	}
 
@@ -329,7 +329,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] RemoteChoice buffered read failed: player={player.NetId} choiceId={choiceId} error={ex}");
+			HextechLog.Warn("Mayhem", $"RemoteChoice buffered read failed: player={player.NetId} choiceId={choiceId} error={ex}");
 		}
 
 		return false;
@@ -395,13 +395,13 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		if (ReceivedChoiceType == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] RemoteChoice buffered reflection unavailable: could not resolve ReceivedChoice type; using event path.");
+			HextechLog.Warn("Mayhem", $"RemoteChoice buffered reflection unavailable: could not resolve ReceivedChoice type; using event path.");
 			return false;
 		}
 
 		if (ReceivedChoiceTaskProperty == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] RemoteChoice buffered reflection unavailable: could not resolve completionSource.Task; using event path.");
+			HextechLog.Warn("Mayhem", $"RemoteChoice buffered reflection unavailable: could not resolve completionSource.Task; using event path.");
 			return false;
 		}
 

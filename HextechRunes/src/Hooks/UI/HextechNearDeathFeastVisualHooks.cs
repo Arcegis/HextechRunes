@@ -58,7 +58,7 @@ internal sealed class HextechNearDeathFeastVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Could not attach Near-Death Feast visual: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Could not attach Near-Death Feast visual: {ex.Message}");
 		}
 	}
 
@@ -150,7 +150,7 @@ internal sealed class HextechNearDeathFeastVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Near-Death Feast visual stopped after runtime error: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Near-Death Feast visual stopped after runtime error: {ex.Message}");
 		}
 		finally
 		{

@@ -1,8 +1,6 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -32,7 +30,7 @@ internal static partial class HextechCombatHooks
 	{
 		if (HextechRunLogBudget.TryConsume("combat.dual-wield-intent-failure", 10))
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] {hook} failed; falling back to vanilla intent: {ex}");
+			HextechLog.Error("Mayhem", $"{hook} failed; falling back to vanilla intent: {ex}");
 		}
 	}
 

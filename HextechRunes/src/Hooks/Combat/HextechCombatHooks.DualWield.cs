@@ -1,4 +1,3 @@
-using HarmonyLib;
 using System.Runtime.CompilerServices;
 using static HextechRunes.HextechHookReflection;
 
@@ -30,7 +29,7 @@ internal static partial class HextechCombatHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Dual Wield attack hook disabled because required AttackCommand fields are unavailable: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Dual Wield attack hook disabled because required AttackCommand fields are unavailable: {ex.GetType().Name}: {ex.Message}");
 				_dualWieldFieldsAvailable = false;
 			}
 

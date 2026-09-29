@@ -86,7 +86,6 @@ internal static partial class HextechCombatHooks
 		return new ValueTuple<int, int>(energyToSpend, starsToSpend);
 	}
 
-
 	private static void PushActivePlayEnergyValue(CardModel card, int energyValue)
 	{
 		if (!ActivePlayEnergyValues.TryGetValue(card, out Stack<int>? energyValues))

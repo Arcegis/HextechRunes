@@ -109,7 +109,7 @@ internal sealed class ThievingHopperEnemyHex : HextechEnemyHexEffect
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] 偷窃草蜢逃跑表现失败，继续原版逃跑结算：{ex.Message}");
+			HextechLog.Warn("ThievingHopper", $"偷窃草蜢逃跑表现失败，继续原版逃跑结算：{ex.Message}");
 		}
 		// 不走死亡命令：逃跑不应触发顺走的击杀返还。
 		await CreatureCmd.Escape(enemy);

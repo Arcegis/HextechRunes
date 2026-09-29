@@ -1,7 +1,5 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Odds;
 using MegaCrit.Sts2.Core.Random;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -11,7 +9,6 @@ internal static class HextechEnemyCuttingEdgeAlchemistHooks
 	private const float FloatTolerance = 0.000001f;
 	private static readonly AccessTools.FieldRef<AbstractOdds, Rng> OddsRngRef =
 		AccessTools.FieldRefAccess<AbstractOdds, Rng>("_rng");
-
 
 	internal static bool ShouldKeepRolledPotion(bool wasForced, float secondaryRoll)
 	{

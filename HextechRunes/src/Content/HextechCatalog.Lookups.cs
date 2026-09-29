@@ -13,7 +13,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.RuneIds.Contains(id);
 	}
 
@@ -24,7 +24,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.ForgeIds.Contains(id);
 	}
 
@@ -35,7 +35,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.ShopOnlyRelicIds.Contains(id);
 	}
 
@@ -46,7 +46,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.EnemyHexIconRelicIds.Contains(id);
 	}
 
@@ -63,7 +63,7 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.PlayerRuneRarityById.TryGetValue(id, out rarity);
 	}
 
@@ -75,13 +75,13 @@ internal static partial class HextechCatalog
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.ForgeRarityById.TryGetValue(id, out rarity);
 	}
 
 	public static string GetPlayerRuneTagKey(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelIdLookups.PlayerRuneTagKeyById.TryGetValue(id, out string? tagKey)
 			? tagKey
 			: HextechPlayerRuneRegistry.DefaultTagKey;

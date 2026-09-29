@@ -27,7 +27,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		if (session.IsActive)
 		{
 			HextechLog.Info(
-				$"[{ModInfo.Id}][Mayhem] Golden reroll active: act={actIndex} choice={choiceOrdinal} " +
+				"Mayhem", $"Golden reroll active: act={actIndex} choice={choiceOrdinal} " +
 				$"player={player.NetId} rarity={rarity} upgraded={session.UpgradedRarity} chance={modifier.GoldenRerollChancePercent}%");
 		}
 

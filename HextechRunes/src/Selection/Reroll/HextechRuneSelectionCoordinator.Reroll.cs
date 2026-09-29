@@ -47,7 +47,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		HashSet<ModelId> currentOptionIds = currentOptions
-			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.Select(static relic => relic.CanonicalId())
 			.ToHashSet();
 		HashSet<ModelId> excludedIds = new(currentOptionIds);
 		excludedIds.UnionWith(seenOptionIds);
@@ -108,7 +108,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			// 只进本机界面的已见集合；存档里的已见在选定后按最终候选记，其他客户端看不到中途重随结果。
 			seenOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RerollSingleOptionMultiplayer: player={player.NetId} slot={slotIndex} ordinal={rerollOrdinal} relic={rerolledId.Entry}");
+			HextechLog.Info("Mayhem", $"RerollSingleOptionMultiplayer: player={player.NetId} slot={slotIndex} ordinal={rerollOrdinal} relic={rerolledId.Entry}");
 		}
 
 		return rerolled;
@@ -130,7 +130,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		HashSet<ModelId> currentOptionIds = currentOptions
-			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.Select(static relic => relic.CanonicalId())
 			.ToHashSet();
 		HashSet<ModelId> excludedIds = new(currentOptionIds);
 		excludedIds.UnionWith(seenOptionIds);
@@ -142,7 +142,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				BuildSelectableRunePool(player, rarity, runState, excludedIds),
 				currentOptions,
 				slotIndex)
-			.OrderBy(static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry, StringComparer.Ordinal)
+			.OrderBy(static relic => (relic.CanonicalId()).Entry, StringComparer.Ordinal)
 			.ToList();
 		if (pool.Count == 0 && seenOptionIds.Count > 0)
 		{
@@ -153,7 +153,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					BuildSelectableRunePool(player, rarity, runState, currentOptionIds),
 					currentOptions,
 					slotIndex)
-				.OrderBy(static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry, StringComparer.Ordinal)
+				.OrderBy(static relic => (relic.CanonicalId()).Entry, StringComparer.Ordinal)
 				.ToList();
 		}
 

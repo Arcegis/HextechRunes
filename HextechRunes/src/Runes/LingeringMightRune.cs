@@ -87,7 +87,7 @@ public sealed class LingeringMightRune : HextechRelicBase
 		catch (Exception ex)
 		{
 			// 上一局带过来的 power 可能来自已卸载的第三方内容,静默放弃比炸战斗开始流程好。
-			Log.Warn($"[{ModInfo.Id}][LingeringMight] Failed to resolve carried buff '{parts[0]}|{parts[1]}': {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("LingeringMight", $"Failed to resolve carried buff '{parts[0]}|{parts[1]}': {ex.GetType().Name}: {ex.Message}");
 			return;
 		}
 

@@ -108,13 +108,13 @@ internal static class HextechAssets
 
 		if (HextechCatalog.IsHextechEnemyHexIconRelic(relic))
 		{
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			ModelId id = relic.CanonicalId();
 			return $"res://{ModInfo.Id}/images/relics/{ToImageFileStem(id.Entry)}.png";
 		}
 
 		if (HextechCatalog.IsHextechRelic(relic))
 		{
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			ModelId id = relic.CanonicalId();
 			string assetModId = HextechExternalContentRegistry.GetAssetModId(id) ?? ModInfo.Id;
 			return $"res://{assetModId}/images/relics/{ToImageFileStem(id.Entry)}.png";
 		}

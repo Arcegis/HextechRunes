@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -124,7 +123,7 @@ internal sealed class SlowCookAuraVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][SlowCookAura] Could not attach aura visual: {ex.Message}");
+			HextechLog.Warn("SlowCookAura", $"Could not attach aura visual: {ex.Message}");
 		}
 	}
 
@@ -216,7 +215,7 @@ internal sealed class SlowCookAuraVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][SlowCookAura] Aura visual stopped after runtime error: {ex.Message}");
+			HextechLog.Warn("SlowCookAura", $"Aura visual stopped after runtime error: {ex.Message}");
 		}
 		finally
 		{
@@ -383,7 +382,7 @@ internal sealed class SlowCookAuraVisual
 		Texture2D? texture = HextechTextures.LoadUiTexture(path);
 		if (texture == null && LoggedMissingTexturePaths.Add(path))
 		{
-			Log.Warn($"[{ModInfo.Id}][SlowCookAura] Aura texture not found: {path}");
+			HextechLog.Warn("SlowCookAura", $"Aura texture not found: {path}");
 		}
 
 		return texture;

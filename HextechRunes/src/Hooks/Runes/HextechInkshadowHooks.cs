@@ -1,6 +1,4 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Models.Enchantments;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -12,8 +10,6 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechInkshadowHooks
 {
-
-
 	internal static async Task PlayWithGuardedEnchant(BladeOfInk card, Player owner, HextechCombatState combatState)
 	{
 		foreach (CardModel item in await Shiv.CreateInHand(owner, card.DynamicVars.Cards.IntValue, combatState))

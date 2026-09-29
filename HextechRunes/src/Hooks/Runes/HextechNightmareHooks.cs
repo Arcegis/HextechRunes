@@ -1,4 +1,3 @@
-using HarmonyLib;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -8,7 +7,6 @@ namespace HextechRunes;
 // 漆黑等回合内效果会通过 OrbCmd.Passive 直接触发 Passive,不会经过回合结束入口。
 internal static class HextechNightmareHooks
 {
-
 	internal static MethodInfo ResolvePassiveHookTarget()
 	{
 		return RequireMethod(
@@ -18,7 +16,6 @@ internal static class HextechNightmareHooks
 			typeof(PlayerChoiceContext),
 			typeof(Creature));
 	}
-
 
 	internal static async Task CompletePassiveThen(Task passiveTask, Func<Task> nightmareEffect)
 	{

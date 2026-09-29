@@ -36,7 +36,7 @@ internal static partial class HextechSavedPropertyBootstrap
 
 	private static void InjectCachesCore()
 	{
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SavedProperty 注入跳过:0.109+ 由 ModelIdSerializationCache.Init 自动收录 ModelDb 载体。");
+		HextechLog.Info("Mayhem", $"SavedProperty 注入跳过:0.109+ 由 ModelIdSerializationCache.Init 自动收录 ModelDb 载体。");
 	}
 
 	/// <summary>
@@ -54,11 +54,11 @@ internal static partial class HextechSavedPropertyBootstrap
 		try
 		{
 			WarnOnUninjectedSavedPropertyCarriers();
-			HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] SavedProperty net-id map is game-canonical: bitSize={SavedPropertiesTypeCache.PropertyIdBitSize} hash={SavedPropertiesTypeCache.Hash:X8}.");
+			HextechLog.Info("MultiplayerCompat", $"SavedProperty net-id map is game-canonical: bitSize={SavedPropertiesTypeCache.PropertyIdBitSize} hash={SavedPropertiesTypeCache.Hash:X8}.");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] SavedProperty post-init audit failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("MultiplayerCompat", $"SavedProperty post-init audit failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

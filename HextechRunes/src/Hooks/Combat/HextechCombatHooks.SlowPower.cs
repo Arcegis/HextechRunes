@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
 	internal static bool TryResolveNeutralPowerType(PowerModel power, out PowerType powerType)
 	{
 		if (power is HextechPlayerSlowPower or HextechTemporarySlowPower)

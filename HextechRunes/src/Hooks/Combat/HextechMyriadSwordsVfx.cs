@@ -84,7 +84,7 @@ internal static class HextechMyriadSwordsVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][MyriadSwordsVfx] Could not play Sovereign Blade fan: {ex.Message}", 2);
+			HextechLog.Warn("MyriadSwordsVfx", $"Could not play Sovereign Blade fan: {ex.Message}");
 		}
 	}
 

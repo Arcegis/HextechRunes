@@ -31,7 +31,7 @@ internal static class HextechAttackCostPreviewRefresher
 					}
 					catch (Exception ex)
 					{
-						Log.Warn($"[{ModInfo.Id}][AttackCostPreview] Cost visual refresh failed for {card.Id}: {ex.Message}");
+						HextechLog.Warn("AttackCostPreview", $"Cost visual refresh failed for {card.Id}: {ex.Message}");
 					}
 				}
 			}

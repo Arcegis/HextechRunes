@@ -108,7 +108,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to read cached tickbox scene; using ResourceLoader: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Failed to read cached tickbox scene; using ResourceLoader: {ex.Message}");
 		}
 
 		return ResourceLoader.Load<PackedScene>(TickboxVisualScenePath, cacheMode: ResourceLoader.CacheMode.Reuse)

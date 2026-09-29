@@ -1,8 +1,6 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.CustomRun;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -153,8 +151,6 @@ internal static class HextechPresetChallengeRegistry
 
 internal static class HextechPresetChallengeHooks
 {
-
-
 	private static IEnumerable<ModifierModel> CreatePresetChallenges()
 	{
 		yield return ModelDb.Modifier<StuffedToRuinChallengeModifier>().ToMutable();
@@ -163,7 +159,6 @@ internal static class HextechPresetChallengeHooks
 		yield return ModelDb.Modifier<EightPennyGateChallengeModifier>().ToMutable();
 		yield return ModelDb.Modifier<ListlessChallengeModifier>().ToMutable();
 	}
-
 
 	[HarmonyPatch(typeof(NCustomRunModifiersList), "GetAllModifiers")]
 	[HextechPatch("custom-run.preset-challenges.list", "预设挑战", Optional = true)]

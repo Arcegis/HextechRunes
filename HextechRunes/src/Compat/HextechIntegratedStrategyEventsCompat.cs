@@ -28,7 +28,7 @@ internal static class HextechIntegratedStrategyEventsCompat
 		{
 			if (HextechRunLogBudget.TryConsume("compat.integrated-strategy-extra-act", 1))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Integrated Strategy extra-act query failed: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Integrated Strategy extra-act query failed: {ex.Message}");
 			}
 			return null;
 		}
@@ -48,7 +48,7 @@ internal static class HextechIntegratedStrategyEventsCompat
 			modifiers: null);
 		if (assembly != null && method == null && HextechRunLogBudget.TryConsume("compat.integrated-strategy-extra-act-api-missing", 1))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Integrated Strategy is loaded but does not expose {InteropTypeName}.{MethodName}(IRunState); finale acts cannot trigger Hextech acquisition until Integrated Strategy is updated.");
+			HextechLog.Warn("Mayhem", $"Integrated Strategy is loaded but does not expose {InteropTypeName}.{MethodName}(IRunState); finale acts cannot trigger Hextech acquisition until Integrated Strategy is updated.");
 		}
 
 		return method;

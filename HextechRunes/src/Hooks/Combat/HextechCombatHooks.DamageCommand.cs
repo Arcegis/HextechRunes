@@ -14,7 +14,6 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-
 	// 只负责命令结束后的账目清理。AsyncLocal 的出栈不能放在这里:async 方法内对 AsyncLocal 的赋值只作用于
 	// 它自己的执行上下文副本,不会回写到调用方;调用方的上下文由 Postfix 在同步返回前恢复(见 DamageCommandPatch)。
 	private static async Task<T> CompleteWithActualDamageCommandReset<T>(Task<T> task, long commandId)

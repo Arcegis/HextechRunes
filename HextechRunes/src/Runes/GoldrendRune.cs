@@ -1,5 +1,3 @@
-using HarmonyLib;
-
 namespace HextechRunes;
 
 public sealed class GoldrendRune : HextechRelicBase

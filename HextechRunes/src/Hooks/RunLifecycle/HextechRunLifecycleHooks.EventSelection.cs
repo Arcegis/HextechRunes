@@ -5,8 +5,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-
-
 	private static async Task EventRoomProceedAfterOriginal(Task original, EventRoomProceedState state)
 	{
 		await original;
@@ -18,7 +16,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] EventRoomProceed continuation failed: {ex}");
+			HextechLog.Error("Mayhem", $"EventRoomProceed continuation failed: {ex}");
 		}
 	}
 
@@ -34,7 +32,7 @@ internal static partial class HextechRunLifecycleHooks
 		string eventId = state.EventId;
 		if (!IsCurrentRun(runState))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: run changed after proceed act={actIndex} event={eventId}");
+			HextechLog.Info("Mayhem", $"EventRoomProceed skip: run changed after proceed act={actIndex} event={eventId}");
 			return;
 		}
 
@@ -46,22 +44,22 @@ internal static partial class HextechRunLifecycleHooks
 
 		if (modifier.IsActResolved(actIndex))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: act{actIndex} already resolved event={eventId}");
+			HextechLog.Info("Mayhem", $"EventRoomProceed skip: act{actIndex} already resolved event={eventId}");
 			return;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: waiting for all ancient events before act{actIndex} selection event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+		HextechLog.Info("Mayhem", $"EventRoomProceed: waiting for all ancient events before act{actIndex} selection event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 		NMapScreen.Instance?.SetTravelEnabled(enabled: false);
 		try
 		{
 			await WaitForAllCurrentEventsFinished(runState, eventId);
 			if (!IsCurrentRun(runState) || modifier.IsActResolved(actIndex))
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed skip: run changed or act{actIndex} resolved after wait event={eventId}");
+				HextechLog.Info("Mayhem", $"EventRoomProceed skip: run changed or act{actIndex} resolved after wait event={eventId}");
 				return;
 			}
 
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: selecting act{actIndex} hex after all ancient events finished event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
+			HextechLog.Info("Mayhem", $"EventRoomProceed: selecting act{actIndex} hex after all ancient events finished event={eventId} mapOpen={NMapScreen.Instance?.IsOpen == true}");
 			await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
 		}
 		finally
@@ -105,13 +103,13 @@ internal static partial class HextechRunLifecycleHooks
 			int finishedCount = events.Count(static eventModel => eventModel.IsFinished);
 			if (AreRequiredCurrentEventsFinished(runState, events, finishedCount, out string completionReason))
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: required events finished event={eventId} count={events.Count} finished={finishedCount} reason={completionReason} waitedFrames={frame}");
+				HextechLog.Info("Mayhem", $"EventRoomProceed: required events finished event={eventId} count={events.Count} finished={finishedCount} reason={completionReason} waitedFrames={frame}");
 				return;
 			}
 
 			if (frame % 300 == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed: waiting for remote events event={eventId} finished={finishedCount}/{events.Count} players={runState.Players.Count}");
+				HextechLog.Info("Mayhem", $"EventRoomProceed: waiting for remote events event={eventId} finished={finishedCount}/{events.Count} players={runState.Players.Count}");
 			}
 
 			await WaitOneFrame();
@@ -139,7 +137,7 @@ internal static partial class HextechRunLifecycleHooks
 			__state = new EventRoomProceedState(shouldSelectAfterProceed, runState, actIndex, eventId);
 			if (shouldSelectAfterProceed)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] EventRoomProceed begin: act={actIndex} event={eventId} {DescribeCurrentEventState(runState)}");
+				HextechLog.Info("Mayhem", $"EventRoomProceed begin: act={actIndex} event={eventId} {DescribeCurrentEventState(runState)}");
 			}
 		}
 

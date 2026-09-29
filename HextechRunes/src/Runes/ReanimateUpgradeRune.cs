@@ -81,7 +81,7 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 				}
 				catch (Exception ex)
 				{
-					Log.Warn($"[{ModInfo.Id}][ReanimateUpgrade] Cost visual refresh failed: {ex.Message}");
+					HextechLog.Warn("ReanimateUpgrade", $"Cost visual refresh failed: {ex.Message}");
 				}
 			}
 		}

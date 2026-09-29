@@ -353,7 +353,7 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 			}
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Reflection] Missing writable DamageResult member {type.FullName}.{memberName}; result field left at its default.");
+		HextechLog.Warn("Reflection", $"Missing writable DamageResult member {type.FullName}.{memberName}; result field left at its default.");
 	}
 
 	private static object ConvertDamageResultValue(object value, Type targetType)

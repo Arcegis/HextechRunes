@@ -74,7 +74,7 @@ public sealed class HextechInfernalDragonSoulPower : HextechPowerBase
 		if (Owner.Player is Player player
 			&& HextechPlayerContextHelper.IsNetworkMultiplayerRun()
 			&& CombatManager.Instance?.IsInProgress == true
-			&& player.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			&& HextechMayhemModifier.FindIn(player.RunState) is HextechMayhemModifier modifier)
 		{
 			return modifier.TryConsumePlayerRuneProcThisTurn(player, nameof(HextechInfernalDragonSoulPower), 1);
 		}
@@ -94,7 +94,7 @@ public sealed class HextechInfernalDragonSoulPower : HextechPowerBase
 		if (Owner.Player is not Player player
 			|| !HextechPlayerContextHelper.IsNetworkMultiplayerRun()
 			|| CombatManager.Instance?.IsInProgress != true
-			|| player.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is not HextechMayhemModifier modifier)
+			|| HextechMayhemModifier.FindIn(player.RunState) is not HextechMayhemModifier modifier)
 		{
 			return false;
 		}
@@ -143,7 +143,7 @@ public sealed class HextechDragonSoulPower : PowerModel
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][DragonSoul] Flash failed: {ex.Message}");
+			HextechLog.Warn("DragonSoul", $"Flash failed: {ex.Message}");
 		}
 	}
 }

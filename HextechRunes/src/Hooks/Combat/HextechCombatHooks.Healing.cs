@@ -10,7 +10,6 @@ internal static partial class HextechCombatHooks
 
 	private readonly record struct HealPostState(Player? Player, Creature Creature, int CurrentHpBefore, bool ShouldProcess);
 
-
 	internal static decimal ClampHealAmountToCap(int currentHp, int maxHp, decimal amount, decimal capPercent)
 	{
 		if (amount <= 0m)
@@ -21,7 +20,6 @@ internal static partial class HextechCombatHooks
 		int healCap = (int)Math.Floor(maxHp * capPercent);
 		return Math.Min(amount, Math.Max(0m, healCap - currentHp));
 	}
-
 
 	private static async Task HealAfterOriginal(Task original, HealPostState state)
 	{

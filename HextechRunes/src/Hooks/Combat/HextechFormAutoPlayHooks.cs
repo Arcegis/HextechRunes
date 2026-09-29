@@ -1,4 +1,3 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Models.Afflictions;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Hooks;
@@ -77,7 +76,7 @@ internal static class HextechFormAutoPlayHooks
 			catch (Exception ex)
 			{
 				// 视觉失败不能中断形态牌结算;后续逻辑仍按同一确定性批次执行。
-				Log.Warn($"[{ModInfo.Id}][FormBatch] Group power-card VFX failed: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("FormBatch", $"Group power-card VFX failed: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 	}
@@ -127,7 +126,7 @@ internal static class HextechFormAutoPlayHooks
 		}
 
 		decimal secondaryAmount = SumSecondaryContribution(contributions);
-		HextechLog.Info($"[{ModInfo.Id}][FormBatch] Combining {cards.Count}x {primary.GetType().Name}: primary plays via vanilla AutoPlay, secondary contribution={secondaryAmount}");
+		HextechLog.Info("FormBatch", $"Combining {cards.Count}x {primary.GetType().Name}: primary plays via vanilla AutoPlay, secondary contribution={secondaryAmount}");
 
 		// 代表牌完整走原版自动打出:它自己的数值 × 自己的出牌次数由原版结算,事件只发这一次。
 		await CardCmd.AutoPlay(choiceContext, primary, target: null, AutoPlayType.Default, skipXCapture: false, skipCardPileVisuals: true);

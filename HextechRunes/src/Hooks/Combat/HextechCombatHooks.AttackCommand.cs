@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
 	internal static async Task<AttackCommand> EnsureAttackCommandExecuteResult(Task<AttackCommand>? task, AttackCommand command)
 	{
 		if (task == null)

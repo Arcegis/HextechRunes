@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 public abstract class HextechForgeBase : HextechRelicBase
 {
-
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedStackCount
 	{

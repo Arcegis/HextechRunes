@@ -1,5 +1,3 @@
-using HarmonyLib;
-
 namespace HextechRunes;
 
 internal static partial class HextechEnemyPowerScalingHooks
@@ -12,7 +10,6 @@ internal static partial class HextechEnemyPowerScalingHooks
 	}
 
 	private static readonly AsyncLocal<ScalingOverride?> CurrentOverride = new();
-
 
 	public static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
 		where T : PowerModel
@@ -132,7 +129,6 @@ internal static partial class HextechEnemyPowerScalingHooks
 			&& ReferenceEquals(target, applier)
 			&& (target.IsPrimaryEnemy || target.IsSecondaryEnemy);
 	}
-
 
 	[HextechPatch("combat.enemy-power-scaling", "敌方能力联机缩放")]
 	private static class ScaledAmountPatch

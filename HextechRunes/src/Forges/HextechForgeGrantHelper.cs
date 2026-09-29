@@ -142,7 +142,7 @@ internal static class HextechForgeGrantHelper
 		// 这唯一落地点再用最新的有效禁用集兜底校验一次,挡掉任何漏网的被禁锻造器。
 		if (IsForgeDisabledForPlayer(player, forge))
 		{
-			Log.Warn($"[{ModInfo.Id}][ForgeChoice] Blocked obtaining a config-disabled forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}");
+			HextechLog.Warn("ForgeChoice", $"Blocked obtaining a config-disabled forge: player={player.NetId} relic={(forge.CanonicalId()).Entry}");
 			return;
 		}
 
@@ -154,21 +154,21 @@ internal static class HextechForgeGrantHelper
 			if (netService.Type is NetGameType.Host or NetGameType.Client && netService.IsConnected)
 			{
 				// Enchantment forges open a nested deck choice during pickup; remote clients must know about the forge first.
-				ModelId forgeId = forge.CanonicalInstance?.Id ?? forge.Id;
+				ModelId forgeId = forge.CanonicalId();
 				RelicModel syncCopy = ModelDb.GetById<RelicModel>(forgeId).ToMutable();
 				RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(syncCopy);
 				syncedBeforePickup = true;
 			}
 			else if (netService.Type is NetGameType.Host or NetGameType.Client)
 			{
-				Log.Warn($"[{ModInfo.Id}][ForgeChoice] Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
+				HextechLog.Warn("ForgeChoice", $"Skipped forge reward sync because multiplayer service is disconnected: relic={forge.Id.Entry}");
 			}
 		}
 
 		await RelicCmd.Obtain(forge, player);
 		if (syncedBeforePickup)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][ForgeChoice] Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
+			HextechLog.Info("ForgeChoice", $"Synced obtained forge before pickup effect: player={player.NetId} relic={forge.Id.Entry}");
 		}
 	}
 
@@ -332,7 +332,7 @@ internal static class HextechForgeGrantHelper
 		try
 		{
 			if (player.RunState is RunState runState
-				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 			{
 				return modifier.ForgeRarityWeights;
 			}
@@ -341,8 +341,8 @@ internal static class HextechForgeGrantHelper
 		{
 			if (HextechRunLogBudget.TryConsume("forge.rarity-config-fallback", 3))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Forge] Could not read synchronized forge rarity weights; "
+				HextechLog.Warn(
+					"Forge", $"Could not read synchronized forge rarity weights; "
 					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
@@ -352,7 +352,7 @@ internal static class HextechForgeGrantHelper
 
 	internal static bool IsForgeDisabledForPlayer(Player player, RelicModel forge)
 	{
-		string entry = (forge.CanonicalInstance?.Id ?? forge.Id).Entry;
+		string entry = (forge.CanonicalId()).Entry;
 		return GetEffectiveDisabledForgeIds(player).Contains(entry);
 	}
 
@@ -361,7 +361,7 @@ internal static class HextechForgeGrantHelper
 		try
 		{
 			if (player.RunState is RunState runState
-				&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 			{
 				return modifier.DisabledForgeIdsForPool;
 			}
@@ -370,8 +370,8 @@ internal static class HextechForgeGrantHelper
 		{
 			if (HextechRunLogBudget.TryConsume("forge.disabled-config-fallback", 3))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Forge] Could not read synchronized disabled forge IDs; "
+				HextechLog.Warn(
+					"Forge", $"Could not read synchronized disabled forge IDs; "
 					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
 			}
 		}

@@ -90,7 +90,7 @@ internal static class HextechKnifeHelper
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][BigKnife] Cost visual refresh failed: {ex.Message}");
+			HextechLog.Warn("BigKnife", $"Cost visual refresh failed: {ex.Message}");
 		}
 	}
 

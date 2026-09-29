@@ -1,6 +1,4 @@
 using System.Runtime.CompilerServices;
-using HarmonyLib;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -196,7 +194,6 @@ internal static class UndyingEtherealKeywordPersistence
 
 internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 {
-
 	private readonly struct KeywordPersistenceSnapshot
 	{
 		private readonly bool _thoughtOverwrite;
@@ -267,7 +264,6 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 			}
 		}
 	}
-
 
 	private static void AddMarker(SerializableCard card, string markerSavedPropertyName)
 	{

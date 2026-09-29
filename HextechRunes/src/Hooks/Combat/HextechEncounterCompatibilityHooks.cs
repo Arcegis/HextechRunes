@@ -37,7 +37,7 @@ internal static class HextechEncounterCompatibilityHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Entomancer] Cast visual failed: {ex.Message}");
+			HextechLog.Warn("Entomancer", $"Cast visual failed: {ex.Message}");
 		}
 	}
 

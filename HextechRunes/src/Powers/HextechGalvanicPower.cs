@@ -54,7 +54,7 @@ public sealed class HextechGalvanicPower : HextechPowerBase
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Galvanic] Lightning visual failed: {ex.Message}");
+				HextechLog.Warn("Galvanic", $"Lightning visual failed: {ex.Message}");
 			}
 		}
 	}

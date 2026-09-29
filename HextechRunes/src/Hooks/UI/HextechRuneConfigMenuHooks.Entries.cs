@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
@@ -7,7 +6,6 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -20,7 +18,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		{
 			RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(runeType));
 			if (relic is IHextechGeneratedRune) continue;
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			ModelId id = relic.CanonicalId();
 			HextechRarityTier rarity = GetRuneRarity(runeType);
 			string rarityKey = rarity.ToString().ToUpperInvariant();
 			string poolKey = HextechCatalog.GetPlayerRunePoolKey(relic);
@@ -85,7 +83,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		foreach (Type forgeType in HextechCatalog.GetAllForgeTypes())
 		{
 			RelicModel relic = ModelDb.GetById<RelicModel>(ModelDb.GetId(forgeType));
-			ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+			ModelId id = relic.CanonicalId();
 			HextechRarityTier rarity = HextechCatalog.TryGetForgeRarity(relic, out HextechRarityTier resolvedRarity)
 				? resolvedRarity
 				: HextechRarityTier.Gold;

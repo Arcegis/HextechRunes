@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using HarmonyLib;
 
 namespace HextechRunes;
 
@@ -93,7 +92,7 @@ internal static class HextechVanillaCopyGuard
 			IReadOnlyDictionary<string, string> expected = LoadExpectedHashes();
 			if (expected.Count == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][VanillaCopyGuard] No frozen IL table for compat target {ModInfo.TargetGameVersion}; skipping.");
+				HextechLog.Info("VanillaCopyGuard", $"No frozen IL table for compat target {ModInfo.TargetGameVersion}; skipping.");
 				return;
 			}
 
@@ -115,22 +114,22 @@ internal static class HextechVanillaCopyGuard
 
 			if (drifted.Count > 0)
 			{
-				Log.Warn($"[{ModInfo.Id}][VanillaCopyGuard] DRIFT: {drifted.Count} patched method(s) changed IL since the table was frozen; review the prefixes that replace vanilla logic:\n  {string.Join("\n  ", drifted)}");
+				HextechLog.Warn("VanillaCopyGuard", $"DRIFT: {drifted.Count} patched method(s) changed IL since the table was frozen; review the prefixes that replace vanilla logic:\n  {string.Join("\n  ", drifted)}");
 			}
 
 			if (unregistered.Count > 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][VanillaCopyGuard] {unregistered.Count} skip-capable target(s) not in the frozen table:\n  {string.Join("\n  ", unregistered)}");
+				HextechLog.Info("VanillaCopyGuard", $"{unregistered.Count} skip-capable target(s) not in the frozen table:\n  {string.Join("\n  ", unregistered)}");
 			}
 
 			if (drifted.Count == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][VanillaCopyGuard] {expected.Count} frozen target(s) verified.");
+				HextechLog.Info("VanillaCopyGuard", $"{expected.Count} frozen target(s) verified.");
 			}
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][VanillaCopyGuard] Verification failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("VanillaCopyGuard", $"Verification failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

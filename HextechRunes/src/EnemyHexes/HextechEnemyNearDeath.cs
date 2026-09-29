@@ -185,7 +185,7 @@ internal static class HextechEnemyNearDeath
 			return false;
 		}
 
-		HextechMayhemModifier? found = runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault();
+		HextechMayhemModifier? found = HextechMayhemModifier.FindIn(runState);
 		if (found == null || !found.HasActiveMonsterHex(MonsterHexKind.NearDeathFeast))
 		{
 			return false;
@@ -246,7 +246,7 @@ internal static class HextechEnemyNearDeath
 				}
 			}
 
-			Log.Warn($"[{ModInfo.Id}][NearDeathFeast] Enemy strength sync failed: {ex.Message}");
+			HextechLog.Warn("NearDeathFeast", $"Enemy strength sync failed: {ex.Message}");
 		}
 		finally
 		{

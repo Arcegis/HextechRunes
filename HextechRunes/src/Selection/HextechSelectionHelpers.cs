@@ -8,7 +8,7 @@ internal static class HextechSelectionHelpers
 {
 	internal static bool SameRuneCandidate(RelicModel left, RelicModel right)
 	{
-		if ((left.CanonicalInstance?.Id ?? left.Id) != (right.CanonicalInstance?.Id ?? right.Id)) return false;
+		if ((left.CanonicalId()) != (right.CanonicalId())) return false;
 		if (left is IHextechGeneratedRune a && right is IHextechGeneratedRune b)
 			return string.Equals(a.ExportSelectionData(), b.ExportSelectionData(), StringComparison.Ordinal);
 		return true;
@@ -39,7 +39,7 @@ internal static class HextechSelectionHelpers
 			return -1;
 		}
 
-		ModelId selectedId = selected.CanonicalInstance?.Id ?? selected.Id;
+		ModelId selectedId = selected.CanonicalId();
 		for (int i = 0; i < relics.Count; i++)
 		{
 			ModelId optionId = relics[i].CanonicalInstance?.Id ?? relics[i].Id;

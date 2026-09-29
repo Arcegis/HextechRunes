@@ -9,7 +9,7 @@ internal sealed partial class HextechMayhemModifier
 	internal void SetPlayerRuneConfigDisabledIdsSnapshot(IEnumerable<string>? disabledIds, string reason)
 	{
 		_runContext.PlayerRuneConfig.Set(disabledIds);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Player rune config snapshot set: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
+		HextechLog.Info("Mayhem", $"Player rune config snapshot set: reason={reason} disabled={_runContext.PlayerRuneConfig.SnapshotCount}");
 	}
 
 	private HashSet<string> GetPlayerRuneConfigDisabledIdsForPool()
@@ -28,7 +28,7 @@ internal sealed partial class HextechMayhemModifier
 	{
 		if (!_runContext.PlayerRuneConfig.TryRestore(json, out string? errorMessage))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Player rune config snapshot restore failed; using runtime fallback: {errorMessage}", 2);
+			HextechLog.Warn("Mayhem", $"Player rune config snapshot restore failed; using runtime fallback: {errorMessage}");
 		}
 	}
 }

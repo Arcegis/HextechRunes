@@ -8,7 +8,6 @@ internal static partial class HextechCombatHooks
 	// 这里追踪滑溜是否真减伤,在它减伤却没被原版消耗时补一次消耗。
 	private static readonly Dictionary<long, HashSet<SlipperyPower>> SlipperyReductionsByCommand = new();
 
-
 	// 缩小、滑溜、人工制品这几处是原版机制的漏洞修正，海克斯内容让它们更容易触发；
 	// 按设计哲学只在本局启用海克斯时生效，不改没开模组功能的对局。
 	internal static bool IsVanillaFixActiveFor(Creature creature)
@@ -26,7 +25,6 @@ internal static partial class HextechCombatHooks
 	// 全程 bypass(伤害目标是 Osty 不是玩家)、永不消耗 → Osty 替死 + 滑溜永久储备 = 双重无敌。
 	// 记录本次伤害命令里 Osty 替了哪些玩家的死,在命令结束时为这些玩家的滑溜各消耗 1 层。
 	private static readonly Dictionary<long, HashSet<SlipperyPower>> OstyRedirectSlipperyByCommand = new();
-
 
 	private static async Task ConsumeOstyRedirectedSlippery(long commandId)
 	{

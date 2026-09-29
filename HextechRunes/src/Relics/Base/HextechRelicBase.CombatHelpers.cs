@@ -8,7 +8,7 @@ public abstract partial class HextechRelicBase
 		where TCard : CardModel
 	{
 		ModelId cardId = ModelDb.GetId<TCard>();
-		return player.Deck.Cards.Any(card => (card.CanonicalInstance?.Id ?? card.Id) == cardId);
+		return player.Deck.Cards.Any(card => (card.CanonicalId()) == cardId);
 	}
 
 	protected static int FloorToInt(decimal value)

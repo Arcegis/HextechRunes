@@ -20,7 +20,7 @@ public sealed class HextechBlackBloodPlus : OrobasPlusRelicBase
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][BlackBloodPlus] Flash failed: {ex.Message}");
+				HextechLog.Warn("BlackBloodPlus", $"Flash failed: {ex.Message}");
 			}
 		}
 	}

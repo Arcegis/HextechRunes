@@ -83,7 +83,6 @@ internal static partial class HextechPlayerRuneHooks
 		OrbManagerCurrentTweenField ??= RequireField(typeof(NOrbManager), "_curTween");
 	}
 
-
 	internal static bool OrbTweenLayoutPrefixCore(NOrbManager __instance)
 	{
 		if (!TryGetOrbLayoutState(__instance, out List<NOrb> orbs, out Player? player, out int capacity)
@@ -169,7 +168,6 @@ internal static partial class HextechPlayerRuneHooks
 		return capacity > 0;
 	}
 
-
 	internal static async Task<IEnumerable<Creature>> ApplyElectrodynamicsLightningDamage(LightningOrb orb, decimal value, PlayerChoiceContext choiceContext)
 	{
 		List<Creature> targets = orb.CombatState.GetOpponentsOf(orb.Owner.Creature)
@@ -211,7 +209,7 @@ internal static partial class HextechPlayerRuneHooks
 			catch (Exception ex)
 			{
 				// 纯布局表现层,异常回退原版布局,不能向调用方外泄。
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Orb layout override failed; falling back to vanilla layout: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Orb layout override failed; falling back to vanilla layout: {ex.Message}");
 				return true;
 			}
 		}

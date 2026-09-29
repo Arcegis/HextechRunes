@@ -427,8 +427,8 @@ internal sealed class HextechMayhemActState
 		{
 			_monsterHexesByAct = NewMonsterHexLists();
 			string preview = json[..Math.Min(80, json.Length)];
-			Log.Warn(
-				$"[{ModInfo.Id}][Mayhem] Monster hexes by act restore failed; state cleared: "
+			HextechLog.Warn(
+				"Mayhem", $"Monster hexes by act restore failed; state cleared: "
 				+ $"{ex.GetType().Name}: {ex.Message} json={preview}");
 		}
 	}
@@ -470,7 +470,7 @@ internal sealed class HextechMayhemActState
 		catch (Exception ex)
 		{
 			_extraStageIndexes.Clear();
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Extra stage index restore failed; mapping cleared: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Extra stage index restore failed; mapping cleared: {ex.Message}");
 		}
 	}
 

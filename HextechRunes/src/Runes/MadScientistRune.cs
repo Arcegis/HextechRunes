@@ -66,7 +66,7 @@ public sealed class MadScientistRune : HextechRelicBase
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][MadScientist] Orb slot visual failed: {ex.Message}");
+				HextechLog.Warn("MadScientist", $"Orb slot visual failed: {ex.Message}");
 			}
 			__result = Task.CompletedTask;
 			return false;

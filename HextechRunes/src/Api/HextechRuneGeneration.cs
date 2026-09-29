@@ -21,7 +21,7 @@ public static class HextechRuneGeneration
 		RunState runState, int stage, List<RelicModel> options, int slot = -1, int rerollOrdinal = 0)
 	{
 		if (_chaosTransform == null || options.Count == 0) return options;
-		HextechMayhemModifier? modifier = runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault();
+		HextechMayhemModifier? modifier = HextechMayhemModifier.FindIn(runState);
 		if (modifier == null || !modifier.IsModActiveForRun) return options;
 		HextechRunConfigurationSnapshot config = modifier.GetEffectiveRunConfigurationSnapshot();
 		if (config.ChaosRuneChancePercent <= 0) return options;

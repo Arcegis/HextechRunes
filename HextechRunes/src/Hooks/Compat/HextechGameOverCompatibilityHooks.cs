@@ -1,15 +1,11 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static class HextechGameOverCompatibilityHooks
 {
-
-
 	private static NScoreLine CreateFallbackScoreLine(string label, string score, Texture2D? icon)
 	{
 		NScoreLine line = new()
@@ -94,7 +90,7 @@ internal static class HextechGameOverCompatibilityHooks
 			__result = CreateFallbackScoreLine(label, score, icon);
 			if (HextechRunLogBudget.TryConsume("compat.game-over-score-line-fallback", 5))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Game over score line fallback used: {__exception.GetType().Name}: {__exception.Message}");
+				HextechLog.Warn("Mayhem", $"Game over score line fallback used: {__exception.GetType().Name}: {__exception.Message}");
 			}
 
 			return null;

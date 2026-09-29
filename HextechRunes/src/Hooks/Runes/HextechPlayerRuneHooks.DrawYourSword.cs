@@ -1,10 +1,7 @@
-using HarmonyLib;
-
 namespace HextechRunes;
 
 internal static partial class HextechPlayerRuneHooks
 {
-
 	/// <summary>
 	/// 只补原版程序集里的充能球 Evoke 覆写。以前会扫描所有已加载程序集并给第三方模组的充能球类也打补丁,
 	/// 那等于替别人的类型做决定;第三方充能球现在保持原版激发,亮剑不替换它们。

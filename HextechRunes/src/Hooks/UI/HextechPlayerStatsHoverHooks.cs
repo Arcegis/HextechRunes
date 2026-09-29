@@ -1,4 +1,3 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.sts2.Core.Nodes.TopBar;
 using static HextechRunes.HextechHookReflection;
@@ -15,7 +14,6 @@ internal static class HextechPlayerStatsHoverHooks
 
 	private static readonly FieldInfo PortraitHoverTipField = RequireField(typeof(NTopBarPortraitTip), "_hoverTip");
 	private static readonly FieldInfo HoverTipDescriptionField = RequireField(typeof(HoverTip), "<Description>k__BackingField");
-
 
 	private static void UpdatePortraitTip(NTopBarPortraitTip portraitTip, IRunState? runState)
 	{
@@ -42,7 +40,7 @@ internal static class HextechPlayerStatsHoverHooks
 		{
 			if (HextechRunLogBudget.TryConsume("ui.player-stats-hover-update-failure", 3))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to update portrait stat hover tip: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Failed to update portrait stat hover tip: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 	}

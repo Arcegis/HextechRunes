@@ -46,7 +46,7 @@ internal static class HextechMikaelsBlessingVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][MikaelsBlessingVfx] Could not play cleansing burst: {ex.Message}");
+			HextechLog.Warn("MikaelsBlessingVfx", $"Could not play cleansing burst: {ex.Message}");
 		}
 	}
 
@@ -97,7 +97,7 @@ internal static class HextechMikaelsBlessingVfx
 			_flashLayer = CreateLayer(_root, "WhiteGreenBurst", discTexture, new Color(0.86f, 1f, 0.88f, 0.78f), additive: true);
 			_waveLayer = CreateLayer(_root, "OuterEmeraldWave", ringTexture, new Color(0.30f, 1f, 0.74f, 0.36f), additive: true);
 			UpdateTransform();
-			HextechLog.Info($"[{ModInfo.Id}][MikaelsBlessingVfx] Burst attached node={_root.GetPath()} parent={_renderLayer.GetPath()} creature={_creature.Entity?.ModelId.Entry ?? "<unknown>"}.");
+			HextechLog.Info("MikaelsBlessingVfx", $"Burst attached node={_root.GetPath()} parent={_renderLayer.GetPath()} creature={_creature.Entity?.ModelId.Entry ?? "<unknown>"}.");
 			return true;
 		}
 
@@ -126,7 +126,7 @@ internal static class HextechMikaelsBlessingVfx
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][MikaelsBlessingVfx] Cleansing burst stopped after runtime error: {ex.Message}");
+				HextechLog.Warn("MikaelsBlessingVfx", $"Cleansing burst stopped after runtime error: {ex.Message}");
 			}
 			finally
 			{
@@ -246,7 +246,7 @@ internal static class HextechMikaelsBlessingVfx
 		Texture2D? texture = HextechTextures.LoadUiTexture(path);
 		if (texture == null && LoggedMissingTexturePaths.Add(path))
 		{
-			Log.Warn($"[{ModInfo.Id}][MikaelsBlessingVfx] Texture not found: {path}");
+			HextechLog.Warn("MikaelsBlessingVfx", $"Texture not found: {path}");
 		}
 
 		return texture;

@@ -59,7 +59,7 @@ internal static class HextechModelPoolRegistrar
 	{
 		if (IsModelAlreadyQueuedForPool(poolType, modelType) && !IsMobileFirstModelWorkaroundDuplicate(poolType, modelType))
 		{
-			HextechLog.Info($"[{ModInfo.Id}] Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
+			HextechLog.Info("Bootstrap", $"Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
 			return;
 		}
 
@@ -102,7 +102,7 @@ internal static class HextechModelPoolRegistrar
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Could not inspect existing mod pool registrations: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Bootstrap", $"Could not inspect existing mod pool registrations: {ex.GetType().Name}: {ex.Message}");
 		}
 
 		return false;
@@ -132,11 +132,11 @@ internal static class HextechModelPoolRegistrar
 		{
 			ModHelper.AddModelToPool(poolType, modelType);
 			MobileDuplicateRegistrations.Add((poolType, modelType));
-			Log.Warn($"[{ModInfo.Id}] Android model registration workaround queued first-model sentinel: pool={poolType.Name} model={modelType.Name}.");
+			HextechLog.Warn("Bootstrap", $"Android model registration workaround queued first-model sentinel: pool={poolType.Name} model={modelType.Name}.");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Android model registration workaround failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Bootstrap", $"Android model registration workaround failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -181,7 +181,7 @@ internal static class HextechModelPoolRegistrar
 
 				if (removed > 0)
 				{
-					HextechLog.Info($"[{ModInfo.Id}] Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
+					HextechLog.Info("Bootstrap", $"Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
 				}
 
 				return;
@@ -189,7 +189,7 @@ internal static class HextechModelPoolRegistrar
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}] Android model registration workaround cleanup failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Bootstrap", $"Android model registration workaround cleanup failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 

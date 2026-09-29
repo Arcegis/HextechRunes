@@ -4,7 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRunLifecycleHooks
 {
-
 	private static async Task FinalizeStartingRelicsAfterOriginal(Task original, RunManager self)
 	{
 		await original;
@@ -25,10 +24,9 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] FinalizeStartingRelics continuation failed: {ex}");
+			HextechLog.Error("Mayhem", $"FinalizeStartingRelics continuation failed: {ex}");
 		}
 	}
-
 
 	private static async Task StartRunAfterOriginal(Task original, RunState runState)
 	{
@@ -45,7 +43,7 @@ internal static partial class HextechRunLifecycleHooks
 		try
 		{
 			HextechMayhemModifier modifier = EnsureMayhemModifier(runState);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour end: currentRoom={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} {DescribeCurrentEventState(runState)}");
+			HextechLog.Info("Mayhem", $"StartRunDetour end: currentRoom={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} {DescribeCurrentEventState(runState)}");
 			try
 			{
 				HextechEnemyUi.HideMayhemModifierBadge();
@@ -53,7 +51,7 @@ internal static partial class HextechRunLifecycleHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Error($"[{ModInfo.Id}][Mayhem] StartRunDetour UI refresh failed: {ex}");
+				HextechLog.Error("Mayhem", $"StartRunDetour UI refresh failed: {ex}");
 			}
 
 			if (!modifier.IsActResolved(runState.CurrentActIndex)
@@ -61,18 +59,18 @@ internal static partial class HextechRunLifecycleHooks
 			{
 				if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: deferring act{runState.CurrentActIndex} selection until ancient event finishes {DescribeCurrentEventState(runState)}");
+					HextechLog.Info("Mayhem", $"StartRunDetour: deferring act{runState.CurrentActIndex} selection until ancient event finishes {DescribeCurrentEventState(runState)}");
 				}
 				else
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour: selecting act{runState.CurrentActIndex} hex immediately after StartRun");
+					HextechLog.Info("Mayhem", $"StartRunDetour: selecting act{runState.CurrentActIndex} hex immediately after StartRun");
 					await HextechRuneSelectionCoordinator.HandleActSelection(runState, modifier);
 				}
 			}
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] StartRunDetour continuation failed: {ex}");
+			HextechLog.Error("Mayhem", $"StartRunDetour continuation failed: {ex}");
 		}
 	}
 
@@ -103,7 +101,7 @@ internal static partial class HextechRunLifecycleHooks
 			HextechEnemyUi.HideMayhemModifierBadge();
 			SubscribeRoomEnteredIfNeeded();
 			SubscribeRoomExitedIfNeeded();
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] StartRunDetour begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
+			HextechLog.Info("Mayhem", $"StartRunDetour begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
 			RunsInsideStartRunOrig.Add(runState);
 		}
 

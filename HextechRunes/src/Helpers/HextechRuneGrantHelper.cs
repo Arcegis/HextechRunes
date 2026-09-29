@@ -82,7 +82,7 @@ internal static class HextechRuneGrantHelper
 					HextechChoiceCodec.CreateRandomRuneGrant(operationToken, selectedIds),
 					$"random-rune-grant {operationContext}");
 
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} context={operationContext} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
+				HextechLog.Info("Mayhem", $"RandomRuneGrant sync local: player={player.NetId} choiceId={sentChoiceId} context={operationContext} ids={string.Join(",", selectedIds.Select(static id => id.Entry))}");
 				await ObtainRuneIds(player, selectedIds);
 				return true;
 			}
@@ -117,7 +117,7 @@ internal static class HextechRuneGrantHelper
 			throw HextechRuneSelectionCoordinator.CreateProtocolFailure($"random-rune-grant {operationContext}", message);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RandomRuneGrant remote received: player={player.NetId} choiceId={receivedChoiceId} context={operationContext} ids={string.Join(",", syncedIds.Select(static id => id.Entry))}");
+		HextechLog.Info("Mayhem", $"RandomRuneGrant remote received: player={player.NetId} choiceId={receivedChoiceId} context={operationContext} ids={string.Join(",", syncedIds.Select(static id => id.Entry))}");
 		try
 		{
 			await ObtainRuneIds(player, syncedIds);
@@ -185,7 +185,7 @@ internal static class HextechRuneGrantHelper
 		IReadOnlySet<string> disabledIds = HextechRunePoolBuilder.GetEffectiveDisabledPlayerRuneIds((RunState)player.RunState);
 		HashSet<ModelId> ownedAndSelectedIds = player.Relics
 			.Where(HextechCatalog.IsHextechRelic)
-			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.Select(static relic => relic.CanonicalId())
 			.Concat(selectedIds)
 			.ToHashSet();
 		HashSet<ModelId> unavailableIds = ownedAndSelectedIds.ToHashSet();
@@ -230,7 +230,7 @@ internal static class HextechRuneGrantHelper
 
 	public static async Task ConsumeAndObtainRandomRunes(RelicModel consumedRune, Player player, IEnumerable<Type> candidateTypes, int count)
 	{
-		ModelId consumedRuneId = consumedRune.CanonicalInstance?.Id ?? consumedRune.Id;
+		ModelId consumedRuneId = consumedRune.CanonicalId();
 		await RelicCmd.Remove(consumedRune);
 		await ObtainRandomRunes(
 			player,

@@ -234,7 +234,7 @@ internal static class HextechEnemyHexCollapseView
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] CollapseView: copy deck count font failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"CollapseView: copy deck count font failed: {ex.Message}");
 		}
 	}
 
@@ -290,7 +290,7 @@ internal static class HextechEnemyHexCollapseView
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] CollapseView: failed to load latest hex icon {hex}: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"CollapseView: failed to load latest hex icon {hex}: {ex.Message}");
 		}
 
 		return null;
@@ -383,7 +383,7 @@ internal static class HextechEnemyHexCollapseView
 					}
 					catch (Exception ex)
 					{
-						Log.Warn($"[{ModInfo.Id}][Mayhem] CollapseView: skipped enemy hex icon {row[i]}: {ex.Message}");
+						HextechLog.Warn("Mayhem", $"CollapseView: skipped enemy hex icon {row[i]}: {ex.Message}");
 					}
 				}
 
@@ -445,7 +445,7 @@ internal static class HextechEnemyHexCollapseView
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] CollapseView: cell size probe failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"CollapseView: cell size probe failed: {ex.Message}");
 		}
 
 		return FallbackCellSize;

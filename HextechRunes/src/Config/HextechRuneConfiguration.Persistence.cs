@@ -45,7 +45,7 @@ internal static partial class HextechRuneConfiguration
 			{
 				// 更新版本写的配置退回本版本读取:类型化模型不保留未知字段,回写会把版本号压回并丢掉未来字段。
 				// 只在内存里使用规范化结果,不覆盖文件;用户在本版本改设置时才会重写。
-				Log.Warn($"[{ModInfo.Id}][RuneConfig] Config version {parsed!.ConfigVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.", 2);
+				HextechLog.Warn("RuneConfig", $"Config version {parsed!.ConfigVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.");
 				return config;
 			}
 
@@ -54,7 +54,7 @@ internal static partial class HextechRuneConfiguration
 		}
 		catch (JsonException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config JSON is invalid; using defaults: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config JSON is invalid; using defaults: {ex.Message}");
 			RuneConfig config = CreateDefaultConfig();
 			if (configPath != null && TryBackupCorruptConfig(configPath))
 			{
@@ -65,17 +65,17 @@ internal static partial class HextechRuneConfiguration
 		}
 		catch (UnauthorizedAccessException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config read was denied; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config read was denied; using in-memory defaults without overwriting the file: {ex.Message}");
 			return CreateDefaultConfig();
 		}
 		catch (IOException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}");
 			return CreateDefaultConfig();
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][RuneConfig] Unexpected config read failure; using in-memory defaults without overwriting the file: {ex}");
+			HextechLog.Error("RuneConfig", $"Unexpected config read failure; using in-memory defaults without overwriting the file: {ex}");
 			return CreateDefaultConfig();
 		}
 	}
@@ -89,17 +89,17 @@ internal static partial class HextechRuneConfiguration
 		}
 		catch (UnauthorizedAccessException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Could not back up corrupt config; original file will not be overwritten: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Could not back up corrupt config; original file will not be overwritten: {ex.Message}");
 			return false;
 		}
 		catch (IOException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Could not back up corrupt config; original file will not be overwritten: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Could not back up corrupt config; original file will not be overwritten: {ex.Message}");
 			return false;
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][RuneConfig] Unexpected corrupt-config backup failure; original file will not be overwritten: {ex}");
+			HextechLog.Error("RuneConfig", $"Unexpected corrupt-config backup failure; original file will not be overwritten: {ex}");
 			return false;
 		}
 	}
@@ -187,7 +187,7 @@ internal static partial class HextechRuneConfiguration
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Config write failed: {ex.Message}", 2);
+			HextechLog.Warn("RuneConfig", $"Config write failed: {ex.Message}");
 		}
 	}
 

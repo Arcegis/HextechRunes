@@ -1,9 +1,7 @@
 using System.Collections;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -19,7 +17,6 @@ internal static class HextechCardGridPreviewHooks
 	private static readonly FieldInfo? CardRowsField = typeof(NCardGrid).GetField("_cardRows", BindingFlags.Instance | BindingFlags.NonPublic);
 	private static readonly FieldInfo? PreviewFlagField = typeof(NGridCardHolder).GetField("_isPreviewingUpgrade", BindingFlags.Instance | BindingFlags.NonPublic);
 	private static readonly FieldInfo? BaseCardField = typeof(NGridCardHolder).GetField("_baseCard", BindingFlags.Instance | BindingFlags.NonPublic);
-
 
 	[HarmonyPatch(typeof(NCardGrid), nameof(NCardGrid.IsShowingUpgrades), MethodType.Setter)]
 	[HextechPatch("ui.card-grid-preview", "牌组升级预览还原")]

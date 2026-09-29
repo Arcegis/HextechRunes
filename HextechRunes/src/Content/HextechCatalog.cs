@@ -112,7 +112,7 @@ internal static partial class HextechCatalog
 	// 只决定界面上的来源标签（HEXTECH_POOL.<key>）与配置菜单排序，不参与发放。
 	public static string GetPlayerRunePoolKey(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		string? externalPoolKey = HextechExternalContentRegistry.GetPlayerRunePoolLabel(id);
 		if (externalPoolKey != null)
 		{
@@ -341,13 +341,13 @@ internal static partial class HextechCatalog
 		{
 			if (HextechRunLogBudget.TryConsume("external-content.non-starter-rune", 12))
 			{
-				Log.Warn($"[{ModInfo.Id}][ExternalContent] External player rune {relic.GetType().FullName} has rarity {relic.Rarity}; only Starter runes are granted.");
+				HextechLog.Warn("ExternalContent", $"External player rune {relic.GetType().FullName} has rarity {relic.Rarity}; only Starter runes are granted.");
 			}
 
 			return false;
 		}
 
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		Func<Player, bool>? availability = HextechExternalContentRegistry.GetPlayerRuneAvailability(id);
 		if (availability == null)
 		{
@@ -364,7 +364,7 @@ internal static partial class HextechCatalog
 		{
 			if (HextechRunLogBudget.TryConsume("external-content.availability-failed", 12))
 			{
-				Log.Warn($"[{ModInfo.Id}][ExternalContent] Availability predicate for {relic.GetType().FullName} threw and the rune was excluded: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("ExternalContent", $"Availability predicate for {relic.GetType().FullName} threw and the rune was excluded: {ex.GetType().Name}: {ex.Message}");
 			}
 
 			return false;

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -38,7 +37,6 @@ internal static partial class HextechRelicVisibilityHooks
 	private static NDrawPileButton? _drawPileAnchor;
 	private static ModUiConfig _config = new();
 
-
 	private static void NGlobalUiInitializePostfix(NGlobalUi __instance)
 	{
 		try
@@ -48,7 +46,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility toggle install failed: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Relic visibility toggle install failed: {ex.Message}");
 		}
 	}
 
@@ -68,7 +66,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility toggle refresh failed: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Relic visibility toggle refresh failed: {ex.Message}");
 		}
 	}
 
@@ -86,7 +84,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility refresh failed: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Relic visibility refresh failed: {ex.Message}");
 		}
 	}
 
@@ -138,7 +136,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 
 		ApplyHiddenState(globalUi);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] hide_ui={hideUi}.");
+		HextechLog.Info("Mayhem", $"hide_ui={hideUi}.");
 	}
 
 	private static void RemoveToggleRoot(NGlobalUi globalUi)
@@ -254,7 +252,7 @@ internal static partial class HextechRelicVisibilityHooks
 				prefix: new HarmonyMethod(typeof(HextechRelicVisibilityHooks), nameof(NRelicInventoryHolderDoFlashPrefix)));
 
 			_installed = true;
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] UI visibility toggle loaded: hide_ui={_config.HideRelics}.");
+			HextechLog.Info("Mayhem", $"UI visibility toggle loaded: hide_ui={_config.HideRelics}.");
 		}
 	}
 }

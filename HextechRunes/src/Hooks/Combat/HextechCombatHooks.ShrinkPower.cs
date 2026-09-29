@@ -1,11 +1,7 @@
-using HarmonyLib;
-
 namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
-
 	private static bool ShouldReplaceTemporaryShrinkWithPermanent(PowerModel power, decimal offset, Creature? applier)
 	{
 		return power is ShrinkPower

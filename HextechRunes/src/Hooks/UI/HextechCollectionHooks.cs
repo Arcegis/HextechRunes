@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes;
@@ -120,7 +119,7 @@ internal static partial class HextechCollectionHooks
 		{
 			if (LoadRelicsMethod == null)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Relic collection hooks disabled: missing NRelicCollectionCategory.LoadRelics.");
+				HextechLog.Warn("Mayhem", $"Relic collection hooks disabled: missing NRelicCollectionCategory.LoadRelics.");
 				return false;
 			}
 
@@ -129,17 +128,16 @@ internal static partial class HextechCollectionHooks
 			{
 				if (RelicsContainerField == null)
 				{
-					Log.Warn($"[{ModInfo.Id}][Mayhem] Relic collection hooks disabled: missing {string.Join(", ", missingSubcategoryDependencies.Append("NRelicCollectionCategory._relicsContainer"))}.");
+					HextechLog.Warn("Mayhem", $"Relic collection hooks disabled: missing {string.Join(", ", missingSubcategoryDependencies.Append("NRelicCollectionCategory._relicsContainer"))}.");
 					return false;
 				}
 
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Relic collection subcategory hooks unavailable: missing {string.Join(", ", missingSubcategoryDependencies)}; using flat starter-grid fallback.");
+				HextechLog.Warn("Mayhem", $"Relic collection subcategory hooks unavailable: missing {string.Join(", ", missingSubcategoryDependencies)}; using flat starter-grid fallback.");
 			}
 
 			return true;
 		}
 	}
-
 
 	public static void RefreshOpenRelicCollections()
 	{
@@ -170,13 +168,13 @@ internal static partial class HextechCollectionHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][RuneConfig] Failed to refresh relic collection after config save: {ex.GetType().Name}: {ex.Message}", 2);
+				HextechLog.Warn("RuneConfig", $"Failed to refresh relic collection after config save: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 
 		if (refreshed > 0)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Refreshed {refreshed} relic collection screen(s) after config save.");
+			HextechLog.Info("RuneConfig", $"Refreshed {refreshed} relic collection screen(s) after config save.");
 		}
 	}
 
@@ -196,7 +194,6 @@ internal static partial class HextechCollectionHooks
 			}
 		}
 	}
-
 
 	[HarmonyPatch]
 	[HextechPatch("ui.relic-collection", "遗物图鉴分类", Optional = true)]

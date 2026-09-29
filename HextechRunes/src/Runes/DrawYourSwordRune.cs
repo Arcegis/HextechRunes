@@ -1,4 +1,3 @@
-using HarmonyLib;
 namespace HextechRunes;
 
 public sealed class DrawYourSwordRune : AttributeConversionRelicBase
@@ -83,7 +82,7 @@ public sealed class DrawYourSwordRune : AttributeConversionRelicBase
 				}
 				catch (Exception ex) when (method.DeclaringType?.Assembly != coreAssembly)
 				{
-					Log.Warn($"[{ModInfo.Id}][Compat] Could not replace evoke for external Orb {method.DeclaringType?.FullName}: {ex.Message}");
+					HextechLog.Warn("Compat", $"Could not replace evoke for external Orb {method.DeclaringType?.FullName}: {ex.Message}");
 				}
 			}
 		}

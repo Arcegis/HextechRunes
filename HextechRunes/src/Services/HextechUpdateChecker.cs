@@ -1,9 +1,7 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -29,7 +27,6 @@ internal static partial class HextechUpdateChecker
 	private static UpdateCheckResult? _cachedResult;
 
 	private sealed record UpdateCheckResult(string Text, bool Cacheable);
-
 
 	/// <summary>
 	/// 配置菜单保存后即时同步主页版本更新说明的显隐:开则(重新)挂上,关则移除现有提示。
@@ -91,7 +88,7 @@ internal static partial class HextechUpdateChecker
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI failed: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Update checker UI failed: {ex.Message}");
 				return;
 			}
 
@@ -101,7 +98,7 @@ internal static partial class HextechUpdateChecker
 			}
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Mayhem] Update checker UI skipped: vanilla mod status label not found after {MaxNoticeAttachAttempts} frames.");
+		HextechLog.Warn("Mayhem", $"Update checker UI skipped: vanilla mod status label not found after {MaxNoticeAttachAttempts} frames.");
 	}
 
 	private static bool TryShowNotice(NMainMenu mainMenu, int attempt)
@@ -110,14 +107,14 @@ internal static partial class HextechUpdateChecker
 		{
 			if (attempt is 1 or MaxNoticeAttachAttempts || attempt % 10 == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update checker UI waiting for vanilla mod status label: attempt={attempt} root={DescribeNode(searchRoot)}.");
+				HextechLog.Info("Mayhem", $"Update checker UI waiting for vanilla mod status label: attempt={attempt} root={DescribeNode(searchRoot)}.");
 			}
 
 			return false;
 		}
 
 		ShowNotice(searchRoot, template, noticeHost);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
+		HextechLog.Info("Mayhem", $"Update checker UI attached: attempt={attempt} template={DescribeNode(template)} host={DescribeNode(noticeHost)} root={DescribeNode(searchRoot)} noticeIndex={template.GetIndex() + 1}.");
 		return true;
 	}
 
@@ -394,7 +391,6 @@ internal static partial class HextechUpdateChecker
 			}
 		}
 	}
-
 
 	[HarmonyPatch(typeof(NMainMenu), nameof(NMainMenu._Ready), new Type[0])]
 	[HextechPatch("service.update-checker", "更新检查")]

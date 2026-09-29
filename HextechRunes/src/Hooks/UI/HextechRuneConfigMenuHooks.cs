@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
@@ -7,7 +6,6 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -61,7 +59,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		if ((host.GetNodeOrNull<Control>("%MainMenuTextButtons") ?? host.GetNodeOrNull<Control>("MainMenuTextButtons")) is not { } buttonHost
 			|| buttonHost.GetNodeOrNull<NMainMenuTextButton>("SettingsButton") is not { } settingsButton)
 		{
-			Log.Warn($"[{ModInfo.Id}][RuneConfig] Main menu config button skipped: native menu buttons were not available.", 2);
+			HextechLog.Warn("RuneConfig", $"Main menu config button skipped: native menu buttons were not available.");
 			return;
 		}
 
@@ -75,7 +73,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		ConfigureNativeMenuButton(configButton, settingsButton);
 		ConfigureNativeMenuNeighbors(buttonHost, configButton, settingsButton);
 		((GodotObject)configButton).Connect(NClickableControl.SignalName.Released, Callable.From<NButton>(_ => OpenOverlay(configButton)));
-		HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Main menu config button attached.");
+		HextechLog.Info("RuneConfig", $"Main menu config button attached.");
 	}
 
 	private static void ConfigureNativeMenuNeighbors(Control buttonHost, NMainMenuTextButton configButton, NMainMenuTextButton settingsButton)
@@ -123,7 +121,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][RuneConfig] Main menu button install failed: {ex.Message}", 2);
+				HextechLog.Warn("RuneConfig", $"Main menu button install failed: {ex.Message}");
 			}
 		}
 	}

@@ -109,7 +109,7 @@ internal static partial class HextechRuneSelectionCoordinator
 						CreateRuneChoiceResult(actIndex, choiceOrdinal, screen, selectedRelic: null),
 						context);
 					modifier.RecordSeenPlayerRunes(selection.Player, screen.CurrentRelics);
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice sync canceled: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={canceledChoiceId}");
+					HextechLog.Info("Mayhem", $"RuneChoice sync canceled: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={canceledChoiceId}");
 				}
 
 				throw;
@@ -125,7 +125,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			// 重随中途刷出又被换掉的只在本机界面记为已见（见 RerollSingleOptionAndTrackMultiplayer），这里与
 			// 远端 ResolveRemoteRuneChoice 的记法对齐。
 			modifier.RecordSeenPlayerRunes(selection.Player, screen.CurrentRelics);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice sync local: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={sentChoiceId}");
+			HextechLog.Info("Mayhem", $"RuneChoice sync local: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={sentChoiceId}");
 			_ = RequireCompletedSelection(
 				selectedRelic,
 				$"local {context} player={selection.Player.NetId} choiceId={sentChoiceId}");
@@ -138,7 +138,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return new RuneSelectionResult(selectedRelic, HextechWeightedRuneOptions.Copy(screen.CurrentRelics), screen.RerollHistory.Count, screen.CurrentMonsterHex, screen.CurrentMonsterHexes, screen);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice wait remote: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={selection.ChoiceId}");
+		HextechLog.Info("Mayhem", $"RuneChoice wait remote: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={selection.ChoiceId}");
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId)? received = await TryWaitForRemoteHextechChoice(
 			synchronizer,
 			(RunState)selection.Player.RunState,
@@ -156,7 +156,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = received.Value;
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice remote received: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={receivedChoiceId}");
+		HextechLog.Info("Mayhem", $"RuneChoice remote received: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={receivedChoiceId}");
 		return ResolveRemoteRuneChoice(modifier, selection.Player, actIndex, choiceOrdinal, remoteChoice);
 	}
 
@@ -252,7 +252,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		catch (Exception ex)
 		{
 			// 构造失败就退回普通的三选一界面,不阻断本幕选择。
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex.GetType().Name}: {ex.Message}");
 			return null;
 		}
 	}
@@ -260,7 +260,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static PlayerChoiceResult CreateRuneChoiceResult(int actIndex, int choiceOrdinal, HextechRuneSelectionScreen screen, RelicModel? selectedRelic)
 	{
 		int selectedIndex = IndexOfRelicInstance(screen.CurrentRelics, selectedRelic);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] CreateRuneChoiceResult: act={actIndex} ordinal={choiceOrdinal} selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
+		HextechLog.Info("Mayhem", $"CreateRuneChoiceResult: act={actIndex} ordinal={choiceOrdinal} selectedIndex={selectedIndex} rerolls={string.Join(",", screen.RerollHistory)}");
 		return HextechChoiceCodec.CreateRuneSelection(actIndex, choiceOrdinal, selectedIndex, screen.RerollHistory, screen.CurrentRelics);
 	}
 
@@ -313,7 +313,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		RelicModel syncedSelectedRelic = RequireCompletedSelection(
 			selectedIndex >= 0 ? syncedOptions[selectedIndex] : null,
 			$"remote rune-choice act={actIndex} ordinal={choiceOrdinal} player={player.NetId}");
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)} syncedOptions={string.Join(",", syncedOptions.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+		HextechLog.Info("Mayhem", $"ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)} syncedOptions={string.Join(",", syncedOptions.Select(o => (o.CanonicalId()).Entry))}");
 		return new RuneSelectionResult(syncedSelectedRelic, syncedOptions, rerollHistory.Count, null);
 	}
 
@@ -375,7 +375,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] ResolveRemoteRuneChoice: failed to load synced option model: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} ids={string.Join(",", optionIds)} error={ex}");
+			HextechLog.Error("Mayhem", $"ResolveRemoteRuneChoice: failed to load synced option model: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} ids={string.Join(",", optionIds)} error={ex}");
 			options.Clear();
 			return false;
 		}

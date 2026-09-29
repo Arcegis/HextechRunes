@@ -41,7 +41,6 @@ internal sealed class WarmogsSpiritEnemyHex : HextechEnemyHexEffect
 			: Task.CompletedTask;
 	}
 
-
 	internal override Task BeforeTurnEnd(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, CombatRoom? combatRoom)
 	{
 		return side == CombatSide.Player && combatRoom != null && HextechPlayerContextHelper.IsNetworkMultiplayerRun()

@@ -47,7 +47,7 @@ internal static class HextechMultiplayerDiagnostics
 
 	internal static void LogNetworkSignature()
 	{
-		HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] Network compatibility signature: {GetNetworkSignature()}");
+		HextechLog.Info("MultiplayerCompat", $"Network compatibility signature: {GetNetworkSignature()}");
 	}
 
 	private static bool TryGetLoadedMod(string modId, out Mod? result)
@@ -127,7 +127,7 @@ internal static class HextechMultiplayerDiagnostics
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Failed to hash {Path.GetFileName(path)}: {ex.Message}");
+			HextechLog.Warn("MultiplayerCompat", $"Failed to hash {Path.GetFileName(path)}: {ex.Message}");
 			return "error";
 		}
 	}

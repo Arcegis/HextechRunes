@@ -114,7 +114,7 @@ internal static class MonsterHexCatalog
 
 	public static bool TryGetMonsterHexKind(RelicModel relic, out MonsterHexKind hex)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return MonsterHexByIconRelicId.Value.TryGetValue(id, out hex);
 	}
 
@@ -171,14 +171,14 @@ internal static class MonsterHexCatalog
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
+			HextechLog.Warn("Mayhem", $"Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
 			try
 			{
 				return relic.DynamicDescription.GetFormattedText();
 			}
 			catch (Exception fallbackEx)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Enemy hex description fallback failed: hex={hex} relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry} error={fallbackEx.Message}");
+				HextechLog.Warn("Mayhem", $"Enemy hex description fallback failed: hex={hex} relic={(relic.CanonicalId()).Entry} error={fallbackEx.Message}");
 				return relic.Title.GetFormattedText();
 			}
 		}
@@ -246,7 +246,7 @@ internal static class MonsterHexCatalog
 
 	private static string GetEnemyHexDescriptionKey(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return HextechAssets.ToImageFileStem(id.Entry) + ".enemyDescription";
 	}
 
@@ -298,7 +298,7 @@ internal static class MonsterHexCatalog
 		foreach (KeyValuePair<MonsterHexKind, Type> pair in MonsterHexIconRelicTypes)
 		{
 			RelicModel iconRelic = ModelDb.GetById<RelicModel>(ModelDb.GetId(pair.Value));
-			ModelId id = iconRelic.CanonicalInstance?.Id ?? iconRelic.Id;
+			ModelId id = iconRelic.CanonicalId();
 			byId[id] = pair.Key;
 		}
 

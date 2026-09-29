@@ -41,7 +41,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				if (hasJournalEntry)
 				{
 					HextechLog.Info(
-						$"[{ModInfo.Id}][Mayhem] RuneChoice journal rebuilt from saved telemetry: " +
+						"Mayhem", $"RuneChoice journal rebuilt from saved telemetry: " +
 						$"act={actIndex} ordinal={choiceOrdinal} player={player.NetId}");
 				}
 			}
@@ -56,7 +56,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				// 因此当前背包缺席不能反证当时未成功发放。
 				resolvedSelections.Add((player, recoveredRelic, journalEntry.Applied));
 				HextechLog.Info(
-					$"[{ModInfo.Id}][Mayhem] RuneChoice journal recovered: act={actIndex} " +
+					"Mayhem", $"RuneChoice journal recovered: act={actIndex} " +
 					$"ordinal={choiceOrdinal} player={player.NetId} " +
 					$"relic={journalEntry.SelectedId.Category}:{journalEntry.SelectedId.Entry} " +
 					$"applied={journalEntry.Applied}");
@@ -73,7 +73,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				useEndlessTagWindow: modifier.IsEndlessLoopActive);
 			if (options.Count == 0)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] No rune options for player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}; skipping this selection.", 2);
+				HextechLog.Warn("Mayhem", $"No rune options for player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}; skipping this selection.");
 				// 各端对"无候选"的判断一致,都跳过这名玩家的同步选择;本机玩家额外看到一次"继续"界面(纯本机,不同步)。
 				if (IsLocalPlayer(runManager, player) && playersNotifiedNoOptions.Add(player.NetId))
 				{
@@ -88,7 +88,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			uint choiceId = synchronizer.ReserveChoiceId(player);
 			pendingSelections.Add(new PendingRuneSelection(player, options, choiceId, IsLocalPlayer(runManager, player)));
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RuneChoice pending: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+			HextechLog.Info("Mayhem", $"RuneChoice pending: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId} local={IsLocalPlayer(runManager, player)} options={string.Join(",", options.Select(o => (o.CanonicalId()).Entry))}");
 		}
 
 		// 敌方调整由固定的权威玩家在自己的选择界面里完成;他本次没有候选(不会弹选择界面)时,
@@ -169,7 +169,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				RelicModel selectedRelic = RequireCompletedSelection(
 					selectedResult.SelectedRelic,
 					$"multiplayer telemetry act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId}");
-				ModelId selectedId = selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id;
+				ModelId selectedId = selectedRelic.CanonicalId();
 				modifier.RecordRuneSelectionJournalSelection(
 					actIndex,
 					choiceOrdinal,
@@ -195,7 +195,7 @@ internal static partial class HextechRuneSelectionCoordinator
 						+ $"ordinal={choiceOrdinal} player={player.NetId}");
 				}
 
-				ModelId selectedId = selectedRelic.CanonicalInstance?.Id ?? selectedRelic.Id;
+				ModelId selectedId = selectedRelic.CanonicalId();
 				bool currentlyOwned = selectedRelic is IHextechGeneratedRune generatedSelection
 					? player.Relics.OfType<IHextechGeneratedRune>().Any(owned => owned.ExportSelectionData() == generatedSelection.ExportSelectionData())
 					: PlayerHasRelicId(player, selectedId);
@@ -235,7 +235,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					string message =
 						$"Rune obtain transaction failed: act={actIndex} ordinal={choiceOrdinal} " +
 						$"player={player.NetId} relic={selectedId.Category}:{selectedId.Entry}";
-					Log.Error($"[{ModInfo.Id}][Mayhem] {message}: {ex}");
+					HextechLog.Error("Mayhem", $"{message}: {ex}");
 					AbortMultiplayerChoiceTransaction(
 						$"rune-choice act={actIndex} ordinal={choiceOrdinal}",
 						message);
@@ -263,7 +263,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			string message =
 				$"Multiplayer rune selection transaction failed: act={actIndex} " +
 				$"ordinal={choiceOrdinal}";
-			Log.Error($"[{ModInfo.Id}][Mayhem] {message}: {ex}");
+			HextechLog.Error("Mayhem", $"{message}: {ex}");
 			AbortMultiplayerChoiceTransaction(
 				$"rune-choice act={actIndex} ordinal={choiceOrdinal}",
 				message);
@@ -287,7 +287,7 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		return player.Relics.Any(relic =>
 		{
-			ModelId actualId = relic.CanonicalInstance?.Id ?? relic.Id;
+			ModelId actualId = relic.CanonicalId();
 			return actualId == expectedId;
 		});
 	}
@@ -308,7 +308,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			await SaveManager.Instance.SaveRun(null!, saveProgress: false);
 			HextechLog.Info(
-				$"[{ModInfo.Id}][Mayhem] RuneChoice checkpoint saved: " +
+				"Mayhem", $"RuneChoice checkpoint saved: " +
 				$"act={actIndex} ordinal={choiceOrdinal}");
 		}
 		catch (OperationCanceledException)
@@ -320,7 +320,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			string message =
 				$"RuneChoice checkpoint save failed before relic obtain: " +
 				$"act={actIndex} ordinal={choiceOrdinal}";
-			Log.Error($"[{ModInfo.Id}][Mayhem] {message} error={ex}");
+			HextechLog.Error("Mayhem", $"{message} error={ex}");
 			throw new InvalidOperationException(message, ex);
 		}
 	}
@@ -335,7 +335,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to dismiss blocking rune selection screen: {ex}");
+				HextechLog.Warn("Mayhem", $"Failed to dismiss blocking rune selection screen: {ex}");
 			}
 		}
 	}

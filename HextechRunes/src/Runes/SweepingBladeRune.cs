@@ -169,8 +169,8 @@ public sealed class SweepingBladeRune : HextechRelicBase
 			: ModelDb.GetByIdOrNull<PowerModel>(powerId);
 		if (canonicalPower == null)
 		{
-			Log.Warn(
-				$"[{ModInfo.Id}][SweepingBlade] Skipped power replication because its model is not registered: "
+			HextechLog.Warn(
+				"SweepingBlade", $"Skipped power replication because its model is not registered: "
 				+ $"power={powerId.Entry} type={power.GetType().FullName}.");
 		}
 

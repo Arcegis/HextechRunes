@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Gold;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
@@ -36,7 +35,7 @@ internal static class HextechShopForgeHooks
 				&& TryGetMethod(typeof(CoreHook), nameof(CoreHook.ShouldRefillMerchantEntry), BindingFlags.Static | BindingFlags.Public, typeof(IRunState), typeof(MerchantEntry), typeof(Player)) != null;
 			if (!available)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop entry disabled because one or more merchant hooks are unavailable.");
+				HextechLog.Warn("Mayhem", $"Random forge shop entry disabled because one or more merchant hooks are unavailable.");
 			}
 
 			_randomForgeShopHooksAvailable = available;
@@ -44,7 +43,6 @@ internal static class HextechShopForgeHooks
 		}
 	}
 	private static readonly Dictionary<ulong, Vector2> CardRemovalOriginalPositions = [];
-
 
 	private static void InstallRandomForgeEntry(MerchantInventory inventory, Player player)
 	{
@@ -101,14 +99,14 @@ internal static class HextechShopForgeHooks
 		// 主机权威复核:被配置禁用的锻造器即便因配置同步时序混进了候选,也要在扣钱前挡下,避免客机白花金币又拿到被禁锻造器。
 		if (HextechForgeGrantHelper.IsForgeDisabledForPlayer(player, forge))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Blocked purchasing a config-disabled forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}");
+			HextechLog.Warn("Mayhem", $"Blocked purchasing a config-disabled forge: player={player.NetId} relic={(forge.CanonicalId()).Entry}");
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
 			return (false, 0);
 		}
 
 		if (!CanContinueSynchronizedPurchase())
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge purchase cancelled because multiplayer service is disconnected.");
+			HextechLog.Warn("Mayhem", $"Random forge purchase cancelled because multiplayer service is disconnected.");
 			return (false, 0);
 		}
 
@@ -137,7 +135,7 @@ internal static class HextechShopForgeHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Double Vision failed to duplicate purchased forge: player={player.NetId} relic={(forge.CanonicalInstance?.Id ?? forge.Id).Entry}: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Double Vision failed to duplicate purchased forge: player={player.NetId} relic={(forge.CanonicalId()).Entry}: {ex.GetType().Name}: {ex.Message}");
 		}
 
 		if (shopRelic != null)
@@ -216,7 +214,7 @@ internal static class HextechShopForgeHooks
 
 		if (merchantInventory.GetNodeOrNull<Control>("%Relics") is not Control relicContainer)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop slot skipped: relic container unavailable.");
+			HextechLog.Warn("Mayhem", $"Random forge shop slot skipped: relic container unavailable.");
 			return;
 		}
 
@@ -226,7 +224,7 @@ internal static class HextechShopForgeHooks
 			NMerchantRelic? template = relicSlots.LastOrDefault();
 			if (template == null)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop slot skipped: no relic slot template available.");
+				HextechLog.Warn("Mayhem", $"Random forge shop slot skipped: no relic slot template available.");
 				return;
 			}
 
@@ -234,7 +232,7 @@ internal static class HextechShopForgeHooks
 			if (duplicatedNode is not NMerchantRelic extraSlot)
 			{
 				duplicatedNode.QueueFree();
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop slot skipped: duplicated node is not a merchant relic slot.");
+				HextechLog.Warn("Mayhem", $"Random forge shop slot skipped: duplicated node is not a merchant relic slot.");
 				return;
 			}
 
@@ -255,7 +253,7 @@ internal static class HextechShopForgeHooks
 		object? cardRemovalNode = merchantInventory.GetNodeOrNull<NMerchantCardRemoval>("%MerchantCardRemoval");
 		if (!TryMoveCardRemovalNode(cardRemovalNode, new Vector2(0f, CardRemovalRandomForgeOffsetY)))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Random forge shop card removal offset skipped: card removal node unavailable.");
+			HextechLog.Warn("Mayhem", $"Random forge shop card removal offset skipped: card removal node unavailable.");
 		}
 	}
 
@@ -299,7 +297,6 @@ internal static class HextechShopForgeHooks
 
 		return new Vector2(160f, 0f);
 	}
-
 
 	[HarmonyPatch(typeof(MerchantRelicEntry), "OnTryPurchase", typeof(MerchantInventory), typeof(bool))]
 	[HextechPatch("shop.random-forge.purchase", "商店随机锻造器")]
@@ -441,7 +438,7 @@ internal static class HextechShopForgeHooks
 			}
 
 			__instance.Entry.OnMerchantInventoryUpdated();
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] Skipped merchant relic inventory animation for random forge placeholder.");
+			HextechLog.Info("Mayhem", $"Skipped merchant relic inventory animation for random forge placeholder.");
 			return false;
 		}
 	}

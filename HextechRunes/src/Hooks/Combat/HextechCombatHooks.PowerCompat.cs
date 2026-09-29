@@ -4,8 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechCombatHooks
 {
-
-
 	private static async Task SafeEntropyAfterPlayerTurnStart(EntropyPower entropyPower, PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != entropyPower.Owner.Player)

@@ -1,5 +1,4 @@
 using System.Text;
-using HarmonyLib;
 
 namespace HextechRunes;
 
@@ -37,7 +36,7 @@ internal static class HextechPatcher
 				{
 					// 声明了元数据却没有任何目标:属性挂错了类。这类错误静默跳过等于补丁凭空消失,必须显形。
 					Results.Add(new PatchResult(meta.Id, meta.Feature, type, Applied: false, Error: "no [HarmonyPatch] target and no Apply(Harmony)"));
-					Log.Warn($"[{ModInfo.Id}][Patch] Patch declared but has no target: {meta.Id} ({meta.Feature}) on {type.FullName}");
+					HextechLog.Warn("Patch", $"Patch declared but has no target: {meta.Id} ({meta.Feature}) on {type.FullName}");
 				}
 
 				continue;
@@ -83,11 +82,11 @@ internal static class HextechPatcher
 				}
 				else if (meta?.Optional == true)
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Patch] Optional patch skipped: {id} ({feature}): {root.GetType().Name}: {root.Message}");
+					HextechLog.Info("Patch", $"Optional patch skipped: {id} ({feature}): {root.GetType().Name}: {root.Message}");
 				}
 				else
 				{
-					Log.Warn($"[{ModInfo.Id}][Patch] Patch failed: {id} ({feature}): {root.GetType().Name}: {root.Message}");
+					HextechLog.Warn("Patch", $"Patch failed: {id} ({feature}): {root.GetType().Name}: {root.Message}");
 				}
 			}
 		}
@@ -124,16 +123,16 @@ internal static class HextechPatcher
 	internal static void LogSummary()
 	{
 		int failed = Results.Count(result => !result.Applied);
-		HextechLog.Info($"[{ModInfo.Id}][Patch] Applied {Results.Count - failed}/{Results.Count} patch classes.");
+		HextechLog.Info("Patch", $"Applied {Results.Count - failed}/{Results.Count} patch classes.");
 		foreach (PatchResult result in Results.Where(result => !result.Applied))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Patch]   failed {result.Id} ({result.Feature}): {result.Error}");
+			HextechLog.Info("Patch", $"  failed {result.Id} ({result.Feature}): {result.Error}");
 		}
 
 		IReadOnlyList<string> missingMembers = HextechHookReflection.MissingMembers;
 		if (missingMembers.Count > 0)
 		{
-			Log.Warn($"[{ModInfo.Id}][Patch] {missingMembers.Count} vanilla private member(s) missing in this game build (dependent features degraded):\n  {string.Join("\n  ", missingMembers)}");
+			HextechLog.Warn("Patch", $"{missingMembers.Count} vanilla private member(s) missing in this game build (dependent features degraded):\n  {string.Join("\n  ", missingMembers)}");
 		}
 	}
 
@@ -191,21 +190,21 @@ internal static class HextechPatcher
 
 			if (lines.Count == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Patch] No patch targets are shared with other mods.");
+				HextechLog.Info("Patch", $"No patch targets are shared with other mods.");
 				return;
 			}
 
 			lines.Sort(StringComparer.Ordinal);
-			Log.Info($"[{ModInfo.Id}][Patch] {lines.Count} patch target(s) shared with other mods:\n  {string.Join("\n  ", lines)}");
+			HextechLog.Info("Patch", $"{lines.Count} patch target(s) shared with other mods:\n  {string.Join("\n  ", lines)}");
 			if (shadowed.Count > 0)
 			{
 				shadowed.Sort(StringComparer.Ordinal);
-				Log.Warn($"[{ModInfo.Id}][Patch] {shadowed.Count} third-party prefix(es) may be skipped by this mod's prefixes:\n  {string.Join("\n  ", shadowed)}");
+				HextechLog.Warn("Patch", $"{shadowed.Count} third-party prefix(es) may be skipped by this mod's prefixes:\n  {string.Join("\n  ", shadowed)}");
 			}
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Patch] Shared patch target scan failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Patch", $"Shared patch target scan failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -224,11 +223,11 @@ internal static class HextechPatcher
 		try
 		{
 			File.WriteAllText(path, BuildPatchTable(harmony.Id), Encoding.UTF8);
-			Log.Info($"[{ModInfo.Id}][Patch] Patch table written to {path}.");
+			HextechLog.Info("Patch", $"Patch table written to {path}.");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Patch] Patch table dump failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Patch", $"Patch table dump failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 

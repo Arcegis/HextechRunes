@@ -25,7 +25,7 @@ internal static class HextechSovereignBladeVfxSync
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][SovereignBladeVfxSync] Could not reconcile blade entities: {ex.Message}", 2);
+			HextechLog.Warn("SovereignBladeVfxSync", $"Could not reconcile blade entities: {ex.Message}");
 		}
 	}
 

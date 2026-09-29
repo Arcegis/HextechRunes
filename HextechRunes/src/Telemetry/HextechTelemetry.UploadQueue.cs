@@ -43,11 +43,11 @@ internal static partial class HextechTelemetry
 		WritePendingPayloads(unsent.TakeLast(MaxPendingLines).ToList());
 		if (unsent.Count == 0)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] Telemetry uploaded run={runId}");
+			HextechLog.Info("Mayhem", $"Telemetry uploaded run={runId}");
 		}
 		else
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry upload deferred unsent={unsent.Count}");
+			HextechLog.Warn("Mayhem", $"Telemetry upload deferred unsent={unsent.Count}");
 		}
 	}
 

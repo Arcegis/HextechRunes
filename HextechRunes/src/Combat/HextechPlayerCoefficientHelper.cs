@@ -170,8 +170,8 @@ internal static class HextechPlayerCoefficientHelper
 			}
 		}
 
-		Log.Warn(
-			$"[{ModInfo.Id}][Coefficient] Ignored {coefficient} multiplier failure from " +
+		HextechLog.Warn(
+			"Coefficient", $"Ignored {coefficient} multiplier failure from " +
 			$"{providerType.FullName}: {exception.GetType().Name}: {exception.Message}");
 	}
 }

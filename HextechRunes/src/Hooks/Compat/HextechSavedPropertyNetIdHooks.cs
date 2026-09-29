@@ -1,5 +1,4 @@
 #if STS2_107_1
-using HarmonyLib;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -32,7 +31,6 @@ internal static class HextechSavedPropertyNetIdHooks
 	/// <summary>规范化是否真正完成(两张表已按规范布局重建、位宽已写入)。失败时保持 false,只用于日志与诊断。</summary>
 	internal static bool IsCanonicalized => _canonicalized;
 
-
 	private static void CanonicalizeNetIdMapPostfix()
 	{
 		if (_registrationFrozen)
@@ -47,7 +45,7 @@ internal static class HextechSavedPropertyNetIdHooks
 			IReadOnlySet<string>? vanillaNames = BuildVanillaPropertyNameSet();
 			if (vanillaNames == null || vanillaNames.Count == 0)
 			{
-				Log.Error($"[{ModInfo.Id}][MultiplayerCompat] Could not determine vanilla SavedProperty names; net-id canonicalization NOT applied (multiplayer with other SavedProperty mods may desync).");
+				HextechLog.Error("MultiplayerCompat", $"Could not determine vanilla SavedProperty names; net-id canonicalization NOT applied (multiplayer with other SavedProperty mods may desync).");
 				return;
 			}
 
@@ -56,14 +54,14 @@ internal static class HextechSavedPropertyNetIdHooks
 			if (netIdToNameField?.GetValue(null) is not List<string> netIdToName
 				|| nameToNetIdField?.GetValue(null) is not Dictionary<string, int> nameToNetId)
 			{
-				Log.Error($"[{ModInfo.Id}][MultiplayerCompat] SavedPropertiesTypeCache maps unavailable; net-id canonicalization NOT applied.");
+				HextechLog.Error("MultiplayerCompat", $"SavedPropertiesTypeCache maps unavailable; net-id canonicalization NOT applied.");
 				return;
 			}
 
 			List<string>? canonical = HextechSavedPropertyNetIdCanonicalizer.Canonicalize(netIdToName, vanillaNames);
 			if (canonical == null || canonical.Count != netIdToName.Count)
 			{
-				Log.Error($"[{ModInfo.Id}][MultiplayerCompat] Net-id canonicalization produced an invalid result (mapCount={netIdToName.Count}); map left unchanged, canonicalization NOT applied.");
+				HextechLog.Error("MultiplayerCompat", $"Net-id canonicalization produced an invalid result (mapCount={netIdToName.Count}); map left unchanged, canonicalization NOT applied.");
 				return;
 			}
 
@@ -80,12 +78,12 @@ internal static class HextechSavedPropertyNetIdHooks
 			if (!TrySetNetIdBitSize(bitSize))
 			{
 				// 两张表已按规范布局重建(条目数不变,旧位宽仍能容纳),但位宽没有按公式写入:不宣称成功。
-				Log.Error($"[{ModInfo.Id}][MultiplayerCompat] SavedProperty net-id maps canonicalized but NetIdBitSize could not be written (expected {bitSize}, actual {SavedPropertiesTypeCache.NetIdBitSize}); canonicalization NOT marked complete.");
+				HextechLog.Error("MultiplayerCompat", $"SavedProperty net-id maps canonicalized but NetIdBitSize could not be written (expected {bitSize}, actual {SavedPropertiesTypeCache.NetIdBitSize}); canonicalization NOT marked complete.");
 				return;
 			}
 
 			_canonicalized = true;
-			HextechLog.Info($"[{ModInfo.Id}][MultiplayerCompat] Canonicalized SavedProperty net-id map: vanilla={vanillaNames.Count} total={canonical.Count} bitSize={SavedPropertiesTypeCache.NetIdBitSize}.");
+			HextechLog.Info("MultiplayerCompat", $"Canonicalized SavedProperty net-id map: vanilla={vanillaNames.Count} total={canonical.Count} bitSize={SavedPropertiesTypeCache.NetIdBitSize}.");
 
 			// 规范化后终检:此刻拓展包/二创包的延迟注册均已完成,扫描所有引用本模组的程序集,
 			// 抓"包侧新增 [SavedProperty] 载体却忘了走 API 注册"的漏项(启动期那次自检看不到包外类型)。
@@ -93,7 +91,7 @@ internal static class HextechSavedPropertyNetIdHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][MultiplayerCompat] SavedProperty net-id canonicalization failed (registration window is frozen, map may be unchanged): {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Error("MultiplayerCompat", $"SavedProperty net-id canonicalization failed (registration window is frozen, map may be unchanged): {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -153,7 +151,7 @@ internal static class HextechSavedPropertyNetIdHooks
 			MethodInfo? essential = oneTimeInit == null ? null : AccessTools.Method(oneTimeInit, "ExecuteEssential");
 			if (essential == null)
 			{
-				Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Could not patch OneTimeInitialization.ExecuteEssential; SavedProperty net-id canonicalization is disabled (multiplayer may desync with other SavedProperty mods such as RitsuLib).");
+				HextechLog.Warn("MultiplayerCompat", $"Could not patch OneTimeInitialization.ExecuteEssential; SavedProperty net-id canonicalization is disabled (multiplayer may desync with other SavedProperty mods such as RitsuLib).");
 				return;
 			}
 
@@ -163,7 +161,7 @@ internal static class HextechSavedPropertyNetIdHooks
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][MultiplayerCompat] Skipped SavedProperty net-id canonicalization: {ex.GetType().Name}: {ex.Message}");
+				HextechLog.Warn("MultiplayerCompat", $"Skipped SavedProperty net-id canonicalization: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 	}

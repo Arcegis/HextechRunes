@@ -15,7 +15,7 @@ public abstract partial class HextechRelicBase
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RelicVisual] Flash failed for {GetType().Name}: {ex.Message}");
+			HextechLog.Warn("RelicVisual", $"Flash failed for {GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -27,7 +27,7 @@ public abstract partial class HextechRelicBase
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RelicVisual] Target flash failed for {GetType().Name}: {ex.Message}");
+			HextechLog.Warn("RelicVisual", $"Target flash failed for {GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -39,7 +39,7 @@ public abstract partial class HextechRelicBase
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RelicVisual] Counter refresh failed for {GetType().Name}: {ex.Message}");
+			HextechLog.Warn("RelicVisual", $"Counter refresh failed for {GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -107,7 +107,7 @@ public abstract partial class HextechRelicBase
 		count = 0;
 		if (!ShouldUseNetworkCombatHistory()
 			|| Owner == null
-			|| Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is not HextechMayhemModifier modifier)
+			|| HextechMayhemModifier.FindIn(Owner.RunState) is not HextechMayhemModifier modifier)
 		{
 			return false;
 		}
@@ -147,7 +147,7 @@ public abstract partial class HextechRelicBase
 
 		if (ShouldUseNetworkCombatHistory()
 			&& Owner != null
-			&& Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			&& HextechMayhemModifier.FindIn(Owner.RunState) is HextechMayhemModifier modifier)
 		{
 			if (!modifier.TryConsumePlayerRuneProcThisTurn(Owner, procKey, maxPerTurn))
 			{
@@ -190,7 +190,7 @@ public abstract partial class HextechRelicBase
 	{
 		if (ShouldUseNetworkCombatHistory()
 			&& Owner != null
-			&& Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			&& HextechMayhemModifier.FindIn(Owner.RunState) is HextechMayhemModifier modifier)
 		{
 			return modifier.GetPlayerRuneProcsInCombat(Owner, procKey);
 		}
@@ -202,7 +202,7 @@ public abstract partial class HextechRelicBase
 	{
 		if (ShouldUseNetworkCombatHistory()
 			&& Owner != null
-			&& Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+			&& HextechMayhemModifier.FindIn(Owner.RunState) is HextechMayhemModifier modifier)
 		{
 			int ordinal = modifier.ConsumePlayerRuneProcInCombat(Owner, procKey);
 			localCount = ordinal + 1;
@@ -223,7 +223,7 @@ public abstract partial class HextechRelicBase
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][RelicVisual] Deferred flash failed for {GetType().Name}: {ex.Message}");
+			HextechLog.Warn("RelicVisual", $"Deferred flash failed for {GetType().Name}: {ex.Message}");
 		}
 	}
 }

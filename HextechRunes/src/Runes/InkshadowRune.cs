@@ -1,4 +1,3 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 
 namespace HextechRunes;

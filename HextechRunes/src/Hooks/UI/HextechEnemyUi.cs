@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
@@ -40,7 +39,7 @@ internal static class HextechEnemyUi
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh suppressed (UI-only failure, multiplayer sync protected): {ex}");
+			HextechLog.Warn("Mayhem", $"EnemyUi.Refresh suppressed (UI-only failure, multiplayer sync protected): {ex}");
 		}
 	}
 
@@ -49,7 +48,7 @@ internal static class HextechEnemyUi
 		Control? container = GetModifiersContainer();
 		if (container == null)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: no modifiers container");
+			HextechLog.Info("Mayhem", $"EnemyUi.Refresh: no modifiers container");
 			return;
 		}
 
@@ -64,7 +63,7 @@ internal static class HextechEnemyUi
 			UpdateContainerVisibility(container);
 			List<IReadOnlyList<MonsterHexKind>> hexRows = BuildHexRowsByAct(modifier);
 			HextechEnemyHexCollapseView.Show(hexRows, ComputeReservedColumns(modifier, hexRows));
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh(collapsed): rows={hexRows.Count} active={string.Join(",", activeHexes)}");
+			HextechLog.Info("Mayhem", $"EnemyUi.Refresh(collapsed): rows={hexRows.Count} active={string.Join(",", activeHexes)}");
 			return;
 		}
 
@@ -75,10 +74,10 @@ internal static class HextechEnemyUi
 		{
 			RemoveAllEnemyHexStrips(container);
 			UpdateContainerVisibility(container);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: no active enemy hexes");
+			HextechLog.Info("Mayhem", $"EnemyUi.Refresh: no active enemy hexes");
 			return;
 		}
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.Refresh: active={string.Join(",", activeHexes)}");
+		HextechLog.Info("Mayhem", $"EnemyUi.Refresh: active={string.Join(",", activeHexes)}");
 
 		HBoxContainer strip = GetOrCreateStrip(container);
 		if (!IsStripCurrent(strip, activeHexes))
@@ -142,7 +141,7 @@ internal static class HextechEnemyUi
 		Control? container = GetModifiersContainer();
 		if (container == null)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.HideMayhemModifierBadge: no modifiers container");
+			HextechLog.Info("Mayhem", $"EnemyUi.HideMayhemModifierBadge: no modifiers container");
 			return;
 		}
 
@@ -152,7 +151,7 @@ internal static class HextechEnemyUi
 				&& TopBarModifierModelField != null
 				&& TopBarModifierModelField.GetValue(topBarModifier) is HextechMayhemModifier)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi.HideMayhemModifierBadge: removed top bar modifier badge");
+				HextechLog.Info("Mayhem", $"EnemyUi.HideMayhemModifierBadge: removed top bar modifier badge");
 				topBarModifier.QueueFree();
 			}
 		}
@@ -190,7 +189,7 @@ internal static class HextechEnemyUi
 				missing.Add("NTopBarModifier._modifier");
 			}
 
-			Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyUi disabled: missing {string.Join(", ", missing)}.");
+			HextechLog.Warn("Mayhem", $"EnemyUi disabled: missing {string.Join(", ", missing)}.");
 			_reportedMissingTopBarMembers = true;
 		}
 
@@ -297,7 +296,7 @@ internal static class HextechEnemyUi
 			catch (Exception ex)
 			{
 				// 单个图标解析/实例化失败只跳过该图标,不影响其余图标,更不冒泡进同步路径。
-				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyUi: skipped enemy hex icon {hex}: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"EnemyUi: skipped enemy hex icon {hex}: {ex.Message}");
 			}
 		}
 	}
@@ -330,7 +329,6 @@ internal static class HextechEnemyUi
 		holder.TreeExiting += () => NHoverTipSet.Remove(holder);
 		return holder;
 	}
-
 
 	private static bool TryGetHexFromHolder(Control holder, out MonsterHexKind hex)
 	{

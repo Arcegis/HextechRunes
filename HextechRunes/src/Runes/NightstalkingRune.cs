@@ -96,7 +96,6 @@ public sealed class NightstalkingRune : HextechRelicBase
 		}
 	}
 
-
 	private async Task ResolveDrawProgressFromHistory()
 	{
 		if (Owner == null || Owner.Creature.IsDead)

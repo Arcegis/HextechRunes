@@ -173,14 +173,14 @@ internal sealed class HextechRuneSelectionJournalState
 			}
 			catch (Exception ex)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Rune selection journal restore failed; journal cleared: {ex.Message}");
+				HextechLog.Warn("Mayhem", $"Rune selection journal restore failed; journal cleared: {ex.Message}");
 				return;
 			}
 
 			if (snapshot == null || snapshot.Version != CurrentVersion || snapshot.Entries == null)
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Mayhem] Rune selection journal restore ignored unsupported payload: "
+				HextechLog.Warn(
+					"Mayhem", $"Rune selection journal restore ignored unsupported payload: "
 					+ $"version={snapshot?.Version.ToString() ?? "null"}.");
 				return;
 			}
@@ -203,8 +203,8 @@ internal sealed class HextechRuneSelectionJournalState
 
 			if (ignored > 0)
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Mayhem] Rune selection journal restore ignored invalid or conflicting entries: "
+				HextechLog.Warn(
+					"Mayhem", $"Rune selection journal restore ignored invalid or conflicting entries: "
 					+ $"ignored={ignored} restored={_entries.Count}.");
 			}
 		}

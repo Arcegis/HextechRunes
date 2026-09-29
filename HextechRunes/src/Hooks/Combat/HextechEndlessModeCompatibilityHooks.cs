@@ -1,7 +1,5 @@
 using System.Runtime.CompilerServices;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Models.Monsters;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -23,7 +21,6 @@ internal static class HextechEndlessModeCompatibilityHooks
 	private static MethodInfo? _endlessMultiplierMethod;
 	private static bool _loggedMissingEndlessApi;
 	private static bool _loggedNormalizationFailure;
-
 
 	private static async Task NormalizeExoskeletonAfterOriginal(Task original, Exoskeleton monster)
 	{
@@ -149,7 +146,7 @@ internal static class HextechEndlessModeCompatibilityHooks
 		int previous = power.Amount;
 		power.SetAmount(expected, true);
 		HextechLog.Info(
-			$"[{ModInfo.Id}][EndlessCompat] Normalized {label}: combatId={creature.CombatId?.ToString() ?? "?"} " +
+			"EndlessCompat", $"Normalized {label}: combatId={creature.CombatId?.ToString() ?? "?"} " +
 			$"raw={rawAmount} endlessMultiplier={multiplier} amount={previous}->{power.Amount}");
 	}
 
@@ -208,7 +205,7 @@ internal static class HextechEndlessModeCompatibilityHooks
 			if (assembly != null && _endlessMultiplierMethod == null && !_loggedMissingEndlessApi)
 			{
 				_loggedMissingEndlessApi = true;
-				Log.Warn($"[{ModInfo.Id}][EndlessCompat] Endless enemy multiplier API not found; monster power normalization skipped.");
+				HextechLog.Warn("EndlessCompat", $"Endless enemy multiplier API not found; monster power normalization skipped.");
 			}
 
 			return _endlessMultiplierMethod;
@@ -226,7 +223,7 @@ internal static class HextechEndlessModeCompatibilityHooks
 		Exception cause = ex is TargetInvocationException invocation && invocation.InnerException is Exception inner
 			? inner
 			: ex;
-		Log.Warn($"[{ModInfo.Id}][EndlessCompat] Monster power normalization failed: {cause.GetType().Name}: {cause.Message}");
+		HextechLog.Warn("EndlessCompat", $"Monster power normalization failed: {cause.GetType().Name}: {cause.Message}");
 	}
 
 	[HarmonyPatch(typeof(MegaCrit.Sts2.Core.Commands.PowerCmd), nameof(MegaCrit.Sts2.Core.Commands.PowerCmd.Apply), typeof(PlayerChoiceContext), typeof(PowerModel), typeof(Creature), typeof(decimal), typeof(Creature), typeof(CardModel), typeof(bool))]

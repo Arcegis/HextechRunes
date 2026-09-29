@@ -110,7 +110,7 @@ internal sealed class FlyingKickCorpseLaunchDriver
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Could not attach Flying Kick corpse launch driver: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Could not attach Flying Kick corpse launch driver: {ex.Message}");
 		}
 	}
 
@@ -123,7 +123,7 @@ internal sealed class FlyingKickCorpseLaunchDriver
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Could not initialize Flying Kick corpse launch driver: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Could not initialize Flying Kick corpse launch driver: {ex.Message}");
 			return false;
 		}
 	}
@@ -156,7 +156,7 @@ internal sealed class FlyingKickCorpseLaunchDriver
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Flying Kick corpse launch driver stopped after runtime error: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Flying Kick corpse launch driver stopped after runtime error: {ex.Message}");
 		}
 		finally
 		{

@@ -12,7 +12,7 @@ internal static class HextechRunePoolBuilder
 	{
 		HashSet<ModelId> ownedIds = player.Relics
 			.Where(HextechCatalog.IsHextechRelic)
-			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
+			.Select(static relic => relic.CanonicalId())
 			.ToHashSet();
 		HashSet<ModelId> blockedOwnedIds = ownedIds.ToHashSet();
 		blockedOwnedIds.UnionWith(HextechCatalog.GetMutuallyExclusivePlayerRuneIds(ownedIds));
@@ -21,8 +21,8 @@ internal static class HextechRunePoolBuilder
 			.Where(type => HextechCatalog.IsPlayerRuneAllowedInAct(type, runState.CurrentActIndex))
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
 			.Where(relic => HextechCatalog.IsAvailableForPlayer(relic, player)
-				&& !blockedOwnedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)
-				&& (excludedIds == null || !excludedIds.Contains(relic.CanonicalInstance?.Id ?? relic.Id)))
+				&& !blockedOwnedIds.Contains(relic.CanonicalId())
+				&& (excludedIds == null || !excludedIds.Contains(relic.CanonicalId())))
 			.ToList();
 
 		return ApplyPlayerRuneConfiguration(pool, runState);
@@ -89,7 +89,7 @@ internal static class HextechRunePoolBuilder
 			List<RelicModel> fallbackPool = BuildSelectableRunePool(player, rarity, runState, null);
 			if (fallbackPool.Count > 0)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] {rarity} rune option pool exhausted by seen-history; falling back to the full pool (ignoring seen) so the selection is not emptied.", 2);
+				HextechLog.Warn("Mayhem", $"{rarity} rune option pool exhausted by seen-history; falling back to the full pool (ignoring seen) so the selection is not emptied.");
 				pool = fallbackPool;
 				effectiveExcludedIds = null;
 			}
@@ -152,7 +152,7 @@ internal static class HextechRunePoolBuilder
 
 	internal static int GetSavedCharacterWeight(Player player)
 	{
-		return player.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()
+		return HextechMayhemModifier.FindIn(player.RunState)
 			?.GetCharacterRuneWeight(player.NetId) ?? HextechWeightedRuneOptions.InitialCharacterWeightPercent;
 	}
 
@@ -256,7 +256,7 @@ internal static class HextechRunePoolBuilder
 		return pool
 			.Where(relic =>
 			{
-				ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+				ModelId id = relic.CanonicalId();
 				return !disabledIds.Contains(id.Entry);
 			})
 			.ToList();
@@ -264,7 +264,7 @@ internal static class HextechRunePoolBuilder
 
 	internal static IReadOnlySet<string> GetEffectiveDisabledPlayerRuneIds(RunState runState)
 	{
-		if (runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier)
+		if (HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 		{
 			return modifier.PlayerRuneConfigDisabledIds;
 		}
@@ -278,7 +278,7 @@ internal static class HextechRunePoolBuilder
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][RuneConfig] Failed to read multiplayer service while resolving disabled player runes; using deterministic empty fallback: {ex}");
+			HextechLog.Error("RuneConfig", $"Failed to read multiplayer service while resolving disabled player runes; using deterministic empty fallback: {ex}");
 			return new HashSet<string>(StringComparer.Ordinal);
 		}
 
@@ -319,7 +319,7 @@ internal static class HextechRunePoolBuilder
 		params string?[] saltParts)
 	{
 		List<RelicModel> pool = candidates
-			.OrderBy(static relic => (relic.CanonicalInstance?.Id ?? relic.Id).Entry, StringComparer.Ordinal)
+			.OrderBy(static relic => (relic.CanonicalId()).Entry, StringComparer.Ordinal)
 			.ToList();
 		List<RelicModel> selected = new(Math.Min(Math.Max(0, count), pool.Count));
 		int characterWeight = GetSavedCharacterWeight(player);
@@ -373,10 +373,9 @@ internal static class HextechRunePoolBuilder
 			&& registration.CharacterPool == characterPool;
 	}
 
-
 	private static ModelId GetRelicId(RelicModel relic)
 	{
-		return relic.CanonicalInstance?.Id ?? relic.Id;
+		return relic.CanonicalId();
 	}
 
 	private static void RemoveById(List<RelicModel> relics, ModelId id)
@@ -403,7 +402,7 @@ internal static class HextechRunePoolBuilder
 
 	private static string BuildWeightedPoolKey(IReadOnlyList<RelicModel> pool, IReadOnlyList<int> weights)
 	{
-		return string.Join(",", pool.Select((relic, index) => $"{(relic.CanonicalInstance?.Id ?? relic.Id).Entry}:{weights[index]}"));
+		return string.Join(",", pool.Select((relic, index) => $"{(relic.CanonicalId()).Entry}:{weights[index]}"));
 	}
 
 	private static string?[] AppendSelectionSalt(string?[] saltParts, params string?[] extra)

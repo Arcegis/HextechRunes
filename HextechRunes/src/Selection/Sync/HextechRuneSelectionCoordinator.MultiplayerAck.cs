@@ -29,7 +29,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					choiceId,
 					HextechChoiceCodec.CreateActSelectionApplied(actIndex, choiceOrdinal),
 					$"act-selection-applied act={actIndex} ordinal={choiceOrdinal}");
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied sync local: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={sentChoiceId}");
+				HextechLog.Info("Mayhem", $"ActSelectionApplied sync local: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={sentChoiceId}");
 				continue;
 			}
 
@@ -48,9 +48,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied waiting: act={actIndex} ordinal={choiceOrdinal} remoteCount={pendingAcks.Count}");
+		HextechLog.Info("Mayhem", $"ActSelectionApplied waiting: act={actIndex} ordinal={choiceOrdinal} remoteCount={pendingAcks.Count}");
 		await Task.WhenAll(pendingAcks);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied complete: act={actIndex} ordinal={choiceOrdinal}");
+		HextechLog.Info("Mayhem", $"ActSelectionApplied complete: act={actIndex} ordinal={choiceOrdinal}");
 	}
 
 	private static async Task WaitForRemoteActSelectionApplied(
@@ -76,7 +76,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				$"Malformed act-selection-applied ack: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={choiceId}");
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
+		HextechLog.Info("Mayhem", $"ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
 	}
 
 	private static async Task WaitForFramesOrRunChangeAsync(

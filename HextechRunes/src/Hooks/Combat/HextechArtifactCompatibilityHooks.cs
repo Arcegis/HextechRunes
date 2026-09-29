@@ -1,12 +1,7 @@
-using HarmonyLib;
-using static HextechRunes.HextechHookReflection;
-
 namespace HextechRunes;
 
 internal static class HextechArtifactCompatibilityHooks
 {
-
-
 	private static bool IsEncounterMechanicPower(PowerModel power)
 	{
 		return power is SurroundedPower or FlankingPower;

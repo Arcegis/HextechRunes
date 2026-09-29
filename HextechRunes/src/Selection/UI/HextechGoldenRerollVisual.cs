@@ -151,7 +151,7 @@ internal sealed partial class HextechGoldenRerollVisual : Control
 			_animationStartedAtMsec = Time.GetTicksMsec();
 		}
 
-		Log.Info($"[{ModInfo.Id}][UI] Golden reroll animation loop started node={GetParent()?.Name}");
+		HextechLog.Info("UI", $"Golden reroll animation loop started node={GetParent()?.Name}");
 		TaskHelper.RunSafely(RunAnimationLoopAsync());
 	}
 
@@ -187,8 +187,8 @@ internal sealed partial class HextechGoldenRerollVisual : Control
 				if (!runningLogged && _elapsed >= 1f)
 				{
 					runningLogged = true;
-					Log.Info(
-						$"[{ModInfo.Id}][UI] Golden reroll animation advanced " +
+					HextechLog.Info(
+						"UI", $"Golden reroll animation advanced " +
 						$"node={GetParent()?.Name} elapsed={_elapsed:F2} pulse={pulse:F2}");
 				}
 			}
@@ -200,7 +200,7 @@ internal sealed partial class HextechGoldenRerollVisual : Control
 		{
 			if (GodotObject.IsInstanceValid(this))
 			{
-				Log.Warn($"[{ModInfo.Id}][UI] Golden reroll animation stopped: {ex.Message}");
+				HextechLog.Warn("UI", $"Golden reroll animation stopped: {ex.Message}");
 			}
 		}
 		finally

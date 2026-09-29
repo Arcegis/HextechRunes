@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -44,7 +43,7 @@ internal sealed class HextechGlassCannonHealthBarVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][GlassCannon] Could not attach health bar lock visual: {ex.Message}");
+			HextechLog.Warn("GlassCannon", $"Could not attach health bar lock visual: {ex.Message}");
 		}
 	}
 
@@ -91,7 +90,7 @@ internal sealed class HextechGlassCannonHealthBarVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][GlassCannon] Health bar lock visual stopped after runtime error: {ex.Message}");
+			HextechLog.Warn("GlassCannon", $"Health bar lock visual stopped after runtime error: {ex.Message}");
 		}
 		finally
 		{
@@ -124,7 +123,7 @@ internal sealed class HextechGlassCannonHealthBarVisual
 		// 敌方:玻璃大炮敌方海克斯(整场战斗对全体敌人生效,固定封顶 70%)。
 		if (creature.Monster != null
 			&& creature.CombatState?.RunState is { } runState
-			&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is { } modifier
+			&& HextechMayhemModifier.FindIn(runState) is { } modifier
 			&& modifier.HasActiveMonsterHex(MonsterHexKind.GlassCannon))
 		{
 			cap = 0.7f;

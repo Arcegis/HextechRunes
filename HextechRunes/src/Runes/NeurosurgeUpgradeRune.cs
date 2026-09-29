@@ -1,5 +1,3 @@
-using HarmonyLib;
-
 namespace HextechRunes;
 
 // 升级：精神过载(仅骨妹) —— 持有时,打出精神过载不再施加原版减益,改为施加本模组的同名正面效果

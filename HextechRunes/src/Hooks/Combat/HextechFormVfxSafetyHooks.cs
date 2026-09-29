@@ -1,4 +1,3 @@
-using HarmonyLib;
 #if STS2_110_OR_NEWER
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Combat;
@@ -52,7 +51,6 @@ internal static class HextechFormVfxSafetyHooks
 			nameof(NCreatureVisuals.RemoveFormVfx),
 			BindingFlags.Instance | BindingFlags.Public);
 	}
-
 
 	private static Control? GetFormVfxHolder(NCreatureVisuals visuals)
 	{

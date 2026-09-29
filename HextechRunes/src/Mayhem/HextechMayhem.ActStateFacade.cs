@@ -73,7 +73,7 @@ internal sealed partial class HextechMayhemModifier
 			stageIndex);
 		if (recovery.Changed)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] Recovered resolved stages from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} currentStage={stageIndex} recoverThrough={recovery.RecoverThroughAct} telemetryThrough={recovery.TelemetryRecoverThroughAct} countThrough={recovery.CountRecoverThroughAct} baseline={_hexCountRecoveryBaseline} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
+			HextechLog.Info("Mayhem", $"Recovered resolved stages from saved choices/player relics: reason={reason} currentAct={RunState.CurrentActIndex} currentStage={stageIndex} recoverThrough={recovery.RecoverThroughAct} telemetryThrough={recovery.TelemetryRecoverThroughAct} countThrough={recovery.CountRecoverThroughAct} baseline={_hexCountRecoveryBaseline} {_actState.Describe()} counts={DescribePlayerHexCounts()} choices={DescribeTelemetryChoiceCounts()}");
 		}
 
 		return recovery.Changed;
@@ -135,14 +135,14 @@ internal sealed partial class HextechMayhemModifier
 		HextechRunConfigurationSnapshot snapshot = CreateNewRunConfigurationSnapshot();
 		_runContext.ResetForNewRun(snapshot.PlayerHexCountsByAct, snapshot.EnemyHexCountsByAct);
 		SetRunConfigurationSnapshot(snapshot, "new run");
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Reset for new run: playerCounts={string.Join(",", PlayerHexCountsByAct)} enemyCounts={string.Join(",", EnemyHexCountsByAct)} playerConfigDisabled={PlayerRuneConfigDisabledIds.Count}");
+		HextechLog.Info("Mayhem", $"Reset for new run: playerCounts={string.Join(",", PlayerHexCountsByAct)} enemyCounts={string.Join(",", EnemyHexCountsByAct)} playerConfigDisabled={PlayerRuneConfigDisabledIds.Count}");
 	}
 
 	public void ResetForEndlessLoop(string reason)
 	{
 		HextechEnemyHexEffects.ResetAllRunScopedState();
 		_runContext.ResetForEndlessLoop(HextechMayhemActRecovery.GetMinimumPlayerHexCount(RunState));
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} enemyCounts={string.Join(",", EnemyHexCountsByAct)} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
+		HextechLog.Info("Mayhem", $"Reset for endless loop: reason={reason} baseline={_hexCountRecoveryBaseline} strengthTierFloor={_monsterHexStrengthTierFloor} enemyCounts={string.Join(",", EnemyHexCountsByAct)} counts={DescribePlayerHexCounts()} {_actState.Describe()}");
 		HextechRunLifecycleHooks.HandleEndlessLoopReset(this, reason);
 	}
 
@@ -188,7 +188,7 @@ internal sealed partial class HextechMayhemModifier
 	public void SetEnemyHexCountsByActSnapshot(IReadOnlyList<int> counts, string reason)
 	{
 		_enemyHexCounts.Set(counts);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexCountsByAct snapshot set: reason={reason} counts={string.Join(",", EnemyHexCountsByAct)}");
+		HextechLog.Info("Mayhem", $"EnemyHexCountsByAct snapshot set: reason={reason} counts={string.Join(",", EnemyHexCountsByAct)}");
 	}
 
 	internal bool IncrementEnemyTezcatarasMercyCombatCounter(int interval)

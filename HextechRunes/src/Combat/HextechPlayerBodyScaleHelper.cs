@@ -26,7 +26,7 @@ internal static class HextechPlayerBodyScaleHelper
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][BodyScale] Creature visual failed: {ex.Message}");
+			HextechLog.Warn("BodyScale", $"Creature visual failed: {ex.Message}");
 		}
 	}
 }

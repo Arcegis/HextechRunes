@@ -95,7 +95,6 @@ internal static partial class HextechCombatHooks
 	}
 #endif
 
-
 	private static bool IsSleightOfFleshPowerDebuffResponse(SleightOfFleshPower instance, PowerModel power, decimal amount, Creature? applier)
 	{
 		return amount != 0m

@@ -15,12 +15,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		Player? authorityPlayer = GetActRollAuthorityPlayer(runManager, runState);
 		if (authorityPlayer == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync: no authority player act={actIndex}");
+			HextechLog.Warn("Mayhem", $"EnemyHexAdjustmentSync: no authority player act={actIndex}");
 			return null;
 		}
 
 		uint choiceId = synchronizer.ReserveChoiceId(authorityPlayer);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync: reserved act={actIndex} authority={authorityPlayer.NetId} choiceId={choiceId}");
+		HextechLog.Info("Mayhem", $"EnemyHexAdjustmentSync: reserved act={actIndex} authority={authorityPlayer.NetId} choiceId={choiceId}");
 		return new EnemyHexAdjustmentSyncContext(synchronizer, authorityPlayer, choiceId, actIndex, initialMonsterHexes);
 	}
 
@@ -124,7 +124,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			syncContext.CurrentMonsterHexSlots.AddRange(nextMonsterHexes);
 			syncContext.RerollCounts.Clear();
 			syncContext.RerollCounts.AddRange(nextRerollCounts);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={sentChoiceId} seq={syncContext.Sequence} hexes={string.Join(",", syncContext.CurrentMonsterHexSlots.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", syncContext.RerollCounts)} final={isFinal}");
+			HextechLog.Info("Mayhem", $"EnemyHexAdjustmentSync send: act={syncContext.ActIndex} choiceId={sentChoiceId} seq={syncContext.Sequence} hexes={string.Join(",", syncContext.CurrentMonsterHexSlots.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", syncContext.RerollCounts)} final={isFinal}");
 			if (isFinal)
 			{
 				syncContext.FinalSent = true;
@@ -166,8 +166,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			Log.Error(
-				$"[{ModInfo.Id}][Mayhem] Enemy hex adjustment receiver failed during transaction cleanup: " +
+			HextechLog.Error(
+				"Mayhem", $"Enemy hex adjustment receiver failed during transaction cleanup: " +
 				$"act={syncContext!.ActIndex} error={ex}");
 		}
 	}
@@ -198,8 +198,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				cancellationToken: cancellationToken);
 			if (!received.HasValue)
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync interrupted: " +
+				HextechLog.Warn(
+					"Mayhem", $"EnemyHexAdjustmentSync interrupted: " +
 					$"act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} " +
 					$"screenActive={screen.IsInsideTree()} runActive={IsCurrentRun(runState)} connected={IsMultiplayerConnected()}");
 				return;
@@ -213,7 +213,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				syncContext.Sequence,
 				out EnemyHexAdjustmentPayload payload))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync malformed: act={syncContext.ActIndex} choiceId={receivedChoiceId}");
+				HextechLog.Warn("Mayhem", $"EnemyHexAdjustmentSync malformed: act={syncContext.ActIndex} choiceId={receivedChoiceId}");
 				return;
 			}
 
@@ -223,7 +223,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			syncContext.RerollCounts.AddRange(payload.RerollCounts.Select(static count => Math.Max(0, count)));
 			syncContext.Sequence = payload.Sequence + 1;
 			screen.ApplyEnemyHexAdjustment(payload.MonsterHexes, payload.RerollCounts);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} hexes={string.Join(",", payload.MonsterHexes.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", payload.RerollCounts)} final={payload.IsFinal}");
+			HextechLog.Info("Mayhem", $"EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} hexes={string.Join(",", payload.MonsterHexes.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", payload.RerollCounts)} final={payload.IsFinal}");
 			if (payload.IsFinal)
 			{
 				screen.CompleteEnemyOnlySelection();

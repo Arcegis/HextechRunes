@@ -65,7 +65,7 @@ public sealed class TwilightVeilRune : HextechRelicBase
 		{
 			if (WarnedMissingMirroredPowerIds.Add(powerId))
 			{
-				Log.Warn($"[{ModInfo.Id}][TwilightVeil] Power model is not registered; mirror skipped: {powerId}");
+				HextechLog.Warn("TwilightVeil", $"Power model is not registered; mirror skipped: {powerId}");
 			}
 
 			return;

@@ -1,14 +1,10 @@
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Runs.History;
 using MegaCrit.Sts2.Core.Saves;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
 internal static class HextechForgeStackingHooks
 {
-
-
 	private static async Task<RelicModel> ObtainStackedForge(HextechForgeBase ownedForge)
 	{
 		ownedForge.AddForgeStack(flash: !ownedForge.HasUponPickupEffect);
@@ -18,13 +14,12 @@ internal static class HextechForgeStackingHooks
 
 	private static bool TryGetOwnedForge(Player player, RelicModel relic, out HextechForgeBase? ownedForge)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		ownedForge = player.Relics
 			.OfType<HextechForgeBase>()
-			.FirstOrDefault(owned => (owned.CanonicalInstance?.Id ?? owned.Id) == id);
+			.FirstOrDefault(owned => (owned.CanonicalId()) == id);
 		return ownedForge != null;
 	}
-
 
 	[HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Obtain), typeof(RelicModel), typeof(Player), typeof(int))]
 	[HextechPatch("forge.stacking", "锻造器叠层")]

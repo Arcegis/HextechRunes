@@ -2,7 +2,6 @@ namespace HextechRunes;
 
 public sealed class DexterityToStrengthRune : AttributeConversionRelicBase
 {
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new PowerVar<StrengthPower>(1m)

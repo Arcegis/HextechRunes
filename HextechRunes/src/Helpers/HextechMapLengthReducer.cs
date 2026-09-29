@@ -28,7 +28,7 @@ internal static class HextechMapLengthReducer
 			int searchStartRow = currentCoord.HasValue ? currentCoord.Value.row + 2 : 1;
 			if (!TryFindSafeRowToRemove(modifiedMap, searchStartRow, out int rowToRemove))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble map shrink skipped: no safe removable row. map={modifiedMap.GetType().Name} rows={modifiedMap.GetRowCount()} current={DescribeCoord(currentCoord)} requested={rowsToRemove} applied={appliedRows}");
+				HextechLog.Warn("Mayhem", $"Hasty Scribble map shrink skipped: no safe removable row. map={modifiedMap.GetType().Name} rows={modifiedMap.GetRowCount()} current={DescribeCoord(currentCoord)} requested={rowsToRemove} applied={appliedRows}");
 				break;
 			}
 
@@ -55,8 +55,8 @@ internal static class HextechMapLengthReducer
 			return;
 		}
 
-		Log.Warn(
-			$"[{ModInfo.Id}][Mayhem] Hasty Scribble map shrink skipped for external ActMap; "
+		HextechLog.Warn(
+			"Mayhem", $"Hasty Scribble map shrink skipped for external ActMap; "
 			+ $"runtimeType={mapType.FullName ?? mapType.Name} assembly={mapType.Assembly.FullName}");
 	}
 
@@ -123,7 +123,7 @@ internal static class HextechMapLengthReducer
 	{
 		if (SetSpoilsCoordMethod == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble could not update SpoilsMap coord: setter missing.");
+			HextechLog.Warn("Mayhem", $"Hasty Scribble could not update SpoilsMap coord: setter missing.");
 			return;
 		}
 
@@ -133,7 +133,7 @@ internal static class HextechMapLengthReducer
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Hasty Scribble failed to update SpoilsMap coord: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Hasty Scribble failed to update SpoilsMap coord: {ex.Message}");
 		}
 	}
 

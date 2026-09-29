@@ -164,7 +164,7 @@ public sealed class HextechAttackReplayPower : PowerModel
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][AttackReplay] Flash failed: {ex.Message}");
+			HextechLog.Warn("AttackReplay", $"Flash failed: {ex.Message}");
 		}
 	}
 

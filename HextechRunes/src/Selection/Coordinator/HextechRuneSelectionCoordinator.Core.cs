@@ -32,13 +32,13 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (ActSelectionGate.ResetIfStaleRun(runState))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: clearing stale handling state for previous run");
+			HextechLog.Warn("Mayhem", $"HandleHextechActSelection: clearing stale handling state for previous run");
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsStageResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
+		HextechLog.Info("Mayhem", $"HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsStageResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
 		if (ActSelectionGate.IsHandling || !IsCurrentRun(runState) || actIndex < 0 || modifier.IsStageResolved(actIndex))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skip");
+			HextechLog.Info("Mayhem", $"HandleHextechActSelection skip");
 			return;
 		}
 
@@ -52,7 +52,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			HextechEnemyUi.Refresh(modifier);
 			await modifier.ApplyToCurrentEnemiesIfNeeded();
 			await PersistActSelection(runState, actIndex);
-			HextechLog.Info($"[{ModInfo.Id}][Challenge] Skipped acquisition after the three preset acts: act={actIndex}");
+			HextechLog.Info("Challenge", $"Skipped acquisition after the three preset acts: act={actIndex}");
 			return;
 		}
 
@@ -67,14 +67,14 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			if (NMapScreen.Instance?.IsOpen == true && NGame.Instance != null)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: closing map before showing selection overlay");
+				HextechLog.Info("Mayhem", $"HandleHextechActSelection: closing map before showing selection overlay");
 				NMapScreen.Instance.Close(animateOut: false);
 				reopenMapAfterSelection = true;
 				await NGame.Instance.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
 			}
 			if (!IsCurrentRun(runState))
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run is no longer current");
+				HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: run is no longer current");
 				return;
 			}
 			if (!await WaitForSelectionBlockingOverlaysToClear(runState, actIndex, "before-selection"))
@@ -96,12 +96,12 @@ internal static partial class HextechRuneSelectionCoordinator
 				modifier.SetStageResolved(actIndex, true);
 				HextechEnemyUi.Refresh(modifier);
 				await PersistActSelection(runState, actIndex);
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] Skipped content generation for disabled run: act={actIndex}");
+				HextechLog.Info("Mayhem", $"Skipped content generation for disabled run: act={actIndex}");
 				return;
 			}
 
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
+			HextechLog.Info("Mayhem", $"HandleHextechActSelection rarity: act={actIndex} rarity={rarity}");
+			HextechLog.Info("Mayhem", $"HandleHextechActSelection monsterHex: act={actIndex} hex={monsterHex}");
 			IReadOnlyList<MonsterHexKind> previousMonsterHexes = modifier.GetActiveMonsterHexesBeforeAct(actIndex);
 			IReadOnlyList<MonsterHexKind> newMonsterHexes = ResolveNewMonsterHexesForAct(modifier, rarity, runState, actIndex, monsterHex);
 			IReadOnlyList<MonsterHexKind> finalMonsterHexes = CombineMonsterHexes(previousMonsterHexes, newMonsterHexes);
@@ -127,7 +127,7 @@ internal static partial class HextechRuneSelectionCoordinator
 							useEndlessTagWindow: modifier.IsEndlessLoopActive);
 						if (options.Count == 0)
 						{
-							Log.Warn($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection no options: player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}");
+							HextechLog.Warn("Mayhem", $"HandleHextechActSelection no options: player={player.NetId} act={actIndex} ordinal={choiceOrdinal} rarity={rarity}");
 							// 本稀有度已无可选:仍要给玩家一个界面交代,并保留本幕敌方海克斯的调整机会。
 							if (!playersNotifiedNoOptions.Add(player.NetId))
 							{
@@ -149,7 +149,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 							if (!IsCurrentRun(runState))
 							{
-								HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: no-options screen returned for stale run");
+								HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: no-options screen returned for stale run");
 								return;
 							}
 
@@ -158,7 +158,7 @@ internal static partial class HextechRuneSelectionCoordinator
 
 						HashSet<MonsterHexKind> seenEnemyHexes = modifier.GetKnownMonsterHexes().ToHashSet();
 						seenEnemyHexes.UnionWith(newMonsterHexes);
-						HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection options: player={player.NetId} ordinal={choiceOrdinal} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalInstance?.Id ?? o.Id).Entry))}");
+						HextechLog.Info("Mayhem", $"HandleHextechActSelection options: player={player.NetId} ordinal={choiceOrdinal} count={options.Count} ids={string.Join(",", options.Select(o => (o.CanonicalId()).Entry))}");
 						// choiceOrdinal>0(!allowEnemyHexAdjustment):敌方 hex 已在第一次选择时定妥,后续玩家符文选择只读展示
 						// 【本幕新增】的敌方 hex(newMonsterHexes 在首次选择后已更新为调整后的结果),不给控件。
 						// 不能用 finalMonsterHexes:它含前几幕累积集,会把历史敌方海克斯一起显示(玩家实报)。
@@ -191,7 +191,7 @@ internal static partial class HextechRuneSelectionCoordinator
 							enemyHexOptions);
 						if (!IsCurrentRun(runState))
 						{
-							HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection returned for stale run");
+							HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: selection returned for stale run");
 							return;
 						}
 
@@ -209,7 +209,7 @@ internal static partial class HextechRuneSelectionCoordinator
 						HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount, choiceOrdinal);
 						modifier.CommitCharacterRuneWeight(player, selection.FinalOptions);
 						await RelicCmd.Obtain(selected, player);
-						HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection obtained: player={player.NetId} ordinal={choiceOrdinal} relic={(selected.CanonicalInstance?.Id ?? selected.Id).Entry}");
+						HextechLog.Info("Mayhem", $"HandleHextechActSelection obtained: player={player.NetId} ordinal={choiceOrdinal} relic={(selected.CanonicalId()).Entry}");
 					}
 				}
 				else
@@ -243,11 +243,11 @@ internal static partial class HextechRuneSelectionCoordinator
 					newMonsterHexes = await SelectEnemyHexesOnly(runState, modifier, actIndex, rarity, previousMonsterHexes, newMonsterHexes);
 					finalMonsterHexes = CombineMonsterHexes(previousMonsterHexes, newMonsterHexes);
 				}
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection skipped player choices: act={actIndex} configuredPlayerHexCount={playerHexCount}");
+				HextechLog.Info("Mayhem", $"HandleHextechActSelection skipped player choices: act={actIndex} configuredPlayerHexCount={playerHexCount}");
 			}
 			if (!IsCurrentRun(runState))
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run changed before resolving act");
+				HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: run changed before resolving act");
 				return;
 			}
 
@@ -257,18 +257,18 @@ internal static partial class HextechRuneSelectionCoordinator
 			HextechEnemyUi.Refresh(modifier);
 			await modifier.ApplyToCurrentEnemiesIfNeeded();
 			await PersistActSelection(runState, actIndex);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection resolved: act={actIndex}");
+			HextechLog.Info("Mayhem", $"HandleHextechActSelection resolved: act={actIndex}");
 		}
 		catch (OperationCanceledException)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: selection overlay closed before choice act={actIndex}");
+			HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: selection overlay closed before choice act={actIndex}");
 		}
 		catch (Exception ex)
 		{
 			// 记录异常，避免它继续打断开局/进幕的调用链。这里不回滚已经完成的状态写入；
 			// 只有尚未 SetStageResolved 的阶段才会在后续进入或读档时重新尝试选择。
 			// 捕获异常本身不保证两端恢复一致，联机状态仍由原版校验。
-			Log.Error($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection failed act={actIndex} networkMp={HextechRelicBase.IsNetworkMultiplayerRun()}: {ex}");
+			HextechLog.Error("Mayhem", $"HandleHextechActSelection failed act={actIndex} networkMp={HextechRelicBase.IsNetworkMultiplayerRun()}: {ex}");
 		}
 		finally
 		{
@@ -280,20 +280,20 @@ internal static partial class HextechRuneSelectionCoordinator
 					&& NMapScreen.Instance != null
 					&& !NMapScreen.Instance.IsOpen)
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: reopening map after selection overlay");
+					HextechLog.Info("Mayhem", $"HandleHextechActSelection: reopening map after selection overlay");
 					NMapScreen.Instance.Open();
 				}
 			}
 			catch (Exception ex)
 			{
-				Log.Error($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection: reopening map failed act={actIndex}: {ex}");
+				HextechLog.Error("Mayhem", $"HandleHextechActSelection: reopening map failed act={actIndex}: {ex}");
 			}
 			finally
 			{
 				ActSelectionGate.ExitIfCurrent(runState);
 			}
 
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection exit: act={actIndex}");
+			HextechLog.Info("Mayhem", $"HandleHextechActSelection exit: act={actIndex}");
 		}
 	}
 
@@ -309,13 +309,13 @@ internal static partial class HextechRuneSelectionCoordinator
 
 			if (frame % 120 == 0)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection waiting: act={actIndex} reason={reason} topOverlay={overlayName} frame={frame}");
+				HextechLog.Info("Mayhem", $"HandleHextechActSelection waiting: act={actIndex} reason={reason} topOverlay={overlayName} frame={frame}");
 			}
 
 			await WaitOneFrame();
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] HandleHextechActSelection abort: run changed while waiting for overlays act={actIndex} reason={reason}");
+		HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: run changed while waiting for overlays act={actIndex} reason={reason}");
 		return false;
 	}
 
@@ -358,11 +358,11 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			await SaveManager.Instance.SaveRun(null!, saveProgress: false);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] PersistActSelection: saved current run after resolving act={actIndex}");
+			HextechLog.Info("Mayhem", $"PersistActSelection: saved current run after resolving act={actIndex}");
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] PersistActSelection failed: act={actIndex} error={ex}");
+			HextechLog.Warn("Mayhem", $"PersistActSelection failed: act={actIndex} error={ex}");
 		}
 	}
 }

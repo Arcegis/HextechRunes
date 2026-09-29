@@ -31,7 +31,7 @@ public sealed partial class SolidTimeRune
 			addedToTemporaryPlayPile = card.Pile?.Type == PileType.Play;
 			if (!addedToTemporaryPlayPile)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] SolidTime skipped stored power without combat pile: card={card.Id}");
+				HextechLog.Warn("Mayhem", $"SolidTime skipped stored power without combat pile: card={card.Id}");
 				return;
 			}
 		}

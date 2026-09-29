@@ -21,7 +21,7 @@ public static class ModEntry
 		{
 			if (_initialized)
 			{
-				HextechLog.Info($"[{ModInfo.Id}] Initialization already completed; skipping duplicate call.");
+				HextechLog.Info("Init", $"Initialization already completed; skipping duplicate call.");
 				return;
 			}
 
@@ -40,8 +40,8 @@ public static class ModEntry
 			_initialized = true;
 			HextechMultiplayerDiagnostics.LogNetworkSignature();
 			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控。
-			Log.Info(
-				$"[{ModInfo.Id}] Loaded implementation variant for " +
+			HextechLog.Info(
+				"Init", $"Loaded implementation variant for " +
 				$"Slay the Spire 2 compat target {ModInfo.TargetGameVersion}.");
 		}
 	}

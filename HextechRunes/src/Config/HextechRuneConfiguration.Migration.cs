@@ -93,7 +93,7 @@ internal static partial class HextechRuneConfiguration
 		// 0.8.4 一次性强制回默认:旧配置(含用户自定义)整体丢弃,不走增量迁移链。
 		if (config.ConfigVersion < ForceResetBelowConfigVersion)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Config version {config.ConfigVersion} < {ForceResetBelowConfigVersion}; forcing full reset to defaults (0.8.4).");
+			HextechLog.Info("RuneConfig", $"Config version {config.ConfigVersion} < {ForceResetBelowConfigVersion}; forcing full reset to defaults (0.8.4).");
 			return CreateDefaultConfig();
 		}
 

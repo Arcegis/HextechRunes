@@ -72,7 +72,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		AudioStream? stream = GD.Load<AudioStream>(path) ?? ResourceLoader.Load<AudioStream>(path);
 		if (stream == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.PlaySfx: failed to load sfx path={path}");
+			HextechLog.Warn("Mayhem", $"SelectionScreen.PlaySfx: failed to load sfx path={path}");
 			return null;
 		}
 
@@ -98,7 +98,7 @@ internal sealed partial class HextechRuneSelectionScreen
 		host ??= GetTree()?.Root;
 		if (host == null || !GodotObject.IsInstanceValid(host))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.PlaySfx: failed to attach audio player name={playerName}.");
+			HextechLog.Warn("Mayhem", $"SelectionScreen.PlaySfx: failed to attach audio player name={playerName}.");
 			player.QueueFree();
 			return null;
 		}

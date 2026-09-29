@@ -13,7 +13,7 @@ public abstract class HextechPowerBase : PowerModel
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][PowerVisual] Flash failed for {GetType().Name}: {ex.Message}");
+			HextechLog.Warn("PowerVisual", $"Flash failed for {GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -25,7 +25,7 @@ public abstract class HextechPowerBase : PowerModel
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][PowerVisual] Counter refresh failed for {GetType().Name}: {ex.Message}");
+			HextechLog.Warn("PowerVisual", $"Counter refresh failed for {GetType().Name}: {ex.Message}");
 		}
 	}
 

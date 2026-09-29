@@ -1,5 +1,4 @@
 using System.Globalization;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Saves;
 using static HextechRunes.HextechHookReflection;
@@ -18,7 +17,6 @@ internal static class HextechTreasureRuneHooks
 {
 	internal static readonly FieldInfo CurrentRelicsField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_currentRelics");
 	internal static readonly FieldInfo PlayerCollectionField = RequireField(typeof(TreasureRoomRelicSynchronizer), "_playerCollection");
-
 
 	internal static void ReplaceRelicsForEggOwners(TreasureRoomRelicSynchronizer synchronizer)
 	{
@@ -81,7 +79,7 @@ internal static class HextechTreasureRuneHooks
 			SaveManager.Instance.MarkRelicAsSeen(rune);
 			relics[slot] = rune;
 			blocked.Add(rune.Id);
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] PrismaticEgg replaced treasure relic: slot={slot} rune={rune.Id.Entry} eggOwners={eggOwners.Count}");
+			HextechLog.Info("Mayhem", $"PrismaticEgg replaced treasure relic: slot={slot} rune={rune.Id.Entry} eggOwners={eggOwners.Count}");
 		}
 	}
 

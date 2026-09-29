@@ -10,7 +10,6 @@ internal static partial class HextechRunLifecycleHooks
 {
 	private const int EnemyUiRefreshFrameBudget = 45;
 
-
 	private static async Task LoadRunAfterOriginal(Task original, RunState runState)
 	{
 		await original;
@@ -23,7 +22,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] LoadRun continuation failed: {ex}");
+			HextechLog.Error("Mayhem", $"LoadRun continuation failed: {ex}");
 		}
 	}
 
@@ -77,12 +76,12 @@ internal static partial class HextechRunLifecycleHooks
 						}
 
 						HextechLog.Info(
-							$"[{ModInfo.Id}][ForgeChoice] Resuming pending initial forge grants after load: "
+							"ForgeChoice", $"Resuming pending initial forge grants after load: "
 							+ $"player={rune.Owner?.NetId.ToString() ?? "none"} rune={rune.Id.Entry}");
 						if (!await rune.ResumePendingInitialForgeGrant())
 						{
 							HextechLog.Info(
-								$"[{ModInfo.Id}][ForgeChoice] Pending initial forge grants remain unresolved after load: "
+								"ForgeChoice", $"Pending initial forge grants remain unresolved after load: "
 								+ $"player={rune.Owner?.NetId.ToString() ?? "none"} rune={rune.Id.Entry}");
 							return false;
 						}
@@ -105,8 +104,8 @@ internal static partial class HextechRunLifecycleHooks
 			await WaitOneFrame();
 		}
 
-		Log.Warn(
-			$"[{ModInfo.Id}][ForgeChoice] Pending initial forge grant recovery timed out: "
+		HextechLog.Warn(
+			"ForgeChoice", $"Pending initial forge grant recovery timed out: "
 			+ $"currentRun={IsCurrentRun(runState)} count={pending.Count}");
 		return false;
 	}
@@ -132,7 +131,7 @@ internal static partial class HextechRunLifecycleHooks
 
 				if (ShouldDeferActSelectionUntilAfterCurrentEvent(runState))
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResumePendingActSelectionAfterLoad: deferred for current event act={runState.CurrentActIndex} stage={stageIndex}");
+					HextechLog.Info("Mayhem", $"ResumePendingActSelectionAfterLoad: deferred for current event act={runState.CurrentActIndex} stage={stageIndex}");
 					return;
 				}
 
@@ -140,7 +139,7 @@ internal static partial class HextechRunLifecycleHooks
 					&& NRun.Instance?.GlobalUi?.TopBar != null
 					&& ShouldScheduleActSelectionOnRoomEntered(runState, modifier, stageIndex))
 				{
-					HextechLog.Info($"[{ModInfo.Id}][Mayhem] ResumePendingActSelectionAfterLoad: reopening unresolved selection act={runState.CurrentActIndex} stage={stageIndex} frame={frame} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+					HextechLog.Info("Mayhem", $"ResumePendingActSelectionAfterLoad: reopening unresolved selection act={runState.CurrentActIndex} stage={stageIndex} frame={frame} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
 					await HextechRuneSelectionCoordinator.HandleStageSelection(runState, modifier, stageIndex);
 					return;
 				}
@@ -149,9 +148,8 @@ internal static partial class HextechRunLifecycleHooks
 			await WaitOneFrame();
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Mayhem] ResumePendingActSelectionAfterLoad timed out: currentRun={IsCurrentRun(runState)} act={runState.CurrentActIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+		HextechLog.Warn("Mayhem", $"ResumePendingActSelectionAfterLoad timed out: currentRun={IsCurrentRun(runState)} act={runState.CurrentActIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
 	}
-
 
 	private static void ScheduleEnemyUiRefresh(RunState runState, string reason, int frameBudget)
 	{
@@ -180,7 +178,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		HextechEnemyUi.HideMayhemModifierBadge();
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh skipped: reason={reason} no current run after {frameBudget} frames");
+		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh skipped: reason={reason} no current run after {frameBudget} frames");
 	}
 
 	private static async Task RefreshEnemyUiForRunWhenReady(RunState runState, string reason, int frameBudget)
@@ -196,7 +194,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		HextechEnemyUi.HideMayhemModifierBadge();
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh skipped: reason={reason} topbar/modifier not ready after {frameBudget} frames");
+		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh skipped: reason={reason} topbar/modifier not ready after {frameBudget} frames");
 	}
 
 	private static bool TryRefreshEnemyUiForRun(RunState runState, string reason, int frame)
@@ -224,7 +222,7 @@ internal static partial class HextechRunLifecycleHooks
 		bool recovered = !modifier.IsStageResolved(stageIndex)
 			&& modifier.TryRecoverResolvedActsFromPlayerRelics(reason, stageIndex);
 		HextechEnemyUi.Refresh(modifier);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnemyUi delayed refresh: reason={reason} frame={frame} recovered={recovered} actIndex={runState.CurrentActIndex} {modifier.DescribeActState()}");
+		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh: reason={reason} frame={frame} recovered={recovered} actIndex={runState.CurrentActIndex} {modifier.DescribeActState()}");
 		return true;
 	}
 

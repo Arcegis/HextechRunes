@@ -15,7 +15,7 @@ internal static partial class HextechChoiceCodec
 		ValidateProtocolCount(rerollHistory.Count, MaxChoiceListCount, nameof(rerollHistory));
 		List<int> payload = [ Magic, ChoiceKindRuneSelection, actIndex, choiceOrdinal, selectedIndex, rerollHistory.Count ];
 		payload.AddRange(rerollHistory);
-		HextechStableModelIdListCodec.Append(payload, finalOptions.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
+		HextechStableModelIdListCodec.Append(payload, finalOptions.Select(static relic => relic.CanonicalId()));
 		HextechRuneWeightCodec.Append(payload, finalOptions);
 		HextechGeneratedRuneDataCodec.Append(payload, finalOptions);
 

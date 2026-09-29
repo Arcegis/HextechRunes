@@ -10,7 +10,7 @@ internal static partial class HextechChoiceCodec
 		IReadOnlyList<RelicModel> options)
 	{
 		List<int> payload = [ Magic, ChoiceKindForgeSelection, operationToken, selectedIndex ];
-		HextechStableModelIdListCodec.Append(payload, options.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id));
+		HextechStableModelIdListCodec.Append(payload, options.Select(static relic => relic.CanonicalId()));
 
 		return PlayerChoiceResult.FromIndexes(payload);
 	}

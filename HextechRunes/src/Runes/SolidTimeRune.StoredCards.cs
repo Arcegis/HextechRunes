@@ -39,8 +39,8 @@ public sealed partial class SolidTimeRune
 			{
 				_lastLoggedCorruptStoredCardsJson = _removedCardsJson;
 				string preview = _removedCardsJson[..Math.Min(80, _removedCardsJson.Length)];
-				Log.Warn(
-					$"[{ModInfo.Id}][SolidTime] Stored cards JSON is corrupted; dropping {_removedCardsJson.Length} chars: "
+				HextechLog.Warn(
+					"SolidTime", $"Stored cards JSON is corrupted; dropping {_removedCardsJson.Length} chars: "
 					+ $"{ex.GetType().Name}: {ex.Message} json={preview}");
 			}
 

@@ -63,7 +63,7 @@ internal static class HextechFeaturedConfigs
 				await HttpClient.GetAsync(HextechServerEndpoints.FeaturedConfigsEndpoint).ConfigureAwait(false);
 			if (!response.IsSuccessStatusCode)
 			{
-				Log.Warn($"[{ModInfo.Id}][FeaturedConfigs] HTTP {(int)response.StatusCode}");
+				HextechLog.Warn("FeaturedConfigs", $"HTTP {(int)response.StatusCode}");
 				return null;
 			}
 
@@ -71,7 +71,7 @@ internal static class HextechFeaturedConfigs
 			FeaturedConfigsDocument? document = JsonSerializer.Deserialize<FeaturedConfigsDocument>(json);
 			if (document?.Configs == null || document.SchemaVersion != 1)
 			{
-				Log.Warn($"[{ModInfo.Id}][FeaturedConfigs] unexpected schema");
+				HextechLog.Warn("FeaturedConfigs", $"unexpected schema");
 				return null;
 			}
 
@@ -93,7 +93,7 @@ internal static class HextechFeaturedConfigs
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][FeaturedConfigs] fetch failed: {ex.Message}");
+			HextechLog.Warn("FeaturedConfigs", $"fetch failed: {ex.Message}");
 			return null;
 		}
 	}
@@ -130,7 +130,7 @@ internal static class HextechFeaturedConfigs
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Community] list fetch failed: {ex.Message}");
+			HextechLog.Warn("Community", $"list fetch failed: {ex.Message}");
 			return null;
 		}
 	}
@@ -157,7 +157,7 @@ internal static class HextechFeaturedConfigs
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Community] mine fetch failed: {ex.Message}");
+			HextechLog.Warn("Community", $"mine fetch failed: {ex.Message}");
 			return null;
 		}
 	}
@@ -209,7 +209,7 @@ internal static class HextechFeaturedConfigs
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Community] {action} failed: {ex.Message}");
+			HextechLog.Warn("Community", $"{action} failed: {ex.Message}");
 			return new CommunityApiResult(false, "network", null, -1);
 		}
 	}

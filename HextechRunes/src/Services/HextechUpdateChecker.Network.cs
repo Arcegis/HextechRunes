@@ -24,7 +24,7 @@ internal static partial class HextechUpdateChecker
 			}
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Mayhem] Update check failed: {string.Join("; ", failures)}");
+		HextechLog.Warn("Mayhem", $"Update check failed: {string.Join("; ", failures)}");
 		return new UpdateCheckResult("海克斯大乱斗模组更新检查暂不可用", false);
 	}
 
@@ -65,7 +65,7 @@ internal static partial class HextechUpdateChecker
 		string text = CompareVersions(normalizedLatest, currentVersion) > 0
 			? $"海克斯大乱斗模组有新版{normalizedLatest}，当前版本为{currentVersion}"
 			: $"海克斯大乱斗模组为最新版{currentVersion}";
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Update check succeeded: latest={normalizedLatest}, current={currentVersion}");
+		HextechLog.Info("Mayhem", $"Update check succeeded: latest={normalizedLatest}, current={currentVersion}");
 		return new UpdateCheckResult(text, true);
 	}
 

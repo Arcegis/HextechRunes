@@ -118,9 +118,9 @@ public sealed partial class DoubleVisionRune
 				throw;
 			}
 
-			Log.Warn(
-				$"[{ModInfo.Id}][DoubleVision] Skipped duplication after recovering a failed custom event relic obtain: "
-				+ $"player={scope.Player.NetId} relic={(recovered.CanonicalInstance?.Id ?? recovered.Id).Entry}.");
+			HextechLog.Warn(
+				"DoubleVision", $"Skipped duplication after recovering a failed custom event relic obtain: "
+				+ $"player={scope.Player.NetId} relic={(recovered.CanonicalId()).Entry}.");
 			return recovered;
 		}
 
@@ -134,9 +134,9 @@ public sealed partial class DoubleVisionRune
 
 		if (!scope.Transaction.TryRecord(new EventRelicIntent(scope.Player, obtained, scope.Runes)))
 		{
-			Log.Warn(
-				$"[{ModInfo.Id}][DoubleVision] Skipped late event relic duplication after its option transaction closed: "
-				+ $"player={scope.Player.NetId} relic={(obtained.CanonicalInstance?.Id ?? obtained.Id).Entry}.");
+			HextechLog.Warn(
+				"DoubleVision", $"Skipped late event relic duplication after its option transaction closed: "
+				+ $"player={scope.Player.NetId} relic={(obtained.CanonicalId()).Entry}.");
 		}
 
 		return obtained;
@@ -153,9 +153,9 @@ public sealed partial class DoubleVisionRune
 	{
 		RelicModel relic = scope.AttemptedRelic;
 		Player player = scope.Player;
-		ModelId relicId = relic.CanonicalInstance?.Id ?? relic.Id;
-		Log.Warn(
-			$"[{ModInfo.Id}][DoubleVision] Custom event relic obtain failed; attempting a history-independent fallback: "
+		ModelId relicId = relic.CanonicalId();
+		HextechLog.Warn(
+			"DoubleVision", $"Custom event relic obtain failed; attempting a history-independent fallback: "
 			+ $"player={player.NetId} relic={relicId.Entry} type={relic.GetType().FullName} "
 			+ $"error={originalException.GetType().Name}: {originalException.Message}");
 
@@ -220,8 +220,8 @@ public sealed partial class DoubleVisionRune
 				}
 			}
 
-			Log.Warn(
-				$"[{ModInfo.Id}][DoubleVision] {context} completed without duplicating run-history writes: "
+			HextechLog.Warn(
+				"DoubleVision", $"{context} completed without duplicating run-history writes: "
 				+ $"player={player.NetId} relic={relicId.Entry}.");
 			return relic;
 		}
@@ -334,10 +334,10 @@ public sealed partial class DoubleVisionRune
 			}
 			catch (Exception exception)
 			{
-				ModelId sourceId = sourceRelic.CanonicalInstance?.Id ?? sourceRelic.Id;
+				ModelId sourceId = sourceRelic.CanonicalId();
 				RelicModel? recoveryCopy = player.Relics.FirstOrDefault(
 					relic => !relicsBefore.Contains(relic)
-						&& (relic.CanonicalInstance?.Id ?? relic.Id) == sourceId);
+						&& (relic.CanonicalId()) == sourceId);
 				Exception? recoveryCopyException = null;
 				if (recoveryCopy == null)
 				{

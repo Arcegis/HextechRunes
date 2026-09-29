@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Helpers;
@@ -44,7 +43,7 @@ internal static class HextechInspectHooks
 
 			if (!HasInspectScreenMembers(out string missingMembers))
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Inspect relic screen hooks disabled: missing {missingMembers}.");
+				HextechLog.Warn("Mayhem", $"Inspect relic screen hooks disabled: missing {missingMembers}.");
 				_inspectScreenHooksAvailable = false;
 				return false;
 			}
@@ -56,7 +55,6 @@ internal static class HextechInspectHooks
 	}
 
 	private readonly record struct InspectOpenState(RelicModel? RequestedRelic);
-
 
 	internal static bool ShouldHandleInspectRequest(RelicModel relic)
 	{
@@ -84,7 +82,6 @@ internal static class HextechInspectHooks
 		requestedIndex = merged.Count - 1;
 		return merged;
 	}
-
 
 	private static void EnsureInspectRelicsUnlocked(NInspectRelicScreen screen, IReadOnlyList<RelicModel> relics)
 	{
@@ -176,7 +173,6 @@ internal static class HextechInspectHooks
 			}
 		}
 	}
-
 
 	[HarmonyPatch(typeof(UnlockState), nameof(UnlockState.Relics), MethodType.Getter)]
 	[HextechPatch("ui.inspect.unlock-state-relics", "遗物检视界面", Optional = true)]

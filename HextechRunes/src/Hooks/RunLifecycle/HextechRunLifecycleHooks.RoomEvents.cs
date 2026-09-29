@@ -58,7 +58,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered failed: {ex}");
+			HextechLog.Error("Mayhem", $"OnRoomEntered failed: {ex}");
 		}
 	}
 
@@ -66,7 +66,7 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: no run state");
+			HextechLog.Info("Mayhem", $"OnRoomEntered: no run state");
 			return;
 		}
 
@@ -95,17 +95,17 @@ internal static partial class HextechRunLifecycleHooks
 			RefreshEnemyUiSafely(modifier);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} stageIndex={stageIndex} stageResolved={modifier?.IsStageResolved(stageIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
+		HextechLog.Info("Mayhem", $"OnRoomEntered: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={runState.CurrentActIndex} stageIndex={stageIndex} stageResolved={modifier?.IsStageResolved(stageIndex)} startedWithNeow={runState.ExtraFields.StartedWithNeow} {DescribeCurrentEventState(runState)}");
 		if (runState.CurrentRoom is EventRoom { CanonicalEvent: AncientEventModel ancientEvent }
 			&& modifier != null
 			&& runState.CurrentActIndex >= 0
 			&& !modifier.IsStageResolved(stageIndex))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: pending act selection is deferred until ancient event proceed. act={runState.CurrentActIndex} event={ancientEvent.Id.Entry} {DescribeCurrentEventState(runState)}");
+			HextechLog.Info("Mayhem", $"OnRoomEntered: pending act selection is deferred until ancient event proceed. act={runState.CurrentActIndex} event={ancientEvent.Id.Entry} {DescribeCurrentEventState(runState)}");
 		}
 		if (modifier != null && ShouldScheduleActSelectionOnRoomEntered(runState, modifier, stageIndex))
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
+			HextechLog.Info("Mayhem", $"OnRoomEntered: scheduling selection for room={runState.CurrentRoom?.GetType().Name ?? "null"}");
 			TaskHelper.RunSafely(HextechRuneSelectionCoordinator.HandleStageSelection(runState, modifier, stageIndex));
 		}
 
@@ -115,7 +115,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered badge refresh failed: {ex}");
+			HextechLog.Error("Mayhem", $"OnRoomEntered badge refresh failed: {ex}");
 		}
 
 		if (modifier != null)
@@ -133,7 +133,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomEntered enemy UI refresh failed: {ex}");
+			HextechLog.Error("Mayhem", $"OnRoomEntered enemy UI refresh failed: {ex}");
 		}
 	}
 
@@ -143,7 +143,7 @@ internal static partial class HextechRunLifecycleHooks
 		{
 			if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: no run state");
+				HextechLog.Info("Mayhem", $"OnRoomExited: no run state");
 				return;
 			}
 
@@ -151,11 +151,11 @@ internal static partial class HextechRunLifecycleHooks
 			IReadOnlyList<MapPointRoomHistoryEntry>? rooms = currentHistory?.Rooms;
 			MapPointRoomHistoryEntry? roomHistory = rooms != null && rooms.Count > 0 ? rooms[^1] : null;
 			string modelEntry = roomHistory?.ModelId?.Entry ?? "null";
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] OnRoomExited: currentRoom={(runState.CurrentRoom?.GetType().Name ?? "null")} lastHistoryRoom={roomHistory?.RoomType} model={modelEntry}");
+			HextechLog.Info("Mayhem", $"OnRoomExited: currentRoom={(runState.CurrentRoom?.GetType().Name ?? "null")} lastHistoryRoom={roomHistory?.RoomType} model={modelEntry}");
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] OnRoomExited failed: {ex}");
+			HextechLog.Error("Mayhem", $"OnRoomExited failed: {ex}");
 		}
 	}
 

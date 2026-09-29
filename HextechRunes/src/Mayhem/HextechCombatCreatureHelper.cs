@@ -88,8 +88,8 @@ internal static class HextechCombatCreatureHelper
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Dead enemy visual cleanup failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Dead enemy visual cleanup failed: {ex.Message}");
 		}
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Removed retained dead enemy after unsafe PainfulStabs cleanup: id={enemy.CombatId?.ToString() ?? "none"} model={enemy.ModelId.Entry}");
+		HextechLog.Info("Mayhem", $"Removed retained dead enemy after unsafe PainfulStabs cleanup: id={enemy.CombatId?.ToString() ?? "none"} model={enemy.ModelId.Entry}");
 	}
 }

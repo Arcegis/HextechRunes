@@ -18,7 +18,7 @@ internal static partial class HextechTelemetry
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry config read failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Telemetry config read failed: {ex.Message}");
 		}
 
 		return new TelemetryConfig(true, DefaultEndpoint);

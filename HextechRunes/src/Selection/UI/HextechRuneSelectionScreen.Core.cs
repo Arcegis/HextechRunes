@@ -203,7 +203,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		IReadOnlyList<RelicModel>? selfPickPool = null,
 		bool continueOnly = false)
 	{
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.Create: count={relics.Count} selfPickPool={selfPickPool?.Count ?? 0} continueOnly={continueOnly}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.Create: count={relics.Count} selfPickPool={selfPickPool?.Count ?? 0} continueOnly={continueOnly}");
 		return new HextechRuneSelectionScreen(
 			relics,
 			monsterHexRelic,

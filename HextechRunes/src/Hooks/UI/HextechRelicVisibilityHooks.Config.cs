@@ -29,7 +29,7 @@ internal static partial class HextechRelicVisibilityHooks
 	{
 		_config.CollapseEnemyHexes = collapse;
 		SaveConfig(_config);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] collapse_enemy_hexes={collapse}.");
+		HextechLog.Info("Mayhem", $"collapse_enemy_hexes={collapse}.");
 	}
 
 	// 海克斯选择二次确认(纯本机 UI 偏好,默认关):开=点卡片只标记待定,按"确认"才提交;关=点卡片立即选定。
@@ -48,7 +48,7 @@ internal static partial class HextechRelicVisibilityHooks
 	{
 		_config.ConfirmRuneSelection = confirm;
 		SaveConfig(_config);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] confirm_rune_selection={confirm}.");
+		HextechLog.Info("Mayhem", $"confirm_rune_selection={confirm}.");
 	}
 
 	internal static bool GetShowHiddenRelicsToggle()
@@ -75,7 +75,7 @@ internal static partial class HextechRelicVisibilityHooks
 	{
 		_config.ShowUpdateNotice = showNotice;
 		SaveConfig(_config);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] show_update_notice={showNotice}.");
+		HextechLog.Info("Mayhem", $"show_update_notice={showNotice}.");
 	}
 
 	internal static void SetShowHiddenRelicsToggle(bool showToggle)
@@ -90,7 +90,7 @@ internal static partial class HextechRelicVisibilityHooks
 			ApplyHiddenState(globalUi);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] show_hidden_ui_toggle={showToggle}.");
+		HextechLog.Info("Mayhem", $"show_hidden_ui_toggle={showToggle}.");
 	}
 
 	private static ModUiConfig LoadOrCreateConfig()
@@ -111,7 +111,7 @@ internal static partial class HextechRelicVisibilityHooks
 			// 0.8.4 一次性强制回默认(与 rune_config 的 v15 重置同批):旧 UI 偏好整体丢弃。
 			if (config.ConfigVersion < CurrentUiConfigVersion)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][Mayhem] UI config version {config.ConfigVersion} < {CurrentUiConfigVersion}; forcing reset to defaults (0.8.4).");
+				HextechLog.Info("Mayhem", $"UI config version {config.ConfigVersion} < {CurrentUiConfigVersion}; forcing reset to defaults (0.8.4).");
 				config = CreateCurrentUiConfig();
 			}
 
@@ -120,7 +120,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (JsonException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility config JSON is invalid; using defaults: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Relic visibility config JSON is invalid; using defaults: {ex.Message}");
 			ModUiConfig config = CreateCurrentUiConfig();
 			if (configPath != null && TryBackupCorruptConfig(configPath))
 			{
@@ -131,17 +131,17 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (UnauthorizedAccessException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility config read was denied; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Relic visibility config read was denied; using in-memory defaults without overwriting the file: {ex.Message}");
 			return CreateCurrentUiConfig();
 		}
 		catch (IOException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Relic visibility config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}");
 			return CreateCurrentUiConfig();
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] Unexpected relic visibility config read failure; using in-memory defaults without overwriting the file: {ex}");
+			HextechLog.Error("Mayhem", $"Unexpected relic visibility config read failure; using in-memory defaults without overwriting the file: {ex}");
 			return CreateCurrentUiConfig();
 		}
 	}
@@ -160,17 +160,17 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (UnauthorizedAccessException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Could not back up corrupt relic visibility config; original file will not be overwritten: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Could not back up corrupt relic visibility config; original file will not be overwritten: {ex.Message}");
 			return false;
 		}
 		catch (IOException ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Could not back up corrupt relic visibility config; original file will not be overwritten: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Could not back up corrupt relic visibility config; original file will not be overwritten: {ex.Message}");
 			return false;
 		}
 		catch (Exception ex)
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] Unexpected relic visibility config backup failure; original file will not be overwritten: {ex}");
+			HextechLog.Error("Mayhem", $"Unexpected relic visibility config backup failure; original file will not be overwritten: {ex}");
 			return false;
 		}
 	}
@@ -186,7 +186,7 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic visibility config write failed: {ex.Message}", 2);
+			HextechLog.Warn("Mayhem", $"Relic visibility config write failed: {ex.Message}");
 		}
 	}
 

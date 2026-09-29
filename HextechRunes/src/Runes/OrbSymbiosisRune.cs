@@ -27,8 +27,8 @@ public sealed class OrbSymbiosisRune : HextechRelicBase
 			: ModelDb.GetByIdOrNull<OrbModel>(orbId);
 		if (canonicalOrb == null)
 		{
-			Log.Warn(
-				$"[{ModInfo.Id}][OrbSymbiosis] Skipped orb duplication because its model is not registered: "
+			HextechLog.Warn(
+				"OrbSymbiosis", $"Skipped orb duplication because its model is not registered: "
 				+ $"orb={orbId.Entry} type={orb.GetType().FullName}.");
 			return;
 		}

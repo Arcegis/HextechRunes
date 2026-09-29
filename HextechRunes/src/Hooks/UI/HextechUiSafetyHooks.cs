@@ -1,6 +1,5 @@
 using System.Collections;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Cards;
@@ -37,7 +36,6 @@ internal static class HextechUiSafetyHooks
 		"BeforeResumedAfterPlayerChoice",
 		BindingFlags.Instance | BindingFlags.NonPublic);
 
-
 	private static async Task PlayNewlyAcquiredAnimationSafely(Task original, NRelicInventoryHolder self)
 	{
 		try
@@ -58,7 +56,6 @@ internal static class HextechUiSafetyHooks
 	{
 		return GodotObject.IsInstanceValid(node) && node.IsInsideTree();
 	}
-
 
 	private static bool TryFindQueueItem(NCardPlayQueue queue, GameAction action, out IList? playQueue, out int index, out object? item, out NCard? card)
 	{
@@ -187,7 +184,7 @@ internal static class HextechUiSafetyHooks
 	{
 		if (HextechRunLogBudget.TryConsume("ui.relic-animation-skip", 5))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Relic acquired animation skipped: {reason}");
+			HextechLog.Warn("Mayhem", $"Relic acquired animation skipped: {reason}");
 		}
 	}
 
@@ -195,7 +192,7 @@ internal static class HextechUiSafetyHooks
 	{
 		if (HextechRunLogBudget.TryConsume("ui.remote-intent-skip", 10))
 		{
-			Log.Warn($"[{ModInfo.Id}][UI] Remote intent card resume UI skipped: {reason}; action={action}");
+			HextechLog.Warn("UI", $"Remote intent card resume UI skipped: {reason}; action={action}");
 		}
 	}
 
@@ -203,10 +200,9 @@ internal static class HextechUiSafetyHooks
 	{
 		if (HextechRunLogBudget.TryConsume("ui.remote-play-queue-skip", 10))
 		{
-			Log.Warn($"[{ModInfo.Id}][UI] Remote play queue card resume UI skipped: {reason}; action={action}");
+			HextechLog.Warn("UI", $"Remote play queue card resume UI skipped: {reason}; action={action}");
 		}
 	}
-
 
 	[HarmonyPatch(typeof(NRelicInventoryHolder), nameof(NRelicInventoryHolder.PlayNewlyAcquiredAnimation), typeof(Vector2?), typeof(Vector2?))]
 	[HextechPatch("ui.safety.newly-acquired-animation", "遗物获取动画安全")]

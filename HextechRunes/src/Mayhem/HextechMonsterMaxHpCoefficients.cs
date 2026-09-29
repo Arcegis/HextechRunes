@@ -142,7 +142,7 @@ internal static class HextechMonsterMaxHpCoefficients
 			madScientistLossFraction,
 			tankEngineStacks);
 		HextechLog.Info(
-			$"[{ModInfo.Id}][Mayhem] Migrated legacy enemy max HP base: combatId={combatId} current={creature.MaxHp} raw={rawMonsterMaxHp?.ToString() ?? "unknown"} fixedBonuses={string.Join(",", appliedFixedBonusFractions)} madLoss={madScientistLossFraction} tankStacks={tankEngineStacks} base={migratedBaseMaxHp}");
+			"Mayhem", $"Migrated legacy enemy max HP base: combatId={combatId} current={creature.MaxHp} raw={rawMonsterMaxHp?.ToString() ?? "unknown"} fixedBonuses={string.Join(",", appliedFixedBonusFractions)} madLoss={madScientistLossFraction} tankStacks={tankEngineStacks} base={migratedBaseMaxHp}");
 		return migratedBaseMaxHp;
 	}
 
@@ -192,7 +192,7 @@ internal static class HextechMonsterMaxHpCoefficients
 			int.MaxValue);
 		modifier.CombatTracking.MonsterMaxHpCoefficientBase[combatId] = adjustedBaseMaxHp;
 		HextechLog.Info(
-			$"[{ModInfo.Id}][Mayhem] Reconciled enemy max HP base after an external change: "
+			"Mayhem", $"Reconciled enemy max HP base after an external change: "
 			+ $"combatId={combatId} base={baseMaxHp} projected={projectedMaxHp} "
 			+ $"observed={creature.MaxHp} adjustedBase={adjustedBaseMaxHp}");
 		return adjustedBaseMaxHp;
@@ -290,7 +290,7 @@ internal static class HextechMonsterMaxHpCoefficients
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Enemy scale visual failed: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Enemy scale visual failed: {ex.Message}");
 		}
 	}
 }

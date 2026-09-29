@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
@@ -7,7 +6,6 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -134,7 +132,7 @@ internal static partial class HextechRuneConfigMenuHooks
 			HextechUpdateChecker.ApplyNoticeVisibility(overlay);
 			HextechCollectionHooks.RefreshOpenRelicCollections();
 			string runeWeights = string.Join("/", pending.RuneWeightsByAct.Select(static weights => string.Join(",", weights)));
-			HextechLog.Info($"[{ModInfo.Id}][RuneConfig] Saved run config: playerDisabled={pending.DisabledPlayerRuneIds.Count} enemyDisabled={pending.DisabledMonsterHexIds.Count} forgeDisabled={pending.DisabledForgeIds.Count} playerCounts={string.Join(",", pending.PlayerHexCounts)} enemyCounts={string.Join(",", pending.EnemyHexCounts)} playerRerolls={pending.PlayerRuneRerollLimit} monsterRerolls={pending.MonsterHexRerollLimit} runeWeightsByAct={runeWeights} preventConsecutiveSilver={pending.PreventConsecutiveSilverRunes} goldenRerollChance={pending.GoldenRerollChancePercent}% forgePrice={pending.ForgePrice} showHiddenUiToggle={pending.ShowHiddenRelicsToggle} showUpdateNotice={pending.ShowUpdateNotice} randomForgeDirect={pending.RandomForgeDirectGrant} modEnabled={pending.ModEnabled}");
+			HextechLog.Info("RuneConfig", $"Saved run config: playerDisabled={pending.DisabledPlayerRuneIds.Count} enemyDisabled={pending.DisabledMonsterHexIds.Count} forgeDisabled={pending.DisabledForgeIds.Count} playerCounts={string.Join(",", pending.PlayerHexCounts)} enemyCounts={string.Join(",", pending.EnemyHexCounts)} playerRerolls={pending.PlayerRuneRerollLimit} monsterRerolls={pending.MonsterHexRerollLimit} runeWeightsByAct={runeWeights} preventConsecutiveSilver={pending.PreventConsecutiveSilverRunes} goldenRerollChance={pending.GoldenRerollChancePercent}% forgePrice={pending.ForgePrice} showHiddenUiToggle={pending.ShowHiddenRelicsToggle} showUpdateNotice={pending.ShowUpdateNotice} randomForgeDirect={pending.RandomForgeDirectGrant} modEnabled={pending.ModEnabled}");
 			CloseOverlayAnimated(overlay);
 		}, compactLayout);
 		Button cancel = CreateActionButton(L("HEXTECH_CONFIG_CANCEL"), () => CloseWithoutSaving(overlay), compactLayout);

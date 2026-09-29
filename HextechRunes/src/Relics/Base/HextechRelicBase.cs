@@ -174,7 +174,7 @@ public abstract partial class HextechRelicBase : RelicModel
 		// 缺图会静默落到原版占位图,肉眼难归因;每路径告警一次,把问题从"玩家看到占位"提前到日志。
 		if (!string.IsNullOrEmpty(customPath) && WarnedMissingIconPaths.Add(customPath))
 		{
-			Log.Warn($"[{ModInfo.Id}][Assets] Relic icon missing, falling back to placeholder: {GetType().Name} -> {customPath}");
+			HextechLog.Warn("Assets", $"Relic icon missing, falling back to placeholder: {GetType().Name} -> {customPath}");
 		}
 
 		return PlaceholderIconPath;

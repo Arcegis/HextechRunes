@@ -60,7 +60,7 @@ internal static class HextechMultiplayerScalingCompat
 			if (!_warnedHostOnlyScaling)
 			{
 				_warnedHostOnlyScaling = true;
-				Log.Warn($"[{ModInfo.Id}][Mayhem] BetterMultiplayerScaling is active on the host only; normalized local enemy HP to host scaling.");
+				HextechLog.Warn("Mayhem", $"BetterMultiplayerScaling is active on the host only; normalized local enemy HP to host scaling.");
 			}
 
 			return;
@@ -70,7 +70,7 @@ internal static class HextechMultiplayerScalingCompat
 		if (!_warnedClientExtraScaling)
 		{
 			_warnedClientExtraScaling = true;
-			Log.Warn($"[{ModInfo.Id}][Mayhem] BetterMultiplayerScaling is active locally but not on the host; normalized local enemy HP down to host scaling.");
+			HextechLog.Warn("Mayhem", $"BetterMultiplayerScaling is active locally but not on the host; normalized local enemy HP down to host scaling.");
 		}
 	}
 

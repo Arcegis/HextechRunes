@@ -89,7 +89,7 @@ internal static partial class HextechCatalog
 			{
 				if (MissingVisibleCustomRelicLogs.Add(type))
 				{
-					Log.Warn($"[{ModInfo.Id}] Skipping missing visible custom relic during inspect list build: type={type.FullName} id={id.Entry}: {ex.Message}");
+					HextechLog.Warn("Inspect", $"Skipping missing visible custom relic during inspect list build: type={type.FullName} id={id.Entry}: {ex.Message}");
 				}
 			}
 
@@ -99,7 +99,7 @@ internal static partial class HextechCatalog
 
 	public static IReadOnlyList<RuneSeriesGroup> GetRuneSeriesGroups(IReadOnlyList<RelicModel> relics)
 	{
-		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalInstance?.Id ?? relic.Id);
+		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalId());
 
 		IReadOnlyList<RelicModel> BuildGroup(IEnumerable<Type> runeTypes)
 		{
@@ -132,7 +132,7 @@ internal static partial class HextechCatalog
 	public static IReadOnlyList<RuneSeriesGroup> GetForgeSeriesGroups()
 	{
 		IReadOnlyList<RelicModel> relics = GetCanonicalForges();
-		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalInstance?.Id ?? relic.Id);
+		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalId());
 
 		IReadOnlyList<RelicModel> BuildGroup(IEnumerable<Type> forgeTypes)
 		{

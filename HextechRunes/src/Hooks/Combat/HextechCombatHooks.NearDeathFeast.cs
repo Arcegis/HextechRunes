@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.addons.mega_text;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using static HextechRunes.HextechHookReflection;
 
@@ -16,13 +15,11 @@ internal static partial class HextechCombatHooks
 		HealthBarHpLabelField ??= RequireField(typeof(NHealthBar), "_hpLabel");
 	}
 
-
 	private static void NearDeathFeastKillPrefix(Creature creature)
 	{
 		NearDeathFeastRune.ForceDeathThresholdForKill(creature);
 		HextechEnemyNearDeath.ForceDeathThresholdForKill(creature);
 	}
-
 
 	[HarmonyPatch(typeof(Creature), nameof(Creature.LoseHpInternal), typeof(decimal), typeof(ValueProp))]
 	[HextechPatch("combat.near-death-feast.lose-hp", "濒死狂宴", Rune = typeof(NearDeathFeastRune))]

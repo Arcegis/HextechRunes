@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -65,7 +64,7 @@ internal sealed class HandOfBaronAuraVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Could not attach Hand of Baron aura visual: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Could not attach Hand of Baron aura visual: {ex.Message}");
 		}
 	}
 
@@ -107,7 +106,7 @@ internal sealed class HandOfBaronAuraVisual
 		_ringLayer = TryCreateLayer(_root, "SoftRing", HextechAssets.HandOfBaronAuraRingPath, new Color(0.86f, 0.42f, 1f, 0.28f), 3);
 		_runeLayer = CreateLayer(_root, "BaronRune", runeTexture, new Color(1f, 0.35f, 1f, 0.78f), 4);
 		UpdateTransform();
-		HextechLog.Info($"[{ModInfo.Id}][BaronAura] Attached node={_root.GetPath()} parent={renderLayer.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"} hasRune={ShouldShow(_creature)}.");
+		HextechLog.Info("BaronAura", $"Attached node={_root.GetPath()} parent={renderLayer.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"} hasRune={ShouldShow(_creature)}.");
 		return true;
 	}
 
@@ -132,7 +131,7 @@ internal sealed class HandOfBaronAuraVisual
 				_root.Visible = visible;
 				if (visible != _lastVisible)
 				{
-					HextechLog.Info($"[{ModInfo.Id}][BaronAura] Visibility changed: visible={visible} node={_root.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"}.");
+					HextechLog.Info("BaronAura", $"Visibility changed: visible={visible} node={_root.GetPath()} player={_creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"}.");
 					_lastVisible = visible;
 				}
 
@@ -156,7 +155,7 @@ internal sealed class HandOfBaronAuraVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Hand of Baron aura visual stopped after runtime error: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Hand of Baron aura visual stopped after runtime error: {ex.Message}");
 		}
 		finally
 		{
@@ -315,7 +314,7 @@ internal sealed class HandOfBaronAuraVisual
 		Texture2D? texture = HextechTextures.LoadUiTexture(path);
 		if (texture == null && LoggedMissingTexturePaths.Add(path))
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Hand of Baron aura texture not found: {path}");
+			HextechLog.Warn("Mayhem", $"Hand of Baron aura texture not found: {path}");
 		}
 
 		return texture;

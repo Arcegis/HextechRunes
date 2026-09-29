@@ -10,7 +10,7 @@ internal static partial class HextechTelemetry
 	{
 		if (runState == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Telemetry payload skipped: runState unavailable");
+			HextechLog.Warn("Mayhem", $"Telemetry payload skipped: runState unavailable");
 			return null;
 		}
 
@@ -110,7 +110,7 @@ internal static partial class HextechTelemetry
 
 	private static string GetRelicId(RelicModel relic)
 	{
-		return (relic.CanonicalInstance?.Id ?? relic.Id).Entry;
+		return (relic.CanonicalId()).Entry;
 	}
 
 	private static string Sha256Hex(string value)

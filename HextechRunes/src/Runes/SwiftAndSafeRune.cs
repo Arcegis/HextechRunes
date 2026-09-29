@@ -95,7 +95,6 @@ public sealed class SwiftAndSafeRune : HextechRelicBase
 		}
 	}
 
-
 	private async Task ResolveDrawProgressFromHistory()
 	{
 		if (Owner == null || Owner.Creature.IsDead)

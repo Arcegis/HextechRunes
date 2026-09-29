@@ -38,7 +38,7 @@ internal static partial class HextechRuneConfiguration
 
 	public static bool IsPlayerRuneEnabled(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return IsPlayerRuneEnabled(id.Entry);
 	}
 

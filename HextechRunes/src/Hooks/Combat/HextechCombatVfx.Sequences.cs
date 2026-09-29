@@ -1,11 +1,9 @@
 using System.Text;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -154,7 +152,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Boomerang sweep failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Boomerang sweep failed: {ex.Message}");
 		}
 	}
 
@@ -220,7 +218,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Omega judgment failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Omega judgment failed: {ex.Message}");
 		}
 	}
 
@@ -306,7 +304,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Corpse bloom burst failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Corpse bloom burst failed: {ex.Message}");
 		}
 	}
 
@@ -404,7 +402,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Quantum pulse failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Quantum pulse failed: {ex.Message}");
 		}
 	}
 
@@ -487,7 +485,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Flying kick strike failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Flying kick strike failed: {ex.Message}");
 		}
 	}
 
@@ -528,7 +526,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Death ring lash failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Death ring lash failed: {ex.Message}");
 		}
 	}
 
@@ -569,7 +567,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Divine pulse failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Divine pulse failed: {ex.Message}");
 		}
 	}
 
@@ -697,7 +695,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Soul drain failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Soul drain failed: {ex.Message}");
 		}
 	}
 }

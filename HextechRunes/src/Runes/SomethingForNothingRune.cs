@@ -80,7 +80,7 @@ public sealed class SomethingForNothingRune : HextechRelicBase
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][SomethingForNothing] Cost visual refresh failed: {ex.Message}");
+			HextechLog.Warn("SomethingForNothing", $"Cost visual refresh failed: {ex.Message}");
 		}
 		Flash();
 		return Task.CompletedTask;

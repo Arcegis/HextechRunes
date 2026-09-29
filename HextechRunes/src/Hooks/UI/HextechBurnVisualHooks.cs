@@ -1,5 +1,4 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -70,7 +69,7 @@ internal sealed class HextechBurnVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Burn] Could not attach burn flames visual: {ex.Message}");
+			HextechLog.Warn("Burn", $"Could not attach burn flames visual: {ex.Message}");
 		}
 	}
 
@@ -149,7 +148,7 @@ internal sealed class HextechBurnVisual
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Burn] Burn flames visual stopped after runtime error: {ex.Message}");
+			HextechLog.Warn("Burn", $"Burn flames visual stopped after runtime error: {ex.Message}");
 		}
 		finally
 		{
@@ -261,7 +260,7 @@ internal sealed class HextechBurnVisual
 	{
 		if (HextechRunLogBudget.TryConsume("visual.burn-tick-burst", 3))
 		{
-			Log.Warn($"[{ModInfo.Id}][Burn] Burn tick burst failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Burn", $"Burn tick burst failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 
@@ -311,7 +310,7 @@ internal sealed class HextechBurnVisual
 		catch (Exception ex)
 		{
 			DisableBoneEmission();
-			Log.Warn($"[{ModInfo.Id}][Burn] Bone emission init failed, using rect emission: {ex.Message}");
+			HextechLog.Warn("Burn", $"Bone emission init failed, using rect emission: {ex.Message}");
 		}
 	}
 
@@ -395,7 +394,7 @@ internal sealed class HextechBurnVisual
 		catch (Exception ex)
 		{
 			DisableBoneEmission();
-			Log.Warn($"[{ModInfo.Id}][Burn] Bone emission update failed, keeping last emission: {ex.Message}");
+			HextechLog.Warn("Burn", $"Bone emission update failed, keeping last emission: {ex.Message}");
 		}
 	}
 

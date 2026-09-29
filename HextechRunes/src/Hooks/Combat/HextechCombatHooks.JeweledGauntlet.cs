@@ -1,5 +1,4 @@
 using System.Globalization;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
@@ -41,7 +40,7 @@ internal static partial class HextechCombatHooks
 				KnowledgeDemonCurseCounterField);
 			if (!available)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] 珠光护手 hook 已禁用:所需私有字段缺失或签名变化。");
+				HextechLog.Warn("Mayhem", $"珠光护手 hook 已禁用:所需私有字段缺失或签名变化。");
 			}
 
 			_jeweledGauntletHooksAvailable = available;
@@ -76,7 +75,7 @@ internal static partial class HextechCombatHooks
 		IReadOnlyList<Creature> targets = combatState!.PlayerCreatures.ToArray();
 		try
 		{
-			HextechLog.Info($"[{ModInfo.Id}][JeweledGauntlet] Monster {monster.Id.Entry} repeating move {repeatState.Move.Id} via enemy Jeweled Gauntlet");
+			HextechLog.Info("JeweledGauntlet", $"Monster {monster.Id.Entry} repeating move {repeatState.Move.Id} via enemy Jeweled Gauntlet");
 			await repeatState.Move.PerformMove(targets);
 			CombatManager.Instance.History.MonsterPerformedMove(combatState, monster, repeatState.Move, targets);
 		}
@@ -110,7 +109,6 @@ internal static partial class HextechCombatHooks
 		// 即使旧动作的意图看似普通，也不能在状态机已前进后再执行其捕获委托。
 		return ReferenceEquals(monster.NextMove, capturedMove);
 	}
-
 
 	private static void RestoreJeweledGauntletIntents(JeweledGauntletIntentPatchState? state)
 	{
@@ -268,7 +266,7 @@ internal static partial class HextechCombatHooks
 	{
 		if (HextechRunLogBudget.TryConsume("combat.jeweled-gauntlet-failure", 10))
 		{
-			Log.Error($"[{ModInfo.Id}][Mayhem] {hook} failed; enemy Jeweled Gauntlet fell back to one action: {ex}");
+			HextechLog.Error("Mayhem", $"{hook} failed; enemy Jeweled Gauntlet fell back to one action: {ex}");
 		}
 	}
 

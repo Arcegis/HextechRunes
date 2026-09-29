@@ -33,7 +33,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		if (IsSelectionConfirmGuardActive())
 		{
 			UpdatePendingPlayerRuneVisuals();
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: ignored early selection relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
+			HextechLog.Info("Mayhem", $"SelectionScreen.OnHolderSelected: ignored early selection relic={(relic.CanonicalId()).Entry}");
 			GetViewport()?.SetInputAsHandled();
 			return;
 		}
@@ -78,7 +78,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		}
 		LockSelfPickControls();
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnHolderSelected: relic={(relic.CanonicalInstance?.Id ?? relic.Id).Entry}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.OnHolderSelected: relic={(relic.CanonicalId()).Entry}");
 		PlayRuneSelectSfx(relic);
 		GetViewport()?.SetInputAsHandled();
 		_completionSource.TrySetResult([relic]);
@@ -208,7 +208,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			return;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: slot={slotIndex} old={oldRelic} new={newRelic}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.OnRerollPressed: slot={slotIndex} old={oldRelic} new={newRelic}");
 		PlayRerollSfx();
 		_relics = HextechWeightedRuneOptions.Copy(rerolled);
 		_playerRuneRerollCounts[slotIndex]++;
@@ -218,7 +218,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			_goldenRerollSession!.Consume();
 			HextechLog.Info(
-				$"[{ModInfo.Id}][Mayhem] SelectionScreen.OnRerollPressed: golden reroll consumed " +
+				"Mayhem", $"SelectionScreen.OnRerollPressed: golden reroll consumed " +
 				$"slot={slotIndex} upgraded={_goldenRerollSession.UpgradedRarity}");
 		}
 		// RebuildCards 会在当前输入事件内销毁并重建按钮。重新开启确认保护，避免鼠标、
@@ -248,7 +248,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 				disabled);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen: golden reroll forced by console");
+		HextechLog.Info("Mayhem", $"SelectionScreen: golden reroll forced by console");
 		return true;
 	}
 
@@ -276,7 +276,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		PlayRerollSfx();
 		_monsterHexKinds[slotIndex] = rerolled;
 		_enemyHexRerollCounts[slotIndex]++;
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRerollPressed: slot={slotIndex} hex={rerolled} count={_enemyHexRerollCounts[slotIndex]}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.OnEnemyHexRerollPressed: slot={slotIndex} hex={rerolled} count={_enemyHexRerollCounts[slotIndex]}");
 		NotifyEnemyHexChanged();
 		RebuildEnemyPreview();
 		if (restoreControllerFocus)
@@ -306,11 +306,11 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		PlayButtonClickSfx();
 		if (wasRemoved)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: undo slot={slotIndex} hex={previous}");
+			HextechLog.Info("Mayhem", $"SelectionScreen.OnEnemyHexRemovePressed: undo slot={slotIndex} hex={previous}");
 		}
 		else
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.OnEnemyHexRemovePressed: remove slot={slotIndex} previous={previous}");
+			HextechLog.Info("Mayhem", $"SelectionScreen.OnEnemyHexRemovePressed: remove slot={slotIndex} previous={previous}");
 		}
 
 		NotifyEnemyHexChanged();
@@ -365,7 +365,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 			_enemyHexRerollCounts.Add(i < rerollCounts.Count ? Math.Max(0, rerollCounts[i]) : 0);
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.ApplyEnemyHexAdjustment: slots={string.Join(",", _monsterHexKinds.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", _enemyHexRerollCounts)}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.ApplyEnemyHexAdjustment: slots={string.Join(",", _monsterHexKinds.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", _enemyHexRerollCounts)}");
 		RebuildEnemyPreview();
 	}
 
@@ -402,17 +402,17 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	public async Task<IEnumerable<RelicModel>> RelicsSelected(bool removeOverlay = true)
 	{
 		IEnumerable<RelicModel> result = await _completionSource.Task;
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: begin dismiss mousePressed={Input.IsMouseButtonPressed(MouseButton.Left)}");
+		HextechLog.Info("Mayhem", $"SelectionScreen.RelicsSelected: begin dismiss mousePressed={Input.IsMouseButtonPressed(MouseButton.Left)}");
 		await WaitForMouseReleaseAsync();
 		if (!removeOverlay)
 		{
 			_blockMapUntilDismissed = true;
 			ShowWaitingForRemotePlayers();
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: keeping overlay until multiplayer sync completes");
+			HextechLog.Info("Mayhem", $"SelectionScreen.RelicsSelected: keeping overlay until multiplayer sync completes");
 			return result;
 		}
 
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.RelicsSelected: removing overlay");
+		HextechLog.Info("Mayhem", $"SelectionScreen.RelicsSelected: removing overlay");
 		NOverlayStack.Instance?.Remove(this);
 		return result;
 	}
@@ -427,9 +427,9 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		bool mouseReleased = await WaitForMouseReleaseAsync(DismissMouseReleaseWaitLimit);
 		if (!mouseReleased)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: mouse release wait reached its limit; forcing overlay removal.");
+			HextechLog.Warn("Mayhem", $"SelectionScreen.DismissAfterSelectionComplete: mouse release wait reached its limit; forcing overlay removal.");
 		}
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SelectionScreen.DismissAfterSelectionComplete: removing overlay");
+		HextechLog.Info("Mayhem", $"SelectionScreen.DismissAfterSelectionComplete: removing overlay");
 		_blockMapUntilDismissed = false;
 		NOverlayStack.Instance?.Remove(this);
 	}

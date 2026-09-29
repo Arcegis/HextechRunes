@@ -24,7 +24,7 @@ internal sealed class EndlessRotationEnemyHex : HextechEnemyHexEffect
 				}
 				catch (Exception ex)
 				{
-					Log.Warn($"[{ModInfo.Id}][EndlessRotation] Cost visual refresh failed: {ex.Message}");
+					HextechLog.Warn("EndlessRotation", $"Cost visual refresh failed: {ex.Message}");
 				}
 			}
 		}

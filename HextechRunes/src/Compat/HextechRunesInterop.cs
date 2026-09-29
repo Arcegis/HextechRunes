@@ -156,7 +156,7 @@ public static class HextechRunesInterop
 			{
 				if (HextechRunLogBudget.TryConsume("compat.extra-act-provider", 3))
 				{
-					Log.Warn($"[{ModInfo.Id}][Mayhem] Extra act provider failed and was ignored: {ex.Message}");
+					HextechLog.Warn("Mayhem", $"Extra act provider failed and was ignored: {ex.Message}");
 				}
 			}
 		}

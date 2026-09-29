@@ -1,12 +1,10 @@
 using System.Text;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -18,7 +16,6 @@ namespace HextechRunes;
 /// </summary>
 internal static class HextechCombatVfxHooks
 {
-
 	/// <summary>
 	/// 吞噬灵魂的特效在死亡动画开始的瞬间派发(真死亡分支必经点),而不是等 rune 的 AfterDeath:
 	/// Hook.AfterDeath 是逐监听器顺序 await 的链条,排在前面的监听器等待死亡动画会让魂"卡一下"
@@ -55,7 +52,7 @@ internal static class HextechCombatVfxHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Soul drain dispatch on death anim failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Soul drain dispatch on death anim failed: {ex.Message}");
 		}
 	}
 
@@ -92,7 +89,7 @@ internal static class HextechCreatureNodeRegistry
 		{
 			if (HextechRunLogBudget.TryConsume("combat.creature-node-safe-get-failure", 5))
 			{
-				Log.Error($"[{ModInfo.Id}][Mayhem] GetCreatureNode failed in AddCreature postfix: {ex}");
+				HextechLog.Error("Mayhem", $"GetCreatureNode failed in AddCreature postfix: {ex}");
 			}
 
 			return null;
@@ -345,7 +342,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Magic missile failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Magic missile failed: {ex.Message}");
 			return Task.FromResult(true);
 		}
 	}
@@ -379,7 +376,7 @@ internal static partial class HextechCombatVfx
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][CombatVfx] Twin Flames missile failed: {ex.Message}");
+			HextechLog.Warn("CombatVfx", $"Twin Flames missile failed: {ex.Message}");
 			return Task.FromResult(true);
 		}
 	}
@@ -511,7 +508,7 @@ internal static partial class HextechCombatVfx
 	{
 		if (HextechRunLogBudget.TryConsume("visual.goldrend-coin-burst", 3))
 		{
-			Log.Warn($"[{ModInfo.Id}][Vfx] Goldrend coin burst failed: {ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Vfx", $"Goldrend coin burst failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

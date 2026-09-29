@@ -1,4 +1,3 @@
-using HarmonyLib;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -8,7 +7,6 @@ namespace HextechRunes;
 // 只让非法的非敌方实例安全完成回调,以便原版伤害响应链正常 PopModel/收尾。
 internal static class HextechPersonalHiveSafetyHooks
 {
-
 	internal static MethodInfo ResolveDamageResponseTarget()
 	{
 		return RequireMethod(
@@ -27,7 +25,6 @@ internal static class HextechPersonalHiveSafetyHooks
 	{
 		return ownerSide == CombatSide.Enemy;
 	}
-
 
 	[HarmonyPatch]
 	[HextechPatch("compat.personal-hive", "私人蜂巢伤害响应安全")]

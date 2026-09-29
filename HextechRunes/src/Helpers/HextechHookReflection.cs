@@ -89,6 +89,6 @@ internal static class HextechHookReflection
 			MissingMemberDescriptions.Add(description);
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Reflection] Missing {description}; dependent feature degraded.");
+		HextechLog.Warn("Reflection", $"Missing {description}; dependent feature degraded.");
 	}
 }

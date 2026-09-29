@@ -1,9 +1,7 @@
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -23,7 +21,7 @@ internal static partial class HextechRunLifecycleHooks
 	{
 		if (HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier existing)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: existing state preserved {existing.DescribeActState()}");
+			HextechLog.Info("Mayhem", $"EnsureMayhemModifier: existing state preserved {existing.DescribeActState()}");
 			return existing;
 		}
 
@@ -31,7 +29,7 @@ internal static partial class HextechRunLifecycleHooks
 		modifier.ResetForNewRun();
 		modifier.OnRunLoaded(runState);
 		runState.AddModifierDebug(modifier);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] EnsureMayhemModifier: added");
+		HextechLog.Info("Mayhem", $"EnsureMayhemModifier: added");
 		return modifier;
 	}
 
@@ -42,7 +40,7 @@ internal static partial class HextechRunLifecycleHooks
 			return existing;
 		}
 
-		Log.Warn($"[{ModInfo.Id}][Mayhem] {reason}; reattaching");
+		HextechLog.Warn("Mayhem", $"{reason}; reattaching");
 		return EnsureMayhemModifier(runState);
 	}
 

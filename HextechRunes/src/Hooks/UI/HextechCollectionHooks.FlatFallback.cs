@@ -19,7 +19,7 @@ internal static partial class HextechCollectionHooks
 		{
 			if (!_loggedMissingFallbackContainer)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] Relic collection flat fallback skipped: starter relic grid is unavailable.");
+				HextechLog.Warn("Mayhem", $"Relic collection flat fallback skipped: starter relic grid is unavailable.");
 				_loggedMissingFallbackContainer = true;
 			}
 
@@ -44,7 +44,7 @@ internal static partial class HextechCollectionHooks
 
 		if (!_loggedFlatFallback)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Added {relics.Count} Hextech relics to the starter relic collection grid through the mobile fallback.");
+			HextechLog.Warn("Mayhem", $"Added {relics.Count} Hextech relics to the starter relic collection grid through the mobile fallback.");
 			_loggedFlatFallback = true;
 		}
 	}

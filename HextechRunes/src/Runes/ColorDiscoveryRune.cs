@@ -59,7 +59,7 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 			return;
 		}
 
-		SavedPendingRewardCardId = card.CanonicalInstance?.Id ?? card.Id;
+		SavedPendingRewardCardId = card.CanonicalId();
 		card.SetToFreeThisCombat();
 
 		Flash();

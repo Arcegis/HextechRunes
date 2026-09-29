@@ -74,7 +74,7 @@ internal static partial class HextechSavedPropertyBootstrap
 			HashSet<string>? registeredNames = TryGetRegisteredSavedPropertyNames();
 			if (registeredNames == null)
 			{
-				Log.Warn($"[{ModInfo.Id}][Mayhem] SavedProperty net-id 名字表自检跳过:取不到名字表;继续核对各载体的 per-type cache。");
+				HextechLog.Warn("Mayhem", $"SavedProperty net-id 名字表自检跳过:取不到名字表;继续核对各载体的 per-type cache。");
 			}
 
 			System.Type abstractModelType = typeof(MegaCrit.Sts2.Core.Models.AbstractModel);
@@ -107,7 +107,7 @@ internal static partial class HextechSavedPropertyBootstrap
 							: missingGlobalName
 								? "未进 net-id 名字表"
 								: "未进该载体的 per-type cache";
-						Log.Warn($"[{ModInfo.Id}][Mayhem] SavedProperty 注入自检:载体 {type.FullName} 的 [SavedProperty] \"{property.Name}\" {missingPart};联机(反)序列化可能抛 \"could not be mapped\" 或静默漏字段。请在模型注册窗口内显式登记该 SavedProperty 载体。");
+						HextechLog.Warn("Mayhem", $"SavedProperty 注入自检:载体 {type.FullName} 的 [SavedProperty] \"{property.Name}\" {missingPart};联机(反)序列化可能抛 \"could not be mapped\" 或静默漏字段。请在模型注册窗口内显式登记该 SavedProperty 载体。");
 					}
 				}
 			}
@@ -115,7 +115,7 @@ internal static partial class HextechSavedPropertyBootstrap
 		catch (System.Exception ex)
 		{
 			// 纯诊断:任何反射异常都不得影响模组加载。
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SavedProperty 注入自检跳过: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"SavedProperty 注入自检跳过: {ex.Message}");
 		}
 	}
 

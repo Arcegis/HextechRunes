@@ -1,11 +1,9 @@
 using System.Runtime.CompilerServices;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.CardRewardAlternatives;
 using MegaCrit.Sts2.Core.Entities.Rewards;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models.Relics;
-using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
@@ -13,7 +11,6 @@ internal static class HextechRewardSafetyHooks
 {
 	private const string PaelsWingSacrificeAlternativeId = "SACRIFICE";
 	private static readonly ConditionalWeakTable<CardReward, CardRewardCompatibilityState> CardRewardStates = new();
-
 
 	private static IReadOnlyList<CardRewardAlternative> GenerateCardRewardAlternativesWithoutVanillaLimit(CardReward cardReward)
 	{
@@ -152,10 +149,8 @@ internal static class HextechRewardSafetyHooks
 		public int? RemainingDriftwoodRerolls { get; set; }
 	}
 
-
 	// 承载 OnSelect 前后所需状态:DoubleVision 的追踪 scope + 进入 OnSelect 前的卡数(供禁忌魔典判别是否真选走了卡)。
 	private sealed record CardRewardOnSelectState(object? DoubleVisionScope, int CardCountBeforeSelect);
-
 
 	private static async Task<bool> CompleteForbiddenGrimoireCardRewardAsync(CardReward reward, Task<bool> originalTask, int cardCountBeforeSelect)
 	{
@@ -186,11 +181,11 @@ internal static class HextechRewardSafetyHooks
 			CardPileAddResult result = await CardPileCmd.Add(card, PileType.Deck);
 			if (result.success)
 			{
-				HextechLog.Info($"[{ModInfo.Id}][EnemyForbiddenGrimoire] Forced unpicked card reward: player={reward.Player.NetId} card={result.cardAdded.Id.Entry}");
+				HextechLog.Info("EnemyForbiddenGrimoire", $"Forced unpicked card reward: player={reward.Player.NetId} card={result.cardAdded.Id.Entry}");
 			}
 			else
 			{
-				Log.Warn($"[{ModInfo.Id}][EnemyForbiddenGrimoire] Failed to force unpicked card reward: player={reward.Player.NetId} card={card.Id.Entry}", 2);
+				HextechLog.Warn("EnemyForbiddenGrimoire", $"Failed to force unpicked card reward: player={reward.Player.NetId} card={card.Id.Entry}");
 			}
 		}
 
@@ -202,10 +197,9 @@ internal static class HextechRewardSafetyHooks
 		Player player = reward.Player;
 		return player.RunState is RunState runState
 			&& !player.Creature.IsDead
-			&& runState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault() is HextechMayhemModifier modifier
+			&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier
 			&& modifier.HasActiveMonsterHex(MonsterHexKind.ForbiddenGrimoire);
 	}
-
 
 	internal static bool TryRestoreForgeChoiceReward(SerializableReward save, Player player, ref Reward result)
 	{
@@ -251,7 +245,7 @@ internal static class HextechRewardSafetyHooks
 			if (save.RewardType == RewardType.Gold && save.GoldAmount < 0 && __result is GoldReward)
 			{
 				__result = new GoldReward(0, player, save.WasGoldStolenBack);
-				Log.Warn($"[{ModInfo.Id}][Rewards] Repaired serialized gold reward with negative amount {save.GoldAmount}; defaulting to 0 gold.");
+				HextechLog.Warn("Rewards", $"Repaired serialized gold reward with negative amount {save.GoldAmount}; defaulting to 0 gold.");
 				return;
 			}
 

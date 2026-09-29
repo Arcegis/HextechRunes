@@ -37,7 +37,7 @@ internal static class HextechBossPhaseHexes
 		}
 
 		modifier.CombatTracking.TestSubjectPhaseStartApplied[combatId] = respawns;
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] Reapplying boss start hexes after TestSubject revive: combatId={combatId} respawns={respawns}");
+		HextechLog.Info("Mayhem", $"Reapplying boss start hexes after TestSubject revive: combatId={combatId} respawns={respawns}");
 		await modifier.ApplyBossStartHexesToEnemy(osty, room);
 		HextechEnemyUi.Refresh(modifier);
 	}

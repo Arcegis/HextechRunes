@@ -82,19 +82,19 @@ internal static partial class HextechSavedPropertyBootstrap
 		int currentBitSize = SavedPropertiesTypeCache.NetIdBitSize;
 		if (currentBitSize >= targetBitSize)
 		{
-			HextechLog.Info($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize unchanged: bitSize={currentBitSize} propertyNames={propertyNameCount}");
+			HextechLog.Info("Mayhem", $"SavedPropertiesTypeCache NetIdBitSize unchanged: bitSize={currentBitSize} propertyNames={propertyNameCount}");
 			return;
 		}
 
 		FieldInfo? backingField = TryGetField(typeof(SavedPropertiesTypeCache), "<NetIdBitSize>k__BackingField", flags);
 		if (backingField == null)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize backing field not found; custom saved properties may desync in multiplayer.");
+			HextechLog.Warn("Mayhem", $"SavedPropertiesTypeCache NetIdBitSize backing field not found; custom saved properties may desync in multiplayer.");
 			return;
 		}
 
 		backingField.SetValue(null, targetBitSize);
-		HextechLog.Info($"[{ModInfo.Id}][Mayhem] SavedPropertiesTypeCache NetIdBitSize updated: old={currentBitSize} new={targetBitSize} propertyNames={propertyNameCount}");
+		HextechLog.Info("Mayhem", $"SavedPropertiesTypeCache NetIdBitSize updated: old={currentBitSize} new={targetBitSize} propertyNames={propertyNameCount}");
 	}
 }
 #endif

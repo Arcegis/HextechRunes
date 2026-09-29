@@ -49,8 +49,8 @@ internal static class HextechExternalContentRegistry
 			string? existingAssetModId = GetStoredAssetModId(registration.Type);
 			if (!HasSamePlayerRuneMetadata(existing, registration))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate player rune registration for {registration.Type.FullName}; first metadata retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate player rune registration for {registration.Type.FullName}; first metadata retained: "
 					+ $"existing=({Describe(existing)}, assetModId={DescribeValue(existingAssetModId)}) "
 					+ $"incoming=({Describe(registration)}, assetModId={DescribeValue(assetModId)}) "
 					+ $"callerAssembly={registration.Type.Assembly.GetName().Name ?? "<unknown>"}");
@@ -102,8 +102,8 @@ internal static class HextechExternalContentRegistry
 			string? existingAssetModId = GetStoredAssetModId(registration.Type);
 			if (existing.Rarity != registration.Rarity)
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate forge registration for {registration.Type.FullName}; first metadata retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate forge registration for {registration.Type.FullName}; first metadata retained: "
 					+ $"existing=(rarity={existing.Rarity}, assetModId={DescribeValue(existingAssetModId)}) "
 					+ $"incoming=(rarity={registration.Rarity}, assetModId={DescribeValue(assetModId)}) "
 					+ $"callerAssembly={registration.Type.Assembly.GetName().Name ?? "<unknown>"}");
@@ -126,8 +126,8 @@ internal static class HextechExternalContentRegistry
 				if (!string.Equals(existingPath, iconPath, StringComparison.Ordinal)
 					&& HextechRunLogBudget.TryConsume("external-content.enchantment-icon-conflict", 12))
 				{
-					Log.Warn(
-						$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate enchantment icon registration for {enchantmentType.FullName}; first path retained: "
+					HextechLog.Warn(
+						"ExternalContent", $"Conflicting duplicate enchantment icon registration for {enchantmentType.FullName}; first path retained: "
 						+ $"existingPath={DescribeValue(existingPath)} incomingPath={DescribeValue(iconPath)} "
 						+ $"callerAssembly={enchantmentType.Assembly.GetName().Name ?? "<unknown>"}");
 				}
@@ -253,8 +253,8 @@ internal static class HextechExternalContentRegistry
 			if (!string.Equals(existingAssetModId, assetModId, StringComparison.Ordinal)
 				&& HextechRunLogBudget.TryConsume("external-content.asset-owner-conflict", 12))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting asset owner registration for {modelType.FullName}; first owner retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting asset owner registration for {modelType.FullName}; first owner retained: "
 					+ $"existingAssetModId={DescribeValue(existingAssetModId)} "
 					+ $"incomingAssetModId={DescribeValue(assetModId)} "
 					+ $"callerAssembly={modelType.Assembly.GetName().Name ?? "<unknown>"}");
@@ -281,8 +281,8 @@ internal static class HextechExternalContentRegistry
 			if (existing != availability
 				&& HextechRunLogBudget.TryConsume("external-content.availability-conflict", 12))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate availability predicate for {runeType.FullName}; first predicate retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate availability predicate for {runeType.FullName}; first predicate retained: "
 					+ $"callerAssembly={runeType.Assembly.GetName().Name ?? "<unknown>"}");
 			}
 
@@ -306,8 +306,8 @@ internal static class HextechExternalContentRegistry
 			if (!string.Equals(existing, value, StringComparison.Ordinal)
 				&& HextechRunLogBudget.TryConsume(logBudgetKey, 12))
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][ExternalContent] Conflicting duplicate {description}; first value retained: "
+				HextechLog.Warn(
+					"ExternalContent", $"Conflicting duplicate {description}; first value retained: "
 					+ $"existing={DescribeValue(existing)} incoming={DescribeValue(value)}");
 			}
 

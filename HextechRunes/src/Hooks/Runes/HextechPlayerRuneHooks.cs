@@ -5,8 +5,6 @@ namespace HextechRunes;
 
 internal static partial class HextechPlayerRuneHooks
 {
-
-
 	internal static async Task JuggernautUpgradeAfterBlockGained(JuggernautPower power, Creature creature, decimal amount)
 	{
 		if (amount <= 0m || creature != power.Owner)
@@ -24,10 +22,8 @@ internal static partial class HextechPlayerRuneHooks
 		await CreatureCmd.Damage(new ThrowingPlayerChoiceContext(), targets, power.Amount, ValueProp.Unpowered, power.Owner);
 	}
 
-
 	// 形参按游戏真实签名用 HextechCombatState(0.104+ 为 ICombatState);helper 需要具体 CombatState,
 	// 拿不到时放行原版(与旧行为一致,不吞小刀)。
-
 
 	internal static async Task PlayFanOfKnivesSovereignBlade(PlayerChoiceContext choiceContext, SovereignBlade card)
 	{
@@ -46,7 +42,6 @@ internal static partial class HextechPlayerRuneHooks
 
 		await attack.Execute(choiceContext);
 	}
-
 
 	internal static List<CardModel>? TryApplyEnemyManipulateRealityStatusDoubling(IReadOnlyList<CardModel> cards, bool addedByPlayer)
 	{
@@ -81,7 +76,7 @@ internal static partial class HextechPlayerRuneHooks
 		return card.Type == CardType.Status
 			&& card.Owner?.Creature.Side == CombatSide.Player
 			&& card.Owner.Creature.CombatState?.RunState == card.Owner.RunState
-			&& card.Owner.RunState.Modifiers.OfType<HextechMayhemModifier>().LastOrDefault()?.HasActiveMonsterHex(MonsterHexKind.ManipulateReality) == true;
+			&& HextechMayhemModifier.FindIn(card.Owner.RunState)?.HasActiveMonsterHex(MonsterHexKind.ManipulateReality) == true;
 	}
 
 	internal static bool TryCreateManipulateRealityStatusCopy(CardModel card, out CardModel copy)
@@ -99,11 +94,10 @@ internal static partial class HextechPlayerRuneHooks
 		}
 		catch (Exception ex)
 		{
-			Log.Warn($"[{ModInfo.Id}][Mayhem] Failed to duplicate enemy generated status card for Manipulate Reality: card={card.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
+			HextechLog.Warn("Mayhem", $"Failed to duplicate enemy generated status card for Manipulate Reality: card={card.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
 			return false;
 		}
 	}
-
 
 	internal static Player? TryGetMutableCardOwner(CardModel card)
 	{

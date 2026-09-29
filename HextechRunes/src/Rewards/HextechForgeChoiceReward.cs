@@ -42,9 +42,9 @@ internal sealed class HextechForgeChoiceReward : Reward
 			return false;
 		}
 
-		ClaimedForgeId = selected.CanonicalInstance?.Id ?? selected.Id;
+		ClaimedForgeId = selected.CanonicalId();
 		await HextechForgeGrantHelper.ObtainSelectedForge(Player, selected, syncObtainedRelic: true);
-		HextechLog.Info($"[{ModInfo.Id}][ForgeChoiceReward] Obtained selected forge: player={Player.NetId} relic={(selected.CanonicalInstance?.Id ?? selected.Id).Entry}");
+		HextechLog.Info("ForgeChoiceReward", $"Obtained selected forge: player={Player.NetId} relic={(selected.CanonicalId()).Entry}");
 		return true;
 	}
 
@@ -55,7 +55,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 			// Gold rewards deserialize safely before our postfix replaces the marker with this custom reward.
 			RewardType = RewardType.Gold,
 			GoldAmount = 0,
-			CardPoolIds = _options.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id).ToList(),
+			CardPoolIds = _options.Select(static relic => relic.CanonicalId()).ToList(),
 			OptionCount = _options.Count,
 			CustomDescriptionEncounterSourceId = ModelDb.GetId<RandomForgeShopRelic>(),
 		};
@@ -139,7 +139,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 
 	private static RelicModel CreateMutableOption(RelicModel relic)
 	{
-		ModelId id = relic.CanonicalInstance?.Id ?? relic.Id;
+		ModelId id = relic.CanonicalId();
 		return ModelDb.GetById<RelicModel>(id).ToMutable();
 	}
 
@@ -155,7 +155,7 @@ internal sealed class HextechForgeChoiceReward : Reward
 	{
 		if (HextechRunLogBudget.TryConsume("rewards.forge-choice-restore-skip", 12))
 		{
-			Log.Warn($"[{ModInfo.Id}][ForgeChoiceReward] Saved forge option skipped: id={id} reason={reason}.");
+			HextechLog.Warn("ForgeChoiceReward", $"Saved forge option skipped: id={id} reason={reason}.");
 		}
 	}
 }
