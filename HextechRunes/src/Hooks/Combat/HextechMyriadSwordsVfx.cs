@@ -29,6 +29,7 @@ internal static class HextechMyriadSwordsVfx
 			return;
 		}
 
+		// 纯表现层：推到主线程帧末执行、不等待，战斗命令不受特效时长影响；PlayDeferred 自行兜底异常。
 		Callable.From(() => PlayDeferred(owner)).CallDeferred();
 	}
 

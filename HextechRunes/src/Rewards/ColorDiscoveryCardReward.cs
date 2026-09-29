@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
@@ -48,7 +49,7 @@ internal sealed class ColorDiscoveryCardReward : CardReward
 		SerializableReward save,
 		Reward? restoredReward,
 		Player player,
-		out ColorDiscoveryCardReward? reward,
+		[NotNullWhen(true)] out ColorDiscoveryCardReward? reward,
 		bool logFailure = true)
 	{
 		reward = null;

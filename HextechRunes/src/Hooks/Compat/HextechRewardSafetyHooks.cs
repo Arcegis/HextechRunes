@@ -222,8 +222,7 @@ internal static class HextechRewardSafetyHooks
 			|| result is not GoldReward
 			|| save.CustomDescriptionEncounterSourceId != ModelDb.GetId<RandomForgeShopRelic>()
 			|| save.CardPoolIds.Count == 0
-			|| !HextechForgeChoiceReward.TryFromSavedReward(save, player, out HextechForgeChoiceReward? restored)
-			|| restored == null)
+			|| !HextechForgeChoiceReward.TryFromSavedReward(save, player, out HextechForgeChoiceReward? restored))
 		{
 			return false;
 		}
@@ -292,8 +291,7 @@ internal static class HextechRewardSafetyHooks
 					save,
 					__result,
 					player,
-					out ColorDiscoveryCardReward? restoredColorDiscoveryReward)
-				&& restoredColorDiscoveryReward != null)
+					out ColorDiscoveryCardReward? restoredColorDiscoveryReward))
 			{
 				__result = restoredColorDiscoveryReward;
 				return;

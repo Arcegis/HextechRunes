@@ -4,7 +4,7 @@ using static HextechRunes.HextechHookReflection;
 
 namespace HextechRunes;
 
-// 0.107.1 的昆虫法师在没有私人蜂巢时 SpitMove 会空引用;0.108 起原版已修复(见 .Official.cs)。
+// 0.107.1 的昆虫法师在没有私人蜂巢时 SpitMove 会空引用;0.108 起原版已修复,其他变体不编译本类。
 internal static class HextechEncounterCompatibilityHooks
 {
 	private const string EntomancerCastSfx = "event:/sfx/enemy/enemy_attacks/entomancer/entomancer_cast";

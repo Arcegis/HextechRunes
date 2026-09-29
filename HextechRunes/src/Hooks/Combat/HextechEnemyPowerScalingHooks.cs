@@ -11,7 +11,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 
 	private static readonly AsyncLocal<ScalingOverride?> CurrentOverride = new();
 
-	public static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
+	internal static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
 		where T : PowerModel
 	{
 		ScalingOverride? scalingOverride = GetScalingOverride(typeof(T));
@@ -38,7 +38,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 	/// 按原值应用,绕过原版联机缩放。原版 PowerCmd.Apply 对敌方目标且 ShouldScaleInMultiplayer
 	/// 的 power(Slippery/Artifact 等)会自动 ×玩家数;层数已按最终口径算好的调用方(墨影幻灵)走这里。
 	/// </summary>
-	public static async Task<T?> ApplyExact<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
+	internal static async Task<T?> ApplyExact<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
 		where T : PowerModel
 	{
 		decimal finalAmount = ClampPowerOffsetForApply<T>(target, amount);
@@ -137,7 +137,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 	[HextechPatch("combat.enemy-power-scaling", "敌方能力联机缩放")]
 	private static class ScaledAmountPatch
 	{
-		public static void Apply(Harmony harmony)
+		private static void Apply(Harmony harmony)
 		{
 			List<MethodInfo> targets = ResolveGetScaledAmountForMultiplayerTargets();
 			if (targets.Count == 0)
