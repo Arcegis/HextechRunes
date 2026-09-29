@@ -11,7 +11,7 @@ internal static class HextechModelBootstrap
 		{
 			if (_installed)
 			{
-				HextechLog.Info("Bootstrap", $"Model bootstrap already installed; skipping duplicate registration.");
+				HextechLog.Info("Bootstrap", "Model bootstrap already installed; skipping duplicate registration.");
 				return;
 			}
 
@@ -19,11 +19,5 @@ internal static class HextechModelBootstrap
 			HextechModelPoolRegistrar.RegisterModels();
 			_installed = true;
 		}
-	}
-
-	// 仅为 HextechMobileModelRegistrationHooks 保留的转发;调用方改为直接调用 HextechModelPoolRegistrar 后即可删除。
-	internal static void CleanupMobileFirstModelRegistrationWorkaround()
-	{
-		HextechModelPoolRegistrar.CleanupMobileFirstModelRegistrationWorkaround();
 	}
 }

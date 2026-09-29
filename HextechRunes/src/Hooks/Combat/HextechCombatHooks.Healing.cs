@@ -75,7 +75,7 @@ internal static partial class HextechCombatHooks
 			return false;
 		}
 
-		modifier ??= ModEntry.EnsureMayhemModifier(runState);
+		modifier ??= HextechRunLifecycleHooks.EnsureMayhemModifier(runState);
 		if (!modifier.QueueEnemyHealingBlock(creature, amount))
 		{
 			return false;
@@ -118,7 +118,7 @@ internal static partial class HextechCombatHooks
 				}
 			}
 
-			// 延迟格挡要按具体 RunState 挂回本局 Modifier（ModEntry.EnsureMayhemModifier 只接受 RunState）。
+			// 延迟格挡要按具体 RunState 挂回本局 Modifier（HextechRunLifecycleHooks.EnsureMayhemModifier 只接受 RunState）。
 			RunState? currentRunState = creature.CombatState?.RunState as RunState;
 			HextechMayhemModifier? modifier = null;
 			bool isEnemyReviveHeal = IsEnemyReviveHeal(creature, amount);

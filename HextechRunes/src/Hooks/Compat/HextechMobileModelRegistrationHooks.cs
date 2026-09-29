@@ -15,7 +15,7 @@ internal static class HextechMobileModelRegistrationHooks
 		{
 			try
 			{
-				HextechModelBootstrap.CleanupMobileFirstModelRegistrationWorkaround();
+				HextechModelPoolRegistrar.CleanupMobileFirstModelRegistrationWorkaround();
 			}
 			catch (Exception ex)
 			{

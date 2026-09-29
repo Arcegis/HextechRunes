@@ -21,7 +21,7 @@ public static class ModEntry
 		{
 			if (_initialized)
 			{
-				HextechLog.Info("Init", $"Initialization already completed; skipping duplicate call.");
+				HextechLog.Info("Init", "Initialization already completed; skipping duplicate call.");
 				return;
 			}
 
@@ -45,12 +45,5 @@ public static class ModEntry
 				"Init", $"Loaded implementation variant for " +
 				$"Slay the Spire 2 compat target {ModInfo.TargetGameVersion}."));
 		}
-	}
-
-	// 仅为 HextechCombatHooks.Healing 保留的转发;该调用方改为直接调用
-	// HextechRunLifecycleHooks.EnsureMayhemModifier 后即可删除。
-	internal static HextechMayhemModifier EnsureMayhemModifier(RunState runState)
-	{
-		return HextechRunLifecycleHooks.EnsureMayhemModifier(runState);
 	}
 }
