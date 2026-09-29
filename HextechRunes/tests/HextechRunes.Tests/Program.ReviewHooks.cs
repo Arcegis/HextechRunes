@@ -2,6 +2,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using HextechRunes;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HextechRunes.Tests;
 
@@ -13,7 +16,8 @@ internal static partial class Program
 	private static TestCase[] ReviewHooksTestCases() =>
 	[
 		new(nameof(HarmonyPassesPostfixStateByReferenceToFinalizer), HarmonyPassesPostfixStateByReferenceToFinalizer),
-		new(nameof(ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure), ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure)
+		new(nameof(ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure), ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure),
+		new(nameof(KeywordPersistenceMarkersKeepLegacySaveFormat), KeywordPersistenceMarkersKeepLegacySaveFormat)
 	];
 
 	/// <summary>只应用 <paramref name="outerType"/> 里声明的嵌套补丁类；给了名字就只应用点名的那几个。</summary>
@@ -179,5 +183,62 @@ internal static partial class Program
 		outer.GetAwaiter().GetResult();
 		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "caller context is clean after the enclosing guard");
 #endif
+	}
+
+	/// <summary>
+	/// 关键词持久化标记的存档格式与合并追踪器之前逐字一致：Props.ints 里按
+	/// 思维覆写 → 谢幕 → 扮演 → 腐化枝 → 不死 的顺序追加值为 1 的标记、已有同名项不重复写；
+	/// 读档只认非 0 标记。旧存档（手写的旧格式）读回后关键词与追踪都恢复，再存一次得到同样的条目。
+	/// </summary>
+	private static void KeywordPersistenceMarkersKeepLegacySaveFormat()
+	{
+		StrikeIronclad card = CreateMutableTestModel<StrikeIronclad>();
+		ThoughtOverwriteKeywordPersistence.Track(card);
+		CorruptedBranchInnateKeywordPersistence.Track(card);
+		UndyingEtherealKeywordPersistence.Track(card);
+
+		SerializableCard saved = new();
+		saved.Props = new SavedProperties
+		{
+			ints = [new SavedProperties.SavedProperty<int>("ForeignMarker", 7), new SavedProperties.SavedProperty<int>(CorruptedBranchRune.InnateMarkerSavedPropertyName, 1)]
+		};
+		HextechThoughtOverwriteKeywordPersistenceHooks.WriteMarkers(card, saved);
+		(string Name, int Value)[] expected =
+		[
+			("ForeignMarker", 7),
+			(CorruptedBranchRune.InnateMarkerSavedPropertyName, 1),
+			(ThoughtOverwriteRune.EtherealMarkerSavedPropertyName, 1),
+			(UndyingUpgradeRune.EtherealMarkerSavedPropertyName, 1)
+		];
+		SequenceEqual(expected, saved.Props!.ints!.Select(static property => (property.name, property.value)), "keyword markers keep the legacy order, value and no-duplicate rule");
+		Equal("SavedThoughtOverwriteEtherealMarker", ThoughtOverwriteRune.EtherealMarkerSavedPropertyName, "thought overwrite marker key");
+		Equal("SavedCurtainCallRetainMarker", CurtainCallRune.RetainMarkerSavedPropertyName, "curtain call marker key");
+		Equal("SavedCosplayInnateMarker", HextechRunesApi.PersistentInnateMarkerSavedPropertyName, "cosplay marker key");
+		Equal("SavedCorruptedBranchInnateMarker", CorruptedBranchRune.InnateMarkerSavedPropertyName, "corrupted branch marker key");
+		Equal("SavedUndyingUpgradeEtherealMarker", UndyingUpgradeRune.EtherealMarkerSavedPropertyName, "undying marker key");
+
+		// 旧格式存档：谢幕标记为 0（不恢复），扮演标记为 1（恢复）。
+		SerializableCard legacy = new()
+		{
+			Props = new SavedProperties
+			{
+				ints =
+				[
+					new SavedProperties.SavedProperty<int>(CurtainCallRune.RetainMarkerSavedPropertyName, 0),
+					new SavedProperties.SavedProperty<int>(HextechRunesApi.PersistentInnateMarkerSavedPropertyName, 1)
+				]
+			}
+		};
+		StrikeIronclad loaded = CreateMutableTestModel<StrikeIronclad>();
+		HextechThoughtOverwriteKeywordPersistenceHooks.RestoreFromMarkers(legacy, loaded);
+		Expect(loaded.Keywords.Contains(CardKeyword.Innate) && CosplayInnateKeywordPersistence.IsTracked(loaded), "legacy non-zero marker restores keyword and tracking");
+		Expect(!loaded.Keywords.Contains(CardKeyword.Retain) && !CurtainCallKeywordPersistence.IsTracked(loaded), "legacy zero marker stays inert");
+
+		SerializableCard resaved = new();
+		HextechThoughtOverwriteKeywordPersistenceHooks.WriteMarkers(loaded, resaved);
+		SequenceEqual(
+			new[] { (HextechRunesApi.PersistentInnateMarkerSavedPropertyName, 1) },
+			resaved.Props!.ints!.Select(static property => (property.name, property.value)),
+			"round trip writes back only the restored marker");
 	}
 }

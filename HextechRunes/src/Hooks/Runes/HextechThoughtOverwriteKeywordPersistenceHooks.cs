@@ -2,218 +2,134 @@ using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
 
-internal static class ThoughtOverwriteKeywordPersistence
+/// <summary>
+/// 一种"运行期附加、需要跨克隆/升级/存档保留"的关键词：追踪哪些卡牌实例带着它，并对应一个存档标记名。
+/// 追踪按实例（弱引用），战斗副本通过 <see cref="CardModel.DeckVersion"/> 继承牌组本体的追踪。
+/// </summary>
+internal sealed class KeywordPersistenceTracker
 {
-	private static readonly ConditionalWeakTable<CardModel, Marker> TrackedCards = new();
+	private static readonly object TrackedMarker = new();
 
-	private sealed class Marker
+	private readonly ConditionalWeakTable<CardModel, object> _trackedCards = new();
+
+	internal KeywordPersistenceTracker(CardKeyword keyword, string markerSavedPropertyName)
 	{
+		Keyword = keyword;
+		MarkerSavedPropertyName = markerSavedPropertyName;
 	}
 
-	public static void Track(CardModel? card)
+	internal CardKeyword Keyword { get; }
+
+	/// <summary>写进 <see cref="SerializableCard.Props"/> 的整数标记名（值 1），是存档兼容契约。</summary>
+	internal string MarkerSavedPropertyName { get; }
+
+	internal void Track(CardModel? card)
 	{
 		if (card == null)
 		{
 			return;
 		}
 
-		TrackedCards.GetValue(card, static _ => new Marker());
+		_trackedCards.GetValue(card, static _ => TrackedMarker);
 	}
 
-	public static bool IsTracked(CardModel? card)
+	internal bool IsTracked(CardModel? card)
 	{
-		return card != null && TrackedCards.TryGetValue(card, out _);
+		return card != null && _trackedCards.TryGetValue(card, out _);
 	}
 
-	public static void Restore(CardModel card)
+	internal void Restore(CardModel card)
 	{
 		Track(card);
-		if (!card.Keywords.Contains(CardKeyword.Ethereal))
+		if (!card.Keywords.Contains(Keyword))
 		{
-			card.AddKeyword(CardKeyword.Ethereal);
+			card.AddKeyword(Keyword);
 		}
 	}
 
-	public static bool ShouldPersist(CardModel card)
+	internal bool ShouldPersist(CardModel card)
 	{
 		return IsTracked(card) || IsTracked(card.DeckVersion);
 	}
+}
+
+// 以下五个入口供各符文调用，名称保持不变；实际状态都在各自的 KeywordPersistenceTracker 里。
+
+internal static class ThoughtOverwriteKeywordPersistence
+{
+	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Ethereal, ThoughtOverwriteRune.EtherealMarkerSavedPropertyName);
+
+	internal static void Track(CardModel? card) => Tracker.Track(card);
+
+	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
+
+	internal static void Restore(CardModel card) => Tracker.Restore(card);
 }
 
 internal static class CurtainCallKeywordPersistence
 {
-	private static readonly ConditionalWeakTable<CardModel, Marker> TrackedCards = new();
+	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Retain, CurtainCallRune.RetainMarkerSavedPropertyName);
 
-	private sealed class Marker
-	{
-	}
+	internal static void Track(CardModel? card) => Tracker.Track(card);
 
-	public static void Track(CardModel? card)
-	{
-		if (card == null)
-		{
-			return;
-		}
+	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
 
-		TrackedCards.GetValue(card, static _ => new Marker());
-	}
-
-	public static bool IsTracked(CardModel? card)
-	{
-		return card != null && TrackedCards.TryGetValue(card, out _);
-	}
-
-	public static void Restore(CardModel card)
-	{
-		Track(card);
-		if (!card.Keywords.Contains(CardKeyword.Retain))
-		{
-			card.AddKeyword(CardKeyword.Retain);
-		}
-	}
-
-	public static bool ShouldPersist(CardModel card)
-	{
-		return IsTracked(card) || IsTracked(card.DeckVersion);
-	}
+	internal static void Restore(CardModel card) => Tracker.Restore(card);
 }
 
 internal static class CosplayInnateKeywordPersistence
 {
-	private static readonly ConditionalWeakTable<CardModel, Marker> TrackedCards = new();
+	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Innate, HextechRunesApi.PersistentInnateMarkerSavedPropertyName);
 
-	private sealed class Marker
-	{
-	}
+	internal static void Track(CardModel? card) => Tracker.Track(card);
 
-	public static void Track(CardModel? card)
-	{
-		if (card == null)
-		{
-			return;
-		}
+	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
 
-		TrackedCards.GetValue(card, static _ => new Marker());
-	}
-
-	public static bool IsTracked(CardModel? card)
-	{
-		return card != null && TrackedCards.TryGetValue(card, out _);
-	}
-
-	public static void Restore(CardModel card)
-	{
-		Track(card);
-		if (!card.Keywords.Contains(CardKeyword.Innate))
-		{
-			card.AddKeyword(CardKeyword.Innate);
-		}
-	}
-
-	public static bool ShouldPersist(CardModel card)
-	{
-		return IsTracked(card) || IsTracked(card.DeckVersion);
-	}
+	internal static void Restore(CardModel card) => Tracker.Restore(card);
 }
 
 internal static class CorruptedBranchInnateKeywordPersistence
 {
-	private static readonly ConditionalWeakTable<CardModel, Marker> TrackedCards = new();
+	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Innate, CorruptedBranchRune.InnateMarkerSavedPropertyName);
 
-	private sealed class Marker
-	{
-	}
+	internal static void Track(CardModel? card) => Tracker.Track(card);
 
-	public static void Track(CardModel? card)
-	{
-		if (card == null)
-		{
-			return;
-		}
+	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
 
-		TrackedCards.GetValue(card, static _ => new Marker());
-	}
-
-	public static bool IsTracked(CardModel? card)
-	{
-		return card != null && TrackedCards.TryGetValue(card, out _);
-	}
-
-	public static void Restore(CardModel card)
-	{
-		Track(card);
-		if (!card.Keywords.Contains(CardKeyword.Innate))
-		{
-			card.AddKeyword(CardKeyword.Innate);
-		}
-	}
-
-	public static bool ShouldPersist(CardModel card)
-	{
-		return IsTracked(card) || IsTracked(card.DeckVersion);
-	}
+	internal static void Restore(CardModel card) => Tracker.Restore(card);
 }
 
 internal static class UndyingEtherealKeywordPersistence
 {
-	private static readonly ConditionalWeakTable<CardModel, Marker> TrackedCards = new();
+	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Ethereal, UndyingUpgradeRune.EtherealMarkerSavedPropertyName);
 
-	private sealed class Marker
-	{
-	}
+	internal static void Track(CardModel? card) => Tracker.Track(card);
 
-	public static void Track(CardModel? card)
-	{
-		if (card == null)
-		{
-			return;
-		}
+	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
 
-		TrackedCards.GetValue(card, static _ => new Marker());
-	}
-
-	public static bool IsTracked(CardModel? card)
-	{
-		return card != null && TrackedCards.TryGetValue(card, out _);
-	}
-
-	public static void Restore(CardModel card)
-	{
-		Track(card);
-		if (!card.Keywords.Contains(CardKeyword.Ethereal))
-		{
-			card.AddKeyword(CardKeyword.Ethereal);
-		}
-	}
-
-	public static bool ShouldPersist(CardModel card)
-	{
-		return IsTracked(card) || IsTracked(card.DeckVersion);
-	}
+	internal static void Restore(CardModel card) => Tracker.Restore(card);
 }
 
 internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 {
+	// 顺序即存档里标记项的追加顺序与读档恢复顺序，保持与旧实现一致。
+	private static readonly KeywordPersistenceTracker[] Trackers =
+	[
+		ThoughtOverwriteKeywordPersistence.Tracker,
+		CurtainCallKeywordPersistence.Tracker,
+		CosplayInnateKeywordPersistence.Tracker,
+		CorruptedBranchInnateKeywordPersistence.Tracker,
+		UndyingEtherealKeywordPersistence.Tracker
+	];
+
+	/// <summary>按 <see cref="Trackers"/> 下标记录的"需要保留"位图。</summary>
 	private readonly struct KeywordPersistenceSnapshot
 	{
-		private readonly bool _thoughtOverwrite;
-		private readonly bool _curtainCall;
-		private readonly bool _cosplayInnate;
-		private readonly bool _corruptedBranchInnate;
-		private readonly bool _undyingEthereal;
+		private readonly int _persistMask;
 
-		private KeywordPersistenceSnapshot(
-			bool thoughtOverwrite,
-			bool curtainCall,
-			bool cosplayInnate,
-			bool corruptedBranchInnate,
-			bool undyingEthereal)
+		private KeywordPersistenceSnapshot(int persistMask)
 		{
-			_thoughtOverwrite = thoughtOverwrite;
-			_curtainCall = curtainCall;
-			_cosplayInnate = cosplayInnate;
-			_corruptedBranchInnate = corruptedBranchInnate;
-			_undyingEthereal = undyingEthereal;
+			_persistMask = persistMask;
 		}
 
 		public static KeywordPersistenceSnapshot Capture(CardModel? card)
@@ -223,12 +139,16 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 				return default;
 			}
 
-			return new KeywordPersistenceSnapshot(
-				ThoughtOverwriteKeywordPersistence.ShouldPersist(card),
-				CurtainCallKeywordPersistence.ShouldPersist(card),
-				CosplayInnateKeywordPersistence.ShouldPersist(card),
-				CorruptedBranchInnateKeywordPersistence.ShouldPersist(card),
-				UndyingEtherealKeywordPersistence.ShouldPersist(card));
+			int mask = 0;
+			for (int i = 0; i < Trackers.Length; i++)
+			{
+				if (Trackers[i].ShouldPersist(card))
+				{
+					mask |= 1 << i;
+				}
+			}
+
+			return new KeywordPersistenceSnapshot(mask);
 		}
 
 		public void Restore(CardModel? card)
@@ -238,58 +158,44 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 				return;
 			}
 
-			if (_thoughtOverwrite)
+			for (int i = 0; i < Trackers.Length; i++)
 			{
-				ThoughtOverwriteKeywordPersistence.Restore(card);
-			}
-
-			if (_curtainCall)
-			{
-				CurtainCallKeywordPersistence.Restore(card);
-			}
-
-			if (_cosplayInnate)
-			{
-				CosplayInnateKeywordPersistence.Restore(card);
-			}
-
-			if (_corruptedBranchInnate)
-			{
-				CorruptedBranchInnateKeywordPersistence.Restore(card);
-			}
-
-			if (_undyingEthereal)
-			{
-				UndyingEtherealKeywordPersistence.Restore(card);
+				if ((_persistMask & (1 << i)) != 0)
+				{
+					Trackers[i].Restore(card);
+				}
 			}
 		}
 	}
 
-	private static void AddMarker(SerializableCard card, string markerSavedPropertyName)
+	/// <summary>存档：按固定顺序为需要保留的关键词追加值为 1 的标记（已有同名项不重复写）。</summary>
+	internal static void WriteMarkers(CardModel card, SerializableCard save)
 	{
-		card.Props ??= new SavedProperties();
-		card.Props.ints ??= new List<SavedProperties.SavedProperty<int>>();
-		if (card.Props.ints.Any(property => property.name == markerSavedPropertyName))
+		foreach (KeywordPersistenceTracker tracker in Trackers)
 		{
-			return;
+			if (tracker.ShouldPersist(card))
+			{
+				HextechCardSavedProps.AddIntIfMissing(save, tracker.MarkerSavedPropertyName, 1);
+			}
 		}
-
-		card.Props.ints.Add(new SavedProperties.SavedProperty<int>(
-			markerSavedPropertyName,
-			1));
 	}
 
-	private static bool HasMarker(SavedProperties? props, string markerSavedPropertyName)
+	/// <summary>读档：带非 0 标记的关键词恢复到卡上并重新追踪。</summary>
+	internal static void RestoreFromMarkers(SerializableCard save, CardModel card)
 	{
-		return props?.ints?.Any(property =>
-			property.name == markerSavedPropertyName
-			&& property.value != 0) == true;
+		foreach (KeywordPersistenceTracker tracker in Trackers)
+		{
+			if (HextechCardSavedProps.HasNonZeroInt(save.Props, tracker.MarkerSavedPropertyName))
+			{
+				tracker.Restore(card);
+			}
+		}
 	}
 
 	// 原版克隆(DeepCloneFields)只按"有来源"的关键词重建 _keywords,思维覆写/谢幕/扮演/腐化枝/不死这类
 	// 运行期附加的关键词与追踪标记都会丢;镜中倒影、复视等复制整副牌组的路径拿到的副本因此没有虚无词条
 	// (玩家反馈)。牌组级克隆把源牌的持久化快照原样恢复到副本上,副本自己成为被追踪的牌组版本。
-	[HarmonyPatch(typeof(MegaCrit.Sts2.Core.Runs.RunState), nameof(MegaCrit.Sts2.Core.Runs.RunState.CloneCard), typeof(CardModel))]
+	[HarmonyPatch(typeof(RunState), nameof(RunState.CloneCard), typeof(CardModel))]
 	[HextechPatch("card.keyword-persistence.clone-deck", "关键词持久化")]
 	private static class RunStateCloneCardPatch
 	{
@@ -300,7 +206,7 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 		}
 	}
 
-	[HarmonyPatch(typeof(MegaCrit.Sts2.Core.Combat.CombatState), nameof(MegaCrit.Sts2.Core.Combat.CombatState.CloneCard), typeof(CardModel))]
+	[HarmonyPatch(typeof(CombatState), nameof(CombatState.CloneCard), typeof(CardModel))]
 	[HextechPatch("card.keyword-persistence.clone-combat", "关键词持久化")]
 	private static class CombatStateCloneCardPatch
 	{
@@ -318,30 +224,7 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 		[HarmonyPostfix]
 		private static void Postfix(CardModel __instance, SerializableCard __result)
 		{
-			if (ThoughtOverwriteKeywordPersistence.ShouldPersist(__instance))
-			{
-				AddMarker(__result, ThoughtOverwriteRune.EtherealMarkerSavedPropertyName);
-			}
-
-			if (CurtainCallKeywordPersistence.ShouldPersist(__instance))
-			{
-				AddMarker(__result, CurtainCallRune.RetainMarkerSavedPropertyName);
-			}
-
-			if (CosplayInnateKeywordPersistence.ShouldPersist(__instance))
-			{
-				AddMarker(__result, HextechRunesApi.PersistentInnateMarkerSavedPropertyName);
-			}
-
-			if (CorruptedBranchInnateKeywordPersistence.ShouldPersist(__instance))
-			{
-				AddMarker(__result, CorruptedBranchRune.InnateMarkerSavedPropertyName);
-			}
-
-			if (UndyingEtherealKeywordPersistence.ShouldPersist(__instance))
-			{
-				AddMarker(__result, UndyingUpgradeRune.EtherealMarkerSavedPropertyName);
-			}
+			WriteMarkers(__instance, __result);
 		}
 	}
 
@@ -352,30 +235,7 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 		[HarmonyPostfix]
 		private static void Postfix(SerializableCard save, CardModel __result)
 		{
-			if (HasMarker(save.Props, ThoughtOverwriteRune.EtherealMarkerSavedPropertyName))
-			{
-				ThoughtOverwriteKeywordPersistence.Restore(__result);
-			}
-
-			if (HasMarker(save.Props, CurtainCallRune.RetainMarkerSavedPropertyName))
-			{
-				CurtainCallKeywordPersistence.Restore(__result);
-			}
-
-			if (HasMarker(save.Props, HextechRunesApi.PersistentInnateMarkerSavedPropertyName))
-			{
-				CosplayInnateKeywordPersistence.Restore(__result);
-			}
-
-			if (HasMarker(save.Props, CorruptedBranchRune.InnateMarkerSavedPropertyName))
-			{
-				CorruptedBranchInnateKeywordPersistence.Restore(__result);
-			}
-
-			if (HasMarker(save.Props, UndyingUpgradeRune.EtherealMarkerSavedPropertyName))
-			{
-				UndyingEtherealKeywordPersistence.Restore(__result);
-			}
+			RestoreFromMarkers(save, __result);
 		}
 	}
 

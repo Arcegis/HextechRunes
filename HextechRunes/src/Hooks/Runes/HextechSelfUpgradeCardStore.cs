@@ -34,12 +34,8 @@ internal static class HextechSelfUpgradeCardStore
 	// 以牌库本体(持久卡)为键累加;战斗克隆副本不计入,弃用后随 GC 回收。
 	private static readonly ConditionalWeakTable<CardModel, Counters> BonusByCard = new();
 
-	// 原版 DowngradeInternal(魔法骑士降级等)会用 canonical 克隆整体替换 _dynamicVars,
-	// 把本 store 加在 BaseValue 上的累计值清零(玩家实报:升级铁斩波被降级后还原成 5/5,
-	// 下场战斗从牌库本体重新克隆才恢复)。降级只应回退"升级",不应吞掉打出累计,这里把记账值补回去。
-
 	/// <summary>打出后给这张卡永久增加 <paramref name="amount"/> 点伤害白值(本局持久、逐实例)。</summary>
-	public static void AddDamageOnPlay(CardModel? playedCard, int amount)
+	internal static void AddDamageOnPlay(CardModel? playedCard, int amount)
 	{
 		if (playedCard == null || amount == 0)
 		{
@@ -56,7 +52,7 @@ internal static class HextechSelfUpgradeCardStore
 	}
 
 	/// <summary>打出后给这张卡永久增加 <paramref name="amount"/> 点格挡白值(本局持久、逐实例)。</summary>
-	public static void AddBlockOnPlay(CardModel? playedCard, int amount)
+	internal static void AddBlockOnPlay(CardModel? playedCard, int amount)
 	{
 		if (playedCard == null || amount == 0)
 		{
@@ -88,32 +84,6 @@ internal static class HextechSelfUpgradeCardStore
 		}
 	}
 
-	private static void SetInt(SerializableCard card, string name, int value)
-	{
-		card.Props ??= new SavedProperties();
-		card.Props.ints ??= new List<SavedProperties.SavedProperty<int>>();
-		card.Props.ints.RemoveAll(property => property.name == name);
-		card.Props.ints.Add(new SavedProperties.SavedProperty<int>(name, value));
-	}
-
-	private static int GetInt(SavedProperties? props, string name)
-	{
-		if (props?.ints == null)
-		{
-			return 0;
-		}
-
-		foreach (SavedProperties.SavedProperty<int> property in props.ints)
-		{
-			if (property.name == name)
-			{
-				return property.value;
-			}
-		}
-
-		return 0;
-	}
-
 	[HarmonyPatch(typeof(CardModel), nameof(CardModel.ToSerializable), new Type[0])]
 	[HextechPatch("card.self-upgrade.save", "自升级卡牌存储")]
 	private static class ToSerializablePatch
@@ -128,12 +98,12 @@ internal static class HextechSelfUpgradeCardStore
 
 			if (counters.Damage != 0)
 			{
-				SetInt(__result, DamageBonusSavedPropertyName, counters.Damage);
+				HextechCardSavedProps.SetInt(__result, DamageBonusSavedPropertyName, counters.Damage);
 			}
 
 			if (counters.Block != 0)
 			{
-				SetInt(__result, BlockBonusSavedPropertyName, counters.Block);
+				HextechCardSavedProps.SetInt(__result, BlockBonusSavedPropertyName, counters.Block);
 			}
 		}
 	}
@@ -145,8 +115,8 @@ internal static class HextechSelfUpgradeCardStore
 		[HarmonyPostfix]
 		private static void Postfix(SerializableCard save, CardModel __result)
 		{
-			int damage = GetInt(save.Props, DamageBonusSavedPropertyName);
-			int block = GetInt(save.Props, BlockBonusSavedPropertyName);
+			int damage = HextechCardSavedProps.GetInt(save.Props, DamageBonusSavedPropertyName);
+			int block = HextechCardSavedProps.GetInt(save.Props, BlockBonusSavedPropertyName);
 			if (damage == 0 && block == 0)
 			{
 				return;
@@ -167,6 +137,9 @@ internal static class HextechSelfUpgradeCardStore
 		}
 	}
 
+	// 原版 DowngradeInternal(魔法骑士降级等)会用 canonical 克隆整体替换 _dynamicVars,
+	// 把本 store 加在 BaseValue 上的累计值清零(玩家实报:升级铁斩波被降级后还原成 5/5,
+	// 下场战斗从牌库本体重新克隆才恢复)。降级只应回退"升级",不应吞掉打出累计,这里把记账值补回去。
 	[HarmonyPatch(typeof(CardModel), nameof(CardModel.DowngradeInternal), new Type[0])]
 	[HextechPatch("card.self-upgrade.downgrade", "自升级卡牌存储")]
 	private static class DowngradePatch
