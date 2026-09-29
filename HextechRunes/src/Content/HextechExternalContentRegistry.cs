@@ -253,9 +253,10 @@ internal static class HextechExternalContentRegistry
 	/// <summary>
 	/// 外部 API 不能重新登记本体内置的符文/锻造:内置与外部列表会被拼接后按类型 ToDictionary,
 	/// 同一类型出现两次会让注册表查找永久抛 ArgumentException。前置的 ModelId 检查按 IsSame 放行同一类型,
-	/// 所以必须在这里对内置清单单独拦截。
+	/// 所以必须对内置清单单独拦截。<see cref="HextechRunesApi"/> 在池登记与 SavedProperty 注入之前先调用一次,
+	/// 这里的最终登记处再兜底一次。
 	/// </summary>
-	private static bool RejectBuiltInType(Type modelType, string kind)
+	internal static bool RejectBuiltInType(Type modelType, string kind)
 	{
 		bool isBuiltIn = HextechPlayerRuneRegistry.Registrations.Any(builtIn => HextechModelTypeIdentity.IsSame(builtIn.Type, modelType))
 			|| HextechForgeRegistry.Registrations.Any(builtIn => HextechModelTypeIdentity.IsSame(builtIn.Type, modelType));

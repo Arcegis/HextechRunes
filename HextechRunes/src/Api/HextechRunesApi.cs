@@ -52,7 +52,9 @@ public static class HextechRunesApi
 	}
 
 	// 两个公开入口共用：强类型 API 要求 HextechRelicBase，HextechRunesInterop 为不引用本程序集的
-	// 模组放宽到 RelicModel。所有校验先于任何副作用，失败的调用不能留下半登记状态。
+	// 模组放宽到 RelicModel。所有校验先于任何副作用，失败的调用不能留下半登记状态；
+	// 本体内置类型在参数校验之后、登记窗口检查与任何副作用之前拒绝（只告警、不抛出）：
+	// 它们早已登记，不会进池、不会注入 SavedProperty，也不受登记窗口是否关闭影响。
 	internal static void RegisterPlayerRuneCore(
 		Type runeType,
 		Type requiredBaseType,
@@ -77,6 +79,11 @@ public static class HextechRunesApi
 		if (string.IsNullOrWhiteSpace(tagKey))
 		{
 			throw new ArgumentException("Player rune tag key must not be empty.", nameof(tagKey));
+		}
+
+		if (HextechExternalContentRegistry.RejectBuiltInType(runeType, "player rune"))
+		{
+			return;
 		}
 
 		PlayerRuneRegistration registration = new(runeType, rarity, flags, characterPool, characterOrder, tagKey);
@@ -131,6 +138,11 @@ public static class HextechRunesApi
 	{
 		ValidateConcreteModelType(forgeType, typeof(HextechForgeBase), nameof(forgeType), "Forge");
 		ValidateRarity(rarity);
+
+		if (HextechExternalContentRegistry.RejectBuiltInType(forgeType, "forge"))
+		{
+			return;
+		}
 
 		HextechSavedPropertyBootstrap.EnsureModelTypeRegistrationAllowed(forgeType);
 		HextechCatalog.EnsureExternalModelIdAvailable(forgeType);

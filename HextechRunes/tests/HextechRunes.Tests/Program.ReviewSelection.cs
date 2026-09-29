@@ -131,11 +131,17 @@ internal static partial class Program
 		int runeCount = HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count;
 		int forgeCount = HextechExternalContentRegistry.GetForgeRegistrations().Count;
 		int version = HextechExternalContentRegistry.Version;
+		Type sharedPool = typeof(MegaCrit.Sts2.Core.Models.RelicPools.SharedRelicPool);
+		bool runeQueued = HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(sharedPool, typeof(SlapRune));
+		bool forgeQueued = HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(sharedPool, typeof(StrengthForge));
 
 		// 测试进程没有 Godot 原生层,真实 Warn 在 0.107.1 会崩溃;先耗尽该告警的日志预算。
 		Action restoreWarnings = SuppressCompatibilityWarnings("external-content.built-in-rejected");
 		try
 		{
+			// 公开 API 在池登记与 SavedProperty 注入之前就拒绝内置类型;最终登记处仍保留兜底。
+			HextechRunesApi.RegisterPlayerRune(typeof(SlapRune), HextechRarityTier.Gold);
+			HextechRunesApi.RegisterForge(typeof(StrengthForge), HextechRarityTier.Gold);
 			HextechExternalContentRegistry.RegisterPlayerRune(new PlayerRuneRegistration(typeof(SlapRune), HextechRarityTier.Gold), assetModId: null);
 			HextechExternalContentRegistry.RegisterForge(new ForgeRegistration(typeof(StrengthForge), HextechRarityTier.Gold), assetModId: null);
 		}
@@ -143,6 +149,9 @@ internal static partial class Program
 		{
 			restoreWarnings();
 		}
+
+		Equal(runeQueued, HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(sharedPool, typeof(SlapRune)), "API rejection leaves built-in rune pool registration untouched");
+		Equal(forgeQueued, HextechModelPoolRegistrar.IsModelAlreadyQueuedForPool(sharedPool, typeof(StrengthForge)), "API rejection leaves built-in forge pool registration untouched");
 
 		Equal(runeCount, HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count, "built-in rune not added to external list");
 		Equal(forgeCount, HextechExternalContentRegistry.GetForgeRegistrations().Count, "built-in forge not added to external list");
