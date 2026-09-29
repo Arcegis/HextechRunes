@@ -412,7 +412,12 @@ internal static partial class Program
 			new(nameof(JeweledGauntletReflectionTargetsFailClosedAsAGroup), JeweledGauntletReflectionTargetsFailClosedAsAGroup),
 			new(nameof(TestSubjectRespawnReflectionMissingFallsBackToZero), TestSubjectRespawnReflectionMissingFallsBackToZero),
 			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
-			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives)
+			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives),
+			new(nameof(PlayerStatsHoverUsesLocalPortraitOwner), PlayerStatsHoverUsesLocalPortraitOwner),
+			new(nameof(ConfigMenuHasNoAsyncVoidHandlers), ConfigMenuHasNoAsyncVoidHandlers),
+			new(nameof(BurnHealthBarPredictionUsesSettlementFormula), BurnHealthBarPredictionUsesSettlementFormula),
+			new(nameof(CollectionHeaderFollowsStarterTemplate), CollectionHeaderFollowsStarterTemplate),
+			new(nameof(UiSkipPrefixesUseLowPriorityAndDeclarativeTargets), UiSkipPrefixesUseLowPriorityAndDeclarativeTargets)
 		];
 
 		if (args.Length > 0)
