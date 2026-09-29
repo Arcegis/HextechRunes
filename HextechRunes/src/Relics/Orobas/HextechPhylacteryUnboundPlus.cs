@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
@@ -22,9 +21,9 @@ public sealed class HextechPhylacteryUnboundPlus : OrobasPlusRelicBase
 		return OstyCmd.Summon(new ThrowingPlayerChoiceContext(), Owner, DynamicVars["StartOfCombat"].BaseValue, this);
 	}
 
-	public override async Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, HextechCombatState combatState)
 	{
-		if (participants.Contains(Owner.Creature))
+		if (HextechTurnParticipants.Includes(participants, Owner))
 		{
 			await OstyCmd.Summon(new ThrowingPlayerChoiceContext(), Owner, DynamicVars["StartOfTurn"].BaseValue, this);
 		}

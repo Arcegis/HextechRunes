@@ -21,7 +21,7 @@ public sealed class EndlessRotationRune : HextechRelicBase
 	public override Task AfterSideTurnEndLate(PlayerChoiceContext choiceContext, CombatSide side,
 		IEnumerable<Creature> participants)
 	{
-		if (Owner != null && side == Owner.Creature.Side && participants.Contains(Owner.Creature))
+		if (Owner != null && side == Owner.Creature.Side && HextechTurnParticipants.Includes(participants, Owner))
 		{
 			_freeCards = null;
 		}

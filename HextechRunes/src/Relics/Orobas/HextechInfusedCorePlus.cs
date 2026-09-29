@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
@@ -20,11 +18,13 @@ public sealed class HextechInfusedCorePlus : OrobasPlusRelicBase
 		HoverTipFactory.FromOrb<LightningOrb>()
 	];
 
-	public override async Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, HextechCombatState combatState)
 	{
-		if (participants.Contains(Owner.Creature) && Owner.PlayerCombatState!.TurnNumber <= 1)
+		if (HextechTurnParticipants.Includes(participants, Owner)
+			&& Owner.PlayerCombatState is { TurnNumber: <= 1 })
 		{
-			for (int i = 0; i < DynamicVars["Lightning"].BaseValue; i++)
+			int lightningCount = DynamicVars["Lightning"].IntValue;
+			for (int i = 0; i < lightningCount; i++)
 			{
 				await OrbCmd.Channel<LightningOrb>(new BlockingPlayerChoiceContext(), Owner);
 			}

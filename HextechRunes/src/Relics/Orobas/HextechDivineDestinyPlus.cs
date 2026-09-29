@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
@@ -14,9 +13,10 @@ public sealed class HextechDivineDestinyPlus : OrobasPlusRelicBase
 			- ModelDb.Relic<DivineRight>().DynamicVars.Stars.BaseValue))
 	];
 
-	public override async Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
+	public override async Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, HextechCombatState combatState)
 	{
-		if (participants.Contains(Owner.Creature) && Owner.PlayerCombatState!.TurnNumber <= 1)
+		if (HextechTurnParticipants.Includes(participants, Owner)
+			&& Owner.PlayerCombatState is { TurnNumber: <= 1 })
 		{
 			await PlayerCmd.GainStars(DynamicVars.Stars.BaseValue, Owner);
 		}

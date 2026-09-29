@@ -13,4 +13,18 @@ public abstract class OrobasPlusRelicBase : RelicModel
 	protected abstract RelicModel OriginalRelic { get; }
 
 	protected sealed override string IconBaseName => OriginalRelic.Id.Entry.ToLowerInvariant();
+
+	// 与 HextechRelicBase.Flash 同一约定：原版 Flash 同步调用本机 UI 订阅者，只隔离表现回调，
+	// 不包裹调用方的状态修改。
+	public new void Flash()
+	{
+		try
+		{
+			base.Flash();
+		}
+		catch (Exception ex)
+		{
+			HextechLog.Warn("RelicVisual", $"Flash failed for {GetType().Name}: {ex.Message}");
+		}
+	}
 }
