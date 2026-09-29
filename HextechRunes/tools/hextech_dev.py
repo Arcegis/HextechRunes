@@ -121,9 +121,15 @@ def sync_localization(args: argparse.Namespace) -> int:
     return 1 if args.check and changes else 0
 
 
+TEST_METHOD = re.compile(r"\[HextechTest\]\s*(?:private\s+|internal\s+|public\s+)?static\s+void\s+(\w+)\s*\(")
+
+
 def registered_tests() -> list[str]:
-    source = (ROOT / "tests/HextechRunes.Tests/Program.cs").read_text(encoding="utf-8")
-    return re.findall(r"\(nameof\((\w+)\),\s*\1\)", source)
+    """测试程序自动收集 Program 上标了 [HextechTest] 的方法并按名称 Ordinal 排序；这里按同一规则静态列出。"""
+    folder = ROOT / "tests/HextechRunes.Tests"
+    names = {name for path in folder.glob("*.cs")
+             for name in TEST_METHOD.findall(path.read_text(encoding="utf-8"))}
+    return sorted(names)
 
 
 def targets() -> list[str]:

@@ -26,6 +26,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void MadScientistOrbLayoutOnlyTweensFirstTen()
 	{
 		Equal(10, HextechPlayerRuneHooks.ResolveTweenedOrbCount(true, 11, 11), "the eleventh Mad Scientist orb should skip layout tweening");
@@ -49,6 +50,7 @@ internal static partial class Program
 			"overflow orbs should move directly to their unchanged layout target");
 	}
 
+	[HextechTest]
 	private static void SovereignBladeVfxSyncUsesVanillaForgeScale()
 	{
 		Expect(Math.Abs(0.9f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(0)) < 0.0001f, "zero-damage blade scale");
@@ -57,6 +59,7 @@ internal static partial class Program
 		Expect(Math.Abs(2f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(999)) < 0.0001f, "blade scale cap");
 	}
 
+	[HextechTest]
 	private static void SlowCookVfxUsesDedicatedPressureCookerTextures()
 	{
 		string[] slowCookPaths =
@@ -90,6 +93,7 @@ internal static partial class Program
 			"Slow Cook aura should cap per-layer brightness spikes");
 	}
 
+	[HextechTest]
 	private static void SymphonyOfWarPreservesDemonAndSerpentFormVfx()
 	{
 		Expect(
@@ -140,6 +144,7 @@ internal static partial class Program
 	/// 批处理不再拦截任何 Hook.* 分发点:它只管一组并行飞行动画(替代逐张内置动画)和进场偏移。
 	/// 出牌事件由代表牌走原版 CardCmd.AutoPlay 如实发出。
 	/// </summary>
+	[HextechTest]
 	private static void FormAutoPlayBatchOnlySuppressesDuplicateFlyVfx()
 	{
 		DemonForm firstCard = new();
@@ -163,6 +168,7 @@ internal static partial class Program
 		Expect(hookTargets.Length == 0, "form batch must not patch any Hook.* dispatcher: " + string.Join("; ", hookTargets));
 	}
 
+	[HextechTest]
 	private static void FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay()
 	{
 		DemonForm firstCard = new();
@@ -184,6 +190,7 @@ internal static partial class Program
 	/// 代表牌走原版结算自己的数值 × 出牌次数;次要牌的贡献 = Σ(数值 × 各自出牌次数),0 次不贡献。
 	/// 代表牌优先选流电牌,保证整批只触发一次电击。
 	/// </summary>
+	[HextechTest]
 	private static void FormAutoPlaySecondaryContributionSumsAmountTimesPlayCount()
 	{
 		decimal total = HextechFormAutoPlayHooks.SumSecondaryContribution([(2m, 1), (2m, 2), (3m, 0)]);
@@ -199,6 +206,7 @@ internal static partial class Program
 		Equal(1m, HextechFormAutoPlayHooks.GetFormAmount(new ReaperForm()), "reaper form contributes one stack per play without touching dynamic vars");
 	}
 
+	[HextechTest]
 	private static void FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments()
 	{
 		Expect(HextechFormAutoPlayHooks.IsCombinedEffectSafeEnchantment(null), "unenchanted forms should combine");

@@ -30,6 +30,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void StuffedToRuinChallengeUsesThreeFixedActPlans()
 	{
 		SequenceEqual(
@@ -67,6 +68,7 @@ internal static partial class Program
 			"challenge default rarity weights should be 1:1:1 in every act");
 	}
 
+	[HextechTest]
 	private static void DefenseCounterMasterChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -94,6 +96,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "defense counter challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void BruteForceChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -121,6 +124,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "brute force challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void EightPennyGateChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -148,6 +152,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 1, 1 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "eight-penny gate challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void ListlessChallengeUsesThreeFixedActPlans()
 	{
 		Expect(
@@ -175,6 +180,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 1, 2, 2 }, expectedPlans.Select(static plan => plan.EnemyHexes.Count), "listless challenge fixed enemy counts");
 	}
 
+	[HextechTest]
 	private static void PresetChallengesArePairwiseMutuallyExclusive()
 	{
 		foreach (Type selectedType in HextechCustomModelRegistry.CustomChallengeModifierTypes)

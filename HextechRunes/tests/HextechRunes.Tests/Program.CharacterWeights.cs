@@ -5,6 +5,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void CharacterWeightUsesSequentialAdditiveSteps()
 	{
 		RelicModel[] candidates = [new BerserkRune(), new JudicatorRune()];
@@ -22,7 +23,10 @@ internal static partial class Program
 		weight = HextechWeightedRuneOptions.Advance(weight, true);
 		Equal(150, weight, "character subtracts ten without resetting");
 		Equal(140, HextechWeightedRuneOptions.Advance(weight, true), "success can reduce weight below initial value");
-		for (int i = 0; i < 20; i++) weight = HextechWeightedRuneOptions.Advance(weight, true);
+		for (int i = 0; i < 20; i++)
+		{
+			weight = HextechWeightedRuneOptions.Advance(weight, true);
+		}
 		Equal(0, weight, "lower bound prevents negative weights");
 		weights = HextechRunePoolBuilder.BuildSelectionWeights(candidates, tags, false, PlayerRuneCharacterPool.Ironclad, weight, out total);
 		SequenceEqual(new[] {0, 10000}, weights, "zero weight skips characters when generic candidates exist");
@@ -37,6 +41,7 @@ internal static partial class Program
 		Equal(18750, weights[0], "existing tag bonus multiplies without truncating half points");
 	}
 
+	[HextechTest]
 	private static void CharacterWeightSaveAndReplayArePerPlayer()
 	{
 		HextechRuneSelectionJournalState host = new();
@@ -62,6 +67,7 @@ internal static partial class Program
 
 	// 自选模式(玩家重随次数无限):最终候选只剩玩家所选的一个,选中序号 0、无重随历史,角色权重原样沿用。
 	// 远端只按 ID 还原,不需要本机的自选池;这里锁住这种单候选形态在现有协议里能完整往返。
+	[HextechTest]
 	private static void SelfPickSelectionRoundTripsAsSingleFinalOption()
 	{
 		RelicModel chosen = CreateRuneSelectionTestOptions(2)[1];
@@ -77,6 +83,7 @@ internal static partial class Program
 		Equal(170, HextechWeightedRuneOptions.GetWeight(remote), "self-pick keeps the character weight unchanged");
 	}
 
+	[HextechTest]
 	private static void CharacterWeightProtocolPreservesRerollProgressAndRecipes()
 	{
 		RelicModel[] models = CreateRuneSelectionTestOptions(3);

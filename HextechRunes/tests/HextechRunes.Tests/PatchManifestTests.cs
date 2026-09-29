@@ -17,6 +17,7 @@ internal static partial class Program
 	/// 这样"多打了一个原版方法"或"执行序被改"都会在测试里显形,而不是在玩家的联机里。
 	/// 比对按整份序列(含重复行与顺序),不用集合差。
 	/// </summary>
+	[HextechTest]
 	private static void PatchManifestMatchesCheckedInList()
 	{
 		string manifestPath = Path.Combine(AppContext.BaseDirectory, PatchManifestFileName);
@@ -51,6 +52,7 @@ internal static partial class Program
 	/// 补丁 id 全局唯一;属性式补丁至少声明一个 prefix/postfix/finalizer/transpiler。
 	/// 这条护栏防的是"属性挂错类导致补丁凭空消失,而清单快照照样通过"。
 	/// </summary>
+	[HextechTest]
 	private static void PatchDeclarationsResolveToRealTargets()
 	{
 		List<string> problems = [];

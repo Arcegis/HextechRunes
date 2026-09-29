@@ -16,6 +16,7 @@ namespace HextechRunes.Tests;
 // 锻造器售价登记点与拓展包补丁声明。
 internal static partial class Program
 {
+	[HextechTest]
 	private static void SponsorSavedPropertyManifestMatchesCheckedInList()
 	{
 		ExpectSavedPropertyManifest(
@@ -25,6 +26,7 @@ internal static partial class Program
 
 	// 两个加载器编译的是同一份 SelectVariant:宿主已知却没有不高于它的变体时必须返回 null(停止加载),
 	// 不能回退到更新的变体;宿主未知才用最新变体。
+	[HextechTest]
 	private static void LoaderSelectVariantNeverFallsBackToNewerVariant()
 	{
 		MainLoader.VariantCandidate[] main =
@@ -51,6 +53,7 @@ internal static partial class Program
 	}
 
 	// 拓展包加载器只认自己的变体清单名与程序集名;类型留在原命名空间,两份加载器可同时存在于进程里。
+	[HextechTest]
 	private static void SponsorLoaderUsesItsOwnIdentity()
 	{
 		Equal("HextechRunesSponsorPack.Loader", typeof(SponsorLoader).Namespace, "sponsor loader namespace");
@@ -96,6 +99,7 @@ internal static partial class Program
 
 	// 稳定哈希的历史结果必须逐位不变(神迹事件、附魔大师的存档与联机两端都依赖它)。golden 值由已删除的
 	// 拓展包 SponsorStableRandom(0.9.x 起在用)实际算出并核对过,算法:FNV-1a(64) over seed|act:|floor:|("|" + salt)... + MurmurHash3 终混。
+	[HextechTest]
 	private static void StableIndexMatchesGoldenValuesAndRejectsEmptyPool()
 	{
 		Equal(
@@ -132,6 +136,7 @@ internal static partial class Program
 	}
 
 	// 信徒的售价修正:叠加所有玩家的信徒,结果不低于 0;没有登记修正器时本体算价原样返回。
+	[HextechTest]
 	private static void BelieverForgePriceModifierSumsDeltasAndClampsAtZero()
 	{
 		var (_, first, second) = CreatePrismaticEnemyFixture();
@@ -155,6 +160,7 @@ internal static partial class Program
 
 	// 拓展包补丁的声明约束(SponsorPatcher 是本体 HextechPatcher 的独立实现,本体那份是 internal):
 	// 每个 [HarmonyPatch] 类都带唯一 id 的 [SponsorPatch];跳过型前缀(返回 bool)必须 Priority.Low 或更低。
+	[HextechTest]
 	private static void SponsorPatchDeclarationsAreCompleteAndSkipPrefixesYield()
 	{
 		List<string> problems = [];

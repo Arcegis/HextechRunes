@@ -17,6 +17,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask()
 	{
 		Type[] added = new[] { typeof(Bash), typeof(Break), typeof(Neutralize), typeof(Suppress), typeof(Unleash),
@@ -30,7 +31,10 @@ internal static partial class Program
 		Harmony harmony = new("HextechRunes.Tests.ArchaicToothEternal");
 		try
 		{
-			foreach (Type type in added) ModelDb.Inject(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Inject(type);
+			}
 			loadedField.SetValue(null, true);
 			enabledProperty.SetValue(config, true);
 			RunState run = (RunState)RuntimeHelpers.GetUninitializedObject(typeof(RunState));
@@ -38,9 +42,9 @@ internal static partial class Program
 			AccessTools.Field(typeof(RunState), "_allCards").SetValue(run, new List<CardModel>());
 			Player owner = CreateOrdinalTestPlayer(1);
 			AccessTools.Field(typeof(Player), "_runState").SetValue(owner, run);
-			AccessTools.Field(typeof(Player), "<Creature>k__BackingField").SetValue(owner, RuntimeHelpers.GetUninitializedObject(typeof(Creature)));
+			SetAutoProperty(owner, nameof(Player.Creature), RuntimeHelpers.GetUninitializedObject(typeof(Creature)));
 			CardPile deck = new(PileType.Deck);
-			AccessTools.Field(typeof(Player), "<Deck>k__BackingField").SetValue(owner, deck);
+			SetAutoProperty(owner, nameof(Player.Deck), deck);
 			CardModel bash = run.CreateCard<Bash>(owner);
 			CardCmd.Upgrade(bash, CardPreviewStyle.None);
 			CardCmd.Enchant(CreateMutableTestModel<TezcatarasEmber>(), bash, 1m);
@@ -74,7 +78,10 @@ internal static partial class Program
 			harmony.UnpatchAll(harmony.Id);
 			enabledProperty.SetValue(config, enabled);
 			loadedField.SetValue(null, loaded);
-			foreach (Type type in added) ModelDb.Remove(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Remove(type);
+			}
 		}
 	}
 

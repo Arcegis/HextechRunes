@@ -17,17 +17,23 @@ internal static partial class Program
 {
 	private static readonly List<(Creature Target, decimal Amount)> VitalSparkApplications = [];
 
+	[HextechTest]
 	private static void PlayerVitalSparkScopesCardsAndCleansUp()
 	{
 		Harmony harmony = new("HextechRunes.Tests.VitalSpark");
 		Type[] added = new[] { typeof(Tainted), typeof(TaintedPower) }.Where(type => !ModelDb.Contains(type)).ToArray();
 		try
 		{
-			foreach (Type type in added) ModelDb.Inject(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Inject(type);
+			}
 			foreach (Type patch in typeof(HextechVitalSparkCompatibilityHooks).GetNestedTypes(System.Reflection.BindingFlags.NonPublic))
 			{
 				if (patch.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0)
+				{
 					harmony.CreateClassProcessor(patch).Patch();
+				}
 			}
 			// 隔离命令所需的场景/历史；实际运行 Power 的完整生命周期与原版清除侵蚀命令。
 			var afflict = typeof(CardCmd).GetMethods().Single(m => m.Name == "Afflict" && !m.IsGenericMethodDefinition);
@@ -35,8 +41,8 @@ internal static partial class Program
 			var apply = typeof(PowerCmd).GetMethods().Single(m => m.Name == "Apply" && !m.IsGenericMethodDefinition);
 			harmony.Patch(apply, prefix: new HarmonyMethod(typeof(Program), nameof(CaptureVitalSparkPollution)));
 			var (_, first, second) = CreatePrismaticEnemyFixture();
-			AccessTools.Field(typeof(Creature), "<Player>k__BackingField").SetValue(first.Creature, first);
-			AccessTools.Field(typeof(Creature), "<Player>k__BackingField").SetValue(second.Creature, second);
+			SetAutoProperty(first.Creature, nameof(Creature.Player), first);
+			SetAutoProperty(second.Creature, nameof(Creature.Player), second);
 			AccessTools.Field(typeof(Creature), "_powers").SetValue(first.Creature, new List<PowerModel>());
 			AccessTools.Field(typeof(Creature), "_powers").SetValue(second.Creature, new List<PowerModel>());
 			CardModel AddCard<T>(Player player, CardPile pile) where T : CardModel, new()
@@ -120,7 +126,10 @@ internal static partial class Program
 		{
 			harmony.UnpatchAll(harmony.Id);
 			VitalSparkApplications.Clear();
-			foreach (Type type in added) ModelDb.Remove(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Remove(type);
+			}
 		}
 	}
 

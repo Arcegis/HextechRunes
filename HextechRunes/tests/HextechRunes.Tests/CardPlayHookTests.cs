@@ -11,6 +11,7 @@ internal static partial class Program
 	/// 禁玩/放行不再用全局 CardModel.CanPlay 补丁:阻止出牌走官方 ShouldPlay 虚方法(原版会带上 BlockedByHook 与 preventer),
 	/// 蓝蜡烛走关键词修改虚方法,压轴放行只补 GrandFinale 自己的 IsPlayable。
 	/// </summary>
+	[HextechTest]
 	private static void CardPlayBlockersUseOfficialShouldPlayHook()
 	{
 		const BindingFlags declared = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;

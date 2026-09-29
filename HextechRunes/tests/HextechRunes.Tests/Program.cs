@@ -64,387 +64,7 @@ internal static partial class Program
 			.GetField("_initialized", BindingFlags.NonPublic | BindingFlags.Static)
 			?.SetValue(null, true);
 #endif
-		TestCase[] tests =
-		[
-			new(nameof(GameplayDeterminismApisRequireReviewedExceptions), GameplayDeterminismApisRequireReviewedExceptions),
-			new(nameof(GenericModelHookOverridesDoNotUseTypeParameters), GenericModelHookOverridesDoNotUseTypeParameters),
-			new(nameof(EndlessLoopRewindIsDetectedOnlyForRevisitedFirstAct), EndlessLoopRewindIsDetectedOnlyForRevisitedFirstAct),
-			new(nameof(RandomGenerationClassesMatchReviewedManifest), RandomGenerationClassesMatchReviewedManifest),
-			new(nameof(CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder), CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder),
-			new(nameof(RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual), RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual),
-			new(nameof(ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory), ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory),
-			new(nameof(GoldrendSfxMuteIsScopedToGoldSounds), GoldrendSfxMuteIsScopedToGoldSounds),
-			new(nameof(ImmediateGoldFeedbackStopsAndLaterDamageStillPays), ImmediateGoldFeedbackStopsAndLaterDamageStillPays),
-			new(nameof(PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped), PlayerUpgradeKeywordsAndNoDrawStayOwnerScoped),
-			new(nameof(ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth), ClawUpgradeSeparatesPermanentGrowthFromNativeCombatGrowth),
-			new(nameof(PersistentPowerUpgradesDoNotAffectOtherPlayers), PersistentPowerUpgradesDoNotAffectOtherPlayers),
-			new(nameof(NeurosurgeUpgradeSwapsVanillaPowerForHextechBuffOnlyForOwner), NeurosurgeUpgradeSwapsVanillaPowerForHextechBuffOnlyForOwner),
-			new(nameof(LoaderRefusesNewerVariantForKnownOlderHost), LoaderRefusesNewerVariantForKnownOlderHost),
-			new(nameof(WaxRelicRewardSaveMarkerIsOwnedAndLegacyCompatible), WaxRelicRewardSaveMarkerIsOwnedAndLegacyCompatible),
-			new(nameof(DamageCommandScopeRestoresCallerContextAndKeepsTaskContext), DamageCommandScopeRestoresCallerContextAndKeepsTaskContext),
-			new(nameof(NearDeathFeastCountersAreSafeOnCanonicalRelic), NearDeathFeastCountersAreSafeOnCanonicalRelic),
-			new(nameof(CardUpgradeReplacementBodiesMatchReviewedVanilla), CardUpgradeReplacementBodiesMatchReviewedVanilla),
-			new(nameof(ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask), ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask),
-			new(nameof(OrobasSecondUpgradePreservesNativeAndForeignMappings), OrobasSecondUpgradePreservesNativeAndForeignMappings),
-			new(nameof(OrobasPlusDrawAndLightningStayOwnerScoped), OrobasPlusDrawAndLightningStayOwnerScoped),
-			new(nameof(OrobasPlusUsesNativeAssetsAndVersionedValues), OrobasPlusUsesNativeAssetsAndVersionedValues),
-			new(nameof(ThreeNewRunesHaveRequestedPoolsAndRarities), ThreeNewRunesHaveRequestedPoolsAndRarities),
-			new(nameof(ScapegoatIncludesNegativeAttributesButLeavesBuffs), ScapegoatIncludesNegativeAttributesButLeavesBuffs),
-			new(nameof(BloodDebtAccumulatesPerCardAndExpiresAfterCombat), BloodDebtAccumulatesPerCardAndExpiresAfterCombat),
-			new(nameof(NetherSoulSnapshotsCurrentEtherealKeywordsOnce), NetherSoulSnapshotsCurrentEtherealKeywordsOnce),
-			new(nameof(ThreeNewRuneHooksUseNativeCommandsAndStableTargets), ThreeNewRuneHooksUseNativeCommandsAndStableTargets),
-			new(nameof(FiveNewRunesHaveRequestedPoolsAndRarities), FiveNewRunesHaveRequestedPoolsAndRarities),
-			new(nameof(RallyingCallSnapshotsSameModelCardsWithoutSourceOrOtherPlayers), RallyingCallSnapshotsSameModelCardsWithoutSourceOrOtherPlayers),
-			new(nameof(MultiplayerSupportRunesHaveRequestedRaritiesAndNumbers), MultiplayerSupportRunesHaveRequestedRaritiesAndNumbers),
-			new(nameof(EndlessRotationFreesBothCostsUntilTurnEnd), EndlessRotationFreesBothCostsUntilTurnEnd),
-			new(nameof(MyriadManifestationsCountsTypesRatherThanSlots), MyriadManifestationsCountsTypesRatherThanSlots),
-			new(nameof(VenomousBladeReadsEachTargetPoisonWithoutExtraDamageEvents), VenomousBladeReadsEachTargetPoisonWithoutExtraDamageEvents),
-			new(nameof(FiveNewRuneHooksKeepNativeExecutionAndSynchronizedRandom), FiveNewRuneHooksKeepNativeExecutionAndSynchronizedRandom),
-			new(nameof(BloodPactRequiresHpLossFromEnemyAttack), BloodPactRequiresHpLossFromEnemyAttack),
-			new(nameof(EnemyBalanceUsesNewTierPercentagesAndUncappedSustain), EnemyBalanceUsesNewTierPercentagesAndUncappedSustain),
-			new(nameof(EnemyDebuffTriggersRejectOutgoingBuffsAndExpiry), EnemyDebuffTriggersRejectOutgoingBuffsAndExpiry),
-			new(nameof(NightstalkingDrawProgressIsIndependentAndSurvivesReload), NightstalkingDrawProgressIsIndependentAndSurvivesReload),
-			new(nameof(GetExcitedDefaultsMigrateOnceAndRemainConfigurable), GetExcitedDefaultsMigrateOnceAndRemainConfigurable),
-			new(nameof(DragonSoulAndMikaelsUseUpdatedUpgradeValues), DragonSoulAndMikaelsUseUpdatedUpgradeValues),
-			new(nameof(GeneratedRuneSelectionPreservesInstanceDataAndRejectsTruncation), GeneratedRuneSelectionPreservesInstanceDataAndRejectsTruncation),
-			new(nameof(ChaosChanceConfigurationRoundTripsAndDefaults), ChaosChanceConfigurationRoundTripsAndDefaults),
-			new(nameof(NaturalRelicPoolPreservesVanillaRngAndForeignContent), NaturalRelicPoolPreservesVanillaRngAndForeignContent),
-			new(nameof(RunActivationUsesSnapshotBeforeFreezeAndPreservesFrozenValue), RunActivationUsesSnapshotBeforeFreezeAndPreservesFrozenValue),
-			new(nameof(DisabledStageBranchesBeforeEnemyGeneration), DisabledStageBranchesBeforeEnemyGeneration),
-			new(nameof(ActRollRoundTripKeepsHostSnapshot), ActRollRoundTripKeepsHostSnapshot),
-			new(nameof(RuneSelectionRoundTripRequiresMatchingActAndOrdinal), RuneSelectionRoundTripRequiresMatchingActAndOrdinal),
-			new(nameof(RuneSelectionRejectsWrongActOrOrdinal), RuneSelectionRejectsWrongActOrOrdinal),
-			new(nameof(ActSelectionAppliedRejectsWrongActOrOrdinal), ActSelectionAppliedRejectsWrongActOrOrdinal),
-			new(nameof(EnemyHexAdjustmentRoundTripKeepsAllSlots), EnemyHexAdjustmentRoundTripKeepsAllSlots),
-			new(nameof(EnemyHexAdjustmentRejectsInvalidHex), EnemyHexAdjustmentRejectsInvalidHex),
-			new(nameof(EnemyHexAdjustmentRejectsUnexpectedSequence), EnemyHexAdjustmentRejectsUnexpectedSequence),
-			new(nameof(EnemyHexAdjustmentRejectsExtremeCounts), EnemyHexAdjustmentRejectsExtremeCounts),
-			new(nameof(LegacyEnemyHexAdjustmentIsRejected), LegacyEnemyHexAdjustmentIsRejected),
-			new(nameof(RandomRuneGrantRoundTripKeepsStableModelIds), RandomRuneGrantRoundTripKeepsStableModelIds),
-			new(nameof(RandomRuneGrantRejectsMalformedStableModelIdList), RandomRuneGrantRejectsMalformedStableModelIdList),
-			new(nameof(RelicOptionSelectionRoundTripRequiresMatchingOptions), RelicOptionSelectionRoundTripRequiresMatchingOptions),
-			new(nameof(OperationTokensRejectCrossedPayloads), OperationTokensRejectCrossedPayloads),
-			new(nameof(StableModelIdListCodecRoundTripsFromNonzeroCursor), StableModelIdListCodecRoundTripsFromNonzeroCursor),
-			new(nameof(StableModelIdListCodecRejectsMalformedLength), StableModelIdListCodecRejectsMalformedLength),
-			new(nameof(StableModelIdListCodecRejectsEncoderOverflow), StableModelIdListCodecRejectsEncoderOverflow),
-			new(nameof(PlayerRuneRarityConfigExcludesFullyDisabledTier), PlayerRuneRarityConfigExcludesFullyDisabledTier),
-			new(nameof(PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled), PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled),
-			new(nameof(FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering), FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering),
-			new(nameof(RarityRollResolverFiltersWeightedRarities), RarityRollResolverFiltersWeightedRarities),
-			new(nameof(RarityRollResolverUsesOrderedUniformFallback), RarityRollResolverUsesOrderedUniformFallback),
-			new(nameof(ConsecutiveSilverRuleExcludesSilverFromEveryLaterAct), ConsecutiveSilverRuleExcludesSilverFromEveryLaterAct),
-			new(nameof(GoldenRerollOnlyUpgradesSilverAndGold), GoldenRerollOnlyUpgradesSilverAndGold),
-			new(nameof(GoldenRerollUsesExactFivePercentWindow), GoldenRerollUsesExactFivePercentWindow),
-			new(nameof(GoldenRerollSeparatesPlayersAndKeepsConsoleLocal), GoldenRerollSeparatesPlayersAndKeepsConsoleLocal),
-			new(nameof(GoldenRerollDebugForceIsOneShot), GoldenRerollDebugForceIsOneShot),
-			new(nameof(GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused), GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused),
-			new(nameof(GoldenRerollCardThemeFollowsRerolledRuneRarity), GoldenRerollCardThemeFollowsRerolledRuneRarity),
-			new(nameof(CharacterWeightUsesSequentialAdditiveSteps), CharacterWeightUsesSequentialAdditiveSteps),
-			new(nameof(CharacterWeightSaveAndReplayArePerPlayer), CharacterWeightSaveAndReplayArePerPlayer),
-			new(nameof(CharacterWeightProtocolPreservesRerollProgressAndRecipes), CharacterWeightProtocolPreservesRerollProgressAndRecipes),
-			new(nameof(SelfPickSelectionRoundTripsAsSingleFinalOption), SelfPickSelectionRoundTripsAsSingleFinalOption),
-			new(nameof(WeightedIndexBoundarySelection), WeightedIndexBoundarySelection),
-			new(nameof(RuneSelectionCandidateConstraintsMixCharactersAndLimitUpgrades), RuneSelectionCandidateConstraintsMixCharactersAndLimitUpgrades),
-			new(nameof(UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption), UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption),
-			new(nameof(SelectionUiFocusesOnlyInDirectionalNavigation), SelectionUiFocusesOnlyInDirectionalNavigation),
-			new(nameof(PlayerRuneSelectionUsesPendingSlotUntilConfirmation), PlayerRuneSelectionUsesPendingSlotUntilConfirmation),
-			new(nameof(PlayerRuneRerollClearsOnlyCurrentPendingSlot), PlayerRuneRerollClearsOnlyCurrentPendingSlot),
-			new(nameof(EnemyHexRerollPlaysRerollSound), EnemyHexRerollPlaysRerollSound),
-			new(nameof(EnemyHexRemovalCanBeUndoneWithoutConsumingTheSlot), EnemyHexRemovalCanBeUndoneWithoutConsumingTheSlot),
-			new(nameof(EnemyHexActionButtonsUseTexturesWithoutTooltipText), EnemyHexActionButtonsUseTexturesWithoutTooltipText),
-			new(nameof(CollapsedEnemyHexPanelFollowsTopBarButtonLifecycle), CollapsedEnemyHexPanelFollowsTopBarButtonLifecycle),
-			new(nameof(DestructivePickupRunesAreExcludedFromRandomRewards), DestructivePickupRunesAreExcludedFromRandomRewards),
-			new(nameof(StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops), StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops),
-			new(nameof(SearingAttackRuneGrantsUpgradedCard), SearingAttackRuneGrantsUpgradedCard),
-			new(nameof(CardUpgradePickupAndAvailabilityRules), CardUpgradePickupAndAvailabilityRules),
-			new(nameof(BashUpgradeStrengthMatchesVulnerableApplied), BashUpgradeStrengthMatchesVulnerableApplied),
-			new(nameof(CreativeAiUpgradeRuneUpgradesGeneratedPowerCards), CreativeAiUpgradeRuneUpgradesGeneratedPowerCards),
-			new(nameof(SubroutineUpgradeCombatMoveGateResetsAcrossCombats), SubroutineUpgradeCombatMoveGateResetsAcrossCombats),
-			new(nameof(PactsEndUpgradeDamageScalesWithExhaustPile), PactsEndUpgradeDamageScalesWithExhaustPile),
-			new(nameof(BrandUpgradeDamageScalesWithPermanentPlayCount), BrandUpgradeDamageScalesWithPermanentPlayCount),
-			new(nameof(BigHammerForgeBonusAvoidsHammerTimeDoubleScaling), BigHammerForgeBonusAvoidsHammerTimeDoubleScaling),
-			new(nameof(HundredRefinementsRequiresTwoBodyForges), HundredRefinementsRequiresTwoBodyForges),
-			new(nameof(InitialForgeGrantRunesPersistPendingTransaction), InitialForgeGrantRunesPersistPendingTransaction),
-			new(nameof(InitialForgeGrantLoadRecoveryPrecedesActRecovery), InitialForgeGrantLoadRecoveryPrecedesActRecovery),
-			new(nameof(HappyAccidentUsesAllCombatPilesAtTurnStart), HappyAccidentUsesAllCombatPilesAtTurnStart),
-			new(nameof(HastyScribbleDrawsToFullHandAtTurnStart), HastyScribbleDrawsToFullHandAtTurnStart),
-			new(nameof(BigHandsIncreasesSummonAmountByFiftyPercent), BigHandsIncreasesSummonAmountByFiftyPercent),
-			new(nameof(SpinToWinRecognizesSupportedDelayedResources), SpinToWinRecognizesSupportedDelayedResources),
-			new(nameof(NewCardUpgradeRunesUseExpectedTriggerRules), NewCardUpgradeRunesUseExpectedTriggerRules),
-			new(nameof(HiddenGemUpgradeMovesNewReplayTargetToHand), HiddenGemUpgradeMovesNewReplayTargetToHand),
-			new(nameof(PlayerSustainRunesUseExpectedMaxHpRules), PlayerSustainRunesUseExpectedMaxHpRules),
-			new(nameof(CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions), CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions),
-			new(nameof(NewRuneHookTargetsMatchSupportedGameApis), NewRuneHookTargetsMatchSupportedGameApis),
-			new(nameof(SymphonyOfWarPreservesDemonAndSerpentFormVfx), SymphonyOfWarPreservesDemonAndSerpentFormVfx),
-			new(nameof(FormAutoPlayBatchOnlySuppressesDuplicateFlyVfx), FormAutoPlayBatchOnlySuppressesDuplicateFlyVfx),
-			new(nameof(FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay), FormAutoPlayBatchOffsetsCardsBeforeTheyEnterPlay),
-			new(nameof(FormAutoPlaySecondaryContributionSumsAmountTimesPlayCount), FormAutoPlaySecondaryContributionSumsAmountTimesPlayCount),
-			new(nameof(FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments), FormAutoPlayBatchCombinesOnlyEffectNeutralEnchantments),
-			new(nameof(DrawYourSwordReplacesOrbEvokeWithTwoFocus), DrawYourSwordReplacesOrbEvokeWithTwoFocus),
-			new(nameof(EnemyOmniDragonSoulUsesPlayerTurnStart), EnemyOmniDragonSoulUsesPlayerTurnStart),
-			new(nameof(FortuneForgeRewardScalesByStacks), FortuneForgeRewardScalesByStacks),
-			new(nameof(PrismaticEggIsExcludedFromThirdAct), PrismaticEggIsExcludedFromThirdAct),
-			new(nameof(MirrorReflectionCopiesCursesButNotBasicCards), MirrorReflectionCopiesCursesButNotBasicCards),
-			new(nameof(DrainAppliesSummonAmountToAllEnemies), DrainAppliesSummonAmountToAllEnemies),
-			new(nameof(FeyMagicUsesThreeCostWithoutTurnLimit), FeyMagicUsesThreeCostWithoutTurnLimit),
-			new(nameof(GiantSlayerScalesFromEnemyMaxHp), GiantSlayerScalesFromEnemyMaxHp),
-			new(nameof(SomethingForNothingDrawsAtZeroAndDiscountsFirstPaidCard), SomethingForNothingDrawsAtZeroAndDiscountsFirstPaidCard),
-			new(nameof(MagicMissileUsesThreeThreePercentHits), MagicMissileUsesThreeThreePercentHits),
-			new(nameof(EchoAddsItsCopyWithoutRecursingThroughGenerationHooks), EchoAddsItsCopyWithoutRecursingThroughGenerationHooks),
-			new(nameof(TwinFlamesUsesThreeEnergyScaledHits), TwinFlamesUsesThreeEnergyScaledHits),
-			new(nameof(TwinFlamesKeepsMultiplayerDamageInsideCardAction), TwinFlamesKeepsMultiplayerDamageInsideCardAction),
-			new(nameof(LightEmUpUsesSixEnergyScaledTwinFlameMissiles), LightEmUpUsesSixEnergyScaledTwinFlameMissiles),
-			new(nameof(ProjectileRunesKeepMultiplayerDamageInsideCardAction), ProjectileRunesKeepMultiplayerDamageInsideCardAction),
-			new(nameof(PiercingThreadSplitsOneDamageEventBeforeBlock), PiercingThreadSplitsOneDamageEventBeforeBlock),
-			new(nameof(DualcastUpgradeReturnsBothCastCardsToHand), DualcastUpgradeReturnsBothCastCardsToHand),
-			new(nameof(DeathWarrantTriggersPoisonEveryEightDraws), DeathWarrantTriggersPoisonEveryEightDraws),
-			new(nameof(MadScientistOrbLayoutOnlyTweensFirstTen), MadScientistOrbLayoutOnlyTweensFirstTen),
-			new(nameof(MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd), MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd),
-			new(nameof(MyriadSwordsExplicitlyClosesAStalePlayPile), MyriadSwordsExplicitlyClosesAStalePlayPile),
-			new(nameof(SovereignBladeVfxSyncUsesVanillaForgeScale), SovereignBladeVfxSyncUsesVanillaForgeScale),
-			new(nameof(SlowCookVfxUsesDedicatedPressureCookerTextures), SlowCookVfxUsesDedicatedPressureCookerTextures),
-			new(nameof(AssetResolverPrefersRawTextureBeforePackedResource), AssetResolverPrefersRawTextureBeforePackedResource),
-			new(nameof(AssetResolverRecognizesRawImagePaths), AssetResolverRecognizesRawImagePaths),
-			new(nameof(AssetResolverRejectsInvalidTextureObjects), AssetResolverRejectsInvalidTextureObjects),
-			new(nameof(AssetResolverPropagatesLoaderExceptionsWithoutCachingDirtyEntries), AssetResolverPropagatesLoaderExceptionsWithoutCachingDirtyEntries),
-			new(nameof(AssetResolverRawOnlyMissReturnsNullWithoutCaching), AssetResolverRawOnlyMissReturnsNullWithoutCaching),
-			new(nameof(CoefficientRunesStackAdditivelyWithinTheirOwnSector), CoefficientRunesStackAdditivelyWithinTheirOwnSector),
-			new(nameof(CoefficientForgesShareOneAdditiveSector), CoefficientForgesShareOneAdditiveSector),
-			new(nameof(MaxHpCoefficientSectorsMultiply), MaxHpCoefficientSectorsMultiply),
-			new(nameof(EnemyCoefficientAddsWithinHexAndMultipliesAcrossHexes), EnemyCoefficientAddsWithinHexAndMultipliesAcrossHexes),
-			new(nameof(EnemyMaxHpCoefficientSectorsUseBaseHp), EnemyMaxHpCoefficientSectorsUseBaseHp),
-			new(nameof(EnemyMaxHpLegacyMigrationRecoversMixedSinglePlayerEffects), EnemyMaxHpLegacyMigrationRecoversMixedSinglePlayerEffects),
-			new(nameof(EnemyMaxHpLegacyMigrationPreservesMultiplayerScaling), EnemyMaxHpLegacyMigrationPreservesMultiplayerScaling),
-			new(nameof(NightmareHooksEveryDarkOrbPassiveTrigger), NightmareHooksEveryDarkOrbPassiveTrigger),
-			new(nameof(NightmareEffectRunsOnceAfterEachPassiveTask), NightmareEffectRunsOnceAfterEachPassiveTask),
-			new(nameof(DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune), DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune),
-			new(nameof(DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights), DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights),
-			new(nameof(ForgeDropChanceAdjustsLikePotionOdds), ForgeDropChanceAdjustsLikePotionOdds),
-			new(nameof(PocketForgeKeepsPotionSlotsWithinFourBitSlotIndex), PocketForgeKeepsPotionSlotsWithinFourBitSlotIndex),
-			new(nameof(StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot), StableRandomPlayerIdentityUsesNetIdBeforeLocalSlot),
-			new(nameof(StableRandomSequentialFloorsAvoidExcessClustering), StableRandomSequentialFloorsAvoidExcessClustering),
-			new(nameof(StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle), StableRandomPowerOfTwoIndexesAvoidTerminalCounterCycle),
-			new(nameof(ColorDiscoveryCandidatesUseSharedStableCombatPool), ColorDiscoveryCandidatesUseSharedStableCombatPool),
-			new(nameof(RandomForgeShopRelicUpdatesDisplayedPrice), RandomForgeShopRelicUpdatesDisplayedPrice),
-			new(nameof(ActSelectionGatePreventsReentryAndClearsCurrentRun), ActSelectionGatePreventsReentryAndClearsCurrentRun),
-			new(nameof(ActSelectionGateClearsStaleRun), ActSelectionGateClearsStaleRun),
-			new(nameof(RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi), RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi),
-			new(nameof(StuffedToRuinChallengeUsesThreeFixedActPlans), StuffedToRuinChallengeUsesThreeFixedActPlans),
-			new(nameof(DefenseCounterMasterChallengeUsesThreeFixedActPlans), DefenseCounterMasterChallengeUsesThreeFixedActPlans),
-			new(nameof(BruteForceChallengeUsesThreeFixedActPlans), BruteForceChallengeUsesThreeFixedActPlans),
-			new(nameof(EightPennyGateChallengeUsesThreeFixedActPlans), EightPennyGateChallengeUsesThreeFixedActPlans),
-			new(nameof(ListlessChallengeUsesThreeFixedActPlans), ListlessChallengeUsesThreeFixedActPlans),
-			new(nameof(PresetChallengesArePairwiseMutuallyExclusive), PresetChallengesArePairwiseMutuallyExclusive),
-			new(nameof(RunConfigurationDefaultSnapshotUsesExpectedActCounts), RunConfigurationDefaultSnapshotUsesExpectedActCounts),
-			new(nameof(RunConfigurationDefaultSnapshotDisablesRiskyContent), RunConfigurationDefaultSnapshotDisablesRiskyContent),
-			new(nameof(RerollLimitConfigUsesZeroToNineThenInfinite), RerollLimitConfigUsesZeroToNineThenInfinite),
-			new(nameof(EnemyHexCountStateNormalizesMissingAndOutOfRangeValues), EnemyHexCountStateNormalizesMissingAndOutOfRangeValues),
-			new(nameof(EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct), EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct),
-			new(nameof(PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot), PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot),
-			new(nameof(PlayerRuneConfigSnapshotStateSnapshotOverridesLocalFallback), PlayerRuneConfigSnapshotStateSnapshotOverridesLocalFallback),
-				new(nameof(PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData), PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData),
-				new(nameof(NetworkChoiceTimeoutUsesNominalWallClockSeconds), NetworkChoiceTimeoutUsesNominalWallClockSeconds),
-				new(nameof(CombatTrackingPerTurnProcLimitsResetOncePerRound), CombatTrackingPerTurnProcLimitsResetOncePerRound),
-				new(nameof(MindOverMatterFirstDrawTrackingResetsPerPlayerTurn), MindOverMatterFirstDrawTrackingResetsPerPlayerTurn),
-				new(nameof(HungryExhaustsZeroOneOrTwoCardsByTier), HungryExhaustsZeroOneOrTwoCardsByTier),
-				new(nameof(InspectBlocksOnlyTheConfiguredExtraDrawTriggers), InspectBlocksOnlyTheConfiguredExtraDrawTriggers),
-				new(nameof(GripConsumesOnlyTheFirstManualCardTrigger), GripConsumesOnlyTheFirstManualCardTrigger),
-				new(nameof(HungryInspectAndGripShareEightPennyGateTexture), HungryInspectAndGripShareEightPennyGateTexture),
-				new(nameof(CombatTrackingGlobalProcOrdinalsSerializeAndReset), CombatTrackingGlobalProcOrdinalsSerializeAndReset),
-				new(nameof(CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume), CombatTrackingPlayerRuneProcOrdinalPeekDoesNotConsume),
-			new(nameof(CombatTrackingSerializationIsCultureInvariant), CombatTrackingSerializationIsCultureInvariant),
-			new(nameof(SavedPropertyManifestMatchesCheckedInList), SavedPropertyManifestMatchesCheckedInList),
-			new(nameof(PatchManifestMatchesCheckedInList), PatchManifestMatchesCheckedInList),
-			new(nameof(PatchDeclarationsResolveToRealTargets), PatchDeclarationsResolveToRealTargets),
-			new(nameof(VanillaCopyGuardFreezesEntriesAndAsyncBodies), VanillaCopyGuardFreezesEntriesAndAsyncBodies),
-			new(nameof(StaticStateManifestMatchesCheckedInList), StaticStateManifestMatchesCheckedInList),
-			new(nameof(CardPlayBlockersUseOfficialShouldPlayHook), CardPlayBlockersUseOfficialShouldPlayHook),
-			new(nameof(SavedPropertyPreInitRegistrationLeavesWireTablesUntouched), SavedPropertyPreInitRegistrationLeavesWireTablesUntouched),
-			new(nameof(SavedPropertyLateCarrierRegistrationFailsClosed), SavedPropertyLateCarrierRegistrationFailsClosed),
-			new(nameof(SavedPropertySameNameCarrierStillRequiresPerTypeCache), SavedPropertySameNameCarrierStillRequiresPerTypeCache),
-			new(nameof(SavedPropertyLateExternalRegistrationLeavesNoPartialState), SavedPropertyLateExternalRegistrationLeavesNoPartialState),
-			new(nameof(ConfigMigrationForceResetsBelowV15), ConfigMigrationForceResetsBelowV15),
-			new(nameof(ConfigMigrationV15BaselineReachesCurrentDefault), ConfigMigrationV15BaselineReachesCurrentDefault),
-			new(nameof(ConfigMigrationV26AddsNewPlayerDefaultDisables), ConfigMigrationV26AddsNewPlayerDefaultDisables),
-			new(nameof(ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention), ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention),
-			new(nameof(ConfigMigrationV30EnablesAdvanceToRetreat), ConfigMigrationV30EnablesAdvanceToRetreat),
-			new(nameof(ConfigMigrationV31EnablesHappyAccident), ConfigMigrationV31EnablesHappyAccident),
-			new(nameof(ConfigMigrationV33ChangesLegacyInfiniteMonsterRerolls), ConfigMigrationV33ChangesLegacyInfiniteMonsterRerolls),
-			new(nameof(ConfigMigrationV34DisablesIllusoryWeaponOnce), ConfigMigrationV34DisablesIllusoryWeaponOnce),
-			new(nameof(MiseryRandomTargetPreservesAttributeTransfer), MiseryRandomTargetPreservesAttributeTransfer),
-			new(nameof(ConfigMigrationCurrentVersionPreservesCustomDisabledIds), ConfigMigrationCurrentVersionPreservesCustomDisabledIds),
-			new(nameof(ConfigShareRoundTripKeepsActRarityWeights), ConfigShareRoundTripKeepsActRarityWeights),
-			new(nameof(MayhemRunContextResetForNewRunClearsState), MayhemRunContextResetForNewRunClearsState),
-			new(nameof(RuneSelectionJournalRoundTripsInStableOrder), RuneSelectionJournalRoundTripsInStableOrder),
-			new(nameof(RuneSelectionJournalRejectsConflictingSelections), RuneSelectionJournalRejectsConflictingSelections),
-			new(nameof(AppliedRuneSelectionJournalDoesNotRequireInventoryPresence), AppliedRuneSelectionJournalDoesNotRequireInventoryPresence),
-			new(nameof(MayhemRunContextResetForEndlessLoopPreservesStageRows), MayhemRunContextResetForEndlessLoopPreservesStageRows),
-			new(nameof(SeenRuneIdsRoundTripToRealRelicIds), SeenRuneIdsRoundTripToRealRelicIds),
-			new(nameof(MayhemActStateSupportsExtraActsAndStableExtraStageIds), MayhemActStateSupportsExtraActsAndStableExtraStageIds),
-			new(nameof(MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex), MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex),
-			new(nameof(PlayerRuneMetadataHasUniqueTypes), PlayerRuneMetadataHasUniqueTypes),
-			new(nameof(PlayerRuneMetadataMatchesContentRegistrySlices), PlayerRuneMetadataMatchesContentRegistrySlices),
-			new(nameof(PlayerRuneMetadataPreservesCharacterOrder), PlayerRuneMetadataPreservesCharacterOrder),
-			new(nameof(PlayerRuneMetadataClassifiesConfigStates), PlayerRuneMetadataClassifiesConfigStates),
-			new(nameof(PlayerRuneMetadataCatalogOutputsMatchCatalogQueries), PlayerRuneMetadataCatalogOutputsMatchCatalogQueries),
-			new(nameof(PlayerRuneMetadataFallbacksAreStable), PlayerRuneMetadataFallbacksAreStable),
-			new(nameof(ForgeMetadataHasUniqueTypes), ForgeMetadataHasUniqueTypes),
-			new(nameof(ForgeMetadataMatchesContentRegistrySlices), ForgeMetadataMatchesContentRegistrySlices),
-			new(nameof(ForgeMetadataFallbacksAreStable), ForgeMetadataFallbacksAreStable),
-			new(nameof(MonsterHexMetadataHasUniqueKinds), MonsterHexMetadataHasUniqueKinds),
-			new(nameof(FourPrismaticEnemiesKeepIdentityAndStrengthScope), FourPrismaticEnemiesKeepIdentityAndStrengthScope),
-			new(nameof(PlayerVitalSparkScopesCardsAndCleansUp), PlayerVitalSparkScopesCardsAndCleansUp),
-			new(nameof(EnemyMoreTheMerrierUsesPooledRelicsForAllThreeMultipliers), EnemyMoreTheMerrierUsesPooledRelicsForAllThreeMultipliers),
-			new(nameof(BalanceAdjustmentsSeptember25), BalanceAdjustmentsSeptember25),
-			new(nameof(EnemyGiantSlayerScalesWithPlayerMaxHp), EnemyGiantSlayerScalesWithPlayerMaxHp),
-			new(nameof(EnemyBlueCandleRaisesPlayerStatusAndCurseCosts), EnemyBlueCandleRaisesPlayerStatusAndCurseCosts),
-			new(nameof(EnemyEnlightenmentFloorsDiscountedCostsWithoutChangingBase), EnemyEnlightenmentFloorsDiscountedCostsWithoutChangingBase),
-			new(nameof(EnemyRotationStacksOnlyCurrentHandUntilTurnEnd), EnemyRotationStacksOnlyCurrentHandUntilTurnEnd),
-			new(nameof(EnemyZeroCostExhaustUsesPlayCostRatherThanPayment), EnemyZeroCostExhaustUsesPlayCostRatherThanPayment),
-			new(nameof(EnemyCorruptedBranchKeepsOwnerAndRestoresRandomSequence), EnemyCorruptedBranchKeepsOwnerAndRestoresRandomSequence),
-			new(nameof(MonsterHexMetadataMatchesContentRegistrySlices), MonsterHexMetadataMatchesContentRegistrySlices),
-			new(nameof(MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools), MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools),
-			new(nameof(NewEnemyHexesReusePlayerRuneIconsAndRarities), NewEnemyHexesReusePlayerRuneIconsAndRarities),
-			new(nameof(FiveEnemyUpgradesHaveStableIdentityAndAutoPatrolDisabled), FiveEnemyUpgradesHaveStableIdentityAndAutoPatrolDisabled),
-			new(nameof(CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff), CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff),
-			new(nameof(MonsterUpgradeIntentsPreserveAttacksAndDoNotAccumulate), MonsterUpgradeIntentsPreserveAttacksAndDoNotAccumulate),
-			new(nameof(HopperEscapeSurvivesTheNextNativeMoveRoll), HopperEscapeSurvivesTheNextNativeMoveRoll),
-			new(nameof(HopperSkipsSleepingEnemiesAndMinions), HopperSkipsSleepingEnemiesAndMinions),
-			new(nameof(BloodIdolNonCombatLossLeavesOneHp), BloodIdolNonCombatLossLeavesOneHp),
-			new(nameof(EnemyOnlyRunsStillRequireEnemyConfirmation), EnemyOnlyRunsStillRequireEnemyConfirmation),
-			new(nameof(EnemyUpgradeCountersRoundTripAndStayIndependent), EnemyUpgradeCountersRoundTripAndStayIndependent),
-			new(nameof(HopperProtectsBossesAndUsesNativeTheftPriorities), HopperProtectsBossesAndUsesNativeTheftPriorities),
-			new(nameof(EnemyHexHoverTipsUseExpectedPowerModels), EnemyHexHoverTipsUseExpectedPowerModels),
-			new(nameof(EnemyFossilStalkerUsesExpectedSuckTiers), EnemyFossilStalkerUsesExpectedSuckTiers),
-			new(nameof(EnemyTungstenRodReducesEachHpLossByTier), EnemyTungstenRodReducesEachHpLossByTier),
-			new(nameof(EnemySlowHexesUseExpectedBaselinesAndTiers), EnemySlowHexesUseExpectedBaselinesAndTiers),
-			new(nameof(TemporarySlowStartDamageCannotRenewPreviousRounds), TemporarySlowStartDamageCannotRenewPreviousRounds),
-			new(nameof(TemporarySlowPreservesOppositeSignNewRoundStacks), TemporarySlowPreservesOppositeSignNewRoundStacks),
-			new(nameof(TemporarySlowCleanupRunsBeforePlayerStartEffects), TemporarySlowCleanupRunsBeforePlayerStartEffects),
-			new(nameof(EnemyOpeningBuffHexesUseDedicatedReplayableHook), EnemyOpeningBuffHexesUseDedicatedReplayableHook),
-			new(nameof(EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit), EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit),
-			new(nameof(EnemyHeavyHitterScalesDamageEveryFifteenMaxHp), EnemyHeavyHitterScalesDamageEveryFifteenMaxHp),
-			new(nameof(EnemyVitalitySurgeScalesAllSustainFromMaxHp), EnemyVitalitySurgeScalesAllSustainFromMaxHp),
-			new(nameof(EnemyTwilightVeilMirrorsOnlyPositivePlayerBlock), EnemyTwilightVeilMirrorsOnlyPositivePlayerBlock),
-			new(nameof(EnemyAttributeBoostsUseExpectedTiersAndCrossHexMultiplication), EnemyAttributeBoostsUseExpectedTiersAndCrossHexMultiplication),
-			new(nameof(EnemyMiserableFateUsesMissingHpDivisors), EnemyMiserableFateUsesMissingHpDivisors),
-			new(nameof(EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount), EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount),
-			new(nameof(EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls), EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls),
-			new(nameof(EnemyJeweledGauntletUsesExpectedStrengthTierChances), EnemyJeweledGauntletUsesExpectedStrengthTierChances),
-			new(nameof(EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes), EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes),
-			new(nameof(EnemyJeweledGauntletDuplicatesWholeIntentGroup), EnemyJeweledGauntletDuplicatesWholeIntentGroup),
-			new(nameof(EnemyJeweledGauntletNeverRepeatsIntoFinalKnowledgeDemonCurse), EnemyJeweledGauntletNeverRepeatsIntoFinalKnowledgeDemonCurse),
-			new(nameof(EnemyJeweledGauntletSkipsTheInsatiableOpeningMove), EnemyJeweledGauntletSkipsTheInsatiableOpeningMove),
-			new(nameof(EnemyJeweledGauntletSkipsMonsterRevivalMoves), EnemyJeweledGauntletSkipsMonsterRevivalMoves),
-			new(nameof(MonsterInteractionPolicyPreservesStructuralMonsterBuffs), MonsterInteractionPolicyPreservesStructuralMonsterBuffs),
-			new(nameof(BuffRemovalPreservesStolenLootPowers), BuffRemovalPreservesStolenLootPowers),
-			new(nameof(PersonalHiveSafetyRejectsPlayerSideCopies), PersonalHiveSafetyRejectsPlayerSideCopies),
-			new(nameof(EnemyCompensationDefersHalfDamageRoundedDown), EnemyCompensationDefersHalfDamageRoundedDown),
-			new(nameof(PlayerCompensationRequiresActiveCombatContext), PlayerCompensationRequiresActiveCombatContext),
-			new(nameof(NextTurnDamageUsesTurnStartSnapshot), NextTurnDamageUsesTurnStartSnapshot),
-			new(nameof(NextTurnDamageDoesNotRetriggerCompensation), NextTurnDamageDoesNotRetriggerCompensation),
-			new(nameof(EnemyCompensationSkipsOutbreakPoisonResponse), EnemyCompensationSkipsOutbreakPoisonResponse),
-			new(nameof(EnemyCompensationSkipsSleightOfFleshResponse), EnemyCompensationSkipsSleightOfFleshResponse),
-			new(nameof(WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics), WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics),
-			new(nameof(UniversalScopeChancesAddBeforeSingleRoll), UniversalScopeChancesAddBeforeSingleRoll),
-			new(nameof(UniversalScopeRefundsOnlyTheSyncedSpend), UniversalScopeRefundsOnlyTheSyncedSpend),
-			new(nameof(UniversalScopeUpgradeRestorationKeepsCapturedLevels), UniversalScopeUpgradeRestorationKeepsCapturedLevels),
-			new(nameof(ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless), ColorlessCardHelperTreatsRegentGeneratedCardsAsColorless),
-			new(nameof(IllusoryWeaponPenNibPrefixesCanReturnSkippedTask), IllusoryWeaponPenNibPrefixesCanReturnSkippedTask),
-			new(nameof(AttackCommandCompatibilityRestoresNullExecuteResult), AttackCommandCompatibilityRestoresNullExecuteResult),
-			new(nameof(MultiplayerGameplaySignatureExcludesRuntimeSavedProperties), MultiplayerGameplaySignatureExcludesRuntimeSavedProperties),
-			new(nameof(SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent), SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent),
-			new(nameof(SavedPropertyNetIdBitSizeMatchesGameFormula), SavedPropertyNetIdBitSizeMatchesGameFormula),
-			new(nameof(CompensationReplacementGuardScopesAsyncWork), CompensationReplacementGuardScopesAsyncWork),
-			new(nameof(CompensationReplacementSuppressesSleightOfFleshResponse), CompensationReplacementSuppressesSleightOfFleshResponse),
-			new(nameof(EventRewardTransactionCommitsSequentially), EventRewardTransactionCommitsSequentially),
-			new(nameof(EventRewardTransactionRejectsLateRecordsAndSecondCommit), EventRewardTransactionRejectsLateRecordsAndSecondCommit),
-			new(nameof(EventRewardTransactionTryRecordSkipsLateAsyncRewards), EventRewardTransactionTryRecordSkipsLateAsyncRewards),
-			new(nameof(DoubleVisionCopiesTrackedCardsWhenMultiSelectEndsWithoutCompletingReward), DoubleVisionCopiesTrackedCardsWhenMultiSelectEndsWithoutCompletingReward),
-			new(nameof(DoubleVisionCopiesWaxStateWithoutCopyingMeltedState), DoubleVisionCopiesWaxStateWithoutCopyingMeltedState),
-			new(nameof(DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect), DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect),
-			new(nameof(DoubleVisionDustyTomeSaveLoadPreservesAncientCard), DoubleVisionDustyTomeSaveLoadPreservesAncientCard),
-			new(nameof(DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast), DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast),
-			new(nameof(PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries), PorcupineTemporaryThornsRemovalPlanSkipsInvalidEntries),
-			new(nameof(MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack), MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack),
-			new(nameof(MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates), MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates),
-			new(nameof(MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks), MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks),
-			new(nameof(ExternalConfigDisabledIdsPreserveUnloadedContent), ExternalConfigDisabledIdsPreserveUnloadedContent),
-			new(nameof(ExternalModelIdConflictsAreRejectedBeforeRegistration), ExternalModelIdConflictsAreRejectedBeforeRegistration),
-			new(nameof(ExternalPlayerRuneRegistrationUpdatesCatalog), ExternalPlayerRuneRegistrationUpdatesCatalog),
-			new(nameof(ExternalEventRelicRegistrationUpdatesRegistry), ExternalEventRelicRegistrationUpdatesRegistry),
-			new(nameof(ExternalForgeRegistrationUpdatesCatalog), ExternalForgeRegistrationUpdatesCatalog),
-			new(nameof(ExternalEnchantmentIconRegistrationTracksPath), ExternalEnchantmentIconRegistrationTracksPath),
-			new(nameof(StableIndexMatchesGoldenValuesAndRejectsEmptyPool), StableIndexMatchesGoldenValuesAndRejectsEmptyPool),
-			new(nameof(SponsorSavedPropertyManifestMatchesCheckedInList), SponsorSavedPropertyManifestMatchesCheckedInList),
-			new(nameof(LoaderSelectVariantNeverFallsBackToNewerVariant), LoaderSelectVariantNeverFallsBackToNewerVariant),
-			new(nameof(SponsorLoaderUsesItsOwnIdentity), SponsorLoaderUsesItsOwnIdentity),
-			new(nameof(BelieverForgePriceModifierSumsDeltasAndClampsAtZero), BelieverForgePriceModifierSumsDeltasAndClampsAtZero),
-			new(nameof(SponsorPatchDeclarationsAreCompleteAndSkipPrefixesYield), SponsorPatchDeclarationsAreCompleteAndSkipPrefixesYield),
-			new(nameof(RandomEnchantmentPoolExcludesDeprecatedNegativeAndMarkerTypes), RandomEnchantmentPoolExcludesDeprecatedNegativeAndMarkerTypes),
-			new(nameof(RandomEnchantmentPoolLegalEnchantmentsPreserveOrderAndCanEnchant), RandomEnchantmentPoolLegalEnchantmentsPreserveOrderAndCanEnchant),
-			new(nameof(SponsorCompositeEnchantmentIsReadOnlyMigrationShell), SponsorCompositeEnchantmentIsReadOnlyMigrationShell),
-			new(nameof(EntropyDecreaseCollectsOnlyCardsMarkedForRemoval), EntropyDecreaseCollectsOnlyCardsMarkedForRemoval),
-			new(nameof(SponsorCatalogDependencyTableIsConsistent), SponsorCatalogDependencyTableIsConsistent),
-			new(nameof(DollysMirrorRelicPagesStayWithinVanillaViewport), DollysMirrorRelicPagesStayWithinVanillaViewport),
-			new(nameof(AbyssalContractChoiceModelsMapToExpectedContracts), AbyssalContractChoiceModelsMapToExpectedContracts),
-			new(nameof(AbyssalContractWarriorEliteThresholdGrows), AbyssalContractWarriorEliteThresholdGrows),
-			new(nameof(AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters), AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters),
-			new(nameof(AbyssalContractWarriorCardFilterRejectsSkillsAndPowers), AbyssalContractWarriorCardFilterRejectsSkillsAndPowers),
-			new(nameof(ActualDamageHookCannotSuppressOutOfCombatCalls), ActualDamageHookCannotSuppressOutOfCombatCalls),
-			new(nameof(HookReflectionRequiresExactSignatures), HookReflectionRequiresExactSignatures),
-			new(nameof(SavedPropertyLateRegistrationFailsClosedOn0107WithoutPartialState), SavedPropertyLateRegistrationFailsClosedOn0107WithoutPartialState),
-			new(nameof(ExternalRegistrationValidationPrecedesAllSideEffects), ExternalRegistrationValidationPrecedesAllSideEffects),
-			new(nameof(ExternalResourceOwnershipIsFirstWriterWinsAndIdempotent), ExternalResourceOwnershipIsFirstWriterWinsAndIdempotent),
-			new(nameof(InteropPlayerRuneRegistrationValidatesBeforeSideEffects), InteropPlayerRuneRegistrationValidatesBeforeSideEffects),
-			new(nameof(InteropRelicModelRuneIsGovernedByRegistry), InteropRelicModelRuneIsGovernedByRegistry),
-			new(nameof(InteropDisplayLabelsAreFirstWriterWinsAndValidated), InteropDisplayLabelsAreFirstWriterWinsAndValidated),
-			new(nameof(TurnHooksSkipOwnersAbsentFromParticipants), TurnHooksSkipOwnersAbsentFromParticipants),
-			new(nameof(FeyMagicKeepsPendingNoDrawForPlayersNotTakingTheTurn), FeyMagicKeepsPendingNoDrawForPlayersNotTakingTheTurn),
-			new(nameof(CombatStartForgesUseTheOwnersOwnTurnNumber), CombatStartForgesUseTheOwnersOwnTurnNumber),
-			new(nameof(SavedForgeRewardRestoreFiltersUnavailableExternalContent), SavedForgeRewardRestoreFiltersUnavailableExternalContent),
-			new(nameof(SavedForgeRewardRestoreKeepsGoldFallbackWhenAllOptionsInvalid), SavedForgeRewardRestoreKeepsGoldFallbackWhenAllOptionsInvalid),
-			new(nameof(StormReplacementRequiresMayhemAndUpgradeRune), StormReplacementRequiresMayhemAndUpgradeRune),
-			new(nameof(EntomancerFallbackIsVersionScopedAndMissingHiveOnly), EntomancerFallbackIsVersionScopedAndMissingHiveOnly),
-			new(nameof(EnemyPowerScalingDoesNotPatchOfficialModifierPipeline), EnemyPowerScalingDoesNotPatchOfficialModifierPipeline),
-			new(nameof(EndlessMonsterPowerNormalizationUsesCapturedBaseAmounts), EndlessMonsterPowerNormalizationUsesCapturedBaseAmounts),
-			new(nameof(GlassCannonHealCapRunsAfterHealingMultipliers), GlassCannonHealCapRunsAfterHealingMultipliers),
-			new(nameof(HealCompositionUsesActualHpDelta), HealCompositionUsesActualHpDelta),
-			new(nameof(ColorDiscoveryRewardUsesPublicCardsAndMissingSpecialFieldKeepsOriginal), ColorDiscoveryRewardUsesPublicCardsAndMissingSpecialFieldKeepsOriginal),
-			new(nameof(ColorDiscoveryIncludesThirdPartyCharacterPools), ColorDiscoveryIncludesThirdPartyCharacterPools),
-			new(nameof(MapLengthReducerRejectsGoldenPathAndThirdPartyMapTypes), MapLengthReducerRejectsGoldenPathAndThirdPartyMapTypes),
-			new(nameof(JeweledGauntletReflectionTargetsFailClosedAsAGroup), JeweledGauntletReflectionTargetsFailClosedAsAGroup),
-			new(nameof(TestSubjectRespawnReflectionMissingFallsBackToZero), TestSubjectRespawnReflectionMissingFallsBackToZero),
-			new(nameof(InspectOpenScopesToHextechAndPreservesExternalPrefixChanges), InspectOpenScopesToHextechAndPreservesExternalPrefixChanges),
-			new(nameof(TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives), TurnProcKeysPreserveBuiltInsAndNamespaceExternalDerivatives),
-			new(nameof(NearDeathHpLossResolvesDyingAndKillThresholds), NearDeathHpLossResolvesDyingAndKillThresholds),
-			new(nameof(RuneFamilyHelpersKeepThresholdAndRoundSemantics), RuneFamilyHelpersKeepThresholdAndRoundSemantics),
-			new(nameof(RuneFamilyTypesUseSharedBases), RuneFamilyTypesUseSharedBases),
-			new(nameof(RuneReflectionTargetsResolveOnCurrentGameVersion), RuneReflectionTargetsResolveOnCurrentGameVersion),
-			new(nameof(RetiredRuneSavedPropertiesStayInertPlaceholders), RetiredRuneSavedPropertiesStayInertPlaceholders),
-			new(nameof(ReviewCombatTrackingSnapshotKeepsLegacyJsonKeys), ReviewCombatTrackingSnapshotKeepsLegacyJsonKeys),
-			new(nameof(ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals), ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals),
-			new(nameof(ReviewEnemyHexHoverTipTablesCoverFormerIfChain), ReviewEnemyHexHoverTipTablesCoverFormerIfChain),
-			new(nameof(ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown), ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown),
-			new(nameof(ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat), ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat),
-			new(nameof(ReviewModelHooksLiveOnTheirOwnModels), ReviewModelHooksLiveOnTheirOwnModels),
-			new(nameof(PlayerStatsHoverUsesLocalPortraitOwner), PlayerStatsHoverUsesLocalPortraitOwner),
-			new(nameof(ConfigMenuHasNoAsyncVoidHandlers), ConfigMenuHasNoAsyncVoidHandlers),
-			new(nameof(BurnHealthBarPredictionUsesSettlementFormula), BurnHealthBarPredictionUsesSettlementFormula),
-			new(nameof(CollectionHeaderFollowsStarterTemplate), CollectionHeaderFollowsStarterTemplate),
-			new(nameof(UiSkipPrefixesUseLowPriorityAndDeclarativeTargets), UiSkipPrefixesUseLowPriorityAndDeclarativeTargets),
-			new(nameof(ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut), ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut),
-			new(nameof(ReviewConfigMigrationTableMatchesLegacyChain), ReviewConfigMigrationTableMatchesLegacyChain),
-			new(nameof(ReviewShareCodePreviewNormalizesLikeSave), ReviewShareCodePreviewNormalizesLikeSave),
-			new(nameof(ReviewExternalRegistryRejectsBuiltInTypes), ReviewExternalRegistryRejectsBuiltInTypes),
-			new(nameof(ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry), ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry),
-			new(nameof(ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes), ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes),
-			new(nameof(ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls), ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls),
-			new(nameof(ReviewRelicChoiceCodecKeepsWireFormatForBothKinds), ReviewRelicChoiceCodecKeepsWireFormatForBothKinds),
-			new(nameof(ReviewRuneSelectionTailParsersValidateHeader), ReviewRuneSelectionTailParsersValidateHeader),
-			new(nameof(ReviewChaosTransformResultIsValidated), ReviewChaosTransformResultIsValidated),
-			.. ReviewHooksTestCases()
-		];
+		TestCase[] tests = DiscoverTests();
 
 		if (args.Length > 0)
 		{
@@ -645,9 +265,7 @@ internal static partial class Program
 		where T : AbstractModel, new()
 	{
 		T model = new();
-		typeof(AbstractModel)
-			.GetField("<IsMutable>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-			.SetValue(model, true);
+		SetAutoProperty(model, nameof(AbstractModel.IsMutable), true);
 		return model;
 	}
 
@@ -676,17 +294,8 @@ internal static partial class Program
 
 	private static DustyTome CreateTestDustyTome()
 	{
-		DustyTome dustyTome = CreateBareTestDustyTome();
+		DustyTome dustyTome = CreateMutableTestModel<DustyTome>();
 		SetTestDustyTomeAncientCard(dustyTome, ModelDb.GetId<Apotheosis>());
-		return dustyTome;
-	}
-
-	private static DustyTome CreateBareTestDustyTome()
-	{
-		DustyTome dustyTome = new();
-		typeof(AbstractModel)
-			.GetField("<IsMutable>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-			.SetValue(dustyTome, true);
 		return dustyTome;
 	}
 
@@ -825,9 +434,7 @@ internal static partial class Program
 	private static Player CreateOrdinalTestPlayer(ulong netId)
 	{
 		Player player = (Player)RuntimeHelpers.GetUninitializedObject(typeof(Player));
-		typeof(Player)
-			.GetField("<NetId>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance)!
-			.SetValue(player, netId);
+		SetAutoProperty(player, nameof(Player.NetId), netId);
 		return player;
 	}
 
@@ -908,4 +515,44 @@ internal static partial class Program
 	}
 
 	private readonly record struct TestCase(string Name, Action Run);
+
+	/// <summary>
+	/// 收集 <see cref="Program"/> 上所有标了 <see cref="HextechTestAttribute"/> 的方法，按名称 Ordinal 排序，
+	/// 保证每次运行顺序一致、与源文件编译顺序无关。标在别的类型上或签名不对都直接报错，不会被静默漏掉。
+	/// </summary>
+	private static TestCase[] DiscoverTests()
+	{
+		const BindingFlags allDeclared = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+		List<TestCase> tests = [];
+		foreach (Type type in typeof(Program).Assembly.GetTypes())
+		{
+			foreach (MethodInfo method in type.GetMethods(allDeclared))
+			{
+				if (!method.IsDefined(typeof(HextechTestAttribute), inherit: false))
+				{
+					continue;
+				}
+
+				if (type != typeof(Program)
+					|| !method.IsStatic
+					|| method.IsGenericMethodDefinition
+					|| method.ReturnType != typeof(void)
+					|| method.GetParameters().Length != 0)
+				{
+					throw new InvalidOperationException($"[HextechTest] {type.FullName}.{method.Name} must be a parameterless static void method on Program");
+				}
+
+				tests.Add(new TestCase(method.Name, method.CreateDelegate<Action>()));
+			}
+		}
+
+		tests.Sort(static (left, right) => string.CompareOrdinal(left.Name, right.Name));
+		return tests.ToArray();
+	}
+}
+
+/// <summary>标记一个测试用例：<c>Program</c> 上无参 static void 方法，方法名即测试名（命令行筛选与 hextech_dev.py 都按它）。</summary>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+internal sealed class HextechTestAttribute : Attribute
+{
 }

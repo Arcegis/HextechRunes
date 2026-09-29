@@ -20,6 +20,7 @@ namespace HextechRunes.Tests;
 // 2026-09 兼容性审计收口:精神过载改为海克斯版正面效果、加载器拒绝比宿主新的变体、蜡制奖励标记归属明确。
 internal static partial class Program
 {
+	[HextechTest]
 	private static void NeurosurgeUpgradeSwapsVanillaPowerForHextechBuffOnlyForOwner()
 	{
 		var (_, first, second) = CreatePrismaticEnemyFixture();
@@ -56,6 +57,7 @@ internal static partial class Program
 			"no Harmony patch targets vanilla NeurosurgePower anymore");
 	}
 
+	[HextechTest]
 	private static void LoaderRefusesNewerVariantForKnownOlderHost()
 	{
 		string root = Path.Combine(Path.GetTempPath(), "hextech-loader-test-" + Guid.NewGuid().ToString("N"));
@@ -92,6 +94,7 @@ internal static partial class Program
 
 	// 伤害命令作用域:Prefix 在调用方上下文入栈,Postfix 必须在同步返回前把调用方恢复;
 	// 而原方法内部(在 Postfix 之前捕获了上下文的 await 续体)仍然看得到自己的命令 ID。
+	[HextechTest]
 	private static void DamageCommandScopeRestoresCallerContextAndKeepsTaskContext()
 	{
 		MethodInfo prefix = FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Prefix")
@@ -136,6 +139,7 @@ internal static partial class Program
 	}
 
 	// 规范遗物被图鉴或第三方遍历时会读计数器 getter;RelicModel.Owner 在规范模型上 AssertMutable,所以必须先判 IsCanonical。
+	[HextechTest]
 	private static void NearDeathFeastCountersAreSafeOnCanonicalRelic()
 	{
 		NearDeathFeastRune canonical = (NearDeathFeastRune)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(NearDeathFeastRune));
@@ -144,6 +148,7 @@ internal static partial class Program
 		Equal(0, canonical.DisplayAmount, "canonical relic displays 0 and does not touch Owner");
 	}
 
+	[HextechTest]
 	private static void WaxRelicRewardSaveMarkerIsOwnedAndLegacyCompatible()
 	{
 		ModelId wax = ModelDb.GetId<TezcatarasMercyRune>();

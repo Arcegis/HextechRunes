@@ -11,6 +11,7 @@ internal static partial class Program
 
 	private static string AuditRoot => Path.GetFullPath(Path.Combine(FindTestsSourceDirectory(), "../.."));
 
+	[HextechTest]
 	private static void GameplayDeterminismApisRequireReviewedExceptions()
 	{
 		string pattern = @"\bSystem\s*\.\s*Random\b|\bnew\s+Random\s*\(|\bRandom\s*\.\s*Shared\b|\bGuid\s*\.\s*NewGuid\b|\bDateTime\s*\.\s*(?:Now|UtcNow)\b|\bStopwatch\b|\bTime\s*\.\s*GetTicks\w*\b|\bGodot\s*\.\s*Timer\b";
@@ -36,15 +37,22 @@ internal static partial class Program
 		HashSet<string> seenExceptions = new(StringComparer.Ordinal);
 		foreach (string file in Directory.EnumerateFiles(Path.Combine(AuditRoot, "src"), "*.cs", SearchOption.AllDirectories))
 		{
-			if (IsGeneratedAuditPath(file)) continue;
+			if (IsGeneratedAuditPath(file))
+			{
+				continue;
+			}
 			string relative = Path.GetRelativePath(AuditRoot, file).Replace('\\', '/');
 			foreach (Match match in Regex.Matches(AuditSource(file), pattern))
 			{
 				string api = Regex.Replace(match.Value, @"\s+", "");
 				if (allowedApis.TryGetValue(relative, out string? allowed) && api == allowed && !string.IsNullOrWhiteSpace(exceptions[relative]))
+				{
 					seenExceptions.Add(relative);
+				}
 				else
+				{
 					violations.Add($"{relative}: {match.Value}");
+				}
 			}
 		}
 		Expect(violations.Count == 0, "unreviewed nondeterministic gameplay APIs: " + string.Join("; ", violations));
@@ -54,6 +62,7 @@ internal static partial class Program
 	private static bool IsGeneratedAuditPath(string path) => path.Replace('\\', '/').Contains("/obj/", StringComparison.Ordinal)
 		|| path.Replace('\\', '/').Contains("/bin/", StringComparison.Ordinal);
 
+	[HextechTest]
 	private static void RandomGenerationClassesMatchReviewedManifest()
 	{
 		// 保守地登记命中生成入口文件中的所有类；包括具体符文及共用工厂，新增路径必须人工复核。
@@ -61,12 +70,20 @@ internal static partial class Program
 		List<string> actual = [];
 		foreach (string file in Directory.EnumerateFiles(Path.Combine(AuditRoot, "src"), "*.cs", SearchOption.AllDirectories))
 		{
-			if (IsGeneratedAuditPath(file)) continue;
+			if (IsGeneratedAuditPath(file))
+			{
+				continue;
+			}
 			string source = AuditSource(file);
-			if (!Regex.IsMatch(source, generation)) continue;
+			if (!Regex.IsMatch(source, generation))
+			{
+				continue;
+			}
 			string relative = Path.GetRelativePath(AuditRoot, file).Replace('\\', '/');
 			foreach (string type in Regex.Matches(source, @"\bclass\s+(\w+)").Select(match => match.Groups[1].Value).Distinct(StringComparer.Ordinal))
+			{
 				actual.Add($"{relative} | {type}");
+			}
 		}
 		string manifest = Path.Combine(FindTestsSourceDirectory(), "random_generation_audit.txt");
 		string[] expected = File.ReadAllLines(manifest).Where(line => line.Length > 0 && !line.StartsWith('#')).ToArray();

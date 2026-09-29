@@ -10,6 +10,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void StormReplacementRequiresMayhemAndUpgradeRune()
 	{
 		Expect(
@@ -26,6 +27,7 @@ internal static partial class Program
 			"Storm replacement should run only for the upgraded Mayhem path");
 	}
 
+	[HextechTest]
 	private static void EntomancerFallbackIsVersionScopedAndMissingHiveOnly()
 	{
 #if STS2_110_OR_NEWER
@@ -51,6 +53,7 @@ internal static partial class Program
 #endif
 	}
 
+	[HextechTest]
 	private static void EnemyPowerScalingDoesNotPatchOfficialModifierPipeline()
 	{
 		BindingFlags flags = BindingFlags.Static | BindingFlags.NonPublic;
@@ -82,6 +85,7 @@ internal static partial class Program
 			"retained enemy scaling targets must be limited to GetScaledAmountForMultiplayer");
 	}
 
+	[HextechTest]
 	private static void EndlessMonsterPowerNormalizationUsesCapturedBaseAmounts()
 	{
 		Equal(9, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(9m, 1m), "unscaled Exoskeleton base amount");
@@ -131,6 +135,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void HealCompositionUsesActualHpDelta()
 	{
 		Equal(5m, HextechCombatHooks.CalculateActualHealAmount(20, 25), "uncapped actual heal delta");
@@ -139,6 +144,7 @@ internal static partial class Program
 		Equal(0m, HextechCombatHooks.CalculateActualHealAmount(20, 15), "concurrent HP loss must not become healing");
 	}
 
+	[HextechTest]
 	private static void GlassCannonHealCapRunsAfterHealingMultipliers()
 	{
 		decimal capBeforeMultiplier = HextechCombatHooks.ClampHealAmountToCap(

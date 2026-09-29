@@ -21,7 +21,10 @@ internal static partial class Program
 		internal int Calls;
 		public override Task AfterGoldGained(Player player)
 		{
-			if (player != Owner) return Task.CompletedTask;
+			if (player != Owner)
+			{
+				return Task.CompletedTask;
+			}
 			Calls++;
 			Expect(Calls < 20, "gold feedback must terminate");
 			return OnGold?.Invoke() ?? Task.CompletedTask;
@@ -49,7 +52,7 @@ internal static partial class Program
 			{
 				AccessTools.Field(typeof(Player), "_relics").SetValue(player, new List<RelicModel>());
 				AccessTools.Field(typeof(Creature), "_powers").SetValue(player.Creature, new List<PowerModel>());
-				AccessTools.Field(typeof(Creature), "<Player>k__BackingField").SetValue(player.Creature, player);
+				SetAutoProperty(player.Creature, nameof(Creature.Player), player);
 			}
 			CombatState combat = (CombatState)first.Creature.CombatState!;
 			Creature enemy = CreatePrismaticTestCreature(CombatSide.Enemy, combat);
@@ -75,6 +78,7 @@ internal static partial class Program
 
 	private static bool SkipImmediateGoldFlash() => false;
 
+	[HextechTest]
 	private static void ImmediateGoldPaysOwnerAndDoesNotRepeatAtVictory()
 	{
 		WithImmediateGoldFixture((owner, other, enemy, listener) =>
@@ -113,13 +117,16 @@ internal static partial class Program
 			Equal(6, listener.Calls, "native gold hooks run for each payout");
 			CombatRoom room = (CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom));
 			foreach (RelicModel rune in new RelicModel[] { sacrifice, goldrend, interest, collector })
+			{
 				rune.AfterCombatEnd(room).GetAwaiter().GetResult();
+			}
 			piggy.ApplySharedCombatVictory(room).GetAwaiter().GetResult();
 			Equal(0, UpgradeGoldRewards.Count, "no duplicate battle-end reward");
 			Equal(0, other.Gold, "teammate gold is unchanged");
 		});
 	}
 
+	[HextechTest]
 	private static void ImmediateGoldFeedbackStopsAndLaterDamageStillPays()
 	{
 		WithImmediateGoldFixture((owner, _, enemy, listener) =>

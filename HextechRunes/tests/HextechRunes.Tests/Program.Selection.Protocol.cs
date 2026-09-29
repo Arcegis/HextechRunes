@@ -28,6 +28,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void ActRollRoundTripKeepsHostSnapshot()
 	{
 		ModelId disabledRune = HextechCatalog.GetConfigurablePlayerRuneIds()
@@ -105,6 +106,7 @@ internal static partial class Program
 		Expect(!HextechChoiceCodec.TryDecodeActRoll(result, 0, out _, out _, out _, out _, out _), "wrong act should be rejected");
 	}
 
+	[HextechTest]
 	private static void RuneSelectionRoundTripRequiresMatchingActAndOrdinal()
 	{
 		RelicModel[] finalOptions = CreateRuneSelectionTestOptions(3);
@@ -126,6 +128,7 @@ internal static partial class Program
 		SequenceEqual(finalOptionIds, decodedFinalOptionIds, "final option ids");
 	}
 
+	[HextechTest]
 	private static void RuneSelectionRejectsWrongActOrOrdinal()
 	{
 		PlayerChoiceResult result = HextechChoiceCodec.CreateRuneSelection(
@@ -142,6 +145,7 @@ internal static partial class Program
 		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(malformed, 1, 2, out _, out _, out _), "malformed rune selection should be rejected");
 	}
 
+	[HextechTest]
 	private static void ActSelectionAppliedRejectsWrongActOrOrdinal()
 	{
 		PlayerChoiceResult result = HextechChoiceCodec.CreateActSelectionApplied(2, 3);
@@ -154,6 +158,7 @@ internal static partial class Program
 		Expect(!HextechChoiceCodec.TryDecodeActSelectionApplied(malformed, 2, 3), "missing applied flag should be rejected");
 	}
 
+	[HextechTest]
 	private static void EnemyHexAdjustmentRoundTripKeepsAllSlots()
 	{
 		const int OperationToken = 112233;
@@ -180,6 +185,7 @@ internal static partial class Program
 		Expect(!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 1, 12, out _), "wrong act should be rejected");
 	}
 
+	[HextechTest]
 	private static void EnemyHexAdjustmentRejectsInvalidHex()
 	{
 		const int OperationToken = 223344;
@@ -200,6 +206,7 @@ internal static partial class Program
 		Expect(!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(result, OperationToken, 0, 1, out _), "invalid monster hex enum should be rejected");
 	}
 
+	[HextechTest]
 	private static void EnemyHexAdjustmentRejectsUnexpectedSequence()
 	{
 		const int OperationToken = 334455;
@@ -222,6 +229,7 @@ internal static partial class Program
 			"future enemy adjustment sequence should be rejected");
 	}
 
+	[HextechTest]
 	private static void EnemyHexAdjustmentRejectsExtremeCounts()
 	{
 		const int OperationToken = 445566;
@@ -257,6 +265,7 @@ internal static partial class Program
 			"extreme enemy reroll count should be rejected without allocation");
 	}
 
+	[HextechTest]
 	private static void LegacyEnemyHexAdjustmentIsRejected()
 	{
 		PlayerChoiceResult result = PlayerChoiceResult.FromIndexes(new List<int>
@@ -276,6 +285,7 @@ internal static partial class Program
 			"legacy enemy adjustment payload should be rejected after the protocol gate");
 	}
 
+	[HextechTest]
 	private static void RandomRuneGrantRoundTripKeepsStableModelIds()
 	{
 		const int OperationToken = 667788;
@@ -292,6 +302,7 @@ internal static partial class Program
 		Expect(HextechChoiceCodec.IsRandomRuneGrant(result, OperationToken), "random grant predicate");
 	}
 
+	[HextechTest]
 	private static void RandomRuneGrantRejectsMalformedStableModelIdList()
 	{
 		const int OperationToken = 778899;
@@ -377,6 +388,7 @@ internal static partial class Program
 			"out-of-range legacy random grant ordinal should be rejected");
 	}
 
+	[HextechTest]
 	private static void RelicOptionSelectionRoundTripRequiresMatchingOptions()
 	{
 		const int OperationToken = 889900;
@@ -394,6 +406,7 @@ internal static partial class Program
 		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, OperationToken, CreateRuneSelectionTestOptions(3)), "different relic option count should not be expected");
 	}
 
+	[HextechTest]
 	private static void GeneratedRuneSelectionPreservesInstanceDataAndRejectsTruncation()
 	{
 		RelicModel[] options = [new GeneratedTestRelic { Data = "recipe:first" }, new GeneratedTestRelic { Data = "recipe:second" }];
@@ -421,6 +434,7 @@ internal static partial class Program
 		Expect(!entry.Applied, "pending recipe still needs obtain");
 	}
 
+	[HextechTest]
 	private static void OperationTokensRejectCrossedPayloads()
 	{
 		const uint ChoiceId = 42;
@@ -483,6 +497,7 @@ internal static partial class Program
 			"crossed enemy adjustment operation should be rejected");
 	}
 
+	[HextechTest]
 	private static void NetworkChoiceTimeoutUsesNominalWallClockSeconds()
 	{
 		Equal(TimeSpan.Zero, HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(0), "zero timeout");
@@ -490,6 +505,7 @@ internal static partial class Program
 		Equal(TimeSpan.FromMinutes(10), HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(36000), "selection timeout");
 	}
 
+	[HextechTest]
 	private static void StableModelIdListCodecRoundTripsFromNonzeroCursor()
 	{
 		ModelId[] source =
@@ -506,6 +522,7 @@ internal static partial class Program
 		Equal(payload.Count, nextCursor, "stable model id helper next cursor");
 	}
 
+	[HextechTest]
 	private static void StableModelIdListCodecRejectsMalformedLength()
 	{
 		List<int> payload =
@@ -520,6 +537,7 @@ internal static partial class Program
 		Equal(0, nextCursor, "failed stable model id decode should keep original cursor");
 	}
 
+	[HextechTest]
 	private static void StableModelIdListCodecRejectsEncoderOverflow()
 	{
 		ModelId id = new("HEXTECH_TEST", "ENTRY");

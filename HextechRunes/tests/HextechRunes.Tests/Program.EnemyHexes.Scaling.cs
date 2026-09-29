@@ -30,6 +30,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void EnemyCoefficientAddsWithinHexAndMultipliesAcrossHexes()
 	{
 		decimal oneHex = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
@@ -50,6 +51,7 @@ internal static partial class Program
 		Equal(1.56m, crossHex, "different enemy hex sectors should multiply");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpCoefficientSectorsUseBaseHp()
 	{
 		decimal scale = HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
@@ -64,6 +66,7 @@ internal static partial class Program
 		Equal(126m, Math.Floor(100m * scale), "enemy max HP should derive once from the tracked base HP");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpLegacyMigrationRecoversMixedSinglePlayerEffects()
 	{
 		Equal(
@@ -106,6 +109,7 @@ internal static partial class Program
 			"rawless legacy migration should preserve the observed max HP after the new coefficient projection");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpLegacyMigrationPreservesMultiplayerScaling()
 	{
 		Equal(
@@ -128,6 +132,7 @@ internal static partial class Program
 			"a fresh externally-scaled enemy should keep its current max HP as the coefficient base");
 	}
 
+	[HextechTest]
 	private static void EnemyAttributeBoostsUseExpectedTiersAndCrossHexMultiplication()
 	{
 		Equal(0m, EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.Stats, 1), "Stats tier one bonus");
@@ -149,6 +154,7 @@ internal static partial class Program
 		Equal(1.21m, combined, "attribute bonuses should add within one hex and multiply across hexes");
 	}
 
+	[HextechTest]
 	private static void EnemyMaxHpCoefficientThresholdsScaleWithPlayerCount()
 	{
 		Equal(1m, HeavyHitterEnemyHex.ResolveMultiplier(29m, 2), "two-player Heavy Hitter below 30-HP threshold");
@@ -164,6 +170,7 @@ internal static partial class Program
 		Equal(2m, ProteinShakeEnemyHex.ResolveMultiplier(1000m, 2), "two-player Protein Shake at 100 percent bonus");
 	}
 
+	[HextechTest]
 	private static void EnemyBalanceUsesNewTierPercentagesAndUncappedSustain()
 	{
 		Equal(20, ExoskeletonEnemyHex.ResolveHardToKill(100, 1), "act one Hard to Kill threshold");

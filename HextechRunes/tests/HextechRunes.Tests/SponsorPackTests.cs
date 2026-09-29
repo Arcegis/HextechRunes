@@ -16,6 +16,7 @@ internal static partial class Program
 {
 	// 功能组注册的依赖表必须与清单表自洽:可获得内容都在锻造器/符文表里,依赖都在载体/图标/事件遗物表里;
 	// 并且运行期硬引用选择遗物的锻造器/符文都声明了依赖(漏声明 = 依赖注册失败时它照样入池,结算时 ModelDb.Relic<T>() 报错)。
+	[HextechTest]
 	private static void SponsorCatalogDependencyTableIsConsistent()
 	{
 		HashSet<Type> obtainables = [.. SponsorCatalog.ObtainableTypes];
@@ -37,6 +38,7 @@ internal static partial class Program
 	}
 
 	// 排除规则的类型部分(纯函数,不触碰 Godot 资源层)。
+	[HextechTest]
 	private static void RandomEnchantmentPoolExcludesDeprecatedNegativeAndMarkerTypes()
 	{
 		Expect(RandomEnchantmentPool.IsExcludedType(typeof(DeprecatedEnchantment)), "DeprecatedEnchantment must be excluded");
@@ -85,12 +87,11 @@ internal static partial class Program
 
 	// GetLegalEnchantments 只做「过 CanEnchant 的保序过滤」;池本身按 Id.Entry 的 Ordinal 顺序在 BuildPool 里排好。
 	// 真实池要 ModelDb 造 canonical 实例(需要 Godot 资源层),测试进程里跑不了,所以走纯函数重载。
+	[HextechTest]
 	private static void RandomEnchantmentPoolLegalEnchantmentsPreserveOrderAndCanEnchant()
 	{
 		CardModel skill = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
-		typeof(CardModel)
-			.GetField("<Type>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-			.SetValue(skill, CardType.Skill);
+		SetAutoProperty(skill, nameof(CardModel.Type), CardType.Skill);
 
 		EnchantmentModel vigorous = (Vigorous)RuntimeHelpers.GetUninitializedObject(typeof(Vigorous));
 		EnchantmentModel steady = (Steady)RuntimeHelpers.GetUninitializedObject(typeof(Steady));
@@ -111,6 +112,7 @@ internal static partial class Program
 
 	// 复合附魔只剩一个只读迁移壳:恒不可附、只保留 SavedEnchantmentsJson 这一个 [SavedProperty](net-id 布局不变)、
 	// 保留 OnEnchant 作为读档迁移入口。真正的迁移路径要 ModelDb + SaveUtil 造内层附魔,测试进程里无法执行。
+	[HextechTest]
 	private static void SponsorCompositeEnchantmentIsReadOnlyMigrationShell()
 	{
 		SponsorCompositeEnchantment shell = (SponsorCompositeEnchantment)RuntimeHelpers.GetUninitializedObject(typeof(SponsorCompositeEnchantment));
@@ -140,28 +142,26 @@ internal static partial class Program
 
 	// 熵减的「战后一次预览批量删除」不再靠 Hook.AfterCombatEnd 的补丁收集,改由第一个被回调的实例
 	// 扫一遍牌组。选牌是纯函数,在这里守住:只挑本场打出过(PendingRemoval)的熵减牌,且保持牌组顺序。
+	[HextechTest]
 	private static void EntropyDecreaseCollectsOnlyCardsMarkedForRemoval()
 	{
-		FieldInfo enchantmentField = typeof(CardModel)
-			.GetField("<Enchantment>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!;
-
 		CardModel plain = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
 
 		CardModel unplayed = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
-		enchantmentField.SetValue(unplayed, RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease)));
+		SetAutoProperty(unplayed, nameof(CardModel.Enchantment), RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease)));
 
 		CardModel played = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
 		EntropyDecrease playedEnchantment = (EntropyDecrease)RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease));
 		playedEnchantment.PendingRemoval = true;
-		enchantmentField.SetValue(played, playedEnchantment);
+		SetAutoProperty(played, nameof(CardModel.Enchantment), playedEnchantment);
 
 		CardModel otherEnchantment = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
-		enchantmentField.SetValue(otherEnchantment, RuntimeHelpers.GetUninitializedObject(typeof(EntropyIncrease)));
+		SetAutoProperty(otherEnchantment, nameof(CardModel.Enchantment), RuntimeHelpers.GetUninitializedObject(typeof(EntropyIncrease)));
 
 		CardModel alsoPlayed = (Bash)RuntimeHelpers.GetUninitializedObject(typeof(Bash));
 		EntropyDecrease alsoPlayedEnchantment = (EntropyDecrease)RuntimeHelpers.GetUninitializedObject(typeof(EntropyDecrease));
 		alsoPlayedEnchantment.PendingRemoval = true;
-		enchantmentField.SetValue(alsoPlayed, alsoPlayedEnchantment);
+		SetAutoProperty(alsoPlayed, nameof(CardModel.Enchantment), alsoPlayedEnchantment);
 
 		IReadOnlyList<CardModel> collected = EntropyDecrease.CollectPendingRemovalCards(
 			[plain, unplayed, played, otherEnchantment, alsoPlayed]);
@@ -170,6 +170,7 @@ internal static partial class Program
 		Equal(alsoPlayed, collected[1], "collection keeps deck order");
 	}
 
+	[HextechTest]
 	private static void DollysMirrorRelicPagesStayWithinVanillaViewport()
 	{
 		DollyRelicPageLayout first = DollysMirrorForge.GetRelicPageLayout(13, 0);
@@ -190,6 +191,7 @@ internal static partial class Program
 	}
 
 	// 契约表是选择界面、提示、识别与事件遗物注册的唯一来源:每种契约恰好一条,选项遗物能反查回自己的契约。
+	[HextechTest]
 	private static void AbyssalContractChoiceModelsMapToExpectedContracts()
 	{
 		(AbyssalContractKind Kind, Type ChoiceRelic)[] expected =
@@ -221,6 +223,7 @@ internal static partial class Program
 			"every contract kind has exactly one choice entry, in enum order");
 	}
 
+	[HextechTest]
 	private static void AbyssalContractWarriorEliteThresholdGrows()
 	{
 		int eliteKills = 0;
@@ -243,6 +246,7 @@ internal static partial class Program
 	}
 
 	// 战士/自动机契约升级起始遗物、摄政契约替换起始遗物都读这张表(IAbyssalContract.UpgradeCurrentStartingRelic、RegentContract)。
+	[HextechTest]
 	private static void AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters()
 	{
 		(Type Character, Type Starter, Type Upgraded)[] expected =
@@ -265,6 +269,7 @@ internal static partial class Program
 		Equal(expected.Length, AbyssalContractCatalog.StarterRelics.Count, "one starter mapping per vanilla character");
 	}
 
+	[HextechTest]
 	private static void AbyssalContractWarriorCardFilterRejectsSkillsAndPowers()
 	{
 		Expect(!AbyssalContractRune.IsWarriorForbiddenCardType(CardType.Attack), "attacks should remain legal");

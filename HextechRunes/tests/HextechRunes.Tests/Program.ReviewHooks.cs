@@ -13,13 +13,6 @@ internal static partial class Program
 {
 	private const BindingFlags NestedPatchFlags = BindingFlags.Public | BindingFlags.NonPublic;
 
-	private static TestCase[] ReviewHooksTestCases() =>
-	[
-		new(nameof(HarmonyPassesPostfixStateByReferenceToFinalizer), HarmonyPassesPostfixStateByReferenceToFinalizer),
-		new(nameof(ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure), ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure),
-		new(nameof(KeywordPersistenceMarkersKeepLegacySaveFormat), KeywordPersistenceMarkersKeepLegacySaveFormat)
-	];
-
 	/// <summary>只应用 <paramref name="outerType"/> 里声明的嵌套补丁类；给了名字就只应用点名的那几个。</summary>
 	private static void ApplyNestedPatches(Harmony harmony, Type outerType, params string[] nestedNames)
 	{
@@ -97,6 +90,7 @@ internal static partial class Program
 	/// AsyncLocal 作用域补丁依赖 Harmony 把 Postfix 里对 ref __state 的清零传给 Finalizer：
 	/// 正常路径 Finalizer 看到已清零、不重复出栈；原方法同步抛异常时 Postfix 不执行，Finalizer 看到入栈标记。
 	/// </summary>
+	[HextechTest]
 	private static void HarmonyPassesPostfixStateByReferenceToFinalizer()
 	{
 		Harmony harmony = new("Natsuki.HextechRunes.Tests.FinalizerStateProbe");
@@ -129,6 +123,7 @@ internal static partial class Program
 		return depth.Value;
 	}
 
+	[HextechTest]
 	private static void ScopedPatchFinalizersRestoreCallerContextAfterSynchronousFailure()
 	{
 		InvalidOperationException failure = new("synchronous failure inside the patched command");
@@ -190,6 +185,7 @@ internal static partial class Program
 	/// 思维覆写 → 谢幕 → 扮演 → 腐化枝 → 不死 的顺序追加值为 1 的标记、已有同名项不重复写；
 	/// 读档只认非 0 标记。旧存档（手写的旧格式）读回后关键词与追踪都恢复，再存一次得到同样的条目。
 	/// </summary>
+	[HextechTest]
 	private static void KeywordPersistenceMarkersKeepLegacySaveFormat()
 	{
 		StrikeIronclad card = CreateMutableTestModel<StrikeIronclad>();

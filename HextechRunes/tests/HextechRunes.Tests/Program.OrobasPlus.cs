@@ -13,6 +13,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void OrobasSecondUpgradePreservesNativeAndForeignMappings()
 	{
 		WithOrobasModels(() =>
@@ -86,6 +87,7 @@ internal static partial class Program
 		});
 	}
 
+	[HextechTest]
 	private static void OrobasPlusDrawAndLightningStayOwnerScoped()
 	{
 		Player owner = CreateOrdinalTestPlayer(1);
@@ -114,6 +116,7 @@ internal static partial class Program
 		Equal(2m, core.ModifyOrbValue(frost, 2m), "other orb types are unchanged");
 	}
 
+	[HextechTest]
 	private static void OrobasPlusUsesNativeAssetsAndVersionedValues()
 	{
 		WithOrobasModels(() =>

@@ -14,6 +14,39 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	/// <summary>
+	/// 写入只读/私有 set 自动属性的编译器支持字段（<c>&lt;Name&gt;k__BackingField</c>）。
+	/// 从实例的运行时类型沿继承链查找；链上出现多个同名支持字段（派生类覆写了自动属性）时直接报错，
+	/// 避免悄悄写到另一层。
+	/// </summary>
+	private static void SetAutoProperty(object target, string propertyName, object? value)
+	{
+		string fieldName = $"<{propertyName}>k__BackingField";
+		FieldInfo? found = null;
+		for (Type? type = target.GetType(); type != null; type = type.BaseType)
+		{
+			FieldInfo? field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly);
+			if (field == null)
+			{
+				continue;
+			}
+
+			if (found != null)
+			{
+				throw new InvalidOperationException($"{target.GetType().FullName}.{propertyName} has backing fields on both {found.DeclaringType?.FullName} and {type.FullName}");
+			}
+
+			found = field;
+		}
+
+		if (found == null)
+		{
+			throw new InvalidOperationException($"{target.GetType().FullName}.{propertyName} has no auto-property backing field");
+		}
+
+		found.SetValue(target, value);
+	}
+
 	private static (HextechEnemyHexContext Context, Player First, Player Second) CreatePrismaticEnemyFixture()
 	{
 		RunState run = (RunState)RuntimeHelpers.GetUninitializedObject(typeof(RunState));
@@ -26,14 +59,14 @@ internal static partial class Program
 		foreach (Player player in new[] { first, second })
 		{
 			AccessTools.Field(typeof(Player), "_runState").SetValue(player, run);
-			AccessTools.Field(typeof(Player), "<Creature>k__BackingField").SetValue(player, CreatePrismaticTestCreature(CombatSide.Player, combat));
+			SetAutoProperty(player, nameof(Player.Creature), CreatePrismaticTestCreature(CombatSide.Player, combat));
 			PlayerCombatState state = (PlayerCombatState)RuntimeHelpers.GetUninitializedObject(typeof(PlayerCombatState));
-			AccessTools.Field(typeof(PlayerCombatState), "<Hand>k__BackingField").SetValue(state, new CardPile(PileType.Hand));
-			AccessTools.Field(typeof(PlayerCombatState), "<DrawPile>k__BackingField").SetValue(state, new CardPile(PileType.Draw));
-			AccessTools.Field(typeof(PlayerCombatState), "<DiscardPile>k__BackingField").SetValue(state, new CardPile(PileType.Discard));
-			AccessTools.Field(typeof(PlayerCombatState), "<ExhaustPile>k__BackingField").SetValue(state, new CardPile(PileType.Exhaust));
-			AccessTools.Field(typeof(PlayerCombatState), "<PlayPile>k__BackingField").SetValue(state, new CardPile(PileType.Play));
-			AccessTools.Field(typeof(Player), "<Deck>k__BackingField").SetValue(player, new CardPile(PileType.Deck));
+			SetAutoProperty(state, nameof(PlayerCombatState.Hand), new CardPile(PileType.Hand));
+			SetAutoProperty(state, nameof(PlayerCombatState.DrawPile), new CardPile(PileType.Draw));
+			SetAutoProperty(state, nameof(PlayerCombatState.DiscardPile), new CardPile(PileType.Discard));
+			SetAutoProperty(state, nameof(PlayerCombatState.ExhaustPile), new CardPile(PileType.Exhaust));
+			SetAutoProperty(state, nameof(PlayerCombatState.PlayPile), new CardPile(PileType.Play));
+			SetAutoProperty(player, nameof(Player.Deck), new CardPile(PileType.Deck));
 			AccessTools.Property(typeof(Player), "PlayerCombatState").SetValue(player, state);
 		}
 		HextechMayhemModifier modifier = CreateMutableTestModel<HextechMayhemModifier>();
@@ -44,7 +77,7 @@ internal static partial class Program
 	private static Creature CreatePrismaticTestCreature(CombatSide side, CombatState combat)
 	{
 		Creature creature = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
-		AccessTools.Field(typeof(Creature), "<Side>k__BackingField").SetValue(creature, side);
+		SetAutoProperty(creature, nameof(Creature.Side), side);
 		AccessTools.Field(typeof(Creature), "_currentHp").SetValue(creature, 50);
 		AccessTools.Property(typeof(Creature), "CombatState").SetValue(creature, combat);
 		return creature;

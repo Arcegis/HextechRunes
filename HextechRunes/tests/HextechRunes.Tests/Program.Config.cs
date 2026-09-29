@@ -26,6 +26,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
@@ -33,6 +34,7 @@ internal static partial class Program
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationV15BaselineReachesCurrentDefault()
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
@@ -44,6 +46,7 @@ internal static partial class Program
 			$"v15 factory defaults + migration chain should equal current factory defaults; migrated:\n{string.Join("\n", migrated.OrderBy(static id => id, StringComparer.Ordinal))}\ncurrent defaults:\n{string.Join("\n", HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal))}");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationV26AddsNewPlayerDefaultDisables()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, []);
@@ -66,6 +69,7 @@ internal static partial class Program
 			"v26 player config migration should add the newly default-disabled runes");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationV34DisablesIllusoryWeaponOnce()
 	{
 		string id = ModelDb.GetId<IllusoryWeaponRune>().Entry;
@@ -77,6 +81,7 @@ internal static partial class Program
 		Expect(HextechContentRegistry.PlayerRuneMetadata.IsConfigurable(typeof(IllusoryWeaponRune)), "default disable remains configurable");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
@@ -93,6 +98,7 @@ internal static partial class Program
 			"current-version monster config should preserve a user-enabled Blank Check");
 	}
 
+	[HextechTest]
 	private static void ConfigShareRoundTripKeepsActRarityWeights()
 	{
 		HextechRarityWeights[] expectedWeights =
@@ -111,6 +117,7 @@ internal static partial class Program
 		SequenceEqual(expectedWeights, preview.Snapshot.RuneRarityWeightsByAct, "act rarity weights should survive share-code round trip");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention()
 	{
 		(int migratedVersion, HextechRarityWeights migratedWeights, bool ruleEnabledWithZeroLegacySilverWeight) =
@@ -142,6 +149,7 @@ internal static partial class Program
 			"v31 single rarity weights should migrate to every act");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationV30EnablesAdvanceToRetreat()
 	{
 		string id = ModelDb.GetId<AdvanceToRetreatRune>().Entry;
@@ -150,6 +158,7 @@ internal static partial class Program
 		Expect(!disabled.Contains(id), "v29 player config migration should enable Advance to Retreat");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationV31EnablesHappyAccident()
 	{
 		string id = ModelDb.GetId<HappyAccidentRune>().Entry;
@@ -158,6 +167,7 @@ internal static partial class Program
 		Expect(!disabled.Contains(id), "v30 player config migration should enable Happy Accident");
 	}
 
+	[HextechTest]
 	private static void ConfigMigrationV33ChangesLegacyInfiniteMonsterRerolls()
 	{
 		(int migratedVersion, int migratedLimit) =
@@ -177,6 +187,7 @@ internal static partial class Program
 			"v33 explicit infinite enemy rerolls should be preserved");
 	}
 
+	[HextechTest]
 	private static void GetExcitedDefaultsMigrateOnceAndRemainConfigurable()
 	{
 		string enemyId = MonsterHexKind.GetExcited.ToString();
@@ -189,6 +200,7 @@ internal static partial class Program
 		Expect(!HextechMonsterHexRegistry.Registrations.Single(row => row.Kind == MonsterHexKind.GetExcited).Disabled, "config default does not hard-remove content");
 	}
 
+	[HextechTest]
 	private static void ChaosChanceConfigurationRoundTripsAndDefaults()
 	{
 		HextechRunConfigurationSnapshot defaults = HextechRuneConfiguration.GetDefaultSnapshot();
@@ -207,6 +219,7 @@ internal static partial class Program
 		Equal(33, JsonSerializer.Deserialize<HextechRunConfigurationSnapshot>(json)!.ChaosRuneChancePercent, "old JSON default");
 	}
 
+	[HextechTest]
 	private static void EnemyHexCountStateNormalizesMissingAndOutOfRangeValues()
 	{
 		SequenceEqual(new[] { 1, 1, 1 }, HextechPlayerHexCountState.Normalize(null), "null player count snapshot");
@@ -218,6 +231,7 @@ internal static partial class Program
 		SequenceEqual(new[] { 2, 3, 4 }, state.Snapshot, "state should keep exactly three normalized act counts");
 	}
 
+	[HextechTest]
 	private static void RunConfigurationDefaultSnapshotUsesExpectedActCounts()
 	{
 		HextechRunConfigurationSnapshot snapshot = HextechRuneConfiguration.GetDefaultSnapshot();
@@ -241,6 +255,7 @@ internal static partial class Program
 		Equal(100, HextechRuneConfiguration.ClampGoldenRerollChancePercent(101), "golden reroll chance upper clamp");
 	}
 
+	[HextechTest]
 	private static void RetiredCustomRarityModifiersAreNotInstalledIntoCustomRunUi()
 	{
 		SequenceEqual(
@@ -269,6 +284,7 @@ internal static partial class Program
 			"mod initialization should not install retired custom rarity modifier UI hooks");
 	}
 
+	[HextechTest]
 	private static void RunConfigurationDefaultSnapshotDisablesRiskyContent()
 	{
 		// 腐化树枝自配置 v16 起转为默认启用;改用长期默认禁用的逃跑计划做代表。
@@ -291,6 +307,7 @@ internal static partial class Program
 		Expect(!snapshot.DisabledPlayerRuneIds.Contains(corruptedBranchId), "corrupted branch should be enabled by default since config v16");
 	}
 
+	[HextechTest]
 	private static void RerollLimitConfigUsesZeroToNineThenInfinite()
 	{
 		Equal(0, HextechRuneConfiguration.StepRerollLimit(0, -1), "zero stays zero on decrement");
@@ -302,6 +319,7 @@ internal static partial class Program
 		Equal(9, HextechRuneConfiguration.ClampRerollLimit(99), "finite values clamp to nine");
 	}
 
+	[HextechTest]
 	private static void EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct()
 	{
 		HextechEnemyHexCountState state = new();
@@ -315,6 +333,7 @@ internal static partial class Program
 		Equal(3, state.GetForAct(0, endless: true), "endless first loop uses third act count");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneConfigSnapshotStateUsesClientFallbackWithoutSnapshot()
 	{
 		string localDisabledId = HextechCatalog.GetConfigurablePlayerRuneIds()
@@ -328,6 +347,7 @@ internal static partial class Program
 		Expect(state.GetDisabledIdsForPool(isClient: true, [ localDisabledId ]).Count == 0, "client fallback should ignore local disabled ids without host snapshot");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneConfigSnapshotStateSnapshotOverridesLocalFallback()
 	{
 		string[] ids = HextechCatalog.GetConfigurablePlayerRuneIds()
@@ -345,6 +365,7 @@ internal static partial class Program
 		SetEqual([ ids[1] ], state.GetDisabledIdsForPool(isClient: false, [ ids[0] ]), "snapshot should override host fallback");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneConfigSnapshotStateSerializesAndClearsMalformedData()
 	{
 		string[] ids = HextechCatalog.GetConfigurablePlayerRuneIds()
@@ -366,6 +387,7 @@ internal static partial class Program
 		Expect(restored.Serialize() == "", "cleared snapshot should serialize as empty string");
 	}
 
+	[HextechTest]
 	private static void MayhemRunContextResetForNewRunClearsState()
 	{
 		HextechMayhemRunContext context = new();
@@ -398,6 +420,7 @@ internal static partial class Program
 			"new-run rune selection journal should reset");
 	}
 
+	[HextechTest]
 	private static void MayhemRunContextResetForEndlessLoopPreservesStageRows()
 	{
 		HextechMayhemRunContext context = new();
@@ -432,6 +455,7 @@ internal static partial class Program
 	}
 
 	// "已见"只存条目名;还原出的 ID 必须和候选池里遗物的真实 ID 相等,否则跨幕排除永远匹配不上。
+	[HextechTest]
 	private static void SeenRuneIdsRoundTripToRealRelicIds()
 	{
 		RelicModel rune = CreateMutableTestModel<BigStrengthRune>();
@@ -441,6 +465,7 @@ internal static partial class Program
 			"seen exclusion set matches candidates by id");
 	}
 
+	[HextechTest]
 	private static void MayhemActStateSupportsExtraActsAndStableExtraStageIds()
 	{
 		HextechMayhemActState state = new();
@@ -462,6 +487,7 @@ internal static partial class Program
 		Equal(finaleIndex, restored.GetOrCreateExtraStageIndex("0:IntegratedStrategyEvents:Finale:EternalDust", 99), "extra finale mapping should round-trip");
 	}
 
+	[HextechTest]
 	private static void MayhemRunContextDebugResetSetsOnlyRequestedMonsterHex()
 	{
 		HextechMayhemRunContext context = new();
@@ -483,6 +509,7 @@ internal static partial class Program
 		Expect(!context.ActState.GetKnownMonsterHexes().Contains(MonsterHexKind.FrostWraith), "debug reset should discard previous monster hexes");
 	}
 
+	[HextechTest]
 	private static void ExternalModelIdConflictsAreRejectedBeforeRegistration()
 	{
 		Type playerCollisionType = typeof(BurningBlood);
@@ -564,6 +591,7 @@ internal static partial class Program
 			"configurable external runes must reject duplicate Entry values across categories");
 	}
 
+	[HextechTest]
 	private static void ExternalPlayerRuneRegistrationUpdatesCatalog()
 	{
 		Type runeType = typeof(ExternalRegistrationTestRune);
@@ -581,6 +609,7 @@ internal static partial class Program
 		Expect(HextechCatalog.GetConfigurablePlayerRuneIds().Contains(ModelDb.GetId(runeType)), "external rune should enter configurable rune id pool");
 	}
 
+	[HextechTest]
 	private static void ExternalEventRelicRegistrationUpdatesRegistry()
 	{
 		Type relicType = typeof(ExternalRegistrationEventRelic);
@@ -593,6 +622,7 @@ internal static partial class Program
 		Equal(1, HextechExternalContentRegistry.GetEventRelicTypes().Count(type => type == relicType), "idempotent event relic registration count");
 	}
 
+	[HextechTest]
 	private static void ExternalForgeRegistrationUpdatesCatalog()
 	{
 		Type forgeType = typeof(ExternalRegistrationForge);
@@ -608,6 +638,7 @@ internal static partial class Program
 		Expect(HextechRuneConfiguration.NormalizeDisabledForgeIds([ forgeId ]).Contains(forgeId), "external forge should be accepted by disabled forge config");
 	}
 
+	[HextechTest]
 	private static void ExternalConfigDisabledIdsPreserveUnloadedContent()
 	{
 		const string unloadedRuneId = "ExternalMod.UnloadedRune";
@@ -623,6 +654,7 @@ internal static partial class Program
 			"unloaded external forge disabled id should be preserved");
 	}
 
+	[HextechTest]
 	private static void ExternalEnchantmentIconRegistrationTracksPath()
 	{
 		ModelId id = ModelDb.GetId<ExternalRegistrationEnchantment>();

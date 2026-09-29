@@ -11,6 +11,7 @@ internal static partial class Program
 	/// <summary>
 	/// 头像系数悬浮不能再用房主(Players[0])或调试接口取状态:联机客户端会看到房主的系数。
 	/// </summary>
+	[HextechTest]
 	private static void PlayerStatsHoverUsesLocalPortraitOwner()
 	{
 		Type hooks = typeof(HextechPlayerStatsHoverHooks);
@@ -36,6 +37,7 @@ internal static partial class Program
 	}
 
 	/// <summary>社区面板的网络按钮不能挂 async void 处理器:异常会逃逸成未观察异常。</summary>
+	[HextechTest]
 	private static void ConfigMenuHasNoAsyncVoidHandlers()
 	{
 		IEnumerable<Type> types = new[] { typeof(HextechRuneConfigMenuHooks) }
@@ -50,6 +52,7 @@ internal static partial class Program
 	}
 
 	/// <summary>血条灼烧预测与实际结算共用同一公式。</summary>
+	[HextechTest]
 	private static void BurnHealthBarPredictionUsesSettlementFormula()
 	{
 		Equal(3, HextechBurnPower.CalculateHpLoss(50, 3), "low hp: stacks dominate");
@@ -58,6 +61,7 @@ internal static partial class Program
 	}
 
 	/// <summary>图鉴子分类标题套用原版「初始」标题的富文本骨架,只换标题与正文,各语言通用。</summary>
+	[HextechTest]
 	private static void CollectionHeaderFollowsStarterTemplate()
 	{
 		MethodInfo format = typeof(HextechCollectionHooks).GetMethod("FormatLikeStarterHeader", BindingFlags.Static | BindingFlags.NonPublic)
@@ -83,6 +87,7 @@ internal static partial class Program
 	}
 
 	/// <summary>跳过原版的 UI 前缀一律 Priority.Low,并且隐藏遗物开关不再在补丁安装阶段动态打补丁。</summary>
+	[HextechTest]
 	private static void UiSkipPrefixesUseLowPriorityAndDeclarativeTargets()
 	{
 		string[] skipPatchTypes =

@@ -4,6 +4,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void ActualDamageHookCannotSuppressOutOfCombatCalls()
 	{
 		MethodInfo prefix = FindPatchMethod(typeof(HextechCombatHooks), "DamageCommandPatch", "Prefix")
@@ -16,6 +17,7 @@ internal static partial class Program
 			"Actual damage prefix should only allocate command state and must not receive targets or replace the result.");
 	}
 
+	[HextechTest]
 	private static void HookReflectionRequiresExactSignatures()
 	{
 		MethodInfo exact = HextechHookReflection.RequireMethod(

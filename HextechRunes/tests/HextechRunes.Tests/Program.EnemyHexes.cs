@@ -22,6 +22,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void MonsterInteractionPolicyPreservesStructuralMonsterBuffs()
 	{
 		PowerModel[] structuralEnemyPowers =
@@ -110,6 +111,7 @@ internal static partial class Program
 		Expect(!HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new StrengthPower()), "ordinary strength should remain mirrorable");
 	}
 
+	[HextechTest]
 	private static void BuffRemovalPreservesStolenLootPowers()
 	{
 		Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new HeistPower()), "Heist should survive Feel the Burn and upgraded Expose");
@@ -117,6 +119,7 @@ internal static partial class Program
 		Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new StrengthPower()), "ordinary Strength should remain removable");
 	}
 
+	[HextechTest]
 	private static void EnemyJeweledGauntletUsesExpectedStrengthTierChances()
 	{
 		Equal(10, HextechCombatHooks.GetJeweledGauntletRepeatPercent(0), "enemy Jeweled Gauntlet tier zero fallback chance");
@@ -126,6 +129,7 @@ internal static partial class Program
 		Equal(30, HextechCombatHooks.GetJeweledGauntletRepeatPercent(99), "enemy Jeweled Gauntlet high-tier clamp chance");
 	}
 
+	[HextechTest]
 	private static void EnemyFossilStalkerUsesExpectedSuckTiers()
 	{
 		Equal(1, FossilStalkerEnemyHex.ResolveSuckAmount(0), "enemy Fossil Stalker tier zero fallback Suck");
@@ -135,6 +139,7 @@ internal static partial class Program
 		Equal(3, FossilStalkerEnemyHex.ResolveSuckAmount(99), "enemy Fossil Stalker high-tier clamp Suck");
 	}
 
+	[HextechTest]
 	private static void EnemyTungstenRodReducesEachHpLossByTier()
 	{
 		Equal(4m, TungstenRodEnemyHex.ReduceHpLoss(5m, 1), "enemy Tungsten Rod tier one HP loss");
@@ -144,6 +149,7 @@ internal static partial class Program
 		Equal(0m, TungstenRodEnemyHex.ReduceHpLoss(0m, 3), "enemy Tungsten Rod should preserve zero HP loss");
 	}
 
+	[HextechTest]
 	private static void EnemySlowHexesUseExpectedBaselinesAndTiers()
 	{
 		HextechPlayerSlowPower slow = new();
@@ -216,6 +222,7 @@ internal static partial class Program
 			"Hundred Refinements should not seed or manually reset persistent Slow");
 	}
 
+	[HextechTest]
 	private static void EnemyOpeningBuffHexesUseDedicatedReplayableHook()
 	{
 		Type[] openingBuffHexTypes =
@@ -249,6 +256,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit()
 	{
 		Equal(1, CorrosionEnemyHex.FrailAmount, "enemy Corrosion Frail amount");
@@ -267,6 +275,7 @@ internal static partial class Program
 			"enemy Corrosion snapshot should not retain the obsolete proc gate");
 	}
 
+	[HextechTest]
 	private static void EnemyVitalitySurgeScalesAllSustainFromMaxHp()
 	{
 		Equal(1m, VitalitySurgeEnemyHex.ResolveMultiplier(0m), "Vitality Surge zero-HP multiplier");
@@ -279,6 +288,7 @@ internal static partial class Program
 		Equal(1.30m, VitalitySurgeEnemyHex.ResolveMultiplier(6000m), "Vitality Surge multiplier above cap");
 	}
 
+	[HextechTest]
 	private static void EnemyTwilightVeilMirrorsOnlyPositivePlayerBlock()
 	{
 		Expect(TwilightVeilEnemyHex.ShouldMirrorBlock(CombatSide.Player, 1m), "Twilight Veil should mirror positive player Block");
@@ -286,6 +296,7 @@ internal static partial class Program
 		Expect(!TwilightVeilEnemyHex.ShouldMirrorBlock(CombatSide.Enemy, 1m), "Twilight Veil should not recurse from enemy Block");
 	}
 
+	[HextechTest]
 	private static void EnemyMiserableFateUsesMissingHpDivisors()
 	{
 		Equal(0, MiserableFateEnemyHex.ResolveBlock(100, 97, 4), "tier one should floor fewer than four missing HP");
@@ -296,6 +307,7 @@ internal static partial class Program
 		Equal(55, MiserableFateEnemyHex.ResolveBlock(100, -10, 2), "negative HP should count as additional missing HP");
 	}
 
+	[HextechTest]
 	private static void EnemyHeavyHitterScalesDamageEveryFifteenMaxHp()
 	{
 		Equal(1m, HeavyHitterEnemyHex.ResolveMultiplier(0m), "Heavy Hitter zero-HP multiplier");
@@ -306,6 +318,7 @@ internal static partial class Program
 		Equal(1.30m, HeavyHitterEnemyHex.ResolveMultiplier(4500m), "Heavy Hitter multiplier above cap");
 	}
 
+	[HextechTest]
 	private static void EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls()
 	{
 		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0f), "successful potion roll should be kept below fifty percent");
@@ -314,6 +327,7 @@ internal static partial class Program
 		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.999999f), "successful potion roll should be removed above fifty percent");
 	}
 
+	[HextechTest]
 	private static void EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes()
 	{
 		IntentType[] repeatable =
@@ -352,6 +366,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void EnemyJeweledGauntletDuplicatesWholeIntentGroup()
 	{
 		BuffIntent buff = new();
@@ -375,6 +390,7 @@ internal static partial class Program
 			"an empty intent group should not be repeatable");
 	}
 
+	[HextechTest]
 	private static void EnemyJeweledGauntletNeverRepeatsIntoFinalKnowledgeDemonCurse()
 	{
 		const string curseMove = "CURSE_OF_KNOWLEDGE_MOVE";
@@ -395,6 +411,7 @@ internal static partial class Program
 			"other Knowledge Demon moves should remain repeatable");
 	}
 
+	[HextechTest]
 	private static void EnemyJeweledGauntletSkipsTheInsatiableOpeningMove()
 	{
 		Expect(
@@ -405,6 +422,7 @@ internal static partial class Program
 			"later The Insatiable moves should remain repeatable");
 	}
 
+	[HextechTest]
 	private static void EnemyJeweledGauntletSkipsMonsterRevivalMoves()
 	{
 		Expect(
@@ -418,6 +436,7 @@ internal static partial class Program
 			"ordinary healing moves should remain repeatable");
 	}
 
+	[HextechTest]
 	private static void PersonalHiveSafetyRejectsPlayerSideCopies()
 	{
 		MethodInfo target = HextechPersonalHiveSafetyHooks.ResolveDamageResponseTarget();
@@ -441,6 +460,7 @@ internal static partial class Program
 		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(null), "ownerless personal hive should be neutralized");
 	}
 
+	[HextechTest]
 	private static void EnemyOmniDragonSoulUsesPlayerTurnStart()
 	{
 		MethodInfo[] declaredMethods = typeof(OmniDragonSoulEnemyHex).GetMethods(
@@ -449,6 +469,7 @@ internal static partial class Program
 		Expect(declaredMethods.All(method => method.Name != "BeforeEnemySideTurnStart"), "enemy Omni Dragon Soul should no longer apply its debuff at enemy turn start");
 	}
 
+	[HextechTest]
 	private static void EnemyMoreTheMerrierUsesPooledRelicsForAllThreeMultipliers()
 	{
 		var (context, first, second) = CreatePrismaticEnemyFixture();
@@ -470,6 +491,7 @@ internal static partial class Program
 		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(MoreTheMerrierRune), "enabled gold with matching icon");
 	}
 
+	[HextechTest]
 	private static void BalanceAdjustmentsSeptember25()
 	{
 		Dictionary<uint, int> hits = new();
@@ -500,6 +522,7 @@ internal static partial class Program
 		Expect(kingdomArmy.AfterForge(3m, null!, null).IsCompletedSuccessfully, "nested forge during minion generation is ignored");
 	}
 
+	[HextechTest]
 	private static void EnemyGiantSlayerScalesWithPlayerMaxHp()
 	{
 		Equal(0.33m, GiantSlayerEnemyHex.GetBonus(66), "66 max HP gives +33%");
@@ -510,6 +533,7 @@ internal static partial class Program
 		Expect(GiantSlayerEnemyHex.GetBonus(66) > 0.20m, "stays above silver Big Strength's flat +20% at the lowest starting max HP");
 	}
 
+	[HextechTest]
 	private static void EnemyBlueCandleRaisesPlayerStatusAndCurseCosts()
 	{
 		var (context, first, _) = CreatePrismaticEnemyFixture();
@@ -538,6 +562,7 @@ internal static partial class Program
 		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(BlueCandleMedkitRune), "enabled gold with matching icon");
 	}
 
+	[HextechTest]
 	private static void EnemyEnlightenmentFloorsDiscountedCostsWithoutChangingBase()
 	{
 		var (context, first, _) = CreatePrismaticEnemyFixture();
@@ -562,6 +587,7 @@ internal static partial class Program
 		Expect(zeroCostEnemy.ModifyCardPlayResultPileTypeAndPosition(context, card, false, resources, PileType.Discard, CardPilePosition.Bottom) == null, "raised play cost no longer triggers zero-cost exhaust");
 	}
 
+	[HextechTest]
 	private static void FourPrismaticEnemiesKeepIdentityAndStrengthScope()
 	{
 		MonsterHexKind[] kinds = [MonsterHexKind.ReforgedHelmet, MonsterHexKind.EndlessRotation,
@@ -587,6 +613,7 @@ internal static partial class Program
 		Equal(3m, effect.ModifyPowerAmountReceived(context, new StrengthPower(), second.Creature, 3m, null), "players unchanged");
 	}
 
+	[HextechTest]
 	private static void EnemyRotationStacksOnlyCurrentHandUntilTurnEnd()
 	{
 		var (context, first, second) = CreatePrismaticEnemyFixture();
@@ -612,6 +639,7 @@ internal static partial class Program
 		Equal(1, card.EnergyCost.GetWithModifiers(CostModifiers.Local), "turn end restores cost");
 	}
 
+	[HextechTest]
 	private static void EnemyZeroCostExhaustUsesPlayCostRatherThanPayment()
 	{
 		var (context, first, _) = CreatePrismaticEnemyFixture();
@@ -629,6 +657,7 @@ internal static partial class Program
 
 	private static readonly List<(CardModel Card, PileType Pile)> EnemyBranchGenerated = [];
 
+	[HextechTest]
 	private static void EnemyCorruptedBranchKeepsOwnerAndRestoresRandomSequence()
 	{
 		Type[] pool = [typeof(Burn), typeof(Dazed), typeof(Slimed), typeof(Wound), typeof(MegaCrit.Sts2.Core.Models.Cards.Void)];
@@ -636,7 +665,10 @@ internal static partial class Program
 		Harmony harmony = new("HextechRunes.Tests.EnemyCorruptedBranch");
 		try
 		{
-			foreach (Type type in added) ModelDb.Inject(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Inject(type);
+			}
 			// 只隔离牌堆动画与存档 UI；保留真实状态牌创建、随机抽选与战斗序号。
 			harmony.Patch(AccessTools.Method(typeof(HextechCardGeneration), "AddGeneratedCardToCombat"),
 				prefix: new HarmonyMethod(typeof(Program), nameof(CaptureEnemyBranchGenerated)));
@@ -664,7 +696,10 @@ internal static partial class Program
 		{
 			harmony.UnpatchAll(harmony.Id);
 			EnemyBranchGenerated.Clear();
-			foreach (Type type in added) ModelDb.Remove(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Remove(type);
+			}
 		}
 	}
 
@@ -676,6 +711,7 @@ internal static partial class Program
 		return false;
 	}
 
+	[HextechTest]
 	private static void EnemyDebuffTriggersRejectOutgoingBuffsAndExpiry()
 	{
 		var (_, player, _) = CreatePrismaticEnemyFixture();
@@ -698,6 +734,7 @@ internal static partial class Program
 		Expect(typeof(TemporaryStrengthPower).IsAssignableFrom(typeof(HextechSlapTemporaryStrengthPower)), "Slap uses native temporary Strength cleanup");
 	}
 
+	[HextechTest]
 	private static void NightstalkingDrawProgressIsIndependentAndSurvivesReload()
 	{
 		HextechMayhemCombatTrackingState state = new();

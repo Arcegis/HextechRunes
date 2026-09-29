@@ -12,6 +12,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void FiveEnemyUpgradesHaveStableIdentityAndAutoPatrolDisabled()
 	{
 		(MonsterHexKind Kind, int Id, HextechRarityTier Rarity, Type Icon)[] expected =
@@ -41,6 +42,7 @@ internal static partial class Program
 		Expect(!reenabled.Contains(autoPatrolId), "manual reenable after migration survives reload");
 	}
 
+	[HextechTest]
 	private static void MonsterUpgradeIntentsPreserveAttacksAndDoNotAccumulate()
 	{
 		Creature owner = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
@@ -61,6 +63,7 @@ internal static partial class Program
 		Equal(2, original.Length, "composition does not mutate other consumers' original list");
 	}
 
+	[HextechTest]
 	private static void HopperEscapeSurvivesTheNextNativeMoveRoll()
 	{
 		int escaped = 0;
@@ -101,6 +104,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff()
 	{
 		Equal(146, (int)MonsterHexKind.CorruptHeart, "append-only enemy identity");
@@ -126,6 +130,7 @@ internal static partial class Program
 		Expect(mockery.Rarity == HextechRarityTier.Gold && !mockery.Flags.HasFlag(PlayerRuneFlags.Disabled), "gold and enabled");
 	}
 
+	[HextechTest]
 	private static void HopperSkipsSleepingEnemiesAndMinions()
 	{
 		Expect(ThievingHopperEnemyHex.HasTheftBlockingPower([new AsleepPower()]), "sleeping matriarch cannot steal");
@@ -135,6 +140,7 @@ internal static partial class Program
 		Expect(!ThievingHopperEnemyHex.HasTheftBlockingPower([new ReattachPower()]), "reviving segments remain eligible without locking their state machine");
 	}
 
+	[HextechTest]
 	private static void BloodIdolNonCombatLossLeavesOneHp()
 	{
 		Equal(1, BloodIdolEnemyHex.NonCombatHpAfterGold(1), "collecting gold at one HP cannot kill a player outside combat");
@@ -142,6 +148,7 @@ internal static partial class Program
 		Equal(39, BloodIdolEnemyHex.NonCombatHpAfterGold(40), "ordinary gold collections still cost one HP");
 	}
 
+	[HextechTest]
 	private static void EnemyOnlyRunsStillRequireEnemyConfirmation()
 	{
 		Expect(HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 2, false), "enemy-only mode must not bypass the reroll screen");
@@ -150,13 +157,16 @@ internal static partial class Program
 		Expect(!HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 2, true), "preset challenges keep their fixed enemies");
 	}
 
+	[HextechTest]
 	private static void EnemyUpgradeCountersRoundTripAndStayIndependent()
 	{
 		var first = CreateOrdinalTestPlayer(1);
 		var second = CreateOrdinalTestPlayer(2);
 		HextechMayhemCombatTrackingState state = new();
 		for (int i = 0; i < LivingFogEnemyHex.SkillLimit; i++)
+		{
 			Expect(HextechCombatProcTracker.TryConsumePlayerRuneProcThisTurn(state, first, LivingFogEnemyHex.ProcKey, LivingFogEnemyHex.SkillLimit), "first three skills allowed");
+		}
 		Expect(!HextechCombatProcTracker.TryConsumePlayerRuneProcThisTurn(state, first, LivingFogEnemyHex.ProcKey, LivingFogEnemyHex.SkillLimit), "fourth skill blocked");
 		Expect(HextechCombatProcTracker.TryConsumePlayerRuneProcThisTurn(state, second, LivingFogEnemyHex.ProcKey, LivingFogEnemyHex.SkillLimit), "players have independent skill budgets");
 		state.GlobalProcsThisCombat[ThievingHopperEnemyHex.TheftKey(7)] = 1;
@@ -172,6 +182,7 @@ internal static partial class Program
 		Equal(1, restored.GlobalProcsThisCombat[ThievingHopperEnemyHex.TheftKey(7)], "next turn does not reset thief quota");
 	}
 
+	[HextechTest]
 	private static void HopperProtectsBossesAndUsesNativeTheftPriorities()
 	{
 		Expect(ThievingHopperEnemyHex.IsProtectedBoss(RoomType.Boss, true), "boss body must never flee");

@@ -28,6 +28,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void MagicMissileUsesThreeThreePercentHits()
 	{
 		Equal(3, MagicMissileRune.MissileCount, "Magic Missile hit count");
@@ -47,6 +48,7 @@ internal static partial class Program
 		Equal(5, MagicMissileRune.CalculateMissileDamage(199), "Magic Missile should round max-HP damage down");
 	}
 
+	[HextechTest]
 	private static void TwinFlamesUsesThreeEnergyScaledHits()
 	{
 		Equal(3, TwinFlamesRune.MissileCount, "Twin Flames hit count");
@@ -69,6 +71,7 @@ internal static partial class Program
 			"Twin Flames should expose its blue-yellow projectile VFX path");
 	}
 
+	[HextechTest]
 	private static void TwinFlamesKeepsMultiplayerDamageInsideCardAction()
 	{
 		MethodInfo afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
@@ -87,6 +90,7 @@ internal static partial class Program
 			"Twin Flames damage should be returned to the current card action");
 	}
 
+	[HextechTest]
 	private static void ProjectileRunesKeepMultiplayerDamageInsideCardAction()
 	{
 		foreach (Type runeType in new[] { typeof(MagicMissileRune), typeof(TwinFlamesRune), typeof(LightEmUpRune) })
@@ -109,6 +113,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void LightEmUpUsesSixEnergyScaledTwinFlameMissiles()
 	{
 		Equal(4, LightEmUpRune.AttacksPerVolley, "Light Em Up attacks per volley");
@@ -152,6 +157,7 @@ internal static partial class Program
 			"Light Em Up should reuse the blue-yellow Twin Flames projectile VFX path");
 	}
 
+	[HextechTest]
 	private static void PiercingThreadSplitsOneDamageEventBeforeBlock()
 	{
 		Equal(50m, PiercingThreadRune.PiercingPercent, "Piercing Thread percentage");

@@ -5,6 +5,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void NearDeathHpLossResolvesDyingAndKillThresholds()
 	{
 		HextechNearDeathHpLoss survive = HextechNearDeathHpLoss.Resolve(wasDying: false, debt: 0, currentHp: 10, amount: 4m, deathLimit: 20);
@@ -32,6 +33,7 @@ internal static partial class Program
 		Equal(HextechCreatureStatLimits.StatHardCap, HextechNearDeathHpLoss.ToHpLoss(decimal.MaxValue), "HP loss uses the vanilla hard cap");
 	}
 
+	[HextechTest]
 	private static void RuneFamilyHelpersKeepThresholdAndRoundSemantics()
 	{
 		Equal(0, HextechRelicBase.CountThresholdCrossings(0, 9, 10), "below the first threshold");
@@ -47,6 +49,7 @@ internal static partial class Program
 		Expect(HextechRoundInterval.TryClaimRound(ref lastRound, 4), "next round can be claimed");
 	}
 
+	[HextechTest]
 	private static void RuneFamilyTypesUseSharedBases()
 	{
 		foreach (Type type in new[]

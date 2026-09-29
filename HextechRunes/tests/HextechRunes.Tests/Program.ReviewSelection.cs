@@ -7,6 +7,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut()
 	{
 		string defaultEndpoint = HextechTelemetry.DefaultEndpointForTests;
@@ -31,6 +32,7 @@ internal static partial class Program
 	/// 迁移链改为表驱动后,从每个旧版本迁移的结果必须与改动前的 if 链逐项相同。
 	/// 这里保留一份改动前的链作为参照实现。
 	/// </summary>
+	[HextechTest]
 	private static void ReviewConfigMigrationTableMatchesLegacyChain()
 	{
 		string[] allConfigurable = HextechCatalog.GetConfigurablePlayerRuneIds().Select(static id => id.Entry).ToArray();
@@ -106,6 +108,7 @@ internal static partial class Program
 		return ids;
 	}
 
+	[HextechTest]
 	private static void ReviewShareCodePreviewNormalizesLikeSave()
 	{
 		HextechRunConfigurationSnapshot defaults = HextechRuneConfiguration.GetDefaultSnapshot();
@@ -126,6 +129,7 @@ internal static partial class Program
 		Equal(HextechRuneConfiguration.GetDefaultForgeRarityWeights(), preview.Snapshot.ForgeRarityWeights, "forge fallback is default");
 	}
 
+	[HextechTest]
 	private static void ReviewExternalRegistryRejectsBuiltInTypes()
 	{
 		int runeCount = HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count;
@@ -160,6 +164,7 @@ internal static partial class Program
 		Expect(HextechContentRegistry.SilverForgeTypes.Contains(typeof(StrengthForge)), "built-in forge metadata retained");
 	}
 
+	[HextechTest]
 	private static void ReviewEnemyHexIconRelicTypesMatchMonsterHexRegistry()
 	{
 		HashSet<Type> playerRuneTypes = HextechPlayerRuneRegistry.Registrations.Select(static registration => registration.Type).ToHashSet();
@@ -172,6 +177,7 @@ internal static partial class Program
 		Equal(HextechCustomModelRegistry.EnemyHexIconRelicTypes.Count, HextechCustomModelRegistry.EnemyHexIconRelicTypes.Distinct().Count(), "enemy hex icon carriers are unique");
 	}
 
+	[HextechTest]
 	private static void ReviewSyncedRuneOptionsRequireRegisteredPlayerRunes()
 	{
 		ModelId slap = ModelDb.GetId<SlapRune>();
@@ -183,6 +189,7 @@ internal static partial class Program
 		Expect(!HextechRuneSelectionCoordinator.AreRegisteredPlayerRuneIds([]), "empty synced options are rejected");
 	}
 
+	[HextechTest]
 	private static void ReviewEnemyHexAdjustmentValidatesSlotsHexesAndRerolls()
 	{
 		MonsterHexKind[] initial = [ MonsterHexKind.Slap, MonsterHexKind.HeavyHitter ];
@@ -200,6 +207,7 @@ internal static partial class Program
 		Expect(!HextechRuneSelectionCoordinator.IsValidEnemyHexAdjustment(Payload([ MonsterHexKind.Slap, MonsterHexKind.Tormentor ], [ 0, 2 ]), initial, candidates, 1), "reroll count above limit is rejected");
 	}
 
+	[HextechTest]
 	private static void ReviewRelicChoiceCodecKeepsWireFormatForBothKinds()
 	{
 		const int Token = 424242;
@@ -240,6 +248,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void ReviewRuneSelectionTailParsersValidateHeader()
 	{
 		RelicModel[] options = [ new GeneratedTestRelic { Data = "recipe:a" }, new GeneratedTestRelic { Data = "recipe:b" } ];
@@ -262,6 +271,7 @@ internal static partial class Program
 		Expect(!HextechRuneWeightCodec.TryRestore(PlayerChoiceResult.FromIndexes(wrongMagic), options, out _), "weight tail parser rejects wrong magic");
 	}
 
+	[HextechTest]
 	private static void ReviewChaosTransformResultIsValidated()
 	{
 		RelicModel slap = new SlapRune();

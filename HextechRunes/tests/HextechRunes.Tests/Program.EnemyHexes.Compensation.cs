@@ -30,6 +30,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void EnemyCompensationDefersHalfDamageRoundedDown()
 	{
 		Equal((0m, 0), CompensationEnemyHex.SplitDamage(0m), "zero damage split");
@@ -41,6 +42,7 @@ internal static partial class Program
 		Equal((500m, 499), CompensationEnemyHex.SplitDamage(999m), "large odd damage split");
 	}
 
+	[HextechTest]
 	private static void PlayerCompensationRequiresActiveCombatContext()
 	{
 		Expect(
@@ -57,6 +59,7 @@ internal static partial class Program
 			"Compensation should reject stale combat state from another run");
 	}
 
+	[HextechTest]
 	private static void NextTurnDamageUsesTurnStartSnapshot()
 	{
 		Equal(0, HextechNextTurnDamagePower.GetDamageToResolve(5, 0), "new stacks should not resolve during the turn they are applied");
@@ -66,6 +69,7 @@ internal static partial class Program
 		Equal(0, HextechNextTurnDamagePower.GetDamageToResolve(-1, 5), "negative amounts should never deal damage");
 	}
 
+	[HextechTest]
 	private static void NextTurnDamageDoesNotRetriggerCompensation()
 	{
 		Expect(!HextechNextTurnDamagePower.IsResolvingDamage, "next-turn damage guard should start inactive");
@@ -82,6 +86,7 @@ internal static partial class Program
 		Expect(!HextechNextTurnDamagePower.IsResolvingDamage, "next-turn damage guard should reset after guarded work");
 	}
 
+	[HextechTest]
 	private static void EnemyCompensationSkipsOutbreakPoisonResponse()
 	{
 		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should start inactive");
@@ -100,6 +105,7 @@ internal static partial class Program
 		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should reset after guarded work");
 	}
 
+	[HextechTest]
 	private static void EnemyCompensationSkipsSleightOfFleshResponse()
 	{
 		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should start inactive");
@@ -118,6 +124,7 @@ internal static partial class Program
 		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should reset after guarded work");
 	}
 
+	[HextechTest]
 	private static void CompensationReplacementGuardScopesAsyncWork()
 	{
 		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should start inactive");
@@ -178,6 +185,7 @@ internal static partial class Program
 		Expect(!enteredTaskGuard.IsActive, "nested completed task guard should unwind exactly one depth");
 	}
 
+	[HextechTest]
 	private static void CompensationReplacementSuppressesSleightOfFleshResponse()
 	{
 		Expect(

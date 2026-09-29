@@ -29,6 +29,7 @@ namespace HextechRunes.Tests;
 internal static partial class Program
 {
 	// 夺金只在自己发钱的异步作用域内、且是金币音效时静音;作用域外与其他音效不受影响。
+	[HextechTest]
 	private static void GoldrendSfxMuteIsScopedToGoldSounds()
 	{
 		FieldInfo scopeField = AccessTools.Field(typeof(GoldrendRune), "SuppressGoldSfx");
@@ -50,6 +51,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void FortuneForgeRewardScalesByStacks()
 	{
 		FortuneForge forge = CreateMutableTestModel<FortuneForge>();
@@ -59,6 +61,7 @@ internal static partial class Program
 		Equal(200, forge.ExtraGoldRewardAmount, "two-stack Fortune Forge reward");
 	}
 
+	[HextechTest]
 	private static void InitialForgeGrantRunesPersistPendingTransaction()
 	{
 		Type[] initialForgeRunes =
@@ -87,6 +90,7 @@ internal static partial class Program
 		Equal(typeof(Task<bool>), method.ReturnType, "initial forge transaction completion result");
 	}
 
+	[HextechTest]
 	private static void InitialForgeGrantLoadRecoveryPrecedesActRecovery()
 	{
 		MethodInfo recovery = typeof(HextechRunLifecycleHooks).GetMethod(
@@ -111,6 +115,7 @@ internal static partial class Program
 			"load continuation should finish pending initial forge grants before resuming act selection");
 	}
 
+	[HextechTest]
 	private static void DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune()
 	{
 		HextechForgeRarityWeights weights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
@@ -124,6 +129,7 @@ internal static partial class Program
 	}
 
 	/// <summary>袖珍锻炉的药水槽总数封顶 16:原版 SerializablePotion 的 SlotIndex 只有 4 bit,超出会在联机同步里截断丢药水。</summary>
+	[HextechTest]
 	private static void PocketForgeKeepsPotionSlotsWithinFourBitSlotIndex()
 	{
 		Equal(16, PocketForge.MaxSerializablePotionSlots, "potion slot cap must match the 4-bit SlotIndex wire format");
@@ -135,6 +141,7 @@ internal static partial class Program
 	}
 
 	/// <summary>掷骰狂人 50%±10、红包 25%±5 的药水式动态掉率:掉落降档、未掉升档、始终夹在 0~100 内,默认偏移就是基础值。</summary>
+	[HextechTest]
 	private static void ForgeDropChanceAdjustsLikePotionOdds()
 	{
 		Equal(50, HextechDynamicDropChance.CurrentChance(0, DiceManiacRune.BaseDropChance), "Dice Maniac starts at its base drop chance");
@@ -162,6 +169,7 @@ internal static partial class Program
 		Equal(-25, HextechDynamicDropChance.ClampOffset(-999, RedEnvelopeRune.BaseForgeChance), "saved offsets are clamped on load");
 	}
 
+	[HextechTest]
 	private static void DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights()
 	{
 		HextechForgeRarityWeights defaultWeights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
@@ -181,6 +189,7 @@ internal static partial class Program
 		Equal(110, customWeights.Total, "custom total weight");
 	}
 
+	[HextechTest]
 	private static void RandomForgeShopRelicUpdatesDisplayedPrice()
 	{
 		RandomForgeShopRelic relic = new();
@@ -194,12 +203,14 @@ internal static partial class Program
 		Equal(0, relic.DynamicVars["Price"].IntValue, "displayed forge price clamps to config minimum");
 	}
 
+	[HextechTest]
 	private static void BigHammerForgeBonusAvoidsHammerTimeDoubleScaling()
 	{
 		Equal(15m, BigHammerRune.CalculateForgeAmount(10m, 50m, sourceAlreadyIncludesBonus: false), "direct forge bonus");
 		Equal(15m, BigHammerRune.CalculateForgeAmount(15m, 50m, sourceAlreadyIncludesBonus: true), "hammer time propagated forge");
 	}
 
+	[HextechTest]
 	private static void HundredRefinementsRequiresTwoBodyForges()
 	{
 		var rune = new HundredRefinementsRune();

@@ -13,6 +13,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder()
 	{
 		Type[] added = new[] { typeof(Anger), typeof(Uppercut), typeof(Impervious), typeof(Glam) }
@@ -20,7 +21,10 @@ internal static partial class Program
 		Harmony harmony = new("HextechRunes.Tests.CrossOrb");
 		try
 		{
-			foreach (Type type in added) ModelDb.Inject(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Inject(type);
+			}
 			// 隔离完整爬塔对象和随机选牌，只替代监听者枚举与候选选择。
 			// 保留原版两阶段 Hook、华美发束克隆/附魔及一次性消耗流程。
 			harmony.Patch(AccessTools.Method(typeof(RunState), nameof(RunState.IterateHookListeners)),
@@ -47,7 +51,10 @@ internal static partial class Program
 				Expect(rewards.All(r => r.Card.Enchantment is Glam { Amount: 1 }), "all final choices retain native Glam regardless of relic order");
 				Equal(1, modifiers.Count(m => ReferenceEquals(m, tress)), "Tress triggers exactly once");
 				Expect(rewards[0].ModifyingRelics.Contains(orb) && rewards[0].ModifyingRelics.Contains(tress), "both reward modifiers remain tracked");
-				foreach (AbstractModel modifier in modifiers) modifier.AfterModifyingCardRewardOptions().GetAwaiter().GetResult();
+				foreach (AbstractModel modifier in modifiers)
+				{
+					modifier.AfterModifyingCardRewardOptions().GetAwaiter().GetResult();
+				}
 				Expect(tress.IsUsedUp, "first reward consumes Tress normally");
 				List<CardCreationResult> next = [new(run.CreateCard<Anger>(owner))];
 				Hook.TryModifyCardRewardOptions(run, owner, next, options, out _);
@@ -57,7 +64,10 @@ internal static partial class Program
 		finally
 		{
 			harmony.UnpatchAll(harmony.Id);
-			foreach (Type type in added) ModelDb.Remove(type);
+			foreach (Type type in added)
+			{
+				ModelDb.Remove(type);
+			}
 		}
 	}
 

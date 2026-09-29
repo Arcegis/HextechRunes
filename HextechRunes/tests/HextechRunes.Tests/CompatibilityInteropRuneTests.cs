@@ -9,6 +9,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void InteropPlayerRuneRegistrationValidatesBeforeSideEffects()
 	{
 		int registryVersion = HextechExternalContentRegistry.Version;
@@ -50,6 +51,7 @@ internal static partial class Program
 			"invalid interop registration must not queue the rune");
 	}
 
+	[HextechTest]
 	private static void InteropRelicModelRuneIsGovernedByRegistry()
 	{
 		Action[] restore =
@@ -111,6 +113,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void InteropDisplayLabelsAreFirstWriterWinsAndValidated()
 	{
 		Action[] restore =

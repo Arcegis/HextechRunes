@@ -27,6 +27,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void PlayerRuneRarityConfigExcludesFullyDisabledTier()
 	{
 		HashSet<string> disabledIds = GetConfigurableRuneEntries(HextechRarityTier.Silver);
@@ -38,6 +39,7 @@ internal static partial class Program
 		Expect(enabled.Contains(HextechRarityTier.Prismatic), "prismatic tier should remain enabled");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneRarityConfigFallsBackWhenAllTiersDisabled()
 	{
 		HashSet<string> disabledIds = GetConfigurableRuneEntries(
@@ -50,6 +52,7 @@ internal static partial class Program
 		SequenceEqual(Enum.GetValues<HextechRarityTier>(), enabled, "all disabled fallback rarities");
 	}
 
+	[HextechTest]
 	private static void FlyingKickDisableSurvivesNormalizationAndStrictPoolFiltering()
 	{
 		string flyingKickId = ModelDb.GetId<FlyingKickRune>().Entry;
@@ -70,6 +73,7 @@ internal static partial class Program
 			"an exhausted pool must remain empty instead of restoring disabled Flying Kick");
 	}
 
+	[HextechTest]
 	private static void RarityRollResolverFiltersWeightedRarities()
 	{
 		HextechRarityWeights weights = HextechRarityRollResolver.ApplyEnabledRarities(
@@ -88,6 +92,7 @@ internal static partial class Program
 		Equal(HextechRarityTier.Prismatic, HextechRarityRollResolver.ResolveWeighted(weights, 79), "last prismatic roll");
 	}
 
+	[HextechTest]
 	private static void RarityRollResolverUsesOrderedUniformFallback()
 	{
 		HextechRarityTier[] order = HextechRarityRollResolver.GetUniformRarityOrder(
@@ -101,6 +106,7 @@ internal static partial class Program
 		Expect(!HextechRarityRollResolver.HasAllRarities(order), "partial-rarity detection");
 	}
 
+	[HextechTest]
 	private static void ConsecutiveSilverRuleExcludesSilverFromEveryLaterAct()
 	{
 		HextechRarityWeights configured = new(2, 5, 3);
@@ -147,6 +153,7 @@ internal static partial class Program
 			"strict non-Silver fallback candidates");
 	}
 
+	[HextechTest]
 	private static void GoldenRerollOnlyUpgradesSilverAndGold()
 	{
 		Expect(
@@ -171,6 +178,7 @@ internal static partial class Program
 		Equal(HextechRarityTier.Prismatic, unchangedPrismatic, "prismatic fallback target");
 	}
 
+	[HextechTest]
 	private static void GoldenRerollUsesExactFivePercentWindow()
 	{
 		for (int roll = 0; roll < 100; roll++)
@@ -216,6 +224,7 @@ internal static partial class Program
 			"gold should not activate when the upgraded pool is unavailable");
 	}
 
+	[HextechTest]
 	private static void GoldenRerollSeparatesPlayersAndKeepsConsoleLocal()
 	{
 		string[] firstPlayerSalt = HextechGoldenRerollRules.BuildSaltParts(
@@ -237,6 +246,7 @@ internal static partial class Program
 			"golden reroll test command must only affect the issuing client");
 	}
 
+	[HextechTest]
 	private static void GoldenRerollDebugForceIsOneShot()
 	{
 		HextechGoldenRerollDebug.ResetForTests();
@@ -248,6 +258,7 @@ internal static partial class Program
 		Expect(!HextechGoldenRerollDebug.IsNextEligibleForced, "consumed force should clear");
 	}
 
+	[HextechTest]
 	private static void GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused()
 	{
 		Expect(
@@ -272,6 +283,7 @@ internal static partial class Program
 			"golden reroll animation should expose the ProcessFrame loop started after overlay open");
 	}
 
+	[HextechTest]
 	private static void GoldenRerollCardThemeFollowsRerolledRuneRarity()
 	{
 		foreach (HextechRarityTier rarity in Enum.GetValues<HextechRarityTier>())
@@ -293,6 +305,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void WeightedIndexBoundarySelection()
 	{
 		int[] weights = [ 100, 150, 100 ];
@@ -305,6 +318,7 @@ internal static partial class Program
 		Equal(2, HextechRunePoolBuilder.SelectWeightedIndex(weights, 999), "overflow clamps to last slot");
 	}
 
+	[HextechTest]
 	private static void RuneSelectionCandidateConstraintsMixCharactersAndLimitUpgrades()
 	{
 		RelicModel[] candidates = [new BerserkRune(), new BloodlettingUpgradeRune(), new JudicatorRune(), new AutomationUpgradeRune()];
@@ -313,6 +327,7 @@ internal static partial class Program
 		SequenceEqual(noUpgrades, HextechRunePoolBuilder.ConstrainCandidates(candidates, true), "one upgrade per offer remains enforced");
 	}
 
+	[HextechTest]
 	private static void UnconfirmedRuneSelectionCancelsInsteadOfDefaultingToFirstOption()
 	{
 		RelicModel confirmed = new JudicatorRune();
@@ -334,6 +349,7 @@ internal static partial class Program
 
 	// 手柄焦点只跟随游戏自己的输入模式(NControllerManager 的方向导航):鼠标玩家打开界面不出焦点框;
 	// 原版确认键 A 是 ui_select,本模组 Godot 按钮只认 ui_accept,选择界面必须做转换。
+	[HextechTest]
 	private static void SelectionUiFocusesOnlyInDirectionalNavigation()
 	{
 		MethodInfo defaultFocusGetter = typeof(HextechRuneSelectionScreen)
@@ -373,6 +389,7 @@ internal static partial class Program
 			"opening config with mouse should not explicitly focus an option");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneSelectionUsesPendingSlotUntilConfirmation()
 	{
 		Expect(
@@ -402,6 +419,7 @@ internal static partial class Program
 		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: true, slotIndex: 3, slotCount: 3), "out-of-range slot is not pending");
 	}
 
+	[HextechTest]
 	private static void PlayerRuneRerollClearsOnlyCurrentPendingSlot()
 	{
 		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingSlotAfterReroll(1, 1), "rerolling the pending slot should clear it");
@@ -409,6 +427,7 @@ internal static partial class Program
 		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingSlotAfterReroll(null, 0), "rerolling without a pending slot should stay empty");
 	}
 
+	[HextechTest]
 	private static void EnemyHexRerollPlaysRerollSound()
 	{
 		MethodInfo reroll = typeof(HextechRuneSelectionScreen).GetMethod(
@@ -423,6 +442,7 @@ internal static partial class Program
 			"successful enemy hex rerolls should use the same reroll sound as player rerolls");
 	}
 
+	[HextechTest]
 	private static void EnemyHexRemovalCanBeUndoneWithoutConsumingTheSlot()
 	{
 		List<MonsterHexKind?> current = [ MonsterHexKind.EightPennyGate ];
@@ -443,6 +463,7 @@ internal static partial class Program
 			"a remotely removed slot without an undo snapshot should stay disabled");
 	}
 
+	[HextechTest]
 	private static void EnemyHexActionButtonsUseTexturesWithoutTooltipText()
 	{
 		Expect(
@@ -513,6 +534,7 @@ internal static partial class Program
 			"enemy remove and undo actions should play the standard UI click sound");
 	}
 
+	[HextechTest]
 	private static void CollapsedEnemyHexPanelFollowsTopBarButtonLifecycle()
 	{
 		MethodInfo ensureButton = typeof(HextechEnemyHexCollapseView).GetMethod(
@@ -538,6 +560,7 @@ internal static partial class Program
 			"top bar exit should release the globally hosted collapsed enemy hex panel");
 	}
 
+	[HextechTest]
 	private static void DestructivePickupRunesAreExcludedFromRandomRewards()
 	{
 		Type[] destructiveTypes =
@@ -559,6 +582,7 @@ internal static partial class Program
 			"ordinary runes should remain eligible for random rewards");
 	}
 
+	[HextechTest]
 	private static void ActSelectionGatePreventsReentryAndClearsCurrentRun()
 	{
 		HextechActSelectionGate gate = new();
@@ -575,6 +599,7 @@ internal static partial class Program
 		Expect(!gate.IsHandling, "gate should be idle after current-run exit");
 	}
 
+	[HextechTest]
 	private static void ActSelectionGateClearsStaleRun()
 	{
 		HextechActSelectionGate gate = new();
@@ -588,6 +613,7 @@ internal static partial class Program
 		Expect(gate.IsHandling, "gate should accept a new run after stale reset");
 	}
 
+	[HextechTest]
 	private static void RuneSelectionJournalRoundTripsInStableOrder()
 	{
 		HextechRuneSelectionJournalState state = new();
@@ -620,6 +646,7 @@ internal static partial class Program
 		Equal(true, laterEntry.Applied, "restored later applied state");
 	}
 
+	[HextechTest]
 	private static void RuneSelectionJournalRejectsConflictingSelections()
 	{
 		HextechRuneSelectionJournalState state = new();
@@ -638,6 +665,7 @@ internal static partial class Program
 			"applied transition must reject a different ModelId");
 	}
 
+	[HextechTest]
 	private static void AppliedRuneSelectionJournalDoesNotRequireInventoryPresence()
 	{
 		Expect(
@@ -657,6 +685,7 @@ internal static partial class Program
 			"only a pending and absent journal entry should resume relic obtain");
 	}
 
+	[HextechTest]
 	private static void MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack()
 	{
 		(HextechRarityTier rarity, IReadOnlyList<MonsterHexKind> rarityPool) = GetMonsterHexPoolWithMinimum(2);
@@ -670,6 +699,7 @@ internal static partial class Program
 		SequenceEqual(rarityPool, fallbackPool, "act monster hex pool should fall back to full rarity pool when exhausted");
 	}
 
+	[HextechTest]
 	private static void MonsterHexRollerResolveNewHexesPreservesPrimaryAndAvoidsDuplicates()
 	{
 		MonsterHexKind[] kinds = Enum.GetValues<MonsterHexKind>()
@@ -698,6 +728,7 @@ internal static partial class Program
 		Expect(HextechMonsterHexRoller.ResolveNewMonsterHexes(0, [ kinds[0] ], kinds[1], (_, _) => kinds[2]).Count == 0, "zero enemy hex count should resolve none");
 	}
 
+	[HextechTest]
 	private static void MonsterHexRollerBuildRerollPoolHonorsIconExclusionsThenFallbacks()
 	{
 		(HextechRarityTier rarity, IReadOnlyList<MonsterHexKind> rarityPool) = GetMonsterHexPoolWithMinimum(4);

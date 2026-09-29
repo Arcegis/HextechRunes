@@ -7,6 +7,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void TemporarySlowStartDamageCannotRenewPreviousRounds()
 	{
 		HextechTemporarySlowPower power = (HextechTemporarySlowPower)RuntimeHelpers.GetUninitializedObject(typeof(HextechTemporarySlowPower));
@@ -33,6 +34,7 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
 	private static void TemporarySlowPreservesOppositeSignNewRoundStacks()
 	{
 		HextechTemporarySlowPower power = (HextechTemporarySlowPower)RuntimeHelpers.GetUninitializedObject(typeof(HextechTemporarySlowPower));
@@ -46,6 +48,7 @@ internal static partial class Program
 		Equal(-8, 92 - expired, "expiry must keep the new negative stacks");
 	}
 
+	[HextechTest]
 	private static void TemporarySlowCleanupRunsBeforePlayerStartEffects()
 	{
 		MethodInfo before = typeof(HextechTemporarySlowPower).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)

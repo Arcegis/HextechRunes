@@ -11,6 +11,7 @@ internal static partial class Program
 {
 	private const string GuardReferenceTarget = "0.111.0";
 
+	[HextechTest]
 	private static void VanillaCopyGuardFreezesEntriesAndAsyncBodies()
 	{
 		string testsRoot = Path.GetFullPath(Path.Combine(FindTestsSourceDirectory(), ".."));

@@ -11,6 +11,7 @@ internal static partial class Program
 	/// 色彩发现的候选池复用基类的稳定战斗生成池(战斗过滤 + 生成许可 + CardKey 序数排序)，
 	/// 不再自带一份排序；多池重复的卡先按 Id 去重。
 	/// </summary>
+	[HextechTest]
 	private static void ColorDiscoveryCandidatesUseSharedStableCombatPool()
 	{
 		MethodInfo production = typeof(ColorDiscoveryRune).GetMethod(
@@ -35,6 +36,7 @@ internal static partial class Program
 	/// <summary>
 	/// 私有反射改为 TryGet* 后，三个维护版本都必须能解析到这些原版成员，否则功能会静默降级。
 	/// </summary>
+	[HextechTest]
 	private static void RuneReflectionTargetsResolveOnCurrentGameVersion()
 	{
 		foreach ((Type owner, string field) in new (Type, string)[]
@@ -59,6 +61,7 @@ internal static partial class Program
 	/// <summary>
 	/// 退役的存档占位属性必须保留名称与类型(net-id 布局)，读取恒为类型默认值、写入被忽略。
 	/// </summary>
+	[HextechTest]
 	private static void RetiredRuneSavedPropertiesStayInertPlaceholders()
 	{
 		foreach ((Type owner, string property, object legacyValue, object expected) in new (Type, string, object, object)[]

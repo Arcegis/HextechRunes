@@ -31,6 +31,7 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
+	[HextechTest]
 	private static void UniversalScopeChancesAddBeforeSingleRoll()
 	{
 		Equal(15, UniversalScopeRuneBase.CombineChancePercent([ 15 ]), "one scope keeps its own chance");
@@ -41,6 +42,7 @@ internal static partial class Program
 
 	// 联机分叉回归（一呼百应连打 + 最万用的瞄准镜）：返还额只看随出牌同步的实付，
 	// 自动打出实付 0 就返还 0，不能因为本机记账缺值退回牌面费用。
+	[HextechTest]
 	private static void UniversalScopeRefundsOnlyTheSyncedSpend()
 	{
 		CardModel card = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Thunderclap>();
@@ -69,6 +71,7 @@ internal static partial class Program
 		return cardPlay;
 	}
 
+	[HextechTest]
 	private static void UniversalScopeUpgradeRestorationKeepsCapturedLevels()
 	{
 		Equal(3, CardTransformUpgradeHelper.GetUpgradeRestorationSteps(0, 3, 30), "restore all lost multi-upgrade levels");
@@ -78,6 +81,7 @@ internal static partial class Program
 		Equal(1, CardTransformUpgradeHelper.GetUpgradeRestorationSteps(0, 3, 1), "respect the card max upgrade level");
 	}
 
+	[HextechTest]
 	private static void EventRewardTransactionCommitsSequentially()
 	{
 		EventRewardTransaction<int> transaction = new();
@@ -104,6 +108,7 @@ internal static partial class Program
 		Expect(completed.SequenceEqual([1, 2]), "event rewards should complete sequentially");
 	}
 
+	[HextechTest]
 	private static void EventRewardTransactionRejectsLateRecordsAndSecondCommit()
 	{
 		EventRewardTransaction<int> transaction = new();
@@ -118,6 +123,7 @@ internal static partial class Program
 			"event transaction should not commit twice");
 	}
 
+	[HextechTest]
 	private static void EventRewardTransactionTryRecordSkipsLateAsyncRewards()
 	{
 		EventRewardTransaction<int> transaction = new();
@@ -135,6 +141,7 @@ internal static partial class Program
 		Expect(committed.SequenceEqual([1]), "late inherited reward must not enter the committed event batch");
 	}
 
+	[HextechTest]
 	private static void DoubleVisionCopiesTrackedCardsWhenMultiSelectEndsWithoutCompletingReward()
 	{
 		Expect(
@@ -148,12 +155,13 @@ internal static partial class Program
 			"an empty skipped reward must not create a card copy");
 	}
 
+	[HextechTest]
 	private static void DoubleVisionCopiesWaxStateWithoutCopyingMeltedState()
 	{
-		DustyTome source = CreateBareTestDustyTome();
+		DustyTome source = CreateMutableTestModel<DustyTome>();
 		source.IsWax = true;
 		source.IsMelted = true;
-		DustyTome copy = CreateBareTestDustyTome();
+		DustyTome copy = CreateMutableTestModel<DustyTome>();
 
 		DoubleVisionRune.CopyWaxState(source, copy);
 
@@ -161,6 +169,7 @@ internal static partial class Program
 		Expect(!copy.IsMelted, "Double Vision should not copy an already-melted state");
 	}
 
+	[HextechTest]
 	private static void DoubleVisionDustyTomeSinglePlayerCopiesRelicWithoutAncientCardEffect()
 	{
 		DustyTome source = CreateTestDustyTome();
@@ -195,7 +204,7 @@ internal static partial class Program
 				return Task.FromResult(candidate);
 			},
 			synchronize: _ => broadcastCount++,
-			createCopy: CreateBareTestDustyTome,
+			createCopy: CreateMutableTestModel<DustyTome>,
 			assignAncientCard: SetTestDustyTomeAncientCard)
 			.GetAwaiter()
 			.GetResult();
@@ -209,6 +218,7 @@ internal static partial class Program
 		Expect(!DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(copy), "Dusty Tome suppression must end after obtain");
 	}
 
+	[HextechTest]
 	private static void DoubleVisionDustyTomeSaveLoadPreservesAncientCard()
 	{
 		DustyTome source = CreateTestDustyTome();
@@ -225,7 +235,7 @@ internal static partial class Program
 			syncReward: false,
 			obtainCopy: Task.FromResult,
 			synchronize: static _ => throw new InvalidOperationException("save test must not broadcast"),
-			createCopy: CreateBareTestDustyTome,
+			createCopy: CreateMutableTestModel<DustyTome>,
 			assignAncientCard: SetTestDustyTomeAncientCard)
 			.GetAwaiter()
 			.GetResult();
@@ -249,6 +259,7 @@ internal static partial class Program
 		Equal(source.AncientCard, (ModelId?)restoredAncientCard, "restored Dusty Tome AncientCard");
 	}
 
+	[HextechTest]
 	private static void DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast()
 	{
 		DustyTome source = CreateTestDustyTome();
@@ -266,7 +277,7 @@ internal static partial class Program
 				return Task.FromResult(candidate);
 			},
 			synchronize: _ => broadcastCount++,
-			createCopy: CreateBareTestDustyTome,
+			createCopy: CreateMutableTestModel<DustyTome>,
 			assignAncientCard: SetTestDustyTomeAncientCard)
 			.GetAwaiter()
 			.GetResult();
@@ -280,7 +291,7 @@ internal static partial class Program
 				return Task.FromResult(candidate);
 			},
 			synchronize: _ => broadcastCount++,
-			createCopy: CreateBareTestDustyTome,
+			createCopy: CreateMutableTestModel<DustyTome>,
 			assignAncientCard: SetTestDustyTomeAncientCard)
 			.GetAwaiter()
 			.GetResult();

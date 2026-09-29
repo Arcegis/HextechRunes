@@ -9,6 +9,7 @@ namespace HextechRunes.Tests;
 internal static partial class Program
 {
 	// 改名只改 C# 标识符：沃格莫特之灵的抽牌计数仍写旧 JSON 键；删掉的奥术重击字段出现在旧档里也能正常读。
+	[HextechTest]
 	private static void ReviewCombatTrackingSnapshotKeepsLegacyJsonKeys()
 	{
 		HextechMayhemCombatTrackingState state = new();
@@ -35,6 +36,7 @@ internal static partial class Program
 	}
 
 	// TXT 同步脚本按字面量读描述阈值，效果类的常量必须与之一致。
+	[HextechTest]
 	private static void ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals()
 	{
 		var thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
@@ -51,6 +53,7 @@ internal static partial class Program
 	}
 
 	// 原来 if 链补的能力提示并入表后仍然出现（顺序：表内能力 → 灼烧 → 卡牌/关键词）。
+	[HextechTest]
 	private static void ReviewEnemyHexHoverTipTablesCoverFormerIfChain()
 	{
 		SequenceEqual(new[] { typeof(HextechNextTurnDamagePower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Compensation), "Compensation tip");
@@ -60,6 +63,7 @@ internal static partial class Program
 		SequenceEqual(new[] { typeof(HextechPlayerSlowPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.HundredRefinements), "Hundred Refinements tip");
 	}
 
+	[HextechTest]
 	private static void ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown()
 	{
 		HextechLoadedAssemblyLookup own = new(typeof(HextechLoadedAssemblyLookup).Assembly.GetName().Name!, StringComparison.Ordinal);
@@ -71,6 +75,7 @@ internal static partial class Program
 	}
 
 	// 单机（或非联机战斗）时，Power 的「每回合 1 次」退回调用方自己的本地标记。
+	[HextechTest]
 	private static void ReviewOwnerTurnProcFallsBackToLocalFlagOutsideNetworkCombat()
 	{
 		bool triggered = false;
@@ -81,6 +86,7 @@ internal static partial class Program
 		Expect(!HextechCombatProcTracker.TryConsumeOwnerTurnProc(null, "review-proc", ref triggered), "second consume in the same turn fails");
 	}
 
+	[HextechTest]
 	private static void ReviewModelHooksLiveOnTheirOwnModels()
 	{
 		const BindingFlags declared = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
