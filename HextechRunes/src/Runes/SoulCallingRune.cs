@@ -42,14 +42,14 @@ public sealed class SoulCallingRune : HextechRelicBase
 
 		_addedThisCombat = true;
 		Flash();
-		await AddSoulToPile(combatState, PileType.Draw);
-		await AddSoulToPile(combatState, PileType.Hand);
-		await AddSoulToPile(combatState, PileType.Discard);
+		await AddSoulToPile(Owner, combatState, PileType.Draw);
+		await AddSoulToPile(Owner, combatState, PileType.Hand);
+		await AddSoulToPile(Owner, combatState, PileType.Discard);
 	}
 
-	private Task AddSoulToPile(HextechCombatState combatState, PileType pileType)
+	private Task AddSoulToPile(Player owner, HextechCombatState combatState, PileType pileType)
 	{
-		IEnumerable<Soul> souls = Soul.Create(Owner!, DynamicVars.Cards.IntValue, combatState);
+		IEnumerable<Soul> souls = Soul.Create(owner, DynamicVars.Cards.IntValue, combatState);
 		return HextechCardGeneration.AddGeneratedCardsToCombat(
 			souls,
 			pileType,

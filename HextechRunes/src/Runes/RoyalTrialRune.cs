@@ -50,19 +50,19 @@ public sealed class RoyalTrialRune : HextechRelicBase
 		List<CardModel> cards = new(DynamicVars.Cards.IntValue);
 		for (int i = 0; i < DynamicVars.Cards.IntValue; i++)
 		{
-			cards.Add(CreateRandomMinionCard(combatState));
+			cards.Add(CreateRandomMinionCard(Owner, combatState));
 		}
 
 		Flash();
 		await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
 	}
 
-	private CardModel CreateRandomMinionCard(HextechCombatState combatState)
+	private CardModel CreateRandomMinionCard(Player owner, HextechCombatState combatState)
 	{
 		int ordinal = ConsumeCombatProcOrdinal(nameof(RoyalTrialRune), ref _generatedMinionsThisCombat);
 		return HextechStableRandom.CreateMinionCard(
 			combatState,
-			Owner!,
+			owner,
 			"royal-trial",
 			ordinal);
 	}

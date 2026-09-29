@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Hooks;
-
 namespace HextechRunes;
 
 public sealed class OblivionUpgradeRune : CardUpgradeRuneBase<Oblivion>

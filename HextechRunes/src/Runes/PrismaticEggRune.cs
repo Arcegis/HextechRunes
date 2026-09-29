@@ -1,7 +1,3 @@
-using System.Globalization;
-using MegaCrit.Sts2.Core.Multiplayer.Game;
-using MegaCrit.Sts2.Core.Saves;
-
 namespace HextechRunes;
 
 // 棱彩蛋 —— 你宝箱房内的遗物奖励会被替换为随机的海克斯符文。

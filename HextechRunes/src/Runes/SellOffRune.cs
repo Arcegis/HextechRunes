@@ -68,17 +68,17 @@ public sealed class SellOffRune : HextechRelicBase
 			await CardPileCmd.Add(card, PileType.Hand, CardPilePosition.Top, this, skipVisuals: true);
 		}
 
-			HextechCombatState? combatState = Owner!.Creature.CombatState;
-			int targetOrdinal = ConsumeCombatProcOrdinal(nameof(SellOffRune), ref _autoPlayTargetsThisCombat);
-			Creature? target = RequiresEnemyTarget(card)
-				? HextechRuneTargeting.PickRandomHittableEnemy(
-					Owner,
-					combatState,
-					"sell-off",
-					combatState?.RoundNumber.ToString() ?? "-1",
-					targetOrdinal.ToString(),
-					card.Id.Entry)
-				: null;
+		HextechCombatState? combatState = Owner?.Creature.CombatState;
+		int targetOrdinal = ConsumeCombatProcOrdinal(nameof(SellOffRune), ref _autoPlayTargetsThisCombat);
+		Creature? target = RequiresEnemyTarget(card)
+			? HextechRuneTargeting.PickRandomHittableEnemy(
+				Owner,
+				combatState,
+				"sell-off",
+				combatState?.RoundNumber.ToString() ?? "-1",
+				targetOrdinal.ToString(),
+				card.Id.Entry)
+			: null;
 		await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);
 	}
 

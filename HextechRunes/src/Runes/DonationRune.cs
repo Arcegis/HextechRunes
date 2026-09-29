@@ -11,6 +11,8 @@ public sealed class DonationRune : HextechRelicBase
 
 	public override Task AfterObtained()
 	{
-		return PlayerCmd.GainGold(DynamicVars.Gold.BaseValue, Owner!);
+		return Owner == null
+			? Task.CompletedTask
+			: PlayerCmd.GainGold(DynamicVars.Gold.BaseValue, Owner);
 	}
 }
