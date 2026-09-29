@@ -48,6 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../HextechRunes/src/HextechRunes.csproj" Private="false" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="../../HextechRunes/src/HextechRunes.csproj" Private="false" ReferenceOutputAssembly="true"
+                      AdditionalProperties="HextechSts2Target=$(HextechSponsorSts2Target);GameDataDir=$(GameDataDir)" />
   </ItemGroup>
 </Project>

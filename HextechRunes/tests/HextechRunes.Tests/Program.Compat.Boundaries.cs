@@ -58,6 +58,11 @@ internal static partial class Program
 
 	private static void LoaderRefusesNewerVariantForKnownOlderHost()
 	{
+		(Type Type, string Assembly, string Manifest)[] loaders =
+		[
+			(typeof(LoaderBootstrap), "HextechRunes.dll", "hextech-runes-variants.manifest"),
+			(typeof(HextechRunesSponsorPack.Loader.LoaderBootstrap), "HextechRunesSponsorPack.dll", "hextech-runes-sponsor-pack-variants.manifest")
+		];
 		string root = Path.Combine(Path.GetTempPath(), "hextech-loader-test-" + Guid.NewGuid().ToString("N"));
 		try
 		{
@@ -66,23 +71,26 @@ internal static partial class Program
 			Directory.CreateDirectory(variantDirectory);
 			File.WriteAllText(Path.Combine(variantDirectory, "compat-target.txt"), "0.110.0");
 			byte[] dll = "not a real assembly"u8.ToArray();
-			string dllPath = Path.Combine(variantDirectory, "HextechRunes.dll");
-			File.WriteAllBytes(dllPath, dll);
-			string manifest = JsonSerializer.Serialize(new
+			foreach (var loader in loaders)
 			{
-				variants = new[] { new { compatTarget = "0.110.0", directory = "lib/0.110.0", assembly = "HextechRunes.dll", sha256 = Convert.ToHexString(SHA256.HashData(dll)) } }
-			});
-			File.WriteAllText(Path.Combine(root, "hextech-runes-variants.manifest"), manifest);
+				string dllPath = Path.Combine(variantDirectory, loader.Assembly);
+				File.WriteAllBytes(dllPath, dll);
+				string manifest = JsonSerializer.Serialize(new
+				{
+					variants = new[] { new { compatTarget = "0.110.0", directory = "lib/0.110.0", assembly = loader.Assembly, sha256 = Convert.ToHexString(SHA256.HashData(dll)) } }
+				});
+				File.WriteAllText(Path.Combine(root, loader.Manifest), manifest);
 
-			MethodInfo pick = AccessTools.Method(typeof(LoaderBootstrap), "PickVariant");
-			Expect(pick != null, "loader exposes PickVariant(loaderDirectory, libRoot, host)");
-			object? Pick(Version? host) => pick!.Invoke(null, [root, libRoot, host]);
-			static string Target(object candidate) => (string)AccessTools.Property(candidate.GetType(), "CompatTarget").GetValue(candidate)!;
+				MethodInfo pick = AccessTools.Method(loader.Type, "PickVariant");
+				Expect(pick != null, $"{loader.Type.FullName} exposes PickVariant(loaderDirectory, libRoot, host)");
+				object? Pick(Version? host) => pick!.Invoke(null, [root, libRoot, host]);
+				static string Target(object candidate) => (string)AccessTools.Property(candidate.GetType(), "CompatTarget").GetValue(candidate)!;
 
-			Equal("0.110.0", Target(Pick(new Version(0, 110, 0))!), "exact host picks its own variant");
-			Equal("0.110.0", Target(Pick(new Version(0, 111, 0))!), "newer host falls back to the newest variant not above it");
-			Equal("0.110.0", Target(Pick(null)!), "unknown host keeps using the newest bundled variant");
-			Expect(Pick(new Version(0, 107, 1)) == null, "known older host with no compatible variant refuses to load instead of picking a newer one");
+				Equal("0.110.0", Target(Pick(new Version(0, 110, 0))!), $"{loader.Type.FullName}: exact host picks its own variant");
+				Equal("0.110.0", Target(Pick(new Version(0, 111, 0))!), $"{loader.Type.FullName}: newer host falls back to the newest variant not above it");
+				Equal("0.110.0", Target(Pick(null)!), $"{loader.Type.FullName}: unknown host keeps using the newest bundled variant");
+				Expect(Pick(new Version(0, 107, 1)) == null, $"{loader.Type.FullName}: known older host with no compatible variant refuses to load");
+			}
 		}
 		finally
 		{

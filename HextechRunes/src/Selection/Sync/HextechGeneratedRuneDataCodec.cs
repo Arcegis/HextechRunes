@@ -51,7 +51,8 @@ internal static class HextechGeneratedRuneDataCodec
 		int rerolls = payload[5];
 		if (rerolls < 0 || rerolls > payload.Count - 6) return false;
 		if (!HextechStableModelIdListCodec.TryDecode(payload, 6 + rerolls, out List<ModelId> ids, out int cursor)
-			|| ids.Count != options.Count || !HextechRuneWeightCodec.TryRead(payload, ref cursor, out _)
+			|| ids.Count != options.Count || !HextechRuneSeenHistoryCodec.TryRead(payload, ref cursor, out _)
+			|| !HextechRuneWeightCodec.TryRead(payload, ref cursor, out _)
 			|| !TryDecode(payload, cursor, ids.Count, out List<string> data)) return false;
 		for (int i = 0; i < options.Count; i++)
 		{

@@ -34,7 +34,8 @@ internal static class HextechRuneWeightCodec
 		int rerolls = payload[5];
 		if (rerolls < 0 || rerolls > payload.Count - 6) return false;
 		if (!HextechStableModelIdListCodec.TryDecode(payload, 6 + rerolls, out List<ModelId> ids, out int cursor)
-			|| ids.Count != options.Count || !TryRead(payload, ref cursor, out int? weight) || !weight.HasValue)
+			|| ids.Count != options.Count || !HextechRuneSeenHistoryCodec.TryRead(payload, ref cursor, out _)
+			|| !TryRead(payload, ref cursor, out int? weight) || !weight.HasValue)
 			return false;
 		weightedOptions = new HextechWeightedRuneOptions(options, weight.Value);
 		return true;

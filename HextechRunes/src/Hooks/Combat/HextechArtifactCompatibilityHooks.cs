@@ -9,7 +9,7 @@ internal static class HextechArtifactCompatibilityHooks
 
 	private static bool IsEncounterMechanicPower(PowerModel power)
 	{
-		return power is SurroundedPower or FlankingPower;
+		return power is SurroundedPower;
 	}
 
 	[HarmonyPatch(typeof(ArtifactPower), nameof(ArtifactPower.TryModifyPowerAmountReceived), new[] { typeof(PowerModel), typeof(Creature), typeof(decimal), typeof(Creature), typeof(decimal) }, new[] { ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Out })]

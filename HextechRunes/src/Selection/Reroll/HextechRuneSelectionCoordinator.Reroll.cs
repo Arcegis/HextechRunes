@@ -91,6 +91,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		int selectionStageIndex,
 		int rerollOrdinal,
 		HashSet<ModelId> seenOptionIds,
+		HashSet<ModelId> offeredOptionIds,
 		HextechRarityTier? rarityOverride = null)
 	{
 		IReadOnlyList<RelicModel> rerolled = RerollSingleOptionMultiplayer(
@@ -106,8 +107,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			ModelId rerolledId = rerolled[slotIndex].CanonicalInstance?.Id ?? rerolled[slotIndex].Id;
 			seenOptionIds.Add(rerolledId);
+			offeredOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);
-			modifier.RecordSeenPlayerRunes(player, [ rerolled[slotIndex] ]);
 			HextechLog.Info($"[{ModInfo.Id}][Mayhem] RerollSingleOptionMultiplayer: player={player.NetId} slot={slotIndex} ordinal={rerollOrdinal} relic={rerolledId.Entry}");
 		}
 
