@@ -13,8 +13,9 @@ internal static partial class HextechRunLifecycleHooks
 	private const int EndlessLoopRoomReadyTimeoutFrames = 600;
 	private const int EndlessLoopWaitLogIntervalFrames = 120;
 	private const int RemoteEventsWaitLogIntervalFrames = 300;
-	// 等待其他玩家完成远古事件的上限：远超正常阅读/选择时间，只防止对端异常时永远挂起。
-	private const int RemoteEventsWaitTimeoutFrames = 18000;
+	// 等待其他玩家完成远古事件超过这个帧数时告警一次，但继续等待：超时由各端独立判定，单端放弃会让
+	// 先放弃的一端等下一房间、后完成的一端等它完成选择，互相卡住，所以只能换局时退出。
+	private const int RemoteEventsSlowWaitWarnFrames = 18000;
 
 	private static readonly HashSet<RunState> RunsInsideStartRunOrig = [];
 

@@ -55,7 +55,7 @@ internal static partial class HextechRunLifecycleHooks
 		{
 			if (!await WaitForAllCurrentEventsFinished(runState, eventId))
 			{
-				// 未完成等待（换局或超时）时不在这里开选择；本幕未决的选择由下一次进入房间的调度补上。
+				// 换局时不在这里开选择；新局的选择由它自己的调度负责。
 				return;
 			}
 
@@ -96,16 +96,14 @@ internal static partial class HextechRunLifecycleHooks
 		return true;
 	}
 
-	/// <summary>等所有玩家的当前事件都结束；换局返回 false，超时记 Warn 后返回 false。</summary>
+	/// <summary>
+	/// 等所有玩家的当前事件都结束；只有换局才返回 false。等待过久只告警，不单端放弃：
+	/// 超时由各端独立判定，一端放弃后另一端会在选择界面等它，而地图行进已被禁用，双方互相卡住。
+	/// </summary>
 	private static async Task<bool> WaitForAllCurrentEventsFinished(RunState runState, string eventId)
 	{
-		for (int frame = 0; frame <= RemoteEventsWaitTimeoutFrames; frame++)
+		for (int frame = 0; IsCurrentRun(runState); frame++)
 		{
-			if (!IsCurrentRun(runState))
-			{
-				return false;
-			}
-
 			IReadOnlyList<EventModel> events = RunManager.Instance.EventSynchronizer.Events;
 			int finishedCount = events.Count(static eventModel => eventModel.IsFinished);
 			if (AreAllPlayerEventsFinished(runState, events, finishedCount))
@@ -114,7 +112,11 @@ internal static partial class HextechRunLifecycleHooks
 				return true;
 			}
 
-			if (frame % RemoteEventsWaitLogIntervalFrames == 0)
+			if (frame == RemoteEventsSlowWaitWarnFrames)
+			{
+				HextechLog.Warn("Mayhem", $"EventRoomProceed: still waiting for remote events after {RemoteEventsSlowWaitWarnFrames} frames event={eventId} finished={finishedCount}/{events.Count} players={runState.Players.Count}; keep waiting.");
+			}
+			else if (frame % RemoteEventsWaitLogIntervalFrames == 0)
 			{
 				HextechLog.Info("Mayhem", $"EventRoomProceed: waiting for remote events event={eventId} finished={finishedCount}/{events.Count} players={runState.Players.Count}");
 			}
@@ -122,7 +124,6 @@ internal static partial class HextechRunLifecycleHooks
 			await WaitOneFrame();
 		}
 
-		HextechLog.Warn("Mayhem", $"EventRoomProceed: timed out waiting for remote events after {RemoteEventsWaitTimeoutFrames} frames event={eventId} players={runState.Players.Count}; selection deferred to the next room.");
 		return false;
 	}
 

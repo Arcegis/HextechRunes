@@ -122,7 +122,7 @@
 - **遥测配置缺 endpoint 或 endpoint 为空时只补默认地址，不覆盖用户写的 `enabled`。** 默认开启、明文 HTTP、无游戏内开关维持现状（用户决定）；文件损坏时的行为不变。`HextechTelemetry.Config`
 - **无尽模式检测只认已加载的 EndlessMode，在 ModManager 初始化完成后缓存。** 旧实现读 `_mods`，把未加载的模组也算进去。`HextechCatalog.IsEndlessModeLoaded`
 - **配置菜单的计数与网格同口径：打开菜单时按网格实际列出的条目算一次 ID 集合，页脚、角标、社区配置摘要共用。** 我方总数不再包含生成型符文，敌方总数按网格条目，禁用集合里的未知 ID 不计入。`HextechRuneConfigMenuHooks`
-- **远古事件结束后等待其他玩家完成事件，上限 18000 帧。** 超时记 Warn，不在当场开选择，本幕未决的海克斯选择由下一次 RoomEntered 调度补上。`HextechRunLifecycleHooks.EventSelection`
+- **远古事件结束后等待其他玩家完成事件，不设单端超时，只在等满 18000 帧时告警一次后继续等待，换局才退出。** 超时由各端独立判定：先放弃的一端会等下一房间，后完成的一端进入选择界面等它，而地图行进已被禁用、原版进入下一房间需要全员投票，双方互相卡住。要取消只能走同步协议让所有客户端一起放弃。`HextechRunLifecycleHooks.EventSelection`
 - **“已连接的联机”统一用 `HextechPlayerContextHelper.IsMultiplayerConnected()`，NetService 为空时返回 false。** 此前选择、夺金、锻造发放三处在 NetService 为空时会抛空引用。
 
 ## 待实机验证
