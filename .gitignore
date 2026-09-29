@@ -11,6 +11,8 @@
 **/workshop-beta/content/
 **/analytics/*_latest.csv
 .tools/
+**/releases/
+HextechRunes/server/hextech-telemetry/data/
 .env
 .env.*
 !.env.example

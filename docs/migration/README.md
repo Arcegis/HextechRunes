@@ -1,5 +1,9 @@
 # 仓库历史迁移记录（2026-09-29）
 
+> 本文是迁移完成时的历史快照。提交数量、文件数量及本地工作区状态仅描述当时的核验结果；当前开发入口与操作说明见[仓库 README](../../README.md)和[工具手册](../../HextechRunes/docs/developer-tools.md)。不要将本文当作重复执行的迁移或发布清单。
+
+> This is a historical snapshot of the completed migration. Counts and local workspace status describe the checks performed at that time. For current development instructions, see the [repository README](../../README.md) and [developer tools](../../HextechRunes/docs/developer-tools.md).
+
 此仓库从 `s1f102500012/sts2mod` 的公开历史和 `s1f102500012/sts2mod-dev` 的开发历史中提取海克斯本体、拓展包，再以真正的双亲合并提交连接两条历史。原仓库不改写历史，也不删除其他模组。
 
 ## 路径映射

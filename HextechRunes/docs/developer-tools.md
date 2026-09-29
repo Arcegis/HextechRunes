@@ -1,12 +1,21 @@
 # 开发工具与共享代码
 
-先读 [开发规范](development.md)。以下命令使用本工作区绝对路径；其它机器替换 `/Users/iniad/sts2-mods/HextechRunes` 前缀。工具从自身位置找项目，不依赖当前目录。
+先读 [开发规范](development.md)。下方 Python 命令从仓库根目录执行；也可以将脚本路径改为自己克隆目录下的绝对路径。表格中的 `tools/`、`src/` 路径相对于本体目录 `HextechRunes/`。工具从脚本自身位置找项目，不依赖旧合集工作区。
+
+## 构建环境与外部工具
+
+- 安装 .NET 9 SDK 和 Python 3。Godot 资源导入与 PCK 打包需要支持 .NET 的 Godot 编辑器；可通过 `GODOT_EDITOR` 指定其可执行文件。
+- 按 `.csproj` 和构建脚本声明的目标版本准备游戏程序集。本体的版本化引用目录为 `HextechRunes/versioned-dll-backups/<游戏版本>/game-refs/`，拓展包默认复用该目录。程序集必须来自对应版本的本机游戏安装，不提交到 Git。
+- `.csproj` 支持通过 `-p:GameDataDir=<程序集目录>` 指定引用目录。直接构建时，本体使用 `HextechSts2Target`，拓展包使用 `HextechSponsorSts2Target`；完整打包脚本会逐个构建它们声明支持的版本。
+- 两个 `build_and_deploy.sh` 都是面向 macOS 的 Zsh 脚本，目前仍含维护者本机的默认游戏安装路径。使用前核对脚本中的 `GAME_APP`；其它系统应使用适合本机的构建、资源导入与部署方式，不直接照搬 macOS 路径。
+- 本体用 `HEXTECH_DEPLOY=0` 关闭部署，拓展包用 `HEXTECH_SPONSOR_DEPLOY=0`。只设置其中一个不会改变另一个脚本的行为。
+- 原工作区的 `tools/sts2-inspect` 未包含在此仓库。需要原版 API 证据时，使用本机另行配置的反编译工具读取对应版本的 `sts2.dll` 与同目录依赖；不把旧工具路径当作本仓库提供的命令。
 
 ## 内容定位
 
 ```bash
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py find '电球头'
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py find SingularityAI --limit 3
+python3 HextechRunes/tools/hextech_dev.py find '电球头'
+python3 HextechRunes/tools/hextech_dev.py find SingularityAI --limit 3
 ```
 
 输出中文名、品级、注册元数据、模型/敌方两种描述、源码和测试引用、已有图标路径。复用内容校验器的注册解析与键名规则，支持连续大写缩写；只索引本体的注册符文/敌方/锻造器，不扫描发行副本或拓展包。它是导航工具，不是 C# 语义分析器；修改后仍需阅读目标文件。卡牌/Power 等用 `rg` 在对应源码目录找。
@@ -16,9 +25,9 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py find Singularit
 以下命令将每种语言的源键复制到同语言的目标键，默认仅展示 diff：
 
 ```bash
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py loc-copy GLOBE_HEAD_HEX.description globeHeadHex.enemyDescription
+python3 HextechRunes/tools/hextech_dev.py loc-copy GLOBE_HEAD_HEX.description globeHeadHex.enemyDescription
 # 明确两条文本语义相同后写入；--check 则只比较，有差异时退出 1
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py loc-copy GLOBE_HEAD_HEX.description globeHeadHex.enemyDescription --apply
+python3 HextechRunes/tools/hextech_dev.py loc-copy GLOBE_HEAD_HEX.description globeHeadHex.enemyDescription --apply
 ```
 
 `--locale zhs` 可限制语言，可重复；默认覆盖磁盘上的全部语言。`--table` 默认 `relics`，也支持 `relic_collection/cards/powers`。先检查所有所选语言的键存在且为字符串，再改写；保留其它行格式和内容。此工具不翻译、不更新 TXT、不重打 PCK。退出 2 表示缺键、格式或调用错误。
@@ -28,8 +37,8 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py loc-copy GLOBE_
 TXT 沿用现有工具：
 
 ```bash
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/sync_content_txt.py
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/sync_content_txt.py --help
+python3 HextechRunes/tools/sync_content_txt.py
+python3 HextechRunes/tools/sync_content_txt.py --help
 ```
 
 不传参数为只读预览（不是 `--check` 参数）。工具会读取拓展包，报告可能超出本次修改；`--apply` 会更新三个 TXT 的生成部分，不自动覆盖人工描述。只对已批准条目用 `--accept-json '锚'`，删除旧条目需显式 `--prune`。不要为消除预览差异整表覆盖。
@@ -43,10 +52,10 @@ TXT 描述从对应模型的 `CanonicalVars` 和数值常量取得未升级基�
 玩家侧活力火花的施加入口与清理规则见 [设计裁决 · 玩家符文](design-decisions.md#玩家符文)；使用 `PowerCmd.Apply<HextechVitalSparkPower>`，不要直接将原版敌方增益施加到玩家。
 
 ```bash
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --list --match Hopper
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEscapeSurvivesTheNextNativeMoveRoll
+python3 HextechRunes/tools/hextech_dev.py tests --list --match Hopper
+python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEscapeSurvivesTheNextNativeMoveRoll
 # 加 --run 才构建该目标并运行所选测试，可重复 --name
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEscapeSurvivesTheNextNativeMoveRoll --run
+python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEscapeSurvivesTheNextNativeMoveRoll --run
 ```
 
 执行前校验维护目标和精确测试名，避免名称拼错变成“运行 0 项也成功”；构建失败后不运行残留 DLL。目标从 csproj 读取，名称从现有 Program 注册读取。测试项目仍会编译其工程依赖，但只执行指定案例，不构建 loader、不部署、不跑内容/发行检查。命令列出的是静态注册候选，最终是否可用由对应版本的测试程序判定。
@@ -59,13 +68,13 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --target 
 | --- | --- |
 | `tools/validate_hextech_content.py` | 全量内容/注册/本地化检查；不是每次小改必跑 |
 | `tools/run_tests.sh` | Bash 脚本，默认全套、多目标、loader 和已有 bundle 检查；`HEXTECH_STS2_TARGET` 可限目标。仍是完整检查入口，不用于定向调用 |
-| 工作区 `tools/sts2-inspect types <类型> <成员>` / `decompile <完整类型> --assembly <匹配 DLL>` | 原版证据；不要混用其它版本依赖 |
+| 本机反编译工具（外部依赖） | 原版 API 取证；目标 `sts2.dll` 与依赖必须来自同一游戏版本，见上方环境说明 |
 | `tools/multi_version/validate_variant_bundle.py` | loader/manifest/变体路径、目标、DLL 哈希校验 |
 | `tools/build_and_deploy.sh` | Zsh 脚本，重建 `.build` 和 `dist`、导入、构建、打包；默认替换本机模组目录，设 `HEXTECH_DEPLOY=0` 才不部署 |
 | `tools/package_release_zip.sh [输出绝对路径]` | 只打包现有 dist，不构建、不部署；调用下面的 Python 实现 |
 | `tools/package_release.py [输出绝对路径] --dist <目录>` | 校验 bundle，再按变体清单打 ZIP；包含 loader、PCK、manifest、各变体 DLL 和必要 `compat-target.txt`，不含更新日志 TXT；成功后才替换原 ZIP |
 | `tools/extract_near_death_feast_glow.gd -- <原版PCK> <输出PNG>` | 用 Godot `--headless --path tools -s <脚本绝对路径>` 运行，提取 SOUL_NEXUS 红光并写入指定 PNG；区域与来源见 [设计裁决 · 视觉](design-decisions.md#视觉) |
-| `tools/update_latest_version.py` / 工坊上传器 / 镜像同步 | 涉及版本发布或外部写入；按用户指定范围使用，不是代码修改后的自动步骤 |
+| `tools/update_latest_version.py` / 工坊上传器 | 涉及版本发布或外部写入；按用户指定范围使用，不是代码修改后的自动步骤。源码直接提交到当前仓库，不再做镜像同步 |
 
 ## 运行时共享能力
 
@@ -90,7 +99,7 @@ python3 /Users/iniad/sts2-mods/HextechRunes/tools/hextech_dev.py tests --target 
 ## 维护这些工具
 
 ```bash
-python3 /Users/iniad/sts2-mods/HextechRunes/tools/tests/test_developer_tools.py
+python3 HextechRunes/tools/tests/test_developer_tools.py
 ```
 
 这些测试只覆盖开发工具的文件写入边界和发行包遗漏问题，不启动游戏或执行全部 C# 回归。修改只读查询时也可直接使用上面的查询示例核对。新增命令保持默认只读；有写入/构建动作需在帮助中明确，并更新本手册。

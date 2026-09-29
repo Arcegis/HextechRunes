@@ -1,7 +1,7 @@
 # 海克斯仓库工作约定
 
 - 总是用中文沟通；新提交的模组作者使用 `Natsuki`。历史提交保留原贡献者署名，不统一改写作者。
-- 本仓库是 HextechRunes 与 HextechRunesSponsorPack 唯一的开发和发布源码入口。直接使用这里的分支、Issue 和 PR；不再向 `sts2mod-dev` 提交海克斯修改，也不再使用旧合集的单向覆盖镜像流程。
+- 本仓库是 HextechRunes 与 HextechRunesSponsorPack 唯一的开发和发布源码入口，直接使用这里的分支、Issue 和 PR。历史迁移背景见 `docs/migration/`，不作为当前发布流程。
 - 先检查 `git status` 与相关差异，保留已有的暂存、未暂存和未跟踪修改。
 - 本体维护遵循 [HextechRunes/AGENTS.md](HextechRunes/AGENTS.md) 和对应开发文档。修改战斗、存档、联机或发行结构时读取 [模组设计哲学](docs/模组设计哲学.md) 的相关章节。
 - PR 分支名不要带 `codex/`，标题不要带 `[codex]`；不追加 AI 署名。
