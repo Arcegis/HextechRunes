@@ -1,7 +1,4 @@
-using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Saves;
 using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
@@ -114,5 +111,4 @@ public sealed partial class DoubleVisionRune : HextechRelicBase
 				break;
 		}
 	}
-
 }

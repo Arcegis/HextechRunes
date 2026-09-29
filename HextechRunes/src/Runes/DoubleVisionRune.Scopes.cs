@@ -1,8 +1,4 @@
 using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Events;
-using MegaCrit.Sts2.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Saves;
-using System.Runtime.CompilerServices;
 
 namespace HextechRunes;
 
@@ -117,6 +113,9 @@ public sealed partial class DoubleVisionRune
 			return false;
 		}
 
+		// 联机时只由奖励所属玩家本机复制：原版奖励领取本就只在领取者本机执行，再经
+		// RewardSynchronizer 广播给其他端(见下方 Sync* 调用)。这里的 LocalContext 判断跟随原版奖励流程，
+		// 共享结果仍由同步消息决定，不属于"用 LocalContext 决定只在本机结算共享效果"。
 		RunManager? runManager = RunManager.Instance;
 		INetGameService? netService = runManager?.NetService;
 		if (netService != null
@@ -152,8 +151,8 @@ public sealed partial class DoubleVisionRune
 		}
 		catch (Exception ex)
 		{
-			Log.Error(
-				$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Local duplicated card reward was already granted, "
+			HextechLog.Error(
+				"DoubleVision", $"[DESYNC-RISK] Local duplicated card reward was already granted, "
 				+ $"but its multiplayer broadcast failed: card={card.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
 		}
 	}
@@ -171,8 +170,8 @@ public sealed partial class DoubleVisionRune
 		}
 		catch (Exception ex)
 		{
-			Log.Error(
-				$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Local duplicated gold reward was already granted, "
+			HextechLog.Error(
+				"DoubleVision", $"[DESYNC-RISK] Local duplicated gold reward was already granted, "
 				+ $"but its multiplayer broadcast failed: amount={amount} error={ex.GetType().Name}: {ex.Message}");
 		}
 	}
@@ -190,8 +189,8 @@ public sealed partial class DoubleVisionRune
 		}
 		catch (Exception ex)
 		{
-			Log.Error(
-				$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Local duplicated potion reward was already granted, "
+			HextechLog.Error(
+				"DoubleVision", $"[DESYNC-RISK] Local duplicated potion reward was already granted, "
 				+ $"but its multiplayer broadcast failed: potion={potion.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
 		}
 	}
@@ -209,8 +208,8 @@ public sealed partial class DoubleVisionRune
 		}
 		catch (Exception ex)
 		{
-			Log.Error(
-				$"[{ModInfo.Id}][DoubleVision][DESYNC-RISK] Local duplicated relic reward was already granted, "
+			HextechLog.Error(
+				"DoubleVision", $"[DESYNC-RISK] Local duplicated relic reward was already granted, "
 				+ $"but its multiplayer broadcast failed: relic={relic.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
 		}
 	}
