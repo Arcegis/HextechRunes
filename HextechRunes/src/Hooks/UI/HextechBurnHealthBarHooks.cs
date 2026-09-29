@@ -28,52 +28,87 @@ internal static class HextechBurnHealthBarHooks
 
 	private static readonly ConditionalWeakTable<NHealthBar, Control> BurnForegrounds = new();
 
-	private static FieldInfo _creatureField = null!;
-	private static FieldInfo _hpForegroundField = null!;
-	private static FieldInfo _poisonForegroundField = null!;
-	private static FieldInfo _doomForegroundField = null!;
-	private static FieldInfo _hpLabelField = null!;
-	private static PropertyInfo _maxFgWidthProp = null!;
-	private static MethodInfo _getFgWidthMethod = null!;
+	// 两个补丁都依赖的原版私有成员;任一缺失时两个补丁都不安装(缺失项已进启动摘要)。
+	private static readonly HealthBarMembers? Members = HealthBarMembers.TryResolve();
 
-	/// <summary>解析血条私有成员;任一缺失即抛出,两个补丁类随之停用。</summary>
-	private static void EnsureMembers()
+	/// <summary>原版 <c>NHealthBar</c> 的私有成员(0.107.1 / 0.110.0 / 0.111.0 同名同签名)。</summary>
+	private sealed class HealthBarMembers
 	{
-		if (_getFgWidthMethod != null)
+		private HealthBarMembers(
+			FieldInfo creature,
+			FieldInfo hpForeground,
+			FieldInfo poisonForeground,
+			FieldInfo doomForeground,
+			FieldInfo hpLabel,
+			Func<NHealthBar, float> maxFgWidth,
+			Func<NHealthBar, int, float> getFgWidth)
 		{
-			return;
+			Creature = creature;
+			HpForeground = hpForeground;
+			PoisonForeground = poisonForeground;
+			DoomForeground = doomForeground;
+			HpLabel = hpLabel;
+			MaxFgWidth = maxFgWidth;
+			GetFgWidth = getFgWidth;
 		}
 
-		_creatureField = RequireField("_creature");
-		_hpForegroundField = RequireField("_hpForeground");
-		_poisonForegroundField = RequireField("_poisonForeground");
-		_doomForegroundField = RequireField("_doomForeground");
-		_hpLabelField = RequireField("_hpLabel");
-		_maxFgWidthProp = typeof(NHealthBar).GetProperty("MaxFgWidth", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-			?? throw new MissingMemberException(nameof(NHealthBar), "MaxFgWidth");
-		_getFgWidthMethod = typeof(NHealthBar).GetMethod("GetFgWidth", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, new[] { typeof(int) }, null)
-			?? throw new MissingMethodException(nameof(NHealthBar), "GetFgWidth");
+		/// <summary>原版 <c>NHealthBar._creature</c>。</summary>
+		internal FieldInfo Creature { get; }
+
+		/// <summary>原版 <c>NHealthBar._hpForeground</c>。</summary>
+		internal FieldInfo HpForeground { get; }
+
+		/// <summary>原版 <c>NHealthBar._poisonForeground</c>。</summary>
+		internal FieldInfo PoisonForeground { get; }
+
+		/// <summary>原版 <c>NHealthBar._doomForeground</c>。</summary>
+		internal FieldInfo DoomForeground { get; }
+
+		/// <summary>原版 <c>NHealthBar._hpLabel</c>。</summary>
+		internal FieldInfo HpLabel { get; }
+
+		/// <summary>原版私有属性 <c>NHealthBar.MaxFgWidth</c> 的 getter,预先绑定成委托,每帧调用不走反射。</summary>
+		internal Func<NHealthBar, float> MaxFgWidth { get; }
+
+		/// <summary>原版私有方法 <c>NHealthBar.GetFgWidth(int)</c>,同上。</summary>
+		internal Func<NHealthBar, int, float> GetFgWidth { get; }
+
+		internal static HealthBarMembers? TryResolve()
+		{
+			const BindingFlags InstanceFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+			Type type = typeof(NHealthBar);
+			FieldInfo? creature = HextechHookReflection.TryGetField(type, "_creature");
+			FieldInfo? hpForeground = HextechHookReflection.TryGetField(type, "_hpForeground");
+			FieldInfo? poisonForeground = HextechHookReflection.TryGetField(type, "_poisonForeground");
+			FieldInfo? doomForeground = HextechHookReflection.TryGetField(type, "_doomForeground");
+			FieldInfo? hpLabel = HextechHookReflection.TryGetField(type, "_hpLabel");
+			MethodInfo? maxFgWidthGetter = HextechHookReflection.TryGetProperty(type, "MaxFgWidth", InstanceFlags)?.GetMethod;
+			MethodInfo? getFgWidth = HextechHookReflection.TryGetMethod(type, "GetFgWidth", InstanceFlags, typeof(int));
+			if (creature == null
+				|| hpForeground == null
+				|| poisonForeground == null
+				|| doomForeground == null
+				|| hpLabel == null
+				|| maxFgWidthGetter == null
+				|| getFgWidth == null)
+			{
+				return null;
+			}
+
+			return new HealthBarMembers(
+				creature,
+				hpForeground,
+				poisonForeground,
+				doomForeground,
+				hpLabel,
+				maxFgWidthGetter.CreateDelegate<Func<NHealthBar, float>>(),
+				getFgWidth.CreateDelegate<Func<NHealthBar, int, float>>());
+		}
 	}
 
-	private static FieldInfo RequireField(string name)
+	private static bool TryRenderForeground(HealthBarMembers members, NHealthBar instance)
 	{
-		return typeof(NHealthBar).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new MissingFieldException(nameof(NHealthBar), name);
-	}
-
-	/// <summary>
-	/// 整段替换 <c>RefreshForeground</c>。任意环节异常时返回 true 让原版方法照常执行，
-	/// 保证最坏情况只是不显示烧条、绝不破坏血条。
-	/// </summary>
-
-	/// <summary>
-	/// 在原版给血条数字上色之后，仅当「灼烧」参与斩杀时覆盖字色，做出和毒(绿)/灾厄(紫)并列的斩杀提示。
-	/// 灼烧不影响结果时完全不动 vanilla 着色（含格挡色、无敌色）。
-	/// </summary>
-
-	private static bool TryRenderForeground(NHealthBar instance)
-	{
-		if (_creatureField.GetValue(instance) is not Creature creature)
+		if (members.Creature.GetValue(instance) is not Creature creature)
 		{
 			return false;
 		}
@@ -91,9 +126,13 @@ internal static class HextechBurnHealthBarHooks
 			return false;
 		}
 
-		Control hpForeground = (Control)_hpForegroundField.GetValue(instance)!;
-		Control poisonForeground = (Control)_poisonForegroundField.GetValue(instance)!;
-		Control doomForeground = (Control)_doomForegroundField.GetValue(instance)!;
+		if (members.HpForeground.GetValue(instance) is not Control hpForeground
+			|| members.PoisonForeground.GetValue(instance) is not Control poisonForeground
+			|| members.DoomForeground.GetValue(instance) is not Control doomForeground)
+		{
+			return false;
+		}
+
 		Control burnForeground = GetOrCreateBurnForeground(instance, poisonForeground);
 
 		if (currentHp <= 0)
@@ -112,49 +151,30 @@ internal static class HextechBurnHealthBarHooks
 			return false;
 		}
 
-		float maxFgWidth = (float)_maxFgWidthProp.GetValue(instance)!;
+		float maxFgWidth = members.MaxFgWidth(instance);
 		hpForeground.Visible = true;
-		float offsetRight = FgWidth(instance, currentHp) - maxFgWidth;
-		hpForeground.OffsetRight = offsetRight;
+		hpForeground.OffsetRight = members.GetFgWidth(instance, currentHp) - maxFgWidth;
 
+		// 走到这里时灼烧预测一定大于 0;中毒量取自中毒 Power 本身,大于 0 即表示持有中毒。
 		int poison = creature.GetPower<PoisonPower>()?.CalculateTotalDamageNextTurn() ?? 0;
-		bool hasPoison = poison > 0 && creature.HasPower<PoisonPower>();
-		bool hasBurn = burn > 0;
 
 		// 按实际结算先后排列：先结算的段贴最右（最先从当前生命值扣起）。
-		var segments = new List<(int Amount, Control Node)>();
-		if (hasPoison && hasBurn)
-		{
-			if (PoisonResolvesBeforeBurn(creature))
-			{
-				segments.Add((poison, poisonForeground));
-				segments.Add((burn, burnForeground));
-			}
-			else
-			{
-				segments.Add((burn, burnForeground));
-				segments.Add((poison, poisonForeground));
-			}
-		}
-		else if (hasPoison)
-		{
-			segments.Add((poison, poisonForeground));
-		}
-		else if (hasBurn)
+		List<(int Amount, Control Node)> segments = [];
+		if (poison <= 0)
 		{
 			segments.Add((burn, burnForeground));
-		}
-
-		if (!hasPoison)
-		{
 			poisonForeground.Visible = false;
 			poisonForeground.OffsetLeft = 0f;
 		}
-
-		if (!hasBurn)
+		else if (PoisonResolvesBeforeBurn(creature))
 		{
-			burnForeground.Visible = false;
-			burnForeground.OffsetLeft = 0f;
+			segments.Add((poison, poisonForeground));
+			segments.Add((burn, burnForeground));
+		}
+		else
+		{
+			segments.Add((burn, burnForeground));
+			segments.Add((poison, poisonForeground));
 		}
 
 		int remainingHp = currentHp;
@@ -177,22 +197,23 @@ internal static class HextechBurnHealthBarHooks
 			else
 			{
 				int patchMarginLeft = node is NinePatchRect ninePatch ? ninePatch.PatchMarginLeft : 0;
-				node.OffsetLeft = Math.Max(0f, FgWidth(instance, afterHp) - patchMarginLeft);
+				node.OffsetLeft = Math.Max(0f, members.GetFgWidth(instance, afterHp) - patchMarginLeft);
 			}
 
-			node.OffsetRight = FgWidth(instance, remainingHp) - maxFgWidth;
+			node.OffsetRight = members.GetFgWidth(instance, remainingHp) - maxFgWidth;
 			remainingHp = afterHp;
 		}
 
 		int totalDotDamage = poison + burn;
-		hpForeground.OffsetRight = FgWidth(instance, remainingHp) - maxFgWidth;
+		hpForeground.OffsetRight = members.GetFgWidth(instance, remainingHp) - maxFgWidth;
 		hpForeground.Visible = remainingHp > 0;
 
-		RenderDoom(instance, creature, hpForeground, doomForeground, maxFgWidth, currentHp, totalDotDamage);
+		RenderDoom(members, instance, creature, hpForeground, doomForeground, maxFgWidth, currentHp, totalDotDamage);
 		return true;
 	}
 
 	private static void RenderDoom(
+		HealthBarMembers members,
 		NHealthBar instance,
 		Creature creature,
 		Control hpForeground,
@@ -209,7 +230,7 @@ internal static class HextechBurnHealthBarHooks
 		}
 
 		doomForeground.Visible = true;
-		float doomWidth = FgWidth(instance, doom) - maxFgWidth;
+		float doomWidth = members.GetFgWidth(instance, doom) - maxFgWidth;
 		bool doomLethal = doom >= currentHp - totalDotDamage; // 灾厄按「持续伤害结算后」是否仍致死
 		bool dotLethal = totalDotDamage >= currentHp;
 		if (doomLethal)
@@ -233,17 +254,11 @@ internal static class HextechBurnHealthBarHooks
 		}
 	}
 
-	/// <summary>下次灼烧结算的预测掉血，与 <see cref="HextechBurnPower"/> 的结算公式一致（与中毒一样忽略格挡）。</summary>
+	/// <summary>下次灼烧结算的预测掉血，直接用 <see cref="HextechBurnPower.CalculateHpLoss"/>（与中毒一样忽略格挡）。</summary>
 	private static int PredictBurnDamage(Creature creature, int currentHp)
 	{
 		int stacks = creature.GetPowerAmount<HextechBurnPower>();
-		if (stacks <= 0)
-		{
-			return 0;
-		}
-
-		int percentHpLoss = (int)Math.Floor((decimal)currentHp * stacks / 100m);
-		return Math.Max(stacks, percentHpLoss);
+		return stacks <= 0 ? 0 : HextechBurnPower.CalculateHpLoss(currentHp, stacks);
 	}
 
 	/// <summary>
@@ -282,7 +297,7 @@ internal static class HextechBurnHealthBarHooks
 			return existing;
 		}
 
-		var clone = (Control)poisonForeground.Duplicate();
+		Control clone = (Control)poisonForeground.Duplicate();
 		clone.Name = "HextechBurnForeground";
 		clone.SelfModulate = BurnForegroundColor;
 		clone.Visible = false;
@@ -291,29 +306,35 @@ internal static class HextechBurnHealthBarHooks
 		return clone;
 	}
 
-	private static float FgWidth(NHealthBar instance, int amount)
-	{
-		return (float)_getFgWidthMethod.Invoke(instance, new object[] { amount })!;
-	}
-
+	/// <summary>
+	/// 整段替换 <c>RefreshForeground</c>(有灼烧预测时)。任意环节异常时返回 true 让原版方法照常执行，
+	/// 保证最坏情况只是不显示烧条、绝不破坏血条。
+	/// </summary>
+	/// <remarks>
+	/// 跳过型前缀:原版私有 <c>NHealthBar.RefreshForeground</c> 只认中毒/灾厄两段前景,没有 Hook 能插入第三段;
+	/// 替换体按原版的中毒/灾厄几何与斩杀判定逐段复刻,只额外排入灼烧段。
+	/// 激活条件:生物身上有灼烧且预测掉血大于 0;否则返回 true 交给原版。
+	/// 版本:0.107.1 / 0.110.0 / 0.111.0 原方法一致,已进原版拷贝守卫;<see cref="Priority.Low"/> 让他人前缀先跑。
+	/// </remarks>
 	[HarmonyPatch(typeof(NHealthBar), "RefreshForeground")]
 	[HextechPatch("ui.burn-health-bar.foreground", "灼烧血条预测")]
 	private static class RefreshForegroundPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare()
-		{
-			EnsureMembers();
-			return true;
-		}
+		private static bool Prepare() => Members != null;
 
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NHealthBar __instance)
 		{
+			if (Members is not { } members)
+			{
+				return true;
+			}
+
 			try
 			{
-				return !TryRenderForeground(__instance);
+				return !TryRenderForeground(members, __instance);
 			}
 			catch (Exception ex)
 			{
@@ -323,23 +344,28 @@ internal static class HextechBurnHealthBarHooks
 		}
 	}
 
+	/// <summary>
+	/// 在原版给血条数字上色之后，仅当「灼烧」参与斩杀时覆盖字色，做出和毒(绿)/灾厄(紫)并列的斩杀提示。
+	/// 灼烧不影响结果时完全不动 vanilla 着色（含格挡色、无敌色）。
+	/// </summary>
 	[HarmonyPatch(typeof(NHealthBar), "RefreshText")]
 	[HextechPatch("ui.burn-health-bar.text", "灼烧血条预测")]
 	private static class RefreshTextPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare()
-		{
-			EnsureMembers();
-			return true;
-		}
+		private static bool Prepare() => Members != null;
 
 		[HarmonyPostfix]
 		private static void Postfix(NHealthBar __instance)
 		{
+			if (Members is not { } members)
+			{
+				return;
+			}
+
 			try
 			{
-				if (_creatureField.GetValue(__instance) is not Creature creature)
+				if (members.Creature.GetValue(__instance) is not Creature creature)
 				{
 					return;
 				}
@@ -389,7 +415,11 @@ internal static class HextechBurnHealthBarHooks
 					outlineColor = DoomLethalOutlineColor;
 				}
 
-				Control hpLabel = (Control)_hpLabelField.GetValue(__instance)!;
+				if (members.HpLabel.GetValue(__instance) is not Control hpLabel)
+				{
+					return;
+				}
+
 				hpLabel.AddThemeColorOverride(FontColorOverride, fontColor);
 				hpLabel.AddThemeColorOverride(FontOutlineColorOverride, outlineColor);
 			}

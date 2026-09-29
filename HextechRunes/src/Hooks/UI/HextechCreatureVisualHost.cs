@@ -6,7 +6,8 @@ namespace HextechRunes;
 
 /// <summary>
 /// 战斗内 creature 节点视觉附件的统一宿主:战斗房间就绪、召唤加入、节点就绪三个时机各只补一次,
-/// 再按固定顺序把节点交给各附件的 <c>TryAttach</c>。新增附件只需在 <see cref="Attach"/> 里加一行,
+/// 再按固定顺序把节点交给各附件的 <c>TryAttach</c>。新增附件按是否依赖节点注册表加进
+/// <see cref="AttachPreRegistry"/> 或 <see cref="AttachPostRegistry"/>,
 /// 不再各自去补同一批原版方法。
 /// </summary>
 /// <remarks>
@@ -22,10 +23,22 @@ internal static class HextechCreatureVisualHost
 			return;
 		}
 
+		AttachPreRegistry(node);
+		HextechCreatureNodeRegistry.Register(node);
+		AttachPostRegistry(node);
+	}
+
+	/// <summary>在 entity → 节点映射重建之前挂的光环类附件。</summary>
+	private static void AttachPreRegistry(NCreature node)
+	{
 		HandOfBaronAuraVisual.TryAttach(node);
 		SlowCookAuraVisual.TryAttach(node);
 		HextechNearDeathFeastVisual.TryAttach(node);
-		HextechCreatureNodeRegistry.Register(node);
+	}
+
+	/// <summary>在 entity → 节点映射重建之后挂的附件(沿用此前的安装序)。</summary>
+	private static void AttachPostRegistry(NCreature node)
+	{
 		HextechBurnVisual.TryAttach(node);
 		HextechGlassCannonHealthBarVisual.TryAttach(node);
 	}
@@ -40,9 +53,7 @@ internal static class HextechCreatureVisualHost
 			NCreature[] nodes = __instance.CreatureNodes.ToArray();
 			foreach (NCreature node in nodes)
 			{
-				HandOfBaronAuraVisual.TryAttach(node);
-				SlowCookAuraVisual.TryAttach(node);
-				HextechNearDeathFeastVisual.TryAttach(node);
+				AttachPreRegistry(node);
 			}
 
 			// 新战斗重建 entity → 节点映射,再挂依赖映射的附件。
@@ -54,8 +65,7 @@ internal static class HextechCreatureVisualHost
 
 			foreach (NCreature node in nodes)
 			{
-				HextechBurnVisual.TryAttach(node);
-				HextechGlassCannonHealthBarVisual.TryAttach(node);
+				AttachPostRegistry(node);
 			}
 		}
 	}

@@ -41,8 +41,7 @@ public sealed class HextechBurnPower : HextechPowerBase
 		}
 
 		int stacks = Amount;
-		int percentHpLoss = Math.Max(1, (int)Math.Floor(Owner.CurrentHp * stacks / 100m));
-		int hpLoss = Math.Max(stacks, percentHpLoss);
+		int hpLoss = CalculateHpLoss(Owner.CurrentHp, stacks);
 		int stackLoss = Math.Max(1, (int)Math.Ceiling(stacks * StackDecayPercent));
 		Flash();
 		// 纯本地表现:延后一帧播放、自带异常隔离,不影响下面的共享伤害结算。
@@ -66,6 +65,13 @@ public sealed class HextechBurnPower : HextechPowerBase
 		{
 			await Cmd.CustomScaledWait(0.1f, 0.25f);
 		}
+	}
+
+	/// <summary>一次灼烧结算的失去生命:层数与当前生命值的层数%(至少 1)取大。结算与血条预测共用。</summary>
+	internal static int CalculateHpLoss(int currentHp, int stacks)
+	{
+		int percentHpLoss = Math.Max(1, (int)Math.Floor(currentHp * stacks / 100m));
+		return Math.Max(stacks, percentHpLoss);
 	}
 
 	internal static Task RunWithDamageResolutionGuard(Func<Task> action)

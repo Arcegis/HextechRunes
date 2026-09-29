@@ -1,105 +1,77 @@
 using Godot;
-using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 
 namespace HextechRunes;
 
-internal sealed class HextechGlassCannonHealthBarVisual
+/// <summary>玻璃大炮:血条上封顶线以右画斜线遮罩,提示这段生命无法被回复。</summary>
+internal sealed class HextechGlassCannonHealthBarVisual : HextechCreatureAttachedVisual
 {
 	private const string OverlayName = "HextechRunes_GlassCannonLock";
+	private const string LogTag = "GlassCannon";
 	private static readonly Color DimColor = new(0.05f, 0.05f, 0.07f, 0.16f);
 
-	private static readonly HashSet<ulong> ActiveCreatureNodes = [];
 	private static Texture2D? _hatchTexture;
 
-	private readonly NCreature _creature;
 	private Control? _overlay;
 
 	private HextechGlassCannonHealthBarVisual(NCreature creature)
+		: base(creature, LogTag, "Health bar lock visual")
 	{
-		_creature = creature;
 	}
+
+	// 以生物节点本身逐帧驱动:遮罩节点按需创建,在封顶生效前可能还不存在。
+	protected override Node? FrameNode => Creature;
 
 	internal static void TryAttach(NCreature? creature)
 	{
-		try
-		{
-			if (!GodotObject.IsInstanceValid(creature)
-				|| !creature.IsNodeReady()
-				|| creature.Entity == null)
-			{
-				return;
-			}
-
-			ulong creatureInstanceId = creature.GetInstanceId();
-			if (!ActiveCreatureNodes.Add(creatureInstanceId))
-			{
-				return;
-			}
-
-			HextechGlassCannonHealthBarVisual visual = new(creature);
-			TaskHelper.RunSafely(visual.RunAsync(creatureInstanceId));
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("GlassCannon", $"Could not attach health bar lock visual: {ex.Message}");
-		}
+		TryAttach(
+			creature,
+			LogTag,
+			"health bar lock visual",
+			static node => node.Entity != null,
+			static node => new HextechGlassCannonHealthBarVisual(node));
 	}
 
-	private async Task RunAsync(ulong creatureInstanceId)
+	protected override bool Start()
 	{
-		try
+		return true;
+	}
+
+	protected override bool Tick()
+	{
+		if (TryGetCapRatio(Creature, out float cap))
 		{
-			while (GodotObject.IsInstanceValid(_creature))
-			{
-				bool hasCap = TryGetCapRatio(_creature, out float cap);
-				if (hasCap)
-				{
-					EnsureOverlay();
-					if (GodotObject.IsInstanceValid(_overlay))
-					{
-						_overlay!.AnchorLeft = cap;
-						_overlay.OffsetLeft = 0f;
-
-						// 内缩,避开血条的圆角端帽与上下边,使斜线落在原版血条轮廓之内、而非外接矩形。
-						float height = _overlay.Size.Y;
-						if (height >= 4f)
-						{
-							_overlay.OffsetTop = height * 0.12f;
-							_overlay.OffsetBottom = -height * 0.12f;
-							_overlay.OffsetRight = -height * 0.42f;
-						}
-
-						_overlay.Visible = true;
-					}
-				}
-				else if (GodotObject.IsInstanceValid(_overlay))
-				{
-					_overlay!.Visible = false;
-				}
-
-				SceneTree? tree = _creature.GetTree();
-				if (tree == null)
-				{
-					return;
-				}
-
-				await _creature.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
-			}
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("GlassCannon", $"Health bar lock visual stopped after runtime error: {ex.Message}");
-		}
-		finally
-		{
+			EnsureOverlay();
 			if (GodotObject.IsInstanceValid(_overlay))
 			{
-				_overlay!.QueueFree();
-			}
+				_overlay.AnchorLeft = cap;
+				_overlay.OffsetLeft = 0f;
 
-			ActiveCreatureNodes.Remove(creatureInstanceId);
+				// 内缩,避开血条的圆角端帽与上下边,使斜线落在原版血条轮廓之内、而非外接矩形。
+				float height = _overlay.Size.Y;
+				if (height >= 4f)
+				{
+					_overlay.OffsetTop = height * 0.12f;
+					_overlay.OffsetBottom = -height * 0.12f;
+					_overlay.OffsetRight = -height * 0.42f;
+				}
+
+				_overlay.Visible = true;
+			}
+		}
+		else if (GodotObject.IsInstanceValid(_overlay))
+		{
+			_overlay.Visible = false;
+		}
+
+		return true;
+	}
+
+	protected override void Release()
+	{
+		if (GodotObject.IsInstanceValid(_overlay))
+		{
+			_overlay.QueueFree();
 		}
 	}
 
@@ -120,13 +92,12 @@ internal sealed class HextechGlassCannonHealthBarVisual
 			return true;
 		}
 
-		// 敌方:玻璃大炮敌方海克斯(整场战斗对全体敌人生效,固定封顶 70%)。
+		// 敌方:玻璃大炮敌方海克斯(整场战斗对全体敌人生效,封顶比例与结算共用同一常量)。
 		if (creature.Monster != null
-			&& creature.CombatState?.RunState is { } runState
-			&& HextechMayhemModifier.FindIn(runState) is { } modifier
+			&& HextechMayhemModifier.FindIn(creature.CombatState?.RunState) is { } modifier
 			&& modifier.HasActiveMonsterHex(MonsterHexKind.GlassCannon))
 		{
-			cap = 0.7f;
+			cap = (float)GlassCannonEnemyHex.HealCapPercent;
 			return true;
 		}
 
@@ -141,7 +112,7 @@ internal sealed class HextechGlassCannonHealthBarVisual
 		}
 
 		// NCreature →(%HealthBar)→ NCreatureStateDisplay →(%HealthBar)→ NHealthBar →(%HpForegroundContainer)→ 满血轨道。
-		if (_creature.GetNodeOrNull("%HealthBar") is not { } stateDisplay
+		if (Creature.GetNodeOrNull("%HealthBar") is not { } stateDisplay
 			|| stateDisplay.GetNodeOrNull<NHealthBar>("%HealthBar") is not { } bar
 			|| bar.GetNodeOrNull<Control>("%HpForegroundContainer") is not { } track)
 		{
@@ -159,7 +130,7 @@ internal sealed class HextechGlassCannonHealthBarVisual
 			AnchorTop = 0f,
 			AnchorBottom = 1f,
 			AnchorRight = 1f,
-			AnchorLeft = 0.7f,
+			AnchorLeft = (float)GlassCannonEnemyHex.HealCapPercent,
 			OffsetLeft = 0f,
 			OffsetRight = 0f,
 			OffsetTop = 0f,

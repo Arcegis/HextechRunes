@@ -81,8 +81,7 @@ internal static partial class Program
 			slowCookPaths.All(static path => path != HextechAssets.MikaelsBlessingAoeRunePath),
 			"Slow Cook VFX must not reuse Mikael's Blessing texture");
 		Equal(slowCookPaths.Length, slowCookPaths.Distinct(StringComparer.Ordinal).Count(), "Slow Cook VFX texture paths");
-		Equal(800f, SlowCookAuraVisual.ResolveWidth(160f), "Slow Cook aura width for a normal player hitbox");
-		Equal(800f, SlowCookAuraVisual.ResolveWidth(500f), "Slow Cook aura width should not be reduced by hitbox scaling");
+		Equal(800f, SlowCookAuraVisual.AuraWidth, "Slow Cook aura width is fixed and does not follow hitbox scaling");
 		Expect(
 			SlowCookAuraVisual.FlowShaderCode.Contains("anchored_gradient", StringComparison.Ordinal),
 			"Slow Cook aura should retain a stationary coverage sample while its texture details move");

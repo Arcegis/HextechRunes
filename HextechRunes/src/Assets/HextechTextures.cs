@@ -11,15 +11,12 @@ internal static class HextechTextures
 {
 	private static readonly Dictionary<string, Texture2D> TextureCache = new();
 	private static readonly Dictionary<string, CompressedTexture2D> CompressedTextureCache = new();
+	private static readonly Dictionary<string, Texture2D?> VanillaTextureCache = new(StringComparer.Ordinal);
 	private static readonly HashSet<string> WarnedTextureMissPaths = new(StringComparer.Ordinal);
 	private static Texture2D? _missingTexture;
 
+	/// <summary>加载本模组自带的 UI/特效纹理;未命中时每个路径只告警一次,调用方不必再自行告警。</summary>
 	internal static Texture2D? LoadUiTexture(string path)
-	{
-		return LoadPortableTexture(path);
-	}
-
-	internal static Texture2D? LoadPortableTexture(string path)
 	{
 		// 原始图像字节在支持的游戏版本间稳定,图片资源只手动解码;非图片路径(.tres 等)才走 ResourceLoader。
 		Func<string, Texture2D?> secondaryLoader = AssetResourceResolver.IsRawImagePath(path)
@@ -70,6 +67,22 @@ internal static class HextechTextures
 
 		WarnTextureMissOnce(path, "ResourceLoader returned no usable compressed texture");
 		return null;
+	}
+
+	/// <summary>
+	/// 加载原版 PCK 内的贴图(已导入资源,走 ResourceLoader);失败返回 null,调用方回退到程序化纹理。
+	/// 结果(含未命中)按路径缓存,避免每次建粒子都重新查找。
+	/// </summary>
+	internal static Texture2D? LoadVanillaTexture(string resPath)
+	{
+		if (VanillaTextureCache.TryGetValue(resPath, out Texture2D? cached))
+		{
+			return cached != null && GodotObject.IsInstanceValid(cached) ? cached : null;
+		}
+
+		Texture2D? texture = ResourceLoader.Load(resPath) as Texture2D;
+		VanillaTextureCache[resPath] = texture;
+		return texture;
 	}
 
 	internal static Texture2D? GetMissingTexture()
