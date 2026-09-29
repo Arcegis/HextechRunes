@@ -29,7 +29,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 
 	private static decimal MultiplyByPlayerCount(decimal amount, int playerCount)
 	{
-		int scale = Math.Clamp(playerCount, 1, 16);
+		int scale = HextechEnemyHexContext.ClampScalingPlayerCount(playerCount);
 		if (scale <= 1)
 		{
 			return ClampPowerAmount(amount);

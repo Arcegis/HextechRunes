@@ -251,7 +251,7 @@ internal static partial class HextechCombatVfx
 	/// <summary>逐个落点砸下光柱（原版天降射线贴图）+ 爆闪 + 扩散环，每个之间间隔 <paramref name="intervalSeconds"/>。</summary>
 	private static async Task StrikeBeamsInSequence(SceneTree tree, List<BeamSpot> spots, Color beamColor, Color flashColor, float intervalSeconds)
 	{
-		Texture2D? rayTexture = LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
+		Texture2D? rayTexture = HextechTextures.LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
 		foreach (BeamSpot spot in spots)
 		{
 			if (rayTexture != null && GodotObject.IsInstanceValid(spot.Parent))
@@ -569,7 +569,7 @@ internal static partial class HextechCombatVfx
 				float height = Mathf.Max(bottom.Y - node.GetTopOfHitbox().Y, width);
 
 				// 主角是从天而降的光柱;柔光与单环收敛为落地反馈,光尘自身体升起。
-				Texture2D? rayTexture = LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
+				Texture2D? rayTexture = HextechTextures.LoadVanillaTexture("res://images/vfx/missile/missile_sky_ray.png");
 				if (rayTexture != null)
 				{
 					SpawnLightShaft(parent!, bottom, width, height, rayTexture);
@@ -631,7 +631,7 @@ internal static partial class HextechCombatVfx
 			Explosiveness = 0.2f,
 			Randomness = 0.6f,
 			LocalCoords = false,
-			Texture = LoadVanillaTexture("res://images/vfx/characters/regent_sparkle.png") ?? GetGlowTexture(),
+			Texture = HextechTextures.LoadVanillaTexture("res://images/vfx/characters/regent_sparkle.png") ?? GetGlowTexture(),
 			EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
 			EmissionRectExtents = new Vector2(width * 0.45f, height * 0.35f),
 			Direction = new Vector2(0f, -1f),

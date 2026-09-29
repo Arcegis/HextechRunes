@@ -33,23 +33,9 @@ internal static partial class HextechCombatVfx
 
 	// 仅表现层随机(路径弧度/粒子错落),不触碰联机决定论。
 	private static readonly Random VisualRng = new();
-	private static readonly Dictionary<string, Texture2D?> VanillaTextureCache = [];
 
 	private static Texture2D? _glowTexture;
 	private static Texture2D? _ringTexture;
-
-	/// <summary>加载原版 PCK 内贴图;失败返回 null(调用方回退程序化纹理)。</summary>
-	private static Texture2D? LoadVanillaTexture(string resPath)
-	{
-		if (VanillaTextureCache.TryGetValue(resPath, out Texture2D? cached))
-		{
-			return cached != null && GodotObject.IsInstanceValid(cached) ? cached : null;
-		}
-
-		Texture2D? texture = ResourceLoader.Load(resPath) as Texture2D;
-		VanillaTextureCache[resPath] = texture;
-		return texture;
-	}
 
 	private static Vector2 Bezier(Vector2 from, Vector2 control, Vector2 to, float t)
 	{
