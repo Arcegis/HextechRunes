@@ -201,7 +201,11 @@ internal static class HextechRunePoolBuilder
 	public static RelicModel CreateSelectableRuneOption(Player player, RelicModel relic)
 	{
 		RelicModel option = relic.ToMutable();
-		RefreshPlayerContextualRuneDescription(player, option);
+		if (option is HextechRelicBase hextechOption)
+		{
+			hextechOption.RefreshDescriptionForPlayer(player);
+		}
+
 		return option;
 	}
 
@@ -390,15 +394,5 @@ internal static class HextechRunePoolBuilder
 	private static string BuildWeightedPoolKey(IReadOnlyList<RelicModel> pool, IReadOnlyList<int> weights)
 	{
 		return string.Join(",", pool.Select((relic, index) => $"{(relic.CanonicalId()).Entry}:{weights[index]}"));
-	}
-
-	// 飞踢的描述依赖持有者最大生命,生成候选时就要按该玩家刷新。单项内容特判本应由符文基类的虚方法分派,
-	// 但基类与符文文件不在本池构建器的维护范围内;新增同类需求时改为虚方法,不要继续在这里加分支。
-	private static void RefreshPlayerContextualRuneDescription(Player player, RelicModel relic)
-	{
-		if (relic is FlyingKickRune flyingKickRune)
-		{
-			flyingKickRune.RefreshExecutePercent(player.Creature.MaxHp);
-		}
 	}
 }

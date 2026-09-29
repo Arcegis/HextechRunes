@@ -29,6 +29,12 @@ public sealed class FlyingKickRune : HextechRelicBase
 		RefreshExecutePercent(Owner.Creature.MaxHp);
 	}
 
+	// 描述里的斩杀线依赖持有者最大生命，生成候选时就按该玩家刷新。
+	internal override void RefreshDescriptionForPlayer(Player player)
+	{
+		RefreshExecutePercent(player.Creature.MaxHp);
+	}
+
 	public decimal RefreshExecutePercent(decimal ownerMaxHp)
 	{
 		decimal executePercent = DynamicVars[BaseExecutePercentVar].BaseValue

@@ -161,6 +161,12 @@ public abstract partial class HextechRelicBase : RelicModel
 
 	public virtual bool IsAvailableForPlayer(Player player) => true;
 
+	// 作为某玩家的候选项生成时调用（此时尚未被持有，Owner 为空）：描述依赖该玩家状态的符文覆写它，
+	// 按该玩家刷新动态变量。
+	internal virtual void RefreshDescriptionForPlayer(Player player)
+	{
+	}
+
 	// 战斗内计数器的显示条件：战斗进行中，且是持有中的实例（规范模型不读实例状态）。
 	protected bool IsInLiveCombat => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
 
