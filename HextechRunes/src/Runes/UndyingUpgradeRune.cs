@@ -2,10 +2,11 @@ namespace HextechRunes;
 
 public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 {
-	internal const string EtherealMarkerSavedPropertyName = "SavedUndyingUpgradeEtherealMarker";
+	internal const string EtherealMarkerSavedPropertyName = nameof(SavedUndyingUpgradeEtherealMarker);
 
 	public override bool HasUponPickupEffect => true;
 
+	// 只为在 SavedProperty 名称表里登记这个名字，供卡牌存档写入关键词标记(见 HextechThoughtOverwriteKeywordPersistenceHooks)；自身不存值，名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	private int SavedUndyingUpgradeEtherealMarker
 	{

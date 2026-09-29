@@ -57,7 +57,7 @@ public sealed class FlyingKickRune : HextechRelicBase
 
 		if (result.WasTargetKilled)
 		{
-			await TriggerFlyingKick(choiceContext, target, killTarget: false);
+			await TriggerFlyingKick(target, killTarget: false);
 			return;
 		}
 
@@ -72,10 +72,10 @@ public sealed class FlyingKickRune : HextechRelicBase
 			return;
 		}
 
-		await TriggerFlyingKick(choiceContext, target, killTarget: true);
+		await TriggerFlyingKick(target, killTarget: true);
 	}
 
-	private async Task TriggerFlyingKick(PlayerChoiceContext choiceContext, Creature target, bool killTarget)
+	private async Task TriggerFlyingKick(Creature target, bool killTarget)
 	{
 		if (_executing || Owner == null || Owner.Creature.IsDead)
 		{

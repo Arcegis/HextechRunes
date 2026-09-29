@@ -61,10 +61,10 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 
 	public override Task AfterAutoPrePlayPhaseEnteredLate(PlayerChoiceContext choiceContext, Player player)
 	{
-		return ControlOddTurnWithVakuu(choiceContext, player);
+		return ControlOddTurnWithVakuu(player);
 	}
 
-	private async Task ControlOddTurnWithVakuu(PlayerChoiceContext choiceContext, Player player)
+	private async Task ControlOddTurnWithVakuu(Player player)
 	{
 		if (!IsOddOwnerTurn(player, out int round) || _lastControlledRound == round || _controllingTurn)
 		{
