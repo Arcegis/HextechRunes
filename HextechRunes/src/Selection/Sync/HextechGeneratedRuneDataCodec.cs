@@ -61,6 +61,7 @@ internal static class HextechGeneratedRuneDataCodec
 			|| !HextechChoiceCodec.TryReadRuneSelectionHeader(payload, out int optionsCursor)
 			|| !HextechStableModelIdListCodec.TryDecode(payload, optionsCursor, out List<ModelId> ids, out int cursor)
 			|| ids.Count != options.Count
+			|| !HextechRuneSeenHistoryCodec.TryRead(payload, ref cursor, out _)
 			|| !HextechRuneWeightCodec.TryRead(payload, ref cursor, out _)
 			|| !TryDecode(payload, cursor, ids.Count, out List<string> data))
 		{

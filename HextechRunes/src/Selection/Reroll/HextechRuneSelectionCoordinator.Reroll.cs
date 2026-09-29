@@ -50,6 +50,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		int selectionStageIndex,
 		int rerollOrdinal,
 		HashSet<ModelId> seenOptionIds,
+		HashSet<ModelId> offeredOptionIds,
 		HextechRarityTier? rarityOverride = null)
 	{
 		RunState runState = (RunState)player.RunState;
@@ -69,8 +70,9 @@ internal static partial class HextechRuneSelectionCoordinator
 		if (!ReferenceEquals(rerolled, currentOptions))
 		{
 			ModelId rerolledId = rerolled[slotIndex].CanonicalId();
-			// 只进本机界面的已见集合；存档里的已见在选定后按最终候选记，其他客户端看不到中途重随结果。
+			// 重随排除集合与完整候选历史分别记录;选定后同步历史,并由两端统一写入存档。
 			seenOptionIds.Add(rerolledId);
+			offeredOptionIds.Add(rerolledId);
 			MarkRelicsSeen([ rerolled[slotIndex] ]);
 			HextechLog.Info("Mayhem", $"RerollSingleOptionMultiplayer: player={player.NetId} slot={slotIndex} ordinal={rerollOrdinal} relic={rerolledId.Entry}");
 		}
