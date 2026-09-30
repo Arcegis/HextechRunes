@@ -50,12 +50,12 @@
   "HEXTECH_STAT_COEFF_HEALING": "Multiplicador de cura: ",
   "HEXTECH_RANDOM_FORGE_TOGGLE_TITLE": "Forja aleatória direta",
   "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "Quando ativado, ao obter uma forja, uma é concedida aleatoriamente em vez de abrir a tela de três opções. No multiplayer, segue a configuração do anfitrião.",
-  "HEXTECH_MOD_ENABLED_TOGGLE_TITLE": "Enable mod",
-  "HEXTECH_MOD_ENABLED_TOGGLE_DESCRIPTION": "When off, this mod stops affecting runs starting from your next run, matching the vanilla game (your current run is unaffected). In multiplayer this follows the host's setting.",
+  "HEXTECH_MOD_ENABLED_TOGGLE_TITLE": "Ativar mod",
+  "HEXTECH_MOD_ENABLED_TOGGLE_DESCRIPTION": "Quando desativado, este mod deixa de afetar as partidas a partir da próxima, e o jogo fica igual ao original (a partida atual não é afetada). No multiplayer, vale a configuração do anfitrião.",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_TITLE": "Mostrar aviso de atualização",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "Quando ativado, o menu principal mostra o aviso de versão do Caos Hextech no canto inferior esquerdo. Desative para ocultá-lo.",
-  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
-  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
+  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Recolher hexes inimigos",
+  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "Quando ativado, durante o combate os hexes inimigos ficam guardados em um botão recolhível à esquerda do botão do mapa na barra superior; clique nele para expandir e vê-los. Quando desativado, eles voltam a aparecer como antes, diretamente na barra superior.",
   "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "Confirmar seleção de runa",
   "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "Quando ativado, clicar em uma runa na tela de seleção apenas a marca; pressione Confirmar para pegá-la. Antes de confirmar, ainda é possível rerolar ou cancelar. O modo de escolha direta sempre pede confirmação e não é afetado.",
   "HEXTECH_FORGE_PRICE_TITLE": "Preço do Forjador de Atributos",
@@ -160,7 +160,7 @@
   "HEXTECH_COMMUNITY_SUMMARY": "Hexes próprios {0}/{1}\nHexes inimigos {2}/{3}\nQtd. própria {4}   inimiga {5}",
   "HEXTECH_COMMUNITY_TAB_MINE": "Meus",
   "HEXTECH_COMMUNITY_HIDDEN": "(oculto)",
-  "HEXTECH_CHAOS_RUNE_CHANCE_LABEL": "Tony’s Chaos Lab: Chaos Runes",
-  "HEXTECH_CHAOS_RUNE_CHANCE_DESCRIPTION": "Each candidate independently has this chance to become a chaos rune. 0% disables conversion; 100% converts all candidates. Rerolls roll again; acquired recipes stay fixed. Applies to new runs and uses the host’s setting in multiplayer.",
-  "HEXTECH_CHAOS_RUNE_CHANCE_VALUE_LABEL": "Conversion chance"
+  "HEXTECH_CHAOS_RUNE_CHANCE_LABEL": "Laboratório do Caos do Tony: runas do caos",
+  "HEXTECH_CHAOS_RUNE_CHANCE_DESCRIPTION": "Cada candidata tem, de forma independente, esta chance de virar uma runa do caos. 0% desativa a conversão; 100% converte todas as candidatas. Rerolar sorteia de novo; receitas já obtidas não mudam. Vale a partir da próxima partida e, no multiplayer, usa a configuração do anfitrião.",
+  "HEXTECH_CHAOS_RUNE_CHANCE_VALUE_LABEL": "Chance de conversão"
 }

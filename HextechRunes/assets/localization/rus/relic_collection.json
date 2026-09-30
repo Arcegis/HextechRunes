@@ -52,8 +52,8 @@
   "HEXTECH_RANDOM_FORGE_TOGGLE_DESCRIPTION": "Когда включено, получение наковальни выдаёт случайную вместо открытия экрана выбора из трёх. В сетевой игре это следует настройке хоста.",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_TITLE": "Показывать уведомление об обновлении версии",
   "HEXTECH_SHOW_UPDATE_NOTICE_TOGGLE_DESCRIPTION": "Когда включено, в главном меню в левом нижнем углу отображается уведомление о проверке версии «Хекстекового хаоса». Отключите, чтобы скрыть его.",
-  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Collapse enemy hexes",
-  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "When enabled, enemy hexes in combat are tucked behind a fold button to the left of the map button; click it to expand and view them. When disabled, they show inline on the top bar as before.",
+  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_TITLE": "Сворачивать вражеские руны",
+  "HEXTECH_COLLAPSE_ENEMY_HEXES_TOGGLE_DESCRIPTION": "Когда включено, в бою вражеские руны убираются в сворачиваемую кнопку слева от кнопки карты на верхней панели; нажмите на неё, чтобы развернуть и посмотреть их. Когда выключено, они, как раньше, отображаются прямо на верхней панели.",
   "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_TITLE": "Подтверждение выбора руны",
   "HEXTECH_CONFIRM_RUNE_SELECTION_TOGGLE_DESCRIPTION": "Если включено, щелчок по руне на экране выбора только отмечает её; чтобы взять её, нажмите «Подтвердить». До подтверждения можно перевыбрать или отменить. Режим прямого выбора всегда требует подтверждения и не зависит от этой настройки.",
   "HEXTECH_FORGE_PRICE_TITLE": "Цена наковальни показателей",
@@ -158,9 +158,9 @@
   "HEXTECH_COMMUNITY_SUMMARY": "Ваши гексы {0}/{1}\nВражеские гексы {2}/{3}\nВаше кол-во {4}   Врага {5}",
   "HEXTECH_COMMUNITY_TAB_MINE": "Мои",
   "HEXTECH_COMMUNITY_HIDDEN": "(скрыто)",
-  "HEXTECH_MOD_ENABLED_TOGGLE_TITLE": "Enable mod",
-  "HEXTECH_MOD_ENABLED_TOGGLE_DESCRIPTION": "When off, this mod stops affecting runs starting from your next run, matching the vanilla game (your current run is unaffected). In multiplayer this follows the host's setting.",
-  "HEXTECH_CHAOS_RUNE_CHANCE_LABEL": "Tony’s Chaos Lab: Chaos Runes",
-  "HEXTECH_CHAOS_RUNE_CHANCE_DESCRIPTION": "Each candidate independently has this chance to become a chaos rune. 0% disables conversion; 100% converts all candidates. Rerolls roll again; acquired recipes stay fixed. Applies to new runs and uses the host’s setting in multiplayer.",
-  "HEXTECH_CHAOS_RUNE_CHANCE_VALUE_LABEL": "Conversion chance"
+  "HEXTECH_MOD_ENABLED_TOGGLE_TITLE": "Включить мод",
+  "HEXTECH_MOD_ENABLED_TOGGLE_DESCRIPTION": "Если выключить, со следующего забега мод перестаёт действовать и игра полностью соответствует оригиналу (текущий забег не затрагивается). В сетевой игре действует настройка хоста.",
+  "HEXTECH_CHAOS_RUNE_CHANCE_LABEL": "Лаборатория хаоса Тони: руны хаоса",
+  "HEXTECH_CHAOS_RUNE_CHANCE_DESCRIPTION": "Каждый кандидат независимо с этим шансом превращается в руну хаоса. 0% — превращение отключено, 100% — превращаются все кандидаты. При перебросе шанс проверяется заново; уже полученные рецепты не меняются. Действует со следующего забега, в сетевой игре используется настройка хоста.",
+  "HEXTECH_CHAOS_RUNE_CHANCE_VALUE_LABEL": "Шанс превращения"
 }
