@@ -168,6 +168,25 @@ internal static partial class Program
 		Equal("res://HextechRunes/images/relics/enlightenmentRune.png", HextechAssets.TryGetCustomRelicIconPath(new EnlightenmentRune()), "player icon path is unchanged");
 	}
 
+	[HextechTest]
+	private static void FormUpgradeRunesAreAllPrismatic()
+	{
+		(Type Type, PlayerRuneCharacterPool Pool)[] forms =
+		[
+			(typeof(DemonFormUpgradeRune), PlayerRuneCharacterPool.Ironclad),
+			(typeof(SerpentFormUpgradeRune), PlayerRuneCharacterPool.Silent),
+			(typeof(VoidFormUpgradeRune), PlayerRuneCharacterPool.Regent),
+			(typeof(EchoFormUpgradeRune), PlayerRuneCharacterPool.Defect),
+			(typeof(ReaperFormUpgradeRune), PlayerRuneCharacterPool.Necrobinder)
+		];
+		foreach ((Type type, PlayerRuneCharacterPool pool) in forms)
+		{
+			PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == type);
+			Equal(HextechRarityTier.Prismatic, registration.Rarity, type.Name + " rarity");
+			Equal<PlayerRuneCharacterPool?>(pool, registration.CharacterPool, type.Name + " character pool");
+		}
+	}
+
 	private static void PlayFeedbackCard(RelicModel rune, CardModel card, int playIndex, int playCount, bool isAutoPlay)
 	{
 		rune.AfterCardPlayed(null!, CreateFeedbackCardPlay(card, playIndex, playCount, isAutoPlay)).GetAwaiter().GetResult();
