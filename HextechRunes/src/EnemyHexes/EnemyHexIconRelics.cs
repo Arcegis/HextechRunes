@@ -171,3 +171,8 @@ public sealed class CorruptHeartHex : EnemyHexIconRelicBase
 public sealed class InfestedPrismHex : EnemyHexIconRelicBase
 {
 }
+
+/// <summary>MonsterHexKind.Enlightenment 的图标载体；玩家符文"开悟"仍是 EnlightenmentRune</summary>
+public sealed class EnlightenmentHex : EnemyHexIconRelicBase
+{
+}

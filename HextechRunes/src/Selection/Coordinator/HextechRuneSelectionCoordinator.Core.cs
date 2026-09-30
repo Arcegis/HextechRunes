@@ -107,9 +107,10 @@ internal static partial class HextechRuneSelectionCoordinator
 				return;
 			}
 
-			if (!IsCurrentRun(runState))
+			// 退出清理期间选择界面被原版清掉，任务链会在 State 仍指向本局时续跑到这里；此时不能标记本幕已决。
+			if (!IsCurrentRunInProgress(runState))
 			{
-				HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: run changed before resolving act");
+				HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: run changed or is being cleaned up before resolving act");
 				return;
 			}
 
@@ -133,7 +134,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			try
 			{
 				if (reopenMapAfterSelection
-					&& IsCurrentRun(runState)
+					&& IsCurrentRunInProgress(runState)
 					&& NMapScreen.Instance != null
 					&& !NMapScreen.Instance.IsOpen)
 				{
@@ -279,7 +280,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				await ShowNoRuneOptionsScreenAsync();
 			}
 
-			if (!IsCurrentRun(runState))
+			if (!IsCurrentRunInProgress(runState))
 			{
 				HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: no-options screen returned for stale run");
 				return false;
@@ -311,7 +312,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			options,
 			stageHexes.VisibleRelic,
 			enemyHexOptions);
-		if (!IsCurrentRun(runState))
+		if (!IsCurrentRunInProgress(runState))
 		{
 			HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: selection returned for stale run");
 			return false;
@@ -328,6 +329,14 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechTelemetry.RecordRuneChoice(runState, actIndex, rarity, player, selection.FinalOptions, selected, selection.RerollCount, choiceOrdinal);
 		modifier.CommitCharacterRuneWeight(player, selection.FinalOptions);
 		await RelicCmd.Obtain(selected, player);
+		// 拾取效果（如棱彩海克斯的连续锻造三选一）在 Obtain 内等待玩家操作；保存并退出会取消这些界面并让这里续跑。
+		// 单机回滚语义：放弃本幕，不标记已决、不存档；内存里的半途发放随本局一起丢弃，读档回到选择前的存档重选。
+		if (!IsCurrentRunInProgress(runState))
+		{
+			HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: run changed or is being cleaned up after obtaining relic={selected.CanonicalId().Entry} player={player.NetId} ordinal={choiceOrdinal}");
+			return false;
+		}
+
 		HextechLog.Info("Mayhem", $"HandleHextechActSelection obtained: player={player.NetId} ordinal={choiceOrdinal} relic={selected.CanonicalId().Entry}");
 		return true;
 	}
@@ -413,17 +422,43 @@ internal static partial class HextechRuneSelectionCoordinator
 	{
 		try
 		{
-			if (!IsCurrentRun(runState) || RunManager.Instance.NetService.Type == NetGameType.Replay)
+			if (!IsCurrentRunInProgress(runState) || RunManager.Instance.NetService.Type == NetGameType.Replay)
 			{
 				return;
 			}
 
-			await SaveManager.Instance.SaveRun(preFinishedRoom: null, saveProgress: false);
-			HextechLog.Info("Mayhem", $"PersistActSelection: saved current run after resolving act={actIndex}");
+			await SaveManager.Instance.SaveRun(SelectPreFinishedRoomForSave(runState.CurrentRoom), saveProgress: false);
+			HextechLog.Info("Mayhem", $"PersistActSelection: requested save after resolving act={actIndex} room={runState.CurrentRoom?.GetType().Name ?? "null"}");
 		}
 		catch (Exception ex)
 		{
 			HextechLog.Warn("Mayhem", $"PersistActSelection failed: act={actIndex} error={ex}");
 		}
+	}
+
+	/// <summary>
+	/// 存档时当前房若是已完成的事件房（先古/涅奥结束、点“继续”后才开始本幕选择），必须作为 preFinishedRoom 写入；
+	/// 传 null 时原版 LoadIntoLatestMapCoord 会按地图坐标重建房间，把先古当新事件重开，而存档里本幕已决，玩家就再也看不到海克斯选择。
+	/// 与原版 EventRoom 在事件全部完成时 SaveRun(this) 同口径；其他房间照旧传 null。
+	/// </summary>
+	internal static AbstractRoom? SelectPreFinishedRoomForSave(AbstractRoom? currentRoom)
+	{
+		return currentRoom is EventRoom { IsPreFinished: true } ? currentRoom : null;
+	}
+
+	/// <summary>
+	/// 本局仍是当前局且不在原版退出清理中。原版 RunManager.CleanUp（保存并退出/放弃，0.107.1–0.111.0 一致）
+	/// 先置 ShouldSave=false、IsCleaningUp=true，再清覆盖层，最后才清 State；清覆盖层会取消等待中的选择界面，
+	/// 让本局任务链在 State 仍指向本局时同步续跑。只比较 State 引用会把正在拆除的对局当成当前局继续推进本幕。
+	/// </summary>
+	private static bool IsCurrentRunInProgress(RunState runState)
+	{
+		RunManager runManager = RunManager.Instance;
+		return IsRunInProgress(runManager.DebugOnlyGetState(), runState, runManager.IsCleaningUp);
+	}
+
+	internal static bool IsRunInProgress(object? currentRunState, object runState, bool isCleaningUp)
+	{
+		return !isCleaningUp && ReferenceEquals(currentRunState, runState);
 	}
 }

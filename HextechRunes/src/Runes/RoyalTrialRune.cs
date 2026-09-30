@@ -38,10 +38,7 @@ public sealed class RoyalTrialRune : HextechRelicBase
 	{
 		if (Owner == null
 			|| Owner.Creature.IsDead
-			|| !cardPlay.IsFirstInSeries
-			|| cardPlay.IsAutoPlay
-			|| cardPlay.Card.Owner != Owner
-			|| cardPlay.Card is not SovereignBlade
+			|| !ShouldGenerateMinions(cardPlay, Owner)
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
@@ -55,6 +52,15 @@ public sealed class RoyalTrialRune : HextechRelicBase
 
 		Flash();
 		await HextechCardGeneration.AddGeneratedCardsToCombat(cards, PileType.Hand, addedByPlayer: true);
+	}
+
+	// 重放（PlayIndex > 0，如原版剑圣给君王之剑加的重放）每次都派发 AfterCardPlayed，每次都生成；
+	// 自动打出不算"你打出"。仆从牌序号在每次触发时消费，两端按同样的出牌序列推进。
+	internal static bool ShouldGenerateMinions(CardPlay cardPlay, Player owner)
+	{
+		return !cardPlay.IsAutoPlay
+			&& cardPlay.Card.Owner == owner
+			&& cardPlay.Card is SovereignBlade;
 	}
 
 	private CardModel CreateRandomMinionCard(Player owner, HextechCombatState combatState)
