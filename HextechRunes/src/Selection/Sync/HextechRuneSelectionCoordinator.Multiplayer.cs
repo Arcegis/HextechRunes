@@ -355,7 +355,8 @@ internal static partial class HextechRuneSelectionCoordinator
 					+ $"act={actIndex} ordinal={choiceOrdinal}");
 			}
 
-			await SaveManager.Instance.SaveRun(preFinishedRoom: null, saveProgress: false);
+			// 先古结束后开始的选择要带上已完成的事件房，否则读这份检查点会把先古当新事件重开。
+			await SaveManager.Instance.SaveRun(SelectPreFinishedRoomForSave(runState.CurrentRoom), saveProgress: false);
 			HextechLog.Info(
 				"Mayhem", $"RuneChoice checkpoint saved: " +
 				$"act={actIndex} ordinal={choiceOrdinal}");
