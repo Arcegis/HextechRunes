@@ -1,8 +1,8 @@
 {
   "HEXTECH_CONFIG_BUTTON": "Configuración de runas hextech",
   "HEXTECH_CONFIG_BUTTON_TOOLTIP": "Configura las reglas de runas Hextech, hexes enemigos y forjadores de atributo para solitario o cuando seas anfitrión.",
-  "HEXTECH_UPDATE_CHECKING": "Checking the Hextech Mayhem mod version...",
-  "HEXTECH_UPDATE_UNAVAILABLE": "Hextech Mayhem update check is currently unavailable",
-  "HEXTECH_UPDATE_AVAILABLE": "Hextech Mayhem {Latest} is available (current version: {Current})",
-  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})"
+  "HEXTECH_UPDATE_CHECKING": "Comprobando la versión del mod Caos hextech...",
+  "HEXTECH_UPDATE_UNAVAILABLE": "La comprobación de actualizaciones de Caos hextech no está disponible ahora mismo",
+  "HEXTECH_UPDATE_AVAILABLE": "Hay una nueva versión de Caos hextech: {Latest} (versión actual: {Current})",
+  "HEXTECH_UPDATE_LATEST": "Caos hextech está actualizado ({Current})"
 }
