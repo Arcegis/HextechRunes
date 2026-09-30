@@ -120,17 +120,21 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 		await AddShivRewardCards(rewards * DynamicVars.Cards.IntValue);
 	}
 
+	// 计数口径同原版苦无（Kunai）：持有者小刀的每一次打出都计 1，含重放（PlayIndex > 0）与自动打出；
+	// 联机历史计数用同一口径（firstInSeriesOnly: false、includeAutoPlay: true）。
 	private bool IsCountedShivPlay(CardPlay cardPlay)
 	{
-		return cardPlay.IsFirstInSeries
-			&& !cardPlay.IsAutoPlay
-			&& cardPlay.Card.Owner == Owner
+		return cardPlay.Card.Owner == Owner
 			&& HextechKnifeHelper.IsShivLike(cardPlay.Card, Owner);
 	}
 
 	private int CountOwnedShivCardsPlayedFromHistory()
 	{
-		return HextechCombatHistoryHelper.CountOwnedCardsPlayed(Owner, card => HextechKnifeHelper.IsShivLike(card, Owner));
+		return HextechCombatHistoryHelper.CountOwnedCardsPlayed(
+			Owner,
+			card => HextechKnifeHelper.IsShivLike(card, Owner),
+			firstInSeriesOnly: false,
+			includeAutoPlay: true);
 	}
 
 	private async Task AddShivRewardCards(int count)

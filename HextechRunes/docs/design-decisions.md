@@ -36,6 +36,8 @@
 - **白洞由牌自己覆写 `AfterCardDrawn`（与原版虚空同写法），非大乱斗下（如控制台给的牌）也会回能。** 回能时机从“所有监听者之后”提前到这张牌在监听列表里的位置，仍在持有者自己的遗物/Power 之后、敌方海克斯分发之前。`WhiteHoleCard`
 - **`HextechPowerCmdCompat` 在有 choiceContext 的调用点暂不改传。** 原版会把 context 传给 `Hook.AfterPowerAmountChanged`；Hook 自带的 context 在玩家做选择时会放行其他玩家的命令队列，`BlockingPlayerChoiceContext` 不会，改传会改变联机时序。强类型重载已提供，`object?` 重载只为已编译的拓展包二进制保留。`HextechPowerCmdCompat`
 - **御前试剑每次打出君王之剑都生成仆从牌，重放（`PlayIndex > 0`）也算，只排除自动打出。** 原版剑圣给君王之剑加的重放每次都派发 `AfterCardPlayed`；仆从牌的稳定随机序号在每次触发时消费（联机走 Mayhem 共享计数），两端按同一出牌序列推进。`RoyalTrialRune`
+- **接二连三、点亮他们！、袖中连环按原版苦无（`Kunai`）口径计数：持有者相应牌的每一次 `AfterCardPlayed` 都计 1，含重放（`PlayIndex > 0`）与自动打出；本地计数与联机历史计数（`firstInSeriesOnly: false, includeAutoPlay: true`）必须同口径。** 旧口径只计首次手动打出，接二连三计数停在 2 时，自动打出的攻击牌每张都被多打一次而计数不推进。`TwiceThriceRune`、`LightEmUpRune`、`ChainInSleeveRune`
+- **接二连三在 `ModifyCardPlayCount` 里看本张牌这一系列打出（c+1 … c+playCount）是否跨过 3 的倍数，跨过就追加一次；追加的那次也计数（会自我加速，已接受）。** 原版 `GeneratePlayCount` 在第一次打出前一次性算出总次数，`Hook.ModifyCardPlayCount` 按监听者顺序累加，0.111.0 没有 Late 版本：持有者身上的 Power 都排在遗物之前，同一玩家的遗物按获得顺序。所以比接二连三晚获得的双刀流等 +1 它看不到（计数 1 时先有双刀流：看到 2 次、追加，共打出 3 次；后有双刀流：看到 1 次、不追加，共 2 次），这些额外打出只在事后推进计数。不为此拦截 Hook 分发或复刻监听者求值。`TwiceThriceRune`
 
 ## 敌方海克斯
 

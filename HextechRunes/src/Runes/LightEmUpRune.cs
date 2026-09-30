@@ -55,7 +55,8 @@ public sealed class LightEmUpRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (!IsCountedAttackPlay(cardPlay))
+		// 计数口径同原版苦无（Kunai）：持有者攻击牌的每一次打出都计 1，含重放（PlayIndex > 0）与自动打出。
+		if (!IsOwnedAttack(cardPlay.Card))
 		{
 			return Task.CompletedTask;
 		}
@@ -102,12 +103,5 @@ public sealed class LightEmUpRune : HextechRelicBase
 
 		shouldLaunchVolley = progress == AttacksPerVolley && energyCost > 0m;
 		return shouldLaunchVolley ? 0 : progress;
-	}
-
-	private bool IsCountedAttackPlay(CardPlay cardPlay)
-	{
-		return cardPlay.IsFirstInSeries
-			&& !cardPlay.IsAutoPlay
-			&& IsOwnedAttack(cardPlay.Card);
 	}
 }
