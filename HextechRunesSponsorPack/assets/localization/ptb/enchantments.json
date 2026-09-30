@@ -1,6 +1,6 @@
 {
   "EVOLUTION.title": "Evolução",
-  "EVOLUTION.description": "Esta carta ganha [gold]Exaurir[/gold]. Depois que um Ataque é jogado, aumente permanentemente seu dano em [blue]2[/blue]. Depois que uma Habilidade é jogada, aumente permanentemente seu Bloqueio em [blue]2[/blue]. Depois que um Poder é jogado, reduza permanentemente seu custo de Energia em [blue]1[/blue].",
+  "EVOLUTION.description": "Esta carta ganha [gold]Exaurir[/gold]. Depois que um Ataque é jogado, aumente permanentemente seu dano em [blue]2[/blue]. Depois que uma Técnica é jogada, aumente permanentemente sua Proteção em [blue]2[/blue]. Depois que um Poder é jogado, reduza permanentemente seu custo de Energia em [blue]1[/blue].",
   "ENTROPY_INCREASE.title": "Aumento de Entropia",
   "ENTROPY_INCREASE.description": "Depois que você obtiver a próxima carta, esta carta se transforma em uma cópia dela.",
   "ENTROPY_DECREASE.title": "Redução de Entropia",

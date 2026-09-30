@@ -12,7 +12,7 @@
   "STARLIGHT_SPARKLE_RUNE.description": "Получает [gold]Белую звезду[/gold], [gold]Черную звезду[/gold] и [gold]Золотую звезду[/gold]. В начале боёв с элитой получает [blue]1[/blue] [gold]силы[/gold] и [gold]ловкости[/gold], а также [blue]3[/blue] [gold]панциря[/gold] и [gold]регенерации[/gold].",
   "STARLIGHT_SPARKLE_RUNE.flavor": "Спонсорский предмет: Когда сияют звёзды, победа смотрит на вас дважды.",
   "COSPLAY_RUNE.title": "КОСПЛЕЙ",
-  "COSPLAY_RUNE.description": "При получении добавляет в колоду [gold]Обезболивание[/gold], [gold]Махину[/gold], [gold]Разжечь[/gold] и [gold]Боевой транс[/gold] с [gold]Начальной[/gold]. Получает [gold]Фонарь[/gold].",
+  "COSPLAY_RUNE.description": "При получении добавляет в колоду карты [gold]«Обезболивание»[/gold], [gold]«Махина»[/gold], [gold]«Хворост»[/gold] и [gold]«Боевой транс»[/gold]; все они [gold]начальные[/gold]. Даёт [gold]«Фонарь»[/gold].",
   "COSPLAY_RUNE.flavor": "Спонсорский предмет: Надень чужие приёмы — и судьба потеряет тебя из виду.",
   "GOLD_STAR_RELIC.title": "Золотая звезда",
   "GOLD_STAR_RELIC.description": "При победе над элитным врагом выдаёт [blue]1[/blue] дополнительную награду за обычного врага.",
