@@ -76,7 +76,8 @@ internal static class HextechCustomModelRegistry
 		typeof(ThievingHopperHex),
 		typeof(HauntedShipHex),
 		typeof(InfestedPrismHex),
-		typeof(CorruptHeartHex)
+		typeof(CorruptHeartHex),
+		typeof(EnlightenmentHex)
 	];
 
 	internal static IReadOnlyList<Type> CustomCardTypes { get; } =

@@ -581,7 +581,7 @@ internal static partial class Program
 		Equal(1, card.EnergyCost.GetWithModifiers(CostModifiers.Local), "native cleanup still restores original card cost");
 		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == effect.Kind);
 		Equal(145, (int)row.Kind, "append-only ID");
-		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(EnlightenmentRune), "enabled gold with matching icon");
+		Expect(row.Rarity == HextechRarityTier.Prismatic && !row.Disabled && row.IconRelicType == typeof(EnlightenmentHex), "enabled prismatic with its own enemy icon carrier");
 		SomethingForNothingEnemyHex zeroCostEnemy = new();
 		ResourceInfo resources = new ResourceInfo { EnergyValue = 1, EnergySpent = 1, StarValue = 0, StarsSpent = 0 };
 		Expect(zeroCostEnemy.ModifyCardPlayResultPileTypeAndPosition(context, card, false, resources, PileType.Discard, CardPilePosition.Bottom) == null, "raised play cost no longer triggers zero-cost exhaust");

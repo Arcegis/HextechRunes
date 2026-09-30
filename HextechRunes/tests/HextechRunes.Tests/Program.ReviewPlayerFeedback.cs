@@ -148,6 +148,26 @@ internal static partial class Program
 		}
 	}
 
+	[HextechTest]
+	private static void EnemyEnlightenmentUsesItsOwnPrismaticIconCarrier()
+	{
+		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(registration => registration.Kind == MonsterHexKind.Enlightenment);
+		Equal(145, (int)row.Kind, "append-only ID is unchanged");
+		Equal(HextechRarityTier.Prismatic, row.Rarity, "enemy Enlightenment is prismatic");
+		Equal(typeof(EnlightenmentHex), row.IconRelicType, "enemy Enlightenment shows its own icon carrier");
+		Equal(typeof(EnlightenmentHex), HextechCustomModelRegistry.EnemyHexIconRelicTypes[^1],
+			"the new carrier is appended so the SharedRelicPool registration order of older carriers is kept");
+		Expect(!HextechPlayerRuneRegistry.Registrations.Any(registration => registration.Type == typeof(EnlightenmentHex)),
+			"the enemy carrier never enters the player pool");
+		Equal(HextechRarityTier.Gold, HextechPlayerRuneRegistry.Registrations.Single(registration => registration.Type == typeof(EnlightenmentRune)).Rarity,
+			"the player rune Enlightenment is unchanged");
+
+		EnlightenmentHex carrier = new();
+		Expect(HextechCatalog.IsHextechEnemyHexIconRelic(carrier), "the carrier is recognised as an enemy hex icon relic");
+		Equal("res://HextechRunes/images/relics/enlightenmentHex.png", HextechAssets.TryGetCustomRelicIconPath(carrier), "enemy icon path");
+		Equal("res://HextechRunes/images/relics/enlightenmentRune.png", HextechAssets.TryGetCustomRelicIconPath(new EnlightenmentRune()), "player icon path is unchanged");
+	}
+
 	private static void PlayFeedbackCard(RelicModel rune, CardModel card, int playIndex, int playCount, bool isAutoPlay)
 	{
 		rune.AfterCardPlayed(null!, CreateFeedbackCardPlay(card, playIndex, playCount, isAutoPlay)).GetAwaiter().GetResult();
