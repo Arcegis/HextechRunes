@@ -458,6 +458,7 @@ internal static partial class Program
 		Expect(HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Enemy), "enemy-owned personal hive should keep vanilla behavior");
 		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Player), "player-owned personal hive should be neutralized");
 		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(null), "ownerless personal hive should be neutralized");
+		Expect(HextechPersonalHiveSafetyHooks.HasDazedRecipient(null), "no dealer: vanilla skips on its own, so the original may run");
 	}
 
 	[HextechTest]

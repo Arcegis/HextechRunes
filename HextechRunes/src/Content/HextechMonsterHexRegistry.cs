@@ -71,7 +71,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<GoldrendRune>(MonsterHexKind.Goldrend, HextechRarityTier.Prismatic),
 		Monster<FeelTheBurnRune>(MonsterHexKind.FeelTheBurn, HextechRarityTier.Prismatic, disabled: true, hasBurnHoverTip: true),
 		Monster<BackToBasicsRune>(MonsterHexKind.BackToBasics, HextechRarityTier.Prismatic),
-		Monster<MadScientistRune>(MonsterHexKind.MadScientist, HextechRarityTier.Prismatic),
+		Monster<EntomancerHex>(MonsterHexKind.MadScientist, HextechRarityTier.Prismatic),
 		Monster<FeyMagicRune>(MonsterHexKind.FeyMagic, HextechRarityTier.Prismatic),
 		Monster<FinalFormRune>(MonsterHexKind.FinalForm, HextechRarityTier.Prismatic),
 		Monster<UnmovableMountainRune>(MonsterHexKind.UnmovableMountain, HextechRarityTier.Prismatic),

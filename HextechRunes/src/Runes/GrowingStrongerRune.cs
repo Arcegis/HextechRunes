@@ -57,20 +57,12 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 			return null;
 		}
 
-		IReadOnlyList<CardModel> handCards = PileType.Hand.GetPile(Owner).Cards;
-		return PickCardToMakeFreeFromCandidates(
-				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: false)).ToList(),
-				ordinal,
-				total,
-				includeGlobalModifiers: false)
-			?? PickCardToMakeFreeFromCandidates(
-				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
-				ordinal,
-				total,
-				includeGlobalModifiers: true);
+		return HextechFreeCardPicker.Pick(
+			PileType.Hand.GetPile(Owner).Cards,
+			(candidates, tier) => PickCardToMakeFreeFromCandidates(candidates, ordinal, total, tier));
 	}
 
-	private CardModel? PickCardToMakeFreeFromCandidates(IReadOnlyList<CardModel> candidates, int ordinal, int total, bool includeGlobalModifiers)
+	private CardModel? PickCardToMakeFreeFromCandidates(IReadOnlyList<CardModel> candidates, int ordinal, int total, string tier)
 	{
 		if (Owner == null || candidates.Count == 0)
 		{
@@ -85,7 +77,7 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
 			ordinal.ToString(),
 			total.ToString(),
-			includeGlobalModifiers ? "global" : "base",
+			tier,
 			HextechStableRandom.CardPileKey(candidates));
 		return candidates[index];
 	}

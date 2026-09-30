@@ -120,6 +120,11 @@ internal static class HextechAssets
 			return RelicImages + "eightPennyGateRune.png";
 		}
 
+		if (relic is EntomancerHex)
+		{
+			return RelicImages + "madScientistRune.png";
+		}
+
 		if (relic is SomethingForNothingRune)
 		{
 			return RelicImages + "acceleratingSorceryRune.png";

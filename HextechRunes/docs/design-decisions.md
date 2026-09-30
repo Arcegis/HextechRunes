@@ -39,6 +39,7 @@
 - **接二连三、点亮他们！、袖中连环按原版苦无（`Kunai`）口径计数：持有者相应牌的每一次 `AfterCardPlayed` 都计 1，含重放（`PlayIndex > 0`）与自动打出；本地计数与联机历史计数（`firstInSeriesOnly: false, includeAutoPlay: true`）必须同口径。** 旧口径只计首次手动打出，接二连三计数停在 2 时，自动打出的攻击牌每张都被多打一次而计数不推进。`TwiceThriceRune`、`LightEmUpRune`、`ChainInSleeveRune`
 - **接二连三与袖中连环在战斗中单机与联机都只读原版战斗完成历史（`CardPlayFinished`，`firstInSeriesOnly: false, includeAutoPlay: true`），不再有“单机本地计数、联机读历史”的双路径。** 原版每次打出先记完成历史、再依次派发 `AfterCardPlayed`；一呼百应（先获得）在外层攻击牌的 `AfterCardPlayed` 里嵌套自动打出攻击牌时，外层已在历史里，而接二连三自己的 `AfterCardPlayed` 还没执行。旧单机路径读本地计数会少算外层这张，同一张嵌套攻击单机与联机追加次数相反（起始计数 1：单机不追加、联机追加；起始 2 反过来）。袖中连环同理只差发奖时点（单机晚到外层那次），一并统一：`_shivsPlayedThisCombat` 只记已结算到的历史张数，`AfterCardPlayed` 与 `AfterCardPlayedLate` 都按历史补结算。接二连三的 `SavedAttacksPlayedThisCombat` 改为兼容占位（`get => 0; set { }`）：原版不存战斗中途状态，战斗内计数本来就不需要随存档恢复，联机分支原先也一直存 0。点亮他们！只有一条本地路径，不受影响。魔鬼之舞、秘术冲拳与 `DrawThresholdRuneBase` 仍是“单机本地计数、联机读历史”的双路径，本次范围外未改，嵌套时点是否有同类差异待逐个核查。`TwiceThriceRune`、`ChainInSleeveRune`
 - **接二连三在 `ModifyCardPlayCount` 里看本张牌这一系列打出（c+1 … c+playCount）是否跨过 3 的倍数，跨过就追加一次；追加的那次也计数（会自我加速，已接受）。** 原版 `GeneratePlayCount` 在第一次打出前一次性算出总次数，`Hook.ModifyCardPlayCount` 按监听者顺序累加，0.111.0 没有 Late 版本：持有者身上的 Power 都排在遗物之前，同一玩家的遗物按获得顺序。所以比接二连三晚获得的双刀流等 +1 它看不到（计数 1 时先有双刀流：看到 2 次、追加，共打出 3 次；后有双刀流：看到 1 次、不追加，共 2 次），这些额外打出只在事后推进计数。不为此拦截 Hook 分发或复刻监听者求值。`TwiceThriceRune`
+- **愈战愈勇与大法师的"随机一张手牌本回合免费"按原版木乃伊之手（`MummifiedHand`）的分级挑选：基础费 > 0 且计入全局修正后仍要花费 → 计入全局修正后仍要花费 → 基础费 > 0 → 任意手牌。** 愈战愈勇原先只看本地费用，会挑中已被三头犬、奇巧许可、剑意等全局修正变成 0 费的牌而浪费免费；X 费按原版 `CostsEnergyOrStars` 口径不进前两级。两者共用 `HextechFreeCardPicker`，各自的稳定随机键不变（分级名进键；愈战愈勇的分级名由 base/global 改为共享的四级名，同一局面的随机结果可能与旧版本不同）。`GrowingStrongerRune`、`ArchmageRune`
 
 ## 敌方海克斯
 
@@ -63,6 +64,7 @@
 - **欧米茄、大法师、偷窃草蜢的战斗计数键统一经 `HextechCombatProcTracker` 拼接。** 旧版本战斗中途留下的快照读回后：欧米茄的一次性标记失效（只有载入后同一回合 4 再触发回合开始钩子才可能重复），大法师当场随机序号从 0 重新计；不会多触发。`OmegaEnemyHex`、`ArchmageEnemyHex`、`ThievingHopperEnemyHex`
 - **八文门“每回合最多 2 次”保留两个 HashSet。** 它们参与战斗快照序列化，改成字典需要迁移旧 JSON，收益太小。
 - **敌方"开悟"用专属图标载体 `EnlightenmentHex`（棱彩），玩家符文"开悟"仍是 `EnlightenmentRune`（黄金、原图标）；不再被读取的 `enlightenmentRune.enemyDescription` 已删除（同感染棱柱先例）。** 敌方海克斯按 `MonsterHexKind` 编号存档与同步（`SavedMonsterHexByAct`/`SavedMonsterHexesByActJson`/`SavedCarriedMonsterHexes` 与选择消息都是 int），换展示载体不影响旧存档读回；新载体追加在 `EnemyHexIconRelicTypes` 末尾，保持既有载体的 SharedRelicPool 登记顺序。新增模型改变模型表，两端须同版本。`EnlightenmentHex`、`HextechMonsterHexRegistry`
+- **敌方 `MonsterHexKind.MadScientist` 重做为"升级：蜂群术士"：敌人减少 30/15/0% 最大生命值，并获得 1 层原版人体蜂房（`PersonalHivePower`）；删除自定义的"受到伤害时往弃牌堆加晕眩"。** 晕眩改由原版能力结算（只认攻击伤害，加到攻击者抽牌堆随机位置，奥斯提的攻击归到主人），旧实现里单人/联机归属晕眩的差异随之消失。人体蜂房与最大生命减少共用同一持久标记 `MadScientistApplied`（开战时所有敌人、战斗中召唤/分裂出的敌人各一次，首领转阶段随最大生命重放），直接 `PowerCmd.Apply`：原版不按人数缩放它，固定 1 层。原版蜂群术士自带 1 层，叠加为 2 层，其吐丝招式在不足 3 层时照常 +1（提前一回合到 3 层上限）；0.107.1 的吐丝兼容补丁只在没有人体蜂房时接管，不受影响；人体蜂房在薄暮法衣的不可镜像名单里，玩家侧实例由安全补丁吞掉。图标载体改为敌方专用 `EntomancerHex`（追加在 `EnemyHexIconRelicTypes` 末尾，暂借 `madScientistRune.png`），玩家符文科学狂人（`MadScientistRune`）不变；不再被读取的 `madScientistRune.enemyDescription` 已删除。枚举成员名与编号保留为配置禁用列表、遥测与存档的兼容契约。`MadScientistEnemyHex`、`EntomancerHex`
 
 ## 卡牌升级
 
