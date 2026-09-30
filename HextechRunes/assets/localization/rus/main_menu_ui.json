@@ -4,5 +4,7 @@
   "HEXTECH_UPDATE_CHECKING": "Checking the Hextech Mayhem mod version...",
   "HEXTECH_UPDATE_UNAVAILABLE": "Hextech Mayhem update check is currently unavailable",
   "HEXTECH_UPDATE_AVAILABLE": "Hextech Mayhem {Latest} is available (current version: {Current})",
-  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})"
+  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})",
+  "HEXTECH_MOD_NAME": "Хекстековый хаос",
+  "HEXTECH_MOD_DESCRIPTION": "В начале каждого акта выберите руну Хекстека, чтобы изменить колоду, а враги этого акта получат вражескую руну той же редкости. Также добавляет наковальни показателей, руны для отдельных персонажей и новые карты. Поддерживает совместную игру; правила настраиваются в пункте «Настройки рун Хекстека» главного меню."
 }

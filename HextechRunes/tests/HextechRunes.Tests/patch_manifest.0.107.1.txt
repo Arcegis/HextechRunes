@@ -170,6 +170,8 @@ ui.inspect.open | MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens.NInspectRelicS
 ui.inspect.relic-seen | MegaCrit.Sts2.Core.Saves.SaveManager.IsRelicSeen(RelicModel) | postfix(400)
 ui.inspect.unlock-state-relics | MegaCrit.Sts2.Core.Unlocks.UnlockState.Relics(*) [Getter] | postfix(400)
 ui.inspect.update-display | MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens.NInspectRelicScreen.UpdateRelicDisplay(*) | prefix?(200)
+ui.mod-list-loc.info | MegaCrit.Sts2.Core.Nodes.Screens.ModdingScreen.NModInfoContainer.Fill(Mod) | postfix(200)
+ui.mod-list-loc.row | MegaCrit.Sts2.Core.Nodes.Screens.ModdingScreen.NModMenuRow._Ready() | postfix(200)
 ui.player-stats-hover.focus | MegaCrit.sts2.Core.Nodes.TopBar.NTopBarPortraitTip.OnFocus() | prefix(400)
 ui.player-stats-hover.init | MegaCrit.sts2.Core.Nodes.TopBar.NTopBarPortraitTip.Initialize(IRunState) | postfix(400)
 ui.relic-collection | targetmethod(LoadRelicsPatch) | postfix(400)

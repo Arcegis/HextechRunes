@@ -4,5 +4,7 @@
   "HEXTECH_UPDATE_CHECKING": "Checking the Hextech Mayhem mod version...",
   "HEXTECH_UPDATE_UNAVAILABLE": "Hextech Mayhem update check is currently unavailable",
   "HEXTECH_UPDATE_AVAILABLE": "Hextech Mayhem {Latest} is available (current version: {Current})",
-  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})"
+  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})",
+  "HEXTECH_MOD_NAME": "ความโกลาหลเฮกซ์เทค",
+  "HEXTECH_MOD_DESCRIPTION": "เมื่อเริ่มแต่ละองก์ ให้เลือกรูนเฮกซ์เทค 1 อันเพื่อปรับเปลี่ยนกองการ์ด และศัตรูในองก์นั้นจะได้รับเฮกซ์ศัตรูที่มีความหายากเท่ากัน มีช่างหลอมค่าสถานะ เฮกซ์เทคเฉพาะตัวละคร และการ์ดใหม่เพิ่มเติม รองรับโหมดหลายคน และปรับกฎได้ที่ “ตั้งค่ารูนเฮกซ์เทค” ในเมนูหลัก"
 }

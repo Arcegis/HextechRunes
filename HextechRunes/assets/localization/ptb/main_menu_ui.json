@@ -4,5 +4,7 @@
   "HEXTECH_UPDATE_CHECKING": "Checking the Hextech Mayhem mod version...",
   "HEXTECH_UPDATE_UNAVAILABLE": "Hextech Mayhem update check is currently unavailable",
   "HEXTECH_UPDATE_AVAILABLE": "Hextech Mayhem {Latest} is available (current version: {Current})",
-  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})"
+  "HEXTECH_UPDATE_LATEST": "Hextech Mayhem is up to date ({Current})",
+  "HEXTECH_MOD_NAME": "Hextech Mayhem",
+  "HEXTECH_MOD_DESCRIPTION": "No início de cada ato, escolha uma runa Hextech para transformar seu baralho; os inimigos daquele ato também recebem um hex inimigo da mesma raridade. Inclui ainda forjadores de atributos, Hextechs exclusivos de cada personagem e cartas novas. Suporta multijogador; ajuste as regras em “Configuração de Runas Hextech” no menu principal."
 }
