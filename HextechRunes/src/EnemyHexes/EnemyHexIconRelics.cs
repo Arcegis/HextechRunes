@@ -176,3 +176,8 @@ public sealed class InfestedPrismHex : EnemyHexIconRelicBase
 public sealed class EnlightenmentHex : EnemyHexIconRelicBase
 {
 }
+
+/// <summary>MonsterHexKind.MadScientist 的图标载体（显示为"升级：蜂群术士"）；玩家符文"科学狂人"仍是 MadScientistRune</summary>
+public sealed class EntomancerHex : EnemyHexIconRelicBase
+{
+}

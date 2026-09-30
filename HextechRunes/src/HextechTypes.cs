@@ -42,7 +42,7 @@ internal enum MonsterHexKind
 	Loop = 30,
 	ServantMaster = 31,
 	BackToBasics = 32,
-	MadScientist = 34,
+	MadScientist = 34,        // 显示为"升级：蜂群术士"（棱彩，EntomancerHex）；成员名与编号是配置/遥测/存档契约，不改
 	FirstAidKit = 35,
 	SpeedDemon = 36,
 	DivineIntervention = 37,

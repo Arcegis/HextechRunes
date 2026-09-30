@@ -80,6 +80,7 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.FossilStalker] = [typeof(SuckPower)],
 			[MonsterHexKind.AncientStatue] = [typeof(HextechPlayerSlowPower)],
 			[MonsterHexKind.HundredRefinements] = [typeof(HextechPlayerSlowPower)],
+			[MonsterHexKind.MadScientist] = [typeof(PersonalHivePower)],
 		};
 
 	// 能力之外的补充悬浮提示（卡牌、关键词），排在灼烧提示之后。

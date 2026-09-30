@@ -12,6 +12,52 @@ namespace HextechRunes.Tests;
 internal static partial class Program
 {
 	[HextechTest]
+	private static void EnemyEntomancerUsesItsOwnPrismaticIconCarrier()
+	{
+		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(registration => registration.Kind == MonsterHexKind.MadScientist);
+		Equal(34, (int)row.Kind, "the MadScientist kind keeps its append-only ID");
+		Equal("MadScientist", row.Kind.ToString(), "the enum name stays as the config/telemetry contract");
+		Equal(HextechRarityTier.Prismatic, row.Rarity, "enemy Entomancer is prismatic");
+		Expect(!row.Disabled, "enemy Entomancer is enabled by default");
+		Equal(typeof(EntomancerHex), row.IconRelicType, "enemy Entomancer shows its own icon carrier");
+		Equal(typeof(EntomancerHex), HextechCustomModelRegistry.EnemyHexIconRelicTypes[^1],
+			"the new carrier is appended so the SharedRelicPool registration order of older carriers is kept");
+		Expect(!HextechPlayerRuneRegistry.Registrations.Any(registration => registration.Type == typeof(EntomancerHex)),
+			"the enemy carrier never enters the player pool");
+		Equal(HextechRarityTier.Prismatic, HextechPlayerRuneRegistry.Registrations.Single(registration => registration.Type == typeof(MadScientistRune)).Rarity,
+			"the player rune Mad Scientist is unchanged");
+
+		EntomancerHex carrier = new();
+		Expect(HextechCatalog.IsHextechEnemyHexIconRelic(carrier), "the carrier is recognised as an enemy hex icon relic");
+		Equal("res://HextechRunes/images/relics/madScientistRune.png", HextechAssets.TryGetCustomRelicIconPath(carrier),
+			"the carrier borrows the Mad Scientist icon for now");
+		Equal("res://HextechRunes/images/relics/madScientistRune.png", HextechAssets.TryGetCustomRelicIconPath(new MadScientistRune()),
+			"player icon path is unchanged");
+	}
+
+	[HextechTest]
+	private static void EnemyEntomancerGrantsVanillaPersonalHiveInsteadOfCustomDazed()
+	{
+		IReadOnlyList<HextechEnemyHexEffect> effects = (IReadOnlyList<HextechEnemyHexEffect>)AccessTools.Field(typeof(HextechEnemyHexEffects), "OrderedEffects").GetValue(null)!;
+		HextechEnemyHexEffect effect = effects.Single(candidate => candidate.Kind == MonsterHexKind.MadScientist);
+		Equal(typeof(MadScientistEnemyHex), effect.GetType(), "the MadScientist kind is handled by the Entomancer effect");
+		Expect(effect is IHextechEnemyMaxHpCoefficientProvider, "the max HP reduction is kept");
+
+		const BindingFlags declared = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+		Expect(typeof(MadScientistEnemyHex).GetMethod(nameof(HextechEnemyHexEffect.AfterEnemyDamageReceived), declared) == null,
+			"the custom on-damage Dazed logic is gone; vanilla Personal Hive adds Dazed instead");
+		Expect(typeof(MadScientistEnemyHex).GetMethod(nameof(HextechEnemyHexEffect.ApplyPersistentToEnemy), declared) != null,
+			"Personal Hive is granted with the persistent max HP reduction (combat start and later summons)");
+		Expect(!new PersonalHivePower().ShouldScaleInMultiplayer,
+			"vanilla does not scale Personal Hive by player count, so the enemy keeps exactly 1 stack");
+
+		SetEqual([typeof(PersonalHivePower)], MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.MadScientist),
+			"the enemy hex hover shows Personal Hive");
+		Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(new PersonalHivePower()),
+			"Personal Hive stays out of Twilight Veil mirroring");
+	}
+
+	[HextechTest]
 	private static void FreeCardPickerSkipsCardsAlreadyFreedByModifiers()
 	{
 		CardModel alreadyFree = CreateMutableTestModel<StrikeIronclad>();

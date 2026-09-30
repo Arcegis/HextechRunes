@@ -218,8 +218,9 @@ internal static partial class Program
 		Equal(145, (int)row.Kind, "append-only ID is unchanged");
 		Equal(HextechRarityTier.Prismatic, row.Rarity, "enemy Enlightenment is prismatic");
 		Equal(typeof(EnlightenmentHex), row.IconRelicType, "enemy Enlightenment shows its own icon carrier");
-		Equal(typeof(EnlightenmentHex), HextechCustomModelRegistry.EnemyHexIconRelicTypes[^1],
-			"the new carrier is appended so the SharedRelicPool registration order of older carriers is kept");
+		List<Type> carriers = HextechCustomModelRegistry.EnemyHexIconRelicTypes.ToList();
+		Equal(carriers.IndexOf(typeof(CorruptHeartHex)) + 1, carriers.IndexOf(typeof(EnlightenmentHex)),
+			"the carrier was appended after the older carriers so their SharedRelicPool registration order is kept");
 		Expect(!HextechPlayerRuneRegistry.Registrations.Any(registration => registration.Type == typeof(EnlightenmentHex)),
 			"the enemy carrier never enters the player pool");
 		Equal(HextechRarityTier.Gold, HextechPlayerRuneRegistry.Registrations.Single(registration => registration.Type == typeof(EnlightenmentRune)).Rarity,
