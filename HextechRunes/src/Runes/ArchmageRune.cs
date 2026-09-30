@@ -53,28 +53,9 @@ public sealed class ArchmageRune : HextechRelicBase
 			return null;
 		}
 
-		IReadOnlyList<CardModel> handCards = PileType.Hand.GetPile(Owner).Cards;
-		return PickFromCandidates(
-				handCards
-					.Where(static card => (card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
-						&& card.CostsEnergyOrStars(includeGlobalModifiers: true))
-					.ToList(),
-				sourceCard,
-				rollOrdinal,
-				"base-cost")
-			?? PickFromCandidates(
-				handCards.Where(static card => card.CostsEnergyOrStars(includeGlobalModifiers: true)).ToList(),
-				sourceCard,
-				rollOrdinal,
-				"global-cost")
-			?? PickFromCandidates(
-				handCards
-					.Where(static card => card.EnergyCost.GetWithModifiers(CostModifiers.None) > 0 || card.BaseStarCost > 0)
-					.ToList(),
-				sourceCard,
-				rollOrdinal,
-				"base-any")
-			?? PickFromCandidates(handCards.ToList(), sourceCard, rollOrdinal, "any");
+		return HextechFreeCardPicker.Pick(
+			PileType.Hand.GetPile(Owner).Cards,
+			(candidates, tier) => PickFromCandidates(candidates, sourceCard, rollOrdinal, tier));
 	}
 
 	private CardModel? PickFromCandidates(IReadOnlyList<CardModel> candidates, CardModel sourceCard, int rollOrdinal, string tier)
