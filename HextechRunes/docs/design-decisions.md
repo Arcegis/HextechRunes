@@ -124,6 +124,9 @@
 - **配置菜单的计数与网格同口径：打开菜单时按网格实际列出的条目算一次 ID 集合，页脚、角标、社区配置摘要共用。** 我方总数不再包含生成型符文，敌方总数按网格条目，禁用集合里的未知 ID 不计入。`HextechRuneConfigMenuHooks`
 - **远古事件结束后等待其他玩家完成事件，不设单端超时，只在等满 18000 帧时告警一次后继续等待，换局才退出。** 超时由各端独立判定：先放弃的一端会等下一房间，后完成的一端进入选择界面等它，而地图行进已被禁用、原版进入下一房间需要全员投票，双方互相卡住。要取消只能走同步协议让所有客户端一起放弃。`HextechRunLifecycleHooks.EventSelection`
 - **“已连接的联机”统一用 `HextechPlayerContextHelper.IsMultiplayerConnected()`，NetService 为空时返回 false。** 此前选择、夺金、锻造发放三处在 NetService 为空时会抛空引用。
+- **单机在海克斯选择或其拾取效果（如棱彩海克斯连续发放 6 个锻造器）途中保存并退出，读档一律回滚到选择前重选（用户裁决）。** 选择开始到本幕完成之间不存档，原版“保存并退出”本身也不存档，所以读档回到选择前的最后一个存档、本幕未决，按原调度（进地图房时，或先古“继续”后）重新弹出选择；半途发放的结果不保留、不重复发放、不跳过选择。`InitialForgeGrantRune` 的待发标记只作联机/其他来源意外存档的兜底，恢复时仍按完整数量重发（补存剩余数量要新增 SavedProperty）。`HextechRuneSelectionCoordinator.Core`
+- **原版退出清理期间不推进、不完成本幕。** `RunManager.CleanUp` 先置 `ShouldSave=false`、`IsCleaningUp=true`，再清覆盖层，最后才清 State；清覆盖层会取消等待中的选择/锻造界面，让本局任务链在 State 仍指向本局时同步续跑。只比引用会把正在拆除的对局当成当前局，继续标记已决并打出误导性的存档日志，所以拾取返回后、完成本幕前和存档前都用 `IsCurrentRunInProgress`（引用相同且不在清理中）复查。`HextechRuneSelectionCoordinator.IsRunInProgress`
+- **本模组自己的存档必须带上已完成的事件房。** 先古/涅奥结束、点“继续”后才开始的选择，此时 `SaveRun(null)` 会让读档按地图坐标把先古当新事件重开，而存档里本幕已决，玩家就看不到海克斯选择、直接重进先古。当前房是 `EventRoom { IsPreFinished: true }` 时作为 preFinishedRoom 传入，与原版事件完成时 `SaveRun(this)` 同口径；单机完成存档与联机检查点都走这条规则。`HextechRuneSelectionCoordinator.SelectPreFinishedRoomForSave`
 
 ## 待实机验证
 
