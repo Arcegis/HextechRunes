@@ -4,17 +4,13 @@ public sealed class TwiceThriceRune : HextechRelicBase
 {
 	private const int AttacksPerReplay = 3;
 
-	private int _attacksPlayedThisCombat;
-
+	// 旧版本存档兼容占位：原为单机本场攻击计数；现在单机与联机都读原版战斗完成历史，名称与类型须保留。
+	// 原版不存战斗中途状态（读档从本场开头重进），战斗内计数本来就不需要随存档恢复。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedAttacksPlayedThisCombat
 	{
-		get => IsNetworkMultiplayer() ? 0 : GetAttacksPlayedThisCombat();
-		set
-		{
-			_attacksPlayedThisCombat = Math.Max(0, value) % AttacksPerReplay;
-			InvokeDisplayAmountChanged();
-		}
+		get => 0;
+		set { }
 	}
 
 	public override bool ShowCounter => IsInLiveCombat;
@@ -28,23 +24,23 @@ public sealed class TwiceThriceRune : HextechRelicBase
 				return 0;
 			}
 
-			return GetAttacksPlayedThisCombat();
+			return GetAttacksPlayedThisCombat() % AttacksPerReplay;
 		}
 	}
 
 	public override Task BeforeCombatStart()
 	{
-		ResetAttacksPlayedThisCombat();
+		InvokeDisplayAmountChanged();
 		return Task.CompletedTask;
 	}
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		ResetAttacksPlayedThisCombat();
+		InvokeDisplayAmountChanged();
 		return Task.CompletedTask;
 	}
 
-	// 计数口径同原版苦无（Kunai）：持有者攻击牌的每一次 AfterCardPlayed 都计 1，含重放（PlayIndex > 0）与自动打出。
+	// 计数口径同原版苦无（Kunai）：持有者攻击牌的每一次打出都计 1，含重放（PlayIndex > 0）与自动打出。
 	// 原版 CardModel.GeneratePlayCount 在第一次打出前一次性算出总次数（Hook.ModifyCardPlayCount 按监听者顺序累加，
 	// 0.111.0 没有 Late 版本），之后每次打出都推进计数。本张牌这一系列打出（c+1 … c+playCount）会跨过 3 的倍数时追加一次，
 	// 追加的那次同样计数。限制：这里只能看到排在本符文之前的监听者累加后的次数——持有者身上的 Power 全部在遗物之前，
@@ -69,11 +65,6 @@ public sealed class TwiceThriceRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		if (!ShouldUseNetworkCombatHistory())
-		{
-			_attacksPlayedThisCombat = (_attacksPlayedThisCombat + 1) % AttacksPerReplay;
-		}
-
 		InvokeDisplayAmountChanged();
 		Flash();
 		return Task.CompletedTask;
@@ -90,16 +81,12 @@ public sealed class TwiceThriceRune : HextechRelicBase
 		return progress + playCount >= AttacksPerReplay;
 	}
 
-	private void ResetAttacksPlayedThisCombat()
-	{
-		_attacksPlayedThisCombat = 0;
-		InvokeDisplayAmountChanged();
-	}
-
+	// 单机与联机统一读原版战斗完成历史（CardPlayFinished），不再维护本地计数。原版每次打出先记完成历史、
+	// 再依次派发 AfterCardPlayed；一呼百应等排在本符文之前的监听者在自己的 AfterCardPlayed 里嵌套自动打出攻击牌时，
+	// 外层那张已在历史里、而本符文的 AfterCardPlayed 还没执行。本地计数会少算外层这张，导致单机与联机追加次数不同。
+	// 历史只含本场（原版在战斗结束与重置时清空），战斗外读到 0。
 	private int GetAttacksPlayedThisCombat()
 	{
-		return ShouldUseNetworkCombatHistory()
-			? CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true) % AttacksPerReplay
-			: _attacksPlayedThisCombat;
+		return CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true);
 	}
 }

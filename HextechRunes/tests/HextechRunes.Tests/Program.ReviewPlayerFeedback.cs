@@ -8,6 +8,8 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes.Tests;
 
@@ -61,30 +63,73 @@ internal static partial class Program
 		StrikeIronclad foreign = CreateMutableTestModel<StrikeIronclad>();
 		foreign.Owner = teammate;
 
-		PlayFeedbackCard(rune, strike, playIndex: 0, playCount: 2, isAutoPlay: false);
-		PlayFeedbackCard(rune, strike, playIndex: 1, playCount: 2, isAutoPlay: false);
-		Equal(2, rune.SavedAttacksPlayedThisCombat, "a replay (PlayIndex=1) advances the count");
-		PlayFeedbackCard(rune, foreign, playIndex: 0, playCount: 1, isAutoPlay: false);
-		Equal(2, rune.SavedAttacksPlayedThisCombat, "a teammate's attack does not advance the count");
-
-		// 旧 bug：计数停在 2 时，自动打出的攻击牌每张都被多打一次而计数不推进。
-		Equal(2, rune.ModifyCardPlayCount(strike, null, 1), "an auto-played third attack is replayed");
-		Equal(2, rune.ModifyCardPlayCount(strike, null, 1), "the play-count hook is read-only when polled again");
-		PlayFeedbackCard(rune, strike, playIndex: 0, playCount: 2, isAutoPlay: true);
-		PlayFeedbackCard(rune, strike, playIndex: 1, playCount: 2, isAutoPlay: true);
-		Equal(1, rune.SavedAttacksPlayedThisCombat, "both plays of the auto-played attack advance the count, including the added replay");
-		Equal(1, rune.ModifyCardPlayCount(strike, null, 1), "the next auto-played attack is no longer replayed");
-
-		// 双刀流在前时看到 playCount=2：计数 1 → 打出 2、3，第 3 张追加一次，共打出 3 次。
-		Equal(3, rune.ModifyCardPlayCount(strike, null, 2), "Dual Wield's extra play reaching the third attack adds one replay");
-		for (int playIndex = 0; playIndex < 3; playIndex++)
+		// 计数读原版战斗完成历史（单机与联机同一口径），这里直接往历史写 CardPlayFinished 条目。
+		WithFeedbackCombatHistory((history, entries) =>
 		{
-			PlayFeedbackCard(rune, strike, playIndex, playCount: 3, isAutoPlay: false);
-		}
+			RecordFeedbackPlayFinished(history, entries, strike, playIndex: 0, playCount: 2, isAutoPlay: false);
+			RecordFeedbackPlayFinished(history, entries, strike, playIndex: 1, playCount: 2, isAutoPlay: false);
+			Equal(2, rune.DisplayAmount, "a replay (PlayIndex=1) advances the count");
+			RecordFeedbackPlayFinished(history, entries, foreign, playIndex: 0, playCount: 1, isAutoPlay: false);
+			Equal(2, rune.DisplayAmount, "a teammate's attack does not advance the count");
 
-		Equal(1, rune.SavedAttacksPlayedThisCombat, "all three plays are counted (1 + 3 = 4)");
-		// 双刀流排在接二连三之后（后获得）：这里只看到 1 次（计数 1 → 2）不追加；之后双刀流 +1 让第二次打出落在第 3 张上，也不再追加。
-		Equal(1, rune.ModifyCardPlayCount(strike, null, 1), "Dual Wield ordered after this rune is not seen, so no replay is added");
+			// 旧 bug：计数停在 2 时，自动打出的攻击牌每张都被多打一次而计数不推进。
+			Equal(2, rune.ModifyCardPlayCount(strike, null, 1), "an auto-played third attack is replayed");
+			Equal(2, rune.ModifyCardPlayCount(strike, null, 1), "the play-count hook is read-only when polled again");
+			RecordFeedbackPlayFinished(history, entries, strike, playIndex: 0, playCount: 2, isAutoPlay: true);
+			RecordFeedbackPlayFinished(history, entries, strike, playIndex: 1, playCount: 2, isAutoPlay: true);
+			Equal(1, rune.DisplayAmount, "both plays of the auto-played attack advance the count, including the added replay");
+			Equal(1, rune.ModifyCardPlayCount(strike, null, 1), "the next auto-played attack is no longer replayed");
+
+			// 双刀流在前时看到 playCount=2：计数 1 → 打出 2、3，第 3 张追加一次，共打出 3 次。
+			Equal(3, rune.ModifyCardPlayCount(strike, null, 2), "Dual Wield's extra play reaching the third attack adds one replay");
+			for (int playIndex = 0; playIndex < 3; playIndex++)
+			{
+				RecordFeedbackPlayFinished(history, entries, strike, playIndex, playCount: 3, isAutoPlay: false);
+			}
+
+			Equal(1, rune.DisplayAmount, "all three plays are counted (1 + 3 = 4)");
+			// 双刀流排在接二连三之后（后获得）：这里只看到 1 次（计数 1 → 2）不追加；之后双刀流 +1 让第二次打出落在第 3 张上，也不再追加。
+			Equal(1, rune.ModifyCardPlayCount(strike, null, 1), "Dual Wield ordered after this rune is not seen, so no replay is added");
+			Equal(0, rune.SavedAttacksPlayedThisCombat, "the legacy saved counter is a compatibility placeholder");
+		});
+		Equal(0, rune.DisplayAmount, "the count is empty once combat history is cleared");
+	}
+
+	// 审查复现：一呼百应（先获得）在外层攻击牌的 AfterCardPlayed 里嵌套自动打出攻击牌。原版先记外层的 CardPlayFinished、
+	// 再依次派发 AfterCardPlayed，所以嵌套那张求 ModifyCardPlayCount 时外层已在历史里、接二连三的 AfterCardPlayed 还没执行。
+	// 单机与联机必须给出同样的追加次数。
+	[HextechTest]
+	private static void TwiceThriceNestedAutoPlayMatchesInSingleAndMultiplayer()
+	{
+		(HextechEnemyHexContext _, Player owner, Player _) = CreatePrismaticEnemyFixture();
+		TwiceThriceRune rune = CreateMutableTestModel<TwiceThriceRune>();
+		rune.Owner = owner;
+		StrikeIronclad outer = CreateMutableTestModel<StrikeIronclad>();
+		outer.Owner = owner;
+		StrikeIronclad nested = CreateMutableTestModel<StrikeIronclad>();
+		nested.Owner = owner;
+
+		// 起始计数 1：外层是第 2 张，嵌套那张是第 3 张 → 追加。起始计数 2：外层第 3 张、嵌套第 4 张 → 不追加。
+		foreach ((int startingCount, int expectedPlayCount) in new[] { (1, 2), (2, 1) })
+		{
+			foreach (NetGameType mode in new[] { NetGameType.Singleplayer, NetGameType.Host, NetGameType.Client })
+			{
+				WithFeedbackNetGameType(mode, () => WithFeedbackCombatHistory((history, entries) =>
+				{
+					for (int i = 0; i < startingCount; i++)
+					{
+						RecordFeedbackPlayFinished(history, entries, outer, playIndex: 0, playCount: 1, isAutoPlay: false);
+					}
+
+					Equal(startingCount, rune.DisplayAmount, $"starting count ({mode}, start {startingCount})");
+					Equal(startingCount == 2 ? 2 : 1, rune.ModifyCardPlayCount(outer, null, 1), $"outer attack play count ({mode}, start {startingCount})");
+					int outerPlayCount = startingCount == 2 ? 2 : 1;
+					// 外层只打第一次就进入嵌套：此刻外层第一次打出已记完成历史，接二连三的 AfterCardPlayed 尚未执行。
+					RecordFeedbackPlayFinished(history, entries, outer, playIndex: 0, playCount: outerPlayCount, isAutoPlay: false);
+					Equal(expectedPlayCount, rune.ModifyCardPlayCount(nested, null, 1), $"nested auto-played attack ({mode}, start {startingCount})");
+				}));
+			}
+		}
 	}
 
 	[HextechTest]
@@ -117,34 +162,52 @@ internal static partial class Program
 		shiv.Owner = owner;
 		Shiv foreign = CreateMutableTestModel<Shiv>();
 		foreign.Owner = teammate;
-		FieldInfo counter = typeof(ChainInSleeveRune).GetField("_shivsPlayedThisCombat", BindingFlags.Instance | BindingFlags.NonPublic)
+		FieldInfo resolved = typeof(ChainInSleeveRune).GetField("_shivsPlayedThisCombat", BindingFlags.Instance | BindingFlags.NonPublic)
 			?? throw new MissingFieldException(nameof(ChainInSleeveRune), "_shivsPlayedThisCombat");
 
-		PlayFeedbackCard(rune, shiv, playIndex: 1, playCount: 2, isAutoPlay: false);
-		Equal(1, (int)counter.GetValue(rune)!, "a replayed Shiv (PlayIndex=1) is counted");
-		PlayFeedbackCard(rune, shiv, playIndex: 0, playCount: 1, isAutoPlay: true);
-		Equal(2, (int)counter.GetValue(rune)!, "an auto-played Shiv is counted");
-		PlayFeedbackCard(rune, foreign, playIndex: 0, playCount: 1, isAutoPlay: false);
-		Equal(2, (int)counter.GetValue(rune)!, "a teammate's Shiv is not counted");
-
-		// 联机路径读战斗历史，必须与本地计数同口径：重放与自动打出都计，队友的不计。
-		MethodInfo historyCount = typeof(ChainInSleeveRune).GetMethod("CountOwnedShivCardsPlayedFromHistory", BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new MissingMethodException(nameof(ChainInSleeveRune), "CountOwnedShivCardsPlayedFromHistory");
-		CombatHistory history = CombatManager.Instance.History;
-		List<CombatHistoryEntry> entries = (List<CombatHistoryEntry>)AccessTools.Field(typeof(CombatHistory), "_entries").GetValue(history)!;
-		Expect(entries.Count == 0, "combat history starts empty in tests");
-		try
+		// 单机与联机都读战斗完成历史：重放与自动打出都计，队友的不计。
+		WithFeedbackCombatHistory((history, entries) =>
 		{
-			foreach ((Shiv card, int playIndex, bool isAutoPlay) in new[] { (shiv, 0, false), (shiv, 1, false), (shiv, 0, true), (foreign, 0, false) })
+			RecordFeedbackPlayFinished(history, entries, shiv, playIndex: 1, playCount: 2, isAutoPlay: false);
+			PlayFeedbackCard(rune, shiv, playIndex: 1, playCount: 2, isAutoPlay: false);
+			Equal(1, (int)resolved.GetValue(rune)!, "a replayed Shiv (PlayIndex=1) is counted");
+			RecordFeedbackPlayFinished(history, entries, shiv, playIndex: 0, playCount: 1, isAutoPlay: true);
+			PlayFeedbackCard(rune, shiv, playIndex: 0, playCount: 1, isAutoPlay: true);
+			Equal(2, (int)resolved.GetValue(rune)!, "an auto-played Shiv is counted");
+			RecordFeedbackPlayFinished(history, entries, foreign, playIndex: 0, playCount: 1, isAutoPlay: false);
+			PlayFeedbackCard(rune, foreign, playIndex: 0, playCount: 1, isAutoPlay: false);
+			Equal(2, (int)resolved.GetValue(rune)!, "a teammate's Shiv is not counted");
+			Equal(1, rune.DisplayAmount, "one more Shiv is needed");
+		});
+	}
+
+	// 嵌套自动打出小刀：外层小刀已记完成历史、本符文对外层的 AfterCardPlayed 还没执行时，嵌套那张的 AfterCardPlayed
+	// 就把两张一起结算；随后外层的 AfterCardPlayed 不再推进。单机与联机同一时点。
+	[HextechTest]
+	private static void ChainInSleeveNestedAutoPlayResolvesAtTheSameMomentInSingleAndMultiplayer()
+	{
+		(HextechEnemyHexContext _, Player owner, Player _) = CreatePrismaticEnemyFixture();
+		ChainInSleeveRune rune = CreateMutableTestModel<ChainInSleeveRune>();
+		rune.Owner = owner;
+		Shiv outer = CreateMutableTestModel<Shiv>();
+		outer.Owner = owner;
+		Shiv nested = CreateMutableTestModel<Shiv>();
+		nested.Owner = owner;
+		FieldInfo resolved = typeof(ChainInSleeveRune).GetField("_shivsPlayedThisCombat", BindingFlags.Instance | BindingFlags.NonPublic)
+			?? throw new MissingFieldException(nameof(ChainInSleeveRune), "_shivsPlayedThisCombat");
+
+		foreach (NetGameType mode in new[] { NetGameType.Singleplayer, NetGameType.Host })
+		{
+			rune.BeforeCombatStart().GetAwaiter().GetResult();
+			WithFeedbackNetGameType(mode, () => WithFeedbackCombatHistory((history, entries) =>
 			{
-				entries.Add(new CardPlayFinishedEntry(CreateFeedbackCardPlay(card, playIndex, playCount: 2, isAutoPlay), 1, CombatSide.Player, history, []));
-			}
-
-			Equal(3, (int)historyCount.Invoke(rune, null)!, "history count includes replays and auto-plays of the owner's Shivs only");
-		}
-		finally
-		{
-			history.Clear();
+				RecordFeedbackPlayFinished(history, entries, outer, playIndex: 0, playCount: 1, isAutoPlay: false);
+				RecordFeedbackPlayFinished(history, entries, nested, playIndex: 0, playCount: 1, isAutoPlay: true);
+				PlayFeedbackCard(rune, nested, playIndex: 0, playCount: 1, isAutoPlay: true);
+				Equal(2, (int)resolved.GetValue(rune)!, $"the nested Shiv's hook resolves both Shivs ({mode})");
+				PlayFeedbackCard(rune, outer, playIndex: 0, playCount: 1, isAutoPlay: false);
+				Equal(2, (int)resolved.GetValue(rune)!, $"the outer Shiv's later hook does not advance again ({mode})");
+			}));
 		}
 	}
 
@@ -184,6 +247,141 @@ internal static partial class Program
 			PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == type);
 			Equal(HextechRarityTier.Prismatic, registration.Rarity, type.Name + " rarity");
 			Equal<PlayerRuneCharacterPool?>(pool, registration.CharacterPool, type.Name + " character pool");
+		}
+	}
+
+	[HextechTest]
+	private static void InitialForgeGrantResumesOnlyTheRemainingForges()
+	{
+		Equal(3, InitialForgeGrantRune.ResolveCompletedForgeCount(6, savedCompleted: 3, forgesObtainedAfterRune: 0),
+			"6 forges with 3 done resumes from the 4th, granting 3 more");
+		Equal(3, InitialForgeGrantRune.ResolveCompletedForgeCount(6, savedCompleted: 3, forgesObtainedAfterRune: 3), "saved and inferred progress agree");
+		Equal(3, InitialForgeGrantRune.ResolveCompletedForgeCount(6, savedCompleted: 0, forgesObtainedAfterRune: 3),
+			"a legacy save without the completed count infers it from the inventory");
+		Equal(2, InitialForgeGrantRune.ResolveCompletedForgeCount(2, savedCompleted: 0, forgesObtainedAfterRune: 5), "inferred progress is capped at the grant size");
+		Equal(6, InitialForgeGrantRune.ResolveCompletedForgeCount(6, savedCompleted: 9, forgesObtainedAfterRune: 0), "saved progress is capped at the grant size");
+		Equal(0, InitialForgeGrantRune.ResolveCompletedForgeCount(6, savedCompleted: -1, forgesObtainedAfterRune: 0), "negative saved progress is ignored");
+
+		StatsOnStatsOnStatsRune rune = CreateMutableTestModel<StatsOnStatsOnStatsRune>();
+		Equal(0, rune.SavedInitialForgeGrantCompletedCount, "completed count defaults to zero");
+		rune.SavedInitialForgeGrantCompletedCount = 3;
+		Equal(3, rune.SavedInitialForgeGrantCompletedCount, "completed count is saveable");
+	}
+
+	[HextechTest]
+	private static void InitialForgeGrantInfersLegacyProgressFromRelicOrder()
+	{
+		(HextechEnemyHexContext _, Player owner, Player _) = CreatePrismaticEnemyFixture();
+		StatsOnStatsOnStatsRune rune = CreateMutableTestModel<StatsOnStatsOnStatsRune>();
+		rune.FloorAddedToDeck = 5;
+		RelicModel earlierForge = CreateFeedbackRelic<StrengthForge>(floor: 5);
+		RelicModel otherRune = CreateFeedbackRelic<TwiceThriceRune>(floor: 5);
+		RelicModel laterFloorForge = CreateFeedbackRelic<UpgradeForge>(floor: 6);
+		List<RelicModel> relics =
+		[
+			earlierForge,
+			rune,
+			CreateFeedbackRelic<DexterityForge>(floor: 5),
+			otherRune,
+			CreateFeedbackRelic<LifeForge>(floor: 5),
+			CreateFeedbackRelic<UpgradeForge>(floor: 5),
+			laterFloorForge
+		];
+		Equal(3, InitialForgeGrantRune.CountForgesObtainedAfter(relics, rune),
+			"only forges after the rune and on its floor count; earlier forges, other relics and later floors do not");
+		Equal(0, InitialForgeGrantRune.CountForgesObtainedAfter(relics, CreateMutableTestModel<StatsRune>()), "a rune missing from the inventory infers nothing");
+
+		// 背包已补齐时恢复直接完成，不再打开锻造器选择。
+		List<RelicModel> complete = [rune];
+		foreach (Type forgeType in new[] { typeof(StrengthForge), typeof(DexterityForge), typeof(LifeForge), typeof(UpgradeForge), typeof(StrengthForge), typeof(DexterityForge) })
+		{
+			RelicModel forge = (RelicModel)Activator.CreateInstance(forgeType)!;
+			SetAutoProperty(forge, nameof(AbstractModel.IsMutable), true);
+			forge.FloorAddedToDeck = 5;
+			complete.Add(forge);
+		}
+
+		FieldInfo relicsField = AccessTools.Field(typeof(Player), "_relics");
+		object? previousRelics = relicsField.GetValue(owner);
+		try
+		{
+			relicsField.SetValue(owner, complete);
+			rune.Owner = owner;
+			rune.SavedInitialForgeGrantPending = true;
+			rune.SavedInitialForgeGrantCompletedCount = 0;
+			Expect(rune.ResumePendingInitialForgeGrant().GetAwaiter().GetResult(), "a legacy pending grant whose forges are all in the inventory completes");
+			Expect(!rune.SavedInitialForgeGrantPending, "the pending flag is cleared");
+			Equal(0, rune.SavedInitialForgeGrantCompletedCount, "the completed count is cleared with the flag");
+		}
+		finally
+		{
+			relicsField.SetValue(owner, previousRelics);
+		}
+	}
+
+	private static RelicModel CreateFeedbackRelic<T>(int floor)
+		where T : RelicModel, new()
+	{
+		T relic = CreateMutableTestModel<T>();
+		relic.FloorAddedToDeck = floor;
+		return relic;
+	}
+
+	private static void WithFeedbackCombatHistory(Action<CombatHistory, List<CombatHistoryEntry>> body)
+	{
+		CombatHistory history = CombatManager.Instance.History;
+		List<CombatHistoryEntry> entries = (List<CombatHistoryEntry>)AccessTools.Field(typeof(CombatHistory), "_entries").GetValue(history)!;
+		Expect(entries.Count == 0, "combat history starts empty in tests");
+		try
+		{
+			body(history, entries);
+		}
+		finally
+		{
+			history.Clear();
+		}
+	}
+
+	private static void RecordFeedbackPlayFinished(CombatHistory history, List<CombatHistoryEntry> entries, CardModel card, int playIndex, int playCount, bool isAutoPlay)
+	{
+		entries.Add(new CardPlayFinishedEntry(CreateFeedbackCardPlay(card, playIndex, playCount, isAutoPlay), 1, CombatSide.Player, history, []));
+	}
+
+	// 临时把 RunManager.NetService 换成只回答 Type 的代理，模拟单机/房主/客机；结束后还原。
+	private static void WithFeedbackNetGameType(NetGameType type, Action body)
+	{
+		PropertyInfo property = AccessTools.Property(typeof(RunManager), nameof(RunManager.NetService))
+			?? throw new MissingMemberException(nameof(RunManager), nameof(RunManager.NetService));
+		object? previous = property.GetValue(RunManager.Instance);
+		INetGameService proxy = DispatchProxy.Create<INetGameService, FeedbackNetGameServiceProxy>();
+		((FeedbackNetGameServiceProxy)(object)proxy).GameType = type;
+		try
+		{
+			property.SetValue(RunManager.Instance, proxy);
+			Equal(type is NetGameType.Host or NetGameType.Client, HextechPlayerContextHelper.IsNetworkMultiplayerRun(), $"simulated net mode {type}");
+			body();
+		}
+		finally
+		{
+			property.SetValue(RunManager.Instance, previous);
+		}
+	}
+
+	public class FeedbackNetGameServiceProxy : DispatchProxy
+	{
+		internal NetGameType GameType { get; set; }
+
+		protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+		{
+			if (targetMethod?.Name == "get_" + nameof(INetGameService.Type))
+			{
+				return GameType;
+			}
+
+			Type? returnType = targetMethod?.ReturnType;
+			return returnType != null && returnType.IsValueType && returnType != typeof(void)
+				? Activator.CreateInstance(returnType)
+				: null;
 		}
 	}
 
