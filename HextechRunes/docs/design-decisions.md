@@ -35,6 +35,7 @@
 - **升级雷暴的补发闪电仍由 Modifier 分发、排在所有监听者之后；算法与按牌记录的层数在符文自己身上。** 原版监听顺序是生物 Power → 该玩家遗物 → 牌 → Modifier，改为遗物覆写 Late 钩子会让闪电提前到奥术重击、恶魔之舞等符文的联机补记之前。补发改用钩子传入的 choiceContext。`StormUpgradeRune`、`HextechMayhem.CardEvents`
 - **白洞由牌自己覆写 `AfterCardDrawn`（与原版虚空同写法），非大乱斗下（如控制台给的牌）也会回能。** 回能时机从“所有监听者之后”提前到这张牌在监听列表里的位置，仍在持有者自己的遗物/Power 之后、敌方海克斯分发之前。`WhiteHoleCard`
 - **`HextechPowerCmdCompat` 在有 choiceContext 的调用点暂不改传。** 原版会把 context 传给 `Hook.AfterPowerAmountChanged`；Hook 自带的 context 在玩家做选择时会放行其他玩家的命令队列，`BlockingPlayerChoiceContext` 不会，改传会改变联机时序。强类型重载已提供，`object?` 重载只为已编译的拓展包二进制保留。`HextechPowerCmdCompat`
+- **御前试剑每次打出君王之剑都生成仆从牌，重放（`PlayIndex > 0`）也算，只排除自动打出。** 原版剑圣给君王之剑加的重放每次都派发 `AfterCardPlayed`；仆从牌的稳定随机序号在每次触发时消费（联机走 Mayhem 共享计数），两端按同一出牌序列推进。`RoyalTrialRune`
 
 ## 敌方海克斯
 
