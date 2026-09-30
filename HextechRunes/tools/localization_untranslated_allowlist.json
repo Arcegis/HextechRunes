@@ -1,0 +1,173 @@
+{
+  "description": "validate_hextech_content.py 的“非 eng 值与 eng 完全相同”豁免表。只收品牌名、专有名词、目标语言里本就同形的词，以及原版该语言缺译、游戏本身回退显示英文的原版名称；每条必须写理由。pack 为 HextechRunes 或 HextechRunesSponsorPack，table 为本地化文件名。",
+  "entries": [
+    {
+      "pack": "HextechRunes",
+      "language": "tha",
+      "table": "powers.json",
+      "key": "HEXTECH_PLAYER_SLOW_POWER.title",
+      "reason": "沿用原版 Slow；泰语原包 powers.json 缺 SLOW_POWER.title，游戏回退显示英文，docs/custom-terms.md 亦登记 tha 写法为 Slow。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "tha",
+      "table": "powers.json",
+      "key": "HEXTECH_NEUROSURGE_POWER.title",
+      "reason": "原版卡牌/能力 Neurosurge 在泰语原包缺译（cards/powers 均无该键），游戏回退显示英文，与升级海克斯标题保持一致。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "tha",
+      "table": "relic_collection.json",
+      "key": "HEXTECH_POOL.REGENT",
+      "reason": "泰语原包 characters.json 缺 REGENT.title，游戏内角色名回退为英文 Regent。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "tha",
+      "table": "relics.json",
+      "key": "SNAKEBITE_RUNE.title",
+      "reason": "取自原版卡牌 Snakebite，泰语原包缺 SNAKEBITE.title，游戏回退显示英文。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "tha",
+      "table": "relics.json",
+      "key": "HEXTECH_RING_OF_THE_DRAKE_PLUS.title",
+      "reason": "原版遗物 Ring of the Drake 加“+”；泰语原包缺 RING_OF_THE_DRAKE.title，游戏回退显示英文。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "tha",
+      "table": "relics.json",
+      "key": "HEXTECH_DIVINE_DESTINY_PLUS.title",
+      "reason": "原版遗物 Divine Destiny 加“+”；泰语原包缺 DIVINE_DESTINY.title，游戏回退显示英文。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "tha",
+      "table": "relics.json",
+      "key": "HEXTECH_INFUSED_CORE_PLUS.title",
+      "reason": "原版遗物 Infused Core 加“+”；泰语原包缺 INFUSED_CORE.title，游戏回退显示英文。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "esp",
+      "table": "relic_collection.json",
+      "key": "HEXTECH_RARITY_WEIGHTS_ROW_RUNE",
+      "reason": "hexes 是本模组 esp 界面通用的借词（Hexes de jugador、hexes enemigos 等），稀有度权重行名与之保持一致。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "spa",
+      "table": "relic_collection.json",
+      "key": "HEXTECH_RARITY_WEIGHTS_ROW_RUNE",
+      "reason": "hexes 是本模组 spa 界面通用的借词，稀有度权重行名与之保持一致。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "ptb",
+      "table": "relic_collection.json",
+      "key": "HEXTECH_RARITY_WEIGHTS_ROW_RUNE",
+      "reason": "hexes 是本模组 ptb 界面通用的借词（Hexes do Rígido、hexes inimigos 等），稀有度权重行名与之保持一致。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "esp",
+      "table": "relics.json",
+      "key": "EUREKA_RUNE.title",
+      "reason": "西语 Eureka（¡Eureka!）与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "spa",
+      "table": "relics.json",
+      "key": "EUREKA_RUNE.title",
+      "reason": "西语 Eureka（¡Eureka!）与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "esp",
+      "table": "relics.json",
+      "key": "SONATA_RUNE.title",
+      "reason": "西语 sonata（奏鸣曲）与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "spa",
+      "table": "relics.json",
+      "key": "SONATA_RUNE.title",
+      "reason": "西语 sonata（奏鸣曲）与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "ptb",
+      "table": "relics.json",
+      "key": "SONATA_RUNE.title",
+      "reason": "葡语 sonata（奏鸣曲）与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "esp",
+      "table": "relics.json",
+      "key": "REPULSOR_RUNE.title",
+      "reason": "西语 repulsor 为本族词，与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "spa",
+      "table": "relics.json",
+      "key": "REPULSOR_RUNE.title",
+      "reason": "西语 repulsor 为本族词，与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "ptb",
+      "table": "relics.json",
+      "key": "REPULSOR_RUNE.title",
+      "reason": "葡语 repulsor 为本族词，与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "esp",
+      "table": "relics.json",
+      "key": "OMEGA_RUNE.title",
+      "reason": "希腊字母名，西语写作 Omega，与英文同形。"
+    },
+    {
+      "pack": "HextechRunes",
+      "language": "spa",
+      "table": "relics.json",
+      "key": "OMEGA_RUNE.title",
+      "reason": "希腊字母名，西语写作 Omega，与英文同形。"
+    },
+    {
+      "pack": "HextechRunesSponsorPack",
+      "language": "zhs",
+      "table": "relics.json",
+      "key": "COSPLAY_RUNE.title",
+      "reason": "中文原名就是拉丁字母 COSPLAY；西语、葡语也通用这个外来词，其余语言为音译。"
+    },
+    {
+      "pack": "HextechRunesSponsorPack",
+      "language": "esp",
+      "table": "relics.json",
+      "key": "COSPLAY_RUNE.title",
+      "reason": "中文原名就是拉丁字母 COSPLAY；西语、葡语也通用这个外来词，其余语言为音译。"
+    },
+    {
+      "pack": "HextechRunesSponsorPack",
+      "language": "spa",
+      "table": "relics.json",
+      "key": "COSPLAY_RUNE.title",
+      "reason": "中文原名就是拉丁字母 COSPLAY；西语、葡语也通用这个外来词，其余语言为音译。"
+    },
+    {
+      "pack": "HextechRunesSponsorPack",
+      "language": "ptb",
+      "table": "relics.json",
+      "key": "COSPLAY_RUNE.title",
+      "reason": "中文原名就是拉丁字母 COSPLAY；西语、葡语也通用这个外来词，其余语言为音译。"
+    }
+  ]
+}

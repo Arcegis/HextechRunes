@@ -5,7 +5,7 @@
   "BLADE_WALTZ_CARD.title": "Vals de cuchillas",
   "BLADE_WALTZ_CARD.description": "Inflige {Damage:diff()} de daño a enemigos aleatorios [blue]{Hits}[/blue] veces. Ganancia [blue]{IntangiblePower}[/blue] [gold]Intangibilidad[/gold].",
   "BLADE_WALTZ_CARD.flavor": "Girar, cortar, inclinar.",
-  "CATALYST_CARD.title": "catalizador",
+  "CATALYST_CARD.title": "Catalizador",
   "CATALYST_CARD.description": "Establece el veneno de un enemigo en [blue]{PoisonMultiplier}[/blue] veces su cantidad actual.",
   "CATALYST_CARD.flavor": "Si la toxina aún respira, aún puede crecer.",
   "OCEAN_DRAGON_SOUL_CARD.title": "Alma de dragón oceánico",

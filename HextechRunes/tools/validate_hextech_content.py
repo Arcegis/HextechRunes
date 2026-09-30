@@ -11,9 +11,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC = REPO_ROOT / "src"
 LOCALIZATION = REPO_ROOT / "assets" / "localization"
+SPONSOR_LOCALIZATION = REPO_ROOT.parent / "HextechRunesSponsorPack" / "assets" / "localization"
 TELEMETRY_LABELS = REPO_ROOT / "server" / "hextech-telemetry" / "labels.json"
 OFFICIAL_ZHS_TITLES = REPO_ROOT / "tools" / "official_zhs_titles.json"
+UNTRANSLATED_ALLOWLIST = REPO_ROOT / "tools" / "localization_untranslated_allowlist.json"
 MOD_ID = "HextechRunes"
+SPONSOR_PACK = "HextechRunesSponsorPack"
+# “非 eng 的值与 eng 完全相同”在各包的严重级别。拓展包补译完成、白名单补齐后改成 "error"。
+UNTRANSLATED_SEVERITY = {MOD_ID: "error", SPONSOR_PACK: "error"}
+UNTRANSLATED_MIN_LATIN_LETTERS = 4
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -485,34 +491,48 @@ def validate_icon_assets(errors: list[str], warnings: list[str]) -> None:
         errors.append(f"hardcoded asset path missing under assets/: {', '.join(missing_refs)}")
 
 
-def validate_localization_key_parity(errors: list[str]) -> None:
+def localization_roots() -> list[tuple[str, Path]]:
+    """本体必查；拓展包目录存在时一并检查（单独拷出本体时跳过）。"""
+    roots = [(MOD_ID, LOCALIZATION)]
+    if SPONSOR_LOCALIZATION.is_dir():
+        roots.append((SPONSOR_PACK, SPONSOR_LOCALIZATION))
+    return roots
+
+
+def localization_label(pack: str, relative: str) -> str:
+    return relative if pack == MOD_ID else f"{pack}:{relative}"
+
+
+def validate_localization_key_parity(errors: list[str], root: Path | None = None, pack: str = MOD_ID) -> None:
     """9 语言逐文件键集一致性(以 eng 为基准):漏译键会静默回退,这里提前到构建期报出。"""
-    baseline_dir = LOCALIZATION / "eng"
+    root = LOCALIZATION if root is None else root
+    baseline_dir = root / "eng"
     if not baseline_dir.exists():
-        errors.append("localization baseline directory eng missing")
+        errors.append(localization_label(pack, "localization baseline directory eng missing"))
         return
 
     baseline = {
         path.name: set(json.loads(read(path)).keys())
         for path in sorted(baseline_dir.glob("*.json"))
     }
-    for locale_dir in sorted(LOCALIZATION.iterdir()):
+    for locale_dir in sorted(root.iterdir()):
         if not locale_dir.is_dir() or locale_dir.name == "eng":
             continue
 
         for file_name, baseline_keys in baseline.items():
             locale_file = locale_dir / file_name
+            label = localization_label(pack, f"{locale_dir.name}/{file_name}")
             if not locale_file.exists():
-                errors.append(f"{locale_dir.name} missing localization file {file_name}")
+                errors.append(f"{localization_label(pack, locale_dir.name)} missing localization file {file_name}")
                 continue
 
             locale_keys = set(json.loads(read(locale_file)).keys())
             missing = sorted(baseline_keys - locale_keys)
             extra = sorted(locale_keys - baseline_keys)
             if missing:
-                errors.append(f"{locale_dir.name}/{file_name} missing keys vs eng: {', '.join(missing[:8])}{'…' if len(missing) > 8 else ''}")
+                errors.append(f"{label} missing keys vs eng: {', '.join(missing[:8])}{'…' if len(missing) > 8 else ''}")
             if extra:
-                errors.append(f"{locale_dir.name}/{file_name} extra keys vs eng: {', '.join(extra[:8])}{'…' if len(extra) > 8 else ''}")
+                errors.append(f"{label} extra keys vs eng: {', '.join(extra[:8])}{'…' if len(extra) > 8 else ''}")
 
 
 def validate_telemetry_labels(errors: list[str]) -> None:
@@ -602,18 +622,19 @@ def localization_format(text: str) -> tuple[set[str], Counter, list[str]]:
     return variables, tags, problems
 
 
-def validate_localization_format_parity(errors: list[str]) -> None:
+def validate_localization_format_parity(errors: list[str], root: Path | None = None, pack: str = MOD_ID) -> None:
     """九语逐键：占位符集合一致，BBCode 嵌套配平。"""
+    root = LOCALIZATION if root is None else root
     languages = ("zhs", "eng", "esp", "spa", "jpn", "kor", "ptb", "rus", "tha")
     for language in languages:
-        if not (LOCALIZATION / language).is_dir():
-            errors.append(f"required localization directory missing: {language}")
-    for baseline_path in sorted((LOCALIZATION / "zhs").glob("*.json")):
+        if not (root / language).is_dir():
+            errors.append(localization_label(pack, f"required localization directory missing: {language}"))
+    for baseline_path in sorted((root / "zhs").glob("*.json")):
         baseline = json.loads(read(baseline_path))
         for language in languages:
-            path = LOCALIZATION / language / baseline_path.name
+            path = root / language / baseline_path.name
             if not path.exists():
-                errors.append(f"required localization file missing: {language}/{baseline_path.name}")
+                errors.append(localization_label(pack, f"required localization file missing: {language}/{baseline_path.name}"))
                 continue
             entries = json.loads(read(path))
             for key, value in entries.items():
@@ -621,12 +642,93 @@ def validate_localization_format_parity(errors: list[str]) -> None:
                     continue
                 variables, tags, problems = localization_format(value)
                 expected_variables, expected_tags, _ = localization_format(baseline[key])
-                label = f"{language}/{baseline_path.name}:{key}"
+                label = localization_label(pack, f"{language}/{baseline_path.name}:{key}")
                 if problems:
                     errors.append(f"{label}: BBCode unbalanced: {'; '.join(problems)}")
                 if variables != expected_variables:
                     errors.append(f"{label}: placeholders {sorted(variables)} != zhs {sorted(expected_variables)}")
                 # 各语言高亮哪些词由译文决定，标签数量不要求与中文一致；只要求配平。
+
+
+def strip_localization_markup(text: str) -> str:
+    """去掉 SmartFormat 占位符（含嵌套的 {A:plural:{B}|c}）与 BBCode 标签，只留可见正文。"""
+    previous = None
+    while previous != text:
+        previous = text
+        text = re.sub(r"\{[^{}]*\}", " ", text)
+    return re.sub(r"\[/?[A-Za-z][A-Za-z0-9_]*(?:[= ][^\]]*)?\]", " ", text)
+
+
+def looks_untranslated(value: str, eng_value: object) -> bool:
+    """非 eng 的值与 eng 逐字相同，且去掉占位符和标签后仍有足够的拉丁字母，视为疑似未翻译。"""
+    if not isinstance(eng_value, str) or value != eng_value:
+        return False
+    return len(re.findall(r"[A-Za-z]", strip_localization_markup(value))) >= UNTRANSLATED_MIN_LATIN_LETTERS
+
+
+def load_untranslated_allowlist(errors: list[str], path: Path | None = None) -> dict[tuple[str, str, str, str], str]:
+    """白名单：{"entries": [{"pack", "language", "table", "key", "reason"}]}，理由必填。"""
+    path = UNTRANSLATED_ALLOWLIST if path is None else path
+    if not path.exists():
+        return {}
+    allowlist: dict[tuple[str, str, str, str], str] = {}
+    for index, entry in enumerate(json.loads(read(path)).get("entries", [])):
+        fields = tuple(str(entry.get(name, "")).strip() for name in ("pack", "language", "table", "key"))
+        reason = str(entry.get("reason", "")).strip()
+        if not all(fields) or not reason:
+            errors.append(f"{path.name} entry {index} needs pack, language, table, key and reason")
+            continue
+        if fields in allowlist:
+            errors.append(f"{path.name} duplicate entry: {'/'.join(fields)}")
+        allowlist[fields] = reason
+    return allowlist
+
+
+def validate_untranslated_values(
+    errors: list[str],
+    warnings: list[str],
+    root: Path | None = None,
+    pack: str = MOD_ID,
+    allowlist: dict[tuple[str, str, str, str], str] | None = None,
+) -> None:
+    """非 eng 语言的值与 eng 完全相同时报疑似漏译；品牌名、专有名词等写进白名单并说明理由。
+    过期的白名单条目（键已删除或已不再与 eng 相同）按同一严重级别报出，避免白名单悄悄失效。"""
+    root = LOCALIZATION if root is None else root
+    allowlist = {} if allowlist is None else allowlist
+    as_error = UNTRANSLATED_SEVERITY.get(pack, "error") == "error"
+    sink = errors if as_error else warnings
+    eng_dir = root / "eng"
+    if not eng_dir.is_dir():
+        return
+    used: set[tuple[str, str, str, str]] = set()
+    for eng_path in sorted(eng_dir.glob("*.json")):
+        eng_entries = json.loads(read(eng_path))
+        for locale_dir in sorted(path for path in root.iterdir() if path.is_dir() and path.name != "eng"):
+            locale_path = locale_dir / eng_path.name
+            if not locale_path.exists():
+                continue
+            hits: list[str] = []
+            for key, value in json.loads(read(locale_path)).items():
+                if not isinstance(value, str) or not looks_untranslated(value, eng_entries.get(key)):
+                    continue
+                allow_key = (pack, locale_dir.name, eng_path.name, key)
+                if allow_key in allowlist:
+                    used.add(allow_key)
+                    continue
+                if as_error:
+                    errors.append(
+                        f"{localization_label(pack, f'{locale_dir.name}/{eng_path.name}:{key}')}: "
+                        f"identical to eng {value[:60]!r}; translate it or add it to {UNTRANSLATED_ALLOWLIST.name} with a reason"
+                    )
+                hits.append(key)
+            if hits and not as_error:
+                # 警告级只汇总到文件，避免补译前每次构建刷屏。
+                warnings.append(
+                    f"{localization_label(pack, f'{locale_dir.name}/{eng_path.name}')}: {len(hits)} value(s) identical to eng, "
+                    f"e.g. {', '.join(hits[:3])}"
+                )
+    for stale in sorted(key for key in allowlist if key[0] == pack and key not in used):
+        sink.append(f"{UNTRANSLATED_ALLOWLIST.name} stale entry (no longer identical to eng): {'/'.join(stale)}")
 
 
 def main() -> int:
@@ -638,10 +740,13 @@ def main() -> int:
     validate_enemy_hex_effect_layout(errors)
     validate_combat_tracking_state(errors)
     validate_icon_assets(errors, warnings)
-    validate_localization_key_parity(errors)
     validate_telemetry_labels(errors)
     validate_official_name_references(errors)
-    validate_localization_format_parity(errors)
+    allowlist = load_untranslated_allowlist(errors)
+    for pack, root in localization_roots():
+        validate_localization_key_parity(errors, root, pack)
+        validate_localization_format_parity(errors, root, pack)
+        validate_untranslated_values(errors, warnings, root, pack, allowlist)
 
     if errors:
         print("Hextech content validation failed:")
