@@ -579,10 +579,12 @@ def validate_official_name_references(errors: list[str]) -> None:
     # 分类/公式/动作强调、组合术语及自有升级牌名；不得用这个表豁免错写的原版名称。
     emphasis = {
         "稀有", "罕见", "X", "减半", "翻倍", "诅咒", "手牌", "状态牌", "龙魂卡牌",
-        "临时力量", "闪电充能球", "灼热攻击+1",
+        "临时力量", "闪电充能球", "灼热攻击+1", "牌组", "附魔",
         "海克斯：", "属性锻造器：", "铁甲战士海克斯：", "静默猎手海克斯：",
         "储君海克斯：", "故障机器人海克斯：", "亡灵契约师海克斯：",
     }
+    enchantment_titles = {value for key, value in snapshot["other_official_terms"].items() if key.startswith("enchantments:")}
+    enchantment_titles.update(value for key, value in tables.get("enchantments", {}).items() if key.endswith(".title"))
     for table, entries in tables.items():
         for key, value in entries.items():
             if not isinstance(value, str) or key.endswith(".flavor"):
@@ -590,6 +592,10 @@ def validate_official_name_references(errors: list[str]) -> None:
             for term in re.findall(r"\[gold\]([^\[\]{}]+)\[/gold\]", value):
                 if term not in official | custom | emphasis:
                     errors.append(f"zhs/{table}.{key}: unrecognized model reference {term!r}; check official_zhs_titles.json or the custom glossary")
+            # 原版遗物文案里附魔名用紫色：只能是官方或自有的附魔标题。
+            for term in re.findall(r"\[purple\]([^\[\]{}]+)\[/purple\]", value):
+                if term not in enchantment_titles:
+                    errors.append(f"zhs/{table}.{key}: [purple] must name an enchantment, got {term!r}")
     relics = tables["relics"]
     for path in sorted((SRC / "Runes").glob("*.cs")):
         for rune, card in re.findall(r"\bclass\s+(\w+)\s*:\s*CardUpgradeRuneBase<(\w+)>", read(path)):
