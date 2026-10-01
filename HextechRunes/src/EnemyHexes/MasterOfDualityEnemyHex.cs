@@ -20,11 +20,13 @@ internal sealed class MasterOfDualityEnemyHex : HextechEnemyHexEffect
 
 		if (HextechCardEffectTypes.IsSkillForEffects(cardPlay.Card))
 		{
-			await PowerCmd.Apply<HextechTemporaryStrengthLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
+			await MasterOfDualityRune.ApplyTemporaryStat<HextechTemporaryStrengthPower, HextechTemporaryStrengthLossPower>(
+				playerCreature, isGain: false, playerCreature, cardPlay.Card);
 		}
 		if (HextechCardEffectTypes.IsAttackForEffects(cardPlay.Card, cardPlay.Card.Owner))
 		{
-			await PowerCmd.Apply<HextechTemporaryDexterityLossPower>(playerCreature, 1m, playerCreature, cardPlay.Card);
+			await MasterOfDualityRune.ApplyTemporaryStat<HextechTemporaryDexterityPower, HextechTemporaryDexterityLossPower>(
+				playerCreature, isGain: false, playerCreature, cardPlay.Card);
 		}
 	}
 }
