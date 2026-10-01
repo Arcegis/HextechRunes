@@ -104,6 +104,22 @@ public static class HextechPowerCmdCompat
 		return MegaCrit.Sts2.Core.Commands.PowerCmd.Remove(power);
 	}
 
+	public static Task<int> ModifyAmount(
+		PowerModel power,
+		decimal offset,
+		Creature? applier,
+		CardModel? cardSource,
+		bool silent = false)
+	{
+		return MegaCrit.Sts2.Core.Commands.PowerCmd.ModifyAmount(
+			new BlockingPlayerChoiceContext(),
+			power,
+			offset,
+			applier,
+			cardSource,
+			silent);
+	}
+
 	public static Task Decrement(PowerModel power)
 	{
 		return MegaCrit.Sts2.Core.Commands.PowerCmd.Decrement(power);

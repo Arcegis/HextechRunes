@@ -65,6 +65,7 @@ Platform/Hooks/Config/Localization/Telemetry
 - 卡牌奖励备选项 `CardRewardAlternative.Generate`（`Compat/HextechRewardSafetyHooks.cs`）：原版在 `Hook.ModifyCardRewardAlternatives` 之后对超过 2 个备选项直接抛异常，多次浮木重掷与多份佩尔之翼献祭会越界；替换体逐步复制原版，只去掉数量上限并合并重复献祭项。
 - 充能球布局 `NOrbManager.TweenLayout`（`Runes/HextechPlayerRuneHooks.Orbs.cs`）：原版半径按 `Mathf.Lerp(225, 300, (槽位-3)/7)` 外插，超过 10 槽继续放大；只在超过软上限时替换为半径封顶的同一环形布局，纯本地表现层。
 - 缩小 `PowerCmd.ModifyAmount`（`Combat/HextechCombatHooks.ShrinkPower.cs`）：原版缩小正层数为临时、负层数为永久，敌人对已有临时缩小的玩家施加永久缩小时层数直接相加、永久效果被抵掉；只在本局启用海克斯、玩家无人工制品、施加者为敌人时改为移除临时实例并施加等量永久缩小。
+- 人工制品 `ArtifactPower.TryModifyPowerAmountReceived`（`Compat/HextechArtifactCompatibilityHooks.cs`）：判定没有可挂的 Hook。三种情况直接给出结果：包围/夹击等遭遇战机制能力不挡；已有正层数临时缩小的到期递减（无外部施加者）不挡——原版缩小允许负层数，`GetTypeForAmount(-1)` 把递减判成负面效果，临时缩小永不结束且每回合吃一层人工制品；本模组隐藏的临时力量/敏捷丢失按可见负面效果整体抵挡——原版只挡可见能力，会放行外壳、只挡住其中的负力量，回合末外壳回收后目标凭空多出永久属性。前两项只在本局启用海克斯时生效，第三项只涉及本模组能力。
 - 缓慢 `PowerModel.GetTypeForAmount`（`Combat/HextechCombatHooks.SlowPower.cs`）：非虚方法，原版把 Counter+AllowNegative 的负层数判为 Debuff；只对本模组两种缓慢能力返回 None。
 - 形态批次 `PlayerCmd.EndTurn`（`Combat/HextechFormAutoPlayHooks.cs`）：虚空形态 OnPlay 自带结束回合，开局批量自动打出会吃掉首回合；只在本模组形态批次的 AsyncLocal 作用域内跳过。
 - 形态特效容器 `NCreatureVisuals.AddFormVfx/RemoveFormVfx`（`Compat/HextechFormVfxSafetyHooks.Official.cs`，0.110+）：自定义角色缺 `%FormVfx` 容器时原版空引用；优先级已从 `Priority.First` 改为默认 `Priority.Low`（没有必须抢先执行的理由）。
