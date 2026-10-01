@@ -23,7 +23,7 @@
 - **玩家侧活力火花必须走 `PowerCmd.Apply<HextechVitalSparkPower>`，不能把原版敌方增益直接施加到玩家。** 牌上污染层数 = 本玩家模组层数 + 场上原版活力火花总层数，但打出时每个 Power 只施加自己那份，避免重复乘算。原版 `BeforeCombatStart` / `AfterPowerAmountChanged` / `AfterRemoved` 会覆盖或清空侵蚀，普通模型 Hook 保证不了执行在原版写入之后，因此这三处用等待原 Task 的 postfix 重算。`HextechVitalSparkPower`
 - **百炼成钢的临时缓慢在官方 `BeforeSideTurnStart` 清理，并按"变化后总量减本次新增量"识别旧层。** 叠层回调会刷新整个实例的 `_appliedRound`，让旧层连续多个回合逃过清理（水银沙漏的回合开始伤害是触发链）。修正依赖 `PowerCmd.ModifyAmount` 的公开契约：先改层数 → 派发 `AfterPowerAmountChanged` → 最后才检查移除零层实例。不为沙漏或冰淇淋写特例。`HextechTemporarySlowPower`
 - **我方扇巴掌 / 恶趣味监听"持有者自己收到负面效果"（来源不限），且不限每回合次数；折磨者仍监听"给敌人施加"，同样不限次数。** 去掉上限是为了让同轴海克斯能叠加，而不是拿到第二个就零收益。判定沿用敌方侧的口径：只认层数增加、排除临时属性的包装 Power。`LimitedDebuffProcRelicBase` 的 `SavedProcsThisTurn` 对无上限子类已无用，但它在 SavedProperty 清单里，不能删。`SlapRune`、`BadTasteRune`、`TormentorRune`
-- **坚若磐石（2026-10 重做）监听"持有者自己获得增益效果"，当场获得格挡、不限次数。** 判定只认层数增加、可见、按当前层数判为增益的能力，排除临时属性的包装 Power（其内层力量/敏捷单独计一次）。沿用 `LimitedDebuffProcRelicBase` 基类，只覆写 `TryMatchProc`：基类的 `SavedProcsThisTurn` 在 SavedProperty 清单里，换基类会改变保存与联机布局。`AdamantRune`、`HextechRelicBase.TryGetOwnerReceivedBuff`
+- **坚若磐石（2026-10 重做）监听"持有者自己获得增益效果"，当场获得格挡、不限次数。** 判定只认层数增加、可见、按本次增量（`GetTypeForAmount(amount)`）判为增益的能力，排除临时属性的包装 Power（其内层力量/敏捷单独计一次）。沿用 `LimitedDebuffProcRelicBase` 基类，只覆写 `TryMatchProc`：基类的 `SavedProcsThisTurn` 在 SavedProperty 清单里，换基类会改变保存与联机布局。`AdamantRune`、`HextechRelicBase.TryGetOwnerReceivedBuff`
 - **回归基本功的"无法打出 3 费及以上"只限手动出牌，自动打出一律放行。** 与敌方同名海克斯、卡卡同口径；否则同时持有"升级：XX形态"时，3 费形态牌开局自动打出会被拦下直接进弃牌堆。`BackToBasicsRune`
 - **仅联机的协作海克斯按固定规则选队友，不弹选择。** 花晓之剑取"当前生命/最大生命"最低、平局按 NetId 最小的存活队友，各端算出同一个人；回复 2% 最大生命向下取整、至少 1 点，同一张牌的重放只算一次。俯冲轰炸挂在持有者自己的 `AfterDeath`：原版先分发 `AfterDeath` 再停用死亡玩家的钩子，所以能收到；伤害无来源、不吃力量与易伤，可被格挡。全心为你多人持有时乘算叠加，持有者倒下后停止生效：格挡走原版全局 Hook（持有者遗物对每个玩家目标返回倍率），治疗在 `HextechPlayerCoefficientHelper` 里按全队存活持有者计数；属性悬浮额外补上队友持有的格挡份额。我们的治疗改为"持有者被治疗时分享给队友"，仍用同一异步链防重入，防止双持互相回血。`BlossomBladeRune`、`DiveBomberRune`、`AllForYouRune`、`OurHealingRune`
 - **王国军势生成仆从牌期间，嵌套进来的铸造不再生成牌。** 它与凝辉（生成牌→辉星）、王令（辉星→铸造）三件同持时构成无终点循环：mplab 复现中 1 颗辉星在 2.5 秒内把牌数从 10 刷到 144，遥测里三件同持的对局 2 胜 26 负、集中卡在拿到第三件后的第一场战斗。加防重入后，同一场景 1 颗辉星只多出 3 张牌就结束。只持有王国军势＋王令时不受影响。`KingdomArmyRune`
@@ -77,7 +77,7 @@
 - **范围限定的三条：** 子弹时间只阻止该牌自身施加的无法抽牌；狂怒/倒映只阻止持有者对应 Power 的定时清理，不禁止外部移除；粒子墙只改战斗卡实例的格挡，不回写牌库本体。
 - **烟囱在持有者抽到状态牌时补伤害，不是"加入手牌"就触发。**
 - **升级散射炮（2026-10 重做）把消耗牌堆里的状态牌也计入命中数，只消耗不在消耗牌堆的那些。** 原版命中数与卡面显示都经私有 `FlakCannon.GetStatuses`，后缀补丁对持有者扩展到消耗牌堆；`OnPlay` 跳过前缀避免把已消耗的状态牌再消耗一次。`FlakCannonUpgradeRune`
-- **升级重启（2026-10 重做）把末尾的随机抽牌换成从抽牌堆选牌，走 `HextechSelectedDrawHelper`（与验牌同一条选择抽牌路径，按抽牌结算并受不能抽牌、手牌上限约束）。** 不再去掉消耗。`RebootUpgradeRune`
+- **升级重启（2026-10 重做）把末尾的随机抽牌换成从抽牌堆选牌，走 `HextechSelectedDrawHelper`（与验牌同一条选择抽牌路径，按抽牌结算并受不能抽牌、手牌上限约束）。** 不再去掉消耗。抽入一张已选牌可能嵌套触发别的抽牌（升级自动化），把同一轮里还没抽入的已选牌提前抽走：这些牌已按抽牌结算过，跳过且不计额度，下一轮从剩余抽牌堆补选差额（`DrawSelectedRounds`）。`RebootUpgradeRune`
 - **五件"升级：XX形态"（恶魔/群蛇/虚空/回响/死神）统一为棱彩阶，共用同一张棱彩图标。** 五件效果同构（开战自动打出全部对应形态牌），2026-09-30 按玩家反馈把虚空、回响、死神从黄金提到与恶魔、群蛇同阶；稀有度是候选池分组依据，改动即改变生成池，两端须同版本。配置 ID 是模型 ID、不含稀有度，已有启用/禁用设置不受影响。`VoidFormUpgradeRune`、`EchoFormUpgradeRune`、`ReaperFormUpgradeRune`、`HextechPlayerRuneRegistry`
 
 ## 金币与奖励
