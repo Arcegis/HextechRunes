@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 
 namespace HextechRunes;
 
@@ -38,9 +39,36 @@ internal static partial class HextechCombatHooks
 		bool planTheft = rollTheft
 			&& theft
 			&& ThievingHopperEnemyHex.CanPlanTheft(creature, context)
-			&& ThievingHopperEnemyHex.RollTheft(context, creature);
+			&& ThievingHopperEnemyHex.IsBelowTheftThreshold(creature);
 		int strengthAmount = strength ? context.TierValue(MonsterHexKind.CeremonialBeast, 1, 2, 3) : 0;
 		MoveStateIntentsField.SetValue(move, ComposeMonsterUpgradeIntents(move.Intents, creature, strengthAmount, planTheft));
+	}
+
+	/// <summary>偷窃草蜢：把偷牌意图补进当前已显示的下一次行动并刷新意图显示。</summary>
+	internal static async Task PlanThievingHopperTheftNow(MonsterModel monster)
+	{
+		MoveState move = monster.NextMove;
+		if (move.Intents.Any(static intent => intent is ThievingHopperTheftIntent))
+		{
+			return;
+		}
+
+		AddMonsterUpgradeIntents(monster, move, rollTheft: true);
+		if (!move.Intents.Any(static intent => intent is ThievingHopperTheftIntent)
+			|| monster.Creature.CombatState is not { } combatState
+			|| NCombatRoom.Instance?.GetCreatureNode(monster.Creature) is not { } node)
+		{
+			return;
+		}
+
+		try
+		{
+			await node.UpdateIntent(combatState.Allies);
+		}
+		catch (ObjectDisposedException ex)
+		{
+			HextechLog.Warn("ThievingHopper", $"Intent refresh skipped: {ex.Message}");
+		}
 	}
 
 	internal static AbstractIntent[] ComposeMonsterUpgradeIntents(

@@ -97,9 +97,12 @@ internal static partial class Program
 		RebootUpgradeRune reboot = CreateMutableTestModel<RebootUpgradeRune>(); reboot.Owner = first;
 		Reboot rebootCard = CreateMutableTestModel<Reboot>(); rebootCard.Owner = first;
 		HashSet<CardKeyword> keywords = [CardKeyword.Exhaust];
-		Expect(reboot.TryModifyKeywordsInCombat(rebootCard, keywords) && !keywords.Contains(CardKeyword.Exhaust), "owner's Reboot loses exhaust");
-		Reboot foreignReboot = CreateMutableTestModel<Reboot>(); foreignReboot.Owner = second; keywords.Add(CardKeyword.Exhaust);
-		Expect(!reboot.TryModifyKeywordsInCombat(foreignReboot, keywords) && keywords.Contains(CardKeyword.Exhaust), "teammate Reboot keeps exhaust");
+		Expect(!reboot.TryModifyKeywordsInCombat(rebootCard, keywords) && keywords.Contains(CardKeyword.Exhaust), "upgraded Reboot keeps its native exhaust");
+		MethodInfo rebootPrefix = AccessTools.Method(AccessTools.Inner(typeof(RebootUpgradeRune), "RebootSelectDrawPatch"), "Prefix");
+		AccessTools.Field(typeof(Player), "_relics").SetValue(second, new List<RelicModel>());
+		Reboot foreignReboot = CreateMutableTestModel<Reboot>(); foreignReboot.Owner = second;
+		Equal(true, (bool)rebootPrefix.Invoke(null, [foreignReboot, null, null])!, "teammate without the rune keeps native random draw");
+		keywords.Clear();
 		HangUpgradeRune hang = CreateMutableTestModel<HangUpgradeRune>(); hang.Owner = first;
 		Hang hangCard = CreateMutableTestModel<Hang>(); hangCard.Owner = first;
 		keywords.Clear();
@@ -170,7 +173,7 @@ internal static partial class Program
 			(typeof(LoopPower), nameof(LoopPower.AfterPlayerTurnStart)),
 			(typeof(RagePower), nameof(RagePower.AfterSideTurnEnd)),
 			(typeof(ReflectPower), nameof(ReflectPower.AfterSideTurnStart)),
-			(typeof(FlakCannon), "OnPlay"), (typeof(Hang), "OnPlay"), (typeof(Neurosurge), "OnPlay"),
+			(typeof(FlakCannon), "OnPlay"), (typeof(Reboot), "OnPlay"), (typeof(Hang), "OnPlay"), (typeof(Neurosurge), "OnPlay"),
 			(typeof(InfernoPower), nameof(InfernoPower.AfterDamageReceived)),
 			(typeof(FlameBarrierPower), nameof(FlameBarrierPower.AfterDamageReceived))
 		];

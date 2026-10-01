@@ -143,4 +143,18 @@ public abstract partial class HextechRelicBase
 			&& power.GetTypeForAmount(amount) == PowerType.Debuff
 			&& power is not ITemporaryPower;
 	}
+
+	// 持有者自己实际获得增益效果，来源不限。排除临时属性的包装 Power（其内层力量/敏捷会单独计一次），
+	// 也排除隐藏的内部记账能力。
+	protected bool TryGetOwnerReceivedBuff(PowerModel power, decimal amount, [NotNullWhen(true)] out Creature? target)
+	{
+		target = power.Owner;
+		return amount > 0m
+			&& Owner != null
+			&& target == Owner.Creature
+			&& !target.IsDead
+			&& power.IsVisible
+			&& power.GetTypeForAmount(amount) == PowerType.Buff
+			&& power is not ITemporaryPower;
+	}
 }

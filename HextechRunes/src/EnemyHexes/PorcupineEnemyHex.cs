@@ -2,8 +2,8 @@ namespace HextechRunes;
 
 internal sealed class PorcupineEnemyHex : HextechEnemyHexEffect
 {
-	// 每 3N 次未被格挡伤害(N=联机人数)获得一次本回合荆棘;描述侧由 MonsterHexCatalog 的 HitsNeeded 阈值同步显示。
-	internal const int HitsPerTriggerPerPlayer = 3;
+	// 每 4N 次未被格挡伤害(N=联机人数)获得一次本回合荆棘;描述侧由 MonsterHexCatalog 的 HitsNeeded 阈值同步显示。
+	internal const int HitsPerTriggerPerPlayer = 4;
 
 	internal override MonsterHexKind Kind => MonsterHexKind.Porcupine;
 

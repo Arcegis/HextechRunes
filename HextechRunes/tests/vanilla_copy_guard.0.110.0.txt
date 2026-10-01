@@ -143,3 +143,5 @@ MegaCrit.Sts2.Core.Nodes.Screens.Shops.NMerchantRelic::OnSuccessfulPurchase(Mega
 MegaCrit.Sts2.Core.Entities.Merchant.MerchantRelicEntry::ClearAfterPurchase()=ad4bcb384a88313fbe720d2dcc8430392ecc82d5
 MegaCrit.Sts2.Core.Models.MonsterModel+<PerformMove>d__105::MoveNext()=88544c23d15695f07b314f356c630962fb574bbe
 MegaCrit.Sts2.Core.Models.MonsterModel::PerformMove()=429d5ab4bc91270fb765b5a8ecd17ee93920b765
+MegaCrit.Sts2.Core.Models.Cards.Reboot::OnPlay(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext,MegaCrit.Sts2.Core.Entities.Cards.CardPlay)=fc962f42b5cbb0d94d4a147ca2089706ef24ad11
+MegaCrit.Sts2.Core.Models.Cards.Reboot+<OnPlay>d__5::MoveNext()=827a820aa597e4fda2b1d6fee6387b08e3901bde

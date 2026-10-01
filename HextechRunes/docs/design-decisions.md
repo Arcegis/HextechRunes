@@ -22,8 +22,8 @@
 - **"战斗第一回合"类的持有者效果看持有者自己的 `PlayerCombatState.TurnNumber == 1`（`IsOwnersFirstTurn`），不看 `RoundNumber`。** 持有者在第 1 回合拿到额外回合时回合号仍为 1，开局多抽、开局锻造器会再结算一次；原版 TurnNumber 只在该玩家开始新回合（含额外回合）时递增。已有 `_lastProcRound`/本场标记防重的、以及语义是"第 1 回合内"的持续效果（死神收割、卡卡）不改。`PreparedForge`、`OrbSlotForge`、`SilverStarsForge`、`SilverOrbForge`、`ForgingForge`、`NecrobinderForge`、`HubrisRune`、`ZealotRune`、`BrutalForceRune`
 - **玩家侧活力火花必须走 `PowerCmd.Apply<HextechVitalSparkPower>`，不能把原版敌方增益直接施加到玩家。** 牌上污染层数 = 本玩家模组层数 + 场上原版活力火花总层数，但打出时每个 Power 只施加自己那份，避免重复乘算。原版 `BeforeCombatStart` / `AfterPowerAmountChanged` / `AfterRemoved` 会覆盖或清空侵蚀，普通模型 Hook 保证不了执行在原版写入之后，因此这三处用等待原 Task 的 postfix 重算。`HextechVitalSparkPower`
 - **百炼成钢的临时缓慢在官方 `BeforeSideTurnStart` 清理，并按"变化后总量减本次新增量"识别旧层。** 叠层回调会刷新整个实例的 `_appliedRound`，让旧层连续多个回合逃过清理（水银沙漏的回合开始伤害是触发链）。修正依赖 `PowerCmd.ModifyAmount` 的公开契约：先改层数 → 派发 `AfterPowerAmountChanged` → 最后才检查移除零层实例。不为沙漏或冰淇淋写特例。`HextechTemporarySlowPower`
-- **我方扇巴掌 / 恶趣味 / 坚若磐石监听"持有者自己收到负面效果"（来源不限），且不限每回合次数；折磨者仍监听"给敌人施加"，同样不限次数。** 去掉上限是为了让同轴海克斯能叠加，而不是拿到第二个就零收益。判定沿用敌方侧的口径：只认层数增加、排除临时属性的包装 Power。`LimitedDebuffProcRelicBase` 的 `SavedProcsThisTurn` 对无上限子类已无用，但它在 SavedProperty 清单里，不能删。`SlapRune`、`BadTasteRune`、`AdamantRune`、`TormentorRune`
-- **坚若磐石的格挡一律记到原版 `BlockNextTurnPower`，不当场发放。** 负面效果多半在敌方回合收到，当场给的格挡会在玩家回合开始时被清掉；原版这个能力在 `AfterBlockCleared` 发放（有壁垒时同样触发），自带显示、保存与联机同步，不需要新增待发状态。
+- **我方扇巴掌 / 恶趣味监听"持有者自己收到负面效果"（来源不限），且不限每回合次数；折磨者仍监听"给敌人施加"，同样不限次数。** 去掉上限是为了让同轴海克斯能叠加，而不是拿到第二个就零收益。判定沿用敌方侧的口径：只认层数增加、排除临时属性的包装 Power。`LimitedDebuffProcRelicBase` 的 `SavedProcsThisTurn` 对无上限子类已无用，但它在 SavedProperty 清单里，不能删。`SlapRune`、`BadTasteRune`、`TormentorRune`
+- **坚若磐石（2026-10 重做）监听"持有者自己获得增益效果"，当场获得格挡、不限次数。** 判定只认层数增加、可见、按当前层数判为增益的能力，排除临时属性的包装 Power（其内层力量/敏捷单独计一次）。沿用 `LimitedDebuffProcRelicBase` 基类，只覆写 `TryMatchProc`：基类的 `SavedProcsThisTurn` 在 SavedProperty 清单里，换基类会改变保存与联机布局。`AdamantRune`、`HextechRelicBase.TryGetOwnerReceivedBuff`
 - **回归基本功的"无法打出 3 费及以上"只限手动出牌，自动打出一律放行。** 与敌方同名海克斯、卡卡同口径；否则同时持有"升级：XX形态"时，3 费形态牌开局自动打出会被拦下直接进弃牌堆。`BackToBasicsRune`
 - **仅联机的协作海克斯按固定规则选队友，不弹选择。** 花晓之剑取"当前生命/最大生命"最低、平局按 NetId 最小的存活队友，各端算出同一个人；回复 2% 最大生命向下取整、至少 1 点，同一张牌的重放只算一次。俯冲轰炸挂在持有者自己的 `AfterDeath`：原版先分发 `AfterDeath` 再停用死亡玩家的钩子，所以能收到；伤害无来源、不吃力量与易伤，可被格挡。全心为你多人持有时乘算叠加，持有者倒下后停止生效：格挡走原版全局 Hook（持有者遗物对每个玩家目标返回倍率），治疗在 `HextechPlayerCoefficientHelper` 里按全队存活持有者计数；属性悬浮额外补上队友持有的格挡份额。我们的治疗改为"持有者被治疗时分享给队友"，仍用同一异步链防重入，防止双持互相回血。`BlossomBladeRune`、`DiveBomberRune`、`AllForYouRune`、`OurHealingRune`
 - **王国军势生成仆从牌期间，嵌套进来的铸造不再生成牌。** 它与凝辉（生成牌→辉星）、王令（辉星→铸造）三件同持时构成无终点循环：mplab 复现中 1 颗辉星在 2.5 秒内把牌数从 10 刷到 144，遥测里三件同持的对局 2 胜 26 负、集中卡在拿到第三件后的第一场战斗。加防重入后，同一场景 1 颗辉星只多出 3 张牌就结束。只持有王国军势＋王令时不受影响。`KingdomArmyRune`
@@ -46,10 +46,11 @@
 - **`MonsterHexKind` 一律尾部追加，不重排旧编号。** 编号是保存与联机契约。
 - **"每 N 回合"= 第 N、2N、3N… 回合触发，第 1 回合不触发（N=1 即从第 2 回合起每回合）。** 与英文 "Every N turns" 一致，中文文案写"每 N 回合"（2026-09 起不再用"每过 N 回合"及其 `%(N+1)` 口径）。敌我双方统一走 `HextechRoundInterval.IsDue`，调用处直接传文案里的数字；额外回合不推进回合号，调用方仍按回合号防重。改口径时黏液史莱姆、拉加维林女族长保持文案 3/2/1、实际触发变频繁，冰霜幽魂（我方）从第 3、5、7 回合改为第 2、4、6 回合。`HextechRoundInterval`、`HextechEnemyHexContext.TryConsumeRoundInterval`
 - **敌方蓝烛药箱（玩家状态/诅咒牌耗能 +1）优先级最低，视同加在基础费用上。** 原版费用 = 基础 → 卡牌临时修正 → 常规 Hook → Late Hook，敌方修饰器在监听顺序里排在遗物、能力、卡牌之后。所以 +1 在常规阶段按卡牌临时修正折算后再加（轮转不息一类的本回合 0 费会吃掉它，相对减费照常叠加）；我方蓝烛药箱的 0 费因此移到 Late 阶段，否则会被加回 1；敌方开悟的 1 费下限同在 Late 且排在遗物之后，仍最优先。原版无法打出的状态/诅咒基础费用是 -1，原版 Hook 直接跳过，这类牌不受影响。`BlueCandleMedkitEnemyHex`、`BlueCandleMedkitRune`
-- **豪猪（每 3N 次）与百炼成钢（每 N 次）的"未被格挡伤害"按敌人 CombatId 计数，整场战斗累积、余数带到下回合，战斗结束才清空；获得的荆棘与临时缓慢仍只到本回合。** N 为联机人数。描述里的 `{HitsNeeded}` 由 `MonsterHexCatalog` 的按人数缩放阈值表填值，表里必须写字面量（`sync_content_txt.py` 按字面量渲染 TXT 的"3N"），测试断言它与效果类常数一致。`PorcupineEnemyHex`、`HundredRefinementsEnemyHex`
+- **豪猪（每 4N 次）与百炼成钢（每 N 次）的"未被格挡伤害"按敌人 CombatId 计数，整场战斗累积、余数带到下回合，战斗结束才清空；获得的荆棘与临时缓慢仍只到本回合。** N 为联机人数。描述里的 `{HitsNeeded}` 由 `MonsterHexCatalog` 的按人数缩放阈值表填值，表里必须写字面量（`sync_content_txt.py` 按字面量渲染 TXT 的"4N"），测试断言它与效果类常数一致。`PorcupineEnemyHex`、`HundredRefinementsEnemyHex`
 - **偷窃草蜢：AsleepPower / SlumberPower 不属于原版 `IsStunned`，必须单独排除。** 计划偷牌和行动结束实际偷牌两处都要排。`ThievingHopperEnemyHex`
 - **偷窃草蜢：MinionPower 单位不偷牌逃跑。** 仆从退场常绑在首领的 `AfterDeath` 上（女王的 TorchHeadAmalgam），而 `CreatureCmd.Escape` 不发死亡回调，逃跑会破坏遭遇关系；不能靠改女王或伪造死亡事件绕过。
 - **偷窃草蜢：逃跑意图靠 FollowUpState 自循环保留，不要设 `MustPerformOnceBeforeTransitioning`。** 那把锁会让千足虫 ReattachPower 的 `SetMoveImmediate(DeadState)` 失效，挡住复活。
+- **偷窃草蜢（2026-10 重做）：血量低于 20% 的非首领敌人偷牌，取代每回合 20% 概率。** 敌方回合末 RollMove 时已低于阈值的直接规划偷牌意图；玩家回合里被打到阈值以下的立即补进已显示的下一次行动并刷新意图。计划后回血不撤销。`ThievingHopperEnemyHex`、`HextechCombatHooks.PlanThievingHopperTheftNow`
 - **偷窃草蜢：每个敌人每场只偷一张，复活不重置次数。** 归还走原版 `SwipePower.BeforeDeath`，逃跑走 `CreatureCmd.Escape` 因而不触发返还。
 - **活雾的技能上限在 `BeforeCardPlayed` 计数。** 只有在这里计数才能拦住技能内部的自动打出越过上限；手动与自动共同计数，同一张牌重放不重复占名额。这与原版 SmoggyPower 的"只能打一张 + 迷雾附魔"不同，不施加该附魔。`LivingFogEnemyHex`
 - **仪式兽追加的力量在整次行动后结算一次。** 多段伤害不多次加力量；珠光护手实际重复行动时也只结算一次追加效果。
@@ -75,7 +76,8 @@
 - **狱火用自身伤害命令返回的 `DamageResult.TotalDamage` 施加灼烧。** 包含被格挡的伤害，但不把伤害链中其他效果的伤害算成狱火的。`InfernoUpgradeRune`
 - **范围限定的三条：** 子弹时间只阻止该牌自身施加的无法抽牌；狂怒/倒映只阻止持有者对应 Power 的定时清理，不禁止外部移除；粒子墙只改战斗卡实例的格挡，不回写牌库本体。
 - **烟囱在持有者抽到状态牌时补伤害，不是"加入手牌"就触发。**
-- **散射炮把可变化的状态牌走原版变化命令变为燃料再移到弃牌堆，不触发消耗。** 不可变化的牌保留原状，原命中次数不变。
+- **升级散射炮（2026-10 重做）把消耗牌堆里的状态牌也计入命中数，只消耗不在消耗牌堆的那些。** 原版命中数与卡面显示都经私有 `FlakCannon.GetStatuses`，后缀补丁对持有者扩展到消耗牌堆；`OnPlay` 跳过前缀避免把已消耗的状态牌再消耗一次。`FlakCannonUpgradeRune`
+- **升级重启（2026-10 重做）把末尾的随机抽牌换成从抽牌堆选牌，走 `HextechSelectedDrawHelper`（与验牌同一条选择抽牌路径，按抽牌结算并受不能抽牌、手牌上限约束）。** 不再去掉消耗。`RebootUpgradeRune`
 - **五件"升级：XX形态"（恶魔/群蛇/虚空/回响/死神）统一为棱彩阶，共用同一张棱彩图标。** 五件效果同构（开战自动打出全部对应形态牌），2026-09-30 按玩家反馈把虚空、回响、死神从黄金提到与恶魔、群蛇同阶；稀有度是候选池分组依据，改动即改变生成池，两端须同版本。配置 ID 是模型 ID、不含稀有度，已有启用/禁用设置不受影响。`VoidFormUpgradeRune`、`EchoFormUpgradeRune`、`ReaperFormUpgradeRune`、`HextechPlayerRuneRegistry`
 
 ## 金币与奖励

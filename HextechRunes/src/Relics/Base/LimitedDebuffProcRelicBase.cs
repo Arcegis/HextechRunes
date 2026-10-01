@@ -45,7 +45,7 @@ public abstract class LimitedDebuffProcRelicBase : TurnScopedRelicBase
 			EnsureTurnScopedStateCurrent();
 		}
 
-		if (Owner is not { } owner || !TryMatchDebuff(power, amount, applier, out Creature? target))
+		if (Owner is not { } owner || !TryMatchProc(power, amount, applier, out Creature? target))
 		{
 			return;
 		}
@@ -67,7 +67,8 @@ public abstract class LimitedDebuffProcRelicBase : TurnScopedRelicBase
 	/// <summary>触发回调。监听敌方时 target 是收到负面效果的敌人；监听自身时 target 是持有者自己。</summary>
 	protected abstract Task OnDebuffProc(Player owner, Creature target);
 
-	private bool TryMatchDebuff(PowerModel power, decimal amount, Creature? applier, [NotNullWhen(true)] out Creature? target)
+	/// <summary>判定这次能力变化是否触发。默认按 <see cref="ListensToOwnerDebuffs"/> 匹配负面效果；子类可改为其他口径。</summary>
+	protected virtual bool TryMatchProc(PowerModel power, decimal amount, Creature? applier, [NotNullWhen(true)] out Creature? target)
 	{
 		return ListensToOwnerDebuffs
 			? TryGetOwnerReceivedDebuff(power, amount, out target)

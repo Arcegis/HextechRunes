@@ -502,7 +502,7 @@ internal static partial class Program
 		Equal(6, hits[7], "remainder carries forward instead of resetting");
 		Expect(!HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 0), "a zero threshold never triggers");
 		Expect(HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 1), "threshold one triggers on every hit");
-		Equal(3, PorcupineEnemyHex.HitsPerTriggerPerPlayer, "porcupine needs 3N hits");
+		Equal(4, PorcupineEnemyHex.HitsPerTriggerPerPlayer, "porcupine needs 4N hits");
 		Equal(1, HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer, "hundred refinements needs N hits");
 
 		// 描述里的 {HitsNeeded} 靠按人数缩放的阈值表填值,漏登记就会原样显示占位符。

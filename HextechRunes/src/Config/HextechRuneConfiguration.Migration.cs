@@ -44,7 +44,9 @@ internal static partial class HextechRuneConfiguration
 		new(35, [], [ typeof(AutoPatrolRune) ]),
 		// 只禁用我方；敌方"无本万利"不受影响。
 		new(37, [], [ typeof(SomethingForNothingRune), typeof(SoulCallingRune) ]),
-		new(39, [], [ typeof(GhostFormRune), typeof(DieForYouRune) ])
+		new(39, [], [ typeof(GhostFormRune), typeof(DieForYouRune) ]),
+		// 敌方同名海克斯同批在 v40 默认禁用。
+		new(40, [], [ typeof(NatureIsHealingRune), typeof(SearingAttackRune), typeof(ScapegoatRune), typeof(TwilightVeilRune) ])
 	];
 
 	/// <summary>敌方海克斯默认禁用迁移:只迁移一次,之后尊重玩家手动开启。</summary>
@@ -53,7 +55,9 @@ internal static partial class HextechRuneConfiguration
 		// 我方已在 v22 默认禁用。
 		(36, MonsterHexKind.GetExcited),
 		// 我方"你肩上的瓦库"早已默认禁用。
-		(38, MonsterHexKind.ShoulderVaku)
+		(38, MonsterHexKind.ShoulderVaku),
+		// 我方同批在 v40 默认禁用。
+		(40, MonsterHexKind.NatureIsHealing)
 	];
 
 	private static RuneConfig NormalizeLoadedConfig(RuneConfig config)
