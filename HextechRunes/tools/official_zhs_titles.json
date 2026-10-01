@@ -985,6 +985,7 @@
     "intents:SUMMON.title": "召唤",
     "orbs:DARK_ORB.title": "黑暗",
     "orbs:LIGHTNING_ORB.title": "闪电",
-    "eras:BLIGHT0.name": "感染"
+    "eras:BLIGHT0.name": "感染",
+    "enchantments:STEADY.title": "稳定"
   }
 }

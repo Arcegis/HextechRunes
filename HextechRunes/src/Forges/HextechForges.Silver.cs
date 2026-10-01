@@ -462,3 +462,23 @@ public sealed class ForgingForge : HextechForgeBase
 		await ForgeCmd.Forge(Stacked(DynamicVars["ForgeAmount"].BaseValue), Owner, this);
 	}
 }
+
+// 恢复锻造器（白银）：战斗开始时回复生命。黄金同名锻造器 RecoveryForge 是每回合开始回复，二者 ModelId 不同、不互相叠层。
+public sealed class SilverRecoveryForge : HextechForgeBase
+{
+	protected override IEnumerable<DynamicVar> CanonicalVars =>
+	[
+		new HealVar(2m)
+	];
+
+	public override Task BeforeCombatStart()
+	{
+		if (Owner == null || Owner.Creature.IsDead)
+		{
+			return Task.CompletedTask;
+		}
+
+		Flash([Owner.Creature]);
+		return CreatureCmd.Heal(Owner.Creature, Stacked(DynamicVars.Heal.BaseValue));
+	}
+}
