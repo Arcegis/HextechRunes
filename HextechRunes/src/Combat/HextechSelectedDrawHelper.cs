@@ -52,46 +52,82 @@ internal static class HextechSelectedDrawHelper
 			return Array.Empty<CardModel>();
 		}
 
-		await ShuffleIntoDrawPileIfShort(choiceContext, player, cardsToSelect);
-		if (!CanDrawAnyCards(player))
+		List<CardModel> drawn = new(cardsToSelect);
+		await DrawSelectedRounds(
+			cardsToSelect,
+			async Task<IReadOnlyList<CardModel>> (int remaining) =>
+			{
+				await ShuffleIntoDrawPileIfShort(choiceContext, player, remaining);
+				int count = Math.Min(remaining, Math.Min(drawPile.Cards.Count, CardPile.MaxCardsInHand - hand.Cards.Count));
+				if (count <= 0 || CombatManager.Instance.IsOverOrEnding)
+				{
+					return Array.Empty<CardModel>();
+				}
+
+				CardSelectorPrefs prefs = new(SelectDrawPrompt, count);
+				return (await CardSelectCmd.FromCombatPile(choiceContext, drawPile, player, prefs)).Take(count).ToList();
+			},
+			card => card.Pile == drawPile,
+			() => !CombatManager.Instance.IsOverOrEnding && hand.Cards.Count < CardPile.MaxCardsInHand,
+			async card =>
+			{
+				drawn.Add(card);
+				await CardPileCmd.Add(card, hand);
+				CombatManager.Instance.History.CardDrawn(combatState, card, fromHandDraw);
+				await Hook.AfterCardDrawn(combatState, choiceContext, card, fromHandDraw);
+				card.InvokeDrawn();
+				NDebugAudioManager.Instance?.Play("card_deal.mp3", 0.25f, PitchVariance.Small);
+			});
+		if (drawn.Count == 0 && !CanDrawAnyCards(player))
 		{
 			ShowDrawFailureThoughtBubble(player);
-			return Array.Empty<CardModel>();
-		}
-
-		cardsToSelect = Math.Min(cardsToSelect, drawPile.Cards.Count);
-		if (cardsToSelect <= 0)
-		{
-			return Array.Empty<CardModel>();
-		}
-
-		CardSelectorPrefs prefs = new(SelectDrawPrompt, cardsToSelect);
-		List<CardModel> selected = (await CardSelectCmd.FromCombatPile(choiceContext, drawPile, player, prefs))
-			.Take(cardsToSelect)
-			.ToList();
-
-		List<CardModel> drawn = new(selected.Count);
-		foreach (CardModel card in selected)
-		{
-			if (CombatManager.Instance.IsOverOrEnding || hand.Cards.Count >= CardPile.MaxCardsInHand)
-			{
-				break;
-			}
-
-			if (card.Pile != drawPile)
-			{
-				continue;
-			}
-
-			drawn.Add(card);
-			await CardPileCmd.Add(card, hand);
-			CombatManager.Instance.History.CardDrawn(combatState, card, fromHandDraw);
-			await Hook.AfterCardDrawn(combatState, choiceContext, card, fromHandDraw);
-			card.InvokeDrawn();
-			NDebugAudioManager.Instance?.Play("card_deal.mp3", 0.25f, PitchVariance.Small);
 		}
 
 		return drawn;
+	}
+
+	/// <summary>
+	/// 按轮选牌并逐张抽入，直到抽满 <paramref name="requested"/> 张或无法继续。
+	/// 抽入某张牌时可能嵌套触发别的抽牌（如升级自动化），把同一轮里尚未抽入的已选牌提前抽走；
+	/// 这些牌已经按抽牌结算过，这里跳过且不计入本次额度，下一轮从剩余抽牌堆补选差额。
+	/// 一轮没有抽入任何牌（选择为空、手牌已满、牌堆耗尽）即停止。
+	/// </summary>
+	internal static async Task<int> DrawSelectedRounds(
+		int requested,
+		Func<int, Task<IReadOnlyList<CardModel>>> selectRound,
+		Func<CardModel, bool> isStillInDrawPile,
+		Func<bool> canDrawMore,
+		Func<CardModel, Task> drawOne)
+	{
+		int remaining = requested;
+		while (remaining > 0 && canDrawMore())
+		{
+			IReadOnlyList<CardModel> selected = await selectRound(remaining);
+			int drawnThisRound = 0;
+			foreach (CardModel card in selected)
+			{
+				if (remaining <= 0 || !canDrawMore())
+				{
+					break;
+				}
+
+				if (!isStillInDrawPile(card))
+				{
+					continue;
+				}
+
+				await drawOne(card);
+				remaining--;
+				drawnThisRound++;
+			}
+
+			if (drawnThisRound == 0)
+			{
+				break;
+			}
+		}
+
+		return requested - remaining;
 	}
 
 	private static async Task ShuffleIntoDrawPileIfShort(PlayerChoiceContext choiceContext, Player player, int requestedDraws)

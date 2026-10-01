@@ -34,17 +34,26 @@ internal sealed class ThievingHopperEnemyHex : HextechEnemyHexEffect
 		// 睡眠不属于 Stun；Minion 的离场常由首领的死亡回调驱动，不能让逃跑绕过该关系。
 		=> powers.Any(power => power is AsleepPower or SlumberPower or MinionPower);
 
-	// 调用方已先过 CanPlanTheft（CombatId 与 CombatState 均非空）。
-	internal static bool RollTheft(HextechEnemyHexContext context, Creature enemy)
+	internal const int TheftHpThresholdPercent = 20;
+
+	internal static bool IsBelowTheftThreshold(int currentHp, int maxHp)
+		=> maxHp > 0 && (long)currentHp * 100 < (long)maxHp * TheftHpThresholdPercent;
+
+	internal static bool IsBelowTheftThreshold(Creature enemy) => IsBelowTheftThreshold(enemy.CurrentHp, enemy.MaxHp);
+
+	// 意图在敌方回合末 RollMove 时规划，那一刻已低于阈值的敌人直接计划偷牌；
+	// 玩家回合里才被打到阈值以下的，立即把偷牌意图补进已经显示的下一次行动，不必再等一轮。
+	internal override async Task AfterEnemyDamageReceived(HextechEnemyHexContext context, Creature target, uint combatId, DamageResult result, Creature? dealer, CardModel? cardSource)
 	{
-		if (enemy.CombatId is not uint combatId || enemy.CombatState is not { } combatState)
+		if (target.CombatState?.CurrentSide != CombatSide.Player
+			|| target.Monster is not { } monster
+			|| !IsBelowTheftThreshold(target)
+			|| !CanPlanTheft(target, context))
 		{
-			return false;
+			return;
 		}
 
-		return HextechStableRandom.PercentChance(context.RunState, 20, "enemy-thieving-hopper",
-			combatId.ToString(CultureInfo.InvariantCulture),
-			Math.Max(1, combatState.RoundNumber).ToString(CultureInfo.InvariantCulture));
+		await HextechCombatHooks.PlanThievingHopperTheftNow(monster);
 	}
 
 	internal static int StealPriority(CardModel card)

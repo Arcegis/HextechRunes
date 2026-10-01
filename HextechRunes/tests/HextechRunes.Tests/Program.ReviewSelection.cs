@@ -50,12 +50,12 @@ internal static partial class Program
 			[ MonsterHexKind.ShoulderVaku.ToString(), "not-a-hex" ]
 		];
 
-		for (int version = 15; version <= 40; version++)
+		for (int version = 15; version <= 41; version++)
 		{
 			foreach (string[] seed in seeds)
 			{
 				(int migratedVersion, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(version, seed);
-				Expect(migratedVersion >= 39, $"v{version} lands on current version");
+				Expect(migratedVersion >= 40, $"v{version} lands on current version");
 				SetEqual(LegacyMigrateDisabledPlayerRuneIds(version, seed), migrated, $"v{version} player migration matches legacy chain (seed size {seed.Length})");
 			}
 
@@ -89,6 +89,7 @@ internal static partial class Program
 		if (version < 35) { Disable(typeof(AutoPatrolRune)); }
 		if (version < 37) { Disable(typeof(SomethingForNothingRune), typeof(SoulCallingRune)); }
 		if (version < 39) { Disable(typeof(GhostFormRune), typeof(DieForYouRune)); }
+		if (version < 40) { Disable(typeof(NatureIsHealingRune), typeof(SearingAttackRune), typeof(ScapegoatRune), typeof(TwilightVeilRune)); }
 		return ids;
 	}
 
@@ -103,6 +104,11 @@ internal static partial class Program
 		if (version < 38)
 		{
 			ids.Add(MonsterHexKind.ShoulderVaku.ToString());
+		}
+
+		if (version < 40)
+		{
+			ids.Add(MonsterHexKind.NatureIsHealing.ToString());
 		}
 
 		return ids;

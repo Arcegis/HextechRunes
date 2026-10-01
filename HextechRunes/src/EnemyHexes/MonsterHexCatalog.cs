@@ -159,8 +159,8 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.VitalitySurge] = ("HpPerPercent", 20),
 			[MonsterHexKind.ProteinShake] = ("HpPerPercent", 5),
 			[MonsterHexKind.MoreTheMerrier] = ("RelicsNeeded", 1),
-			// 写字面量:tools/sync_content_txt.py 按字面量渲染 TXT 里的"3N";测试断言它与效果类的常数一致。
-			[MonsterHexKind.Porcupine] = ("HitsNeeded", 3),
+			// 写字面量:tools/sync_content_txt.py 按字面量渲染 TXT 里的"4N";测试断言它与效果类的常数一致。
+			[MonsterHexKind.Porcupine] = ("HitsNeeded", 4),
 			[MonsterHexKind.HundredRefinements] = ("HitsNeeded", 1),
 		};
 

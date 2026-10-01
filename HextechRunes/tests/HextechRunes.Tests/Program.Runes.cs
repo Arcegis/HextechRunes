@@ -557,18 +557,19 @@ internal static partial class Program
 	[HextechTest]
 	private static void ThreeNewRunesHaveRequestedPoolsAndRarities()
 	{
-		(Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool)[] expected =
+		// 祸水东引于 v40 转为默认禁用（仍可在配置中开启）。
+		(Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool, PlayerRuneFlags Flags)[] expected =
 		[
-			(typeof(ScapegoatRune), HextechRarityTier.Gold, null),
-			(typeof(BloodDebtRune), HextechRarityTier.Silver, PlayerRuneCharacterPool.Ironclad),
-			(typeof(NetherSoulRune), HextechRarityTier.Gold, PlayerRuneCharacterPool.Necrobinder)
+			(typeof(ScapegoatRune), HextechRarityTier.Gold, null, PlayerRuneFlags.Disabled),
+			(typeof(BloodDebtRune), HextechRarityTier.Silver, PlayerRuneCharacterPool.Ironclad, PlayerRuneFlags.None),
+			(typeof(NetherSoulRune), HextechRarityTier.Gold, PlayerRuneCharacterPool.Necrobinder, PlayerRuneFlags.None)
 		];
-		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool) entry in expected)
+		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool, PlayerRuneFlags Flags) entry in expected)
 		{
 			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
 			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
 			Equal(entry.Pool, actual.CharacterPool, entry.Type.Name + " character pool");
-			Equal(PlayerRuneFlags.None, actual.Flags, entry.Type.Name + " enabled");
+			Equal(entry.Flags, actual.Flags, entry.Type.Name + " default flags");
 		}
 	}
 
