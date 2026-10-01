@@ -18,7 +18,7 @@
 
 ### 版本检查
 
-`HextechRunesInterop.ApiVersion`（`public static int`）从 0.9.6 之后的版本开始提供。反射取不到这个属性，就说明对方的海克斯版本太旧，此时直接跳过对接即可。
+`HextechRunesInterop.ApiVersion`（`public static int`）从 0.9.7 开始提供。反射取不到这个属性，就说明对方的海克斯版本太旧，此时直接跳过对接即可。
 
 | ApiVersion | 内容 |
 | --- | --- |
@@ -283,7 +283,7 @@ public static void RegisterExtraActProvider(Func<IRunState, string?> provider);
 
 ## English quick reference
 
-- Soft dependency (no reference to `HextechRunes.dll`): reflect on `HextechRunes.HextechRunesInterop` in the assembly named `HextechRunes`, check the `ApiVersion` property (≥ 1; available after 0.9.6), then call `RegisterPlayerRune(Type runeType, string rarity, string? flags, string? characterPool, int characterOrder, string? tagKey, string? assetModId, Func<Player, bool>? isAvailableForPlayer)` during mod initialization.
+- Soft dependency (no reference to `HextechRunes.dll`): reflect on `HextechRunes.HextechRunesInterop` in the assembly named `HextechRunes`, check the `ApiVersion` property (≥ 1; available since 0.9.7), then call `RegisterPlayerRune(Type runeType, string rarity, string? flags, string? characterPool, int characterOrder, string? tagKey, string? assetModId, Func<Player, bool>? isAvailableForPlayer)` during mod initialization.
 - The rune only needs to derive from `RelicModel`, but its `Rarity` **must** be `RelicRarity.Starter`; non-Starter external runes are never granted. Provide your own icons via `PackedIconPath` / `PackedIconOutlinePath` / `BigIconPath`.
 - Rarity, flag and character pool arguments are enum *names* (case-insensitive): `Silver|Gold|Prismatic`; comma-separated `Disabled, FirstActExcluded, ThirdActExcluded, SelectionExcluded, AttributeConversionExclusive`; `Ironclad|Silent|Regent|Defect|Necrobinder` or `null`.
 - Registered runes are kept out of vanilla natural relic generation, are skipped by Double Vision, and appear under the Hextech category in the compendium and in the config menu.
