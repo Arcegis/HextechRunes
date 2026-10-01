@@ -74,3 +74,7 @@ public sealed class EmbersForge : EnchantmentForgeBase<TezcatarasEmber>
 public sealed class SpiralForge : EnchantmentForgeBase<UniversalSpiral>
 {
 }
+
+public sealed class SteadyForge : EnchantmentForgeBase<Steady>
+{
+}

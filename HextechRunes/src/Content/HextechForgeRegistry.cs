@@ -23,6 +23,9 @@ internal static class HextechForgeRegistry
 		Forge<SilverStarsForge>(HextechRarityTier.Silver),
 		Forge<SilverOrbForge>(HextechRarityTier.Silver),
 		Forge<ForgingForge>(HextechRarityTier.Silver),
+		Forge<ScissorsForge>(HextechRarityTier.Silver),
+		Forge<SteadyForge>(HextechRarityTier.Silver),
+		Forge<SilverRecoveryForge>(HextechRarityTier.Silver),
 
 		Forge<ConstitutionForge>(HextechRarityTier.Gold),
 		Forge<DisasterForge>(HextechRarityTier.Gold),
@@ -48,6 +51,7 @@ internal static class HextechForgeRegistry
 		Forge<ArtifactForge>(HextechRarityTier.Gold),
 		Forge<VenomForge>(HextechRarityTier.Gold),
 		Forge<ShrinkForge>(HextechRarityTier.Gold),
+		Forge<GoldScissorsForge>(HextechRarityTier.Gold),
 
 		Forge<PrismaticLifeForge>(HextechRarityTier.Prismatic),
 		Forge<AttackForge>(HextechRarityTier.Prismatic),
