@@ -3,7 +3,7 @@ using MegaCrit.Sts2.Core.Modding;
 namespace HextechRunes;
 
 /// <summary>
-/// 模组入口,只做编排:模型注册 → 配置/遥测 → 补丁应用 → 诊断输出。
+/// 模组入口,只做编排:模型注册 → 配置/遥测 → 补丁应用 → 启动摘要。
 /// 功能补丁由 <see cref="HextechPatcher"/> 按元数据统一应用；需要先后关系时显式声明 Harmony 顺序约束。
 /// </summary>
 [ModInitializer(nameof(Initialize))]
@@ -38,7 +38,6 @@ public static class ModEntry
 			HextechVanillaCopyGuard.Verify(harmony.Id);
 			HextechPatcher.DumpIfRequested(harmony);
 			_initialized = true;
-			HextechMultiplayerDiagnostics.LogNetworkSignature();
 			// 加载确认行保持始终输出（headless 验证与用户排障都依赖它），不走 verbose 门控:
 			// HextechLog.Info 默认关闭,所以这里直接用原版 Log.Info 输出同一前缀格式。
 			Log.Info(HextechLog.Format(

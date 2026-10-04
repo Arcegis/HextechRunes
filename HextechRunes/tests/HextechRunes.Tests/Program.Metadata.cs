@@ -929,29 +929,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
-	{
-		string gameplaySignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
-			"HextechRunes",
-			"0.8.1",
-			null,
-			"",
-			"",
-			includeSavedProperties: false);
-		string diagnosticSignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
-			"HextechRunes",
-			"0.8.1",
-			null,
-			"",
-			"",
-			includeSavedProperties: true);
-
-		Expect(!gameplaySignature.Contains("savedProps=", StringComparison.Ordinal), "gameplay signature must not include runtime SavedProperties state");
-		Expect(diagnosticSignature.Contains("savedProps=", StringComparison.Ordinal), "diagnostic signature should still include SavedProperties state");
-		Expect(!string.Equals(gameplaySignature, diagnosticSignature, StringComparison.Ordinal), "diagnostic signature should remain more detailed than gameplay signature");
-	}
-
-	[HextechTest]
 	private static void SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent()
 	{
 		IReadOnlySet<string> vanilla = new HashSet<string>(StringComparer.Ordinal) { "V0", "V1", "V2" };

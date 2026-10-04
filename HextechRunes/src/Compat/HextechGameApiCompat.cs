@@ -9,8 +9,7 @@ namespace HextechRunes;
 /// 0.107.1↔0.108.0 直接调用类 API 差异的集中适配(签名统一为 0.107 形态,0.108 下补齐新参数):
 /// CreatureCmd.Damage 带 cardSource 的重载追加 CardPlay、AttackCommand.FromCard 追加 CardPlay、
 /// PotionFactory.GetPotionOptions 移除 blacklist、CardCreationOptions 移除自定义卡列表构造器
-/// (改为池+过滤器)与 WithCardPools 的过滤器参数分离、0.108.0 新增 HibernatePower;
-/// 以及 0.109.0 SavedPropertiesTypeCache 的 NetIdBitSize 改名 PropertyIdBitSize。
+/// (改为池+过滤器)与 WithCardPools 的过滤器参数分离、0.108.0 新增 HibernatePower。
 /// 共享代码不写行内 #if,版本差异都收在这里。
 /// </summary>
 internal static class HextechGameApiCompat
@@ -117,18 +116,6 @@ internal static class HextechGameApiCompat
 		_ = power;
 		return false;
 #endif
-	}
-
-	internal static int SavedPropertyIdBitSize
-	{
-		get
-		{
-#if STS2_109_OR_NEWER
-			return SavedPropertiesTypeCache.PropertyIdBitSize;
-#else
-			return SavedPropertiesTypeCache.NetIdBitSize;
-#endif
-		}
 	}
 
 	internal static CardCreationOptions WithCardPoolsCompat(this CardCreationOptions options, IEnumerable<CardPoolModel> pools, Func<CardModel, bool>? cardPoolFilter)
