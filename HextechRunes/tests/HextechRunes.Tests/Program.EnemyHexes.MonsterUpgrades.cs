@@ -30,7 +30,7 @@ internal static partial class Program
 			Equal(row.Rarity, registration.Rarity, "enemy rarity");
 			Equal(row.Icon, registration.IconRelicType, "enemy texture carrier");
 			Expect(!registration.Disabled, "new enemy hex enabled");
-			Expect(HextechContentRegistry.EnemyHexIconRelicTypes.Contains(row.Icon), "icon model registered");
+			Expect(HextechCustomModelRegistry.EnemyHexIconRelicTypes.Contains(row.Icon), "icon model registered");
 			Expect(!HextechPlayerRuneRegistry.Registrations.Any(r => r.Type == row.Icon), "enemy hex cannot enter player pool");
 		}
 		PlayerRuneRegistration autoPatrol = HextechPlayerRuneRegistry.Registrations.Single(r => r.Type == typeof(AutoPatrolRune));

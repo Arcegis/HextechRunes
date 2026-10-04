@@ -10,7 +10,7 @@ internal static partial class HextechCatalog
 
 	public static IReadOnlyList<RelicModel> GetCanonicalRunes()
 	{
-		return AllRuneTypes
+		return PlayerRuneMetadata.AllTypes
 			.Select(static type => ModelDb.GetById<RelicModel>(ModelDb.GetId(type)))
 			.ToArray();
 	}
@@ -30,7 +30,7 @@ internal static partial class HextechCatalog
 				pool.RuneTypes
 					.Select(static (type, index) => new IndexedRuneType(type, index))
 					.Where(static rune => IsPlayerRuneTypeVisibleInCollection(rune.Type))
-					.OrderBy(static rune => GetPlayerRuneRaritySortOrder(rune.Type))
+					.OrderBy(static rune => PlayerRuneMetadata.GetRaritySortOrder(rune.Type))
 					.ThenBy(static rune => rune.Index)
 					.Select(static rune => ModelDb.GetById<RelicModel>(ModelDb.GetId(rune.Type)))
 					.ToArray()))
@@ -48,7 +48,7 @@ internal static partial class HextechCatalog
 	public static IReadOnlyList<RelicModel> GetCanonicalVisibleCustomRelics()
 	{
 		return AllCustomRelicTypes
-			.Where(static type => !AllRuneTypes.Contains(type) || IsPlayerRuneTypeVisibleInCollection(type))
+			.Where(static type => !PlayerRuneMetadata.AllTypes.Contains(type) || IsPlayerRuneTypeVisibleInCollection(type))
 			.Select(static type => TryGetCanonicalVisibleCustomRelic(type, out RelicModel? relic) ? relic : null)
 			.OfType<RelicModel>()
 			.ToArray();
@@ -75,42 +75,5 @@ internal static partial class HextechCatalog
 
 			return false;
 		}
-	}
-
-	public static IReadOnlyList<RuneSeriesGroup> GetRuneSeriesGroups(IReadOnlyList<RelicModel> relics)
-	{
-		Dictionary<ModelId, RelicModel> byId = relics.ToDictionary(static relic => relic.CanonicalId());
-
-		IReadOnlyList<RelicModel> BuildGroup(IEnumerable<Type> runeTypes)
-		{
-			List<RelicModel> group = new();
-			foreach (Type runeType in runeTypes)
-			{
-				if (!IsPlayerRuneTypeVisibleInCollection(runeType))
-				{
-					continue;
-				}
-
-				ModelId id = ModelDb.GetId(runeType);
-				if (byId.TryGetValue(id, out RelicModel? relic))
-				{
-					group.Add(relic);
-				}
-			}
-
-			return group;
-		}
-
-		return
-		[
-			new RuneSeriesGroup("SILVER", BuildGroup(SilverRuneTypes)),
-			new RuneSeriesGroup("GOLD", BuildGroup(GoldRuneTypes)),
-			new RuneSeriesGroup("PRISMATIC", BuildGroup(PrismaticRuneTypes))
-		];
-	}
-
-	private static int GetPlayerRuneRaritySortOrder(Type type)
-	{
-		return PlayerRuneMetadata.GetRaritySortOrder(type);
 	}
 }

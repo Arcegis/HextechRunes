@@ -26,4 +26,4 @@ public readonly record struct PlayerRuneRegistration(
 	PlayerRuneFlags Flags = PlayerRuneFlags.None,
 	PlayerRuneCharacterPool? CharacterPool = null,
 	int CharacterOrder = 0,
-	string TagKey = "COMPREHENSIVE");
+	string TagKey = HextechPlayerRuneRegistry.DefaultTagKey);

@@ -10,7 +10,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<EscapePlanRune>(MonsterHexKind.EscapePlan, HextechRarityTier.Silver),
 		Monster<HeavyHitterRune>(MonsterHexKind.HeavyHitter, HextechRarityTier.Silver),
 		Monster<BigStrengthRune>(MonsterHexKind.BigStrength, HextechRarityTier.Silver),
-		Monster<TormentorRune>(MonsterHexKind.Tormentor, HextechRarityTier.Silver, hasBurnHoverTip: true),
+		Monster<TormentorRune>(MonsterHexKind.Tormentor, HextechRarityTier.Silver),
 		Monster<ProtectiveVeilRune>(MonsterHexKind.ProtectiveVeil, HextechRarityTier.Silver),
 		Monster<RepulsorRune>(MonsterHexKind.Repulsor, HextechRarityTier.Silver),
 		Monster<ThornmailRune>(MonsterHexKind.Thornmail, HextechRarityTier.Silver),
@@ -30,7 +30,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<SturdyRune>(MonsterHexKind.Sturdy, HextechRarityTier.Gold),
 		Monster<DawnbringersResolveRune>(MonsterHexKind.DawnbringersResolve, HextechRarityTier.Gold),
 		Monster<ShrinkRayRune>(MonsterHexKind.ShrinkRay, HextechRarityTier.Gold),
-		Monster<FirebrandRune>(MonsterHexKind.Firebrand, HextechRarityTier.Gold, hasBurnHoverTip: true),
+		Monster<FirebrandRune>(MonsterHexKind.Firebrand, HextechRarityTier.Gold),
 		Monster<SuperBrainRune>(MonsterHexKind.SuperBrain, HextechRarityTier.Gold),
 		Monster<NightstalkingRune>(MonsterHexKind.Nightstalking, HextechRarityTier.Gold),
 		Monster<AstralBodyRune>(MonsterHexKind.AstralBody, HextechRarityTier.Gold),
@@ -69,7 +69,7 @@ internal static class HextechMonsterHexRegistry
 		Monster<CantTouchThisRune>(MonsterHexKind.CantTouchThis, HextechRarityTier.Prismatic),
 		Monster<MasterOfDualityRune>(MonsterHexKind.MasterOfDuality, HextechRarityTier.Prismatic),
 		Monster<GoldrendRune>(MonsterHexKind.Goldrend, HextechRarityTier.Prismatic),
-		Monster<FeelTheBurnRune>(MonsterHexKind.FeelTheBurn, HextechRarityTier.Prismatic, disabled: true, hasBurnHoverTip: true),
+		Monster<FeelTheBurnRune>(MonsterHexKind.FeelTheBurn, HextechRarityTier.Prismatic, disabled: true),
 		Monster<BackToBasicsRune>(MonsterHexKind.BackToBasics, HextechRarityTier.Prismatic),
 		Monster<EntomancerHex>(MonsterHexKind.MadScientist, HextechRarityTier.Prismatic),
 		Monster<FeyMagicRune>(MonsterHexKind.FeyMagic, HextechRarityTier.Prismatic),
@@ -155,9 +155,8 @@ internal static class HextechMonsterHexRegistry
 	private static MonsterHexRegistration Monster<TRelic>(
 		MonsterHexKind kind,
 		HextechRarityTier rarity,
-		bool disabled = false,
-		bool hasBurnHoverTip = false)
+		bool disabled = false)
 	{
-		return new MonsterHexRegistration(kind, rarity, typeof(TRelic), disabled, hasBurnHoverTip);
+		return new MonsterHexRegistration(kind, rarity, typeof(TRelic), disabled);
 	}
 }

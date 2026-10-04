@@ -91,11 +91,11 @@ Platform/Hooks/Config/Localization/Telemetry
 
 ## Source of truth 方向
 
-后续重构应收敛到单一内容元数据源：
+内容元数据只有一个来源：
 
-- 符文 ID、稀有度、角色池、标签、默认禁用、是否进入图鉴、是否进入抽选池都应从同一份 catalog metadata 派生。
+- 三张注册表（`HextechPlayerRuneRegistry`、`HextechForgeRegistry`、`HextechMonsterHexRegistry`）加外部 API 登记，经 `HextechContentRegistry` 按注册表版本派生 `PlayerRuneMetadataCatalog`、锻造器稀有度分组和 `MonsterHexMetadataCatalog`；稀有度、角色池、标签、默认禁用、是否进入图鉴、是否进入抽选池都从这里取，不另建名单。
+- 类型层面的派生不调用 `ModelDb`；按 ModelId 的查表在 `HextechCatalog.ModelIdLookups` 单独缓存，两个缓存不能合并（合并会提前 ModelId 的捕获时机，RitsuLib 前缀尚未生效时会缓存错误的 ID）。
 - 本地化、配置界面、统计中文名、图鉴可见性不应各自维护重复名单。
-- 在正式切换前，应保留旧 registry 与新 metadata 的双读对比，确认输出一致后再删除旧路径。
 
 ## 高风险规则
 

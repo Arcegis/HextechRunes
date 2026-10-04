@@ -186,7 +186,7 @@ internal static class HextechEnemyHexEffects
 			throw new InvalidOperationException($"Duplicate enemy hex effects: {string.Join(", ", duplicateKinds)}");
 		}
 
-		IReadOnlySet<MonsterHexKind> registeredKinds = HextechContentRegistry.AllMonsterHexKinds;
+		IReadOnlySet<MonsterHexKind> registeredKinds = HextechContentRegistry.MonsterHexMetadata.AllKinds;
 		MonsterHexKind[] missingEffects = registeredKinds
 			.Except(effects.Select(static effect => effect.Kind))
 			.ToArray();

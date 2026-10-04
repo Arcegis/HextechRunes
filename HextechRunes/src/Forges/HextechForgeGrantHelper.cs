@@ -161,9 +161,15 @@ internal static class HextechForgeGrantHelper
 		return TryCreateStableRandomForgeChoice(player, rarity, source, ordinal, out options);
 	}
 
+	// 公开 API 可能传入未定义的稀有度值：按空池处理，不抛异常。
+	private static IReadOnlyList<Type> GetForgeTypesForRarity(HextechRarityTier rarity)
+	{
+		return HextechContentRegistry.ForgeTypesByRarity.GetValueOrDefault(rarity, Array.Empty<Type>());
+	}
+
 	private static bool TryCreateStableRandomForgeChoice(Player player, HextechRarityTier rarity, string source, int ordinal, out List<RelicModel> options)
 	{
-		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity));
+		List<Type> pool = BuildAvailableForgePool(player, GetForgeTypesForRarity(rarity));
 		if (pool.Count == 0)
 		{
 			pool = BuildAvailableForgePool(player, HextechCatalog.GetAllForgeTypes());
@@ -180,7 +186,7 @@ internal static class HextechForgeGrantHelper
 		Func<Type, bool> forgeTypePredicate,
 		out List<RelicModel> options)
 	{
-		List<Type> pool = BuildAvailableForgePool(player, HextechCatalog.GetForgeTypesForRarity(rarity).Where(forgeTypePredicate));
+		List<Type> pool = BuildAvailableForgePool(player, GetForgeTypesForRarity(rarity).Where(forgeTypePredicate));
 		return TryPickForgeChoiceOptions(player, pool, rarity, source, "filtered-forge-choice", ordinal, out options);
 	}
 
