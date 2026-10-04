@@ -18,12 +18,7 @@ public sealed class FeelTheBurnCard : HextechOwnerPoolTokenCard
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner?.Creature.CombatState == null)
-		{
-			return;
-		}
-
-		List<Creature> enemies = Owner.Creature.CombatState.Enemies
+		List<Creature> enemies = Owner.Creature.CombatState!.Enemies
 			.Where(static enemy => enemy.IsAlive)
 			.ToList();
 		if (enemies.Count == 0)

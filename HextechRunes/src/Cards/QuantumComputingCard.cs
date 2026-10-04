@@ -19,12 +19,7 @@ public sealed class QuantumComputingCard : HextechOwnerPoolTokenCard
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner?.Creature.CombatState == null)
-		{
-			return;
-		}
-
-		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies.ToList();
+		List<Creature> enemies = Owner.Creature.CombatState!.HittableEnemies.ToList();
 		if (enemies.Count == 0)
 		{
 			return;

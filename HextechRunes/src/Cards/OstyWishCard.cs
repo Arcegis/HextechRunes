@@ -29,12 +29,8 @@ public sealed class OstyWishCard : HextechOwnerPoolTokenCard
 
 	internal static CardModel CreatePlaceholderPreview()
 	{
-		CardModel card = ModelDb.Card<OstyWishCard>().ToMutable();
-		if (card is OstyWishCard wish)
-		{
-			wish._usePlaceholderDisplayValues = true;
-		}
-
+		OstyWishCard card = (OstyWishCard)ModelDb.Card<OstyWishCard>().ToMutable();
+		card._usePlaceholderDisplayValues = true;
 		return card;
 	}
 
@@ -66,14 +62,9 @@ public sealed class OstyWishCard : HextechOwnerPoolTokenCard
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner?.Creature.CombatState == null)
-		{
-			return;
-		}
-
 		await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
 
-		IReadOnlyList<Creature> enemies = Owner.Creature.CombatState.HittableEnemies.ToList();
+		IReadOnlyList<Creature> enemies = Owner.Creature.CombatState!.HittableEnemies.ToList();
 		foreach (Creature enemy in enemies)
 		{
 			await HextechGameApiCompat.Damage(choiceContext, enemy, DynamicVars.Damage, Owner.Creature, this);
