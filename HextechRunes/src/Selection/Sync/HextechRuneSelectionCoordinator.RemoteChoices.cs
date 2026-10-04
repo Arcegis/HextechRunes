@@ -25,93 +25,39 @@ internal static partial class HextechRuneSelectionCoordinator
 		"Task",
 		BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 	private static readonly bool BufferedChoiceReflectionAvailable = ValidateBufferedChoiceReflection();
+	private static readonly TimeSpan RemoteChoiceStillWaitingLogInterval = TimeSpan.FromSeconds(30);
 
+	/// <summary>
+	/// 等待远端玩家的指定 choiceId。与原版一样不设超时:只在本局结束、联机断开、shouldRemainActive 返回 false
+	/// 或取消时以 OperationCanceledException 退出;收到的载荷不满足 isExpected 时按协议失败处理。
+	/// </summary>
 	internal static async Task<(PlayerChoiceResult Result, uint ChoiceId)> WaitForRemoteHextechChoice(
 		PlayerChoiceSynchronizer synchronizer,
 		RunState runState,
 		Player player,
-		uint initialChoiceId,
+		uint choiceId,
 		Func<PlayerChoiceResult, bool> isExpected,
 		string context,
-		Func<PlayerChoiceResult, bool>? shouldReturnMalformedExactChoice = null,
+		Func<bool>? shouldRemainActive = null,
 		CancellationToken cancellationToken = default)
 	{
-		(PlayerChoiceResult Result, uint ChoiceId)? result = await TryWaitForRemoteHextechChoice(
+		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await WaitForRemoteChoiceByEvent(
 			synchronizer,
 			runState,
 			player,
-			initialChoiceId,
-			isExpected,
+			choiceId,
 			context,
-			timeoutFrames: null,
-			shouldReturnMalformedExactChoice: shouldReturnMalformedExactChoice,
-			cancellationToken: cancellationToken);
-		if (result.HasValue)
+			shouldRemainActive,
+			cancellationToken);
+		if (isExpected(remoteChoice))
 		{
-			return result.Value;
+			return (remoteChoice, receivedChoiceId);
 		}
 
-		throw new TimeoutException($"Timed out waiting for remote hextech choice context={context} player={player.NetId} choiceId={initialChoiceId}.");
-	}
-
-	internal static async Task<(PlayerChoiceResult Result, uint ChoiceId)?> TryWaitForRemoteHextechChoice(
-		PlayerChoiceSynchronizer synchronizer,
-		RunState runState,
-		Player player,
-		uint initialChoiceId,
-		Func<PlayerChoiceResult, bool> isExpected,
-		string context,
-		int? timeoutFrames,
-		Func<bool>? shouldContinueAfterTimeout = null,
-		Func<PlayerChoiceResult, bool>? shouldReturnMalformedExactChoice = null,
-		CancellationToken cancellationToken = default)
-	{
-		while (true)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-			(PlayerChoiceResult Result, uint ChoiceId)? remote = await WaitForRemoteChoiceByEvent(
-				synchronizer,
-				runState,
-				player,
-				initialChoiceId,
-				context,
-				timeoutFrames,
-				shouldContinueAfterTimeout,
-				cancellationToken);
-			if (!remote.HasValue)
-			{
-				if (!IsCurrentRun(runState)
-					|| !HextechPlayerContextHelper.IsMultiplayerConnected()
-					|| shouldContinueAfterTimeout?.Invoke() == false)
-				{
-					throw new OperationCanceledException(
-						$"Remote choice wait was canceled: context={context} player={player.NetId} choiceId={initialChoiceId}.");
-				}
-
-				if (shouldContinueAfterTimeout?.Invoke() == true)
-				{
-					HextechLog.Warn("Mayhem", $"WaitForRemoteHextechChoice: still waiting context={context} player={player.NetId} choiceId={initialChoiceId}");
-					continue;
-				}
-
-				HextechLog.Warn("Mayhem", $"WaitForRemoteHextechChoice: interrupted context={context} player={player.NetId} choiceId={initialChoiceId}");
-				return null;
-			}
-
-			PlayerChoiceResult remoteChoice = remote.Value.Result;
-			uint receivedChoiceId = remote.Value.ChoiceId;
-			if (isExpected(remoteChoice)
-				|| (receivedChoiceId == initialChoiceId
-					&& shouldReturnMalformedExactChoice?.Invoke(remoteChoice) == true))
-			{
-				return (remoteChoice, receivedChoiceId);
-			}
-
-			throw CreateProtocolFailure(
-				context,
-				$"Unexpected choice payload context={context} player={player.NetId} " +
-				$"choiceId={initialChoiceId} type={remoteChoice.ChoiceType} result={remoteChoice}");
-		}
+		throw CreateProtocolFailure(
+			context,
+			$"Unexpected choice payload context={context} player={player.NetId} " +
+			$"choiceId={choiceId} type={remoteChoice.ChoiceType} result={remoteChoice}");
 	}
 
 	internal static uint SyncLocalHextechChoice(
@@ -135,13 +81,12 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 	}
 
-	private static async Task<(PlayerChoiceResult Result, uint ChoiceId)?> WaitForRemoteChoiceByEvent(
+	private static async Task<(PlayerChoiceResult Result, uint ChoiceId)> WaitForRemoteChoiceByEvent(
 		PlayerChoiceSynchronizer synchronizer,
 		RunState runState,
 		Player player,
 		uint choiceId,
 		string context,
-		int? timeoutFrames,
 		Func<bool>? shouldRemainActive,
 		CancellationToken cancellationToken)
 	{
@@ -171,7 +116,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		synchronizer.PlayerChoiceReceived += OnPlayerChoiceReceived;
 		try
 		{
-			ThrowIfSelectionTransactionInactive(runState, shouldRemainActive, context);
 			if (TryTakeBufferedRemoteChoice(synchronizer, player, choiceId, out NetPlayerChoiceResult lateBufferedResult))
 			{
 				HextechLog.Info("Mayhem", $"RemoteChoice event wait: consumed late buffered choice context={context} player={player.NetId} choiceId={choiceId}");
@@ -179,42 +123,28 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			Task<(uint ChoiceId, NetPlayerChoiceResult Result)> waitTask = completion.Task;
-			using CancellationTokenSource observerCancellation =
-				CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-			Task interrupted = WaitForSelectionTransactionInterruptionAsync(
-				runState,
-				shouldRemainActive,
-				observerCancellation.Token);
-			Task? timeout = timeoutFrames.HasValue
-				? WaitForFramesOrRunChangeAsync(runState, timeoutFrames.Value, observerCancellation.Token)
-				: null;
-			Task winner = timeout == null
-				? await Task.WhenAny(waitTask, interrupted)
-				: await Task.WhenAny(waitTask, interrupted, timeout);
-			if (winner != waitTask)
+			string waitDescription = $"context={context} player={player.NetId} choiceId={choiceId}";
+			while (!waitTask.IsCompleted)
 			{
+				using CancellationTokenSource observerCancellation =
+					CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+				Task interrupted = WaitForSelectionTransactionInterruptionAsync(
+					runState,
+					shouldRemainActive,
+					waitDescription,
+					observerCancellation.Token);
+				Task winner = await Task.WhenAny(waitTask, interrupted);
 				observerCancellation.Cancel();
 				ObserveCompletion(interrupted, $"{context} interruption observer");
-				if (timeout != null)
+				if (winner != waitTask)
 				{
-					ObserveCompletion(timeout, $"{context} timeout observer");
-				}
-
-				if (cancellationToken.IsCancellationRequested)
-				{
+					// 观察者只在取消或事务失效时结束;续体执行前状态又恢复时继续等待同一个 choiceId。
 					cancellationToken.ThrowIfCancellationRequested();
+					ThrowIfSelectionTransactionInactive(runState, shouldRemainActive, context);
 				}
-
-				return null;
 			}
 
 			(uint receivedChoiceId, NetPlayerChoiceResult result) = await waitTask;
-			observerCancellation.Cancel();
-			ObserveCompletion(interrupted, $"{context} interruption observer");
-			if (timeout != null)
-			{
-				ObserveCompletion(timeout, $"{context} timeout observer");
-			}
 			TryTakeBufferedRemoteChoice(synchronizer, player, receivedChoiceId, out _);
 			HextechLog.Info("Mayhem", $"RemoteChoice event wait: received choice context={context} player={player.NetId} expectedChoiceId={choiceId} receivedChoiceId={receivedChoiceId}");
 			return (PlayerChoiceResult.FromNetData(player, runState, result), receivedChoiceId);
@@ -242,13 +172,22 @@ internal static partial class HextechRuneSelectionCoordinator
 	private static async Task WaitForSelectionTransactionInterruptionAsync(
 		RunState runState,
 		Func<bool>? shouldRemainActive,
+		string waitDescription,
 		CancellationToken cancellationToken)
 	{
+		// 按墙钟计时:联机计时类模组会加速帧,按帧数打日志会失真。
+		DateTimeOffset nextStillWaitingLog = DateTimeOffset.UtcNow + RemoteChoiceStillWaitingLogInterval;
 		while (!cancellationToken.IsCancellationRequested
 			&& IsCurrentRun(runState)
 			&& HextechPlayerContextHelper.IsMultiplayerConnected()
 			&& shouldRemainActive?.Invoke() != false)
 		{
+			if (DateTimeOffset.UtcNow >= nextStillWaitingLog)
+			{
+				HextechLog.Warn("Mayhem", $"WaitForRemoteHextechChoice: still waiting {waitDescription}");
+				nextStillWaitingLog = DateTimeOffset.UtcNow + RemoteChoiceStillWaitingLogInterval;
+			}
+
 			await WaitForProcessFrameOrDelayAsync(cancellationToken);
 		}
 	}
@@ -353,18 +292,16 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static IEnumerable<(int Index, ulong SenderId, uint ChoiceId, Task<NetPlayerChoiceResult> Task)> EnumerateBufferedChoices(IList receivedChoices)
 	{
-		FieldInfo? senderIdField = ReceivedChoiceSenderIdField;
-		FieldInfo? choiceIdField = ReceivedChoiceChoiceIdField;
-		FieldInfo? completionSourceField = ReceivedChoiceCompletionSourceField;
-		PropertyInfo? taskProperty = ReceivedChoiceTaskProperty;
-		if (!BufferedChoiceReflectionAvailable
-			|| senderIdField == null
-			|| choiceIdField == null
-			|| completionSourceField == null
-			|| taskProperty == null)
+		if (!BufferedChoiceReflectionAvailable)
 		{
 			yield break;
 		}
+
+		// BufferedChoiceReflectionAvailable 为 true 时四个成员都已解析。
+		FieldInfo senderIdField = ReceivedChoiceSenderIdField!;
+		FieldInfo choiceIdField = ReceivedChoiceChoiceIdField!;
+		FieldInfo completionSourceField = ReceivedChoiceCompletionSourceField!;
+		PropertyInfo taskProperty = ReceivedChoiceTaskProperty!;
 
 		for (int i = 0; i < receivedChoices.Count; i++)
 		{

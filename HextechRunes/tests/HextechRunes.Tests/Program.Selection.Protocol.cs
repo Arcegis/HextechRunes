@@ -120,12 +120,10 @@ internal static partial class Program
 			rerollHistory: [ 2, 0 ],
 			finalOptions);
 
-		Expect(HextechChoiceCodec.IsRuneSelection(result), "rune selection kind predicate should decode");
-		Expect(HextechChoiceCodec.IsRuneSelection(result, 1, 2), "matching rune selection act and ordinal should decode");
-		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> decodedFinalOptionIds), "matching rune selection should decode");
-		Equal(1, selectedIndex, "selected index");
-		SequenceEqual(new[] { 2, 0 }, rerollHistory, "reroll history");
-		SequenceEqual(finalOptionIds, decodedFinalOptionIds, "final option ids");
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out RuneSelectionPayload? decoded), "matching rune selection should decode");
+		Equal(1, decoded.SelectedIndex, "selected index");
+		SequenceEqual(new[] { 2, 0 }, decoded.RerollHistory, "reroll history");
+		SequenceEqual(finalOptionIds, decoded.FinalOptionIds, "final option ids");
 	}
 
 	[HextechTest]
@@ -138,11 +136,11 @@ internal static partial class Program
 			rerollHistory: [],
 			CreateRuneSelectionTestOptions(3));
 
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 0, 2, out _, out _, out _), "wrong rune selection act should be rejected");
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 1, out _, out _, out _), "wrong rune selection ordinal should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 0, 2, out _), "wrong rune selection act should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 1, out _), "wrong rune selection ordinal should be rejected");
 
 		PlayerChoiceResult malformed = PlayerChoiceResult.FromIndexes(new List<int> { Magic, ChoiceKindRuneSelection, 1, 2, 0, 2, 0 });
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(malformed, 1, 2, out _, out _, out _), "malformed rune selection should be rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(malformed, 1, 2, out _), "malformed rune selection should be rejected");
 	}
 
 	[HextechTest]
@@ -160,16 +158,15 @@ internal static partial class Program
 		HextechWeightedRuneOptions finalOptions = new([ candidates[2] ], 170);
 		PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [ 0, 0 ], finalOptions, offered);
 		Expect(
-			HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out _, out List<int> rerolls, out List<ModelId> finalIds, out List<ModelId> remoteSeen),
+			HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out RuneSelectionPayload? decoded),
 			"seen history decodes with consecutive rerolls");
-		SequenceEqual(new[] { 0, 0 }, rerolls, "same-slot reroll history");
-		SequenceEqual(new[] { final }, finalIds, "only C is in final options");
+		SequenceEqual(new[] { 0, 0 }, decoded.RerollHistory, "same-slot reroll history");
+		SequenceEqual(new[] { final }, decoded.FinalOptionIds, "only C is in final options");
 		Expect(
-			remoteSeen.ToHashSet().SetEquals(new[] { initial, intermediate, final }),
+			decoded.SeenOptionIds.ToHashSet().SetEquals(new[] { initial, intermediate, final }),
 			"remote receives A and overwritten B after the exclusion pool resets");
-		Expect(HextechRuneWeightCodec.TryRestore(choice, finalOptions, out List<RelicModel> restored), "weight parser skips seen history");
-		Equal(170, HextechWeightedRuneOptions.GetWeight(restored), "final weight survives seen history");
-		Expect(HextechGeneratedRuneDataCodec.Restore(choice, restored), "recipe parser skips seen history");
+		Equal(170, decoded.CharacterWeightPercent, "final weight survives seen history");
+		Expect(HextechGeneratedRuneDataCodec.Restore(decoded.GeneratedRuneData, finalOptions), "recipe parser skips seen history");
 		PlayerChoiceResult reordered = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [ 0, 0 ], finalOptions, offered.Reverse());
 		SequenceEqual(choice.AsIndexes(), reordered.AsIndexes(), "seen history uses canonical ordering");
 	}
@@ -181,22 +178,20 @@ internal static partial class Program
 		HextechWeightedRuneOptions finalOptions = new([ candidates[2] ], 170);
 		PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], finalOptions, [ candidates[0].Id, candidates[1].Id ]);
 		Expect(
-			HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out int selected, out List<int> history, out List<ModelId> finalIds, out List<ModelId> seen),
+			HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out RuneSelectionPayload? decoded),
 			"self-pick history decodes");
-		Equal(0, selected, "self-pick selected index");
-		Equal(0, history.Count, "self-pick has no rerolls");
-		SequenceEqual(new[] { candidates[2].Id }, finalIds, "self-pick carries one final model");
+		Equal(0, decoded.SelectedIndex, "self-pick selected index");
+		Equal(0, decoded.RerollHistory.Count, "self-pick has no rerolls");
+		SequenceEqual(new[] { candidates[2].Id }, decoded.FinalOptionIds, "self-pick carries one final model");
 		Expect(
-			seen.ToHashSet().SetEquals(candidates.Select(static relic => relic.Id)),
+			decoded.SeenOptionIds.ToHashSet().SetEquals(candidates.Select(static relic => relic.Id)),
 			"self-pick appends the chosen model even when it was outside the original offers");
 
 		List<int> legacy = [ Magic, ChoiceKindRuneSelection, 1, 2, 0, 0 ];
-		HextechStableModelIdListCodec.Append(legacy, finalIds);
+		HextechStableModelIdListCodec.Append(legacy, decoded.FinalOptionIds);
 		HextechRuneWeightCodec.Append(legacy, finalOptions);
 		PlayerChoiceResult oldChoice = PlayerChoiceResult.FromIndexes(legacy);
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(oldChoice, 1, 2, out _, out _, out _), "pre-history payload cannot silently drop intermediate candidates");
-		Expect(!HextechRuneWeightCodec.TryRestore(oldChoice, finalOptions, out _), "legacy weight restore is rejected");
-		Expect(!HextechGeneratedRuneDataCodec.Restore(oldChoice, finalOptions), "legacy recipe restore is rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(oldChoice, 1, 2, out _), "pre-history payload cannot silently drop intermediate candidates");
 	}
 
 	[HextechTest]
@@ -211,13 +206,13 @@ internal static partial class Program
 				.ToArray();
 			PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], options, seen);
 			Expect(
-				HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out _, out _, out _, out List<ModelId> decoded),
+				HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out RuneSelectionPayload? decoded),
 				$"{count} seen IDs decode across chunk boundaries");
-			Equal(count, decoded.Count, "no IDs are truncated");
-			Expect(decoded.ToHashSet().SetEquals(seen), "every seen ID survives");
-			Expect(HextechRuneWeightCodec.TryRestore(choice, [ new GeneratedTestRelic() ], out List<RelicModel> restored), "weight follows all seen chunks");
-			Equal(170, HextechWeightedRuneOptions.GetWeight(restored), "weight survives chunking");
-			Expect(HextechGeneratedRuneDataCodec.Restore(choice, restored), "recipe follows all seen chunks");
+			Equal(count, decoded.SeenOptionIds.Count, "no IDs are truncated");
+			Expect(decoded.SeenOptionIds.ToHashSet().SetEquals(seen), "every seen ID survives");
+			Equal(170, decoded.CharacterWeightPercent, "weight survives chunking");
+			RelicModel[] restored = [ new GeneratedTestRelic() ];
+			Expect(HextechGeneratedRuneDataCodec.Restore(decoded.GeneratedRuneData, restored), "recipe follows all seen chunks");
 			Equal("recipe:chunked", ((GeneratedTestRelic)restored[0]).Data, "recipe survives chunking");
 			PlayerChoiceResult reordered = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], options, seen.Reverse().Concat(seen));
 			SequenceEqual(choice.AsIndexes(), reordered.AsIndexes(), "deduplication and ordering are stable across chunks");
@@ -235,19 +230,18 @@ internal static partial class Program
 				.Select(static index => new ModelId("HEXTECH_TEST", $"REROLL_{index}"))
 				.ToArray();
 			PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, history, options, seen);
-			Expect(HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out _, out List<int> decoded, out _), $"{count} rerolls decode");
-			SequenceEqual(history, decoded, "all rerolls retain their original order and count");
-			Expect(HextechRuneWeightCodec.TryRestore(choice, [ new GeneratedTestRelic() ], out List<RelicModel> restored), "weight follows long reroll history");
-			Expect(HextechGeneratedRuneDataCodec.Restore(choice, restored), "recipe follows long reroll history");
+			Expect(HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out RuneSelectionPayload? decoded), $"{count} rerolls decode");
+			SequenceEqual(history, decoded.RerollHistory, "all rerolls retain their original order and count");
+			Equal(170, decoded.CharacterWeightPercent, "weight follows long reroll history");
+			RelicModel[] restored = [ new GeneratedTestRelic() ];
+			Expect(HextechGeneratedRuneDataCodec.Restore(decoded.GeneratedRuneData, restored), "recipe follows long reroll history");
 			Equal("recipe:rerolled", ((GeneratedTestRelic)restored[0]).Data, "recipe survives long reroll history");
 			foreach (int invalidCount in new[] { -1, int.MaxValue })
 			{
 				List<int> malformed = choice.AsIndexes().ToList();
 				malformed[5] = invalidCount;
 				PlayerChoiceResult invalid = PlayerChoiceResult.FromIndexes(malformed);
-				Expect(!HextechChoiceCodec.TryDecodeRuneSelection(invalid, 1, 2, out _, out _, out _), "invalid reroll count rejected");
-				Expect(!HextechRuneWeightCodec.TryRestore(invalid, options, out _), "weight rejects invalid reroll count");
-				Expect(!HextechGeneratedRuneDataCodec.Restore(invalid, options), "recipe rejects invalid reroll count");
+				Expect(!HextechChoiceCodec.TryDecodeRuneSelection(invalid, 1, 2, out _), "invalid reroll count rejected");
 			}
 		}
 	}
@@ -267,7 +261,7 @@ internal static partial class Program
 			List<int> malformed = payload.ToList();
 			malformed[seenCursor + 1] = invalidCount;
 			Expect(
-				!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(malformed), 1, 2, out _, out _, out _),
+				!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(malformed), 1, 2, out _),
 				"negative, inconsistent or impossible total is rejected");
 		}
 
@@ -276,7 +270,7 @@ internal static partial class Program
 			List<int> malformed = payload.ToList();
 			malformed[seenCursor + 3] = invalidCount;
 			Expect(
-				!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(malformed), 1, 2, out _, out _, out _),
+				!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(malformed), 1, 2, out _),
 				"empty or oversized chunk is rejected");
 		}
 
@@ -288,11 +282,11 @@ internal static partial class Program
 		Equal(0, cursor, "failed decoding does not consume the caller's cursor");
 		List<int> truncated = payload.Take(payload.Count - 1).ToList();
 		Expect(
-			!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(truncated), 1, 2, out _, out _, out _),
+			!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(truncated), 1, 2, out _),
 			"truncated seen data is rejected");
 		List<int> trailing = payload.Append(12345).ToList();
 		Expect(
-			!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(trailing), 1, 2, out _, out _, out _),
+			!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(trailing), 1, 2, out _),
 			"unknown trailing payload is rejected");
 	}
 
@@ -495,7 +489,7 @@ internal static partial class Program
 			int.MaxValue
 		});
 		Expect(
-			!HextechChoiceCodec.TryDecodeRuneSelection(runeSelectionWithOutOfRangeLegacyOrdinal, 1, 2, out _, out _, out _),
+			!HextechChoiceCodec.TryDecodeRuneSelection(runeSelectionWithOutOfRangeLegacyOrdinal, 1, 2, out _),
 			"out-of-range legacy rune selection ordinal should be rejected");
 
 		PlayerChoiceResult forgeSelectionWithOutOfRangeLegacyOrdinal = PlayerChoiceResult.FromIndexes(new List<int>
@@ -508,11 +502,8 @@ internal static partial class Program
 			int.MaxValue
 		});
 		Expect(
-			!HextechChoiceCodec.TryDecodeForgeSelection(forgeSelectionWithOutOfRangeLegacyOrdinal, OperationToken, out _, out _),
+			!HextechChoiceCodec.TryDecodeRelicChoice(HextechRelicChoiceKind.Forge, forgeSelectionWithOutOfRangeLegacyOrdinal, OperationToken, out _, out _),
 			"out-of-range legacy forge selection ordinal should be rejected");
-		Expect(
-			HextechChoiceCodec.IsMalformedForgeSelectionEnvelope(forgeSelectionWithOutOfRangeLegacyOrdinal, OperationToken),
-			"malformed forge selection envelope should remain identifiable");
 
 		PlayerChoiceResult malformedRelicOptionSelection = PlayerChoiceResult.FromIndexes(new List<int>
 		{
@@ -523,8 +514,8 @@ internal static partial class Program
 			StableModelIdListVersion
 		});
 		Expect(
-			HextechChoiceCodec.IsMalformedRelicOptionSelectionEnvelope(malformedRelicOptionSelection, OperationToken),
-			"malformed relic option envelope should remain identifiable");
+			!HextechChoiceCodec.TryDecodeRelicChoice(HextechRelicChoiceKind.RelicOption, malformedRelicOptionSelection, OperationToken, out _, out _),
+			"truncated relic option selection should be rejected");
 
 		PlayerChoiceResult randomGrantWithOutOfRangeLegacyOrdinal = PlayerChoiceResult.FromIndexes(new List<int>
 		{
@@ -540,24 +531,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void RelicOptionSelectionRoundTripRequiresMatchingOptions()
-	{
-		const int OperationToken = 889900;
-		RelicModel[] options = CreateRuneSelectionTestOptions(2);
-		ModelId[] optionIds = options
-			.Select(static relic => relic.CanonicalInstance?.Id ?? relic.Id)
-			.ToArray();
-		PlayerChoiceResult result = HextechChoiceCodec.CreateRelicOptionSelection(OperationToken, 1, options);
-
-		Expect(HextechChoiceCodec.IsRelicOptionSelection(result, OperationToken, options), "matching relic option selection should be expected");
-		Expect(HextechChoiceCodec.TryDecodeRelicOptionSelection(result, OperationToken, out int selectedIndex, out List<ModelId> decodedOptionIds), "relic option selection should decode");
-		Equal(1, selectedIndex, "selected relic option index");
-		SequenceEqual(optionIds, decodedOptionIds, "relic option ids");
-		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, OperationToken, options.Reverse().ToArray()), "reordered relic options should not be expected");
-		Expect(!HextechChoiceCodec.IsRelicOptionSelection(result, OperationToken, CreateRuneSelectionTestOptions(3)), "different relic option count should not be expected");
-	}
-
-	[HextechTest]
 	private static void GeneratedRuneSelectionPreservesInstanceDataAndRejectsTruncation()
 	{
 		RelicModel[] options = [new GeneratedTestRelic { Data = "recipe:first" }, new GeneratedTestRelic { Data = "recipe:second" }];
@@ -565,16 +538,21 @@ internal static partial class Program
 		Expect(HextechSelectionHelpers.SameRuneCandidate(options[0], new GeneratedTestRelic { Data = "recipe:first" }), "same recipe reconstruction is unchanged");
 		PlayerChoiceResult choice = HextechChoiceCodec.CreateRuneSelection(1, 2, 1, [0, 1], options);
 		RelicModel[] restored = [new GeneratedTestRelic(), new GeneratedTestRelic()];
-		Expect(HextechGeneratedRuneDataCodec.Restore(choice, restored), "generated data restores");
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(choice, 1, 2, out RuneSelectionPayload? decoded), "generated selection decodes");
+		Expect(HextechGeneratedRuneDataCodec.Restore(decoded.GeneratedRuneData, restored), "generated data restores");
 		Equal("recipe:second", ((GeneratedTestRelic)restored[1]).Data, "same model ID keeps separate recipes");
 		List<int> truncated = choice.AsIndexes().ToList();
 		truncated.RemoveAt(truncated.Count - 1);
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(truncated), 1, 2, out _, out _, out _), "truncated recipe must fail");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(truncated), 1, 2, out _), "truncated recipe must fail");
 		List<int> missing = [];
 		HextechStableModelIdListCodec.Append(missing, options.Select(static option => option.Id));
 		PlayerChoiceResult old = PlayerChoiceResult.FromIndexes(new[] { Magic, 2, 1, 2, 1, 0 }.Concat(missing).ToList());
-		Expect(!HextechGeneratedRuneDataCodec.Restore(old, restored), "missing generated data must not reroll");
-		Expect(HextechGeneratedRuneDataCodec.Restore(HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], CreateRuneSelectionTestOptions(2)), CreateRuneSelectionTestOptions(2)), "ordinary choices keep working");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(old, 1, 2, out _), "payload without seen history and recipes is rejected");
+		Expect(!HextechGeneratedRuneDataCodec.Restore([], restored), "missing generated data must not reroll");
+		Expect(
+			HextechChoiceCodec.TryDecodeRuneSelection(HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], CreateRuneSelectionTestOptions(2)), 1, 2, out RuneSelectionPayload? ordinary)
+				&& HextechGeneratedRuneDataCodec.Restore(ordinary.GeneratedRuneData, CreateRuneSelectionTestOptions(2)),
+			"ordinary choices keep working");
 
 		HextechRuneSelectionJournalState journal = new();
 		journal.RecordSelected(1, 2, 7, options[1].Id, "recipe:second");
@@ -609,17 +587,17 @@ internal static partial class Program
 		Expect(forgeToken != crossedForgeToken, "different stable contexts should produce different operation tokens");
 
 		RelicModel[] options = CreateRuneSelectionTestOptions(2);
-		PlayerChoiceResult forge = HextechChoiceCodec.CreateForgeSelection(forgeToken, 0, options);
-		Expect(HextechChoiceCodec.TryDecodeForgeSelection(forge, forgeToken, out _, out _), "matching forge operation should decode");
-		Expect(!HextechChoiceCodec.TryDecodeForgeSelection(forge, crossedForgeToken, out _, out _), "crossed forge operation should be rejected");
+		PlayerChoiceResult forge = HextechChoiceCodec.CreateRelicChoice(HextechRelicChoiceKind.Forge, forgeToken, 0, options);
+		Expect(HextechChoiceCodec.TryDecodeRelicChoice(HextechRelicChoiceKind.Forge, forge, forgeToken, out _, out _), "matching forge operation should decode");
+		Expect(!HextechChoiceCodec.TryDecodeRelicChoice(HextechRelicChoiceKind.Forge, forge, crossedForgeToken, out _, out _), "crossed forge operation should be rejected");
 
 		int relicToken = HextechChoiceCodec.ComputeOperationToken(
 			"relic-option-selection",
 			ChoiceId,
 			PlayerNetId,
 			"relic-source");
-		PlayerChoiceResult relic = HextechChoiceCodec.CreateRelicOptionSelection(relicToken, 1, options);
-		Expect(!HextechChoiceCodec.TryDecodeRelicOptionSelection(relic, relicToken + 1, out _, out _), "crossed relic operation should be rejected");
+		PlayerChoiceResult relic = HextechChoiceCodec.CreateRelicChoice(HextechRelicChoiceKind.RelicOption, relicToken, 1, options);
+		Expect(!HextechChoiceCodec.TryDecodeRelicChoice(HextechRelicChoiceKind.RelicOption, relic, relicToken + 1, out _, out _), "crossed relic operation should be rejected");
 
 		int randomToken = HextechChoiceCodec.ComputeOperationToken(
 			"random-rune-grant",
@@ -646,14 +624,6 @@ internal static partial class Program
 		Expect(
 			!HextechChoiceCodec.TryDecodeEnemyHexAdjustment(enemy, enemyToken + 1, 1, 2, out _),
 			"crossed enemy adjustment operation should be rejected");
-	}
-
-	[HextechTest]
-	private static void NetworkChoiceTimeoutUsesNominalWallClockSeconds()
-	{
-		Equal(TimeSpan.Zero, HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(0), "zero timeout");
-		Equal(TimeSpan.FromSeconds(10), HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(600), "ack timeout");
-		Equal(TimeSpan.FromMinutes(10), HextechRuneSelectionCoordinator.GetNetworkChoiceTimeoutDuration(36000), "selection timeout");
 	}
 
 	[HextechTest]

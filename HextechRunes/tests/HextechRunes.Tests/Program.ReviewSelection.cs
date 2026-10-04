@@ -231,26 +231,12 @@ internal static partial class Program
 			Expect(HextechChoiceCodec.TryDecodeRelicChoice(kind, result, Token, out int selectedIndex, out List<ModelId> ids), $"{kind} round trip decodes");
 			Equal(2, selectedIndex, $"{kind} selected index");
 			SequenceEqual(options.Select(static relic => relic.CanonicalId()), ids, $"{kind} option ids");
-			Expect(HextechChoiceCodec.IsRelicChoice(kind, result, Token, options), $"{kind} matches same options");
-			Expect(!HextechChoiceCodec.IsRelicChoice(kind, result, Token, options.Reverse().ToArray()), $"{kind} rejects reordered options");
+			Expect(HextechChoiceCodec.MatchesOptionIds(ids, options), $"{kind} matches same options");
+			Expect(!HextechChoiceCodec.MatchesOptionIds(ids, options.Reverse().ToArray()), $"{kind} rejects reordered options");
+			Expect(!HextechChoiceCodec.MatchesOptionIds(ids, CreateRuneSelectionTestOptions(2)), $"{kind} rejects a different option count");
 			HextechRelicChoiceKind other = kind == HextechRelicChoiceKind.Forge ? HextechRelicChoiceKind.RelicOption : HextechRelicChoiceKind.Forge;
 			Expect(!HextechChoiceCodec.TryDecodeRelicChoice(other, result, Token, out _, out _), $"{kind} payload is not decoded as {other}");
-			Expect(!HextechChoiceCodec.IsMalformedRelicChoiceEnvelope(kind, result, Token), $"{kind} valid payload is not malformed");
-		}
-
-		// 旧入口与共享实现产出完全相同的载荷。
-		SequenceEqual(
-			Payload(HextechChoiceCodec.CreateRelicChoice(HextechRelicChoiceKind.Forge, Token, 0, options)),
-			Payload(HextechChoiceCodec.CreateForgeSelection(Token, 0, options)),
-			"forge wrapper payload");
-		SequenceEqual(
-			Payload(HextechChoiceCodec.CreateRelicChoice(HextechRelicChoiceKind.RelicOption, Token, 0, options)),
-			Payload(HextechChoiceCodec.CreateRelicOptionSelection(Token, 0, options)),
-			"relic option wrapper payload");
-
-		static List<int> Payload(PlayerChoiceResult result)
-		{
-			return HextechChoiceCodec.TryGetIndexPayload(result, out List<int> payload) ? payload : [];
+			Expect(!HextechChoiceCodec.TryDecodeRelicChoice(kind, result, Token + 1, out _, out _), $"{kind} crossed operation is rejected");
 		}
 	}
 
@@ -263,18 +249,16 @@ internal static partial class Program
 		Expect(HextechChoiceCodec.TryGetIndexPayload(valid, out List<int> payload), "rune selection payload");
 		Expect(HextechChoiceCodec.TryReadRuneSelectionHeader(payload, out int cursor), "valid header parses");
 		Equal(7, cursor, "final options start after header and one reroll entry");
-		Expect(HextechRuneWeightCodec.TryRestore(valid, options, out List<RelicModel> restored), "weight restores from valid payload");
-		Equal(140, HextechWeightedRuneOptions.GetWeight(restored), "restored weight");
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(valid, 1, 0, out RuneSelectionPayload? decoded), "valid payload decodes");
+		Equal(140, decoded.CharacterWeightPercent, "decoded weight");
 
 		List<int> wrongKind = payload.ToList();
 		wrongKind[1] = ChoiceKindForgeSelection;
-		PlayerChoiceResult wrongKindResult = PlayerChoiceResult.FromIndexes(wrongKind);
-		Expect(!HextechRuneWeightCodec.TryRestore(wrongKindResult, options, out _), "weight tail parser rejects non rune-selection kind");
-		Expect(!HextechGeneratedRuneDataCodec.Restore(wrongKindResult, options), "recipe tail parser rejects non rune-selection kind");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(wrongKind), 1, 0, out _), "non rune-selection kind is rejected");
 
 		List<int> wrongMagic = payload.ToList();
 		wrongMagic[0] = Magic + 1;
-		Expect(!HextechRuneWeightCodec.TryRestore(PlayerChoiceResult.FromIndexes(wrongMagic), options, out _), "weight tail parser rejects wrong magic");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(wrongMagic), 1, 0, out _), "wrong magic is rejected");
 	}
 
 	[HextechTest]

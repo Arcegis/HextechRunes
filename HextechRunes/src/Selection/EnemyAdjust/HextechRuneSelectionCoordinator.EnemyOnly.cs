@@ -18,9 +18,10 @@ internal static partial class HextechRuneSelectionCoordinator
 		EnemyHexAdjustmentSyncContext? sync = null;
 		if (!HextechPlayerContextHelper.IsSinglePlayerFlow(manager.NetService.Type))
 		{
-			PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(manager);
-			sync = CreateEnemyHexAdjustmentSyncContext(manager, runState, synchronizer, actIndex, newHexes)
+			PlayerChoiceSynchronizer synchronizer = RequirePlayerChoiceSynchronizer(manager);
+			Player authorityPlayer = GetActRollAuthorityPlayer(manager, runState)
 				?? throw new OperationCanceledException("No enemy hex selection authority.");
+			sync = CreateEnemyHexAdjustmentSyncContext(synchronizer, authorityPlayer, actIndex, newHexes);
 		}
 
 		bool authority = sync == null || IsLocalPlayer(manager, sync.AuthorityPlayer);

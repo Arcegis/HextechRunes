@@ -92,7 +92,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return (local.Rarity, local.MonsterHex, ResolvePlayerHexCount(local.RunConfigSnapshot, modifier, actIndex));
 		}
 
-		PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
+		PlayerChoiceSynchronizer synchronizer = RequirePlayerChoiceSynchronizer(runManager);
 		Player authorityPlayer = GetActRollAuthorityPlayer(runManager, runState)
 			?? throw CreateProtocolFailure(
 				$"act-roll act={actIndex}",
@@ -258,7 +258,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		bool syncedHostUsesExternalScaling = false;
 		int[] syncedEnemyHexCountsByAct = [];
 		HashSet<string> syncedDisabledPlayerRuneIds = [];
-		HextechRunConfigurationSnapshot? syncedRunConfigSnapshot = null;
+		HextechRunConfigurationSnapshot syncedRunConfigSnapshot = null!;
 		(_, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
 			runState,
@@ -274,13 +274,6 @@ internal static partial class HextechRuneSelectionCoordinator
 				out syncedDisabledPlayerRuneIds,
 				out syncedRunConfigSnapshot),
 			$"act-roll act={actIndex}");
-		if (syncedRunConfigSnapshot == null)
-		{
-			throw CreateProtocolFailure(
-				$"act-roll act={actIndex}",
-				$"Malformed host act-roll payload: act={actIndex} player={authorityPlayer.NetId} choiceId={receivedChoiceId}");
-		}
-
 		modifier.SetRarityForAct(actIndex, syncedRarity);
 		modifier.SetEnemyHexCountsByActSnapshot(syncedEnemyHexCountsByAct, $"host act-roll act={actIndex}");
 		modifier.SetPlayerRuneConfigDisabledIdsSnapshot(syncedDisabledPlayerRuneIds, $"host act-roll act={actIndex}");

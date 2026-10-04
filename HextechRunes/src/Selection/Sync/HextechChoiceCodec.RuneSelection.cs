@@ -3,13 +3,22 @@ using MegaCrit.Sts2.Core.GameActions;
 
 namespace HextechRunes;
 
+/// <param name="CharacterWeightPercent">最终角色权重;旧载荷没有这段尾部时为 null。</param>
+/// <param name="GeneratedRuneData">与最终候选一一对应的实例配方;载荷没有配方尾部时为空列表。</param>
+internal sealed record RuneSelectionPayload(
+	int SelectedIndex,
+	IReadOnlyList<int> RerollHistory,
+	IReadOnlyList<ModelId> FinalOptionIds,
+	IReadOnlyList<ModelId> SeenOptionIds,
+	int? CharacterWeightPercent,
+	IReadOnlyList<string> GeneratedRuneData);
+
 internal static partial class HextechChoiceCodec
 {
 	// [Magic, kind, act, ordinal, selectedIndex, rerollCount] + rerollHistory + 最终候选 ID 列表 + 本次展示过的候选历史 + 可选尾部(权重、实例配方)。
 	private const int RuneSelectionHeaderCount = 6;
 	private const int RuneSelectionRerollCountIndex = 5;
 
-	private static readonly object PlayerRuneIdsByOrdinalLock = new();
 	private static IReadOnlyList<ModelId>? _playerRuneIdsByOrdinal;
 	private static int _playerRuneIdsByOrdinalVersion = -1;
 
@@ -20,19 +29,16 @@ internal static partial class HextechChoiceCodec
 		get
 		{
 			int version = HextechContentRegistry.Version;
-			lock (PlayerRuneIdsByOrdinalLock)
+			if (_playerRuneIdsByOrdinal == null || _playerRuneIdsByOrdinalVersion != version)
 			{
-				if (_playerRuneIdsByOrdinal == null || _playerRuneIdsByOrdinalVersion != version)
-				{
-					_playerRuneIdsByOrdinal = HextechCatalog.GetConfigurablePlayerRuneIds()
-						.OrderBy(static id => id.Category, StringComparer.Ordinal)
-						.ThenBy(static id => id.Entry, StringComparer.Ordinal)
-						.ToArray();
-					_playerRuneIdsByOrdinalVersion = version;
-				}
-
-				return _playerRuneIdsByOrdinal;
+				_playerRuneIdsByOrdinal = HextechCatalog.GetConfigurablePlayerRuneIds()
+					.OrderBy(static id => id.Category, StringComparer.Ordinal)
+					.ThenBy(static id => id.Entry, StringComparer.Ordinal)
+					.ToArray();
+				_playerRuneIdsByOrdinalVersion = version;
 			}
+
+			return _playerRuneIdsByOrdinal;
 		}
 	}
 
@@ -49,55 +55,40 @@ internal static partial class HextechChoiceCodec
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
-	public static bool IsRuneSelection(PlayerChoiceResult result)
-	{
-		return TryGetIndexPayload(result, out List<int> payload)
-			&& payload.Count >= 2
-			&& payload[0] == Magic
-			&& payload[1] == ChoiceKindRuneSelection;
-	}
-
-	public static bool IsRuneSelection(PlayerChoiceResult result, int expectedActIndex, int expectedChoiceOrdinal)
-	{
-		return TryDecodeRuneSelection(result, expectedActIndex, expectedChoiceOrdinal, out _, out _, out _);
-	}
-
+	/// <summary>
+	/// 完整解码并校验符文选择载荷(含已见历史、权重与实例配方尾部)。远端在等待的 isExpected 里解码一次,
+	/// 之后直接用这个结果还原候选,不再从原始载荷重新解析。
+	/// </summary>
 	public static bool TryDecodeRuneSelection(
 		PlayerChoiceResult result,
 		int expectedActIndex,
 		int expectedChoiceOrdinal,
-		out int selectedIndex,
-		out List<int> rerollHistory,
-		out List<ModelId> finalOptionIds)
+		[NotNullWhen(true)] out RuneSelectionPayload? decoded)
 	{
-		return TryDecodeRuneSelection(result, expectedActIndex, expectedChoiceOrdinal,
-			out selectedIndex, out rerollHistory, out finalOptionIds, out _);
-	}
-
-	public static bool TryDecodeRuneSelection(
-		PlayerChoiceResult result,
-		int expectedActIndex,
-		int expectedChoiceOrdinal,
-		out int selectedIndex,
-		out List<int> rerollHistory,
-		out List<ModelId> finalOptionIds,
-		out List<ModelId> seenOptionIds)
-	{
-		selectedIndex = -1;
-		rerollHistory = [];
-		finalOptionIds = [];
-		seenOptionIds = [];
+		decoded = null;
 		if (!TryGetIndexPayload(result, out List<int> payload)
 			|| !TryReadRuneSelectionHeader(payload, out int finalOptionsCursor)
 			|| payload[2] != expectedActIndex
-			|| payload[3] != expectedChoiceOrdinal)
+			|| payload[3] != expectedChoiceOrdinal
+			|| !TryDecodeRuneSelectionFinalOptions(
+				payload,
+				finalOptionsCursor,
+				out List<ModelId> finalOptionIds,
+				out List<ModelId> seenOptionIds,
+				out int? characterWeightPercent,
+				out List<string> generatedRuneData))
 		{
 			return false;
 		}
 
-		selectedIndex = payload[4];
-		rerollHistory = payload.Skip(RuneSelectionHeaderCount).Take(payload[RuneSelectionRerollCountIndex]).ToList();
-		return TryDecodeRuneSelectionFinalOptions(payload, finalOptionsCursor, out finalOptionIds, out seenOptionIds);
+		decoded = new RuneSelectionPayload(
+			payload[4],
+			payload.Skip(RuneSelectionHeaderCount).Take(payload[RuneSelectionRerollCountIndex]).ToList(),
+			finalOptionIds,
+			seenOptionIds,
+			characterWeightPercent,
+			generatedRuneData);
+		return true;
 	}
 
 	/// <summary>
@@ -126,10 +117,18 @@ internal static partial class HextechChoiceCodec
 		return true;
 	}
 
-	private static bool TryDecodeRuneSelectionFinalOptions(List<int> payload, int cursor, out List<ModelId> finalOptionIds, out List<ModelId> seenOptionIds)
+	private static bool TryDecodeRuneSelectionFinalOptions(
+		List<int> payload,
+		int cursor,
+		out List<ModelId> finalOptionIds,
+		out List<ModelId> seenOptionIds,
+		out int? characterWeightPercent,
+		out List<string> generatedRuneData)
 	{
 		finalOptionIds = [];
 		seenOptionIds = [];
+		characterWeightPercent = null;
+		generatedRuneData = [];
 		if (payload.Count <= cursor)
 		{
 			return false;
@@ -137,38 +136,40 @@ internal static partial class HextechChoiceCodec
 
 		if (payload[cursor] == HextechStableModelIdListCodec.Version)
 		{
-			return HextechStableModelIdListCodec.TryDecode(payload, cursor, out finalOptionIds, out int nextCursor)
-				&& HextechRuneSeenHistoryCodec.TryRead(payload, ref nextCursor, out seenOptionIds)
-				&& finalOptionIds.All(seenOptionIds.Contains)
-				&& HextechRuneWeightCodec.TryRead(payload, ref nextCursor, out _)
-				&& HextechGeneratedRuneDataCodec.TryDecode(payload, nextCursor, finalOptionIds.Count, out _);
-		}
-
-		int optionCount = payload[cursor];
-		cursor++;
-		if (optionCount < 0
-			|| optionCount > MaxChoiceListCount
-			|| !HasRemaining(payload, cursor, optionCount))
-		{
-			return false;
-		}
-
-		for (int i = 0; i < optionCount; i++)
-		{
-			if (!TryGetRuneIdForOrdinal(payload[cursor + i], out ModelId? id))
+			if (!HextechStableModelIdListCodec.TryDecode(payload, cursor, out finalOptionIds, out cursor))
 			{
-				finalOptionIds.Clear();
+				return false;
+			}
+		}
+		else
+		{
+			int optionCount = payload[cursor];
+			cursor++;
+			if (optionCount < 0
+				|| optionCount > MaxChoiceListCount
+				|| !HasRemaining(payload, cursor, optionCount))
+			{
 				return false;
 			}
 
-			finalOptionIds.Add(id);
+			for (int i = 0; i < optionCount; i++)
+			{
+				if (!TryGetRuneIdForOrdinal(payload[cursor + i], out ModelId? id))
+				{
+					finalOptionIds.Clear();
+					return false;
+				}
+
+				finalOptionIds.Add(id);
+			}
+
+			cursor += optionCount;
 		}
 
-		cursor += optionCount;
 		return HextechRuneSeenHistoryCodec.TryRead(payload, ref cursor, out seenOptionIds)
 			&& finalOptionIds.All(seenOptionIds.Contains)
-			&& HextechRuneWeightCodec.TryRead(payload, ref cursor, out _)
-			&& HextechGeneratedRuneDataCodec.TryDecode(payload, cursor, finalOptionIds.Count, out _);
+			&& HextechRuneWeightCodec.TryRead(payload, ref cursor, out characterWeightPercent)
+			&& HextechGeneratedRuneDataCodec.TryDecode(payload, cursor, finalOptionIds.Count, out generatedRuneData);
 	}
 
 	private static bool TryGetRuneIdForOrdinal(int ordinal, [NotNullWhen(true)] out ModelId? id)
