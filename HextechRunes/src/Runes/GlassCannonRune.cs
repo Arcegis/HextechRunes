@@ -19,11 +19,6 @@ public sealed class GlassCannonRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner?.Creature == null)
-		{
-			return;
-		}
-
 		int hpCap = Math.Max(1, FloorToInt(Owner.Creature.MaxHp * HealCapPercent));
 		if (Owner.Creature.CurrentHp > hpCap)
 		{
