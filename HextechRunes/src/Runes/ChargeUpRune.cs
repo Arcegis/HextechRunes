@@ -11,7 +11,7 @@ public sealed class ChargeUpRune : HextechRelicBase
 
 	public override Task AfterStarsSpent(int amount, Player spender)
 	{
-		if (Owner == null || Owner.Creature.IsDead || spender != Owner || amount <= 0)
+		if (Owner.Creature.IsDead || spender != Owner || amount <= 0)
 		{
 			return Task.CompletedTask;
 		}

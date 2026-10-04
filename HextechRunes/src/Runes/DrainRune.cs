@@ -14,7 +14,7 @@ public sealed class DrainRune : HextechRelicBase
 
 	public override async Task AfterSummon(PlayerChoiceContext choiceContext, Player summoner, decimal amount)
 	{
-		if (summoner != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0m || Owner.Creature.CombatState == null)
+		if (summoner != Owner || Owner.Creature.IsDead || amount <= 0m || Owner.Creature.CombatState == null)
 		{
 			return;
 		}

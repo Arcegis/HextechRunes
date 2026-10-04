@@ -52,7 +52,7 @@ public sealed class FanTheHammerRune : TurnScopedRelicBase
 			return playCount;
 		}
 
-		return playCount + GetReplayCount();
+		return playCount + DynamicVars["Replays"].IntValue;
 	}
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
@@ -74,8 +74,7 @@ public sealed class FanTheHammerRune : TurnScopedRelicBase
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| cardSource is not CardModel card
+		if (cardSource is not CardModel card
 			|| card != _damageReducedCard
 			|| card.Owner != Owner
 			|| dealer != Owner.Creature
@@ -87,11 +86,6 @@ public sealed class FanTheHammerRune : TurnScopedRelicBase
 		}
 
 		return DynamicVars["DamageMultiplier"].BaseValue;
-	}
-
-	private int GetReplayCount()
-	{
-		return DynamicVars["Replays"].IntValue;
 	}
 
 	private void TrackDamageReducedCard(CardModel card)

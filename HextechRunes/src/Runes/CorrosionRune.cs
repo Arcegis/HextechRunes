@@ -16,8 +16,7 @@ public sealed class CorrosionRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| target.Side != CombatSide.Enemy
+		if (target.Side != CombatSide.Enemy
 			|| !target.IsAlive
 			|| result.TotalDamage <= 0m
 			|| !IsDamageFromOwner(dealer, cardSource))

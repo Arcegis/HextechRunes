@@ -42,9 +42,12 @@ public sealed partial class DoubleVisionRune
 		public bool WasGoldStolenBack { get; set; }
 	}
 
-	private sealed class EventRelicTransaction
+	// 一次事件选项内获得的遗物先只记账，等原选项 Task 完成后再按获得顺序逐个复制：
+	// 原版在选项内可能连续获得多件，复制必须串行，且收尾后迟到的异步获得不再并入本批。
+	internal sealed class EventRelicTransaction
 	{
-		private readonly EventRewardTransaction<EventRelicIntent> _transaction = new();
+		private readonly List<EventRelicIntent> _items = [];
+		private bool _commitStarted;
 
 		public EventRelicTransaction(
 			RunState runState,
@@ -62,33 +65,44 @@ public sealed partial class DoubleVisionRune
 
 		public EventRelicTransactionBatch Batch { get; }
 
-		public int Count => _transaction.Count;
+		public int Count => _items.Count;
 
 		public bool IsCommitting { get; private set; }
 
-		public bool IsAcceptingRecords => _transaction.IsAcceptingRecords;
-
-		public void Record(EventRelicIntent intent)
-		{
-			_transaction.Record(intent);
-		}
+		public bool IsAcceptingRecords { get; private set; } = true;
 
 		public bool TryRecord(EventRelicIntent intent)
 		{
-			return _transaction.TryRecord(intent);
+			if (!IsAcceptingRecords)
+			{
+				return false;
+			}
+
+			_items.Add(intent);
+			return true;
 		}
 
 		public void CloseForRecording()
 		{
-			_transaction.CloseForRecording();
+			IsAcceptingRecords = false;
 		}
 
 		public async Task CommitSequentially(Func<EventRelicIntent, Task> commit)
 		{
+			if (_commitStarted)
+			{
+				throw new InvalidOperationException("The event transaction has already been committed.");
+			}
+
+			CloseForRecording();
+			_commitStarted = true;
 			IsCommitting = true;
 			try
 			{
-				await _transaction.CommitSequentially(commit);
+				foreach (EventRelicIntent intent in _items)
+				{
+					await commit(intent);
+				}
 			}
 			finally
 			{
@@ -97,45 +111,38 @@ public sealed partial class DoubleVisionRune
 		}
 	}
 
-	private sealed class EventRelicTransactionBatch
+	internal sealed class EventRelicTransactionBatch
 	{
-		private readonly object _lock = new();
 		private int _activeTransactions;
 		private bool _hasCommittedRewardsSinceLastSave;
 
 		public void Begin()
 		{
-			lock (_lock)
-			{
-				_activeTransactions++;
-			}
+			_activeTransactions++;
 		}
 
 		public bool Complete(bool committedRewards, bool canSaveFinishedAncientEvent)
 		{
-			lock (_lock)
+			if (_activeTransactions <= 0)
 			{
-				if (_activeTransactions <= 0)
-				{
-					throw new InvalidOperationException("Event relic transaction batch completed without a matching begin.");
-				}
-
-				_activeTransactions--;
-				_hasCommittedRewardsSinceLastSave |= committedRewards;
-				if (_activeTransactions != 0
-					|| !_hasCommittedRewardsSinceLastSave
-					|| !canSaveFinishedAncientEvent)
-				{
-					return false;
-				}
-
-				_hasCommittedRewardsSinceLastSave = false;
-				return true;
+				throw new InvalidOperationException("Event relic transaction batch completed without a matching begin.");
 			}
+
+			_activeTransactions--;
+			_hasCommittedRewardsSinceLastSave |= committedRewards;
+			if (_activeTransactions != 0
+				|| !_hasCommittedRewardsSinceLastSave
+				|| !canSaveFinishedAncientEvent)
+			{
+				return false;
+			}
+
+			_hasCommittedRewardsSinceLastSave = false;
+			return true;
 		}
 	}
 
-	private sealed record EventRelicIntent(
+	internal sealed record EventRelicIntent(
 		Player Player,
 		RelicModel ObtainedRelic,
 		IReadOnlyList<DoubleVisionRune> Runes);

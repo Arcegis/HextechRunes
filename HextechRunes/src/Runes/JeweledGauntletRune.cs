@@ -25,7 +25,7 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		if (Owner == null || card.Owner != Owner)
+		if (card.Owner != Owner)
 		{
 			_pendingReplayRolls.Remove(card);
 			return playCount;
@@ -53,7 +53,7 @@ public sealed class JeweledGauntletRune : HextechRelicBase
 	// 消费节奏与旧版(每次真实出牌推进一位)一致;轮询产生的残留 pending 不会走到这里,无副作用。
 	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
-		if (Owner == null || cardPlay.Card.Owner != Owner || cardPlay.PlayIndex != 0)
+		if (cardPlay.Card.Owner != Owner || cardPlay.PlayIndex != 0)
 		{
 			return Task.CompletedTask;
 		}

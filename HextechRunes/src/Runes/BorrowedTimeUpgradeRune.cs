@@ -13,7 +13,7 @@ public sealed class BorrowedTimeUpgradeRune : CardUpgradeRuneBase<BorrowedTime>
 	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
 		_shouldCleanBorrowedTime = cardPlay.Card.Owner == Owner && cardPlay.Card is BorrowedTime;
-		_borrowedTimeBeforePlay = _shouldCleanBorrowedTime && Owner != null
+		_borrowedTimeBeforePlay = _shouldCleanBorrowedTime
 			? Owner.Creature.GetPowerAmount<BorrowedTimePower>()
 			: 0m;
 		return Task.CompletedTask;
@@ -21,7 +21,7 @@ public sealed class BorrowedTimeUpgradeRune : CardUpgradeRuneBase<BorrowedTime>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!_shouldCleanBorrowedTime || Owner == null || cardPlay.Card.Owner != Owner || cardPlay.Card is not BorrowedTime)
+		if (!_shouldCleanBorrowedTime || cardPlay.Card.Owner != Owner || cardPlay.Card is not BorrowedTime)
 		{
 			return;
 		}

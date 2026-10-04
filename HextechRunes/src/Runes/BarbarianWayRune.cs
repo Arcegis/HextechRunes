@@ -19,11 +19,6 @@ public sealed class BarbarianWayRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardModel> transformableCards = Owner.Deck.Cards
 			.Where(CanTransformToClaw)
 			.ToList();

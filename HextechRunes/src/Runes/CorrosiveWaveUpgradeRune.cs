@@ -14,7 +14,7 @@ public sealed class CorrosiveWaveUpgradeRune : CardUpgradeRuneBase<CorrosiveWave
 	// 给牌本身加消耗词条，而不是在结算时改去向：卡面会显示消耗，也会和"遗忘之魂"这类按词条生效的效果正常互动。
 	public override bool TryModifyKeywordsInCombat(CardModel card, ISet<CardKeyword> keywords)
 	{
-		return Owner != null && GrantsExhaust(card, Owner) && keywords.Add(CardKeyword.Exhaust);
+		return GrantsExhaust(card, Owner) && keywords.Add(CardKeyword.Exhaust);
 	}
 
 	internal static bool GrantsExhaust(CardModel card, Player owner)

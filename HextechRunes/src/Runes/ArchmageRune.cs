@@ -13,8 +13,7 @@ public sealed class ArchmageRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| !CombatManager.Instance.IsInProgress
+		if (!CombatManager.Instance.IsInProgress
 			|| !IsOwnedSkill(cardPlay.Card)
 			|| !RollTrigger(cardPlay.Card, out int rollOrdinal)
 			|| PickCardToMakeFree(cardPlay.Card, rollOrdinal) is not CardModel card)
@@ -29,12 +28,6 @@ public sealed class ArchmageRune : HextechRelicBase
 
 	private bool RollTrigger(CardModel sourceCard, out int rollOrdinal)
 	{
-		rollOrdinal = -1;
-		if (Owner == null)
-		{
-			return false;
-		}
-
 		rollOrdinal = ConsumeCombatProcOrdinal(nameof(ArchmageRune), ref _localFreeCardRollOrdinal);
 		return HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
@@ -48,11 +41,6 @@ public sealed class ArchmageRune : HextechRelicBase
 
 	private CardModel? PickCardToMakeFree(CardModel sourceCard, int rollOrdinal)
 	{
-		if (Owner == null)
-		{
-			return null;
-		}
-
 		return HextechFreeCardPicker.Pick(
 			PileType.Hand.GetPile(Owner).Cards,
 			(candidates, tier) => PickFromCandidates(candidates, sourceCard, rollOrdinal, tier));
@@ -60,11 +48,6 @@ public sealed class ArchmageRune : HextechRelicBase
 
 	private CardModel? PickFromCandidates(IReadOnlyList<CardModel> candidates, CardModel sourceCard, int rollOrdinal, string tier)
 	{
-		if (Owner == null || candidates.Count == 0)
-		{
-			return null;
-		}
-
 		int index = HextechStableRandom.Index(
 			(RunState)Owner.RunState,
 			candidates.Count,

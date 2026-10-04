@@ -44,7 +44,7 @@ public abstract partial class HextechRelicBase
 
 	protected bool IsOwnedAttack(CardModel? card)
 	{
-		return Owner != null && card?.Owner == Owner && HextechCardEffectTypes.IsAttackForEffects(card, Owner);
+		return card?.Owner == Owner && HextechCardEffectTypes.IsAttackForEffects(card, Owner);
 	}
 
 	protected bool IsOwnedSkill(CardModel? card)
@@ -59,7 +59,7 @@ public abstract partial class HextechRelicBase
 			return true;
 		}
 
-		return Owner != null && HextechCardEffectTypes.IsOriginalOwnedSkill(cardSource, Owner);
+		return HextechCardEffectTypes.IsOriginalOwnedSkill(cardSource, Owner);
 	}
 
 	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
@@ -101,11 +101,6 @@ public abstract partial class HextechRelicBase
 
 	protected bool IsPotionUseOwnedByOrTargetingOwner(PotionModel? potion, Creature? target)
 	{
-		if (Owner == null)
-		{
-			return false;
-		}
-
 		if (target == Owner.Creature)
 		{
 			return true;
@@ -126,7 +121,7 @@ public abstract partial class HextechRelicBase
 		target = power.Owner;
 		return amount > 0m
 			&& target?.Side == CombatSide.Enemy
-			&& applier == Owner?.Creature
+			&& applier == Owner.Creature
 			&& power.GetTypeForAmount(amount) == PowerType.Debuff
 			&& power is not ITemporaryPower;
 	}
@@ -137,7 +132,6 @@ public abstract partial class HextechRelicBase
 	{
 		target = power.Owner;
 		return amount > 0m
-			&& Owner != null
 			&& target == Owner.Creature
 			&& !target.IsDead
 			&& power.GetTypeForAmount(amount) == PowerType.Debuff
@@ -150,7 +144,6 @@ public abstract partial class HextechRelicBase
 	{
 		target = power.Owner;
 		return amount > 0m
-			&& Owner != null
 			&& target == Owner.Creature
 			&& !target.IsDead
 			&& power.IsVisible

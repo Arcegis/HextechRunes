@@ -20,7 +20,7 @@ public sealed class KillerHunterRune : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!IsOwnedCard(cardPlay.Card) || Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		if (!IsOwnedCard(cardPlay.Card) || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
 		{
 			return;
 		}

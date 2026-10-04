@@ -18,7 +18,7 @@ public sealed class BackToBasicsRune : HextechRelicBase, IHextechHealingMultipli
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? StatMultiplier : 1m;
+		return target == Owner.Creature ? StatMultiplier : 1m;
 	}
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)

@@ -37,7 +37,7 @@ public sealed class InfiniteLoopRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner != null && !Owner.Creature.IsDead)
+		if (!Owner.Creature.IsDead)
 		{
 			SavedCombatVictories++;
 			Flash(Array.Empty<Creature>());

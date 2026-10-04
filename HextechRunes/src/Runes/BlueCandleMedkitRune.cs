@@ -49,8 +49,7 @@ public sealed class BlueCandleMedkitRune : HextechRelicBase
 
 	private bool CanAffect(CardModel card)
 	{
-		return Owner != null
-			&& card.Owner == Owner
+		return card.Owner == Owner
 			&& card.Pile?.Type is PileType.Hand or PileType.Play
 			&& card.Type is CardType.Status or CardType.Curse;
 	}

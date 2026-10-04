@@ -144,9 +144,8 @@ public abstract partial class HextechRelicBase : RelicModel
 	// 持有者所属阵营的四个回合入口统一检查参与者；异阵营触发交给具体效果处理。
 	private bool ShouldSkipOwnerTurn(CombatSide side, IEnumerable<Creature> participants)
 	{
-		return Owner is { } owner
-			&& side == owner.Creature.Side
-			&& !HextechTurnParticipants.Includes(participants, owner);
+		return side == Owner.Creature.Side
+			&& !HextechTurnParticipants.Includes(participants, Owner);
 	}
 
 	public sealed override RelicRarity Rarity => RelicRarity.Starter;

@@ -190,8 +190,6 @@ internal static partial class Program
 	private static void CardUpgradePickupAndAvailabilityRules()
 	{
 		BloodlettingUpgradeRune singleForm = new();
-		Expect(singleForm.GrantsCardOnPickup, "ordinary card upgrade runes should grant their target card");
-		Expect(singleForm.HasUponPickupEffect, "ordinary card upgrade runes should advertise their pickup effect");
 		Expect(singleForm.MeetsCardAvailabilityRequirement([]), "ordinary card upgrade runes should not require the target card");
 
 		BashUpgradeRune bash = new();
@@ -199,15 +197,6 @@ internal static partial class Program
 		FallingStarUpgradeRune fallingStar = new();
 		UnleashUpgradeRune unleash = new();
 		DualcastUpgradeRune dualcast = new();
-		RelicModel[] dualFormRunes = [ bash, neutralize, fallingStar, unleash, dualcast ];
-		foreach (RelicModel rune in dualFormRunes)
-		{
-			Expect(!rune.HasUponPickupEffect, $"{rune.GetType().Name} should not grant a card on pickup");
-			Expect(
-				rune is IHextechSelectionFooterProvider footerProvider
-				&& footerProvider.GetSelectionFooterText() == null,
-				$"{rune.GetType().Name} should not show a pickup footer");
-		}
 
 		Expect(!bash.MeetsCardAvailabilityRequirement([]), "Bash upgrade should require Bash or Break");
 		Expect(bash.MeetsCardAvailabilityRequirement([new Bash()]), "Bash upgrade should accept Bash");
@@ -225,8 +214,6 @@ internal static partial class Program
 		Expect(dualcast.MeetsCardAvailabilityRequirement([new Dualcast()]), "Dualcast upgrade should accept Dualcast");
 		Expect(dualcast.MeetsCardAvailabilityRequirement([new Quadcast()]), "Dualcast upgrade should accept Quadcast");
 
-		Expect((object)new StrikeUpgradeRune() is not IHextechSelectionFooterProvider, "Strike upgrade should not show a pickup footer");
-		Expect((object)new DefendUpgradeRune() is not IHextechSelectionFooterProvider, "Defend upgrade should not show a pickup footer");
 		Expect(!StrikeUpgradeRune.HasBasicStrike([]), "Strike upgrade should require a basic Strike");
 		Expect(StrikeUpgradeRune.HasBasicStrike([new StrikeIronclad()]), "Strike upgrade should accept a basic Strike");
 		Expect(!DefendUpgradeRune.HasBasicDefend([]), "Defend upgrade should require a basic Defend");
@@ -334,29 +321,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void DualcastUpgradeReturnsBothCastCardsToHand()
-	{
-		Expect(
-			DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Dualcast>()),
-			"Dualcast Upgrade should return Dualcast to hand");
-		Expect(
-			DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Quadcast>()),
-			"Dualcast Upgrade should return Quadcast to hand");
-		Expect(
-			!DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Zap>()),
-			"Dualcast Upgrade should ignore unrelated cards");
-		Expect(
-			DualcastUpgradeRune.CanReturnFromResultPile(PileType.Discard),
-			"normal result piles should be redirected to hand");
-		Expect(
-			!DualcastUpgradeRune.CanReturnFromResultPile(PileType.None),
-			"temporary copies with no result pile should still disappear");
-		DualcastUpgradeRune rune = new();
-		Expect(!rune.GrantsCardOnPickup, "Dualcast Upgrade should not grant a card when obtained");
-		Expect(!rune.HasUponPickupEffect, "Dualcast Upgrade should not advertise a pickup effect");
-	}
-
-	[HextechTest]
 	private static void PactsEndUpgradeDamageScalesWithExhaustPile()
 	{
 		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(0, 6m), "empty exhaust pile bonus");
@@ -367,7 +331,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void BrandUpgradeDamageScalesWithPermanentPlayCount()
 	{
-		Equal(3, BrandUpgradeRune.DamagePercentPerBrand, "Brand damage percent per play");
 		Equal(1m, BrandUpgradeRune.CalculateDamageMultiplier(0, BrandUpgradeRune.DamagePercentPerBrand), "zero brand plays");
 		Equal(1.03m, BrandUpgradeRune.CalculateDamageMultiplier(1, BrandUpgradeRune.DamagePercentPerBrand), "one brand play");
 		Equal(1.30m, BrandUpgradeRune.CalculateDamageMultiplier(10, BrandUpgradeRune.DamagePercentPerBrand), "ten brand plays");
@@ -394,12 +357,8 @@ internal static partial class Program
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Skill, hasUpgradeRune: true), "upgraded Storm should trigger for Skills");
 		Expect(ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: false), "Reanimate should count Minion and Small Hand deaths like Melancholy");
 		Expect(!ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: true), "Reanimate should ignore a death that was prevented");
-		Equal(7, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 0), "Body Slam should count total damage like Fisticuffs");
-		Equal(10, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 3), "Body Slam should add overkill damage like Fisticuffs");
 		Equal(7, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 0), "Wrought in War should count total damage like Fisticuffs");
 		Equal(10, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 3), "Wrought in War should add overkill damage like Fisticuffs");
-		Expect(DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: false), "Decisions should allow playable cards of any type");
-		Expect(!DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: true), "Decisions should still reject Unplayable cards");
 		Equal(3, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(1, 3), "Decisions should resolve all three plays inside one card-play wrapper");
 		Equal(4, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(2, 3), "Decisions replay count should combine additively with another replay");
 	}

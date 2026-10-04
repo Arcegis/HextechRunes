@@ -9,8 +9,7 @@ public sealed class DeathHarvestRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| Owner.Creature.CombatState?.RoundNumber != 1
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0

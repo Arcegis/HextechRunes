@@ -21,7 +21,7 @@ public sealed class KeystoneHunterRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead || !IsSilentPlayer(Owner))
+		if (Owner.Creature.IsDead || !IsSilentPlayer(Owner))
 		{
 			return;
 		}

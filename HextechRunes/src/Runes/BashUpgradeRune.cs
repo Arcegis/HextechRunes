@@ -24,7 +24,7 @@ public sealed class BashUpgradeRune : CardUpgradeRuneBase<Bash>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null || cardPlay.Card.Owner != Owner || Owner.Creature.IsDead)
+		if (cardPlay.Card.Owner != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}

@@ -19,7 +19,6 @@ public sealed class HappyAccidentRune : HextechRelicBase
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| Owner.Creature.CombatState == null)
 		{

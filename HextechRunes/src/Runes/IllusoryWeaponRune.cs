@@ -15,8 +15,7 @@ public sealed class IllusoryWeaponRune : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !HextechCardEffectTypes.IsOriginalOwnedSkill(cardPlay.Card, Owner)
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{

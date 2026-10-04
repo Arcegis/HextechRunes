@@ -30,8 +30,7 @@ public sealed class InstantDeathRune : HextechRelicBase
 
 	private async Task KillIfDoomExceedsHp(Creature creature)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| creature.Side != CombatSide.Enemy
 			|| !creature.IsAlive
 			|| creature.GetPowerAmount<DoomPower>() <= creature.CurrentHp)

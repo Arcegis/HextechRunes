@@ -39,8 +39,7 @@ public sealed class DawnbringersResolveRune : HextechRelicBase
 
 	public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| target != Owner.Creature
+		if (target != Owner.Creature
 			|| result.UnblockedDamage <= 0
 			|| _triggeredThisCombat
 			|| target.CurrentHp >= target.MaxHp * 0.5m)

@@ -22,7 +22,7 @@ public sealed class BloodDebtRune : HextechRelicBase
 
 	public override Task AfterCurrentHpChanged(Creature creature, decimal delta)
 	{
-		if (Owner?.PlayerCombatState == null || creature != Owner.Creature
+		if (Owner.PlayerCombatState == null || creature != Owner.Creature
 			|| delta >= 0m || creature.IsDead)
 		{
 			return Task.CompletedTask;
@@ -35,11 +35,6 @@ public sealed class BloodDebtRune : HextechRelicBase
 
 	internal void GrowAttacks(IEnumerable<CardModel> cards, decimal amount)
 	{
-		if (Owner == null || amount <= 0m)
-		{
-			return;
-		}
-
 		foreach (CardModel card in cards.Distinct())
 		{
 			if (card.Owner != Owner || card.Type != CardType.Attack)

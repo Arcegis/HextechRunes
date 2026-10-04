@@ -32,7 +32,7 @@ public sealed class BrokenGoldenCrownRune : HextechRelicBase
 
 	public override Task AfterEnergyResetLate(Player player)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

@@ -44,7 +44,7 @@ public sealed class CurtainCallRune : HextechRelicBase
 
 	public override Task AfterCardEnteredCombat(CardModel card)
 	{
-		if (Owner == null || card.Owner != Owner)
+		if (card.Owner != Owner)
 		{
 			return Task.CompletedTask;
 		}

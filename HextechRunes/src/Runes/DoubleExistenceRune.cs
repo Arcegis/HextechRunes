@@ -9,8 +9,7 @@ public sealed class DoubleExistenceRune : HextechRelicBase
 
 	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null
-			|| side != Owner.Creature.Side
+		if (side != Owner.Creature.Side
 			|| Owner.Creature.IsDead)
 		{
 			return;

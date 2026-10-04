@@ -19,11 +19,6 @@ public sealed class BigHandsRune : HextechRelicBase
 
 	public override decimal ModifySummonAmount(Player summoner, decimal amount, AbstractModel? source)
 	{
-		return summoner == Owner ? CalculateSummonAmount(amount) : amount;
-	}
-
-	internal static decimal CalculateSummonAmount(decimal amount)
-	{
-		return amount * SummonMultiplier;
+		return summoner == Owner ? amount * SummonMultiplier : amount;
 	}
 }

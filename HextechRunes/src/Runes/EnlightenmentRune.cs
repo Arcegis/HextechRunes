@@ -8,8 +8,7 @@ public sealed class EnlightenmentRune : HextechRelicBase
 	{
 		// originalCost 此时已是常规通道(溢流等)累计后的值。
 		modifiedCost = originalCost;
-		if (Owner == null
-			|| card.Owner != Owner
+		if (card.Owner != Owner
 			|| card.EnergyCost.CostsX
 			|| originalCost <= 1m)
 		{

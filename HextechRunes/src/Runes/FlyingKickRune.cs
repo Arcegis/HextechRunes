@@ -52,7 +52,6 @@ public sealed class FlyingKickRune : HextechRelicBase
 		CardModel? cardSource)
 	{
 		if (_executing
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0m
@@ -83,11 +82,6 @@ public sealed class FlyingKickRune : HextechRelicBase
 
 	private async Task TriggerFlyingKick(Creature target, bool killTarget)
 	{
-		if (_executing || Owner == null || Owner.Creature.IsDead)
-		{
-			return;
-		}
-
 		_executing = true;
 		try
 		{

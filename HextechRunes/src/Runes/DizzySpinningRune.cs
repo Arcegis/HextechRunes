@@ -19,7 +19,7 @@ public sealed class DizzySpinningRune : HextechRelicBase
 
 	public override async Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
 	{
-		if (shuffler != Owner || Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState is not HextechCombatState combatState)
+		if (shuffler != Owner || Owner.Creature.IsDead || Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}

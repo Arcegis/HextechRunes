@@ -9,7 +9,7 @@ public sealed class GloomyCloudsRune : HextechRelicBase
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (player != Owner || Owner?.PlayerCombatState == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.PlayerCombatState == null || Owner.Creature.IsDead)
 		{
 			return;
 		}

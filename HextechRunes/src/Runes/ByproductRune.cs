@@ -15,7 +15,7 @@ public sealed class ByproductRune : HextechRelicBase
 	public override async Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
 	{
 		bool addedByPlayer = creator == Owner;
-		if (!addedByPlayer || card.Owner != Owner || Owner == null || Owner.Creature.IsDead || card.Type != CardType.Status)
+		if (!addedByPlayer || card.Owner != Owner || Owner.Creature.IsDead || card.Type != CardType.Status)
 		{
 			return;
 		}

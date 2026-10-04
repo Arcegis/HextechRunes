@@ -15,11 +15,6 @@ public sealed class JinlianBoxRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardModel> rareOptions = Owner.Character.CardPool
 			.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint)
 			.Where(static card => card.Rarity == CardRarity.Rare)

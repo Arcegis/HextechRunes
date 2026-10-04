@@ -12,11 +12,9 @@ public sealed class BoneBreakUpgradeRune : CardUpgradeRuneBase<BoneShards>
 	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
 		_pendingOstyHp = 0;
-		if (Owner != null
-			&& cardPlay.Card.Owner == Owner
+		if (cardPlay.Card.Owner == Owner
 			&& cardPlay.Card is BoneShards
-			&& Owner.IsOstyAlive
-			&& Owner.Osty is { } osty)
+			&& Owner.Osty is { IsAlive: true } osty)
 		{
 			// 碎骨会在结算中牺牲奥斯提，必须在打出前快照最大生命值。
 			_pendingOstyHp = Math.Max(0, osty.MaxHp);
@@ -27,8 +25,7 @@ public sealed class BoneBreakUpgradeRune : CardUpgradeRuneBase<BoneShards>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not BoneShards
 			|| _pendingOstyHp <= 0

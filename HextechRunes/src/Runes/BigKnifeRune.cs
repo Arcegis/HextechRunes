@@ -40,8 +40,7 @@ public sealed class BigKnifeRune : HextechRelicBase
 
 	private bool ShouldMakeBladeFree(CardModel card)
 	{
-		return Owner != null
-			&& card.Owner == Owner
+		return card.Owner == Owner
 			&& card is SovereignBlade
 			&& card.Pile?.Type is PileType.Hand or PileType.Play;
 	}

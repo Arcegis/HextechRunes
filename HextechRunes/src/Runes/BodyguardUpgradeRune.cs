@@ -9,23 +9,21 @@ public sealed class BodyguardUpgradeRune : CardUpgradeRuneBase<Bodyguard>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
+		if (cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not Bodyguard
 			|| !IsNecrobinderPlayer(Owner)
-			|| Owner.Osty == null
-			|| Owner.Osty.IsDead)
+			|| Owner.Osty is not { IsAlive: true } osty)
 		{
 			return;
 		}
 
-		decimal heal = Owner.Osty.MaxHp - Owner.Osty.CurrentHp;
+		decimal heal = osty.MaxHp - osty.CurrentHp;
 		if (heal <= 0m)
 		{
 			return;
 		}
 
-		Flash([Owner.Osty]);
-		await CreatureCmd.Heal(Owner.Osty, heal);
+		Flash([osty]);
+		await CreatureCmd.Heal(osty, heal);
 	}
 }

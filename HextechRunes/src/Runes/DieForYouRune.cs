@@ -64,8 +64,7 @@ public sealed class DieForYouRune : HextechRelicBase
 	public override Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
 		HextechCombatState? combatState = target.CombatState;
-		if (Owner == null
-			|| wasRemovalPrevented
+		if (wasRemovalPrevented
 			|| Owner.Creature.IsDead
 			|| target.PetOwner != Owner
 			|| target.Monster is not Osty

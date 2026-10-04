@@ -10,7 +10,7 @@ public sealed class CuttingEdgeAlchemistRune : HextechSharedCombatVictoryRuneBas
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
