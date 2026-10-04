@@ -19,12 +19,6 @@ public sealed class TwinFlamesRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_targetRollsThisCombat = 0;
-		return Task.CompletedTask;
-	}
-
 	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		if (Owner.Creature.IsDead

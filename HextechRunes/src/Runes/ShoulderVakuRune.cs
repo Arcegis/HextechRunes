@@ -27,14 +27,6 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_lastControlledRound = 0;
-		_controllingTurn = false;
-		_lastHealRound = -1;
-		return Task.CompletedTask;
-	}
-
 	public override decimal ModifyHandDraw(Player player, decimal count)
 	{
 		return player == Owner ? count + DynamicVars.Cards.BaseValue : count;

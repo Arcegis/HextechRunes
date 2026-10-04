@@ -6,19 +6,8 @@ public sealed class ScapegoatRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		ResetTransferCount();
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		ResetTransferCount();
-		return Task.CompletedTask;
-	}
-
-	private void ResetTransferCount()
-	{
 		_transferCount = 0;
+		return Task.CompletedTask;
 	}
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)

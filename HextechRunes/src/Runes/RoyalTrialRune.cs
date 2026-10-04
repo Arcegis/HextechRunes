@@ -28,12 +28,6 @@ public sealed class RoyalTrialRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_generatedMinionsThisCombat = 0;
-		return Task.CompletedTask;
-	}
-
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		if (Owner.Creature.IsDead

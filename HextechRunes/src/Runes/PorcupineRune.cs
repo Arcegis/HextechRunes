@@ -21,12 +21,6 @@ public sealed class PorcupineRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_temporaryThorns = 0m;
-		return Task.CompletedTask;
-	}
-
 	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
 		if (side != Owner.Creature.Side || Owner.Creature.IsDead)
