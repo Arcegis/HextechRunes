@@ -2,9 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	// 无尽循环中每一轮都按第 3 幕的玩家海克斯数量结算。
-	private const int EndlessLoopPlayerHexCountSlot = 2;
-
 	/// <summary>
 	/// 本幕稀有度抽签。deterministic=true(联机)用稳定哈希,各端独立算出同一结果;
 	/// false(单机)推进原版 Niche 随机流。两条路径的 RNG 调用次数与顺序与拆分前一致。
@@ -278,9 +275,10 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechMayhemModifier modifier,
 		int actIndex)
 	{
-		int[] counts = HextechPlayerHexCountState.Normalize(snapshot.PlayerHexCountsByAct);
-		int slot = modifier.IsEndlessLoopActive ? EndlessLoopPlayerHexCountSlot : Math.Clamp(actIndex, 0, counts.Length - 1);
-		return counts[slot];
+		return HextechHexCountState.GetForAct(
+			HextechRuneConfiguration.NormalizePlayerHexCounts(snapshot.PlayerHexCountsByAct),
+			actIndex,
+			modifier.IsEndlessLoopActive);
 	}
 
 	private static Player? GetActRollAuthorityPlayer(RunManager runManager, RunState runState)

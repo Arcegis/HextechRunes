@@ -36,11 +36,11 @@ internal sealed class HextechMayhemActState
 		}
 	}
 
-	public int[] SavedMonsterHexByAct
+	// 旧格式(每幕只记首个敌方海克斯)只读不写:getter 返回 null,SaveIfNotTypeDefault 便不再写出;
+	// 读到旧档时仍按累积集并入。现行格式是 SavedMonsterHexesByActJson。
+	public int[]? SavedMonsterHexByAct
 	{
-		get => _monsterHexesByAct
-			.Select(static hexes => hexes.Count > 0 ? (int)hexes[0] : -1)
-			.ToArray();
+		get => null;
 		set
 		{
 			MergeLegacyMonsterHexByAct(value);
