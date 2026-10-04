@@ -73,11 +73,10 @@ internal static class HextechEnemyUi
 		Control? container = GetModifiersContainer();
 		if (container == null)
 		{
-			HextechLog.Info("Mayhem", $"EnemyUi.Refresh: no modifiers container");
 			return;
 		}
 
-		HideMayhemModifierBadge();
+		HideMayhemModifierBadge(container);
 
 		IReadOnlyList<MonsterHexKind> activeHexes = modifier.GetActiveMonsterHexes();
 
@@ -89,7 +88,6 @@ internal static class HextechEnemyUi
 			// 折叠面板按获得批次分行。阶段序号跨额外幕与无尽轮次单调递增，不能再按三幕配置数组截断。
 			IReadOnlyList<IReadOnlyList<MonsterHexKind>> hexRows = modifier.GetMonsterHexRows();
 			HextechEnemyHexCollapseView.Show(hexRows, ComputeReservedColumns(modifier, hexRows));
-			HextechLog.Info("Mayhem", $"EnemyUi.Refresh(collapsed): rows={hexRows.Count} active={string.Join(",", activeHexes)}");
 			return;
 		}
 
@@ -100,10 +98,8 @@ internal static class HextechEnemyUi
 		{
 			RemoveAllEnemyHexStrips(container);
 			UpdateContainerVisibility(container);
-			HextechLog.Info("Mayhem", $"EnemyUi.Refresh: no active enemy hexes");
 			return;
 		}
-		HextechLog.Info("Mayhem", $"EnemyUi.Refresh: active={string.Join(",", activeHexes)}");
 
 		HBoxContainer strip = GetOrCreateStrip(container);
 		if (!IsStripCurrent(strip, activeHexes))
@@ -130,7 +126,7 @@ internal static class HextechEnemyUi
 		}
 
 		RemoveAllEnemyHexStrips(container);
-		HideMayhemModifierBadge();
+		HideMayhemModifierBadge(container);
 		UpdateContainerVisibility(container);
 	}
 
@@ -153,19 +149,20 @@ internal static class HextechEnemyUi
 
 	public static void HideMayhemModifierBadge()
 	{
-		Control? container = GetModifiersContainer();
-		if (container == null)
+		if (GetModifiersContainer() is { } container)
 		{
-			HextechLog.Info("Mayhem", $"EnemyUi.HideMayhemModifierBadge: no modifiers container");
-			return;
+			HideMayhemModifierBadge(container);
 		}
+	}
 
+	private static void HideMayhemModifierBadge(Control container)
+	{
 		foreach (Node child in container.GetChildren())
 		{
+			// GetModifiersContainer 非空即两个反射字段都已解析。
 			if (child is NTopBarModifier topBarModifier
-				&& TopBarModifierModelField?.GetValue(topBarModifier) is HextechMayhemModifier)
+				&& TopBarModifierModelField!.GetValue(topBarModifier) is HextechMayhemModifier)
 			{
-				HextechLog.Info("Mayhem", $"EnemyUi.HideMayhemModifierBadge: removed top bar modifier badge");
 				topBarModifier.QueueFree();
 			}
 		}
@@ -185,38 +182,12 @@ internal static class HextechEnemyUi
 
 	private static HBoxContainer GetOrCreateStrip(Control container)
 	{
-		HBoxContainer? existingStrip = null;
-		foreach (Node child in container.GetChildren())
+		// 海克斯条只由下面整体建出,同名兄弟节点至多一个(移除时先 RemoveChild 再释放)。
+		if (container.GetNodeOrNull<Control>(EnemyHexRootName) is { } existingRoot)
 		{
-			if (child.Name != EnemyHexRootName)
-			{
-				continue;
-			}
-
-			if (existingStrip == null
-				&& child is MarginContainer existingRoot
-				&& existingRoot.GetChildCount() > 0
-				&& existingRoot.GetChild(0) is PanelContainer existingPanel
-				&& existingPanel.GetChildCount() > 0
-				&& existingPanel.GetChild(0) is HBoxContainer existingIcons)
-			{
-				existingStrip = existingIcons;
-				continue;
-			}
-
-			container.RemoveChild(child);
-			child.QueueFree();
-		}
-
-		if (existingStrip != null)
-		{
-			Node? existingRootNode = existingStrip.GetParent()?.GetParent();
-			if (existingRootNode != null)
-			{
-				container.MoveChild(existingRootNode, container.GetChildCount() - 1);
-			}
-
-			return existingStrip;
+			// 原版之后追加的修饰图标会排到海克斯条后面,把海克斯条挪回最右。
+			container.MoveChild(existingRoot, container.GetChildCount() - 1);
+			return existingRoot.GetNode<HBoxContainer>($"{EnemyHexPanelName}/{EnemyHexIconsName}");
 		}
 
 		MarginContainer root = new()
@@ -242,7 +213,6 @@ internal static class HextechEnemyUi
 		panel.AddChild(strip);
 		root.AddChild(panel);
 		container.AddChild(root);
-		container.MoveChild(root, container.GetChildCount() - 1);
 		return strip;
 	}
 
@@ -264,13 +234,9 @@ internal static class HextechEnemyUi
 
 	private static void RebuildStrip(HBoxContainer strip, IReadOnlyList<MonsterHexKind> activeHexes)
 	{
+		// 图标的提示由 CreateEnemyHexHolder 挂的 TreeExiting 在 RemoveChild 时收起。
 		foreach (Node child in strip.GetChildren())
 		{
-			if (child is Control control)
-			{
-				NHoverTipSet.Remove(control);
-			}
-
 			strip.RemoveChild(child);
 			child.QueueFree();
 		}

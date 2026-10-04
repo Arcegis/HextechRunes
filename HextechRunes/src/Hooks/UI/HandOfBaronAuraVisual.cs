@@ -24,7 +24,6 @@ internal sealed class HandOfBaronAuraVisual : HextechBehindCreatureVisual
 	private HextechAuraLayer? _ringLayer;
 	private HextechAuraLayer? _runeLayer;
 	private float _time;
-	private bool _lastVisible;
 
 	private HandOfBaronAuraVisual(NCreature creature)
 		: base(creature, LogTag, "Hand of Baron aura visual")
@@ -60,7 +59,6 @@ internal sealed class HandOfBaronAuraVisual : HextechBehindCreatureVisual
 		_ringLayer = HextechAuraLayer.TryCreate(Root, "SoftRing", HextechAssets.SoftRingEffectPath, new Color(0.86f, 0.42f, 1f, 0.28f));
 		_runeLayer = HextechAuraLayer.Create(Root, "BaronRune", runeTexture, new Color(1f, 0.35f, 1f, 0.78f));
 		UpdateTransform();
-		HextechLog.Info(LogTag, $"Attached node={Root.GetPath()} player={Creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"} hasRune={ShouldShow(Creature)}.");
 		return true;
 	}
 
@@ -73,12 +71,6 @@ internal sealed class HandOfBaronAuraVisual : HextechBehindCreatureVisual
 
 		bool visible = ShouldShow(Creature);
 		root.Visible = visible;
-		if (visible != _lastVisible)
-		{
-			HextechLog.Info(LogTag, $"Visibility changed: visible={visible} node={root.GetPath()} player={Creature.Entity?.Player?.Character.Id.Entry ?? "<unknown>"}.");
-			_lastVisible = visible;
-		}
-
 		if (visible)
 		{
 			EnsureRenderOrder();
