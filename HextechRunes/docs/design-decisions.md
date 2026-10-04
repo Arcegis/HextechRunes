@@ -70,7 +70,7 @@
 ## 卡牌升级
 
 - **`CardUpgradeRuneBase<TCard>` 的局部替换一律是 `Priority.Low` 的条件 prefix。** 原版没有改变单张卡/Power 内部操作的细粒度 Hook；只有模型所属玩家持有对应符文时才跳过回调，其他玩家与未启用效果保持原版。
-- **这些局部替换的入口与异步 `MoveNext` 的 IL 冻结在 `vanilla_copy_guard.<target>.txt`。** 游戏更新后必须人工核对原版行为，核对完才用 `HEXTECH_WRITE_UPGRADE_GUARD=1` 增补冻结表；刷新快照不能代替行为审查。
+- **这些局部替换的入口与异步 `MoveNext` 的 IL 冻结在 `vanilla_copy_guard.<target>.txt`。** 由通用守卫测试 `VanillaCopyGuardFreezesEntriesAndAsyncBodies` 校验；`HEXTECH_WRITE_PATCH_MANIFEST=1` 只追加缺失行，漂移行必须人工核对原版行为后手改，刷新快照不能代替行为审查。
 - **爪击的永久成长按 `DeckVersion` 去重写进 `HextechSelfUpgradeCardStore`。** 原版爪击的本场成长不写入永久计数；之后新获得的爪击不追溯之前的触发。`ClawUpgradeRune`
 - **吊杀施加独立的 `HextechHangPower`（倍率 2、4、8……），适用于该目标受到的所有伤害。** 但不把直接失去生命改成伤害，也不替换其他玩家原版吊杀的 Power。`HangUpgradeRune`
 - **狱火用自身伤害命令返回的 `DamageResult.TotalDamage` 施加灼烧。** 包含被格挡的伤害，但不把伤害链中其他效果的伤害算成狱火的。`InfernoUpgradeRune`
