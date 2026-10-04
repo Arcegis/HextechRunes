@@ -98,7 +98,7 @@ internal static class HextechMultiplayerScalingCompat
 		}
 
 		int lostHp = Math.Max(0, creature.MaxHp - creature.CurrentHp);
-		await CreatureCmdCompat.SetMaxHp(creature, expectedMaxHp);
+		await CreatureCmd.SetMaxHp(creature, expectedMaxHp);
 		await CreatureCmd.SetCurrentHp(creature, Math.Max(0, expectedMaxHp - lostHp));
 	}
 
