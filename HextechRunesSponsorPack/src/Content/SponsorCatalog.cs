@@ -69,58 +69,111 @@ internal static class SponsorCatalog
 		.. AbyssalContractCatalog.ChoiceRelicTypes
 	];
 
+	// 可获得内容(锻造器 / 符文)在运行期硬引用的依赖:选择用的事件遗物、附魔载体与图标。
+	// 依赖里任何一项注册失败,对应的可获得内容就不入池——否则玩家拿到锻造器后结算时 ModelDb.Relic<T>() 直接报错。
+	// 没列出的可获得内容没有硬依赖(附魔大师对锻造器类型只做过滤,缺席仍能工作)。
+	private static readonly Dictionary<Type, Type[]> Requires = new()
+	{
+		[typeof(EntropyForge)] = [typeof(EntropyIncrease), typeof(EntropyDecrease), typeof(EntropyIncreaseChoiceRelic), typeof(EntropyDecreaseChoiceRelic)],
+		[typeof(ArcaneForge)] = [typeof(ArcaneCloneChoiceRelic), typeof(ArcaneSoulsPowerChoiceRelic), typeof(ArcaneRoyallyApprovedChoiceRelic)],
+		[typeof(DollysMirrorForge)] = [typeof(DollyCardChoiceRelic), typeof(DollyRelicChoiceRelic), typeof(DollyPreviousPageRelic), typeof(DollyNextPageRelic)],
+		[typeof(EvolutionForge)] = [typeof(Evolution)],
+		[typeof(StarlightSparkleRune)] = [typeof(GoldStarRelic)],
+		[typeof(AbyssalContractRune)] = [.. AbyssalContractCatalog.ChoiceRelicTypes]
+	};
+
+	// 供清单一致性测试用:依赖表里的每个可获得类型都必须在锻造器/符文表里,每个依赖都必须在载体/图标/事件遗物表里。
+	internal static IEnumerable<Type> ObtainableTypes =>
+		Forges.Select(static entry => entry.Forge).Concat(PlayerRunes.Select(static entry => entry.Rune));
+
+	internal static IEnumerable<Type> DependencyTypes =>
+		SavedPropertyCarriers.Concat(EnchantmentIcons.Select(static entry => entry.Enchantment)).Concat(EventRelics);
+
+	internal static IReadOnlyDictionary<Type, Type[]> RequiredDependencies => Requires;
+
 	/// <summary>
-	/// 按表顺序逐条注册，每条独立容错。注册不是事务:本体的注册表没有回滚口子,一条失败不能把前面已入池的内容撤回,
-	/// 所以失败只记 Warn 并计数,其余条目照常注册。表顺序决定池内顺序,类别之间的先后保持不变。返回失败条数。
+	/// 按功能组注册。注册不是事务:本体的注册表没有回滚口子,一条失败不能把前面已入池的内容撤回。
+	/// 所以分两趟:先注册全部依赖(载体、图标、事件遗物),每条独立容错并记下失败的类型;
+	/// 再注册可获得内容(锻造器、符文),<see cref="Requires"/> 里有依赖失败的直接跳过不入池。
+	/// 各类别内部保持表序(决定池内顺序),类别之间的先后没有消费者。返回失败 + 跳过的条数。
 	/// 补丁由入口无条件应用(每个补丁都以"玩家持有对应符文"为前提,内容缺席时只是空转)。
 	/// </summary>
 	internal static int RegisterAll()
 	{
-		int failed = 0;
+		HashSet<Type> failed = [];
 
 		foreach (Type carrier in SavedPropertyCarriers)
 		{
-			failed += Register("SavedProperty carrier", carrier, () => HextechRunesApi.RegisterSavedPropertyCarrier(carrier));
+			Register("SavedProperty carrier", carrier, failed, () => HextechRunesApi.RegisterSavedPropertyCarrier(carrier));
 		}
 
 		foreach ((Type enchantment, string iconFile) in EnchantmentIcons)
 		{
-			failed += Register("enchantment icon", enchantment, () => HextechRunesApi.RegisterEnchantmentIcon(enchantment, $"res://{ModInfo.Id}/images/enchantments/{iconFile}"));
+			Register("enchantment icon", enchantment, failed, () => HextechRunesApi.RegisterEnchantmentIcon(enchantment, $"res://{ModInfo.Id}/images/enchantments/{iconFile}"));
 		}
 
 		foreach (Type relic in EventRelics)
 		{
-			failed += Register("event relic", relic, () => HextechRunesApi.RegisterEventRelic(relic, ModInfo.Id));
+			Register("event relic", relic, failed, () => HextechRunesApi.RegisterEventRelic(relic, ModInfo.Id));
 		}
 
+		int skipped = 0;
 		foreach ((Type forge, HextechRarityTier rarity) in Forges)
 		{
-			failed += Register("forge", forge, () => HextechRunesApi.RegisterForge(forge, rarity, ModInfo.Id));
+			if (HasFailedDependency("forge", forge, failed))
+			{
+				skipped++;
+				continue;
+			}
+
+			Register("forge", forge, failed, () => HextechRunesApi.RegisterForge(forge, rarity, ModInfo.Id));
 		}
 
 		foreach ((Type rune, HextechRarityTier rarity, string tagKey) in PlayerRunes)
 		{
-			failed += Register("player rune", rune, () => HextechRunesApi.RegisterPlayerRune(rune, rarity, tagKey: tagKey, assetModId: ModInfo.Id));
+			if (HasFailedDependency("player rune", rune, failed))
+			{
+				skipped++;
+				continue;
+			}
+
+			Register("player rune", rune, failed, () => HextechRunesApi.RegisterPlayerRune(rune, rarity, tagKey: tagKey, assetModId: ModInfo.Id));
 		}
 
 		// 信徒的锻造器售价修正走本体公开登记点;本体过旧(没有该方法)时只记失败,不影响其他内容。
-		failed += Register("forge shop price modifier", typeof(BelieverRune), RegisterBelieverForgePriceModifier);
+		Register("forge shop price modifier", typeof(BelieverRune), failed, RegisterBelieverForgePriceModifier);
 
-		SponsorLog.Info(LogTag, $"Registered sponsor-pack content ({PlayerRunes.Length} runes, {Forges.Length} forges, {EventRelics.Length} event relics); {failed} failed.");
-		return failed;
+		SponsorLog.Info(LogTag, $"Registered sponsor-pack content ({PlayerRunes.Length} runes, {Forges.Length} forges, {EventRelics.Length} event relics); {failed.Count} failed, {skipped} skipped.");
+		return failed.Count + skipped;
 	}
 
-	private static int Register(string kind, Type type, Action register)
+	private static bool HasFailedDependency(string kind, Type obtainable, HashSet<Type> failed)
+	{
+		if (!Requires.TryGetValue(obtainable, out Type[]? dependencies))
+		{
+			return false;
+		}
+
+		Type[] missing = dependencies.Where(failed.Contains).ToArray();
+		if (missing.Length == 0)
+		{
+			return false;
+		}
+
+		SponsorLog.Warn(LogTag, $"Skipped {kind} {obtainable.Name}: dependency registration failed for {string.Join(", ", missing.Select(static type => type.Name))}.");
+		return true;
+	}
+
+	private static void Register(string kind, Type type, HashSet<Type> failed, Action register)
 	{
 		try
 		{
 			register();
-			return 0;
 		}
 		catch (Exception ex)
 		{
+			failed.Add(type);
 			SponsorLog.Warn(LogTag, $"Failed to register {kind} {type.Name}: {ex.GetType().Name}: {ex.Message}");
-			return 1;
 		}
 	}
 

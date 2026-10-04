@@ -85,13 +85,13 @@ public static class ModEntry
 
 		_initializationAttempted = true;
 
-		// 注册逐条容错(SponsorCatalog.RegisterAll),失败条目已各自 Warn。
+		// 注册按功能组隔离(SponsorCatalog.RegisterAll:先依赖后可获得内容,依赖失败的功能整组不入池),失败条目已各自 Warn。
 		// 补丁无条件照装:注册不是事务,失败时前面的内容已经入池,此时跳过补丁反而会留下
 		// "符文抽得到、依赖的补丁没装"的半初始化状态;每个补丁都以持有对应符文为前提,内容缺席只是空转。
 		int failures = SponsorCatalog.RegisterAll();
 		if (failures > 0)
 		{
-			SponsorLog.Warn(LogTag, $"{failures} content registration(s) failed; remaining content stays registered and patches are still applied.");
+			SponsorLog.Warn(LogTag, $"{failures} content registration(s) failed or were skipped; remaining content stays registered and patches are still applied.");
 		}
 
 		try
