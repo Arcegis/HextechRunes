@@ -134,7 +134,7 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.Inklet] = new[] { ("Stacks1", 1), ("Stacks2", 2), ("Stacks3", 3) },
 		};
 
-	private static readonly IReadOnlyDictionary<MonsterHexKind, (string Var, int Base)> PlayerCountScaledThresholds =
+	internal static readonly IReadOnlyDictionary<MonsterHexKind, (string Var, int Base)> PlayerCountScaledThresholds =
 		new Dictionary<MonsterHexKind, (string, int)>
 		{
 			// 同 Porcupine：字面量供 TXT 同步脚本渲染，测试断言与各效果类的 HpPerPercentPerPlayer 一致。
@@ -171,16 +171,9 @@ internal static class MonsterHexCatalog
 		}
 		catch (Exception ex)
 		{
+			// 敌方描述缺键或格式化失败时退回玩家版描述，不让悬浮提示和选择界面整体失败。
 			HextechLog.Warn("Mayhem", $"Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
-			try
-			{
-				return relic.DynamicDescription.GetFormattedText();
-			}
-			catch (Exception fallbackEx)
-			{
-				HextechLog.Warn("Mayhem", $"Enemy hex description fallback failed: hex={hex} relic={relic.CanonicalId().Entry} error={fallbackEx.Message}");
-				return relic.Title.GetFormattedText();
-			}
+			return relic.DynamicDescription.GetFormattedText();
 		}
 	}
 

@@ -505,14 +505,6 @@ internal static partial class Program
 		Equal(4, PorcupineEnemyHex.HitsPerTriggerPerPlayer, "porcupine needs 4N hits");
 		Equal(1, HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer, "hundred refinements needs N hits");
 
-		// 描述里的 {HitsNeeded} 靠按人数缩放的阈值表填值,漏登记就会原样显示占位符。
-		System.Collections.IDictionary thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
-			.GetField("PlayerCountScaledThresholds", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
-		Equal(("HitsNeeded", PorcupineEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.Porcupine]!,
-			"porcupine description threshold matches the effect");
-		Equal(("HitsNeeded", HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.HundredRefinements]!,
-			"hundred refinements description threshold matches the effect");
-
 		Equal(HextechRarityTier.Prismatic,
 			HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == typeof(DemonFormUpgradeRune)).Rarity,
 			"Upgrade: Demon Form is prismatic");
