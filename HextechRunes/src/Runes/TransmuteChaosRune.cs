@@ -1,12 +1,8 @@
 namespace HextechRunes;
 
-public sealed class TransmuteChaosRune : HextechRelicBase
+public sealed class TransmuteChaosRune : TransmuteRuneBase
 {
-	public override bool HasUponPickupEffect => true;
+	protected override IEnumerable<Type> CandidateTypes => HextechCatalog.GetAllConfigurableRuneTypes();
 
-	public override async Task AfterObtained()
-	{
-		Flash();
-		await HextechRuneGrantHelper.ConsumeAndObtainRandomRunes(this, Owner, HextechCatalog.GetAllConfigurableRuneTypes(), 2);
-	}
+	protected override int ObtainCount => 2;
 }
