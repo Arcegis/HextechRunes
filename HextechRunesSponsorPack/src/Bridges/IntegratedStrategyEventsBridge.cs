@@ -3,7 +3,6 @@ using System.Reflection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
@@ -20,24 +19,17 @@ internal static class IntegratedStrategyEventsBridge
 	private const int FinalChoraleRandomRelicRewardCount = 2;
 	private const string LogTag = "ISE";
 
-	// 解析结果缓存:找到就一直用;找不到的负缓存见 TryResolveAssembly。
+	// 解析结果缓存:找到就一直用。
 	private static Type? _prophecyProjectionRelicType;
 	private static Type? _endlessKeyRelicType;
 	private static Type? _finalChoraleType;
-	private static bool _assemblyKnownMissing;
 
 	internal static bool IsAvailable => TryResolveTypes(out _, out _);
 
+	// 在 Creature.SetCurrentHpInternal 前缀里高频调用,只比对类型全名,不解析程序集。
 	internal static bool IsFinalChorale(Creature creature)
 	{
-		if (creature.Monster?.GetType().FullName == FinalChoraleTypeName)
-		{
-			return true;
-		}
-
-		return TryResolveTypes(out _, out Type? finalChoraleType)
-			&& creature.Monster != null
-			&& finalChoraleType.IsInstanceOfType(creature.Monster);
+		return creature.Monster?.GetType().FullName == FinalChoraleTypeName;
 	}
 
 	internal static async Task<bool> ObtainProphecyProjection(Player owner, int? choraleHp = null)
@@ -247,26 +239,13 @@ internal static class IntegratedStrategyEventsBridge
 		return true;
 	}
 
-	// 没装 IntegratedStrategyEvents 时,IsFinalChorale 会在 Creature.SetCurrentHpInternal 前缀里反复调用;
-	// 模组加载结束(ModManager.State 离开 None)后程序集集合不再变化,此时找不到就记负缓存,不再每次扫描全部程序集。
 	private static bool TryResolveAssembly([NotNullWhen(true)] out Assembly? assembly)
 	{
-		assembly = null;
-		if (_assemblyKnownMissing)
-		{
-			return false;
-		}
-
 		assembly = AppDomain.CurrentDomain.GetAssemblies()
 			.FirstOrDefault(static candidate => string.Equals(
 				candidate.GetName().Name,
 				AssemblyName,
 				StringComparison.Ordinal));
-		if (assembly == null && ModManager.State != ModManagerState.None)
-		{
-			_assemblyKnownMissing = true;
-		}
-
 		return assembly != null;
 	}
 }
