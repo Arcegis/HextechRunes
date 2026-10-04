@@ -9,7 +9,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedShivsPlayedThisCombat
 	{
-		get => GetShivsPlayedThisCombat() % ShivsNeeded;
+		get => CountOwnedShivCardsPlayedFromHistory() % ShivsNeeded;
 		set
 		{
 			_shivsPlayedThisCombat = Math.Max(0, value) % ShivsNeeded;
@@ -29,7 +29,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 			}
 
 			int shivsNeeded = ShivsNeeded;
-			int remainder = GetShivsPlayedThisCombat() % shivsNeeded;
+			int remainder = CountOwnedShivCardsPlayedFromHistory() % shivsNeeded;
 			return remainder == 0 ? shivsNeeded : shivsNeeded - remainder;
 		}
 	}
@@ -86,7 +86,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 
 	private async Task ResolveShivProgressFromHistory()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -106,7 +106,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 	{
 		InvokeDisplayAmountChanged();
 		int rewards = CountThresholdCrossings(previousShivsPlayed, currentShivsPlayed, ShivsNeeded);
-		if (rewards <= 0 || Owner == null || Owner.Creature.IsDead)
+		if (rewards <= 0)
 		{
 			return;
 		}
@@ -123,6 +123,7 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 			&& HextechKnifeHelper.IsShivLike(cardPlay.Card, Owner);
 	}
 
+	// 历史只含本场（原版在战斗结束与重置时清空），战斗外读到 0。
 	private int CountOwnedShivCardsPlayedFromHistory()
 	{
 		return HextechCombatHistoryHelper.CountOwnedCardsPlayed(
@@ -134,19 +135,13 @@ public sealed class ChainInSleeveRune : HextechRelicBase
 
 	private async Task AddShivRewardCards(int count)
 	{
-		if (Owner?.GetRelic<BigKnifeRune>() != null)
+		if (Owner.GetRelic<BigKnifeRune>() != null)
 		{
 			await AddCardCopiesToCombatHand<SovereignBlade>(count, HextechKnifeHelper.ConfigureBigKnifeBlade);
 			return;
 		}
 
 		await AddCardCopiesToCombatHand<Shiv>(count);
-	}
-
-	// 历史只含本场（原版在战斗结束与重置时清空），战斗外读到 0。
-	private int GetShivsPlayedThisCombat()
-	{
-		return CountOwnedShivCardsPlayedFromHistory();
 	}
 
 	private void ResetCounter()

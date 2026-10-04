@@ -28,25 +28,14 @@ public sealed class DualcastUpgradeRune : CardUpgradeRuneBase<Dualcast>
 		CardPilePosition position)
 	{
 		// 去向 None 的临时复制品必须继续销毁，否则回手后会残留重复实体。
-		if (Owner != null
-			&& card.Owner == Owner
-			&& IsSupportedCard(card)
-			&& CanReturnFromResultPile(pileType))
+		if (card.Owner == Owner
+			&& card is Dualcast or Quadcast
+			&& pileType != PileType.None)
 		{
 			Flash();
 			return (PileType.Hand, CardPilePosition.Bottom);
 		}
 
 		return (pileType, position);
-	}
-
-	internal static bool IsSupportedCard(CardModel card)
-	{
-		return card is Dualcast or Quadcast;
-	}
-
-	internal static bool CanReturnFromResultPile(PileType pileType)
-	{
-		return pileType is not PileType.None;
 	}
 }

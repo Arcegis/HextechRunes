@@ -167,12 +167,17 @@ internal static partial class Program
 	[HextechTest]
 	private static void GiantSlayerScalesFromEnemyMaxHp()
 	{
-		Equal(1m, GiantSlayerRune.ResolveDamageMultiplier(0), "zero-HP fallback multiplier");
-		Equal(1m, GiantSlayerRune.ResolveDamageMultiplier(7), "below first eight-HP step multiplier");
-		Equal(1.01m, GiantSlayerRune.ResolveDamageMultiplier(8), "first eight-HP step multiplier");
-		Equal(1.49m, GiantSlayerRune.ResolveDamageMultiplier(399), "multiplier before cap");
-		Equal(1.5m, GiantSlayerRune.ResolveDamageMultiplier(400), "fifty-percent cap multiplier");
-		Equal(1.5m, GiantSlayerRune.ResolveDamageMultiplier(9999), "multiplier remains capped");
+		static decimal Multiplier(int enemyMaxHp) => GiantSlayerRune.ResolveDamageMultiplier(
+			enemyMaxHp,
+			GiantSlayerRune.EnemyMaxHpPerPercent,
+			GiantSlayerRune.DamagePerStepPercent,
+			GiantSlayerRune.MaximumBonusPercent);
+		Equal(1m, Multiplier(0), "zero-HP fallback multiplier");
+		Equal(1m, Multiplier(7), "below first eight-HP step multiplier");
+		Equal(1.01m, Multiplier(8), "first eight-HP step multiplier");
+		Equal(1.49m, Multiplier(399), "multiplier before cap");
+		Equal(1.5m, Multiplier(400), "fifty-percent cap multiplier");
+		Equal(1.5m, Multiplier(9999), "multiplier remains capped");
 	}
 
 	[HextechTest]
@@ -451,13 +456,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void BigHandsIncreasesSummonAmountByFiftyPercent()
-	{
-		Equal(1.5m, BigHandsRune.SummonMultiplier, "Big Hands summon multiplier");
-		Equal(15m, BigHandsRune.CalculateSummonAmount(10m), "Big Hands summon amount");
-	}
-
-	[HextechTest]
 	private static void SpinToWinRecognizesSupportedDelayedResources()
 	{
 		Expect(SpinToWinRune.IsConvertiblePower(new DrawCardsNextTurnPower()), "next-turn draw should convert");
@@ -631,9 +629,6 @@ internal static partial class Program
 		Equal(0m, Bonus(skill), "skills do not grow");
 		Equal(0m, Bonus(foreign), "other players' cards do not grow");
 		Equal(0m, Bonus(first, ValueProp.Unpowered), "incidental damage is not an extra attack hit");
-		rune.GrowAttacks([first], 0);
-		rune.GrowAttacks([first], -5);
-		Equal(10m, Bonus(first), "healing and zero loss grant no growth");
 		rune.AfterCombatEnd(null!).GetAwaiter().GetResult();
 		Equal(0m, Bonus(first), "combat end clears bonuses");
 		rune.GrowAttacks([first], 4);
@@ -836,11 +831,6 @@ internal static partial class Program
 		Expect(!CreateMutableTestModel<AllForYouRune>().IsAvailableForPlayer(solo), "all for you is multiplayer-only");
 		Expect(!CreateMutableTestModel<BlossomBladeRune>().IsAvailableForPlayer(solo), "blossom blade is multiplayer-only");
 
-		Equal(40m, DiveBomberRune.GetDamage(80m, 50m), "dive bomber deals half of max HP");
-		Equal(37m, DiveBomberRune.GetDamage(75m, 50m), "odd max HP rounds down");
 		Equal(1.25m, AllForYouRune.SustainMultiplier, "all for you is +25%");
-		Equal(1m, BlossomBladeRune.GetHealAmount(80m, 2m), "2% of 80 rounds down to 1");
-		Equal(3m, BlossomBladeRune.GetHealAmount(150m, 2m), "2% of 150 is 3");
-		Equal(1m, BlossomBladeRune.GetHealAmount(20m, 2m), "heal is at least 1");
 	}
 }

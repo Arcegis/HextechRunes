@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Godot;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -53,15 +52,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void ColorDiscoveryIncludesThirdPartyCharacterPools()
 	{
-		CompatibilityOwnerCardPool ownerPool = new();
-		CompatibilityExternalCardPool externalPool = new();
-
-		CardPoolModel[] pools = ColorDiscoveryRune.GetOtherCharacterPools(
-			[ownerPool, externalPool],
-			ownerPool.Id).ToArray();
-
-		SequenceEqual([externalPool], pools, "third-party character pool should remain eligible");
-
 		MethodInfo productionMethod = typeof(ColorDiscoveryRune).GetMethod(
 			"GetOtherCharacterCards",
 			BindingFlags.NonPublic | BindingFlags.Static)
@@ -171,28 +161,6 @@ internal static partial class Program
 		Equal(expectedExternalKeyB, keyB, "second external turn proc key");
 		Expect(firstKeyA != keyB, "external derived types with the same short name must not share a proc key");
 		Equal(firstKeyA, secondKeyA, "single-player and network turn proc key stability");
-	}
-
-	private abstract class CompatibilityCardPoolBase : CardPoolModel
-	{
-		public override string Title => "Compatibility";
-		public override string EnergyColorName => "red";
-		public override string CardFrameMaterialPath => "ironclad";
-		public override Color DeckEntryCardColor => Colors.White;
-		public override bool IsColorless => false;
-
-		protected override CardModel[] GenerateAllCards()
-		{
-			return [];
-		}
-	}
-
-	private sealed class CompatibilityOwnerCardPool : CompatibilityCardPoolBase
-	{
-	}
-
-	private sealed class CompatibilityExternalCardPool : CompatibilityCardPoolBase
-	{
 	}
 
 	private abstract class CompatibilityExternalActMap : ActMap

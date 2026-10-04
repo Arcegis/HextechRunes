@@ -19,14 +19,9 @@ public sealed class BodySlamUpgradeRune : CardUpgradeRuneBase<BodySlam>
 
 		int block = attackCommand.Results
 			.SelectMany(static results => results)
-			.Sum(static result => CalculateFisticuffsBlock(result.TotalDamage, result.OverkillDamage));
+			.Sum(static result => result.TotalDamage + result.OverkillDamage);
 		Flash();
 		await CreatureCmd.GainBlock(card.Owner.Creature, block, ValueProp.Move, cardPlay);
-	}
-
-	internal static int CalculateFisticuffsBlock(int totalDamage, int overkillDamage)
-	{
-		return totalDamage + overkillDamage;
 	}
 
 	[HarmonyPatch(typeof(BodySlam), "OnPlay", typeof(PlayerChoiceContext), typeof(CardPlay))]

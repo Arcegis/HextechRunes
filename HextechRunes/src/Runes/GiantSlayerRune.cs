@@ -46,7 +46,7 @@ public sealed class GiantSlayerRune : HextechRelicBase
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null || target?.Side != CombatSide.Enemy || !IsDamageFromOwner(dealer, cardSource))
+		if (target?.Side != CombatSide.Enemy || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return 1m;
 		}
@@ -60,9 +60,9 @@ public sealed class GiantSlayerRune : HextechRelicBase
 
 	internal static decimal ResolveDamageMultiplier(
 		int enemyMaxHp,
-		int hpPerStep = EnemyMaxHpPerPercent,
-		decimal damagePerStep = DamagePerStepPercent,
-		decimal maximumBonus = MaximumBonusPercent)
+		int hpPerStep,
+		decimal damagePerStep,
+		decimal maximumBonus)
 	{
 		int steps = Math.Max(0, enemyMaxHp) / Math.Max(1, hpPerStep);
 		decimal bonus = Math.Min(steps * damagePerStep, maximumBonus);

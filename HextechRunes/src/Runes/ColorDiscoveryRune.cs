@@ -39,7 +39,6 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 	{
 		if (SavedOfferedThisCombat
 			|| player != Owner
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| combatState.RoundNumber != 1
 			|| PickOptions(combatState).ToList() is not { Count: > 0 } options)
@@ -68,7 +67,7 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead || SavedPendingRewardCardId.Equals(ModelId.none))
+		if (Owner.Creature.IsDead || SavedPendingRewardCardId.Equals(ModelId.none))
 		{
 			return Task.CompletedTask;
 		}
@@ -81,11 +80,6 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 
 	private IEnumerable<CardModel> PickOptions(HextechCombatState combatState)
 	{
-		if (Owner == null)
-		{
-			return [];
-		}
-
 		List<CardModel> candidates = GetOtherCharacterCards(Owner);
 		List<CardModel> options = [];
 		for (int i = 0; i < DynamicVars.Cards.IntValue && candidates.Count > 0; i++)
@@ -115,17 +109,10 @@ public sealed class ColorDiscoveryRune : HextechRelicBase
 	private static List<CardModel> GetOtherCharacterCards(Player player)
 	{
 		ModelId ownerPoolId = player.Character.CardPool.Id;
-		return BuildStableCombatGenerationPool(GetOtherCharacterPools(
-				ModelDb.AllCharacters.Select(static character => character.CardPool),
-				ownerPoolId)
+		return BuildStableCombatGenerationPool(ModelDb.AllCharacters
+			.Select(static character => character.CardPool)
+			.Where(pool => !pool.Id.Equals(ownerPoolId))
 			.SelectMany(pool => pool.GetUnlockedCards(player.UnlockState, player.RunState.CardMultiplayerConstraint))
 			.DistinctBy(static card => card.Id));
-	}
-
-	internal static IEnumerable<CardPoolModel> GetOtherCharacterPools(
-		IEnumerable<CardPoolModel> characterPools,
-		ModelId ownerPoolId)
-	{
-		return characterPools.Where(pool => !pool.Id.Equals(ownerPoolId));
 	}
 }

@@ -30,18 +30,13 @@ public sealed class FrostWraithRune : HextechRelicBase
 		if (player != Owner
 			|| Owner.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
-			|| !ShouldTriggerForRound(combatState.RoundNumber, DynamicVars["TurnsNeeded"].IntValue)
+			|| !HextechRoundInterval.IsDue(combatState.RoundNumber, DynamicVars["TurnsNeeded"].IntValue)
 			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))
 		{
 			return;
 		}
 
 		await ApplySlow(combatState);
-	}
-
-	internal static bool ShouldTriggerForRound(int roundNumber, int turnsNeeded)
-	{
-		return HextechRoundInterval.IsDue(roundNumber, turnsNeeded);
 	}
 
 	private async Task ApplySlow(HextechCombatState combatState)

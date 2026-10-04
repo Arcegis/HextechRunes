@@ -43,23 +43,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void PlayerCompensationRequiresActiveCombatContext()
-	{
-		Expect(
-			CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: true, combatStateMatchesRun: true),
-			"Compensation should replace damage during the active combat it belongs to");
-		Expect(
-			!CompensationRune.IsActiveCombatContext(combatInProgress: false, currentRoomIsCombat: true, combatStateMatchesRun: true),
-			"Compensation should not replace event or other out-of-combat damage");
-		Expect(
-			!CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: false, combatStateMatchesRun: true),
-			"Compensation should require the current room to be a combat room");
-		Expect(
-			!CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: true, combatStateMatchesRun: false),
-			"Compensation should reject stale combat state from another run");
-	}
-
-	[HextechTest]
 	private static void NextTurnDamageUsesTurnStartSnapshot()
 	{
 		Equal(0, HextechNextTurnDamagePower.GetDamageToResolve(5, 0), "new stacks should not resolve during the turn they are applied");

@@ -19,7 +19,6 @@ public sealed class BlossomBladeRune : HextechRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		if (!cardPlay.IsFirstInSeries
-			|| Owner == null
 			|| cardPlay.Card.Owner != Owner
 			|| Owner.Creature.IsDead
 			|| Owner.Creature.CombatState == null
@@ -35,7 +34,7 @@ public sealed class BlossomBladeRune : HextechRelicBase
 		}
 
 		Flash([teammate]);
-		await CreatureCmd.Heal(teammate, GetHealAmount(teammate.MaxHp, DynamicVars["HealPercent"].BaseValue));
+		await CreatureCmd.Heal(teammate, Math.Max(1m, Math.Floor(teammate.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m)));
 	}
 
 	internal static Creature? FindLowestHpRatioTeammate(Player owner)
@@ -46,10 +45,5 @@ public sealed class BlossomBladeRune : HextechRelicBase
 			.ThenBy(static player => player.NetId)
 			.Select(static player => player.Creature)
 			.FirstOrDefault();
-	}
-
-	internal static decimal GetHealAmount(decimal maxHp, decimal percent)
-	{
-		return Math.Max(1m, Math.Floor(maxHp * percent / 100m));
 	}
 }

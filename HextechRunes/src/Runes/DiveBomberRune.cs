@@ -20,14 +20,13 @@ public sealed class DiveBomberRune : HextechRelicBase
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
 		if (wasRemovalPrevented
-			|| Owner == null
 			|| target != Owner.Creature
 			|| target.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
 
-		decimal damage = GetDamage(target.MaxHp, DynamicVars["MaxHpPercent"].BaseValue);
+		decimal damage = Math.Floor(target.MaxHp * DynamicVars["MaxHpPercent"].BaseValue / 100m);
 		List<Creature> enemies = combatState.HittableEnemies.Where(static enemy => enemy.IsAlive).ToList();
 		if (damage <= 0m || enemies.Count == 0)
 		{
@@ -36,10 +35,5 @@ public sealed class DiveBomberRune : HextechRelicBase
 
 		Flash(enemies);
 		await HextechGameApiCompat.Damage(choiceContext, enemies, damage, ValueProp.Unpowered, null, null);
-	}
-
-	internal static decimal GetDamage(decimal maxHp, decimal percent)
-	{
-		return Math.Floor(maxHp * percent / 100m);
 	}
 }

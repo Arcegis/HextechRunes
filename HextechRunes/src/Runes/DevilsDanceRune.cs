@@ -77,7 +77,7 @@ public sealed class DevilsDanceRune : HextechRelicBase
 
 	private async Task GainMaxHpForAttackThreshold()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

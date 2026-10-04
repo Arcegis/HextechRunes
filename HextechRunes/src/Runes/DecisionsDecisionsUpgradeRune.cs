@@ -66,12 +66,10 @@ public sealed class DecisionsDecisionsUpgradeRune : CardUpgradeRuneBase<Decision
 		return Task.CompletedTask;
 	}
 
-	internal static bool CanSelectCard(CardModel card)
+	private static bool CanSelectCard(CardModel card)
 	{
-		return CanSelectCard(card.Keywords.Contains(CardKeyword.Unplayable));
+		return !card.Keywords.Contains(CardKeyword.Unplayable);
 	}
-
-	internal static bool CanSelectCard(bool isUnplayable) => !isUnplayable;
 
 	internal static int AddRequestedPlayCount(int playCount, int requestedPlayCount)
 	{

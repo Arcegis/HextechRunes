@@ -106,7 +106,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 
 	private async Task GainEnergyForAttackThreshold()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

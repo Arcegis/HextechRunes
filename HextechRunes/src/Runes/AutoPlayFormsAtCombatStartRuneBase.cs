@@ -10,7 +10,6 @@ public abstract class AutoPlayFormsAtCombatStartRuneBase<TCard> : CardUpgradeRun
 	where TCard : CardModel
 {
 	private bool _startedThisCombat;
-	private bool _autoPlaying;
 
 	public override Task BeforeCombatStart()
 	{
@@ -36,11 +35,8 @@ public abstract class AutoPlayFormsAtCombatStartRuneBase<TCard> : CardUpgradeRun
 	private async Task PlayFormsOnFirstPlayerTurnAsync(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (_startedThisCombat
-			|| _autoPlaying
 			|| player != Owner
-			|| Owner == null
 			|| Owner.Creature.IsDead
-			|| Owner.PlayerCombatState == null
 			|| !IsAvailableForCharacter(Owner))
 		{
 			return;
@@ -50,7 +46,7 @@ public abstract class AutoPlayFormsAtCombatStartRuneBase<TCard> : CardUpgradeRun
 
 		// "你所有的 XX 形态":战斗牌堆(抽牌/手牌/弃牌)里的全部,含引魂/固有等把牌送进
 		// 非常规起始位置的情况;消耗堆与已移除的不算。
-		List<TCard> cards = Owner.PlayerCombatState.AllCards
+		List<TCard> cards = Owner.PlayerCombatState!.AllCards
 			.OfType<TCard>()
 			.Where(card => card.Owner == Owner
 				&& card.Pile?.Type is PileType.Draw or PileType.Hand or PileType.Discard)
@@ -60,49 +56,41 @@ public abstract class AutoPlayFormsAtCombatStartRuneBase<TCard> : CardUpgradeRun
 			return;
 		}
 
-		_autoPlaying = true;
-		try
+		Flash();
+		// 整批从进场动画起共用展开布局;安全场景只结算一次合计 Power,兼容场景仍走
+		// 原版逐张路径。虚空形态的 EndTurn 在同一确定性作用域内压掉,不吃掉首回合。
+		using (HextechFormAutoPlayHooks.BeginCardPlayBatch(cards))
+		using (HextechFormAutoPlayHooks.BeginEndTurnSuppression())
 		{
-			Flash();
-			// 整批从进场动画起共用展开布局;安全场景只结算一次合计 Power,兼容场景仍走
-			// 原版逐张路径。虚空形态的 EndTurn 在同一确定性作用域内压掉,不吃掉首回合。
-			using (HextechFormAutoPlayHooks.BeginCardPlayBatch(cards))
-			using (HextechFormAutoPlayHooks.BeginEndTurnSuppression())
+			IReadOnlyList<CardPileAddResult> moveResults = await CardPileCmd.Add(
+				cards,
+				PileType.Play,
+				CardPilePosition.Bottom);
+			List<CardModel> cardsInPlay = moveResults
+				.Where(result => result.success && result.cardAdded.Pile?.Type == PileType.Play)
+				.Select(result => result.cardAdded)
+				.ToList();
+
+			await HextechFormAutoPlayHooks.PlayCardBatchVfx(cardsInPlay);
+
+			if (await HextechFormAutoPlayHooks.TryPlayCombinedFinalEffect(choiceContext, cardsInPlay))
 			{
-				IReadOnlyList<CardPileAddResult> moveResults = await CardPileCmd.Add(
-					cards,
-					PileType.Play,
-					CardPilePosition.Bottom);
-				List<CardModel> cardsInPlay = moveResults
-					.Where(result => result.success && result.cardAdded.Pile?.Type == PileType.Play)
-					.Select(result => result.cardAdded)
-					.ToList();
-
-				await HextechFormAutoPlayHooks.PlayCardBatchVfx(cardsInPlay);
-
-				if (await HextechFormAutoPlayHooks.TryPlayCombinedFinalEffect(choiceContext, cardsInPlay))
-				{
-					return;
-				}
-
-				foreach (CardModel card in cardsInPlay)
-				{
-					if (card.Pile?.Type != PileType.Play)
-					{
-						continue;
-					}
-
-					await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(
-						choiceContext,
-						card,
-						target: null,
-						skipCardPileVisuals: true);
-				}
+				return;
 			}
-		}
-		finally
-		{
-			_autoPlaying = false;
+
+			foreach (CardModel card in cardsInPlay)
+			{
+				if (card.Pile?.Type != PileType.Play)
+				{
+					continue;
+				}
+
+				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(
+					choiceContext,
+					card,
+					target: null,
+					skipCardPileVisuals: true);
+			}
 		}
 	}
 }
