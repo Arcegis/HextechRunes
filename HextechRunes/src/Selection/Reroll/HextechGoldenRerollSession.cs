@@ -20,33 +20,14 @@ internal static class HextechGoldenRerollRules
 		}
 	}
 
-	public static bool ShouldActivateForRoll(
-		HextechRarityTier rarity,
-		bool hasUpgradedCandidates,
-		int percentRoll,
-		int activationPercent)
-	{
-		int normalizedPercent = HextechRuneConfiguration.ClampGoldenRerollChancePercent(activationPercent);
-		return hasUpgradedCandidates
-			&& TryGetUpgradedRarity(rarity, out _)
-			&& percentRoll >= 0
-			&& percentRoll < normalizedPercent;
-	}
-
+	/// <summary>调用方(HextechGoldenRerollSession.Create)已确认本稀有度可升级且升级池非空。</summary>
 	public static bool ShouldActivate(
 		RunState runState,
 		Player player,
 		int actIndex,
 		int choiceOrdinal,
-		HextechRarityTier rarity,
-		bool hasUpgradedCandidates,
 		int activationPercent)
 	{
-		if (!hasUpgradedCandidates || !TryGetUpgradedRarity(rarity, out _))
-		{
-			return false;
-		}
-
 		return HextechStableRandom.PercentChance(
 			runState,
 			HextechRuneConfiguration.ClampGoldenRerollChancePercent(activationPercent),
@@ -56,7 +37,7 @@ internal static class HextechGoldenRerollRules
 				HextechStableRandom.PlayerKey(player)));
 	}
 
-	internal static string[] BuildSaltParts(
+	private static string[] BuildSaltParts(
 		int actIndex,
 		int choiceOrdinal,
 		string playerKey)
@@ -118,8 +99,6 @@ internal sealed class HextechGoldenRerollSession
 			player,
 			actIndex,
 			choiceOrdinal,
-			rarity,
-			hasUpgradedCandidates,
 			activationPercent);
 		return new HextechGoldenRerollSession(
 			canActivate: true,

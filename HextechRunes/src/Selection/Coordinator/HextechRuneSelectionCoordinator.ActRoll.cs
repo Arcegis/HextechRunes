@@ -16,38 +16,21 @@ internal static partial class HextechRuneSelectionCoordinator
 		IReadOnlyList<HextechRarityTier> enabledRarities,
 		bool deterministic)
 	{
-		HextechRarityWeights weights = GetEffectiveActRarityWeights(
+		(HextechRarityWeights weights, IReadOnlyList<HextechRarityTier> eligibleRarities) = ApplyConsecutiveSilverRule(
 			modifier.GetRuneRarityWeightsForAct(actIndex),
-			modifier.PreventConsecutiveSilverRunes,
-			actIndex,
-			modifier.GetRarityForAct(actIndex - 1));
-		IReadOnlyList<HextechRarityTier> eligibleRarities = GetEffectiveActRarityCandidates(
 			enabledRarities,
 			modifier.PreventConsecutiveSilverRunes,
 			actIndex,
 			modifier.GetRarityForAct(actIndex - 1));
-		return RollWeightedRarity(runState, weights.Silver, weights.Gold, weights.Prismatic, deterministic, actIndex, eligibleRarities);
+		return RollWeightedRarity(runState, weights, deterministic, actIndex, eligibleRarities);
 	}
 
-	internal static HextechRarityWeights GetEffectiveActRarityWeights(
+	/// <summary>
+	/// "上一幕白银后不再出白银":从第二幕起,上一幕是白银时去掉白银的权重与候选。
+	/// 只剩白银权重时改为金色/棱彩各 1;启用稀有度只有白银时候选回落为金色与棱彩。
+	/// </summary>
+	internal static (HextechRarityWeights Weights, IReadOnlyList<HextechRarityTier> Candidates) ApplyConsecutiveSilverRule(
 		HextechRarityWeights configuredWeights,
-		bool preventConsecutiveSilverRunes,
-		int actIndex,
-		HextechRarityTier? previousActRarity)
-	{
-		if (!preventConsecutiveSilverRunes
-			|| actIndex <= 0
-			|| previousActRarity != HextechRarityTier.Silver)
-		{
-			return configuredWeights;
-		}
-
-		return configuredWeights.Gold + configuredWeights.Prismatic > 0
-			? configuredWeights with { Silver = 0 }
-			: new HextechRarityWeights(0, 1, 1);
-	}
-
-	internal static IReadOnlyList<HextechRarityTier> GetEffectiveActRarityCandidates(
 		IReadOnlyList<HextechRarityTier> enabledRarities,
 		bool preventConsecutiveSilverRunes,
 		int actIndex,
@@ -57,15 +40,18 @@ internal static partial class HextechRuneSelectionCoordinator
 			|| actIndex <= 0
 			|| previousActRarity != HextechRarityTier.Silver)
 		{
-			return enabledRarities;
+			return (configuredWeights, enabledRarities);
 		}
 
+		HextechRarityWeights weights = configuredWeights.Gold + configuredWeights.Prismatic > 0
+			? configuredWeights with { Silver = 0 }
+			: new HextechRarityWeights(0, 1, 1);
 		HextechRarityTier[] nonSilverRarities = enabledRarities
 			.Where(static rarity => rarity != HextechRarityTier.Silver)
 			.ToArray();
-		return nonSilverRarities.Length > 0
+		return (weights, nonSilverRarities.Length > 0
 			? nonSilverRarities
-			: [ HextechRarityTier.Gold, HextechRarityTier.Prismatic ];
+			: [ HextechRarityTier.Gold, HextechRarityTier.Prismatic ]);
 	}
 
 	private sealed record LocalActRoll(
@@ -309,18 +295,12 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static HextechRarityTier RollWeightedRarity(
 		RunState runState,
-		int silverWeight,
-		int goldWeight,
-		int prismaticWeight,
+		HextechRarityWeights configuredWeights,
 		bool deterministic,
 		int actIndex,
 		IReadOnlyList<HextechRarityTier> enabledRarities)
 	{
-		HextechRarityWeights weights = HextechRarityRollResolver.ApplyEnabledRarities(
-			silverWeight,
-			goldWeight,
-			prismaticWeight,
-			enabledRarities);
+		HextechRarityWeights weights = HextechRarityRollResolver.ApplyEnabledRarities(configuredWeights, enabledRarities);
 		if (weights.Total <= 0)
 		{
 			return RollUniformRarity(runState, deterministic, actIndex, enabledRarities);
@@ -341,7 +321,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			int roll = deterministic
 				? HextechStableRandom.Index(runState, 3, "act-roll-rarity", actIndex.ToString())
 				: runState.Rng.Niche.NextInt(3);
-			return HextechRarityRollResolver.ResolveUniform(orderedRarities, roll);
+			return orderedRarities[roll];
 		}
 
 		int index = deterministic
@@ -431,11 +411,6 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		HextechLog.Info("Mayhem", $"ResolveNewMonsterHexesForAct: act={actIndex} newCount={newEnemyHexCount} previous={previousHexes.Count} primary={primaryMonsterHex} newHexes={string.Join(",", resolvedNewHexes)}");
 		return resolvedNewHexes;
-	}
-
-	private static IReadOnlyList<MonsterHexKind> CombineMonsterHexes(IEnumerable<MonsterHexKind> previousHexes, IEnumerable<MonsterHexKind> newHexes)
-	{
-		return HextechMonsterHexRoller.CombineActiveHexes(previousHexes, newHexes);
 	}
 
 	private static MonsterHexKind? RerollEnemyHexForAct(

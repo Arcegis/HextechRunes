@@ -8,15 +8,13 @@ internal readonly record struct HextechRarityWeights(int Silver, int Gold, int P
 internal static class HextechRarityRollResolver
 {
 	public static HextechRarityWeights ApplyEnabledRarities(
-		int silverWeight,
-		int goldWeight,
-		int prismaticWeight,
+		HextechRarityWeights weights,
 		IReadOnlyCollection<HextechRarityTier> enabledRarities)
 	{
 		return new HextechRarityWeights(
-			enabledRarities.Contains(HextechRarityTier.Silver) ? silverWeight : 0,
-			enabledRarities.Contains(HextechRarityTier.Gold) ? goldWeight : 0,
-			enabledRarities.Contains(HextechRarityTier.Prismatic) ? prismaticWeight : 0);
+			enabledRarities.Contains(HextechRarityTier.Silver) ? weights.Silver : 0,
+			enabledRarities.Contains(HextechRarityTier.Gold) ? weights.Gold : 0,
+			enabledRarities.Contains(HextechRarityTier.Prismatic) ? weights.Prismatic : 0);
 	}
 
 	public static HextechRarityTier ResolveWeighted(HextechRarityWeights weights, int roll)
@@ -48,12 +46,6 @@ internal static class HextechRarityRollResolver
 		return orderedRarities.Length == 0
 			? Enum.GetValues<HextechRarityTier>()
 			: orderedRarities;
-	}
-
-	public static HextechRarityTier ResolveUniform(IReadOnlyCollection<HextechRarityTier> enabledRarities, int roll)
-	{
-		HextechRarityTier[] orderedRarities = GetUniformRarityOrder(enabledRarities);
-		return orderedRarities[roll];
 	}
 
 	public static bool HasAllRarities(IReadOnlyCollection<HextechRarityTier> enabledRarities)

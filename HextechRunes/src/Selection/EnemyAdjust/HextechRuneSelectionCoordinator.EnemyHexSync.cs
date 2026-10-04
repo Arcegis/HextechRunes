@@ -166,7 +166,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		try
 		{
 			List<MonsterHexKind?> nextMonsterHexes = monsterHexes.ToList();
-			List<int> nextRerollCounts = rerollCounts.Select(static count => Math.Max(0, count)).ToList();
+			List<int> nextRerollCounts = rerollCounts.ToList();
 			EnemyHexAdjustmentPayload payload = new(
 				syncContext.ActIndex,
 				syncContext.Sequence,
@@ -268,7 +268,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			syncContext.CurrentMonsterHexSlots.Clear();
 			syncContext.CurrentMonsterHexSlots.AddRange(payload.MonsterHexes);
 			syncContext.RerollCounts.Clear();
-			syncContext.RerollCounts.AddRange(payload.RerollCounts.Select(static count => Math.Max(0, count)));
+			syncContext.RerollCounts.AddRange(payload.RerollCounts);
 			syncContext.Sequence = payload.Sequence + 1;
 			screen.ApplyEnemyHexAdjustment(payload.MonsterHexes, payload.RerollCounts);
 			HextechLog.Info("Mayhem", $"EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} hexes={string.Join(",", payload.MonsterHexes.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", payload.RerollCounts)} final={payload.IsFinal}");

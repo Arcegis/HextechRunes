@@ -190,7 +190,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		return ResolveRemoteRuneChoice(modifier, selection.Player, actIndex, choiceOrdinal, decoded!);
 	}
 
-	private static async Task<HextechRuneSelectionScreen> CreateRuneSelectionScreenAsync(
+	/// <summary>等待覆盖层栈就绪后创建并推入选择界面;符文、仅敌方、"无候选"与锻造三选一共用。</summary>
+	internal static async Task<HextechRuneSelectionScreen> CreateRuneSelectionScreenAsync(
 		IReadOnlyList<RelicModel> relics,
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc = null,
@@ -200,7 +201,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechGoldenRerollSession? goldenRerollSession = null,
 		CancellationToken cancellationToken = default,
 		IReadOnlyList<RelicModel>? selfPickPool = null,
-		bool continueOnly = false)
+		bool continueOnly = false,
+		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune)
 	{
 		await WaitForSingletonAsync(static () => NOverlayStack.Instance, cancellationToken: cancellationToken);
 		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(
@@ -210,12 +212,13 @@ internal static partial class HextechRuneSelectionCoordinator
 			enemyHexOptions,
 			playerRuneRerollLimit,
 			titleOverride,
-			goldenRerollSession: goldenRerollSession,
-			selfPickPool: selfPickPool,
-			continueOnly: continueOnly);
+			metadataMode,
+			goldenRerollSession,
+			selfPickPool,
+			continueOnly);
 		if (NOverlayStack.Instance == null)
 		{
-			throw new InvalidOperationException("NOverlayStack is not available for rune selection.");
+			throw new InvalidOperationException("NOverlayStack is not available for hextech selection.");
 		}
 
 		NOverlayStack.Instance.Push(selectionScreen);

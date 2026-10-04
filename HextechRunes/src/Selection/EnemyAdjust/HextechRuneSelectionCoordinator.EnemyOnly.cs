@@ -4,11 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	internal static bool NeedsEnemyOnlySelection(int playerCount, int newEnemyCount, bool presetChallenge)
-	{
-		return playerCount <= 0 && newEnemyCount > 0 && !presetChallenge;
-	}
-
 	private static async Task<IReadOnlyList<MonsterHexKind>> SelectEnemyHexesOnly(
 		RunState runState, HextechMayhemModifier modifier, int actIndex, HextechRarityTier rarity,
 		IReadOnlyList<MonsterHexKind> previousHexes, IReadOnlyList<MonsterHexKind> newHexes,

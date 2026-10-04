@@ -64,11 +64,8 @@ internal static class HextechMonsterHexRoller
 		IEnumerable<MonsterHexKind> previousHexes,
 		IEnumerable<MonsterHexKind> newHexes)
 	{
-		List<MonsterHexKind> combined = [];
-		HashSet<MonsterHexKind> seen = [];
-		AddUnique(combined, seen, previousHexes);
-		AddUnique(combined, seen, newHexes);
-		return combined;
+		// Distinct 按首次出现的顺序产出,结果顺序与输入一致。
+		return previousHexes.Concat(newHexes).Distinct().ToList();
 	}
 
 	public static IReadOnlyList<MonsterHexKind> BuildRerollPool(
@@ -124,7 +121,7 @@ internal static class HextechMonsterHexRoller
 	// 各 peer 得到同一池 → roll 确定性,不引入分叉。为空兜底返回原池(防御性,当前禁用集不会清空 Gold 池)。
 	private static IReadOnlyList<MonsterHexKind> FilterMultiplayerDisabled(IReadOnlyList<MonsterHexKind> rarityPool)
 	{
-		if (MultiplayerDisabledHexes.Count == 0 || !HextechPlayerContextHelper.IsNetworkMultiplayerRun())
+		if (!HextechPlayerContextHelper.IsNetworkMultiplayerRun())
 		{
 			return rarityPool;
 		}
@@ -144,23 +141,8 @@ internal static class HextechMonsterHexRoller
 			return rarityPool;
 		}
 
-		List<MonsterHexKind> configuredPool = rarityPool
+		return rarityPool
 			.Where(kind => !disabledMonsterHexIds.Contains(kind.ToString()))
 			.ToList();
-		return configuredPool.Count > 0 ? configuredPool : [];
-	}
-
-	private static void AddUnique(
-		List<MonsterHexKind> target,
-		HashSet<MonsterHexKind> seen,
-		IEnumerable<MonsterHexKind> source)
-	{
-		foreach (MonsterHexKind hex in source)
-		{
-			if (seen.Add(hex))
-			{
-				target.Add(hex);
-			}
-		}
 	}
 }

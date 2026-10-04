@@ -77,10 +77,8 @@ internal static partial class Program
 	private static void RarityRollResolverFiltersWeightedRarities()
 	{
 		HextechRarityWeights weights = HextechRarityRollResolver.ApplyEnabledRarities(
-			silverWeight: 20,
-			goldWeight: 50,
-			prismaticWeight: 30,
-			enabledRarities: [ HextechRarityTier.Gold, HextechRarityTier.Prismatic ]);
+			new HextechRarityWeights(20, 50, 30),
+			[ HextechRarityTier.Gold, HextechRarityTier.Prismatic ]);
 
 		Equal(0, weights.Silver, "silver weight");
 		Equal(50, weights.Gold, "gold weight");
@@ -99,8 +97,6 @@ internal static partial class Program
 			[ HextechRarityTier.Prismatic, HextechRarityTier.Silver ]);
 
 		SequenceEqual(new[] { HextechRarityTier.Silver, HextechRarityTier.Prismatic }, order, "uniform rarity order");
-		Equal(HextechRarityTier.Silver, HextechRarityRollResolver.ResolveUniform(order, 0), "first uniform rarity");
-		Equal(HextechRarityTier.Prismatic, HextechRarityRollResolver.ResolveUniform(order, 1), "second uniform rarity");
 		SequenceEqual(Enum.GetValues<HextechRarityTier>(), HextechRarityRollResolver.GetUniformRarityOrder([]), "empty enabled fallback order");
 		Expect(HextechRarityRollResolver.HasAllRarities(Enum.GetValues<HextechRarityTier>()), "all-rarity detection");
 		Expect(!HextechRarityRollResolver.HasAllRarities(order), "partial-rarity detection");
@@ -110,46 +106,49 @@ internal static partial class Program
 	private static void ConsecutiveSilverRuleExcludesSilverFromEveryLaterAct()
 	{
 		HextechRarityWeights configured = new(2, 5, 3);
+		HextechRarityTier[] all = Enum.GetValues<HextechRarityTier>();
 		Equal(
 			configured,
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 0, null),
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(configured, all, true, 0, null).Weights,
 			"first act weights");
 		Equal(
 			configured,
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 1, HextechRarityTier.Gold),
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(configured, all, true, 1, HextechRarityTier.Gold).Weights,
 			"weights after non-Silver act");
-		Equal(
-			configured,
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, false, 1, HextechRarityTier.Silver),
-			"disabled consecutive-Silver rule");
+		(HextechRarityWeights disabledWeights, IReadOnlyList<HextechRarityTier> disabledCandidates) =
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(configured, all, false, 1, HextechRarityTier.Silver);
+		Equal(configured, disabledWeights, "disabled consecutive-Silver rule");
+		SequenceEqual(all, disabledCandidates, "disabled rule keeps candidates");
 		Equal(
 			new HextechRarityWeights(0, 5, 3),
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 1, HextechRarityTier.Silver),
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(configured, all, true, 1, HextechRarityTier.Silver).Weights,
 			"second act weights after Silver");
 		Equal(
 			new HextechRarityWeights(0, 5, 3),
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(configured, true, 2, HextechRarityTier.Silver),
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(configured, all, true, 2, HextechRarityTier.Silver).Weights,
 			"third act weights after Silver");
 		Equal(
 			new HextechRarityWeights(0, 1, 1),
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityWeights(new HextechRarityWeights(9, 0, 0), true, 2, HextechRarityTier.Silver),
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(new HextechRarityWeights(9, 0, 0), all, true, 2, HextechRarityTier.Silver).Weights,
 			"non-Silver zero-weight fallback");
 
 		SequenceEqual(
 			new[] { HextechRarityTier.Gold },
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityCandidates(
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(
+				configured,
 				[ HextechRarityTier.Silver, HextechRarityTier.Gold ],
 				true,
 				1,
-				HextechRarityTier.Silver),
+				HextechRarityTier.Silver).Candidates,
 			"enabled non-Silver candidates");
 		SequenceEqual(
 			new[] { HextechRarityTier.Gold, HextechRarityTier.Prismatic },
-			HextechRuneSelectionCoordinator.GetEffectiveActRarityCandidates(
+			HextechRuneSelectionCoordinator.ApplyConsecutiveSilverRule(
+				configured,
 				[ HextechRarityTier.Silver ],
 				true,
 				1,
-				HextechRarityTier.Silver),
+				HextechRarityTier.Silver).Candidates,
 			"strict non-Silver fallback candidates");
 	}
 
@@ -176,74 +175,6 @@ internal static partial class Program
 				out HextechRarityTier unchangedPrismatic),
 			"prismatic should not be eligible for a golden reroll");
 		Equal(HextechRarityTier.Prismatic, unchangedPrismatic, "prismatic fallback target");
-	}
-
-	[HextechTest]
-	private static void GoldenRerollUsesExactFivePercentWindow()
-	{
-		for (int roll = 0; roll < 100; roll++)
-		{
-			Equal(
-				roll < 5,
-				HextechGoldenRerollRules.ShouldActivateForRoll(
-					HextechRarityTier.Silver,
-					hasUpgradedCandidates: true,
-					roll,
-					activationPercent: 5),
-				$"silver golden reroll roll {roll}");
-		}
-
-		Expect(
-			!HextechGoldenRerollRules.ShouldActivateForRoll(
-				HextechRarityTier.Silver,
-				hasUpgradedCandidates: true,
-				percentRoll: 0,
-				activationPercent: 0),
-			"zero percent should never activate");
-		Expect(
-			HextechGoldenRerollRules.ShouldActivateForRoll(
-				HextechRarityTier.Gold,
-				hasUpgradedCandidates: true,
-				percentRoll: 99,
-				activationPercent: 100),
-			"one hundred percent should always activate for eligible rolls");
-
-		Expect(
-			!HextechGoldenRerollRules.ShouldActivateForRoll(
-				HextechRarityTier.Prismatic,
-				hasUpgradedCandidates: true,
-				percentRoll: 0,
-				activationPercent: 100),
-			"prismatic should not activate even on a winning roll");
-		Expect(
-			!HextechGoldenRerollRules.ShouldActivateForRoll(
-				HextechRarityTier.Gold,
-				hasUpgradedCandidates: false,
-				percentRoll: 0,
-				activationPercent: 100),
-			"gold should not activate when the upgraded pool is unavailable");
-	}
-
-	[HextechTest]
-	private static void GoldenRerollSeparatesPlayersAndKeepsConsoleLocal()
-	{
-		string[] firstPlayerSalt = HextechGoldenRerollRules.BuildSaltParts(
-			actIndex: 1,
-			choiceOrdinal: 0,
-			playerKey: "net:100");
-		string[] secondPlayerSalt = HextechGoldenRerollRules.BuildSaltParts(
-			actIndex: 1,
-			choiceOrdinal: 0,
-			playerKey: "net:200");
-
-		Expect(
-			!firstPlayerSalt.SequenceEqual(secondPlayerSalt),
-			"different multiplayer players must receive independent golden reroll rolls");
-		Equal("net:100", firstPlayerSalt[^1], "first player golden reroll salt");
-		Equal("net:200", secondPlayerSalt[^1], "second player golden reroll salt");
-		Expect(
-			!new GoldenRerollConsoleCmd().IsNetworked,
-			"golden reroll test command must only affect the issuing client");
 	}
 
 	[HextechTest]
@@ -409,14 +340,13 @@ internal static partial class Program
 			"enemy-only selection should keep its existing confirmation");
 		Equal(
 			1,
-			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: true, slotIndex: 1, slotCount: 3),
+			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(slotIndex: 1, slotCount: 3),
 			"card click should record its slot without completing the selection");
 		Equal(
 			0,
-			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: true, slotIndex: 0, slotCount: 3),
+			HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(slotIndex: 0, slotCount: 3),
 			"a second card click should replace the pending slot");
-		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: false, slotIndex: 0, slotCount: 3), "no pending slot without confirmation");
-		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(confirmationEnabled: true, slotIndex: 3, slotCount: 3), "out-of-range slot is not pending");
+		Equal<int?>(null, HextechRuneSelectionScreen.ResolvePendingPlayerRuneSlot(slotIndex: 3, slotCount: 3), "out-of-range slot is not pending");
 	}
 
 	[HextechTest]
@@ -580,37 +510,6 @@ internal static partial class Program
 		Expect(
 			!HextechRuneGrantHelper.IsDestructiveRandomRewardRuneType(typeof(JudicatorRune)),
 			"ordinary runes should remain eligible for random rewards");
-	}
-
-	[HextechTest]
-	private static void ActSelectionGatePreventsReentryAndClearsCurrentRun()
-	{
-		HextechActSelectionGate gate = new();
-		object run = new();
-		object otherRun = new();
-
-		Expect(!gate.IsHandling, "new gate should be idle");
-		gate.Enter(run);
-		Expect(gate.IsHandling, "entered gate should be handling");
-		Expect(!gate.ResetIfStaleRun(run), "same run should not be stale");
-		Expect(!gate.ExitIfCurrent(otherRun), "different run should not exit current handling");
-		Expect(gate.IsHandling, "gate should keep handling after different-run exit");
-		Expect(gate.ExitIfCurrent(run), "current run should exit");
-		Expect(!gate.IsHandling, "gate should be idle after current-run exit");
-	}
-
-	[HextechTest]
-	private static void ActSelectionGateClearsStaleRun()
-	{
-		HextechActSelectionGate gate = new();
-		object oldRun = new();
-		object newRun = new();
-
-		gate.Enter(oldRun);
-		Expect(gate.ResetIfStaleRun(newRun), "different run should clear stale handling state");
-		Expect(!gate.IsHandling, "gate should be idle after stale reset");
-		gate.Enter(newRun);
-		Expect(gate.IsHandling, "gate should accept a new run after stale reset");
 	}
 
 	[HextechTest]

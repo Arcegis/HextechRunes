@@ -19,7 +19,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		HashSet<ulong> playersNotifiedNoOptions)
 	{
 		RunManager runManager = RunManager.Instance;
-		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
+		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = HextechMonsterHexRoller.CombineActiveHexes(previousMonsterHexes, initialNewMonsterHexes);
 		PlayerChoiceSynchronizer synchronizer = RequirePlayerChoiceSynchronizer(runManager);
 
 		List<PendingRuneSelection> pendingSelections = [];
@@ -118,7 +118,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			IReadOnlyList<MonsterHexKind> resolvedMonsterHexes = enemyHexSync != null
-				? CombineMonsterHexes(previousMonsterHexes, enemyHexSync.CurrentMonsterHexes)
+				? HextechMonsterHexRoller.CombineActiveHexes(previousMonsterHexes, enemyHexSync.CurrentMonsterHexes)
 				: initialActiveMonsterHexes;
 			modifier.SetMonsterHexesForAct(actIndex, resolvedMonsterHexes);
 			await PersistRuneSelectionCheckpoint(runState, actIndex, choiceOrdinal);
@@ -226,7 +226,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				continue;
 			}
 
-			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player);
+			// 玩家候选只排除本局已见过的符文;敌方持有的海克斯照样可以出现在玩家候选里。
+			HashSet<ModelId> excludedIds = modifier.GetSeenPlayerRuneIds(player);
 			List<RelicModel> options = BuildStableSelectableRunesForRarity(
 				player,
 				rarity,

@@ -103,12 +103,10 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	}
 
 	internal static int? ResolvePendingPlayerRuneSlot(
-		bool confirmationEnabled,
 		int slotIndex,
 		int slotCount)
 	{
-		return confirmationEnabled
-			&& slotIndex >= 0
+		return slotIndex >= 0
 			&& slotIndex < slotCount
 			? slotIndex
 			: null;
