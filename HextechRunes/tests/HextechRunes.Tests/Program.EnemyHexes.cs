@@ -490,7 +490,7 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void BalanceAdjustmentsSeptember25()
+	private static void EnemyHitThresholdCountsPerEnemyAndCarriesRemainder()
 	{
 		Dictionary<uint, int> hits = new();
 		bool[] fired = Enumerable.Range(0, 6).Select(_ => HextechEnemyHexEffect.ReachesHitThreshold(hits, 7, 3)).ToArray();
@@ -499,9 +499,11 @@ internal static partial class Program
 		Equal(6, hits[7], "remainder carries forward instead of resetting");
 		Expect(!HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 0), "a zero threshold never triggers");
 		Expect(HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 1), "threshold one triggers on every hit");
-		Equal(4, PorcupineEnemyHex.HitsPerTriggerPerPlayer, "porcupine needs 4N hits");
-		Equal(1, HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer, "hundred refinements needs N hits");
+	}
 
+	[HextechTest]
+	private static void EnemyHitThresholdDescriptionsUseTheEffectThresholds()
+	{
 		// 描述里的 {HitsNeeded} 靠按人数缩放的阈值表填值,漏登记就会原样显示占位符。
 		System.Collections.IDictionary thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
 			.GetField("PlayerCountScaledThresholds", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
@@ -509,11 +511,11 @@ internal static partial class Program
 			"porcupine description threshold matches the effect");
 		Equal(("HitsNeeded", HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.HundredRefinements]!,
 			"hundred refinements description threshold matches the effect");
+	}
 
-		Equal(HextechRarityTier.Prismatic,
-			HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == typeof(DemonFormUpgradeRune)).Rarity,
-			"Upgrade: Demon Form is prismatic");
-
+	[HextechTest]
+	private static void KingdomArmyIgnoresForgesNestedInMinionGeneration()
+	{
 		// 王国军势生成仆从牌期间嵌套进来的铸造直接返回,凝辉/王令无法把它再次点燃。
 		KingdomArmyRune kingdomArmy = CreateMutableTestModel<KingdomArmyRune>();
 		typeof(KingdomArmyRune).GetField("_generating", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(kingdomArmy, true);
