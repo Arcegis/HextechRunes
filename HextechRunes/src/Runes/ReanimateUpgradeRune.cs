@@ -32,7 +32,8 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 
 	public override Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
-		if (ShouldCountDeath(wasRemovalPrevented))
+		// 原版忧郁只排除被阻止的死亡；爪牙和小手回调时可能已经脱离 CombatState。
+		if (!wasRemovalPrevented)
 		{
 			_deathsThisCombat++;
 			Flash();
@@ -41,9 +42,6 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 
 		return Task.CompletedTask;
 	}
-
-	// 原版忧郁只排除被阻止的死亡；爪牙和小手回调时可能已经脱离 CombatState。
-	internal static bool ShouldCountDeath(bool wasRemovalPrevented) => !wasRemovalPrevented;
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{

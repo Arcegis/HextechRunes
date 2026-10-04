@@ -62,13 +62,8 @@ public sealed class PiercingThreadRune : HextechRelicBase
 
 	internal static int CalculatePiercingDamage(decimal amount)
 	{
-		decimal piercingDamage = Math.Floor(Math.Max(0m, amount) * PiercingPercent / 100m);
+		decimal piercingDamage = Math.Floor(amount * PiercingPercent / 100m);
 		return (int)Math.Min(piercingDamage, HextechCreatureStatLimits.StatHardCap);
-	}
-
-	internal static decimal CalculateBlockableDamage(decimal amount)
-	{
-		return Math.Max(0m, amount - CalculatePiercingDamage(amount));
 	}
 
 	internal static bool TryTakeBlockableDamage(

@@ -26,9 +26,7 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 	public override async Task BeforeCombatStart()
 	{
 		if (Owner.PlayerCombatState == null
-			|| Owner.Creature.CombatState is not HextechCombatState combatState
-			|| !CombatManager.Instance.IsInProgress
-			|| CombatManager.Instance.IsOverOrEnding)
+			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
@@ -39,11 +37,6 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 
 	private static async Task AddRandomUpgradedDragonSoulCardsToCombatHand(Player owner, int count, HextechCombatState combatState)
 	{
-		if (count <= 0)
-		{
-			return;
-		}
-
 		IReadOnlyList<int> dragonSoulRolls = RollDistinctDragonSoulCardKinds(owner, count, combatState);
 		List<CardModel> cards = new(dragonSoulRolls.Count);
 		foreach (int roll in dragonSoulRolls)

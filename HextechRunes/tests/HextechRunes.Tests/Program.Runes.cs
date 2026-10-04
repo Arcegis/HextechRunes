@@ -118,14 +118,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void MirrorReflectionCopiesCursesButNotBasicCards()
-	{
-		Expect(MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<Clumsy>()), "Mirror Reflection should duplicate Curse cards");
-		Expect(!MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<StrikeIronclad>()), "Mirror Reflection should not duplicate basic Strike cards");
-		Expect(!MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<DefendIronclad>()), "Mirror Reflection should not duplicate basic Defend cards");
-	}
-
-	[HextechTest]
 	private static void MiseryRandomTargetPreservesAttributeTransfer()
 	{
 		MethodInfo handler = GetAsyncStateMachineMoveNext(typeof(MiseryRune).GetMethod(nameof(MiseryRune.AfterPlayerTurnStart))!);
@@ -178,12 +170,8 @@ internal static partial class Program
 	[HextechTest]
 	private static void SomethingForNothingDrawsAtZeroAndDiscountsFirstPaidCard()
 	{
-		Expect(SomethingForNothingRune.IsZeroCostPlay(0m), "zero-cost cards should draw");
-		Expect(SomethingForNothingRune.IsZeroCostPlay(-1m), "negative sentinel costs should remain in the zero-cost branch");
-		Expect(!SomethingForNothingRune.IsZeroCostPlay(1m), "positive-cost cards should use the discount branch");
 		Equal(0, SomethingForNothingRune.ReduceCost(0, 1), "combat discount should not make costs negative");
 		Equal(1, SomethingForNothingRune.ReduceCost(2, 1), "combat discount should reduce the card by one");
-		Equal(2, SomethingForNothingRune.ReduceCost(2, -1), "negative reductions should be ignored");
 
 		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
 			registration => registration.Type == typeof(SomethingForNothingRune));

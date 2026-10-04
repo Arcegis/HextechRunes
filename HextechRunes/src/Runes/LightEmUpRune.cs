@@ -28,18 +28,7 @@ public sealed class LightEmUpRune : HextechRelicBase
 
 	public override bool ShowCounter => IsInLiveCombat;
 
-	public override int DisplayAmount
-	{
-		get
-		{
-			if (IsCanonical)
-			{
-				return 0;
-			}
-
-			return _attacksPlayedThisCombat;
-		}
-	}
+	public override int DisplayAmount => _attacksPlayedThisCombat;
 
 	public override Task BeforeCombatStart()
 	{
@@ -92,9 +81,8 @@ public sealed class LightEmUpRune : HextechRelicBase
 		InvokeDisplayAmountChanged();
 	}
 
-	internal static int AdvanceAttackProgress(int currentProgress, decimal energyCost, out bool shouldLaunchVolley)
+	internal static int AdvanceAttackProgress(int progress, decimal energyCost, out bool shouldLaunchVolley)
 	{
-		int progress = Math.Clamp(currentProgress, 0, AttacksPerVolley);
 		if (progress < AttacksPerVolley)
 		{
 			progress++;

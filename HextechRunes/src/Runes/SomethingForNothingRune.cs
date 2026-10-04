@@ -70,7 +70,7 @@ public sealed class SomethingForNothingRune : TurnScopedRelicBase
 
 	internal static int ReduceCost(int currentCost, int reduction)
 	{
-		return Math.Max(0, currentCost - Math.Max(0, reduction));
+		return Math.Max(0, currentCost - reduction);
 	}
 
 	protected override void ResetTurnScopedState()

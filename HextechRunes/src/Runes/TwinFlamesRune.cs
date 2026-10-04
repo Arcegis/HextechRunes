@@ -36,7 +36,7 @@ public sealed class TwinFlamesRune : HextechRelicBase
 
 		Creature source = Owner.Creature;
 		decimal damage = HextechMissileVolley.DamageFromEnergyCost(HextechCombatHooks.GetEnergyCostForCurrentCardPlay(cardPlay.Card));
-		if (!ShouldLaunchMissiles(damage))
+		if (damage <= 0m)
 		{
 			return Task.CompletedTask;
 		}
@@ -59,10 +59,5 @@ public sealed class TwinFlamesRune : HextechRelicBase
 		Creature[] targets = [target];
 		_ = TaskHelper.RunSafely(HextechMissileVolley.PlayVfxAsync(source, targets, MissileCount, HextechCombatVfx.PlayTwinFlamesMissile));
 		return HextechMissileVolley.ResolveVolleyDamageInLockstepAsync(choiceContext, source, combatState, targets, MissileCount, _ => damage);
-	}
-
-	internal static bool ShouldLaunchMissiles(decimal damage)
-	{
-		return damage > 0m;
 	}
 }

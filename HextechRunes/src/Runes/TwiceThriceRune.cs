@@ -72,13 +72,7 @@ public sealed class TwiceThriceRune : HextechRelicBase
 
 	internal static bool ShouldAddReplay(int attacksPlayedBefore, int playCount)
 	{
-		if (playCount <= 0)
-		{
-			return false;
-		}
-
-		int progress = Math.Max(0, attacksPlayedBefore) % AttacksPerReplay;
-		return progress + playCount >= AttacksPerReplay;
+		return attacksPlayedBefore % AttacksPerReplay + playCount >= AttacksPerReplay;
 	}
 
 	// 单机与联机统一读原版战斗完成历史（CardPlayFinished），不再维护本地计数。原版每次打出先记完成历史、

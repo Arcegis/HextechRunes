@@ -34,6 +34,6 @@ public sealed class ThornmailRune : HextechRelicBase
 
 	internal static int CalculateThorns(decimal maxHp, decimal maxHpPerThorns = MaxHpPerThorns)
 	{
-		return maxHpPerThorns <= 0m ? 0 : Math.Max(0, FloorToInt(maxHp / maxHpPerThorns));
+		return FloorToInt(maxHp / maxHpPerThorns);
 	}
 }

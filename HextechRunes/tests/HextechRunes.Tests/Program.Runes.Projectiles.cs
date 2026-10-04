@@ -55,8 +55,6 @@ internal static partial class Program
 		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Twin Flames should not create negative damage");
 		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(0m), "zero-cost Skills should resolve to zero missile damage");
 		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Twin Flames damage should equal the played Skill's Energy cost");
-		Expect(!TwinFlamesRune.ShouldLaunchMissiles(0m), "zero-cost Skills should not launch Twin Flames missiles");
-		Expect(TwinFlamesRune.ShouldLaunchMissiles(1m), "positive-cost Skills should launch Twin Flames missiles");
 		MethodInfo? afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
 			nameof(TwinFlamesRune.AfterCardPlayed),
 			BindingFlags.Instance | BindingFlags.Public);
@@ -161,14 +159,9 @@ internal static partial class Program
 	private static void PiercingThreadSplitsOneDamageEventBeforeBlock()
 	{
 		Equal(50m, PiercingThreadRune.PiercingPercent, "Piercing Thread percentage");
-		Equal(0, PiercingThreadRune.CalculatePiercingDamage(-1m), "negative damage should not pierce");
 		Equal(0, PiercingThreadRune.CalculatePiercingDamage(1m), "one damage should round its piercing half down");
 		Equal(2, PiercingThreadRune.CalculatePiercingDamage(5m), "odd piercing damage should round down");
 		Equal(5, PiercingThreadRune.CalculatePiercingDamage(10m), "even piercing damage should split evenly");
-		Equal(3m, PiercingThreadRune.CalculateBlockableDamage(5m), "the non-piercing remainder should still hit Block");
-		Equal(5m, PiercingThreadRune.CalculateBlockableDamage(10m), "half of even damage should remain blockable");
-		Equal(5m, 10m - Math.Min(100m, PiercingThreadRune.CalculateBlockableDamage(10m)), "full Block should still take five piercing damage");
-		Equal(7m, 11m - Math.Min(4m, PiercingThreadRune.CalculateBlockableDamage(11m)), "piercing damage and block overflow should remain one damage result");
 
 		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
 			registration => registration.Type == typeof(PiercingThreadRune));
