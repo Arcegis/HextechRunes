@@ -27,8 +27,7 @@ public sealed class SomethingForNothingRune : TurnScopedRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner)
 		{
 			return Task.CompletedTask;
@@ -71,7 +70,7 @@ public sealed class SomethingForNothingRune : TurnScopedRelicBase
 
 	internal static int ReduceCost(int currentCost, int reduction)
 	{
-		return Math.Max(0, currentCost - Math.Max(0, reduction));
+		return Math.Max(0, currentCost - reduction);
 	}
 
 	protected override void ResetTurnScopedState()

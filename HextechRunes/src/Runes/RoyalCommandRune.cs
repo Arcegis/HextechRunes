@@ -24,7 +24,7 @@ public sealed class RoyalCommandRune : HextechRelicBase
 
 	private Task HandleStarsChanged(int amount, Player player)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0)
+		if (player != Owner || Owner.Creature.IsDead || amount <= 0)
 		{
 			return Task.CompletedTask;
 		}

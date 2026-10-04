@@ -21,10 +21,9 @@ public sealed class OminousPactRune : HextechRelicBase
 
 	private async Task HandleDoomApplied(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| power is not DoomPower
-			|| power.Owner?.Side != CombatSide.Enemy
+			|| power.Owner.Side != CombatSide.Enemy
 			|| applier != Owner.Creature
 			|| amount <= 0m
 			|| _summoningFromDoomDepth > 0)
@@ -32,7 +31,7 @@ public sealed class OminousPactRune : HextechRelicBase
 			return;
 		}
 
-		Flash(power.Owner == null ? Array.Empty<Creature>() : [power.Owner]);
+		Flash([power.Owner]);
 		_summoningFromDoomDepth++;
 		try
 		{

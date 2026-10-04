@@ -7,7 +7,7 @@ public sealed class RallyingCallRune : HextechRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		if (_playingMatches || !IsOwnedCard(cardPlay.Card)
-			|| Owner?.PlayerCombatState == null || Owner.Creature.IsDead
+			|| Owner.PlayerCombatState == null || Owner.Creature.IsDead
 			|| Owner.Creature.CombatState == null || CombatManager.Instance.IsOverOrEnding)
 		{
 			return;

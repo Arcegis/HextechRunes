@@ -44,7 +44,7 @@ public sealed class RekindleRune : HextechRelicBase
 
 	public override async Task AfterCardExhausted(PlayerChoiceContext choiceContext, CardModel card, bool causedByEthereal)
 	{
-		if (!IsOwnedCard(card) || Owner == null || Owner.Creature.IsDead)
+		if (!IsOwnedCard(card) || Owner.Creature.IsDead)
 		{
 			return;
 		}

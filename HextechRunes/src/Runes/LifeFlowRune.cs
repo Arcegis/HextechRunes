@@ -43,7 +43,6 @@ public sealed class LifeFlowRune : TurnScopedRelicBase
 	{
 		EnsureTurnScopedStateCurrent();
 		if (!IsOwnedCard(card)
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| !TryConsumeTurnProc(nameof(LifeFlowRune), ref _procsThisTurn, DynamicVars["MaxProcsPerTurn"].IntValue))
 		{

@@ -17,8 +17,7 @@ public sealed class SwordFlightRune : TurnScopedRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent();
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !cardPlay.IsFirstInSeries
 			|| cardPlay.IsAutoPlay
 			|| cardPlay.Card.Owner != Owner

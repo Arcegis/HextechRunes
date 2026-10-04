@@ -15,7 +15,7 @@ public sealed class WizardlyThinkingRune : HextechRelicBase
 	public override async Task AfterRoomEntered(AbstractRoom room)
 	{
 		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
-		if (room is not CombatRoom || Owner == null || !IsDefectOwner)
+		if (room is not CombatRoom || !IsDefectOwner)
 		{
 			return;
 		}

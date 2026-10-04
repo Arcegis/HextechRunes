@@ -8,14 +8,9 @@ public sealed class MirrorReflectionRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardPileAddResult> results = new();
 		List<CardModel> cards = Owner.Deck.Cards
-			.Where(ShouldDuplicate)
+			.Where(static card => !card.IsBasicStrikeOrDefend)
 			.ToList();
 		if (cards.Count == 0)
 		{
@@ -31,10 +26,5 @@ public sealed class MirrorReflectionRune : HextechRelicBase
 		}
 
 		CardCmd.PreviewCardPileAdd(results, 2f);
-	}
-
-	internal static bool ShouldDuplicate(CardModel card)
-	{
-		return !card.IsBasicStrikeOrDefend;
 	}
 }

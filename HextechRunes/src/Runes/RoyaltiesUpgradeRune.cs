@@ -2,29 +2,14 @@ namespace HextechRunes;
 
 public sealed class RoyaltiesUpgradeRune : CardUpgradeRuneBase<Royalties>
 {
-	// 兼容已有开发版本存档的未领取奖励；新的回合收益立即发放。
-	private int _countThisCombat;
-
 	protected override bool IsAvailableForCharacter(Player player) => IsRegentPlayer(player);
 
+	// 旧版本存档兼容占位：原为待发放的战后金币计数，金币已改为触发时立即发放；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCountThisCombat
 	{
-		get => _countThisCombat;
-		set
-		{
-			_countThisCombat = Math.Max(0, value);
-			InvokeDisplayAmountChanged();
-		}
-	}
-
-	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
-	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
-
-	public override Task BeforeCombatStart()
-	{
-		SavedCountThisCombat = 0;
-		return Task.CompletedTask;
+		get => 0;
+		set { }
 	}
 
 	public override Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
@@ -39,17 +24,6 @@ public sealed class RoyaltiesUpgradeRune : CardUpgradeRuneBase<Royalties>
 			}
 		}
 
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		if (Owner != null && _countThisCombat > 0)
-		{
-			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, _countThisCombat);
-		}
-
-		SavedCountThisCombat = 0;
 		return Task.CompletedTask;
 	}
 }

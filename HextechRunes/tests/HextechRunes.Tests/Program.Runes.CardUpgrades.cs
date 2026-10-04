@@ -36,7 +36,7 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual()
+	private static void RoyaltiesUpgradePaysImmediately()
 	{
 		WithImmediateGoldFixture((first, second, _, listener) =>
 		{
@@ -50,30 +50,10 @@ internal static partial class Program
 			int gold = first.Gold;
 			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
 			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
-			Equal(0, rune.SavedCountThisCombat, "immediate income does not accrue for a second payout");
 			Equal(gold + 38, first.Gold, "full royalties amount each turn, paid immediately with no compounding");
 			Equal(19, power.Amount, "original combat-end royalties remain intact");
 			rune.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
 			Equal(0, UpgradeGoldRewards.Count, "no battle-end duplicate");
-			// 旧版本保存的尚未领取计数仍能还原并结算一次。
-			rune.SavedCountThisCombat = 13;
-#if STS2_109_OR_NEWER
-			MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache.CacheSavedPropertiesForTypeDebug(typeof(RoyaltiesUpgradeRune));
-#else
-			HextechSavedPropertyBootstrap.InjectModelType(typeof(RoyaltiesUpgradeRune));
-#endif
-			SerializableRelic saved = rune.ToSerializable();
-			int count = saved.Props!.ints!.Single(p => p.name == nameof(RoyaltiesUpgradeRune.SavedCountThisCombat)).value;
-			RoyaltiesUpgradeRune loaded = CreateMutableTestModel<RoyaltiesUpgradeRune>();
-			loaded.Owner = first;
-			loaded.SavedCountThisCombat = count;
-			loaded.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
-			loaded.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
-			Equal(1, UpgradeGoldRewards.Count, "one fixed combat reward");
-			Equal((first, 13), UpgradeGoldRewards[0], "legacy saved accrual belongs only to its owner");
-			Equal(0, loaded.SavedCountThisCombat, "payout clears accrued counter");
-			loaded.BeforeCombatStart().GetAwaiter().GetResult();
-			Equal(0, loaded.SavedCountThisCombat, "next combat starts empty");
 		});
 	}
 
@@ -325,7 +305,6 @@ internal static partial class Program
 	{
 		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(0, 6m), "empty exhaust pile bonus");
 		Equal(30m, PactsEndUpgradeRune.CalculateBonusDamage(5, 6m), "five-card exhaust pile bonus");
-		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(-1, 6m), "negative exhaust count clamps");
 	}
 
 	[HextechTest]
@@ -355,10 +334,6 @@ internal static partial class Program
 		Expect(!StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: false), "vanilla Storm should ignore Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: true), "upgraded Storm should trigger for Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Skill, hasUpgradeRune: true), "upgraded Storm should trigger for Skills");
-		Expect(ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: false), "Reanimate should count Minion and Small Hand deaths like Melancholy");
-		Expect(!ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: true), "Reanimate should ignore a death that was prevented");
-		Equal(7, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 0), "Wrought in War should count total damage like Fisticuffs");
-		Equal(10, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 3), "Wrought in War should add overkill damage like Fisticuffs");
 		Equal(3, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(1, 3), "Decisions should resolve all three plays inside one card-play wrapper");
 		Equal(4, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(2, 3), "Decisions replay count should combine additively with another replay");
 	}

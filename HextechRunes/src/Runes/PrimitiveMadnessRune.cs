@@ -14,11 +14,6 @@ public sealed class PrimitiveMadnessRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardModel> transformableCards = Owner.Deck.Cards
 			.Where(static card => card.IsTransformable)
 			.ToList();

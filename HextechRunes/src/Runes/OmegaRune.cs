@@ -10,8 +10,7 @@ public sealed class OmegaRune : HextechRelicBase
 
 	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| side != Owner.Creature.Side
 			|| Owner.Creature.CombatState == null
 			|| Owner.Creature.CombatState.RoundNumber < DynamicVars["StartTurn"].IntValue)

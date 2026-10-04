@@ -18,8 +18,7 @@ public sealed class MagicMissileRune : TurnScopedRelicBase
 	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent();
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !cardPlay.IsFirstInSeries
 			|| !IsOwnedAttack(cardPlay.Card))
 		{
@@ -48,7 +47,7 @@ public sealed class MagicMissileRune : TurnScopedRelicBase
 
 	internal static int CalculateMissileDamage(decimal targetMaxHp, decimal damagePercent = MaxHpDamagePercent)
 	{
-		return Math.Max(1, FloorToInt(Math.Max(0m, targetMaxHp) * Math.Max(0m, damagePercent) / 100m));
+		return Math.Max(1, FloorToInt(targetMaxHp * damagePercent / 100m));
 	}
 
 	protected override void ResetTurnScopedState()

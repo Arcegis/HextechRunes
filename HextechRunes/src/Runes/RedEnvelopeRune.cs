@@ -29,7 +29,7 @@ public sealed class RedEnvelopeRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

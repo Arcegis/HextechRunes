@@ -16,7 +16,7 @@ public sealed class TrinityRune : HextechRelicBase
 
 	public override Task AfterEnergySpent(CardModel card, int amount)
 	{
-		if (Owner == null || card.Owner != Owner || Owner.Creature.IsDead || amount <= 0)
+		if (card.Owner != Owner || Owner.Creature.IsDead || amount <= 0)
 		{
 			return Task.CompletedTask;
 		}
@@ -27,7 +27,7 @@ public sealed class TrinityRune : HextechRelicBase
 
 	public override Task AfterStarsSpent(int amount, Player spender)
 	{
-		if (spender != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0)
+		if (spender != Owner || Owner.Creature.IsDead || amount <= 0)
 		{
 			return Task.CompletedTask;
 		}

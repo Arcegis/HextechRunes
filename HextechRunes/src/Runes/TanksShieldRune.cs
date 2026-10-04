@@ -9,7 +9,7 @@ public sealed class TanksShieldRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!IsOwnedAttack(cardPlay.Card) || Owner == null || Owner.Creature.IsDead)
+		if (!IsOwnedAttack(cardPlay.Card) || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

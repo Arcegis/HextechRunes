@@ -15,7 +15,7 @@ public sealed class NetherSoulRune : HextechRelicBase
 	public override async Task AfterSideTurnEndLate(PlayerChoiceContext choiceContext, CombatSide side,
 		IEnumerable<Creature> participants)
 	{
-		if (_playingExhausted || Owner?.PlayerCombatState == null || side != Owner.Creature.Side
+		if (_playingExhausted || Owner.PlayerCombatState == null || side != Owner.Creature.Side
 			|| !participants.Contains(Owner.Creature) || Owner.Creature.IsDead
 			|| Owner.Creature.CombatState == null || CombatManager.Instance.IsOverOrEnding)
 		{

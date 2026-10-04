@@ -42,7 +42,7 @@ public sealed class MountainSoulRune : HextechRelicBase
 
 	public override Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner != null && target == Owner.Creature && result.UnblockedDamage > 0)
+		if (target == Owner.Creature && result.UnblockedDamage > 0)
 		{
 			_tookUnblockedDamageSinceLastTurn = true;
 		}

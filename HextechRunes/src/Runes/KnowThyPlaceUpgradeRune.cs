@@ -11,8 +11,7 @@ public sealed class KnowThyPlaceUpgradeRune : CardUpgradeRuneBase<KnowThyPlace>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
+		if (cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not KnowThyPlace
 			|| cardPlay.Target == null
 			|| cardPlay.Target.Side == Owner.Creature.Side)

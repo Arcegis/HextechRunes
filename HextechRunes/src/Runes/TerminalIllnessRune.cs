@@ -14,8 +14,7 @@ public sealed class TerminalIllnessRune : HextechRelicBase
 	public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature? applier, out decimal modifiedAmount)
 	{
 		modifiedAmount = amount;
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| canonicalPower is not PoisonPower
 			|| amount != -1m

@@ -17,7 +17,7 @@ public sealed class MakeItMineRune : HextechSharedCombatVictoryRuneBase
 
 	public override bool ShowCounter => true;
 
-	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
+	public override int DisplayAmount => _stacks;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -31,7 +31,7 @@ public sealed class MakeItMineRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -54,7 +54,6 @@ public sealed class MakeItMineRune : HextechSharedCombatVictoryRuneBase
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
 		if (player != Owner
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| Owner.Creature.CombatState is not HextechCombatState combatState
 			|| combatState.RoundNumber > 1

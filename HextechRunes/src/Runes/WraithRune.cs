@@ -22,7 +22,7 @@ public sealed class WraithRune : HextechRelicBase
 
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -39,7 +39,7 @@ public sealed class WraithRune : HextechRelicBase
 			return 1m;
 		}
 
-		int soulCount = Owner?.PlayerCombatState?.ExhaustPile.Cards.Count(static card => card is Soul) ?? 0;
+		int soulCount = Owner.PlayerCombatState?.ExhaustPile.Cards.Count(static card => card is Soul) ?? 0;
 		return 1m + soulCount * DynamicVars["DamagePercentPerSoul"].BaseValue / 100m;
 	}
 }

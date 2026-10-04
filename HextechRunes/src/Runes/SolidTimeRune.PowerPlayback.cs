@@ -22,8 +22,8 @@ public sealed partial class SolidTimeRune
 				combatState.RoundNumber.ToString(),
 				index.ToString(),
 				card.Id.Entry),
-			TargetType.AnyAlly => Owner?.Creature,
-			TargetType.AnyPlayer => Owner?.Creature,
+			TargetType.AnyAlly => Owner.Creature,
+			TargetType.AnyPlayer => Owner.Creature,
 			_ => null
 		};
 	}

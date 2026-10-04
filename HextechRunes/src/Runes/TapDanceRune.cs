@@ -18,7 +18,7 @@ public sealed class TapDanceRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null || !IsOwnedAttack(cardPlay.Card))
+		if (!IsOwnedAttack(cardPlay.Card))
 		{
 			return Task.CompletedTask;
 		}

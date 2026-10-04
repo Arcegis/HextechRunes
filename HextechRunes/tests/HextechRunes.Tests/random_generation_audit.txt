@@ -44,6 +44,4 @@ src/Runes/RoyalTrialRune.cs | RoyalTrialRune
 src/Runes/SendThemInRune.cs | SendThemInRune
 src/Runes/SingularityAIRune.cs | SingularityAIRune
 src/Runes/TezcatarasMercyRune.cs | TezcatarasMercyRune
-src/Runes/TransmuteChaosRune.cs | TransmuteChaosRune
-src/Runes/TransmuteGoldRune.cs | TransmuteGoldRune
-src/Runes/TransmutePrismaticRune.cs | TransmutePrismaticRune
+src/Runes/TransmuteRuneBase.cs | TransmuteRuneBase

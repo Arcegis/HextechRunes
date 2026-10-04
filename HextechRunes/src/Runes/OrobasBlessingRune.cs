@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
 
-public sealed class OrobasBlessingRune : HextechRelicBase
+public sealed class OrobasBlessingRune : RelicBundleRuneBase
 {
 	private static readonly Type[] RelicTypes =
 	[
@@ -10,12 +10,7 @@ public sealed class OrobasBlessingRune : HextechRelicBase
 		typeof(TouchOfOrobas)
 	];
 
-	public override bool HasUponPickupEffect => true;
+	protected override IReadOnlyList<Type> BundledRelicTypes => RelicTypes;
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips => BundledRelicHoverTips(RelicTypes);
-
-	public override Task AfterObtained()
-	{
-		return Owner == null ? Task.CompletedTask : RelicBundleGrantHelper.GrantRelics(Owner, RelicTypes);
-	}
+	protected override bool FlashOnObtain => false;
 }

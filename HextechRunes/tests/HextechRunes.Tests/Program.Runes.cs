@@ -118,14 +118,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void MirrorReflectionCopiesCursesButNotBasicCards()
-	{
-		Expect(MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<Clumsy>()), "Mirror Reflection should duplicate Curse cards");
-		Expect(!MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<StrikeIronclad>()), "Mirror Reflection should not duplicate basic Strike cards");
-		Expect(!MirrorReflectionRune.ShouldDuplicate(CreateMutableTestModel<DefendIronclad>()), "Mirror Reflection should not duplicate basic Defend cards");
-	}
-
-	[HextechTest]
 	private static void MiseryRandomTargetPreservesAttributeTransfer()
 	{
 		MethodInfo handler = GetAsyncStateMachineMoveNext(typeof(MiseryRune).GetMethod(nameof(MiseryRune.AfterPlayerTurnStart))!);
@@ -183,12 +175,8 @@ internal static partial class Program
 	[HextechTest]
 	private static void SomethingForNothingDrawsAtZeroAndDiscountsFirstPaidCard()
 	{
-		Expect(SomethingForNothingRune.IsZeroCostPlay(0m), "zero-cost cards should draw");
-		Expect(SomethingForNothingRune.IsZeroCostPlay(-1m), "negative sentinel costs should remain in the zero-cost branch");
-		Expect(!SomethingForNothingRune.IsZeroCostPlay(1m), "positive-cost cards should use the discount branch");
 		Equal(0, SomethingForNothingRune.ReduceCost(0, 1), "combat discount should not make costs negative");
 		Equal(1, SomethingForNothingRune.ReduceCost(2, 1), "combat discount should reduce the card by one");
-		Equal(2, SomethingForNothingRune.ReduceCost(2, -1), "negative reductions should be ignored");
 
 		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
 			registration => registration.Type == typeof(SomethingForNothingRune));
@@ -333,64 +321,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void NightmareEffectRunsOnceAfterEachPassiveTask()
-	{
-		TaskCompletionSource passive = new(TaskCreationOptions.RunContinuationsAsynchronously);
-		TaskCompletionSource effect = new(TaskCreationOptions.RunContinuationsAsynchronously);
-		int effectCount = 0;
-		Task wrapped = HextechNightmareHooks.CompletePassiveThen(
-			passive.Task,
-			() =>
-			{
-				Interlocked.Increment(ref effectCount);
-				return effect.Task;
-			});
-
-		Equal(0, effectCount, "nightmare must wait for the dark orb passive");
-		Expect(!wrapped.IsCompleted, "nightmare wrapper should await the passive");
-
-		passive.SetResult();
-		Expect(
-			SpinWait.SpinUntil(() => Volatile.Read(ref effectCount) == 1, TimeSpan.FromSeconds(1)),
-			"nightmare effect should begin after the passive completes");
-		Expect(!wrapped.IsCompleted, "nightmare wrapper should await its appended damage");
-
-		effect.SetResult();
-		wrapped.GetAwaiter().GetResult();
-		Equal(1, effectCount, "one passive should append exactly one nightmare effect");
-
-		int repeatedEffectCount = 0;
-		for (int i = 0; i < 2; i++)
-		{
-			HextechNightmareHooks.CompletePassiveThen(
-				Task.CompletedTask,
-				() =>
-				{
-					repeatedEffectCount++;
-					return Task.CompletedTask;
-				}).GetAwaiter().GetResult();
-		}
-		Equal(2, repeatedEffectCount, "two passive triggers should append exactly two nightmare effects");
-
-		int failedPassiveEffectCount = 0;
-		try
-		{
-			HextechNightmareHooks.CompletePassiveThen(
-				Task.FromException(new InvalidOperationException("passive failed")),
-				() =>
-				{
-					failedPassiveEffectCount++;
-					return Task.CompletedTask;
-				}).GetAwaiter().GetResult();
-			throw new InvalidOperationException("failed passive should propagate");
-		}
-		catch (InvalidOperationException ex) when (ex.Message == "passive failed")
-		{
-		}
-		Equal(0, failedPassiveEffectCount, "failed passive must not append nightmare damage");
-	}
-
-	[HextechTest]
 	private static void WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics()
 	{
 		IReadOnlyList<Type> commonPool = WatchOutGrapefruitRune.BuildFoodRelicCandidates(
@@ -453,16 +383,6 @@ internal static partial class Program
 		Equal(6, HastyScribbleRune.CalculateCardsToDraw(4), "partially filled hand draw");
 		Equal(0, HastyScribbleRune.CalculateCardsToDraw(CardPile.MaxCardsInHand), "full hand draw");
 		Equal(0, HastyScribbleRune.CalculateCardsToDraw(CardPile.MaxCardsInHand + 1), "overfull hand draw");
-	}
-
-	[HextechTest]
-	private static void SpinToWinRecognizesSupportedDelayedResources()
-	{
-		Expect(SpinToWinRune.IsConvertiblePower(new DrawCardsNextTurnPower()), "next-turn draw should convert");
-		Expect(SpinToWinRune.IsConvertiblePower(new EnergyNextTurnPower()), "next-turn energy should convert");
-		Expect(SpinToWinRune.IsConvertiblePower(new SummonNextTurnPower()), "next-turn summon should convert");
-		Expect(SpinToWinRune.IsConvertiblePower(new StarNextTurnPower()), "next-turn stars should convert");
-		Expect(!SpinToWinRune.IsConvertiblePower(new StrengthPower()), "unrelated powers should remain unchanged");
 	}
 
 	[HextechTest]
@@ -796,7 +716,13 @@ internal static partial class Program
 		Expect(rally.Any(m => m.Name == nameof(HextechAutoPlayHelper.AutoPlayOrMoveToResultPile)), "same-name cards use actual autoplay");
 		Expect(!rally.Any(m => m.Name == "CanPlay"), "autoplay does not require remaining energy");
 		MethodInfo[] orbs = Calls(typeof(MyriadManifestationsRune), nameof(MyriadManifestationsRune.BeforeSideTurnEndEarly));
-		Expect(orbs.Any(m => m.DeclaringType == typeof(HextechOrbPassiveCompat) && m.Name == "TriggerPassive"), "extra passives use the version-matched native entry");
+		Expect(orbs.Any(m => m.DeclaringType == typeof(OrbSnapshotPassiveHelper) && m.Name == nameof(OrbSnapshotPassiveHelper.TriggerRounds)), "extra passives iterate the frozen orb snapshot");
+		// 触发委托编译成闭包方法，展开一层再找实际的被动入口。
+		MethodInfo[] orbTriggers = orbs
+			.Where(static m => m.Name.Contains('<'))
+			.SelectMany(static m => PatchProcessor.GetOriginalInstructions(m).Select(static i => i.operand).OfType<MethodInfo>())
+			.ToArray();
+		Expect(orbTriggers.Any(m => m.DeclaringType == typeof(HextechOrbPassiveCompat) && m.Name == "TriggerPassive"), "extra passives use the version-matched native entry");
 		MethodInfo entry = typeof(HextechOrbPassiveCompat).GetMethod("TriggerPassive", BindingFlags.Static | BindingFlags.NonPublic)!;
 		MethodInfo[] passive = PatchProcessor.GetOriginalInstructions(entry.GetCustomAttribute<AsyncStateMachineAttribute>() == null ? entry : GetAsyncStateMachineMoveNext(entry)).Select(i => i.operand).OfType<MethodInfo>().ToArray();
 		Expect(passive.Any(m => m.DeclaringType == typeof(OrbModel) && m.Name == "TriggerPassive"

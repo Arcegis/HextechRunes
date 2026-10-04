@@ -13,11 +13,6 @@ public sealed class VakuuMockeryRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		Flash();
 		for (int i = 0; i < DynamicVars["Relics"].IntValue; i++)
 		{

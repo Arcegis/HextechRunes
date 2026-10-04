@@ -15,8 +15,7 @@ public sealed class SkyDrillUpgradeRune : CardUpgradeRuneBase<HeavenlyDrill>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
+		if (cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not HeavenlyDrill card
 			|| cardPlay.Target is not Creature target)
 		{

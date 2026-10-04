@@ -8,13 +8,11 @@ public sealed class ProteinShakeRune : HextechRelicBase, IHextechHealingMultipli
 		new DynamicVar("SustainPercentPerStep", 1m)
 	];
 
-	public decimal SustainMultiplier => Owner == null
-		? 1m
-		: 1m + Math.Floor(Owner.Creature.MaxHp / DynamicVars["MaxHpPerStep"].BaseValue) * DynamicVars["SustainPercentPerStep"].BaseValue / 100m;
+	public decimal SustainMultiplier => 1m + Math.Floor(Owner.Creature.MaxHp / DynamicVars["MaxHpPerStep"].BaseValue) * DynamicVars["SustainPercentPerStep"].BaseValue / 100m;
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? SustainMultiplier : 1m;
+		return target == Owner.Creature ? SustainMultiplier : 1m;
 	}
 
 	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)

@@ -27,14 +27,6 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_lastControlledRound = 0;
-		_controllingTurn = false;
-		_lastHealRound = -1;
-		return Task.CompletedTask;
-	}
-
 	public override decimal ModifyHandDraw(Player player, decimal count)
 	{
 		return player == Owner ? count + DynamicVars.Cards.BaseValue : count;
@@ -93,7 +85,7 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	private bool IsOddOwnerTurn(Player player, out int round)
 	{
 		round = 0;
-		if (player != Owner || Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		if (player != Owner || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
 		{
 			return false;
 		}
@@ -104,7 +96,6 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 
 	private bool OwnerHasWhisperingEarring()
 	{
-		return Owner?.Relics.Any(static relic =>
-			relic.CanonicalId() == WhisperingEarringId) == true;
+		return Owner.Relics.Any(static relic => relic.CanonicalId() == WhisperingEarringId);
 	}
 }

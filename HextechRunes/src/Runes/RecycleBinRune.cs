@@ -9,7 +9,7 @@ public sealed class RecycleBinRune : HextechRelicBase
 
 	public override void ModifyShuffleOrder(Player player, List<CardModel> cards, bool isInitialShuffle)
 	{
-		if (isInitialShuffle || player != Owner || Owner == null)
+		if (isInitialShuffle || player != Owner)
 		{
 			return;
 		}

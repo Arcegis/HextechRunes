@@ -22,8 +22,7 @@ public sealed class UnleashUpgradeRune : CardUpgradeRuneBase<Unleash>
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0m
 			|| cardSource?.Owner != Owner

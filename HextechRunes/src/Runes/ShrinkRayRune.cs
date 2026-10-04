@@ -17,7 +17,6 @@ public sealed class ShrinkRayRune : HextechRelicBase
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
 		if (_applyingShrinkRay
-			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0
 			|| !IsDamageFromOwner(dealer, cardSource))

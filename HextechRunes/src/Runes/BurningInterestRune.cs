@@ -7,24 +7,15 @@ namespace HextechRunes;
 /// </summary>
 public sealed class BurningInterestRune : HextechRelicBase
 {
-	// 仅保留旧存档尚未领取的战后奖励（见 SettleLegacyCombatGold）；新的触发直接发放金币。
-	private int _countThisCombat;
 	private bool _grantingGold;
 
+	// 旧版本存档兼容占位：原为待发放的战后金币计数，金币已改为触发时立即发放；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCountThisCombat
 	{
-		get => _countThisCombat;
-		set
-		{
-			_countThisCombat = Math.Max(0, value);
-			InvokeDisplayAmountChanged();
-		}
+		get => 0;
+		set { }
 	}
-
-	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
-
-	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -36,18 +27,6 @@ public sealed class BurningInterestRune : HextechRelicBase
 	[
 		HoverTipFactory.FromPower<HextechBurnPower>()
 	];
-
-	public override Task BeforeCombatStart()
-	{
-		SettleLegacyCombatGold(null, ref _countThisCombat);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		SettleLegacyCombatGold(room, ref _countThisCombat);
-		return Task.CompletedTask;
-	}
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{

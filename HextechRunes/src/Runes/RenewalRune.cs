@@ -14,7 +14,7 @@ public sealed class RenewalRune : HextechRelicBase
 
 	public override async Task AfterCardDiscarded(PlayerChoiceContext choiceContext, CardModel card)
 	{
-		if (!IsOwnedCard(card) || Owner == null || Owner.Creature.IsDead)
+		if (!IsOwnedCard(card) || Owner.Creature.IsDead)
 		{
 			return;
 		}

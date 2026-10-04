@@ -17,7 +17,7 @@ public sealed class ThornmailRune : HextechRelicBase
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (room is not CombatRoom || Owner == null)
+		if (room is not CombatRoom)
 		{
 			return Task.CompletedTask;
 		}
@@ -34,6 +34,6 @@ public sealed class ThornmailRune : HextechRelicBase
 
 	internal static int CalculateThorns(decimal maxHp, decimal maxHpPerThorns = MaxHpPerThorns)
 	{
-		return maxHpPerThorns <= 0m ? 0 : Math.Max(0, FloorToInt(maxHp / maxHpPerThorns));
+		return FloorToInt(maxHp / maxHpPerThorns);
 	}
 }

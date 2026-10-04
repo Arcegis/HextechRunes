@@ -5,9 +5,6 @@ public sealed class SacrificeRune : HextechRelicBase, IHextechHealingMultiplierP
 	private const decimal SustainMultiplierValue = 1.1m;
 	private const decimal SustainBonusPercentValue = (SustainMultiplierValue - 1m) * 100m;
 
-	// 仅保留旧存档尚未领取的战后奖励（见 SettleLegacyCombatGold）；新的触发直接发放金币。
-	private int _countThisCombat;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new DynamicVar("CountPerEnemy", 5m),
@@ -17,31 +14,12 @@ public sealed class SacrificeRune : HextechRelicBase, IHextechHealingMultiplierP
 
 	public decimal SustainMultiplier => DynamicVars["SustainMultiplier"].BaseValue;
 
+	// 旧版本存档兼容占位：原为待发放的战后金币计数，金币已改为触发时立即发放；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCountThisCombat
 	{
-		get => _countThisCombat;
-		set
-		{
-			_countThisCombat = Math.Max(0, value);
-			InvokeDisplayAmountChanged();
-		}
-	}
-
-	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
-
-	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
-
-	public override Task BeforeCombatStart()
-	{
-		SettleLegacyCombatGold(null, ref _countThisCombat);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		SettleLegacyCombatGold(room, ref _countThisCombat);
-		return Task.CompletedTask;
+		get => 0;
+		set { }
 	}
 
 	public override Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
@@ -57,7 +35,7 @@ public sealed class SacrificeRune : HextechRelicBase, IHextechHealingMultiplierP
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? SustainMultiplier : 1m;
+		return target == Owner.Creature ? SustainMultiplier : 1m;
 	}
 
 	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)

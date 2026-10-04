@@ -12,8 +12,7 @@ public sealed class MoltenFistUpgradeRune : CardUpgradeRuneBase<MoltenFist>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not MoltenFist
 			|| cardPlay.Card.CombatState is not { } combatState)

@@ -15,8 +15,7 @@ public sealed class SoulUpgradeRune : CardUpgradeRuneBase<Soul>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card is not Soul
 			|| cardPlay.Card.Owner != Owner)
 		{

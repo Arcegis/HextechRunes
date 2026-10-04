@@ -19,15 +19,14 @@ public sealed class TauntRune : HextechRelicBase
 
 	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| power is not DoomPower
 			|| applier != Owner.Creature)
 		{
 			return;
 		}
 
-		Flash(power.Owner == null ? Array.Empty<Creature>() : [power.Owner]);
+		Flash([power.Owner]);
 		await CardPileCmd.Draw(new BlockingPlayerChoiceContext(), DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
 	}
 }

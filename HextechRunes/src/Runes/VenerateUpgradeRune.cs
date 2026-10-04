@@ -9,8 +9,7 @@ public sealed class VenerateUpgradeRune : CardUpgradeRuneBase<Venerate>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
+		if (cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not Venerate
 			|| Owner.PlayerCombatState == null)
 		{
