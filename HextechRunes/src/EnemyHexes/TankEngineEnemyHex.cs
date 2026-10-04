@@ -21,35 +21,12 @@ internal sealed class TankEngineEnemyHex : HextechEnemyHexEffect, IHextechEnemyM
 				continue;
 			}
 
-			bool hadPreviousRound = context.Tracking.TankEngineLastAppliedRound.TryGetValue(
-				combatId,
-				out int previousRound);
-			bool hadPreviousStacks = context.Tracking.TankEngineStacks.TryGetValue(
-				combatId,
-				out int previousStacks);
+			// 先记下本回合已结算与新层数再等待重算：命令链里重入时不会重复叠层。
 			context.Modifier.CaptureMonsterMaxHpCoefficientBase(enemy);
 			context.Tracking.TankEngineLastAppliedRound[combatId] = currentRound;
-			context.Tracking.TankEngineStacks[combatId] = previousStacks + 1;
-			try
-			{
-				await context.Modifier.ReapplyMonsterMaxHpCoefficients(enemy);
-				context.UpdateEnemyScale(enemy);
-			}
-			catch
-			{
-				RestoreTrackedValue(
-					context.Tracking.TankEngineLastAppliedRound,
-					combatId,
-					hadPreviousRound,
-					previousRound);
-				RestoreTrackedValue(
-					context.Tracking.TankEngineStacks,
-					combatId,
-					hadPreviousStacks,
-					previousStacks);
-				context.Tracking.MonsterMaxHpCoefficientProjected.Remove(combatId);
-				throw;
-			}
+			context.Tracking.TankEngineStacks[combatId] = context.Tracking.TankEngineStacks.GetValueOrDefault(combatId, 0) + 1;
+			await context.Modifier.ReapplyMonsterMaxHpCoefficients(enemy);
+			context.UpdateEnemyScale(enemy);
 		}
 	}
 
@@ -59,20 +36,5 @@ internal sealed class TankEngineEnemyHex : HextechEnemyHexEffect, IHextechEnemyM
 			? context.Tracking.TankEngineStacks.GetValueOrDefault(combatId, 0)
 			: 0;
 		return Math.Max(0, stacks) * 0.05m;
-	}
-
-	private static void RestoreTrackedValue(
-		Dictionary<uint, int> values,
-		uint combatId,
-		bool hadPreviousValue,
-		int previousValue)
-	{
-		if (hadPreviousValue)
-		{
-			values[combatId] = previousValue;
-			return;
-		}
-
-		values.Remove(combatId);
 	}
 }
