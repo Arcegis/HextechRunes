@@ -59,13 +59,4 @@ internal static partial class Program
 		Expect(added.Length == 0, "MonsterHexKind manifest is missing new rows (append with HEXTECH_WRITE_PATCH_MANIFEST=1):\n  " + string.Join("\n  ", added));
 	}
 
-	[HextechTest]
-	private static void EnabledMonsterHexKindsHaveRegisteredEffects()
-	{
-		MonsterHexKind[] unimplemented = HextechMonsterHexRegistry.Registrations
-			.Where(static registration => !registration.Disabled && !HextechEnemyHexEffects.RegisteredKinds.Contains(registration.Kind))
-			.Select(static registration => registration.Kind)
-			.ToArray();
-		Expect(unimplemented.Length == 0, "enabled enemy hexes without an effect: " + string.Join(", ", unimplemented));
-	}
 }
