@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
@@ -20,7 +22,7 @@ internal sealed partial class HextechMayhemModifier
 			this,
 			(effect, context) => effect.AfterEnemyDamageReceived(context, target, combatId, result, dealer, cardSource));
 
-		if (!HextechEnemyTriggerGuard.ShouldSuppressDuplicateEnemyThresholdTrigger(CombatTracking, target, result, dealer, cardSource)
+		if (!ShouldSuppressDuplicateEnemyThresholdTrigger(target, result, dealer, cardSource)
 			&& IsBelowEnemyHealthThreshold(target))
 		{
 			await HextechEnemyHexDispatcher.ForEachActive(
@@ -72,5 +74,22 @@ internal sealed partial class HextechMayhemModifier
 	private static bool IsBelowEnemyHealthThreshold(Creature target)
 	{
 		return target.CurrentHp < target.MaxHp * HextechEnemyHexEffect.EnemyHealthThresholdPercent;
+	}
+
+	private bool ShouldSuppressDuplicateEnemyThresholdTrigger(
+		Creature target,
+		DamageResult result,
+		Creature? dealer,
+		CardModel? cardSource)
+	{
+		string key = string.Join(":",
+			target.CombatId?.ToString() ?? "none",
+			target.CurrentHp.ToString(CultureInfo.InvariantCulture),
+			result.UnblockedDamage.ToString(CultureInfo.InvariantCulture),
+			dealer?.CombatId?.ToString() ?? "none",
+			HextechStableRandom.CardActionKey(cardSource));
+		bool suppress = key == CombatTracking.LastEnemyThresholdTriggerKey;
+		CombatTracking.LastEnemyThresholdTriggerKey = key;
+		return suppress;
 	}
 }

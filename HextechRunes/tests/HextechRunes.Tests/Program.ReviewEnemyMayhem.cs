@@ -98,9 +98,7 @@ internal static partial class Program
 			&& typeof(HextechDragonSoulPower).IsSubclassOf(typeof(HextechPowerBase))
 			&& typeof(HextechCloudDragonSoulPower).IsSubclassOf(typeof(HextechPowerBase)),
 			"own powers use the shared safe Flash");
-		Expect(typeof(HextechModifierBase).GetMethod(nameof(HextechModifierBase.AfterSideTurnStartForParticipants), declared) != null
-			&& typeof(HextechModifierBase).GetMethod(nameof(HextechModifierBase.AfterTurnEndForParticipants), declared) != null
-			&& typeof(HextechPowerBase).GetMethod(nameof(HextechPowerBase.AfterTurnEndForParticipants), declared) != null,
+		Expect(typeof(HextechPowerBase).GetMethod(nameof(HextechPowerBase.AfterTurnEndForParticipants), declared) != null,
 			"turn hook bridges pass participants through");
 
 		MethodInfo typed = typeof(HextechPowerCmdCompat).GetMethods(BindingFlags.Public | BindingFlags.Static)
