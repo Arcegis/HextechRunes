@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
 
-public sealed class GoldCardCustomerRune : HextechRelicBase
+public sealed class GoldCardCustomerRune : RelicBundleRuneBase
 {
 	private static readonly Type[] RelicTypes =
 	[
@@ -10,13 +10,5 @@ public sealed class GoldCardCustomerRune : HextechRelicBase
 		typeof(MembershipCard)
 	];
 
-	public override bool HasUponPickupEffect => true;
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips => BundledRelicHoverTips(RelicTypes);
-
-	public override async Task AfterObtained()
-	{
-		Flash();
-		await RelicBundleGrantHelper.GrantRelics(Owner, RelicTypes);
-	}
+	protected override IReadOnlyList<Type> BundledRelicTypes => RelicTypes;
 }
