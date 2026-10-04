@@ -67,28 +67,59 @@ internal static partial class HextechRuneConfiguration
 		}
 	}
 
+	/// <summary>
+	/// 当前配置的独立副本(调用方可以改,不影响内存配置)。内存配置在载入与保存时都已经过
+	/// <see cref="NormalizeSnapshot"/>,这里只复制。
+	/// </summary>
 	public static HextechRunConfigurationSnapshot GetSnapshot()
 	{
 		EnsureLoaded();
 		lock (SyncRoot)
 		{
-			return NormalizeSnapshot(new HextechRunConfigurationSnapshot(
-				_config.PlayerHexCountsByAct ?? DefaultPlayerHexCountsByAct,
-				_config.EnemyHexCountsByAct ?? DefaultEnemyHexCountsByAct,
-				_config.PlayerRuneRerollLimit,
-				_config.MonsterHexRerollLimit,
-				_config.DisabledPlayerRuneIds,
-				_config.DisabledMonsterHexIds,
-				_config.DisabledForgeIds,
-				ToRarityWeightsByAct(_config.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
-				_config.PreventConsecutiveSilverRunes,
-				_config.GoldenRerollChancePercent,
-				ToRarityWeights(_config.ForgeRarityWeights, DefaultForgeRarityWeights),
-				_config.RandomForgeShopPrice,
-				_config.RandomForgeDirectGrant,
-				_config.ModEnabled,
-				_config.ChaosRuneChancePercent));
+			return ReadSnapshot(_config);
 		}
+	}
+
+	private static HextechRunConfigurationSnapshot ReadSnapshot(RuneConfig config)
+	{
+		return new HextechRunConfigurationSnapshot(
+			config.PlayerHexCountsByAct!.ToArray(),
+			config.EnemyHexCountsByAct!.ToArray(),
+			config.PlayerRuneRerollLimit,
+			config.MonsterHexRerollLimit,
+			config.DisabledPlayerRuneIds.ToHashSet(StringComparer.Ordinal),
+			config.DisabledMonsterHexIds.ToHashSet(StringComparer.Ordinal),
+			config.DisabledForgeIds.ToHashSet(StringComparer.Ordinal),
+			ToRarityWeightsByAct(config.RuneRarityWeightsByAct, DefaultRuneRarityWeightsByAct),
+			config.PreventConsecutiveSilverRunes,
+			config.GoldenRerollChancePercent,
+			ToRarityWeights(config.ForgeRarityWeights, DefaultForgeRarityWeights),
+			config.RandomForgeShopPrice,
+			config.RandomForgeDirectGrant,
+			config.ModEnabled,
+			config.ChaosRuneChancePercent);
+	}
+
+	/// <summary>把已规范化的快照写回内存配置(不落盘)。</summary>
+	private static void StoreNormalizedSnapshot(RuneConfig config, HextechRunConfigurationSnapshot normalized)
+	{
+		config.PlayerHexCountsByAct = normalized.PlayerHexCountsByAct;
+		config.EnemyHexCountsByAct = normalized.EnemyHexCountsByAct;
+		config.PlayerRuneRerollLimit = normalized.PlayerRuneRerollLimit;
+		config.MonsterHexRerollLimit = normalized.MonsterHexRerollLimit;
+		config.DisabledPlayerRuneIds = normalized.DisabledPlayerRuneIds;
+		config.DisabledMonsterHexIds = normalized.DisabledMonsterHexIds;
+		config.DisabledForgeIds = normalized.DisabledForgeIds;
+		config.RuneRarityWeightsByAct = FromRarityWeightsByAct(normalized.RuneRarityWeightsByAct);
+		config.RuneRarityWeights = null;
+		config.PreventConsecutiveSilverRunes = normalized.PreventConsecutiveSilverRunes;
+		config.GoldenRerollChancePercent = normalized.GoldenRerollChancePercent;
+		config.ChaosRuneChancePercent = normalized.ChaosRuneChancePercent;
+		config.NormalRuneRarityWeights = null;
+		config.ForgeRarityWeights = FromRarityWeights(normalized.ForgeRarityWeights);
+		config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
+		config.RandomForgeDirectGrant = normalized.RandomForgeDirectGrant;
+		config.ModEnabled = normalized.ModEnabled;
 	}
 
 	internal static HashSet<string> NormalizeDisabledPlayerRuneIds(IEnumerable<string>? ids)
@@ -138,25 +169,8 @@ internal static partial class HextechRuneConfiguration
 		EnsureLoaded();
 		lock (SyncRoot)
 		{
-			HextechRunConfigurationSnapshot normalized = NormalizeSnapshot(snapshot);
 			_config.ConfigVersion = CurrentConfigVersion;
-			_config.PlayerHexCountsByAct = normalized.PlayerHexCountsByAct;
-			_config.EnemyHexCountsByAct = normalized.EnemyHexCountsByAct;
-			_config.PlayerRuneRerollLimit = normalized.PlayerRuneRerollLimit;
-			_config.MonsterHexRerollLimit = normalized.MonsterHexRerollLimit;
-			_config.DisabledPlayerRuneIds = normalized.DisabledPlayerRuneIds;
-			_config.DisabledMonsterHexIds = normalized.DisabledMonsterHexIds;
-			_config.DisabledForgeIds = normalized.DisabledForgeIds;
-			_config.RuneRarityWeightsByAct = FromRarityWeightsByAct(normalized.RuneRarityWeightsByAct);
-			_config.RuneRarityWeights = null;
-			_config.PreventConsecutiveSilverRunes = normalized.PreventConsecutiveSilverRunes;
-			_config.GoldenRerollChancePercent = normalized.GoldenRerollChancePercent;
-			_config.ChaosRuneChancePercent = normalized.ChaosRuneChancePercent;
-			_config.NormalRuneRarityWeights = null;
-			_config.ForgeRarityWeights = FromRarityWeights(normalized.ForgeRarityWeights);
-			_config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
-			_config.RandomForgeDirectGrant = normalized.RandomForgeDirectGrant;
-			_config.ModEnabled = normalized.ModEnabled;
+			StoreNormalizedSnapshot(_config, NormalizeSnapshot(snapshot));
 			SaveConfig(_config);
 		}
 	}
@@ -171,14 +185,15 @@ internal static partial class HextechRuneConfiguration
 		}
 	}
 
-	private static HashSet<string> NormalizeStringIds(IEnumerable<string>? ids, IReadOnlySet<string> validIds)
+	internal static HashSet<string> NormalizeStringIds(IEnumerable<string>? ids, IReadOnlySet<string> validIds)
 	{
 		return NormalizeConfigStringIds(ids).Where(validIds.Contains).ToHashSet(StringComparer.Ordinal);
 	}
 
+	// 去空白、去重、排序;不按注册表过滤(未知 ID 原样保留)。
 	// ToHashSet 自己去重;排序不是多余的:只插入不删除的 HashSet 按插入顺序枚举,
 	// 排好序才能让 rune_config.json 的数组顺序与日志输出稳定。
-	private static HashSet<string> NormalizeConfigStringIds(IEnumerable<string>? ids)
+	internal static HashSet<string> NormalizeConfigStringIds(IEnumerable<string>? ids)
 	{
 		return (ids ?? [])
 			.Where(static id => !string.IsNullOrWhiteSpace(id))

@@ -15,7 +15,11 @@ internal static partial class HextechRuneConfiguration
 				return;
 			}
 
-			_config = LoadOrCreateConfig();
+			RuneConfig config = LoadOrCreateConfig();
+			// 载入链只按字段迁移/夹值;默认配置与迁移追加的敌方禁用项还没排序和过滤。
+			// 这里统一过一遍 NormalizeSnapshot(与保存同口径),之后 GetSnapshot 只需复制。只改内存,不回写文件。
+			StoreNormalizedSnapshot(config, NormalizeSnapshot(ReadSnapshot(config)));
+			_config = config;
 			_loaded = true;
 		}
 	}
