@@ -49,7 +49,7 @@ internal static partial class Program
 
 	/// <summary>
 	/// 补丁声明完整性:每个 <c>[HextechPatch]</c> 类型必须有可解析的 Harmony 目标或 <c>Apply(Harmony)</c>;
-	/// 补丁 id 全局唯一;属性式补丁至少声明一个 prefix/postfix/finalizer/transpiler。
+	/// 补丁 id 全局唯一;属性式补丁至少声明一个 prefix/postfix/finalizer/transpiler;跳过原方法的前缀不高于 Priority.Low。
 	/// 这条护栏防的是"属性挂错类导致补丁凭空消失,而清单快照照样通过"。
 	/// </summary>
 	[HextechTest]
@@ -68,11 +68,6 @@ internal static partial class Program
 			}
 
 			string name = type.FullName ?? type.Name;
-			if (Environment.GetEnvironmentVariable("HEXTECH_PATCH_DECL_TRACE") == "1")
-			{
-				Console.WriteLine($"  checking {name}");
-			}
-
 			if (meta == null)
 			{
 				problems.Add($"{name}: [HarmonyPatch] without [HextechPatch] metadata");
@@ -109,10 +104,22 @@ internal static partial class Program
 				problems.Add($"{name} ({meta.Id}): declares a target but no patch method");
 			}
 
+			// 跳过原方法的前缀让位给其他模组的同目标前缀:Priority.Low 或更低,与拓展包的同名规则一致。
+			// 动态 Apply 的补丁不经过这里(敌方能力联机缩放的 Priority.First 是 architecture.md 里的已裁决例外)。
+			HarmonyMethod merged = HarmonyMethod.Merge(harmonyAttributes);
+			foreach (MethodInfo method in methods.Where(static method => method.GetCustomAttribute<HarmonyPrefix>() != null && method.ReturnType == typeof(bool)))
+			{
+				int priority = method.GetCustomAttribute<HarmonyPriority>()?.info.priority ?? (merged.priority >= 0 ? merged.priority : Priority.Normal);
+				if (priority > Priority.Low)
+				{
+					problems.Add($"{name}.{method.Name} ({meta.Id}): skip prefix must use Priority.Low or lower, got {priority}");
+				}
+			}
+
 			// 不在测试进程里执行 [HarmonyPrepare] / [HarmonyTargetMethod(s)]:它们可能触碰 Godot 运行时(测试进程没有原生层,
 			// 触碰即段错误)。带这两种方法的类只校验声明形状,目标是否真的打上由 HextechPatcher 在 headless 加载时兜底
 			// (打不上任何方法就记失败并告警)。
-			string? failure = DescribeUnresolvedTarget(HarmonyMethod.Merge(harmonyAttributes), type, methods);
+			string? failure = DescribeUnresolvedTarget(merged, type, methods);
 			if (failure != null && !meta.Optional)
 			{
 				problems.Add($"{name} ({meta.Id}): {failure}");

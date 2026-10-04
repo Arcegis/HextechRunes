@@ -30,7 +30,7 @@ internal static partial class Program
 	private static void ConfigMigrationForceResetsBelowV15()
 	{
 		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(14, ["some-user-custom-id"]);
-		Equal(40, version, "v14 config should land on current version");
+		Equal(CurrentConfigVersion, version, "v14 config should land on current version");
 		SetEqual(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(), disabled, "v14 config should force-reset to factory defaults");
 	}
 
@@ -39,85 +39,103 @@ internal static partial class Program
 	{
 		IReadOnlySet<string> baseline = HextechPlayerRuneConfigIds.FromTypes(Version15FactoryDisabledRuneTypes);
 		(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(15, baseline);
-		Equal(40, version, "v15 config should land on current version");
+		Equal(CurrentConfigVersion, version, "v15 config should land on current version");
 		SetEqual(
 			HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().ToArray(),
 			migrated,
 			$"v15 factory defaults + migration chain should equal current factory defaults; migrated:\n{string.Join("\n", migrated.OrderBy(static id => id, StringComparer.Ordinal))}\ncurrent defaults:\n{string.Join("\n", HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal))}");
 	}
 
+	/// <summary>
+	/// 默认开关迁移表逐段检查:低于该段版本的配置迁移一次即带上本段改动、保留玩家自定义项,迁移结果再次载入不变;
+	/// 已在该段版本之上的配置尊重玩家手动开关。迁移表直接从源码读取,新增一段不必改这里;
+	/// 被后续段再次翻转的符文(如回力OK镖 v17 启用、v27 禁用)只看最后一段,整条链的终点由 V15 基线测试守护。
+	/// </summary>
 	[HextechTest]
-	private static void ConfigMigrationV26AddsNewPlayerDefaultDisables()
+	private static void ConfigDefaultMigrationSegmentsApplyOnceAndKeepUserChoices()
 	{
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(26, []);
-		Equal(40, version, "v26 player config should land on current version");
-		SetEqual(
-			HextechPlayerRuneConfigIds.FromTypes(
-			[
-				typeof(OmegaRune),
-				typeof(OkBoomerangRune),
-				typeof(FeyMagicRune),
-				typeof(AstralBodyRune),
-				typeof(IllusoryWeaponRune),
-				typeof(AutoPatrolRune),
-				typeof(SomethingForNothingRune),
-				typeof(SoulCallingRune),
-				typeof(GhostFormRune),
-				typeof(DieForYouRune),
-				typeof(NatureIsHealingRune),
-				typeof(SearingAttackRune),
-				typeof(ScapegoatRune),
-				typeof(TwilightVeilRune)
-			]).ToArray(),
-			disabled,
-			"v26 player config migration should add the newly default-disabled runes");
+		const string customId = "custom-unknown-rune";
+		(int BelowVersion, Type[] Enable, Type[] Disable)[] playerSegments = ReadPlayerRuneDefaultMigrations();
+		Expect(playerSegments.Length > 0, "player migration table should be readable");
+		for (int index = 0; index < playerSegments.Length; index++)
+		{
+			(int below, Type[] enable, Type[] disable) = playerSegments[index];
+			HashSet<Type> flippedLater = playerSegments
+				.Skip(index + 1)
+				.SelectMany(static segment => segment.Enable.Concat(segment.Disable))
+				.ToHashSet();
+			string[] disableIds = HextechPlayerRuneConfigIds.FromTypes(disable.Where(type => !flippedLater.Contains(type))).ToArray();
+			string[] enableIds = HextechPlayerRuneConfigIds.FromTypes(enable.Where(type => !flippedLater.Contains(type))).ToArray();
+			Expect(disable.All(HextechContentRegistry.PlayerRuneMetadata.IsConfigurable), $"v{below} default-disabled runes stay configurable");
+
+			(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(below - 1, [customId, .. enableIds]);
+			Equal(CurrentConfigVersion, version, $"v{below - 1} config should land on current version");
+			Expect(disableIds.All(migrated.Contains), $"v{below - 1} config gains the v{below} default disables");
+			Expect(!enableIds.Any(migrated.Contains), $"v{below - 1} config gains the v{below} default enables");
+			Expect(migrated.Contains(customId), $"v{below} migration keeps custom selections");
+			(_, IReadOnlySet<string> reloaded) = HextechRuneConfiguration.MigrateDisabledIdsForTests(version, migrated);
+			SetEqual(migrated, reloaded, $"v{below} migration runs only once");
+
+			(_, IReadOnlySet<string> userChoice) = HextechRuneConfiguration.MigrateDisabledIdsForTests(below, enableIds);
+			Expect(!disableIds.Any(userChoice.Contains), $"manual re-enable after v{below} is preserved");
+			Expect(enableIds.All(userChoice.Contains), $"manual disable after v{below} is preserved");
+		}
+
+		(int BelowVersion, MonsterHexKind Kind)[] monsterSegments = (((int, MonsterHexKind)[]?)typeof(HextechRuneConfiguration)
+			.GetField("MonsterHexDefaultDisableMigrations", BindingFlags.NonPublic | BindingFlags.Static)
+			?.GetValue(null))
+			?? throw new MissingFieldException(nameof(HextechRuneConfiguration), "MonsterHexDefaultDisableMigrations");
+		Expect(monsterSegments.Length > 0, "monster migration table should be readable");
+		string customMonsterId = MonsterHexKind.FrostWraith.ToString();
+		foreach ((int below, MonsterHexKind kind) in monsterSegments)
+		{
+			string id = kind.ToString();
+			Expect(HextechRuneConfiguration.GetDefaultDisabledMonsterHexIds().Contains(id), $"new configs disable enemy {kind} by default");
+			Expect(!HextechMonsterHexRegistry.Registrations.Single(row => row.Kind == kind).Disabled, $"enemy {kind} default-off stays configurable, not hard-removed");
+
+			(int version, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(below - 1, [customMonsterId]);
+			Equal(CurrentConfigVersion, version, $"v{below - 1} monster config should land on current version");
+			Expect(migrated.Contains(id) && migrated.Contains(customMonsterId), $"v{below - 1} monster config gains enemy {kind} and keeps custom selections");
+			(_, IReadOnlySet<string> reloaded) = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(version, migrated);
+			SetEqual(migrated, reloaded, $"v{below} monster migration runs only once");
+			(_, IReadOnlySet<string> userChoice) = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(below, []);
+			Expect(!userChoice.Contains(id), $"manual enemy {kind} re-enable after v{below} is preserved");
+		}
 	}
 
-	[HextechTest]
-	private static void ConfigMigrationV34DisablesIllusoryWeaponOnce()
-	{
-		string id = ModelDb.GetId<IllusoryWeaponRune>().Entry;
-		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(id), "new config defaults disable Illusory Weapon");
-		(_, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(33, ["other-custom-rune"]);
-		SetEqual(new[] {id, ModelDb.GetId<AutoPatrolRune>().Entry, ModelDb.GetId<SomethingForNothingRune>().Entry, ModelDb.GetId<SoulCallingRune>().Entry, ModelDb.GetId<GhostFormRune>().Entry, ModelDb.GetId<DieForYouRune>().Entry, ModelDb.GetId<NatureIsHealingRune>().Entry, ModelDb.GetId<SearingAttackRune>().Entry, ModelDb.GetId<ScapegoatRune>().Entry, ModelDb.GetId<TwilightVeilRune>().Entry, "other-custom-rune"}, migrated, "upgrade adds default disables and preserves custom selections");
-		(_, IReadOnlySet<string> reenabling) = HextechRuneConfiguration.MigrateDisabledIdsForTests(34, []);
-		Expect(!reenabling.Contains(id), "manual reenable after migration is preserved");
-		Expect(HextechContentRegistry.PlayerRuneMetadata.IsConfigurable(typeof(IllusoryWeaponRune)), "default disable remains configurable");
-	}
+	// 两者都是 HextechRuneConfiguration 的私有成员:测试统一从这里读,升配置版本或追加迁移段时测试不必逐处同步。
+	private static int CurrentConfigVersion => (int)(typeof(HextechRuneConfiguration)
+		.GetField("CurrentConfigVersion", BindingFlags.NonPublic | BindingFlags.Static)
+		?.GetRawConstantValue()
+		?? throw new MissingFieldException(nameof(HextechRuneConfiguration), "CurrentConfigVersion"));
 
-	[HextechTest]
-	private static void ConfigMigrationV40DisablesNatureIsHealingBatchOnce()
+	private static (int BelowVersion, Type[] Enable, Type[] Disable)[] ReadPlayerRuneDefaultMigrations()
 	{
-		Type[] batch = [ typeof(NatureIsHealingRune), typeof(SearingAttackRune), typeof(ScapegoatRune), typeof(TwilightVeilRune) ];
-		IReadOnlySet<string> batchIds = HextechPlayerRuneConfigIds.FromTypes(batch);
-		IReadOnlySet<string> defaults = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds();
-		Expect(batchIds.All(defaults.Contains), "new configs disable the v40 player batch");
-		Expect(batch.All(HextechContentRegistry.PlayerRuneMetadata.IsConfigurable), "default-off runes stay configurable");
-		(_, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(39, ["other-custom-rune"]);
-		SetEqual(batchIds.Append("other-custom-rune").ToArray(), migrated, "v39 configs gain the v40 batch and keep custom selections");
-		(_, IReadOnlySet<string> reenabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(40, []);
-		Expect(reenabled.Count == 0, "manual re-enable after v40 is preserved");
-
-		string nature = MonsterHexKind.NatureIsHealing.ToString();
-		Expect(HextechRuneConfiguration.GetDefaultDisabledMonsterHexIds().Contains(nature), "enemy Nature Is Healing is off by default");
-		Expect(!HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.NatureIsHealing).Disabled, "enemy default-off stays configurable");
-		(_, IReadOnlySet<string> monsters) = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(39, []);
-		SetEqual([nature], monsters, "v39 monster configs gain the enemy Nature Is Healing disable once");
-		(_, IReadOnlySet<string> monstersReenabled) = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(40, []);
-		Expect(monstersReenabled.Count == 0, "manual enemy re-enable after v40 is preserved");
+		Array table = (Array?)typeof(HextechRuneConfiguration)
+			.GetField("PlayerRuneDefaultMigrations", BindingFlags.NonPublic | BindingFlags.Static)
+			?.GetValue(null)
+			?? throw new MissingFieldException(nameof(HextechRuneConfiguration), "PlayerRuneDefaultMigrations");
+		return table.Cast<object>()
+			.Select(static row =>
+			{
+				object Read(string name) => row.GetType().GetProperty(name)?.GetValue(row)
+					?? throw new MissingMemberException(row.GetType().Name, name);
+				return ((int)Read("BelowVersion"), (Type[])Read("Enable"), (Type[])Read("Disable"));
+			})
+			.ToArray();
 	}
 
 	[HextechTest]
 	private static void ConfigMigrationCurrentVersionPreservesCustomDisabledIds()
 	{
 		string customId = HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().OrderBy(static id => id, StringComparer.Ordinal).First();
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(40, [customId]);
-		Equal(40, version, "current-version config keeps version");
+		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(CurrentConfigVersion, [customId]);
+		Equal(CurrentConfigVersion, version, "current-version config keeps version");
 		SetEqual([customId], disabled, "current-version config should pass user selection through unchanged");
 
 		(int monsterVersion, IReadOnlySet<string> disabledMonsters) =
-			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(40, [MonsterHexKind.FrostWraith.ToString()]);
-		Equal(40, monsterVersion, "current-version monster config keeps version");
+			HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(CurrentConfigVersion, [MonsterHexKind.FrostWraith.ToString()]);
+		Equal(CurrentConfigVersion, monsterVersion, "current-version monster config keeps version");
 		SetEqual(
 			[MonsterHexKind.FrostWraith.ToString()],
 			disabledMonsters,
@@ -151,7 +169,7 @@ internal static partial class Program
 				27,
 				new HextechRarityWeights(4, 5, 6),
 				new HextechRarityWeights(0, 7, 8));
-		Equal(40, migratedVersion, "v27 rarity config should land on current version");
+		Equal(CurrentConfigVersion, migratedVersion, "v27 rarity config should land on current version");
 		Equal(new HextechRarityWeights(4, 5, 6), migratedWeights, "v27 normal weights should become rune weights");
 		Equal(true, ruleEnabledWithZeroLegacySilverWeight, "legacy rarity config should enable consecutive-Silver prevention by default");
 
@@ -176,29 +194,11 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void ConfigMigrationV30EnablesAdvanceToRetreat()
-	{
-		string id = ModelDb.GetId<AdvanceToRetreatRune>().Entry;
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(29, [id]);
-		Equal(40, version, "v29 player config should land on current version");
-		Expect(!disabled.Contains(id), "v29 player config migration should enable Advance to Retreat");
-	}
-
-	[HextechTest]
-	private static void ConfigMigrationV31EnablesHappyAccident()
-	{
-		string id = ModelDb.GetId<HappyAccidentRune>().Entry;
-		(int version, IReadOnlySet<string> disabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(30, [id]);
-		Equal(40, version, "v30 player config should land on current version");
-		Expect(!disabled.Contains(id), "v30 player config migration should enable Happy Accident");
-	}
-
-	[HextechTest]
 	private static void ConfigMigrationV33ChangesLegacyInfiniteMonsterRerolls()
 	{
 		(int migratedVersion, int migratedLimit) =
 			HextechRuneConfiguration.MigrateMonsterHexRerollLimitForTests(32, HextechRuneConfiguration.InfiniteRerollLimit);
-		Equal(40, migratedVersion, "v32 config should land on current version");
+		Equal(CurrentConfigVersion, migratedVersion, "v32 config should land on current version");
 		Equal(1, migratedLimit, "v32 infinite enemy rerolls should migrate to the new one-reroll default");
 
 		(_, int finiteLimit) = HextechRuneConfiguration.MigrateMonsterHexRerollLimitForTests(32, 4);
@@ -211,19 +211,6 @@ internal static partial class Program
 			HextechRuneConfiguration.InfiniteRerollLimit,
 			currentInfiniteLimit,
 			"v33 explicit infinite enemy rerolls should be preserved");
-	}
-
-	[HextechTest]
-	private static void GetExcitedDefaultsMigrateOnceAndRemainConfigurable()
-	{
-		string enemyId = MonsterHexKind.GetExcited.ToString();
-		Expect(HextechRuneConfiguration.GetDefaultDisabledPlayerRuneIds().Contains(ModelDb.GetId<GetExcitedRune>().Entry), "player default is disabled");
-		Expect(HextechRuneConfiguration.GetDefaultDisabledMonsterHexIds().Contains(enemyId), "enemy default is disabled");
-		(int ConfigVersion, IReadOnlySet<string> DisabledMonsterHexIds) migrated = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(35, [MonsterHexKind.FrostWraith.ToString()]);
-		Expect(migrated.DisabledMonsterHexIds.SetEquals(new[] { enemyId, MonsterHexKind.ShoulderVaku.ToString(), MonsterHexKind.NatureIsHealing.ToString(), MonsterHexKind.FrostWraith.ToString() }), "migration adds Get Excited and the later enemy default disables, keeps custom selections");
-		(int ConfigVersion, IReadOnlySet<string> DisabledMonsterHexIds) custom = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(migrated.ConfigVersion, []);
-		Equal(0, custom.DisabledMonsterHexIds.Count, "manual re-enable persists after migration");
-		Expect(!HextechMonsterHexRegistry.Registrations.Single(row => row.Kind == MonsterHexKind.GetExcited).Disabled, "config default does not hard-remove content");
 	}
 
 	[HextechTest]

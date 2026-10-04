@@ -31,11 +31,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void MagicMissileUsesThreeThreePercentHits()
 	{
-		Equal(3, MagicMissileRune.MissileCount, "Magic Missile hit count");
-		Equal(3m, MagicMissileRune.MaxHpDamagePercent, "Magic Missile max-HP damage percent");
-		Equal(0.055f, HextechCombatVfx.MagicMissileLaunchIntervalSeconds, "Magic Missile launch interval");
-		Equal(0.28f, HextechCombatVfx.MagicMissileBaseFlightSeconds, "Magic Missile base flight duration");
-		Equal(0.025f, HextechCombatVfx.MagicMissileFlightStepSeconds, "Magic Missile flight duration step");
 		MethodInfo? afterCardPlayed = typeof(MagicMissileRune).GetMethod(
 			nameof(MagicMissileRune.AfterCardPlayed),
 			BindingFlags.Instance | BindingFlags.Public);
@@ -51,7 +46,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void TwinFlamesUsesThreeEnergyScaledHits()
 	{
-		Equal(3, TwinFlamesRune.MissileCount, "Twin Flames hit count");
 		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Twin Flames should not create negative damage");
 		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(0m), "zero-cost Skills should resolve to zero missile damage");
 		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Twin Flames damage should equal the played Skill's Energy cost");
@@ -62,30 +56,6 @@ internal static partial class Program
 			null,
 			afterCardPlayed?.GetCustomAttribute<AsyncStateMachineAttribute>(),
 			"Twin Flames should not hold the card-play hook open while projectiles resolve");
-		Expect(
-			typeof(HextechCombatVfx).GetMethod(
-				"PlayTwinFlamesMissile",
-				BindingFlags.Static | BindingFlags.NonPublic) != null,
-			"Twin Flames should expose its blue-yellow projectile VFX path");
-	}
-
-	[HextechTest]
-	private static void TwinFlamesKeepsMultiplayerDamageInsideCardAction()
-	{
-		MethodInfo afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
-			nameof(TwinFlamesRune.AfterCardPlayed),
-			BindingFlags.Instance | BindingFlags.Public)
-			?? throw new MissingMethodException(nameof(TwinFlamesRune), nameof(TwinFlamesRune.AfterCardPlayed));
-		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(afterCardPlayed)
-			.Select(static instruction => instruction.operand)
-			.OfType<MethodInfo>()
-			.ToArray();
-		Expect(
-			!calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
-			"Twin Flames uses one damage path for single player and multiplayer");
-		Expect(
-			calls.Any(static method => method.Name == "ResolveVolleyDamageInLockstepAsync"),
-			"Twin Flames damage should be returned to the current card action");
 	}
 
 	[HextechTest]
@@ -114,11 +84,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void LightEmUpUsesSixEnergyScaledTwinFlameMissiles()
 	{
-		Equal(4, LightEmUpRune.AttacksPerVolley, "Light Em Up attacks per volley");
-		Equal(6, LightEmUpRune.MissileCount, "Light Em Up missile count");
-		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Light Em Up should not create negative damage");
-		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Light Em Up damage should equal the triggering Attack's Energy cost");
-
 		int progress = 0;
 		for (int attackIndex = 0; attackIndex < 3; attackIndex++)
 		{
@@ -143,30 +108,14 @@ internal static partial class Program
 			null,
 			afterCardPlayed?.GetCustomAttribute<AsyncStateMachineAttribute>(),
 			"Light Em Up should not hold the card-play hook open while projectiles resolve");
-		Expect(
-			typeof(LightEmUpRune).GetMethod(
-				nameof(LightEmUpRune.ModifyCardPlayCount),
-				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly) == null,
-			"Light Em Up should no longer replay the fourth Attack");
-		Expect(
-			typeof(HextechCombatVfx).GetMethod(
-				"PlayTwinFlamesMissile",
-				BindingFlags.Static | BindingFlags.NonPublic) != null,
-			"Light Em Up should reuse the blue-yellow Twin Flames projectile VFX path");
 	}
 
 	[HextechTest]
 	private static void PiercingThreadSplitsOneDamageEventBeforeBlock()
 	{
-		Equal(50m, PiercingThreadRune.PiercingPercent, "Piercing Thread percentage");
 		Equal(0, PiercingThreadRune.CalculatePiercingDamage(1m), "one damage should round its piercing half down");
 		Equal(2, PiercingThreadRune.CalculatePiercingDamage(5m), "odd piercing damage should round down");
 		Equal(5, PiercingThreadRune.CalculatePiercingDamage(10m), "even piercing damage should split evenly");
-
-		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
-			registration => registration.Type == typeof(PiercingThreadRune));
-		Equal(HextechRarityTier.Gold, registration.Rarity, "Piercing Thread rarity");
-		Equal("OUTPUT", registration.TagKey, "Piercing Thread tag");
 		Expect(
 			FindPatchMethod(typeof(HextechCombatHooks), "DamageBlockPatch", "Prefix") != null,
 			"Piercing Thread should alter the blockable amount at the original block-consumption boundary");

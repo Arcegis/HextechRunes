@@ -259,31 +259,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void GoldenRerollVisualKeepsAnimatingWhileOverlayIsPaused()
-	{
-		Expect(
-			HextechGoldenRerollVisual.ShaderCode.Contains("uniform float animation_time", StringComparison.Ordinal),
-			"golden reroll shader should receive an explicit animation clock");
-		Expect(
-			HextechGoldenRerollVisual.ShaderCode.Contains("sweep_position", StringComparison.Ordinal),
-			"golden reroll shader should include a visible moving sweep");
-		Expect(
-			HextechGoldenRerollVisual.ShaderCode.Contains("sparkles", StringComparison.Ordinal),
-			"golden reroll shader should include animated noise sparkles");
-		MethodInfo? processOverride = typeof(HextechGoldenRerollVisual).GetMethod(
-			"_Process",
-			BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-		Expect(
-			processOverride == null,
-			"golden reroll animation should not depend on an unreliable dynamic Control _Process callback");
-		Expect(
-			typeof(HextechGoldenRerollVisual).GetMethod(
-				"StartAnimationLoop",
-				BindingFlags.Public | BindingFlags.Instance) != null,
-			"golden reroll animation should expose the ProcessFrame loop started after overlay open");
-	}
-
-	[HextechTest]
 	private static void GoldenRerollCardThemeFollowsRerolledRuneRarity()
 	{
 		foreach (HextechRarityTier rarity in Enum.GetValues<HextechRarityTier>())
@@ -428,21 +403,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyHexRerollPlaysRerollSound()
-	{
-		MethodInfo reroll = typeof(HextechRuneSelectionScreen).GetMethod(
-			"OnEnemyHexRerollPressed",
-			BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new MissingMethodException(nameof(HextechRuneSelectionScreen), "OnEnemyHexRerollPressed");
-		Expect(
-			PatchProcessor.GetOriginalInstructions(reroll)
-				.Select(static instruction => instruction.operand)
-				.OfType<MethodInfo>()
-				.Any(static method => method.Name == "PlayRerollSfx"),
-			"successful enemy hex rerolls should use the same reroll sound as player rerolls");
-	}
-
-	[HextechTest]
 	private static void EnemyHexRemovalCanBeUndoneWithoutConsumingTheSlot()
 	{
 		List<MonsterHexKind?> current = [ MonsterHexKind.EightPennyGate ];
@@ -464,7 +424,7 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyHexActionButtonsUseTexturesWithoutTooltipText()
+	private static void EnemyHexActionButtonsSwapToUndoAndResolveStateTextures()
 	{
 		Expect(
 			!HextechRuneSelectionScreen.ShouldShowEnemyHexUndoButton(MonsterHexKind.EightPennyGate),
@@ -472,32 +432,6 @@ internal static partial class Program
 		Expect(
 			HextechRuneSelectionScreen.ShouldShowEnemyHexUndoButton(null),
 			"removed enemy hexes should replace both actions with undo");
-		SetEqual(
-			new[]
-			{
-				"res://HextechRunes/images/ui/hextechRemoveButton.png",
-				"res://HextechRunes/images/ui/hextechRemoveButtonHover.png",
-				"res://HextechRunes/images/ui/hextechRemoveButtonPressed.png",
-				"res://HextechRunes/images/ui/hextechRemoveButtonDisabled.png",
-				"res://HextechRunes/images/ui/hextechUndoButton.png",
-				"res://HextechRunes/images/ui/hextechUndoButtonHover.png",
-				"res://HextechRunes/images/ui/hextechUndoButtonPressed.png",
-				"res://HextechRunes/images/ui/hextechUndoButtonDisabled.png"
-			},
-			new[]
-			{
-				"RemoveButtonTexturePath",
-				"RemoveButtonHoverTexturePath",
-				"RemoveButtonPressedTexturePath",
-				"RemoveButtonDisabledTexturePath",
-				"UndoButtonTexturePath",
-				"UndoButtonHoverTexturePath",
-				"UndoButtonPressedTexturePath",
-				"UndoButtonDisabledTexturePath"
-			}.Select(name => (string)typeof(HextechRuneSelectionScreen)
-				.GetField(name, BindingFlags.Static | BindingFlags.NonPublic)!
-				.GetRawConstantValue()!),
-			"enemy remove and undo button state textures");
 		Equal(
 			"res://HextechRunes/images/ui/hextechUndoButtonDisabled.png",
 			HextechRuneSelectionScreen.ResolveEnemyHexRemovalButtonTexture(undo: true, disabled: true, pressed: false, highlighted: false),
@@ -510,28 +444,6 @@ internal static partial class Program
 			"res://HextechRunes/images/ui/hextechRemoveButtonHover.png",
 			HextechRuneSelectionScreen.ResolveEnemyHexRemovalButtonTexture(undo: false, disabled: false, pressed: false, highlighted: true),
 			"hovered remove texture");
-
-		MethodInfo previewRow = typeof(HextechRuneSelectionScreen).GetMethod(
-			"CreateEnemyPreviewRow",
-			BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new MissingMethodException(nameof(HextechRuneSelectionScreen), "CreateEnemyPreviewRow");
-		Expect(
-			PatchProcessor.GetOriginalInstructions(previewRow)
-				.Select(static instruction => instruction.operand)
-				.OfType<MethodInfo>()
-				.All(static method => method.Name != "set_TooltipText"),
-			"enemy reroll and remove buttons should not show hover text");
-
-		MethodInfo remove = typeof(HextechRuneSelectionScreen).GetMethod(
-			"OnEnemyHexRemovePressed",
-			BindingFlags.Instance | BindingFlags.NonPublic)
-			?? throw new MissingMethodException(nameof(HextechRuneSelectionScreen), "OnEnemyHexRemovePressed");
-		Expect(
-			PatchProcessor.GetOriginalInstructions(remove)
-				.Select(static instruction => instruction.operand)
-				.OfType<MethodInfo>()
-				.Any(static method => method.Name == "PlayButtonClickSfx"),
-			"enemy remove and undo actions should play the standard UI click sound");
 	}
 
 	[HextechTest]

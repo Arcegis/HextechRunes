@@ -269,24 +269,31 @@ internal static partial class Program
 		return model;
 	}
 
-	private static CardPlay CreateCardPlay(CardModel card, int playIndex = 0, int playCount = 1)
+	// 0.109 起 CardPlay 才有 Player 成员；未设所有者的可变卡 Owner 为 null，照原样传入。
+	private static CardPlay CreateCardPlay(
+		CardModel card,
+		int playIndex = 0,
+		int playCount = 1,
+		bool isAutoPlay = true,
+		int energySpent = 0,
+		int starsSpent = 0)
 	{
 		return new CardPlay
 		{
 			Card = card,
 #if STS2_109_OR_NEWER
-			Player = null!,
+			Player = card.Owner,
 #endif
 			Target = null,
 			ResultPile = PileType.Discard,
 			Resources = new ResourceInfo
 			{
-				EnergySpent = 0,
-				EnergyValue = 0,
-				StarsSpent = 0,
-				StarValue = 0
+				EnergySpent = energySpent,
+				EnergyValue = energySpent,
+				StarsSpent = starsSpent,
+				StarValue = starsSpent
 			},
-			IsAutoPlay = true,
+			IsAutoPlay = isAutoPlay,
 			PlayIndex = playIndex,
 			PlayCount = playCount
 		};

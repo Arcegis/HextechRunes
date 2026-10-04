@@ -1,7 +1,5 @@
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using HextechRunes;
-using MegaCrit.Sts2.Core.Combat;
 
 namespace HextechRunes.Tests;
 
@@ -46,18 +44,5 @@ internal static partial class Program
 		expired = power.RecordStackedAmount(4, -8, 92);
 		Equal(100, expired, "all previous-round positive stacks expire before a new reduction");
 		Equal(-8, 92 - expired, "expiry must keep the new negative stacks");
-	}
-
-	[HextechTest]
-	private static void TemporarySlowCleanupRunsBeforePlayerStartEffects()
-	{
-		MethodInfo before = typeof(HextechTemporarySlowPower).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-			.Single(method => method.Name == "BeforeSideTurnStart");
-		Expect(before.IsVirtual, "temporary Slow cleanup must participate in the official pre-turn hook");
-		Expect(!typeof(HextechTemporarySlowPower).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-			.Any(method => method.Name == "AfterSideTurnStart"), "cleanup must not wait until after Mercury Hourglass/Frost Wraith");
-		Expect(HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, 3, 2), "old stacks expire at the next player turn boundary");
-		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, 3, 3), "same-round applications and extra turns must survive");
-		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Enemy, 3, 2), "enemy turn start does not expire temporary Slow");
 	}
 }

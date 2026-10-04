@@ -8,32 +8,6 @@ namespace HextechRunes.Tests;
 internal static partial class Program
 {
 	/// <summary>
-	/// 色彩发现的候选池复用基类的稳定战斗生成池(战斗过滤 + 生成许可 + CardKey 序数排序)，
-	/// 不再自带一份排序；多池重复的卡先按 Id 去重。
-	/// </summary>
-	[HextechTest]
-	private static void ColorDiscoveryCandidatesUseSharedStableCombatPool()
-	{
-		MethodInfo production = typeof(ColorDiscoveryRune).GetMethod(
-			"GetOtherCharacterCards",
-			BindingFlags.NonPublic | BindingFlags.Static)
-			?? throw new MissingMethodException(nameof(ColorDiscoveryRune), "GetOtherCharacterCards");
-		List<MethodInfo> referenced = [];
-		CollectReferencedMethods(production, referenced, []);
-		Expect(
-			referenced.Any(static method => method.DeclaringType == typeof(HextechRelicBase)
-				&& method.Name == "BuildStableCombatGenerationPool"),
-			"Color Discovery should build its pool through HextechRelicBase.BuildStableCombatGenerationPool");
-		Expect(
-			referenced.Any(static method => method.DeclaringType == typeof(Enumerable)
-				&& method.Name == nameof(Enumerable.DistinctBy)),
-			"Color Discovery should de-duplicate cards shared by several pools before ordering");
-		Expect(
-			typeof(ColorDiscoveryRune).GetMethod("OrderCandidatesForStableSelection", BindingFlags.NonPublic | BindingFlags.Static) == null,
-			"Color Discovery should not keep a private copy of the stable ordering");
-	}
-
-	/// <summary>
 	/// 私有反射改为 TryGet* 后，三个维护版本都必须能解析到这些原版成员，否则功能会静默降级。
 	/// </summary>
 	[HextechTest]

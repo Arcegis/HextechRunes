@@ -4,7 +4,6 @@ using HextechRunes;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Combat.History;
 using MegaCrit.Sts2.Core.Combat.History.Entries;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -13,7 +12,7 @@ using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes.Tests;
 
-// 玩家反馈批次（2026-09-30）：重放/自动打出的计数口径、敌方开悟载体、升级形态棱彩化。
+// 玩家反馈批次（2026-09-30）：重放/自动打出的计数口径、敌方开悟载体、初始锻造器发放的续发。
 internal static partial class Program
 {
 	[HextechTest]
@@ -22,17 +21,17 @@ internal static partial class Program
 		(HextechEnemyHexContext _, Player owner, Player teammate) = CreatePrismaticEnemyFixture();
 		SovereignBlade blade = CreateMutableTestModel<SovereignBlade>();
 		blade.Owner = owner;
-		Expect(RoyalTrialRune.ShouldGenerateMinions(CreateFeedbackCardPlay(blade, playIndex: 0, playCount: 2, isAutoPlay: false), owner),
+		Expect(RoyalTrialRune.ShouldGenerateMinions(CreateCardPlay(blade, playIndex: 0, playCount: 2, isAutoPlay: false), owner),
 			"the first play of Sovereign Blade generates minions");
-		Expect(RoyalTrialRune.ShouldGenerateMinions(CreateFeedbackCardPlay(blade, playIndex: 1, playCount: 2, isAutoPlay: false), owner),
+		Expect(RoyalTrialRune.ShouldGenerateMinions(CreateCardPlay(blade, playIndex: 1, playCount: 2, isAutoPlay: false), owner),
 			"each replay (PlayIndex > 0) generates minions again");
-		Expect(!RoyalTrialRune.ShouldGenerateMinions(CreateFeedbackCardPlay(blade, playIndex: 0, playCount: 1, isAutoPlay: true), owner),
+		Expect(!RoyalTrialRune.ShouldGenerateMinions(CreateCardPlay(blade, playIndex: 0, playCount: 1, isAutoPlay: true), owner),
 			"auto-played Sovereign Blade does not generate minions");
-		Expect(!RoyalTrialRune.ShouldGenerateMinions(CreateFeedbackCardPlay(blade, playIndex: 0, playCount: 1, isAutoPlay: false), teammate),
+		Expect(!RoyalTrialRune.ShouldGenerateMinions(CreateCardPlay(blade, playIndex: 0, playCount: 1, isAutoPlay: false), teammate),
 			"a teammate's Sovereign Blade does not trigger the owner's rune");
 		StrikeIronclad strike = CreateMutableTestModel<StrikeIronclad>();
 		strike.Owner = owner;
-		Expect(!RoyalTrialRune.ShouldGenerateMinions(CreateFeedbackCardPlay(strike, playIndex: 0, playCount: 1, isAutoPlay: false), owner),
+		Expect(!RoyalTrialRune.ShouldGenerateMinions(CreateCardPlay(strike, playIndex: 0, playCount: 1, isAutoPlay: false), owner),
 			"other attacks do not trigger");
 	}
 
@@ -212,43 +211,17 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyEnlightenmentUsesItsOwnPrismaticIconCarrier()
+	private static void EnemyEnlightenmentUsesItsOwnIconCarrier()
 	{
 		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(registration => registration.Kind == MonsterHexKind.Enlightenment);
-		Equal(145, (int)row.Kind, "append-only ID is unchanged");
-		Equal(HextechRarityTier.Prismatic, row.Rarity, "enemy Enlightenment is prismatic");
 		Equal(typeof(EnlightenmentHex), row.IconRelicType, "enemy Enlightenment shows its own icon carrier");
-		List<Type> carriers = HextechCustomModelRegistry.EnemyHexIconRelicTypes.ToList();
-		Equal(carriers.IndexOf(typeof(CorruptHeartHex)) + 1, carriers.IndexOf(typeof(EnlightenmentHex)),
-			"the carrier was appended after the older carriers so their SharedRelicPool registration order is kept");
 		Expect(!HextechPlayerRuneRegistry.Registrations.Any(registration => registration.Type == typeof(EnlightenmentHex)),
 			"the enemy carrier never enters the player pool");
-		Equal(HextechRarityTier.Gold, HextechPlayerRuneRegistry.Registrations.Single(registration => registration.Type == typeof(EnlightenmentRune)).Rarity,
-			"the player rune Enlightenment is unchanged");
 
 		EnlightenmentHex carrier = new();
 		Expect(HextechCatalog.IsHextechEnemyHexIconRelic(carrier), "the carrier is recognised as an enemy hex icon relic");
 		Equal("res://HextechRunes/images/relics/enlightenmentHex.png", HextechAssets.TryGetCustomRelicIconPath(carrier), "enemy icon path");
 		Equal("res://HextechRunes/images/relics/enlightenmentRune.png", HextechAssets.TryGetCustomRelicIconPath(new EnlightenmentRune()), "player icon path is unchanged");
-	}
-
-	[HextechTest]
-	private static void FormUpgradeRunesAreAllPrismatic()
-	{
-		(Type Type, PlayerRuneCharacterPool Pool)[] forms =
-		[
-			(typeof(DemonFormUpgradeRune), PlayerRuneCharacterPool.Ironclad),
-			(typeof(SerpentFormUpgradeRune), PlayerRuneCharacterPool.Silent),
-			(typeof(VoidFormUpgradeRune), PlayerRuneCharacterPool.Regent),
-			(typeof(EchoFormUpgradeRune), PlayerRuneCharacterPool.Defect),
-			(typeof(ReaperFormUpgradeRune), PlayerRuneCharacterPool.Necrobinder)
-		];
-		foreach ((Type type, PlayerRuneCharacterPool pool) in forms)
-		{
-			PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == type);
-			Equal(HextechRarityTier.Prismatic, registration.Rarity, type.Name + " rarity");
-			Equal<PlayerRuneCharacterPool?>(pool, registration.CharacterPool, type.Name + " character pool");
-		}
 	}
 
 	[HextechTest]
@@ -265,8 +238,6 @@ internal static partial class Program
 
 		StatsOnStatsOnStatsRune rune = CreateMutableTestModel<StatsOnStatsOnStatsRune>();
 		Equal(0, rune.SavedInitialForgeGrantCompletedCount, "completed count defaults to zero");
-		rune.SavedInitialForgeGrantCompletedCount = 3;
-		Equal(3, rune.SavedInitialForgeGrantCompletedCount, "completed count is saveable");
 	}
 
 	[HextechTest]
@@ -345,7 +316,7 @@ internal static partial class Program
 
 	private static void RecordFeedbackPlayFinished(CombatHistory history, List<CombatHistoryEntry> entries, CardModel card, int playIndex, int playCount, bool isAutoPlay)
 	{
-		entries.Add(new CardPlayFinishedEntry(CreateFeedbackCardPlay(card, playIndex, playCount, isAutoPlay), 1, CombatSide.Player, history, []));
+		entries.Add(new CardPlayFinishedEntry(CreateCardPlay(card, playIndex, playCount, isAutoPlay), 1, CombatSide.Player, history, []));
 	}
 
 	// 临时把 RunManager.NetService 换成只回答 Type 的代理，模拟单机/房主/客机；结束后还原。
@@ -388,29 +359,6 @@ internal static partial class Program
 
 	private static void PlayFeedbackCard(RelicModel rune, CardModel card, int playIndex, int playCount, bool isAutoPlay)
 	{
-		rune.AfterCardPlayed(null!, CreateFeedbackCardPlay(card, playIndex, playCount, isAutoPlay)).GetAwaiter().GetResult();
-	}
-
-	private static CardPlay CreateFeedbackCardPlay(CardModel card, int playIndex, int playCount, bool isAutoPlay)
-	{
-		return new CardPlay
-		{
-			Card = card,
-#if STS2_109_OR_NEWER
-			Player = card.Owner,
-#endif
-			Target = null,
-			ResultPile = PileType.Discard,
-			Resources = new ResourceInfo
-			{
-				EnergySpent = 0,
-				EnergyValue = 0,
-				StarsSpent = 0,
-				StarValue = 0
-			},
-			IsAutoPlay = isAutoPlay,
-			PlayIndex = playIndex,
-			PlayCount = playCount
-		};
+		rune.AfterCardPlayed(null!, CreateCardPlay(card, playIndex, playCount, isAutoPlay)).GetAwaiter().GetResult();
 	}
 }

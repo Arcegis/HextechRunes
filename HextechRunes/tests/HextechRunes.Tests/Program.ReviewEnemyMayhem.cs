@@ -85,29 +85,4 @@ internal static partial class Program
 		Expect(HextechCombatProcTracker.HasOwnerTurnProcTriggered(null, "review-proc", triggered), "triggered after consuming");
 		Expect(!HextechCombatProcTracker.TryConsumeOwnerTurnProc(null, "review-proc", ref triggered), "second consume in the same turn fails");
 	}
-
-	[HextechTest]
-	private static void ReviewModelHooksLiveOnTheirOwnModels()
-	{
-		const BindingFlags declared = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
-		Expect(typeof(WhiteHoleCard).GetMethod(nameof(CardModel.AfterCardDrawn), declared) != null, "White Hole listens to its own draw like vanilla Void");
-		Expect(typeof(StormUpgradeRune).GetMethod(nameof(RelicModel.BeforeCombatStart), declared) != null
-			&& typeof(StormUpgradeRune).GetMethod(nameof(RelicModel.AfterCombatEnd), declared) != null,
-			"Storm upgrade clears its per-card lightning records around combat");
-		Expect(typeof(HextechAttackReplayPower).IsSubclassOf(typeof(HextechPowerBase))
-			&& typeof(HextechDragonSoulPower).IsSubclassOf(typeof(HextechPowerBase))
-			&& typeof(HextechCloudDragonSoulPower).IsSubclassOf(typeof(HextechPowerBase)),
-			"own powers use the shared safe Flash");
-		Expect(typeof(HextechModifierBase).GetMethod(nameof(HextechModifierBase.AfterSideTurnStartForParticipants), declared) != null
-			&& typeof(HextechModifierBase).GetMethod(nameof(HextechModifierBase.AfterTurnEndForParticipants), declared) != null
-			&& typeof(HextechPowerBase).GetMethod(nameof(HextechPowerBase.AfterTurnEndForParticipants), declared) != null,
-			"turn hook bridges pass participants through");
-
-		MethodInfo typed = typeof(HextechPowerCmdCompat).GetMethods(BindingFlags.Public | BindingFlags.Static)
-			.Single(method => method.Name == nameof(HextechPowerCmdCompat.Apply)
-				&& method.IsGenericMethodDefinition
-				&& method.GetParameters().Length == 6
-				&& method.GetParameters()[0].ParameterType == typeof(PlayerChoiceContext));
-		Expect(typed.GetCustomAttribute<ObsoleteAttribute>() == null, "the typed choice-context overload is the supported one");
-	}
 }

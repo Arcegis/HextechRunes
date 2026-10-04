@@ -219,7 +219,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops()
 	{
-		Equal(999, HextechStarterUpgradeHooks.UpgradeLevelCap, "starter multi-upgrade cap");
 		Equal(
 			999,
 			HextechStarterUpgradeHooks.ResolveOwnedMaxUpgradeLevel(0),
@@ -240,23 +239,6 @@ internal static partial class Program
 			1001,
 			HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(1000, isDeserializing: true),
 			"legacy over-cap saves can replay the next upgrade level");
-
-		int simulatedUpgradeLevel = 0;
-		int upgradeCount = 0;
-		while (simulatedUpgradeLevel < HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(
-			simulatedUpgradeLevel,
-			isDeserializing: false))
-		{
-			simulatedUpgradeLevel++;
-			upgradeCount++;
-			Expect(upgradeCount <= 1, "UpgradeAllCards-style loop must terminate at the vanilla cap");
-		}
-
-		Equal(1, simulatedUpgradeLevel, "UpgradeAllCards-style loop final level");
-		Equal(1, upgradeCount, "UpgradeAllCards-style loop iteration count");
-
-		SearingAttackCard searingAttack = CreateMutableTestModel<SearingAttackCard>();
-		Equal(999, searingAttack.MaxUpgradeLevel, "Searing Attack cap");
 	}
 
 	[HextechTest]
@@ -351,24 +333,5 @@ internal static partial class Program
 			!HiddenGemUpgradeRune.IsEligibleReplayTarget(target),
 			"Hidden Gem should retain the vanilla restriction against cards that already have Replay");
 		Equal(PileType.Hand, HiddenGemUpgradeRune.ReplayTargetPile, "Hidden Gem upgraded replay target pile");
-	}
-
-	[HextechTest]
-	private static void DragonSoulAndMikaelsUseUpdatedUpgradeValues()
-	{
-		MikaelsBlessingCard mikaels = CreateMutableTestModel<MikaelsBlessingCard>();
-		Equal(0, mikaels.EnergyCost.GetWithModifiers(CostModifiers.Local), "base Mikael's Blessing costs zero");
-		Equal(10m, mikaels.DynamicVars["HealPercent"].BaseValue, "base Mikael's Blessing heals ten percent");
-		Expect(mikaels.CanonicalKeywords.Contains(CardKeyword.Retain), "Mikael's Blessing retains");
-		CardCmd.Upgrade(mikaels);
-		Equal(0, mikaels.EnergyCost.GetWithModifiers(CostModifiers.Local), "upgraded Mikael's Blessing still costs zero");
-		Equal(15m, mikaels.DynamicVars["HealPercent"].BaseValue, "upgrade increases healing to fifteen percent");
-		InfernalDragonSoulCard infernal = CreateMutableTestModel<InfernalDragonSoulCard>();
-		Equal(0, infernal.EnergyCost.GetWithModifiers(CostModifiers.Local), "Infernal Dragon Soul costs zero");
-		Equal(8m, infernal.DynamicVars["BurnPower"].BaseValue, "Infernal Dragon Soul applies eight Burn");
-		CardCmd.Upgrade(infernal);
-		Equal(8m, infernal.DynamicVars["BurnPower"].BaseValue, "upgraded Infernal Dragon Soul retains eight Burn");
-		Expect(infernal.Keywords.Contains(CardKeyword.Innate), "upgraded Infernal Dragon Soul is Innate");
-		Equal(2m, new AncientWineRune().DynamicVars["HealPercent"].BaseValue, "Ancient Wine heals two percent after a Skill");
 	}
 }

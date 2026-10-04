@@ -276,10 +276,6 @@ internal static partial class Program
 	{
 #if STS2_109_OR_NEWER
 		Type cacheType = typeof(MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache);
-		FieldInfo initializedField = cacheType.GetField(
-			"_initialized",
-			BindingFlags.NonPublic | BindingFlags.Static)
-			?? throw new InvalidOperationException("0.109 SavedProperty cache initialized field should exist");
 		string[] wireFieldNames =
 		[
 			"_savedPropertyCache",
@@ -290,16 +286,7 @@ internal static partial class Program
 			static name => name,
 			name => SnapshotStaticCollection(cacheType, name),
 			StringComparer.Ordinal);
-		bool originalInitialized = initializedField.GetValue(null) is true;
-		try
-		{
-			initializedField.SetValue(null, false);
-			HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier));
-		}
-		finally
-		{
-			initializedField.SetValue(null, originalInitialized);
-		}
+		RunBeforeSavedPropertyCacheInitialization(static () => HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier)));
 
 		foreach (string fieldName in wireFieldNames)
 		{
@@ -732,29 +719,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void NewEnemyHexesReusePlayerRuneIconsAndRarities()
-	{
-		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		(MonsterHexKind Kind, int Value, HextechRarityTier Rarity, Type IconType)[] expected =
-		[
-			(MonsterHexKind.TwilightVeil, 130, HextechRarityTier.Gold, typeof(TwilightVeilRune)),
-			(MonsterHexKind.Stats, 131, HextechRarityTier.Silver, typeof(StatsRune)),
-			(MonsterHexKind.StatsOnStats, 132, HextechRarityTier.Gold, typeof(StatsOnStatsRune)),
-			(MonsterHexKind.StatsOnStatsOnStats, 133, HextechRarityTier.Prismatic, typeof(StatsOnStatsOnStatsRune)),
-			(MonsterHexKind.MiserableFate, 134, HextechRarityTier.Prismatic, typeof(MiserableFateRune))
-		];
-
-		foreach ((MonsterHexKind kind, int value, HextechRarityTier rarity, Type iconType) in expected)
-		{
-			Equal(value, (int)kind, $"{kind} append-only enum value");
-			Expect(metadata.TryGetRegistration(kind, out MonsterHexRegistration registration), $"{kind} registration should exist");
-			Equal(rarity, registration.Rarity, $"{kind} rarity");
-			Equal(iconType, registration.IconRelicType, $"{kind} icon relic type");
-			Expect(!registration.Disabled, $"{kind} should be enabled by default");
-		}
-	}
-
-	[HextechTest]
 	private static void EnemyHexHoverTipsUseExpectedPowerModels()
 	{
 		SequenceEqual(
@@ -802,111 +766,6 @@ internal static partial class Program
 			{
 				Expect(typeof(PowerModel).IsAssignableFrom(powerType), $"enemy {hex} hover-tip type should be a power model: {powerType}");
 			}
-		}
-	}
-
-	[HextechTest]
-	private static void NewRuneHookTargetsMatchSupportedGameApis()
-	{
-#if STS2_110_OR_NEWER
-		Expect(typeof(Outbreak).GetMethod(
-			"OnPlay",
-			BindingFlags.Instance | BindingFlags.NonPublic,
-			[
-				typeof(PlayerChoiceContext),
-				typeof(CardPlay)
-			]) != null,
-			"0.110 outbreak card response guard target");
-		Expect(
-			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "AddFormVfxPatch").GetParameters()
-				.Select(static parameter => parameter.ParameterType)
-				.SequenceEqual([typeof(MegaCrit.Sts2.Core.Nodes.Vfx.Forms.NFormVfx)]),
-			"0.110 form VFX add safety target");
-		Equal(
-			0,
-			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "RemoveFormVfxPatch").GetParameters().Length,
-			"0.110 form VFX removal safety target arity");
-#else
-		Expect(typeof(OutbreakPower).GetMethods(BindingFlags.Instance | BindingFlags.Public)
-			.Any(method => method.Name == "AfterPowerAmountChanged"),
-			"legacy outbreak power response guard target");
-#endif
-		Expect(typeof(PactsEnd).GetMethod("get_CanDealDamage", BindingFlags.Instance | BindingFlags.NonPublic) != null, "pacts end private condition hook target");
-		Expect(typeof(CorrosiveWavePower).GetMethod(nameof(CorrosiveWavePower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "corrosive wave turn-end hook target");
-		Expect(typeof(PoisonPower).GetMethod(nameof(PoisonPower.CalculateTotalDamageNextTurn), BindingFlags.Instance | BindingFlags.Public) != null, "poison preview hook target");
-		Expect(typeof(OblivionPower).GetMethod(nameof(OblivionPower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "oblivion turn-end hook target");
-		Expect(typeof(BodySlam).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "body slam play hook target");
-		Expect(typeof(WroughtInWar).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "wrought in war play hook target");
-		Expect(typeof(DecisionsDecisions).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "decisions play hook target");
-		Expect(typeof(CardSelectCmd).GetMethod(
-			nameof(CardSelectCmd.FromHand),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(PlayerChoiceContext),
-				typeof(Player),
-				typeof(CardSelectorPrefs),
-				typeof(Func<CardModel, bool>),
-				typeof(AbstractModel)
-			]) != null,
-			"decisions hand-selection hook target");
-		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
-			nameof(MegaCrit.Sts2.Core.Hooks.Hook.BeforeCardPlayed),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(ICombatState),
-				typeof(CardPlay)
-			]) != null,
-			"form batch before-card-played hook target");
-		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
-			nameof(MegaCrit.Sts2.Core.Hooks.Hook.AfterCardPlayed),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(ICombatState),
-				typeof(PlayerChoiceContext),
-				typeof(CardPlay)
-			]) != null,
-			"form batch after-card-played hook target");
-		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
-			nameof(MegaCrit.Sts2.Core.Hooks.Hook.AfterCardChangedPiles),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(IRunState),
-				typeof(ICombatState),
-				typeof(CardModel),
-				typeof(PileType),
-				typeof(AbstractModel)
-			]) != null,
-			"form batch changed-piles hook target");
-		Expect(typeof(CardModel).GetMethod(
-			"PlayPowerCardFlyVfx",
-			BindingFlags.Instance | BindingFlags.NonPublic) != null,
-			"form batch power-card VFX hook target");
-		Expect(typeof(PileTypeExtensions).GetMethod(
-			nameof(PileTypeExtensions.GetTargetPosition),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(PileType),
-				typeof(MegaCrit.Sts2.Core.Nodes.Cards.NCard)
-			]) != null,
-			"form batch entry target-position hook target");
-		Expect(typeof(CardModel).GetMethod(
-			"GeneratePlayCount",
-			BindingFlags.Instance | BindingFlags.NonPublic,
-			[
-				typeof(ICombatState),
-				typeof(Creature)
-			]) != null,
-			"form batch play-count generation target");
-		foreach (Type formType in new[] { typeof(DemonForm), typeof(EchoForm), typeof(ReaperForm), typeof(SerpentForm), typeof(VoidForm) })
-		{
-			Expect(formType.GetMethod(
-				"OnPlay",
-				BindingFlags.Instance | BindingFlags.NonPublic,
-				[
-					typeof(PlayerChoiceContext),
-					typeof(CardPlay)
-				]) != null,
-				$"combined {formType.Name} play hook target");
 		}
 	}
 

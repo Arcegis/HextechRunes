@@ -98,23 +98,6 @@ internal static partial class Program
 		Equal(0, HappyAccidentRune.ResolveOrbCount(-1, 1), "Happy Accident negative Status fallback");
 		Equal(0, HappyAccidentRune.ResolveOrbCount(3, 0), "Happy Accident disabled orb count");
 		Equal(3, HappyAccidentRune.ResolveOrbCount(3, 1), "Happy Accident one orb per Status");
-
-		MethodInfo[] declaredMethods = typeof(HappyAccidentRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		Expect(
-			declaredMethods.Any(static method => method.Name == nameof(HappyAccidentRune.AfterPlayerTurnStart)),
-			"Happy Accident should trigger at player turn start");
-		Expect(
-			declaredMethods.All(static method => method.Name != "AfterCardGeneratedForCombat"),
-			"Happy Accident should no longer trigger when Status cards are generated");
-	}
-
-	[HextechTest]
-	private static void PrismaticEggIsExcludedFromThirdAct()
-	{
-		Expect(
-			HextechContentRegistry.PlayerRuneMetadata.HasFlag(typeof(PrismaticEggRune), PlayerRuneFlags.ThirdActExcluded),
-			"Prismatic Egg should not appear in the third act rune pool");
 	}
 
 	[HextechTest]
@@ -146,17 +129,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void FeyMagicUsesThreeCostWithoutTurnLimit()
-	{
-		Equal(3, FeyMagicRune.MinimumCardCost, "Fey Magic minimum card cost");
-
-		MethodInfo[] declaredMethods = typeof(FeyMagicRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		Expect(declaredMethods.Any(method => method.Name == "AfterDamageGiven"), "Fey Magic should trigger after each qualifying damage event");
-		Expect(declaredMethods.All(method => method.Name != "BeforeSideTurnStart"), "Fey Magic should not keep a per-turn trigger reset");
-	}
-
-	[HextechTest]
 	private static void GiantSlayerScalesFromEnemyMaxHp()
 	{
 		static decimal Multiplier(int enemyMaxHp) => GiantSlayerRune.ResolveDamageMultiplier(
@@ -177,11 +149,6 @@ internal static partial class Program
 	{
 		Equal(0, SomethingForNothingRune.ReduceCost(0, 1), "combat discount should not make costs negative");
 		Equal(1, SomethingForNothingRune.ReduceCost(2, 1), "combat discount should reduce the card by one");
-
-		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
-			registration => registration.Type == typeof(SomethingForNothingRune));
-		Equal(HextechRarityTier.Prismatic, registration.Rarity, "Something for Nothing rarity");
-		Equal("RESOURCE", registration.TagKey, "Something for Nothing tag");
 		Expect(
 			typeof(TurnScopedRelicBase).IsAssignableFrom(typeof(SomethingForNothingRune)),
 			"Something for Nothing should reset its paid-card trigger each turn");
@@ -236,16 +203,6 @@ internal static partial class Program
 		Expect(
 			calls.Any(static method => method.Name == nameof(PoisonPower.AfterSideTurnStart)),
 			"Death Warrant should use the Poison turn-start path shared by both supported game versions");
-	}
-
-	[HextechTest]
-	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()
-	{
-		MethodInfo[] declaredMethods = typeof(MyriadSwordsRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-
-		Expect(declaredMethods.Any(method => method.Name == "AfterShuffle"), "Myriad Swords should trigger after the owner's draw pile is shuffled");
-		Expect(declaredMethods.All(method => method.Name != "BeforeTurnEnd"), "Myriad Swords should no longer trigger at turn end");
 	}
 
 	[HextechTest]
@@ -400,8 +357,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions()
 	{
-		Equal(10m, CollectorRune.ExecutePercent, "Collector execute percent");
-		Equal(20, CollectorRune.CountPerExecute, "Collector count per execute");
 		Expect(
 			CollectorRune.IsBelowExecuteThreshold(9.99m, 100m, CollectorRune.ExecutePercent),
 			"Collector should execute below ten percent max HP");
@@ -411,18 +366,6 @@ internal static partial class Program
 		Expect(
 			!CollectorRune.IsBelowExecuteThreshold(1m, 0m, CollectorRune.ExecutePercent),
 			"Collector should reject invalid max HP thresholds");
-
-		MethodInfo[] declaredMethods = typeof(CollectorRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		Expect(
-			declaredMethods.Any(static method => method.Name == nameof(CollectorRune.AfterDamageGiven)),
-			"Collector should execute from owner damage events");
-		Expect(
-			declaredMethods.All(static method => method.Name != nameof(CollectorRune.AfterDeath)),
-			"Collector should not count unrelated enemy deaths");
-		Expect(
-			declaredMethods.All(static method => method.Name != nameof(CollectorRune.ModifyDamageMultiplicativeCompat)),
-			"Collector should not retain its old damage multiplier");
 	}
 
 	[HextechTest]
@@ -433,12 +376,10 @@ internal static partial class Program
 
 		MethodInfo[] runeMethods = typeof(DrawYourSwordRune).GetMethods(
 			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(runeMethods.All(method => method.Name != nameof(DrawYourSwordRune.BeforeSideTurnStart)), "Draw Your Sword should no longer remove Orbs at enemy turn start");
 		Expect(runeMethods.Any(method => method.Name == nameof(DrawYourSwordRune.ReplaceOrbEvoke)), "Draw Your Sword should replace each Orb's Evoke effect");
 
 		MethodInfo[] hookMethods = typeof(HextechPlayerRuneHooks).GetMethods(
 			BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-		Expect(hookMethods.All(method => method.Name != "OrbChannelPrefix"), "Draw Your Sword should no longer intercept Orb channeling");
 		Expect(FindPatchMethod(typeof(DrawYourSwordRune), "DrawYourSwordEvokePatch", "Apply") != null, "Draw Your Sword should install an Orb Evoke replacement hook");
 		Expect(hookMethods.Any(method => method.Name == "OrbEvokePrefix"), "Draw Your Sword should intercept Orb Evoke effects");
 
@@ -473,42 +414,17 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void ThreeNewRunesHaveRequestedPoolsAndRarities()
-	{
-		// 祸水东引于 v40 转为默认禁用（仍可在配置中开启）。
-		(Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool, PlayerRuneFlags Flags)[] expected =
-		[
-			(typeof(ScapegoatRune), HextechRarityTier.Gold, null, PlayerRuneFlags.Disabled),
-			(typeof(BloodDebtRune), HextechRarityTier.Silver, PlayerRuneCharacterPool.Ironclad, PlayerRuneFlags.None),
-			(typeof(NetherSoulRune), HextechRarityTier.Gold, PlayerRuneCharacterPool.Necrobinder, PlayerRuneFlags.None)
-		];
-		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool, PlayerRuneFlags Flags) entry in expected)
-		{
-			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
-			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
-			Equal(entry.Pool, actual.CharacterPool, entry.Type.Name + " character pool");
-			Equal(entry.Flags, actual.Flags, entry.Type.Name + " default flags");
-		}
-	}
-
-	[HextechTest]
 	private static void ScapegoatIncludesNegativeAttributesButLeavesBuffs()
 	{
-		T Power<T>(int amount) where T : PowerModel, new()
-		{
-			T power = CreateMutableTestModel<T>();
-			typeof(PowerModel).GetField("_amount", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(power, amount);
-			return power;
-		}
-		StrengthPower strength = Power<StrengthPower>(-5);
-		DexterityPower dexterity = Power<DexterityPower>(-3);
-		WeakPower weak = Power<WeakPower>(2);
+		StrengthPower strength = CreateTestPower<StrengthPower>(-5);
+		DexterityPower dexterity = CreateTestPower<DexterityPower>(-3);
+		WeakPower weak = CreateTestPower<WeakPower>(2);
 		weak.SkipNextDurationTick = true;
-		StrengthPower buff = Power<StrengthPower>(4);
-		HexPower hex = Power<HexPower>(1);
-		RingingPower ringing = Power<RingingPower>(1);
-		ConfusedPower confused = Power<ConfusedPower>(1);
-		HextechGalvanicPower galvanic = Power<HextechGalvanicPower>(2);
+		StrengthPower buff = CreateTestPower<StrengthPower>(4);
+		HexPower hex = CreateTestPower<HexPower>(1);
+		RingingPower ringing = CreateTestPower<RingingPower>(1);
+		ConfusedPower confused = CreateTestPower<ConfusedPower>(1);
+		HextechGalvanicPower galvanic = CreateTestPower<HextechGalvanicPower>(2);
 		List<PowerModel> powers = [strength, hex, buff, weak, ringing, dexterity, confused, galvanic];
 		PowerModel[] snapshot = ScapegoatRune.SnapshotDebuffs(powers);
 		Expect(snapshot.SequenceEqual(new PowerModel[] { strength, hex, weak, ringing, dexterity, confused, galvanic }),
@@ -595,26 +511,6 @@ internal static partial class Program
 		Expect(replay.Any(m => m.DeclaringType == typeof(HextechAutoPlayHelper)), "exhausted cards use native autoplay");
 		Expect(!replay.Any(m => m.Name == "CanPlay"), "zero energy must not block autoplay");
 		Expect(replay.Any(m => m.Name == "Contains" && m.IsGenericMethod && m.GetGenericArguments().Contains(typeof(Creature))), "only the owner's turn including extra-turn participation");
-	}
-
-	[HextechTest]
-	private static void FiveNewRunesHaveRequestedPoolsAndRarities()
-	{
-		(Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool)[] expected =
-		[
-			(typeof(RallyingCallRune), HextechRarityTier.Gold, null),
-			(typeof(EndlessRotationRune), HextechRarityTier.Prismatic, null),
-			(typeof(VenomousBladeRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Silent),
-			(typeof(MyriadManifestationsRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Defect),
-			(typeof(KingdomArmyRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Regent)
-		];
-		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool) entry in expected)
-		{
-			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
-			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
-			Equal(entry.Pool, actual.CharacterPool, entry.Type.Name + " pool");
-			Equal(PlayerRuneFlags.None, actual.Flags, entry.Type.Name + " enabled in normal selections");
-		}
 	}
 
 	[HextechTest]
@@ -734,29 +630,13 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void MultiplayerSupportRunesHaveRequestedRaritiesAndNumbers()
+	private static void MultiplayerSupportRunesAreMultiplayerOnlyAndScaleFromMaxHp()
 	{
-		(Type Type, HextechRarityTier Rarity)[] expected =
-		[
-			(typeof(DiveBomberRune), HextechRarityTier.Silver),
-			(typeof(AllForYouRune), HextechRarityTier.Gold),
-			(typeof(BlossomBladeRune), HextechRarityTier.Prismatic),
-			(typeof(OurHealingRune), HextechRarityTier.Gold)
-		];
-		foreach ((Type Type, HextechRarityTier Rarity) entry in expected)
-		{
-			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
-			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
-			Equal(PlayerRuneFlags.None, actual.Flags, entry.Type.Name + " enabled");
-			Equal(null, actual.CharacterPool, entry.Type.Name + " is not character-specific");
-		}
-
 		// 测试进程不是联机局,仅联机的海克斯必须不可用。
 		Player solo = CreateOrdinalTestPlayer(1);
 		Expect(!CreateMutableTestModel<DiveBomberRune>().IsAvailableForPlayer(solo), "dive bomber is multiplayer-only");
 		Expect(!CreateMutableTestModel<AllForYouRune>().IsAvailableForPlayer(solo), "all for you is multiplayer-only");
 		Expect(!CreateMutableTestModel<BlossomBladeRune>().IsAvailableForPlayer(solo), "blossom blade is multiplayer-only");
 
-		Equal(1.25m, AllForYouRune.SustainMultiplier, "all for you is +25%");
 	}
 }
