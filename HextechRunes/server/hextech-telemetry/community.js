@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const zlib = require("node:zlib");
 const crypto = require("node:crypto");
+const { sendJson, readBody, writeFileAtomic } = require("./http-util");
 
 const LIMITS = {
   maxConfigsPerSteamId: 3,
@@ -15,6 +16,7 @@ const LIMITS = {
   authorMaxChars: 24,
   codeMaxBytes: 16 * 1024,
   decodedMaxBytes: 512 * 1024,
+  requestBodyMaxBytes: 64 * 1024,
   reportAutoHideThreshold: 5,
   materializedTop: 100,
   maxTotalConfigs: 5000
@@ -138,18 +140,12 @@ function loadOrCreateAdminToken() {
   }
 }
 
-function atomicWrite(file, text) {
-  const tmp = `${file}.tmp.${process.pid}`;
-  fs.writeFileSync(tmp, text);
-  fs.renameSync(tmp, file);
-}
-
 function persistConfigs() {
-  atomicWrite(state.configsFile, JSON.stringify([...state.configs.values()], null, 1) + "\n");
+  writeFileAtomic(state.configsFile, JSON.stringify([...state.configs.values()], null, 1) + "\n");
 }
 
 function persistBans() {
-  atomicWrite(state.bansFile, JSON.stringify([...state.bans]) + "\n");
+  writeFileAtomic(state.bansFile, JSON.stringify([...state.bans]) + "\n");
 }
 
 function appendLike(record) {
@@ -227,37 +223,8 @@ function materialize() {
   const hot = [...visible].sort((a, b) => hotScore(b) - hotScore(a)).slice(0, LIMITS.materializedTop);
   const fresh = [...visible].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, LIMITS.materializedTop);
   const wrap = (configs) => JSON.stringify({ schemaVersion: 1, updatedAtUtc, configs: configs.map(publicView) }) + "\n";
-  atomicWrite(path.join(state.publicDir, "community-hot.json"), wrap(hot));
-  atomicWrite(path.join(state.publicDir, "community-new.json"), wrap(fresh));
-}
-
-function readBody(req, maxBytes = 64 * 1024) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let total = 0;
-    req.on("data", (chunk) => {
-      total += chunk.length;
-      if (total > maxBytes) {
-        reject(new Error("body too large"));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
-  });
-}
-
-function sendJson(res, status, value) {
-  const body = JSON.stringify(value);
-  res.writeHead(status, {
-    "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store",
-    "access-control-allow-origin": "*",
-    "content-length": Buffer.byteLength(body)
-  });
-  res.end(body);
+  writeFileAtomic(path.join(state.publicDir, "community-hot.json"), wrap(hot));
+  writeFileAtomic(path.join(state.publicDir, "community-new.json"), wrap(fresh));
 }
 
 function checkUploadRate(steamId) {
@@ -276,7 +243,7 @@ function checkUploadRate(steamId) {
 async function handleUpload(req, res) {
   let payload;
   try {
-    payload = JSON.parse(await readBody(req));
+    payload = JSON.parse(await readBody(req, LIMITS.requestBodyMaxBytes));
   } catch {
     return sendJson(res, 400, { ok: false, error: "bad_request" });
   }
@@ -301,7 +268,7 @@ async function handleUpload(req, res) {
   if (!validateCode(payload.code)) {
     return sendJson(res, 400, { ok: false, error: "bad_code" });
   }
-  const owned = [...state.configs.values()].filter((entry) => entry.steamId === steamId && !entry.deleted);
+  const owned = [...state.configs.values()].filter((entry) => entry.steamId === steamId);
   if (owned.length >= LIMITS.maxConfigsPerSteamId) {
     return sendJson(res, 409, { ok: false, error: "quota_exceeded" });
   }
@@ -333,7 +300,7 @@ async function handleUpload(req, res) {
 async function handleDelete(req, res) {
   let payload;
   try {
-    payload = JSON.parse(await readBody(req));
+    payload = JSON.parse(await readBody(req, LIMITS.requestBodyMaxBytes));
   } catch {
     return sendJson(res, 400, { ok: false, error: "bad_request" });
   }
@@ -351,7 +318,7 @@ async function handleDelete(req, res) {
 async function handleLike(req, res) {
   let payload;
   try {
-    payload = JSON.parse(await readBody(req));
+    payload = JSON.parse(await readBody(req, LIMITS.requestBodyMaxBytes));
   } catch {
     return sendJson(res, 400, { ok: false, error: "bad_request" });
   }
@@ -392,7 +359,7 @@ async function handleLike(req, res) {
 async function handleMine(req, res) {
   let payload;
   try {
-    payload = JSON.parse(await readBody(req));
+    payload = JSON.parse(await readBody(req, LIMITS.requestBodyMaxBytes));
   } catch {
     return sendJson(res, 400, { ok: false, error: "bad_request" });
   }
@@ -410,7 +377,7 @@ async function handleMine(req, res) {
 async function handleReport(req, res) {
   let payload;
   try {
-    payload = JSON.parse(await readBody(req));
+    payload = JSON.parse(await readBody(req, LIMITS.requestBodyMaxBytes));
   } catch {
     return sendJson(res, 400, { ok: false, error: "bad_request" });
   }
@@ -455,7 +422,7 @@ async function handleAdmin(req, res, action) {
   let payload = {};
   if (req.method === "POST") {
     try {
-      payload = JSON.parse(await readBody(req));
+      payload = JSON.parse(await readBody(req, LIMITS.requestBodyMaxBytes));
     } catch {
       return sendJson(res, 400, { ok: false, error: "bad_request" });
     }
@@ -512,7 +479,7 @@ async function handleAdmin(req, res, action) {
       doc.configs = (doc.configs || []).filter((item) => item.id !== entry.id);
       doc.configs.push({ id: entry.id, name: entry.title, author: entry.author, description: "", code: entry.code });
       doc.updatedAtUtc = new Date().toISOString();
-      atomicWrite(featuredFile, JSON.stringify(doc, null, 2) + "\n");
+      writeFileAtomic(featuredFile, JSON.stringify(doc, null, 2) + "\n");
       return sendJson(res, 200, { ok: true });
     }
     case "unfeature": {
@@ -521,7 +488,7 @@ async function handleAdmin(req, res, action) {
         const doc = JSON.parse(fs.readFileSync(featuredFile, "utf8"));
         doc.configs = (doc.configs || []).filter((item) => item.id !== payload?.id);
         doc.updatedAtUtc = new Date().toISOString();
-        atomicWrite(featuredFile, JSON.stringify(doc, null, 2) + "\n");
+        writeFileAtomic(featuredFile, JSON.stringify(doc, null, 2) + "\n");
       } catch {
         // featured 文件缺失时视为已移除
       }
@@ -564,7 +531,7 @@ async function handleAdmin(req, res, action) {
         });
       }
       const doc = { schemaVersion: 1, updatedAtUtc: new Date().toISOString(), configs: cleaned };
-      atomicWrite(path.join(state.publicDir, "featured-configs.json"), JSON.stringify(doc, null, 2) + "\n");
+      writeFileAtomic(path.join(state.publicDir, "featured-configs.json"), JSON.stringify(doc, null, 2) + "\n");
       return sendJson(res, 200, { ok: true, doc });
     }
     default:
