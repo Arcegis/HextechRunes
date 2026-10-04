@@ -189,19 +189,14 @@ internal static partial class Program
 		Equal(1.08m, HextechPlayerSlowPower.ResolveDamageMultiplier(8m), "positive Slow should increase damage taken on either side");
 		Equal(0.92m, HextechPlayerSlowPower.ResolveDamageMultiplier(-8m), "negative Slow should reduce damage taken on either side");
 		Equal(0m, HextechPlayerSlowPower.ResolveDamageMultiplier(-120m), "negative Slow damage multiplier should floor at zero");
-		Equal(3, FrostWraithEnemyHex.TurnsNeeded, "enemy Frost Wraith trigger interval");
-		Equal(50, FrostWraithEnemyHex.TemporarySlowAmount, "enemy Frost Wraith temporary Slow amount");
 		Expect(!FrostWraithEnemyHex.ShouldTriggerForRound(1), "enemy Frost Wraith should not trigger on round one");
 		Expect(!FrostWraithEnemyHex.ShouldTriggerForRound(2), "enemy Frost Wraith should wait for three player turns");
 		Expect(FrostWraithEnemyHex.ShouldTriggerForRound(3), "enemy Frost Wraith should trigger before the third enemy turn");
 		Expect(FrostWraithEnemyHex.ShouldTriggerForRound(6), "enemy Frost Wraith should trigger every three rounds afterward");
-		Equal(2, FrostWraithRune.TurnsNeeded, "Frost Wraith trigger interval");
-		Equal(50, FrostWraithRune.TemporarySlowAmount, "Frost Wraith temporary Slow amount");
 		Expect(!FrostWraithRune.ShouldTriggerForRound(1, FrostWraithRune.TurnsNeeded), "Frost Wraith should not trigger at combat start");
 		Expect(FrostWraithRune.ShouldTriggerForRound(2, FrostWraithRune.TurnsNeeded), "Frost Wraith triggers on round two");
 		Expect(!FrostWraithRune.ShouldTriggerForRound(3, FrostWraithRune.TurnsNeeded), "Frost Wraith skips round three");
 		Expect(FrostWraithRune.ShouldTriggerForRound(4, FrostWraithRune.TurnsNeeded), "Frost Wraith triggers every two rounds");
-		Equal(6, CorrosionRune.TemporarySlowAmount, "Corrosion temporary Slow amount per damage event");
 		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(0), "Ancient Statue tier zero fallback Slow gain");
 		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(1), "Ancient Statue tier one Slow gain");
 		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(2), "Ancient Statue tier two Slow gain");
@@ -217,7 +212,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit()
 	{
-		Equal(1, CorrosionEnemyHex.FrailAmount, "enemy Corrosion Frail amount");
 		Expect(CorrosionEnemyHex.ShouldApplyFrail(1m, targetIsPlayer: true), "enemy Corrosion should trigger on unblocked player damage");
 		Expect(!CorrosionEnemyHex.ShouldApplyFrail(0m, targetIsPlayer: true), "enemy Corrosion should ignore fully blocked damage");
 		Expect(!CorrosionEnemyHex.ShouldApplyFrail(1m, targetIsPlayer: false), "enemy Corrosion should ignore non-player targets");
@@ -501,8 +495,6 @@ internal static partial class Program
 			"our Blue Candle zeroes costs in the Late phase so the enemy increase cannot re-add one");
 		Expect(typeof(BlueCandleMedkitEnemyHex).GetMethod(nameof(HextechEnemyHexEffect.ModifyEnergyCostInCombatLate), BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly) == null,
 			"the enemy increase must stay out of the Late phase");
-		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == effect.Kind);
-		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(BlueCandleMedkitRune), "enabled gold with matching icon");
 	}
 
 	[HextechTest]

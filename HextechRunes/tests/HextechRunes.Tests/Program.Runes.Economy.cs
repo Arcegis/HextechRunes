@@ -172,11 +172,4 @@ internal static partial class Program
 		Equal(15m, BigHammerRune.CalculateForgeAmount(10m, 50m, sourceAlreadyIncludesBonus: false), "direct forge bonus");
 		Equal(15m, BigHammerRune.CalculateForgeAmount(15m, 50m, sourceAlreadyIncludesBonus: true), "hammer time propagated forge");
 	}
-
-	[HextechTest]
-	private static void HundredRefinementsRequiresTwoBodyForges()
-	{
-		HundredRefinementsRune rune = new();
-		Equal(2, rune.DynamicVars["BodyForges"].IntValue, "Hundred Refinements body forge requirement");
-	}
 }

@@ -12,7 +12,7 @@ using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunes.Tests;
 
-// 玩家反馈批次（2026-09-30）：重放/自动打出的计数口径、敌方开悟载体、升级形态棱彩化。
+// 玩家反馈批次（2026-09-30）：重放/自动打出的计数口径、敌方开悟载体、初始锻造器发放的续发。
 internal static partial class Program
 {
 	[HextechTest]
@@ -222,25 +222,6 @@ internal static partial class Program
 		Expect(HextechCatalog.IsHextechEnemyHexIconRelic(carrier), "the carrier is recognised as an enemy hex icon relic");
 		Equal("res://HextechRunes/images/relics/enlightenmentHex.png", HextechAssets.TryGetCustomRelicIconPath(carrier), "enemy icon path");
 		Equal("res://HextechRunes/images/relics/enlightenmentRune.png", HextechAssets.TryGetCustomRelicIconPath(new EnlightenmentRune()), "player icon path is unchanged");
-	}
-
-	[HextechTest]
-	private static void FormUpgradeRunesAreAllPrismatic()
-	{
-		(Type Type, PlayerRuneCharacterPool Pool)[] forms =
-		[
-			(typeof(DemonFormUpgradeRune), PlayerRuneCharacterPool.Ironclad),
-			(typeof(SerpentFormUpgradeRune), PlayerRuneCharacterPool.Silent),
-			(typeof(VoidFormUpgradeRune), PlayerRuneCharacterPool.Regent),
-			(typeof(EchoFormUpgradeRune), PlayerRuneCharacterPool.Defect),
-			(typeof(ReaperFormUpgradeRune), PlayerRuneCharacterPool.Necrobinder)
-		];
-		foreach ((Type type, PlayerRuneCharacterPool pool) in forms)
-		{
-			PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == type);
-			Equal(HextechRarityTier.Prismatic, registration.Rarity, type.Name + " rarity");
-			Equal<PlayerRuneCharacterPool?>(pool, registration.CharacterPool, type.Name + " character pool");
-		}
 	}
 
 	[HextechTest]

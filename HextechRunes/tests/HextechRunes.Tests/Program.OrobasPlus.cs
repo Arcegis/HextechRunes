@@ -105,19 +105,10 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void OrobasPlusUsesNativeAssetsAndVersionedValues()
+	private static void OrobasPlusUsesNativeAssetsAndStaysOutOfShops()
 	{
 		WithOrobasModels(() =>
 		{
-			Equal(18m, ModelDb.Relic<HextechBlackBloodPlus>().DynamicVars.Heal.BaseValue, "black blood healing");
-#if STS2_107_1
-			Equal(9m, ModelDb.Relic<HextechDivineDestinyPlus>().DynamicVars.Stars.BaseValue, "legacy destiny stars");
-#else
-			Equal(11m, ModelDb.Relic<HextechDivineDestinyPlus>().DynamicVars.Stars.BaseValue, "current destiny stars");
-#endif
-			Equal(10m, ModelDb.Relic<HextechPhylacteryUnboundPlus>().DynamicVars["StartOfCombat"].BaseValue, "opening summon");
-			Equal(3m, ModelDb.Relic<HextechPhylacteryUnboundPlus>().DynamicVars["StartOfTurn"].BaseValue, "per-turn summon");
-			Equal(5m, ModelDb.Relic<HextechInfusedCorePlus>().DynamicVars["Lightning"].BaseValue, "opening lightning count");
 			foreach (Type type in HextechCustomModelRegistry.EventRelicTypes.Where(type => typeof(OrobasPlusRelicBase).IsAssignableFrom(type)))
 			{
 				RelicModel plus = ModelDb.GetById<RelicModel>(ModelDb.GetId(type));

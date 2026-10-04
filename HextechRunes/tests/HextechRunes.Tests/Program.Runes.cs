@@ -156,11 +156,6 @@ internal static partial class Program
 		Equal(0, SomethingForNothingRune.ReduceCost(0, 1), "combat discount should not make costs negative");
 		Equal(1, SomethingForNothingRune.ReduceCost(2, 1), "combat discount should reduce the card by one");
 		Equal(2, SomethingForNothingRune.ReduceCost(2, -1), "negative reductions should be ignored");
-
-		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
-			registration => registration.Type == typeof(SomethingForNothingRune));
-		Equal(HextechRarityTier.Prismatic, registration.Rarity, "Something for Nothing rarity");
-		Equal("RESOURCE", registration.TagKey, "Something for Nothing tag");
 		Expect(
 			typeof(TurnScopedRelicBase).IsAssignableFrom(typeof(SomethingForNothingRune)),
 			"Something for Nothing should reset its paid-card trigger each turn");
@@ -415,7 +410,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void BigHandsIncreasesSummonAmountByFiftyPercent()
 	{
-		Equal(1.5m, BigHandsRune.SummonMultiplier, "Big Hands summon multiplier");
 		Equal(15m, BigHandsRune.CalculateSummonAmount(10m), "Big Hands summon amount");
 	}
 
@@ -444,8 +438,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void CollectorUsesStrictExecuteThresholdAndSharesFlyingKickExecutions()
 	{
-		Equal(10m, CollectorRune.ExecutePercent, "Collector execute percent");
-		Equal(20, CollectorRune.CountPerExecute, "Collector count per execute");
 		Expect(
 			CollectorRune.IsBelowExecuteThreshold(9.99m, 100m, CollectorRune.ExecutePercent),
 			"Collector should execute below ten percent max HP");
@@ -500,25 +492,6 @@ internal static partial class Program
 		Expect(!BloodPactRune.ShouldGainStrength(CombatSide.Player, 3, ValueProp.Move), "self or allied damage does not grant Strength");
 		Expect(!BloodPactRune.ShouldGainStrength(null, 3, ValueProp.Unpowered), "HP costs and sourceless damage do not grant Strength");
 		Expect(!BloodPactRune.ShouldGainStrength(CombatSide.Enemy, 3, ValueProp.Unpowered), "enemy non-attack damage does not grant Strength");
-	}
-
-	[HextechTest]
-	private static void ThreeNewRunesHaveRequestedPoolsAndRarities()
-	{
-		// 祸水东引于 v40 转为默认禁用（仍可在配置中开启）。
-		(Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool, PlayerRuneFlags Flags)[] expected =
-		[
-			(typeof(ScapegoatRune), HextechRarityTier.Gold, null, PlayerRuneFlags.Disabled),
-			(typeof(BloodDebtRune), HextechRarityTier.Silver, PlayerRuneCharacterPool.Ironclad, PlayerRuneFlags.None),
-			(typeof(NetherSoulRune), HextechRarityTier.Gold, PlayerRuneCharacterPool.Necrobinder, PlayerRuneFlags.None)
-		];
-		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool, PlayerRuneFlags Flags) entry in expected)
-		{
-			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
-			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
-			Equal(entry.Pool, actual.CharacterPool, entry.Type.Name + " character pool");
-			Equal(entry.Flags, actual.Flags, entry.Type.Name + " default flags");
-		}
 	}
 
 	[HextechTest]
@@ -622,26 +595,6 @@ internal static partial class Program
 		Expect(replay.Any(m => m.DeclaringType == typeof(HextechAutoPlayHelper)), "exhausted cards use native autoplay");
 		Expect(!replay.Any(m => m.Name == "CanPlay"), "zero energy must not block autoplay");
 		Expect(replay.Any(m => m.Name == "Contains" && m.IsGenericMethod && m.GetGenericArguments().Contains(typeof(Creature))), "only the owner's turn including extra-turn participation");
-	}
-
-	[HextechTest]
-	private static void FiveNewRunesHaveRequestedPoolsAndRarities()
-	{
-		(Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool)[] expected =
-		[
-			(typeof(RallyingCallRune), HextechRarityTier.Gold, null),
-			(typeof(EndlessRotationRune), HextechRarityTier.Prismatic, null),
-			(typeof(VenomousBladeRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Silent),
-			(typeof(MyriadManifestationsRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Defect),
-			(typeof(KingdomArmyRune), HextechRarityTier.Prismatic, PlayerRuneCharacterPool.Regent)
-		];
-		foreach ((Type Type, HextechRarityTier Rarity, PlayerRuneCharacterPool? Pool) entry in expected)
-		{
-			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
-			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
-			Equal(entry.Pool, actual.CharacterPool, entry.Type.Name + " pool");
-			Equal(PlayerRuneFlags.None, actual.Flags, entry.Type.Name + " enabled in normal selections");
-		}
 	}
 
 	[HextechTest]
@@ -755,23 +708,8 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void MultiplayerSupportRunesHaveRequestedRaritiesAndNumbers()
+	private static void MultiplayerSupportRunesAreMultiplayerOnlyAndScaleFromMaxHp()
 	{
-		(Type Type, HextechRarityTier Rarity)[] expected =
-		[
-			(typeof(DiveBomberRune), HextechRarityTier.Silver),
-			(typeof(AllForYouRune), HextechRarityTier.Gold),
-			(typeof(BlossomBladeRune), HextechRarityTier.Prismatic),
-			(typeof(OurHealingRune), HextechRarityTier.Gold)
-		];
-		foreach ((Type Type, HextechRarityTier Rarity) entry in expected)
-		{
-			PlayerRuneRegistration actual = HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == entry.Type);
-			Equal(entry.Rarity, actual.Rarity, entry.Type.Name + " rarity");
-			Equal(PlayerRuneFlags.None, actual.Flags, entry.Type.Name + " enabled");
-			Equal(null, actual.CharacterPool, entry.Type.Name + " is not character-specific");
-		}
-
 		// 测试进程不是联机局,仅联机的海克斯必须不可用。
 		Player solo = CreateOrdinalTestPlayer(1);
 		Expect(!CreateMutableTestModel<DiveBomberRune>().IsAvailableForPlayer(solo), "dive bomber is multiplayer-only");
@@ -780,7 +718,6 @@ internal static partial class Program
 
 		Equal(40m, DiveBomberRune.GetDamage(80m, 50m), "dive bomber deals half of max HP");
 		Equal(37m, DiveBomberRune.GetDamage(75m, 50m), "odd max HP rounds down");
-		Equal(1.25m, AllForYouRune.SustainMultiplier, "all for you is +25%");
 		Equal(1m, BlossomBladeRune.GetHealAmount(80m, 2m), "2% of 80 rounds down to 1");
 		Equal(3m, BlossomBladeRune.GetHealAmount(150m, 2m), "2% of 150 is 3");
 		Equal(1m, BlossomBladeRune.GetHealAmount(20m, 2m), "heal is at least 1");

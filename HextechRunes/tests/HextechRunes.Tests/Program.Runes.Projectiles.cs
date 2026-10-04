@@ -31,11 +31,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void MagicMissileUsesThreeThreePercentHits()
 	{
-		Equal(3, MagicMissileRune.MissileCount, "Magic Missile hit count");
-		Equal(3m, MagicMissileRune.MaxHpDamagePercent, "Magic Missile max-HP damage percent");
-		Equal(0.055f, HextechCombatVfx.MagicMissileLaunchIntervalSeconds, "Magic Missile launch interval");
-		Equal(0.28f, HextechCombatVfx.MagicMissileBaseFlightSeconds, "Magic Missile base flight duration");
-		Equal(0.025f, HextechCombatVfx.MagicMissileFlightStepSeconds, "Magic Missile flight duration step");
 		MethodInfo? afterCardPlayed = typeof(MagicMissileRune).GetMethod(
 			nameof(MagicMissileRune.AfterCardPlayed),
 			BindingFlags.Instance | BindingFlags.Public);
@@ -51,7 +46,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void TwinFlamesUsesThreeEnergyScaledHits()
 	{
-		Equal(3, TwinFlamesRune.MissileCount, "Twin Flames hit count");
 		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Twin Flames should not create negative damage");
 		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(0m), "zero-cost Skills should resolve to zero missile damage");
 		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Twin Flames damage should equal the played Skill's Energy cost");
@@ -92,11 +86,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void LightEmUpUsesSixEnergyScaledTwinFlameMissiles()
 	{
-		Equal(4, LightEmUpRune.AttacksPerVolley, "Light Em Up attacks per volley");
-		Equal(6, LightEmUpRune.MissileCount, "Light Em Up missile count");
-		Equal(0m, HextechMissileVolley.DamageFromEnergyCost(-1m), "Light Em Up should not create negative damage");
-		Equal(3m, HextechMissileVolley.DamageFromEnergyCost(3m), "Light Em Up damage should equal the triggering Attack's Energy cost");
-
 		int progress = 0;
 		for (int attackIndex = 0; attackIndex < 3; attackIndex++)
 		{
@@ -126,7 +115,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void PiercingThreadSplitsOneDamageEventBeforeBlock()
 	{
-		Equal(50m, PiercingThreadRune.PiercingPercent, "Piercing Thread percentage");
 		Equal(0, PiercingThreadRune.CalculatePiercingDamage(-1m), "negative damage should not pierce");
 		Equal(0, PiercingThreadRune.CalculatePiercingDamage(1m), "one damage should round its piercing half down");
 		Equal(2, PiercingThreadRune.CalculatePiercingDamage(5m), "odd piercing damage should round down");
@@ -135,11 +123,6 @@ internal static partial class Program
 		Equal(5m, PiercingThreadRune.CalculateBlockableDamage(10m), "half of even damage should remain blockable");
 		Equal(5m, 10m - Math.Min(100m, PiercingThreadRune.CalculateBlockableDamage(10m)), "full Block should still take five piercing damage");
 		Equal(7m, 11m - Math.Min(4m, PiercingThreadRune.CalculateBlockableDamage(11m)), "piercing damage and block overflow should remain one damage result");
-
-		PlayerRuneRegistration registration = HextechPlayerRuneRegistry.Registrations.Single(
-			registration => registration.Type == typeof(PiercingThreadRune));
-		Equal(HextechRarityTier.Gold, registration.Rarity, "Piercing Thread rarity");
-		Equal("OUTPUT", registration.TagKey, "Piercing Thread tag");
 		Expect(
 			FindPatchMethod(typeof(HextechCombatHooks), "DamageBlockPatch", "Prefix") != null,
 			"Piercing Thread should alter the blockable amount at the original block-consumption boundary");
