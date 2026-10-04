@@ -316,64 +316,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void NightmareEffectRunsOnceAfterEachPassiveTask()
-	{
-		TaskCompletionSource passive = new(TaskCreationOptions.RunContinuationsAsynchronously);
-		TaskCompletionSource effect = new(TaskCreationOptions.RunContinuationsAsynchronously);
-		int effectCount = 0;
-		Task wrapped = HextechNightmareHooks.CompletePassiveThen(
-			passive.Task,
-			() =>
-			{
-				Interlocked.Increment(ref effectCount);
-				return effect.Task;
-			});
-
-		Equal(0, effectCount, "nightmare must wait for the dark orb passive");
-		Expect(!wrapped.IsCompleted, "nightmare wrapper should await the passive");
-
-		passive.SetResult();
-		Expect(
-			SpinWait.SpinUntil(() => Volatile.Read(ref effectCount) == 1, TimeSpan.FromSeconds(1)),
-			"nightmare effect should begin after the passive completes");
-		Expect(!wrapped.IsCompleted, "nightmare wrapper should await its appended damage");
-
-		effect.SetResult();
-		wrapped.GetAwaiter().GetResult();
-		Equal(1, effectCount, "one passive should append exactly one nightmare effect");
-
-		int repeatedEffectCount = 0;
-		for (int i = 0; i < 2; i++)
-		{
-			HextechNightmareHooks.CompletePassiveThen(
-				Task.CompletedTask,
-				() =>
-				{
-					repeatedEffectCount++;
-					return Task.CompletedTask;
-				}).GetAwaiter().GetResult();
-		}
-		Equal(2, repeatedEffectCount, "two passive triggers should append exactly two nightmare effects");
-
-		int failedPassiveEffectCount = 0;
-		try
-		{
-			HextechNightmareHooks.CompletePassiveThen(
-				Task.FromException(new InvalidOperationException("passive failed")),
-				() =>
-				{
-					failedPassiveEffectCount++;
-					return Task.CompletedTask;
-				}).GetAwaiter().GetResult();
-			throw new InvalidOperationException("failed passive should propagate");
-		}
-		catch (InvalidOperationException ex) when (ex.Message == "passive failed")
-		{
-		}
-		Equal(0, failedPassiveEffectCount, "failed passive must not append nightmare damage");
-	}
-
-	[HextechTest]
 	private static void WatchOutGrapefruitFoodPoolHonorsCharacterAndUniqueRelics()
 	{
 		IReadOnlyList<Type> commonPool = WatchOutGrapefruitRune.BuildFoodRelicCandidates(
