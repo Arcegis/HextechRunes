@@ -303,7 +303,7 @@ internal static partial class HextechRuneSelectionCoordinator
 					player.NetId,
 					selectedId);
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
 				// 发放中途抛错时遗物可能已进背包;以背包为准记下提交边界,记录和断线由批次外层统一处理。
 				if (player.Relics.Any(relic => ReferenceEquals(relic, selectedRelic)))
@@ -315,7 +315,16 @@ internal static partial class HextechRuneSelectionCoordinator
 						selectedId);
 				}
 
-				HextechLog.Warn("Mayhem", $"Rune obtain failed: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} relic={selectedId.Category}:{selectedId.Entry}");
+				string message = $"Rune obtain failed: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} relic={selectedId.Category}:{selectedId.Entry}";
+				HextechLog.Warn("Mayhem", message);
+				// 外层把取消异常当作正常退出、不断线;发放已开始后的取消仍要断线,否则两端提交边界可能不同。
+				if (ex is OperationCanceledException)
+				{
+					AbortMultiplayerChoiceTransaction(
+						$"rune-choice act={actIndex} ordinal={choiceOrdinal}",
+						message);
+				}
+
 				throw;
 			}
 		}
