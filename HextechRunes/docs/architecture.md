@@ -86,7 +86,7 @@ Platform/Hooks/Config/Localization/Telemetry
 - **拓展包只走公开 API**：售价修正（`RegisterForgeShopPriceModifier`）、归属判定（`IsHextechRelic`）、稳定哈希（`StableIndex`）都经 `HextechRunesApi`，不反射 internal 类型、不复制实现。`SponsorPatcher` 仍独立实现（公开 `HextechPatcher` 会把大量内部类型带进 API 面），约定对齐本体，由声明完整性测试守护。
 - **选择同步**：锻造选择与遗物选项选择共用 `HextechSyncedRelicChoice` 事务和 `HextechChoiceCodec.RelicChoice`（消息类型 5/7，线格式不变）；远端核对候选 ID 后返回本端同位置的候选实例。远端载荷先做内容校验：符文候选必须是已登记的玩家符文；敌方调整校验槽位数、海克斯来源与每槽重掷上限。任何一项不通过都走 `CreateProtocolFailure`——协议失败的唯一出口，只记录一次。
 - **外部扩展点**：`HextechRuneGeneration` 对第三方混沌变换的结果做校验（同条数、全部是已登记玩家符文），异常或不合法时回退原候选并告警；外部 API 登记本体内置的符文/锻造在任何副作用之前被拒绝。
-- **敌方海克斯分发**：洗牌、抽牌、能否打出三类事件只对本局战斗中的玩家侧分发，效果层不再重复判断；回合钩子在 Power 与 Modifier 基类两边都有 `*ForParticipants` 入口，兼容桥不再吞掉 participants。
+- **敌方海克斯分发**：`AfterShuffle`、`AfterCardDrawn`、`ShouldPlay` 只对本局战斗中的玩家侧分发；`ShouldDraw` 与其余钩子在分发层不过滤，玩家侧与本局归属由各效果自己判断（不少效果里的同类判断与分发层重复，统一收口要逐个核对钩子语义，暂不做）。回合钩子在 Power 与 Modifier 基类两边都有 `*ForParticipants` 入口，兼容桥不再吞掉 participants。
 - **Modifier 不承载单项内容**：白洞由牌自己监听 `AfterCardDrawn`；雷暴升级的算法与按牌层数在 `StormUpgradeRune` 里，只有调用时机仍由 Modifier 分发（保证补发闪电排在所有监听者之后）。
 
 ## Source of truth 方向
