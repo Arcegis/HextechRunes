@@ -15,21 +15,12 @@ public sealed class SpinToWinRune : HextechRelicBase
 		return ConvertDelayedResource(choiceContext, power, amount);
 	}
 
-	internal static bool IsConvertiblePower(PowerModel power)
-	{
-		return power is DrawCardsNextTurnPower
-			or EnergyNextTurnPower
-			or SummonNextTurnPower
-			or StarNextTurnPower;
-	}
-
 	private async Task ConvertDelayedResource(PlayerChoiceContext choiceContext, PowerModel power, decimal amount)
 	{
 		if (Owner.Creature.IsDead
 			|| power.Owner != Owner.Creature
 			|| amount <= 0m
-			|| power.Amount <= 0
-			|| !IsConvertiblePower(power))
+			|| power.Amount <= 0)
 		{
 			return;
 		}
@@ -49,6 +40,8 @@ public sealed class SpinToWinRune : HextechRelicBase
 			case StarNextTurnPower:
 				await PlayerCmd.GainStars(pendingAmount, Owner);
 				break;
+			default:
+				return;
 		}
 
 		await PowerCmd.Remove(power);

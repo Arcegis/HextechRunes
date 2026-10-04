@@ -388,16 +388,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void SpinToWinRecognizesSupportedDelayedResources()
-	{
-		Expect(SpinToWinRune.IsConvertiblePower(new DrawCardsNextTurnPower()), "next-turn draw should convert");
-		Expect(SpinToWinRune.IsConvertiblePower(new EnergyNextTurnPower()), "next-turn energy should convert");
-		Expect(SpinToWinRune.IsConvertiblePower(new SummonNextTurnPower()), "next-turn summon should convert");
-		Expect(SpinToWinRune.IsConvertiblePower(new StarNextTurnPower()), "next-turn stars should convert");
-		Expect(!SpinToWinRune.IsConvertiblePower(new StrengthPower()), "unrelated powers should remain unchanged");
-	}
-
-	[HextechTest]
 	private static void PlayerSustainRunesUseExpectedMaxHpRules()
 	{
 		Equal(0, HextechRelicBase.CountThresholdCrossings(0, 2, 3), "Devil's Dance should wait for three Attacks");

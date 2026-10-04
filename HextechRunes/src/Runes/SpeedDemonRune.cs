@@ -7,16 +7,12 @@ public sealed class SpeedDemonRune : TurnScopedRelicBase
 
 	private bool _triggeredThisTurn;
 
+	// 旧版本存档兼容占位：回合内状态不进存档、不进联机校验；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedTriggeredThisTurn
 	{
 		get => false;
-		set
-		{
-			// Legacy save compatibility: this is turn-scoped runtime state and must not enter multiplayer checksums.
-			_triggeredThisTurn = false;
-			UpdateTurnScopedStateIdentity(null);
-		}
+		set { }
 	}
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)

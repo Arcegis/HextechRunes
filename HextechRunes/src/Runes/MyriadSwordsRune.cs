@@ -87,10 +87,7 @@ public sealed class MyriadSwordsRune : HextechRelicBase
 		}
 		finally
 		{
-			if (Owner.PlayerCombatState != null && Owner.Creature.CombatState != null)
-			{
-				HextechSovereignBladeVfxSync.Reconcile(Owner);
-			}
+			HextechSovereignBladeVfxSync.Reconcile(Owner);
 			_discharging = false;
 		}
 	}

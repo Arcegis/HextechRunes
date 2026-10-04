@@ -22,8 +22,8 @@ public sealed class MarkovBabbleRune : HextechRelicBase
 			return;
 		}
 
-		OrbQueue? orbQueue = Owner.PlayerCombatState?.OrbQueue;
-		int emptySlots = Math.Max(0, (orbQueue?.Capacity ?? 0) - (orbQueue?.Orbs.Count ?? 0));
+		OrbQueue orbQueue = Owner.PlayerCombatState!.OrbQueue;
+		int emptySlots = Math.Max(0, orbQueue.Capacity - orbQueue.Orbs.Count);
 		if (emptySlots <= 0)
 		{
 			return;

@@ -26,7 +26,7 @@ public sealed class TauntRune : HextechRelicBase
 			return;
 		}
 
-		Flash(power.Owner == null ? Array.Empty<Creature>() : [power.Owner]);
+		Flash([power.Owner]);
 		await CardPileCmd.Draw(new BlockingPlayerChoiceContext(), DynamicVars.Cards.BaseValue, Owner, fromHandDraw: false);
 	}
 }

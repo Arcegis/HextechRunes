@@ -19,7 +19,7 @@ public sealed class NeutralizeUpgradeRune : CardUpgradeRuneBase<Neutralize>
 
 	internal override bool MeetsCardAvailabilityRequirement(IEnumerable<CardModel> deckCards)
 	{
-		return deckCards.Any(static card => card is Neutralize or Suppress);
+		return deckCards.Any(IsSupportedCard);
 	}
 
 	protected override bool IsAvailableForCharacter(Player player)
@@ -34,7 +34,6 @@ public sealed class NeutralizeUpgradeRune : CardUpgradeRuneBase<Neutralize>
 			|| Owner.Creature.IsDead
 			|| !IsSupportedCard(card)
 			|| Owner.Creature.CombatState == null
-			|| !CombatManager.Instance.IsInProgress
 			|| CombatManager.Instance.IsOverOrEnding)
 		{
 			return;

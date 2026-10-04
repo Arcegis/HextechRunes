@@ -91,7 +91,7 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 			chancePercent,
 			"universal-scope-refund",
 			HextechStableRandom.PlayerKey(Owner),
-			Owner.Creature.CombatState?.RoundNumber.ToString() ?? "-1",
+			Owner.Creature.CombatState!.RoundNumber.ToString(),
 			rollOrdinal.ToString(),
 			HextechStableRandom.CardKey(cardPlay.Card));
 	}

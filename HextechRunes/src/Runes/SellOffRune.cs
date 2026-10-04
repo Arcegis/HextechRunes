@@ -35,7 +35,7 @@ public sealed class SellOffRune : HextechRelicBase
 		{
 			while (_pendingDiscardedCards.TryDequeue(out CardModel? discardedCard))
 			{
-				if (discardedCard == null || !CanAutoPlayDiscardedCard(discardedCard))
+				if (!CanAutoPlayDiscardedCard(discardedCard))
 				{
 					continue;
 				}
@@ -67,14 +67,14 @@ public sealed class SellOffRune : HextechRelicBase
 			await CardPileCmd.Add(card, PileType.Hand, CardPilePosition.Top, this, skipVisuals: true);
 		}
 
-		HextechCombatState? combatState = Owner.Creature.CombatState;
+		HextechCombatState combatState = Owner.Creature.CombatState!;
 		int targetOrdinal = ConsumeCombatProcOrdinal(nameof(SellOffRune), ref _autoPlayTargetsThisCombat);
 		Creature? target = RequiresEnemyTarget(card)
 			? HextechRuneTargeting.PickRandomHittableEnemy(
 				Owner,
 				combatState,
 				"sell-off",
-				combatState?.RoundNumber.ToString() ?? "-1",
+				combatState.RoundNumber.ToString(),
 				targetOrdinal.ToString(),
 				card.Id.Entry)
 			: null;
