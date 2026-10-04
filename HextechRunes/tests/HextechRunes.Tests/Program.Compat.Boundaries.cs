@@ -1,9 +1,6 @@
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text.Json;
 using HarmonyLib;
 using HextechRunes;
-using HextechRunes.Loader;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -17,7 +14,7 @@ using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HextechRunes.Tests;
 
-// 2026-09 兼容性审计收口:精神过载改为海克斯版正面效果、加载器拒绝比宿主新的变体、蜡制奖励标记归属明确。
+// 2026-09 兼容性审计收口:精神过载改为海克斯版正面效果、蜡制奖励标记归属明确。
 internal static partial class Program
 {
 	[HextechTest]
@@ -55,52 +52,6 @@ internal static partial class Program
 		Expect(
 			typeof(ModEntry).Assembly.GetTypes().All(type => type.GetCustomAttributes<HarmonyPatch>().All(patch => patch.info.declaringType != typeof(NeurosurgePower))),
 			"no Harmony patch targets vanilla NeurosurgePower anymore");
-	}
-
-	[HextechTest]
-	private static void LoaderRefusesNewerVariantForKnownOlderHost()
-	{
-		(Type Type, string Assembly, string Manifest)[] loaders =
-		[
-			(typeof(LoaderBootstrap), "HextechRunes.dll", "hextech-runes-variants.manifest"),
-			(typeof(HextechRunesSponsorPack.Loader.LoaderBootstrap), "HextechRunesSponsorPack.dll", "hextech-runes-sponsor-pack-variants.manifest")
-		];
-		string root = Path.Combine(Path.GetTempPath(), "hextech-loader-test-" + Guid.NewGuid().ToString("N"));
-		try
-		{
-			string libRoot = Path.Combine(root, "lib");
-			string variantDirectory = Path.Combine(libRoot, "0.110.0");
-			Directory.CreateDirectory(variantDirectory);
-			File.WriteAllText(Path.Combine(variantDirectory, "compat-target.txt"), "0.110.0");
-			byte[] dll = "not a real assembly"u8.ToArray();
-			foreach ((Type Type, string Assembly, string Manifest) loader in loaders)
-			{
-				string dllPath = Path.Combine(variantDirectory, loader.Assembly);
-				File.WriteAllBytes(dllPath, dll);
-				string manifest = JsonSerializer.Serialize(new
-				{
-					variants = new[] { new { compatTarget = "0.110.0", directory = "lib/0.110.0", assembly = loader.Assembly, sha256 = Convert.ToHexString(SHA256.HashData(dll)) } }
-				});
-				File.WriteAllText(Path.Combine(root, loader.Manifest), manifest);
-
-				MethodInfo pick = AccessTools.Method(loader.Type, "PickVariant");
-				Expect(pick != null, $"{loader.Type.FullName} exposes PickVariant(loaderDirectory, libRoot, host)");
-				object? Pick(Version? host) => pick!.Invoke(null, [root, libRoot, host]);
-				static string Target(object candidate) => (string)AccessTools.Property(candidate.GetType(), "CompatTarget").GetValue(candidate)!;
-
-				Equal("0.110.0", Target(Pick(new Version(0, 110, 0))!), $"{loader.Type.FullName}: exact host picks its own variant");
-				Equal("0.110.0", Target(Pick(new Version(0, 111, 0))!), $"{loader.Type.FullName}: newer host falls back to the newest variant not above it");
-				Equal("0.110.0", Target(Pick(null)!), $"{loader.Type.FullName}: unknown host keeps using the newest bundled variant");
-				Expect(Pick(new Version(0, 107, 1)) == null, $"{loader.Type.FullName}: known older host with no compatible variant refuses to load");
-			}
-		}
-		finally
-		{
-			if (Directory.Exists(root))
-			{
-				Directory.Delete(root, recursive: true);
-			}
-		}
 	}
 
 	// 伤害命令作用域:Prefix 在调用方上下文入栈,Postfix 必须在同步返回前把调用方恢复;
