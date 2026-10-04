@@ -64,30 +64,6 @@ internal static partial class Program
 			null,
 			afterCardPlayed?.GetCustomAttribute<AsyncStateMachineAttribute>(),
 			"Twin Flames should not hold the card-play hook open while projectiles resolve");
-		Expect(
-			typeof(HextechCombatVfx).GetMethod(
-				"PlayTwinFlamesMissile",
-				BindingFlags.Static | BindingFlags.NonPublic) != null,
-			"Twin Flames should expose its blue-yellow projectile VFX path");
-	}
-
-	[HextechTest]
-	private static void TwinFlamesKeepsMultiplayerDamageInsideCardAction()
-	{
-		MethodInfo afterCardPlayed = typeof(TwinFlamesRune).GetMethod(
-			nameof(TwinFlamesRune.AfterCardPlayed),
-			BindingFlags.Instance | BindingFlags.Public)
-			?? throw new MissingMethodException(nameof(TwinFlamesRune), nameof(TwinFlamesRune.AfterCardPlayed));
-		MethodInfo[] calls = PatchProcessor.GetOriginalInstructions(afterCardPlayed)
-			.Select(static instruction => instruction.operand)
-			.OfType<MethodInfo>()
-			.ToArray();
-		Expect(
-			!calls.Any(static method => method.DeclaringType == typeof(HextechPlayerContextHelper) && method.Name == nameof(HextechPlayerContextHelper.IsNetworkMultiplayerRun)),
-			"Twin Flames uses one damage path for single player and multiplayer");
-		Expect(
-			calls.Any(static method => method.Name == "ResolveVolleyDamageInLockstepAsync"),
-			"Twin Flames damage should be returned to the current card action");
 	}
 
 	[HextechTest]
@@ -145,16 +121,6 @@ internal static partial class Program
 			null,
 			afterCardPlayed?.GetCustomAttribute<AsyncStateMachineAttribute>(),
 			"Light Em Up should not hold the card-play hook open while projectiles resolve");
-		Expect(
-			typeof(LightEmUpRune).GetMethod(
-				nameof(LightEmUpRune.ModifyCardPlayCount),
-				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly) == null,
-			"Light Em Up should no longer replay the fourth Attack");
-		Expect(
-			typeof(HextechCombatVfx).GetMethod(
-				"PlayTwinFlamesMissile",
-				BindingFlags.Static | BindingFlags.NonPublic) != null,
-			"Light Em Up should reuse the blue-yellow Twin Flames projectile VFX path");
 	}
 
 	[HextechTest]

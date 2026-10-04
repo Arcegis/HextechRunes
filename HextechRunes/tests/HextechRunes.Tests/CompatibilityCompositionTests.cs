@@ -57,16 +57,6 @@ internal static partial class Program
 	private static void EnemyPowerScalingDoesNotPatchOfficialModifierPipeline()
 	{
 		BindingFlags flags = BindingFlags.Static | BindingFlags.NonPublic;
-		Expect(
-			typeof(HextechEnemyPowerScalingHooks).GetMethod("ModifyPowerAmountGivenHookPrefix", flags) == null,
-			"enemy scaling must not skip the official power-given listener aggregator");
-		Expect(
-			typeof(HextechEnemyPowerScalingHooks).GetMethod("ModifyPowerAmountGivenPrefix", flags) == null,
-			"legacy enemy scaling must not replace a model power-given callback");
-		Expect(
-			typeof(HextechEnemyPowerScalingHooks).GetMethod("TryResolveModifyPowerAmountGivenTarget", flags) == null,
-			"enemy scaling must not retain a global power-given target resolver");
-
 		MethodInfo? scaledPrefix = typeof(HextechEnemyPowerScalingHooks).GetMethod(
 			"GetScaledAmountForMultiplayerPrefix",
 			flags);

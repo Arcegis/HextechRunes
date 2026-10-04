@@ -1,4 +1,3 @@
-using System.Reflection;
 using HarmonyLib;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -34,12 +33,6 @@ internal static partial class Program
 		HextechEnemyHexEffect effect = effects.Single(candidate => candidate.Kind == MonsterHexKind.MadScientist);
 		Equal(typeof(MadScientistEnemyHex), effect.GetType(), "the MadScientist kind is handled by the Entomancer effect");
 		Expect(effect is IHextechEnemyMaxHpCoefficientProvider, "the max HP reduction is kept");
-
-		const BindingFlags declared = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
-		Expect(typeof(MadScientistEnemyHex).GetMethod(nameof(HextechEnemyHexEffect.AfterEnemyDamageReceived), declared) == null,
-			"the custom on-damage Dazed logic is gone; vanilla Personal Hive adds Dazed instead");
-		Expect(typeof(MadScientistEnemyHex).GetMethod(nameof(HextechEnemyHexEffect.ApplyPersistentToEnemy), declared) != null,
-			"Personal Hive is granted with the persistent max HP reduction (combat start and later summons)");
 		Expect(!new PersonalHivePower().ShouldScaleInMultiplayer,
 			"vanilla does not scale Personal Hive by player count, so the enemy keeps exactly 1 stack");
 

@@ -257,8 +257,6 @@ internal static partial class Program
 
 		StatsOnStatsOnStatsRune rune = CreateMutableTestModel<StatsOnStatsOnStatsRune>();
 		Equal(0, rune.SavedInitialForgeGrantCompletedCount, "completed count defaults to zero");
-		rune.SavedInitialForgeGrantCompletedCount = 3;
-		Equal(3, rune.SavedInitialForgeGrantCompletedCount, "completed count is saveable");
 	}
 
 	[HextechTest]

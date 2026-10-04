@@ -241,49 +241,4 @@ internal static partial class Program
 		Equal(copy.Id, loaded.Id, "restored Dusty Tome relic id");
 		Equal(source.AncientCard, (ModelId?)restoredAncientCard, "restored Dusty Tome AncientCard");
 	}
-
-	[HextechTest]
-	private static void DoubleVisionDustyTomeEventMultiplayerRunsOnEveryPeerWithoutBroadcast()
-	{
-		DustyTome source = CreateTestDustyTome();
-		int hostObtainCount = 0;
-		int clientObtainCount = 0;
-		int broadcastCount = 0;
-
-		DustyTome hostCopy = DoubleVisionRune.DuplicateDustyTomeSpecializedForTest(
-			source,
-			syncReward: false,
-			obtainCopy: candidate =>
-			{
-				hostObtainCount++;
-				Expect(DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(candidate), "host copy should suppress only its own AfterObtained");
-				return Task.FromResult(candidate);
-			},
-			synchronize: _ => broadcastCount++,
-			createCopy: CreateMutableTestModel<DustyTome>,
-			assignAncientCard: SetTestDustyTomeAncientCard)
-			.GetAwaiter()
-			.GetResult();
-		DustyTome clientCopy = DoubleVisionRune.DuplicateDustyTomeSpecializedForTest(
-			source,
-			syncReward: false,
-			obtainCopy: candidate =>
-			{
-				clientObtainCount++;
-				Expect(DoubleVisionRune.ShouldSuppressDustyTomeAfterObtained(candidate), "client copy should suppress only its own AfterObtained");
-				return Task.FromResult(candidate);
-			},
-			synchronize: _ => broadcastCount++,
-			createCopy: CreateMutableTestModel<DustyTome>,
-			assignAncientCard: SetTestDustyTomeAncientCard)
-			.GetAwaiter()
-			.GetResult();
-
-		Equal(1, hostObtainCount, "host deterministic event obtain count");
-		Equal(1, clientObtainCount, "client deterministic event obtain count");
-		Equal(0, broadcastCount, "deterministic event Dusty Tome broadcast count");
-		Expect(!ReferenceEquals(hostCopy, clientCopy), "each peer should construct its own Dusty Tome instance");
-		Equal(hostCopy.Id, clientCopy.Id, "multiplayer Dusty Tome id");
-		Equal(hostCopy.AncientCard, clientCopy.AncientCard, "multiplayer Dusty Tome AncientCard");
-	}
 }

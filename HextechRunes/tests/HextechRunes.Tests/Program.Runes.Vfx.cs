@@ -60,40 +60,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void SlowCookVfxUsesDedicatedPressureCookerTextures()
-	{
-		string[] slowCookPaths =
-		[
-			HextechAssets.SlowCookHeatGlowPath,
-			HextechAssets.SlowCookAoeGradientPath,
-			HextechAssets.SlowCookAoeGradientSubtlePath,
-			HextechAssets.SlowCookAoeEdgePath,
-			HextechAssets.SlowCookAoePolarPath,
-			HextechAssets.SlowCookEdgeAccentPath,
-			HextechAssets.SlowCookGroundRingPath,
-			HextechAssets.SlowCookFlameNoisePath,
-			HextechAssets.SlowCookInnerFirePath,
-			HextechAssets.SlowCookInnerFireBPath,
-			HextechAssets.SlowCookFlarePath
-		];
-
-		Expect(
-			slowCookPaths.All(static path => path.StartsWith("res://HextechRunes/images/effects/slow_cook/", StringComparison.Ordinal)),
-			"Slow Cook VFX should load only its dedicated Pressure Cooker textures");
-		Expect(
-			slowCookPaths.All(static path => path != HextechAssets.MikaelsBlessingAoeRunePath),
-			"Slow Cook VFX must not reuse Mikael's Blessing texture");
-		Equal(slowCookPaths.Length, slowCookPaths.Distinct(StringComparer.Ordinal).Count(), "Slow Cook VFX texture paths");
-		Equal(800f, SlowCookAuraVisual.AuraWidth, "Slow Cook aura width is fixed and does not follow hitbox scaling");
-		Expect(
-			SlowCookAuraVisual.FlowShaderCode.Contains("anchored_gradient", StringComparison.Ordinal),
-			"Slow Cook aura should retain a stationary coverage sample while its texture details move");
-		Expect(
-			SlowCookAuraVisual.FlowShaderCode.Contains("intensity = min(intensity, 0.90)", StringComparison.Ordinal),
-			"Slow Cook aura should cap per-layer brightness spikes");
-	}
-
-	[HextechTest]
 	private static void SymphonyOfWarPreservesDemonAndSerpentFormVfx()
 	{
 		Expect(

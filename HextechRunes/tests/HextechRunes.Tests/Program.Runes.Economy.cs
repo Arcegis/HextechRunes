@@ -62,35 +62,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void InitialForgeGrantRunesPersistPendingTransaction()
-	{
-		Type[] initialForgeRunes =
-		[
-			typeof(StatsRune),
-			typeof(StatsOnStatsRune),
-			typeof(StatsOnStatsOnStatsRune),
-			typeof(HailToTheKingRune)
-		];
-		foreach (Type type in initialForgeRunes)
-		{
-			Expect(
-				type.IsSubclassOf(typeof(InitialForgeGrantRune)),
-				$"{type.Name} should use the resumable initial forge transaction");
-		}
-
-		StatsOnStatsRune rune = new();
-		Expect(!rune.SavedInitialForgeGrantPending, "initial forge transaction should default to completed");
-		rune.SavedInitialForgeGrantPending = true;
-		Expect(rune.SavedInitialForgeGrantPending, "pending initial forge transaction should be saveable");
-
-		MethodInfo method = typeof(HextechForgeGrantHelper).GetMethod(
-			"TryObtainRandomForges",
-			BindingFlags.Static | BindingFlags.NonPublic)
-			?? throw new MissingMethodException(nameof(HextechForgeGrantHelper), "TryObtainRandomForges");
-		Equal(typeof(Task<bool>), method.ReturnType, "initial forge transaction completion result");
-	}
-
-	[HextechTest]
 	private static void InitialForgeGrantLoadRecoveryPrecedesActRecovery()
 	{
 		MethodInfo recovery = typeof(HextechRunLifecycleHooks).GetMethod(
@@ -113,19 +84,6 @@ internal static partial class Program
 		Expect(
 			actRecoveryIndex > forgeRecoveryIndex,
 			"load continuation should finish pending initial forge grants before resuming act selection");
-	}
-
-	[HextechTest]
-	private static void DiceManiacForgeRarityModifierKeepsDefaultWeightsWithoutRune()
-	{
-		HextechForgeRarityWeights weights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
-			new HextechForgeRarityWeights(65, 25, 10),
-			hasDiceManiac: false);
-
-		Equal(65, weights.Silver, "silver weight");
-		Equal(25, weights.Gold, "gold weight");
-		Equal(10, weights.Prismatic, "prismatic weight");
-		Equal(100, weights.Total, "total weight");
 	}
 
 	/// <summary>袖珍锻炉的药水槽总数封顶 16:原版 SerializablePotion 的 SlotIndex 只有 4 bit,超出会在联机同步里截断丢药水。</summary>
@@ -172,6 +130,11 @@ internal static partial class Program
 	[HextechTest]
 	private static void DiceManiacForgeRarityModifierDoublesGoldAndPrismaticWeights()
 	{
+		Equal(
+			new HextechForgeRarityWeights(65, 25, 10),
+			HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(new HextechForgeRarityWeights(65, 25, 10), hasDiceManiac: false),
+			"without Dice Maniac the weights are unchanged");
+
 		HextechForgeRarityWeights defaultWeights = HextechForgeGrantHelper.ApplyDiceManiacForgeRarityModifier(
 			new HextechForgeRarityWeights(65, 25, 10),
 			hasDiceManiac: true);

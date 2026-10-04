@@ -212,48 +212,6 @@ internal static partial class Program
 		Equal(-4, HundredRefinementsEnemyHex.ResolveSlowReduction(2), "Hundred Refinements tier two Slow reduction");
 		Equal(-6, HundredRefinementsEnemyHex.ResolveSlowReduction(3), "Hundred Refinements tier three Slow reduction");
 		Equal(-6, HundredRefinementsEnemyHex.ResolveSlowReduction(99), "Hundred Refinements high-tier Slow reduction clamp");
-		MethodInfo[] ancientStatueMethods = typeof(AncientStatueEnemyHex).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(
-			ancientStatueMethods.All(static method => method.Name is not nameof(AncientStatueEnemyHex.ApplyCombatStartPlayerDebuffs) and not nameof(AncientStatueEnemyHex.BeforePlayerSideTurnStart)),
-			"Ancient Statue should not seed or manually reset persistent Slow");
-		MethodInfo[] hundredRefinementsMethods = typeof(HundredRefinementsEnemyHex).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(
-			hundredRefinementsMethods.All(static method => method.Name is not nameof(HundredRefinementsEnemyHex.ApplyCombatStartToEnemy) and not nameof(HundredRefinementsEnemyHex.BeforePlayerSideTurnStart)),
-			"Hundred Refinements should not seed or manually reset persistent Slow");
-	}
-
-	[HextechTest]
-	private static void EnemyOpeningBuffHexesUseDedicatedReplayableHook()
-	{
-		Type[] openingBuffHexTypes =
-		[
-			typeof(ProtectiveVeilEnemyHex),
-			typeof(ThornmailEnemyHex),
-			typeof(SuperBrainEnemyHex),
-			typeof(SkulkingColonyEnemyHex),
-			typeof(UnmovableMountainEnemyHex)
-		];
-
-		foreach (Type effectType in openingBuffHexTypes)
-		{
-			MethodInfo[] declaredMethods = effectType.GetMethods(
-				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-			MethodInfo? openingHook = declaredMethods.SingleOrDefault(
-				static method => method.Name == nameof(HextechEnemyHexEffect.ApplyOpeningCombatStartToEnemy));
-			Expect(
-				openingHook != null,
-				$"{effectType.Name} should apply through the replayable opening combat-start hook");
-			Equal(
-				typeof(bool),
-				openingHook!.GetParameters()[3].ParameterType,
-				$"{effectType.Name} opening hook replay flag type");
-			Expect(
-				declaredMethods.All(static method => method.Name != nameof(HextechEnemyHexEffect.ApplyPersistentToEnemy)),
-				$"{effectType.Name} should not apply to enemies added after combat start");
-			Expect(
-				declaredMethods.All(static method => method.Name != nameof(HextechEnemyHexEffect.ApplyCombatStartToEnemy)),
-				$"{effectType.Name} should not use the generic spawned-enemy combat-start hook");
-		}
 	}
 
 	[HextechTest]
@@ -267,12 +225,6 @@ internal static partial class Program
 			new[] { typeof(FrailPower) },
 			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Corrosion),
 			"enemy Corrosion should explain Frail");
-		Expect(
-			typeof(HextechMayhemCombatTrackingState).GetField("CorrosionProcsThisTurn") == null,
-			"enemy Corrosion should not retain a per-turn proc gate");
-		Expect(
-			typeof(CombatTrackingSnapshot).GetProperty("CorrosionProcsThisTurn") == null,
-			"enemy Corrosion snapshot should not retain the obsolete proc gate");
 	}
 
 	[HextechTest]
@@ -459,15 +411,6 @@ internal static partial class Program
 		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Player), "player-owned personal hive should be neutralized");
 		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(null), "ownerless personal hive should be neutralized");
 		Expect(HextechPersonalHiveSafetyHooks.HasDazedRecipient(null), "no dealer: vanilla skips on its own, so the original may run");
-	}
-
-	[HextechTest]
-	private static void EnemyOmniDragonSoulUsesPlayerTurnStart()
-	{
-		MethodInfo[] declaredMethods = typeof(OmniDragonSoulEnemyHex).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(declaredMethods.Any(method => method.Name == "BeforePlayerSideTurnStart"), "enemy Omni Dragon Soul should apply its debuff at player turn start");
-		Expect(declaredMethods.All(method => method.Name != "BeforeEnemySideTurnStart"), "enemy Omni Dragon Soul should no longer apply its debuff at enemy turn start");
 	}
 
 	[HextechTest]

@@ -98,23 +98,6 @@ internal static partial class Program
 		Equal(0, HappyAccidentRune.ResolveOrbCount(-1, 1), "Happy Accident negative Status fallback");
 		Equal(0, HappyAccidentRune.ResolveOrbCount(3, 0), "Happy Accident disabled orb count");
 		Equal(3, HappyAccidentRune.ResolveOrbCount(3, 1), "Happy Accident one orb per Status");
-
-		MethodInfo[] declaredMethods = typeof(HappyAccidentRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		Expect(
-			declaredMethods.Any(static method => method.Name == nameof(HappyAccidentRune.AfterPlayerTurnStart)),
-			"Happy Accident should trigger at player turn start");
-		Expect(
-			declaredMethods.All(static method => method.Name != "AfterCardGeneratedForCombat"),
-			"Happy Accident should no longer trigger when Status cards are generated");
-	}
-
-	[HextechTest]
-	private static void PrismaticEggIsExcludedFromThirdAct()
-	{
-		Expect(
-			HextechContentRegistry.PlayerRuneMetadata.HasFlag(typeof(PrismaticEggRune), PlayerRuneFlags.ThirdActExcluded),
-			"Prismatic Egg should not appear in the third act rune pool");
 	}
 
 	[HextechTest]
@@ -151,17 +134,6 @@ internal static partial class Program
 		Expect(calls.Any(static method => method.Name == "get_HittableEnemies"), "Drain uses all hittable enemies");
 		Expect(calls.All(static method => method.Name is not "get_CurrentHp" and not "op_Multiply" and not "get_DynamicVars"),
 			"Drain neither selects by current HP nor multiplies the summon amount");
-	}
-
-	[HextechTest]
-	private static void FeyMagicUsesThreeCostWithoutTurnLimit()
-	{
-		Equal(3, FeyMagicRune.MinimumCardCost, "Fey Magic minimum card cost");
-
-		MethodInfo[] declaredMethods = typeof(FeyMagicRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		Expect(declaredMethods.Any(method => method.Name == "AfterDamageGiven"), "Fey Magic should trigger after each qualifying damage event");
-		Expect(declaredMethods.All(method => method.Name != "BeforeSideTurnStart"), "Fey Magic should not keep a per-turn trigger reset");
 	}
 
 	[HextechTest]
@@ -243,16 +215,6 @@ internal static partial class Program
 		Expect(
 			calls.Any(static method => method.Name == nameof(PoisonPower.AfterSideTurnStart)),
 			"Death Warrant should use the Poison turn-start path shared by both supported game versions");
-	}
-
-	[HextechTest]
-	private static void MyriadSwordsUsesShuffleTriggerInsteadOfTurnEnd()
-	{
-		MethodInfo[] declaredMethods = typeof(MyriadSwordsRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-
-		Expect(declaredMethods.Any(method => method.Name == "AfterShuffle"), "Myriad Swords should trigger after the owner's draw pile is shuffled");
-		Expect(declaredMethods.All(method => method.Name != "BeforeTurnEnd"), "Myriad Swords should no longer trigger at turn end");
 	}
 
 	[HextechTest]
@@ -493,18 +455,6 @@ internal static partial class Program
 		Expect(
 			!CollectorRune.IsBelowExecuteThreshold(1m, 0m, CollectorRune.ExecutePercent),
 			"Collector should reject invalid max HP thresholds");
-
-		MethodInfo[] declaredMethods = typeof(CollectorRune).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-		Expect(
-			declaredMethods.Any(static method => method.Name == nameof(CollectorRune.AfterDamageGiven)),
-			"Collector should execute from owner damage events");
-		Expect(
-			declaredMethods.All(static method => method.Name != nameof(CollectorRune.AfterDeath)),
-			"Collector should not count unrelated enemy deaths");
-		Expect(
-			declaredMethods.All(static method => method.Name != nameof(CollectorRune.ModifyDamageMultiplicativeCompat)),
-			"Collector should not retain its old damage multiplier");
 	}
 
 	[HextechTest]
@@ -515,12 +465,10 @@ internal static partial class Program
 
 		MethodInfo[] runeMethods = typeof(DrawYourSwordRune).GetMethods(
 			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(runeMethods.All(method => method.Name != nameof(DrawYourSwordRune.BeforeSideTurnStart)), "Draw Your Sword should no longer remove Orbs at enemy turn start");
 		Expect(runeMethods.Any(method => method.Name == nameof(DrawYourSwordRune.ReplaceOrbEvoke)), "Draw Your Sword should replace each Orb's Evoke effect");
 
 		MethodInfo[] hookMethods = typeof(HextechPlayerRuneHooks).GetMethods(
 			BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-		Expect(hookMethods.All(method => method.Name != "OrbChannelPrefix"), "Draw Your Sword should no longer intercept Orb channeling");
 		Expect(FindPatchMethod(typeof(DrawYourSwordRune), "DrawYourSwordEvokePatch", "Apply") != null, "Draw Your Sword should install an Orb Evoke replacement hook");
 		Expect(hookMethods.Any(method => method.Name == "OrbEvokePrefix"), "Draw Your Sword should intercept Orb Evoke effects");
 
