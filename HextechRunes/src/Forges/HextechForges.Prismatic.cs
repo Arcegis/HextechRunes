@@ -1,83 +1,25 @@
 namespace HextechRunes;
 
-public sealed class PrismaticLifeForge : HextechForgeBase, IHextechPercentHpForge
+public sealed class PrismaticLifeForge : HextechPercentHpForgeBase
 {
-	private int _baseMaxHp;
-
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedBaseMaxHp
 	{
-		get => _baseMaxHp;
-		set => _baseMaxHp = Math.Max(0, value);
+		get => SavedBaseMaxHpValue;
+		set => SavedBaseMaxHpValue = value;
 	}
 
-	public int BaseMaxHp
-	{
-		get => _baseMaxHp;
-		set => _baseMaxHp = Math.Max(1, value);
-	}
-
-	public decimal MaxHpPercentTotal => DynamicVars["MaxHpPercent"].BaseValue * StackAmount;
-
-	public override bool HasUponPickupEffect => true;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("MaxHpPercent", 30m)
-	];
-
-	public override async Task AfterObtained()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		Flash();
-		await HextechMaxHpScaling.ReapplyScale(Owner);
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreatePercentVars(30m);
 }
 
-public sealed class AttackForge : HextechForgeBase, IHextechDamageCoefficientForge
+public sealed class AttackForge : HextechDamageCoefficientForgeBase
 {
-	private const decimal DamageMultiplierValue = 1.2m;
-	private const decimal DamageBonusPercentValue = (DamageMultiplierValue - 1m) * 100m;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("DamageMultiplier", DamageMultiplierValue),
-		new DynamicVar("DamageBonusPercent", DamageBonusPercentValue)
-	];
-
-	public decimal DamageBonusFractionTotal => StackedMultiplier(DynamicVars["DamageMultiplier"].BaseValue) - 1m;
-
-	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
-	{
-		return Owner != null && IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource)
-			? HextechForgeCoefficientHelper.GetDamageMultiplier(Owner, this)
-			: 1m;
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreateDamageVars(1.2m);
 }
 
-public sealed class ProtectionForge : HextechForgeBase, IHextechSustainCoefficientForge
+public sealed class ProtectionForge : HextechSustainCoefficientForgeBase
 {
-	private const decimal SustainMultiplierValue = 1.2m;
-	private const decimal SustainBonusPercentValue = (SustainMultiplierValue - 1m) * 100m;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("SustainMultiplier", SustainMultiplierValue),
-		new DynamicVar("SustainBonusPercent", SustainBonusPercentValue)
-	];
-
-	public decimal SustainBonusFractionTotal => StackedMultiplier(DynamicVars["SustainMultiplier"].BaseValue) - 1m;
-
-	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
-	{
-		return Owner != null && target == Owner.Creature
-			? HextechForgeCoefficientHelper.GetSustainMultiplier(Owner, this)
-			: 1m;
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreateSustainVars(1.2m);
 }
 
 public sealed class EnergyForge : HextechForgeBase

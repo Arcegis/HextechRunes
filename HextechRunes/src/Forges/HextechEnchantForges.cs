@@ -6,10 +6,8 @@ namespace HextechRunes;
 public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 	where TEnchantment : EnchantmentModel
 {
+	// 附魔层数;选牌张数固定为 1,两者互不相关(动量锻造器是选 1 张牌附魔动量 3)。
 	protected virtual int EnchantmentAmount => 1;
-
-	// 选牌张数与附魔层数解耦:MomentumForge 要「选 1 张牌附魔动量3」,层数=3 但只选 1 张。
-	protected virtual int EnchantmentCardCount => 1;
 
 	public override bool HasUponPickupEffect => true;
 
@@ -26,11 +24,6 @@ public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 
 	private async Task EnchantSelectedCardsAsync()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		EnchantmentModel canonicalEnchantment = ModelDb.Enchantment<TEnchantment>();
 		// FromDeckForEnchantment 的第三参是选牌界面的"附魔层数预览"(仅展示),不是选牌张数——
 		// 误传张数(1)会让动量锻造器在选牌屏显示"动量1"(玩家实报);选牌张数由 prefs 第二参控制,
@@ -39,7 +32,7 @@ public abstract class EnchantmentForgeBase<TEnchantment> : HextechForgeBase
 			Owner,
 			canonicalEnchantment,
 			EnchantmentAmount,
-			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, EnchantmentCardCount));
+			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, 1));
 		foreach (CardModel selected in selectedCards)
 		{
 			Flash();
