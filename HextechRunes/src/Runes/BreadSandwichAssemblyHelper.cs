@@ -4,9 +4,9 @@ namespace HextechRunes;
 
 internal static class BreadSandwichAssemblyHelper
 {
-	public static async Task TryAssemble(Player? player)
+	public static async Task TryAssemble(Player player)
 	{
-		if (player == null || player.GetRelic<BreadSandwichRune>() != null)
+		if (player.GetRelic<BreadSandwichRune>() != null)
 		{
 			return;
 		}
@@ -19,13 +19,9 @@ internal static class BreadSandwichAssemblyHelper
 			return;
 		}
 
-		RelicModel[] consumedRunes = [butter, cheese, jam];
-		foreach (RelicModel rune in consumedRunes)
+		foreach (RelicModel rune in new RelicModel[] { butter, cheese, jam })
 		{
-			if (player.Relics.Contains(rune))
-			{
-				await RelicCmd.Remove(rune);
-			}
+			await RelicCmd.Remove(rune);
 		}
 
 		RelicModel sandwich = ModelDb.GetById<RelicModel>(ModelDb.GetId<BreadSandwichRune>()).ToMutable();

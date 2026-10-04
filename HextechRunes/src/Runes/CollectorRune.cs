@@ -43,7 +43,6 @@ public sealed class CollectorRune : HextechRelicBase
 		CardModel? cardSource)
 	{
 		if (_executing
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0m
@@ -102,11 +101,10 @@ public sealed class CollectorRune : HextechRelicBase
 		return Task.CompletedTask;
 	}
 
-	internal async Task RecordExecution(Creature target, bool? isCreditableDeath = null)
+	internal async Task RecordExecution(Creature target, bool isCreditableDeath)
 	{
-		if (Owner == null
-			|| target.Side == Owner.Creature.Side
-			|| !(isCreditableDeath ?? IsCreditableDeath(target))
+		if (target.Side == Owner.Creature.Side
+			|| !isCreditableDeath
 			|| !_creditedExecutions.Add(target))
 		{
 			return;
