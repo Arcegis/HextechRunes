@@ -27,8 +27,7 @@ public sealed class SomethingForNothingRune : TurnScopedRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner)
 		{
 			return Task.CompletedTask;

@@ -38,8 +38,7 @@ public sealed class SwordIntentRune : HextechRelicBase
 
 	private bool ShouldBladeBeFree(CardModel card)
 	{
-		return Owner != null
-			&& card.Owner == Owner
+		return card.Owner == Owner
 			&& card is SovereignBlade
 			&& card.Pile?.Type is PileType.Hand or PileType.Play;
 	}

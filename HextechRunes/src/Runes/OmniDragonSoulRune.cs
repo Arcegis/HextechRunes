@@ -25,8 +25,7 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null
-			|| Owner.PlayerCombatState == null
+		if (Owner.PlayerCombatState == null
 			|| Owner.Creature.CombatState is not HextechCombatState combatState
 			|| !CombatManager.Instance.IsInProgress
 			|| CombatManager.Instance.IsOverOrEnding)

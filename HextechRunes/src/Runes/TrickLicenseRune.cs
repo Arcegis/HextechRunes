@@ -38,8 +38,7 @@ public sealed class TrickLicenseRune : HextechRelicBase
 
 	private bool ShouldPlayForFree(CardModel card)
 	{
-		return Owner != null
-			&& card.Owner == Owner
+		return card.Owner == Owner
 			&& card.IsSlyThisTurn
 			&& card.Pile?.Type is PileType.Hand or PileType.Play;
 	}

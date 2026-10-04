@@ -23,7 +23,7 @@ public sealed class ScapegoatRune : HextechRelicBase
 
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (Owner == null || player != Owner || Owner.Creature.IsDead
+		if (player != Owner || Owner.Creature.IsDead
 			|| Owner.Creature.CombatState == null || CombatManager.Instance.IsOverOrEnding)
 		{
 			return;

@@ -7,7 +7,7 @@ public sealed class MyriadManifestationsRune : HextechRelicBase
 	public override async Task BeforeSideTurnEndEarly(PlayerChoiceContext choiceContext, CombatSide side,
 		IEnumerable<Creature> participants)
 	{
-		if (Owner?.PlayerCombatState == null || Owner.Creature.Side != side || Owner.Creature.IsDead
+		if (Owner.PlayerCombatState == null || Owner.Creature.Side != side || Owner.Creature.IsDead
 			|| !HextechTurnParticipants.Includes(participants, Owner))
 		{
 			return;

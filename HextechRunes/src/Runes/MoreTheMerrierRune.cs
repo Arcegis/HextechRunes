@@ -11,7 +11,7 @@ public sealed class MoreTheMerrierRune : HextechRelicBase, IHextechHealingMultip
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? SustainMultiplier : 1m;
+		return target == Owner.Creature ? SustainMultiplier : 1m;
 	}
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
@@ -26,6 +26,6 @@ public sealed class MoreTheMerrierRune : HextechRelicBase, IHextechHealingMultip
 
 	private int CountRelics()
 	{
-		return Owner?.Relics.Count ?? 0;
+		return Owner.Relics.Count;
 	}
 }

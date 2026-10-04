@@ -5,7 +5,7 @@ public sealed class VampireCrawlerRune : HextechRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		if (!ShouldCopyPlayedPowerToDiscard(cardPlay)
-			|| Owner?.Creature.CombatState is not HextechCombatState combatState)
+			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
@@ -18,8 +18,7 @@ public sealed class VampireCrawlerRune : HextechRelicBase
 	private bool ShouldCopyPlayedPowerToDiscard(CardPlay cardPlay)
 	{
 		CardModel card = cardPlay.Card;
-		return Owner != null
-			&& CombatManager.Instance.IsInProgress
+		return CombatManager.Instance.IsInProgress
 			&& !CombatManager.Instance.IsOverOrEnding
 			&& card.Owner == Owner
 			&& !card.IsDupe

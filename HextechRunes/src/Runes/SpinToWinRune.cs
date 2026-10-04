@@ -25,8 +25,7 @@ public sealed class SpinToWinRune : HextechRelicBase
 
 	private async Task ConvertDelayedResource(PlayerChoiceContext choiceContext, PowerModel power, decimal amount)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| power.Owner != Owner.Creature
 			|| amount <= 0m
 			|| power.Amount <= 0

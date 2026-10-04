@@ -11,11 +11,6 @@ public sealed class MindToMatterRune : HextechRelicBase
 
 	public override Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return Task.CompletedTask;
-		}
-
 		int maxHpGain = Owner.Deck.Cards.Count;
 		if (maxHpGain <= 0)
 		{

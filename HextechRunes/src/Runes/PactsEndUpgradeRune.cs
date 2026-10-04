@@ -11,7 +11,7 @@ public sealed class PactsEndUpgradeRune : CardUpgradeRuneBase<PactsEnd>
 
 	public override decimal ModifyDamageAdditiveCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner?.PlayerCombatState == null
+		if (Owner.PlayerCombatState == null
 			|| cardSource is not PactsEnd
 			|| !IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource))
 		{

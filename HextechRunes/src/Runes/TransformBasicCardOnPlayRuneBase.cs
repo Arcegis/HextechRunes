@@ -26,8 +26,7 @@ public abstract class TransformBasicCardOnPlayRuneBase<TReplacement> : HextechRe
 
 	private async Task TransformPlayedCardAsync(CardModel card, PileType oldPileType)
 	{
-		if (Owner == null
-			|| card.Owner != Owner
+		if (card.Owner != Owner
 			|| oldPileType != PileType.Play
 			|| card.Pile == null
 			|| card.Pile.Type == PileType.Play

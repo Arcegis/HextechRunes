@@ -197,7 +197,7 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 
 	public override async Task AfterCurrentHpChanged(Creature creature, decimal delta)
 	{
-		if (Owner == null || creature != Owner.Creature || !_nearDeathActive)
+		if (creature != Owner.Creature || !_nearDeathActive)
 		{
 			return;
 		}
@@ -207,7 +207,7 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		if (Owner != null && (_nearDeathActive || Owner.Creature.CurrentHp < 1))
+		if (_nearDeathActive || Owner.Creature.CurrentHp < 1)
 		{
 			Flash(Array.Empty<Creature>());
 			Owner.Creature.SetCurrentHpInternal(1);
@@ -225,17 +225,12 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature && IsDyingButAlive(target) ? 0m : 1m;
+		return target == Owner.Creature && IsDyingButAlive(target) ? 0m : 1m;
 	}
 
 	// 先预留目标加成再发命令：命令链里若再次触发失血（重入本方法），只会补新的差额。
 	private async Task SyncNearDeathStrength()
 	{
-		if (Owner is not Player owner)
-		{
-			return;
-		}
-
 		int desiredBonus = _nearDeathActive
 			? _nearDeathDebt * (int)DynamicVars["StrengthPerNegativeHp"].BaseValue
 			: 0;
@@ -250,7 +245,7 @@ public sealed class NearDeathFeastRune : HextechRelicBase
 		try
 		{
 			Flash();
-			await PowerCmd.Apply<StrengthPower>(owner.Creature, delta, owner.Creature, null);
+			await PowerCmd.Apply<StrengthPower>(Owner.Creature, delta, Owner.Creature, null);
 		}
 		catch
 		{

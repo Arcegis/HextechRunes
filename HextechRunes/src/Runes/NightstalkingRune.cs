@@ -22,7 +22,7 @@ public sealed class NightstalkingRune : DrawThresholdRuneBase
 
 	protected override async Task ApplyDrawThresholdReward()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

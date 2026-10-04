@@ -44,7 +44,7 @@ public sealed class RoyaltiesUpgradeRune : CardUpgradeRuneBase<Royalties>
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		if (Owner != null && _countThisCombat > 0)
+		if (_countThisCombat > 0)
 		{
 			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, _countThisCombat);
 		}

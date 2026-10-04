@@ -29,7 +29,6 @@ public sealed class SnakebiteRune : HextechRelicBase
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| combatState.RoundNumber > 1
 			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))

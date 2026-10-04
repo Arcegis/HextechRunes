@@ -8,11 +8,6 @@ public sealed class NonupeipeGenerosityRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		RelicModel relic = HextechAncientRelicHelper.CreateRandomNonupeipeRelic(Owner, "nonupeipe-generosity");
 		SaveManager.Instance.MarkRelicAsSeen(relic);
 		Flash();

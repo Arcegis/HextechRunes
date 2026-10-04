@@ -36,8 +36,7 @@ public sealed class RoyalTrialRune : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !ShouldGenerateMinions(cardPlay, Owner)
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{

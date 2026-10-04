@@ -35,7 +35,7 @@ public sealed class SoulCallingRune : HextechRelicBase
 
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
-		if (_addedThisCombat || player != Owner || Owner == null || Owner.Creature.IsDead)
+		if (_addedThisCombat || player != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}

@@ -68,7 +68,6 @@ public sealed class LightEmUpRune : HextechRelicBase
 			out bool shouldLaunchVolley);
 		InvokeDisplayAmountChanged();
 		if (!shouldLaunchVolley
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{

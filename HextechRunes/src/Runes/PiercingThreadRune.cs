@@ -39,8 +39,7 @@ public sealed class PiercingThreadRune : HextechRelicBase
 		Creature? dealer,
 		CardModel? cardSource)
 	{
-		if (Owner == null
-			|| target.Side != CombatSide.Enemy
+		if (target.Side != CombatSide.Enemy
 			|| amount <= 0m
 			|| props.HasFlag(ValueProp.Unblockable)
 			|| !IsDamageFromOwner(dealer, cardSource))

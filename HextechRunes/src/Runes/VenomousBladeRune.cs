@@ -13,7 +13,7 @@ public sealed class VenomousBladeRune : HextechRelicBase
 	public override decimal ModifyDamageAdditiveCompat(Creature? target, decimal amount, ValueProp props,
 		Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null || target == null || !props.IsPoweredAttack()
+		if (target == null || !props.IsPoweredAttack()
 			|| !IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource)
 			|| !HextechKnifeHelper.IsShivLike(cardSource, Owner))
 		{

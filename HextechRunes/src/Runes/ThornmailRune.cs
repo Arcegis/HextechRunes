@@ -17,7 +17,7 @@ public sealed class ThornmailRune : HextechRelicBase
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (room is not CombatRoom || Owner == null)
+		if (room is not CombatRoom)
 		{
 			return Task.CompletedTask;
 		}

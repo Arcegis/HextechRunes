@@ -30,7 +30,6 @@ public sealed class NeutralizeUpgradeRune : CardUpgradeRuneBase<Neutralize>
 	public override async Task AfterCardDiscarded(PlayerChoiceContext choiceContext, CardModel card)
 	{
 		if (_isAutoPlayingDiscardedCard
-			|| Owner == null
 			|| !IsOwnedCard(card)
 			|| Owner.Creature.IsDead
 			|| !IsSupportedCard(card)

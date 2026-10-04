@@ -20,7 +20,7 @@ public sealed class SummonForthRune : HextechRelicBase
 	public override async Task BeforeCombatStart()
 	{
 		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
-		if (Owner == null || Owner.Creature.IsDead || !IsRegentOwner)
+		if (Owner.Creature.IsDead || !IsRegentOwner)
 		{
 			return;
 		}
@@ -31,7 +31,7 @@ public sealed class SummonForthRune : HextechRelicBase
 
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
-		if (player != Owner || Owner?.PlayerCombatState == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.PlayerCombatState == null || Owner.Creature.IsDead)
 		{
 			return;
 		}

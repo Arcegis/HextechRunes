@@ -15,7 +15,6 @@ public sealed class PlasterRune : HextechRelicBase
 	public override Task AfterSummon(PlayerChoiceContext choiceContext, Player summoner, decimal amount)
 	{
 		if (summoner != Owner
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| amount <= 0m
 			|| !Owner.IsOstyAlive

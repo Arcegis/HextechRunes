@@ -48,7 +48,7 @@ public sealed class StormUpgradeRune : CardUpgradeRuneBase<Storm>
 
 	internal void RecordStormBeforeCardPlayed(CardPlay cardPlay)
 	{
-		if (Owner?.Creature.GetPower<StormPower>() is not StormPower stormPower)
+		if (Owner.Creature.GetPower<StormPower>() is not StormPower stormPower)
 		{
 			return;
 		}

@@ -18,8 +18,7 @@ public sealed class MagicMissileRune : TurnScopedRelicBase
 	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent();
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !cardPlay.IsFirstInSeries
 			|| !IsOwnedAttack(cardPlay.Card))
 		{

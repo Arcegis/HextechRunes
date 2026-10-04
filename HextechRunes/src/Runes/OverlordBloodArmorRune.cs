@@ -15,7 +15,7 @@ public sealed class OverlordBloodArmorRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

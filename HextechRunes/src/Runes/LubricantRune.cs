@@ -73,7 +73,6 @@ public sealed class LubricantRune : TurnScopedRelicBase
 	{
 		EnsureTurnScopedStateCurrent();
 		return !HasTurnProcTriggered(nameof(LubricantRune), _usedThisTurn)
-			&& Owner != null
 			&& card.Owner == Owner
 			&& card.Type == CardType.Power
 			&& card.Pile?.Type is PileType.Hand or PileType.Play;

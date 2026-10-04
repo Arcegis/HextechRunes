@@ -18,11 +18,6 @@ public sealed class MobileHomeRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		Flash();
 		await RelicBundleGrantHelper.GrantRelics(Owner, RelicTypes);
 	}

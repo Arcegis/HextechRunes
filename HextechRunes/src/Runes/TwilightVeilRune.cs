@@ -46,7 +46,6 @@ public sealed class TwilightVeilRune : HextechRelicBase
 		if (!_armed
 			|| _mirroring
 			|| MirrorSuppressed.Value
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| amount <= 0m
 			|| power.Owner is not Creature enemy

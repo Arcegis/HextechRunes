@@ -49,7 +49,6 @@ public sealed class PiggyBankRune : HextechSharedCombatVictoryRuneBase
 		CardModel? cardSource)
 	{
 		if (_grantingGold
-			|| Owner == null
 			|| target != Owner.Creature
 			|| result.UnblockedDamage <= 0m)
 		{
@@ -76,7 +75,7 @@ public sealed class PiggyBankRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || _counter <= 0)
+		if (_counter <= 0)
 		{
 			SavedCounter = 0;
 			return Task.CompletedTask;

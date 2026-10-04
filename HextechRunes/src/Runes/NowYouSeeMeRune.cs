@@ -14,8 +14,7 @@ public sealed class NowYouSeeMeRune : HextechRelicBase
 
 	public override async Task AfterCardDiscarded(PlayerChoiceContext choiceContext, CardModel card)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !IsOwnedCard(card)
 			|| card.Type is not (CardType.Status or CardType.Curse)
 			|| card.Pile?.Type != PileType.Discard

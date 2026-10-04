@@ -21,8 +21,7 @@ public sealed class OminousPactRune : HextechRelicBase
 
 	private async Task HandleDoomApplied(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| power is not DoomPower
 			|| power.Owner?.Side != CombatSide.Enemy
 			|| applier != Owner.Creature

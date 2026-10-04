@@ -21,7 +21,7 @@ public sealed class TezcatarasMercyRune : HextechSharedCombatVictoryRuneBase
 
 	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -42,11 +42,6 @@ public sealed class TezcatarasMercyRune : HextechSharedCombatVictoryRuneBase
 
 	private async Task MeltLeftmostWaxRelic()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		RelicModel? relic = Owner.Relics.FirstOrDefault(static relic => relic.IsWax && !relic.IsMelted);
 		if (relic != null)
 		{

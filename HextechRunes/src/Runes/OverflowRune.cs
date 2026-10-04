@@ -19,7 +19,7 @@ public sealed class OverflowRune : HextechRelicBase, IHextechHealingMultiplierPr
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
 		modifiedCost = originalCost;
-		if (Owner == null || card.Owner != Owner || card.Pile?.Type != PileType.Hand || card.EnergyCost.CostsX)
+		if (card.Owner != Owner || card.Pile?.Type != PileType.Hand || card.EnergyCost.CostsX)
 		{
 			return false;
 		}
@@ -30,7 +30,7 @@ public sealed class OverflowRune : HextechRelicBase, IHextechHealingMultiplierPr
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? StatMultiplier : 1m;
+		return target == Owner.Creature ? StatMultiplier : 1m;
 	}
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)

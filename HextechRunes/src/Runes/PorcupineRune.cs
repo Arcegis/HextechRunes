@@ -29,7 +29,7 @@ public sealed class PorcupineRune : HextechRelicBase
 
 	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
+		if (side != Owner.Creature.Side || Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -47,7 +47,7 @@ public sealed class PorcupineRune : HextechRelicBase
 
 	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side || _temporaryThorns <= 0m)
+		if (side != Owner.Creature.Side || _temporaryThorns <= 0m)
 		{
 			return;
 		}

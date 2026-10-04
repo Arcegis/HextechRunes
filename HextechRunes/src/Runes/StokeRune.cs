@@ -9,7 +9,7 @@ public sealed class StokeRune : HextechRelicBase
 {
 	public override bool TryModifyRestSiteOptions(Player player, ICollection<RestSiteOption> options)
 	{
-		if (Owner == null || player != Owner || options.Any(static option => option.OptionId == StokeRestSiteOption.OptionIdValue))
+		if (player != Owner || options.Any(static option => option.OptionId == StokeRestSiteOption.OptionIdValue))
 		{
 			return false;
 		}

@@ -8,11 +8,6 @@ public sealed class MirrorReflectionRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardPileAddResult> results = new();
 		List<CardModel> cards = Owner.Deck.Cards
 			.Where(ShouldDuplicate)

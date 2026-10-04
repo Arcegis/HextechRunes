@@ -24,8 +24,7 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 		//    AutoPlayTransientCardAndCleanup 强制离场,返还会让模型被移除而手牌 UI 残留
 		//    一张点不动的幽灵牌。两个判定都基于牌的固有属性/两端一致执行的战斗流程,
 		//    联机确定性安全;且在 roll 之前 return,不影响 proc ordinal 计数的两端一致。
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !cardPlay.IsLastInSeries
 			|| !IsOwnedAttack(cardPlay.Card)
 			|| cardPlay.Card.Keywords.Contains(CardKeyword.Unplayable)
@@ -87,11 +86,6 @@ public abstract class UniversalScopeRuneBase : HextechRelicBase
 
 	private bool RollTrigger(CardPlay cardPlay, int rollOrdinal, int chancePercent)
 	{
-		if (Owner == null)
-		{
-			return false;
-		}
-
 		return HextechStableRandom.PercentChance(
 			(RunState)Owner.RunState,
 			chancePercent,

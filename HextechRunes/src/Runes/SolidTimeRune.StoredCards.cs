@@ -70,11 +70,6 @@ public sealed partial class SolidTimeRune
 
 	private CardModel? CreateCombatCard(HextechCombatState combatState, StoredCard stored)
 	{
-		if (Owner == null)
-		{
-			return null;
-		}
-
 		CardModel? canonical = TryGetCanonical(stored);
 		if (canonical == null || !IsStoredAsPowerCard(canonical, stored))
 		{

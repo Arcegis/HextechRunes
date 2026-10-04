@@ -55,10 +55,7 @@ public sealed class TankEngineRune : HextechSharedCombatVictoryRuneBase, IHextec
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null)
-		{
-			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
-		}
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 
 		Grow();
 		return Task.CompletedTask;
@@ -66,7 +63,7 @@ public sealed class TankEngineRune : HextechSharedCombatVictoryRuneBase, IHextec
 
 	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

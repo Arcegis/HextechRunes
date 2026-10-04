@@ -27,8 +27,7 @@ public sealed class TwinFlamesRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| !IsOwnedSkill(cardPlay.Card)
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{

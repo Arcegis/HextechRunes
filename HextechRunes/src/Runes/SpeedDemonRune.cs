@@ -22,8 +22,7 @@ public sealed class SpeedDemonRune : TurnScopedRelicBase
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
 		EnsureTurnScopedStateCurrent();
-		if (Owner == null
-			|| target.Side != CombatSide.Enemy
+		if (target.Side != CombatSide.Enemy
 			|| result.UnblockedDamage <= 0
 			|| (!IsOwnerOrPet(dealer) && cardSource?.Owner != Owner)
 			|| !TryConsumeTurnProc(nameof(SpeedDemonRune), ref _triggeredThisTurn))

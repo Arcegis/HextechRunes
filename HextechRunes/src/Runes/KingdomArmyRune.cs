@@ -30,7 +30,7 @@ public sealed class KingdomArmyRune : HextechRelicBase
 
 	public override async Task AfterForge(decimal amount, Player forger, AbstractModel? source)
 	{
-		if (_generating || Owner == null || forger != Owner || amount <= 0m || Owner.Creature.IsDead
+		if (_generating || forger != Owner || amount <= 0m || Owner.Creature.IsDead
 			|| Owner.PlayerCombatState == null || Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;

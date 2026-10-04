@@ -12,8 +12,7 @@ public sealed class PowerShieldRune : TurnScopedRelicBase
 	public override async Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
 	{
 		EnsureTurnScopedStateCurrent();
-		if (Owner == null
-			|| creature != Owner.Creature
+		if (creature != Owner.Creature
 			|| amount <= 0m
 			|| !TryConsumeTurnProc(nameof(PowerShieldRune), ref _triggeredThisTurn))
 		{

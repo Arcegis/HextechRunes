@@ -18,7 +18,7 @@ public sealed class QueenRune : HextechRelicBase
 
 	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side)
+		if (side != Owner.Creature.Side)
 		{
 			return;
 		}

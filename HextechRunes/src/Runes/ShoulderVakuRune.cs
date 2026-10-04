@@ -93,7 +93,7 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 	private bool IsOddOwnerTurn(Player player, out int round)
 	{
 		round = 0;
-		if (player != Owner || Owner == null || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
+		if (player != Owner || Owner.Creature.IsDead || Owner.Creature.CombatState == null)
 		{
 			return false;
 		}
@@ -104,7 +104,6 @@ public sealed class ShoulderVakuRune : HextechRelicBase
 
 	private bool OwnerHasWhisperingEarring()
 	{
-		return Owner?.Relics.Any(static relic =>
-			relic.CanonicalId() == WhisperingEarringId) == true;
+		return Owner.Relics.Any(static relic => relic.CanonicalId() == WhisperingEarringId);
 	}
 }

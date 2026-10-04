@@ -17,8 +17,7 @@ public sealed class SweepingBladeRune : HextechRelicBase
 
 	public override Task BeforeAttack(AttackCommand command)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| command.Attacker != Owner.Creature
 			|| command.ModelSource is not CardModel card
 			|| !IsOwnedAttack(card)
@@ -44,7 +43,7 @@ public sealed class SweepingBladeRune : HextechRelicBase
 	{
 		if (_activeContext == null
 			|| command.ModelSource != _activeContext.Card
-			|| command.Attacker != Owner?.Creature)
+			|| command.Attacker != Owner.Creature)
 		{
 			return Task.CompletedTask;
 		}
@@ -55,8 +54,7 @@ public sealed class SweepingBladeRune : HextechRelicBase
 
 	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner
 			|| !IsOwnedAttack(cardPlay.Card)
 			|| !cardPlay.Card.Tags.Contains(CardTag.Strike)
@@ -86,7 +84,6 @@ public sealed class SweepingBladeRune : HextechRelicBase
 	{
 		if (_isReplicatingPower
 			|| amount == 0m
-			|| Owner == null
 			|| _activeContext == null
 			|| cardSource != _activeContext.Card
 			|| applier != Owner.Creature
@@ -128,7 +125,6 @@ public sealed class SweepingBladeRune : HextechRelicBase
 	{
 		if (_isReplicatingPower
 			|| amount == 0m
-			|| Owner == null
 			|| _activeContext == null
 			|| cardSource != _activeContext.Card
 			|| applier != Owner.Creature

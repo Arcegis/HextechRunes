@@ -13,7 +13,7 @@ public sealed class RageUpgradeRune : CardUpgradeRuneBase<Rage>
 	// 效果常驻后每张狂怒都会永久叠层，给牌加上消耗词条作为刹车。
 	public override bool TryModifyKeywordsInCombat(CardModel card, ISet<CardKeyword> keywords)
 	{
-		return Owner != null && card.Owner == Owner && card is Rage && keywords.Add(CardKeyword.Exhaust);
+		return card.Owner == Owner && card is Rage && keywords.Add(CardKeyword.Exhaust);
 	}
 
 	// 跳过理由：原版 RagePower.AfterSideTurnEnd(三个版本一致)在持有者回合结束时直接 PowerCmd.Remove(this)；

@@ -48,8 +48,7 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
 		modifiedCost = originalCost;
-		if (Owner == null
-			|| card.Owner != Owner
+		if (card.Owner != Owner
 			|| card is not Reanimate
 			|| card.EnergyCost.CostsX)
 		{
@@ -68,11 +67,6 @@ public sealed class ReanimateUpgradeRune : CardUpgradeRuneBase<Reanimate>
 
 	private void RefreshReanimateCostsInHand()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		foreach (CardModel card in PileType.Hand.GetPile(Owner).Cards)
 		{
 			if (card is Reanimate)
