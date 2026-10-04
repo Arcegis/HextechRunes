@@ -115,15 +115,11 @@ internal static class HextechPatcher
 		return patch.PatchMethod.ReturnType == typeof(bool);
 	}
 
-	/// <summary>启动汇总:应用/失败计数,失败项逐条列出。</summary>
+	/// <summary>启动汇总:应用/失败计数。失败项已由 <see cref="ReportFailure"/> 逐条记录。</summary>
 	internal static void LogSummary()
 	{
 		int failed = Results.Count(result => !result.Applied);
 		HextechLog.Info("Patch", $"Applied {Results.Count - failed}/{Results.Count} patch classes.");
-		foreach (PatchResult result in Results.Where(result => !result.Applied))
-		{
-			HextechLog.Info("Patch", $"  failed {result.Id} ({result.Feature}): {result.Error}");
-		}
 
 		IReadOnlyList<string> missingMembers = HextechHookReflection.MissingMembers;
 		if (missingMembers.Count > 0)
