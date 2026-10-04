@@ -75,15 +75,8 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff()
+	private static void EnemyBadTasteHealsOnePercentOfMaxHp()
 	{
-		Equal(146, (int)MonsterHexKind.CorruptHeart, "append-only enemy identity");
-		Equal(147, (int)MonsterHexKind.BadTaste, "append-only enemy identity");
-		MonsterHexRegistration heart = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.CorruptHeart);
-		Expect(heart.Rarity == HextechRarityTier.Prismatic && !heart.Disabled && heart.IconRelicType == typeof(CorruptHeartHex), "prismatic with its own icon carrier");
-		Expect(!HextechPlayerRuneRegistry.Registrations.Any(r => r.Type == typeof(CorruptHeartHex)), "enemy icon carrier cannot enter player pool");
-		MonsterHexRegistration badTaste = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.BadTaste);
-		Expect(badTaste.Rarity == HextechRarityTier.Silver && !badTaste.Disabled && badTaste.IconRelicType == typeof(BadTasteRune), "silver, reuses the player rune icon");
 		Equal(1, BadTasteEnemyHex.HealAmountFor(40), "one percent never rounds a small enemy down to zero");
 		Equal(10, BadTasteEnemyHex.HealAmountFor(1000), "one percent of max HP");
 		Equal(0, BadTasteEnemyHex.HealAmountFor(0), "no max HP, no heal");

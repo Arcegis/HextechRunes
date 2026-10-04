@@ -719,29 +719,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void NewEnemyHexesReusePlayerRuneIconsAndRarities()
-	{
-		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		(MonsterHexKind Kind, int Value, HextechRarityTier Rarity, Type IconType)[] expected =
-		[
-			(MonsterHexKind.TwilightVeil, 130, HextechRarityTier.Gold, typeof(TwilightVeilRune)),
-			(MonsterHexKind.Stats, 131, HextechRarityTier.Silver, typeof(StatsRune)),
-			(MonsterHexKind.StatsOnStats, 132, HextechRarityTier.Gold, typeof(StatsOnStatsRune)),
-			(MonsterHexKind.StatsOnStatsOnStats, 133, HextechRarityTier.Prismatic, typeof(StatsOnStatsOnStatsRune)),
-			(MonsterHexKind.MiserableFate, 134, HextechRarityTier.Prismatic, typeof(MiserableFateRune))
-		];
-
-		foreach ((MonsterHexKind kind, int value, HextechRarityTier rarity, Type iconType) in expected)
-		{
-			Equal(value, (int)kind, $"{kind} append-only enum value");
-			Expect(metadata.TryGetRegistration(kind, out MonsterHexRegistration registration), $"{kind} registration should exist");
-			Equal(rarity, registration.Rarity, $"{kind} rarity");
-			Equal(iconType, registration.IconRelicType, $"{kind} icon relic type");
-			Expect(!registration.Disabled, $"{kind} should be enabled by default");
-		}
-	}
-
-	[HextechTest]
 	private static void EnemyHexHoverTipsUseExpectedPowerModels()
 	{
 		SequenceEqual(

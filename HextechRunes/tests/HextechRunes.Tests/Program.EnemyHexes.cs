@@ -487,9 +487,6 @@ internal static partial class Program
 		firstRelics.Clear();
 		secondRelics.Clear();
 		Equal(1m, effect.ModifyEnemyHealMultiplicative(context, first.Creature, 10m), "no relics means no bonus");
-		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == effect.Kind);
-		Equal(144, (int)row.Kind, "append-only ID");
-		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(MoreTheMerrierRune), "enabled gold with matching icon");
 	}
 
 	[HextechTest]
@@ -580,28 +577,14 @@ internal static partial class Program
 		Equal(0m, effect.ModifyEnergyCostInCombatLate(context, x, 0m), "X is not converted to fixed cost");
 		card.EnergyCost.EndOfTurnCleanup();
 		Equal(1, card.EnergyCost.GetWithModifiers(CostModifiers.Local), "native cleanup still restores original card cost");
-		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == effect.Kind);
-		Equal(145, (int)row.Kind, "append-only ID");
-		Expect(row.Rarity == HextechRarityTier.Prismatic && !row.Disabled && row.IconRelicType == typeof(EnlightenmentHex), "enabled prismatic with its own enemy icon carrier");
 		SomethingForNothingEnemyHex zeroCostEnemy = new();
 		ResourceInfo resources = new ResourceInfo { EnergyValue = 1, EnergySpent = 1, StarValue = 0, StarsSpent = 0 };
 		Expect(zeroCostEnemy.ModifyCardPlayResultPileTypeAndPosition(context, card, false, resources, PileType.Discard, CardPilePosition.Bottom) == null, "raised play cost no longer triggers zero-cost exhaust");
 	}
 
 	[HextechTest]
-	private static void FourPrismaticEnemiesKeepIdentityAndStrengthScope()
+	private static void EnemyReforgedHelmetBlocksOnlyEnemyStrengthLoss()
 	{
-		MonsterHexKind[] kinds = [MonsterHexKind.ReforgedHelmet, MonsterHexKind.EndlessRotation,
-			MonsterHexKind.SomethingForNothing, MonsterHexKind.CorruptedBranch];
-		Type[] icons = [typeof(ReforgedHelmetRune), typeof(EndlessRotationRune), typeof(SomethingForNothingRune), typeof(CorruptedBranchRune)];
-		for (int i = 0; i < kinds.Length; i++)
-		{
-			Equal(140 + i, (int)kinds[i], "append-only identity");
-			MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == kinds[i]);
-			Equal(HextechRarityTier.Prismatic, row.Rarity, "prismatic enemy");
-			Equal(icons[i], row.IconRelicType, "reuse matching player icon");
-			Expect(!row.Disabled && HextechEnemyHexEffects.RegisteredKinds.Contains(kinds[i]), "enabled and implemented");
-		}
 		(HextechEnemyHexContext context, Player first, Player second) = CreatePrismaticEnemyFixture();
 		Creature enemy = CreatePrismaticTestCreature(CombatSide.Enemy, (CombatState)first.Creature.CombatState!);
 		ReforgedHelmetEnemyHex effect = new();

@@ -26,7 +26,7 @@
 | 战斗共享状态 | `src/Mayhem` 中 Tracking、ProcTracker 和序列化分部；不要把单符文算法堆进 Modifier |
 | 版本差异 | `src/Compat`，保存引导在 `src/Bootstrap`，根加载器在 `loader` |
 
-注册表仍有多个入口，不能把“未来统一元数据”的重构目标当成已实现。先追踪同类内容的完整引用。新增枚举追加到尾部，保留旧序号；模型名称、配置标识、SavedProperty 名称和同步消息编号都是兼容契约。身份变更必须核对旧档/联机代价，不能靠更新快照掩盖。
+注册表仍有多个入口，不能把“未来统一元数据”的重构目标当成已实现。先追踪同类内容的完整引用。新增枚举追加到尾部，保留旧序号（`MonsterHexKind` 由测试清单 `monster_hex_kind_manifest.txt` 守护，`HEXTECH_WRITE_PATCH_MANIFEST=1` 只追加新行，删除的编号记为 `retired=N`）；模型名称、配置标识、SavedProperty 名称和同步消息编号都是兼容契约。身份变更必须核对旧档/联机代价，不能靠更新快照掩盖。
 
 ## 3. 代码风格与共享能力
 
