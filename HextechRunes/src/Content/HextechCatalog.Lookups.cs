@@ -7,6 +7,8 @@ internal static partial class HextechCatalog
 	private static readonly object ModelIdLookupLock = new();
 	private static ModelIdLookupCache? _modelIdLookupCache;
 	private static int _modelIdLookupCacheVersion = -1;
+	private static IReadOnlySet<ModelId>? _configurablePlayerRuneIds;
+	private static int _configurablePlayerRuneIdsVersion = -1;
 
 	public static bool IsHextechRelic(RelicModel? relic)
 	{

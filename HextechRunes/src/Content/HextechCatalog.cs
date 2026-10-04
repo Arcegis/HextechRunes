@@ -100,7 +100,24 @@ internal static partial class HextechCatalog
 		return PlayerRuneMetadata.GetConfigurableTypesForRarity(rarity);
 	}
 
+	// 配置格式只存 Entry，所以可配置符文的 Entry 必须唯一。校验与结果按注册表版本缓存，外部登记后重建；
+	// 冲突时每次调用都重新校验并抛出，不缓存失败。
 	public static IReadOnlySet<ModelId> GetConfigurablePlayerRuneIds()
+	{
+		int version = HextechContentRegistry.Version;
+		lock (ModelIdLookupLock)
+		{
+			if (_configurablePlayerRuneIds == null || _configurablePlayerRuneIdsVersion != version)
+			{
+				_configurablePlayerRuneIds = BuildConfigurablePlayerRuneIds();
+				_configurablePlayerRuneIdsVersion = version;
+			}
+
+			return _configurablePlayerRuneIds;
+		}
+	}
+
+	private static IReadOnlySet<ModelId> BuildConfigurablePlayerRuneIds()
 	{
 		Type[] configurableTypes = GetAllConfigurableRuneTypes().ToArray();
 		EnsureUniqueModelIds(configurableTypes, ModelDb.GetId);
