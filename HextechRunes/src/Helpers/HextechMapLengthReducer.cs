@@ -122,20 +122,8 @@ internal static class HextechMapLengthReducer
 
 	private static void SetSpoilsCoord(SpoilsMap spoilsMap, MapCoord coord)
 	{
-		// setter 缺失已在启动摘要里报告过，这里不再逐次告警。
-		if (SetSpoilsCoordMethod == null)
-		{
-			return;
-		}
-
-		try
-		{
-			SetSpoilsCoordMethod.Invoke(spoilsMap, [coord]);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"Hasty Scribble failed to update SpoilsMap coord: {ex.Message}");
-		}
+		// setter 缺失已在启动摘要里报告过，这里不再逐次告警。它在三个发布目标上都是纯自动属性的私有 setter，调用不会抛异常。
+		SetSpoilsCoordMethod?.Invoke(spoilsMap, [coord]);
 	}
 
 	private sealed class ShortenedActMap : ActMap
