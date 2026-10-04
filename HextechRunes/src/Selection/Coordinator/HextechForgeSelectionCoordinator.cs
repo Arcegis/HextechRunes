@@ -81,24 +81,17 @@ internal static class HextechForgeSelectionCoordinator
 
 	private static bool ShouldDirectlyGrantRandomForge(Player player)
 	{
-		try
+		// 不吞异常:单端抛出后返回 false 会让这一端直发、另一端弹选择,静默分叉。
+		if (player.RunState is RunState runState
+			&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 		{
-			if (player.RunState is RunState runState
-				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
-			{
-				return modifier.RandomForgeDirectGrant;
-			}
+			return modifier.RandomForgeDirectGrant;
+		}
 
-			// 没有本局 modifier(外部模组在未启用本模组的局里调用 API 等)时与 HextechMayhemModifier.IsEnabledForRun
-			// 同一口径:联机缺少本局快照,不能用各端本地菜单值决定共享结果,一律不直发;单机才读本地配置。
-			return !HextechPlayerContextHelper.IsNetworkMultiplayerRun()
-				&& HextechRuneConfiguration.GetSnapshot().RandomForgeDirectGrant;
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error("ForgeChoice", $"Failed to read synchronized random-forge setting; using deterministic false fallback: player={player.NetId} error={ex}");
-			return false;
-		}
+		// 没有本局 modifier(外部模组在未启用本模组的局里调用 API 等)时与 HextechMayhemModifier.IsEnabledForRun
+		// 同一口径:联机缺少本局快照,不能用各端本地菜单值决定共享结果,一律不直发;单机才读本地配置。
+		return !HextechPlayerContextHelper.IsNetworkMultiplayerRun()
+			&& HextechRuneConfiguration.GetSnapshot().RandomForgeDirectGrant;
 	}
 
 	private static RelicModel PickStableRandomForge(Player player, IReadOnlyList<RelicModel> options, string context)

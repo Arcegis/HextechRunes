@@ -287,22 +287,11 @@ internal static class HextechForgeGrantHelper
 
 	private static HextechForgeRarityWeights GetBaseForgeRarityWeights(Player player)
 	{
-		try
+		// 有本局 modifier 时只读同步快照;读取失败不能回落本地配置,客机的本地值会与主机分叉。
+		if (player.RunState is RunState runState
+			&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 		{
-			if (player.RunState is RunState runState
-				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
-			{
-				return modifier.ForgeRarityWeights;
-			}
-		}
-		catch (InvalidOperationException ex)
-		{
-			if (HextechRunLogBudget.TryConsume("forge.rarity-config-fallback", 3))
-			{
-				HextechLog.Warn(
-					"Forge", $"Could not read synchronized forge rarity weights; "
-					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
-			}
+			return modifier.ForgeRarityWeights;
 		}
 
 		return HextechRuneConfiguration.GetSnapshot().ForgeRarityWeights;
@@ -316,22 +305,10 @@ internal static class HextechForgeGrantHelper
 
 	private static IReadOnlySet<string> GetEffectiveDisabledForgeIds(Player player)
 	{
-		try
+		if (player.RunState is RunState runState
+			&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
 		{
-			if (player.RunState is RunState runState
-				&& HextechMayhemModifier.FindIn(runState) is HextechMayhemModifier modifier)
-			{
-				return modifier.DisabledForgeIdsForPool;
-			}
-		}
-		catch (InvalidOperationException ex)
-		{
-			if (HextechRunLogBudget.TryConsume("forge.disabled-config-fallback", 3))
-			{
-				HextechLog.Warn(
-					"Forge", $"Could not read synchronized disabled forge IDs; "
-					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
-			}
+			return modifier.DisabledForgeIdsForPool;
 		}
 
 		return HextechRuneConfiguration.GetDisabledForgeIds();
