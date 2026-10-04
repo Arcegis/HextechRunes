@@ -18,12 +18,12 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 		int count = context.TierValue(Kind, 2, 4, 6);
 		foreach (Player player in HextechEnemyHexContext.GetAlivePlayersByNetId(players))
 		{
-			if (player.PlayerCombatState == null)
+			if (player.PlayerCombatState is not { } playerCombatState)
 			{
 				continue;
 			}
 
-			List<CardModel> chosen = ChooseCards(context, player, count);
+			List<CardModel> chosen = ChooseCards(context, player, playerCombatState, count);
 			if (chosen.Count == 0)
 			{
 				continue;
@@ -46,14 +46,8 @@ internal sealed class MysteryEnemyHex : HextechEnemyHexEffect
 		}
 	}
 
-	private static List<CardModel> ChooseCards(HextechEnemyHexContext context, Player player, int count)
+	private static List<CardModel> ChooseCards(HextechEnemyHexContext context, Player player, PlayerCombatState playerCombatState, int count)
 	{
-		// 调用方已跳过没有 PlayerCombatState 的玩家。
-		if (player.PlayerCombatState is not { } playerCombatState)
-		{
-			return [];
-		}
-
 		List<CardModel> candidates = playerCombatState.AllCards
 			.Where(card => card.Owner == player && CardTransformUpgradeHelper.CanTransformToRandomCardInCombatPiles(card))
 			.OrderBy(HextechStableRandom.CardKey, StringComparer.Ordinal)
