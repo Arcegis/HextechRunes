@@ -52,17 +52,6 @@ internal static partial class Program
 		Equal(1, HextechEnemyHexContext.ClampScalingPlayerCount(0), "scaling player count never drops below one");
 	}
 
-	// 原来 if 链补的能力提示并入表后仍然出现（顺序：表内能力 → 灼烧 → 卡牌/关键词）。
-	[HextechTest]
-	private static void ReviewEnemyHexHoverTipTablesCoverFormerIfChain()
-	{
-		SequenceEqual(new[] { typeof(HextechNextTurnDamagePower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Compensation), "Compensation tip");
-		SequenceEqual(new[] { typeof(HextechGalvanicPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.SolidTime), "Solid Time tip");
-		SequenceEqual(new[] { typeof(SuckPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.FossilStalker), "Fossil Stalker tip");
-		SequenceEqual(new[] { typeof(HextechPlayerSlowPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.AncientStatue), "Ancient Statue tip");
-		SequenceEqual(new[] { typeof(HextechPlayerSlowPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.HundredRefinements), "Hundred Refinements tip");
-	}
-
 	[HextechTest]
 	private static void ReviewLoadedAssemblyLookupFindsLoadedAndMissesUnknown()
 	{

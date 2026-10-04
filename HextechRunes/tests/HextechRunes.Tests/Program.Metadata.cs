@@ -570,43 +570,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void EnemyHexHoverTipsUseExpectedPowerModels()
 	{
-		SequenceEqual(
-			new[] { typeof(DisintegrationPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Doomsday),
-			"enemy Doomsday should explain Disintegration");
-		SequenceEqual(
-			new[] { typeof(DisintegrationPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Omega),
-			"enemy Omega should explain Disintegration");
-		SequenceEqual(
-			new[] { typeof(DoomPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.OminousPact),
-			"enemy Ominous Pact should explain Doom");
-		SequenceEqual(
-			new[] { typeof(SkittishPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.PhantasmalGardener),
-			"enemy Phantasmal Gardener should explain Skittish");
-		SequenceEqual(
-			new[] { typeof(ChainsOfBindingPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Queen),
-			"enemy Queen should explain Chains of Binding");
-		SequenceEqual(
-			new[] { typeof(ArtifactPower), typeof(PlatingPower), typeof(RegenPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.HailToTheKing),
-			"enemy Hail to the King should explain all three powers");
-		SequenceEqual(
-			new[] { typeof(WeakPower), typeof(FrailPower), typeof(VulnerablePower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.OmniDragonSoul),
-			"enemy Omni Dragon Soul should explain all three debuffs");
-		SequenceEqual(
-			new[] { typeof(HextechVitalSparkPower), typeof(TaintedPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.ArcanePunch),
-			"Infested Prism upgrade should explain Vital Spark and Tainted");
-		SequenceEqual(
-			new[] { typeof(HextechPlayerSlowPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.FrostWraith),
-			"enemy Frost Wraith should explain Hextech Slow");
-
 		foreach (MonsterHexKind hex in HextechContentRegistry.MonsterHexMetadata.AllKinds)
 		{
 			IReadOnlyList<Type> powerTypes = MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(hex);

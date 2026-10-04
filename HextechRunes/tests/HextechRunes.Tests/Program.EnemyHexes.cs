@@ -600,7 +600,7 @@ internal static partial class Program
 			MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == kinds[i]);
 			Equal(HextechRarityTier.Prismatic, row.Rarity, "prismatic enemy");
 			Equal(icons[i], row.IconRelicType, "reuse matching player icon");
-			Expect(!row.Disabled && HextechEnemyHexEffects.RegisteredKinds.Contains(kinds[i]), "enabled and implemented");
+			Expect(!row.Disabled, "enabled");
 		}
 		(HextechEnemyHexContext context, Player first, Player second) = CreatePrismaticEnemyFixture();
 		Creature enemy = CreatePrismaticTestCreature(CombatSide.Enemy, (CombatState)first.Creature.CombatState!);

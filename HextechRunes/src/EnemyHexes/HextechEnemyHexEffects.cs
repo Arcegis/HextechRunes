@@ -162,10 +162,6 @@ internal static class HextechEnemyHexEffects
 		return GetActive(modifier).Any(static effect => effect.AffectsPlayerAttackCostPreview);
 	}
 
-	internal static IReadOnlySet<MonsterHexKind> RegisteredKinds => OrderedEffects
-		.Select(static effect => effect.Kind)
-		.ToHashSet();
-
 	internal static void ResetAllRunScopedState()
 	{
 		foreach (HextechEnemyHexEffect effect in OrderedEffects)
