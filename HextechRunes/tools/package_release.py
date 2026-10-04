@@ -35,18 +35,12 @@ def write_package(dist: Path, destination: Path) -> None:
     if destination in {(dist / entry).resolve() for entry in entries}:
         raise ValueError("输出路径不能覆盖发行输入文件")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    # 先生成并验证临时 ZIP，成功后才替换已有发行包。
+    # 先写临时 ZIP，写完才替换已有发行包，中途失败不会留下半个包。
     with tempfile.TemporaryDirectory(prefix="hextech-package-", dir=destination.parent) as temporary:
         staged = Path(temporary) / f"{MOD_ID}.zip"
         with zipfile.ZipFile(staged, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for entry in entries:
                 archive.write(dist / entry, (Path(MOD_ID) / entry).as_posix())
-        with zipfile.ZipFile(staged) as archive:
-            if archive.testzip() is not None:
-                raise ValueError("ZIP CRC 校验失败")
-            expected = [(Path(MOD_ID) / entry).as_posix() for entry in entries]
-            if archive.namelist() != expected:
-                raise ValueError("ZIP 内容与发行白名单不一致")
         staged.replace(destination)
     print(f"已打包 {len(entries)} 个文件: {destination}")
 

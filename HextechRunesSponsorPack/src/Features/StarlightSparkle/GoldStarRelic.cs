@@ -35,7 +35,7 @@ public sealed partial class GoldStarRelic : RelicModel, IHextechSharedCombatVict
 
 	public Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead || room.RoomType != RoomType.Elite)
+		if (Owner.Creature.IsDead || room.RoomType != RoomType.Elite)
 		{
 			return Task.CompletedTask;
 		}
@@ -49,7 +49,7 @@ public sealed partial class GoldStarRelic : RelicModel, IHextechSharedCombatVict
 
 	private void AddNormalMonsterGoldReward(CombatRoom room)
 	{
-		if (Owner == null || room.GoldProportion <= 0f)
+		if (room.GoldProportion <= 0f)
 		{
 			return;
 		}
@@ -66,11 +66,6 @@ public sealed partial class GoldStarRelic : RelicModel, IHextechSharedCombatVict
 
 	private void AddNormalMonsterPotionRewardIfRolled(CombatRoom room)
 	{
-		if (Owner == null || RunManager.Instance?.AscensionManager == null)
-		{
-			return;
-		}
-
 		if (RollPotionReward(Owner))
 		{
 			room.AddExtraReward(Owner, new PotionReward(Owner));

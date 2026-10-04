@@ -49,9 +49,7 @@ class UntranslatedValueTests(unittest.TestCase):
                 (validation.MOD_ID, "esp", "relics.json", "C.title"): "stale",
             }
             errors: list[str] = []
-            warnings: list[str] = []
-            validation.validate_untranslated_values(errors, warnings, root, validation.MOD_ID, allowlist)
-            self.assertEqual(warnings, [])
+            validation.validate_untranslated_values(errors, root, validation.MOD_ID, allowlist)
             # jpn/kor/... 默认抄了 eng，也都要报；esp 的 A 被白名单豁免，C 已翻译所以白名单条目过期。
             self.assertTrue(any("esp/relics.json:B.title" in error for error in errors))
             self.assertFalse(any("esp/relics.json:A.title" in error for error in errors))
@@ -59,7 +57,7 @@ class UntranslatedValueTests(unittest.TestCase):
             self.assertTrue(any("stale entry" in error and "esp/relics.json/C.title" in error for error in errors))
             self.assertFalse(any("zhs/" in error for error in errors))
 
-    def test_sponsor_pack_only_warns_and_groups_by_file(self):
+    def test_sponsor_pack_reports_errors_with_prefixed_labels(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             write_tables(root, "events.json", {
@@ -67,20 +65,9 @@ class UntranslatedValueTests(unittest.TestCase):
                 "zhs": {"E.title": "奇迹", "E.description": "选一个。"},
             })
             errors: list[str] = []
-            warnings: list[str] = []
-            with patch.dict(validation.UNTRANSLATED_SEVERITY, {validation.SPONSOR_PACK: "warning"}):
-                validation.validate_untranslated_values(errors, warnings, root, validation.SPONSOR_PACK, {})
-            self.assertEqual(errors, [])
-            tha = [warning for warning in warnings if "tha/events.json" in warning]
-            self.assertEqual(len(tha), 1)
-            self.assertIn(validation.SPONSOR_PACK, tha[0])
-            self.assertIn("2 value(s)", tha[0])
-            # 合并后把严重级别切到 error，同样的数据就会逐条报错。
-            with patch.dict(validation.UNTRANSLATED_SEVERITY, {validation.SPONSOR_PACK: "error"}):
-                errors, warnings = [], []
-                validation.validate_untranslated_values(errors, warnings, root, validation.SPONSOR_PACK, {})
-            self.assertEqual(warnings, [])
+            validation.validate_untranslated_values(errors, root, validation.SPONSOR_PACK, {})
             self.assertTrue(any("HextechRunesSponsorPack:tha/events.json:E.title" in error for error in errors))
+            self.assertTrue(any("HextechRunesSponsorPack:tha/events.json:E.description" in error for error in errors))
 
     def test_allowlist_requires_reason_and_rejects_duplicates(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -98,7 +85,7 @@ class UntranslatedValueTests(unittest.TestCase):
         allowlist = validation.load_untranslated_allowlist(errors)
         self.assertEqual(errors, [])
         self.assertTrue(allowlist)
-        self.assertTrue(all(pack in validation.UNTRANSLATED_SEVERITY for pack, *_ in allowlist))
+        self.assertTrue(all(pack in (validation.MOD_ID, validation.SPONSOR_PACK) for pack, *_ in allowlist))
 
 
 class SponsorPackLocalizationTests(unittest.TestCase):

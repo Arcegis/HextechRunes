@@ -22,7 +22,3 @@ def sha256(path: Path) -> str:
             digest.update(chunk)
     return digest.hexdigest()
 
-
-def require_under(path: Path, root: Path) -> None:
-    if not path.resolve().is_relative_to(root.resolve()):
-        raise ValueError(f"path escapes {root}: {path}")

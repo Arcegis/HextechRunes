@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 
-from variant_common import COMPAT_MARKER_NAME, require_under, sha256, version_key
+from variant_common import COMPAT_MARKER_NAME, sha256, version_key
 
 
 def main() -> int:
@@ -16,36 +16,19 @@ def main() -> int:
     parser.add_argument("--mod-id", required=True)
     parser.add_argument("--manifest-name", required=True)
     parser.add_argument("--target", action="append", required=True)
-    parser.add_argument("--assembly")
     args = parser.parse_args()
 
+    # 目录、DLL、标记与哈希的一致性由随后运行的 validate_variant_bundle.py 统一校验。
     dist = args.dist.resolve()
-    lib_root = (dist / "lib").resolve()
-    assembly = args.assembly or f"{args.mod_id}.dll"
-    if Path(args.manifest_name).name != args.manifest_name:
-        raise ValueError("--manifest-name must be a basename")
-    if Path(assembly).name != assembly:
-        raise ValueError("--assembly must be a basename")
-
+    assembly = f"{args.mod_id}.dll"
     targets = sorted(set(args.target), key=version_key)
     if len(targets) != len(args.target):
         raise ValueError("duplicate --target value")
 
     variants = []
     for target in targets:
-        version_key(target)
         directory = dist / "lib" / target
-        require_under(directory, lib_root)
-        if directory.resolve().name != target:
-            raise ValueError(f"variant directory does not match target: {directory}")
-        if not directory.is_dir():
-            raise FileNotFoundError(f"missing variant directory: {directory}")
-
         dll = directory / assembly
-        require_under(dll, directory)
-        if not dll.is_file():
-            raise FileNotFoundError(f"missing variant DLL: {dll}")
-
         marker = directory / COMPAT_MARKER_NAME
         marker.write_text(f"{target}\n", encoding="utf-8")
         variants.append(

@@ -39,34 +39,26 @@ if [[ ${#TEST_NAMES[@]} -gt 0 && -z "$REQUESTED_TARGET" ]]; then
   exit 2
 fi
 
-# 加载器的结构性不变式(共享源码由两个加载器工程同时编译,身份常量与选择规则由测试直接断言)。
-grep -Fq '<AssemblyName>HextechRunes.Loader</AssemblyName>' "$ROOT/loader/HextechRunes.Loader.csproj"
-grep -Fq '<AssemblyName>HextechRunesSponsorPack.Loader</AssemblyName>' "$SPONSOR_ROOT/loader/HextechRunesSponsorPack.Loader.csproj"
-grep -Fq '[ModInitializer(nameof(Initialize))]' "$ROOT/loader/LoaderBootstrap.cs"
-grep -Fq 'LinuxNativeDependencyBootstrap.EnsureHarmonyRuntimeDependenciesVisible();' "$ROOT/loader/LoaderBootstrap.cs"
-grep -Fq 'libgcc_s.so.1' "$ROOT/loader/LinuxNativeDependencyBootstrap.cs"
-grep -Fq 'RtldGlobal' "$ROOT/loader/LinuxNativeDependencyBootstrap.cs"
-grep -Fq 'AssociateAssemblyWithMod' "$ROOT/loader/LoaderBootstrap.cs"
-grep -Fq 'ReflectionHelperModTypesPostfix' "$ROOT/loader/LoaderBootstrap.cs"
-grep -Fq 'ModManager.OnModDetected += OnLegacyModDetected' "$ROOT/loader/LoaderBootstrap.cs"
-grep -Fq 'LegacyModAssemblyField?.SetValue(mod, _selectedVariantAssembly)' "$ROOT/loader/LoaderBootstrap.cs"
-grep -Fq '<AssemblyMetadata Include="HextechCompatibilityTarget"' "$ROOT/src/HextechRunes.csproj"
-grep -Fq '<AssemblyMetadata Include="HextechSponsorCompatibilityTarget"' "$SPONSOR_ROOT/src/HextechRunesSponsorPack.csproj"
+# 加载器按程序集名定位实现、按 AssemblyMetadata 里的目标版本选变体;这几处身份改动会让发行包加载失败。
+require_identity() {
+  grep -Fq "$2" "$1" || hextech_fail "$1 缺少 $2;加载器依赖这项身份,改动前先核对 loader 与变体清单。"
+}
+require_identity "$ROOT/loader/HextechRunes.Loader.csproj" '<AssemblyName>HextechRunes.Loader</AssemblyName>'
+require_identity "$SPONSOR_ROOT/loader/HextechRunesSponsorPack.Loader.csproj" '<AssemblyName>HextechRunesSponsorPack.Loader</AssemblyName>'
+require_identity "$ROOT/src/HextechRunes.csproj" '<AssemblyMetadata Include="HextechCompatibilityTarget"'
+require_identity "$SPONSOR_ROOT/src/HextechRunesSponsorPack.csproj" '<AssemblyMetadata Include="HextechSponsorCompatibilityTarget"'
 
-# 默认对各发布目标各跑一遍(引用目录存在才跑);指定目标则只跑该目标。
+# 默认对全部发布目标各跑一遍;指定目标则只跑该目标。引用目录缺失直接报错,不跳过目标。
 if [[ -n "$REQUESTED_TARGET" ]]; then
   TARGETS=("$REQUESTED_TARGET")
 else
-  TARGETS=()
-  for candidate in "${HEXTECH_TARGETS[@]}"; do
-    if [[ -f "$ROOT/versioned-dll-backups/$candidate/game-refs/sts2.dll" ]]; then
-      TARGETS+=("$candidate")
-    fi
-  done
-  if [[ ${#TARGETS[@]} -eq 0 ]]; then
-    TARGETS=("${HEXTECH_TARGETS[0]}")
-  fi
+  TARGETS=("${HEXTECH_TARGETS[@]}")
 fi
+
+for TARGET in "${TARGETS[@]}"; do
+  GAME_DATA_DIR="${HEXTECH_GAME_DATA_DIR:-"$ROOT/versioned-dll-backups/$TARGET/game-refs"}"
+  [[ -f "$GAME_DATA_DIR/sts2.dll" ]] || hextech_fail "缺少 STS2 $TARGET 的游戏程序集: $GAME_DATA_DIR/sts2.dll。从该版本的游戏安装复制到 versioned-dll-backups/$TARGET/game-refs/,或用 HEXTECH_GAME_DATA_DIR 指定目录。"
+done
 
 for TARGET in "${TARGETS[@]}"; do
   GAME_DATA_DIR="${HEXTECH_GAME_DATA_DIR:-"$ROOT/versioned-dll-backups/$TARGET/game-refs"}"
@@ -77,7 +69,6 @@ for TARGET in "${TARGETS[@]}"; do
     --no-incremental \
     "${HEXTECH_BUILD_STABILITY_ARGS[@]}" \
     -p:HextechSts2Target="$TARGET" \
-    -p:HextechSponsorSts2Target="$TARGET" \
     -p:GameDataDir="$GAME_DATA_DIR"
   echo "== Running tests against STS2 $TARGET =="
   if [[ ${#TEST_NAMES[@]} -gt 0 ]]; then

@@ -1,7 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 
@@ -10,9 +9,6 @@ namespace HextechRunesSponsorPack;
 // 缚魂者:赠送一张刻印的血肉戏法,代价是己方回合开始给场上所有生物(含自己)随机上负面。
 internal sealed class NecrobinderContract : AbyssalContractBase
 {
-	public override IEnumerable<IHoverTip> ExtraHoverTips =>
-		HoverTipFactory.FromRelic<NecrobinderContractChoiceRelic>();
-
 	public override Task ApplyInitialEffect(AbyssalContractRune rune)
 	{
 		return rune.AddContractCards<SleightOfFlesh>(1, ApplyImbuedEnchantment);
@@ -53,11 +49,6 @@ internal sealed class NecrobinderContract : AbyssalContractBase
 		PlayerChoiceContext choiceContext,
 		Creature target)
 	{
-		if (rune.Owner == null)
-		{
-			return;
-		}
-
 		switch (rune.Owner.RunState.Rng.Niche.NextInt(5))
 		{
 			case 0:

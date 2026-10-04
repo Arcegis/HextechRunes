@@ -23,7 +23,7 @@ public sealed class ArcaneForge : SelectableEnchantmentForgeBase
 
 	public override bool TryModifyRestSiteOptions(Player player, ICollection<RestSiteOption> options)
 	{
-		if (Owner == null || player != Owner || options.Any(static option => option.OptionId == CloneRestSiteOptionId))
+		if (player != Owner || options.Any(static option => option.OptionId == CloneRestSiteOptionId))
 		{
 			return false;
 		}

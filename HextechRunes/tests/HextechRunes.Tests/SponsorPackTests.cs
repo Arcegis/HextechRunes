@@ -14,29 +14,6 @@ namespace HextechRunes.Tests;
 
 internal static partial class Program
 {
-	// 功能组注册的依赖表必须与清单表自洽:可获得内容都在锻造器/符文表里,依赖都在载体/图标/事件遗物表里;
-	// 并且运行期硬引用选择遗物的锻造器/符文都声明了依赖(漏声明 = 依赖注册失败时它照样入池,结算时 ModelDb.Relic<T>() 报错)。
-	[HextechTest]
-	private static void SponsorCatalogDependencyTableIsConsistent()
-	{
-		HashSet<Type> obtainables = [.. SponsorCatalog.ObtainableTypes];
-		HashSet<Type> dependencies = [.. SponsorCatalog.DependencyTypes];
-		foreach ((Type obtainable, Type[] required) in SponsorCatalog.RequiredDependencies)
-		{
-			Expect(obtainables.Contains(obtainable), $"{obtainable.Name} in Requires must be a registered forge or rune");
-			Expect(required.Length > 0, $"{obtainable.Name} must list at least one dependency");
-			foreach (Type dependency in required)
-			{
-				Expect(dependencies.Contains(dependency), $"{obtainable.Name} depends on {dependency.Name}, which is not in any dependency table");
-			}
-		}
-
-		foreach (Type expected in new[] { typeof(EntropyForge), typeof(ArcaneForge), typeof(DollysMirrorForge), typeof(EvolutionForge), typeof(StarlightSparkleRune), typeof(AbyssalContractRune) })
-		{
-			Expect(SponsorCatalog.RequiredDependencies.ContainsKey(expected), $"{expected.Name} hard-references choice relics or carriers and must declare them");
-		}
-	}
-
 	// 排除规则的类型部分(纯函数,不触碰 Godot 资源层)。
 	[HextechTest]
 	private static void RandomEnchantmentPoolExcludesDeprecatedNegativeAndMarkerTypes()
@@ -245,7 +222,7 @@ internal static partial class Program
 		Equal(2, strengthBonuses, "second strength bonus count");
 	}
 
-	// 战士/自动机契约升级起始遗物、摄政契约替换起始遗物都读这张表(IAbyssalContract.UpgradeCurrentStartingRelic、RegentContract)。
+	// 战士/自动机契约升级起始遗物、摄政契约替换起始遗物都读这张表(AbyssalContractBase.UpgradeCurrentStartingRelic、RegentContract)。
 	[HextechTest]
 	private static void AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters()
 	{

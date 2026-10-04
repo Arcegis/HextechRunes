@@ -3,7 +3,6 @@ set -euo pipefail
 
 # 构建 HextechRunesSponsorPack 三个变体 + 加载器 + PCK,默认部署到游戏 mods 目录。
 #   HEXTECH_SPONSOR_DEPLOY=0          只构建,不部署。
-#   HEXTECH_SPONSOR_REFS_ROOT=<dir>   覆盖按版本备份的游戏引用目录。
 #   STS2_GAME_APP=<.app>              覆盖游戏安装位置。
 # 加载器与本体共用源码(见 loader/HextechRunesSponsorPack.Loader.csproj),构建步骤与多版本清单工具
 # 直接使用本体的 tools/lib_build.sh 与 tools/multi_version/。
@@ -15,7 +14,7 @@ source "$HEXTECH_TOOLS_DIR/lib_build.sh"
 
 FILE_STEM="HextechRunesSponsorPack"
 VARIANT_MANIFEST_NAME="hextech-runes-sponsor-pack-variants.manifest"
-REFS_ROOT="${HEXTECH_SPONSOR_REFS_ROOT:-$ROOT/../HextechRunes/versioned-dll-backups}"
+REFS_ROOT="$ROOT/../HextechRunes/versioned-dll-backups"
 BUILD_ROOT="$ROOT/.build"
 DIST="$ROOT/dist"
 MOD_DIR="$GAME_APP/Contents/MacOS/mods/$FILE_STEM"
@@ -25,8 +24,7 @@ hextech_resolve_tools
 hextech_check_prerequisites
 hextech_prepare_output
 
-# 拓展包工程引用本体工程,两个目标属性要同时设置,否则本体会按默认目标编译。
-hextech_build_variants "$ROOT/src/$FILE_STEM.csproj" HextechSponsorSts2Target HextechSts2Target
+hextech_build_variants "$ROOT/src/$FILE_STEM.csproj"
 hextech_build_loader "$ROOT/loader/$FILE_STEM.Loader.csproj"
 hextech_generate_variant_manifest
 hextech_pack_assets

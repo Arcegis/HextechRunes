@@ -184,10 +184,9 @@ internal static partial class Program
 				problems.Add($"{type.FullName}: duplicate patch id {meta.Id}");
 			}
 
-			MethodInfo? dynamicApply = type.GetMethod("Apply", PatchMemberFlags, [typeof(Harmony)]);
-			if (!hasHarmonyTarget && dynamicApply == null)
+			if (!hasHarmonyTarget)
 			{
-				problems.Add($"{type.FullName} ({meta.Id}): no [HarmonyPatch] target and no Apply(Harmony)");
+				problems.Add($"{type.FullName} ({meta.Id}): no [HarmonyPatch] target");
 			}
 
 			foreach (MethodInfo method in type.GetMethods(PatchMemberFlags))

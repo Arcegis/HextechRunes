@@ -3,7 +3,6 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Rooms;
@@ -12,43 +11,9 @@ namespace HextechRunesSponsorPack;
 
 // 五种深渊契约各自的行为。策略实例无状态且进程内共享,所有持久计数写在 AbyssalContractRune 的
 // [SavedProperty] 上,每场战斗的临时计数写在 rune 的 internal 字段上 —— 策略类自己不许有字段。
-internal interface IAbyssalContract
+// 悬浮提示由符文按 AbyssalContractCatalog.Choices 推导,策略类不提供。
+internal abstract class AbyssalContractBase
 {
-	IEnumerable<IHoverTip> ExtraHoverTips { get; }
-
-	Task ApplyInitialEffect(AbyssalContractRune rune);
-
-	Task AfterRemoved(AbyssalContractRune rune);
-
-	Task BeforeCombatStart(AbyssalContractRune rune);
-
-	Task AfterCombatVictory(AbyssalContractRune rune, CombatRoom room);
-
-	Task AfterCardPlayed(AbyssalContractRune rune, PlayerChoiceContext choiceContext, CardPlay cardPlay);
-
-	Task BeforeSideTurnStart(
-		AbyssalContractRune rune,
-		PlayerChoiceContext choiceContext,
-		CombatSide side,
-		HextechCombatState combatState);
-
-	Task BeforeTurnEnd(AbyssalContractRune rune, PlayerChoiceContext choiceContext, CombatSide side);
-
-	bool ShouldAddToDeck(AbyssalContractRune rune, CardModel card);
-
-	Task AfterAddToDeckPrevented(AbyssalContractRune rune, CardModel card);
-
-	bool TryModifyEnergyCostInCombat(
-		AbyssalContractRune rune,
-		CardModel card,
-		decimal originalCost,
-		out decimal modifiedCost);
-}
-
-internal abstract class AbyssalContractBase : IAbyssalContract
-{
-	public abstract IEnumerable<IHoverTip> ExtraHoverTips { get; }
-
 	public virtual Task ApplyInitialEffect(AbyssalContractRune rune) => Task.CompletedTask;
 
 	public virtual Task AfterRemoved(AbyssalContractRune rune) => Task.CompletedTask;
@@ -102,12 +67,7 @@ internal abstract class AbyssalContractBase : IAbyssalContract
 
 	protected static async Task UpgradeCurrentStartingRelic(AbyssalContractRune rune)
 	{
-		Player? owner = rune.Owner;
-		if (owner == null)
-		{
-			return;
-		}
-
+		Player owner = rune.Owner;
 		if (!AbyssalContractCatalog.TryGetStarterRelics(owner.Character, out AbyssalContractCatalog.StarterRelicUpgrade starter))
 		{
 			return;

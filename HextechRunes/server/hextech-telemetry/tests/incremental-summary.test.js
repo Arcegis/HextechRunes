@@ -93,10 +93,10 @@ async function postRun(port, payload) {
   return response.json();
 }
 
-test("增量快照写入、尾部回放和近期去重不触发全量重建", async () => {
+test("增量快照写入、尾部回放、近期去重与离线全量重建", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-"));
   const port = 32000 + Math.floor(Math.random() * 10000);
-  let server = await startServer(dataDir, port);
+  const server = await startServer(dataDir, port);
   try {
     const firstPayload = makePayload("run-0000000000000001");
     assert.deepEqual(await postRun(port, firstPayload), {
@@ -116,11 +116,7 @@ test("增量快照写入、尾部回放和近期去重不触发全量重建", as
     await stopServer(server);
   }
 
-  const summaryPath = path.join(dataDir, "derived", "summary.json");
-  const legacySummary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
-  delete legacySummary._incremental;
-  fs.writeFileSync(summaryPath, `${JSON.stringify(legacySummary, null, 2)}\n`, "utf8");
-
+  // 模拟崩溃：记录已追加到 run_results.jsonl，但 summary 检查点还停在旧位置。
   const tailReceivedAtUtc = new Date(Date.now() + 1000).toISOString();
   const tailRecords = [];
   let lastPayload = null;
@@ -134,28 +130,49 @@ test("增量快照写入、尾部回放和近期去重不触发全量重建", as
   }
   fs.appendFileSync(path.join(dataDir, "run_results.jsonl"), `${tailRecords.join("\n")}\n`, "utf8");
 
-  const bootstrap = spawnSync(process.execPath, [SERVER_FILE, "--bootstrap-incremental"], {
+  async function assertTailCounted() {
+    const tailServer = await startServer(dataDir, port);
+    try {
+      const summary = await fetch(`http://127.0.0.1:${port}/api/hextech-runes/summary`).then((response) => response.json());
+      assert.equal(summary.runCount, 10001);
+      assert.equal(summary.winCount, 5001);
+      assert.equal(summary.raw.totalUniqueRuns, 10001);
+
+      const duplicate = await postRun(port, lastPayload);
+      assert.equal(duplicate.duplicate, true);
+      const health = await fetch(`http://127.0.0.1:${port}/health`).then((response) => response.json());
+      assert.equal(health.runs, 10001);
+      assert.equal(health.derived.rebuilding, false);
+      assert.equal(health.derived.checkpointOffset, health.derived.resultsSize);
+    } finally {
+      await stopServer(tailServer);
+    }
+  }
+
+  // 服务启动时从检查点回放尾部。
+  await assertTailCounted();
+
+  // 检查点丢失时服务拒绝启动，离线全量重建后得到同样的结果。
+  const summaryPath = path.join(dataDir, "derived", "summary.json");
+  const uncheckpointedSummary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+  delete uncheckpointedSummary._incremental;
+  fs.writeFileSync(summaryPath, `${JSON.stringify(uncheckpointedSummary, null, 2)}\n`, "utf8");
+
+  const refused = spawnSync(process.execPath, [SERVER_FILE], {
+    env: { ...process.env, HOST: "127.0.0.1", PORT: String(port), DATA_DIR: dataDir },
+    encoding: "utf8",
+    timeout: 10000
+  });
+  assert.notEqual(refused.status, 0, refused.stderr || refused.stdout);
+  assert.match(refused.stderr, /--rebuild-derived/);
+
+  const rebuild = spawnSync(process.execPath, [SERVER_FILE, "--rebuild-derived"], {
     env: { ...process.env, DATA_DIR: dataDir },
     encoding: "utf8"
   });
-  assert.equal(bootstrap.status, 0, bootstrap.stderr || bootstrap.stdout);
+  assert.equal(rebuild.status, 0, rebuild.stderr || rebuild.stdout);
 
-  server = await startServer(dataDir, port);
-  try {
-    const summary = await fetch(`http://127.0.0.1:${port}/api/hextech-runes/summary`).then((response) => response.json());
-    assert.equal(summary.runCount, 10001);
-    assert.equal(summary.winCount, 5001);
-    assert.equal(summary.raw.totalUniqueRuns, 10001);
-
-    const duplicate = await postRun(port, lastPayload);
-    assert.equal(duplicate.duplicate, true);
-    const health = await fetch(`http://127.0.0.1:${port}/health`).then((response) => response.json());
-    assert.equal(health.runs, 10001);
-    assert.equal(health.derived.rebuilding, false);
-    assert.equal(health.derived.checkpointOffset, health.derived.resultsSize);
-  } finally {
-    await stopServer(server);
-  }
+  await assertTailCounted();
 });
 
 test("重建锁被占用时 --rebuild-derived 以非零退出", () => {

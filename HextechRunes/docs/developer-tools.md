@@ -5,9 +5,9 @@
 ## 构建环境与外部工具
 
 - 安装 .NET 9 SDK 和 Python 3。Godot 资源导入与 PCK 打包需要支持 .NET 的 Godot 编辑器；可通过 `GODOT_EDITOR` 指定其可执行文件。
-- 按 `.csproj` 和构建脚本声明的目标版本准备游戏程序集。本体的版本化引用目录为 `HextechRunes/versioned-dll-backups/<游戏版本>/game-refs/`，拓展包默认复用该目录。程序集必须来自对应版本的本机游戏安装，不提交到 Git。
-- `.csproj` 支持通过 `-p:GameDataDir=<程序集目录>` 指定引用目录。直接构建时，本体使用 `HextechSts2Target`，拓展包使用 `HextechSponsorSts2Target`；完整打包脚本会逐个构建它们声明支持的版本。版本符号、目标校验（未知目标直接报错）与游戏引用集中在仓库根 `Directory.Build.targets`，只对声明 `HextechUsesVariantTargets=true` 的工程生效，loader 与 mplab 不受影响。
-- 游戏安装位置默认是维护者本机路径，可用环境变量 `STS2_GAME_APP` 覆盖（两个构建脚本、csproj 与 mplab 一致）。两个 `build_and_deploy.sh` 是面向 macOS 的 Zsh 脚本，共用步骤在 `tools/lib_build.sh`；其它系统应使用适合本机的构建、资源导入与部署方式，不直接照搬 macOS 路径。
+- 按 `.csproj` 和构建脚本声明的目标版本准备游戏程序集。本体与拓展包共用版本化引用目录 `HextechRunes/versioned-dll-backups/<游戏版本>/game-refs/`；目录缺失时构建和 `run_tests.sh` 直接报错，不回退到本机游戏安装。程序集必须来自对应版本的本机游戏安装，不提交到 Git。
+- `.csproj` 支持通过 `-p:GameDataDir=<程序集目录>` 指定引用目录。直接构建时，本体、拓展包与测试都用 `HextechSts2Target` 指定目标（拓展包经 ProjectReference 传给本体）；完整打包脚本会逐个构建它们声明支持的版本。版本符号、目标校验（未知目标直接报错）与游戏引用集中在仓库根 `Directory.Build.targets`，只对声明 `HextechUsesVariantTargets=true` 的工程生效，loader 与 mplab 不受影响。
+- 游戏安装位置默认是维护者本机路径，可用环境变量 `STS2_GAME_APP` 覆盖（两个构建脚本与 mplab 一致）。两个 `build_and_deploy.sh` 是面向 macOS 的 Zsh 脚本，共用步骤在 `tools/lib_build.sh`；其它系统应使用适合本机的构建、资源导入与部署方式，不直接照搬 macOS 路径。
 - 本体用 `HEXTECH_DEPLOY=0` 关闭部署，拓展包用 `HEXTECH_SPONSOR_DEPLOY=0`。只设置其中一个不会改变另一个脚本的行为。`HEXTECH_UPDATE_LATEST` 默认 0，本地构建不改写已跟踪的 `server/hextech-telemetry/public/latest-version.json`；发布时显式设 1。
 - 两个包的加载器只有一份源码 `HextechRunes/loader/`：拓展包 loader 工程以链接方式编译它，身份常量在各自的 `LoaderBootstrap.Identity.cs`。拓展包没有自己的 `multi_version` 脚本，直接调用本体的。
 - 原工作区的 `tools/sts2-inspect` 未包含在此仓库。需要原版 API 证据时，使用本机另行配置的反编译工具读取对应版本的 `sts2.dll` 与同目录依赖；不把旧工具路径当作本仓库提供的命令。
@@ -46,7 +46,7 @@ python3 HextechRunes/tools/sync_content_txt.py --help
 
 TXT 描述从对应模型的 `CanonicalVars` 和数值常量取得未升级基础值，支持同文件多个模型、标准变量及 `PowerVar`，并剥离 BBCode。敌方人数缩放读取 `MonsterHexCatalog` 的参数表，以 `N` 表示玩家人数；需要具体对局状态的值使用明确公式。遇到无法静态解析的变量会报错，不能让裸占位符进入说明，也不能猜一个数值。已有人工描述仍须通过 `--accept-json` 才会更新。
 
-`tools/validate_hextech_content.py` 还会比较固定九语逐键占位符集合与 BBCode 配平（各语言标签数量不要求一致）；键集、格式检查同时覆盖 `HextechRunesSponsorPack/assets/localization`（报错带 `HextechRunesSponsorPack:` 前缀）。非 eng 的值与 eng 逐字相同、去掉占位符和标签后仍有 ≥4 个拉丁字母时按疑似漏译处理：本体报 error，拓展包暂按 `UNTRANSLATED_SEVERITY` 报汇总 warning；品牌名、目标语言同形词、原版该语言缺译而回退英文的原版名写进 `tools/localization_untranslated_allowlist.json` 并注明理由，过期条目同样报出。原版中文引用读取 `tools/official_zhs_titles.json`，运行时不依赖本机 PCK。名称检查覆盖 `CardUpgradeRuneBase<T>` 的源码绑定和 `[gold]` 名称引用，区分自创标题与普通强调词；没有高亮的普通句子里的原版名称不在检查范围内，需人工核对。补充官方名称时从原版本地化取证更新快照；不得把错写的原版名称加到普通强调词豁免中。术语依据见 [自创术语](custom-terms.md)；原版中文名以 `tools/official_zhs_titles.json` 为准，不要在文档里另维护一份。
+`tools/validate_hextech_content.py` 还会比较固定九语逐键占位符集合与 BBCode 配平（各语言标签数量不要求一致）；键集、格式检查同时覆盖 `HextechRunesSponsorPack/assets/localization`（报错带 `HextechRunesSponsorPack:` 前缀）。非 eng 的值与 eng 逐字相同、去掉占位符和标签后仍有 ≥4 个拉丁字母时按疑似漏译处理，两个包都逐条报 error；品牌名、目标语言同形词、原版该语言缺译而回退英文的原版名写进 `tools/localization_untranslated_allowlist.json` 并注明理由，过期条目同样报出。原版中文引用读取 `tools/official_zhs_titles.json`，运行时不依赖本机 PCK。名称检查覆盖 `CardUpgradeRuneBase<T>` 的源码绑定和 `[gold]` 名称引用，区分自创标题与普通强调词；没有高亮的普通句子里的原版名称不在检查范围内，需人工核对。补充官方名称时从原版本地化取证更新快照；不得把错写的原版名称加到普通强调词豁免中。术语依据见 [自创术语](custom-terms.md)；原版中文名以 `tools/official_zhs_titles.json` 为准，不要在文档里另维护一份。
 
 ## 定向验证
 
@@ -74,9 +74,9 @@ python3 HextechRunes/tools/hextech_dev.py tests --target 0.111.0 --name HopperEs
 | 本机反编译工具（外部依赖） | 原版 API 取证；目标 `sts2.dll` 与依赖必须来自同一游戏版本，见上方环境说明 |
 | `tools/multi_version/validate_variant_bundle.py` | loader/manifest/变体路径、目标、DLL 哈希校验 |
 | `tools/build_and_deploy.sh` | Zsh 脚本，重建 `.build` 和 `dist`、导入、构建、打包；默认替换本机模组目录，设 `HEXTECH_DEPLOY=0` 才不部署；`HEXTECH_UPDATE_LATEST=1` 才改写 latest-version |
-| `tools/package_release_zip.sh [输出绝对路径]` | 只打包现有 dist，不构建、不部署；调用下面的 Python 实现 |
-| `tools/package_release.py [输出绝对路径] --dist <目录>` | 校验 bundle，再按变体清单打 ZIP；包含 loader、PCK、manifest、各变体 DLL 和必要 `compat-target.txt`，不含更新日志 TXT；成功后才替换原 ZIP |
+| `tools/package_release.py [输出绝对路径] --dist <目录>` | 只打包现有 dist，不构建、不部署；校验 bundle，再按变体清单打 ZIP；包含 loader、PCK、manifest、各变体 DLL 和必要 `compat-target.txt`，不含更新日志 TXT；成功后才替换原 ZIP |
 | `tools/extract_near_death_feast_glow.gd -- <原版PCK> <输出PNG>` | 用 Godot `--headless --path tools -s <脚本绝对路径>` 运行，提取 SOUL_NEXUS 红光并写入指定 PNG；区域与来源见 [设计裁决 · 视觉](design-decisions.md#视觉) |
+| `tools/mplab/run_mplab.sh` | 本机双客户端联机确定性实验：构建 `HextechMpLab` 驱动并临时放进游戏 mods 目录，主机与客户端自动跑同一局，结束后比对两边日志里的校验和分叉并移除驱动；排查联机分叉时按需使用 |
 | `tools/update_latest_version.py` / 工坊上传器 | 涉及版本发布或外部写入；按用户指定范围使用，不是代码修改后的自动步骤。源码直接提交到当前仓库，不再做镜像同步 |
 
 ## 运行时共享能力

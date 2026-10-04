@@ -1,6 +1,5 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Rooms;
@@ -10,9 +9,6 @@ namespace HextechRunesSponsorPack;
 // 战士:牌组只留攻击牌,换来固定力量;每打若干精英再加一层,阈值随已获层数递增。
 internal sealed class WarriorContract : AbyssalContractBase
 {
-	public override IEnumerable<IHoverTip> ExtraHoverTips =>
-		HoverTipFactory.FromRelic<WarriorContractChoiceRelic>();
-
 	public override async Task ApplyInitialEffect(AbyssalContractRune rune)
 	{
 		await RemoveForbiddenCards(rune);
@@ -68,12 +64,7 @@ internal sealed class WarriorContract : AbyssalContractBase
 
 	private static async Task RemoveForbiddenCards(AbyssalContractRune rune)
 	{
-		Player? owner = rune.Owner;
-		if (owner == null)
-		{
-			return;
-		}
-
+		Player owner = rune.Owner;
 		IReadOnlyList<CardModel> cards = owner.Deck.Cards
 			.Where(static card => AbyssalContractRune.IsWarriorForbiddenCardType(card.Type))
 			.ToArray();
