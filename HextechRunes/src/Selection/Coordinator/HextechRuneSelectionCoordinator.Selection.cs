@@ -279,8 +279,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			// 构造失败就退回普通的三选一界面,不阻断本幕选择。
-			HextechLog.Warn("Mayhem", $"Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex.GetType().Name}: {ex.Message}");
+			// 自选池只影响本机界面:构造失败就记错误并退回普通的三选一界面,不阻断本幕选择。
+			HextechLog.Error("Mayhem", $"Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex}");
 			return null;
 		}
 	}

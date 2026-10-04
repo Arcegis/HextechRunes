@@ -12,16 +12,12 @@ internal sealed class HextechRuneSelectionJournalState
 {
 	private const int CurrentVersion = 1;
 
-	private readonly object _syncRoot = new();
 	private readonly Dictionary<JournalKey, HextechRuneSelectionJournalEntry> _entries = new();
 	private readonly SortedDictionary<ulong, int> _characterWeights = new();
 
 	internal int GetCharacterWeight(ulong playerNetId)
 	{
-		lock (_syncRoot)
-		{
-			return _characterWeights.GetValueOrDefault(playerNetId, HextechWeightedRuneOptions.InitialCharacterWeightPercent);
-		}
+		return _characterWeights.GetValueOrDefault(playerNetId, HextechWeightedRuneOptions.InitialCharacterWeightPercent);
 	}
 
 	internal void CommitCharacterWeight(ulong playerNetId, int weight)
@@ -32,15 +28,7 @@ internal sealed class HextechRuneSelectionJournalState
 		}
 
 		// 提交绝对值而非增量：恢复检查点或重复确认不能再次推进掉落权重。
-		lock (_syncRoot)
-		{
-			_characterWeights[playerNetId] = weight;
-		}
-	}
-
-	internal static bool RequiresRelicObtain(bool applied, bool currentlyOwned)
-	{
-		return !applied && !currentlyOwned;
+		_characterWeights[playerNetId] = weight;
 	}
 
 	public bool TryGet(
@@ -49,11 +37,7 @@ internal sealed class HextechRuneSelectionJournalState
 		ulong playerNetId,
 		out HextechRuneSelectionJournalEntry entry)
 	{
-		JournalKey key = CreateKey(actIndex, choiceOrdinal, playerNetId);
-		lock (_syncRoot)
-		{
-			return _entries.TryGetValue(key, out entry);
-		}
+		return _entries.TryGetValue(CreateKey(actIndex, choiceOrdinal, playerNetId), out entry);
 	}
 
 	public bool HasEntriesForAct(int actIndex)
@@ -63,10 +47,7 @@ internal sealed class HextechRuneSelectionJournalState
 			return false;
 		}
 
-		lock (_syncRoot)
-		{
-			return _entries.Keys.Any(key => key.ActIndex == actIndex);
-		}
+		return _entries.Keys.Any(key => key.ActIndex == actIndex);
 	}
 
 	public bool RecordSelected(
@@ -78,24 +59,21 @@ internal sealed class HextechRuneSelectionJournalState
 		JournalKey key = CreateKey(actIndex, choiceOrdinal, playerNetId);
 		ValidateModelId(selectedId);
 
-		lock (_syncRoot)
+		if (_entries.TryGetValue(key, out HextechRuneSelectionJournalEntry existing))
 		{
-			if (_entries.TryGetValue(key, out HextechRuneSelectionJournalEntry existing))
+			if (existing.SelectedId != selectedId || existing.SelectionData != selectionData)
 			{
-				if (!HasSameModelId(existing.SelectedId, selectedId) || existing.SelectionData != selectionData)
-				{
-					throw new InvalidOperationException(
-						$"[{ModInfo.Id}][Mayhem] Rune selection journal conflict: "
-						+ $"act={actIndex} ordinal={choiceOrdinal} player={playerNetId} "
-						+ $"existing={Describe(existing.SelectedId)} incoming={Describe(selectedId)}.");
-				}
-
-				return false;
+				throw new InvalidOperationException(
+					$"[{ModInfo.Id}][Mayhem] Rune selection journal conflict: "
+					+ $"act={actIndex} ordinal={choiceOrdinal} player={playerNetId} "
+					+ $"existing={Describe(existing.SelectedId)} incoming={Describe(selectedId)}.");
 			}
 
-			_entries.Add(key, new HextechRuneSelectionJournalEntry(selectedId, Applied: false, selectionData));
-			return true;
+			return false;
 		}
+
+		_entries.Add(key, new HextechRuneSelectionJournalEntry(selectedId, Applied: false, selectionData));
+		return true;
 	}
 
 	public bool MarkApplied(
@@ -107,183 +85,130 @@ internal sealed class HextechRuneSelectionJournalState
 		JournalKey key = CreateKey(actIndex, choiceOrdinal, playerNetId);
 		ValidateModelId(selectedId);
 
-		lock (_syncRoot)
+		if (!_entries.TryGetValue(key, out HextechRuneSelectionJournalEntry existing))
 		{
-			if (!_entries.TryGetValue(key, out HextechRuneSelectionJournalEntry existing))
-			{
-				throw new InvalidOperationException(
-					$"[{ModInfo.Id}][Mayhem] Rune selection journal cannot mark an unrecorded selection as applied: "
-					+ $"act={actIndex} ordinal={choiceOrdinal} player={playerNetId} selected={Describe(selectedId)}.");
-			}
-
-			if (!HasSameModelId(existing.SelectedId, selectedId))
-			{
-				throw new InvalidOperationException(
-					$"[{ModInfo.Id}][Mayhem] Rune selection journal apply mismatch: "
-					+ $"act={actIndex} ordinal={choiceOrdinal} player={playerNetId} "
-					+ $"recorded={Describe(existing.SelectedId)} applied={Describe(selectedId)}.");
-			}
-
-			if (existing.Applied)
-			{
-				return false;
-			}
-
-			_entries[key] = existing with { Applied = true };
-			return true;
+			throw new InvalidOperationException(
+				$"[{ModInfo.Id}][Mayhem] Rune selection journal cannot mark an unrecorded selection as applied: "
+				+ $"act={actIndex} ordinal={choiceOrdinal} player={playerNetId} selected={Describe(selectedId)}.");
 		}
+
+		if (existing.SelectedId != selectedId)
+		{
+			throw new InvalidOperationException(
+				$"[{ModInfo.Id}][Mayhem] Rune selection journal apply mismatch: "
+				+ $"act={actIndex} ordinal={choiceOrdinal} player={playerNetId} "
+				+ $"recorded={Describe(existing.SelectedId)} applied={Describe(selectedId)}.");
+		}
+
+		if (existing.Applied)
+		{
+			return false;
+		}
+
+		_entries[key] = existing with { Applied = true };
+		return true;
 	}
 
 	public string Serialize()
 	{
-		lock (_syncRoot)
+		if (_entries.Count == 0 && _characterWeights.Count == 0)
 		{
-			if (_entries.Count == 0 && _characterWeights.Count == 0)
-			{
-				return "";
-			}
-
-			JournalJsonEntry[] entries = _entries
-				.OrderBy(static pair => pair.Key.ActIndex)
-				.ThenBy(static pair => pair.Key.ChoiceOrdinal)
-				.ThenBy(static pair => pair.Key.PlayerNetId)
-				.Select(static pair => new JournalJsonEntry(
-					pair.Key.ActIndex,
-					pair.Key.ChoiceOrdinal,
-					pair.Key.PlayerNetId,
-					pair.Value.SelectedId.Category,
-					pair.Value.SelectedId.Entry,
-					pair.Value.Applied, pair.Value.SelectionData))
-				.ToArray();
-			return JsonSerializer.Serialize(
-				new JournalJsonSnapshot(CurrentVersion, entries, _characterWeights),
-				HextechTelemetry.JsonOptions);
+			return "";
 		}
+
+		JournalJsonEntry[] entries = _entries
+			.OrderBy(static pair => pair.Key.ActIndex)
+			.ThenBy(static pair => pair.Key.ChoiceOrdinal)
+			.ThenBy(static pair => pair.Key.PlayerNetId)
+			.Select(static pair => new JournalJsonEntry(
+				pair.Key.ActIndex,
+				pair.Key.ChoiceOrdinal,
+				pair.Key.PlayerNetId,
+				pair.Value.SelectedId.Category,
+				pair.Value.SelectedId.Entry,
+				pair.Value.Applied, pair.Value.SelectionData))
+			.ToArray();
+		return JsonSerializer.Serialize(
+			new JournalJsonSnapshot(CurrentVersion, entries, _characterWeights),
+			HextechTelemetry.JsonOptions);
 	}
 
 	public void Restore(string? json)
 	{
-		lock (_syncRoot)
+		_entries.Clear();
+		_characterWeights.Clear();
+		if (string.IsNullOrWhiteSpace(json))
 		{
-			_entries.Clear();
-			_characterWeights.Clear();
-			if (string.IsNullOrWhiteSpace(json))
-			{
-				return;
-			}
+			return;
+		}
 
-			JournalJsonSnapshot? snapshot;
-			try
-			{
-				snapshot = JsonSerializer.Deserialize<JournalJsonSnapshot>(
-					json,
-					HextechTelemetry.JsonOptions);
-			}
-			catch (Exception ex)
-			{
-				HextechLog.Warn("Mayhem", $"Rune selection journal restore failed; journal cleared: {ex.Message}");
-				return;
-			}
+		JournalJsonSnapshot? snapshot;
+		try
+		{
+			snapshot = JsonSerializer.Deserialize<JournalJsonSnapshot>(
+				json,
+				HextechTelemetry.JsonOptions);
+		}
+		catch (Exception ex)
+		{
+			HextechLog.Warn("Mayhem", $"Rune selection journal restore failed; journal cleared: {ex.Message}");
+			return;
+		}
 
-			if (snapshot == null || snapshot.Version != CurrentVersion || snapshot.Entries == null)
-			{
-				HextechLog.Warn(
-					"Mayhem", $"Rune selection journal restore ignored unsupported payload: "
-					+ $"version={snapshot?.Version.ToString() ?? "null"}.");
-				return;
-			}
+		if (snapshot == null || snapshot.Version != CurrentVersion || snapshot.Entries == null)
+		{
+			HextechLog.Warn(
+				"Mayhem", $"Rune selection journal restore ignored unsupported payload: "
+				+ $"version={snapshot?.Version.ToString() ?? "null"}.");
+			return;
+		}
 
-			int ignored = 0;
-			if (snapshot.CharacterWeights != null)
+		if (snapshot.CharacterWeights != null)
+		{
+			foreach ((ulong playerId, int weight) in snapshot.CharacterWeights)
 			{
-				foreach ((ulong playerId, int weight) in snapshot.CharacterWeights)
+				if (weight >= 0 && weight % HextechWeightedRuneOptions.WeightStep == 0)
 				{
-					if (weight >= 0 && weight % HextechWeightedRuneOptions.WeightStep == 0)
-					{
-						_characterWeights[playerId] = weight;
-					}
+					_characterWeights[playerId] = weight;
 				}
 			}
+		}
 
-			HashSet<JournalKey> conflictedKeys = [];
-			foreach (JournalJsonEntry? serialized in snapshot.Entries)
+		// JSON 由 Serialize 从字典写出,键不重复;这里只跳过字段不完整的条目。
+		int ignored = 0;
+		foreach (JournalJsonEntry? serialized in snapshot.Entries)
+		{
+			if (serialized == null
+				|| serialized.ActIndex < 0
+				|| serialized.ChoiceOrdinal < 0
+				|| string.IsNullOrWhiteSpace(serialized.Category)
+				|| string.IsNullOrWhiteSpace(serialized.Entry)
+				|| !_entries.TryAdd(
+					new JournalKey(serialized.ActIndex, serialized.ChoiceOrdinal, serialized.PlayerNetId),
+					new HextechRuneSelectionJournalEntry(
+						new ModelId(serialized.Category, serialized.Entry),
+						serialized.Applied,
+						serialized.SelectionData ?? "")))
 			{
-				if (!TryRestoreEntry(serialized, conflictedKeys))
-				{
-					ignored++;
-				}
+				ignored++;
 			}
+		}
 
-			if (ignored > 0)
-			{
-				HextechLog.Warn(
-					"Mayhem", $"Rune selection journal restore ignored invalid or conflicting entries: "
-					+ $"ignored={ignored} restored={_entries.Count}.");
-			}
+		if (ignored > 0)
+		{
+			HextechLog.Warn(
+				"Mayhem", $"Rune selection journal restore ignored invalid entries: "
+				+ $"ignored={ignored} restored={_entries.Count}.");
 		}
 	}
 
 	public void Reset(bool preserveCharacterWeights = false)
 	{
-		lock (_syncRoot)
+		_entries.Clear();
+		if (!preserveCharacterWeights)
 		{
-			_entries.Clear();
-			if (!preserveCharacterWeights)
-			{
-				_characterWeights.Clear();
-			}
+			_characterWeights.Clear();
 		}
-	}
-
-	private bool TryRestoreEntry(
-		JournalJsonEntry? serialized,
-		HashSet<JournalKey> conflictedKeys)
-	{
-		if (serialized == null
-			|| serialized.ActIndex < 0
-			|| serialized.ChoiceOrdinal < 0
-			|| string.IsNullOrWhiteSpace(serialized.Category)
-			|| string.IsNullOrWhiteSpace(serialized.Entry))
-		{
-			return false;
-		}
-
-		JournalKey key = new(
-			serialized.ActIndex,
-			serialized.ChoiceOrdinal,
-			serialized.PlayerNetId);
-		if (conflictedKeys.Contains(key))
-		{
-			return false;
-		}
-
-		ModelId selectedId;
-		try
-		{
-			selectedId = new ModelId(serialized.Category, serialized.Entry);
-		}
-		catch (Exception)
-		{
-			return false;
-		}
-
-		HextechRuneSelectionJournalEntry restored = new(selectedId, serialized.Applied, serialized.SelectionData ?? "");
-		if (!_entries.TryGetValue(key, out HextechRuneSelectionJournalEntry existing))
-		{
-			_entries.Add(key, restored);
-			return true;
-		}
-
-		if (HasSameModelId(existing.SelectedId, selectedId) && existing.SelectionData == restored.SelectionData)
-		{
-			_entries[key] = existing with { Applied = existing.Applied || restored.Applied };
-			return true;
-		}
-
-		// 同一 operation 对应两个不同模型时无法安全推断哪一个已发放，删除该键让上层重新走同步选择。
-		_entries.Remove(key);
-		conflictedKeys.Add(key);
-		return false;
 	}
 
 	private static JournalKey CreateKey(
@@ -309,12 +234,6 @@ internal sealed class HextechRuneSelectionJournalState
 		{
 			throw new ArgumentException("Rune selection journal ModelId must include both category and entry.", nameof(id));
 		}
-	}
-
-	private static bool HasSameModelId(ModelId left, ModelId right)
-	{
-		return string.Equals(left.Category, right.Category, StringComparison.Ordinal)
-			&& string.Equals(left.Entry, right.Entry, StringComparison.Ordinal);
 	}
 
 	private static string Describe(ModelId id)

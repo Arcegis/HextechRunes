@@ -4,7 +4,6 @@ namespace HextechRunes;
 
 internal sealed class HextechMayhemChoiceHistoryState
 {
-	private readonly object _seenPlayerRuneIdsLock = new();
 	private string _telemetryChoicesJson = "";
 	private string _seenPlayerRuneIdsJson = "";
 
@@ -58,11 +57,7 @@ internal sealed class HextechMayhemChoiceHistoryState
 	public HashSet<ModelId> GetSeenPlayerRuneIds(Player player, RunState runState)
 	{
 		int playerSlot = GetPlayerSlotIndex(player, runState);
-		HashSet<string> entries;
-		lock (_seenPlayerRuneIdsLock)
-		{
-			entries = GetSeenPlayerRuneEntries(playerSlot);
-		}
+		HashSet<string> entries = GetSeenPlayerRuneEntries(playerSlot);
 
 		foreach (string entry in GetTelemetryChoiceRecords()
 			.Where(record => record.PlayerSlot == playerSlot)
@@ -74,20 +69,8 @@ internal sealed class HextechMayhemChoiceHistoryState
 			}
 		}
 
-		HashSet<ModelId> result = [];
-		foreach (string entry in entries)
-		{
-			try
-			{
-				result.Add(ToSeenRelicId(entry));
-			}
-			catch (Exception ex)
-			{
-				HextechLog.Warn("Mayhem", $"Seen player rune id ignored: slot={playerSlot} entry={entry} error={ex.Message}");
-			}
-		}
-
-		return result;
+		// 条目都来自本类与遥测记录自己序列化的非空条目名。
+		return entries.Select(ToSeenRelicId).ToHashSet();
 	}
 
 	/// <summary>
@@ -117,32 +100,29 @@ internal sealed class HextechMayhemChoiceHistoryState
 		}
 
 		int playerSlot = GetPlayerSlotIndex(player, runState);
-		lock (_seenPlayerRuneIdsLock)
+		Dictionary<int, HashSet<string>> seenBySlot = DecodeSeenPlayerRuneEntries();
+		if (!seenBySlot.TryGetValue(playerSlot, out HashSet<string>? seenEntries))
 		{
-			Dictionary<int, HashSet<string>> seenBySlot = DecodeSeenPlayerRuneEntries();
-			if (!seenBySlot.TryGetValue(playerSlot, out HashSet<string>? seenEntries))
-			{
-				seenEntries = new HashSet<string>(StringComparer.Ordinal);
-				seenBySlot[playerSlot] = seenEntries;
-			}
+			seenEntries = new HashSet<string>(StringComparer.Ordinal);
+			seenBySlot[playerSlot] = seenEntries;
+		}
 
-			bool changed = false;
-			foreach (string entry in entriesToAdd)
-			{
-				changed |= seenEntries.Add(entry);
-			}
+		bool changed = false;
+		foreach (string entry in entriesToAdd)
+		{
+			changed |= seenEntries.Add(entry);
+		}
 
-			if (changed)
-			{
-				// 顶层键序也要规范化：Dictionary 插入序依赖"两端见到槽位的顺序相同"这一隐式前提。
-				_seenPlayerRuneIdsJson = JsonSerializer.Serialize(
-					seenBySlot
-						.OrderBy(static pair => pair.Key)
-						.ToDictionary(
-							static pair => pair.Key.ToString(),
-							static pair => pair.Value.OrderBy(static entry => entry, StringComparer.Ordinal).ToArray()),
-					HextechTelemetry.JsonOptions);
-			}
+		if (changed)
+		{
+			// 顶层键序也要规范化：Dictionary 插入序依赖"两端见到槽位的顺序相同"这一隐式前提。
+			_seenPlayerRuneIdsJson = JsonSerializer.Serialize(
+				seenBySlot
+					.OrderBy(static pair => pair.Key)
+					.ToDictionary(
+						static pair => pair.Key.ToString(),
+						static pair => pair.Value.OrderBy(static entry => entry, StringComparer.Ordinal).ToArray()),
+				HextechTelemetry.JsonOptions);
 		}
 	}
 
@@ -191,22 +171,10 @@ internal sealed class HextechMayhemChoiceHistoryState
 		return result;
 	}
 
+	// 找不到的玩家记在 0 号槽(沿用既有存档口径)。
 	private static int GetPlayerSlotIndex(Player player, RunState runState)
 	{
 		int slot = runState.GetPlayerSlotIndex(player);
-		if (slot >= 0)
-		{
-			return slot;
-		}
-
-		for (int i = 0; i < runState.Players.Count; i++)
-		{
-			if (ReferenceEquals(runState.Players[i], player))
-			{
-				return i;
-			}
-		}
-
-		return 0;
+		return slot >= 0 ? slot : 0;
 	}
 }

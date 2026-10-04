@@ -279,7 +279,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			bool currentlyOwned = selectedRelic is IHextechGeneratedRune generatedSelection
 				? player.Relics.OfType<IHextechGeneratedRune>().Any(owned => owned.ExportSelectionData() == generatedSelection.ExportSelectionData())
 				: PlayerHasRelicId(player, selectedId);
-			if (!HextechRuneSelectionJournalState.RequiresRelicObtain(applied, currentlyOwned))
+			// Applied 后不再重放(自我消耗的符文离开背包也不补发);未 Applied 但已在背包里说明发放已越过
+			// 提交边界,只补记 Applied,不能再发一次。
+			if (applied || currentlyOwned)
 			{
 				if (!applied)
 				{

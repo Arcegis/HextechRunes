@@ -565,26 +565,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void AppliedRuneSelectionJournalDoesNotRequireInventoryPresence()
-	{
-		Expect(
-			!HextechRuneSelectionJournalState.RequiresRelicObtain(
-				applied: true,
-				currentlyOwned: false),
-			"an applied journal entry must not replay after a self-consuming rune leaves the inventory");
-		Expect(
-			!HextechRuneSelectionJournalState.RequiresRelicObtain(
-				applied: false,
-				currentlyOwned: true),
-			"an inventory-boundary recovery should mark the pending entry instead of obtaining it twice");
-		Expect(
-			HextechRuneSelectionJournalState.RequiresRelicObtain(
-				applied: false,
-				currentlyOwned: false),
-			"only a pending and absent journal entry should resume relic obtain");
-	}
-
-	[HextechTest]
 	private static void MonsterHexRollerBuildActPoolExcludesKnownAndFallsBack()
 	{
 		(HextechRarityTier rarity, IReadOnlyList<MonsterHexKind> rarityPool) = GetMonsterHexPoolWithMinimum(2);
