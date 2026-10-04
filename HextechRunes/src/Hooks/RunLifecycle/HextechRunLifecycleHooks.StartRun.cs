@@ -95,7 +95,6 @@ internal static partial class HextechRunLifecycleHooks
 			HextechRuneSelectionCoordinator.ResetActSelectionState();
 			HextechEnemyUi.Clear();
 			SubscribeRoomEnteredIfNeeded();
-			SubscribeRoomExitedIfNeeded();
 			HextechLog.Info("Mayhem", $"StartRun begin: seed={runState.Rng.StringSeed} actIndex={runState.CurrentActIndex} startedWithNeow={runState.ExtraFields.StartedWithNeow}");
 			RunsInsideStartRunOrig.Add(runState);
 		}

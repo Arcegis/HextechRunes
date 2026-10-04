@@ -27,12 +27,6 @@ internal static class HextechSovereignBladeVfxSync
 		}
 	}
 
-	internal static float GetNormalScaleForDamage(int damage)
-	{
-		float bladeSize = Mathf.Clamp((float)damage / 200f, 0f, 1f);
-		return Mathf.Lerp(0.9f, 2f, bladeSize);
-	}
-
 	private static void ReconcileNow(Player owner, bool createMissing)
 	{
 		if (owner.PlayerCombatState == null || owner.Creature.CombatState == null)
@@ -116,8 +110,9 @@ internal static class HextechSovereignBladeVfxSync
 			Node2D? spineNode = vfx.GetNodeOrNull<Node2D>("SpineSword");
 			if (spineNode != null)
 			{
-				float scale = GetNormalScaleForDamage(blade.DynamicVars.Damage.IntValue);
-				spineNode.Scale = Vector2.One * scale;
+				// 与原版锻造时的剑体缩放同一公式：伤害 0→200 线性对应 0.9→2 倍。
+				float bladeSize = Mathf.Clamp(blade.DynamicVars.Damage.IntValue / 200f, 0f, 1f);
+				spineNode.Scale = Vector2.One * Mathf.Lerp(0.9f, 2f, bladeSize);
 			}
 		}
 	}

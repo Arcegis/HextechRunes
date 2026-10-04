@@ -5,33 +5,22 @@ internal static partial class HextechEnemyPowerScalingHooks
 	private enum ScalingOverride
 	{
 		Unscaled,
-		PlayerCount,
-		FinalAmount
+		PlayerCount
 	}
 
-	private static readonly AsyncLocal<ScalingOverride?> CurrentOverride = new();
+	// 本模组 ApplyExact 的施加窗口：层数已按最终口径算好，窗口内跳过原版对敌方的联机缩放。
+	private static readonly AsyncLocal<bool> InExactApply = new();
 
 	internal static async Task<T?> Apply<T>(Creature target, decimal amount, Creature? applier, CardModel? cardSource, bool silent = false)
 		where T : PowerModel
 	{
-		ScalingOverride? scalingOverride = GetScalingOverride(typeof(T));
-		if (scalingOverride == null)
+		if (GetScalingOverride(typeof(T)) is not ScalingOverride scalingOverride)
 		{
 			return await PowerCmd.Apply<T>(target, amount, applier, cardSource, silent);
 		}
 
-		decimal finalAmount = CalculateFinalAmount(target, amount, applier, scalingOverride.Value);
-		finalAmount = ClampPowerOffsetForApply<T>(target, finalAmount);
-		if (finalAmount == 0m)
-		{
-			return target.GetPower<T>();
-		}
-
-		Creature? effectiveApplier = ShouldClearSelfApplier(target, applier) ? null : applier;
-		using (BeginOverride(ScalingOverride.FinalAmount))
-		{
-			return await PowerCmd.Apply<T>(target, finalAmount, effectiveApplier, cardSource, silent);
-		}
+		decimal finalAmount = CalculateFinalAmount(target, amount, applier, scalingOverride);
+		return await ApplyExact<T>(target, finalAmount, applier, cardSource, silent);
 	}
 
 	/// <summary>
@@ -48,9 +37,15 @@ internal static partial class HextechEnemyPowerScalingHooks
 		}
 
 		Creature? effectiveApplier = ShouldClearSelfApplier(target, applier) ? null : applier;
-		using (BeginOverride(ScalingOverride.FinalAmount))
+		bool previous = InExactApply.Value;
+		InExactApply.Value = true;
+		try
 		{
 			return await PowerCmd.Apply<T>(target, finalAmount, effectiveApplier, cardSource, silent);
+		}
+		finally
+		{
+			InExactApply.Value = previous;
 		}
 	}
 
@@ -60,7 +55,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 		Creature target,
 		ref decimal __result)
 	{
-		if (CurrentOverride.Value != ScalingOverride.FinalAmount
+		if (!InExactApply.Value
 			|| target == null
 			|| (!target.IsPrimaryEnemy && !target.IsSecondaryEnemy)
 			|| GetScalingOverride(__instance.GetType()) == null)
@@ -79,13 +74,9 @@ internal static partial class HextechEnemyPowerScalingHooks
 			return amount;
 		}
 
-		return scalingOverride switch
-		{
-			ScalingOverride.PlayerCount => MultiplyByPlayerCount(amount, GetPlayerCount(applier, target)),
-			ScalingOverride.Unscaled => ClampPowerAmount(amount),
-			ScalingOverride.FinalAmount => ClampPowerAmount(amount),
-			_ => ClampPowerAmount(amount)
-		};
+		return scalingOverride == ScalingOverride.PlayerCount
+			? MultiplyByPlayerCount(amount, GetPlayerCount(applier, target))
+			: ClampPowerAmount(amount);
 	}
 
 	private static decimal ClampPowerOffsetForApply<T>(Creature target, decimal amount)
@@ -131,7 +122,7 @@ internal static partial class HextechEnemyPowerScalingHooks
 	}
 
 	// 跳过型前缀用 Priority.First（已裁决保留，见 architecture.md）：只在本模组 Apply/ApplyExact 的 AsyncLocal
-	// 窗口内（CurrentOverride == FinalAmount）且目标是敌人时生效，窗口外恒 return true、对其他模组透明；
+	// 窗口内（InExactApply）且目标是敌人时生效，窗口外恒 return true、对其他模组透明；
 	// 窗口内层数已按最终口径算好，若排在第三方缩放前缀之后，会被它们再缩放一次或被它们的跳过前缀挡掉。
 	// 目标由 ScalingOverrides 各类型的 GetScaledAmountForMultiplayer 声明处派生（需运行时去重，故动态安装）。
 	[HextechPatch("combat.enemy-power-scaling", "敌方能力联机缩放")]

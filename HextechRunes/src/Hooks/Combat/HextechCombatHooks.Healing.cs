@@ -23,7 +23,8 @@ internal static partial class HextechCombatHooks
 
 		Player? player = state.Player;
 		Creature creature = state.Creature;
-		decimal amount = CalculateActualHealAmount(state.CurrentHpBefore, creature.CurrentHp);
+		// 按实际血量变化算：被上限截断的部分不算，治疗期间同时掉血也不能变成负治疗。
+		decimal amount = Math.Max(0m, creature.CurrentHp - (decimal)state.CurrentHpBefore);
 		if (amount <= 0m)
 		{
 			return;
@@ -38,11 +39,6 @@ internal static partial class HextechCombatHooks
 
 		// 我们的治疗(仅联机):持有者被治疗后分享给每个存活队友,战斗内外通吃。
 		await OurHealingRune.ShareHolderHeal(creature, amount);
-	}
-
-	internal static decimal CalculateActualHealAmount(int currentHpBefore, int currentHpAfter)
-	{
-		return Math.Max(0m, currentHpAfter - (decimal)currentHpBefore);
 	}
 
 	private static bool IsSkulkingColony(Creature creature)

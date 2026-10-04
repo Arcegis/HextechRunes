@@ -10,7 +10,6 @@ namespace HextechRunes;
 
 internal static class HextechShopForgeHooks
 {
-	private const int RandomForgeShopRegularCost = 250;
 	private const float CardRemovalRandomForgeOffsetY = 60f;
 
 	// MerchantInventory._relicEntries（List<MerchantRelicEntry>，0.107.1/0.110.0/0.111.0 原版私有字段）：
@@ -43,7 +42,10 @@ internal static class HextechShopForgeHooks
 
 	private static void InstallRandomForgeEntry(MerchantInventory inventory, Player player)
 	{
-		if (!IsModEnabledForRun(player))
+		// 模组总开关:商店随机锻造器是无条件注入普通局的少数泄漏点之一,按本局冻结值门控。
+		// 无 run/modifier 时:联机局固定 false(实时本地配置在两端可能不同,而这里门控的是
+		// MerchantInventory 模型写入,按本地配置各走一边会库存分叉);单机局退回实时配置。
+		if (!HextechMayhemModifier.IsEnabledForRun(player.RunState))
 		{
 			return;
 		}
@@ -60,28 +62,14 @@ internal static class HextechShopForgeHooks
 		inventory.AddRelicEntry(entry);
 	}
 
-	// 模组总开关:商店随机锻造器是无条件注入普通局的少数泄漏点之一,按本局冻结值门控。
-	// 无 run/modifier 时:联机局固定 false(实时本地配置在两端可能不同,而这里门控的是
-	// MerchantInventory 模型写入,按本地配置各走一边会库存分叉);单机局退回实时配置。
-	private static bool IsModEnabledForRun(Player? player)
-	{
-		return HextechMayhemModifier.IsEnabledForRun(player?.RunState);
-	}
-
 	private static async Task<(bool, int)> PurchaseRandomForge(MerchantRelicEntry entry, MerchantInventory inventory, bool ignoreCost)
 	{
+		// 只由 PurchasePatch 在 IsRandomForgeEntry 为真时调用；商店专属遗物只有 RandomForgeShopRelic 一种。
 		Player player = inventory.Player;
-		RandomForgeShopRelic? shopRelic = null;
-		int cost = RandomForgeShopRegularCost;
-		if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? activeShopRelic))
-		{
-			shopRelic = activeShopRelic;
-			HextechForgeShopPriceHelper.RefreshRandomForgeShopRelic(shopRelic, player.RunState as RunState);
-			cost = entry.Cost;
-		}
-
-		int purchaseOrdinal = shopRelic?.PurchaseCount ?? 0;
-		if (!HextechForgeGrantHelper.TryCreateStableShopForgeChoice(player, purchaseOrdinal, out List<RelicModel> options))
+		RandomForgeShopRelic shopRelic = (RandomForgeShopRelic)entry.Model!;
+		HextechForgeShopPriceHelper.RefreshRandomForgeShopRelic(shopRelic, player.RunState as RunState);
+		int cost = entry.Cost;
+		if (!HextechForgeGrantHelper.TryCreateStableShopForgeChoice(player, shopRelic.PurchaseCount, out List<RelicModel> options))
 		{
 			entry.InvokePurchaseFailed(PurchaseStatus.FailureOutOfStock);
 			return (false, 0);
@@ -137,11 +125,8 @@ internal static class HextechShopForgeHooks
 			HextechLog.Warn("Mayhem", $"Double Vision failed to duplicate purchased forge: player={player.NetId} relic={forge.CanonicalId().Entry}: {ex.GetType().Name}: {ex.Message}");
 		}
 
-		if (shopRelic != null)
-		{
-			shopRelic.IncrementPurchaseCount();
-			entry.OnMerchantInventoryUpdated();
-		}
+		shopRelic.IncrementPurchaseCount();
+		entry.OnMerchantInventoryUpdated();
 
 		return (true, ignoreCost ? 0 : cost);
 	}
@@ -155,11 +140,6 @@ internal static class HextechShopForgeHooks
 	private static bool IsRandomForgeEntry(MerchantEntry entry)
 	{
 		return entry is MerchantRelicEntry relicEntry && HextechCatalog.IsHextechShopRelic(relicEntry.Model);
-	}
-
-	private static bool IsFakeMerchantInventory(NMerchantInventory merchantInventory)
-	{
-		return merchantInventory is NFakeMerchantInventory;
 	}
 
 	private static void RemoveRandomForgeEntries(MerchantInventory inventory)
@@ -179,11 +159,6 @@ internal static class HextechShopForgeHooks
 	{
 		shopRelic = entry is MerchantRelicEntry relicEntry ? relicEntry.Model as RandomForgeShopRelic : null;
 		return shopRelic != null;
-	}
-
-	private static int GetRandomForgeShopBaseCost(RandomForgeShopRelic shopRelic)
-	{
-		return HextechForgeShopPriceHelper.GetRandomForgeShopPriceFor(shopRelic.Owner?.RunState as RunState);
 	}
 
 	private static void UpdateInventoryEntries(MerchantInventory inventory)
@@ -244,26 +219,14 @@ internal static class HextechShopForgeHooks
 			return;
 		}
 
-		object? cardRemovalNode = merchantInventory.GetNodeOrNull<NMerchantCardRemoval>("%MerchantCardRemoval");
-		if (!TryMoveCardRemovalNode(cardRemovalNode, new Vector2(0f, CardRemovalRandomForgeOffsetY)))
+		if (merchantInventory.GetNodeOrNull<NMerchantCardRemoval>("%MerchantCardRemoval") is not NMerchantCardRemoval cardRemoval)
 		{
 			HextechLog.Warn("Mayhem", $"Random forge shop card removal offset skipped: card removal node unavailable.");
+			return;
 		}
-	}
 
-	private static bool TryMoveCardRemovalNode(object? cardRemovalNode, Vector2 offset)
-	{
-		switch (cardRemovalNode)
-		{
-			case Control control:
-				control.Position = GetOriginalCardRemovalPosition(control, control.Position) + offset;
-				return true;
-			case Node2D node:
-				node.Position = GetOriginalCardRemovalPosition(node, node.Position) + offset;
-				return true;
-			default:
-				return false;
-		}
+		cardRemoval.Position = GetOriginalCardRemovalPosition(cardRemoval, cardRemoval.Position)
+			+ new Vector2(0f, CardRemovalRandomForgeOffsetY);
 	}
 
 	private static Vector2 GetOriginalCardRemovalPosition(GodotObject node, Vector2 currentPosition)
@@ -351,7 +314,7 @@ internal static class HextechShopForgeHooks
 			if (TryGetRandomForgeShopRelic(entry, out RandomForgeShopRelic? shopRelic))
 			{
 				HextechForgeShopPriceHelper.RefreshRandomForgeShopRelic(shopRelic, shopRelic.Owner?.RunState as RunState);
-				result = GetRandomForgeShopBaseCost(shopRelic);
+				result = HextechForgeShopPriceHelper.GetRandomForgeShopPriceFor(shopRelic.Owner?.RunState as RunState);
 			}
 		}
 	}
@@ -401,7 +364,7 @@ internal static class HextechShopForgeHooks
 		[HarmonyPrefix]
 		private static void Prefix(NMerchantInventory __instance, MerchantInventory inventory)
 		{
-			if (IsFakeMerchantInventory(__instance))
+			if (__instance is NFakeMerchantInventory)
 			{
 				RemoveRandomForgeEntries(inventory);
 				return;
@@ -414,7 +377,7 @@ internal static class HextechShopForgeHooks
 		[HarmonyPostfix]
 		private static void Postfix(NMerchantInventory __instance, MerchantInventory inventory)
 		{
-			if (IsFakeMerchantInventory(__instance))
+			if (__instance is NFakeMerchantInventory)
 			{
 				return;
 			}

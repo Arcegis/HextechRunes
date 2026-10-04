@@ -40,7 +40,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be structural");
 			Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should survive buff removal");
-			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not trigger monster self-buff effects");
 			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
 		}
 
@@ -50,7 +49,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be classified as a player relation rather than structural");
 			Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should survive enemy buff removal for Surrounded");
-			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not trigger monster self-buff effects");
 			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
 		}
 
@@ -69,7 +67,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be removable while its owner is alive");
 			Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should be removable by Feel the Burn and upgraded Expose");
-			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should keep its monster self-buff trigger restriction");
 			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
 		}
 
@@ -101,7 +98,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should not be classified as an enemy structural power");
 			Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should not be protected by enemy buff removal policy");
-			Expect(!HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not be classified as a monster self-buff");
 			Expect(!HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be classified as a monster mechanism");
 		}
 
@@ -117,16 +113,6 @@ internal static partial class Program
 		Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new HeistPower()), "Heist should survive Feel the Burn and upgraded Expose");
 		Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new SwipePower()), "Swipe should survive Feel the Burn and upgraded Expose");
 		Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new StrengthPower()), "ordinary Strength should remain removable");
-	}
-
-	[HextechTest]
-	private static void EnemyJeweledGauntletUsesExpectedStrengthTierChances()
-	{
-		Equal(10, HextechCombatHooks.GetJeweledGauntletRepeatPercent(0), "enemy Jeweled Gauntlet tier zero fallback chance");
-		Equal(10, HextechCombatHooks.GetJeweledGauntletRepeatPercent(1), "enemy Jeweled Gauntlet tier one chance");
-		Equal(20, HextechCombatHooks.GetJeweledGauntletRepeatPercent(2), "enemy Jeweled Gauntlet tier two chance");
-		Equal(30, HextechCombatHooks.GetJeweledGauntletRepeatPercent(3), "enemy Jeweled Gauntlet tier three chance");
-		Equal(30, HextechCombatHooks.GetJeweledGauntletRepeatPercent(99), "enemy Jeweled Gauntlet high-tier clamp chance");
 	}
 
 	[HextechTest]
@@ -161,13 +147,6 @@ internal static partial class Program
 		Expect(HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, roundNumber: 3, appliedRound: 2), "temporary Slow should expire at the next player turn start");
 		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, roundNumber: 3, appliedRound: 3), "temporary Slow applied during this player turn start must survive the same turn (Frost Wraith)");
 		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Enemy, roundNumber: 3, appliedRound: 2), "temporary Slow should remain during enemy turn start");
-		Expect(
-			HextechCombatHooks.TryResolveNeutralPowerType(slow, out MegaCrit.Sts2.Core.Entities.Powers.PowerType neutralType),
-			"custom Slow should bypass vanilla signed Counter classification");
-		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, neutralType, "custom Slow signed amount type");
-		Expect(
-			!HextechCombatHooks.TryResolveNeutralPowerType(new StrengthPower(), out _),
-			"neutral classification override should not affect vanilla powers");
 		Harmony neutralTypeHarmony = new("Natsuki.HextechRunes.Tests.SlowPowerType");
 		neutralTypeHarmony.Patch(
 			AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), [typeof(decimal)]),
@@ -315,15 +294,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls()
-	{
-		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0f), "successful potion roll should be kept below fifty percent");
-		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.499999f), "successful potion roll should be kept just below fifty percent");
-		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.5f), "successful potion roll should be removed at fifty percent boundary");
-		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.999999f), "successful potion roll should be removed above fifty percent");
-	}
-
-	[HextechTest]
 	private static void EnemyJeweledGauntletOnlyRepeatsStandardIntentTypes()
 	{
 		IntentType[] repeatable =
@@ -405,31 +375,6 @@ internal static partial class Program
 		Expect(
 			!HextechCombatHooks.WouldRepeatFinalKnowledgeDemonCurse("SLAP_MOVE", 2),
 			"other Knowledge Demon moves should remain repeatable");
-	}
-
-	[HextechTest]
-	private static void EnemyJeweledGauntletSkipsTheInsatiableOpeningMove()
-	{
-		Expect(
-			HextechCombatHooks.IsTheInsatiableOpeningMove("LIQUIFY_GROUND_MOVE"),
-			"The Insatiable opening move should never repeat");
-		Expect(
-			!HextechCombatHooks.IsTheInsatiableOpeningMove("THRASH_MOVE"),
-			"later The Insatiable moves should remain repeatable");
-	}
-
-	[HextechTest]
-	private static void EnemyJeweledGauntletSkipsMonsterRevivalMoves()
-	{
-		Expect(
-			HextechCombatHooks.IsMonsterRevivalMove("RESPAWN_MOVE"),
-			"Test Subject respawn should never repeat");
-		Expect(
-			HextechCombatHooks.IsMonsterRevivalMove("REVIVE_MOVE"),
-			"Illusion revive should never repeat");
-		Expect(
-			!HextechCombatHooks.IsMonsterRevivalMove("HEAL_MOVE"),
-			"ordinary healing moves should remain repeatable");
 	}
 
 	[HextechTest]

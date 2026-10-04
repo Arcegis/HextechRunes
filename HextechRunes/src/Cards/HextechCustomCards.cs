@@ -66,7 +66,7 @@ public sealed class CatalystCard : HextechOwnerPoolTokenCard
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (cardPlay.Target == null || Owner == null)
+		if (cardPlay.Target == null)
 		{
 			return;
 		}

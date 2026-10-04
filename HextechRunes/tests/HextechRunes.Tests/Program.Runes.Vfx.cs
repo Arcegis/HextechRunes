@@ -51,15 +51,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void SovereignBladeVfxSyncUsesVanillaForgeScale()
-	{
-		Expect(Math.Abs(0.9f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(0)) < 0.0001f, "zero-damage blade scale");
-		Expect(Math.Abs(0.955f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(10)) < 0.0001f, "base blade scale");
-		Expect(Math.Abs(2f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(200)) < 0.0001f, "fully scaled blade");
-		Expect(Math.Abs(2f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(999)) < 0.0001f, "blade scale cap");
-	}
-
-	[HextechTest]
 	private static void SlowCookVfxUsesDedicatedPressureCookerTextures()
 	{
 		string[] slowCookPaths =

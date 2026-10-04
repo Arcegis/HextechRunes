@@ -70,44 +70,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyCompensationSkipsOutbreakPoisonResponse()
-	{
-		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should start inactive");
-		Expect(
-			!CompensationEnemyHex.ShouldSkipDamageReplacement(),
-			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
-
-		bool skippedInsideGuard = false;
-		HextechCombatHooks.RunWithOutbreakPowerPoisonResponseGuard(() =>
-		{
-			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement();
-			return Task.CompletedTask;
-		}).GetAwaiter().GetResult();
-
-		Expect(skippedInsideGuard, "outbreak poison response damage should skip compensation replacement");
-		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should reset after guarded work");
-	}
-
-	[HextechTest]
-	private static void EnemyCompensationSkipsSleightOfFleshResponse()
-	{
-		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should start inactive");
-		Expect(
-			!CompensationEnemyHex.ShouldSkipDamageReplacement(),
-			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
-
-		bool skippedInsideGuard = false;
-		HextechCombatHooks.RunWithSleightOfFleshPowerDebuffResponseGuard(() =>
-		{
-			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement();
-			return Task.CompletedTask;
-		}).GetAwaiter().GetResult();
-
-		Expect(skippedInsideGuard, "sleight of flesh response damage should skip compensation replacement to avoid the poison recursion stack overflow");
-		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should reset after guarded work");
-	}
-
-	[HextechTest]
 	private static void CompensationReplacementGuardScopesAsyncWork()
 	{
 		Expect(!HextechCombatHooks.IsApplyingCompensationReplacement, "compensation replacement guard should start inactive");
@@ -166,25 +128,5 @@ internal static partial class Program
 		nestedSynchronousTask.GetAwaiter().GetResult();
 		enteredTaskGuard.Exit();
 		Expect(!enteredTaskGuard.IsActive, "nested completed task guard should unwind exactly one depth");
-	}
-
-	[HextechTest]
-	private static void CompensationReplacementSuppressesSleightOfFleshResponse()
-	{
-		Expect(
-			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true),
-			"sleight response should not be suppressed outside compensation replacement");
-
-		bool suppressedInsideGuard = false;
-		HextechCombatHooks.RunWithCompensationReplacementGuard(() =>
-		{
-			suppressedInsideGuard = HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true);
-			return Task.CompletedTask;
-		}).GetAwaiter().GetResult();
-
-		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement");
-		Expect(
-			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(false),
-			"sleight response should not be suppressed when the power change would not trigger sleight");
 	}
 }

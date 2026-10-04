@@ -16,10 +16,10 @@ internal static partial class HextechPlayerRuneHooks
 	private const float OrbLayoutTweenSpeed = 0.45f;
 
 	// NOrbManager._orbs（List<NOrb>）、_creatureNode（NCreature）、_curTween（Tween），0.107.1/0.110.0/0.111.0 原版私有字段。
-	// 前两者缺失时软上限布局不安装、走原版；_curTween 缺失只是不能杀掉上一段补间。
-	private static readonly FieldInfo? OrbManagerOrbsField = TryGetField(typeof(NOrbManager), "_orbs");
-	private static readonly FieldInfo? OrbManagerCreatureField = TryGetField(typeof(NOrbManager), "_creatureNode");
-	private static readonly FieldInfo? OrbManagerCurrentTweenField = TryGetField(typeof(NOrbManager), "_curTween");
+	// 任一缺失时软上限布局不安装（Prepare 返回 false）、走原版。
+	private static readonly FieldInfo OrbManagerOrbsField = TryGetField(typeof(NOrbManager), "_orbs")!;
+	private static readonly FieldInfo OrbManagerCreatureField = TryGetField(typeof(NOrbManager), "_creatureNode")!;
+	private static readonly FieldInfo OrbManagerCurrentTweenField = TryGetField(typeof(NOrbManager), "_curTween")!;
 	private static readonly ConditionalWeakTable<NOrbManager, OrbLayoutFrameState> OrbLayoutFrameStates = new();
 
 	private sealed class OrbLayoutFrameState
@@ -111,9 +111,9 @@ internal static partial class HextechPlayerRuneHooks
 			radius *= 0.75f;
 		}
 
-		((Tween?)OrbManagerCurrentTweenField?.GetValue(__instance))?.Kill();
+		((Tween?)OrbManagerCurrentTweenField.GetValue(__instance))?.Kill();
 		Tween tween = __instance.CreateTween().SetParallel();
-		OrbManagerCurrentTweenField?.SetValue(__instance, tween);
+		OrbManagerCurrentTweenField.SetValue(__instance, tween);
 
 		int layoutCount = Math.Min(capacity, orbs.Count);
 		int tweenedCount = ResolveTweenedOrbCount(optimizeMadScientistOverflow, capacity, orbs.Count);
@@ -155,8 +155,8 @@ internal static partial class HextechPlayerRuneHooks
 		out Player? player,
 		out int capacity)
 	{
-		orbs = (List<NOrb>?)OrbManagerOrbsField?.GetValue(manager) ?? new List<NOrb>();
-		NCreature? creature = (NCreature?)OrbManagerCreatureField?.GetValue(manager);
+		orbs = (List<NOrb>)OrbManagerOrbsField.GetValue(manager)!;
+		NCreature? creature = (NCreature?)OrbManagerCreatureField.GetValue(manager);
 		player = creature?.Entity.Player;
 		capacity = player?.PlayerCombatState?.OrbQueue.Capacity ?? 0;
 		return capacity > 0;
@@ -190,7 +190,8 @@ internal static partial class HextechPlayerRuneHooks
 	internal static class OrbLayoutSoftCapPatch
 	{
 		[HarmonyPrepare]
-		private static bool Prepare() => OrbManagerOrbsField != null && OrbManagerCreatureField != null;
+		private static bool Prepare() =>
+			OrbManagerOrbsField != null && OrbManagerCreatureField != null && OrbManagerCurrentTweenField != null;
 
 		[HarmonyPrefix]
 		[HarmonyPriority(Priority.Low)]

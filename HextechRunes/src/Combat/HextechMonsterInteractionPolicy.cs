@@ -27,13 +27,6 @@ internal static class HextechMonsterInteractionPolicy
 			&& !Hook.ShouldCreatureBeRemovedFromCombatAfterDeath(combatState, creature);
 	}
 
-	public static bool ShouldIgnoreMonsterSelfBuff(PowerModel power)
-	{
-		return IsStructuralMonsterBuff(power)
-			|| IsEnemyHostedPlayerRelationBuff(power)
-			|| IsRemovableMonsterMechanismBuff(power);
-	}
-
 	public static bool ShouldPreserveFromBuffRemoval(PowerModel power)
 	{
 		return IsStructuralMonsterBuff(power)

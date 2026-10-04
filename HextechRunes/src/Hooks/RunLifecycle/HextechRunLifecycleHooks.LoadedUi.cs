@@ -15,7 +15,7 @@ internal static partial class HextechRunLifecycleHooks
 		// mod 延续体异常不能把原版 LoadRun 任务链打成 faulted。
 		try
 		{
-			await RefreshEnemyUiWhenReady(() => runState, "LoadRun", EnemyUiRefreshFrameBudget);
+			await RefreshEnemyUiWhenReady(() => runState, "LoadRun");
 			// 不能 await：原版读档入口（主菜单继续/各联机读档界面）在 LoadRun 返回后才 FadeIn，
 			// 恢复中的锻造器/海克斯选择要等玩家操作，等它会让画面一直停在淡出状态。
 			// 两端都在各自的 LoadRun 延续里启动这段恢复，选择结果由选择协议同步；异常由 RunSafely 记录。
@@ -151,14 +151,14 @@ internal static partial class HextechRunLifecycleHooks
 	}
 
 	// 顶栏初始化是同步回调，只能启动不能等待；刷新只读本局状态并更新本地 UI，两端各自执行，不影响共享状态。
-	private static void ScheduleEnemyUiRefresh(Func<RunState?> resolveRun, string reason, int frameBudget)
+	private static void ScheduleEnemyUiRefresh(Func<RunState?> resolveRun, string reason)
 	{
-		TaskHelper.RunSafely(RefreshEnemyUiWhenReady(resolveRun, reason, frameBudget));
+		TaskHelper.RunSafely(RefreshEnemyUiWhenReady(resolveRun, reason));
 	}
 
-	private static async Task RefreshEnemyUiWhenReady(Func<RunState?> resolveRun, string reason, int frameBudget)
+	private static async Task RefreshEnemyUiWhenReady(Func<RunState?> resolveRun, string reason)
 	{
-		for (int frame = 0; frame <= frameBudget; frame++)
+		for (int frame = 0; frame <= EnemyUiRefreshFrameBudget; frame++)
 		{
 			if (resolveRun() is RunState runState && TryRefreshEnemyUiForRun(runState, reason, frame))
 			{
@@ -169,7 +169,7 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		HextechEnemyUi.HideMayhemModifierBadge();
-		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh skipped: reason={reason} run/topbar/modifier not ready after {frameBudget} frames");
+		HextechLog.Info("Mayhem", $"EnemyUi delayed refresh skipped: reason={reason} run/topbar/modifier not ready after {EnemyUiRefreshFrameBudget} frames");
 	}
 
 	private static bool TryRefreshEnemyUiForRun(RunState runState, string reason, int frame)
@@ -192,7 +192,6 @@ internal static partial class HextechRunLifecycleHooks
 		}
 
 		SubscribeRoomEnteredIfNeeded();
-		SubscribeRoomExitedIfNeeded();
 		int stageIndex = ResolveCurrentStageIndex(runState, modifier, out _);
 		bool recovered = !modifier.IsStageResolved(stageIndex)
 			&& modifier.TryRecoverResolvedActsFromPlayerRelics(reason, stageIndex);
@@ -223,11 +222,11 @@ internal static partial class HextechRunLifecycleHooks
 		{
 			if (runState is RunState concreteRunState)
 			{
-				ScheduleEnemyUiRefresh(() => concreteRunState, "NTopBar.Initialize", EnemyUiRefreshFrameBudget);
+				ScheduleEnemyUiRefresh(() => concreteRunState, "NTopBar.Initialize");
 				return;
 			}
 
-			ScheduleEnemyUiRefresh(static () => RunManager.Instance.DebugOnlyGetState(), "NTopBar.Initialize", EnemyUiRefreshFrameBudget);
+			ScheduleEnemyUiRefresh(static () => RunManager.Instance.DebugOnlyGetState(), "NTopBar.Initialize");
 		}
 	}
 }

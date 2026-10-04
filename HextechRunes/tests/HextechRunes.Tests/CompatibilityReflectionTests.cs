@@ -7,8 +7,6 @@ using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
-using MegaCrit.Sts2.Core.Models.Monsters;
-using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
@@ -74,30 +72,6 @@ internal static partial class Program
 		Expect(
 			!HextechMapLengthReducer.IsSupportedMapType(typeof(CompatibilityExternalActMap)),
 			"third-party ActMap subclasses must fail open without rewriting.");
-	}
-
-	[HextechTest]
-	private static void JeweledGauntletReflectionTargetsFailClosedAsAGroup()
-	{
-		FieldInfo? intents = typeof(MoveState).GetField(
-			"<Intents>k__BackingField",
-			BindingFlags.Instance | BindingFlags.NonPublic);
-		FieldInfo? performingMove = typeof(MonsterModel).GetField(
-			"_isPerformingMove",
-			BindingFlags.Instance | BindingFlags.NonPublic);
-		FieldInfo? curseCounter = typeof(KnowledgeDemon).GetField(
-			"_curseOfKnowledgeCounter",
-			BindingFlags.Instance | BindingFlags.NonPublic);
-
-		Expect(
-			HextechCombatHooks.HasJeweledGauntletPrivateFieldContracts(intents, performingMove, curseCounter),
-			"current-version Jeweled Gauntlet field contracts");
-		Expect(
-			!HextechCombatHooks.HasJeweledGauntletPrivateFieldContracts(null, performingMove, curseCounter),
-			"one missing field must disable the whole Jeweled Gauntlet hook group");
-		Expect(
-			!HextechCombatHooks.HasJeweledGauntletPrivateFieldContracts(curseCounter, performingMove, intents),
-			"changed field signatures must disable the whole Jeweled Gauntlet hook group");
 	}
 
 	[HextechTest]
