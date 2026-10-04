@@ -80,10 +80,13 @@ internal static partial class Program
 	[HextechTest]
 	private static void StableIndexMatchesGoldenValuesAndRejectsEmptyPool()
 	{
-		Equal(
-			0x4A7ED4341511E801UL,
-			HextechStableRandom.HashRaw("SEED-1", "|act:", "2", "|floor:", "17", "|", "enchantment-master", "|", "3", "|", "card"),
-			"golden hash (act 2, floor 17)");
+		foreach (int count in new[] { 7, 100, int.MaxValue })
+		{
+			Equal(
+				(int)(0x4A7ED4341511E801UL % (ulong)count),
+				HextechStableRandom.IndexFromRawParts(count, "SEED-1", "|act:", "2", "|floor:", "17", "|", "enchantment-master", "|", "3", "|", "card"),
+				$"golden raw hash (act 2, floor 17, count {count})");
+		}
 
 		RunState run = (RunState)RuntimeHelpers.GetUninitializedObject(typeof(RunState));
 		FieldInfo history = AccessTools.Field(typeof(RunState), "_mapPointHistory");
