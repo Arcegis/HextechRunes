@@ -33,8 +33,8 @@ public sealed class AbyssalContractRune : HextechRelicBase
 	internal const int AutomatonOrbSlotBonus = 99;
 	internal const int AutomatonDamagePerOrb = 1;
 
-	private static readonly IReadOnlyDictionary<AbyssalContractKind, IAbyssalContract> Strategies =
-		new Dictionary<AbyssalContractKind, IAbyssalContract>
+	private static readonly IReadOnlyDictionary<AbyssalContractKind, AbyssalContractBase> Strategies =
+		new Dictionary<AbyssalContractKind, AbyssalContractBase>
 		{
 			[AbyssalContractKind.Warrior] = new WarriorContract(),
 			[AbyssalContractKind.Hunter] = new HunterContract(),
@@ -86,18 +86,18 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 	internal AbyssalContractKind Contract => _contract;
 
-	private IAbyssalContract? Strategy =>
-		Strategies.TryGetValue(_contract, out IAbyssalContract? strategy) ? strategy : null;
+	private AbyssalContractBase? Strategy =>
+		Strategies.TryGetValue(_contract, out AbyssalContractBase? strategy) ? strategy : null;
 
 	// 未签约时把五种契约的提示全列出来,签约后只留自己那一条。
-	protected override IEnumerable<IHoverTip> ExtraHoverTips => Strategy?.ExtraHoverTips
-		?? AbyssalContractCatalog.ChoiceRelicTypes
-			.SelectMany(static type => HoverTipFactory.FromRelic(AbyssalContractCatalog.GetCanonicalRelic(type)))
-			.ToArray();
+	protected override IEnumerable<IHoverTip> ExtraHoverTips => AbyssalContractCatalog.Choices
+		.Where(choice => _contract == AbyssalContractKind.None || choice.Kind == _contract)
+		.SelectMany(static choice => HoverTipFactory.FromRelic(AbyssalContractCatalog.GetCanonicalRelic(choice.ChoiceRelicType)))
+		.ToArray();
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null || _contract != AbyssalContractKind.None)
+		if (_contract != AbyssalContractKind.None)
 		{
 			return;
 		}
@@ -117,7 +117,7 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 		SavedContract = (int)contract;
 		Flash();
-		if (Strategy is IAbyssalContract strategy)
+		if (Strategy is AbyssalContractBase strategy)
 		{
 			await strategy.ApplyInitialEffect(this);
 		}
@@ -125,11 +125,6 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 	public override Task AfterRemoved()
 	{
-		if (Owner == null)
-		{
-			return Task.CompletedTask;
-		}
-
 		return Strategy?.AfterRemoved(this) ?? Task.CompletedTask;
 	}
 
@@ -137,7 +132,7 @@ public sealed class AbyssalContractRune : HextechRelicBase
 	{
 		HunterSkillsPlayedThisCombat = 0;
 		AutoPlayingSnakebite = false;
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -154,7 +149,7 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -164,7 +159,7 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -177,7 +172,7 @@ public sealed class AbyssalContractRune : HextechRelicBase
 		CombatSide side,
 		HextechCombatState combatState)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -187,7 +182,7 @@ public sealed class AbyssalContractRune : HextechRelicBase
 
 	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -211,7 +206,7 @@ public sealed class AbyssalContractRune : HextechRelicBase
 		out decimal modifiedCost)
 	{
 		modifiedCost = originalCost;
-		IAbyssalContract? strategy = Strategy;
+		AbyssalContractBase? strategy = Strategy;
 		return strategy != null
 			&& strategy.TryModifyEnergyCostInCombat(this, card, originalCost, out modifiedCost);
 	}

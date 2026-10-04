@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HextechRunesSponsorPack;
@@ -11,9 +10,6 @@ namespace HextechRunesSponsorPack;
 // 代价是回合结束按场上珠数自伤。
 internal sealed class AutomatonContract : AbyssalContractBase
 {
-	public override IEnumerable<IHoverTip> ExtraHoverTips =>
-		HoverTipFactory.FromRelic<AutomatonContractChoiceRelic>();
-
 	public override async Task ApplyInitialEffect(AbyssalContractRune rune)
 	{
 		ApplyOrbSlots(rune);
@@ -60,12 +56,7 @@ internal sealed class AutomatonContract : AbyssalContractBase
 	// SerializablePlayer.BaseOrbSlotCount 是 16 位序列化,+99 仍在范围内(联机安全)。
 	private static void ApplyOrbSlots(AbyssalContractRune rune)
 	{
-		Player? owner = rune.Owner;
-		if (owner == null)
-		{
-			return;
-		}
-
+		Player owner = rune.Owner;
 		owner.BaseOrbSlotCount += AbyssalContractRune.AutomatonOrbSlotBonus;
 		if (owner.PlayerCombatState != null && owner.Creature.CombatState != null)
 		{

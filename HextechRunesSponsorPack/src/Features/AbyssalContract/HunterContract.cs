@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -13,9 +12,6 @@ namespace HextechRunesSponsorPack;
 // 猎人:开局塞入蛇牙,每打出若干张技能自动打出一张蛇牙,每隔若干场战斗再把一张牌变成蛇牙。
 internal sealed class HunterContract : AbyssalContractBase
 {
-	public override IEnumerable<IHoverTip> ExtraHoverTips =>
-		HoverTipFactory.FromRelic<HunterContractChoiceRelic>();
-
 	public override Task ApplyInitialEffect(AbyssalContractRune rune)
 	{
 		return rune.AddContractCards<Snakebite>(AbyssalContractRune.HunterSnakebiteCount);
@@ -93,12 +89,7 @@ internal sealed class HunterContract : AbyssalContractBase
 
 	private static async Task TransformRandomCardIntoSnakebite(AbyssalContractRune rune)
 	{
-		Player? owner = rune.Owner;
-		if (owner == null)
-		{
-			return;
-		}
-
+		Player owner = rune.Owner;
 		IReadOnlyList<CardModel> nonSnakebites = owner.Deck.Cards
 			.Where(static card => card is not Snakebite)
 			.ToArray();
