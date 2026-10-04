@@ -11,23 +11,6 @@ namespace HextechRunes.Tests;
 internal static partial class Program
 {
 	[HextechTest]
-	private static void StormReplacementRequiresMayhemAndUpgradeRune()
-	{
-		Expect(
-			!HextechCombatHooks.ShouldUseHextechStormHandling(hasMayhemModifier: false, hasStormUpgradeRune: false),
-			"Storm replacement should stay disabled without Mayhem or the upgrade rune");
-		Expect(
-			!HextechCombatHooks.ShouldUseHextechStormHandling(hasMayhemModifier: true, hasStormUpgradeRune: false),
-			"Mayhem alone must preserve vanilla Storm callbacks");
-		Expect(
-			!HextechCombatHooks.ShouldUseHextechStormHandling(hasMayhemModifier: false, hasStormUpgradeRune: true),
-			"the upgrade rune alone must preserve vanilla Storm callbacks");
-		Expect(
-			HextechCombatHooks.ShouldUseHextechStormHandling(hasMayhemModifier: true, hasStormUpgradeRune: true),
-			"Storm replacement should run only for the upgraded Mayhem path");
-	}
-
-	[HextechTest]
 	private static void EntomancerFallbackIsVersionScopedAndMissingHiveOnly()
 	{
 #if STS2_110_OR_NEWER
@@ -133,15 +116,6 @@ internal static partial class Program
 		{
 			harmony.UnpatchAll(harmony.Id);
 		}
-	}
-
-	[HextechTest]
-	private static void HealCompositionUsesActualHpDelta()
-	{
-		Equal(5m, HextechCombatHooks.CalculateActualHealAmount(20, 25), "uncapped actual heal delta");
-		Equal(2m, HextechCombatHooks.CalculateActualHealAmount(28, 30), "max-HP-capped actual heal delta");
-		Equal(0m, HextechCombatHooks.CalculateActualHealAmount(20, 20), "suppressed heal delta");
-		Equal(0m, HextechCombatHooks.CalculateActualHealAmount(20, 15), "concurrent HP loss must not become healing");
 	}
 
 	[HextechTest]

@@ -162,7 +162,12 @@ internal static partial class HextechCombatHooks
 			return false;
 		}
 
-		int chance = GetJeweledGauntletRepeatPercent(modifier.GetMonsterHexStrengthTier(MonsterHexKind.JeweledGauntlet));
+		int chance = modifier.GetMonsterHexStrengthTier(MonsterHexKind.JeweledGauntlet) switch
+		{
+			<= 1 => 10,
+			2 => 20,
+			_ => 30
+		};
 		return HextechStableRandom.PercentChance(
 			runState,
 			chance,
@@ -176,12 +181,12 @@ internal static partial class HextechCombatHooks
 		MonsterModel monster,
 		MoveState move)
 	{
-		if (IsMonsterRevivalMove(move.Id))
+		if (move.Id is TestSubjectRespawnMoveId or IllusionReviveMoveId)
 		{
 			return true;
 		}
 
-		if (monster is TheInsatiable && IsTheInsatiableOpeningMove(move.Id))
+		if (monster is TheInsatiable && move.Id == TheInsatiableOpeningMoveId)
 		{
 			return true;
 		}
@@ -211,27 +216,6 @@ internal static partial class HextechCombatHooks
 		// 因此计数为 1 时就必须阻止重复，否则第二阶段的暴击会直接执行第三阶段。
 		return curseCounter + 1 >= FinalKnowledgeDemonCurseIndex
 			&& string.Equals(moveId, KnowledgeDemonCurseMoveId, StringComparison.Ordinal);
-	}
-
-	internal static bool IsTheInsatiableOpeningMove(string moveId)
-	{
-		return string.Equals(moveId, TheInsatiableOpeningMoveId, StringComparison.Ordinal);
-	}
-
-	internal static bool IsMonsterRevivalMove(string moveId)
-	{
-		return string.Equals(moveId, TestSubjectRespawnMoveId, StringComparison.Ordinal)
-			|| string.Equals(moveId, IllusionReviveMoveId, StringComparison.Ordinal);
-	}
-
-	internal static int GetJeweledGauntletRepeatPercent(int strengthTier)
-	{
-		return strengthTier switch
-		{
-			<= 1 => 10,
-			2 => 20,
-			_ => 30
-		};
 	}
 
 	internal static bool AreJeweledGauntletIntentsRepeatable(IReadOnlyList<AbstractIntent> intents)

@@ -40,24 +40,13 @@ internal static partial class HextechCombatHooks
 		}
 	}
 
-	private static bool ShouldUseHextechStormHandling(StormPower stormPower)
-	{
-		Player? owner = stormPower.Owner?.Player;
-		return ShouldUseHextechStormHandling(
-			HextechMayhemModifier.FindIn(owner?.Creature.CombatState?.RunState) != null,
-			owner?.GetRelic<StormUpgradeRune>() != null);
-	}
-
-	internal static bool ShouldUseHextechStormHandling(bool hasMayhemModifier, bool hasStormUpgradeRune)
-	{
-		return hasMayhemModifier && hasStormUpgradeRune;
-	}
-
 	// 升级雷暴由 Modifier 的出牌事件（HextechMayhem.CardEvents）补发闪电，持有者的原版雷暴出牌前/后回调都要跳过；
 	// 两个补丁 ID 分别保留，只共用方法体。
 	private static bool RunStormCallbackUnlessUpgraded(StormPower storm, ref Task result)
 	{
-		if (!ShouldUseHextechStormHandling(storm))
+		Player? owner = storm.Owner?.Player;
+		if (HextechMayhemModifier.FindIn(owner?.Creature.CombatState?.RunState) == null
+			|| owner?.GetRelic<StormUpgradeRune>() == null)
 		{
 			return true;
 		}

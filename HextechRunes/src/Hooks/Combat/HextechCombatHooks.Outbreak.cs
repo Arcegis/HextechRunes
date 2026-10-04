@@ -57,24 +57,9 @@ internal static partial class HextechCombatHooks
 			&& power is not ITemporaryPower;
 	}
 
-	internal static bool ShouldSuppressSleightOfFleshPowerDebuffResponse(bool wouldRespond)
-	{
-		return wouldRespond && IsApplyingCompensationReplacement;
-	}
-
-	internal static Task RunWithOutbreakPowerPoisonResponseGuard(Func<Task> action)
-	{
-		return OutbreakPowerPoisonResponseGuard.RunAsync(action);
-	}
-
 	internal static Task RunWithCompensationReplacementGuard(Func<Task> action)
 	{
 		return CompensationReplacementGuard.RunAsync(action);
-	}
-
-	internal static Task RunWithSleightOfFleshPowerDebuffResponseGuard(Func<Task> action)
-	{
-		return SleightOfFleshPowerDebuffResponseGuard.RunAsync(action);
 	}
 
 	[HarmonyPatch(typeof(SleightOfFleshPower), nameof(SleightOfFleshPower.AfterPowerAmountChanged), typeof(PlayerChoiceContext), typeof(PowerModel), typeof(decimal), typeof(Creature), typeof(CardModel))]
@@ -87,7 +72,8 @@ internal static partial class HextechCombatHooks
 		{
 			__state = false;
 			bool wouldRespond = IsSleightOfFleshPowerDebuffResponse(__instance, power, amount, applier);
-			if (ShouldSuppressSleightOfFleshPowerDebuffResponse(wouldRespond))
+			// 代偿替换施加的下回合伤害不触发血肉戏法，避免与代偿互相递归。
+			if (wouldRespond && IsApplyingCompensationReplacement)
 			{
 				__result = Task.CompletedTask;
 				return false;

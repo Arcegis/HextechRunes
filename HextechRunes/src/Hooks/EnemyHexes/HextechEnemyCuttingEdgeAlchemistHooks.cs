@@ -12,11 +12,6 @@ internal static class HextechEnemyCuttingEdgeAlchemistHooks
 	// 缺失时本敌方海克斯不再减半药水掉落（保持原版结果），缺失成员进启动摘要。
 	private static readonly FieldInfo? OddsRngField = TryGetField(typeof(AbstractOdds), "_rng");
 
-	internal static bool ShouldKeepRolledPotion(float secondaryRoll)
-	{
-		return secondaryRoll < PotionRewardMultiplier;
-	}
-
 	internal readonly record struct PotionRollState(bool Active, float OriginalValue);
 
 	// 0.107.1 的 PotionRewardOdds.Roll 多一个 AscensionManager 参数（补丁目标签名随版本变化，允许行内 #if）。
@@ -51,7 +46,7 @@ internal static class HextechEnemyCuttingEdgeAlchemistHooks
 				return;
 			}
 
-			__result = ShouldKeepRolledPotion(rng.NextFloat());
+			__result = rng.NextFloat() < PotionRewardMultiplier;
 		}
 	}
 }
