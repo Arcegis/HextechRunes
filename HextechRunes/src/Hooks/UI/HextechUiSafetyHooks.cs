@@ -324,13 +324,11 @@ internal static class HextechUiSafetyHooks
 				return true;
 			}
 
+			// TryFindQueueItem 返回 true 时 playQueue/index 有效;退订与 Tween.Kill 都不改动队列。
 			UnsubscribeCardPlayQueueResume(__instance, action);
 			KillQueueItemTween(item);
-			if (playQueue != null && index >= 0 && index < playQueue.Count)
-			{
-				playQueue.RemoveAt(index);
-				TweenAllToQueuePositionMethod?.Invoke(__instance, null);
-			}
+			playQueue!.RemoveAt(index);
+			TweenAllToQueuePositionMethod?.Invoke(__instance, null);
 
 			LogRemotePlayQueueSkipped(action, card == null ? "missing-card-node" : "card-node-detached");
 			return false;
