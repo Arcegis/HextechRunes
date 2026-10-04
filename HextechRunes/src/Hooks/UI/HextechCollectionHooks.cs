@@ -1,7 +1,5 @@
-using Godot;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection;
 using MegaCrit.Sts2.Core.Unlocks;
 using static HextechRunes.HextechHookReflection;
@@ -49,47 +47,17 @@ internal static partial class HextechCollectionHooks
 		typeof(HashSet<RelicModel>),
 		typeof(HashSet<RelicModel>));
 
-	private static readonly MethodInfo? LoadRelicsMethod = TryGetMethod(
-		typeof(NRelicCollectionCategory),
-		"LoadRelics",
-		BindingFlags.Instance | BindingFlags.Public,
-		warnIfMissing: false,
-		typeof(RelicRarity),
-		typeof(NRelicCollection),
-		typeof(LocString),
-		typeof(HashSet<RelicModel>),
-		typeof(UnlockState),
-		typeof(HashSet<RelicModel>));
-
-	private static readonly MethodInfo? CollectionClearRelicsMethod = TryGetMethod(
-		typeof(NRelicCollection),
-		"ClearRelics",
-		BindingFlags.Instance | BindingFlags.NonPublic,
-		warnIfMissing: false);
-
-	private static readonly MethodInfo? CollectionLoadRelicsMethod = TryGetMethod(
-		typeof(NRelicCollection),
-		"LoadRelics",
-		BindingFlags.Instance | BindingFlags.NonPublic,
-		warnIfMissing: false);
-
 	private static string? _starterHeaderTemplate;
 
 	private static bool _loggedFlatFallback;
 
 	private static bool _loggedMissingFallbackContainer;
 
-	/// <summary>图鉴分类依赖原版 NRelicCollectionCategory 的一组私有成员;主目标缺失整体停用,子分类成员缺失退化为平铺网格。</summary>
+	/// <summary>图鉴分类依赖原版 NRelicCollectionCategory 的一组私有成员;子分类成员缺失退化为平铺网格,平铺所需的容器也缺失时整体停用。</summary>
 	private static bool CollectionHooksAvailable
 	{
 		get
 		{
-			if (LoadRelicsMethod == null)
-			{
-				HextechLog.Warn("Mayhem", $"Relic collection hooks disabled: missing NRelicCollectionCategory.LoadRelics.");
-				return false;
-			}
-
 			List<string> missingSubcategoryDependencies = GetMissingSubcategoryDependencies().ToList();
 			if (missingSubcategoryDependencies.Count > 0)
 			{
@@ -106,71 +74,12 @@ internal static partial class HextechCollectionHooks
 		}
 	}
 
-	public static void RefreshOpenRelicCollections()
-	{
-		if (CollectionClearRelicsMethod == null || CollectionLoadRelicsMethod == null)
-		{
-			return;
-		}
-
-		Node? root = NGame.Instance?.GetTree()?.Root;
-		if (root == null || !GodotObject.IsInstanceValid(root))
-		{
-			return;
-		}
-
-		int refreshed = 0;
-		foreach (NRelicCollection collection in EnumerateNodes<NRelicCollection>(root))
-		{
-			if (!GodotObject.IsInstanceValid(collection) || !collection.IsInsideTree())
-			{
-				continue;
-			}
-
-			try
-			{
-				CollectionClearRelicsMethod.Invoke(collection, null);
-				CollectionLoadRelicsMethod.Invoke(collection, null);
-				refreshed++;
-			}
-			catch (Exception ex)
-			{
-				HextechLog.Warn("RuneConfig", $"Failed to refresh relic collection after config save: {ex.GetType().Name}: {ex.Message}");
-			}
-		}
-
-		if (refreshed > 0)
-		{
-			HextechLog.Info("RuneConfig", $"Refreshed {refreshed} relic collection screen(s) after config save.");
-		}
-	}
-
-	private static IEnumerable<TNode> EnumerateNodes<TNode>(Node node)
-		where TNode : Node
-	{
-		if (node is TNode match)
-		{
-			yield return match;
-		}
-
-		foreach (Node child in node.GetChildren())
-		{
-			foreach (TNode descendant in EnumerateNodes<TNode>(child))
-			{
-				yield return descendant;
-			}
-		}
-	}
-
-	[HarmonyPatch]
+	[HarmonyPatch(typeof(NRelicCollectionCategory), nameof(NRelicCollectionCategory.LoadRelics))]
 	[HextechPatch("ui.relic-collection", "遗物图鉴分类", Optional = true)]
 	private static class LoadRelicsPatch
 	{
 		[HarmonyPrepare]
 		private static bool Prepare() => CollectionHooksAvailable;
-
-		[HarmonyTargetMethod]
-		private static MethodBase TargetMethod() => LoadRelicsMethod!;
 
 		[HarmonyPostfix]
 		private static void Postfix(

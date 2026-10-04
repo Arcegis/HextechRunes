@@ -111,7 +111,10 @@ internal static partial class HextechCollectionHooks
 		return subCategory;
 	}
 
-	/// <summary>在 <paramref name="parent"/> 标题下插入一个子分类并载入遗物;私有成员取不到时返回 null。</summary>
+	/// <summary>
+	/// 在 <paramref name="parent"/> 标题下插入一个子分类并载入遗物;私有成员的值类型对不上时返回 null。
+	/// 只在 <see cref="CanUseSubcategoryHooks"/> 为真时调用,所需反射成员都已解析。
+	/// </summary>
 	private static NRelicCollectionCategory? CreateAndLoadSubcategory(
 		NRelicCollectionCategory parent,
 		NRelicCollection collection,
@@ -120,10 +123,9 @@ internal static partial class HextechCollectionHooks
 		HashSet<RelicModel> seenRelics,
 		HashSet<RelicModel> allUnlockedRelics)
 	{
-		if (SubCategoriesField?.GetValue(parent) is not List<NRelicCollectionCategory> subCategories
-			|| HeaderLabelField?.GetValue(parent) is not Control headerLabel
-			|| LoadSubcategoryMethod == null
-			|| CreateForSubcategoryMethod?.Invoke(parent, null) is not NRelicCollectionCategory subCategory)
+		if (SubCategoriesField!.GetValue(parent) is not List<NRelicCollectionCategory> subCategories
+			|| HeaderLabelField!.GetValue(parent) is not Control headerLabel
+			|| CreateForSubcategoryMethod!.Invoke(parent, null) is not NRelicCollectionCategory subCategory)
 		{
 			return null;
 		}
@@ -133,7 +135,7 @@ internal static partial class HextechCollectionHooks
 		parent.AddChild(subCategory);
 		parent.MoveChild(subCategory, insertIndex);
 
-		LoadSubcategoryMethod.Invoke(
+		LoadSubcategoryMethod!.Invoke(
 			subCategory,
 			[
 				collection,

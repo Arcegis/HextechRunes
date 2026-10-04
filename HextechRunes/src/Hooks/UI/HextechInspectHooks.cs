@@ -19,7 +19,6 @@ internal static class HextechInspectHooks
 
 	/// <summary>原版 <c>NInspectRelicScreen</c> 的私有成员(0.107.1 / 0.110.0 / 0.111.0 同名同签名)。</summary>
 	private sealed record InspectScreenMembers(
-		FieldInfo UnlockedRelics,
 		FieldInfo Relics,
 		FieldInfo Index,
 		FieldInfo NameLabel,
@@ -36,7 +35,6 @@ internal static class HextechInspectHooks
 		{
 			Type type = typeof(NInspectRelicScreen);
 			const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
-			FieldInfo? unlockedRelics = HextechHookReflection.TryGetField(type, "_allUnlockedRelics");
 			FieldInfo? relics = HextechHookReflection.TryGetField(type, "_relics");
 			FieldInfo? index = HextechHookReflection.TryGetField(type, "_index");
 			FieldInfo? nameLabel = HextechHookReflection.TryGetField(type, "_nameLabel");
@@ -48,8 +46,7 @@ internal static class HextechInspectHooks
 			MethodInfo? updateRelicDisplay = HextechHookReflection.TryGetMethod(type, "UpdateRelicDisplay", PrivateInstance);
 			MethodInfo? setRelic = HextechHookReflection.TryGetMethod(type, "SetRelic", PrivateInstance, typeof(int));
 			MethodInfo? setRarityVisuals = HextechHookReflection.TryGetMethod(type, "SetRarityVisuals", PrivateInstance, typeof(RelicRarity));
-			if (unlockedRelics == null
-				|| relics == null
+			if (relics == null
 				|| index == null
 				|| nameLabel == null
 				|| rarityLabel == null
@@ -65,7 +62,6 @@ internal static class HextechInspectHooks
 			}
 
 			return new InspectScreenMembers(
-				unlockedRelics,
 				relics,
 				index,
 				nameLabel,
@@ -105,31 +101,6 @@ internal static class HextechInspectHooks
 		merged.Add(requestedRelic);
 		requestedIndex = merged.Count - 1;
 		return merged;
-	}
-
-	/// <summary>
-	/// 把海克斯遗物的规范实例补进检视界面的"已解锁"集合。只改检视界面自己的集合,不回写遗物模型:
-	/// 可变副本缺规范实例时按 ID 取规范模型放进集合即可(海克斯遗物的显示本就由 <see cref="UpdateRelicDisplayPatch"/> 接管)。
-	/// </summary>
-	private static void EnsureInspectRelicsUnlocked(InspectScreenMembers members, NInspectRelicScreen screen, IReadOnlyList<RelicModel> relics)
-	{
-		if (members.UnlockedRelics.GetValue(screen) is not HashSet<RelicModel> unlockedRelics)
-		{
-			return;
-		}
-
-		foreach (RelicModel canonicalRelic in HextechCatalog.GetCanonicalVisibleCustomRelics())
-		{
-			unlockedRelics.Add(canonicalRelic);
-		}
-
-		foreach (RelicModel relic in relics)
-		{
-			if (HextechCatalog.IsHextechCustomRelic(relic))
-			{
-				unlockedRelics.Add(relic.CanonicalInstance ?? ModelDb.GetById<RelicModel>(relic.Id));
-			}
-		}
 	}
 
 	/// <summary>按原版"已解锁且已发现"分支渲染海克斯遗物(名称、稀有度、描述、风味、大图、提示)。</summary>
@@ -226,8 +197,8 @@ internal static class HextechInspectHooks
 		[HarmonyPriority(Priority.Last)]
 		private static void Postfix(NInspectRelicScreen __instance, InspectOpenState __state)
 		{
-			if (Members is not { } members
-				|| __state.RequestedRelic == null
+			InspectScreenMembers members = Members!;
+			if (__state.RequestedRelic == null
 				|| members.Relics.GetValue(__instance) is not IReadOnlyList<RelicModel> finalRelics)
 			{
 				return;
@@ -237,7 +208,6 @@ internal static class HextechInspectHooks
 				finalRelics,
 				__state.RequestedRelic,
 				out int requestedIndex);
-			EnsureInspectRelicsUnlocked(members, __instance, mergedRelics);
 			if (!ReferenceEquals(mergedRelics, finalRelics))
 			{
 				members.Relics.SetValue(__instance, mergedRelics);
@@ -268,8 +238,8 @@ internal static class HextechInspectHooks
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NInspectRelicScreen __instance)
 		{
-			if (Members is { } members
-				&& members.Relics.GetValue(__instance) is IReadOnlyList<RelicModel> relics
+			InspectScreenMembers members = Members!;
+			if (members.Relics.GetValue(__instance) is IReadOnlyList<RelicModel> relics
 				&& members.Index.GetValue(__instance) is int index
 				&& index >= 0
 				&& index < relics.Count)
