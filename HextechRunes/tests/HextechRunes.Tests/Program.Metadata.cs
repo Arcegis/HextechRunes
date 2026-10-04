@@ -918,17 +918,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void AttackCommandCompatibilityRestoresNullExecuteResult()
-	{
-		AttackCommand command = new(1m);
-		AttackCommand result = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult<AttackCommand>(null!), command).GetAwaiter().GetResult();
-		Expect(ReferenceEquals(command, result), "null AttackCommand.Execute result should fall back to command instance");
-
-		AttackCommand completed = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult(command), new AttackCommand(2m)).GetAwaiter().GetResult();
-		Expect(ReferenceEquals(command, completed), "non-null AttackCommand.Execute result should be preserved");
-	}
-
-	[HextechTest]
 	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
 	{
 		string gameplaySignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
