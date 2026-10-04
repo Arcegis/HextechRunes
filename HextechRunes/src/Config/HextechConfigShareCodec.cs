@@ -13,7 +13,7 @@ namespace HextechRunes;
 internal static class HextechConfigShareCodec
 {
 	private const string Prefix = "HEXCFG1:";
-	// 载荷版本:1 = 旧三段稀有度权重(wn);2 = 单组权重(wr)+防连续银;3 = 金色重掷概率;4 = 分幕权重(wa)。
+	// 载荷版本:1 = 旧三段稀有度权重(只读 wn;同版本的 w1/w2 从不读取,反序列化按未知字段跳过);2 = 单组权重(wr)+防连续银;3 = 金色重掷概率;4 = 分幕权重(wa)。
 	private const int OldestSupportedShareVersion = 1;
 	private const int SingleRarityWeightsShareVersion = 2;
 	private const int GoldenRerollShareVersion = 3;
@@ -22,11 +22,9 @@ internal static class HextechConfigShareCodec
 	private const int MaxEncodedLength = 64 * 1024;
 	private const int MaxDecodedLength = 512 * 1024;
 
+	/// <param name="Snapshot">规范化后的快照;<c>ModEnabled</c> 不在载荷里,恒为默认值,应用方不得读取。</param>
 	internal sealed record ImportPreview(
 		HextechRunConfigurationSnapshot Snapshot,
-		int DisabledPlayerRuneCount,
-		int DisabledMonsterHexCount,
-		int DisabledForgeCount,
 		int IgnoredUnknownCount);
 
 	private sealed record SharePayload(
@@ -42,9 +40,7 @@ internal static class HextechConfigShareCodec
 		[property: JsonPropertyName("wa")] int[][]? RuneRarityWeightsByAct,
 		[property: JsonPropertyName("ns")] bool? PreventConsecutiveSilverRunes,
 		[property: JsonPropertyName("gr")] int? GoldenRerollChancePercent,
-		[property: JsonPropertyName("w1")] int[]? FirstActRuneRarityWeights,
 		[property: JsonPropertyName("wn")] int[]? NormalRuneRarityWeights,
-		[property: JsonPropertyName("w2")] int[]? SecondActAfterSilverRuneRarityWeights,
 		[property: JsonPropertyName("wf")] int[]? ForgeRarityWeights,
 		[property: JsonPropertyName("fp")] int RandomForgeShopPrice,
 		[property: JsonPropertyName("fg")] bool RandomForgeDirectGrant,
@@ -70,9 +66,7 @@ internal static class HextechConfigShareCodec
 			RuneRarityWeightsByAct: snapshot.RuneRarityWeightsByAct.Select(ToArray).ToArray(),
 			PreventConsecutiveSilverRunes: snapshot.PreventConsecutiveSilverRunes,
 			GoldenRerollChancePercent: snapshot.GoldenRerollChancePercent,
-			FirstActRuneRarityWeights: null,
 			NormalRuneRarityWeights: null,
-			SecondActAfterSilverRuneRarityWeights: null,
 			ForgeRarityWeights: ToArray(snapshot.ForgeRarityWeights),
 			RandomForgeShopPrice: snapshot.RandomForgeShopPrice,
 			RandomForgeDirectGrant: snapshot.RandomForgeDirectGrant,
@@ -90,16 +84,6 @@ internal static class HextechConfigShareCodec
 
 	/// <summary>解析分享码并生成导入预览。失败返回 null（格式错/超限/解压失败等一律视为无效码）。</summary>
 	public static ImportPreview? TryParse(string? code)
-	{
-		return TryParse(code, currentSnapshot: null);
-	}
-
-	internal static ImportPreview? TryParseForTests(string? code, HextechRunConfigurationSnapshot currentSnapshot)
-	{
-		return TryParse(code, currentSnapshot);
-	}
-
-	private static ImportPreview? TryParse(string? code, HextechRunConfigurationSnapshot? currentSnapshot)
 	{
 		try
 		{
@@ -120,7 +104,7 @@ internal static class HextechConfigShareCodec
 				return null;
 			}
 
-			return BuildPreview(payload, currentSnapshot);
+			return BuildPreview(payload);
 		}
 		catch
 		{
@@ -128,9 +112,8 @@ internal static class HextechConfigShareCodec
 		}
 	}
 
-	private static ImportPreview BuildPreview(SharePayload payload, HextechRunConfigurationSnapshot? currentSnapshot)
+	private static ImportPreview BuildPreview(SharePayload payload)
 	{
-		HextechRunConfigurationSnapshot current = currentSnapshot ?? HextechRuneConfiguration.GetSnapshot();
 		int rawDisabledCount = (payload.DisabledPlayerRuneIds?.Length ?? 0)
 			+ (payload.DisabledMonsterHexIds?.Length ?? 0)
 			+ (payload.DisabledForgeIds?.Length ?? 0);
@@ -155,18 +138,13 @@ internal static class HextechConfigShareCodec
 			ForgeRarityWeights: ToRarityWeights(payload.ForgeRarityWeights, HextechRuneConfiguration.GetDefaultForgeRarityWeights()),
 			RandomForgeShopPrice: payload.RandomForgeShopPrice,
 			RandomForgeDirectGrant: payload.RandomForgeDirectGrant,
-			ModEnabled: current.ModEnabled,
+			ModEnabled: HextechRuneConfiguration.DefaultModEnabled,
 			ChaosRuneChancePercent: payload.ChaosRuneChancePercent ?? HextechRuneConfiguration.DefaultChaosRuneChancePercent));
 
 		int normalizedDisabledCount = snapshot.DisabledPlayerRuneIds.Count
 			+ snapshot.DisabledMonsterHexIds.Count
 			+ snapshot.DisabledForgeIds.Count;
-		return new ImportPreview(
-			snapshot,
-			snapshot.DisabledPlayerRuneIds.Count,
-			snapshot.DisabledMonsterHexIds.Count,
-			snapshot.DisabledForgeIds.Count,
-			Math.Max(0, rawDisabledCount - normalizedDisabledCount));
+		return new ImportPreview(snapshot, Math.Max(0, rawDisabledCount - normalizedDisabledCount));
 	}
 
 	private static HextechRarityWeights[] ReadRuneRarityWeightsByAct(SharePayload payload)
@@ -186,12 +164,6 @@ internal static class HextechConfigShareCodec
 			payload.Version >= SingleRarityWeightsShareVersion ? payload.RuneRarityWeights : payload.NormalRuneRarityWeights,
 			HextechRuneConfiguration.GetDefaultRuneRarityWeights());
 		return [ legacyWeights, legacyWeights, legacyWeights ];
-	}
-
-	/// <summary>确认后应用（全量覆盖当前配置；SaveSnapshot 内部再做一次 Normalize/Clamp）。</summary>
-	public static void Apply(ImportPreview preview)
-	{
-		HextechRuneConfiguration.SaveSnapshot(preview.Snapshot);
 	}
 
 	private static void CopyBounded(Stream source, MemoryStream destination, int maxBytes)

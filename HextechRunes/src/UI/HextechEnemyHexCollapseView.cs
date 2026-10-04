@@ -45,20 +45,16 @@ internal static class HextechEnemyHexCollapseView
 		}
 
 		EnsureButton();
-		if (_button == null || !GodotObject.IsInstanceValid(_button))
+		if (_button == null)
 		{
 			return;
 		}
 
+		// 以下字段与按钮在 EnsureButton/EnsurePanel 里成组建出,按钮退树时成组清空。
 		EnsurePanel();
 		RebuildRows(hexRows, reservedColumns);
 		UpdateButtonIcon(LatestHex(hexRows));
-
-		if (_countBadge != null && GodotObject.IsInstanceValid(_countBadge))
-		{
-			_countBadge.Text = total.ToString();
-		}
-
+		_countBadge!.Text = total.ToString();
 		_button.Visible = true;
 		UpdatePanel();
 	}
@@ -204,35 +200,28 @@ internal static class HextechEnemyHexCollapseView
 	// 把原版牌组按钮计数标签的字体/字号/颜色/描边照抄到角标,使数字与牌组「10」渲染一致。取不到就保留角标自带兜底样式。
 	private static void ApplyDeckCountFont(Label badge)
 	{
-		try
+		Node? deckButton = NRun.Instance?.GlobalUi?.TopBar?.Deck;
+		Label? deckLabel = deckButton == null ? null : FindFirstLabel(deckButton);
+		if (deckLabel == null)
 		{
-			Node? deckButton = NRun.Instance?.GlobalUi?.TopBar?.Deck;
-			Label? deckLabel = deckButton == null ? null : FindFirstLabel(deckButton);
-			if (deckLabel == null || !GodotObject.IsInstanceValid(deckLabel))
-			{
-				return;
-			}
-
-			Font? font = deckLabel.GetThemeFont("font");
-			if (font != null)
-			{
-				badge.AddThemeFontOverride("font", font);
-			}
-
-			int fontSize = deckLabel.GetThemeFontSize("font_size");
-			if (fontSize > 0)
-			{
-				badge.AddThemeFontSizeOverride("font_size", fontSize);
-			}
-
-			badge.AddThemeColorOverride("font_color", deckLabel.GetThemeColor("font_color"));
-			badge.AddThemeColorOverride("font_outline_color", deckLabel.GetThemeColor("font_outline_color"));
-			badge.AddThemeConstantOverride("outline_size", deckLabel.GetThemeConstant("outline_size"));
+			return;
 		}
-		catch (Exception ex)
+
+		Font? font = deckLabel.GetThemeFont("font");
+		if (font != null)
 		{
-			HextechLog.Warn("Mayhem", $"CollapseView: copy deck count font failed: {ex.Message}");
+			badge.AddThemeFontOverride("font", font);
 		}
+
+		int fontSize = deckLabel.GetThemeFontSize("font_size");
+		if (fontSize > 0)
+		{
+			badge.AddThemeFontSizeOverride("font_size", fontSize);
+		}
+
+		badge.AddThemeColorOverride("font_color", deckLabel.GetThemeColor("font_color"));
+		badge.AddThemeColorOverride("font_outline_color", deckLabel.GetThemeColor("font_outline_color"));
+		badge.AddThemeConstantOverride("outline_size", deckLabel.GetThemeConstant("outline_size"));
 	}
 
 	private static Label? FindFirstLabel(Node node)
@@ -256,35 +245,20 @@ internal static class HextechEnemyHexCollapseView
 
 	private static void UpdateButtonIcon(MonsterHexKind latestHex)
 	{
-		if (_iconRect == null || !GodotObject.IsInstanceValid(_iconRect))
-		{
-			return;
-		}
-
 		Texture2D? texture = TryLoadHexIcon(latestHex);
 		if (texture != null)
 		{
-			_iconRect.Texture = texture;
+			_iconRect!.Texture = texture;
 		}
 	}
 
 	private static Texture2D? TryLoadHexIcon(MonsterHexKind hex)
 	{
-		try
-		{
-			RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(hex);
-			string path = relic.PackedIconPath;
-			if (!string.IsNullOrEmpty(path) && ResourceLoader.Exists(path))
-			{
-				return ResourceLoader.Load<Texture2D>(path);
-			}
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"CollapseView: failed to load latest hex icon {hex}: {ex.Message}");
-		}
-
-		return null;
+		RelicModel relic = MonsterHexCatalog.GetIconRelicForMonsterHex(hex);
+		string path = relic.PackedIconPath;
+		return !string.IsNullOrEmpty(path) && ResourceLoader.Exists(path)
+			? ResourceLoader.Load<Texture2D>(path)
+			: null;
 	}
 
 	private static void EnsurePanel()
@@ -339,50 +313,59 @@ internal static class HextechEnemyHexCollapseView
 	// 按幕铺格:每幕一行,不足「保留列数」的用空占位补满,使每幕独占一行、深色底宽度稳定为保留列数。
 	private static void RebuildRows(IReadOnlyList<IReadOnlyList<MonsterHexKind>> hexRows, int reservedColumns)
 	{
-		if (_grid == null || !GodotObject.IsInstanceValid(_grid))
-		{
-			return;
-		}
-
+		GridContainer grid = _grid!;
 		int columns = Math.Max(1, reservedColumns);
-		_grid.Columns = columns;
+		grid.Columns = columns;
 
-		foreach (Node child in _grid.GetChildren())
+		foreach (Node child in grid.GetChildren())
 		{
 			// 包装格里的 holder 在被 free 时会经 TreeExiting 自行 NHoverTipSet.Remove,这里直接释放整格。
-			_grid.RemoveChild(child);
+			grid.RemoveChild(child);
 			child.QueueFree();
 		}
 
-		Vector2 cell = ResolveCellSize(hexRows);
-
-		List<Control> focusableHolders = [];
+		// 先建出全部图标(null = 空位或该图标失败),再按顺序入格:空位尺寸取第一个图标入树前的自然尺寸。
+		List<Control?> slots = [];
 		foreach (IReadOnlyList<MonsterHexKind> row in hexRows)
 		{
 			for (int i = 0; i < columns; i++)
 			{
-				if (i < row.Count)
-				{
-					try
-					{
-						Control holder = HextechEnemyUi.CreateEnemyHexHolder(row[i]);
-						holder.Scale = Vector2.One; // 折叠面板里保持原始大小,不缩小图标(需要更多空间时靠背景变大)
-						holder.FocusMode = Control.FocusModeEnum.All;
-						_grid.AddChild(holder);
-						focusableHolders.Add(holder);
-						continue;
-					}
-					catch (Exception ex)
-					{
-						HextechLog.Warn("Mayhem", $"CollapseView: skipped enemy hex icon {row[i]}: {ex.Message}");
-					}
-				}
-
-				_grid.AddChild(EmptyCell(cell));
+				slots.Add(i < row.Count ? TryCreateHolder(row[i]) : null);
 			}
 		}
 
+		Vector2 cell = ResolveCellSize(slots.FirstOrDefault(static slot => slot != null));
+		List<Control> focusableHolders = [];
+		foreach (Control? holder in slots)
+		{
+			if (holder == null)
+			{
+				grid.AddChild(EmptyCell(cell));
+				continue;
+			}
+
+			grid.AddChild(holder);
+			focusableHolders.Add(holder);
+		}
+
 		ConfigureHolderNavigation(focusableHolders);
+	}
+
+	private static Control? TryCreateHolder(MonsterHexKind hex)
+	{
+		try
+		{
+			Control holder = HextechEnemyUi.CreateEnemyHexHolder(hex);
+			holder.Scale = Vector2.One; // 折叠面板里保持原始大小,不缩小图标(需要更多空间时靠背景变大)
+			holder.FocusMode = Control.FocusModeEnum.All;
+			return holder;
+		}
+		catch (Exception ex)
+		{
+			// 单个图标失败只空出该格,不影响其余图标。
+			HextechLog.Warn("Mayhem", $"CollapseView: skipped enemy hex icon {hex}: {ex.Message}");
+			return null;
+		}
 	}
 
 	private static void ConfigureHolderNavigation(IReadOnlyList<Control> holders)
@@ -414,29 +397,19 @@ internal static class HextechEnemyHexCollapseView
 		};
 	}
 
-	// 量一个真实 holder 的自然尺寸 × 缩放得到格子尺寸;量不到就用兜底值。量到一次后缓存。
-	private static Vector2 ResolveCellSize(IReadOnlyList<IReadOnlyList<MonsterHexKind>> hexRows)
+	// 量一个真实 holder(尚未入树)的自然最小尺寸作为格子尺寸;量不到就用兜底值。量到一次后缓存。
+	private static Vector2 ResolveCellSize(Control? sampleHolder)
 	{
 		if (_cellSize.X > 4f && _cellSize.Y > 4f)
 		{
 			return _cellSize;
 		}
 
-		try
+		Vector2 natural = sampleHolder?.GetCombinedMinimumSize() ?? Vector2.Zero;
+		if (natural.X > 4f && natural.Y > 4f)
 		{
-			MonsterHexKind sample = hexRows[0][0];
-			Control holder = HextechEnemyUi.CreateEnemyHexHolder(sample);
-			Vector2 natural = holder.GetCombinedMinimumSize();
-			holder.QueueFree();
-			if (natural.X > 4f && natural.Y > 4f)
-			{
-				_cellSize = natural;
-				return _cellSize;
-			}
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"CollapseView: cell size probe failed: {ex.Message}");
+			_cellSize = natural;
+			return _cellSize;
 		}
 
 		return FallbackCellSize;
@@ -465,16 +438,14 @@ internal static class HextechEnemyHexCollapseView
 
 			PositionPanel();
 		}
-		else if (_button != null
-			&& _panel.GetViewport()?.GuiGetFocusOwner() is { } focusOwner
-			&& _panel.IsAncestorOf(focusOwner))
-		{
-			_button.FocusNeighborBottom = _button.GetPath();
-			_button.GrabFocus();
-		}
 		else if (_button != null)
 		{
 			_button.FocusNeighborBottom = _button.GetPath();
+			// 焦点还在面板里时收起面板会丢焦点,交还给按钮。
+			if (_panel.GetViewport()?.GuiGetFocusOwner() is { } focusOwner && _panel.IsAncestorOf(focusOwner))
+			{
+				_button.GrabFocus();
+			}
 		}
 	}
 

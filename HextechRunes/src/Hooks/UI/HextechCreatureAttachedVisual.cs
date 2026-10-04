@@ -131,11 +131,13 @@ internal abstract class HextechCreatureAttachedVisual
 }
 
 /// <summary>
-/// 画在生物身后的附件:根节点挂进父容器里的 <see cref="HextechBehindCreaturesLayer"/>(与原先各附件同一父节点与坐标系),
+/// 画在生物身后的附件:根节点挂进父容器里共用的身后层 <c>HextechRunes_BehindCreatures</c>(与原先各附件同一父节点与坐标系),
 /// 每帧维持该层在最底,结束时释放根节点。
 /// </summary>
 internal abstract class HextechBehindCreatureVisual : HextechCreatureAttachedVisual
 {
+	private const string BehindCreaturesLayerName = "HextechRunes_BehindCreatures";
+
 	private Node2D? _renderLayer;
 
 	protected HextechBehindCreatureVisual(NCreature creature, string logTag, string displayName)
@@ -150,7 +152,7 @@ internal abstract class HextechBehindCreatureVisual : HextechCreatureAttachedVis
 	/// <summary>在生物父节点的身后层里建根节点;父节点失效时返回 false。</summary>
 	protected bool TryCreateRoot(string name, bool visible)
 	{
-		Node2D? renderLayer = HextechBehindCreaturesLayer.GetOrCreate(Creature.GetParent());
+		Node2D? renderLayer = GetOrCreateBehindCreaturesLayer(Creature.GetParent());
 		if (renderLayer == null)
 		{
 			return false;
@@ -173,7 +175,46 @@ internal abstract class HextechBehindCreatureVisual : HextechCreatureAttachedVis
 
 	protected void EnsureRenderOrder()
 	{
-		HextechBehindCreaturesLayer.EnsureRenderOrder(_renderLayer);
+		MoveLayerToBack(_renderLayer);
+	}
+
+	/// <summary>同一父容器下所有身后附件共用一个身后层;父节点失效时返回 null。</summary>
+	private static Node2D? GetOrCreateBehindCreaturesLayer(Node? renderParent)
+	{
+		if (!GodotObject.IsInstanceValid(renderParent))
+		{
+			return null;
+		}
+
+		Node2D? layer = renderParent.GetNodeOrNull<Node2D>(BehindCreaturesLayerName);
+		if (!GodotObject.IsInstanceValid(layer))
+		{
+			layer = new Node2D
+			{
+				Name = BehindCreaturesLayerName,
+				ShowBehindParent = false,
+				TopLevel = false,
+				ZAsRelative = true,
+				ZIndex = 0
+			};
+			renderParent.AddChildSafely(layer);
+		}
+
+		MoveLayerToBack(layer);
+		return layer;
+	}
+
+	private static void MoveLayerToBack(Node2D? layer)
+	{
+		if (!GodotObject.IsInstanceValid(layer)
+			|| layer.GetParent() is not Node renderParent
+			|| !GodotObject.IsInstanceValid(renderParent)
+			|| layer.GetIndex() == 0)
+		{
+			return;
+		}
+
+		renderParent.MoveChildSafely(layer, 0);
 	}
 
 	protected override void Release()
