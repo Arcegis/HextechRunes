@@ -17,8 +17,8 @@ internal static class HextechEndlessModeCompatibilityHooks
 		internal decimal? HardenedShell;
 	}
 
-	// 捕获前缀与归一化续体都跑在游戏主线程上,不加锁。
 	private static readonly ConditionalWeakTable<Creature, CapturedPowerAmounts> CapturedAmounts = new();
+	private static readonly object EndlessMethodLock = new();
 	private static MethodInfo? _endlessMultiplierMethod;
 	private static bool _loggedMissingEndlessApi;
 	private static bool _loggedNormalizationFailure;
@@ -83,23 +83,26 @@ internal static class HextechEndlessModeCompatibilityHooks
 			return false;
 		}
 
-		decimal? value = hardToKill ? captured.HardToKill : captured.HardenedShell;
-		if (hardToKill)
+		lock (captured)
 		{
-			captured.HardToKill = null;
-		}
-		else
-		{
-			captured.HardenedShell = null;
-		}
+			decimal? value = hardToKill ? captured.HardToKill : captured.HardenedShell;
+			if (hardToKill)
+			{
+				captured.HardToKill = null;
+			}
+			else
+			{
+				captured.HardenedShell = null;
+			}
 
-		if (captured.HardToKill == null && captured.HardenedShell == null)
-		{
-			CapturedAmounts.Remove(creature);
-		}
+			if (captured.HardToKill == null && captured.HardenedShell == null)
+			{
+				CapturedAmounts.Remove(creature);
+			}
 
-		amount = value.GetValueOrDefault();
-		return amount > 0m;
+			amount = value.GetValueOrDefault();
+			return amount > 0m;
+		}
 	}
 
 	internal static int CalculateEndlessScaledAmount(decimal rawAmount, decimal multiplier)
@@ -109,7 +112,15 @@ internal static class HextechEndlessModeCompatibilityHooks
 			return 0;
 		}
 
-		return ClampPowerAmountToInt(Math.Ceiling(rawAmount * multiplier));
+		// 两个乘数都来自外部（能力施加量、无尽模式倍率），decimal 乘法可能超过 decimal.MaxValue 而溢出。
+		try
+		{
+			return ClampPowerAmountToInt(Math.Ceiling(rawAmount * multiplier));
+		}
+		catch (OverflowException)
+		{
+			return int.MaxValue;
+		}
 	}
 
 	private static int ClampPowerAmountToInt(decimal amount)
@@ -180,25 +191,33 @@ internal static class HextechEndlessModeCompatibilityHooks
 			return null;
 		}
 
-		Assembly? assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(
-			static candidate => string.Equals(
-				candidate.GetName().Name,
-				EndlessModeAssemblyName,
-				StringComparison.Ordinal));
-		Type? entryType = assembly?.GetType(EndlessModeEntryTypeName, throwOnError: false);
-		_endlessMultiplierMethod = entryType?.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-			.SingleOrDefault(static method =>
-				method.Name == EndlessMultiplierMethodName
-				&& method.ReturnType == typeof(decimal)
-				&& method.GetParameters().Length == 1);
-
-		if (assembly != null && _endlessMultiplierMethod == null && !_loggedMissingEndlessApi)
+		lock (EndlessMethodLock)
 		{
-			_loggedMissingEndlessApi = true;
-			HextechLog.Warn("EndlessCompat", "Endless enemy multiplier API not found; monster power normalization skipped.");
-		}
+			if (_endlessMultiplierMethod != null)
+			{
+				return _endlessMultiplierMethod;
+			}
 
-		return _endlessMultiplierMethod;
+			Assembly? assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(
+				static candidate => string.Equals(
+					candidate.GetName().Name,
+					EndlessModeAssemblyName,
+					StringComparison.Ordinal));
+			Type? entryType = assembly?.GetType(EndlessModeEntryTypeName, throwOnError: false);
+			_endlessMultiplierMethod = entryType?.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+				.SingleOrDefault(static method =>
+					method.Name == EndlessMultiplierMethodName
+					&& method.ReturnType == typeof(decimal)
+					&& method.GetParameters().Length == 1);
+
+			if (assembly != null && _endlessMultiplierMethod == null && !_loggedMissingEndlessApi)
+			{
+				_loggedMissingEndlessApi = true;
+				HextechLog.Warn("EndlessCompat", "Endless enemy multiplier API not found; monster power normalization skipped.");
+			}
+
+			return _endlessMultiplierMethod;
+		}
 	}
 
 	private static void LogNormalizationFailureOnce(Exception ex)
@@ -229,13 +248,22 @@ internal static class HextechEndlessModeCompatibilityHooks
 				return;
 			}
 
+			CapturedPowerAmounts captured;
 			if (target.Monster is Exoskeleton && power is HardToKillPower)
 			{
-				CapturedAmounts.GetOrCreateValue(target).HardToKill = amount;
+				captured = CapturedAmounts.GetOrCreateValue(target);
+				lock (captured)
+				{
+					captured.HardToKill = amount;
+				}
 			}
 			else if (target.Monster is SkulkingColony && power is HardenedShellPower)
 			{
-				CapturedAmounts.GetOrCreateValue(target).HardenedShell = amount;
+				captured = CapturedAmounts.GetOrCreateValue(target);
+				lock (captured)
+				{
+					captured.HardenedShell = amount;
+				}
 			}
 		}
 	}

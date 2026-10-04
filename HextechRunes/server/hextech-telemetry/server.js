@@ -579,6 +579,12 @@ function initializeIncrementalSummary() {
   }
 
   const checkpoint = summary._incremental;
+  if (!checkpoint && identity.size === 0) {
+    // 原始库为空时没有可回放的数据,旧 summary 直接从 offset 0 补检查点。
+    setIncrementalCheckpoint(summary, identity, 0);
+    writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summary, null, 2)}\n`);
+    return summary;
+  }
   if (checkpoint?.schemaVersion !== INCREMENTAL_SCHEMA_VERSION) {
     throw new Error(`summary.json has no supported incremental checkpoint (schema ${checkpoint?.schemaVersion}); stop the service and run node server.js --rebuild-derived`);
   }

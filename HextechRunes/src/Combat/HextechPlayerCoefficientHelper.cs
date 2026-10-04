@@ -10,6 +10,7 @@ internal readonly record struct HextechPlayerCoefficients(
 
 internal static class HextechPlayerCoefficientHelper
 {
+	private static readonly object FailureLogLock = new();
 	private static readonly HashSet<(string Coefficient, Type ProviderType)> LoggedProviderFailures = [];
 
 	public static HextechPlayerCoefficients Get(Player player)
@@ -112,9 +113,12 @@ internal static class HextechPlayerCoefficientHelper
 
 	private static void WarnProviderFailureOnce(string coefficient, Type providerType, Exception exception)
 	{
-		if (!LoggedProviderFailures.Add((coefficient, providerType)))
+		lock (FailureLogLock)
 		{
-			return;
+			if (!LoggedProviderFailures.Add((coefficient, providerType)))
+			{
+				return;
+			}
 		}
 
 		HextechLog.Warn(
