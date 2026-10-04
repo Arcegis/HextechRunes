@@ -731,7 +731,13 @@ internal static partial class Program
 		Expect(rally.Any(m => m.Name == nameof(HextechAutoPlayHelper.AutoPlayOrMoveToResultPile)), "same-name cards use actual autoplay");
 		Expect(!rally.Any(m => m.Name == "CanPlay"), "autoplay does not require remaining energy");
 		MethodInfo[] orbs = Calls(typeof(MyriadManifestationsRune), nameof(MyriadManifestationsRune.BeforeSideTurnEndEarly));
-		Expect(orbs.Any(m => m.DeclaringType == typeof(HextechOrbPassiveCompat) && m.Name == "TriggerPassive"), "extra passives use the version-matched native entry");
+		Expect(orbs.Any(m => m.DeclaringType == typeof(OrbSnapshotPassiveHelper) && m.Name == nameof(OrbSnapshotPassiveHelper.TriggerRounds)), "extra passives iterate the frozen orb snapshot");
+		// 触发委托编译成闭包方法，展开一层再找实际的被动入口。
+		MethodInfo[] orbTriggers = orbs
+			.Where(static m => m.Name.Contains('<'))
+			.SelectMany(static m => PatchProcessor.GetOriginalInstructions(m).Select(static i => i.operand).OfType<MethodInfo>())
+			.ToArray();
+		Expect(orbTriggers.Any(m => m.DeclaringType == typeof(HextechOrbPassiveCompat) && m.Name == "TriggerPassive"), "extra passives use the version-matched native entry");
 		MethodInfo entry = typeof(HextechOrbPassiveCompat).GetMethod("TriggerPassive", BindingFlags.Static | BindingFlags.NonPublic)!;
 		MethodInfo[] passive = PatchProcessor.GetOriginalInstructions(entry.GetCustomAttribute<AsyncStateMachineAttribute>() == null ? entry : GetAsyncStateMachineMoveNext(entry)).Select(i => i.operand).OfType<MethodInfo>().ToArray();
 		Expect(passive.Any(m => m.DeclaringType == typeof(OrbModel) && m.Name == "TriggerPassive"

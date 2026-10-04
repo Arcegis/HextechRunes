@@ -11,24 +11,12 @@ public sealed class LoopUpgradeRune : CardUpgradeRuneBase<Loop>
 			return;
 		}
 
-		OrbModel[] orbs = player.PlayerCombatState.OrbQueue.Orbs.ToArray();
-		int rounds = power.Amount;
-		for (int round = 0; round < rounds; round++)
-		{
-			foreach (OrbModel orb in orbs)
-			{
-				if (CombatManager.Instance.IsOverOrEnding || player.Creature.IsDead || player.PlayerCombatState == null)
-				{
-					return;
-				}
-
-				if (player.PlayerCombatState.OrbQueue.Orbs.Contains(orb))
-				{
-					// 与原版循环相同，每层直接触发一次被动，不额外套用回合末被动次数修正。
-					await OrbCmd.Passive(context, orb, null);
-				}
-			}
-		}
+		// 与原版循环相同，每层直接触发一次被动，不额外套用回合末被动次数修正。
+		await OrbSnapshotPassiveHelper.TriggerRounds(
+			player,
+			player.PlayerCombatState.OrbQueue.Orbs.ToArray(),
+			power.Amount,
+			orb => OrbCmd.Passive(context, orb, null));
 	}
 
 	// 跳过理由：原版 LoopPower.AfterPlayerTurnStart(0.107.1/0.110.0/0.111.0 反编译一致)写死只对 Orbs[0] 触发被动，
