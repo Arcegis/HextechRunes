@@ -34,7 +34,7 @@ internal static partial class HextechUpdateChecker
 	{
 		try
 		{
-			using HttpResponseMessage response = await HttpClient.GetAsync(endpoint).ConfigureAwait(false);
+			using HttpResponseMessage response = await HextechHttp.GetAsync(endpoint).ConfigureAwait(false);
 			if (!response.IsSuccessStatusCode)
 			{
 				failures.Add($"{endpoint}: HTTP {(int)response.StatusCode}");
@@ -44,7 +44,7 @@ internal static partial class HextechUpdateChecker
 			string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			using JsonDocument document = JsonDocument.Parse(json);
 			JsonElement root = document.RootElement;
-			string? latestVersion = TryReadLatestVersion(root);
+			string? latestVersion = TryGetString(root, "latestVersion");
 			if (string.IsNullOrWhiteSpace(latestVersion))
 			{
 				failures.Add($"{endpoint}: missing latestVersion");
@@ -80,13 +80,8 @@ internal static partial class HextechUpdateChecker
 		}
 	}
 
-	private static string? TryReadLatestVersion(JsonElement root)
-	{
-		return TryGetString(root, "latestVersion")
-			?? TryGetString(root, "version")
-			?? TryGetString(root, "latest");
-	}
-
+	// 两个版本端点(静态 latest-version.json 与 /api/hextech-runes/latest-version)都只写 latestVersion,
+	// 由 tools/update_latest_version.py 维护。
 	private static string? TryGetString(JsonElement element, string propertyName)
 	{
 		return element.ValueKind == JsonValueKind.Object

@@ -14,12 +14,6 @@ internal static partial class HextechUpdateChecker
 	private const int MaxNoticeAttachAttempts = 30;
 	private const string NoticeLocTable = "main_menu_ui";
 
-	// 写全名:本文件 using Godot,Godot.HttpClient 与 System.Net.Http.HttpClient 同名。
-	private static readonly System.Net.Http.HttpClient HttpClient = new()
-	{
-		Timeout = TimeSpan.FromSeconds(12)
-	};
-
 	private static readonly string[] VersionEndpoints =
 	[
 		HextechServerEndpoints.StaticVersionEndpoint,

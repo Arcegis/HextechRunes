@@ -13,11 +13,6 @@ internal static class HextechCommunityClient
 {
 	private const int ListSchemaVersion = 1;
 
-	private static readonly HttpClient HttpClient = new()
-	{
-		Timeout = TimeSpan.FromSeconds(12)
-	};
-
 	internal sealed record CommunityConfigEntry(
 		[property: JsonPropertyName("id")] string? Id,
 		[property: JsonPropertyName("title")] string? Title,
@@ -41,7 +36,7 @@ internal static class HextechCommunityClient
 			string endpoint = sort == "hot"
 				? HextechServerEndpoints.CommunityHotEndpoint
 				: HextechServerEndpoints.CommunityNewEndpoint;
-			using HttpResponseMessage response = await HttpClient.GetAsync(endpoint).ConfigureAwait(false);
+			using HttpResponseMessage response = await HextechHttp.GetAsync(endpoint).ConfigureAwait(false);
 			if (!response.IsSuccessStatusCode)
 			{
 				return null;
@@ -77,7 +72,7 @@ internal static class HextechCommunityClient
 				JsonSerializer.Serialize(new Dictionary<string, string> { ["steamId"] = steamId }),
 				Encoding.UTF8,
 				"application/json");
-			using HttpResponseMessage response = await HttpClient
+			using HttpResponseMessage response = await HextechHttp
 				.PostAsync(HextechServerEndpoints.CommunityApiBase + "mine", content).ConfigureAwait(false);
 			if (!response.IsSuccessStatusCode)
 			{
@@ -129,7 +124,7 @@ internal static class HextechCommunityClient
 				JsonSerializer.Serialize(payload),
 				Encoding.UTF8,
 				"application/json");
-			using HttpResponseMessage response = await HttpClient
+			using HttpResponseMessage response = await HextechHttp
 				.PostAsync(HextechServerEndpoints.CommunityApiBase + action, content).ConfigureAwait(false);
 			string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 			using JsonDocument document = JsonDocument.Parse(json);
