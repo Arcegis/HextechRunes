@@ -5,21 +5,12 @@ namespace HextechRunes;
 
 internal static class MonsterHexCatalog
 {
-	private static readonly IReadOnlyList<MonsterHexKind> SilverMonsterHexes = HextechContentRegistry.SilverMonsterHexes;
-
-	private static readonly IReadOnlyList<MonsterHexKind> GoldMonsterHexes = HextechContentRegistry.GoldMonsterHexes;
-
-	private static readonly IReadOnlyList<MonsterHexKind> PrismaticMonsterHexes = HextechContentRegistry.PrismaticMonsterHexes;
-
-	private static readonly IReadOnlyDictionary<MonsterHexKind, Type> MonsterHexIconRelicTypes = HextechContentRegistry.MonsterHexIconRelicTypes;
-
-	private static readonly IReadOnlySet<MonsterHexKind> EnemyHexesWithBurnHoverTip =
-		HextechContentRegistry.MonsterHexesWithBurnHoverTip;
-
 	private static readonly IReadOnlyDictionary<MonsterHexKind, Type[]> EnemyHexPowerHoverTipTypes =
 		new Dictionary<MonsterHexKind, Type[]>
 		{
 			[MonsterHexKind.Slap] = [typeof(StrengthPower)],
+			[MonsterHexKind.Tormentor] = [typeof(HextechBurnPower)],
+			[MonsterHexKind.Firebrand] = [typeof(HextechBurnPower)],
 			[MonsterHexKind.Corrosion] = [typeof(FrailPower)],
 			[MonsterHexKind.Brutality] = [typeof(VigorPower)],
 			[MonsterHexKind.EscapePlan] = [typeof(ShrinkPower)],
@@ -39,7 +30,7 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.HandOfBaron] = [typeof(ShrinkPower)],
 			[MonsterHexKind.CantTouchThis] = [typeof(BufferPower)],
 			[MonsterHexKind.MasterOfDuality] = [typeof(StrengthPower), typeof(DexterityPower)],
-			[MonsterHexKind.FeelTheBurn] = [typeof(WeakPower), typeof(VulnerablePower)],
+			[MonsterHexKind.FeelTheBurn] = [typeof(WeakPower), typeof(VulnerablePower), typeof(HextechBurnPower)],
 			[MonsterHexKind.FeyMagic] = [typeof(ShrinkPower), typeof(NoDrawPower)],
 			[MonsterHexKind.UnmovableMountain] = [typeof(BarricadePower)],
 			[MonsterHexKind.BloodPact] = [typeof(StrengthPower)],
@@ -83,7 +74,7 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.MadScientist] = [typeof(PersonalHivePower)],
 		};
 
-	// 能力之外的补充悬浮提示（卡牌、关键词），排在灼烧提示之后。
+	// 能力之外的补充悬浮提示（卡牌、关键词），排在能力提示之后。
 	private static readonly IReadOnlyDictionary<MonsterHexKind, Func<IHoverTip>[]> EnemyHexExtraHoverTips =
 		new Dictionary<MonsterHexKind, Func<IHoverTip>[]>
 		{
@@ -93,24 +84,16 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.CorruptedBranch] = [static () => HoverTipFactory.FromKeyword(CardKeyword.Exhaust)],
 		};
 
-	private static readonly Lazy<IReadOnlyDictionary<MonsterHexKind, HextechRarityTier>> RarityByMonsterHex = new(BuildRarityByMonsterHex);
-
 	private static readonly Lazy<IReadOnlyDictionary<ModelId, MonsterHexKind>> MonsterHexByIconRelicId = new(BuildMonsterHexByIconRelicId);
 
 	public static IReadOnlyList<MonsterHexKind> GetMonsterHexesForRarity(HextechRarityTier rarity)
 	{
-		return rarity switch
-		{
-			HextechRarityTier.Silver => SilverMonsterHexes,
-			HextechRarityTier.Gold => GoldMonsterHexes,
-			HextechRarityTier.Prismatic => PrismaticMonsterHexes,
-			_ => Array.Empty<MonsterHexKind>()
-		};
+		return HextechContentRegistry.MonsterHexMetadata.EnabledKindsByRarity.GetValueOrDefault(rarity, Array.Empty<MonsterHexKind>());
 	}
 
 	public static HextechRarityTier GetMonsterHexRarity(MonsterHexKind hex)
 	{
-		if (RarityByMonsterHex.Value.TryGetValue(hex, out HextechRarityTier rarity))
+		if (HextechContentRegistry.MonsterHexMetadata.RarityByKind.TryGetValue(hex, out HextechRarityTier rarity))
 		{
 			return rarity;
 		}
@@ -120,7 +103,7 @@ internal static class MonsterHexCatalog
 
 	public static RelicModel GetIconRelicForMonsterHex(MonsterHexKind hex)
 	{
-		if (!MonsterHexIconRelicTypes.TryGetValue(hex, out Type? relicType))
+		if (!HextechContentRegistry.MonsterHexMetadata.IconRelicTypes.TryGetValue(hex, out Type? relicType))
 		{
 			throw new ArgumentOutOfRangeException(nameof(hex), hex, "Unknown monster hex icon relic.");
 		}
@@ -151,7 +134,7 @@ internal static class MonsterHexCatalog
 			[MonsterHexKind.Inklet] = new[] { ("Stacks1", 1), ("Stacks2", 2), ("Stacks3", 3) },
 		};
 
-	private static readonly IReadOnlyDictionary<MonsterHexKind, (string Var, int Base)> PlayerCountScaledThresholds =
+	internal static readonly IReadOnlyDictionary<MonsterHexKind, (string Var, int Base)> PlayerCountScaledThresholds =
 		new Dictionary<MonsterHexKind, (string, int)>
 		{
 			// 同 Porcupine：字面量供 TXT 同步脚本渲染，测试断言与各效果类的 HpPerPercentPerPlayer 一致。
@@ -188,16 +171,9 @@ internal static class MonsterHexCatalog
 		}
 		catch (Exception ex)
 		{
+			// 敌方描述缺键或格式化失败时退回玩家版描述，不让悬浮提示和选择界面整体失败。
 			HextechLog.Warn("Mayhem", $"Enemy hex description fallback: hex={hex} key={localizationKey} error={ex.Message}");
-			try
-			{
-				return relic.DynamicDescription.GetFormattedText();
-			}
-			catch (Exception fallbackEx)
-			{
-				HextechLog.Warn("Mayhem", $"Enemy hex description fallback failed: hex={hex} relic={relic.CanonicalId().Entry} error={fallbackEx.Message}");
-				return relic.Title.GetFormattedText();
-			}
+			return relic.DynamicDescription.GetFormattedText();
 		}
 	}
 
@@ -211,11 +187,6 @@ internal static class MonsterHexCatalog
 		{
 			PowerModel power = ModelDb.GetById<PowerModel>(ModelDb.GetId(powerType));
 			tips.Add(HoverTipFactory.FromPower(power));
-		}
-
-		if (EnemyHexesWithBurnHoverTip.Contains(hex))
-		{
-			tips.Add(HoverTipFactory.FromPower<HextechBurnPower>());
 		}
 
 		if (EnemyHexExtraHoverTips.TryGetValue(hex, out Func<IHoverTip>[]? extraTips))
@@ -265,30 +236,10 @@ internal static class MonsterHexCatalog
 		return HextechEnemyHexContext.ClampScalingPlayerCount(count);
 	}
 
-	private static IReadOnlyDictionary<MonsterHexKind, HextechRarityTier> BuildRarityByMonsterHex()
-	{
-		Dictionary<MonsterHexKind, HextechRarityTier> byHex = new();
-		AddRarityEntries(byHex, SilverMonsterHexes, HextechRarityTier.Silver);
-		AddRarityEntries(byHex, GoldMonsterHexes, HextechRarityTier.Gold);
-		AddRarityEntries(byHex, PrismaticMonsterHexes, HextechRarityTier.Prismatic);
-		return byHex;
-	}
-
-	private static void AddRarityEntries(
-		Dictionary<MonsterHexKind, HextechRarityTier> byHex,
-		IEnumerable<MonsterHexKind> hexes,
-		HextechRarityTier rarity)
-	{
-		foreach (MonsterHexKind hex in hexes)
-		{
-			byHex[hex] = rarity;
-		}
-	}
-
 	private static IReadOnlyDictionary<ModelId, MonsterHexKind> BuildMonsterHexByIconRelicId()
 	{
 		Dictionary<ModelId, MonsterHexKind> byId = new();
-		foreach (KeyValuePair<MonsterHexKind, Type> pair in MonsterHexIconRelicTypes)
+		foreach (KeyValuePair<MonsterHexKind, Type> pair in HextechContentRegistry.MonsterHexMetadata.IconRelicTypes)
 		{
 			RelicModel iconRelic = ModelDb.GetById<RelicModel>(ModelDb.GetId(pair.Value));
 			ModelId id = iconRelic.CanonicalId();

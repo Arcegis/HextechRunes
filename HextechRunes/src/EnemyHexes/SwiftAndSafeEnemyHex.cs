@@ -11,10 +11,7 @@ internal sealed class SwiftAndSafeEnemyHex : DrawProgressEnemyHexBase
 
 	protected override async Task AfterLocalCardDrawn(HextechEnemyHexContext context, Player owner, HextechCombatState combatState)
 	{
-		ulong playerId = owner.NetId;
-		int cardsDrawn = context.Tracking.SwiftAndSafePlayerCardsDrawnThisCombat.GetValueOrDefault(playerId, 0) + 1;
-		context.Tracking.SwiftAndSafePlayerCardsDrawnThisCombat[playerId] = cardsDrawn;
-		if (cardsDrawn % GetCardsPerArtifact(context) != 0)
+		if (HextechEnemyDrawProgress.RecordDraw(context.Tracking.SwiftAndSafePlayerCardsDrawnThisCombat, owner, GetCardsPerArtifact(context)) == 0)
 		{
 			return;
 		}
@@ -34,10 +31,10 @@ internal sealed class SwiftAndSafeEnemyHex : DrawProgressEnemyHexBase
 		// 会让层数随人数线性翻倍(5 人 ≈ 5 倍),正是玩家反馈的 bug。各玩家累计抽牌数仍精确存进 tracking,
 		// 故跨越阈值的小数进度不会丢失。
 		int playerCount = Math.Max(1, combatState.Players.Count);
-		long threshold = (long)cardsPerArtifact * playerCount;
+		int threshold = cardsPerArtifact * playerCount;
 
-		long totalDrawnNow = 0;
-		long totalDrawnPrev = 0;
+		int totalDrawnNow = 0;
+		int totalDrawnPrev = 0;
 		foreach (Player player in combatState.Players.OrderBy(static player => player.NetId))
 		{
 			int drawnCards = HextechCombatHistoryHelper.CountOwnedCardsDrawn(player);
@@ -54,7 +51,7 @@ internal sealed class SwiftAndSafeEnemyHex : DrawProgressEnemyHexBase
 			context.Tracking.SwiftAndSafePlayerCardsDrawnThisCombat[player.NetId] = drawnCards;
 		}
 
-		int pendingArtifact = (int)(totalDrawnNow / threshold - totalDrawnPrev / threshold);
+		int pendingArtifact = HextechRelicBase.CountThresholdCrossings(totalDrawnPrev, totalDrawnNow, threshold);
 		if (pendingArtifact <= 0)
 		{
 			return;

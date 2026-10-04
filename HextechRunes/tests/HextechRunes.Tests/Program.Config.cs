@@ -601,16 +601,15 @@ internal static partial class Program
 	private static void ExternalPlayerRuneRegistrationUpdatesCatalog()
 	{
 		Type runeType = typeof(ExternalRegistrationTestRune);
-		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should not be visible before registration");
+		Expect(!HextechContentRegistry.PlayerRuneMetadata.IsVisible(runeType), "external rune should not be visible before registration");
 		RunBeforeSavedPropertyCacheInitialization(() =>
 			HextechRunesApi.RegisterPlayerRune<ExternalRegistrationTestRune>(
 				HextechRarityTier.Gold,
 				tagKey: "COMPREHENSIVE",
 				assetModId: "HextechRunes.Tests"));
-		Expect(HextechCatalog.IsPlayerRuneTypeVisible(runeType), "external rune should be visible after registration");
+		Expect(HextechContentRegistry.PlayerRuneMetadata.IsVisible(runeType), "external rune should be visible after registration");
 		Expect(HextechCatalog.IsPlayerRuneTypeConfigurable(runeType), "external rune should be configurable after registration");
-		Expect(HextechCatalog.IsPlayerRuneTypeSelectable(runeType), "external rune should be selectable after registration");
-		Expect(HextechCatalog.GetPlayerRuneTypesForRarity(HextechRarityTier.Gold).Contains(runeType), "external rune should enter rarity pool");
+		Expect(HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier.Gold).Contains(runeType), "external rune should enter rarity pool");
 		Expect(HextechCatalog.GetAllConfigurableRuneTypes().Contains(runeType), "external rune should enter configurable rune type pool");
 		Expect(HextechCatalog.GetConfigurablePlayerRuneIds().Contains(ModelDb.GetId(runeType)), "external rune should enter configurable rune id pool");
 	}
@@ -638,8 +637,7 @@ internal static partial class Program
 				HextechRarityTier.Prismatic,
 				"HextechRunes.Tests"));
 		Expect(HextechContentRegistry.AllForgeTypes.Contains(forgeType), "external forge should enter all forge types");
-		Expect(HextechContentRegistry.PrismaticForgeTypes.Contains(forgeType), "external forge should enter prismatic pool");
-		Expect(HextechCatalog.GetForgeTypesForRarity(HextechRarityTier.Prismatic).Contains(forgeType), "external forge should enter catalog rarity pool");
+		Expect(HextechContentRegistry.ForgeTypesByRarity[HextechRarityTier.Prismatic].Contains(forgeType), "external forge should enter prismatic pool");
 		string forgeId = ModelDb.GetId(forgeType).Entry;
 		Expect(HextechRuneConfiguration.NormalizeDisabledForgeIds([ forgeId ]).Contains(forgeId), "external forge should be accepted by disabled forge config");
 	}

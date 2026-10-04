@@ -75,7 +75,7 @@ internal sealed class ColorDiscoveryCardReward : CardReward
 
 	public override SerializableReward ToSerializable()
 	{
-		CardModel card = GetCurrentRewardCard() ?? ModelDb.GetById<CardModel>(_cardId);
+		CardModel card = Cards.FirstOrDefault() ?? ModelDb.GetById<CardModel>(_cardId);
 		return new SerializableReward
 		{
 			RewardType = RewardType.SpecialCard,
@@ -104,37 +104,11 @@ internal sealed class ColorDiscoveryCardReward : CardReward
 		return options;
 	}
 
-	private CardModel? GetCurrentRewardCard()
-	{
-		return GetFirstOfferedCard(Cards);
-	}
-
-	internal static CardModel? GetFirstOfferedCard(IEnumerable<CardModel> cards)
-	{
-		return cards.FirstOrDefault();
-	}
-
+	// 其他模组的后缀可能已把恢复结果换成别的奖励类型，只从 SpecialCardReward 上读字段。
 	internal static CardModel? TryGetRestoredSpecialCard(object? restoredReward, FieldInfo? cardField)
 	{
-		if (restoredReward == null || cardField == null)
-		{
-			return null;
-		}
-
-		try
-		{
-			return cardField.GetValue(restoredReward) as CardModel;
-		}
-		catch (Exception ex)
-		{
-			if (HextechRunLogBudget.TryConsume("rewards.color-discovery-special-card-field-read", 1))
-			{
-				HextechLog.Warn(
-					"Rewards", $"SpecialCardReward card field read failed; keeping the original reward: "
-					+ $"rewardType={restoredReward.GetType().FullName} error={ex.GetType().Name}: {ex.Message}");
-			}
-
-			return null;
-		}
+		return restoredReward is SpecialCardReward && cardField != null
+			? cardField.GetValue(restoredReward) as CardModel
+			: null;
 	}
 }

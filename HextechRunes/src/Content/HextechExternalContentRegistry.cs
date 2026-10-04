@@ -58,7 +58,7 @@ internal static class HextechExternalContentRegistry
 					"ExternalContent", $"Conflicting duplicate player rune registration for {registration.Type.FullName}; first metadata retained: "
 					+ $"existing=({Describe(existing)}, assetModId={DescribeValue(existingAssetModId)}) "
 					+ $"incoming=({Describe(registration)}, assetModId={DescribeValue(assetModId)}) "
-					+ $"callerAssembly={registration.Type.Assembly.GetName().Name ?? "<unknown>"}");
+					+ $"callerAssembly={DescribeCallerAssembly(registration.Type)}");
 			}
 
 			bool assetOwnerStored = TryStoreAssetModId(registration.Type, assetModId);
@@ -116,7 +116,7 @@ internal static class HextechExternalContentRegistry
 					"ExternalContent", $"Conflicting duplicate forge registration for {registration.Type.FullName}; first metadata retained: "
 					+ $"existing=(rarity={existing.Rarity}, assetModId={DescribeValue(existingAssetModId)}) "
 					+ $"incoming=(rarity={registration.Rarity}, assetModId={DescribeValue(assetModId)}) "
-					+ $"callerAssembly={registration.Type.Assembly.GetName().Name ?? "<unknown>"}");
+					+ $"callerAssembly={DescribeCallerAssembly(registration.Type)}");
 			}
 
 			if (TryStoreAssetModId(registration.Type, assetModId))
@@ -130,23 +130,17 @@ internal static class HextechExternalContentRegistry
 	{
 		lock (SyncRoot)
 		{
-			ModelId id = ModelDb.GetId(enchantmentType);
-			if (EnchantmentIconPathsByModelId.TryGetValue(id, out string? existingPath))
+			if (TryStoreFirstWriter(
+				EnchantmentIconPathsByModelId,
+				ModelDb.GetId(enchantmentType),
+				iconPath,
+				"external-content.enchantment-icon-conflict",
+				(existingPath, incomingPath) => $"Conflicting duplicate enchantment icon registration for {enchantmentType.FullName}; first path retained: "
+					+ $"existingPath={DescribeValue(existingPath)} incomingPath={DescribeValue(incomingPath)} "
+					+ $"callerAssembly={DescribeCallerAssembly(enchantmentType)}"))
 			{
-				if (!string.Equals(existingPath, iconPath, StringComparison.Ordinal)
-					&& HextechRunLogBudget.TryConsume("external-content.enchantment-icon-conflict", 12))
-				{
-					HextechLog.Warn(
-						"ExternalContent", $"Conflicting duplicate enchantment icon registration for {enchantmentType.FullName}; first path retained: "
-						+ $"existingPath={DescribeValue(existingPath)} incomingPath={DescribeValue(iconPath)} "
-						+ $"callerAssembly={enchantmentType.Assembly.GetName().Name ?? "<unknown>"}");
-				}
-
-				return;
+				_version++;
 			}
-
-			EnchantmentIconPathsByModelId.Add(id, iconPath);
-			_version++;
 		}
 	}
 
@@ -193,7 +187,7 @@ internal static class HextechExternalContentRegistry
 				ModelDb.GetId(runeType),
 				poolKey,
 				"external-content.pool-label-conflict",
-				$"pool label for {runeType.FullName}");
+				(existing, incoming) => DescribeStringConflict($"pool label for {runeType.FullName}", existing, incoming));
 		}
 	}
 
@@ -206,7 +200,7 @@ internal static class HextechExternalContentRegistry
 				assetModId,
 				titleKey,
 				"external-content.config-section-conflict",
-				$"config section title for {assetModId}");
+				(existing, incoming) => DescribeStringConflict($"config section title for {assetModId}", existing, incoming));
 		}
 	}
 
@@ -281,24 +275,15 @@ internal static class HextechExternalContentRegistry
 			return false;
 		}
 
-		ModelId id = ModelDb.GetId(modelType);
-		if (AssetModIdsByModelId.TryGetValue(id, out string? existingAssetModId))
-		{
-			if (!string.Equals(existingAssetModId, assetModId, StringComparison.Ordinal)
-				&& HextechRunLogBudget.TryConsume("external-content.asset-owner-conflict", 12))
-			{
-				HextechLog.Warn(
-					"ExternalContent", $"Conflicting asset owner registration for {modelType.FullName}; first owner retained: "
-					+ $"existingAssetModId={DescribeValue(existingAssetModId)} "
-					+ $"incomingAssetModId={DescribeValue(assetModId)} "
-					+ $"callerAssembly={modelType.Assembly.GetName().Name ?? "<unknown>"}");
-			}
-
-			return false;
-		}
-
-		AssetModIdsByModelId.Add(id, assetModId);
-		return true;
+		return TryStoreFirstWriter(
+			AssetModIdsByModelId,
+			ModelDb.GetId(modelType),
+			assetModId,
+			"external-content.asset-owner-conflict",
+			(existing, incoming) => $"Conflicting asset owner registration for {modelType.FullName}; first owner retained: "
+				+ $"existingAssetModId={DescribeValue(existing)} "
+				+ $"incomingAssetModId={DescribeValue(incoming)} "
+				+ $"callerAssembly={DescribeCallerAssembly(modelType)}");
 	}
 
 	// 首个非空可用性委托生效，冲突登记只告警，不覆盖先前的委托。
@@ -309,46 +294,49 @@ internal static class HextechExternalContentRegistry
 			return false;
 		}
 
-		ModelId id = ModelDb.GetId(runeType);
-		if (PlayerRuneAvailabilityByModelId.TryGetValue(id, out Func<Player, bool>? existing))
+		return TryStoreFirstWriter(
+			PlayerRuneAvailabilityByModelId,
+			ModelDb.GetId(runeType),
+			availability,
+			"external-content.availability-conflict",
+			(_, _) => $"Conflicting duplicate availability predicate for {runeType.FullName}; first predicate retained: "
+				+ $"callerAssembly={DescribeCallerAssembly(runeType)}");
+	}
+
+	// 首个写入者生效：同键再次登记不同的值只按预算告警、不覆盖，登记相同的值静默忽略。
+	// 字符串按 Ordinal 比较，委托按目标与方法比较（EqualityComparer.Default 与原先的 == / != 一致）。
+	private static bool TryStoreFirstWriter<TKey, TValue>(
+		Dictionary<TKey, TValue> store,
+		TKey key,
+		TValue value,
+		string logBudgetKey,
+		Func<TValue, TValue, string> describeConflict)
+		where TKey : notnull
+	{
+		if (store.TryGetValue(key, out TValue? existing))
 		{
-			if (existing != availability
-				&& HextechRunLogBudget.TryConsume("external-content.availability-conflict", 12))
+			if (!EqualityComparer<TValue>.Default.Equals(existing, value)
+				&& HextechRunLogBudget.TryConsume(logBudgetKey, 12))
 			{
-				HextechLog.Warn(
-					"ExternalContent", $"Conflicting duplicate availability predicate for {runeType.FullName}; first predicate retained: "
-					+ $"callerAssembly={runeType.Assembly.GetName().Name ?? "<unknown>"}");
+				HextechLog.Warn("ExternalContent", describeConflict(existing, value));
 			}
 
 			return false;
 		}
 
-		PlayerRuneAvailabilityByModelId.Add(id, availability);
+		store.Add(key, value);
 		return true;
 	}
 
-	private static void TryStoreFirstWriter<TKey>(
-		Dictionary<TKey, string> store,
-		TKey key,
-		string value,
-		string logBudgetKey,
-		string description)
-		where TKey : notnull
+	private static string DescribeStringConflict(string description, string existing, string incoming)
 	{
-		if (store.TryGetValue(key, out string? existing))
-		{
-			if (!string.Equals(existing, value, StringComparison.Ordinal)
-				&& HextechRunLogBudget.TryConsume(logBudgetKey, 12))
-			{
-				HextechLog.Warn(
-					"ExternalContent", $"Conflicting duplicate {description}; first value retained: "
-					+ $"existing={DescribeValue(existing)} incoming={DescribeValue(value)}");
-			}
+		return $"Conflicting duplicate {description}; first value retained: "
+			+ $"existing={DescribeValue(existing)} incoming={DescribeValue(incoming)}";
+	}
 
-			return;
-		}
-
-		store.Add(key, value);
+	private static string DescribeCallerAssembly(Type type)
+	{
+		return type.Assembly.GetName().Name ?? "<unknown>";
 	}
 
 	private static string? GetStoredAssetModId(Type modelType)

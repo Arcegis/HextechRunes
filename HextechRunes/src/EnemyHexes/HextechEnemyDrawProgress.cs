@@ -16,7 +16,7 @@ internal static class HextechEnemyDrawProgress
 		}
 
 		counts[playerId] = drawnCards;
-		return drawnCards / threshold - previous / threshold;
+		return HextechRelicBase.CountThresholdCrossings(previous, drawnCards, threshold);
 	}
 
 	internal static int ResolveFromHistory(Dictionary<ulong, int> counts, HextechCombatState combatState, int threshold)

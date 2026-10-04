@@ -25,9 +25,6 @@ internal static partial class Program
 			typeof(ColorDiscoveryCardReward).GetField("CardRewardCardsField", BindingFlags.Static | BindingFlags.NonPublic) == null,
 			"Color Discovery must not cache CardReward._cards.");
 
-		CardModel card = new StrikeIronclad();
-		Equal(card, ColorDiscoveryCardReward.GetFirstOfferedCard([card]), "first public reward card");
-		Equal<CardModel?>(null, ColorDiscoveryCardReward.GetFirstOfferedCard([]), "empty public reward cards");
 		Equal<CardModel?>(
 			null,
 			ColorDiscoveryCardReward.TryGetRestoredSpecialCard(restoredReward: null, cardField: null),

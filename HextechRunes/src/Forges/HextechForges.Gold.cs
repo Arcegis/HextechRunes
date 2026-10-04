@@ -78,109 +78,34 @@ public sealed class GoldLifeForge : HextechForgeBase
 }
 
 // 血量锻造器:百分比版最大生命(棱彩"生命锻造器"30% 的 1/2),与固定值的生命锻造器并存。
-public sealed class GoldHpForge : HextechForgeBase, IHextechPercentHpForge
+public sealed class GoldHpForge : HextechPercentHpForgeBase
 {
-	private int _baseMaxHp;
-
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedBaseMaxHp
 	{
-		get => _baseMaxHp;
-		set => _baseMaxHp = Math.Max(0, value);
+		get => SavedBaseMaxHpValue;
+		set => SavedBaseMaxHpValue = value;
 	}
 
-	public int BaseMaxHp
-	{
-		get => _baseMaxHp;
-		set => _baseMaxHp = Math.Max(1, value);
-	}
-
-	public decimal MaxHpPercentTotal => DynamicVars["MaxHpPercent"].BaseValue * StackAmount;
-
-	public override bool HasUponPickupEffect => true;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("MaxHpPercent", 15m)
-	];
-
-	public override async Task AfterObtained()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		Flash();
-		await HextechMaxHpScaling.ReapplyScale(Owner);
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreatePercentVars(15m);
 }
 
-public sealed class GoldAttackForge : HextechForgeBase, IHextechDamageCoefficientForge
+public sealed class GoldAttackForge : HextechDamageCoefficientForgeBase
 {
-	private const decimal DamageMultiplierValue = 1.1m;
-	private const decimal DamageBonusPercentValue = (DamageMultiplierValue - 1m) * 100m;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("DamageMultiplier", DamageMultiplierValue),
-		new DynamicVar("DamageBonusPercent", DamageBonusPercentValue)
-	];
-
-	public decimal DamageBonusFractionTotal => StackedMultiplier(DynamicVars["DamageMultiplier"].BaseValue) - 1m;
-
-	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
-	{
-		return Owner != null && IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource)
-			? HextechForgeCoefficientHelper.GetDamageMultiplier(Owner, this)
-			: 1m;
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreateDamageVars(1.1m);
 }
 
-public sealed class GoldProtectionForge : HextechForgeBase, IHextechSustainCoefficientForge
+public sealed class GoldProtectionForge : HextechSustainCoefficientForgeBase
 {
-	private const decimal SustainMultiplierValue = 1.1m;
-	private const decimal SustainBonusPercentValue = (SustainMultiplierValue - 1m) * 100m;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("SustainMultiplier", SustainMultiplierValue),
-		new DynamicVar("SustainBonusPercent", SustainBonusPercentValue)
-	];
-
-	public decimal SustainBonusFractionTotal => StackedMultiplier(DynamicVars["SustainMultiplier"].BaseValue) - 1m;
-
-	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
-	{
-		return Owner != null && target == Owner.Creature
-			? HextechForgeCoefficientHelper.GetSustainMultiplier(Owner, this)
-			: 1m;
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreateSustainVars(1.1m);
 }
 
-public sealed class GoldFocusForge : HextechForgeBase
+public sealed class GoldFocusForge : HextechFocusForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new PowerVar<FocusPower>(1m)
 	];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromPower<FocusPower>()
-	];
-
-	public override bool IsAvailableForPlayer(Player player)
-	{
-		return IsDefectPlayer(player);
-	}
-
-	public override Task BeforeCombatStart()
-	{
-		return IsDefectOwner
-			? ApplyStackedPowerAtCombatStart<FocusPower>(DynamicVars["FocusPower"].BaseValue)
-			: Task.CompletedTask;
-	}
 }
 
 public sealed class DrawForge : HextechForgeBase
@@ -245,45 +170,14 @@ public sealed class HourglassForge : HextechForgeBase
 	}
 }
 
-public sealed class GoldUpgradeForge : HextechForgeBase
+public sealed class GoldUpgradeForge : HextechUpgradeForgeBase
 {
-	public override bool HasUponPickupEffect => true;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new CardsVar(4)
 	];
 
-	public override Task AfterObtained()
-	{
-		if (Owner == null)
-		{
-			return Task.CompletedTask;
-		}
-
-			List<CardModel> cards = HextechStableRandom.PickDistinct(
-				Owner.Deck.Cards
-				.Where(static card => card != null && card.IsUpgradable)
-				.ToList(),
-				DynamicVars.Cards.IntValue,
-				(RunState)Owner.RunState,
-				HextechStableRandom.CardKey,
-				"gold-upgrade-forge",
-				HextechStableRandom.PlayerKey(Owner),
-				Owner.Deck.Cards.Count.ToString());
-		if (cards.Count == 0)
-		{
-			return Task.CompletedTask;
-		}
-
-		Flash();
-		foreach (CardModel card in cards)
-		{
-			CardCmd.Upgrade(card);
-		}
-
-		return Task.CompletedTask;
-	}
+	protected override string UpgradeRandomSalt => "gold-upgrade-forge";
 }
 
 public sealed class SummonForge : HextechForgeBase

@@ -7,6 +7,8 @@ internal static partial class HextechCatalog
 	private static readonly object ModelIdLookupLock = new();
 	private static ModelIdLookupCache? _modelIdLookupCache;
 	private static int _modelIdLookupCacheVersion = -1;
+	private static IReadOnlySet<ModelId>? _configurablePlayerRuneIds;
+	private static int _configurablePlayerRuneIdsVersion = -1;
 
 	public static bool IsHextechRelic(RelicModel? relic)
 	{
@@ -104,7 +106,7 @@ internal static partial class HextechCatalog
 		}
 
 		HashSet<ModelId> blockedIds = new();
-		foreach (Type runeType in AttributeConversionExclusiveRuneTypes)
+		foreach (Type runeType in PlayerRuneMetadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive])
 		{
 			ModelId candidateId = ModelDb.GetId(runeType);
 			if (!ownedSet.Contains(candidateId))
@@ -142,10 +144,10 @@ internal static partial class HextechCatalog
 	private static ModelIdLookupCache BuildModelIdLookupCache()
 	{
 		return new ModelIdLookupCache(
-			ToModelIdSet(AllRuneTypes),
+			ToModelIdSet(PlayerRuneMetadata.AllTypes),
 			ToModelIdSet(AllForgeTypes),
-			ToModelIdSet(ShopOnlyRelicTypes),
-			ToModelIdSet(HextechContentRegistry.EnemyHexIconRelicTypes),
+			ToModelIdSet(HextechCustomModelRegistry.ShopOnlyRelicTypes),
+			ToModelIdSet(HextechCustomModelRegistry.EnemyHexIconRelicTypes),
 			BuildPlayerRuneRarityById(),
 			BuildForgeRarityById(),
 			BuildPlayerRuneTagKeyById(),
@@ -171,9 +173,11 @@ internal static partial class HextechCatalog
 	private static IReadOnlyDictionary<ModelId, HextechRarityTier> BuildForgeRarityById()
 	{
 		Dictionary<ModelId, HextechRarityTier> byId = new();
-		AddRarityEntries(byId, SilverForgeTypes, HextechRarityTier.Silver);
-		AddRarityEntries(byId, GoldForgeTypes, HextechRarityTier.Gold);
-		AddRarityEntries(byId, PrismaticForgeTypes, HextechRarityTier.Prismatic);
+		foreach ((Type forgeType, HextechRarityTier rarity) in ForgeRarityByType)
+		{
+			byId[ModelDb.GetId(forgeType)] = rarity;
+		}
+
 		return byId;
 	}
 
@@ -186,14 +190,6 @@ internal static partial class HextechCatalog
 		}
 
 		return byId;
-	}
-
-	private static void AddRarityEntries(Dictionary<ModelId, HextechRarityTier> byId, IEnumerable<Type> modelTypes, HextechRarityTier rarity)
-	{
-		foreach (Type modelType in modelTypes)
-		{
-			byId[ModelDb.GetId(modelType)] = rarity;
-		}
 	}
 
 	private sealed record ModelIdLookupCache(

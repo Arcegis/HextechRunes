@@ -361,18 +361,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyHitThresholdDescriptionsUseTheEffectThresholds()
-	{
-		// 描述里的 {HitsNeeded} 靠按人数缩放的阈值表填值,漏登记就会原样显示占位符。
-		System.Collections.IDictionary thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
-			.GetField("PlayerCountScaledThresholds", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
-		Equal(("HitsNeeded", PorcupineEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.Porcupine]!,
-			"porcupine description threshold matches the effect");
-		Equal(("HitsNeeded", HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.HundredRefinements]!,
-			"hundred refinements description threshold matches the effect");
-	}
-
-	[HextechTest]
 	private static void KingdomArmyIgnoresForgesNestedInMinionGeneration()
 	{
 		// 王国军势生成仆从牌期间嵌套进来的铸造直接返回,凝辉/王令无法把它再次点燃。

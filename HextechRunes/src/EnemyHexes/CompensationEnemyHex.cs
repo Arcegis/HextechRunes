@@ -4,32 +4,31 @@ namespace HextechRunes;
 
 internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 {
-	private static CompensationEnemyHex? _effectWithPendingCompensation;
-
-	private readonly List<PendingCompensation> _pendingCompensations = [];
+	// 效果是单例（HextechEnemyHexEffects），待结算项放静态列表：伤害命令结束时 HextechCombatHooks 按命令号清理。
+	private static readonly List<PendingCompensation> PendingCompensations = [];
 
 	internal override MonsterHexKind Kind => MonsterHexKind.Compensation;
 
 	internal override void ResetRunScopedState()
 	{
-		ClearPendingCompensationsForEffect();
+		PendingCompensations.Clear();
 	}
 
 	internal override Task ApplyCombatStartToEnemy(HextechEnemyHexContext context, Creature enemy, CombatRoom room)
 	{
-		ClearPendingCompensationsForEffect();
+		PendingCompensations.Clear();
 		return Task.CompletedTask;
 	}
 
 	internal override Task BeforeSideTurnStart(HextechEnemyHexContext context, PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		ClearPendingCompensationsForEffect();
+		PendingCompensations.Clear();
 		return Task.CompletedTask;
 	}
 
 	internal override Task AfterCombatVictory(HextechEnemyHexContext context, CombatRoom room)
 	{
-		ClearPendingCompensationsForEffect();
+		PendingCompensations.Clear();
 		return Task.CompletedTask;
 	}
 
@@ -80,7 +79,7 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 
 	internal static void ClearPendingCompensations(long commandId)
 	{
-		_effectWithPendingCompensation?.ClearPendingCompensationsForCommand(commandId);
+		PendingCompensations.RemoveAll(pending => pending.CommandId == commandId);
 	}
 
 	internal static (decimal ImmediateDamage, int NextTurnDamage) SplitDamage(decimal damage)
@@ -105,40 +104,37 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 			|| HextechNextTurnDamagePower.IsResolvingDamage;
 	}
 
-	private void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource)
+	private static void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource)
 	{
-		for (int i = _pendingCompensations.Count - 1; i >= 0; i--)
+		for (int i = PendingCompensations.Count - 1; i >= 0; i--)
 		{
-			PendingCompensation pending = _pendingCompensations[i];
+			PendingCompensation pending = PendingCompensations[i];
 			if (pending.CommandId == commandId && pending.Target == target)
 			{
-				_pendingCompensations[i] = pending with
+				PendingCompensations[i] = pending with
 				{
 					Amount = pending.Amount + amount,
 					Dealer = dealer ?? pending.Dealer,
 					CardSource = cardSource ?? pending.CardSource
 				};
-				_effectWithPendingCompensation = this;
 				return;
 			}
 		}
 
-		_pendingCompensations.Add(new PendingCompensation(commandId, target, amount, dealer, cardSource));
-		_effectWithPendingCompensation = this;
+		PendingCompensations.Add(new PendingCompensation(commandId, target, amount, dealer, cardSource));
 	}
 
-	private bool TryTakePendingCompensation(long commandId, Creature target, [NotNullWhen(true)] out PendingCompensation? pending)
+	private static bool TryTakePendingCompensation(long commandId, Creature target, [NotNullWhen(true)] out PendingCompensation? pending)
 	{
-		for (int i = 0; i < _pendingCompensations.Count; i++)
+		for (int i = 0; i < PendingCompensations.Count; i++)
 		{
-			pending = _pendingCompensations[i];
+			pending = PendingCompensations[i];
 			if (pending.CommandId != commandId || pending.Target != target)
 			{
 				continue;
 			}
 
-			_pendingCompensations.RemoveAt(i);
-			RemoveFromPendingRegistryIfEmpty();
+			PendingCompensations.RemoveAt(i);
 			return true;
 		}
 
@@ -151,29 +147,6 @@ internal sealed class CompensationEnemyHex : HextechEnemyHexEffect
 		return compensation.Amount > 0m
 			&& target.IsAlive
 			&& target.CombatState?.RunState == context.RunState;
-	}
-
-	private void ClearPendingCompensationsForCommand(long commandId)
-	{
-		_pendingCompensations.RemoveAll(pending => pending.CommandId == commandId);
-		RemoveFromPendingRegistryIfEmpty();
-	}
-
-	private void ClearPendingCompensationsForEffect()
-	{
-		_pendingCompensations.Clear();
-		if (ReferenceEquals(_effectWithPendingCompensation, this))
-		{
-			_effectWithPendingCompensation = null;
-		}
-	}
-
-	private void RemoveFromPendingRegistryIfEmpty()
-	{
-		if (_pendingCompensations.Count == 0 && ReferenceEquals(_effectWithPendingCompensation, this))
-		{
-			_effectWithPendingCompensation = null;
-		}
 	}
 
 	private sealed record PendingCompensation(long CommandId, Creature Target, decimal Amount, Creature? Dealer, CardModel? CardSource);

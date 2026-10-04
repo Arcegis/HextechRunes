@@ -44,74 +44,22 @@ public sealed class SilverPlatingForge : HextechForgeBase
 	}
 }
 
-public sealed class UpgradeForge : HextechForgeBase
+public sealed class UpgradeForge : HextechUpgradeForgeBase
 {
-	public override bool HasUponPickupEffect => true;
-
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new CardsVar(2)
 	];
 
-	public override Task AfterObtained()
-	{
-		UpgradeRandomCards(DynamicVars.Cards.IntValue);
-		return Task.CompletedTask;
-	}
-
-	private void UpgradeRandomCards(int count)
-	{
-		if (Owner == null || count <= 0)
-		{
-			return;
-		}
-
-		List<CardModel> cards = HextechStableRandom.PickDistinct(
-			Owner.Deck.Cards
-			.Where(static card => card != null && card.IsUpgradable)
-			.ToList(),
-			count,
-			(RunState)Owner.RunState,
-			HextechStableRandom.CardKey,
-			"silver-upgrade-forge",
-			HextechStableRandom.PlayerKey(Owner),
-			Owner.Deck.Cards.Count.ToString());
-		if (cards.Count == 0)
-		{
-			return;
-		}
-
-		Flash();
-		foreach (CardModel card in cards)
-		{
-			CardCmd.Upgrade(card);
-		}
-	}
+	protected override string UpgradeRandomSalt => "silver-upgrade-forge";
 }
 
-public sealed class FocusForge : HextechForgeBase
+public sealed class FocusForge : HextechFocusForgeBase
 {
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
 		new PowerVar<FocusPower>(2m)
 	];
-
-	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-	[
-		HoverTipFactory.FromPower<FocusPower>()
-	];
-
-	public override bool IsAvailableForPlayer(Player player)
-	{
-		return IsDefectPlayer(player);
-	}
-
-	public override Task BeforeCombatStart()
-	{
-		return IsDefectOwner
-			? ApplyStackedPowerAtCombatStart<FocusPower>(DynamicVars["FocusPower"].BaseValue)
-			: Task.CompletedTask;
-	}
 }
 
 public sealed class LifeForge : HextechForgeBase
@@ -136,84 +84,26 @@ public sealed class LifeForge : HextechForgeBase
 }
 
 // 血量锻造器:百分比版最大生命(棱彩"生命锻造器"30% 的 1/4),与固定值的生命锻造器并存。
-public sealed class SilverHpForge : HextechForgeBase, IHextechPercentHpForge
+public sealed class SilverHpForge : HextechPercentHpForgeBase
 {
-	private int _baseMaxHp;
-
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedBaseMaxHp
 	{
-		get => _baseMaxHp;
-		set => _baseMaxHp = Math.Max(0, value);
+		get => SavedBaseMaxHpValue;
+		set => SavedBaseMaxHpValue = value;
 	}
 
-	public int BaseMaxHp
-	{
-		get => _baseMaxHp;
-		set => _baseMaxHp = Math.Max(1, value);
-	}
-
-	public decimal MaxHpPercentTotal => DynamicVars["MaxHpPercent"].BaseValue * StackAmount;
-
-	public override bool HasUponPickupEffect => true;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("MaxHpPercent", 7.5m)
-	];
-
-	public override async Task AfterObtained()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		Flash();
-		await HextechMaxHpScaling.ReapplyScale(Owner);
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreatePercentVars(7.5m);
 }
 
-public sealed class SilverAttackForge : HextechForgeBase, IHextechDamageCoefficientForge
+public sealed class SilverAttackForge : HextechDamageCoefficientForgeBase
 {
-	private const decimal DamageMultiplierValue = 1.05m;
-	private const decimal DamageBonusPercentValue = (DamageMultiplierValue - 1m) * 100m;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("DamageMultiplier", DamageMultiplierValue),
-		new DynamicVar("DamageBonusPercent", DamageBonusPercentValue)
-	];
-
-	public decimal DamageBonusFractionTotal => StackedMultiplier(DynamicVars["DamageMultiplier"].BaseValue) - 1m;
-
-	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
-	{
-		return Owner != null && IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource)
-			? HextechForgeCoefficientHelper.GetDamageMultiplier(Owner, this)
-			: 1m;
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreateDamageVars(1.05m);
 }
 
-public sealed class SilverProtectionForge : HextechForgeBase, IHextechSustainCoefficientForge
+public sealed class SilverProtectionForge : HextechSustainCoefficientForgeBase
 {
-	private const decimal SustainMultiplierValue = 1.05m;
-	private const decimal SustainBonusPercentValue = (SustainMultiplierValue - 1m) * 100m;
-
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("SustainMultiplier", SustainMultiplierValue),
-		new DynamicVar("SustainBonusPercent", SustainBonusPercentValue)
-	];
-
-	public decimal SustainBonusFractionTotal => StackedMultiplier(DynamicVars["SustainMultiplier"].BaseValue) - 1m;
-
-	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
-	{
-		return Owner != null && target == Owner.Creature
-			? HextechForgeCoefficientHelper.GetSustainMultiplier(Owner, this)
-			: 1m;
-	}
+	protected override IEnumerable<DynamicVar> CanonicalVars => CreateSustainVars(1.05m);
 }
 
 public sealed class PocketForge : HextechForgeBase

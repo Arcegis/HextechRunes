@@ -80,8 +80,9 @@ internal static partial class Program
 		Equal(runeCount, HextechExternalContentRegistry.GetPlayerRuneRegistrations().Count, "built-in rune not added to external list");
 		Equal(forgeCount, HextechExternalContentRegistry.GetForgeRegistrations().Count, "built-in forge not added to external list");
 		Equal(version, HextechExternalContentRegistry.Version, "rejected registration does not bump version");
-		Equal(HextechRarityTier.Silver, HextechContentRegistry.PlayerRuneMetadata.GetRegistration(typeof(SlapRune)).Rarity, "built-in rune metadata retained and lookups still build");
-		Expect(HextechContentRegistry.SilverForgeTypes.Contains(typeof(StrengthForge)), "built-in forge metadata retained");
+		Expect(HextechContentRegistry.PlayerRuneMetadata.TryGetRarity(typeof(SlapRune), out HextechRarityTier slapRarity), "built-in rune metadata retained and lookups still build");
+		Equal(HextechRarityTier.Silver, slapRarity, "built-in rune rarity retained");
+		Equal(HextechRarityTier.Silver, HextechContentRegistry.ForgeRarityByType[typeof(StrengthForge)], "built-in forge metadata retained");
 	}
 
 	[HextechTest]

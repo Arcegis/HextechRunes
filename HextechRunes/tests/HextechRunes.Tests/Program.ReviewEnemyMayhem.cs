@@ -35,32 +35,35 @@ internal static partial class Program
 		Equal("", restored.Serialize(), "a cleared tracking state serializes as empty");
 	}
 
-	// TXT 同步脚本按字面量读描述阈值，效果类的常量必须与之一致。
+	// TXT 同步脚本按字面量读描述阈值，效果类的常量必须与之一致；描述里的阈值占位符靠这张表填值，漏登记会原样显示占位符。
 	[HextechTest]
-	private static void ReviewEnemyMaxHpStepThresholdsMatchCatalogLiterals()
+	private static void ReviewEnemyHexScaledThresholdsMatchEffectConstants()
 	{
-		System.Collections.IDictionary thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
-			.GetField("PlayerCountScaledThresholds", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
-		Equal(("HpPerPercent", HeavyHitterEnemyHex.HpPerPercentPerPlayer), ((string, int))thresholds[MonsterHexKind.HeavyHitter]!, "Heavy Hitter threshold");
-		Equal(("HpPerPercent", VitalitySurgeEnemyHex.HpPerPercentPerPlayer), ((string, int))thresholds[MonsterHexKind.VitalitySurge]!, "Vitality Surge threshold");
-		Equal(("HpPerPercent", ProteinShakeEnemyHex.HpPerPercentPerPlayer), ((string, int))thresholds[MonsterHexKind.ProteinShake]!, "Protein Shake threshold");
+		Dictionary<MonsterHexKind, (string Var, int Base)> expected = new()
+		{
+			[MonsterHexKind.HeavyHitter] = ("HpPerPercent", HeavyHitterEnemyHex.HpPerPercentPerPlayer),
+			[MonsterHexKind.VitalitySurge] = ("HpPerPercent", VitalitySurgeEnemyHex.HpPerPercentPerPlayer),
+			[MonsterHexKind.ProteinShake] = ("HpPerPercent", ProteinShakeEnemyHex.HpPerPercentPerPlayer),
+			// 多多益善按全队遗物数除以人数取整，每 N 件（N=人数）+1%，效果类里没有单独的常量。
+			[MonsterHexKind.MoreTheMerrier] = ("RelicsNeeded", 1),
+			[MonsterHexKind.Porcupine] = ("HitsNeeded", PorcupineEnemyHex.HitsPerTriggerPerPlayer),
+			[MonsterHexKind.HundredRefinements] = ("HitsNeeded", HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer),
+		};
+		SetEqual(expected.Keys, MonsterHexCatalog.PlayerCountScaledThresholds.Keys, "scaled threshold kinds");
+		foreach ((MonsterHexKind kind, (string Var, int Base) threshold) in MonsterHexCatalog.PlayerCountScaledThresholds)
+		{
+			Equal(expected[kind], threshold, $"{kind} description threshold matches the effect");
+		}
+	}
 
+	[HextechTest]
+	private static void ReviewEnemyMaxHpStepMultipliersScaleWithParty()
+	{
 		Equal(1.30m, HeavyHitterEnemyHex.ResolveMultiplier(10000m, 3), "capped multipliers stay capped for any party size");
 		Equal(1.02m, VitalitySurgeEnemyHex.ResolveMultiplier(120m, 3), "Vitality Surge threshold scales with the party");
 		Equal(1m, ProteinShakeEnemyHex.ResolveMultiplier(4m, 1), "Protein Shake below the first step");
 		Equal(16, HextechEnemyHexContext.ClampScalingPlayerCount(40), "scaling player count caps at sixteen");
 		Equal(1, HextechEnemyHexContext.ClampScalingPlayerCount(0), "scaling player count never drops below one");
-	}
-
-	// 原来 if 链补的能力提示并入表后仍然出现（顺序：表内能力 → 灼烧 → 卡牌/关键词）。
-	[HextechTest]
-	private static void ReviewEnemyHexHoverTipTablesCoverFormerIfChain()
-	{
-		SequenceEqual(new[] { typeof(HextechNextTurnDamagePower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Compensation), "Compensation tip");
-		SequenceEqual(new[] { typeof(HextechGalvanicPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.SolidTime), "Solid Time tip");
-		SequenceEqual(new[] { typeof(SuckPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.FossilStalker), "Fossil Stalker tip");
-		SequenceEqual(new[] { typeof(HextechPlayerSlowPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.AncientStatue), "Ancient Statue tip");
-		SequenceEqual(new[] { typeof(HextechPlayerSlowPower) }, MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.HundredRefinements), "Hundred Refinements tip");
 	}
 
 	[HextechTest]
