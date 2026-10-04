@@ -1,27 +1,18 @@
 namespace HextechRunes;
 
-public sealed class PiggyBankRune : HextechSharedCombatVictoryRuneBase
+public sealed class PiggyBankRune : HextechRelicBase
 {
-	// 仅保留旧存档尚未领取的战后奖励；新的触发直接发放金币。
-	private int _counter;
 	private bool _grantingGold;
 
+	// 旧版本存档兼容占位：原为待发放的战后金币计数，金币已改为触发时立即发放；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCounter
 	{
-		get => _counter;
-		set
-		{
-			_counter = Math.Max(0, value);
-			InvokeDisplayAmountChanged();
-		}
+		get => 0;
+		set { }
 	}
 
 	public override bool HasUponPickupEffect => true;
-
-	public override bool ShowCounter => IsInLiveCombat && _counter > 0;
-
-	public override int DisplayAmount => _counter;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -31,13 +22,7 @@ public sealed class PiggyBankRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task AfterObtained()
 	{
-		return Owner == null ? Task.CompletedTask : GrantGold(DynamicVars.Gold.BaseValue);
-	}
-
-	public override Task BeforeCombatStart()
-	{
-		SavedCounter = 0;
-		return Task.CompletedTask;
+		return GrantGold(DynamicVars.Gold.BaseValue);
 	}
 
 	public override Task AfterDamageReceived(
@@ -71,19 +56,5 @@ public sealed class PiggyBankRune : HextechSharedCombatVictoryRuneBase
 		{
 			_grantingGold = false;
 		}
-	}
-
-	public override Task ApplySharedCombatVictory(CombatRoom room)
-	{
-		if (_counter <= 0)
-		{
-			SavedCounter = 0;
-			return Task.CompletedTask;
-		}
-
-		HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, _counter);
-		Flash(Array.Empty<Creature>());
-		SavedCounter = 0;
-		return Task.CompletedTask;
 	}
 }
