@@ -9,7 +9,6 @@ using MegaCrit.Sts2.Core.Debug;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
-using MegaCrit.Sts2.Core.Saves;
 
 // 本体与拓展包共用这一份加载器源码:拓展包 loader 工程以链接方式编译本文件,并定义 HEXTECH_SPONSOR_LOADER
 // 让类型保持在各自原来的命名空间里。两边只在 LoaderBootstrap.Identity.cs 的 ModId / 清单名 / 元数据键上不同。
@@ -533,16 +532,8 @@ public static partial class LoaderBootstrap
 			}
 		}
 
-		Version? assemblyVersion = typeof(SerializableRun).Assembly.GetName().Version;
-		if (assemblyVersion != null
-			&& (assemblyVersion.Major != 0
-				|| assemblyVersion.Minor != 0
-				|| assemblyVersion.Build != 0
-				|| assemblyVersion.Revision != 0))
-		{
-			return new HostVersionSnapshot(assemblyVersion, fallbackLabel);
-		}
-
+		// 不回退到 sts2.dll 的程序集版本:各版本都是 0.1.0.0,会被当成已知的旧宿主而拒绝加载。
+		// 版本未知时交给 SelectVariant 用最新变体。
 		return new HostVersionSnapshot(null, fallbackLabel);
 	}
 
