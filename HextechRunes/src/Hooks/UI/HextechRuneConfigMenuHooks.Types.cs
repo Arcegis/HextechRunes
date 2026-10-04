@@ -27,8 +27,6 @@ internal static partial class HextechRuneConfigMenuHooks
 		RelicModel Relic,
 		string Title,
 		string RarityText,
-		string PoolText,
-		string TagText,
 		int RarityOrder,
 		string PoolKey,
 		string TagKey,

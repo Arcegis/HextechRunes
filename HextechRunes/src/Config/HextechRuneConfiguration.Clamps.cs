@@ -28,11 +28,6 @@ internal static partial class HextechRuneConfiguration
 		return ClampActHexCount(count);
 	}
 
-	public static int ClampPlayerHexCount(int count)
-	{
-		return ClampActHexCount(count);
-	}
-
 	public static int ClampActHexCount(int count)
 	{
 		return Math.Clamp(count, MinActHexCount, MaxActHexCount);

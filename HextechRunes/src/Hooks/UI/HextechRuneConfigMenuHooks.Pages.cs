@@ -13,14 +13,12 @@ internal static partial class HextechRuneConfigMenuHooks
 			context,
 			L("HEXTECH_PLAYER_COUNT_TITLE"),
 			L("HEXTECH_PLAYER_COUNT_DESCRIPTION"),
-			pending.PlayerHexCounts,
-			HextechRuneConfiguration.ClampPlayerHexCount));
+			pending.PlayerHexCounts));
 		page.AddChild(CreateActCountSection(
 			context,
 			L("HEXTECH_ENEMY_COUNT_TITLE"),
 			L("HEXTECH_ENEMY_COUNT_DESCRIPTION"),
-			pending.EnemyHexCounts,
-			HextechRuneConfiguration.ClampEnemyHexCount));
+			pending.EnemyHexCounts));
 		page.AddChild(CreateRerollLimitSection(context));
 		page.AddChild(CreateGoldenRerollChanceSection(context));
 		if (HextechRuneGeneration.ChaosAvailable)
@@ -68,8 +66,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		ConfigMenuContext context,
 		string titleText,
 		string descriptionText,
-		int[] counts,
-		Func<int, int> clamp)
+		int[] counts)
 	{
 		Control[] steppers = new Control[counts.Length];
 		for (int act = 0; act < counts.Length; act++)
@@ -79,7 +76,7 @@ internal static partial class HextechRuneConfigMenuHooks
 				context,
 				GetActLabel(index),
 				() => counts[index],
-				value => counts[index] = clamp(value));
+				value => counts[index] = HextechRuneConfiguration.ClampActHexCount(value));
 		}
 
 		return CreateStepperCard(context, titleText, descriptionText, spacedRow: true, steppers);
