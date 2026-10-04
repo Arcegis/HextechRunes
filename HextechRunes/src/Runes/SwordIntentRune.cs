@@ -14,26 +14,16 @@ public sealed class SwordIntentRune : HextechRelicBase
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldBladeBeFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldBladeBeFree(card);
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldBladeBeFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldBladeBeFree(card);
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	private bool ShouldBladeBeFree(CardModel card)

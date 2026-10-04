@@ -31,26 +31,16 @@ public sealed class LubricantRune : TurnScopedRelicBase
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldPowerCardBeFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldPowerCardBeFree(card);
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldPowerCardBeFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldPowerCardBeFree(card);
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)

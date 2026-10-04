@@ -11,26 +11,16 @@ public sealed class TriPrismRune : TurnScopedRelicBase
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldTrigger(card) || card.EnergyCost.CostsX)
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldTrigger(card) && !card.EnergyCost.CostsX;
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldTrigger(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldTrigger(card);
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
