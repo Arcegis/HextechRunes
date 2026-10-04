@@ -5,9 +5,9 @@
 ## 构建环境与外部工具
 
 - 安装 .NET 9 SDK 和 Python 3。Godot 资源导入与 PCK 打包需要支持 .NET 的 Godot 编辑器；可通过 `GODOT_EDITOR` 指定其可执行文件。
-- 按 `.csproj` 和构建脚本声明的目标版本准备游戏程序集。本体的版本化引用目录为 `HextechRunes/versioned-dll-backups/<游戏版本>/game-refs/`，拓展包默认复用该目录。程序集必须来自对应版本的本机游戏安装，不提交到 Git。
-- `.csproj` 支持通过 `-p:GameDataDir=<程序集目录>` 指定引用目录。直接构建时，本体使用 `HextechSts2Target`，拓展包使用 `HextechSponsorSts2Target`；完整打包脚本会逐个构建它们声明支持的版本。版本符号、目标校验（未知目标直接报错）与游戏引用集中在仓库根 `Directory.Build.targets`，只对声明 `HextechUsesVariantTargets=true` 的工程生效，loader 与 mplab 不受影响。
-- 游戏安装位置默认是维护者本机路径，可用环境变量 `STS2_GAME_APP` 覆盖（两个构建脚本、csproj 与 mplab 一致）。两个 `build_and_deploy.sh` 是面向 macOS 的 Zsh 脚本，共用步骤在 `tools/lib_build.sh`；其它系统应使用适合本机的构建、资源导入与部署方式，不直接照搬 macOS 路径。
+- 按 `.csproj` 和构建脚本声明的目标版本准备游戏程序集。本体与拓展包共用版本化引用目录 `HextechRunes/versioned-dll-backups/<游戏版本>/game-refs/`；目录缺失时构建和 `run_tests.sh` 直接报错，不回退到本机游戏安装。程序集必须来自对应版本的本机游戏安装，不提交到 Git。
+- `.csproj` 支持通过 `-p:GameDataDir=<程序集目录>` 指定引用目录。直接构建时，本体、拓展包与测试都用 `HextechSts2Target` 指定目标（拓展包经 ProjectReference 传给本体）；完整打包脚本会逐个构建它们声明支持的版本。版本符号、目标校验（未知目标直接报错）与游戏引用集中在仓库根 `Directory.Build.targets`，只对声明 `HextechUsesVariantTargets=true` 的工程生效，loader 与 mplab 不受影响。
+- 游戏安装位置默认是维护者本机路径，可用环境变量 `STS2_GAME_APP` 覆盖（两个构建脚本与 mplab 一致）。两个 `build_and_deploy.sh` 是面向 macOS 的 Zsh 脚本，共用步骤在 `tools/lib_build.sh`；其它系统应使用适合本机的构建、资源导入与部署方式，不直接照搬 macOS 路径。
 - 本体用 `HEXTECH_DEPLOY=0` 关闭部署，拓展包用 `HEXTECH_SPONSOR_DEPLOY=0`。只设置其中一个不会改变另一个脚本的行为。`HEXTECH_UPDATE_LATEST` 默认 0，本地构建不改写已跟踪的 `server/hextech-telemetry/public/latest-version.json`；发布时显式设 1。
 - 两个包的加载器只有一份源码 `HextechRunes/loader/`：拓展包 loader 工程以链接方式编译它，身份常量在各自的 `LoaderBootstrap.Identity.cs`。拓展包没有自己的 `multi_version` 脚本，直接调用本体的。
 - 原工作区的 `tools/sts2-inspect` 未包含在此仓库。需要原版 API 证据时，使用本机另行配置的反编译工具读取对应版本的 `sts2.dll` 与同目录依赖；不把旧工具路径当作本仓库提供的命令。
