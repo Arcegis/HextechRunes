@@ -33,13 +33,13 @@ internal static class HextechCardGridPreviewHooks
 		[HarmonyPostfix]
 		private static void Postfix(NCardGrid __instance, bool value)
 		{
-			if (value
-				|| PreviewFlagField is not { } previewFlagField
-				|| BaseCardField is not { } baseCardField
-				|| CardRowsField?.GetValue(__instance) is not IEnumerable rows)
+			if (value || CardRowsField!.GetValue(__instance) is not IEnumerable rows)
 			{
 				return;
 			}
+
+			FieldInfo previewFlagField = PreviewFlagField!;
+			FieldInfo baseCardField = BaseCardField!;
 
 			foreach (object? rowObj in rows)
 			{
