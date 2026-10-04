@@ -51,7 +51,7 @@ public sealed class BurningInterestRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null || target.Side != CombatSide.Enemy || !IsAttackDamageForRuneEffects(props, cardSource) || !IsDamageFromOwner(dealer, cardSource))
+		if (target.Side != CombatSide.Enemy || !IsAttackDamageForRuneEffects(props, cardSource) || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;
 		}
@@ -66,7 +66,6 @@ public sealed class BurningInterestRune : HextechRelicBase
 	public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
 		if (_grantingGold
-			|| Owner == null
 			|| target.Side != CombatSide.Enemy
 			|| !HextechBurnPower.IsResolvingDamage
 			|| result.TotalDamage <= 0m

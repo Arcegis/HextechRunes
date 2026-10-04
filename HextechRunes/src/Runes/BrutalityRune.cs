@@ -15,7 +15,7 @@ public sealed class BrutalityRune : HextechRelicBase
 
 	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}

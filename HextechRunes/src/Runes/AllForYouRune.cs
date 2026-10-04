@@ -21,7 +21,7 @@ public sealed class AllForYouRune : HextechRelicBase
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return Owner != null && target.IsPlayer ? SustainMultiplier : 1m;
+		return target.IsPlayer ? SustainMultiplier : 1m;
 	}
 
 	/// <summary>全队存活持有者带给 <paramref name="player"/> 的治疗倍率。</summary>

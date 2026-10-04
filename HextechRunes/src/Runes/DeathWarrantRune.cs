@@ -25,8 +25,7 @@ public sealed class DeathWarrantRune : DrawThresholdRuneBase
 
 	protected override async Task ApplyDrawThresholdReward()
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;

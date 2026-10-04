@@ -27,7 +27,7 @@ public abstract class TurnScopedRelicBase : HextechRelicBase
 
 	public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner != null && side == Owner.Creature.Side)
+		if (side == Owner.Creature.Side)
 		{
 			ResetTurnScopedStateAndIdentity(combatState);
 		}

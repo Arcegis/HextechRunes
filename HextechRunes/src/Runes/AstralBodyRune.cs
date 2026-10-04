@@ -35,11 +35,6 @@ public sealed class AstralBodyRune : HextechRelicBase, IHextechMaxHpScalingRune
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		await HextechMaxHpScaling.ReapplyScale(Owner);
 	}
 

@@ -4,7 +4,7 @@ public sealed class HattrickRune : HextechRelicBase
 {
 	public override bool ShouldAllowSelectingMoreCardRewards(Player player, CardReward cardReward)
 	{
-		if (Owner == null || player != Owner || Owner.Creature.IsDead)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return false;
 		}

@@ -16,7 +16,7 @@ public sealed class CondensedRadianceRune : HextechRelicBase
 	public override async Task AfterCardGeneratedForCombat(CardModel card, Player? creator)
 	{
 		bool addedByPlayer = creator == Owner;
-		if (!addedByPlayer || card.Owner != Owner || Owner == null || Owner.Creature.IsDead)
+		if (!addedByPlayer || card.Owner != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}

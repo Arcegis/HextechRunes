@@ -27,7 +27,7 @@ public sealed class FallingStarUpgradeRune : CardUpgradeRuneBase<FallingStar>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null || cardPlay.Card.Owner != Owner || !IsSupportedCard(cardPlay.Card))
+		if (cardPlay.Card.Owner != Owner || !IsSupportedCard(cardPlay.Card))
 		{
 			return;
 		}
@@ -49,7 +49,7 @@ public sealed class FallingStarUpgradeRune : CardUpgradeRuneBase<FallingStar>
 	{
 		if (cardPlay.Card is MeteorShower)
 		{
-			return Owner?.Creature.CombatState?.HittableEnemies ?? [];
+			return Owner.Creature.CombatState?.HittableEnemies ?? [];
 		}
 
 		if (cardPlay.Target is Creature target && target.Side == CombatSide.Enemy)
@@ -57,7 +57,7 @@ public sealed class FallingStarUpgradeRune : CardUpgradeRuneBase<FallingStar>
 			return [target];
 		}
 
-		return Owner?.Creature.CombatState?.HittableEnemies ?? [];
+		return Owner.Creature.CombatState?.HittableEnemies ?? [];
 	}
 
 	private static bool IsSupportedCard(CardModel card)

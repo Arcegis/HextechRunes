@@ -30,8 +30,7 @@ public sealed class BrandUpgradeRune : CardUpgradeRuneBase<Brand>
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not Brand)
 		{

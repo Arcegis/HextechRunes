@@ -48,19 +48,14 @@ public sealed class FeedUpgradeRune : CardUpgradeRuneBase<Feed>, IHextechMaxHpSc
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null)
-		{
-			MigrateLegacyStackCount();
-			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
-		}
-
+		MigrateLegacyStackCount();
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner, this);
 		return Task.CompletedTask;
 	}
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not Feed
 			|| cardPlay.Target is not { IsDead: true })

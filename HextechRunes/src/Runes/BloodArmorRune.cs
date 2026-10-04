@@ -19,8 +19,7 @@ public sealed class BloodArmorRune : HextechRelicBase
 
 	public override Task AfterCurrentHpChanged(Creature creature, decimal delta)
 	{
-		if (Owner == null
-			|| creature != Owner.Creature
+		if (creature != Owner.Creature
 			|| delta >= 0m
 			|| Owner.Creature.IsDead
 			|| !IsIroncladPlayer(Owner))

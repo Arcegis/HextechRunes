@@ -18,8 +18,7 @@ public sealed class FeyMagicRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| target.Side != CombatSide.Enemy
+		if (target.Side != CombatSide.Enemy
 			|| result.TotalDamage <= 0m
 			|| !IsOwnedCardWithEffectiveCostAtLeast(cardSource, DynamicVars["MinCost"].BaseValue))
 		{

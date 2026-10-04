@@ -16,7 +16,6 @@ public sealed class BattleTranceUpgradeRune : CardUpgradeRuneBase<BattleTrance>
 	public override decimal ModifyPowerAmountGivenMultiplicative(PowerModel power, Creature giver, decimal amount, Creature? target, CardModel? cardSource)
 	{
 		return power is NoDrawPower
-			&& Owner != null
 			&& giver == Owner.Creature
 			&& cardSource is BattleTrance
 			? 0m

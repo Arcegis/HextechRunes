@@ -57,7 +57,7 @@ public abstract class DrawThresholdRuneBase : HextechRelicBase
 
 	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
-		if (card.Owner != Owner || Owner == null || Owner.Creature.IsDead)
+		if (card.Owner != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -97,7 +97,7 @@ public abstract class DrawThresholdRuneBase : HextechRelicBase
 
 	private async Task ResolveDrawProgressFromHistory()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

@@ -35,8 +35,7 @@ public sealed class GetExcitedRune : HextechRelicBase
 
 	public override Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
-		if (Owner == null
-			|| wasRemovalPrevented
+		if (wasRemovalPrevented
 			|| target.Side == Owner.Creature.Side
 			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target))
 		{

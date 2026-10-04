@@ -14,7 +14,7 @@ public sealed class DexterityStrengthToFocusRune : AttributeConversionRelicBase
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (room is not CombatRoom || Owner == null || !IsDefectOwner)
+		if (room is not CombatRoom || !IsDefectOwner)
 		{
 			return Task.CompletedTask;
 		}

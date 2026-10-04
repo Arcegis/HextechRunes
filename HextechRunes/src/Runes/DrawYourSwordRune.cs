@@ -22,8 +22,7 @@ public sealed class DrawYourSwordRune : AttributeConversionRelicBase
 
 	internal bool ShouldReplaceOrbEvoke(OrbModel orb)
 	{
-		return Owner != null
-			&& !Owner.Creature.IsDead
+		return !Owner.Creature.IsDead
 			&& IsDefectOwner
 			&& ReferenceEquals(orb.Owner, Owner)
 			&& ReferenceEquals(Owner.GetRelic<DrawYourSwordRune>(), this);
@@ -56,7 +55,7 @@ public sealed class DrawYourSwordRune : AttributeConversionRelicBase
 		return PowerCmd.Apply<FocusPower>(owner, -amount, applier, cardSource);
 	}
 
-	private bool HasConflictingFocusConverter => Owner?.GetRelic<DexterityStrengthToFocusRune>() != null;
+	private bool HasConflictingFocusConverter => Owner.GetRelic<DexterityStrengthToFocusRune>() != null;
 
 	[HextechPatch("rune.draw-your-sword.evoke", "亮出你的剑", Rune = typeof(DrawYourSwordRune))]
 	private static class DrawYourSwordEvokePatch

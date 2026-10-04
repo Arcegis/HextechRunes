@@ -6,11 +6,6 @@ public sealed class BlackCandleRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardModel> curses = Owner.Deck.Cards
 			.Where(static card => card.Type == CardType.Curse)
 			.ToList();

@@ -45,7 +45,7 @@ public abstract class LimitedDebuffProcRelicBase : TurnScopedRelicBase
 			EnsureTurnScopedStateCurrent();
 		}
 
-		if (Owner is not { } owner || !TryMatchProc(power, amount, applier, out Creature? target))
+		if (!TryMatchProc(power, amount, applier, out Creature? target))
 		{
 			return;
 		}
@@ -61,7 +61,7 @@ public abstract class LimitedDebuffProcRelicBase : TurnScopedRelicBase
 		}
 
 		Flash([target]);
-		await OnDebuffProc(owner, target);
+		await OnDebuffProc(Owner, target);
 	}
 
 	/// <summary>触发回调。监听敌方时 target 是收到负面效果的敌人；监听自身时 target 是持有者自己。</summary>

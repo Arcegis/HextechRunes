@@ -9,7 +9,7 @@ public sealed class EndlessRecoveryRune : HextechRelicBase
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

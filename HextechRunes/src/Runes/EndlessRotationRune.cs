@@ -21,7 +21,7 @@ public sealed class EndlessRotationRune : HextechRelicBase
 	public override Task AfterSideTurnEndLate(PlayerChoiceContext choiceContext, CombatSide side,
 		IEnumerable<Creature> participants)
 	{
-		if (Owner != null && side == Owner.Creature.Side && HextechTurnParticipants.Includes(participants, Owner))
+		if (side == Owner.Creature.Side && HextechTurnParticipants.Includes(participants, Owner))
 		{
 			_freeCards = null;
 		}
@@ -30,14 +30,14 @@ public sealed class EndlessRotationRune : HextechRelicBase
 
 	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		bool free = Owner != null && card.Owner == Owner && _freeCards?.Contains(card) == true;
+		bool free = card.Owner == Owner && _freeCards?.Contains(card) == true;
 		modifiedCost = free ? 0m : originalCost;
 		return free;
 	}
 
 	public override Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
 	{
-		if (Owner?.PlayerCombatState == null || shuffler != Owner || Owner.Creature.IsDead)
+		if (Owner.PlayerCombatState == null || shuffler != Owner || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

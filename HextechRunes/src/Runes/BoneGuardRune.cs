@@ -18,7 +18,7 @@ public sealed class BoneGuardRune : HextechRelicBase
 
 	public override Task AfterSummon(PlayerChoiceContext choiceContext, Player summoner, decimal amount)
 	{
-		if (summoner != Owner || Owner == null || Owner.Creature.IsDead || amount <= 0m)
+		if (summoner != Owner || Owner.Creature.IsDead || amount <= 0m)
 		{
 			return Task.CompletedTask;
 		}

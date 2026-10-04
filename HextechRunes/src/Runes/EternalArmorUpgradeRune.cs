@@ -46,7 +46,6 @@ public sealed class EternalArmorUpgradeRune : CardUpgradeRuneBase<EternalArmor>
 	{
 		modifiedAmount = amount;
 		if (!_activeThisCombat
-			|| Owner == null
 			|| target != Owner.Creature
 			|| canonicalPower is not PlatingPower
 			|| amount >= 0m)

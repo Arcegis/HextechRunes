@@ -19,7 +19,7 @@ public sealed class HardBonesRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead || !IsNecrobinderPlayer(Owner))
+		if (Owner.Creature.IsDead || !IsNecrobinderPlayer(Owner))
 		{
 			return;
 		}

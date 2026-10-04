@@ -22,7 +22,7 @@ public sealed class BrutalForceRune : HextechRelicBase
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

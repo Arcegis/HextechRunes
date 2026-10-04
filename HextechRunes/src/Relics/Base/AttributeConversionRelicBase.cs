@@ -26,7 +26,7 @@ public abstract class AttributeConversionRelicBase : HextechRelicBase
 	public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature? applier, out decimal modifiedAmount)
 	{
 		modifiedAmount = amount;
-		if (_isConverting || Owner == null || target != Owner.Creature || amount == 0m || !ShouldConvert(canonicalPower))
+		if (_isConverting || target != Owner.Creature || amount == 0m || !ShouldConvert(canonicalPower))
 		{
 			return false;
 		}
@@ -48,11 +48,6 @@ public abstract class AttributeConversionRelicBase : HextechRelicBase
 		Creature? applier = _pendingApplier;
 		_pendingAmount = null;
 		_pendingApplier = null;
-		if (Owner == null)
-		{
-			return;
-		}
-
 		_isConverting = true;
 		try
 		{
@@ -67,7 +62,7 @@ public abstract class AttributeConversionRelicBase : HextechRelicBase
 
 	public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		if (_isConverting || Owner == null || amount == 0m || power.Owner != Owner.Creature || !ShouldConvert(power))
+		if (_isConverting || amount == 0m || power.Owner != Owner.Creature || !ShouldConvert(power))
 		{
 			return;
 		}
