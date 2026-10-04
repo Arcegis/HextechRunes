@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""把 dist 里 manifest 的版本号写进服务器的 latest-version.json(更新检查只读 latestVersion)。
-
-历史上这里还会记录官方构建的 dll/pck/manifest 哈希供客户端做完整性指纹校验;该校验已于 2026-09 移除,
-旧的 officialBuilds / serverIdentity 字段随本脚本一并清掉。
-"""
+"""把 dist 里 manifest 的版本号写进服务器的 latest-version.json(更新检查只读 latestVersion)。"""
 import argparse
 import json
 from pathlib import Path
@@ -32,8 +28,6 @@ def main() -> int:
         raise ValueError(f"manifest is missing version: {manifest_path}")
 
     latest = read_json(args.latest_json)
-    latest.pop("officialBuilds", None)
-    latest.pop("serverIdentity", None)
     latest["modId"] = args.mod_id
     latest["name"] = args.server_name
     latest["latestVersion"] = mod_version
