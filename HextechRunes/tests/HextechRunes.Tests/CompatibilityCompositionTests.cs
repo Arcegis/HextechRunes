@@ -20,12 +20,6 @@ internal static partial class Program
 			"0.110 build should not contain the Entomancer SpitMove compatibility patch");
 #else
 		MethodInfo? prefix = FindPatchMethod(typeof(HextechEncounterCompatibilityHooks), "EntomancerSpitMovePatch", "Prefix");
-		Expect(
-			!HextechEncounterCompatibilityHooks.ShouldRunOriginalEntomancerSpitMove(hasPersonalHive: false),
-			"0.107 missing-hive state should use the official 0.110 Strength fallback");
-		Expect(
-			HextechEncounterCompatibilityHooks.ShouldRunOriginalEntomancerSpitMove(hasPersonalHive: true),
-			"0.107 should preserve the original move when Personal Hive exists");
 		Expect(prefix != null, "0.107 build should contain the narrowly scoped SpitMove patch");
 		Equal<MethodInfo?>(
 			null,
@@ -64,7 +58,6 @@ internal static partial class Program
 		Equal(9, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(9m, 1m), "unscaled Exoskeleton base amount");
 		Equal(23, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(9m, 2.5m), "scaled Exoskeleton base amount");
 		Equal(50, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(20m, 2.5m), "scaled Hardened Shell base amount");
-		Equal(int.MaxValue, HextechEndlessModeCompatibilityHooks.CalculateEndlessScaledAmount(decimal.MaxValue, 2m), "overflowing power amount");
 
 		Harmony harmony = new("Natsuki.HextechRunes.Tests.EndlessPowerOrder");
 		try

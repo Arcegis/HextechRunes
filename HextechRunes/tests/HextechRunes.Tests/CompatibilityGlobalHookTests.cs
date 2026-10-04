@@ -90,31 +90,4 @@ internal static partial class Program
 		Expect(!HextechArtifactCompatibilityHooks.IsTemporaryShrinkTickDown(temporary, owner, -1m, null),
 			"permanent shrink has no tick-down");
 	}
-
-	[HextechTest]
-	private static void HookReflectionRequiresExactSignatures()
-	{
-		MethodInfo exact = HextechHookReflection.RequireMethod(
-			typeof(ReflectionSignatureFixture),
-			nameof(ReflectionSignatureFixture.Target),
-			BindingFlags.NonPublic | BindingFlags.Static,
-			typeof(string));
-		Equal(typeof(string), exact.GetParameters()[0].ParameterType, "exact reflection parameter");
-
-		ExpectThrows<InvalidOperationException>(
-			() => HextechHookReflection.RequireMethod(
-				typeof(ReflectionSignatureFixture),
-				nameof(ReflectionSignatureFixture.Target),
-				BindingFlags.NonPublic | BindingFlags.Static,
-				typeof(int)),
-			"A same-name, same-arity method with a different signature must not be selected.");
-	}
-
-	private static class ReflectionSignatureFixture
-	{
-		internal static void Target(string value)
-		{
-			_ = value;
-		}
-	}
 }

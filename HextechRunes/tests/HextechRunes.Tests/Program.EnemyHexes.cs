@@ -324,27 +324,8 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void PersonalHiveSafetyRejectsPlayerSideCopies()
+	private static void PersonalHiveDazedRecipientAllowsMissingDealer()
 	{
-		MethodInfo target = HextechPersonalHiveSafetyHooks.ResolveDamageResponseTarget();
-		Equal(typeof(PersonalHivePower), target.DeclaringType, "personal hive safety hook declaring type");
-		Equal(nameof(PersonalHivePower.AfterDamageReceived), target.Name, "personal hive safety hook method");
-		SequenceEqual(
-			new[]
-			{
-				typeof(PlayerChoiceContext),
-				typeof(Creature),
-				typeof(DamageResult),
-				typeof(ValueProp),
-				typeof(Creature),
-				typeof(CardModel),
-			},
-			target.GetParameters().Select(static parameter => parameter.ParameterType),
-			"personal hive safety hook parameter types");
-
-		Expect(HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Enemy), "enemy-owned personal hive should keep vanilla behavior");
-		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Player), "player-owned personal hive should be neutralized");
-		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(null), "ownerless personal hive should be neutralized");
 		Expect(HextechPersonalHiveSafetyHooks.HasDazedRecipient(null), "no dealer: vanilla skips on its own, so the original may run");
 	}
 

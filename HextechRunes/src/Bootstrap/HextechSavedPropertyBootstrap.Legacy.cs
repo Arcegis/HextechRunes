@@ -42,7 +42,7 @@ internal static partial class HextechSavedPropertyBootstrap
 
 		// Power 与退役锻造不在任何内容注册表里(注册表只覆盖符文/锻造/敌方图标/卡牌/modifier),
 		// 只能手写:0.107.1 不会自动收录模组载体,这里漏一个就会在联机(反)序列化时抛错。
-		// 紧随其后的 WarnOnUninjectedSavedPropertyCarriers 会在启动期扫描本程序集全部带 [SavedProperty] 的
+		// ExecuteEssential 后缀里的 WarnOnUninjectedSavedPropertyCarriers 会扫描全部带 [SavedProperty] 的
 		// 模型类型,新增载体忘了登记会直接告警。
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechBurnPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechNextTurnDamagePower));
@@ -69,7 +69,6 @@ internal static partial class HextechSavedPropertyBootstrap
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(HextechNeurosurgePower));
 		// 已退出注册表但仍保留类型的锻造器:旧存档里的实例仍会带 SavedStackCount 往返,载体必须继续注入。
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(SilverPlatingForge));
-		WarnOnUninjectedSavedPropertyCarriers();
 		EnsureSavedPropertyNetIdBitSize();
 	}
 

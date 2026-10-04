@@ -4,7 +4,7 @@ namespace HextechRunes;
 
 internal static class HextechCombatHistoryHelper
 {
-	public static int CountOwnedAttackCardsPlayed(Player? owner, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	public static int CountOwnedAttackCardsPlayed(Player? owner, bool firstInSeriesOnly = false, bool includeAutoPlay = true)
 	{
 		return CountOwnedCardsPlayed(
 			owner,
@@ -13,7 +13,7 @@ internal static class HextechCombatHistoryHelper
 			includeAutoPlay);
 	}
 
-	public static int CountOwnedCardsPlayed(Player? owner, Func<CardModel, bool> matches, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	public static int CountOwnedCardsPlayed(Player? owner, Func<CardModel, bool> matches, bool firstInSeriesOnly = false, bool includeAutoPlay = true)
 	{
 		if (owner == null)
 		{
@@ -30,7 +30,7 @@ internal static class HextechCombatHistoryHelper
 				&& matches(entry.CardPlay.Card));
 	}
 
-	public static int CountOwnedAttackCardsPlayedThisTurn(Player? owner, HextechCombatState? combatState, bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	public static int CountOwnedAttackCardsPlayedThisTurn(Player? owner, HextechCombatState? combatState, bool firstInSeriesOnly = false, bool includeAutoPlay = true)
 	{
 		if (owner == null || combatState == null)
 		{
@@ -40,16 +40,11 @@ internal static class HextechCombatHistoryHelper
 		ulong ownerId = owner.NetId;
 		return CombatManager.Instance.History.CardPlaysFinished
 			.Count(entry =>
-				HappenedThisTurn(entry, combatState)
+				entry.HappenedThisTurn(combatState)
 				&& (!firstInSeriesOnly || entry.CardPlay.IsFirstInSeries)
 				&& (includeAutoPlay || !entry.CardPlay.IsAutoPlay)
 				&& entry.CardPlay.Card.Owner?.NetId == ownerId
 				&& HextechCardEffectTypes.IsAttackForEffects(entry.CardPlay.Card, owner));
-	}
-
-	private static bool HappenedThisTurn(CombatHistoryEntry entry, HextechCombatState? combatState)
-	{
-		return entry.HappenedThisTurn(combatState);
 	}
 
 	public static int CountOwnedCardsDrawn(Player? owner)

@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-
 namespace HextechRunes;
 
 /// <summary>
@@ -42,13 +40,7 @@ internal static class HextechCardEffectTypes
 			return false;
 		}
 
-		try
-		{
-			return (card.CanonicalInstance?.Type ?? card.Type) == CardType.Skill;
-		}
-		catch (CanonicalModelException)
-		{
-			return card.Type == CardType.Skill;
-		}
+		// CanonicalInstance 的 getter 在规范模型上返回自身,不会断言可变。
+		return (card.CanonicalInstance?.Type ?? card.Type) == CardType.Skill;
 	}
 }

@@ -18,26 +18,29 @@ internal static class HextechTextures
 	/// <summary>加载本模组自带的 UI/特效纹理;未命中时每个路径只告警一次,调用方不必再自行告警。</summary>
 	internal static Texture2D? LoadUiTexture(string path)
 	{
-		// 原始图像字节在支持的游戏版本间稳定,图片资源只手动解码;非图片路径(.tres 等)才走 ResourceLoader。
-		Func<string, Texture2D?> secondaryLoader = AssetResourceResolver.IsRawImagePath(path)
-			? static _ => null
-			: LoadTextureThroughResourceLoader;
-		Texture2D? texture = AssetResourceResolver.Resolve(
-			path,
-			TextureCache,
-			IsTextureUsable,
-			LoadRawImageTexture,
-			secondaryLoader);
-		if (texture == null)
+		if (TextureCache.TryGetValue(path, out Texture2D? cached))
 		{
-			WarnTextureMissOnce(
-				path,
-				AssetResourceResolver.IsRawImagePath(path)
-					? "raw image decode miss"
-					: "raw decode and ResourceLoader miss");
+			if (IsTextureUsable(cached))
+			{
+				return cached;
+			}
+
+			TextureCache.Remove(path);
 		}
 
-		return texture;
+		// 原始图像字节在支持的游戏版本间稳定,图片资源只手动解码;非图片路径(.tres 等)才走 ResourceLoader。
+		bool isRawImage = IsRawImagePath(path);
+		Texture2D? texture = isRawImage
+			? LoadRawImageTexture(path)
+			: LoadTextureThroughResourceLoader(path);
+		if (texture != null && IsTextureUsable(texture))
+		{
+			TextureCache[path] = texture;
+			return texture;
+		}
+
+		WarnTextureMissOnce(path, isRawImage ? "raw image decode miss" : "ResourceLoader miss");
+		return null;
 	}
 
 	internal static CompressedTexture2D? LoadCompressedTexture(string path)
@@ -139,9 +142,11 @@ internal static class HextechTextures
 		}
 	}
 
-	private static Texture2D? LoadRawImageTexture(string path)
+	private static bool IsRawImagePath(string path)
 	{
-		return TryLoadRawImageTexture(path, out Texture2D? texture) ? texture : null;
+		return path.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+			|| path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+			|| path.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static Texture2D? LoadTextureThroughResourceLoader(string path)
@@ -157,23 +162,17 @@ internal static class HextechTextures
 		}
 	}
 
-	private static bool TryLoadRawImageTexture(string path, out Texture2D? texture)
+	private static Texture2D? LoadRawImageTexture(string path)
 	{
-		texture = null;
-		if (!AssetResourceResolver.IsRawImagePath(path))
-		{
-			return false;
-		}
-
 		bool isPng = path.EndsWith(".png", StringComparison.OrdinalIgnoreCase);
 
-		// 解码与建纹理整体兜底:Resolve 按契约不 catch,LoadUiTexture 链上也没有别的护栏。
+		// 解码与建纹理整体兜底:LoadUiTexture 链上没有别的护栏。
 		try
 		{
 			byte[] bytes = Godot.FileAccess.GetFileAsBytes(path);
 			if (bytes.Length == 0)
 			{
-				return false;
+				return null;
 			}
 
 			Image image = new();
@@ -182,23 +181,22 @@ internal static class HextechTextures
 				: image.LoadJpgFromBuffer(bytes);
 			if (err != Error.Ok)
 			{
-				return false;
+				return null;
 			}
 
 			ImageTexture? imageTexture = ImageTexture.CreateFromImage(image);
 			if (!IsTextureUsable(imageTexture))
 			{
 				imageTexture?.Dispose();
-				return false;
+				return null;
 			}
 
-			texture = imageTexture;
-			return true;
+			return imageTexture;
 		}
 		catch (Exception ex)
 		{
-			LogFailure(nameof(TryLoadRawImageTexture), ex);
-			return false;
+			LogFailure(nameof(LoadRawImageTexture), ex);
+			return null;
 		}
 	}
 

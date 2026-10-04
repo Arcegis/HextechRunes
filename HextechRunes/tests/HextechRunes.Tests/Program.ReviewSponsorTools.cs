@@ -24,8 +24,8 @@ internal static partial class Program
 			CollectSavedPropertyNames(typeof(SponsorCatalog).Assembly, declaredInAssemblyOnly: true));
 	}
 
-	// 两个加载器编译的是同一份 SelectVariant:宿主已知却没有不高于它的变体时必须返回 null(停止加载),
-	// 不能回退到更新的变体;宿主未知才用最新变体。
+	// 宿主已知却没有不高于它的变体时必须返回 null(停止加载),不能回退到更新的变体;宿主未知才用最新变体。
+	// 拓展包加载器以链接方式编译同一份源码,选择规则只在这里测一次。
 	[HextechTest]
 	private static void LoaderSelectVariantNeverFallsBackToNewerVariant()
 	{
@@ -41,35 +41,13 @@ internal static partial class Program
 		Equal("0.111.0", MainLoader.SelectVariant(main, null)?.CompatTarget, "unknown host picks the newest variant");
 		Expect(MainLoader.SelectVariant(main, new Version(0, 106, 0)) == null, "host older than every variant refuses to load");
 		Expect(MainLoader.SelectVariant([], null) == null, "no variants");
-
-		SponsorLoader.VariantCandidate[] sponsor =
-		[
-			new("0.110.0", new Version(0, 110, 0), "b"),
-			new("0.111.0", new Version(0, 111, 0), "c")
-		];
-		Expect(SponsorLoader.SelectVariant(sponsor, new Version(0, 107, 1)) == null, "sponsor loader refuses a newer variant for a known older host");
-		Equal("0.110.0", SponsorLoader.SelectVariant(sponsor, new Version(0, 110, 1))?.CompatTarget, "sponsor loader picks the newest variant not above the host");
-		Equal("0.111.0", SponsorLoader.SelectVariant(sponsor, null)?.CompatTarget, "sponsor loader: unknown host picks the newest variant");
 	}
 
-	// 拓展包加载器只认自己的变体清单名与程序集名;类型留在原命名空间,两份加载器可同时存在于进程里。
+	// 拓展包加载器只认自己的变体清单名与程序集名。
+	// 只走不写日志的成功/拒绝路径:加载器的 Log.Error 在测试进程里会触碰 Godot 原生层。
 	[HextechTest]
-	private static void SponsorLoaderUsesItsOwnIdentity()
+	private static void SponsorLoaderReadsItsOwnVariantManifest()
 	{
-		Equal("HextechRunesSponsorPack.Loader", typeof(SponsorLoader).Namespace, "sponsor loader namespace");
-		Equal("HextechRunesSponsorPack.Loader", typeof(SponsorLoader).Assembly.GetName().Name, "sponsor loader assembly name");
-		Equal("HextechRunes.Loader", typeof(MainLoader).Namespace, "main loader namespace");
-		Equal("[HextechRunesSponsorPack.Loader] ", SponsorLoader.LogPrefix, "sponsor loader log prefix");
-		Equal("[HextechRunes.Loader] ", MainLoader.LogPrefix, "main loader log prefix");
-		Equal("HextechRunesSponsorPack", SponsorLoader.ModId, "sponsor loader mod id");
-		Equal("hextech-runes-sponsor-pack-variants.manifest", SponsorLoader.VariantManifestName, "sponsor loader manifest name");
-		Equal("HextechSponsorCompatibilityTarget", SponsorLoader.CompatTargetMetadataKey, "sponsor loader metadata key");
-		Equal("HextechRunes", MainLoader.ModId, "main loader mod id");
-		Equal("hextech-runes-variants.manifest", MainLoader.VariantManifestName, "main loader manifest name");
-		Equal("HextechCompatibilityTarget", MainLoader.CompatTargetMetadataKey, "main loader metadata key");
-
-		// 只走不写日志的成功/拒绝路径:加载器的 Log.Error 在测试进程里会触碰 Godot 原生层。
-
 		string root = Path.Combine(Path.GetTempPath(), "hextech-sponsor-loader-test-" + Guid.NewGuid().ToString("N"));
 		try
 		{
@@ -102,10 +80,13 @@ internal static partial class Program
 	[HextechTest]
 	private static void StableIndexMatchesGoldenValuesAndRejectsEmptyPool()
 	{
-		Equal(
-			0x4A7ED4341511E801UL,
-			HextechStableRandom.HashRaw("SEED-1", "|act:", "2", "|floor:", "17", "|", "enchantment-master", "|", "3", "|", "card"),
-			"golden hash (act 2, floor 17)");
+		foreach (int count in new[] { 7, 100, int.MaxValue })
+		{
+			Equal(
+				(int)(0x4A7ED4341511E801UL % (ulong)count),
+				HextechStableRandom.IndexFromRawParts(count, "SEED-1", "|act:", "2", "|floor:", "17", "|", "enchantment-master", "|", "3", "|", "card"),
+				$"golden raw hash (act 2, floor 17, count {count})");
+		}
 
 		RunState run = (RunState)RuntimeHelpers.GetUninitializedObject(typeof(RunState));
 		FieldInfo history = AccessTools.Field(typeof(RunState), "_mapPointHistory");

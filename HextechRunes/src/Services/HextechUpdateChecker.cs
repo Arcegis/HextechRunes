@@ -14,12 +14,6 @@ internal static partial class HextechUpdateChecker
 	private const int MaxNoticeAttachAttempts = 30;
 	private const string NoticeLocTable = "main_menu_ui";
 
-	// 写全名:本文件 using Godot,Godot.HttpClient 与 System.Net.Http.HttpClient 同名。
-	private static readonly System.Net.Http.HttpClient HttpClient = new()
-	{
-		Timeout = TimeSpan.FromSeconds(12)
-	};
-
 	private static readonly string[] VersionEndpoints =
 	[
 		HextechServerEndpoints.StaticVersionEndpoint,
@@ -186,23 +180,14 @@ internal static partial class HextechUpdateChecker
 		return mainMenu.GetTree()?.Root is Node root ? root : mainMenu;
 	}
 
-	private static Label CreateNoticeLabel(Label? template)
+	private static Label CreateNoticeLabel(Label template)
 	{
 		Label label = template is MegaLabel ? new MegaLabel() : new Label();
 		label.Name = NoticeName;
 		label.MouseFilter = Control.MouseFilterEnum.Ignore;
-		label.ZIndex = template?.ZIndex ?? 0;
-		label.ZAsRelative = template?.ZAsRelative ?? true;
-		if (template != null)
-		{
-			ApplyNoticeStyleFromTemplate(label, template);
-			return label;
-		}
-
-		label.AddThemeFontSizeOverride("font_size", 18);
-		label.AddThemeColorOverride("font_color", new Color(0.86f, 0.69f, 0.18f, 0.94f));
-		label.AddThemeColorOverride("font_outline_color", new Color(0f, 0f, 0f, 0.58f));
-		label.AddThemeConstantOverride("outline_size", 2);
+		label.ZIndex = template.ZIndex;
+		label.ZAsRelative = template.ZAsRelative;
+		ApplyNoticeStyleFromTemplate(label, template);
 		return label;
 	}
 
