@@ -7,8 +7,8 @@ internal static partial class HextechCombatHooks
 {
 	// AttackCommand._damagePerHit（decimal 白值）与 _hitCount（int 段数），0.107.1/0.110.0/0.111.0 原版私有字段。
 	// 任一缺失时攻击改写与意图预览一并停用（Prepare 返回 false），缺失成员进启动摘要。
-	private static readonly FieldInfo? DualWieldDamagePerHitField = TryGetField(typeof(AttackCommand), "_damagePerHit");
-	private static readonly FieldInfo? DualWieldHitCountField = TryGetField(typeof(AttackCommand), "_hitCount");
+	private static readonly FieldInfo DualWieldDamagePerHitField = TryGetField(typeof(AttackCommand), "_damagePerHit")!;
+	private static readonly FieldInfo DualWieldHitCountField = TryGetField(typeof(AttackCommand), "_hitCount")!;
 	private static readonly ConditionalWeakTable<AttackCommand, object> DualWieldProcessedCommands = new();
 	private static readonly object DualWieldProcessedMarker = new();
 
@@ -40,12 +40,12 @@ internal static partial class HextechCombatHooks
 			DualWieldProcessedCommands.Add(__instance, DualWieldProcessedMarker);
 
 			// 计算型伤害(_damagePerHit < 0,改用 _calculatedDamageVar)不在此减半,只加倍段数。
-			if (DualWieldDamagePerHitField?.GetValue(__instance) is decimal damagePerHit && damagePerHit >= 1m)
+			if (DualWieldDamagePerHitField.GetValue(__instance) is decimal damagePerHit && damagePerHit >= 1m)
 			{
 				DualWieldDamagePerHitField.SetValue(__instance, Math.Ceiling(damagePerHit / 2m));
 			}
 
-			if (DualWieldHitCountField?.GetValue(__instance) is int hitCount && hitCount >= 1)
+			if (DualWieldHitCountField.GetValue(__instance) is int hitCount && hitCount >= 1)
 			{
 				DualWieldHitCountField.SetValue(__instance, hitCount * 2);
 			}

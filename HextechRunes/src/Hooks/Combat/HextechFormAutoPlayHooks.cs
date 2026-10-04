@@ -170,7 +170,7 @@ internal static class HextechFormAutoPlayHooks
 
 	private static Task InvokePowerCardFlyVfx(MethodInfo playPowerCardFlyVfx, CardModel card)
 	{
-		return playPowerCardFlyVfx.Invoke(card, null) as Task ?? Task.CompletedTask;
+		return (Task)playPowerCardFlyVfx.Invoke(card, null)!;
 	}
 
 	private static Type[] GetSupportedFormTypes()
@@ -213,7 +213,7 @@ internal static class HextechFormAutoPlayHooks
 
 	private static async Task<int> GeneratePlayCount(MethodInfo generatePlayCount, CardModel card, ICombatState combatState)
 	{
-		return await (generatePlayCount.Invoke(card, [combatState, null]) as Task<int> ?? Task.FromResult(1));
+		return await (Task<int>)generatePlayCount.Invoke(card, [combatState, null])!;
 	}
 
 	internal static decimal GetFormAmount(CardModel card)
@@ -400,8 +400,6 @@ internal sealed class HextechFormAutoPlayBatchState
 			_horizontalOffsets[cardList[index]] = (index - centerIndex) * spacing;
 		}
 	}
-
-	internal bool Contains(CardModel card) => _cards.Contains(card);
 
 	internal bool TryGetHorizontalOffset(CardModel card, out float offset)
 	{
