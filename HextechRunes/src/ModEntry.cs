@@ -26,7 +26,8 @@ public static class ModEntry
 			}
 
 			// 先登记模型与 SavedProperty 载体，再安装依赖这些模型的补丁；net-id 冻结在后续启动收尾进行。
-			HextechModelBootstrap.Install();
+			HextechSavedPropertyBootstrap.InjectCaches();
+			HextechModelPoolRegistrar.RegisterModels();
 			HextechRuneConfiguration.Initialize();
 			HextechTelemetry.Initialize();
 			HextechIntegratedStrategyEventsCompat.Install();
