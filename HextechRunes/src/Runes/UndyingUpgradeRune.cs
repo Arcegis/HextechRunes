@@ -51,10 +51,7 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 			return Task.CompletedTask;
 		}
 
-		if (UndyingEtherealKeywordPersistence.IsTracked(card.DeckVersion))
-		{
-			UndyingEtherealKeywordPersistence.Restore(card);
-		}
+		KeywordPersistenceTrackers.UndyingEthereal.RestoreFromDeckVersion(card);
 
 		return Task.CompletedTask;
 	}
@@ -75,7 +72,7 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 
 	private static void ApplyPersistentEthereal(CardModel card)
 	{
-		UndyingEtherealKeywordPersistence.Track(card);
+		KeywordPersistenceTrackers.UndyingEthereal.Track(card);
 		CardCmd.ApplyKeyword(card, CardKeyword.Ethereal);
 	}
 }

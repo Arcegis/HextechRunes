@@ -40,7 +40,8 @@ internal static partial class HextechPlayerRuneHooks
 			&& OrnamentalFanDoActivateVisualsMethod != null;
 		if (!ready)
 		{
-			HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed<IllusoryWeaponRune>(
+			HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed(
+				typeof(IllusoryWeaponRune),
 				"illusory weapon attack counters",
 				new MissingMemberException("Illusory Weapon relic counters or activation visuals are missing in this game build."));
 		}
@@ -52,9 +53,7 @@ internal static partial class HextechPlayerRuneHooks
 	{
 		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
 			card.Owner,
-			card.CombatState as CombatState,
-			firstInSeriesOnly: false,
-			includeAutoPlay: true);
+			card.CombatState as CombatState);
 	}
 
 	internal static async Task ResolveIllusoryWeaponNunchaku(Nunchaku nunchaku)

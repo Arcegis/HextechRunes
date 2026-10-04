@@ -81,6 +81,6 @@ public sealed class TwiceThriceRune : HextechRelicBase
 	// 历史只含本场（原版在战斗结束与重置时清空），战斗外读到 0。
 	private int GetAttacksPlayedThisCombat()
 	{
-		return CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true);
+		return CountOwnedAttackCardsPlayedFromHistory();
 	}
 }

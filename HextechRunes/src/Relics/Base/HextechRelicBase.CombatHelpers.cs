@@ -5,13 +5,6 @@ namespace HextechRunes;
 
 public abstract partial class HextechRelicBase
 {
-	protected static bool DeckContains<TCard>(Player player)
-		where TCard : CardModel
-	{
-		ModelId cardId = ModelDb.GetId<TCard>();
-		return player.Deck.Cards.Any(card => card.CanonicalId() == cardId);
-	}
-
 	protected static int FloorToInt(decimal value)
 	{
 		return (int)decimal.Floor(value);
@@ -51,9 +44,9 @@ public abstract partial class HextechRelicBase
 		return HextechCardEffectTypes.IsOriginalOwnedSkill(cardSource, Owner);
 	}
 
-	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	protected int CountOwnedAttackCardsPlayedFromHistory()
 	{
-		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayed(Owner, firstInSeriesOnly, includeAutoPlay);
+		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayed(Owner);
 	}
 
 	protected int CountOwnedCardsDrawnFromHistory()

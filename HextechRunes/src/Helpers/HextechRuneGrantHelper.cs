@@ -61,7 +61,7 @@ internal static class HextechRuneGrantHelper
 			return false;
 		}
 
-		PlayerChoiceSynchronizer synchronizer = await HextechRuneSelectionCoordinator.WaitForPlayerChoiceSynchronizerAsync(runManager);
+		PlayerChoiceSynchronizer synchronizer = HextechRuneSelectionCoordinator.RequirePlayerChoiceSynchronizer(runManager);
 
 		uint choiceId = synchronizer.ReserveChoiceId(player);
 		int operationToken = HextechChoiceCodec.ComputeOperationToken(

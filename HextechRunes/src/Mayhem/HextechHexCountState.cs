@@ -46,7 +46,7 @@ internal sealed class HextechHexCountState(Func<IReadOnlyList<int>?, int[]> norm
 
 		for (int i = 0; i < Math.Min(normalized.Length, counts.Count); i++)
 		{
-			normalized[i] = HextechRuneConfiguration.ClampEnemyHexCount(counts[i]);
+			normalized[i] = HextechRuneConfiguration.ClampActHexCount(counts[i]);
 		}
 
 		return normalized;

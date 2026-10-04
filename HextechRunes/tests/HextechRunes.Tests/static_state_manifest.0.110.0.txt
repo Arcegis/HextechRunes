@@ -1,7 +1,7 @@
 ﻿# 由 HEXTECH_WRITE_PATCH_MANIFEST=1 生成;每行 = 类型.字段 : 字段类型(可变静态字段)。
-HextechRunes.CompensationEnemyHex._effectWithPendingCompensation : CompensationEnemyHex
-HextechRunes.FlyingKickCorpseLaunchDriver.LoggedAndroidSkip : Boolean
 HextechRunes.HextechBurnVisual._particleTexture : Texture2D
+HextechRunes.HextechCatalog._configurablePlayerRuneIds : IReadOnlySet`1
+HextechRunes.HextechCatalog._configurablePlayerRuneIdsVersion : Int32
 HextechRunes.HextechCatalog._endlessModeLoaded : Nullable`1
 HextechRunes.HextechCatalog._modelIdLookupCache : ModelIdLookupCache
 HextechRunes.HextechCatalog._modelIdLookupCacheVersion : Int32
@@ -10,7 +10,6 @@ HextechRunes.HextechChoiceCodec._playerRuneIdsByOrdinalVersion : Int32
 HextechRunes.HextechCollectionHooks._loggedFlatFallback : Boolean
 HextechRunes.HextechCollectionHooks._loggedMissingFallbackContainer : Boolean
 HextechRunes.HextechCollectionHooks._starterHeaderTemplate : String
-HextechRunes.HextechCombatHooks._jeweledGauntletHooksAvailable : Nullable`1
 HextechRunes.HextechCombatHooks._nextActualDamageCommandId : Int64
 HextechRunes.HextechCombatVfx._glowTexture : Texture2D
 HextechRunes.HextechCombatVfx._ringTexture : Texture2D
@@ -38,16 +37,14 @@ HextechRunes.HextechGoldenRerollDebug._forceNextEligible : Boolean
 HextechRunes.HextechGoldrendSync._trackedRunState : RunState
 HextechRunes.HextechIntegratedStrategyEventsCompat._extraActMethodResolved : Boolean
 HextechRunes.HextechIntegratedStrategyEventsCompat._getCurrentExtraActId : MethodInfo
-HextechRunes.HextechModelBootstrap._installed : Boolean
-HextechRunes.HextechMultiplayerDiagnostics._cachedNetworkSignature : String
 HextechRunes.HextechMultiplayerScalingCompat._warnedClientExtraScaling : Boolean
 HextechRunes.HextechMultiplayerScalingCompat._warnedHostOnlyScaling : Boolean
-HextechRunes.HextechPlayerRuneHooks._illusoryWeaponReflectionReady : Nullable`1
 HextechRunes.HextechRelicVisibilityHooks._drawPileAnchor : NDrawPileButton
 HextechRunes.HextechRelicVisibilityHooks._multiplayerStateHiddenByToggle : Boolean
 HextechRunes.HextechRuneConfiguration._config : RuneConfig
 HextechRunes.HextechRuneConfiguration._loaded : Boolean
 HextechRunes.HextechRuneGeneration._chaosTransform : CandidateTransform
+HextechRunes.HextechRuneSelectionCoordinator._actSelectionRun : RunState
 HextechRunes.HextechRuneSelectionScreen.RerollSfxPlayer : AudioStreamPlayer
 HextechRunes.HextechRuneSelectionScreen.SelectSfxPlayer : AudioStreamPlayer
 HextechRunes.HextechSavedPropertyBootstrap._officialCacheAudited : Boolean

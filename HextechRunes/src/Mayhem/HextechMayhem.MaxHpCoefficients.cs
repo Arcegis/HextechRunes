@@ -159,7 +159,7 @@ internal sealed partial class HextechMayhemModifier
 
 		if (delta < 0)
 		{
-			await CreatureCmdCompat.SetMaxHp(creature, expectedMaxHp);
+			await CreatureCmd.SetMaxHp(creature, expectedMaxHp);
 		}
 
 		TrackProjectedMonsterMaxHp(creature);
@@ -219,7 +219,7 @@ internal sealed partial class HextechMayhemModifier
 
 		int oldMaxHp = creature.MaxHp;
 		int oldCurrentHp = creature.CurrentHp;
-		await CreatureCmdCompat.SetMaxHp(creature, oldMaxHp + amount);
+		await CreatureCmd.SetMaxHp(creature, oldMaxHp + amount);
 
 		int actualMaxHpGain = Math.Max(0, creature.MaxHp - oldMaxHp);
 		if (actualMaxHpGain <= 0)

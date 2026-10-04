@@ -42,7 +42,7 @@ public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune, IH
 		// 主符文可能是先获得的另一个系数参与者(星界躯体/百分比锻造器),此时基础值已在它那里,按新乘积重算。
 		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
 		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: false);
-		await CreatureCmdCompat.SetMaxHp(Owner.Creature, primary.BaseMaxHp);
+		await CreatureCmd.SetMaxHp(Owner.Creature, primary.BaseMaxHp);
 		await CreatureCmd.Heal(Owner.Creature, Owner.Creature.MaxHp - Owner.Creature.CurrentHp);
 		HextechPlayerBodyScaleHelper.Update(Owner);
 	}

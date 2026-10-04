@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 internal sealed class GoliathEnemyHex : HextechEnemyHexEffect, IHextechEnemyMaxHpCoefficientProvider
 {
-	// 敌人体型（纯视觉），由 HextechMonsterMaxHpCoefficients.UpdateEnemyScale 汇总。
+	// 敌人体型（纯视觉），由 HextechMayhemModifier.UpdateEnemyScale 汇总。
 	internal const float BodyScale = 1.35f;
 
 	internal override MonsterHexKind Kind => MonsterHexKind.Goliath;

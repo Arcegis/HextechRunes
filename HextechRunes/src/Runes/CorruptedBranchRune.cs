@@ -64,10 +64,7 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		if (CorruptedBranchInnateKeywordPersistence.IsTracked(card.DeckVersion))
-		{
-			CorruptedBranchInnateKeywordPersistence.Restore(card);
-		}
+		KeywordPersistenceTrackers.CorruptedBranchInnate.RestoreFromDeckVersion(card);
 
 		return Task.CompletedTask;
 	}
@@ -151,7 +148,7 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 
 	private static void ApplyPersistentInnate(CardModel card)
 	{
-		CorruptedBranchInnateKeywordPersistence.Track(card);
+		KeywordPersistenceTrackers.CorruptedBranchInnate.Track(card);
 		CardCmd.ApplyKeyword(card, CardKeyword.Innate);
 	}
 }

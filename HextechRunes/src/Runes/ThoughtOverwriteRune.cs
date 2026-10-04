@@ -62,7 +62,7 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 		Flash();
 		foreach (CardModel card in selectedCards)
 		{
-			ThoughtOverwriteKeywordPersistence.Track(card);
+			KeywordPersistenceTrackers.ThoughtOverwrite.Track(card);
 			CardCmd.ApplyKeyword(card, CardKeyword.Ethereal);
 		}
 	}
@@ -74,10 +74,7 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 			return Task.CompletedTask;
 		}
 
-		if (ThoughtOverwriteKeywordPersistence.IsTracked(card.DeckVersion))
-		{
-			ThoughtOverwriteKeywordPersistence.Restore(card);
-		}
+		KeywordPersistenceTrackers.ThoughtOverwrite.RestoreFromDeckVersion(card);
 
 		return Task.CompletedTask;
 	}

@@ -51,61 +51,27 @@ internal sealed class KeywordPersistenceTracker
 	{
 		return IsTracked(card) || IsTracked(card.DeckVersion);
 	}
+
+	/// <summary>战斗副本从牌组本体继承追踪：本体被追踪时把关键词补回副本。</summary>
+	internal void RestoreFromDeckVersion(CardModel card)
+	{
+		if (IsTracked(card.DeckVersion))
+		{
+			Restore(card);
+		}
+	}
 }
 
-// 以下五个入口供各符文调用，名称保持不变；实际状态都在各自的 KeywordPersistenceTracker 里。
-
-internal static class ThoughtOverwriteKeywordPersistence
+/// <summary>各符文的关键词追踪器；标记名是存档契约，不能改。</summary>
+internal static class KeywordPersistenceTrackers
 {
-	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Ethereal, ThoughtOverwriteRune.EtherealMarkerSavedPropertyName);
+	internal static readonly KeywordPersistenceTracker ThoughtOverwrite = new(CardKeyword.Ethereal, ThoughtOverwriteRune.EtherealMarkerSavedPropertyName);
 
-	internal static void Track(CardModel? card) => Tracker.Track(card);
+	internal static readonly KeywordPersistenceTracker CurtainCall = new(CardKeyword.Retain, CurtainCallRune.RetainMarkerSavedPropertyName);
 
-	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
+	internal static readonly KeywordPersistenceTracker CosplayInnate = new(CardKeyword.Innate, HextechRunesApi.PersistentInnateMarkerSavedPropertyName);
 
-	internal static void Restore(CardModel card) => Tracker.Restore(card);
-}
+	internal static readonly KeywordPersistenceTracker CorruptedBranchInnate = new(CardKeyword.Innate, CorruptedBranchRune.InnateMarkerSavedPropertyName);
 
-internal static class CurtainCallKeywordPersistence
-{
-	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Retain, CurtainCallRune.RetainMarkerSavedPropertyName);
-
-	internal static void Track(CardModel? card) => Tracker.Track(card);
-
-	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
-
-	internal static void Restore(CardModel card) => Tracker.Restore(card);
-}
-
-internal static class CosplayInnateKeywordPersistence
-{
-	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Innate, HextechRunesApi.PersistentInnateMarkerSavedPropertyName);
-
-	internal static void Track(CardModel? card) => Tracker.Track(card);
-
-	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
-
-	internal static void Restore(CardModel card) => Tracker.Restore(card);
-}
-
-internal static class CorruptedBranchInnateKeywordPersistence
-{
-	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Innate, CorruptedBranchRune.InnateMarkerSavedPropertyName);
-
-	internal static void Track(CardModel? card) => Tracker.Track(card);
-
-	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
-
-	internal static void Restore(CardModel card) => Tracker.Restore(card);
-}
-
-internal static class UndyingEtherealKeywordPersistence
-{
-	internal static readonly KeywordPersistenceTracker Tracker = new(CardKeyword.Ethereal, UndyingUpgradeRune.EtherealMarkerSavedPropertyName);
-
-	internal static void Track(CardModel? card) => Tracker.Track(card);
-
-	internal static bool IsTracked(CardModel? card) => Tracker.IsTracked(card);
-
-	internal static void Restore(CardModel card) => Tracker.Restore(card);
+	internal static readonly KeywordPersistenceTracker UndyingEthereal = new(CardKeyword.Ethereal, UndyingUpgradeRune.EtherealMarkerSavedPropertyName);
 }

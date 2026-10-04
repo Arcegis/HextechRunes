@@ -73,12 +73,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechLog.Info("Mayhem", $"ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
 	}
 
-	// HextechRuneGrantHelper(Helpers/)仍按异步签名调用。
-	internal static Task<PlayerChoiceSynchronizer> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
-	{
-		return Task.FromResult(RequirePlayerChoiceSynchronizer(runManager));
-	}
-
 	internal static PlayerChoiceSynchronizer RequirePlayerChoiceSynchronizer(RunManager runManager)
 	{
 		return runManager.PlayerChoiceSynchronizer

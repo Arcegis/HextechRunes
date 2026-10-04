@@ -9,8 +9,8 @@ internal static class HextechPlayerRuneConfigIds
 			return HextechRuneConfiguration.NormalizeConfigStringIds(ids);
 		}
 
-		// 只在需要过滤时才构建可配置集合:它要做注册表唯一性校验与分组,可能抛异常;
-		// 加载配置走 preserveUnknownIds=true,不应因此让整份配置被兜底回落为默认。
+		// 可配置集合在注册表校验失败时会抛异常;加载配置走 preserveUnknownIds=true,不读它,
+		// 以免一处注册冲突让整份配置回落为默认。
 		HashSet<string> configurableIds = HextechCatalog.GetConfigurablePlayerRuneIds()
 			.Select(static id => id.Entry)
 			.ToHashSet(StringComparer.Ordinal);

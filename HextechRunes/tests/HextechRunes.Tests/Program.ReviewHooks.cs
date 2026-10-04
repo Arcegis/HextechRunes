@@ -188,9 +188,9 @@ internal static partial class Program
 	private static void KeywordPersistenceMarkersKeepLegacySaveFormat()
 	{
 		StrikeIronclad card = CreateMutableTestModel<StrikeIronclad>();
-		ThoughtOverwriteKeywordPersistence.Track(card);
-		CorruptedBranchInnateKeywordPersistence.Track(card);
-		UndyingEtherealKeywordPersistence.Track(card);
+		KeywordPersistenceTrackers.ThoughtOverwrite.Track(card);
+		KeywordPersistenceTrackers.CorruptedBranchInnate.Track(card);
+		KeywordPersistenceTrackers.UndyingEthereal.Track(card);
 
 		SerializableCard saved = new();
 		saved.Props = new SavedProperties
@@ -226,8 +226,8 @@ internal static partial class Program
 		};
 		StrikeIronclad loaded = CreateMutableTestModel<StrikeIronclad>();
 		HextechThoughtOverwriteKeywordPersistenceHooks.RestoreFromMarkers(legacy, loaded);
-		Expect(loaded.Keywords.Contains(CardKeyword.Innate) && CosplayInnateKeywordPersistence.IsTracked(loaded), "legacy non-zero marker restores keyword and tracking");
-		Expect(!loaded.Keywords.Contains(CardKeyword.Retain) && !CurtainCallKeywordPersistence.IsTracked(loaded), "legacy zero marker stays inert");
+		Expect(loaded.Keywords.Contains(CardKeyword.Innate) && KeywordPersistenceTrackers.CosplayInnate.IsTracked(loaded), "legacy non-zero marker restores keyword and tracking");
+		Expect(!loaded.Keywords.Contains(CardKeyword.Retain) && !KeywordPersistenceTrackers.CurtainCall.IsTracked(loaded), "legacy zero marker stays inert");
 
 		SerializableCard resaved = new();
 		HextechThoughtOverwriteKeywordPersistenceHooks.WriteMarkers(loaded, resaved);
