@@ -17,7 +17,7 @@ public sealed class TranscendentEvilRune : HextechSharedCombatVictoryRuneBase
 
 	public override bool ShowCounter => true;
 
-	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
+	public override int DisplayAmount => _stacks;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[

@@ -31,7 +31,7 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 
 	public override bool ShowCounter => true;
 
-	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
+	public override int DisplayAmount => _stacks;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
