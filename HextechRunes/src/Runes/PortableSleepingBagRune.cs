@@ -2,10 +2,8 @@ using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
 
-public sealed class PortableSleepingBagRune : HextechRelicBase
+public sealed class PortableSleepingBagRune : RelicBundleRuneBase
 {
-	public override bool HasUponPickupEffect => true;
-
 	private static readonly Type[] RelicTypes =
 	[
 		typeof(RegalPillow),
@@ -14,11 +12,5 @@ public sealed class PortableSleepingBagRune : HextechRelicBase
 		typeof(StoneHumidifier)
 	];
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips => BundledRelicHoverTips(RelicTypes);
-
-	public override async Task AfterObtained()
-	{
-		Flash();
-		await RelicBundleGrantHelper.GrantRelics(Owner, RelicTypes);
-	}
+	protected override IReadOnlyList<Type> BundledRelicTypes => RelicTypes;
 }
