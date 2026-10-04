@@ -9,14 +9,12 @@ internal static class HextechModelPoolRegistrar
 {
 	// 原版 0.107.1–0.111.0:ModHelper 私有静态字段
 	// Dictionary<Type, ModPoolContent> _moddedContentForPools,ModPoolContent 为私有嵌套类,
-	// 其 public List<Type>? modelsToAdd 是待并入各池的模组模型。只用于查重与清理 Android 首模型哨兵,
-	// 缺失时 HextechHookReflection 会进启动摘要,查重退化为“视为未登记”,清理跳过。
+	// 其 public List<Type>? modelsToAdd 是待并入各池的模组模型。只用于查重,
+	// 缺失时 HextechHookReflection 会进启动摘要,查重退化为“视为未登记”。
 	private static readonly FieldInfo? ModdedContentForPoolsField =
 		HextechHookReflection.TryGetField(typeof(ModHelper), "_moddedContentForPools", BindingFlags.NonPublic | BindingFlags.Static);
 
 	private static readonly FieldInfo? ModelsToAddField = GetModelsToAddField();
-
-	private static readonly List<(Type PoolType, Type ModelType)> MobileDuplicateRegistrations = new();
 
 	internal static void RegisterModels()
 	{
@@ -44,24 +42,9 @@ internal static class HextechModelPoolRegistrar
 		RegisterModelsInPool(typeof(EventRelicPool), HextechModelTypeIdentity.Distinct(relicTypes));
 	}
 
-	internal static void CleanupMobileFirstModelRegistrationWorkaround()
-	{
-		if (MobileDuplicateRegistrations.Count == 0)
-		{
-			return;
-		}
-
-		foreach ((Type poolType, Type modelType) in MobileDuplicateRegistrations)
-		{
-			RemoveDuplicatePoolRegistration(poolType, modelType);
-		}
-
-		MobileDuplicateRegistrations.Clear();
-	}
-
 	private static void TryAddModelToPool(Type poolType, Type modelType)
 	{
-		if (IsModelAlreadyQueuedForPool(poolType, modelType) && !IsMobileFirstModelWorkaroundDuplicate(poolType, modelType))
+		if (IsModelAlreadyQueuedForPool(poolType, modelType))
 		{
 			HextechLog.Info("Bootstrap", $"Skipping duplicate pool registration for {modelType.FullName} in {poolType.FullName}.");
 			return;
@@ -72,17 +55,10 @@ internal static class HextechModelPoolRegistrar
 
 	private static void RegisterModelsInPool(Type poolType, IReadOnlyList<Type> modelTypes)
 	{
-		if (ShouldUseMobileFirstModelRegistrationWorkaround())
-		{
-			QueueMobileFirstModelRegistrationWorkaround(poolType, modelTypes);
-		}
-
 		foreach (Type modelType in modelTypes)
 		{
 			TryAddModelToPool(poolType, modelType);
 		}
-
-		CleanupDuplicatePoolRegistrations(poolType, modelTypes);
 	}
 
 	internal static bool IsModelAlreadyQueuedForPool(Type poolType, Type modelType)
@@ -110,98 +86,6 @@ internal static class HextechModelPoolRegistrar
 		}
 
 		return false;
-	}
-
-	private static bool ShouldUseMobileFirstModelRegistrationWorkaround()
-	{
-		return HextechRuntimeRuneCompatibility.IsAndroidRuntime;
-	}
-
-	private static bool IsMobileFirstModelWorkaroundDuplicate(Type poolType, Type modelType)
-	{
-		return MobileDuplicateRegistrations.Any(entry =>
-			HextechModelTypeIdentity.IsSame(entry.PoolType, poolType)
-			&& HextechModelTypeIdentity.IsSame(entry.ModelType, modelType));
-	}
-
-	private static void QueueMobileFirstModelRegistrationWorkaround(Type poolType, IReadOnlyList<Type> modelTypes)
-	{
-		if (modelTypes.Count == 0)
-		{
-			return;
-		}
-
-		Type modelType = modelTypes[0];
-		try
-		{
-			ModHelper.AddModelToPool(poolType, modelType);
-			MobileDuplicateRegistrations.Add((poolType, modelType));
-			HextechLog.Warn("Bootstrap", $"Android model registration workaround queued first-model sentinel: pool={poolType.Name} model={modelType.Name}.");
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Bootstrap", $"Android model registration workaround failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
-		}
-	}
-
-	private static void RemoveDuplicatePoolRegistration(Type poolType, Type modelType)
-	{
-		try
-		{
-			if (ModdedContentForPoolsField?.GetValue(null) is not IDictionary pools)
-			{
-				return;
-			}
-
-			foreach (DictionaryEntry entry in pools)
-			{
-				if (entry.Key is not Type existingPoolType || !HextechModelTypeIdentity.IsSame(existingPoolType, poolType))
-				{
-					continue;
-				}
-
-				if (entry.Value == null || ModelsToAddField?.GetValue(entry.Value) is not IList models)
-				{
-					continue;
-				}
-
-				int seen = 0;
-				int removed = 0;
-				for (int index = models.Count - 1; index >= 0; index--)
-				{
-					if (models[index] is not Type existingModelType || !HextechModelTypeIdentity.IsSame(existingModelType, modelType))
-					{
-						continue;
-					}
-
-					seen++;
-					if (seen > 1)
-					{
-						models.RemoveAt(index);
-						removed++;
-					}
-				}
-
-				if (removed > 0)
-				{
-					HextechLog.Info("Bootstrap", $"Android model registration workaround cleaned duplicate entries: pool={poolType.Name} model={modelType.Name} removed={removed}.");
-				}
-
-				return;
-			}
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Bootstrap", $"Android model registration workaround cleanup failed for {modelType.FullName}: {ex.GetType().Name}: {ex.Message}");
-		}
-	}
-
-	private static void CleanupDuplicatePoolRegistrations(Type poolType, IReadOnlyList<Type> modelTypes)
-	{
-		foreach (Type modelType in modelTypes)
-		{
-			RemoveDuplicatePoolRegistration(poolType, modelType);
-		}
 	}
 
 	private static bool ContentContainsModelType(object? content, Type modelType)
