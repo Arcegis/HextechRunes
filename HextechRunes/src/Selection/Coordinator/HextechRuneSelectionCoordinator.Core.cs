@@ -16,11 +16,24 @@ internal static partial class HextechRuneSelectionCoordinator
 	// 等待遮挡界面关闭时,每 120 帧(约 2 秒)记一次日志,避免逐帧刷屏。
 	private const int OverlayWaitLogIntervalFrames = 120;
 
-	private static readonly HextechActSelectionGate ActSelectionGate = new();
+	// 同一时刻只处理一幕的选择:非空表示正在处理,值是所属的局。换局后残留的标记在下次进入时清掉,
+	// 不能挡住新局的选择;处理结束时只释放属于本局的标记。
+	private static RunState? _actSelectionRun;
 
 	public static void ResetActSelectionState()
 	{
-		ActSelectionGate.Reset();
+		_actSelectionRun = null;
+	}
+
+	private static bool ResetActSelectionIfStale(RunState runState)
+	{
+		if (_actSelectionRun == null || ReferenceEquals(_actSelectionRun, runState))
+		{
+			return false;
+		}
+
+		_actSelectionRun = null;
+		return true;
 	}
 
 	public static Task HandleActSelection(RunState runState, HextechMayhemModifier modifier)
@@ -35,13 +48,13 @@ internal static partial class HextechRuneSelectionCoordinator
 			HextechEnemyUi.Refresh(modifier);
 		}
 
-		if (ActSelectionGate.ResetIfStaleRun(runState))
+		if (ResetActSelectionIfStale(runState))
 		{
 			HextechLog.Warn("Mayhem", $"HandleHextechActSelection: clearing stale handling state for previous run");
 		}
 
-		HextechLog.Info("Mayhem", $"HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsStageResolved(actIndex)} handling={ActSelectionGate.IsHandling}");
-		if (ActSelectionGate.IsHandling || !IsCurrentRun(runState) || actIndex < 0 || modifier.IsStageResolved(actIndex))
+		HextechLog.Info("Mayhem", $"HandleHextechActSelection enter: room={runState.CurrentRoom?.GetType().Name ?? "null"} actIndex={actIndex} resolved={modifier.IsStageResolved(actIndex)} handling={_actSelectionRun != null}");
+		if (_actSelectionRun != null || !IsCurrentRun(runState) || actIndex < 0 || modifier.IsStageResolved(actIndex))
 		{
 			HextechLog.Info("Mayhem", $"HandleHextechActSelection skip");
 			return;
@@ -55,7 +68,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return;
 		}
 
-		ActSelectionGate.Enter(runState);
+		_actSelectionRun = runState;
 		bool reopenMapAfterSelection = false;
 		try
 		{
@@ -148,7 +161,10 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			finally
 			{
-				ActSelectionGate.ExitIfCurrent(runState);
+				if (ReferenceEquals(_actSelectionRun, runState))
+				{
+					_actSelectionRun = null;
+				}
 			}
 
 			HextechLog.Info("Mayhem", $"HandleHextechActSelection exit: act={actIndex}");
@@ -166,8 +182,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		public void SetNew(IReadOnlyList<MonsterHexKind> newHexes)
 		{
 			New = newHexes;
-			Final = CombineMonsterHexes(Previous, newHexes);
-			VisibleRelic = CreateMonsterHexRelic(FirstMonsterHexOrNull(newHexes));
+			Final = HextechMonsterHexRoller.CombineActiveHexes(Previous, newHexes);
+			VisibleRelic = CreateMonsterHexRelic(newHexes.Cast<MonsterHexKind?>().FirstOrDefault());
 		}
 
 		// 联机批次直接返回本幕最终累积集;允许调整敌方时再据此回推本幕新增与展示图标。
@@ -179,7 +195,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				New = finalHexes
 					.Where(hex => !Previous.Contains(hex))
 					.ToArray();
-				VisibleRelic = CreateMonsterHexRelic(FirstMonsterHexOrNull(New));
+				VisibleRelic = CreateMonsterHexRelic(New.Cast<MonsterHexKind?>().FirstOrDefault());
 			}
 		}
 	}
@@ -232,7 +248,8 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		if (playerHexCount <= 0)
 		{
-			if (NeedsEnemyOnlySelection(playerHexCount, stageHexes.New.Count, HextechPresetChallengeRegistry.IsActive(runState)))
+			// 没有玩家选择时仍要给敌方新增海克斯一个确认/调整界面;预设挑战的敌方固定,不调整。
+			if (stageHexes.New.Count > 0 && !HextechPresetChallengeRegistry.IsActive(runState))
 			{
 				stageHexes.SetNew(await SelectEnemyHexesOnly(runState, modifier, actIndex, rarity, stageHexes.Previous, stageHexes.New));
 			}
@@ -254,7 +271,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		StageMonsterHexes stageHexes,
 		HashSet<ulong> playersNotifiedNoOptions)
 	{
-		HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player);
+		// 玩家候选只排除本局已见过的符文;敌方持有的海克斯照样可以出现在玩家候选里。
+		HashSet<ModelId> excludedIds = modifier.GetSeenPlayerRuneIds(player);
 		List<RelicModel> options = BuildSelectableRunesForRarity(
 			player,
 			rarity,
@@ -380,7 +398,7 @@ internal static partial class HextechRuneSelectionCoordinator
 				HextechLog.Info("Mayhem", $"HandleHextechActSelection waiting: act={actIndex} reason={reason} topOverlay={overlayName} frame={frame}");
 			}
 
-			await WaitOneFrame();
+			await WaitForProcessFrameOrDelayAsync();
 		}
 
 		HextechLog.Info("Mayhem", $"HandleHextechActSelection abort: run changed while waiting for overlays act={actIndex} reason={reason}");
@@ -405,17 +423,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		// 第三方模组的奖励类界面不一定声明 NetScreenType.Rewards,也没有可依赖的公共基类,
 		// 只能按类型名兜底识别;原版奖励界面已由上面的类型判断覆盖。
 		return overlayName.Contains("Reward", StringComparison.OrdinalIgnoreCase);
-	}
-
-	private static async Task WaitOneFrame()
-	{
-		if (NGame.Instance != null)
-		{
-			await NGame.Instance.ToSignal(NGame.Instance.GetTree(), SceneTree.SignalName.ProcessFrame);
-			return;
-		}
-
-		await Task.Yield();
 	}
 
 	private static async Task PersistActSelection(RunState runState, int actIndex)

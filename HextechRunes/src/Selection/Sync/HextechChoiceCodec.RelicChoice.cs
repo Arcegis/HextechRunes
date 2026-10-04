@@ -27,23 +27,6 @@ internal static partial class HextechChoiceCodec
 		return PlayerChoiceResult.FromIndexes(payload);
 	}
 
-	/// <summary>载荷可解码且候选 ID 与本端候选逐个相同(顺序一致)。</summary>
-	public static bool IsRelicChoice(
-		HextechRelicChoiceKind kind,
-		PlayerChoiceResult result,
-		int expectedOperationToken,
-		IReadOnlyList<RelicModel> expectedOptions)
-	{
-		return TryDecodeRelicChoice(kind, result, expectedOperationToken, out _, out List<ModelId> optionIds)
-			&& MatchesOptionIds(optionIds, expectedOptions);
-	}
-
-	public static bool IsMalformedRelicChoiceEnvelope(HextechRelicChoiceKind kind, PlayerChoiceResult result, int expectedOperationToken)
-	{
-		return IsChoiceEnvelope(result, GetRelicChoiceMessageKind(kind))
-			&& !TryDecodeRelicChoice(kind, result, expectedOperationToken, out _, out _);
-	}
-
 	public static bool TryDecodeRelicChoice(
 		HextechRelicChoiceKind kind,
 		PlayerChoiceResult result,
@@ -67,6 +50,7 @@ internal static partial class HextechChoiceCodec
 		return HextechStableModelIdListCodec.TryDecode(payload, RelicChoiceHeaderCount, out optionIds, out _);
 	}
 
+	/// <summary>远端候选 ID 与本端候选逐个相同(顺序一致)。</summary>
 	internal static bool MatchesOptionIds(IReadOnlyList<ModelId> optionIds, IReadOnlyList<RelicModel> expectedOptions)
 	{
 		if (optionIds.Count != expectedOptions.Count)
@@ -93,41 +77,5 @@ internal static partial class HextechChoiceCodec
 			HextechRelicChoiceKind.RelicOption => ChoiceKindRelicOptionSelection,
 			_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown relic choice kind.")
 		};
-	}
-
-	// 按消息类型命名的入口(协议测试使用),实现统一走上面的共享编解码。
-	public static PlayerChoiceResult CreateForgeSelection(int operationToken, int selectedIndex, IReadOnlyList<RelicModel> options)
-	{
-		return CreateRelicChoice(HextechRelicChoiceKind.Forge, operationToken, selectedIndex, options);
-	}
-
-	public static bool TryDecodeForgeSelection(PlayerChoiceResult result, int expectedOperationToken, out int selectedIndex, out List<ModelId> optionIds)
-	{
-		return TryDecodeRelicChoice(HextechRelicChoiceKind.Forge, result, expectedOperationToken, out selectedIndex, out optionIds);
-	}
-
-	public static bool IsMalformedForgeSelectionEnvelope(PlayerChoiceResult result, int expectedOperationToken)
-	{
-		return IsMalformedRelicChoiceEnvelope(HextechRelicChoiceKind.Forge, result, expectedOperationToken);
-	}
-
-	public static PlayerChoiceResult CreateRelicOptionSelection(int operationToken, int selectedIndex, IReadOnlyList<RelicModel> options)
-	{
-		return CreateRelicChoice(HextechRelicChoiceKind.RelicOption, operationToken, selectedIndex, options);
-	}
-
-	public static bool IsRelicOptionSelection(PlayerChoiceResult result, int expectedOperationToken, IReadOnlyList<RelicModel> expectedOptions)
-	{
-		return IsRelicChoice(HextechRelicChoiceKind.RelicOption, result, expectedOperationToken, expectedOptions);
-	}
-
-	public static bool TryDecodeRelicOptionSelection(PlayerChoiceResult result, int expectedOperationToken, out int selectedIndex, out List<ModelId> optionIds)
-	{
-		return TryDecodeRelicChoice(HextechRelicChoiceKind.RelicOption, result, expectedOperationToken, out selectedIndex, out optionIds);
-	}
-
-	public static bool IsMalformedRelicOptionSelectionEnvelope(PlayerChoiceResult result, int expectedOperationToken)
-	{
-		return IsMalformedRelicChoiceEnvelope(HextechRelicChoiceKind.RelicOption, result, expectedOperationToken);
 	}
 }

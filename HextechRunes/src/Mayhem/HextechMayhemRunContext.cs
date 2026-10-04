@@ -7,8 +7,8 @@ internal sealed class HextechMayhemRunContext
 	public HextechMayhemChoiceHistoryState ChoiceHistory { get; } = new();
 	public HextechRuneSelectionJournalState RuneSelectionJournal { get; } = new();
 	public HextechActiveMonsterHexCache ActiveMonsterHexCache { get; } = new();
-	public HextechPlayerHexCountState PlayerHexCounts { get; } = new();
-	public HextechEnemyHexCountState EnemyHexCounts { get; } = new();
+	public HextechHexCountState PlayerHexCounts { get; } = new(HextechRuneConfiguration.NormalizePlayerHexCounts);
+	public HextechHexCountState EnemyHexCounts { get; } = new(HextechHexCountState.NormalizeEnemyCounts);
 	public HextechPlayerRuneConfigSnapshotState PlayerRuneConfig { get; } = new();
 	public HextechRunConfigurationSnapshot? RunConfigurationSnapshot { get; set; }
 	public int HexCountRecoveryBaseline { get; set; }

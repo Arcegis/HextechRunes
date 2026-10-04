@@ -42,6 +42,4 @@ internal static partial class HextechRuneSelectionCoordinator
 		public bool FinalSent { get; set; }
 		public Task? RemoteReceiveTask { get; set; }
 	}
-
-	private const int RemoteRuneChoicePollFrames = 1800;
 }

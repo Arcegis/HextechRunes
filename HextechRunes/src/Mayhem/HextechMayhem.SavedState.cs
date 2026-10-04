@@ -13,9 +13,9 @@ internal sealed partial class HextechMayhemModifier
 
 	private HextechActiveMonsterHexCache ActiveMonsterHexCache => _runContext.ActiveMonsterHexCache;
 
-	private HextechPlayerHexCountState PlayerHexCounts => _runContext.PlayerHexCounts;
+	private HextechHexCountState PlayerHexCounts => _runContext.PlayerHexCounts;
 
-	private HextechEnemyHexCountState EnemyHexCounts => _runContext.EnemyHexCounts;
+	private HextechHexCountState EnemyHexCounts => _runContext.EnemyHexCounts;
 
 	private int HexCountRecoveryBaseline
 	{
@@ -43,7 +43,7 @@ internal sealed partial class HextechMayhemModifier
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-	public int[] SavedMonsterHexByAct
+	public int[]? SavedMonsterHexByAct
 	{
 		get => ActState.SavedMonsterHexByAct;
 		set => ActState.SavedMonsterHexByAct = value;

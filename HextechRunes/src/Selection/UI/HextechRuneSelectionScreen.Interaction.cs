@@ -52,7 +52,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 		if (UsesPlayerRuneConfirmation)
 		{
-			_pendingPlayerRuneSlot = ResolvePendingPlayerRuneSlot(UsesPlayerRuneConfirmation, slotIndex, _relics.Count);
+			_pendingPlayerRuneSlot = ResolvePendingPlayerRuneSlot(slotIndex, _relics.Count);
 			if (!_pendingPlayerRuneSlot.HasValue)
 			{
 				return;
@@ -369,7 +369,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 		{
 			_monsterHexKinds.Add(monsterHexes[i]);
 			_monsterHexBeforeRemoval.Add(null);
-			_enemyHexRerollCounts.Add(i < rerollCounts.Count ? Math.Max(0, rerollCounts[i]) : 0);
+			_enemyHexRerollCounts.Add(i < rerollCounts.Count ? rerollCounts[i] : 0);
 		}
 
 		HextechLog.Info("Mayhem", $"SelectionScreen.ApplyEnemyHexAdjustment: slots={string.Join(",", _monsterHexKinds.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", _enemyHexRerollCounts)}");
@@ -472,12 +472,6 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 	private async Task<bool> AwaitProcessFrameIfInsideTreeAsync(CancellationToken cancellationToken = default)
 	{
 		if (!IsInsideTree())
-		{
-			return false;
-		}
-
-		SceneTree tree = GetTree();
-		if (tree == null)
 		{
 			return false;
 		}

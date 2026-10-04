@@ -2,9 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	// 无尽循环中每一轮都按第 3 幕的玩家海克斯数量结算。
-	private const int EndlessLoopPlayerHexCountSlot = 2;
-
 	/// <summary>
 	/// 本幕稀有度抽签。deterministic=true(联机)用稳定哈希,各端独立算出同一结果;
 	/// false(单机)推进原版 Niche 随机流。两条路径的 RNG 调用次数与顺序与拆分前一致。
@@ -16,38 +13,21 @@ internal static partial class HextechRuneSelectionCoordinator
 		IReadOnlyList<HextechRarityTier> enabledRarities,
 		bool deterministic)
 	{
-		HextechRarityWeights weights = GetEffectiveActRarityWeights(
+		(HextechRarityWeights weights, IReadOnlyList<HextechRarityTier> eligibleRarities) = ApplyConsecutiveSilverRule(
 			modifier.GetRuneRarityWeightsForAct(actIndex),
-			modifier.PreventConsecutiveSilverRunes,
-			actIndex,
-			modifier.GetRarityForAct(actIndex - 1));
-		IReadOnlyList<HextechRarityTier> eligibleRarities = GetEffectiveActRarityCandidates(
 			enabledRarities,
 			modifier.PreventConsecutiveSilverRunes,
 			actIndex,
 			modifier.GetRarityForAct(actIndex - 1));
-		return RollWeightedRarity(runState, weights.Silver, weights.Gold, weights.Prismatic, deterministic, actIndex, eligibleRarities);
+		return RollWeightedRarity(runState, weights, deterministic, actIndex, eligibleRarities);
 	}
 
-	internal static HextechRarityWeights GetEffectiveActRarityWeights(
+	/// <summary>
+	/// "上一幕白银后不再出白银":从第二幕起,上一幕是白银时去掉白银的权重与候选。
+	/// 只剩白银权重时改为金色/棱彩各 1;启用稀有度只有白银时候选回落为金色与棱彩。
+	/// </summary>
+	internal static (HextechRarityWeights Weights, IReadOnlyList<HextechRarityTier> Candidates) ApplyConsecutiveSilverRule(
 		HextechRarityWeights configuredWeights,
-		bool preventConsecutiveSilverRunes,
-		int actIndex,
-		HextechRarityTier? previousActRarity)
-	{
-		if (!preventConsecutiveSilverRunes
-			|| actIndex <= 0
-			|| previousActRarity != HextechRarityTier.Silver)
-		{
-			return configuredWeights;
-		}
-
-		return configuredWeights.Gold + configuredWeights.Prismatic > 0
-			? configuredWeights with { Silver = 0 }
-			: new HextechRarityWeights(0, 1, 1);
-	}
-
-	internal static IReadOnlyList<HextechRarityTier> GetEffectiveActRarityCandidates(
 		IReadOnlyList<HextechRarityTier> enabledRarities,
 		bool preventConsecutiveSilverRunes,
 		int actIndex,
@@ -57,15 +37,18 @@ internal static partial class HextechRuneSelectionCoordinator
 			|| actIndex <= 0
 			|| previousActRarity != HextechRarityTier.Silver)
 		{
-			return enabledRarities;
+			return (configuredWeights, enabledRarities);
 		}
 
+		HextechRarityWeights weights = configuredWeights.Gold + configuredWeights.Prismatic > 0
+			? configuredWeights with { Silver = 0 }
+			: new HextechRarityWeights(0, 1, 1);
 		HextechRarityTier[] nonSilverRarities = enabledRarities
 			.Where(static rarity => rarity != HextechRarityTier.Silver)
 			.ToArray();
-		return nonSilverRarities.Length > 0
+		return (weights, nonSilverRarities.Length > 0
 			? nonSilverRarities
-			: [ HextechRarityTier.Gold, HextechRarityTier.Prismatic ];
+			: [ HextechRarityTier.Gold, HextechRarityTier.Prismatic ]);
 	}
 
 	private sealed record LocalActRoll(
@@ -92,7 +75,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			return (local.Rarity, local.MonsterHex, ResolvePlayerHexCount(local.RunConfigSnapshot, modifier, actIndex));
 		}
 
-		PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
+		PlayerChoiceSynchronizer synchronizer = RequirePlayerChoiceSynchronizer(runManager);
 		Player authorityPlayer = GetActRollAuthorityPlayer(runManager, runState)
 			?? throw CreateProtocolFailure(
 				$"act-roll act={actIndex}",
@@ -258,7 +241,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		bool syncedHostUsesExternalScaling = false;
 		int[] syncedEnemyHexCountsByAct = [];
 		HashSet<string> syncedDisabledPlayerRuneIds = [];
-		HextechRunConfigurationSnapshot? syncedRunConfigSnapshot = null;
+		HextechRunConfigurationSnapshot syncedRunConfigSnapshot = null!;
 		(_, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
 			runState,
@@ -274,13 +257,6 @@ internal static partial class HextechRuneSelectionCoordinator
 				out syncedDisabledPlayerRuneIds,
 				out syncedRunConfigSnapshot),
 			$"act-roll act={actIndex}");
-		if (syncedRunConfigSnapshot == null)
-		{
-			throw CreateProtocolFailure(
-				$"act-roll act={actIndex}",
-				$"Malformed host act-roll payload: act={actIndex} player={authorityPlayer.NetId} choiceId={receivedChoiceId}");
-		}
-
 		modifier.SetRarityForAct(actIndex, syncedRarity);
 		modifier.SetEnemyHexCountsByActSnapshot(syncedEnemyHexCountsByAct, $"host act-roll act={actIndex}");
 		modifier.SetPlayerRuneConfigDisabledIdsSnapshot(syncedDisabledPlayerRuneIds, $"host act-roll act={actIndex}");
@@ -299,9 +275,10 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechMayhemModifier modifier,
 		int actIndex)
 	{
-		int[] counts = HextechPlayerHexCountState.Normalize(snapshot.PlayerHexCountsByAct);
-		int slot = modifier.IsEndlessLoopActive ? EndlessLoopPlayerHexCountSlot : Math.Clamp(actIndex, 0, counts.Length - 1);
-		return counts[slot];
+		return HextechHexCountState.GetForAct(
+			HextechRuneConfiguration.NormalizePlayerHexCounts(snapshot.PlayerHexCountsByAct),
+			actIndex,
+			modifier.IsEndlessLoopActive);
 	}
 
 	private static Player? GetActRollAuthorityPlayer(RunManager runManager, RunState runState)
@@ -316,18 +293,12 @@ internal static partial class HextechRuneSelectionCoordinator
 
 	private static HextechRarityTier RollWeightedRarity(
 		RunState runState,
-		int silverWeight,
-		int goldWeight,
-		int prismaticWeight,
+		HextechRarityWeights configuredWeights,
 		bool deterministic,
 		int actIndex,
 		IReadOnlyList<HextechRarityTier> enabledRarities)
 	{
-		HextechRarityWeights weights = HextechRarityRollResolver.ApplyEnabledRarities(
-			silverWeight,
-			goldWeight,
-			prismaticWeight,
-			enabledRarities);
+		HextechRarityWeights weights = HextechRarityRollResolver.ApplyEnabledRarities(configuredWeights, enabledRarities);
 		if (weights.Total <= 0)
 		{
 			return RollUniformRarity(runState, deterministic, actIndex, enabledRarities);
@@ -348,7 +319,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			int roll = deterministic
 				? HextechStableRandom.Index(runState, 3, "act-roll-rarity", actIndex.ToString())
 				: runState.Rng.Niche.NextInt(3);
-			return HextechRarityRollResolver.ResolveUniform(orderedRarities, roll);
+			return orderedRarities[roll];
 		}
 
 		int index = deterministic
@@ -438,11 +409,6 @@ internal static partial class HextechRuneSelectionCoordinator
 
 		HextechLog.Info("Mayhem", $"ResolveNewMonsterHexesForAct: act={actIndex} newCount={newEnemyHexCount} previous={previousHexes.Count} primary={primaryMonsterHex} newHexes={string.Join(",", resolvedNewHexes)}");
 		return resolvedNewHexes;
-	}
-
-	private static IReadOnlyList<MonsterHexKind> CombineMonsterHexes(IEnumerable<MonsterHexKind> previousHexes, IEnumerable<MonsterHexKind> newHexes)
-	{
-		return HextechMonsterHexRoller.CombineActiveHexes(previousHexes, newHexes);
 	}
 
 	private static MonsterHexKind? RerollEnemyHexForAct(

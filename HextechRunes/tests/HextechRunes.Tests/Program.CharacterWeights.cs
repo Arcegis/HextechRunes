@@ -74,13 +74,12 @@ internal static partial class Program
 		ModelId chosenId = chosen.CanonicalInstance?.Id ?? chosen.Id;
 		HextechWeightedRuneOptions finalOptions = new([chosen], 170);
 		PlayerChoiceResult result = HextechChoiceCodec.CreateRuneSelection(2, 0, 0, [], finalOptions);
-		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 2, 0, out int selectedIndex, out List<int> history, out List<ModelId> ids),
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 2, 0, out RuneSelectionPayload? decoded),
 			"self-pick selection decodes");
-		Equal(0, selectedIndex, "the only final option is the selected one");
-		Equal(0, history.Count, "self-pick carries no reroll history");
-		Expect(ids.Count == 1 && ids[0] == chosenId, "the chosen rune is the single authoritative option");
-		Expect(HextechRuneWeightCodec.TryRestore(result, [chosen], out List<RelicModel> remote), "weight restores for a single option");
-		Equal(170, HextechWeightedRuneOptions.GetWeight(remote), "self-pick keeps the character weight unchanged");
+		Equal(0, decoded.SelectedIndex, "the only final option is the selected one");
+		Equal(0, decoded.RerollHistory.Count, "self-pick carries no reroll history");
+		Expect(decoded.FinalOptionIds.Count == 1 && decoded.FinalOptionIds[0] == chosenId, "the chosen rune is the single authoritative option");
+		Equal(170, decoded.CharacterWeightPercent, "self-pick keeps the character weight unchanged");
 	}
 
 	[HextechTest]
@@ -93,21 +92,21 @@ internal static partial class Program
 		HextechWeightedRuneOptions rerolled = new(uiCopy, 160);
 		Equal(170, offered.CharacterWeightPercent, "reroll cannot mutate prior snapshot or saved state");
 		PlayerChoiceResult result = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [0, 0, 1], rerolled);
-		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out _, out _, out _), "weighted selection envelope decodes");
-		Expect(HextechRuneWeightCodec.TryRestore(result, models, out List<RelicModel> remote), "remote restores weight including replaced candidates");
-		Equal(160, HextechWeightedRuneOptions.GetWeight(remote), "final options alone are insufficient; transmitted progress wins");
-		Expect(HextechGeneratedRuneDataCodec.Restore(result, remote), "ordinary choices with weight have no recipe requirement");
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out RuneSelectionPayload? decoded), "weighted selection envelope decodes");
+		Equal(160, decoded.CharacterWeightPercent, "final options alone are insufficient; transmitted progress wins");
+		Expect(HextechGeneratedRuneDataCodec.Restore(decoded.GeneratedRuneData, models), "ordinary choices with weight have no recipe requirement");
 		List<int> truncated = result.AsIndexes().ToList();
 		truncated.RemoveAt(truncated.Count - 1);
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(truncated), 1, 2, out _, out _, out _), "truncated weight rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(truncated), 1, 2, out _), "truncated weight rejected");
 		List<int> negative = result.AsIndexes().ToList();
 		negative[^1] = -10;
-		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(negative), 1, 2, out _, out _, out _), "negative weight rejected");
+		Expect(!HextechChoiceCodec.TryDecodeRuneSelection(PlayerChoiceResult.FromIndexes(negative), 1, 2, out _), "negative weight rejected");
 		RelicModel[] generated = [new GeneratedTestRelic {Data = "recipe:weighted"}];
 		result = HextechChoiceCodec.CreateRuneSelection(1, 2, 0, [], new HextechWeightedRuneOptions(generated, 180));
 		RelicModel[] restored = [new GeneratedTestRelic()];
-		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out _, out _, out _), "weight and generated recipe coexist");
-		Expect(HextechGeneratedRuneDataCodec.Restore(result, restored), "weight prefix does not consume recipe bytes");
+		Expect(HextechChoiceCodec.TryDecodeRuneSelection(result, 1, 2, out decoded), "weight and generated recipe coexist");
+		Equal(180, decoded.CharacterWeightPercent, "weight precedes the recipe tail");
+		Expect(HextechGeneratedRuneDataCodec.Restore(decoded.GeneratedRuneData, restored), "weight prefix does not consume recipe bytes");
 		Equal("recipe:weighted", ((GeneratedTestRelic)restored[0]).Data, "generated recipe survives sync");
 	}
 }

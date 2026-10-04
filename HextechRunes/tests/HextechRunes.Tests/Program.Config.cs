@@ -228,11 +228,11 @@ internal static partial class Program
 	[HextechTest]
 	private static void EnemyHexCountStateNormalizesMissingAndOutOfRangeValues()
 	{
-		SequenceEqual(new[] { 1, 1, 1 }, HextechPlayerHexCountState.Normalize(null), "null player count snapshot");
-		SequenceEqual(new[] { 1, 2, 3 }, HextechEnemyHexCountState.Normalize(null), "null enemy count snapshot");
-		SequenceEqual(new[] { 0, 6, 3 }, HextechEnemyHexCountState.Normalize([ -1, 7 ]), "partial clamped enemy count snapshot");
+		SequenceEqual(new[] { 1, 1, 1 }, HextechRuneConfiguration.NormalizePlayerHexCounts(null), "null player count snapshot");
+		SequenceEqual(new[] { 1, 2, 3 }, HextechHexCountState.NormalizeEnemyCounts(null), "null enemy count snapshot");
+		SequenceEqual(new[] { 0, 6, 3 }, HextechHexCountState.NormalizeEnemyCounts([ -1, 7 ]), "partial clamped enemy count snapshot");
 
-		HextechEnemyHexCountState state = new();
+		HextechHexCountState state = new(HextechHexCountState.NormalizeEnemyCounts);
 		state.Set([ 2, 3, 4, 5 ]);
 		SequenceEqual(new[] { 2, 3, 4 }, state.Snapshot, "state should keep exactly three normalized act counts");
 	}
@@ -328,7 +328,7 @@ internal static partial class Program
 	[HextechTest]
 	private static void EnemyHexCountStateUsesThirdActForEndlessAndBeyondThirdAct()
 	{
-		HextechEnemyHexCountState state = new();
+		HextechHexCountState state = new(HextechHexCountState.NormalizeEnemyCounts);
 		state.Set([ 1, 2, 3 ]);
 
 		Equal(1, state.GetForAct(-1, endless: false), "negative act clamps to first act");

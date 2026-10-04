@@ -65,7 +65,6 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 	private static void ValidateSnapshotPropertyType(FieldInfo stateField, PropertyInfo snapshotProperty)
 	{
 		Type stateType = stateField.FieldType;
-		Type snapshotType = snapshotProperty.PropertyType;
 		if (typeof(IDictionary).IsAssignableFrom(stateType))
 		{
 			ValidateAssignableGenericArguments(stateField, snapshotProperty, typeof(Dictionary<,>));
@@ -78,10 +77,8 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 			return;
 		}
 
-		if (snapshotType != stateType)
-		{
-			throw new InvalidOperationException($"Combat tracking snapshot property '{snapshotProperty.Name}' has type {snapshotType}, expected {stateType}.");
-		}
+		// 复制、恢复与非空判断只处理这两种集合;要存标量需先在 Values 里补对应分支。
+		throw new InvalidOperationException($"Combat tracking saved field '{stateField.Name}' has type {stateType}; only Dictionary and HashSet are supported.");
 	}
 
 	private static void ValidateAssignableGenericArguments(FieldInfo stateField, PropertyInfo snapshotProperty, Type expectedSnapshotGenericType)

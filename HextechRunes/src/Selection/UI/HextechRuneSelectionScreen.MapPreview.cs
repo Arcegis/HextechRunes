@@ -65,14 +65,7 @@ internal sealed partial class HextechRuneSelectionScreen : Control, IOverlayScre
 
 	private static NTopBarMapButton? GetTopBarMapButton()
 	{
-		try
-		{
-			return NRun.Instance?.GlobalUi?.TopBar?.Map;
-		}
-		catch
-		{
-			return null;
-		}
+		return NRun.Instance?.GlobalUi?.TopBar?.Map;
 	}
 
 	public void AfterOverlayClosed()

@@ -70,8 +70,8 @@ internal static partial class HextechChoiceCodec
 	private static void AppendRunConfigurationSnapshot(List<int> payload, HextechRunConfigurationSnapshot snapshot)
 	{
 		payload.Add(RunConfigurationSnapshotVersion);
-		payload.AddRange(HextechPlayerHexCountState.Normalize(snapshot.PlayerHexCountsByAct));
-		payload.AddRange(HextechEnemyHexCountState.Normalize(snapshot.EnemyHexCountsByAct));
+		payload.AddRange(HextechRuneConfiguration.NormalizePlayerHexCounts(snapshot.PlayerHexCountsByAct));
+		payload.AddRange(HextechHexCountState.NormalizeEnemyCounts(snapshot.EnemyHexCountsByAct));
 		payload.Add(HextechRuneConfiguration.ClampRerollLimit(snapshot.PlayerRuneRerollLimit));
 		payload.Add(HextechRuneConfiguration.ClampRerollLimit(snapshot.MonsterHexRerollLimit));
 		foreach (HextechRarityWeights weights in snapshot.RuneRarityWeightsByAct)
@@ -143,9 +143,9 @@ internal static partial class HextechChoiceCodec
 			return false;
 		}
 
-		int[] playerHexCounts = HextechPlayerHexCountState.Normalize(payload.Skip(cursor).Take(3).ToArray());
+		int[] playerHexCounts = HextechRuneConfiguration.NormalizePlayerHexCounts(payload.Skip(cursor).Take(3).ToArray());
 		cursor += 3;
-		int[] enemyHexCounts = HextechEnemyHexCountState.Normalize(payload.Skip(cursor).Take(3).ToArray());
+		int[] enemyHexCounts = HextechHexCountState.NormalizeEnemyCounts(payload.Skip(cursor).Take(3).ToArray());
 		cursor += 3;
 		int playerRuneRerollLimit = fallback.PlayerRuneRerollLimit;
 		int monsterHexRerollLimit = fallback.MonsterHexRerollLimit;

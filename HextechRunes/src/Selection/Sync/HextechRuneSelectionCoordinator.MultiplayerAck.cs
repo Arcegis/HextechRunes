@@ -73,49 +73,18 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechLog.Info("Mayhem", $"ActSelectionApplied remote: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} choiceId={receivedChoiceId}");
 	}
 
-	private static async Task WaitForFramesOrRunChangeAsync(
-		RunState runState,
-		int frameCount,
-		CancellationToken cancellationToken = default)
-	{
-		TimeSpan timeout = GetNetworkChoiceTimeoutDuration(frameCount);
-		if (timeout <= TimeSpan.Zero)
-		{
-			return;
-		}
-
-		DateTimeOffset deadline = DateTimeOffset.UtcNow + timeout;
-		while (!cancellationToken.IsCancellationRequested
-			&& IsCurrentRun(runState)
-			&& HextechPlayerContextHelper.IsMultiplayerConnected()
-			&& DateTimeOffset.UtcNow < deadline)
-		{
-			// Multiplayer timer mods can accelerate process frames; keep network choice
-			// fallbacks on wall time so clients do not resolve different selection state.
-			await WaitForProcessFrameOrDelayAsync(cancellationToken);
-		}
-
-		cancellationToken.ThrowIfCancellationRequested();
-	}
-
-	internal static TimeSpan GetNetworkChoiceTimeoutDuration(int frameCount)
-	{
-		return frameCount <= 0
-			? TimeSpan.Zero
-			: TimeSpan.FromSeconds(frameCount / 60.0d);
-	}
-
+	// HextechRuneGrantHelper(Helpers/)仍按异步签名调用。
 	internal static Task<PlayerChoiceSynchronizer> WaitForPlayerChoiceSynchronizerAsync(RunManager runManager)
 	{
-		PlayerChoiceSynchronizer? synchronizer = runManager.PlayerChoiceSynchronizer;
-		if (synchronizer != null)
-		{
-			return Task.FromResult(synchronizer);
-		}
+		return Task.FromResult(RequirePlayerChoiceSynchronizer(runManager));
+	}
 
-		throw CreateProtocolFailure(
-			"player-choice-synchronizer",
-			"PlayerChoiceSynchronizer is unavailable during an active multiplayer transaction.");
+	internal static PlayerChoiceSynchronizer RequirePlayerChoiceSynchronizer(RunManager runManager)
+	{
+		return runManager.PlayerChoiceSynchronizer
+			?? throw CreateProtocolFailure(
+				"player-choice-synchronizer",
+				"PlayerChoiceSynchronizer is unavailable during an active multiplayer transaction.");
 	}
 
 	internal static bool IsLocalPlayer(RunManager runManager, Player player)

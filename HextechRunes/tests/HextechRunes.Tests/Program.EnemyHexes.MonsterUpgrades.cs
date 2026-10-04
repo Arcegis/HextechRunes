@@ -101,15 +101,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyOnlyRunsStillRequireEnemyConfirmation()
-	{
-		Expect(HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 2, false), "enemy-only mode must not bypass the reroll screen");
-		Expect(!HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(1, 2, false), "normal rune selection already includes enemy controls");
-		Expect(!HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 0, false), "no additions require no empty confirmation screen");
-		Expect(!HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 2, true), "preset challenges keep their fixed enemies");
-	}
-
-	[HextechTest]
 	private static void EnemyUpgradeCountersRoundTripAndStayIndependent()
 	{
 		MegaCrit.Sts2.Core.Entities.Players.Player first = CreateOrdinalTestPlayer(1);

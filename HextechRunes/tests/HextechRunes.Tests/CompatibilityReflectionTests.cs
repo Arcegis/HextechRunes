@@ -72,15 +72,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void TestSubjectRespawnReflectionMissingFallsBackToZero()
-	{
-		Equal(0, HextechMayhemModifier.NormalizeTestSubjectRespawns(null), "missing TestSubject respawn field");
-		Equal(0, HextechMayhemModifier.NormalizeTestSubjectRespawns("2"), "changed TestSubject respawn field type");
-		Equal(0, HextechMayhemModifier.NormalizeTestSubjectRespawns(-1), "negative TestSubject respawn field");
-		Equal(2, HextechMayhemModifier.NormalizeTestSubjectRespawns(2), "valid TestSubject respawn field");
-	}
-
-	[HextechTest]
 	private static void InspectOpenScopesToHextechAndPreservesExternalPrefixChanges()
 	{
 		RelicModel requested = new ColorDiscoveryRune();

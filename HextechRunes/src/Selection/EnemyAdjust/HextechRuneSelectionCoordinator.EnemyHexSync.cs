@@ -5,20 +5,12 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	private static EnemyHexAdjustmentSyncContext? CreateEnemyHexAdjustmentSyncContext(
-		RunManager runManager,
-		RunState runState,
+	private static EnemyHexAdjustmentSyncContext CreateEnemyHexAdjustmentSyncContext(
 		PlayerChoiceSynchronizer synchronizer,
+		Player authorityPlayer,
 		int actIndex,
 		IReadOnlyList<MonsterHexKind> initialMonsterHexes)
 	{
-		Player? authorityPlayer = GetActRollAuthorityPlayer(runManager, runState);
-		if (authorityPlayer == null)
-		{
-			HextechLog.Warn("Mayhem", $"EnemyHexAdjustmentSync: no authority player act={actIndex}");
-			return null;
-		}
-
 		uint choiceId = synchronizer.ReserveChoiceId(authorityPlayer);
 		HextechLog.Info("Mayhem", $"EnemyHexAdjustmentSync: reserved act={actIndex} authority={authorityPlayer.NetId} choiceId={choiceId}");
 		return new EnemyHexAdjustmentSyncContext(synchronizer, authorityPlayer, choiceId, actIndex, initialMonsterHexes);
@@ -174,7 +166,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		try
 		{
 			List<MonsterHexKind?> nextMonsterHexes = monsterHexes.ToList();
-			List<int> nextRerollCounts = rerollCounts.Select(static count => Math.Max(0, count)).ToList();
+			List<int> nextRerollCounts = rerollCounts.ToList();
 			EnemyHexAdjustmentPayload payload = new(
 				syncContext.ActIndex,
 				syncContext.Sequence,
@@ -251,7 +243,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			int operationToken = GetEnemyHexAdjustmentOperationToken(syncContext);
 			// 解码结果在 isExpected 回调里捕获:等待只会在它返回 true 时结束,之后不再二次解码。
 			EnemyHexAdjustmentPayload payload = default;
-			(PlayerChoiceResult result, uint receivedChoiceId)? received = await TryWaitForRemoteHextechChoice(
+			(_, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 				syncContext.Synchronizer,
 				runState,
 				syncContext.AuthorityPlayer,
@@ -263,19 +255,8 @@ internal static partial class HextechRuneSelectionCoordinator
 					syncContext.Sequence,
 					out payload),
 				$"enemy-hex-adjustment act={syncContext.ActIndex}",
-				RemoteRuneChoicePollFrames,
-				() => screen.IsInsideTree() && IsCurrentRun(runState) && HextechPlayerContextHelper.IsMultiplayerConnected(),
-				cancellationToken: cancellationToken);
-			if (!received.HasValue)
-			{
-				HextechLog.Warn(
-					"Mayhem", $"EnemyHexAdjustmentSync interrupted: " +
-					$"act={syncContext.ActIndex} choiceId={syncContext.NextChoiceId} " +
-					$"screenActive={screen.IsInsideTree()} runActive={IsCurrentRun(runState)} connected={HextechPlayerContextHelper.IsMultiplayerConnected()}");
-				return;
-			}
-
-			uint receivedChoiceId = received.Value.receivedChoiceId;
+				() => screen.IsInsideTree(),
+				cancellationToken);
 			if (!isValidPayload(payload))
 			{
 				throw CreateProtocolFailure(
@@ -287,7 +268,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			syncContext.CurrentMonsterHexSlots.Clear();
 			syncContext.CurrentMonsterHexSlots.AddRange(payload.MonsterHexes);
 			syncContext.RerollCounts.Clear();
-			syncContext.RerollCounts.AddRange(payload.RerollCounts.Select(static count => Math.Max(0, count)));
+			syncContext.RerollCounts.AddRange(payload.RerollCounts);
 			syncContext.Sequence = payload.Sequence + 1;
 			screen.ApplyEnemyHexAdjustment(payload.MonsterHexes, payload.RerollCounts);
 			HextechLog.Info("Mayhem", $"EnemyHexAdjustmentSync receive: act={syncContext.ActIndex} choiceId={receivedChoiceId} seq={payload.Sequence} hexes={string.Join(",", payload.MonsterHexes.Select(static hex => hex?.ToString() ?? "None"))} rerolls={string.Join(",", payload.RerollCounts)} final={payload.IsFinal}");

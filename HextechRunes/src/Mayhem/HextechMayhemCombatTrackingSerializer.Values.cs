@@ -5,8 +5,9 @@ namespace HextechRunes;
 
 internal static partial class HextechMayhemCombatTrackingSerializer
 {
-	// Tracking 字段只有 Dictionary（走非泛型 IDictionary）、HashSet<T> 与几种标量。HashSet<T> 没有非泛型集合接口，
-	// 按集合类型缓存一次 Clear/Add/Count 反射句柄；ClearPhase 每个回合边界都会跑，不能每次 GetMethod。
+	// 持久字段只有 Dictionary（走非泛型 IDictionary）与 HashSet<T>（ValidateSnapshotPropertyType 启动时强制）；
+	// 临时字段另有 string/bool 标量，只需清空。HashSet<T> 没有非泛型集合接口，按集合类型缓存一次
+	// Clear/Add/Count 反射句柄；ClearPhase 每个回合边界都会跑，不能每次 GetMethod。
 	private sealed record HashSetAccessor(MethodInfo Clear, MethodInfo Add, PropertyInfo Count);
 
 	private static readonly ConcurrentDictionary<Type, HashSetAccessor> HashSetAccessors = new();
@@ -29,17 +30,9 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 			return null;
 		}
 
-		if (source is IDictionary dictionary)
-		{
-			return CopyDictionary(dictionary, snapshotType);
-		}
-
-		if (IsHashSet(source.GetType()))
-		{
-			return CopySet(source, snapshotType);
-		}
-
-		return source is int counter ? Math.Max(0, counter) : source;
+		return source is IDictionary dictionary
+			? CopyDictionary(dictionary, snapshotType)
+			: CopySet(source, snapshotType);
 	}
 
 	private static object CopyDictionary(IDictionary source, Type snapshotType)
@@ -83,24 +76,14 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 			return;
 		}
 
-		if (target != null && IsHashSet(target.GetType()))
+		HashSetAccessor accessor = GetHashSetAccessor(target!.GetType());
+		accessor.Clear.Invoke(target, null);
+		if (snapshotValue is IEnumerable sourceValues)
 		{
-			HashSetAccessor accessor = GetHashSetAccessor(target.GetType());
-			accessor.Clear.Invoke(target, null);
-			if (snapshotValue is IEnumerable sourceValues)
+			foreach (object value in sourceValues)
 			{
-				foreach (object value in sourceValues)
-				{
-					accessor.Add.Invoke(target, [value]);
-				}
+				accessor.Add.Invoke(target, [value]);
 			}
-
-			return;
-		}
-
-		if (field.FieldType == typeof(int))
-		{
-			field.SetValue(state, Math.Max(0, snapshotValue is int value ? value : 0));
 		}
 	}
 
@@ -127,10 +110,6 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 		{
 			field.SetValue(state, false);
 		}
-		else if (field.FieldType == typeof(int))
-		{
-			field.SetValue(state, 0);
-		}
 	}
 
 	private static bool HasNonDefaultValue(object? value)
@@ -139,31 +118,8 @@ internal static partial class HextechMayhemCombatTrackingSerializer
 		{
 			null => false,
 			IDictionary dictionary => dictionary.Count > 0,
-			_ when TryGetCount(value, out int count) => count > 0,
-			int counter => counter > 0,
-			bool flag => flag,
-			string text => !string.IsNullOrEmpty(text),
-			_ => false
+			_ => GetHashSetAccessor(value.GetType()).Count.GetValue(value) is int count && count > 0
 		};
-	}
-
-	private static bool TryGetCount(object value, out int count)
-	{
-		if (value is ICollection collection)
-		{
-			count = collection.Count;
-			return true;
-		}
-
-		if (IsHashSet(value.GetType())
-			&& GetHashSetAccessor(value.GetType()).Count.GetValue(value) is int setCount)
-		{
-			count = setCount;
-			return true;
-		}
-
-		count = 0;
-		return false;
 	}
 
 	private static bool IsHashSet(Type type)
