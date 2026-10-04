@@ -276,10 +276,6 @@ internal static partial class Program
 	{
 #if STS2_109_OR_NEWER
 		Type cacheType = typeof(MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache);
-		FieldInfo initializedField = cacheType.GetField(
-			"_initialized",
-			BindingFlags.NonPublic | BindingFlags.Static)
-			?? throw new InvalidOperationException("0.109 SavedProperty cache initialized field should exist");
 		string[] wireFieldNames =
 		[
 			"_savedPropertyCache",
@@ -290,16 +286,7 @@ internal static partial class Program
 			static name => name,
 			name => SnapshotStaticCollection(cacheType, name),
 			StringComparer.Ordinal);
-		bool originalInitialized = initializedField.GetValue(null) is true;
-		try
-		{
-			initializedField.SetValue(null, false);
-			HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier));
-		}
-		finally
-		{
-			initializedField.SetValue(null, originalInitialized);
-		}
+		RunBeforeSavedPropertyCacheInitialization(static () => HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier)));
 
 		foreach (string fieldName in wireFieldNames)
 		{

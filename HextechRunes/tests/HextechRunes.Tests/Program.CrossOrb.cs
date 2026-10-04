@@ -16,15 +16,10 @@ internal static partial class Program
 	[HextechTest]
 	private static void CrossOrbKeepsSilkenTressOnFinalRewardsInEitherRelicOrder()
 	{
-		Type[] added = new[] { typeof(Anger), typeof(Uppercut), typeof(Impervious), typeof(Glam) }
-			.Where(type => !ModelDb.Contains(type)).ToArray();
+		using IDisposable models = InjectMissingModels(typeof(Anger), typeof(Uppercut), typeof(Impervious), typeof(Glam));
 		Harmony harmony = new("HextechRunes.Tests.CrossOrb");
 		try
 		{
-			foreach (Type type in added)
-			{
-				ModelDb.Inject(type);
-			}
 			// 隔离完整爬塔对象和随机选牌，只替代监听者枚举与候选选择。
 			// 保留原版两阶段 Hook、华美发束克隆/附魔及一次性消耗流程。
 			harmony.Patch(AccessTools.Method(typeof(RunState), nameof(RunState.IterateHookListeners)),
@@ -64,10 +59,6 @@ internal static partial class Program
 		finally
 		{
 			harmony.UnpatchAll(harmony.Id);
-			foreach (Type type in added)
-			{
-				ModelDb.Remove(type);
-			}
 		}
 	}
 

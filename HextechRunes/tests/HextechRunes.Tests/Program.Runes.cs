@@ -576,21 +576,15 @@ internal static partial class Program
 	[HextechTest]
 	private static void ScapegoatIncludesNegativeAttributesButLeavesBuffs()
 	{
-		T Power<T>(int amount) where T : PowerModel, new()
-		{
-			T power = CreateMutableTestModel<T>();
-			typeof(PowerModel).GetField("_amount", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(power, amount);
-			return power;
-		}
-		StrengthPower strength = Power<StrengthPower>(-5);
-		DexterityPower dexterity = Power<DexterityPower>(-3);
-		WeakPower weak = Power<WeakPower>(2);
+		StrengthPower strength = CreateTestPower<StrengthPower>(-5);
+		DexterityPower dexterity = CreateTestPower<DexterityPower>(-3);
+		WeakPower weak = CreateTestPower<WeakPower>(2);
 		weak.SkipNextDurationTick = true;
-		StrengthPower buff = Power<StrengthPower>(4);
-		HexPower hex = Power<HexPower>(1);
-		RingingPower ringing = Power<RingingPower>(1);
-		ConfusedPower confused = Power<ConfusedPower>(1);
-		HextechGalvanicPower galvanic = Power<HextechGalvanicPower>(2);
+		StrengthPower buff = CreateTestPower<StrengthPower>(4);
+		HexPower hex = CreateTestPower<HexPower>(1);
+		RingingPower ringing = CreateTestPower<RingingPower>(1);
+		ConfusedPower confused = CreateTestPower<ConfusedPower>(1);
+		HextechGalvanicPower galvanic = CreateTestPower<HextechGalvanicPower>(2);
 		List<PowerModel> powers = [strength, hex, buff, weak, ringing, dexterity, confused, galvanic];
 		PowerModel[] snapshot = ScapegoatRune.SnapshotDebuffs(powers);
 		Expect(snapshot.SequenceEqual(new PowerModel[] { strength, hex, weak, ringing, dexterity, confused, galvanic }),

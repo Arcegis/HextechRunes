@@ -662,14 +662,10 @@ internal static partial class Program
 	private static void EnemyCorruptedBranchKeepsOwnerAndRestoresRandomSequence()
 	{
 		Type[] pool = [typeof(Burn), typeof(Dazed), typeof(Slimed), typeof(Wound), typeof(MegaCrit.Sts2.Core.Models.Cards.Void)];
-		Type[] added = pool.Where(type => !ModelDb.Contains(type)).ToArray();
+		using IDisposable models = InjectMissingModels(pool);
 		Harmony harmony = new("HextechRunes.Tests.EnemyCorruptedBranch");
 		try
 		{
-			foreach (Type type in added)
-			{
-				ModelDb.Inject(type);
-			}
 			// 只隔离牌堆动画与存档 UI；保留真实状态牌创建、随机抽选与战斗序号。
 			harmony.Patch(AccessTools.Method(typeof(HextechCardGeneration), "AddGeneratedCardToCombat"),
 				prefix: new HarmonyMethod(typeof(Program), nameof(CaptureEnemyBranchGenerated)));
@@ -697,10 +693,6 @@ internal static partial class Program
 		{
 			harmony.UnpatchAll(harmony.Id);
 			EnemyBranchGenerated.Clear();
-			foreach (Type type in added)
-			{
-				ModelDb.Remove(type);
-			}
 		}
 	}
 
@@ -717,21 +709,15 @@ internal static partial class Program
 	{
 		(HextechEnemyHexContext _, Player player, Player _) = CreatePrismaticEnemyFixture();
 		Creature enemy = CreatePrismaticTestCreature(CombatSide.Enemy, (CombatState)player.Creature.CombatState!);
-		T Power<T>(Creature owner) where T : PowerModel, new()
-		{
-			T power = CreateMutableTestModel<T>();
-			AccessTools.Property(typeof(PowerModel), nameof(PowerModel.Owner)).SetValue(power, owner);
-			return power;
-		}
-		WeakPower weak = Power<WeakPower>(enemy);
+		WeakPower weak = CreateTestPower<WeakPower>(owner: enemy);
 		Expect(HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(weak, 1, player.Creature, null), "receiving Weak triggers");
 		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(weak, -1, player.Creature, null), "removing Weak does not trigger");
-		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(Power<WeakPower>(player.Creature), 1, enemy, null), "outgoing player debuff no longer triggers");
-		StrengthPower strength = Power<StrengthPower>(enemy);
+		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(CreateTestPower<WeakPower>(owner: player.Creature), 1, enemy, null), "outgoing player debuff no longer triggers");
+		StrengthPower strength = CreateTestPower<StrengthPower>(owner: enemy);
 		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(strength, 1, enemy, null), "self buff no longer triggers");
 		Expect(HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(strength, -1, player.Creature, null), "external Strength loss triggers");
 		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(strength, -1, enemy, null), "temporary Strength expiry must not re-arm the effects");
-		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(Power<HextechTemporaryStrengthLossPower>(enemy), 1, player.Creature, null), "temporary wrapper does not double-count its underlying Strength change");
+		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(CreateTestPower<HextechTemporaryStrengthLossPower>(owner: enemy), 1, player.Creature, null), "temporary wrapper does not double-count its underlying Strength change");
 		Expect(typeof(TemporaryStrengthPower).IsAssignableFrom(typeof(HextechSlapTemporaryStrengthPower)), "Slap uses native temporary Strength cleanup");
 	}
 

@@ -46,29 +46,12 @@ internal static partial class Program
 	private static void UniversalScopeRefundsOnlyTheSyncedSpend()
 	{
 		CardModel card = CreateMutableTestModel<MegaCrit.Sts2.Core.Models.Cards.Thunderclap>();
-		HextechCardPlayResourceSpend autoPlay = HextechCombatHooks.GetResourceSpend(CreateTestCardPlay(card, isAutoPlay: true, energySpent: 0, starsSpent: 0));
+		HextechCardPlayResourceSpend autoPlay = HextechCombatHooks.GetResourceSpend(CreateCardPlay(card, isAutoPlay: true, energySpent: 0, starsSpent: 0));
 		Equal(0m, autoPlay.Energy, "auto-played cards spent no energy and refund none");
 		Equal(0m, autoPlay.Stars, "auto-played cards spent no stars and refund none");
-		HextechCardPlayResourceSpend manual = HextechCombatHooks.GetResourceSpend(CreateTestCardPlay(card, isAutoPlay: false, energySpent: 2, starsSpent: 1));
+		HextechCardPlayResourceSpend manual = HextechCombatHooks.GetResourceSpend(CreateCardPlay(card, isAutoPlay: false, energySpent: 2, starsSpent: 1));
 		Equal(2m, manual.Energy, "manual plays refund the energy actually spent");
 		Equal(1m, manual.Stars, "manual plays refund the stars actually spent");
-	}
-
-	// CardPlay 的成员随版本增减（0.107.1 没有 Player），用未初始化对象 + 反射只设需要的属性。
-	private static CardPlay CreateTestCardPlay(CardModel card, bool isAutoPlay, int energySpent, int starsSpent)
-	{
-		CardPlay cardPlay = (CardPlay)RuntimeHelpers.GetUninitializedObject(typeof(CardPlay));
-		AccessTools.Property(typeof(CardPlay), nameof(CardPlay.Card)).SetValue(cardPlay, card);
-		AccessTools.Property(typeof(CardPlay), nameof(CardPlay.IsAutoPlay)).SetValue(cardPlay, isAutoPlay);
-		AccessTools.Property(typeof(CardPlay), nameof(CardPlay.PlayCount)).SetValue(cardPlay, 1);
-		AccessTools.Property(typeof(CardPlay), nameof(CardPlay.Resources)).SetValue(cardPlay, new ResourceInfo
-		{
-			EnergySpent = energySpent,
-			EnergyValue = Math.Max(1, energySpent),
-			StarsSpent = starsSpent,
-			StarValue = starsSpent
-		});
-		return cardPlay;
 	}
 
 	[HextechTest]

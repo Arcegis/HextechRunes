@@ -27,9 +27,9 @@ internal static partial class Program
 			?? throw new InvalidOperationException("0.107 SavedProperty per-type cache should not be null"));
 		Action[] restore =
 		[
-			CaptureCompatibilityCollectionRestore(cacheType, "_cache"),
-			CaptureCompatibilityCollectionRestore(cacheType, "_propertyNameToNetIdMap"),
-			CaptureCompatibilityCollectionRestore(cacheType, "_netIdToPropertyNameMap")
+			CaptureStaticCollectionRestore(cacheType, "_cache"),
+			CaptureStaticCollectionRestore(cacheType, "_propertyNameToNetIdMap"),
+			CaptureStaticCollectionRestore(cacheType, "_netIdToPropertyNameMap")
 		];
 		bool originalCanonicalized = canonicalizedField.GetValue(null) is true;
 		int originalBitSize = SavedPropertiesTypeCache.NetIdBitSize;
@@ -357,50 +357,9 @@ internal static partial class Program
 		};
 	}
 
-	private static Action CaptureCompatibilityCollectionRestore(Type type, string fieldName)
-	{
-		FieldInfo field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static)
-			?? throw new InvalidOperationException($"{type.FullName}.{fieldName} should exist");
-		object value = field.GetValue(null)
-			?? throw new InvalidOperationException($"{type.FullName}.{fieldName} should not be null");
-		if (value is IDictionary dictionary)
-		{
-			List<DictionaryEntry> entries = [];
-			IDictionaryEnumerator enumerator = dictionary.GetEnumerator();
-			while (enumerator.MoveNext())
-			{
-				entries.Add(enumerator.Entry);
-			}
-
-			return () =>
-			{
-				dictionary.Clear();
-				foreach (DictionaryEntry entry in entries)
-				{
-					dictionary.Add(entry.Key, entry.Value);
-				}
-			};
-		}
-		if (value is IList list)
-		{
-			object?[] items = list.Cast<object?>().ToArray();
-			return () =>
-			{
-				list.Clear();
-				foreach (object? item in items)
-				{
-					list.Add(item);
-				}
-			};
-		}
-
-		throw new InvalidOperationException(
-			$"{type.FullName}.{fieldName} is not a mutable dictionary or list");
-	}
-
 	private static Action SuppressCompatibilityWarnings(params string[] keys)
 	{
-		Action restore = CaptureCompatibilityCollectionRestore(
+		Action restore = CaptureStaticCollectionRestore(
 			typeof(HextechRunLogBudget),
 			"ConsumedByKey");
 		foreach (string key in keys)

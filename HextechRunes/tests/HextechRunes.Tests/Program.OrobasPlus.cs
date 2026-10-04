@@ -54,30 +54,18 @@ internal static partial class Program
 
 				// 玩家复现是无 Mayhem modifier 的单机旧局，通过控制台获得欧洛巴斯之触。
 				// 走实际补丁而非直接传 active=true，避免漏掉启用判断；配置只改测试进程内存。
-				FieldInfo loadedField = typeof(HextechRuneConfiguration).GetField("_loaded", BindingFlags.Static | BindingFlags.NonPublic)!;
-				FieldInfo configField = typeof(HextechRuneConfiguration).GetField("_config", BindingFlags.Static | BindingFlags.NonPublic)!;
-				object config = configField.GetValue(null)!;
-				PropertyInfo enabledProperty = config.GetType().GetProperty("ModEnabled")!;
-				object? wasLoaded = loadedField.GetValue(null);
-				object? wasEnabled = enabledProperty.GetValue(config);
-				try
+				using (ModEnabledOverride modSwitch = new())
 				{
-					loadedField.SetValue(null, true);
 					RunState run = (RunState)RuntimeHelpers.GetUninitializedObject(typeof(RunState));
 					typeof(RunState).GetProperty(nameof(RunState.Modifiers))!.SetValue(run, Array.Empty<ModifierModel>());
 					Player owner = CreateOrdinalTestPlayer(1);
 					typeof(Player).GetField("_runState", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(owner, run);
 					RelicModel ownedAncient = ModelDb.Relic<BlackBlood>().ToMutable();
 					ownedAncient.Owner = owner;
-					enabledProperty.SetValue(config, true);
+					modSwitch.Enabled = true;
 					Expect(touch.GetUpgradedStarterRelic(ownedAncient) is HextechBlackBloodPlus, "enabled single-player run without Mayhem modifier upgrades at native entry");
-					enabledProperty.SetValue(config, false);
+					modSwitch.Enabled = false;
 					Expect(touch.GetUpgradedStarterRelic(ownedAncient) is Circlet, "disabled single-player run still keeps native behavior");
-				}
-				finally
-				{
-					enabledProperty.SetValue(config, wasEnabled);
-					loadedField.SetValue(null, wasLoaded);
 				}
 			}
 			finally
@@ -149,21 +137,7 @@ internal static partial class Program
 			typeof(CrackedCore), typeof(InfusedCore), typeof(Circlet),
 			.. HextechCustomModelRegistry.EventRelicTypes.Where(type => typeof(OrobasPlusRelicBase).IsAssignableFrom(type))
 		];
-		Type[] added = types.Where(type => !ModelDb.Contains(type)).ToArray();
-		try
-		{
-			foreach (Type type in added)
-			{
-				ModelDb.Inject(type);
-			}
-			action();
-		}
-		finally
-		{
-			foreach (Type type in added)
-			{
-				ModelDb.Remove(type);
-			}
-		}
+		using IDisposable models = InjectMissingModels(types);
+		action();
 	}
 }
