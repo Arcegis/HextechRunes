@@ -70,12 +70,7 @@ public sealed partial class SolidTimeRune : HextechRelicBase
 				break;
 			}
 
-			CardModel? card = CreateCombatCard(combatState, cards[i]);
-			if (card == null)
-			{
-				continue;
-			}
-
+			CardModel card = CreateCombatCard(combatState, cards[i]);
 			card.SetToFreeThisCombat();
 			Creature? target = PickTarget(card, combatState, i);
 			await ApplyStoredPowerDirectly(choiceContext, card, target);

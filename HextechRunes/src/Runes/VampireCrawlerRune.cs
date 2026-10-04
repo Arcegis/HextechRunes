@@ -18,13 +18,12 @@ public sealed class VampireCrawlerRune : HextechRelicBase
 	private bool ShouldCopyPlayedPowerToDiscard(CardPlay cardPlay)
 	{
 		CardModel card = cardPlay.Card;
-		return CombatManager.Instance.IsInProgress
-			&& !CombatManager.Instance.IsOverOrEnding
+		return !CombatManager.Instance.IsOverOrEnding
 			&& card.Owner == Owner
 			&& !card.IsDupe
 			&& card.Type == CardType.Power
 			&& card.Pile?.Type == PileType.Play
 			&& cardPlay.ResultPile == PileType.None
-			&& cardPlay.PlayIndex + 1 >= Math.Max(1, cardPlay.PlayCount);
+			&& cardPlay.IsLastInSeries;
 	}
 }

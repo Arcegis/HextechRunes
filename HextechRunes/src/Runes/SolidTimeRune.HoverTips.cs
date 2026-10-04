@@ -29,21 +29,15 @@ public sealed partial class SolidTimeRune
 		StringBuilder builder = new();
 		for (int i = 0; i < cards.Count; i++)
 		{
-			CardModel? preview = CreatePreviewCard(cards[i]);
-			if (preview == null)
-			{
-				continue;
-			}
-
-			if (builder.Length > 0)
+			if (i > 0)
 			{
 				builder.AppendLine();
 			}
 
 			builder.Append("- ");
-			builder.Append(preview.Title);
+			builder.Append(CreatePreviewCard(cards[i]).Title);
 		}
 
-		return builder.Length > 0 ? builder.ToString() : "- ?";
+		return builder.ToString();
 	}
 }
