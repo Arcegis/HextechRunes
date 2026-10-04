@@ -1,5 +1,4 @@
 using Godot;
-using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -96,20 +95,9 @@ internal static partial class HextechRelicVisibilityHooks
 		return visuals;
 	}
 
+	// CacheMode.Reuse:原版预载过的场景直接取 Godot 资源缓存里的同一实例。
 	private static PackedScene LoadTickboxVisualScene()
 	{
-		try
-		{
-			if (PreloadManager.Cache.ContainsKey(TickboxVisualScenePath))
-			{
-				return PreloadManager.Cache.GetScene(TickboxVisualScenePath);
-			}
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"Failed to read cached tickbox scene; using ResourceLoader: {ex.Message}");
-		}
-
 		return ResourceLoader.Load<PackedScene>(TickboxVisualScenePath, cacheMode: ResourceLoader.CacheMode.Reuse)
 			?? throw new InvalidOperationException($"Could not load tickbox scene: {TickboxVisualScenePath}");
 	}
@@ -125,15 +113,10 @@ internal static partial class HextechRelicVisibilityHooks
 		button.AddThemeStyleboxOverride("hover_pressed", empty);
 	}
 
+	// 开关根节点总是 GlobalUi 的直接子节点(InstallToggle 挂上去,RemoveToggleRoot 先摘再释放)。
 	private static Control? FindToggleRoot(NGlobalUi globalUi)
 	{
-		Control? direct = globalUi.GetNodeOrNull<Control>(ToggleRootNodeName);
-		if (direct != null && GodotObject.IsInstanceValid(direct))
-		{
-			return direct;
-		}
-
-		return globalUi.FindChild(ToggleRootNodeName, recursive: true, owned: false) as Control;
+		return globalUi.GetNodeOrNull<Control>(ToggleRootNodeName);
 	}
 
 	private static void UpdateToggleVisualState(Control root, bool hideRelics)
