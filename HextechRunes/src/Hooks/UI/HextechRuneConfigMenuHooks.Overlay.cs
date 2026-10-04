@@ -49,13 +49,9 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 	}
 
+	// 只由覆盖层自己的「取消」按钮与 CancelRequested 回调触发,此时覆盖层一定有效。
 	private static void CloseWithoutSaving(Control overlay)
 	{
-		if (!GodotObject.IsInstanceValid(overlay))
-		{
-			return;
-		}
-
 		overlay.GetViewport()?.SetInputAsHandled();
 		CloseOverlayAnimated(overlay);
 	}

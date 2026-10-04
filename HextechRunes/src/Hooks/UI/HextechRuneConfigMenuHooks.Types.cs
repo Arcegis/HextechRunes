@@ -83,16 +83,6 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 	}
 
-	/// <summary>杂项页分享区三个按钮的动作;依赖整个菜单上下文,在页脚构建时才绑定。</summary>
-	private sealed class ConfigShareActions
-	{
-		internal Action? ExportCode { get; set; }
-
-		internal Action? ImportCode { get; set; }
-
-		internal Action? OpenCommunity { get; set; }
-	}
-
 	/// <summary>
 	/// 一次打开的配置菜单的共享状态:编辑态、条目、各类控件绑定、页脚摘要与布局模式。
 	/// 集合在菜单生命周期内只就地增改(绑定持有同一实例)。
@@ -120,8 +110,6 @@ internal static partial class HextechRuneConfigMenuHooks
 		internal List<RuneConfigLoadTarget> LoadTargets { get; } = [];
 
 		internal List<Action> BadgeRefreshers { get; } = [];
-
-		internal ConfigShareActions ShareActions { get; } = new();
 
 		internal ConfigPage SelectedPage { get; set; } = ConfigPage.Counts;
 

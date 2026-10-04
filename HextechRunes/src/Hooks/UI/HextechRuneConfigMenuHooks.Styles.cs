@@ -18,7 +18,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		float width = windowWidth < minWidth
 			? Math.Max(320f, windowWidth * 0.98f)
 			: Mathf.Clamp(windowWidth * 0.9f, minWidth, maxWidth);
-		float height = windowHeight < CompactConfigHeightThreshold
+		float height = compactLayout
 			? Math.Max(440f, windowHeight * 0.98f)
 			: Mathf.Clamp(windowHeight * 0.92f, 660f, 840f);
 		return new Vector2(width, height);
@@ -52,16 +52,6 @@ internal static partial class HextechRuneConfigMenuHooks
 			HextechRarityTier.Silver => new Color(0.56f, 0.85f, 0.92f),
 			HextechRarityTier.Prismatic => new Color(0.94f, 0.43f, 1f),
 			_ => new Color(0.94f, 0.76f, 0.35f)
-		};
-	}
-
-	private static Color GetRarityAccentColorByOrder(int rarityOrder)
-	{
-		return rarityOrder switch
-		{
-			0 => GetRarityAccentColor(HextechRarityTier.Silver),
-			2 => GetRarityAccentColor(HextechRarityTier.Prismatic),
-			_ => GetRarityAccentColor(HextechRarityTier.Gold)
 		};
 	}
 
@@ -164,12 +154,12 @@ internal static partial class HextechRuneConfigMenuHooks
 	private static void StylePillTrack(Button toggle, float trackHeight)
 	{
 		int radius = (int)(trackHeight / 2f);
-		// 轨道四态:关(深钢灰)/关悬停(略亮)/开(深金)/开悬停(更亮的金);旋钮颜色另由 panel stylebox 决定。
+		// 轨道四态:关(深钢灰)/关悬停(略亮)/开(深金)/开悬停(更亮的金);开关从不禁用,不设 disabled 态。
+		// 旋钮颜色另由 panel stylebox 决定。
 		toggle.AddThemeStyleboxOverride("normal", CreatePillTrackStyle(new Color(0.2f, 0.24f, 0.32f, 0.95f), HextechUiTheme.SoftSteelBorder, radius));
 		toggle.AddThemeStyleboxOverride("hover", CreatePillTrackStyle(new Color(0.26f, 0.31f, 0.4f, 0.97f), new Color(0.62f, 0.7f, 0.82f, 0.66f), radius));
 		toggle.AddThemeStyleboxOverride("pressed", CreatePillTrackStyle(new Color(0.86f, 0.66f, 0.28f, 0.98f), new Color(0.97f, 0.82f, 0.5f, 1f), radius));
 		toggle.AddThemeStyleboxOverride("hover_pressed", CreatePillTrackStyle(new Color(0.94f, 0.74f, 0.34f, 1f), new Color(1f, 0.9f, 0.6f, 1f), radius));
-		toggle.AddThemeStyleboxOverride("disabled", CreatePillTrackStyle(new Color(0.16f, 0.18f, 0.24f, 0.6f), new Color(0.34f, 0.38f, 0.46f, 0.4f), radius));
 		toggle.AddThemeStyleboxOverride("focus", CreatePillFocusStyle(radius));
 	}
 
