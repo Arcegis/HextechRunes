@@ -53,9 +53,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 
 	public override Task AfterObtained()
 	{
-		return Owner != null
-			? IntegratedStrategyEventsBridge.ObtainProphecyProjection(Owner)
-			: Task.CompletedTask;
+		return IntegratedStrategyEventsBridge.ObtainProphecyProjection(Owner);
 	}
 
 	// 主模组 0.108 适配后基类 ModifyDamageMultiplicative 被 sealed(版本签名转发),子类改写 Compat 变体。
@@ -76,12 +74,12 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		CardModel? cardSource,
 		CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? BonusMultiplier : 1m;
+		return target == Owner.Creature ? BonusMultiplier : 1m;
 	}
 
 	public decimal ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
 	{
-		return player == Owner && creature == Owner?.Creature ? BonusMultiplier : 1m;
+		return player == Owner && creature == Owner.Creature ? BonusMultiplier : 1m;
 	}
 
 	public override Task AfterDamageGiven(
@@ -92,8 +90,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		Creature target,
 		CardModel? cardSource)
 	{
-		if (Owner == null
-			|| !result.WasTargetKilled
+		if (!result.WasTargetKilled
 			|| target.CombatId is not uint combatId
 			|| !IntegratedStrategyEventsBridge.IsFinalChorale(target)
 			|| !IsDamageFromOwner(dealer, cardSource))
@@ -112,8 +109,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		Creature? applier,
 		CardModel? cardSource)
 	{
-		if (Owner != null
-			&& amount > 0m
+		if (amount > 0m
 			&& power is DoomPower
 			&& applier == Owner.Creature
 			&& power.Owner.CombatId is uint combatId
@@ -127,8 +123,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 
 	public override Task BeforeDeath(Creature target)
 	{
-		if (Owner != null
-			&& target.CombatId is uint combatId
+		if (target.CombatId is uint combatId
 			&& target.GetPower<DoomPower>()?.Applier == Owner.Creature
 			&& IntegratedStrategyEventsBridge.IsFinalChorale(target))
 		{
@@ -144,8 +139,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		bool wasRemovalPrevented,
 		float deathAnimLength)
 	{
-		if (Owner == null
-			|| wasRemovalPrevented
+		if (wasRemovalPrevented
 			|| target.CombatId is not uint combatId
 			|| !_ownerKilledChoraleCombatIds.Contains(combatId)
 			|| !IntegratedStrategyEventsBridge.IsFinalChorale(target))
@@ -161,11 +155,6 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 		PlayerChoiceContext choiceContext,
 		IReadOnlyList<Creature> creatures)
 	{
-		if (Owner == null)
-		{
-			return Task.CompletedTask;
-		}
-
 		foreach (Creature creature in creatures)
 		{
 			if (!creature.IsDead
@@ -184,7 +173,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 
 	private void QueueFinalChoraleReward(Creature target, uint combatId)
 	{
-		if (Owner == null || !_rewardedChoraleCombatIds.Add(combatId))
+		if (!_rewardedChoraleCombatIds.Add(combatId))
 		{
 			return;
 		}
@@ -202,7 +191,7 @@ public sealed class DesperateFinaleRune : HextechRelicBase, IHextechHealingMulti
 
 	public override async Task AfterCombatVictory(CombatRoom room)
 	{
-		if (Owner != null && _pendingProjectionChoraleHp.Count > 0)
+		if (_pendingProjectionChoraleHp.Count > 0)
 		{
 			IntegratedStrategyEventsBridge.AddFinalChoraleRewardsIfMissing(room);
 			foreach (int choraleHp in _pendingProjectionChoraleHp)

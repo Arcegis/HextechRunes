@@ -18,11 +18,6 @@ public sealed class BasicForge : HextechForgeBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		IReadOnlyList<RelicModel> choiceRelics = CreateChoiceRelics();
 		RelicModel? selected = await HextechRunesApi.SelectRelicOption(Owner, choiceRelics, "basic-forge-relic-choice");
 		if (selected == null)

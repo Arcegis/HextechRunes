@@ -76,7 +76,7 @@ public sealed class RegretRune : HextechRelicBase
 	{
 		_pendingPlayerRevive = false;
 		_freeCardsUntilOwnerTurnEnd = false;
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -95,8 +95,7 @@ public sealed class RegretRune : HextechRelicBase
 
 	public override Task BeforeDeath(Creature creature)
 	{
-		if (Owner == null
-			|| creature != Owner.Creature
+		if (creature != Owner.Creature
 			|| _pendingPlayerRevive
 			|| _revivesUsed >= DynamicVars["MaxRevives"].IntValue)
 		{
@@ -109,17 +108,12 @@ public sealed class RegretRune : HextechRelicBase
 
 	public override bool ShouldDie(Creature creature)
 	{
-		if (Owner == null)
-		{
-			return true;
-		}
-
 		return creature != Owner.Creature || !_pendingPlayerRevive;
 	}
 
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
-		if (Owner == null || target != Owner.Creature || !wasRemovalPrevented || !_pendingPlayerRevive)
+		if (target != Owner.Creature || !wasRemovalPrevented || !_pendingPlayerRevive)
 		{
 			return;
 		}
@@ -135,7 +129,7 @@ public sealed class RegretRune : HextechRelicBase
 
 	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner != null && side == Owner.Creature.Side && _freeCardsUntilOwnerTurnEnd)
+		if (side == Owner.Creature.Side && _freeCardsUntilOwnerTurnEnd)
 		{
 			_freeCardsUntilOwnerTurnEnd = false;
 		}
@@ -155,11 +149,6 @@ public sealed class RegretRune : HextechRelicBase
 
 	private async Task ApplyReviveRewards(PlayerChoiceContext choiceContext)
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		if (Owner.Creature.CombatState is HextechCombatState combatState)
 		{
 			await PowerCmd.Apply<WeakPower>(combatState.HittableEnemies, DynamicVars.Weak.BaseValue, Owner.Creature, null);
@@ -172,7 +161,7 @@ public sealed class RegretRune : HextechRelicBase
 
 	private Task DrawUntilHandFull(PlayerChoiceContext choiceContext)
 	{
-		if (Owner == null || Owner.PlayerCombatState == null || Owner.Creature.IsDead)
+		if (Owner.PlayerCombatState == null || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -199,7 +188,6 @@ public sealed class RegretRune : HextechRelicBase
 	private bool ShouldMakeCardFree(CardModel card)
 	{
 		return _freeCardsUntilOwnerTurnEnd
-			&& Owner != null
 			&& !Owner.Creature.IsDead
 			&& card.Owner == Owner
 			&& card.Pile?.Type is PileType.Hand or PileType.Play;

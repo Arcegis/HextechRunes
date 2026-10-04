@@ -31,11 +31,6 @@ public abstract class SelectableEnchantmentForgeBase : HextechForgeBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		IEnumerable<CardModel> selectedCards = await CardSelectCmd.FromDeckGeneric(
 			Owner,
 			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, CardSelectionCount),
@@ -75,34 +70,13 @@ public abstract class SelectableEnchantmentForgeBase : HextechForgeBase
 			return null;
 		}
 
-		IReadOnlyList<RelicModel> choiceRelics = applicable
+		RelicModel[] choiceRelics = applicable
 			.Select(static option => option.CreateChoiceRelic())
 			.ToArray();
+		// 本地选择界面与联机远端分支都返回 choiceRelics 里的同一个实例,按引用找回下标即可。
 		RelicModel? selected = await HextechRunesApi.SelectRelicOption(owner, choiceRelics, choiceContext);
-		int selectedIndex = IndexOfModel(choiceRelics, selected);
-		return selectedIndex >= 0 && selectedIndex < applicable.Count
-			? applicable[selectedIndex].CreateCanonical()
-			: null;
-	}
-
-	private static int IndexOfModel(IReadOnlyList<RelicModel> options, RelicModel? selected)
-	{
-		if (selected == null)
-		{
-			return -1;
-		}
-
-		ModelId selectedId = selected.CanonicalInstance?.Id ?? selected.Id;
-		for (int i = 0; i < options.Count; i++)
-		{
-			ModelId optionId = options[i].CanonicalInstance?.Id ?? options[i].Id;
-			if (optionId == selectedId)
-			{
-				return i;
-			}
-		}
-
-		return -1;
+		int selectedIndex = selected == null ? -1 : Array.IndexOf(choiceRelics, selected);
+		return selectedIndex >= 0 ? applicable[selectedIndex].CreateCanonical() : null;
 	}
 }
 

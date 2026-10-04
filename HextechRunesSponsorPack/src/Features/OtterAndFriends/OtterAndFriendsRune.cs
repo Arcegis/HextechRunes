@@ -47,8 +47,7 @@ public sealed class OtterAndFriendsRune : HextechRelicBase
 
 	public override async Task AfterPlayerTurnStartEarly(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| player.Creature.IsDead
 			|| player.Creature.CombatState is not HextechCombatState combatState
 			|| !ReferenceEquals(Owner.Creature.CombatState, combatState))

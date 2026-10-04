@@ -7,7 +7,7 @@ using MegaCrit.Sts2.Core.Runs;
 
 namespace HextechRunesSponsorPack;
 
-// 0.107.1:PotionRewardOdds.Roll(player, AscensionManager, RoomType)。调用方已确认 AscensionManager 存在。
+// 0.107.1:PotionRewardOdds.Roll(player, AscensionManager, RoomType)。没有 AscensionManager 时不掉药水。
 public sealed partial class GoldStarRelic
 {
 	[MethodImpl(MethodImplOptions.NoInlining)]
