@@ -26,7 +26,6 @@ internal static partial class HextechRunLifecycleHooks
 	internal static void HandleEndlessLoopReset(HextechMayhemModifier modifier, string reason)
 	{
 		SubscribeRoomEnteredIfNeeded(force: true);
-		SubscribeRoomExitedIfNeeded(force: true);
 		HextechRuneSelectionCoordinator.ResetActSelectionState();
 		// 由 Modifier.ResetForEndlessLoop 同步调用（房间进入回调或无尽模组的同步通知），调用方无法等待；
 		// 所有端都在同一逻辑点重置并启动这段等待，真正的海克斯选择由选择协议同步，异常由 RunSafely 记录。
