@@ -138,7 +138,7 @@ internal static partial class Program
 			RuneRarityWeightsByAct = expectedWeights
 		};
 		string code = HextechConfigShareCodec.Export(snapshot);
-		HextechConfigShareCodec.ImportPreview preview = HextechConfigShareCodec.TryParseForTests(code, snapshot)
+		HextechConfigShareCodec.ImportPreview preview = HextechConfigShareCodec.TryParse(code)
 			?? throw new InvalidOperationException("act rarity share code should decode");
 		SequenceEqual(expectedWeights, preview.Snapshot.RuneRarityWeightsByAct, "act rarity weights should survive share-code round trip");
 	}
@@ -146,20 +146,13 @@ internal static partial class Program
 	[HextechTest]
 	private static void ConfigMigrationV27KeepsNormalWeightsAndEnablesConsecutiveSilverPrevention()
 	{
-		(int migratedVersion, HextechRarityWeights migratedWeights, bool ruleEnabledWithZeroLegacySilverWeight) =
+		(int migratedVersion, HextechRarityWeights migratedWeights, bool consecutiveSilverPrevention) =
 			HextechRuneConfiguration.MigrateRarityConfigForTests(
 				27,
-				new HextechRarityWeights(4, 5, 6),
-				new HextechRarityWeights(0, 7, 8));
+				new HextechRarityWeights(4, 5, 6));
 		Equal(40, migratedVersion, "v27 rarity config should land on current version");
 		Equal(new HextechRarityWeights(4, 5, 6), migratedWeights, "v27 normal weights should become rune weights");
-		Equal(true, ruleEnabledWithZeroLegacySilverWeight, "legacy rarity config should enable consecutive-Silver prevention by default");
-
-		(_, _, bool ruleEnabledWithPositiveLegacySilverWeight) = HextechRuneConfiguration.MigrateRarityConfigForTests(
-			27,
-			new HextechRarityWeights(1, 1, 1),
-			new HextechRarityWeights(2, 1, 1));
-		Equal(true, ruleEnabledWithPositiveLegacySilverWeight, "removed legacy after-Silver weights should not disable the new default-on rule");
+		Equal(true, consecutiveSilverPrevention, "legacy rarity config should enable consecutive-Silver prevention by default");
 
 		HextechRarityWeights[] migratedByAct = HextechRuneConfiguration.MigrateSingleRarityConfigForTests(
 			31,
@@ -236,7 +229,7 @@ internal static partial class Program
 			snapshot.EnemyHexCountsByAct, snapshot.DisabledPlayerRuneIds, snapshot);
 		Expect(HextechChoiceCodec.TryDecodeActRoll(roll, 0, out _, out _, out _, out _, out _, out HextechRunConfigurationSnapshot decoded), "snapshot decodes");
 		Equal(73, decoded.ChaosRuneChancePercent, "host chance wins");
-		Equal(73, HextechConfigShareCodec.TryParseForTests(HextechConfigShareCodec.Export(snapshot), defaults)!.Snapshot.ChaosRuneChancePercent, "share code preserves chance");
+		Equal(73, HextechConfigShareCodec.TryParse(HextechConfigShareCodec.Export(snapshot))!.Snapshot.ChaosRuneChancePercent, "share code preserves chance");
 		Equal(0, HextechRuneConfiguration.NormalizeSnapshot(snapshot with { ChaosRuneChancePercent = -1 }).ChaosRuneChancePercent, "lower bound");
 		Equal(100, HextechRuneConfiguration.NormalizeSnapshot(snapshot with { ChaosRuneChancePercent = 101 }).ChaosRuneChancePercent, "upper bound");
 		string json = JsonSerializer.Serialize(snapshot);

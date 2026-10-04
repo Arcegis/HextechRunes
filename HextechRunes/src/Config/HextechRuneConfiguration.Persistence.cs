@@ -143,17 +143,10 @@ internal static partial class HextechRuneConfiguration
 		[JsonPropertyName("ChaosRuneChancePercent")]
 		public int ChaosRuneChancePercent { get; set; } = DefaultChaosRuneChancePercent;
 
-		[JsonPropertyName("first_act_rune_rarity_weights")]
-		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-		public RarityWeightConfig? FirstActRuneRarityWeights { get; set; }
-
+		// 只在 v<28 迁移时读取;旧文件里同期的 first_act_/second_act_after_silver_ 权重从不读取,按未知字段跳过。
 		[JsonPropertyName("normal_rune_rarity_weights")]
 		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public RarityWeightConfig? NormalRuneRarityWeights { get; set; }
-
-		[JsonPropertyName("second_act_after_silver_rune_rarity_weights")]
-		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-		public RarityWeightConfig? SecondActAfterSilverRuneRarityWeights { get; set; }
 
 		[JsonPropertyName("forge_rarity_weights")]
 		public RarityWeightConfig? ForgeRarityWeights { get; set; }

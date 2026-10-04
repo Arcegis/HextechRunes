@@ -153,9 +153,7 @@ internal static partial class HextechRuneConfiguration
 		config.RuneRarityWeights = null;
 		config.GoldenRerollChancePercent = ClampGoldenRerollChancePercent(config.GoldenRerollChancePercent);
 		config.ChaosRuneChancePercent = ClampChaosRuneChancePercent(config.ChaosRuneChancePercent);
-		config.FirstActRuneRarityWeights = null;
 		config.NormalRuneRarityWeights = null;
-		config.SecondActAfterSilverRuneRarityWeights = null;
 		config.ForgeRarityWeights = FromRarityWeights(NormalizeRarityWeights(
 			ToRarityWeights(config.ForgeRarityWeights, DefaultForgeRarityWeights),
 			DefaultForgeRarityWeights));
@@ -189,14 +187,12 @@ internal static partial class HextechRuneConfiguration
 
 	internal static (int ConfigVersion, HextechRarityWeights RuneRarityWeights, bool PreventConsecutiveSilverRunes) MigrateRarityConfigForTests(
 		int configVersion,
-		HextechRarityWeights normalWeights,
-		HextechRarityWeights afterSilverWeights)
+		HextechRarityWeights normalWeights)
 	{
 		RuneConfig config = new()
 		{
 			ConfigVersion = configVersion,
-			NormalRuneRarityWeights = FromRarityWeights(normalWeights),
-			SecondActAfterSilverRuneRarityWeights = FromRarityWeights(afterSilverWeights)
+			NormalRuneRarityWeights = FromRarityWeights(normalWeights)
 		};
 		RuneConfig normalized = NormalizeLoadedConfig(config);
 		return (

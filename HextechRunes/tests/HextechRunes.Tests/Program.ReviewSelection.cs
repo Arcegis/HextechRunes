@@ -125,7 +125,7 @@ internal static partial class Program
 			ChaosRuneChancePercent = 250
 		};
 		string code = HextechConfigShareCodec.Export(zeroWeights);
-		HextechConfigShareCodec.ImportPreview preview = HextechConfigShareCodec.TryParseForTests(code, defaults)
+		HextechConfigShareCodec.ImportPreview preview = HextechConfigShareCodec.TryParse(code)
 			?? throw new InvalidOperationException("share code should parse");
 		HextechRunConfigurationSnapshot expected = HextechRuneConfiguration.NormalizeSnapshot(zeroWeights);
 		SequenceEqual(expected.RuneRarityWeightsByAct, preview.Snapshot.RuneRarityWeightsByAct, "all-zero act weights fall back like save");

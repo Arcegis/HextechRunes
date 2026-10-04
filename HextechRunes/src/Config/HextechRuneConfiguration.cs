@@ -27,7 +27,7 @@ internal static partial class HextechRuneConfiguration
 	private const int MinChaosRuneChancePercent = 0;
 	private const int MaxChaosRuneChancePercent = 100;
 	// 模组总开关默认开启:关闭后本局表现得与原版一致(开局时快照,联机按房主)。
-	private const bool DefaultModEnabled = true;
+	internal const bool DefaultModEnabled = true;
 	private const int DefaultPlayerRuneRerollLimit = 1;
 	private const int DefaultMonsterHexRerollLimit = 1;
 
@@ -38,12 +38,6 @@ internal static partial class HextechRuneConfiguration
 	public static void Initialize()
 	{
 		EnsureLoaded();
-	}
-
-	public static bool IsPlayerRuneEnabled(RelicModel relic)
-	{
-		ModelId id = relic.CanonicalId();
-		return IsPlayerRuneEnabled(id.Entry);
 	}
 
 	public static bool IsPlayerRuneEnabled(string id)
@@ -61,15 +55,6 @@ internal static partial class HextechRuneConfiguration
 		lock (SyncRoot)
 		{
 			return _config.DisabledPlayerRuneIds.ToHashSet(StringComparer.Ordinal);
-		}
-	}
-
-	public static IReadOnlySet<string> GetDisabledMonsterHexIds()
-	{
-		EnsureLoaded();
-		lock (SyncRoot)
-		{
-			return NormalizeDisabledMonsterHexIds(_config.DisabledMonsterHexIds);
 		}
 	}
 
@@ -167,9 +152,7 @@ internal static partial class HextechRuneConfiguration
 			_config.PreventConsecutiveSilverRunes = normalized.PreventConsecutiveSilverRunes;
 			_config.GoldenRerollChancePercent = normalized.GoldenRerollChancePercent;
 			_config.ChaosRuneChancePercent = normalized.ChaosRuneChancePercent;
-			_config.FirstActRuneRarityWeights = null;
 			_config.NormalRuneRarityWeights = null;
-			_config.SecondActAfterSilverRuneRarityWeights = null;
 			_config.ForgeRarityWeights = FromRarityWeights(normalized.ForgeRarityWeights);
 			_config.RandomForgeShopPrice = normalized.RandomForgeShopPrice;
 			_config.RandomForgeDirectGrant = normalized.RandomForgeDirectGrant;
