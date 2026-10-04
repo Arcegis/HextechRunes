@@ -10,20 +10,20 @@ internal static partial class Program
 	[HextechTest]
 	private static void ReviewTelemetryConfigWithoutEndpointKeepsUserOptOut()
 	{
-		string defaultEndpoint = HextechTelemetry.DefaultEndpointForTests;
-		(bool enabled, string endpoint) = HextechTelemetry.ParseConfigForTests("{\"enabled\":false}");
+		string defaultEndpoint = HextechServerEndpoints.TelemetryEndpoint;
+		(bool enabled, string endpoint) = HextechTelemetry.ParseConfig("{\"enabled\":false}");
 		Expect(!enabled, "opt-out without endpoint must stay disabled");
 		Equal(defaultEndpoint, endpoint, "missing endpoint falls back to default");
 
-		(enabled, endpoint) = HextechTelemetry.ParseConfigForTests("{\"enabled\":false,\"endpoint\":\"  \"}");
+		(enabled, endpoint) = HextechTelemetry.ParseConfig("{\"enabled\":false,\"endpoint\":\"  \"}");
 		Expect(!enabled, "opt-out with blank endpoint must stay disabled");
 		Equal(defaultEndpoint, endpoint, "blank endpoint falls back to default");
 
-		(enabled, endpoint) = HextechTelemetry.ParseConfigForTests("{\"enabled\":true,\"endpoint\":\"http://example.invalid/x\"}");
+		(enabled, endpoint) = HextechTelemetry.ParseConfig("{\"enabled\":true,\"endpoint\":\"http://example.invalid/x\"}");
 		Expect(enabled, "explicit enabled is preserved");
 		Equal("http://example.invalid/x", endpoint, "explicit endpoint is preserved");
 
-		(enabled, endpoint) = HextechTelemetry.ParseConfigForTests("null");
+		(enabled, endpoint) = HextechTelemetry.ParseConfig("null");
 		Expect(enabled, "null document keeps previous default-on behavior");
 		Equal(defaultEndpoint, endpoint, "null document uses default endpoint");
 	}

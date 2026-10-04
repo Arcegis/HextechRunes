@@ -95,19 +95,6 @@ internal static partial class HextechTelemetry
 		return payloads;
 	}
 
-	private static int GetPlayerSlot(RunState runState, Player player)
-	{
-		for (int i = 0; i < runState.Players.Count; i++)
-		{
-			if (ReferenceEquals(runState.Players[i], player))
-			{
-				return i;
-			}
-		}
-
-		return Math.Max(0, runState.GetPlayerSlotIndex(player));
-	}
-
 	private static string GetRelicId(RelicModel relic)
 	{
 		return relic.CanonicalId().Entry;

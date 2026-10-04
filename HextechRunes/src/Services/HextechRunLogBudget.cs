@@ -7,11 +7,6 @@ internal static class HextechRunLogBudget
 
 	internal static bool TryConsume(string key, int budget)
 	{
-		if (budget <= 0)
-		{
-			return false;
-		}
-
 		lock (Sync)
 		{
 			ConsumedByKey.TryGetValue(key, out int consumed);
