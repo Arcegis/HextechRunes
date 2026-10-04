@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Text;
 using HarmonyLib;
 
 namespace HextechRunesSponsorPack;
@@ -11,7 +10,6 @@ namespace HextechRunesSponsorPack;
 /// </summary>
 internal static class SponsorPatcher
 {
-	private const string DumpEnvVar = "HEXTECH_SPONSOR_DUMP_PATCHES";
 	private const string LogTag = "Patch";
 
 	private sealed record PatchResult(string Id, string Feature, bool Optional, bool Applied, string? Error);
@@ -21,25 +19,18 @@ internal static class SponsorPatcher
 	/// <summary>非 Optional 且未能应用的补丁类数量;入口据此判断初始化是否真正成功。</summary>
 	internal static int RequiredFailureCount => Results.Count(static result => !result.Applied && !result.Optional);
 
-	/// <summary>
-	/// 应用 <paramref name="assembly"/> 里的补丁类:带 <c>[HarmonyPatch]</c> 的走 Harmony 类处理器;
-	/// 只带 <c>[SponsorPatch]</c> 且声明 <c>static void Apply(Harmony)</c> 的是"动态目标"补丁(目标只能在运行时枚举)。
-	/// </summary>
+	/// <summary>应用 <paramref name="assembly"/> 里带 <c>[HarmonyPatch]</c> 的补丁类，逐类经 Harmony 类处理器安装。</summary>
 	internal static void ApplyAll(Harmony harmony, Assembly assembly)
 	{
 		foreach (Type type in AccessTools.GetTypesFromAssembly(assembly))
 		{
 			SponsorPatchAttribute? meta = type.GetCustomAttribute<SponsorPatchAttribute>();
-			bool hasHarmonyAttributes = HarmonyMethodExtensions.GetFromType(type).Any();
-			MethodInfo? dynamicApply = hasHarmonyAttributes || meta == null
-				? null
-				: type.GetMethod("Apply", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, [typeof(Harmony)]);
-			if (!hasHarmonyAttributes && dynamicApply == null)
+			if (!HarmonyMethodExtensions.GetFromType(type).Any())
 			{
 				if (meta != null)
 				{
 					// 声明了元数据却没有任何目标:属性挂错了类。静默跳过等于补丁凭空消失,必须显形。
-					Results.Add(new PatchResult(meta.Id, meta.Feature, meta.Optional, Applied: false, Error: "no [HarmonyPatch] target and no Apply(Harmony)"));
+					Results.Add(new PatchResult(meta.Id, meta.Feature, meta.Optional, Applied: false, Error: "no [HarmonyPatch] target"));
 					SponsorLog.Warn(LogTag, $"Patch declared but has no target: {meta.Id} ({meta.Feature}) on {type.FullName}");
 				}
 
@@ -51,17 +42,10 @@ internal static class SponsorPatcher
 			bool optional = meta?.Optional == true;
 			try
 			{
-				if (dynamicApply != null)
+				List<MethodInfo>? patched = harmony.CreateClassProcessor(type).Patch();
+				if ((patched == null || patched.Count == 0) && !optional)
 				{
-					dynamicApply.Invoke(null, [harmony]);
-				}
-				else
-				{
-					List<MethodInfo>? patched = harmony.CreateClassProcessor(type).Patch();
-					if ((patched == null || patched.Count == 0) && !optional)
-					{
-						throw new InvalidOperationException("class processor patched no methods");
-					}
+					throw new InvalidOperationException("class processor patched no methods");
 				}
 
 				Results.Add(new PatchResult(id, feature, optional, Applied: true, Error: null));
@@ -95,29 +79,6 @@ internal static class SponsorPatcher
 		foreach (PatchResult result in Results.Where(static result => !result.Applied))
 		{
 			SponsorLog.Info(LogTag, $"  failed {result.Id} ({result.Feature}{(result.Optional ? ", optional" : string.Empty)}): {result.Error}");
-		}
-	}
-
-	/// <summary>
-	/// 环境变量 <c>HEXTECH_SPONSOR_DUMP_PATCHES=&lt;path&gt;</c> 存在时把本模组的补丁表写成文本:
-	/// 重构等价性验证工具,目标集合、种类、优先级与同目标执行序在改动前后必须一致。
-	/// </summary>
-	internal static void DumpIfRequested(Harmony harmony)
-	{
-		string? path = Environment.GetEnvironmentVariable(DumpEnvVar);
-		if (string.IsNullOrWhiteSpace(path))
-		{
-			return;
-		}
-
-		try
-		{
-			File.WriteAllText(path, SponsorPatchTable.Build(harmony.Id), Encoding.UTF8);
-			SponsorLog.Info(LogTag, $"Patch table written to {path}.");
-		}
-		catch (Exception ex)
-		{
-			SponsorLog.Warn(LogTag, $"Patch table dump failed: {ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

@@ -1,13 +1,12 @@
 namespace HextechRunesSponsorPack;
 
 /// <summary>
-/// 补丁类元数据。挂在带 <c>[HarmonyPatch]</c> 的类(或声明了 <c>static void Apply(Harmony)</c> 的动态目标类)上,
-/// 由 <see cref="SponsorPatcher"/> 统一应用并逐条汇报。
+/// 补丁类元数据。挂在带 <c>[HarmonyPatch]</c> 的类上,由 <see cref="SponsorPatcher"/> 统一应用并逐条汇报。
 /// </summary>
 /// <remarks>
 /// 约定:
 /// <list type="bullet">
-/// <item><see cref="Id"/> 稳定且唯一,形如 <c>abyssal.regent-forge</c>,日志与补丁表 dump 都按它定位。</item>
+/// <item><see cref="Id"/> 稳定且唯一,形如 <c>abyssal.regent-forge</c>,日志按它定位。</item>
 /// <item><see cref="Feature"/> 是玩家可感知的功能名(符文名 / 事件名),失败时日志按功能归因。</item>
 /// <item><see cref="Optional"/> 允许类处理器未安装任何目标；安装异常仍计入失败，以 Info 记录。</item>
 /// </list>
