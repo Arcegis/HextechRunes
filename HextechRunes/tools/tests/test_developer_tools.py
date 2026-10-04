@@ -151,20 +151,24 @@ class SecondCard : CardModel
                 self.assertEqual(dev.registered_tests(), ["Alpha", "Zeta"])
 
     def test_focused_runner_rejects_typo_and_stops_after_build_failure(self):
+        # 测试名用虚构值并 patch 掉静态收集，真实测试改名或删除不会让这里失败。
+        known = ["FictionalRegisteredTest"]
         args = argparse.Namespace(list=False, name=["MisspelledTest"], target="0.111.0", run=True, match="")
-        with patch.object(dev.subprocess, "run") as run:
+        with patch.object(dev, "registered_tests", return_value=known), \
+             patch.object(dev.subprocess, "run") as run:
             with self.assertRaisesRegex(ValueError, "未知测试名"):
                 dev.focused_tests(args)
             run.assert_not_called()
-        args.name = ["HopperEscapeSurvivesTheNextNativeMoveRoll"]
-        with patch.object(dev.subprocess, "run", side_effect=subprocess.CalledProcessError(1, "dotnet")) as run:
+        args.name = ["FictionalRegisteredTest"]
+        with patch.object(dev, "registered_tests", return_value=known), \
+             patch.object(dev.subprocess, "run", side_effect=subprocess.CalledProcessError(1, "dotnet")) as run:
             with patch.object(Path, "is_file", return_value=True), redirect_stdout(io.StringIO()):
                 with self.assertRaises(subprocess.CalledProcessError):
                     dev.focused_tests(args)
             self.assertEqual(run.call_count, 1)
             command = run.call_args.args[0]
             self.assertTrue(command[1].endswith("run_tests.sh"))
-            self.assertEqual(command[2:5], ["--target", "0.111.0", "HopperEscapeSurvivesTheNextNativeMoveRoll"])
+            self.assertEqual(command[2:5], ["--target", "0.111.0", "FictionalRegisteredTest"])
 
     def make_bundle(self, root):
         dist = root / "dist"
