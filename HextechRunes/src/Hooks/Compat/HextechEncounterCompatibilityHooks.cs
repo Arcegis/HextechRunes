@@ -9,11 +9,6 @@ internal static class HextechEncounterCompatibilityHooks
 {
 	private const string EntomancerCastSfx = "event:/sfx/enemy/enemy_attacks/entomancer/entomancer_cast";
 
-	internal static bool ShouldRunOriginalEntomancerSpitMove(bool hasPersonalHive)
-	{
-		return hasPersonalHive;
-	}
-
 	internal static MethodInfo? TryResolveEntomancerSpitMove(Type entomancerType, bool warnIfMissing)
 	{
 		return TryGetMethod(
@@ -54,7 +49,7 @@ internal static class HextechEncounterCompatibilityHooks
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(Entomancer __instance, ref Task __result)
 		{
-			if (ShouldRunOriginalEntomancerSpitMove(__instance.Creature.HasPower<PersonalHivePower>()))
+			if (__instance.Creature.HasPower<PersonalHivePower>())
 			{
 				return true;
 			}

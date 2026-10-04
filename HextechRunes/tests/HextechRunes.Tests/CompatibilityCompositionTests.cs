@@ -37,12 +37,6 @@ internal static partial class Program
 			"0.110 build should not contain the Entomancer SpitMove compatibility patch");
 #else
 		MethodInfo? prefix = FindPatchMethod(typeof(HextechEncounterCompatibilityHooks), "EntomancerSpitMovePatch", "Prefix");
-		Expect(
-			!HextechEncounterCompatibilityHooks.ShouldRunOriginalEntomancerSpitMove(hasPersonalHive: false),
-			"0.107 missing-hive state should use the official 0.110 Strength fallback");
-		Expect(
-			HextechEncounterCompatibilityHooks.ShouldRunOriginalEntomancerSpitMove(hasPersonalHive: true),
-			"0.107 should preserve the original move when Personal Hive exists");
 		Expect(prefix != null, "0.107 build should contain the narrowly scoped SpitMove patch");
 		Equal<MethodInfo?>(
 			null,
