@@ -1422,12 +1422,15 @@ function rebuildDerivedTablesWithLock() {
   try {
     fd = fs.openSync(REBUILD_LOCK_FILE, "wx");
   } catch (error) {
-    if (error?.code === "EEXIST" && lockLooksStale(REBUILD_LOCK_FILE)) {
-      fs.rmSync(REBUILD_LOCK_FILE, { force: true });
-      fd = fs.openSync(REBUILD_LOCK_FILE, "wx");
-    } else {
-      return readDerivedSummary();
+    if (error?.code !== "EEXIST") {
+      throw error;
     }
+    if (!lockLooksStale(REBUILD_LOCK_FILE)) {
+      // 不能静默返回旧 summary:--rebuild-derived 会以 0 退出,运维看不出重建被跳过。
+      throw new Error(`summary rebuild lock is held (${REBUILD_LOCK_FILE}); another rebuild may be running. Remove the lock if it is left over.`);
+    }
+    fs.rmSync(REBUILD_LOCK_FILE, { force: true });
+    fd = fs.openSync(REBUILD_LOCK_FILE, "wx");
   }
   try {
     fs.writeFileSync(fd, `${process.pid}\n${new Date().toISOString()}\n`, "utf8");

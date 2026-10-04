@@ -157,3 +157,21 @@ test("增量快照写入、尾部回放和近期去重不触发全量重建", as
     await stopServer(server);
   }
 });
+
+test("重建锁被占用时 --rebuild-derived 以非零退出", () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-lock-"));
+  try {
+    fs.mkdirSync(path.join(dataDir, "derived"), { recursive: true });
+    fs.writeFileSync(path.join(dataDir, "run_results.jsonl"), "", "utf8");
+    fs.writeFileSync(path.join(dataDir, "derived", ".summary-rebuild.lock"), "12345\n", "utf8");
+
+    const rebuild = spawnSync(process.execPath, [SERVER_FILE, "--rebuild-derived"], {
+      env: { ...process.env, DATA_DIR: dataDir },
+      encoding: "utf8"
+    });
+    assert.equal(rebuild.status, 1, rebuild.stderr || rebuild.stdout);
+    assert.match(rebuild.stderr, /rebuild lock is held/);
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
