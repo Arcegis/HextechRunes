@@ -99,7 +99,7 @@ internal static class HextechMaxHpScaling
 
 		EnsureBaseInitialized(owner, primary, assumeAlreadyScaled: false);
 		int oldMax = owner.Creature.MaxHp;
-		await CreatureCmdCompat.SetMaxHp(owner.Creature, primary.BaseMaxHp);
+		await CreatureCmd.SetMaxHp(owner.Creature, primary.BaseMaxHp);
 		int delta = owner.Creature.MaxHp - oldMax;
 		if (delta > 0)
 		{

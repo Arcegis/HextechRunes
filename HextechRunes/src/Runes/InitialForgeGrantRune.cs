@@ -16,11 +16,6 @@ public abstract class InitialForgeGrantRune : HextechRelicBase
 
 	public sealed override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		// RelicCmd 已在调用 AfterObtained 前把本体放进背包。这个标记必须在第一次打开选择界面前落下，
 		// 让意外留下的存档能区分“拾取效果已完成”和“只有海克斯本体已入库”。
 		// 单机海克斯选择途中保存并退出不会留下这种存档（读档回滚到选择前重选）；这里只是联机或其他来源的兜底。
@@ -35,11 +30,6 @@ public abstract class InitialForgeGrantRune : HextechRelicBase
 		if (!SavedInitialForgeGrantPending)
 		{
 			return true;
-		}
-
-		if (Owner == null)
-		{
-			return false;
 		}
 
 		int total = Math.Max(0, InitialForgeCount);

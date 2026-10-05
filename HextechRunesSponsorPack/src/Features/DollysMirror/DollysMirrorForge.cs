@@ -23,11 +23,6 @@ public sealed class DollysMirrorForge : HextechForgeBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<RelicModel> categoryOptions = [];
 		if (Owner.Deck.Cards.Count > 0)
 		{
@@ -115,11 +110,6 @@ public sealed class DollysMirrorForge : HextechForgeBase
 
 	private IReadOnlyList<RelicModel> CreateRelicOptions()
 	{
-		if (Owner == null)
-		{
-			return [];
-		}
-
 		return Owner.Relics
 			.Where(IsNonHextechRelic)
 			.GroupBy(static relic => relic.CanonicalInstance?.Id ?? relic.Id)

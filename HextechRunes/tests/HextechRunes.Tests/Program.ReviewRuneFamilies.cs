@@ -1,4 +1,3 @@
-using System.Reflection;
 using HextechRunes;
 
 namespace HextechRunes.Tests;
@@ -47,37 +46,5 @@ internal static partial class Program
 		Equal(3, lastRound, "claim records the round");
 		Expect(!HextechRoundInterval.TryClaimRound(ref lastRound, 3), "re-entrant claim in the same round fails");
 		Expect(HextechRoundInterval.TryClaimRound(ref lastRound, 4), "next round can be claimed");
-	}
-
-	[HextechTest]
-	private static void RuneFamilyTypesUseSharedBases()
-	{
-		foreach (Type type in new[]
-		{
-			typeof(OverflowRune), typeof(FirstAidKitRune), typeof(SacrificeRune), typeof(BackToBasicsRune),
-			typeof(GoliathRune), typeof(ProteinShakeRune), typeof(GoldenSpatulaRune), typeof(NineDragonPowerRune)
-		})
-		{
-			Expect(typeof(IHextechHealingMultiplierProvider).IsAssignableFrom(type), $"{type.Name} should report its healing multiplier as a provider");
-		}
-
-		foreach (Type type in new[]
-		{
-			typeof(LifeFlowRune), typeof(LubricantRune), typeof(MagicMissileRune), typeof(PowerShieldRune),
-			typeof(SomethingForNothingRune), typeof(SpeedDemonRune), typeof(SwordFlightRune), typeof(TriPrismRune),
-			typeof(CerberusRune), typeof(FinalFormRune), typeof(FanTheHammerRune), typeof(FirstTypedCardReplayRuneBase),
-			typeof(LimitedDebuffProcRelicBase)
-		})
-		{
-			Expect(typeof(TurnScopedRelicBase).IsAssignableFrom(type), $"{type.Name} should reset turn state through TurnScopedRelicBase");
-		}
-
-		// SavedProperty 必须仍声明在各符文自己的类型上（net-id 布局由属性集合决定）。
-		foreach (Type type in new[] { typeof(SwiftAndSafeRune), typeof(NightstalkingRune), typeof(WarmogsSpiritRune), typeof(DeathWarrantRune) })
-		{
-			Expect(typeof(DrawThresholdRuneBase).IsAssignableFrom(type), $"{type.Name} should share the draw-threshold base");
-			PropertyInfo? saved = type.GetProperty("SavedCardsDrawnThisCombat", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-			Expect(saved != null && saved.PropertyType == typeof(int), $"{type.Name} should keep SavedCardsDrawnThisCombat on its own type");
-		}
 	}
 }

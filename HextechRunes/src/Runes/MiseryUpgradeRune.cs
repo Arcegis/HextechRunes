@@ -12,7 +12,6 @@ public sealed class MiseryUpgradeRune : CardUpgradeRuneBase<Misery>
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		if (_isDoublingDebuffs
-			|| Owner == null
 			|| cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not Misery
 			|| cardPlay.Target == null

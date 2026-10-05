@@ -8,8 +8,6 @@ public sealed class GoldrendRune : HextechRelicBase
 	// 夺金每次命中都发钱,多段攻击时金币音效连响;只在本次发钱的异步作用域内静音,别处的金币音效不受影响。
 	private static readonly AsyncLocal<bool> SuppressGoldSfx = new();
 
-	// 仅保留旧存档尚未领取的战后奖励（见 SettleLegacyCombatGold）；新的触发直接发放金币。
-	private int _countThisCombat;
 	private bool _grantingGold;
 	// 本回合是否已经响过一次金币音效;纯本地表现,不进存档、不参与联机。
 	private bool _goldSfxPlayedThisTurn;
@@ -19,31 +17,17 @@ public sealed class GoldrendRune : HextechRelicBase
 		new DynamicVar("CountPerHit", 10m)
 	];
 
+	// 旧版本存档兼容占位：原为待发放的战后金币计数，金币已改为触发时立即发放；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedCountThisCombat
 	{
-		get => _countThisCombat;
-		set
-		{
-			_countThisCombat = Math.Max(0, value);
-			InvokeDisplayAmountChanged();
-		}
+		get => 0;
+		set { }
 	}
-
-	public override bool ShowCounter => IsInLiveCombat && _countThisCombat > 0;
-
-	public override int DisplayAmount => !IsCanonical ? _countThisCombat : 0;
 
 	public override Task BeforeCombatStart()
 	{
 		_goldSfxPlayedThisTurn = false;
-		SettleLegacyCombatGold(null, ref _countThisCombat);
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		SettleLegacyCombatGold(room, ref _countThisCombat);
 		return Task.CompletedTask;
 	}
 

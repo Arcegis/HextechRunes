@@ -56,21 +56,12 @@ internal sealed partial class HextechMayhemModifier
 
 	internal HextechRunConfigurationSnapshot GetEffectiveRunConfigurationSnapshot()
 	{
-		HextechRunConfigurationSnapshot? snapshot = _runContext.RunConfigurationSnapshot;
-		if (snapshot != null)
-		{
-			return HextechRuneConfiguration.NormalizeSnapshot(snapshot with
-			{
-				PlayerHexCountsByAct = _runContext.PlayerHexCounts.Snapshot,
-				EnemyHexCountsByAct = _runContext.EnemyHexCounts.Snapshot,
-				DisabledPlayerRuneIds = PlayerRuneConfigDisabledIds.ToHashSet(StringComparer.Ordinal)
-			});
-		}
-
-		HextechRunConfigurationSnapshot local = HextechPlayerContextHelper.IsClientRun()
-			? HextechRuneConfiguration.GetDefaultSnapshot()
-			: HextechRuneConfiguration.GetSnapshot();
-		return HextechRuneConfiguration.NormalizeSnapshot(local with
+		// 没有本局快照时:客户端用默认值(不能用本地菜单值),其余读本地配置。数量与禁用表总以本局状态为准。
+		HextechRunConfigurationSnapshot baseSnapshot = _runContext.RunConfigurationSnapshot
+			?? (HextechPlayerContextHelper.IsClientRun()
+				? HextechRuneConfiguration.GetDefaultSnapshot()
+				: HextechRuneConfiguration.GetSnapshot());
+		return HextechRuneConfiguration.NormalizeSnapshot(baseSnapshot with
 		{
 			PlayerHexCountsByAct = _runContext.PlayerHexCounts.Snapshot,
 			EnemyHexCountsByAct = _runContext.EnemyHexCounts.Snapshot,

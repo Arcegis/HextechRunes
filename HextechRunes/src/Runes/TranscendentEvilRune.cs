@@ -17,7 +17,7 @@ public sealed class TranscendentEvilRune : HextechSharedCombatVictoryRuneBase
 
 	public override bool ShowCounter => true;
 
-	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
+	public override int DisplayAmount => _stacks;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -33,7 +33,7 @@ public sealed class TranscendentEvilRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -54,8 +54,7 @@ public sealed class TranscendentEvilRune : HextechSharedCombatVictoryRuneBase
 
 	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null
-			|| side != Owner.Creature.Side
+		if (side != Owner.Creature.Side
 			|| combatState.RoundNumber > 1
 			|| !IsDefectOwner
 			|| !HextechRoundInterval.TryClaimRound(ref _lastProcRound, combatState.RoundNumber))

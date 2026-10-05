@@ -54,34 +54,18 @@ public sealed partial class SolidTimeRune
 		return IsStoredAsPowerCard(canonical, stored);
 	}
 
-	private static CardModel? CreatePreviewCard(StoredCard stored)
+	// 以下两个入口只接收 DecodeStoredCards 的结果，那里已滤掉找不到模型或不是能力牌的记录。
+	private static CardModel CreatePreviewCard(StoredCard stored)
 	{
-		CardModel? canonical = TryGetCanonical(stored);
-		if (canonical == null || !IsStoredAsPowerCard(canonical, stored))
-		{
-			return null;
-		}
-
-		CardModel preview = canonical.ToMutable();
+		CardModel preview = TryGetCanonical(stored)!.ToMutable();
 		ApplyStoredCardState(preview, stored);
 		ApplyUpgradeLevels(preview, stored.Upgrades);
 		return preview;
 	}
 
-	private CardModel? CreateCombatCard(HextechCombatState combatState, StoredCard stored)
+	private CardModel CreateCombatCard(HextechCombatState combatState, StoredCard stored)
 	{
-		if (Owner == null)
-		{
-			return null;
-		}
-
-		CardModel? canonical = TryGetCanonical(stored);
-		if (canonical == null || !IsStoredAsPowerCard(canonical, stored))
-		{
-			return null;
-		}
-
-		CardModel card = combatState.CreateCard(canonical, Owner);
+		CardModel card = combatState.CreateCard(TryGetCanonical(stored)!, Owner);
 		ApplyStoredCardState(card, stored);
 		ApplyUpgradeLevels(card, stored.Upgrades);
 		SaveManager.Instance.MarkCardAsSeen(card);

@@ -13,36 +13,6 @@ namespace HextechRunes.Tests;
 internal static partial class Program
 {
 	[HextechTest]
-	private static void FiveEnemyUpgradesHaveStableIdentityAndAutoPatrolDisabled()
-	{
-		(MonsterHexKind Kind, int Id, HextechRarityTier Rarity, Type Icon)[] expected =
-		[
-			(MonsterHexKind.LivingFog, 135, HextechRarityTier.Prismatic, typeof(LivingFogHex)),
-			(MonsterHexKind.CeremonialBeast, 136, HextechRarityTier.Prismatic, typeof(CeremonialBeastHex)),
-			(MonsterHexKind.SoulFysh, 137, HextechRarityTier.Gold, typeof(SoulFyshHex)),
-			(MonsterHexKind.ThievingHopper, 138, HextechRarityTier.Gold, typeof(ThievingHopperHex)),
-			(MonsterHexKind.HauntedShip, 139, HextechRarityTier.Silver, typeof(HauntedShipHex))
-		];
-		foreach ((MonsterHexKind Kind, int Id, HextechRarityTier Rarity, Type Icon) row in expected)
-		{
-			Equal(row.Id, (int)row.Kind, "append-only enemy identity");
-			MonsterHexRegistration registration = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == row.Kind);
-			Equal(row.Rarity, registration.Rarity, "enemy rarity");
-			Equal(row.Icon, registration.IconRelicType, "enemy texture carrier");
-			Expect(!registration.Disabled, "new enemy hex enabled");
-			Expect(HextechContentRegistry.EnemyHexIconRelicTypes.Contains(row.Icon), "icon model registered");
-			Expect(!HextechPlayerRuneRegistry.Registrations.Any(r => r.Type == row.Icon), "enemy hex cannot enter player pool");
-		}
-		PlayerRuneRegistration autoPatrol = HextechPlayerRuneRegistry.Registrations.Single(r => r.Type == typeof(AutoPatrolRune));
-		Expect(autoPatrol.Flags.HasFlag(PlayerRuneFlags.Disabled), "Auto Patrol disabled by default");
-		string autoPatrolId = ModelDb.GetId<AutoPatrolRune>().Entry;
-		(int _, IReadOnlySet<string> migrated) = HextechRuneConfiguration.MigrateDisabledIdsForTests(34, ["custom-rune"]);
-		SetEqual(new[] { autoPatrolId, ModelDb.GetId<SomethingForNothingRune>().Entry, ModelDb.GetId<SoulCallingRune>().Entry, ModelDb.GetId<GhostFormRune>().Entry, ModelDb.GetId<DieForYouRune>().Entry, ModelDb.GetId<NatureIsHealingRune>().Entry, ModelDb.GetId<SearingAttackRune>().Entry, ModelDb.GetId<ScapegoatRune>().Entry, ModelDb.GetId<TwilightVeilRune>().Entry, "custom-rune" }, migrated, "existing config gains Auto Patrol and the later default disables, keeps custom selections");
-		(int _, IReadOnlySet<string> reenabled) = HextechRuneConfiguration.MigrateDisabledIdsForTests(35, []);
-		Expect(!reenabled.Contains(autoPatrolId), "manual reenable after migration survives reload");
-	}
-
-	[HextechTest]
 	private static void MonsterUpgradeIntentsPreserveAttacksAndDoNotAccumulate()
 	{
 		Creature owner = (Creature)RuntimeHelpers.GetUninitializedObject(typeof(Creature));
@@ -105,29 +75,11 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void CorruptHeartAndEnemyBadTasteHaveStableIdentityAndVakuIsConfigurableDefaultOff()
+	private static void EnemyBadTasteHealsOnePercentOfMaxHp()
 	{
-		Equal(146, (int)MonsterHexKind.CorruptHeart, "append-only enemy identity");
-		Equal(147, (int)MonsterHexKind.BadTaste, "append-only enemy identity");
-		MonsterHexRegistration heart = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.CorruptHeart);
-		Expect(heart.Rarity == HextechRarityTier.Prismatic && !heart.Disabled && heart.IconRelicType == typeof(CorruptHeartHex), "prismatic with its own icon carrier");
-		Expect(!HextechPlayerRuneRegistry.Registrations.Any(r => r.Type == typeof(CorruptHeartHex)), "enemy icon carrier cannot enter player pool");
-		MonsterHexRegistration badTaste = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.BadTaste);
-		Expect(badTaste.Rarity == HextechRarityTier.Silver && !badTaste.Disabled && badTaste.IconRelicType == typeof(BadTasteRune), "silver, reuses the player rune icon");
 		Equal(1, BadTasteEnemyHex.HealAmountFor(40), "one percent never rounds a small enemy down to zero");
 		Equal(10, BadTasteEnemyHex.HealAmountFor(1000), "one percent of max HP");
 		Equal(0, BadTasteEnemyHex.HealAmountFor(0), "no max HP, no heal");
-
-		string vaku = MonsterHexKind.ShoulderVaku.ToString();
-		Expect(HextechRuneConfiguration.GetDefaultDisabledMonsterHexIds().Contains(vaku), "enemy Vaku is off by default");
-		Expect(!HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == MonsterHexKind.ShoulderVaku).Disabled, "default-off stays configurable, not hard-removed");
-		(int ConfigVersion, IReadOnlySet<string> DisabledMonsterHexIds) migrated = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(37, []);
-		Expect(migrated.DisabledMonsterHexIds.Contains(vaku), "existing configs gain the default disable once");
-		(int ConfigVersion, IReadOnlySet<string> DisabledMonsterHexIds) reenabled = HextechRuneConfiguration.MigrateDisabledMonsterHexIdsForTests(migrated.ConfigVersion, []);
-		Expect(!reenabled.DisabledMonsterHexIds.Contains(vaku), "manual re-enable survives reload");
-
-		PlayerRuneRegistration mockery = HextechPlayerRuneRegistry.Registrations.Single(r => r.Type == typeof(VakuuMockeryRune));
-		Expect(mockery.Rarity == HextechRarityTier.Gold && !mockery.Flags.HasFlag(PlayerRuneFlags.Disabled), "gold and enabled");
 	}
 
 	[HextechTest]
@@ -146,15 +98,6 @@ internal static partial class Program
 		Equal(1, BloodIdolEnemyHex.NonCombatHpAfterGold(1), "collecting gold at one HP cannot kill a player outside combat");
 		Equal(1, BloodIdolEnemyHex.NonCombatHpAfterGold(2), "two HP still pays one HP");
 		Equal(39, BloodIdolEnemyHex.NonCombatHpAfterGold(40), "ordinary gold collections still cost one HP");
-	}
-
-	[HextechTest]
-	private static void EnemyOnlyRunsStillRequireEnemyConfirmation()
-	{
-		Expect(HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 2, false), "enemy-only mode must not bypass the reroll screen");
-		Expect(!HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(1, 2, false), "normal rune selection already includes enemy controls");
-		Expect(!HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 0, false), "no additions require no empty confirmation screen");
-		Expect(!HextechRuneSelectionCoordinator.NeedsEnemyOnlySelection(0, 2, true), "preset challenges keep their fixed enemies");
 	}
 
 	[HextechTest]

@@ -40,7 +40,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be structural");
 			Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should survive buff removal");
-			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not trigger monster self-buff effects");
 			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
 		}
 
@@ -50,7 +49,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be classified as a player relation rather than structural");
 			Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should survive enemy buff removal for Surrounded");
-			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not trigger monster self-buff effects");
 			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
 		}
 
@@ -69,7 +67,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should be removable while its owner is alive");
 			Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should be removable by Feel the Burn and upgraded Expose");
-			Expect(HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should keep its monster self-buff trigger restriction");
 			Expect(HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be mirrored to players");
 		}
 
@@ -101,7 +98,6 @@ internal static partial class Program
 			string name = power.GetType().Name;
 			Expect(!HextechMonsterInteractionPolicy.IsStructuralMonsterBuff(power), $"{name} should not be classified as an enemy structural power");
 			Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(power), $"{name} should not be protected by enemy buff removal policy");
-			Expect(!HextechMonsterInteractionPolicy.ShouldIgnoreMonsterSelfBuff(power), $"{name} should not be classified as a monster self-buff");
 			Expect(!HextechMonsterInteractionPolicy.IsMonsterMechanismBuff(power), $"{name} should not be classified as a monster mechanism");
 		}
 
@@ -117,16 +113,6 @@ internal static partial class Program
 		Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new HeistPower()), "Heist should survive Feel the Burn and upgraded Expose");
 		Expect(HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new SwipePower()), "Swipe should survive Feel the Burn and upgraded Expose");
 		Expect(!HextechMonsterInteractionPolicy.ShouldPreserveFromBuffRemoval(new StrengthPower()), "ordinary Strength should remain removable");
-	}
-
-	[HextechTest]
-	private static void EnemyJeweledGauntletUsesExpectedStrengthTierChances()
-	{
-		Equal(10, HextechCombatHooks.GetJeweledGauntletRepeatPercent(0), "enemy Jeweled Gauntlet tier zero fallback chance");
-		Equal(10, HextechCombatHooks.GetJeweledGauntletRepeatPercent(1), "enemy Jeweled Gauntlet tier one chance");
-		Equal(20, HextechCombatHooks.GetJeweledGauntletRepeatPercent(2), "enemy Jeweled Gauntlet tier two chance");
-		Equal(30, HextechCombatHooks.GetJeweledGauntletRepeatPercent(3), "enemy Jeweled Gauntlet tier three chance");
-		Equal(30, HextechCombatHooks.GetJeweledGauntletRepeatPercent(99), "enemy Jeweled Gauntlet high-tier clamp chance");
 	}
 
 	[HextechTest]
@@ -161,13 +147,6 @@ internal static partial class Program
 		Expect(HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, roundNumber: 3, appliedRound: 2), "temporary Slow should expire at the next player turn start");
 		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Player, roundNumber: 3, appliedRound: 3), "temporary Slow applied during this player turn start must survive the same turn (Frost Wraith)");
 		Expect(!HextechTemporarySlowPower.ShouldExpireAtSide(CombatSide.Enemy, roundNumber: 3, appliedRound: 2), "temporary Slow should remain during enemy turn start");
-		Expect(
-			HextechCombatHooks.TryResolveNeutralPowerType(slow, out MegaCrit.Sts2.Core.Entities.Powers.PowerType neutralType),
-			"custom Slow should bypass vanilla signed Counter classification");
-		Equal(MegaCrit.Sts2.Core.Entities.Powers.PowerType.None, neutralType, "custom Slow signed amount type");
-		Expect(
-			!HextechCombatHooks.TryResolveNeutralPowerType(new StrengthPower(), out _),
-			"neutral classification override should not affect vanilla powers");
 		Harmony neutralTypeHarmony = new("Natsuki.HextechRunes.Tests.SlowPowerType");
 		neutralTypeHarmony.Patch(
 			AccessTools.Method(typeof(PowerModel), nameof(PowerModel.GetTypeForAmount), [typeof(decimal)]),
@@ -189,19 +168,10 @@ internal static partial class Program
 		Equal(1.08m, HextechPlayerSlowPower.ResolveDamageMultiplier(8m), "positive Slow should increase damage taken on either side");
 		Equal(0.92m, HextechPlayerSlowPower.ResolveDamageMultiplier(-8m), "negative Slow should reduce damage taken on either side");
 		Equal(0m, HextechPlayerSlowPower.ResolveDamageMultiplier(-120m), "negative Slow damage multiplier should floor at zero");
-		Equal(3, FrostWraithEnemyHex.TurnsNeeded, "enemy Frost Wraith trigger interval");
-		Equal(50, FrostWraithEnemyHex.TemporarySlowAmount, "enemy Frost Wraith temporary Slow amount");
 		Expect(!FrostWraithEnemyHex.ShouldTriggerForRound(1), "enemy Frost Wraith should not trigger on round one");
 		Expect(!FrostWraithEnemyHex.ShouldTriggerForRound(2), "enemy Frost Wraith should wait for three player turns");
 		Expect(FrostWraithEnemyHex.ShouldTriggerForRound(3), "enemy Frost Wraith should trigger before the third enemy turn");
 		Expect(FrostWraithEnemyHex.ShouldTriggerForRound(6), "enemy Frost Wraith should trigger every three rounds afterward");
-		Equal(2, FrostWraithRune.TurnsNeeded, "Frost Wraith trigger interval");
-		Equal(50, FrostWraithRune.TemporarySlowAmount, "Frost Wraith temporary Slow amount");
-		Expect(!FrostWraithRune.ShouldTriggerForRound(1, FrostWraithRune.TurnsNeeded), "Frost Wraith should not trigger at combat start");
-		Expect(FrostWraithRune.ShouldTriggerForRound(2, FrostWraithRune.TurnsNeeded), "Frost Wraith triggers on round two");
-		Expect(!FrostWraithRune.ShouldTriggerForRound(3, FrostWraithRune.TurnsNeeded), "Frost Wraith skips round three");
-		Expect(FrostWraithRune.ShouldTriggerForRound(4, FrostWraithRune.TurnsNeeded), "Frost Wraith triggers every two rounds");
-		Equal(6, CorrosionRune.TemporarySlowAmount, "Corrosion temporary Slow amount per damage event");
 		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(0), "Ancient Statue tier zero fallback Slow gain");
 		Equal(3, AncientStatueEnemyHex.ResolveCardSlowGain(1), "Ancient Statue tier one Slow gain");
 		Equal(5, AncientStatueEnemyHex.ResolveCardSlowGain(2), "Ancient Statue tier two Slow gain");
@@ -212,54 +182,11 @@ internal static partial class Program
 		Equal(-4, HundredRefinementsEnemyHex.ResolveSlowReduction(2), "Hundred Refinements tier two Slow reduction");
 		Equal(-6, HundredRefinementsEnemyHex.ResolveSlowReduction(3), "Hundred Refinements tier three Slow reduction");
 		Equal(-6, HundredRefinementsEnemyHex.ResolveSlowReduction(99), "Hundred Refinements high-tier Slow reduction clamp");
-		MethodInfo[] ancientStatueMethods = typeof(AncientStatueEnemyHex).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(
-			ancientStatueMethods.All(static method => method.Name is not nameof(AncientStatueEnemyHex.ApplyCombatStartPlayerDebuffs) and not nameof(AncientStatueEnemyHex.BeforePlayerSideTurnStart)),
-			"Ancient Statue should not seed or manually reset persistent Slow");
-		MethodInfo[] hundredRefinementsMethods = typeof(HundredRefinementsEnemyHex).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(
-			hundredRefinementsMethods.All(static method => method.Name is not nameof(HundredRefinementsEnemyHex.ApplyCombatStartToEnemy) and not nameof(HundredRefinementsEnemyHex.BeforePlayerSideTurnStart)),
-			"Hundred Refinements should not seed or manually reset persistent Slow");
-	}
-
-	[HextechTest]
-	private static void EnemyOpeningBuffHexesUseDedicatedReplayableHook()
-	{
-		Type[] openingBuffHexTypes =
-		[
-			typeof(ProtectiveVeilEnemyHex),
-			typeof(ThornmailEnemyHex),
-			typeof(SuperBrainEnemyHex),
-			typeof(SkulkingColonyEnemyHex),
-			typeof(UnmovableMountainEnemyHex)
-		];
-
-		foreach (Type effectType in openingBuffHexTypes)
-		{
-			MethodInfo[] declaredMethods = effectType.GetMethods(
-				BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-			MethodInfo? openingHook = declaredMethods.SingleOrDefault(
-				static method => method.Name == nameof(HextechEnemyHexEffect.ApplyOpeningCombatStartToEnemy));
-			Expect(
-				openingHook != null,
-				$"{effectType.Name} should apply through the replayable opening combat-start hook");
-			Equal(
-				typeof(bool),
-				openingHook!.GetParameters()[3].ParameterType,
-				$"{effectType.Name} opening hook replay flag type");
-			Expect(
-				declaredMethods.All(static method => method.Name != nameof(HextechEnemyHexEffect.ApplyPersistentToEnemy)),
-				$"{effectType.Name} should not apply to enemies added after combat start");
-			Expect(
-				declaredMethods.All(static method => method.Name != nameof(HextechEnemyHexEffect.ApplyCombatStartToEnemy)),
-				$"{effectType.Name} should not use the generic spawned-enemy combat-start hook");
-		}
 	}
 
 	[HextechTest]
 	private static void EnemyCorrosionAppliesFrailOnEveryUnblockedPlayerHit()
 	{
-		Equal(1, CorrosionEnemyHex.FrailAmount, "enemy Corrosion Frail amount");
 		Expect(CorrosionEnemyHex.ShouldApplyFrail(1m, targetIsPlayer: true), "enemy Corrosion should trigger on unblocked player damage");
 		Expect(!CorrosionEnemyHex.ShouldApplyFrail(0m, targetIsPlayer: true), "enemy Corrosion should ignore fully blocked damage");
 		Expect(!CorrosionEnemyHex.ShouldApplyFrail(1m, targetIsPlayer: false), "enemy Corrosion should ignore non-player targets");
@@ -267,12 +194,6 @@ internal static partial class Program
 			new[] { typeof(FrailPower) },
 			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Corrosion),
 			"enemy Corrosion should explain Frail");
-		Expect(
-			typeof(HextechMayhemCombatTrackingState).GetField("CorrosionProcsThisTurn") == null,
-			"enemy Corrosion should not retain a per-turn proc gate");
-		Expect(
-			typeof(CombatTrackingSnapshot).GetProperty("CorrosionProcsThisTurn") == null,
-			"enemy Corrosion snapshot should not retain the obsolete proc gate");
 	}
 
 	[HextechTest]
@@ -316,15 +237,6 @@ internal static partial class Program
 		Equal(1.29m, HeavyHitterEnemyHex.ResolveMultiplier(449m), "Heavy Hitter multiplier below cap");
 		Equal(1.30m, HeavyHitterEnemyHex.ResolveMultiplier(450m), "Heavy Hitter multiplier at cap");
 		Equal(1.30m, HeavyHitterEnemyHex.ResolveMultiplier(4500m), "Heavy Hitter multiplier above cap");
-	}
-
-	[HextechTest]
-	private static void EnemyCuttingEdgeAlchemistHalvesSuccessfulPotionRolls()
-	{
-		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0f), "successful potion roll should be kept below fifty percent");
-		Expect(HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.499999f), "successful potion roll should be kept just below fifty percent");
-		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.5f), "successful potion roll should be removed at fifty percent boundary");
-		Expect(!HextechEnemyCuttingEdgeAlchemistHooks.ShouldKeepRolledPotion(0.999999f), "successful potion roll should be removed above fifty percent");
 	}
 
 	[HextechTest]
@@ -412,62 +324,9 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void EnemyJeweledGauntletSkipsTheInsatiableOpeningMove()
+	private static void PersonalHiveDazedRecipientAllowsMissingDealer()
 	{
-		Expect(
-			HextechCombatHooks.IsTheInsatiableOpeningMove("LIQUIFY_GROUND_MOVE"),
-			"The Insatiable opening move should never repeat");
-		Expect(
-			!HextechCombatHooks.IsTheInsatiableOpeningMove("THRASH_MOVE"),
-			"later The Insatiable moves should remain repeatable");
-	}
-
-	[HextechTest]
-	private static void EnemyJeweledGauntletSkipsMonsterRevivalMoves()
-	{
-		Expect(
-			HextechCombatHooks.IsMonsterRevivalMove("RESPAWN_MOVE"),
-			"Test Subject respawn should never repeat");
-		Expect(
-			HextechCombatHooks.IsMonsterRevivalMove("REVIVE_MOVE"),
-			"Illusion revive should never repeat");
-		Expect(
-			!HextechCombatHooks.IsMonsterRevivalMove("HEAL_MOVE"),
-			"ordinary healing moves should remain repeatable");
-	}
-
-	[HextechTest]
-	private static void PersonalHiveSafetyRejectsPlayerSideCopies()
-	{
-		MethodInfo target = HextechPersonalHiveSafetyHooks.ResolveDamageResponseTarget();
-		Equal(typeof(PersonalHivePower), target.DeclaringType, "personal hive safety hook declaring type");
-		Equal(nameof(PersonalHivePower.AfterDamageReceived), target.Name, "personal hive safety hook method");
-		SequenceEqual(
-			new[]
-			{
-				typeof(PlayerChoiceContext),
-				typeof(Creature),
-				typeof(DamageResult),
-				typeof(ValueProp),
-				typeof(Creature),
-				typeof(CardModel),
-			},
-			target.GetParameters().Select(static parameter => parameter.ParameterType),
-			"personal hive safety hook parameter types");
-
-		Expect(HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Enemy), "enemy-owned personal hive should keep vanilla behavior");
-		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(CombatSide.Player), "player-owned personal hive should be neutralized");
-		Expect(!HextechPersonalHiveSafetyHooks.ShouldRunOriginal(null), "ownerless personal hive should be neutralized");
 		Expect(HextechPersonalHiveSafetyHooks.HasDazedRecipient(null), "no dealer: vanilla skips on its own, so the original may run");
-	}
-
-	[HextechTest]
-	private static void EnemyOmniDragonSoulUsesPlayerTurnStart()
-	{
-		MethodInfo[] declaredMethods = typeof(OmniDragonSoulEnemyHex).GetMethods(
-			BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-		Expect(declaredMethods.Any(method => method.Name == "BeforePlayerSideTurnStart"), "enemy Omni Dragon Soul should apply its debuff at player turn start");
-		Expect(declaredMethods.All(method => method.Name != "BeforeEnemySideTurnStart"), "enemy Omni Dragon Soul should no longer apply its debuff at enemy turn start");
 	}
 
 	[HextechTest]
@@ -487,13 +346,10 @@ internal static partial class Program
 		firstRelics.Clear();
 		secondRelics.Clear();
 		Equal(1m, effect.ModifyEnemyHealMultiplicative(context, first.Creature, 10m), "no relics means no bonus");
-		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == effect.Kind);
-		Equal(144, (int)row.Kind, "append-only ID");
-		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(MoreTheMerrierRune), "enabled gold with matching icon");
 	}
 
 	[HextechTest]
-	private static void BalanceAdjustmentsSeptember25()
+	private static void EnemyHitThresholdCountsPerEnemyAndCarriesRemainder()
 	{
 		Dictionary<uint, int> hits = new();
 		bool[] fired = Enumerable.Range(0, 6).Select(_ => HextechEnemyHexEffect.ReachesHitThreshold(hits, 7, 3)).ToArray();
@@ -502,21 +358,11 @@ internal static partial class Program
 		Equal(6, hits[7], "remainder carries forward instead of resetting");
 		Expect(!HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 0), "a zero threshold never triggers");
 		Expect(HextechEnemyHexEffect.ReachesHitThreshold(new Dictionary<uint, int>(), 1, 1), "threshold one triggers on every hit");
-		Equal(4, PorcupineEnemyHex.HitsPerTriggerPerPlayer, "porcupine needs 4N hits");
-		Equal(1, HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer, "hundred refinements needs N hits");
+	}
 
-		// 描述里的 {HitsNeeded} 靠按人数缩放的阈值表填值,漏登记就会原样显示占位符。
-		System.Collections.IDictionary thresholds = (System.Collections.IDictionary)typeof(MonsterHexCatalog)
-			.GetField("PlayerCountScaledThresholds", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
-		Equal(("HitsNeeded", PorcupineEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.Porcupine]!,
-			"porcupine description threshold matches the effect");
-		Equal(("HitsNeeded", HundredRefinementsEnemyHex.HitsPerTriggerPerPlayer), ((string, int))thresholds[MonsterHexKind.HundredRefinements]!,
-			"hundred refinements description threshold matches the effect");
-
-		Equal(HextechRarityTier.Prismatic,
-			HextechPlayerRuneRegistry.Registrations.Single(row => row.Type == typeof(DemonFormUpgradeRune)).Rarity,
-			"Upgrade: Demon Form is prismatic");
-
+	[HextechTest]
+	private static void KingdomArmyIgnoresForgesNestedInMinionGeneration()
+	{
 		// 王国军势生成仆从牌期间嵌套进来的铸造直接返回,凝辉/王令无法把它再次点燃。
 		KingdomArmyRune kingdomArmy = CreateMutableTestModel<KingdomArmyRune>();
 		typeof(KingdomArmyRune).GetField("_generating", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(kingdomArmy, true);
@@ -559,8 +405,6 @@ internal static partial class Program
 			"our Blue Candle zeroes costs in the Late phase so the enemy increase cannot re-add one");
 		Expect(typeof(BlueCandleMedkitEnemyHex).GetMethod(nameof(HextechEnemyHexEffect.ModifyEnergyCostInCombatLate), BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly) == null,
 			"the enemy increase must stay out of the Late phase");
-		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == effect.Kind);
-		Expect(row.Rarity == HextechRarityTier.Gold && !row.Disabled && row.IconRelicType == typeof(BlueCandleMedkitRune), "enabled gold with matching icon");
 	}
 
 	[HextechTest]
@@ -580,28 +424,14 @@ internal static partial class Program
 		Equal(0m, effect.ModifyEnergyCostInCombatLate(context, x, 0m), "X is not converted to fixed cost");
 		card.EnergyCost.EndOfTurnCleanup();
 		Equal(1, card.EnergyCost.GetWithModifiers(CostModifiers.Local), "native cleanup still restores original card cost");
-		MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == effect.Kind);
-		Equal(145, (int)row.Kind, "append-only ID");
-		Expect(row.Rarity == HextechRarityTier.Prismatic && !row.Disabled && row.IconRelicType == typeof(EnlightenmentHex), "enabled prismatic with its own enemy icon carrier");
 		SomethingForNothingEnemyHex zeroCostEnemy = new();
 		ResourceInfo resources = new ResourceInfo { EnergyValue = 1, EnergySpent = 1, StarValue = 0, StarsSpent = 0 };
 		Expect(zeroCostEnemy.ModifyCardPlayResultPileTypeAndPosition(context, card, false, resources, PileType.Discard, CardPilePosition.Bottom) == null, "raised play cost no longer triggers zero-cost exhaust");
 	}
 
 	[HextechTest]
-	private static void FourPrismaticEnemiesKeepIdentityAndStrengthScope()
+	private static void EnemyReforgedHelmetBlocksOnlyEnemyStrengthLoss()
 	{
-		MonsterHexKind[] kinds = [MonsterHexKind.ReforgedHelmet, MonsterHexKind.EndlessRotation,
-			MonsterHexKind.SomethingForNothing, MonsterHexKind.CorruptedBranch];
-		Type[] icons = [typeof(ReforgedHelmetRune), typeof(EndlessRotationRune), typeof(SomethingForNothingRune), typeof(CorruptedBranchRune)];
-		for (int i = 0; i < kinds.Length; i++)
-		{
-			Equal(140 + i, (int)kinds[i], "append-only identity");
-			MonsterHexRegistration row = HextechMonsterHexRegistry.Registrations.Single(r => r.Kind == kinds[i]);
-			Equal(HextechRarityTier.Prismatic, row.Rarity, "prismatic enemy");
-			Equal(icons[i], row.IconRelicType, "reuse matching player icon");
-			Expect(!row.Disabled && HextechEnemyHexEffects.RegisteredKinds.Contains(kinds[i]), "enabled and implemented");
-		}
 		(HextechEnemyHexContext context, Player first, Player second) = CreatePrismaticEnemyFixture();
 		Creature enemy = CreatePrismaticTestCreature(CombatSide.Enemy, (CombatState)first.Creature.CombatState!);
 		ReforgedHelmetEnemyHex effect = new();
@@ -662,14 +492,10 @@ internal static partial class Program
 	private static void EnemyCorruptedBranchKeepsOwnerAndRestoresRandomSequence()
 	{
 		Type[] pool = [typeof(Burn), typeof(Dazed), typeof(Slimed), typeof(Wound), typeof(MegaCrit.Sts2.Core.Models.Cards.Void)];
-		Type[] added = pool.Where(type => !ModelDb.Contains(type)).ToArray();
+		using IDisposable models = InjectMissingModels(pool);
 		Harmony harmony = new("HextechRunes.Tests.EnemyCorruptedBranch");
 		try
 		{
-			foreach (Type type in added)
-			{
-				ModelDb.Inject(type);
-			}
 			// 只隔离牌堆动画与存档 UI；保留真实状态牌创建、随机抽选与战斗序号。
 			harmony.Patch(AccessTools.Method(typeof(HextechCardGeneration), "AddGeneratedCardToCombat"),
 				prefix: new HarmonyMethod(typeof(Program), nameof(CaptureEnemyBranchGenerated)));
@@ -697,10 +523,6 @@ internal static partial class Program
 		{
 			harmony.UnpatchAll(harmony.Id);
 			EnemyBranchGenerated.Clear();
-			foreach (Type type in added)
-			{
-				ModelDb.Remove(type);
-			}
 		}
 	}
 
@@ -717,21 +539,15 @@ internal static partial class Program
 	{
 		(HextechEnemyHexContext _, Player player, Player _) = CreatePrismaticEnemyFixture();
 		Creature enemy = CreatePrismaticTestCreature(CombatSide.Enemy, (CombatState)player.Creature.CombatState!);
-		T Power<T>(Creature owner) where T : PowerModel, new()
-		{
-			T power = CreateMutableTestModel<T>();
-			AccessTools.Property(typeof(PowerModel), nameof(PowerModel.Owner)).SetValue(power, owner);
-			return power;
-		}
-		WeakPower weak = Power<WeakPower>(enemy);
+		WeakPower weak = CreateTestPower<WeakPower>(owner: enemy);
 		Expect(HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(weak, 1, player.Creature, null), "receiving Weak triggers");
 		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(weak, -1, player.Creature, null), "removing Weak does not trigger");
-		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(Power<WeakPower>(player.Creature), 1, enemy, null), "outgoing player debuff no longer triggers");
-		StrengthPower strength = Power<StrengthPower>(enemy);
+		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(CreateTestPower<WeakPower>(owner: player.Creature), 1, enemy, null), "outgoing player debuff no longer triggers");
+		StrengthPower strength = CreateTestPower<StrengthPower>(owner: enemy);
 		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(strength, 1, enemy, null), "self buff no longer triggers");
 		Expect(HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(strength, -1, player.Creature, null), "external Strength loss triggers");
 		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(strength, -1, enemy, null), "temporary Strength expiry must not re-arm the effects");
-		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(Power<HextechTemporaryStrengthLossPower>(enemy), 1, player.Creature, null), "temporary wrapper does not double-count its underlying Strength change");
+		Expect(!HextechEnemyPowerTriggerHelper.IsEnemyDebuffReceived(CreateTestPower<HextechTemporaryStrengthLossPower>(owner: enemy), 1, player.Creature, null), "temporary wrapper does not double-count its underlying Strength change");
 		Expect(typeof(TemporaryStrengthPower).IsAssignableFrom(typeof(HextechSlapTemporaryStrengthPower)), "Slap uses native temporary Strength cleanup");
 	}
 

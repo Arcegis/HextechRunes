@@ -24,7 +24,7 @@ public sealed class LingeringMightRune : HextechRelicBase
 	// AfterCombatEnd 两端确定性触发 + 稳定盐,联机无需额外同步。
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -65,7 +65,7 @@ public sealed class LingeringMightRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || _pendingBuff.Length == 0)
+		if (_pendingBuff.Length == 0)
 		{
 			return;
 		}

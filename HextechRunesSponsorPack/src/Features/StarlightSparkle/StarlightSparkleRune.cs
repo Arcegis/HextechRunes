@@ -40,19 +40,13 @@ public sealed class StarlightSparkleRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		Flash();
 		await RelicBundleGrantHelper.GrantRelics(Owner, RelicTypes);
 	}
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| Owner.RunState.CurrentRoom is not CombatRoom { RoomType: RoomType.Elite })
 		{
 			return;

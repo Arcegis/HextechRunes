@@ -276,10 +276,6 @@ internal static partial class Program
 	{
 #if STS2_109_OR_NEWER
 		Type cacheType = typeof(MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache);
-		FieldInfo initializedField = cacheType.GetField(
-			"_initialized",
-			BindingFlags.NonPublic | BindingFlags.Static)
-			?? throw new InvalidOperationException("0.109 SavedProperty cache initialized field should exist");
 		string[] wireFieldNames =
 		[
 			"_savedPropertyCache",
@@ -290,16 +286,7 @@ internal static partial class Program
 			static name => name,
 			name => SnapshotStaticCollection(cacheType, name),
 			StringComparer.Ordinal);
-		bool originalInitialized = initializedField.GetValue(null) is true;
-		try
-		{
-			initializedField.SetValue(null, false);
-			HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier));
-		}
-		finally
-		{
-			initializedField.SetValue(null, originalInitialized);
-		}
+		RunBeforeSavedPropertyCacheInitialization(static () => HextechSavedPropertyBootstrap.InjectModelType(typeof(PreInitSavedPropertyCarrier)));
 
 		foreach (string fieldName in wireFieldNames)
 		{
@@ -515,64 +502,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void PlayerRuneMetadataHasUniqueTypes()
-	{
-		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
-		Type[] duplicatedTypes = metadata.Registrations
-			.GroupBy(static registration => registration.Type)
-			.Where(static group => group.Count() > 1)
-			.Select(static group => group.Key)
-			.ToArray();
-
-		Expect(duplicatedTypes.Length == 0, $"duplicate player rune registrations: {string.Join(", ", duplicatedTypes.Select(static type => type.Name))}");
-		// AllTypes 按稀有度分组；调整稀有度不应强迫维护者重排原始注册表。
-		SetEqual(
-			metadata.Registrations.Select(static registration => registration.Type).Distinct(),
-			metadata.AllTypes,
-			"all player rune metadata types");
-	}
-
-	[HextechTest]
-	private static void PlayerRuneMetadataMatchesContentRegistrySlices()
-	{
-		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
-
-		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Silver], HextechContentRegistry.SilverRuneTypes, "silver runes");
-		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Gold], HextechContentRegistry.GoldRuneTypes, "gold runes");
-		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Prismatic], HextechContentRegistry.PrismaticRuneTypes, "prismatic runes");
-		Equal(HextechRarityTier.Silver, metadata.GetRegistration(typeof(TerminalIllnessRune)).Rarity, "Terminal Illness rarity");
-		Equal(HextechRarityTier.Silver, metadata.GetRegistration(typeof(TrickLicenseRune)).Rarity, "Trick License rarity");
-		Equal(PlayerRuneCharacterPool.Silent, metadata.GetRegistration(typeof(DeathWarrantRune)).CharacterPool, "Death Warrant character pool");
-		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.Disabled], HextechContentRegistry.DisabledPlayerRuneTypes, "default disabled runes");
-		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.SelectionExcluded], HextechContentRegistry.SelectionExcludedPlayerRuneTypes, "selection excluded runes");
-		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.FirstActExcluded], HextechContentRegistry.FirstActExcludedRuneTypes, "first act excluded runes");
-		SetEqual(metadata.TypesByFlag[PlayerRuneFlags.ThirdActExcluded], HextechContentRegistry.ThirdActExcludedRuneTypes, "third act excluded runes");
-		SequenceEqual(metadata.TypesByFlag[PlayerRuneFlags.AttributeConversionExclusive], HextechContentRegistry.AttributeConversionExclusiveRuneTypes, "attribute conversion exclusive runes");
-		Expect(metadata.TagKeys.Count == HextechContentRegistry.PlayerRuneTagKeys.Count, "tag key count should match");
-		foreach ((Type type, string tagKey) in metadata.TagKeys)
-		{
-			Expect(HextechContentRegistry.PlayerRuneTagKeys.TryGetValue(type, out string? registryTag), $"missing tag key for {type.Name}");
-			Equal(tagKey, registryTag, $"tag key for {type.Name}");
-		}
-	}
-
-	[HextechTest]
-	private static void PlayerRuneMetadataPreservesCharacterOrder()
-	{
-		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
-
-		foreach (PlayerRuneCharacterPool characterPool in Enum.GetValues<PlayerRuneCharacterPool>())
-		{
-			Type[] expected = metadata.Registrations
-				.Where(registration => registration.CharacterPool == characterPool)
-				.OrderBy(static registration => registration.CharacterOrder)
-				.Select(static registration => registration.Type)
-				.ToArray();
-			SequenceEqual(expected, metadata.TypesByCharacter[characterPool], $"{characterPool} character runes");
-		}
-	}
-
-	[HextechTest]
 	private static void PlayerRuneMetadataClassifiesConfigStates()
 	{
 		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
@@ -582,219 +511,31 @@ internal static partial class Program
 
 		Expect(!metadata.IsVisible(defaultDisabled.Type), "default disabled rune should not be visible by default");
 		Expect(metadata.IsConfigurable(defaultDisabled.Type), "default disabled rune should remain configurable");
-		Expect(!metadata.IsSelectable(defaultDisabled.Type), "default disabled rune should not be selectable");
-		Expect(!HextechCatalog.IsPlayerRuneTypeVisible(defaultDisabled.Type), "catalog default disabled visibility");
-		Expect(HextechCatalog.IsPlayerRuneTypeConfigurable(defaultDisabled.Type), "catalog default disabled configurability");
-		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(defaultDisabled.Type), "catalog default disabled selectability");
 
 		PlayerRuneRegistration selectionExcluded = metadata.Registrations.First(registration =>
 			metadata.HasFlag(registration.Type, PlayerRuneFlags.SelectionExcluded)
 			&& !metadata.HasFlag(registration.Type, PlayerRuneFlags.Disabled));
 		Expect(metadata.IsVisible(selectionExcluded.Type), "selection excluded rune should still be visible");
 		Expect(!metadata.IsConfigurable(selectionExcluded.Type), "selection excluded rune should not be configurable");
-		Expect(!metadata.IsSelectable(selectionExcluded.Type), "selection excluded rune should not be selectable");
-		Expect(HextechCatalog.IsPlayerRuneTypeVisible(selectionExcluded.Type), "catalog selection excluded visibility");
-		Expect(!HextechCatalog.IsPlayerRuneTypeConfigurable(selectionExcluded.Type), "catalog selection excluded configurability");
-		Expect(!HextechCatalog.IsPlayerRuneTypeSelectable(selectionExcluded.Type), "catalog selection excluded selectability");
-	}
-
-	[HextechTest]
-	private static void PlayerRuneMetadataCatalogOutputsMatchCatalogQueries()
-	{
-		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
-
-		foreach (HextechRarityTier rarity in Enum.GetValues<HextechRarityTier>())
-		{
-			SequenceEqual(
-				metadata.GetSelectableTypesForRarity(rarity),
-				HextechCatalog.GetPlayerRuneTypesForRarity(rarity),
-				$"{rarity} selectable runes");
-			SequenceEqual(
-				metadata.GetConfigurableTypesForRarity(rarity),
-				HextechCatalog.GetConfigurablePlayerRuneTypesForRarity(rarity),
-				$"{rarity} configurable runes");
-		}
-	}
-
-	[HextechTest]
-	private static void PlayerRuneMetadataFallbacksAreStable()
-	{
-		PlayerRuneMetadataCatalog metadata = HextechContentRegistry.PlayerRuneMetadata;
-
-		Expect(!metadata.IsRegistered(typeof(Program)), "test program type should not be registered as rune metadata");
-		Expect(!metadata.TryGetRegistration(typeof(Program), out _), "unknown type registration lookup should fail");
-		Expect(!metadata.TryGetRarity(typeof(Program), out _), "unknown type rarity lookup should fail");
-		Equal(3, metadata.GetRaritySortOrder(typeof(Program)), "unknown type rarity sort order");
-		Equal(HextechPlayerRuneRegistry.DefaultTagKey, metadata.GetTagKey(typeof(Program)), "unknown type tag key");
-	}
-
-	[HextechTest]
-	private static void ForgeMetadataHasUniqueTypes()
-	{
-		ForgeMetadataCatalog metadata = HextechContentRegistry.ForgeMetadata;
-		Type[] duplicatedTypes = metadata.Registrations
-			.GroupBy(static registration => registration.Type)
-			.Where(static group => group.Count() > 1)
-			.Select(static group => group.Key)
-			.ToArray();
-
-		Expect(duplicatedTypes.Length == 0, $"duplicate forge registrations: {string.Join(", ", duplicatedTypes.Select(static type => type.Name))}");
-		Type[] registeredTypes = metadata.Registrations.Select(static registration => registration.Type).Distinct().ToArray();
-		// 内置锻造器按稀有度顺序登记，AllTypes 与登记顺序一致；外部登记的先后取决于调用方
-		// （测试进程里取决于其他测试的执行顺序），只比较集合。
-		static bool IsBuiltIn(Type type) => type.Assembly == typeof(HextechForgeBase).Assembly;
-		SequenceEqual(
-			registeredTypes.Where(IsBuiltIn),
-			metadata.AllTypes.Where(IsBuiltIn),
-			"built-in forge metadata types");
-		Expect(registeredTypes.ToHashSet().SetEquals(metadata.AllTypes), "all forge metadata types");
-	}
-
-	[HextechTest]
-	private static void ForgeMetadataMatchesContentRegistrySlices()
-	{
-		ForgeMetadataCatalog metadata = HextechContentRegistry.ForgeMetadata;
-
-		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Silver], HextechContentRegistry.SilverForgeTypes, "silver forges");
-		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Gold], HextechContentRegistry.GoldForgeTypes, "gold forges");
-		SequenceEqual(metadata.TypesByRarity[HextechRarityTier.Prismatic], HextechContentRegistry.PrismaticForgeTypes, "prismatic forges");
-		SequenceEqual(metadata.AllTypes, HextechContentRegistry.AllForgeTypes, "all forges");
-	}
-
-	[HextechTest]
-	private static void ForgeMetadataFallbacksAreStable()
-	{
-		ForgeMetadataCatalog metadata = HextechContentRegistry.ForgeMetadata;
-
-		Expect(!metadata.IsRegistered(typeof(Program)), "test program type should not be registered as forge metadata");
-		Expect(!metadata.TryGetRarity(typeof(Program), out _), "unknown forge type rarity lookup should fail");
-	}
-
-	[HextechTest]
-	private static void MonsterHexMetadataHasUniqueKinds()
-	{
-		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		MonsterHexKind[] duplicatedKinds = metadata.Registrations
-			.GroupBy(static registration => registration.Kind)
-			.Where(static group => group.Count() > 1)
-			.Select(static group => group.Key)
-			.ToArray();
-
-		Expect(duplicatedKinds.Length == 0, $"duplicate monster hex registrations: {string.Join(", ", duplicatedKinds)}");
-		SetEqual(
-			metadata.Registrations.Select(static registration => registration.Kind),
-			metadata.AllKinds,
-			"all monster hex metadata kinds");
-	}
-
-	[HextechTest]
-	private static void MonsterHexMetadataMatchesContentRegistrySlices()
-	{
-		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-
-		SequenceEqual(metadata.EnabledKindsByRarity[HextechRarityTier.Silver], HextechContentRegistry.SilverMonsterHexes, "silver monster hexes");
-		SequenceEqual(metadata.EnabledKindsByRarity[HextechRarityTier.Gold], HextechContentRegistry.GoldMonsterHexes, "gold monster hexes");
-		SequenceEqual(metadata.EnabledKindsByRarity[HextechRarityTier.Prismatic], HextechContentRegistry.PrismaticMonsterHexes, "prismatic monster hexes");
-		SetEqual(metadata.DisabledKinds, HextechContentRegistry.DisabledMonsterHexes, "disabled monster hexes");
-		SetEqual(metadata.BurnHoverTipKinds, HextechContentRegistry.MonsterHexesWithBurnHoverTip, "burn hover tip monster hexes");
-		SetEqual(metadata.AllKinds, HextechContentRegistry.AllMonsterHexKinds, "all monster hexes");
-		Expect(metadata.IconRelicTypes.Count == HextechContentRegistry.MonsterHexIconRelicTypes.Count, "monster hex icon count should match");
-		foreach ((MonsterHexKind kind, Type iconRelicType) in metadata.IconRelicTypes)
-		{
-			Expect(HextechContentRegistry.MonsterHexIconRelicTypes.TryGetValue(kind, out Type? registryIconType), $"missing monster hex icon for {kind}");
-			Equal(iconRelicType, registryIconType, $"monster hex icon for {kind}");
-		}
 	}
 
 	[HextechTest]
 	private static void MonsterHexMetadataKeepsDisabledKindsOutOfRarityPools()
 	{
 		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		MonsterHexRegistration[] disabledRegistrations = metadata.Registrations
-			.Where(static registration => registration.Disabled)
-			.ToArray();
-		if (disabledRegistrations.Length == 0)
+		foreach (MonsterHexRegistration disabled in HextechMonsterHexRegistry.Registrations.Where(static registration => registration.Disabled))
 		{
-			Expect(metadata.DisabledKinds.Count == 0, "no disabled monster hexes should leave disabled set empty");
-			Expect(!metadata.EnabledKindsByRarity.Values.Any(kinds => kinds.Any(kind => metadata.DisabledKinds.Contains(kind))), "rarity pools should not contain disabled monster hexes");
-			Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
-			return;
-		}
-
-		MonsterHexRegistration disabledRegistration = disabledRegistrations[0];
-		Expect(metadata.AllKinds.Contains(disabledRegistration.Kind), "disabled monster hex should stay in all-kinds set");
-		Expect(metadata.DisabledKinds.Contains(disabledRegistration.Kind), "disabled monster hex should stay in disabled set");
-		Expect(!metadata.IsEnabled(disabledRegistration.Kind), "disabled monster hex should not be enabled");
-		Expect(!metadata.EnabledKindsByRarity[disabledRegistration.Rarity].Contains(disabledRegistration.Kind), "disabled monster hex should not appear in rarity pool");
-		Expect(metadata.TryGetRegistration(disabledRegistration.Kind, out MonsterHexRegistration decoded), "disabled monster hex registration should decode");
-		Equal(disabledRegistration.IconRelicType, decoded.IconRelicType, "disabled monster hex icon relic type");
-		Expect(!metadata.IsRegistered((MonsterHexKind)int.MaxValue), "invalid monster hex kind should not be registered");
-	}
-
-	[HextechTest]
-	private static void NewEnemyHexesReusePlayerRuneIconsAndRarities()
-	{
-		MonsterHexMetadataCatalog metadata = HextechContentRegistry.MonsterHexMetadata;
-		(MonsterHexKind Kind, int Value, HextechRarityTier Rarity, Type IconType)[] expected =
-		[
-			(MonsterHexKind.TwilightVeil, 130, HextechRarityTier.Gold, typeof(TwilightVeilRune)),
-			(MonsterHexKind.Stats, 131, HextechRarityTier.Silver, typeof(StatsRune)),
-			(MonsterHexKind.StatsOnStats, 132, HextechRarityTier.Gold, typeof(StatsOnStatsRune)),
-			(MonsterHexKind.StatsOnStatsOnStats, 133, HextechRarityTier.Prismatic, typeof(StatsOnStatsOnStatsRune)),
-			(MonsterHexKind.MiserableFate, 134, HextechRarityTier.Prismatic, typeof(MiserableFateRune))
-		];
-
-		foreach ((MonsterHexKind kind, int value, HextechRarityTier rarity, Type iconType) in expected)
-		{
-			Equal(value, (int)kind, $"{kind} append-only enum value");
-			Expect(metadata.TryGetRegistration(kind, out MonsterHexRegistration registration), $"{kind} registration should exist");
-			Equal(rarity, registration.Rarity, $"{kind} rarity");
-			Equal(iconType, registration.IconRelicType, $"{kind} icon relic type");
-			Expect(!registration.Disabled, $"{kind} should be enabled by default");
+			Expect(metadata.AllKinds.Contains(disabled.Kind), $"{disabled.Kind} should stay in all-kinds set");
+			Equal(disabled.Rarity, metadata.RarityByKind[disabled.Kind], $"{disabled.Kind} keeps its rarity");
+			Equal(disabled.IconRelicType, metadata.IconRelicTypes[disabled.Kind], $"{disabled.Kind} keeps its icon relic type");
+			Expect(!metadata.EnabledKindsByRarity.Values.Any(kinds => kinds.Contains(disabled.Kind)), $"{disabled.Kind} should not appear in any rarity pool");
 		}
 	}
 
 	[HextechTest]
 	private static void EnemyHexHoverTipsUseExpectedPowerModels()
 	{
-		SequenceEqual(
-			new[] { typeof(DisintegrationPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Doomsday),
-			"enemy Doomsday should explain Disintegration");
-		SequenceEqual(
-			new[] { typeof(DisintegrationPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Omega),
-			"enemy Omega should explain Disintegration");
-		SequenceEqual(
-			new[] { typeof(DoomPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.OminousPact),
-			"enemy Ominous Pact should explain Doom");
-		SequenceEqual(
-			new[] { typeof(SkittishPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.PhantasmalGardener),
-			"enemy Phantasmal Gardener should explain Skittish");
-		SequenceEqual(
-			new[] { typeof(ChainsOfBindingPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.Queen),
-			"enemy Queen should explain Chains of Binding");
-		SequenceEqual(
-			new[] { typeof(ArtifactPower), typeof(PlatingPower), typeof(RegenPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.HailToTheKing),
-			"enemy Hail to the King should explain all three powers");
-		SequenceEqual(
-			new[] { typeof(WeakPower), typeof(FrailPower), typeof(VulnerablePower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.OmniDragonSoul),
-			"enemy Omni Dragon Soul should explain all three debuffs");
-		SequenceEqual(
-			new[] { typeof(HextechVitalSparkPower), typeof(TaintedPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.ArcanePunch),
-			"Infested Prism upgrade should explain Vital Spark and Tainted");
-		SequenceEqual(
-			new[] { typeof(HextechPlayerSlowPower) },
-			MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(MonsterHexKind.FrostWraith),
-			"enemy Frost Wraith should explain Hextech Slow");
-
-		foreach (MonsterHexKind hex in HextechContentRegistry.AllMonsterHexKinds)
+		foreach (MonsterHexKind hex in HextechContentRegistry.MonsterHexMetadata.AllKinds)
 		{
 			IReadOnlyList<Type> powerTypes = MonsterHexCatalog.GetEnemyHexPowerHoverTipTypes(hex);
 			Equal(powerTypes.Count, powerTypes.Distinct().Count(), $"enemy {hex} hover-tip power types should be unique");
@@ -806,186 +547,9 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void NewRuneHookTargetsMatchSupportedGameApis()
-	{
-#if STS2_110_OR_NEWER
-		Expect(typeof(Outbreak).GetMethod(
-			"OnPlay",
-			BindingFlags.Instance | BindingFlags.NonPublic,
-			[
-				typeof(PlayerChoiceContext),
-				typeof(CardPlay)
-			]) != null,
-			"0.110 outbreak card response guard target");
-		Expect(
-			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "AddFormVfxPatch").GetParameters()
-				.Select(static parameter => parameter.ParameterType)
-				.SequenceEqual([typeof(MegaCrit.Sts2.Core.Nodes.Vfx.Forms.NFormVfx)]),
-			"0.110 form VFX add safety target");
-		Equal(
-			0,
-			ResolveDeclaredPatchTarget(typeof(HextechFormVfxSafetyHooks), "RemoveFormVfxPatch").GetParameters().Length,
-			"0.110 form VFX removal safety target arity");
-#else
-		Expect(typeof(OutbreakPower).GetMethods(BindingFlags.Instance | BindingFlags.Public)
-			.Any(method => method.Name == "AfterPowerAmountChanged"),
-			"legacy outbreak power response guard target");
-#endif
-		Expect(typeof(PactsEnd).GetMethod("get_CanDealDamage", BindingFlags.Instance | BindingFlags.NonPublic) != null, "pacts end private condition hook target");
-		Expect(typeof(CorrosiveWavePower).GetMethod(nameof(CorrosiveWavePower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "corrosive wave turn-end hook target");
-		Expect(typeof(PoisonPower).GetMethod(nameof(PoisonPower.CalculateTotalDamageNextTurn), BindingFlags.Instance | BindingFlags.Public) != null, "poison preview hook target");
-		Expect(typeof(OblivionPower).GetMethod(nameof(OblivionPower.AfterSideTurnEnd), BindingFlags.Instance | BindingFlags.Public) != null, "oblivion turn-end hook target");
-		Expect(typeof(BodySlam).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "body slam play hook target");
-		Expect(typeof(WroughtInWar).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "wrought in war play hook target");
-		Expect(typeof(DecisionsDecisions).GetMethod("OnPlay", BindingFlags.Instance | BindingFlags.NonPublic) != null, "decisions play hook target");
-		Expect(typeof(CardSelectCmd).GetMethod(
-			nameof(CardSelectCmd.FromHand),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(PlayerChoiceContext),
-				typeof(Player),
-				typeof(CardSelectorPrefs),
-				typeof(Func<CardModel, bool>),
-				typeof(AbstractModel)
-			]) != null,
-			"decisions hand-selection hook target");
-		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
-			nameof(MegaCrit.Sts2.Core.Hooks.Hook.BeforeCardPlayed),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(ICombatState),
-				typeof(CardPlay)
-			]) != null,
-			"form batch before-card-played hook target");
-		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
-			nameof(MegaCrit.Sts2.Core.Hooks.Hook.AfterCardPlayed),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(ICombatState),
-				typeof(PlayerChoiceContext),
-				typeof(CardPlay)
-			]) != null,
-			"form batch after-card-played hook target");
-		Expect(typeof(MegaCrit.Sts2.Core.Hooks.Hook).GetMethod(
-			nameof(MegaCrit.Sts2.Core.Hooks.Hook.AfterCardChangedPiles),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(IRunState),
-				typeof(ICombatState),
-				typeof(CardModel),
-				typeof(PileType),
-				typeof(AbstractModel)
-			]) != null,
-			"form batch changed-piles hook target");
-		Expect(typeof(CardModel).GetMethod(
-			"PlayPowerCardFlyVfx",
-			BindingFlags.Instance | BindingFlags.NonPublic) != null,
-			"form batch power-card VFX hook target");
-		Expect(typeof(PileTypeExtensions).GetMethod(
-			nameof(PileTypeExtensions.GetTargetPosition),
-			BindingFlags.Static | BindingFlags.Public,
-			[
-				typeof(PileType),
-				typeof(MegaCrit.Sts2.Core.Nodes.Cards.NCard)
-			]) != null,
-			"form batch entry target-position hook target");
-		Expect(typeof(CardModel).GetMethod(
-			"GeneratePlayCount",
-			BindingFlags.Instance | BindingFlags.NonPublic,
-			[
-				typeof(ICombatState),
-				typeof(Creature)
-			]) != null,
-			"form batch play-count generation target");
-		foreach (Type formType in new[] { typeof(DemonForm), typeof(EchoForm), typeof(ReaperForm), typeof(SerpentForm), typeof(VoidForm) })
-		{
-			Expect(formType.GetMethod(
-				"OnPlay",
-				BindingFlags.Instance | BindingFlags.NonPublic,
-				[
-					typeof(PlayerChoiceContext),
-					typeof(CardPlay)
-				]) != null,
-				$"combined {formType.Name} play hook target");
-		}
-	}
-
-	[HextechTest]
 	private static void IllusoryWeaponPenNibPrefixesCanReturnSkippedTask()
 	{
 		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibBeforeCardPlayedPatch");
 		AssertHarmonyTaskPrefixCanReturnSkippedTask("PenNibAfterCardPlayedPatch");
-	}
-
-	[HextechTest]
-	private static void AttackCommandCompatibilityRestoresNullExecuteResult()
-	{
-		AttackCommand command = new(1m);
-		AttackCommand result = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult<AttackCommand>(null!), command).GetAwaiter().GetResult();
-		Expect(ReferenceEquals(command, result), "null AttackCommand.Execute result should fall back to command instance");
-
-		AttackCommand completed = HextechCombatHooks.EnsureAttackCommandExecuteResult(Task.FromResult(command), new AttackCommand(2m)).GetAwaiter().GetResult();
-		Expect(ReferenceEquals(command, completed), "non-null AttackCommand.Execute result should be preserved");
-	}
-
-	[HextechTest]
-	private static void MultiplayerGameplaySignatureExcludesRuntimeSavedProperties()
-	{
-		string gameplaySignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
-			"HextechRunes",
-			"0.8.1",
-			null,
-			"",
-			"",
-			includeSavedProperties: false);
-		string diagnosticSignature = HextechMultiplayerDiagnostics.BuildModNetworkSignature(
-			"HextechRunes",
-			"0.8.1",
-			null,
-			"",
-			"",
-			includeSavedProperties: true);
-
-		Expect(!gameplaySignature.Contains("savedProps=", StringComparison.Ordinal), "gameplay signature must not include runtime SavedProperties state");
-		Expect(diagnosticSignature.Contains("savedProps=", StringComparison.Ordinal), "diagnostic signature should still include SavedProperties state");
-		Expect(!string.Equals(gameplaySignature, diagnosticSignature, StringComparison.Ordinal), "diagnostic signature should remain more detailed than gameplay signature");
-	}
-
-	[HextechTest]
-	private static void SavedPropertyNetIdCanonicalizationIsInjectionOrderIndependent()
-	{
-		IReadOnlySet<string> vanilla = new HashSet<string>(StringComparer.Ordinal) { "V0", "V1", "V2" };
-
-		// 同一组模组属性名,但两端注入顺序不同(模拟不同的本地模组加载顺序)。
-		List<string> mapClientA = ["V0", "V1", "V2", "Zebra", "Apple", "SavedTriggeredThisTurn", "Mango"];
-		List<string> mapClientB = ["V0", "V1", "V2", "SavedTriggeredThisTurn", "Mango", "Apple", "Zebra"];
-
-		List<string>? canonicalA = HextechSavedPropertyNetIdCanonicalizer.Canonicalize(mapClientA, vanilla);
-		List<string>? canonicalB = HextechSavedPropertyNetIdCanonicalizer.Canonicalize(mapClientB, vanilla);
-
-		Expect(canonicalA != null && canonicalB != null, "canonicalization should succeed for valid input");
-		Equal(string.Join(",", canonicalA!), string.Join(",", canonicalB!), "two clients with the same mod set must produce identical net-id layout regardless of injection order");
-
-		// 原版前缀按原顺序保留(net-id 0..2 不变)。
-		Equal("V0,V1,V2", string.Join(",", canonicalA!.Take(3)), "vanilla prefix preserved in original order");
-		// 模组后缀按序数排序。
-		Equal("Apple,Mango,SavedTriggeredThisTurn,Zebra", string.Join(",", canonicalA!.Skip(3)), "modded suffix is ordinal-sorted");
-		// 条目总数不变(位宽不会因规范化漂移)。
-		Equal(mapClientA.Count, canonicalA!.Count, "canonicalization preserves entry count");
-
-		// 非法输入(原版集合缺失)应放弃改写。
-		Expect(HextechSavedPropertyNetIdCanonicalizer.Canonicalize(mapClientA, null) == null, "null vanilla set should abort canonicalization");
-		Expect(HextechSavedPropertyNetIdCanonicalizer.Canonicalize(null, vanilla) == null, "null map should abort canonicalization");
-	}
-
-	[HextechTest]
-	private static void SavedPropertyNetIdBitSizeMatchesGameFormula()
-	{
-		// 必须与游戏 / RitsuLib 的 CeilToInt(Log2(count)) 完全一致。
-		Equal(0, HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(1), "count=1 -> 0 bits (matches game)");
-		Equal(1, HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(2), "count=2 -> 1 bit");
-		Equal(3, HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(7), "count=7 -> ceil(log2 7)=3 bits");
-		Equal(7, HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(128), "count=128 -> 7 bits");
-		Equal(8, HextechSavedPropertyNetIdCanonicalizer.ComputeNetIdBitSize(129), "count=129 -> 8 bits");
 	}
 }

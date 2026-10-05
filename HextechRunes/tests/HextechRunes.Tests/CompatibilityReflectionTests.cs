@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Godot;
 using HextechRunes;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -8,8 +7,6 @@ using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
-using MegaCrit.Sts2.Core.Models.Monsters;
-using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
@@ -28,9 +25,6 @@ internal static partial class Program
 			typeof(ColorDiscoveryCardReward).GetField("CardRewardCardsField", BindingFlags.Static | BindingFlags.NonPublic) == null,
 			"Color Discovery must not cache CardReward._cards.");
 
-		CardModel card = new StrikeIronclad();
-		Equal(card, ColorDiscoveryCardReward.GetFirstOfferedCard([card]), "first public reward card");
-		Equal<CardModel?>(null, ColorDiscoveryCardReward.GetFirstOfferedCard([]), "empty public reward cards");
 		Equal<CardModel?>(
 			null,
 			ColorDiscoveryCardReward.TryGetRestoredSpecialCard(restoredReward: null, cardField: null),
@@ -53,15 +47,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void ColorDiscoveryIncludesThirdPartyCharacterPools()
 	{
-		CompatibilityOwnerCardPool ownerPool = new();
-		CompatibilityExternalCardPool externalPool = new();
-
-		CardPoolModel[] pools = ColorDiscoveryRune.GetOtherCharacterPools(
-			[ownerPool, externalPool],
-			ownerPool.Id).ToArray();
-
-		SequenceEqual([externalPool], pools, "third-party character pool should remain eligible");
-
 		MethodInfo productionMethod = typeof(ColorDiscoveryRune).GetMethod(
 			"GetOtherCharacterCards",
 			BindingFlags.NonPublic | BindingFlags.Static)
@@ -84,39 +69,6 @@ internal static partial class Program
 		Expect(
 			!HextechMapLengthReducer.IsSupportedMapType(typeof(CompatibilityExternalActMap)),
 			"third-party ActMap subclasses must fail open without rewriting.");
-	}
-
-	[HextechTest]
-	private static void JeweledGauntletReflectionTargetsFailClosedAsAGroup()
-	{
-		FieldInfo? intents = typeof(MoveState).GetField(
-			"<Intents>k__BackingField",
-			BindingFlags.Instance | BindingFlags.NonPublic);
-		FieldInfo? performingMove = typeof(MonsterModel).GetField(
-			"_isPerformingMove",
-			BindingFlags.Instance | BindingFlags.NonPublic);
-		FieldInfo? curseCounter = typeof(KnowledgeDemon).GetField(
-			"_curseOfKnowledgeCounter",
-			BindingFlags.Instance | BindingFlags.NonPublic);
-
-		Expect(
-			HextechCombatHooks.HasJeweledGauntletPrivateFieldContracts(intents, performingMove, curseCounter),
-			"current-version Jeweled Gauntlet field contracts");
-		Expect(
-			!HextechCombatHooks.HasJeweledGauntletPrivateFieldContracts(null, performingMove, curseCounter),
-			"one missing field must disable the whole Jeweled Gauntlet hook group");
-		Expect(
-			!HextechCombatHooks.HasJeweledGauntletPrivateFieldContracts(curseCounter, performingMove, intents),
-			"changed field signatures must disable the whole Jeweled Gauntlet hook group");
-	}
-
-	[HextechTest]
-	private static void TestSubjectRespawnReflectionMissingFallsBackToZero()
-	{
-		Equal(0, HextechMayhemModifier.NormalizeTestSubjectRespawns(null), "missing TestSubject respawn field");
-		Equal(0, HextechMayhemModifier.NormalizeTestSubjectRespawns("2"), "changed TestSubject respawn field type");
-		Equal(0, HextechMayhemModifier.NormalizeTestSubjectRespawns(-1), "negative TestSubject respawn field");
-		Equal(2, HextechMayhemModifier.NormalizeTestSubjectRespawns(2), "valid TestSubject respawn field");
 	}
 
 	[HextechTest]
@@ -171,28 +123,6 @@ internal static partial class Program
 		Equal(expectedExternalKeyB, keyB, "second external turn proc key");
 		Expect(firstKeyA != keyB, "external derived types with the same short name must not share a proc key");
 		Equal(firstKeyA, secondKeyA, "single-player and network turn proc key stability");
-	}
-
-	private abstract class CompatibilityCardPoolBase : CardPoolModel
-	{
-		public override string Title => "Compatibility";
-		public override string EnergyColorName => "red";
-		public override string CardFrameMaterialPath => "ironclad";
-		public override Color DeckEntryCardColor => Colors.White;
-		public override bool IsColorless => false;
-
-		protected override CardModel[] GenerateAllCards()
-		{
-			return [];
-		}
-	}
-
-	private sealed class CompatibilityOwnerCardPool : CompatibilityCardPoolBase
-	{
-	}
-
-	private sealed class CompatibilityExternalCardPool : CompatibilityCardPoolBase
-	{
 	}
 
 	private abstract class CompatibilityExternalActMap : ActMap

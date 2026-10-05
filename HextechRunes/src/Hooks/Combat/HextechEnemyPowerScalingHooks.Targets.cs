@@ -9,56 +9,29 @@ internal static partial class HextechEnemyPowerScalingHooks
 		List<MethodInfo> targets = [];
 		foreach (Type powerType in ScalingOverrides.Keys)
 		{
-			MethodInfo? method = TryGetMethod(
-				powerType,
-				nameof(PowerModel.GetScaledAmountForMultiplayer),
-				BindingFlags.Public | BindingFlags.Instance,
-				warnIfMissing: false,
-				typeof(HextechCombatState),
-				typeof(Creature),
-				typeof(decimal),
-				typeof(Creature),
-				typeof(CardModel));
-			if (method == null)
+			if (TryGetMethod(
+					powerType,
+					nameof(PowerModel.GetScaledAmountForMultiplayer),
+					BindingFlags.Public | BindingFlags.Instance,
+					warnIfMissing: false,
+					typeof(HextechCombatState),
+					typeof(Creature),
+					typeof(decimal),
+					typeof(Creature),
+					typeof(CardModel)) is not MethodInfo method)
 			{
 				continue;
 			}
 
-			Type declaringType = method.DeclaringType ?? typeof(PowerModel);
-			method = TryGetMethod(
-				declaringType,
-				nameof(PowerModel.GetScaledAmountForMultiplayer),
-				BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
-				warnIfMissing: false,
-				typeof(HextechCombatState),
-				typeof(Creature),
-				typeof(decimal),
-				typeof(Creature),
-				typeof(CardModel));
-			if (method == null)
+			// 从派生类型取到的 MethodInfo 以该派生类型为 ReflectedType；经句柄取回声明处的实例，
+			// 没覆写的类型才会归并成 PowerModel 上的同一个目标，不会对同一方法重复安装。
+			MethodInfo declared = (MethodInfo)MethodBase.GetMethodFromHandle(method.MethodHandle)!;
+			if (!targets.Contains(declared))
 			{
-				continue;
-			}
-
-			if (!ContainsMethod(targets, method))
-			{
-				targets.Add(method);
+				targets.Add(declared);
 			}
 		}
 
 		return targets;
-	}
-
-	private static bool ContainsMethod(IEnumerable<MethodInfo> methods, MethodInfo candidate)
-	{
-		foreach (MethodInfo method in methods)
-		{
-			if (method.Module == candidate.Module && method.MetadataToken == candidate.MetadataToken)
-			{
-				return true;
-			}
-		}
-
-		return false;
 	}
 }

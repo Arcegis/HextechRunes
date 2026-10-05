@@ -1,15 +1,10 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace HextechRunes;
 
 internal static partial class HextechRuneConfiguration
 {
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = true,
-		PropertyNameCaseInsensitive = true
-	};
+	private const string LogTag = "RuneConfig";
 
 	private static void EnsureLoaded()
 	{
@@ -20,88 +15,31 @@ internal static partial class HextechRuneConfiguration
 				return;
 			}
 
-			_config = LoadOrCreateConfig();
+			RuneConfig config = LoadOrCreateConfig();
+			// 载入链只按字段迁移/夹值;默认配置与迁移追加的敌方禁用项还没排序和过滤。
+			// 这里统一过一遍 NormalizeSnapshot(与保存同口径),之后 GetSnapshot 只需复制。只改内存,不回写文件。
+			StoreNormalizedSnapshot(config, NormalizeSnapshot(ReadSnapshot(config)));
+			_config = config;
 			_loaded = true;
 		}
 	}
 
 	private static RuneConfig LoadOrCreateConfig()
 	{
-		string? configPath = null;
-		try
+		return JsonConfigFile.Load(ConfigFileName, LogTag, CreateDefaultConfig, static parsed =>
 		{
-			configPath = GetConfigPath();
-			if (!File.Exists(configPath))
-			{
-				RuneConfig defaultConfig = CreateDefaultConfig();
-				SaveConfig(defaultConfig);
-				return defaultConfig;
-			}
-
-			RuneConfig? parsed = JsonSerializer.Deserialize<RuneConfig>(File.ReadAllText(configPath), JsonOptions);
-			int? parsedVersion = parsed?.ConfigVersion;
-			RuneConfig config = NormalizeLoadedConfig(parsed ?? new RuneConfig());
+			int parsedVersion = parsed.ConfigVersion;
+			RuneConfig config = NormalizeLoadedConfig(parsed);
 			if (parsedVersion > CurrentConfigVersion)
 			{
 				// 更新版本写的配置退回本版本读取:类型化模型不保留未知字段,回写会把版本号压回并丢掉未来字段。
 				// 只在内存里使用规范化结果,不覆盖文件;用户在本版本改设置时才会重写。
-				HextechLog.Warn("RuneConfig", $"Config version {parsedVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.");
-				return config;
+				HextechLog.Warn(LogTag, $"Config version {parsedVersion} is newer than supported {CurrentConfigVersion}; using it in memory without rewriting the file.");
+				return (config, false);
 			}
 
-			SaveConfig(config);
-			return config;
-		}
-		catch (JsonException ex)
-		{
-			HextechLog.Warn("RuneConfig", $"Config JSON is invalid; using defaults: {ex.Message}");
-			RuneConfig config = CreateDefaultConfig();
-			if (configPath != null && TryBackupCorruptConfig(configPath))
-			{
-				SaveConfig(config);
-			}
-
-			return config;
-		}
-		catch (UnauthorizedAccessException ex)
-		{
-			HextechLog.Warn("RuneConfig", $"Config read was denied; using in-memory defaults without overwriting the file: {ex.Message}");
-			return CreateDefaultConfig();
-		}
-		catch (IOException ex)
-		{
-			HextechLog.Warn("RuneConfig", $"Config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}");
-			return CreateDefaultConfig();
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error("RuneConfig", $"Unexpected config read failure; using in-memory defaults without overwriting the file: {ex}");
-			return CreateDefaultConfig();
-		}
-	}
-
-	private static bool TryBackupCorruptConfig(string configPath)
-	{
-		try
-		{
-			File.Copy(configPath, configPath + ".corrupt.bak", overwrite: true);
-			return true;
-		}
-		catch (UnauthorizedAccessException ex)
-		{
-			HextechLog.Warn("RuneConfig", $"Could not back up corrupt config; original file will not be overwritten: {ex.Message}");
-			return false;
-		}
-		catch (IOException ex)
-		{
-			HextechLog.Warn("RuneConfig", $"Could not back up corrupt config; original file will not be overwritten: {ex.Message}");
-			return false;
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error("RuneConfig", $"Unexpected corrupt-config backup failure; original file will not be overwritten: {ex}");
-			return false;
-		}
+			return (config, true);
+		});
 	}
 
 	private static RuneConfig CreateDefaultConfig()
@@ -161,25 +99,7 @@ internal static partial class HextechRuneConfiguration
 
 	private static void SaveConfig(RuneConfig config)
 	{
-		try
-		{
-			string configPath = GetConfigPath();
-			Directory.CreateDirectory(HextechDataPaths.GetDataDirectory());
-			string serialized = JsonSerializer.Serialize(config, JsonOptions);
-			// 先写临时文件再原子替换:写到一半崩溃/断电不会留下截断的 JSON(否则下次载入会被当作损坏配置回落默认)。
-			string tempPath = configPath + ".tmp";
-			File.WriteAllText(tempPath, serialized);
-			File.Move(tempPath, configPath, overwrite: true);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("RuneConfig", $"Config write failed: {ex.Message}");
-		}
-	}
-
-	private static string GetConfigPath()
-	{
-		return HextechDataPaths.GetFilePath(ConfigFileName);
+		JsonConfigFile.Save(ConfigFileName, LogTag, config);
 	}
 
 	private sealed class RuneConfig
@@ -227,17 +147,10 @@ internal static partial class HextechRuneConfiguration
 		[JsonPropertyName("ChaosRuneChancePercent")]
 		public int ChaosRuneChancePercent { get; set; } = DefaultChaosRuneChancePercent;
 
-		[JsonPropertyName("first_act_rune_rarity_weights")]
-		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-		public RarityWeightConfig? FirstActRuneRarityWeights { get; set; }
-
+		// 只在 v<28 迁移时读取;旧文件里同期的 first_act_/second_act_after_silver_ 权重从不读取,按未知字段跳过。
 		[JsonPropertyName("normal_rune_rarity_weights")]
 		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public RarityWeightConfig? NormalRuneRarityWeights { get; set; }
-
-		[JsonPropertyName("second_act_after_silver_rune_rarity_weights")]
-		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-		public RarityWeightConfig? SecondActAfterSilverRuneRarityWeights { get; set; }
 
 		[JsonPropertyName("forge_rarity_weights")]
 		public RarityWeightConfig? ForgeRarityWeights { get; set; }

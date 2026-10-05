@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.GameActions;
-
 namespace HextechRunes;
 
 /// <summary>候选模型 ID 后的可选实例数据。限制长度并校验完整尾部，避免错误配方静默重推导。</summary>
@@ -55,19 +53,9 @@ internal static class HextechGeneratedRuneDataCodec
 		return cursor == payload.Count;
 	}
 
-	internal static bool Restore(PlayerChoiceResult result, IReadOnlyList<RelicModel> options)
+	/// <summary>把已解码的配方写回本端按同一 ID 创建的候选实例;data 为空表示载荷没有配方尾部。</summary>
+	internal static bool Restore(IReadOnlyList<string> data, IReadOnlyList<RelicModel> options)
 	{
-		if (!HextechChoiceCodec.TryGetIndexPayload(result, out List<int> payload)
-			|| !HextechChoiceCodec.TryReadRuneSelectionHeader(payload, out int optionsCursor)
-			|| !HextechStableModelIdListCodec.TryDecode(payload, optionsCursor, out List<ModelId> ids, out int cursor)
-			|| ids.Count != options.Count
-			|| !HextechRuneSeenHistoryCodec.TryRead(payload, ref cursor, out _)
-			|| !HextechRuneWeightCodec.TryRead(payload, ref cursor, out _)
-			|| !TryDecode(payload, cursor, ids.Count, out List<string> data))
-		{
-			return false;
-		}
-
 		for (int i = 0; i < options.Count; i++)
 		{
 			string value = data.Count == 0 ? "" : data[i];

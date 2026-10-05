@@ -8,11 +8,6 @@ public sealed class UpgradeRune : HextechRelicBase
 
 	public override Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return Task.CompletedTask;
-		}
-
 		List<CardModel> cards = Owner.Deck.Cards
 			.Where(static card => card.IsUpgradable)
 			.ToList();

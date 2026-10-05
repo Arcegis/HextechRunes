@@ -19,7 +19,7 @@ public sealed class SomethingFromNothingRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null || cardPlay.Card.Owner != Owner || !cardPlay.Card.Keywords.Contains(CardKeyword.Ethereal))
+		if (cardPlay.Card.Owner != Owner || !cardPlay.Card.Keywords.Contains(CardKeyword.Ethereal))
 		{
 			return Task.CompletedTask;
 		}

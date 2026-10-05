@@ -9,8 +9,7 @@ public sealed class GiantSerpentsFangRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| target.Block <= 0
 			|| result.TotalDamage <= 0

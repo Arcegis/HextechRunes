@@ -102,7 +102,7 @@ public sealed class BelieverRune : HextechRelicBase
 
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead || IsNetworkMultiplayerRun())
+		if (Owner.Creature.IsDead || IsNetworkMultiplayerRun())
 		{
 			return Task.CompletedTask;
 		}

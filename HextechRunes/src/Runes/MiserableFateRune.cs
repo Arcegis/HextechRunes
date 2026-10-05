@@ -19,7 +19,7 @@ public sealed class MiserableFateRune : HextechRelicBase
 
 	public override Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
+		if (side != Owner.Creature.Side || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

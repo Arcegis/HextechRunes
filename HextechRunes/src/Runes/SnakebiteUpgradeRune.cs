@@ -14,7 +14,7 @@ public sealed class SnakebiteUpgradeRune : CardUpgradeRuneBase<Snakebite>
 
 	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || Owner.Creature.IsDead || side != Owner.Creature.Side)
+		if (Owner.Creature.IsDead || side != Owner.Creature.Side)
 		{
 			return Task.CompletedTask;
 		}

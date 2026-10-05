@@ -16,7 +16,7 @@ public sealed class GhostFormRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

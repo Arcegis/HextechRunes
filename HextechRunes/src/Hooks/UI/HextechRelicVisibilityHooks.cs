@@ -88,22 +88,15 @@ internal static partial class HextechRelicVisibilityHooks
 			return;
 		}
 
+		// 开关根节点只由 CreateToggleRoot 整体建出并挂在 GlobalUi 末尾,找到了就一定带着按钮。
 		Control? root = FindToggleRoot(globalUi);
-		Button? button = root?.GetNodeOrNull<Button>($"{ToggleColumnNodeName}/{ToggleBoxNodeName}/{ToggleButtonNodeName}");
-		if (root == null || !GodotObject.IsInstanceValid(root) || button == null || !GodotObject.IsInstanceValid(button))
+		if (root == null)
 		{
-			if (root != null && GodotObject.IsInstanceValid(root))
-			{
-				root.GetParent()?.RemoveChild(root);
-				root.QueueFree();
-			}
-
 			root = CreateToggleRoot();
 			globalUi.AddChild(root);
-			globalUi.MoveChild(root, globalUi.GetChildCount() - 1);
-			button = root.GetNode<Button>($"{ToggleColumnNodeName}/{ToggleBoxNodeName}/{ToggleButtonNodeName}");
 		}
 
+		Button button = root.GetNode<Button>($"{ToggleColumnNodeName}/{ToggleBoxNodeName}/{ToggleButtonNodeName}");
 		bool hideRelics = HextechUiPreferences.HideRelics;
 		button.SetPressedNoSignal(hideRelics);
 		UpdateToggleVisualState(root, hideRelics);
@@ -127,7 +120,7 @@ internal static partial class HextechRelicVisibilityHooks
 
 	private static void RemoveToggleRoot(NGlobalUi globalUi)
 	{
-		if (FindToggleRoot(globalUi) is { } root && GodotObject.IsInstanceValid(root))
+		if (FindToggleRoot(globalUi) is { } root)
 		{
 			root.GetParent()?.RemoveChild(root);
 			root.QueueFree();
@@ -142,13 +135,9 @@ internal static partial class HextechRelicVisibilityHooks
 		}
 
 		bool showRelics = !ShouldHideUi();
+		// RelicNodes 只含在场的持有者:原版移除遗物时先从列表摘掉再释放节点。
 		foreach (NRelicInventoryHolder holder in inventory.RelicNodes)
 		{
-			if (holder == null || !GodotObject.IsInstanceValid(holder))
-			{
-				continue;
-			}
-
 			holder.Visible = showRelics;
 		}
 	}

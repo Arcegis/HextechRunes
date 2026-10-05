@@ -6,8 +6,7 @@ public sealed class ClawUpgradeRune : CardUpgradeRuneBase<Claw>
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
+		if (cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not Claw
 			|| Owner.PlayerCombatState is not { } playerCombatState)
 		{

@@ -13,7 +13,6 @@ internal sealed class FlyingKickCorpseLaunchDriver
 	private static readonly HashSet<uint> PendingCombatIds = [];
 	private static readonly HashSet<Creature> PendingCreatureRefs = new(ReferenceEqualityComparer.Instance);
 	private static readonly HashSet<ulong> ActiveCreatureNodes = [];
-	private static bool LoggedAndroidSkip;
 
 	private readonly NCreature _creature;
 	private NCreatureVisuals? _visuals;
@@ -75,19 +74,9 @@ internal sealed class FlyingKickCorpseLaunchDriver
 
 	internal static void TryAttach(NCreature creature)
 	{
+		// 只由 FlyingKickCorpseLaunchPatch 调用;Android 上该补丁的 Prepare 返回 false,不会走到这里。
 		try
 		{
-			if (HextechRuntimeRuneCompatibility.IsAndroidRuntime)
-			{
-				if (!LoggedAndroidSkip)
-				{
-					HextechLog.Warn("Compat", "Flying Kick corpse launch visual skipped on Android runtime.");
-					LoggedAndroidSkip = true;
-				}
-
-				return;
-			}
-
 			if (!GodotObject.IsInstanceValid(creature) || creature.Entity?.IsMonster != true)
 			{
 				return;
@@ -116,16 +105,8 @@ internal sealed class FlyingKickCorpseLaunchDriver
 
 	private bool Start()
 	{
-		try
-		{
-			_visuals = _creature.Visuals;
-			return GodotObject.IsInstanceValid(_visuals);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"Could not initialize Flying Kick corpse launch driver: {ex.Message}");
-			return false;
-		}
+		_visuals = _creature.Visuals;
+		return GodotObject.IsInstanceValid(_visuals);
 	}
 
 	private async Task RunAsync(ulong creatureInstanceId)

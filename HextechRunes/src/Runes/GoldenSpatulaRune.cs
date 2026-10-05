@@ -45,17 +45,13 @@ public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHex
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null)
-		{
-			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
-		}
-
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 		return Task.CompletedTask;
 	}
 
 	public override async Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -73,7 +69,7 @@ public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHex
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? StackMultiplier : 1m;
+		return target == Owner.Creature ? StackMultiplier : 1m;
 	}
 
 	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
@@ -96,11 +92,6 @@ public sealed class GoldenSpatulaRune : HextechSharedCombatVictoryRuneBase, IHex
 
 	private decimal TotalBonusPercentFor(int stacks)
 	{
-		if (stacks <= 0)
-		{
-			return 0m;
-		}
-
 		decimal multiplier = stacks > DynamicVars["StackOverloadThreshold"].IntValue ? 3m : 1m;
 		return stacks * DynamicVars["StackBonusPercent"].BaseValue * multiplier;
 	}

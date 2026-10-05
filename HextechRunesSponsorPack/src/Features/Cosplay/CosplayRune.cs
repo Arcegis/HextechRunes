@@ -41,11 +41,6 @@ public sealed class CosplayRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		Flash();
 		await AddInnateCard<FeelNoPain>();
 		await AddInnateCard<Juggernaut>();
@@ -65,7 +60,7 @@ public sealed class CosplayRune : HextechRelicBase
 
 	public override Task AfterCardEnteredCombat(CardModel card)
 	{
-		if (Owner == null || card.Owner != Owner)
+		if (card.Owner != Owner)
 		{
 			return Task.CompletedTask;
 		}

@@ -4,7 +4,7 @@ namespace HextechRunes;
 
 internal static class HextechPlayerBodyScaleHelper
 {
-	// 生物体型缩放下限（体型再小就看不清了）；玩家与敌方（HextechMonsterMaxHpCoefficients.UpdateEnemyScale）共用。
+	// 生物体型缩放下限（体型再小就看不清了）；玩家与敌方（HextechMayhemModifier.UpdateEnemyScale）共用。
 	internal const float MinCreatureBodyScale = 0.2f;
 
 	internal static void Update(Player? player)

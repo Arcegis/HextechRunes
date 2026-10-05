@@ -37,22 +37,19 @@ public sealed class CurtainCallRune : HextechRelicBase
 			DynamicVars.Cards.IntValue,
 			static card =>
 			{
-				CurtainCallKeywordPersistence.Track(card);
+				KeywordPersistenceTrackers.CurtainCall.Track(card);
 				CardCmd.ApplyKeyword(card, CardKeyword.Retain);
 			});
 	}
 
 	public override Task AfterCardEnteredCombat(CardModel card)
 	{
-		if (Owner == null || card.Owner != Owner)
+		if (card.Owner != Owner)
 		{
 			return Task.CompletedTask;
 		}
 
-		if (CurtainCallKeywordPersistence.IsTracked(card.DeckVersion))
-		{
-			CurtainCallKeywordPersistence.Restore(card);
-		}
+		KeywordPersistenceTrackers.CurtainCall.RestoreFromDeckVersion(card);
 
 		return Task.CompletedTask;
 	}

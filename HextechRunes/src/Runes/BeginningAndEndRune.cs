@@ -21,7 +21,7 @@ public sealed class BeginningAndEndRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

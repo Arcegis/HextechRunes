@@ -52,14 +52,6 @@ internal static partial class HextechChoiceCodec
 		return unchecked((int)hash);
 	}
 
-	private static bool IsChoiceEnvelope(PlayerChoiceResult result, int choiceKind)
-	{
-		return TryGetIndexPayload(result, out List<int> payload)
-			&& payload.Count >= 2
-			&& payload[0] == Magic
-			&& payload[1] == choiceKind;
-	}
-
 	public static bool TryGetIndexPayload(PlayerChoiceResult result, out List<int> payload)
 	{
 		payload = [];

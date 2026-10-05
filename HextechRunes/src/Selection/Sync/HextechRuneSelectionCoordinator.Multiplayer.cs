@@ -19,8 +19,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		HashSet<ulong> playersNotifiedNoOptions)
 	{
 		RunManager runManager = RunManager.Instance;
-		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = CombineMonsterHexes(previousMonsterHexes, initialNewMonsterHexes);
-		PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
+		IReadOnlyList<MonsterHexKind> initialActiveMonsterHexes = HextechMonsterHexRoller.CombineActiveHexes(previousMonsterHexes, initialNewMonsterHexes);
+		PlayerChoiceSynchronizer synchronizer = RequirePlayerChoiceSynchronizer(runManager);
 
 		List<PendingRuneSelection> pendingSelections = [];
 		List<ResolvedRuneSelection> resolvedSelections = [];
@@ -42,11 +42,11 @@ internal static partial class HextechRuneSelectionCoordinator
 		EnemyHexAdjustmentSyncContext? enemyHexSync =
 			allowEnemyHexAdjustment
 			&& initialNewMonsterHexes.Count > 0
+			&& enemyHexAuthority != null
 			&& pendingSelections.Any(selection => selection.Player == enemyHexAuthority)
 				? CreateEnemyHexAdjustmentSyncContext(
-					runManager,
-					runState,
 					synchronizer,
+					enemyHexAuthority,
 					actIndex,
 					initialNewMonsterHexes)
 				: null;
@@ -54,14 +54,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		RuneSelectionResult[] selectedRelics = [];
 		List<HextechRuneSelectionScreen> blockingScreens = [];
 		using CancellationTokenSource batchCancellation = new();
-		void TrackBlockingScreen(HextechRuneSelectionScreen screen)
-		{
-			lock (blockingScreens)
-			{
-				blockingScreens.Add(screen);
-			}
-		}
-
 		async Task<RuneSelectionResult> RunSelection(PendingRuneSelection selection)
 		{
 			try
@@ -85,7 +77,7 @@ internal static partial class HextechRuneSelectionCoordinator
 						selection,
 						batchCancellation.Token),
 					screen => CompleteLocalEnemyHexAdjustmentSync(runManager, enemyHexSync, screen),
-					TrackBlockingScreen,
+					blockingScreens.Add,
 					() => enemyHexSync?.RemoteReceiveTask,
 					batchCancellation.Token);
 			}
@@ -126,7 +118,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 
 			IReadOnlyList<MonsterHexKind> resolvedMonsterHexes = enemyHexSync != null
-				? CombineMonsterHexes(previousMonsterHexes, enemyHexSync.CurrentMonsterHexes)
+				? HextechMonsterHexRoller.CombineActiveHexes(previousMonsterHexes, enemyHexSync.CurrentMonsterHexes)
 				: initialActiveMonsterHexes;
 			modifier.SetMonsterHexesForAct(actIndex, resolvedMonsterHexes);
 			await PersistRuneSelectionCheckpoint(runState, actIndex, choiceOrdinal);
@@ -147,6 +139,12 @@ internal static partial class HextechRuneSelectionCoordinator
 			batchCancellation.Cancel();
 			throw;
 		}
+		catch (HextechChoiceProtocolException)
+		{
+			// CreateProtocolFailure 已断开联机并记录原因。
+			batchCancellation.Cancel();
+			throw;
+		}
 		catch (Exception ex)
 		{
 			batchCancellation.Cancel();
@@ -163,13 +161,7 @@ internal static partial class HextechRuneSelectionCoordinator
 		{
 			batchCancellation.Cancel();
 			await ObserveEnemyHexAdjustmentReceiveTask(enemyHexSync);
-			HextechRuneSelectionScreen[] screens;
-			lock (blockingScreens)
-			{
-				screens = blockingScreens.ToArray();
-			}
-
-			await DismissBlockingSelectionScreens(screens);
+			await DismissBlockingSelectionScreens(blockingScreens);
 		}
 	}
 
@@ -234,7 +226,8 @@ internal static partial class HextechRuneSelectionCoordinator
 				continue;
 			}
 
-			HashSet<ModelId> excludedIds = CreateBaseExcludedIds(modifier, player);
+			// 玩家候选只排除本局已见过的符文;敌方持有的海克斯照样可以出现在玩家候选里。
+			HashSet<ModelId> excludedIds = modifier.GetSeenPlayerRuneIds(player);
 			List<RelicModel> options = BuildStableSelectableRunesForRarity(
 				player,
 				rarity,
@@ -286,7 +279,9 @@ internal static partial class HextechRuneSelectionCoordinator
 			bool currentlyOwned = selectedRelic is IHextechGeneratedRune generatedSelection
 				? player.Relics.OfType<IHextechGeneratedRune>().Any(owned => owned.ExportSelectionData() == generatedSelection.ExportSelectionData())
 				: PlayerHasRelicId(player, selectedId);
-			if (!HextechRuneSelectionJournalState.RequiresRelicObtain(applied, currentlyOwned))
+			// Applied 后不再重放(自我消耗的符文离开背包也不补发);未 Applied 但已在背包里说明发放已越过
+			// 提交边界,只补记 Applied,不能再发一次。
+			if (applied || currentlyOwned)
 			{
 				if (!applied)
 				{
@@ -310,6 +305,7 @@ internal static partial class HextechRuneSelectionCoordinator
 			}
 			catch (Exception ex)
 			{
+				// 发放中途抛错时遗物可能已进背包;以背包为准记下提交边界,记录和断线由批次外层统一处理。
 				if (player.Relics.Any(relic => ReferenceEquals(relic, selectedRelic)))
 				{
 					modifier.MarkRuneSelectionJournalApplied(
@@ -319,13 +315,16 @@ internal static partial class HextechRuneSelectionCoordinator
 						selectedId);
 				}
 
-				string message =
-					$"Rune obtain transaction failed: act={actIndex} ordinal={choiceOrdinal} " +
-					$"player={player.NetId} relic={selectedId.Category}:{selectedId.Entry}";
-				HextechLog.Error("Mayhem", $"{message}: {ex}");
-				AbortMultiplayerChoiceTransaction(
-					$"rune-choice act={actIndex} ordinal={choiceOrdinal}",
-					message);
+				string message = $"Rune obtain failed: act={actIndex} ordinal={choiceOrdinal} player={player.NetId} relic={selectedId.Category}:{selectedId.Entry}";
+				HextechLog.Warn("Mayhem", message);
+				// 外层把取消异常当作正常退出、不断线;发放已开始后的取消仍要断线,否则两端提交边界可能不同。
+				if (ex is OperationCanceledException)
+				{
+					AbortMultiplayerChoiceTransaction(
+						$"rune-choice act={actIndex} ordinal={choiceOrdinal}",
+						message);
+				}
+
 				throw;
 			}
 		}
@@ -367,11 +366,9 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			string message =
-				$"RuneChoice checkpoint save failed before relic obtain: " +
-				$"act={actIndex} ordinal={choiceOrdinal}";
-			HextechLog.Error("Mayhem", $"{message} error={ex}");
-			throw new InvalidOperationException(message, ex);
+			throw new InvalidOperationException(
+				$"RuneChoice checkpoint save failed before relic obtain: act={actIndex} ordinal={choiceOrdinal}",
+				ex);
 		}
 	}
 

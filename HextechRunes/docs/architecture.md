@@ -78,7 +78,7 @@ Platform/Hooks/Config/Localization/Telemetry
 
 ### SavedProperty net-id 规范化（仅 0.107.1）
 
-`Compat/HextechSavedPropertyNetIdHooks.cs` 在 `OneTimeInitialization.ExecuteEssential` 后缀里把 `SavedPropertiesTypeCache` 的 net-id 表按"原版前缀 + 模组条目确定性排序"重排，并重写位宽。设计哲学第 2 节原则上禁止重排 net-id 表；**裁决：0.107.1 变体保留，0.109+ 不存在**。原因：0.107.1 的 net-id 按注册先后分配，本模组与 RitsuLib 等模组在 ModInitializer 与 LocManager 两个阶段注入 SavedProperty 载体，两端加载顺序不同就会得到错位的 net-id，序列化抛异常后被断连兜底报成 1014 模组不匹配；0.109 起游戏自己的 `ModelIdSerializationCache.Init` 做确定性排序与哈希，本补丁随之只编译进 0.107.1。删除它会让 0.107.1 联机在装有其他 SavedProperty 模组时重新随机失败，且与已发布的 0.107.1 变体 net-id 布局不一致，因此不删。维护约束：只在冻结点之前注册载体（冻结后注入会告警）；规范化失败只记错误、不宣称完成（`IsCanonicalized`）。
+`Hooks/Compat/HextechSavedPropertyNetIdHooks.cs` 在 `OneTimeInitialization.ExecuteEssential` 后缀里把 `SavedPropertiesTypeCache` 的 net-id 表按"原版前缀 + 模组条目确定性排序"重排，并重写位宽。设计哲学第 2 节原则上禁止重排 net-id 表；**裁决：0.107.1 变体保留，0.109+ 不存在**。原因：0.107.1 的 net-id 按注册先后分配，本模组与 RitsuLib 等模组在 ModInitializer 与 LocManager 两个阶段注入 SavedProperty 载体，两端加载顺序不同就会得到错位的 net-id，序列化抛异常导致联机失败；0.109 起游戏自己的 `ModelIdSerializationCache.Init` 做确定性排序与哈希，本补丁随之只编译进 0.107.1。删除它会让 0.107.1 联机在装有其他 SavedProperty 模组时重新随机失败，且与已发布的 0.107.1 变体 net-id 布局不一致，因此不删。维护约束：只在冻结点之前注册载体（冻结后注入会告警）；规范化失败只记错误、不宣称完成（`IsCanonicalized`）。
 
 ## 共享边界（2026-09 代码审查整理）
 
@@ -86,16 +86,16 @@ Platform/Hooks/Config/Localization/Telemetry
 - **拓展包只走公开 API**：售价修正（`RegisterForgeShopPriceModifier`）、归属判定（`IsHextechRelic`）、稳定哈希（`StableIndex`）都经 `HextechRunesApi`，不反射 internal 类型、不复制实现。`SponsorPatcher` 仍独立实现（公开 `HextechPatcher` 会把大量内部类型带进 API 面），约定对齐本体，由声明完整性测试守护。
 - **选择同步**：锻造选择与遗物选项选择共用 `HextechSyncedRelicChoice` 事务和 `HextechChoiceCodec.RelicChoice`（消息类型 5/7，线格式不变）；远端核对候选 ID 后返回本端同位置的候选实例。远端载荷先做内容校验：符文候选必须是已登记的玩家符文；敌方调整校验槽位数、海克斯来源与每槽重掷上限。任何一项不通过都走 `CreateProtocolFailure`——协议失败的唯一出口，只记录一次。
 - **外部扩展点**：`HextechRuneGeneration` 对第三方混沌变换的结果做校验（同条数、全部是已登记玩家符文），异常或不合法时回退原候选并告警；外部 API 登记本体内置的符文/锻造在任何副作用之前被拒绝。
-- **敌方海克斯分发**：洗牌、抽牌、能否打出三类事件只对本局战斗中的玩家侧分发，效果层不再重复判断；回合钩子在 Power 与 Modifier 基类两边都有 `*ForParticipants` 入口，兼容桥不再吞掉 participants。
+- **敌方海克斯分发**：`AfterShuffle`、`AfterCardDrawn`、`ShouldPlay` 只对本局战斗中的玩家侧分发；`ShouldDraw` 与其余钩子在分发层不过滤，玩家侧与本局归属由各效果自己判断（不少效果里的同类判断与分发层重复，统一收口要逐个核对钩子语义，暂不做）。Power 基类的回合钩子走 `*ForParticipants` 入口，兼容桥不吞 participants；Modifier 直接覆写原版回合钩子（签名本身就带 participants）。
 - **Modifier 不承载单项内容**：白洞由牌自己监听 `AfterCardDrawn`；雷暴升级的算法与按牌层数在 `StormUpgradeRune` 里，只有调用时机仍由 Modifier 分发（保证补发闪电排在所有监听者之后）。
 
 ## Source of truth 方向
 
-后续重构应收敛到单一内容元数据源：
+内容元数据只有一个来源：
 
-- 符文 ID、稀有度、角色池、标签、默认禁用、是否进入图鉴、是否进入抽选池都应从同一份 catalog metadata 派生。
+- 三张注册表（`HextechPlayerRuneRegistry`、`HextechForgeRegistry`、`HextechMonsterHexRegistry`）加外部 API 登记，经 `HextechContentRegistry` 按注册表版本派生 `PlayerRuneMetadataCatalog`、锻造器稀有度分组和 `MonsterHexMetadataCatalog`；稀有度、角色池、标签、默认禁用、是否进入图鉴、是否进入抽选池都从这里取，不另建名单。
+- 类型层面的派生不调用 `ModelDb`；按 ModelId 的查表在 `HextechCatalog.ModelIdLookups` 单独缓存，两个缓存不能合并（合并会提前 ModelId 的捕获时机，RitsuLib 前缀尚未生效时会缓存错误的 ID）。
 - 本地化、配置界面、统计中文名、图鉴可见性不应各自维护重复名单。
-- 在正式切换前，应保留旧 registry 与新 metadata 的双读对比，确认输出一致后再删除旧路径。
 
 ## 高风险规则
 

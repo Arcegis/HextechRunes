@@ -12,56 +12,48 @@ internal static partial class HextechPlayerRuneHooks
 
 	// 苦无/手里剑/装饰扇的 AttacksPlayedThisTurn、钢笔尖的 AttackToDouble（私有 setter 的属性），
 	// 以及双节棍/苦无/手里剑/装饰扇的 DoActivateVisuals()（私有方法），均为 0.107.1/0.110.0/0.111.0 原版成员。
-	private static readonly PropertyInfo? KunaiAttacksPlayedThisTurnProperty = TryGetProperty(typeof(Kunai), "AttacksPlayedThisTurn");
-	private static readonly PropertyInfo? ShurikenAttacksPlayedThisTurnProperty = TryGetProperty(typeof(Shuriken), "AttacksPlayedThisTurn");
-	private static readonly PropertyInfo? OrnamentalFanAttacksPlayedThisTurnProperty = TryGetProperty(typeof(OrnamentalFan), "AttacksPlayedThisTurn");
-	private static readonly PropertyInfo? PenNibAttackToDoubleProperty = TryGetProperty(typeof(PenNib), "AttackToDouble");
-	private static readonly MethodInfo? NunchakuDoActivateVisualsMethod = TryGetMethod(typeof(Nunchaku), "DoActivateVisuals", InstanceNonPublic);
-	private static readonly MethodInfo? KunaiDoActivateVisualsMethod = TryGetMethod(typeof(Kunai), "DoActivateVisuals", InstanceNonPublic);
-	private static readonly MethodInfo? ShurikenDoActivateVisualsMethod = TryGetMethod(typeof(Shuriken), "DoActivateVisuals", InstanceNonPublic);
-	private static readonly MethodInfo? OrnamentalFanDoActivateVisualsMethod = TryGetMethod(typeof(OrnamentalFan), "DoActivateVisuals", InstanceNonPublic);
-	private static bool? _illusoryWeaponReflectionReady;
+	// 任一缺失时 IllusoryWeaponReflectionReady 为假，七个补丁都不安装，补丁体内不再判空。
+	private static readonly PropertyInfo KunaiAttacksPlayedThisTurnProperty = TryGetProperty(typeof(Kunai), "AttacksPlayedThisTurn")!;
+	private static readonly PropertyInfo ShurikenAttacksPlayedThisTurnProperty = TryGetProperty(typeof(Shuriken), "AttacksPlayedThisTurn")!;
+	private static readonly PropertyInfo OrnamentalFanAttacksPlayedThisTurnProperty = TryGetProperty(typeof(OrnamentalFan), "AttacksPlayedThisTurn")!;
+	private static readonly PropertyInfo PenNibAttackToDoubleProperty = TryGetProperty(typeof(PenNib), "AttackToDouble")!;
+	private static readonly MethodInfo NunchakuDoActivateVisualsMethod = TryGetMethod(typeof(Nunchaku), "DoActivateVisuals", InstanceNonPublic)!;
+	private static readonly MethodInfo KunaiDoActivateVisualsMethod = TryGetMethod(typeof(Kunai), "DoActivateVisuals", InstanceNonPublic)!;
+	private static readonly MethodInfo ShurikenDoActivateVisualsMethod = TryGetMethod(typeof(Shuriken), "DoActivateVisuals", InstanceNonPublic)!;
+	private static readonly MethodInfo OrnamentalFanDoActivateVisualsMethod = TryGetMethod(typeof(OrnamentalFan), "DoActivateVisuals", InstanceNonPublic)!;
 
 	/// <summary>
 	/// 幻影武器要改写五个原版遗物的私有计数与视觉方法;任一缺失就整组停用并把符文标为本运行时不可用。
-	/// IllusoryWeaponRune 的七个补丁类在 Prepare 里共用这一次判定。
+	/// IllusoryWeaponRune 的七个补丁类在 Prepare 里共用这一次判定（须声明在上面的反射字段之后，按文本顺序初始化）。
 	/// </summary>
-	internal static bool IllusoryWeaponReflectionReady
+	internal static readonly bool IllusoryWeaponReflectionReady = ResolveIllusoryWeaponReflection();
+
+	private static bool ResolveIllusoryWeaponReflection()
 	{
-		get
+		bool ready = KunaiAttacksPlayedThisTurnProperty != null
+			&& ShurikenAttacksPlayedThisTurnProperty != null
+			&& OrnamentalFanAttacksPlayedThisTurnProperty != null
+			&& PenNibAttackToDoubleProperty != null
+			&& NunchakuDoActivateVisualsMethod != null
+			&& KunaiDoActivateVisualsMethod != null
+			&& ShurikenDoActivateVisualsMethod != null
+			&& OrnamentalFanDoActivateVisualsMethod != null;
+		if (!ready)
 		{
-			if (_illusoryWeaponReflectionReady is bool cached)
-			{
-				return cached;
-			}
-
-			bool ready = KunaiAttacksPlayedThisTurnProperty != null
-				&& ShurikenAttacksPlayedThisTurnProperty != null
-				&& OrnamentalFanAttacksPlayedThisTurnProperty != null
-				&& PenNibAttackToDoubleProperty != null
-				&& NunchakuDoActivateVisualsMethod != null
-				&& KunaiDoActivateVisualsMethod != null
-				&& ShurikenDoActivateVisualsMethod != null
-				&& OrnamentalFanDoActivateVisualsMethod != null;
-			if (!ready)
-			{
-				HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed<IllusoryWeaponRune>(
-					"illusory weapon attack counters",
-					new MissingMemberException("Illusory Weapon relic counters or activation visuals are missing in this game build."));
-			}
-
-			_illusoryWeaponReflectionReady = ready;
-			return ready;
+			HextechRuntimeRuneCompatibility.MarkPlayerRuneHookFailed(
+				typeof(IllusoryWeaponRune),
+				"illusory weapon attack counters",
+				new MissingMemberException("Illusory Weapon relic counters or activation visuals are missing in this game build."));
 		}
+
+		return ready;
 	}
 
 	internal static decimal CountFinisherAttackCardsPlayedThisTurn(CardModel card, Creature? _)
 	{
 		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayedThisTurn(
 			card.Owner,
-			card.CombatState as CombatState,
-			firstInSeriesOnly: false,
-			includeAutoPlay: true);
+			card.CombatState as CombatState);
 	}
 
 	internal static async Task ResolveIllusoryWeaponNunchaku(Nunchaku nunchaku)
@@ -139,46 +131,34 @@ internal static partial class HextechPlayerRuneHooks
 			&& HextechCardEffectTypes.IsAttackForEffects(cardPlay.Card, owner);
 	}
 
-	private static int IncrementIntProperty(object instance, PropertyInfo? property)
+	private static int IncrementIntProperty(object instance, PropertyInfo property)
 	{
-		int value = property?.GetValue(instance) is int current ? current : 0;
-		value++;
-		property?.SetValue(instance, value);
+		int value = (int)property.GetValue(instance)! + 1;
+		property.SetValue(instance, value);
 		return value;
 	}
 
 	internal static bool IsPenNibTracking(PenNib penNib, CardModel card)
 	{
-		return ReferenceEquals(PenNibAttackToDoubleProperty?.GetValue(penNib), card);
+		return ReferenceEquals(PenNibAttackToDoubleProperty.GetValue(penNib), card);
 	}
 
 	internal static void SetPenNibAttackToDouble(PenNib penNib, CardModel? card)
 	{
-		PenNibAttackToDoubleProperty?.SetValue(penNib, card);
+		PenNibAttackToDoubleProperty.SetValue(penNib, card);
 	}
 
-	private static async Task InvokePrivateRelicVisuals(RelicModel relic, MethodInfo? method, string relicName)
+	// 调用方经 TaskHelper.RunSafely 发起，回退闪光本身再失败由它兜底记录。
+	private static async Task InvokePrivateRelicVisuals(RelicModel relic, MethodInfo method, string relicName)
 	{
-		if (method == null)
-		{
-			return;
-		}
-
 		try
 		{
-			await (method.Invoke(relic, null) as Task ?? Task.CompletedTask);
+			await (Task)method.Invoke(relic, null)!;
 		}
 		catch (Exception ex)
 		{
 			HextechLog.Warn("IllusoryWeapon", $"Failed to run {relicName} activation visuals: {ex.GetType().Name}: {ex.Message}");
-			try
-			{
-				relic.Flash();
-			}
-			catch (Exception flashException)
-			{
-				HextechLog.Warn("IllusoryWeapon", $"Fallback flash failed for {relicName}: {flashException.Message}");
-			}
+			relic.Flash();
 		}
 	}
 }

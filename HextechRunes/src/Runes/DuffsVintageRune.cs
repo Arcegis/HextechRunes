@@ -14,7 +14,7 @@ public sealed class DuffsVintageRune : HextechRelicBase
 
 	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
+		if (side != Owner.Creature.Side || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

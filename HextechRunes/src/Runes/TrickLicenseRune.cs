@@ -14,32 +14,21 @@ public sealed class TrickLicenseRune : HextechRelicBase
 
 	public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldPlayForFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldPlayForFree(card);
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	public override bool TryModifyStarCost(CardModel card, decimal originalCost, out decimal modifiedCost)
 	{
-		modifiedCost = originalCost;
-		if (!ShouldPlayForFree(card))
-		{
-			return false;
-		}
-
-		modifiedCost = 0m;
-		return true;
+		bool free = ShouldPlayForFree(card);
+		modifiedCost = free ? 0m : originalCost;
+		return free;
 	}
 
 	private bool ShouldPlayForFree(CardModel card)
 	{
-		return Owner != null
-			&& card.Owner == Owner
+		return card.Owner == Owner
 			&& card.IsSlyThisTurn
 			&& card.Pile?.Type is PileType.Hand or PileType.Play;
 	}

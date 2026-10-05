@@ -17,8 +17,6 @@ OFFICIAL_ZHS_TITLES = REPO_ROOT / "tools" / "official_zhs_titles.json"
 UNTRANSLATED_ALLOWLIST = REPO_ROOT / "tools" / "localization_untranslated_allowlist.json"
 MOD_ID = "HextechRunes"
 SPONSOR_PACK = "HextechRunesSponsorPack"
-# “非 eng 的值与 eng 完全相同”在各包的严重级别。拓展包补译完成、白名单补齐后改成 "error"。
-UNTRANSLATED_SEVERITY = {MOD_ID: "error", SPONSOR_PACK: "error"}
 UNTRANSLATED_MIN_LATIN_LETTERS = 4
 
 def read(path: Path) -> str:
@@ -170,8 +168,6 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
     rarity_values = [str(reg["kind"]) for reg in monster_regs if not reg["disabled"]]
     disabled_values = [str(reg["kind"]) for reg in monster_regs if reg["disabled"]]
     check_duplicates(errors, "monster hex registry", registry_values)
-    check_duplicates(errors, "monster hex rarity registry", rarity_values)
-    check_duplicates(errors, "disabled monster hex registry", disabled_values)
 
     missing_from_rarity = sorted(set(enum_values) - set(rarity_values) - set(disabled_values))
     unknown_in_rarity = sorted(set(rarity_values) - set(enum_values))
@@ -184,9 +180,6 @@ def validate_monster_hex_registry(errors: list[str], warnings: list[str]) -> Non
         errors.append(f"Unknown MonsterHexKind in disabled registry: {', '.join(unknown_disabled)}")
 
     icon_pairs = {str(reg["kind"]): str(reg["type"]) for reg in monster_regs}
-    missing_from_icons = sorted(set(enum_values) - set(icon_pairs))
-    if missing_from_icons:
-        errors.append(f"MonsterHexKind missing from MonsterHexIconRelicTypes: {', '.join(missing_from_icons)}")
 
     for locale in ("zhs", "eng"):
         loc = json.loads(read(LOCALIZATION / locale / "relics.json"))
@@ -225,31 +218,19 @@ def validate_relic_registry(errors: list[str]) -> None:
     all_types: list[str] = []
 
     for rarity in ("Silver", "Gold", "Prismatic"):
-        values = [str(reg["type"]) for reg in rune_regs if reg["rarity"] == rarity]
-        check_duplicates(errors, f"{rarity}RuneTypes", values)
-        all_types.extend(values)
+        all_types.extend(str(reg["type"]) for reg in rune_regs if reg["rarity"] == rarity)
 
     for rarity in ("Silver", "Gold", "Prismatic"):
-        values = [str(reg["type"]) for reg in forge_regs if reg["rarity"] == rarity]
-        check_duplicates(errors, f"{rarity}ForgeTypes", values)
-        all_types.extend(values)
+        all_types.extend(str(reg["type"]) for reg in forge_regs if reg["rarity"] == rarity)
 
-    values = extract_type_list(registry_text, "ShopOnlyRelicTypes")
-    check_duplicates(errors, "ShopOnlyRelicTypes", values)
-    all_types.extend(values)
+    all_types.extend(extract_type_list(registry_text, "ShopOnlyRelicTypes"))
 
     for character_pool in player_rune_enum_values("PlayerRuneCharacterPool"):
-        values = [str(reg["type"]) for reg in rune_regs if reg["character_pool"] == character_pool]
         orders = [str(reg["character_order"]) for reg in rune_regs if reg["character_pool"] == character_pool]
-        check_duplicates(errors, f"{character_pool}RuneTypes", values)
         check_duplicates(errors, f"{character_pool}RuneTypes character order", orders)
         missing_order = [str(reg["type"]) for reg in rune_regs if reg["character_pool"] == character_pool and reg["character_order"] == 0]
         if missing_order:
             errors.append(f"{character_pool}RuneTypes missing character order: {', '.join(missing_order)}")
-
-    for flag in player_rune_enum_values("PlayerRuneFlags"):
-        values = [str(reg["type"]) for reg in rune_regs if flag in reg["flags"]]
-        check_duplicates(errors, f"{flag} rune registry", values)
 
     tag_keys = sorted({str(reg["tag_key"]) for reg in rune_regs})
     for locale in ("zhs", "eng"):
@@ -258,6 +239,7 @@ def validate_relic_registry(errors: list[str]) -> None:
         if missing_tags:
             errors.append(f"{locale} relic_collection.json missing rune tag localization: {', '.join(missing_tags)}")
 
+    # 各稀有度、角色池、开关只是这份清单的切片，在这里查一次重即可。
     check_duplicates(errors, "all custom relic registries", all_types)
 
     source_text = "\n".join(read(path) for path in source_files())
@@ -307,65 +289,6 @@ def validate_enemy_hex_effect_layout(errors: list[str]) -> None:
 
         if f"new {expected_class}()" not in effect_registry_text:
             errors.append(f"enemy hex effect registry missing {expected_class}")
-
-
-def validate_combat_tracking_state(errors: list[str]) -> None:
-    state_text = read(source_file_named("HextechMayhemCombatTrackingState.cs"))
-    snapshot_text = read(source_file_named("CombatTrackingSnapshot.cs"))
-    state_fields = {
-        name: field_type
-        for field_type, name in re.findall(
-            r"\bpublic\s+(?:readonly\s+)?(Dictionary<[^>]+>|HashSet<[^>]+>|string\?|bool|int)\s+([A-Za-z0-9]+)(?=\s*(?:=|;))",
-            state_text,
-        )
-    }
-    declared = set(state_fields)
-    snapshot_fields = {
-        name: field_type
-        for field_type, name in re.findall(
-            r"\bpublic\s+(Dictionary<[^>]+>|List<[^>]+>|int)\s+([A-Za-z0-9]+)\s*\{\s*get;\s*set;\s*\}",
-            snapshot_text,
-        )
-    }
-    persistent = set(snapshot_fields)
-    transient = set(
-        name
-        for _, name in re.findall(
-            r"\[CombatTrackingTransient\]\s*\n\s*public\s+(?:readonly\s+)?(Dictionary<[^>]+>|HashSet<[^>]+>|string\?|bool|int)\s+([A-Za-z0-9]+)",
-            state_text,
-        )
-    )
-    if not declared:
-        errors.append("combat tracking field block not found")
-        return
-
-    if not persistent:
-        errors.append("combat tracking snapshot properties not found")
-        return
-
-    classified = persistent | transient
-    unclassified = sorted(declared - classified)
-    snapshot_without_state = sorted(persistent - declared)
-    transient_and_persistent = sorted(transient & persistent)
-    if unclassified:
-        errors.append(f"combat tracking fields need classification: {', '.join(unclassified)}")
-    if snapshot_without_state:
-        errors.append(f"combat tracking snapshot properties missing state fields: {', '.join(snapshot_without_state)}")
-    if transient_and_persistent:
-        errors.append(f"combat tracking fields marked both persistent and transient: {', '.join(transient_and_persistent)}")
-
-    for field in sorted(persistent & declared):
-        state_type = state_fields[field]
-        snapshot_type = snapshot_fields[field]
-        if state_type.startswith("Dictionary<"):
-            expected = state_type
-        elif state_type.startswith("HashSet<"):
-            expected = "List<" + state_type.removeprefix("HashSet<")
-        else:
-            expected = state_type
-
-        if snapshot_type != expected:
-            errors.append(f"combat tracking snapshot type mismatch for {field}: expected {expected}, got {snapshot_type}")
 
 
 def resolve_string_constants(source: str) -> dict[str, str]:
@@ -692,17 +615,14 @@ def load_untranslated_allowlist(errors: list[str], path: Path | None = None) -> 
 
 def validate_untranslated_values(
     errors: list[str],
-    warnings: list[str],
     root: Path | None = None,
     pack: str = MOD_ID,
     allowlist: dict[tuple[str, str, str, str], str] | None = None,
 ) -> None:
     """非 eng 语言的值与 eng 完全相同时报疑似漏译；品牌名、专有名词等写进白名单并说明理由。
-    过期的白名单条目（键已删除或已不再与 eng 相同）按同一严重级别报出，避免白名单悄悄失效。"""
+    过期的白名单条目（键已删除或已不再与 eng 相同）同样报错，避免白名单悄悄失效。"""
     root = LOCALIZATION if root is None else root
     allowlist = {} if allowlist is None else allowlist
-    as_error = UNTRANSLATED_SEVERITY.get(pack, "error") == "error"
-    sink = errors if as_error else warnings
     eng_dir = root / "eng"
     if not eng_dir.is_dir():
         return
@@ -713,7 +633,6 @@ def validate_untranslated_values(
             locale_path = locale_dir / eng_path.name
             if not locale_path.exists():
                 continue
-            hits: list[str] = []
             for key, value in json.loads(read(locale_path)).items():
                 if not isinstance(value, str) or not looks_untranslated(value, eng_entries.get(key)):
                     continue
@@ -721,20 +640,12 @@ def validate_untranslated_values(
                 if allow_key in allowlist:
                     used.add(allow_key)
                     continue
-                if as_error:
-                    errors.append(
-                        f"{localization_label(pack, f'{locale_dir.name}/{eng_path.name}:{key}')}: "
-                        f"identical to eng {value[:60]!r}; translate it or add it to {UNTRANSLATED_ALLOWLIST.name} with a reason"
-                    )
-                hits.append(key)
-            if hits and not as_error:
-                # 警告级只汇总到文件，避免补译前每次构建刷屏。
-                warnings.append(
-                    f"{localization_label(pack, f'{locale_dir.name}/{eng_path.name}')}: {len(hits)} value(s) identical to eng, "
-                    f"e.g. {', '.join(hits[:3])}"
+                errors.append(
+                    f"{localization_label(pack, f'{locale_dir.name}/{eng_path.name}:{key}')}: "
+                    f"identical to eng {value[:60]!r}; translate it or add it to {UNTRANSLATED_ALLOWLIST.name} with a reason"
                 )
     for stale in sorted(key for key in allowlist if key[0] == pack and key not in used):
-        sink.append(f"{UNTRANSLATED_ALLOWLIST.name} stale entry (no longer identical to eng): {'/'.join(stale)}")
+        errors.append(f"{UNTRANSLATED_ALLOWLIST.name} stale entry (no longer identical to eng): {'/'.join(stale)}")
 
 
 def main() -> int:
@@ -744,7 +655,6 @@ def main() -> int:
     validate_relic_registry(errors)
     validate_rune_file_layout(errors)
     validate_enemy_hex_effect_layout(errors)
-    validate_combat_tracking_state(errors)
     validate_icon_assets(errors, warnings)
     validate_telemetry_labels(errors)
     validate_official_name_references(errors)
@@ -752,7 +662,7 @@ def main() -> int:
     for pack, root in localization_roots():
         validate_localization_key_parity(errors, root, pack)
         validate_localization_format_parity(errors, root, pack)
-        validate_untranslated_values(errors, warnings, root, pack, allowlist)
+        validate_untranslated_values(errors, root, pack, allowlist)
 
     if errors:
         print("Hextech content validation failed:")

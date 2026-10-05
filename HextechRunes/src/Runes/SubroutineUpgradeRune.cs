@@ -29,7 +29,7 @@ public sealed class SubroutineUpgradeRune : CardUpgradeRuneBase<Subroutine>
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
 		if (player != Owner
-			|| Owner?.PlayerCombatState == null
+			|| Owner.PlayerCombatState == null
 			|| Owner.Creature.IsDead
 			|| !TryConsumeCombatStartMove())
 		{

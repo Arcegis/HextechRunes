@@ -27,7 +27,7 @@ internal static partial class HextechChoiceCodec
 			monsterHex.HasValue ? (int)monsterHex.Value : -1,
 			hostUsesBetterMultiplayerScaling ? 1 : 0
 		];
-		int[] normalizedCounts = HextechEnemyHexCountState.Normalize(enemyHexCountsByAct);
+		int[] normalizedCounts = HextechHexCountState.NormalizeEnemyCounts(enemyHexCountsByAct);
 		payload.AddRange(normalizedCounts);
 		AppendDisabledPlayerRuneConfig(payload, disabledPlayerRuneIds);
 		AppendRunConfigurationSnapshot(payload, normalizedSnapshot);
@@ -98,7 +98,7 @@ internal static partial class HextechChoiceCodec
 		hostUsesBetterMultiplayerScaling = payload.Count >= 6 && payload[5] != 0;
 		if (payload.Count >= 9)
 		{
-			enemyHexCountsByAct = HextechEnemyHexCountState.Normalize(payload.Skip(6).Take(3).ToArray());
+			enemyHexCountsByAct = HextechHexCountState.NormalizeEnemyCounts(payload.Skip(6).Take(3).ToArray());
 			if (!TryDecodeDisabledPlayerRuneConfig(payload, 9, out disabledPlayerRuneIds, out int nextCursor))
 			{
 				return false;

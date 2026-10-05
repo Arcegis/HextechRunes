@@ -30,25 +30,9 @@ internal static class HextechIntegratedStrategyEventsCompat
 			_extraActMethodResolved = true;
 		}
 
-		MethodInfo? method = _getCurrentExtraActId;
-		if (method == null)
-		{
-			return null;
-		}
-
-		try
-		{
-			return method.Invoke(null, [ runState ]) as string;
-		}
-		catch (Exception ex)
-		{
-			if (HextechRunLogBudget.TryConsume("compat.integrated-strategy-extra-act", 1))
-			{
-				HextechLog.Warn("Mayhem", $"Integrated Strategy extra-act query failed: {ex.Message}");
-			}
-
-			return null;
-		}
+		// 异常不在这里接:HextechRunesInterop.GetCurrentExtraActId 对每个提供者都有 catch 并限次告警。
+		// DoNotWrapExceptions 让那里的告警拿到 ISE 自己的异常信息,而不是 TargetInvocationException。
+		return _getCurrentExtraActId?.Invoke(null, BindingFlags.DoNotWrapExceptions, binder: null, [ runState ], culture: null) as string;
 	}
 
 	private static MethodInfo? ResolveMethod(Assembly assembly)

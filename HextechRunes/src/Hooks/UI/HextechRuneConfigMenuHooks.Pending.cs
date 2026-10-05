@@ -123,10 +123,10 @@ internal static partial class HextechRuneConfigMenuHooks
 				DisabledPlayerRuneIds,
 				DisabledMonsterHexIds,
 				DisabledForgeIds,
-				ToRarityWeightsByAct(RuneWeightsByAct),
+				RuneWeightsByAct.Select(ToRarityWeights).ToArray(),
 				PreventConsecutiveSilverRunes,
 				GoldenRerollChancePercent,
-				ToForgeRarityWeights(ForgeWeights),
+				ToRarityWeights(ForgeWeights),
 				ForgePrice,
 				RandomForgeDirectGrant,
 				ModEnabled,
@@ -215,24 +215,9 @@ internal static partial class HextechRuneConfigMenuHooks
 		return [ weights.Silver, weights.Gold, weights.Prismatic ];
 	}
 
-	private static HextechRarityWeights ToRarityWeights(IReadOnlyList<int> weights)
+	// 编辑态的权重数组都由 ToWeightArray 建出,恒为三格(银/金/棱彩)。
+	private static HextechRarityWeights ToRarityWeights(int[] weights)
 	{
-		return new HextechRarityWeights(
-			weights.Count > 0 ? weights[0] : 0,
-			weights.Count > 1 ? weights[1] : 0,
-			weights.Count > 2 ? weights[2] : 0);
-	}
-
-	private static HextechRarityWeights[] ToRarityWeightsByAct(IEnumerable<IReadOnlyList<int>> weightsByAct)
-	{
-		return weightsByAct.Select(ToRarityWeights).ToArray();
-	}
-
-	private static HextechForgeRarityWeights ToForgeRarityWeights(IReadOnlyList<int> weights)
-	{
-		return new HextechForgeRarityWeights(
-			weights.Count > 0 ? weights[0] : 0,
-			weights.Count > 1 ? weights[1] : 0,
-			weights.Count > 2 ? weights[2] : 0);
+		return new HextechRarityWeights(weights[0], weights[1], weights[2]);
 	}
 }

@@ -13,7 +13,7 @@ public sealed class HangUpgradeRune : CardUpgradeRuneBase<Hang>
 
 	public override bool TryModifyKeywordsInCombat(CardModel card, ISet<CardKeyword> keywords)
 	{
-		return Owner != null && card.Owner == Owner && card is Hang && keywords.Add(CardKeyword.Exhaust);
+		return card.Owner == Owner && card is Hang && keywords.Add(CardKeyword.Exhaust);
 	}
 
 	internal static int NextIncrease(int current) => Math.Min(Math.Max(2, current), HextechCreatureStatLimits.StatHardCap - current);

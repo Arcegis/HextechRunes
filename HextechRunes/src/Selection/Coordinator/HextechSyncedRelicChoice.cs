@@ -55,7 +55,7 @@ internal static class HextechSyncedRelicChoice
 			return null;
 		}
 
-		PlayerChoiceSynchronizer synchronizer = await HextechRuneSelectionCoordinator.WaitForPlayerChoiceSynchronizerAsync(runManager);
+		PlayerChoiceSynchronizer synchronizer = HextechRuneSelectionCoordinator.RequirePlayerChoiceSynchronizer(runManager);
 		uint choiceId = synchronizer.ReserveChoiceId(player);
 		int operationToken = HextechChoiceCodec.ComputeOperationToken(
 			kind.OperationKind,
@@ -69,15 +69,18 @@ internal static class HextechSyncedRelicChoice
 		}
 
 		HextechLog.Info(kind.LogTag, $"Wait remote: player={player.NetId} choiceId={choiceId} context={context}");
-		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(
+		// 解码与候选核对都在 isExpected 里完成:等待只会在它返回 true 时结束,之后直接用捕获的下标。
+		int selectedIndex = -1;
+		(_, uint receivedChoiceId) = await HextechRuneSelectionCoordinator.WaitForRemoteHextechChoice(
 			synchronizer,
 			(RunState)player.RunState,
 			player,
 			choiceId,
-			choice => HextechChoiceCodec.IsRelicChoice(kind.CodecKind, choice, operationToken, options),
+			choice => HextechChoiceCodec.TryDecodeRelicChoice(kind.CodecKind, choice, operationToken, out selectedIndex, out List<ModelId> optionIds)
+				&& HextechChoiceCodec.MatchesOptionIds(optionIds, options),
 			protocolContext);
 		HextechLog.Info(kind.LogTag, $"Remote received: player={player.NetId} choiceId={receivedChoiceId} context={context}");
-		return ResolveRemoteChoice(kind, player, options, remoteChoice, operationToken, context, protocolContext);
+		return ResolveRemoteChoice(kind, player, options, selectedIndex, context, protocolContext);
 	}
 
 	private static async Task<RelicModel?> SelectLocalAndSyncAsync(
@@ -150,46 +153,22 @@ internal static class HextechSyncedRelicChoice
 		ChoiceKind kind,
 		Player player,
 		IReadOnlyList<RelicModel> expectedOptions,
-		PlayerChoiceResult remoteChoice,
-		int expectedOperationToken,
+		int selectedIndex,
 		string context,
 		string protocolContext)
 	{
-		string payloadDump = HextechChoiceCodec.TryGetIndexPayload(remoteChoice, out List<int> payload)
-			? $"[{string.Join(",", payload)}]"
-			: remoteChoice.ToString();
-		// 协议失败统一交给 CreateProtocolFailure:它断开联机并记录一次原因,这里不再重复写错误日志。
-		if (!HextechChoiceCodec.TryDecodeRelicChoice(
-			kind.CodecKind,
-			remoteChoice,
-			expectedOperationToken,
-			out int selectedIndex,
-			out List<ModelId> optionIds))
-		{
-			throw HextechRuneSelectionCoordinator.CreateProtocolFailure(
-				protocolContext,
-				$"Malformed {kind.Description} payload: player={player.NetId} context={context} payload={payloadDump}");
-		}
-
 		if (selectedIndex == -1)
 		{
 			HextechLog.Info(kind.LogTag, $"Remote selection canceled: player={player.NetId} context={context}");
 			return null;
 		}
 
-		if (!HextechChoiceCodec.MatchesOptionIds(optionIds, expectedOptions))
+		// 协议失败统一交给 CreateProtocolFailure:它断开联机并记录一次原因,这里不再重复写错误日志。
+		if (selectedIndex < 0 || selectedIndex >= expectedOptions.Count)
 		{
 			throw HextechRuneSelectionCoordinator.CreateProtocolFailure(
 				protocolContext,
-				$"Synced {kind.Description} options differ from local options: player={player.NetId} " +
-				$"expected={expectedOptions.Count} actual={optionIds.Count} context={context} payload={payloadDump}");
-		}
-
-		if (selectedIndex < 0 || selectedIndex >= optionIds.Count)
-		{
-			throw HextechRuneSelectionCoordinator.CreateProtocolFailure(
-				protocolContext,
-				$"Invalid {kind.Description} selected index: player={player.NetId} index={selectedIndex} count={optionIds.Count} context={context} payload={payloadDump}");
+				$"Invalid {kind.Description} selected index: player={player.NetId} index={selectedIndex} count={expectedOptions.Count} context={context}");
 		}
 
 		// 候选 ID 已逐个核对,返回本端同位置的候选实例,与本地分支返回 options 中实例的口径一致。

@@ -89,7 +89,6 @@ public sealed partial class DoubleVisionRune
 
 		return player.Relics
 			.OfType<DoubleVisionRune>()
-			.Where(static rune => rune.Owner != null)
 			.ToList();
 	}
 
@@ -102,7 +101,6 @@ public sealed partial class DoubleVisionRune
 
 		return player.Relics
 			.OfType<DoubleVisionRune>()
-			.Where(static rune => rune.Owner != null)
 			.ToList();
 	}
 
@@ -124,7 +122,9 @@ public sealed partial class DoubleVisionRune
 		return true;
 	}
 
-	private static void TrySyncObtainedCard(CardModel card)
+	// 复制份已在本地获得后才广播；原版 RewardSynchronizer 在联机中途可能抛异常，
+	// 此时不能回滚已获得的奖励，只记录分叉风险。
+	private static void TrySyncObtainedReward(string kind, string subject, Action sync)
 	{
 		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
@@ -133,70 +133,13 @@ public sealed partial class DoubleVisionRune
 
 		try
 		{
-			RunManager.Instance.RewardSynchronizer.SyncLocalObtainedCard(card);
+			sync();
 		}
 		catch (Exception ex)
 		{
 			HextechLog.Error(
-				"DoubleVision", $"[DESYNC-RISK] Local duplicated card reward was already granted, "
-				+ $"but its multiplayer broadcast failed: card={card.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
-		}
-	}
-
-	private static void TrySyncObtainedGold(int amount)
-	{
-		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
-		{
-			return;
-		}
-
-		try
-		{
-			RunManager.Instance.RewardSynchronizer.SyncLocalObtainedGold(amount);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error(
-				"DoubleVision", $"[DESYNC-RISK] Local duplicated gold reward was already granted, "
-				+ $"but its multiplayer broadcast failed: amount={amount} error={ex.GetType().Name}: {ex.Message}");
-		}
-	}
-
-	private static void TrySyncObtainedPotion(PotionModel potion)
-	{
-		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
-		{
-			return;
-		}
-
-		try
-		{
-			RunManager.Instance.RewardSynchronizer.SyncLocalObtainedPotion(potion);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error(
-				"DoubleVision", $"[DESYNC-RISK] Local duplicated potion reward was already granted, "
-				+ $"but its multiplayer broadcast failed: potion={potion.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
-		}
-	}
-
-	private static void TrySyncObtainedRelic(RelicModel relic)
-	{
-		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
-		{
-			return;
-		}
-
-		try
-		{
-			RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(relic);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error(
-				"DoubleVision", $"[DESYNC-RISK] Local duplicated relic reward was already granted, "
-				+ $"but its multiplayer broadcast failed: relic={relic.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
+				"DoubleVision", $"[DESYNC-RISK] Local duplicated {kind} reward was already granted, "
+				+ $"but its multiplayer broadcast failed: {kind}={subject} error={ex.GetType().Name}: {ex.Message}");
 		}
 	}
 }

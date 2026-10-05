@@ -2,7 +2,7 @@ namespace HextechRunes;
 
 internal sealed partial class HextechMayhemModifier
 {
-	public override async Task BeforeTurnEndForParticipants(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
+	public override async Task BeforeSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
 	{
 		CombatRoom? combatRoom = RunState.CurrentRoom as CombatRoom;
 		IReadOnlyList<Creature> participantList = participants.ToList();

@@ -60,7 +60,7 @@ public sealed class DevilsDanceRune : HextechRelicBase
 
 	private async Task ResolveAttackProgressFromHistory()
 	{
-		int attacksPlayed = CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true);
+		int attacksPlayed = CountOwnedAttackCardsPlayedFromHistory();
 		int previousAttacksPlayed = _attacksPlayedThisCombat;
 		if (attacksPlayed <= previousAttacksPlayed)
 		{
@@ -77,7 +77,7 @@ public sealed class DevilsDanceRune : HextechRelicBase
 
 	private async Task GainMaxHpForAttackThreshold()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}

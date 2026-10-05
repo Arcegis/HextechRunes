@@ -25,11 +25,10 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null
-			|| Owner.PlayerCombatState == null
-			|| Owner.Creature.CombatState is not HextechCombatState combatState
-			|| !CombatManager.Instance.IsInProgress
-			|| CombatManager.Instance.IsOverOrEnding)
+		// 排在前面的遗物(如烟花锻造器)可能已在开局打死全部主要敌人,战斗进入结束流程后不再发牌。
+		if (Owner.PlayerCombatState == null
+			|| CombatManager.Instance.IsOverOrEnding
+			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
 			return;
 		}
@@ -40,11 +39,6 @@ public sealed class OmniDragonSoulRune : HextechRelicBase
 
 	private static async Task AddRandomUpgradedDragonSoulCardsToCombatHand(Player owner, int count, HextechCombatState combatState)
 	{
-		if (count <= 0)
-		{
-			return;
-		}
-
 		IReadOnlyList<int> dragonSoulRolls = RollDistinctDragonSoulCardKinds(owner, count, combatState);
 		List<CardModel> cards = new(dragonSoulRolls.Count);
 		foreach (int roll in dragonSoulRolls)

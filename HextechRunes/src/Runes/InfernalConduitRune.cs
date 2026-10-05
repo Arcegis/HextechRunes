@@ -30,7 +30,7 @@ public sealed class InfernalConduitRune : HextechRelicBase
 
 	public override async Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature? dealer, DamageResult result, ValueProp props, Creature target, CardModel? cardSource)
 	{
-		if (Owner == null || target.Side != CombatSide.Enemy || !IsAttackDamageForRuneEffects(props, cardSource) || !IsDamageFromOwner(dealer, cardSource))
+		if (target.Side != CombatSide.Enemy || !IsAttackDamageForRuneEffects(props, cardSource) || !IsDamageFromOwner(dealer, cardSource))
 		{
 			return;
 		}
@@ -40,7 +40,7 @@ public sealed class InfernalConduitRune : HextechRelicBase
 
 	public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.CombatState == null)
+		if (side != Owner.Creature.Side || Owner.Creature.CombatState == null)
 		{
 			return Task.CompletedTask;
 		}

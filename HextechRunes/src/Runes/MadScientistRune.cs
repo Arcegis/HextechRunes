@@ -16,19 +16,13 @@ public sealed class MadScientistRune : HextechRelicBase
 
 	public override async Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
-		{
-			return;
-		}
-
-		int orbSlots = Math.Max(0, DynamicVars["OrbSlots"].IntValue);
-		if (orbSlots <= 0)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}
 
 		Flash();
-		await OrbCmd.AddSlots(Owner, orbSlots);
+		await OrbCmd.AddSlots(Owner, DynamicVars["OrbSlots"].IntValue);
 	}
 
 	// 跳过理由：原版 OrbCmd.AddSlots(三个版本一致)写死 amount = Min(10 - Capacity, amount)，充能球栏位上限 10

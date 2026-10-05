@@ -28,7 +28,7 @@ public sealed class HubrisRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner != null && !Owner.Creature.IsDead)
+		if (!Owner.Creature.IsDead)
 		{
 			SavedStacks++;
 			Flash(Array.Empty<Creature>());
@@ -39,7 +39,7 @@ public sealed class HubrisRune : HextechSharedCombatVictoryRuneBase
 
 	public override async Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (room is not CombatRoom || Owner == null)
+		if (room is not CombatRoom)
 		{
 			return;
 		}

@@ -35,8 +35,7 @@ public sealed class FinalFormRune : TurnScopedRelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		EnsureTurnScopedStateCurrent();
-		if (Owner == null
-			|| !IsOwnedCardWithEffectiveCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue)
+		if (!IsOwnedCardWithEffectiveCostAtLeast(cardPlay.Card, DynamicVars["MinCost"].BaseValue)
 			|| !TryConsumeTurnProc(nameof(FinalFormRune), ref _triggeredThisTurn))
 		{
 			return;

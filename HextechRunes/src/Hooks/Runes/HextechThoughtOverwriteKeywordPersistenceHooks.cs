@@ -5,11 +5,11 @@ internal static class HextechThoughtOverwriteKeywordPersistenceHooks
 	// 顺序即存档里标记项的追加顺序与读档恢复顺序，保持与旧实现一致。
 	private static readonly KeywordPersistenceTracker[] Trackers =
 	[
-		ThoughtOverwriteKeywordPersistence.Tracker,
-		CurtainCallKeywordPersistence.Tracker,
-		CosplayInnateKeywordPersistence.Tracker,
-		CorruptedBranchInnateKeywordPersistence.Tracker,
-		UndyingEtherealKeywordPersistence.Tracker
+		KeywordPersistenceTrackers.ThoughtOverwrite,
+		KeywordPersistenceTrackers.CurtainCall,
+		KeywordPersistenceTrackers.CosplayInnate,
+		KeywordPersistenceTrackers.CorruptedBranchInnate,
+		KeywordPersistenceTrackers.UndyingEthereal
 	];
 
 	/// <summary>按 <see cref="Trackers"/> 下标记录的"需要保留"位图。</summary>

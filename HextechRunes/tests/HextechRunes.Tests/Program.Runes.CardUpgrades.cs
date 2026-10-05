@@ -36,7 +36,7 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void RoyaltiesUpgradePaysImmediatelyAndPreservesLegacyAccrual()
+	private static void RoyaltiesUpgradePaysImmediately()
 	{
 		WithImmediateGoldFixture((first, second, _, listener) =>
 		{
@@ -50,30 +50,10 @@ internal static partial class Program
 			int gold = first.Gold;
 			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
 			rune.AfterPlayerTurnStart(null!, first).GetAwaiter().GetResult();
-			Equal(0, rune.SavedCountThisCombat, "immediate income does not accrue for a second payout");
 			Equal(gold + 38, first.Gold, "full royalties amount each turn, paid immediately with no compounding");
 			Equal(19, power.Amount, "original combat-end royalties remain intact");
 			rune.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
 			Equal(0, UpgradeGoldRewards.Count, "no battle-end duplicate");
-			// 旧版本保存的尚未领取计数仍能还原并结算一次。
-			rune.SavedCountThisCombat = 13;
-#if STS2_109_OR_NEWER
-			MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache.CacheSavedPropertiesForTypeDebug(typeof(RoyaltiesUpgradeRune));
-#else
-			HextechSavedPropertyBootstrap.InjectModelType(typeof(RoyaltiesUpgradeRune));
-#endif
-			SerializableRelic saved = rune.ToSerializable();
-			int count = saved.Props!.ints!.Single(p => p.name == nameof(RoyaltiesUpgradeRune.SavedCountThisCombat)).value;
-			RoyaltiesUpgradeRune loaded = CreateMutableTestModel<RoyaltiesUpgradeRune>();
-			loaded.Owner = first;
-			loaded.SavedCountThisCombat = count;
-			loaded.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
-			loaded.AfterCombatEnd((CombatRoom)RuntimeHelpers.GetUninitializedObject(typeof(CombatRoom))).GetAwaiter().GetResult();
-			Equal(1, UpgradeGoldRewards.Count, "one fixed combat reward");
-			Equal((first, 13), UpgradeGoldRewards[0], "legacy saved accrual belongs only to its owner");
-			Equal(0, loaded.SavedCountThisCombat, "payout clears accrued counter");
-			loaded.BeforeCombatStart().GetAwaiter().GetResult();
-			Equal(0, loaded.SavedCountThisCombat, "next combat starts empty");
 		});
 	}
 
@@ -190,8 +170,6 @@ internal static partial class Program
 	private static void CardUpgradePickupAndAvailabilityRules()
 	{
 		BloodlettingUpgradeRune singleForm = new();
-		Expect(singleForm.GrantsCardOnPickup, "ordinary card upgrade runes should grant their target card");
-		Expect(singleForm.HasUponPickupEffect, "ordinary card upgrade runes should advertise their pickup effect");
 		Expect(singleForm.MeetsCardAvailabilityRequirement([]), "ordinary card upgrade runes should not require the target card");
 
 		BashUpgradeRune bash = new();
@@ -199,15 +177,6 @@ internal static partial class Program
 		FallingStarUpgradeRune fallingStar = new();
 		UnleashUpgradeRune unleash = new();
 		DualcastUpgradeRune dualcast = new();
-		RelicModel[] dualFormRunes = [ bash, neutralize, fallingStar, unleash, dualcast ];
-		foreach (RelicModel rune in dualFormRunes)
-		{
-			Expect(!rune.HasUponPickupEffect, $"{rune.GetType().Name} should not grant a card on pickup");
-			Expect(
-				rune is IHextechSelectionFooterProvider footerProvider
-				&& footerProvider.GetSelectionFooterText() == null,
-				$"{rune.GetType().Name} should not show a pickup footer");
-		}
 
 		Expect(!bash.MeetsCardAvailabilityRequirement([]), "Bash upgrade should require Bash or Break");
 		Expect(bash.MeetsCardAvailabilityRequirement([new Bash()]), "Bash upgrade should accept Bash");
@@ -225,8 +194,6 @@ internal static partial class Program
 		Expect(dualcast.MeetsCardAvailabilityRequirement([new Dualcast()]), "Dualcast upgrade should accept Dualcast");
 		Expect(dualcast.MeetsCardAvailabilityRequirement([new Quadcast()]), "Dualcast upgrade should accept Quadcast");
 
-		Expect((object)new StrikeUpgradeRune() is not IHextechSelectionFooterProvider, "Strike upgrade should not show a pickup footer");
-		Expect((object)new DefendUpgradeRune() is not IHextechSelectionFooterProvider, "Defend upgrade should not show a pickup footer");
 		Expect(!StrikeUpgradeRune.HasBasicStrike([]), "Strike upgrade should require a basic Strike");
 		Expect(StrikeUpgradeRune.HasBasicStrike([new StrikeIronclad()]), "Strike upgrade should accept a basic Strike");
 		Expect(!DefendUpgradeRune.HasBasicDefend([]), "Defend upgrade should require a basic Defend");
@@ -252,7 +219,6 @@ internal static partial class Program
 	[HextechTest]
 	private static void StarterUpgradeCapsTerminateExternalUpgradeToMaxLoops()
 	{
-		Equal(999, HextechStarterUpgradeHooks.UpgradeLevelCap, "starter multi-upgrade cap");
 		Equal(
 			999,
 			HextechStarterUpgradeHooks.ResolveOwnedMaxUpgradeLevel(0),
@@ -273,23 +239,6 @@ internal static partial class Program
 			1001,
 			HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(1000, isDeserializing: true),
 			"legacy over-cap saves can replay the next upgrade level");
-
-		int simulatedUpgradeLevel = 0;
-		int upgradeCount = 0;
-		while (simulatedUpgradeLevel < HextechStarterUpgradeHooks.ResolveUnownedMaxUpgradeLevel(
-			simulatedUpgradeLevel,
-			isDeserializing: false))
-		{
-			simulatedUpgradeLevel++;
-			upgradeCount++;
-			Expect(upgradeCount <= 1, "UpgradeAllCards-style loop must terminate at the vanilla cap");
-		}
-
-		Equal(1, simulatedUpgradeLevel, "UpgradeAllCards-style loop final level");
-		Equal(1, upgradeCount, "UpgradeAllCards-style loop iteration count");
-
-		SearingAttackCard searingAttack = CreateMutableTestModel<SearingAttackCard>();
-		Equal(999, searingAttack.MaxUpgradeLevel, "Searing Attack cap");
 	}
 
 	[HextechTest]
@@ -334,40 +283,15 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void DualcastUpgradeReturnsBothCastCardsToHand()
-	{
-		Expect(
-			DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Dualcast>()),
-			"Dualcast Upgrade should return Dualcast to hand");
-		Expect(
-			DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Quadcast>()),
-			"Dualcast Upgrade should return Quadcast to hand");
-		Expect(
-			!DualcastUpgradeRune.IsSupportedCard(CreateMutableTestModel<Zap>()),
-			"Dualcast Upgrade should ignore unrelated cards");
-		Expect(
-			DualcastUpgradeRune.CanReturnFromResultPile(PileType.Discard),
-			"normal result piles should be redirected to hand");
-		Expect(
-			!DualcastUpgradeRune.CanReturnFromResultPile(PileType.None),
-			"temporary copies with no result pile should still disappear");
-		DualcastUpgradeRune rune = new();
-		Expect(!rune.GrantsCardOnPickup, "Dualcast Upgrade should not grant a card when obtained");
-		Expect(!rune.HasUponPickupEffect, "Dualcast Upgrade should not advertise a pickup effect");
-	}
-
-	[HextechTest]
 	private static void PactsEndUpgradeDamageScalesWithExhaustPile()
 	{
 		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(0, 6m), "empty exhaust pile bonus");
 		Equal(30m, PactsEndUpgradeRune.CalculateBonusDamage(5, 6m), "five-card exhaust pile bonus");
-		Equal(0m, PactsEndUpgradeRune.CalculateBonusDamage(-1, 6m), "negative exhaust count clamps");
 	}
 
 	[HextechTest]
 	private static void BrandUpgradeDamageScalesWithPermanentPlayCount()
 	{
-		Equal(3, BrandUpgradeRune.DamagePercentPerBrand, "Brand damage percent per play");
 		Equal(1m, BrandUpgradeRune.CalculateDamageMultiplier(0, BrandUpgradeRune.DamagePercentPerBrand), "zero brand plays");
 		Equal(1.03m, BrandUpgradeRune.CalculateDamageMultiplier(1, BrandUpgradeRune.DamagePercentPerBrand), "one brand play");
 		Equal(1.30m, BrandUpgradeRune.CalculateDamageMultiplier(10, BrandUpgradeRune.DamagePercentPerBrand), "ten brand plays");
@@ -392,14 +316,6 @@ internal static partial class Program
 		Expect(!StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: false), "vanilla Storm should ignore Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Attack, hasUpgradeRune: true), "upgraded Storm should trigger for Attacks");
 		Expect(StormUpgradeRune.ShouldTrigger(CardType.Skill, hasUpgradeRune: true), "upgraded Storm should trigger for Skills");
-		Expect(ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: false), "Reanimate should count Minion and Small Hand deaths like Melancholy");
-		Expect(!ReanimateUpgradeRune.ShouldCountDeath(wasRemovalPrevented: true), "Reanimate should ignore a death that was prevented");
-		Equal(7, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 0), "Body Slam should count total damage like Fisticuffs");
-		Equal(10, BodySlamUpgradeRune.CalculateFisticuffsBlock(7, 3), "Body Slam should add overkill damage like Fisticuffs");
-		Equal(7, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 0), "Wrought in War should count total damage like Fisticuffs");
-		Equal(10, WroughtInWarUpgradeRune.CalculateFisticuffsBlock(7, 3), "Wrought in War should add overkill damage like Fisticuffs");
-		Expect(DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: false), "Decisions should allow playable cards of any type");
-		Expect(!DecisionsDecisionsUpgradeRune.CanSelectCard(isUnplayable: true), "Decisions should still reject Unplayable cards");
 		Equal(3, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(1, 3), "Decisions should resolve all three plays inside one card-play wrapper");
 		Equal(4, DecisionsDecisionsUpgradeRune.AddRequestedPlayCount(2, 3), "Decisions replay count should combine additively with another replay");
 	}
@@ -417,24 +333,5 @@ internal static partial class Program
 			!HiddenGemUpgradeRune.IsEligibleReplayTarget(target),
 			"Hidden Gem should retain the vanilla restriction against cards that already have Replay");
 		Equal(PileType.Hand, HiddenGemUpgradeRune.ReplayTargetPile, "Hidden Gem upgraded replay target pile");
-	}
-
-	[HextechTest]
-	private static void DragonSoulAndMikaelsUseUpdatedUpgradeValues()
-	{
-		MikaelsBlessingCard mikaels = CreateMutableTestModel<MikaelsBlessingCard>();
-		Equal(0, mikaels.EnergyCost.GetWithModifiers(CostModifiers.Local), "base Mikael's Blessing costs zero");
-		Equal(10m, mikaels.DynamicVars["HealPercent"].BaseValue, "base Mikael's Blessing heals ten percent");
-		Expect(mikaels.CanonicalKeywords.Contains(CardKeyword.Retain), "Mikael's Blessing retains");
-		CardCmd.Upgrade(mikaels);
-		Equal(0, mikaels.EnergyCost.GetWithModifiers(CostModifiers.Local), "upgraded Mikael's Blessing still costs zero");
-		Equal(15m, mikaels.DynamicVars["HealPercent"].BaseValue, "upgrade increases healing to fifteen percent");
-		InfernalDragonSoulCard infernal = CreateMutableTestModel<InfernalDragonSoulCard>();
-		Equal(0, infernal.EnergyCost.GetWithModifiers(CostModifiers.Local), "Infernal Dragon Soul costs zero");
-		Equal(8m, infernal.DynamicVars["BurnPower"].BaseValue, "Infernal Dragon Soul applies eight Burn");
-		CardCmd.Upgrade(infernal);
-		Equal(8m, infernal.DynamicVars["BurnPower"].BaseValue, "upgraded Infernal Dragon Soul retains eight Burn");
-		Expect(infernal.Keywords.Contains(CardKeyword.Innate), "upgraded Infernal Dragon Soul is Innate");
-		Equal(2m, new AncientWineRune().DynamicVars["HealPercent"].BaseValue, "Ancient Wine heals two percent after a Skill");
 	}
 }

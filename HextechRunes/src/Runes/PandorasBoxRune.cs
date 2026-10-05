@@ -6,11 +6,6 @@ public sealed class PandorasBoxRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		Flash();
 		await HextechRuneGrantHelper.ReplaceOwnedHextechRunesWithRandomRunes(
 			Owner,

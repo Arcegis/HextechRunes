@@ -16,15 +16,10 @@ public sealed class WroughtInWarUpgradeRune : CardUpgradeRuneBase<WroughtInWar>
 
 		int block = attackCommand.Results
 			.SelectMany(static results => results)
-			.Sum(static result => CalculateFisticuffsBlock(result.TotalDamage, result.OverkillDamage));
+			.Sum(static result => result.TotalDamage + result.OverkillDamage);
 		Flash();
 		await CreatureCmd.GainBlock(card.Owner.Creature, block, ValueProp.Move, cardPlay);
 		await ForgeCmd.Forge(card.DynamicVars.Forge.IntValue, card.Owner, card);
-	}
-
-	internal static int CalculateFisticuffsBlock(int totalDamage, int overkillDamage)
-	{
-		return totalDamage + overkillDamage;
 	}
 
 	[HarmonyPatch(typeof(WroughtInWar), "OnPlay", typeof(PlayerChoiceContext), typeof(CardPlay))]

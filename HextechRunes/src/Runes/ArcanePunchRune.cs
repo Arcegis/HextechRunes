@@ -88,7 +88,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 
 	private async Task ResolveAttackProgressFromHistory()
 	{
-		int attacksPlayed = CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true);
+		int attacksPlayed = CountOwnedAttackCardsPlayedFromHistory();
 		int previousAttacksPlayed = _attacksPlayedThisCombat;
 		if (attacksPlayed <= previousAttacksPlayed)
 		{
@@ -106,7 +106,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 
 	private async Task GainEnergyForAttackThreshold()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -118,7 +118,7 @@ public sealed class ArcanePunchRune : HextechRelicBase
 	private int GetAttacksPlayedThisCombat()
 	{
 		return ShouldUseNetworkCombatHistory()
-			? CountOwnedAttackCardsPlayedFromHistory(firstInSeriesOnly: false, includeAutoPlay: true)
+			? CountOwnedAttackCardsPlayedFromHistory()
 			: _attacksPlayedThisCombat;
 	}
 }

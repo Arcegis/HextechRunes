@@ -245,7 +245,7 @@ internal static partial class Program
 		Equal(2, strengthBonuses, "second strength bonus count");
 	}
 
-	// 战士/自动机契约升级起始遗物、摄政契约替换起始遗物都读这张表(IAbyssalContract.UpgradeCurrentStartingRelic、RegentContract)。
+	// 战士/自动机契约升级起始遗物、摄政契约替换起始遗物都读这张表(AbyssalContractBase.UpgradeCurrentStartingRelic、RegentContract)。
 	[HextechTest]
 	private static void AbyssalContractStarterUpgradeMappingsCoverVanillaCharacters()
 	{

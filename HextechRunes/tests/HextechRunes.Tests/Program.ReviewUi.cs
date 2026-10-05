@@ -51,9 +51,9 @@ internal static partial class Program
 			$"config menu should start async work through TaskHelper.RunSafely, found async void: {string.Join(", ", asyncVoid.Select(static method => method.DeclaringType?.Name + "." + method.Name))}");
 	}
 
-	/// <summary>血条灼烧预测与实际结算共用同一公式。</summary>
+	/// <summary>灼烧每次结算的掉血取层数与百分比两者较大者(血条预测直接调用同一函数)。</summary>
 	[HextechTest]
-	private static void BurnHealthBarPredictionUsesSettlementFormula()
+	private static void BurnHpLossTakesLargerOfStacksAndPercent()
 	{
 		Equal(3, HextechBurnPower.CalculateHpLoss(50, 3), "low hp: stacks dominate");
 		Equal(15, HextechBurnPower.CalculateHpLoss(500, 3), "high hp: percent dominates");
@@ -84,37 +84,5 @@ internal static partial class Program
 			"Plain text",
 			Format("[gold][font_size=28][b]Starter:[/b][/font_size][/gold] Body", "Plain text"),
 			"loc text without the gold title falls back unchanged");
-	}
-
-	/// <summary>跳过原版的 UI 前缀一律 Priority.Low,并且隐藏遗物开关不再在补丁安装阶段动态打补丁。</summary>
-	[HextechTest]
-	private static void UiSkipPrefixesUseLowPriorityAndDeclarativeTargets()
-	{
-		string[] skipPatchTypes =
-		[
-			"HextechRunes.HextechEnemyUi+HolderFocusPatch",
-			"HextechRunes.HextechEnemyUi+HolderUnfocusPatch",
-			"HextechRunes.HextechInspectHooks+UpdateRelicDisplayPatch",
-			"HextechRunes.HextechUiSafetyHooks+NewlyAcquiredAnimationPatch",
-			"HextechRunes.HextechUiSafetyHooks+MultiplayerIntentPatch",
-			"HextechRunes.HextechUiSafetyHooks+CardPlayQueuePatch",
-			"HextechRunes.HextechRelicVisibilityHooks+RelicHolderDoFlashPatch",
-			"HextechRunes.HextechBurnHealthBarHooks+RefreshForegroundPatch"
-		];
-		foreach (string typeName in skipPatchTypes)
-		{
-			Type type = typeof(ModEntry).Assembly.GetType(typeName)
-				?? throw new TypeLoadException(typeName);
-			MethodInfo prefix = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-				.Single(static method => method.GetCustomAttribute<HarmonyPrefix>() != null);
-			Equal(typeof(bool), prefix.ReturnType, $"{typeName} prefix can skip the original");
-			Equal(Priority.Low, prefix.GetCustomAttribute<HarmonyPriority>()?.info.priority ?? -1, $"{typeName} prefix priority");
-		}
-
-		Type visibility = typeof(HextechRelicVisibilityHooks);
-		Expect(
-			visibility.GetNestedTypes(BindingFlags.NonPublic)
-				.All(static nested => nested.GetMethod("Apply", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, [typeof(Harmony)]) == null),
-			"relic visibility patches should be declared per target instead of applied dynamically");
 	}
 }

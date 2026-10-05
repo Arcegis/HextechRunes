@@ -14,17 +14,12 @@ public sealed class FlawlessRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!IsOwnedCard(cardPlay.Card) || Owner == null || Owner.Creature.IsDead || !ShouldCountCard(cardPlay.Card))
+		if (!IsOwnedCard(cardPlay.Card) || Owner.Creature.IsDead || !HextechColorlessCardHelper.IsColorlessCard(cardPlay.Card))
 		{
 			return Task.CompletedTask;
 		}
 
 		Flash();
 		return CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
-	}
-
-	private static bool ShouldCountCard(CardModel card)
-	{
-		return HextechColorlessCardHelper.IsColorlessCard(card);
 	}
 }

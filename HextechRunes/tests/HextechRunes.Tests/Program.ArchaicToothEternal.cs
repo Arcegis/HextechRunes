@@ -20,23 +20,13 @@ internal static partial class Program
 	[HextechTest]
 	private static void ArchaicToothTransformsEternalOnlyWithinItsNativeObtainTask()
 	{
-		Type[] added = new[] { typeof(Bash), typeof(Break), typeof(Neutralize), typeof(Suppress), typeof(Unleash),
-			typeof(Protector), typeof(FallingStar), typeof(MeteorShower), typeof(Dualcast), typeof(Quadcast) }
-			.Where(type => !ModelDb.Contains(type)).ToArray();
-		FieldInfo loadedField = AccessTools.Field(typeof(HextechRuneConfiguration), "_loaded");
-		object config = AccessTools.Field(typeof(HextechRuneConfiguration), "_config").GetValue(null)!;
-		PropertyInfo enabledProperty = config.GetType().GetProperty("ModEnabled")!;
-		object? loaded = loadedField.GetValue(null);
-		object? enabled = enabledProperty.GetValue(config);
+		using IDisposable models = InjectMissingModels(typeof(Bash), typeof(Break), typeof(Neutralize), typeof(Suppress), typeof(Unleash),
+			typeof(Protector), typeof(FallingStar), typeof(MeteorShower), typeof(Dualcast), typeof(Quadcast));
+		using ModEnabledOverride modSwitch = new();
 		Harmony harmony = new("HextechRunes.Tests.ArchaicToothEternal");
 		try
 		{
-			foreach (Type type in added)
-			{
-				ModelDb.Inject(type);
-			}
-			loadedField.SetValue(null, true);
-			enabledProperty.SetValue(config, true);
+			modSwitch.Enabled = true;
 			RunState run = (RunState)RuntimeHelpers.GetUninitializedObject(typeof(RunState));
 			AccessTools.Property(typeof(RunState), nameof(RunState.Modifiers)).SetValue(run, Array.Empty<ModifierModel>());
 			AccessTools.Field(typeof(RunState), "_allCards").SetValue(run, new List<CardModel>());
@@ -69,19 +59,13 @@ internal static partial class Program
 			Expect(!bash.IsTransformable && !other.IsTransformable, "pending async conversion does not leak permission to caller");
 			obtained.GetAwaiter().GetResult();
 			Expect(!bash.IsTransformable && !bash.IsRemovable, "completion retains eternal and clears conversion permission");
-			enabledProperty.SetValue(config, false);
+			modSwitch.Enabled = false;
 			ExpectThrows<InvalidOperationException>(() => tooth.AfterObtained().GetAwaiter().GetResult(), "disabled mod preserves native eternal refusal");
 			Expect(!bash.IsTransformable, "failed conversion leaves no permission behind");
 		}
 		finally
 		{
 			harmony.UnpatchAll(harmony.Id);
-			enabledProperty.SetValue(config, enabled);
-			loadedField.SetValue(null, loaded);
-			foreach (Type type in added)
-			{
-				ModelDb.Remove(type);
-			}
 		}
 	}
 

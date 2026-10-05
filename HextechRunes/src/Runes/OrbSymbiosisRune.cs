@@ -16,7 +16,7 @@ public sealed class OrbSymbiosisRune : HextechRelicBase
 
 	public override async Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
 	{
-		if (_duplicatingOrb || player != Owner || Owner == null || Owner.Creature.IsDead)
+		if (_duplicatingOrb || player != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}

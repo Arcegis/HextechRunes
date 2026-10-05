@@ -4,11 +4,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	internal static bool NeedsEnemyOnlySelection(int playerCount, int newEnemyCount, bool presetChallenge)
-	{
-		return playerCount <= 0 && newEnemyCount > 0 && !presetChallenge;
-	}
-
 	private static async Task<IReadOnlyList<MonsterHexKind>> SelectEnemyHexesOnly(
 		RunState runState, HextechMayhemModifier modifier, int actIndex, HextechRarityTier rarity,
 		IReadOnlyList<MonsterHexKind> previousHexes, IReadOnlyList<MonsterHexKind> newHexes,
@@ -18,9 +13,10 @@ internal static partial class HextechRuneSelectionCoordinator
 		EnemyHexAdjustmentSyncContext? sync = null;
 		if (!HextechPlayerContextHelper.IsSinglePlayerFlow(manager.NetService.Type))
 		{
-			PlayerChoiceSynchronizer synchronizer = await WaitForPlayerChoiceSynchronizerAsync(manager);
-			sync = CreateEnemyHexAdjustmentSyncContext(manager, runState, synchronizer, actIndex, newHexes)
+			PlayerChoiceSynchronizer synchronizer = RequirePlayerChoiceSynchronizer(manager);
+			Player authorityPlayer = GetActRollAuthorityPlayer(manager, runState)
 				?? throw new OperationCanceledException("No enemy hex selection authority.");
+			sync = CreateEnemyHexAdjustmentSyncContext(synchronizer, authorityPlayer, actIndex, newHexes);
 		}
 
 		bool authority = sync == null || IsLocalPlayer(manager, sync.AuthorityPlayer);

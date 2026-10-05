@@ -9,7 +9,7 @@ public sealed class AncientWineRune : HextechRelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (!IsOwnedSkill(cardPlay.Card) || Owner == null || Owner.Creature.IsDead)
+		if (!IsOwnedSkill(cardPlay.Card) || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

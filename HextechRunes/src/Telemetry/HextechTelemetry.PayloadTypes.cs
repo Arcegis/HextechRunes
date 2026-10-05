@@ -13,7 +13,7 @@ internal static partial class HextechTelemetry
 		string? Selected,
 		int RerollCount);
 
-	private sealed record TelemetryConfig(bool Enabled, string Endpoint);
+	internal sealed record TelemetryConfig(bool Enabled, string Endpoint);
 
 	private sealed record RunEndedPayload(
 		int SchemaVersion,

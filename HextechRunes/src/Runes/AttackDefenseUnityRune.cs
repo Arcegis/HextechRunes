@@ -16,11 +16,6 @@ public sealed class AttackDefenseUnityRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardModel> strikes = Owner.Deck.Cards
 			.Where(static card => card.IsBasicStrikeOrDefend && card.Type == CardType.Attack)
 			.ToList();

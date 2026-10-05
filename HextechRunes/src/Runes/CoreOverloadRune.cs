@@ -20,7 +20,7 @@ public sealed class CoreOverloadRune : HextechRelicBase
 
 	public override async Task AfterOrbEvoked(PlayerChoiceContext choiceContext, OrbModel orb, IEnumerable<Creature> targets)
 	{
-		if (Owner == null || Owner.Creature.IsDead || orb.Owner != Owner || !IsDefectOwner)
+		if (Owner.Creature.IsDead || orb.Owner != Owner || !IsDefectOwner)
 		{
 			return;
 		}

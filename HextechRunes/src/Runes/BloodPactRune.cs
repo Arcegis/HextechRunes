@@ -27,8 +27,7 @@ public sealed class BloodPactRune : HextechRelicBase
 
 	public override Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| target != Owner.Creature
+		if (target != Owner.Creature
 			|| Owner.Creature.IsDead
 			|| !ShouldGainStrength(dealer?.Side, result.UnblockedDamage, props))
 		{

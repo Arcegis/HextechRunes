@@ -99,7 +99,6 @@ public static class ModEntry
 			Harmony harmony = new(HarmonyId);
 			SponsorPatcher.ApplyAll(harmony, typeof(ModEntry).Assembly);
 			SponsorPatcher.LogSummary();
-			SponsorPatcher.DumpIfRequested(harmony);
 			_patchesApplied = SponsorPatcher.RequiredFailureCount == 0;
 		}
 		catch (Exception ex)

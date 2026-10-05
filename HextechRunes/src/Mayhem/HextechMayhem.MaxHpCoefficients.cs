@@ -3,20 +3,15 @@ using MegaCrit.Sts2.Core.Nodes.Rooms;
 
 namespace HextechRunes;
 
-/// <summary>
-/// 敌方持久海克斯的 MaxHp 系数基准/投影维护。由 <see cref="HextechMayhemModifier"/> 的分部转发进来，
-/// 状态一律经 <see cref="HextechMayhemModifier.CombatTracking"/> 读写，本类自身不持有可变静态状态。
-/// </summary>
-internal static class HextechMonsterMaxHpCoefficients
+// 敌方持久海克斯的 MaxHp 系数基准/投影维护。状态一律经 CombatTracking 读写。
+internal sealed partial class HextechMayhemModifier
 {
-	internal static async Task ApplyPersistentMonsterHexes(
-		HextechMayhemModifier modifier,
+	private async Task ApplyPersistentMonsterHexes(
 		Creature creature,
 		bool replayOneShotPowers = false)
 	{
 		int? maxHpBaseOverride = replayOneShotPowers ? creature.MaxHp : null;
 		_ = CaptureMonsterMaxHpCoefficientBase(
-			modifier,
 			creature,
 			maxHpBaseOverride,
 			out bool migratedLegacyCoefficients);
@@ -24,26 +19,24 @@ internal static class HextechMonsterMaxHpCoefficients
 		{
 			// 旧存档的 persistent markers 已经置位，后续各 effect 会跳过 Apply。
 			// 基准迁移后必须在这里统一投影一次，否则旧实际 MaxHp 会与新基准永久脱节。
-			await ReapplyMonsterMaxHpCoefficients(modifier, creature);
+			await ReapplyMonsterMaxHpCoefficients(creature);
 		}
 
 		await HextechEnemyHexDispatcher.ForEachActiveOrdered(
-			modifier,
+			this,
 			static effect => effect.PersistentOrder,
 			(effect, context) => effect.ApplyPersistentToEnemy(context, creature, maxHpBaseOverride, replayOneShotPowers));
 	}
 
-	internal static int CaptureMonsterMaxHpCoefficientBase(HextechMayhemModifier modifier, Creature creature, int? baseMaxHpOverride = null)
+	internal int CaptureMonsterMaxHpCoefficientBase(Creature creature, int? baseMaxHpOverride = null)
 	{
 		return CaptureMonsterMaxHpCoefficientBase(
-			modifier,
 			creature,
 			baseMaxHpOverride,
 			out _);
 	}
 
-	private static int CaptureMonsterMaxHpCoefficientBase(
-		HextechMayhemModifier modifier,
+	private int CaptureMonsterMaxHpCoefficientBase(
 		Creature creature,
 		int? baseMaxHpOverride,
 		out bool migratedLegacyCoefficients)
@@ -57,81 +50,81 @@ internal static class HextechMonsterMaxHpCoefficients
 		if (baseMaxHpOverride is int overriddenBase)
 		{
 			int normalizedOverride = Math.Max(1, overriddenBase);
-			modifier.CombatTracking.MonsterMaxHpCoefficientBase[combatId] = normalizedOverride;
-			modifier.CombatTracking.MonsterMaxHpCoefficientProjected.Remove(combatId);
+			CombatTracking.MonsterMaxHpCoefficientBase[combatId] = normalizedOverride;
+			CombatTracking.MonsterMaxHpCoefficientProjected.Remove(combatId);
 			return normalizedOverride;
 		}
 
-		if (modifier.CombatTracking.MonsterMaxHpCoefficientBase.TryGetValue(combatId, out int trackedBase)
+		if (CombatTracking.MonsterMaxHpCoefficientBase.TryGetValue(combatId, out int trackedBase)
 			&& trackedBase > 0)
 		{
 			migratedLegacyCoefficients =
-				modifier.CombatTracking.MonsterMaxHpCoefficientProjected.GetValueOrDefault(combatId, 0) <= 0
-				&& HasAppliedMonsterMaxHpCoefficientMarker(modifier, combatId);
+				CombatTracking.MonsterMaxHpCoefficientProjected.GetValueOrDefault(combatId, 0) <= 0
+				&& HasAppliedMonsterMaxHpCoefficientMarker(combatId);
 			return trackedBase;
 		}
 
-		bool coefficientsWereAlreadyApplied = HasAppliedMonsterMaxHpCoefficientMarker(modifier, combatId);
+		bool coefficientsWereAlreadyApplied = HasAppliedMonsterMaxHpCoefficientMarker(combatId);
 		int baseMaxHp = coefficientsWereAlreadyApplied
-			? ResolveLegacyMonsterMaxHpCoefficientBase(modifier, creature, combatId)
+			? ResolveLegacyMonsterMaxHpCoefficientBase(creature, combatId)
 			: Math.Max(1, creature.MaxHp);
 		migratedLegacyCoefficients = coefficientsWereAlreadyApplied;
 
-		modifier.CombatTracking.MonsterMaxHpCoefficientBase[combatId] = baseMaxHp;
+		CombatTracking.MonsterMaxHpCoefficientBase[combatId] = baseMaxHp;
 		return baseMaxHp;
 	}
 
-	private static bool HasAppliedMonsterMaxHpCoefficientMarker(HextechMayhemModifier modifier, uint combatId)
+	private bool HasAppliedMonsterMaxHpCoefficientMarker(uint combatId)
 	{
 		return
-			modifier.CombatTracking.GoliathApplied.Contains(combatId)
-			|| modifier.CombatTracking.AstralBodyApplied.Contains(combatId)
-			|| modifier.CombatTracking.GoldenSpatulaApplied.Contains(combatId)
-			|| modifier.CombatTracking.StatsApplied.Contains(combatId)
-			|| modifier.CombatTracking.StatsOnStatsApplied.Contains(combatId)
-			|| modifier.CombatTracking.StatsOnStatsOnStatsApplied.Contains(combatId)
-			|| modifier.CombatTracking.MadScientistApplied.Contains(combatId)
-			|| modifier.CombatTracking.TankEngineStacks.GetValueOrDefault(combatId, 0) > 0;
+			CombatTracking.GoliathApplied.Contains(combatId)
+			|| CombatTracking.AstralBodyApplied.Contains(combatId)
+			|| CombatTracking.GoldenSpatulaApplied.Contains(combatId)
+			|| CombatTracking.StatsApplied.Contains(combatId)
+			|| CombatTracking.StatsOnStatsApplied.Contains(combatId)
+			|| CombatTracking.StatsOnStatsOnStatsApplied.Contains(combatId)
+			|| CombatTracking.MadScientistApplied.Contains(combatId)
+			|| CombatTracking.TankEngineStacks.GetValueOrDefault(combatId, 0) > 0;
 	}
 
-	private static int ResolveLegacyMonsterMaxHpCoefficientBase(HextechMayhemModifier modifier, Creature creature, uint combatId)
+	private int ResolveLegacyMonsterMaxHpCoefficientBase(Creature creature, uint combatId)
 	{
-		HextechEnemyHexContext context = new(modifier);
+		HextechEnemyHexContext context = new(this);
 		List<decimal> appliedFixedBonusFractions = new(3);
-		if (modifier.CombatTracking.GoliathApplied.Contains(combatId))
+		if (CombatTracking.GoliathApplied.Contains(combatId))
 		{
 			appliedFixedBonusFractions.Add(context.TierValue(MonsterHexKind.Goliath, 0.20m, 0.30m, 0.40m));
 		}
 
-		if (modifier.CombatTracking.AstralBodyApplied.Contains(combatId))
+		if (CombatTracking.AstralBodyApplied.Contains(combatId))
 		{
 			appliedFixedBonusFractions.Add(context.TierValue(MonsterHexKind.AstralBody, 0.20m, 0.30m, 0.40m));
 		}
 
-		if (modifier.CombatTracking.GoldenSpatulaApplied.Contains(combatId))
+		if (CombatTracking.GoldenSpatulaApplied.Contains(combatId))
 		{
 			appliedFixedBonusFractions.Add(context.TierValue(MonsterHexKind.GoldenSpatula, 0.25m, 0.30m, 0.45m));
 		}
 
-		if (modifier.CombatTracking.StatsApplied.Contains(combatId))
+		if (CombatTracking.StatsApplied.Contains(combatId))
 		{
 			appliedFixedBonusFractions.Add(EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.Stats, context.GetStrengthTier(MonsterHexKind.Stats)));
 		}
 
-		if (modifier.CombatTracking.StatsOnStatsApplied.Contains(combatId))
+		if (CombatTracking.StatsOnStatsApplied.Contains(combatId))
 		{
 			appliedFixedBonusFractions.Add(EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStats, context.GetStrengthTier(MonsterHexKind.StatsOnStats)));
 		}
 
-		if (modifier.CombatTracking.StatsOnStatsOnStatsApplied.Contains(combatId))
+		if (CombatTracking.StatsOnStatsOnStatsApplied.Contains(combatId))
 		{
 			appliedFixedBonusFractions.Add(EnemyAttributeBoostValues.GetBonusFraction(MonsterHexKind.StatsOnStatsOnStats, context.GetStrengthTier(MonsterHexKind.StatsOnStatsOnStats)));
 		}
 
-		decimal madScientistLossFraction = modifier.CombatTracking.MadScientistApplied.Contains(combatId)
+		decimal madScientistLossFraction = CombatTracking.MadScientistApplied.Contains(combatId)
 			? context.TierValue(MonsterHexKind.MadScientist, 0.30m, 0.15m, 0.00m)
 			: 0m;
-		int tankEngineStacks = Math.Max(0, modifier.CombatTracking.TankEngineStacks.GetValueOrDefault(combatId, 0));
+		int tankEngineStacks = Math.Max(0, CombatTracking.TankEngineStacks.GetValueOrDefault(combatId, 0));
 		int? rawMonsterMaxHp = creature.MonsterMaxHpBeforeModification is int rawMaxHp && rawMaxHp > 0
 			? rawMaxHp
 			: null;
@@ -146,37 +139,37 @@ internal static class HextechMonsterMaxHpCoefficients
 		return migratedBaseMaxHp;
 	}
 
-	internal static async Task ReapplyMonsterMaxHpCoefficients(HextechMayhemModifier modifier, Creature creature, int? baseMaxHpOverride = null)
+	internal async Task ReapplyMonsterMaxHpCoefficients(Creature creature, int? baseMaxHpOverride = null)
 	{
-		int baseMaxHp = CaptureMonsterMaxHpCoefficientBase(modifier, creature, baseMaxHpOverride);
+		int baseMaxHp = CaptureMonsterMaxHpCoefficientBase(creature, baseMaxHpOverride);
 		if (baseMaxHpOverride == null)
 		{
-			baseMaxHp = ReconcileObservedMonsterMaxHpChange(modifier, creature, baseMaxHp);
+			baseMaxHp = ReconcileObservedMonsterMaxHpChange(creature, baseMaxHp);
 		}
 
-		decimal scale = GetMonsterMaxHpCoefficientScale(modifier, creature);
+		decimal scale = GetMonsterMaxHpCoefficientScale(creature);
 		int expectedMaxHp = (int)Math.Clamp(Math.Floor(baseMaxHp * scale), 1m, int.MaxValue);
 		int delta = expectedMaxHp - creature.MaxHp;
 		if (delta > 0)
 		{
 			await GainMonsterMaxHpWithoutHeal(creature, delta);
-			TrackProjectedMonsterMaxHp(modifier, creature);
+			TrackProjectedMonsterMaxHp(creature);
 			return;
 		}
 
 		if (delta < 0)
 		{
-			await CreatureCmdCompat.SetMaxHp(creature, expectedMaxHp);
+			await CreatureCmd.SetMaxHp(creature, expectedMaxHp);
 		}
 
-		TrackProjectedMonsterMaxHp(modifier, creature);
+		TrackProjectedMonsterMaxHp(creature);
 		await KeepFurCoatMarkedEnemyAtOneHp(creature);
 	}
 
-	private static int ReconcileObservedMonsterMaxHpChange(HextechMayhemModifier modifier, Creature creature, int baseMaxHp)
+	private int ReconcileObservedMonsterMaxHpChange(Creature creature, int baseMaxHp)
 	{
 		if (creature.CombatId is not uint combatId
-			|| !modifier.CombatTracking.MonsterMaxHpCoefficientProjected.TryGetValue(
+			|| !CombatTracking.MonsterMaxHpCoefficientProjected.TryGetValue(
 				combatId,
 				out int projectedMaxHp)
 			|| projectedMaxHp <= 0
@@ -190,7 +183,7 @@ internal static class HextechMonsterMaxHpCoefficients
 			(long)baseMaxHp + observedDelta,
 			1L,
 			int.MaxValue);
-		modifier.CombatTracking.MonsterMaxHpCoefficientBase[combatId] = adjustedBaseMaxHp;
+		CombatTracking.MonsterMaxHpCoefficientBase[combatId] = adjustedBaseMaxHp;
 		HextechLog.Info(
 			"Mayhem", $"Reconciled enemy max HP base after an external change: "
 			+ $"combatId={combatId} base={baseMaxHp} projected={projectedMaxHp} "
@@ -198,26 +191,26 @@ internal static class HextechMonsterMaxHpCoefficients
 		return adjustedBaseMaxHp;
 	}
 
-	private static void TrackProjectedMonsterMaxHp(HextechMayhemModifier modifier, Creature creature)
+	private void TrackProjectedMonsterMaxHp(Creature creature)
 	{
 		if (creature.CombatId is uint combatId)
 		{
-			modifier.CombatTracking.MonsterMaxHpCoefficientProjected[combatId] =
+			CombatTracking.MonsterMaxHpCoefficientProjected[combatId] =
 				Math.Max(1, creature.MaxHp);
 		}
 	}
 
-	private static decimal GetMonsterMaxHpCoefficientScale(HextechMayhemModifier modifier, Creature creature)
+	private decimal GetMonsterMaxHpCoefficientScale(Creature creature)
 	{
-		HextechEnemyHexContext context = new(modifier);
+		HextechEnemyHexContext context = new(this);
 		return HextechEnemyCoefficientHelper.CombineBonusFractionsByHex(
-			HextechEnemyHexEffects.GetActive(modifier)
+			HextechEnemyHexEffects.GetActive(this)
 				.OfType<IHextechEnemyMaxHpCoefficientProvider>()
 				.Select(provider =>
 				(((HextechEnemyHexEffect)provider).Kind, provider.GetMaxHpBonusFraction(context, creature))));
 	}
 
-	internal static async Task GainMonsterMaxHpWithoutHeal(Creature creature, int amount)
+	private static async Task GainMonsterMaxHpWithoutHeal(Creature creature, int amount)
 	{
 		if (amount <= 0)
 		{
@@ -226,7 +219,7 @@ internal static class HextechMonsterMaxHpCoefficients
 
 		int oldMaxHp = creature.MaxHp;
 		int oldCurrentHp = creature.CurrentHp;
-		await CreatureCmdCompat.SetMaxHp(creature, oldMaxHp + amount);
+		await CreatureCmd.SetMaxHp(creature, oldMaxHp + amount);
 
 		int actualMaxHpGain = Math.Max(0, creature.MaxHp - oldMaxHp);
 		if (actualMaxHpGain <= 0)
@@ -276,12 +269,12 @@ internal static class HextechMonsterMaxHpCoefficients
 		return false;
 	}
 
-	internal static void UpdateEnemyScale(HextechMayhemModifier modifier, Creature creature)
+	internal void UpdateEnemyScale(Creature creature)
 	{
-		float baseScale = modifier.HasActiveMonsterHex(MonsterHexKind.Goliath) ? GoliathEnemyHex.BodyScale : 1f;
-		float giantSlayerShrink = modifier.HasActiveMonsterHex(MonsterHexKind.GiantSlayer) ? GiantSlayerEnemyHex.BodyScaleShrink : 0f;
-		int tankStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.TankEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
-		int shrinkStacks = creature.CombatId == null ? 0 : modifier.CombatTracking.ShrinkEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
+		float baseScale = HasActiveMonsterHex(MonsterHexKind.Goliath) ? GoliathEnemyHex.BodyScale : 1f;
+		float giantSlayerShrink = HasActiveMonsterHex(MonsterHexKind.GiantSlayer) ? GiantSlayerEnemyHex.BodyScaleShrink : 0f;
+		int tankStacks = creature.CombatId == null ? 0 : CombatTracking.TankEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
+		int shrinkStacks = creature.CombatId == null ? 0 : CombatTracking.ShrinkEngineStacks.GetValueOrDefault(creature.CombatId.Value, 0);
 		float finalScale = Math.Max(
 			HextechPlayerBodyScaleHelper.MinCreatureBodyScale,
 			baseScale

@@ -237,17 +237,17 @@ public static class HextechRunesApi
 
 	public static void TrackPersistentInnate(CardModel? card)
 	{
-		CosplayInnateKeywordPersistence.Track(card);
+		KeywordPersistenceTrackers.CosplayInnate.Track(card);
 	}
 
 	public static bool IsPersistentInnateTracked(CardModel? card)
 	{
-		return CosplayInnateKeywordPersistence.IsTracked(card);
+		return KeywordPersistenceTrackers.CosplayInnate.IsTracked(card);
 	}
 
 	public static void RestorePersistentInnate(CardModel card)
 	{
-		CosplayInnateKeywordPersistence.Restore(card);
+		KeywordPersistenceTrackers.CosplayInnate.Restore(card);
 	}
 
 	internal static void ValidateConcreteModelType(

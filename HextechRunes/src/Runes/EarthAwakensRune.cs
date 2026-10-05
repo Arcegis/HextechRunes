@@ -2,13 +2,12 @@ namespace HextechRunes;
 
 public sealed class EarthAwakensRune : HextechRelicBase
 {
-	private bool _initialPowerAppliedThisCombat;
-
+	// 旧版本存档兼容占位：原为"本场已施加首层"标记，已不再使用；名称与类型须保留。
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedInitialPowerAppliedThisCombat
 	{
-		get => _initialPowerAppliedThisCombat;
-		set => _initialPowerAppliedThisCombat = value;
+		get => false;
+		set { }
 	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -21,43 +20,9 @@ public sealed class EarthAwakensRune : HextechRelicBase
 		HoverTipFactory.FromPower<RollingBoulderPower>()
 	];
 
-	public override Task BeforeCombatStart()
-	{
-		_initialPowerAppliedThisCombat = false;
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCombatEnd(CombatRoom room)
-	{
-		_initialPowerAppliedThisCombat = false;
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterPlayerTurnStartLate(PlayerChoiceContext choiceContext, Player player)
-	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead || _initialPowerAppliedThisCombat)
-		{
-			return Task.CompletedTask;
-		}
-
-		_initialPowerAppliedThisCombat = true;
-		return ApplyRollingBoulderPower();
-	}
-
 	public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
-		{
-			return;
-		}
-
-		_initialPowerAppliedThisCombat = true;
-		await ApplyRollingBoulderPower();
-	}
-
-	private async Task ApplyRollingBoulderPower()
-	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}

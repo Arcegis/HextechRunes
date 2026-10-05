@@ -15,7 +15,6 @@ public sealed class CorpseExplosionRune : HextechRelicBase
 	public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target, bool wasRemovalPrevented, float deathAnimLength)
 	{
 		if (wasRemovalPrevented
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| !HextechMonsterInteractionPolicy.IsTrueCombatDeath(target)

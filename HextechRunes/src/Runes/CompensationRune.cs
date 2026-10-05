@@ -38,8 +38,7 @@ public sealed class CompensationRune : HextechRelicBase
 
 	public override decimal ModifyHpLostAfterOsty(Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| target != Owner.Creature
+		if (target != Owner.Creature
 			|| Owner.Creature.IsDead
 			|| amount <= 0m
 			|| !IsNecrobinderPlayer(Owner)
@@ -66,7 +65,7 @@ public sealed class CompensationRune : HextechRelicBase
 
 	public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature? dealer, CardModel? cardSource)
 	{
-		if (Owner == null || target != Owner.Creature || !IsInActiveCombat(Owner))
+		if (target != Owner.Creature || !IsInActiveCombat(Owner))
 		{
 			return;
 		}
@@ -96,17 +95,12 @@ public sealed class CompensationRune : HextechRelicBase
 		}
 	}
 
-	internal static bool IsActiveCombatContext(bool combatInProgress, bool currentRoomIsCombat, bool combatStateMatchesRun)
-	{
-		return combatInProgress && currentRoomIsCombat && combatStateMatchesRun;
-	}
-
+	// 只在本局正在进行的战斗里替换伤害：事件等战斗外伤害，以及残留的其他局战斗状态都不算。
 	private static bool IsInActiveCombat(Player owner)
 	{
-		return IsActiveCombatContext(
-			CombatManager.Instance?.IsInProgress == true,
-			owner.RunState.CurrentRoom is CombatRoom,
-			ReferenceEquals(owner.Creature.CombatState?.RunState, owner.RunState));
+		return CombatManager.Instance?.IsInProgress == true
+			&& owner.RunState.CurrentRoom is CombatRoom
+			&& ReferenceEquals(owner.Creature.CombatState?.RunState, owner.RunState);
 	}
 
 	private void EnqueuePendingCompensation(long commandId, Creature target, decimal amount, Creature? dealer, CardModel? cardSource)

@@ -33,8 +33,7 @@ public sealed partial class SolidTimeRune : HextechRelicBase
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
+		if (cardPlay.Card.Owner != Owner
 			|| cardPlay.Card.Type != CardType.Power
 			|| !TryGetDeckPower(cardPlay.Card, out CardModel? deckCard))
 		{
@@ -50,7 +49,6 @@ public sealed partial class SolidTimeRune : HextechRelicBase
 	{
 		if (_startedThisCombat
 			|| player != Owner
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
@@ -72,12 +70,7 @@ public sealed partial class SolidTimeRune : HextechRelicBase
 				break;
 			}
 
-			CardModel? card = CreateCombatCard(combatState, cards[i]);
-			if (card == null)
-			{
-				continue;
-			}
-
+			CardModel card = CreateCombatCard(combatState, cards[i]);
 			card.SetToFreeThisCombat();
 			Creature? target = PickTarget(card, combatState, i);
 			await ApplyStoredPowerDirectly(choiceContext, card, target);

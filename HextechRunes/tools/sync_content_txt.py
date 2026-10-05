@@ -11,12 +11,12 @@
 
 目标文件与策略:
 - hextech_rune_tags.txt        纯生成物,全量重生成(保留既有行序,新条目插到注册表邻位)。
-- hextech_relic_flavors.txt    生成物,全量重生成;PERMANENT/PENDING_OVERRIDES 保留 txt 人工值。
+- hextech_relic_flavors.txt    纯生成物,全量重生成,flavor 一律取 zhs JSON。
 - hextech_relics_summary.txt   混合物,只做增量:补缺失条目、修 #禁用前缀/品级前缀;
                                描述永不覆盖(单条采纳用 --accept-json);删除需 --prune。
 
 模式:
-- 默认只读预览: 报告差异;存在需落盘的差异时 exit 1(待裁决项不影响退出码)。
+- 默认只读预览: 报告差异;存在需落盘的差异时 exit 1。
 - --apply: 写回三个 txt。
 - --apply --prune: 同时删除 summary 中已从注册表移除的条目。
 - --accept-json "锚": 单条采纳 JSON 描述覆盖 summary 条目,锚格式见 --help 示例,
@@ -66,18 +66,8 @@ TAG_SECTION_ORDER = [
     "[我方 / 亡灵契约师]",
 ]
 
-# ---------------------------------------------------------------------------
-# 人工 flavor 保留区。
-# PERMANENT: JSON 没有对应字段/刻意的敌方专属文案,永久保留 txt 值。
-# PENDING:   txt 与 zhs JSON flavor 方向不一致,方向未裁决——保留 txt 现状,
-#            check 时列为“待裁决”不影响退出码。裁决后:采纳 JSON 就删掉对应条目;
-#            采纳 txt 就把 JSON 文案改成 txt 值后再删掉条目。
-# 键: (章节, 品级或 None, 标题) -> txt 保留值。
-PERMANENT_FLAVOR_OVERRIDES: dict[tuple[str, str | None, str], str] = {}
-PENDING_FLAVOR_OVERRIDES: dict[tuple[str, str | None, str], str] = {}
-
 # 拓展包锻造器/新增拓展包符文条目在 flavors 属性锻造器区使用的后缀约定,
-# 与 summary 一致(仅用于新生成条目;既有条目文本由 override/JSON 决定)。
+# 与 summary 一致(仅用于新生成条目;既有条目文本由 JSON 决定)。
 SPONSOR_SUFFIX = "（赞助者拓展包）"
 
 
@@ -439,7 +429,7 @@ def generate_tags(truth: Truth, current_text: str, report: list[str]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 2) hextech_relic_flavors.txt —— 全量重生成(含 override 保留)
+# 2) hextech_relic_flavors.txt —— 全量重生成
 
 
 def flavor_truth_entries(truth: Truth) -> dict[str, list[tuple[str | None, str, str]]]:
@@ -501,13 +491,12 @@ def parse_flavor_entries(lines: list[str], all_titles: set[str]) -> dict[FlavorK
 
 
 class FlavorEmitter:
-    """按真值生成一个品级块:既有条目保持旧顺位,新条目插到真值邻位;PERMANENT/PENDING 覆盖保留 txt 值。"""
+    """按真值生成一个品级块:既有条目保持旧顺位,新条目插到真值邻位,flavor 取 JSON。"""
 
     def __init__(self, current: dict[FlavorKey, tuple[int, str]]) -> None:
         self.current = current
         self.consumed: set[FlavorKey] = set()
         self.added: list[str] = []
-        self.diverged: list[str] = []
 
     def emit(self, section_name: str, rarity: str | None, items: list[tuple[str | None, str, str]]) -> list[str]:
         picked = [(t, f) for r, t, f in items if r == rarity]
@@ -516,7 +505,6 @@ class FlavorEmitter:
             (t for t, _ in picked if (section_name, rarity, t) in self.current),
             key=lambda t: self.current[(section_name, rarity, t)][0],
         )
-        # 跨品级漂移的旧条目沿用其旧值判断 override 之外一律 JSON。
         for t, _ in picked:
             if t not in ordered:
                 ordered.insert(insert_position(ordered, anchor_order, t), t)
@@ -525,18 +513,8 @@ class FlavorEmitter:
         flavor_of = dict(picked)
         result = []
         for t in ordered:
-            key = (section_name, rarity, t)
-            self.consumed.add(key)
-            value = flavor_of[t]
-            if key in PERMANENT_FLAVOR_OVERRIDES:
-                value = PERMANENT_FLAVOR_OVERRIDES[key]
-            elif key in PENDING_FLAVOR_OVERRIDES:
-                value = PENDING_FLAVOR_OVERRIDES[key]
-                self.diverged.append(
-                    f"[{section_name}/{rarity or '-'}] {t}\n"
-                    f"    txt : {value}\n    json: {flavor_of[t]}"
-                )
-            result.append(f"- {t}：{value}")
+            self.consumed.add((section_name, rarity, t))
+            result.append(f"- {t}：{flavor_of[t]}")
         return result
 
 
@@ -626,11 +604,6 @@ def generate_flavors(truth: Truth, current_text: str, report: list[str]) -> str:
         report.append(f"flavors: 品级归位 {len(moved)} 条: " + "; ".join(sorted(moved)))
     if removed:
         report.append(f"flavors: 移除已失效条目 {len(removed)} 条: " + "; ".join(sorted(removed)))
-    if emitter.diverged:
-        report.append(
-            f"flavors: 待裁决分歧 {len(emitter.diverged)} 条(保留 txt 现状,不影响退出码):\n  "
-            + "\n  ".join(emitter.diverged)
-        )
     return "\n".join(out) + "\n"
 
 
@@ -982,7 +955,7 @@ def main() -> int:
     if dirty:
         print(f"需要同步(--apply): {', '.join(dirty)}")
         return 1
-    print("三个 txt 与真值一致(待裁决分歧除外)。")
+    print("三个 txt 与真值一致。")
     return 0
 
 

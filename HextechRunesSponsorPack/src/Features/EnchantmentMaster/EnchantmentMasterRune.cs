@@ -38,11 +38,6 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		Flash();
 		await HextechRunesApi.ObtainRandomForges(
 			Owner,
@@ -68,7 +63,7 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 	// 所以每场战斗不同),池按 Id.Entry 有序,两端结论一致。表现层(Flash/Preview)在状态写入之后。
 	public override Task AfterCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}
@@ -96,13 +91,6 @@ public sealed class EnchantmentMasterRune : HextechRelicBase
 		CardModel target = candidates[cardIndex];
 		IReadOnlyList<EnchantmentModel> options = candidateOptions[cardIndex];
 		EnchantmentModel canonical = options[HextechRunesApi.StableIndex(runState, options.Count, "enchantment-master", netId, "enchant")];
-
-		// 选完再核一次:CardCmd.Enchant 对不合法的组合会抛,这里宁可放弃本次触发也不打断战斗结算。
-		if (!canonical.CanEnchant(target))
-		{
-			SponsorLog.Warn(LogTag, $"{canonical.Id.Entry} is no longer legal for {target.Id.Entry}; skipping this combat.");
-			return Task.CompletedTask;
-		}
 
 		CardCmd.Enchant(canonical.ToMutable(), target, 1m);
 		SponsorLog.Info(LogTag, $"Enchanted {target.Id.Entry} with {canonical.Id.Entry}");

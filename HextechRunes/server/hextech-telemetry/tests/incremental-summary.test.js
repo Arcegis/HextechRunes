@@ -93,10 +93,10 @@ async function postRun(port, payload) {
   return response.json();
 }
 
-test("增量快照写入、尾部回放和近期去重不触发全量重建", async () => {
+test("增量快照写入、尾部回放、近期去重与离线全量重建", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-"));
   const port = 32000 + Math.floor(Math.random() * 10000);
-  let server = await startServer(dataDir, port);
+  const server = await startServer(dataDir, port);
   try {
     const firstPayload = makePayload("run-0000000000000001");
     assert.deepEqual(await postRun(port, firstPayload), {
@@ -116,11 +116,7 @@ test("增量快照写入、尾部回放和近期去重不触发全量重建", as
     await stopServer(server);
   }
 
-  const summaryPath = path.join(dataDir, "derived", "summary.json");
-  const legacySummary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
-  delete legacySummary._incremental;
-  fs.writeFileSync(summaryPath, `${JSON.stringify(legacySummary, null, 2)}\n`, "utf8");
-
+  // 模拟崩溃：记录已追加到 run_results.jsonl，但 summary 检查点还停在旧位置。
   const tailReceivedAtUtc = new Date(Date.now() + 1000).toISOString();
   const tailRecords = [];
   let lastPayload = null;
@@ -134,28 +130,49 @@ test("增量快照写入、尾部回放和近期去重不触发全量重建", as
   }
   fs.appendFileSync(path.join(dataDir, "run_results.jsonl"), `${tailRecords.join("\n")}\n`, "utf8");
 
-  const bootstrap = spawnSync(process.execPath, [SERVER_FILE, "--bootstrap-incremental"], {
+  async function assertTailCounted() {
+    const tailServer = await startServer(dataDir, port);
+    try {
+      const summary = await fetch(`http://127.0.0.1:${port}/api/hextech-runes/summary`).then((response) => response.json());
+      assert.equal(summary.runCount, 10001);
+      assert.equal(summary.winCount, 5001);
+      assert.equal(summary.raw.totalUniqueRuns, 10001);
+
+      const duplicate = await postRun(port, lastPayload);
+      assert.equal(duplicate.duplicate, true);
+      const health = await fetch(`http://127.0.0.1:${port}/health`).then((response) => response.json());
+      assert.equal(health.runs, 10001);
+      assert.equal(health.derived.rebuilding, false);
+      assert.equal(health.derived.checkpointOffset, health.derived.resultsSize);
+    } finally {
+      await stopServer(tailServer);
+    }
+  }
+
+  // 服务启动时从检查点回放尾部。
+  await assertTailCounted();
+
+  // 检查点丢失时服务拒绝启动，离线全量重建后得到同样的结果。
+  const summaryPath = path.join(dataDir, "derived", "summary.json");
+  const uncheckpointedSummary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+  delete uncheckpointedSummary._incremental;
+  fs.writeFileSync(summaryPath, `${JSON.stringify(uncheckpointedSummary, null, 2)}\n`, "utf8");
+
+  const refused = spawnSync(process.execPath, [SERVER_FILE], {
+    env: { ...process.env, HOST: "127.0.0.1", PORT: String(port), DATA_DIR: dataDir },
+    encoding: "utf8",
+    timeout: 10000
+  });
+  assert.notEqual(refused.status, 0, refused.stderr || refused.stdout);
+  assert.match(refused.stderr, /--rebuild-derived/);
+
+  const rebuild = spawnSync(process.execPath, [SERVER_FILE, "--rebuild-derived"], {
     env: { ...process.env, DATA_DIR: dataDir },
     encoding: "utf8"
   });
-  assert.equal(bootstrap.status, 0, bootstrap.stderr || bootstrap.stdout);
+  assert.equal(rebuild.status, 0, rebuild.stderr || rebuild.stdout);
 
-  server = await startServer(dataDir, port);
-  try {
-    const summary = await fetch(`http://127.0.0.1:${port}/api/hextech-runes/summary`).then((response) => response.json());
-    assert.equal(summary.runCount, 10001);
-    assert.equal(summary.winCount, 5001);
-    assert.equal(summary.raw.totalUniqueRuns, 10001);
-
-    const duplicate = await postRun(port, lastPayload);
-    assert.equal(duplicate.duplicate, true);
-    const health = await fetch(`http://127.0.0.1:${port}/health`).then((response) => response.json());
-    assert.equal(health.runs, 10001);
-    assert.equal(health.derived.rebuilding, false);
-    assert.equal(health.derived.checkpointOffset, health.derived.resultsSize);
-  } finally {
-    await stopServer(server);
-  }
+  await assertTailCounted();
 });
 
 test("重建锁被占用时 --rebuild-derived 以非零退出", () => {
@@ -171,6 +188,36 @@ test("重建锁被占用时 --rebuild-derived 以非零退出", () => {
     });
     assert.equal(rebuild.status, 1, rebuild.stderr || rebuild.stdout);
     assert.match(rebuild.stderr, /rebuild lock is held/);
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("--rebuild-derived 计入文件末尾没有换行的完整记录，截断的末行计为格式错误", () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-tail-"));
+  try {
+    const resultsPath = path.join(dataDir, "run_results.jsonl");
+    const summaryPath = path.join(dataDir, "derived", "summary.json");
+    const record = (runId) => JSON.stringify({ receivedAtUtc: new Date().toISOString(), payloadHash: `hash-${runId}`, payload: makePayload(runId) });
+    const rebuild = () => spawnSync(process.execPath, [SERVER_FILE, "--rebuild-derived"], {
+      env: { ...process.env, DATA_DIR: dataDir },
+      encoding: "utf8"
+    });
+
+    fs.writeFileSync(resultsPath, `${record("run-tail-a")}\n${record("run-tail-b")}`, "utf8");
+    let result = rebuild();
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    let summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+    assert.equal(summary.runCount, 2, "complete last record without a trailing newline is counted");
+    assert.equal(summary.raw.malformedLines, 0);
+    assert.equal(summary._incremental.source.offset, fs.statSync(resultsPath).size);
+
+    fs.writeFileSync(resultsPath, `${record("run-tail-a")}\n${record("run-tail-b").slice(0, 40)}`, "utf8");
+    result = rebuild();
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+    assert.equal(summary.runCount, 1);
+    assert.equal(summary.raw.malformedLines, 1, "truncated last line is reported as malformed, not silently skipped");
   } finally {
     fs.rmSync(dataDir, { recursive: true, force: true });
   }

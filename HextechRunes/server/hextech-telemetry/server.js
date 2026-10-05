@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const community = require("./community");
+const { sendJson, readBody, writeFileAtomic } = require("./http-util");
 
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
@@ -10,7 +11,6 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(__dirname, "public");
 const DERIVED_DIR = path.join(DATA_DIR, "derived");
 const SUMMARY_FILE = path.join(DERIVED_DIR, "summary.json");
-const DERIVED_INDEX_FILE = path.join(DERIVED_DIR, "index.html");
 const REBUILD_LOCK_FILE = path.join(DERIVED_DIR, ".summary-rebuild.lock");
 const LABELS_FILE = path.join(__dirname, "labels.json");
 const LATEST_VERSION_FILE = path.join(PUBLIC_DIR, "latest-version.json");
@@ -24,16 +24,13 @@ const RECENT_RUN_ID_LIMIT = Number.isFinite(parsedRecentRunIdLimit) ? Math.max(1
 const parsedRecentRunIdTailBytes = Number.parseInt(process.env.RECENT_RUN_ID_TAIL_BYTES || String(64 * 1024 * 1024), 10);
 const RECENT_RUN_ID_TAIL_BYTES = Number.isFinite(parsedRecentRunIdTailBytes) ? Math.max(1024 * 1024, parsedRecentRunIdTailBytes) : 64 * 1024 * 1024;
 const INCREMENTAL_SCHEMA_VERSION = 1;
-const DERIVED_FILE_NAMES = ["summary.json", "runs.csv", "player_runes.csv", "rune_choices.csv", "monster_hexes.csv"];
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(DERIVED_DIR, { recursive: true });
 
 const LABELS = loadLabels();
 const isRebuildProcess = process.argv.includes("--rebuild-derived");
-const isBootstrapProcess = process.argv.includes("--bootstrap-incremental");
-const isOfflineProcess = isRebuildProcess || isBootstrapProcess;
-const recentRunIds = isOfflineProcess ? new Map() : loadRecentRunIds();
+const recentRunIds = isRebuildProcess ? new Map() : loadRecentRunIds();
 const summaryCache = new Map();
 const derivedState = {
   dirty: false,
@@ -104,17 +101,6 @@ function rememberRunId(ids, runId) {
   }
 }
 
-function sendJson(res, status, value) {
-  const body = JSON.stringify(value);
-  res.writeHead(status, {
-    "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store",
-    "access-control-allow-origin": "*",
-    "content-length": Buffer.byteLength(body)
-  });
-  res.end(body);
-}
-
 function sendText(res, status, value) {
   res.writeHead(status, {
     "content-type": "text/plain; charset=utf-8",
@@ -152,31 +138,7 @@ function readLatestVersionInfo() {
   } catch (error) {
     console.warn(`failed to load latest version info: ${error.message}`);
   }
-  return {
-    modId: "HextechRunes",
-    serverIdentity: "Natsuki.HextechRunes.official",
-    name: "海克斯大乱斗",
-    latestVersion: "0.5.5",
-    officialBuilds: []
-  };
-}
-
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    req.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
-        reject(Object.assign(new Error("payload too large"), { statusCode: 413 }));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
-  });
+  return null;
 }
 
 function validatePayload(payload) {
@@ -210,7 +172,7 @@ function validatePayload(payload) {
 async function handleIngest(req, res) {
   let payload;
   try {
-    payload = JSON.parse(await readBody(req));
+    payload = JSON.parse(await readBody(req, MAX_BODY_BYTES));
   } catch (error) {
     return sendJson(res, error.statusCode || 400, { ok: false, error: error.message || "invalid json" });
   }
@@ -244,59 +206,10 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-function forEachJsonlLine(filePath, callback) {
-  if (!fs.existsSync(filePath)) {
-    return 0;
-  }
-
-  const fd = fs.openSync(filePath, "r");
-  const buffer = Buffer.allocUnsafe(1024 * 1024);
-  let carry = Buffer.alloc(0);
-  let carryOffset = 0;
-  let lineCount = 0;
-  try {
-    while (true) {
-      const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, null);
-      if (bytesRead <= 0) {
-        break;
-      }
-
-      const chunk = carry.length > 0
-        ? Buffer.concat([carry, buffer.subarray(0, bytesRead)])
-        : buffer.subarray(0, bytesRead);
-      let lineStart = 0;
-      for (let i = 0; i < chunk.length; i++) {
-        if (chunk[i] !== 10) {
-          continue;
-        }
-
-        let line = chunk.subarray(lineStart, i);
-        if (line.length > 0 && line[line.length - 1] === 13) {
-          line = line.subarray(0, line.length - 1);
-        }
-        if (line.toString("utf8").trim().length > 0) {
-          callback(line.toString("utf8"), carryOffset + lineStart);
-          lineCount += 1;
-        }
-        lineStart = i + 1;
-      }
-
-      carry = Buffer.from(chunk.subarray(lineStart));
-      carryOffset += chunk.length - carry.length;
-    }
-
-    if (carry.length > 0 && carry.toString("utf8").trim().length > 0) {
-      callback(carry.toString("utf8"), carryOffset);
-      lineCount += 1;
-    }
-  } finally {
-    fs.closeSync(fd);
-  }
-
-  return lineCount;
-}
-
-function forEachJsonlLineFromOffset(filePath, requestedOffset, callback) {
+// includeUnterminatedTail:全量重建把文件末尾没有换行的最后一行也当成一行处理(完整 JSON 照常计入,
+// 截断的计为格式错误),因为重建的检查点设在文件末尾,这一行之后不会再被回放。增量回放不开启:
+// 末尾半行可能还在写入中,检查点停在最后一个换行处。
+function forEachJsonlLineFromOffset(filePath, requestedOffset, callback, { includeUnterminatedTail = false } = {}) {
   if (!fs.existsSync(filePath)) {
     return { lineCount: 0, endOffset: 0 };
   }
@@ -347,6 +260,18 @@ function forEachJsonlLineFromOffset(filePath, requestedOffset, callback) {
       carry = Buffer.from(chunk.subarray(lineStart));
       lineOffset = readOffset - carry.length;
     }
+
+    if (includeUnterminatedTail && carry.length > 0 && !skipPartialLine) {
+      let line = carry;
+      if (line[line.length - 1] === 13) {
+        line = line.subarray(0, line.length - 1);
+      }
+      if (line.toString("utf8").trim().length > 0) {
+        callback(line.toString("utf8"), lineOffset, readOffset);
+        lineCount += 1;
+      }
+      lineOffset = readOffset;
+    }
   } finally {
     fs.closeSync(fd);
   }
@@ -358,7 +283,7 @@ function buildRecordIndex() {
   const latestOffsetsByRunId = new Map();
   let physicalLines = 0;
   let malformedLines = 0;
-  forEachJsonlLine(RESULTS_FILE, (line, offset) => {
+  forEachJsonlLineFromOffset(RESULTS_FILE, 0, (line, offset) => {
     physicalLines += 1;
     try {
       const record = JSON.parse(line);
@@ -369,7 +294,7 @@ function buildRecordIndex() {
     } catch {
       malformedLines += 1;
     }
-  });
+  }, { includeUnterminatedTail: true });
 
   return {
     latestOffsets: new Set(latestOffsetsByRunId.values()),
@@ -381,7 +306,7 @@ function buildRecordIndex() {
 }
 
 function forEachLatestRecord(recordIndex, callback) {
-  forEachJsonlLine(RESULTS_FILE, (line, offset) => {
+  forEachJsonlLineFromOffset(RESULTS_FILE, 0, (line, offset) => {
     if (!recordIndex.latestOffsets.has(offset)) {
       return;
     }
@@ -390,24 +315,7 @@ function forEachLatestRecord(recordIndex, callback) {
     } catch {
       // Malformed latest lines are already counted during indexing.
     }
-  });
-}
-
-function readRecordSet() {
-  if (!fs.existsSync(RESULTS_FILE)) {
-    return { records: [], physicalLines: 0, duplicateLines: 0, malformedLines: 0 };
-  }
-
-  const recordIndex = buildRecordIndex();
-  const records = [];
-  forEachLatestRecord(recordIndex, (record) => records.push(record));
-
-  return {
-    records,
-    physicalLines: recordIndex.physicalLines,
-    duplicateLines: recordIndex.duplicateLines,
-    malformedLines: recordIndex.malformedLines
-  };
+  }, { includeUnterminatedTail: true });
 }
 
 function getRun(record) {
@@ -446,16 +354,8 @@ function getRunTime(record) {
   return Number.isFinite(runTime) ? runTime : 0;
 }
 
-function getExcludeReasons(record) {
-  const reasons = [];
-  if (getRunTime(record) < MIN_RUN_TIME_FOR_DEFAULT_STATS) {
-    reasons.push("short_run");
-  }
-  return reasons;
-}
-
 function isDefaultEligible(record) {
-  return getExcludeReasons(record).length === 0;
+  return getRunTime(record) >= MIN_RUN_TIME_FOR_DEFAULT_STATS;
 }
 
 function addCounter(map, key, isVictory) {
@@ -505,289 +405,6 @@ function addSimpleCounter(map, key) {
     return;
   }
   map[key] = (map[key] || 0) + 1;
-}
-
-function buildDerivedData(options = {}) {
-  const versionFilter = normalizeVersionFilter(options.version);
-  const recordSet = readRecordSet();
-  const records = recordSet.records;
-  const versionRecords = versionFilter ? records.filter((record) => getModVersion(record) === versionFilter) : records;
-  const eligibleRecords = versionRecords.filter(isDefaultEligible);
-  const allEligibleRecords = records.filter(isDefaultEligible);
-  const excludedShortRuns = versionRecords.length - eligibleRecords.length;
-  const availableVersionCounts = {};
-  for (const record of allEligibleRecords) {
-    addSimpleCounter(availableVersionCounts, getModVersion(record));
-  }
-
-  const summary = {
-    generatedAtUtc: new Date().toISOString(),
-    filters: {
-      minRunTimeForDefaultStats: MIN_RUN_TIME_FOR_DEFAULT_STATS,
-      defaultExcludes: ["short_run"],
-      version: versionFilter || "all"
-    },
-    versionFilter: versionFilter || "all",
-    availableVersions: buildCountRows(availableVersionCounts),
-    raw: {
-      physicalLines: recordSet.physicalLines,
-      uniqueRuns: versionRecords.length,
-      totalUniqueRuns: records.length,
-      duplicateLines: recordSet.duplicateLines,
-      malformedLines: recordSet.malformedLines
-    },
-    runCount: eligibleRecords.length,
-    winCount: 0,
-    winRate: 0,
-    excludedShortRuns,
-    playerRuneRuns: {},
-    playerRuneChoices: {},
-    monsterHexRuns: {},
-    versions: {},
-    netModes: {},
-    characters: {},
-    tables: {
-      playerRuneRuns: [],
-      playerRuneChoices: [],
-      monsterHexRuns: [],
-      versions: [],
-      netModes: [],
-      characters: []
-    }
-  };
-
-  const runsRows = [];
-  const playerRuneRows = [];
-  const runeChoiceRows = [];
-  const monsterHexRows = [];
-
-  for (const record of versionRecords) {
-    const payload = record.payload || {};
-    const run = payload.run || {};
-    const isVictory = run.isVictory === true;
-    const runId = run.runId || "";
-    const excludeReasons = getExcludeReasons(record);
-    const eligible = excludeReasons.length === 0;
-    const runCommon = {
-      receivedAtUtc: record.receivedAtUtc || "",
-      uploadedAtUtc: payload.uploadedAtUtc || "",
-      runId,
-      seedHash: run.seedHash || "",
-      modVersion: payload.modVersion || "",
-      gameVersion: payload.gameVersion || "",
-      netMode: run.netMode || "",
-      netModeName: getLabel("netModes", run.netMode || ""),
-      playerCount: run.playerCount || 0,
-      ascension: run.ascension || 0,
-      currentActIndex: run.currentActIndex || 0,
-      totalFloor: run.totalFloor || 0,
-      runTime: getRunTime(record),
-      isVictory: isVictory ? 1 : 0,
-      eligibleDefaultStats: eligible ? 1 : 0,
-      excludeReasons: excludeReasons.join("|")
-    };
-
-    runsRows.push(runCommon);
-
-    if (eligible) {
-      if (isVictory) {
-        summary.winCount += 1;
-      }
-      addSimpleCounter(summary.versions, getModVersion(record));
-      addSimpleCounter(summary.netModes, run.netMode || "(unknown)");
-    }
-
-    for (const player of payload.players || []) {
-      const character = player.character || "";
-      const characterName = getLabel("characters", character);
-      if (eligible) {
-        addSimpleCounter(summary.characters, character || "(unknown)");
-      }
-      const hextechRunes = Array.isArray(player.hextechRunes) ? player.hextechRunes : [];
-      for (const rune of hextechRunes) {
-        playerRuneRows.push({
-          ...runCommon,
-          playerSlot: player.slot ?? "",
-          character,
-          characterName,
-          runeName: getLabel("runes", rune),
-          rune
-        });
-        if (eligible) {
-          addCounter(summary.playerRuneRuns, rune, isVictory);
-        }
-      }
-    }
-
-    for (const choice of payload.runeChoices || []) {
-      const options = Array.isArray(choice.options) ? choice.options : [];
-      const selected = typeof choice.selected === "string" ? choice.selected : "";
-      for (const option of options) {
-        const isSelected = option === selected;
-        runeChoiceRows.push({
-          ...runCommon,
-          actIndex: choice.actIndex ?? "",
-          playerSlot: choice.playerSlot ?? "",
-          rarity: choice.rarity || "",
-          rarityName: getLabel("rarities", choice.rarity || ""),
-          rerollCount: choice.rerollCount ?? 0,
-          option,
-          optionName: getLabel("runes", option),
-          selectedRune: selected,
-          selectedRuneName: getLabel("runes", selected),
-          isSelected: isSelected ? 1 : 0
-        });
-        if (eligible) {
-          addChoiceCounter(summary.playerRuneChoices, option, "offered", isVictory);
-          if (isSelected) {
-            addChoiceCounter(summary.playerRuneChoices, option, "selected", isVictory);
-          }
-        }
-      }
-      if (eligible && selected && !options.includes(selected)) {
-        addChoiceCounter(summary.playerRuneChoices, selected, "offered", isVictory);
-        addChoiceCounter(summary.playerRuneChoices, selected, "selected", isVictory);
-      }
-    }
-
-    for (const monsterHex of payload.monsterHexes || []) {
-      monsterHexRows.push({
-        ...runCommon,
-        actIndex: monsterHex.actIndex ?? "",
-        rarity: monsterHex.rarity || "",
-        rarityName: getLabel("rarities", monsterHex.rarity || ""),
-        hex: monsterHex.hex || "",
-        hexName: getLabel("monsterHexes", monsterHex.hex || "")
-      });
-      if (eligible) {
-        addMonsterCounter(summary.monsterHexRuns, monsterHex.hex, isVictory);
-      }
-    }
-  }
-
-  summary.winRate = pctNumber(summary.winCount, summary.runCount);
-  summary.tables.playerRuneRuns = buildRateRows(summary.playerRuneRuns, "runes");
-  summary.tables.playerRuneChoices = buildChoiceRows(summary.playerRuneChoices, "runes");
-  summary.tables.monsterHexRuns = buildMonsterRows(summary.monsterHexRuns, "monsterHexes");
-  summary.tables.versions = buildCountRows(summary.versions);
-  summary.tables.netModes = buildCountRows(summary.netModes, "netModes");
-  summary.tables.characters = buildCountRows(summary.characters, "characters");
-
-  return {
-    summary,
-    tables: {
-      runs: runsRows,
-      playerRunes: playerRuneRows,
-      runeChoices: runeChoiceRows,
-      monsterHexes: monsterHexRows
-    }
-  };
-}
-
-function buildSummaryData(options = {}) {
-  const versionFilter = normalizeVersionFilter(options.version);
-  const recordIndex = buildRecordIndex();
-  const availableVersionCounts = {};
-  const summary = {
-    generatedAtUtc: new Date().toISOString(),
-    filters: {
-      minRunTimeForDefaultStats: MIN_RUN_TIME_FOR_DEFAULT_STATS,
-      defaultExcludes: ["short_run"],
-      version: versionFilter || "all"
-    },
-    versionFilter: versionFilter || "all",
-    availableVersions: [],
-    raw: {
-      physicalLines: recordIndex.physicalLines,
-      uniqueRuns: 0,
-      totalUniqueRuns: recordIndex.totalUniqueRuns,
-      duplicateLines: recordIndex.duplicateLines,
-      malformedLines: recordIndex.malformedLines
-    },
-    runCount: 0,
-    winCount: 0,
-    winRate: 0,
-    excludedShortRuns: 0,
-    playerRuneRuns: {},
-    playerRuneChoices: {},
-    monsterHexRuns: {},
-    versions: {},
-    netModes: {},
-    characters: {},
-    tables: {
-      playerRuneRuns: [],
-      playerRuneChoices: [],
-      monsterHexRuns: [],
-      versions: [],
-      netModes: [],
-      characters: []
-    }
-  };
-
-  forEachLatestRecord(recordIndex, (record) => {
-    const recordVersion = getModVersion(record);
-    const allEligible = isDefaultEligible(record);
-    if (allEligible) {
-      addSimpleCounter(availableVersionCounts, recordVersion);
-    }
-    if (versionFilter && recordVersion !== versionFilter) {
-      return;
-    }
-
-    summary.raw.uniqueRuns += 1;
-    if (!allEligible) {
-      summary.excludedShortRuns += 1;
-      return;
-    }
-
-    const payload = record.payload || {};
-    const run = payload.run || {};
-    const isVictory = run.isVictory === true;
-    if (isVictory) {
-      summary.winCount += 1;
-    }
-    summary.runCount += 1;
-    addSimpleCounter(summary.versions, recordVersion);
-    addSimpleCounter(summary.netModes, run.netMode || "(unknown)");
-
-    for (const player of payload.players || []) {
-      const character = player.character || "";
-      addSimpleCounter(summary.characters, character || "(unknown)");
-      for (const rune of Array.isArray(player.hextechRunes) ? player.hextechRunes : []) {
-        addCounter(summary.playerRuneRuns, rune, isVictory);
-      }
-    }
-
-    for (const choice of payload.runeChoices || []) {
-      const options = Array.isArray(choice.options) ? choice.options : [];
-      const selected = typeof choice.selected === "string" ? choice.selected : "";
-      for (const option of options) {
-        const isSelected = option === selected;
-        addChoiceCounter(summary.playerRuneChoices, option, "offered", isVictory);
-        if (isSelected) {
-          addChoiceCounter(summary.playerRuneChoices, option, "selected", isVictory);
-        }
-      }
-      if (selected && !options.includes(selected)) {
-        addChoiceCounter(summary.playerRuneChoices, selected, "offered", isVictory);
-        addChoiceCounter(summary.playerRuneChoices, selected, "selected", isVictory);
-      }
-    }
-
-    for (const monsterHex of payload.monsterHexes || []) {
-      addMonsterCounter(summary.monsterHexRuns, monsterHex.hex, isVictory);
-    }
-  });
-
-  summary.winRate = pctNumber(summary.winCount, summary.runCount);
-  summary.availableVersions = buildCountRows(availableVersionCounts);
-  summary.tables.playerRuneRuns = buildRateRows(summary.playerRuneRuns, "runes");
-  summary.tables.playerRuneChoices = buildChoiceRows(summary.playerRuneChoices, "runes");
-  summary.tables.monsterHexRuns = buildMonsterRows(summary.monsterHexRuns, "monsterHexes");
-  summary.tables.versions = buildCountRows(summary.versions);
-  summary.tables.netModes = buildCountRows(summary.netModes, "netModes");
-  summary.tables.characters = buildCountRows(summary.characters, "characters");
-  return summary;
 }
 
 function createEmptySummary(versionFilter, recordIndex) {
@@ -950,113 +567,6 @@ function setIncrementalCheckpoint(summary, identity, offset) {
   };
 }
 
-function bootstrapIncrementalSummary() {
-  const summary = readDerivedSummary();
-  if (!summary) {
-    throw new Error("cannot bootstrap incremental summary without derived/summary.json");
-  }
-  const identity = getResultsIdentity();
-  const cutoffMs = Date.parse(summary.generatedAtUtc || "");
-  const offset = Number.isFinite(cutoffMs)
-    ? findFirstRecordOffsetAfter(RESULTS_FILE, cutoffMs)
-    : identity.size;
-  setIncrementalCheckpoint(summary, identity, offset);
-  writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summary, null, 2)}\n`);
-  console.log(`incremental summary bootstrapped at byte ${offset} of ${identity.size}`);
-  return summary;
-}
-
-function findNextLineStart(fd, requestedOffset, fileSize) {
-  if (requestedOffset <= 0) {
-    return 0;
-  }
-  if (requestedOffset < fileSize) {
-    const previousByte = Buffer.allocUnsafe(1);
-    if (fs.readSync(fd, previousByte, 0, 1, requestedOffset - 1) === 1 && previousByte[0] === 10) {
-      return requestedOffset;
-    }
-  }
-  const buffer = Buffer.allocUnsafe(64 * 1024);
-  let offset = Math.min(requestedOffset, fileSize);
-  while (offset < fileSize) {
-    const bytesRead = fs.readSync(fd, buffer, 0, Math.min(buffer.length, fileSize - offset), offset);
-    if (bytesRead <= 0) {
-      return fileSize;
-    }
-    const newlineIndex = buffer.subarray(0, bytesRead).indexOf(10);
-    if (newlineIndex >= 0) {
-      return offset + newlineIndex + 1;
-    }
-    offset += bytesRead;
-  }
-  return fileSize;
-}
-
-function readJsonlEntry(fd, lineStart, fileSize) {
-  const chunks = [];
-  const buffer = Buffer.allocUnsafe(64 * 1024);
-  let offset = lineStart;
-  while (offset < fileSize) {
-    const bytesRead = fs.readSync(fd, buffer, 0, Math.min(buffer.length, fileSize - offset), offset);
-    if (bytesRead <= 0) {
-      break;
-    }
-    const chunk = buffer.subarray(0, bytesRead);
-    const newlineIndex = chunk.indexOf(10);
-    if (newlineIndex >= 0) {
-      chunks.push(Buffer.from(chunk.subarray(0, newlineIndex)));
-      return { line: Buffer.concat(chunks).toString("utf8"), endOffset: offset + newlineIndex + 1 };
-    }
-    chunks.push(Buffer.from(chunk));
-    offset += bytesRead;
-    if (offset - lineStart > MAX_BODY_BYTES * 2) {
-      return { line: "", endOffset: findNextLineStart(fd, offset, fileSize) };
-    }
-  }
-  return { line: Buffer.concat(chunks).toString("utf8"), endOffset: fileSize };
-}
-
-function findFirstRecordOffsetAfter(filePath, cutoffMs) {
-  if (!fs.existsSync(filePath)) {
-    return 0;
-  }
-  const fileSize = fs.statSync(filePath).size;
-  if (fileSize === 0) {
-    return 0;
-  }
-
-  const fd = fs.openSync(filePath, "r");
-  let low = 0;
-  let high = fileSize;
-  let result = fileSize;
-  try {
-    for (let iteration = 0; iteration < 64 && low < high; iteration += 1) {
-      const midpoint = low + Math.floor((high - low) / 2);
-      const lineStart = findNextLineStart(fd, midpoint, fileSize);
-      if (lineStart >= fileSize) {
-        high = midpoint;
-        continue;
-      }
-      const entry = readJsonlEntry(fd, lineStart, fileSize);
-      let receivedAtMs = Number.NaN;
-      try {
-        receivedAtMs = Date.parse(JSON.parse(entry.line)?.receivedAtUtc || "");
-      } catch {
-        // 单条损坏记录不应迫使首次迁移退化成全文件扫描。
-      }
-      if (!Number.isFinite(receivedAtMs) || receivedAtMs <= cutoffMs) {
-        low = Math.max(entry.endOffset, midpoint + 1);
-      } else {
-        result = lineStart;
-        high = lineStart;
-      }
-    }
-  } finally {
-    fs.closeSync(fd);
-  }
-  return result;
-}
-
 function createFreshSummaryBundle() {
   const summary = createEmptySummary(null, {
     physicalLines: 0,
@@ -1084,19 +594,17 @@ function initializeIncrementalSummary() {
   }
 
   const checkpoint = summary._incremental;
-  if (!checkpoint) {
-    if (identity.size > 0) {
-      throw new Error("summary.json has no incremental checkpoint; stop the service and run node server.js --bootstrap-incremental once");
-    }
+  if (!checkpoint && identity.size === 0) {
+    // 原始库为空时没有可回放的数据,旧 summary 直接从 offset 0 补检查点。
     setIncrementalCheckpoint(summary, identity, 0);
     writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summary, null, 2)}\n`);
     return summary;
   }
-  if (checkpoint.schemaVersion !== INCREMENTAL_SCHEMA_VERSION) {
-    throw new Error(`unsupported incremental summary schema ${checkpoint.schemaVersion}`);
+  if (checkpoint?.schemaVersion !== INCREMENTAL_SCHEMA_VERSION) {
+    throw new Error(`summary.json has no supported incremental checkpoint (schema ${checkpoint?.schemaVersion}); stop the service and run node server.js --rebuild-derived`);
   }
   if (checkpoint.source?.device !== identity.device || checkpoint.source?.inode !== identity.inode) {
-    throw new Error("run_results.jsonl identity differs from summary checkpoint; bootstrap or rebuild explicitly before starting the service");
+    throw new Error("run_results.jsonl identity differs from summary checkpoint; stop the service and run node server.js --rebuild-derived");
   }
   if (!Number.isSafeInteger(checkpoint.source.offset) || checkpoint.source.offset < 0 || checkpoint.source.offset > identity.size) {
     throw new Error("summary checkpoint offset is outside run_results.jsonl");
@@ -1227,89 +735,6 @@ function buildCountRows(map, labelCategory = null) {
     .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
 }
 
-function writeDerivedTables() {
-  const derived = buildDerivedData();
-  writeFileAtomic(path.join(DERIVED_DIR, "summary.json"), `${JSON.stringify(derived.summary, null, 2)}\n`);
-  writeCsv("runs.csv", derived.tables.runs, [
-    "receivedAtUtc",
-    "uploadedAtUtc",
-    "runId",
-    "seedHash",
-    "modVersion",
-    "gameVersion",
-    "netMode",
-    "netModeName",
-    "playerCount",
-    "ascension",
-    "currentActIndex",
-    "totalFloor",
-    "runTime",
-    "isVictory",
-    "eligibleDefaultStats",
-    "excludeReasons"
-  ]);
-  writeCsv("player_runes.csv", derived.tables.playerRunes, [
-    "receivedAtUtc",
-    "runId",
-    "modVersion",
-    "netMode",
-    "netModeName",
-    "playerCount",
-    "ascension",
-    "totalFloor",
-    "runTime",
-    "isVictory",
-    "eligibleDefaultStats",
-    "playerSlot",
-    "character",
-    "characterName",
-    "runeName",
-    "rune"
-  ]);
-  writeCsv("rune_choices.csv", derived.tables.runeChoices, [
-    "receivedAtUtc",
-    "runId",
-    "modVersion",
-    "netMode",
-    "netModeName",
-    "playerCount",
-    "ascension",
-    "totalFloor",
-    "runTime",
-    "isVictory",
-    "eligibleDefaultStats",
-    "actIndex",
-    "playerSlot",
-    "rarity",
-    "rarityName",
-    "rerollCount",
-    "option",
-    "optionName",
-    "selectedRune",
-    "selectedRuneName",
-    "isSelected"
-  ]);
-  writeCsv("monster_hexes.csv", derived.tables.monsterHexes, [
-    "receivedAtUtc",
-    "runId",
-    "modVersion",
-    "netMode",
-    "netModeName",
-    "playerCount",
-    "ascension",
-    "totalFloor",
-    "runTime",
-    "isVictory",
-    "eligibleDefaultStats",
-    "actIndex",
-    "rarity",
-    "rarityName",
-    "hex",
-    "hexName"
-  ]);
-  return derived.summary;
-}
-
 function readDerivedSummary() {
   if (!fs.existsSync(SUMMARY_FILE)) {
     return null;
@@ -1319,10 +744,6 @@ function readDerivedSummary() {
   } catch {
     return null;
   }
-}
-
-function allDerivedFilesExist() {
-  return DERIVED_FILE_NAMES.every((fileName) => fs.existsSync(path.join(DERIVED_DIR, fileName)));
 }
 
 function derivedFilesAreCurrent() {
@@ -1365,7 +786,6 @@ function flushSummaryNow() {
   try {
     finalizeSummaryBundle(summaryBundle);
     writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summaryBundle, null, 2)}\n`);
-    writeFileAtomic(DERIVED_INDEX_FILE, renderIndexHtml(getDefaultDisplayVersion()));
     derivedState.dirty = false;
     derivedState.pendingRecords = 0;
     derivedState.persistedOffset = summaryBundle._incremental.source.offset;
@@ -1383,28 +803,13 @@ function flushSummaryNow() {
   }
 }
 
+// 只由离线 --rebuild-derived 进程调用，服务进程不会同时持有未落盘的增量状态。
 function rebuildDerivedTablesNow() {
-  if (derivedState.flushing) {
-    return readDerivedSummary();
-  }
-  if (derivedState.timer) {
-    clearTimeout(derivedState.timer);
-    derivedState.timer = null;
-  }
-  derivedState.flushing = true;
-  try {
-    const summary = buildSummaryBundle();
-    const identity = getResultsIdentity();
-    setIncrementalCheckpoint(summary, identity, identity.size);
-    writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summary, null, 2)}\n`);
-    writeFileAtomic(DERIVED_INDEX_FILE, renderIndexHtml(getDefaultDisplayVersion()));
-    derivedState.dirty = false;
-    derivedState.lastBuiltAtMs = Date.now();
-    derivedState.lastError = null;
-    return summary;
-  } finally {
-    derivedState.flushing = false;
-  }
+  const summary = buildSummaryBundle();
+  const identity = getResultsIdentity();
+  setIncrementalCheckpoint(summary, identity, identity.size);
+  writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summary, null, 2)}\n`);
+  return summary;
 }
 
 function lockLooksStale(lockPath) {
@@ -1518,43 +923,14 @@ function getSummaryForDisplay(versionFilter = null) {
   return summary;
 }
 
-function writeCsv(fileName, rows, headers) {
-  const lines = [headers.join(",")];
-  for (const row of rows) {
-    lines.push(headers.map((header) => csvCell(row[header])).join(","));
-  }
-  writeFileAtomic(path.join(DERIVED_DIR, fileName), `${lines.join("\n")}\n`);
-}
-
-function csvCell(value) {
-  const raw = value == null ? "" : String(value);
-  if (/[",\r\n]/.test(raw)) {
-    return `"${raw.replaceAll('"', '""')}"`;
-  }
-  return raw;
-}
-
-function writeFileAtomic(filePath, body) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const tmpPath = `${filePath}.${process.pid}.tmp`;
-  fs.writeFileSync(tmpPath, body, "utf8");
-  fs.renameSync(tmpPath, filePath);
-}
-
 function serveDerived(req, res, pathname) {
-  const fileName = path.basename(pathname);
-  if (!DERIVED_FILE_NAMES.includes(fileName)) {
+  if (path.basename(pathname) !== "summary.json") {
     return sendText(res, 404, "not found");
   }
-  const filePath = path.join(DERIVED_DIR, fileName);
-  if (!fs.existsSync(filePath)) {
-    if (fileName === "summary.json") {
-      return sendJson(res, 200, getSummaryForDisplay(null));
-    }
-    return sendText(res, 503, "derived file is not available; rebuild it offline");
+  if (!fs.existsSync(SUMMARY_FILE)) {
+    return sendJson(res, 200, getSummaryForDisplay(null));
   }
-  const contentType = fileName.endsWith(".json") ? "application/json; charset=utf-8" : "text/csv; charset=utf-8";
-  return sendFile(res, filePath, contentType);
+  return sendFile(res, SUMMARY_FILE, "application/json; charset=utf-8");
 }
 
 function escapeHtml(value) {
@@ -1590,7 +966,7 @@ function getVersionIdsForDisplay(summary, latestVersion = null) {
 }
 
 function getDefaultDisplayVersion() {
-  const latestVersion = normalizeVersionFilter(readLatestVersionInfo().latestVersion);
+  const latestVersion = normalizeVersionFilter(readLatestVersionInfo()?.latestVersion);
   const summary = getSummaryForDisplay(null);
   const availableVersions = new Set((summary.availableVersions || []).map((row) => row.id).filter(Boolean));
   if (latestVersion && availableVersions.has(latestVersion)) {
@@ -1636,7 +1012,7 @@ function renderVersionOptions(summary, selectedVersion, latestVersion) {
 
 function renderIndexHtml(versionFilter = null) {
   const summary = getSummaryForDisplay(versionFilter);
-  const latestVersion = normalizeVersionFilter(readLatestVersionInfo().latestVersion);
+  const latestVersion = normalizeVersionFilter(readLatestVersionInfo()?.latestVersion);
   const indexPath = path.join(PUBLIC_DIR, "index.html");
   let html = fs.readFileSync(indexPath, "utf8");
   const note = buildFilterNote(summary);
@@ -1722,7 +1098,11 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, getSummaryForDisplay(url.searchParams.get("version")));
   }
   if (req.method === "GET" && url.pathname === "/api/hextech-runes/latest-version") {
-    return sendJson(res, 200, readLatestVersionInfo());
+    const latestVersionInfo = readLatestVersionInfo();
+    if (!latestVersionInfo) {
+      return sendJson(res, 503, { ok: false, error: "latest version info is unavailable" });
+    }
+    return sendJson(res, 200, latestVersionInfo);
   }
   if (req.method === "GET" && url.pathname.startsWith("/api/hextech-runes/derived/")) {
     return serveDerived(req, res, url.pathname);
@@ -1738,16 +1118,6 @@ const server = http.createServer(async (req, res) => {
   }
   return sendText(res, 405, "method not allowed");
 });
-
-if (isBootstrapProcess) {
-  try {
-    bootstrapIncrementalSummary();
-    process.exit(0);
-  } catch (error) {
-    console.error(error?.stack || error);
-    process.exit(1);
-  }
-}
 
 if (isRebuildProcess) {
   try {

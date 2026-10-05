@@ -223,16 +223,7 @@ internal static partial class HextechRuneConfigMenuHooks
 
 	private static async Task PopulateCommunityListAsync(CommunityPanel panel, CommunityTab tab)
 	{
-		List<CommunityDisplayEntry>? entries;
-		try
-		{
-			entries = await FetchCommunityEntriesAsync(panel.MySteamId, tab);
-		}
-		catch (Exception ex)
-		{
-			LogCommunityFailure("list", ex);
-			entries = null;
-		}
+		List<CommunityDisplayEntry>? entries = await FetchCommunityEntriesAsync(panel.MySteamId, tab);
 
 		Callable.From(() =>
 		{
@@ -425,16 +416,7 @@ internal static partial class HextechRuneConfigMenuHooks
 	private static async Task ToggleLikeAsync(Button like, string mySteamId, string entryId, int fallbackLikes)
 	{
 		bool on = !SessionLikedIds.Contains(entryId);
-		HextechCommunityClient.CommunityApiResult result;
-		try
-		{
-			result = await HextechCommunityClient.LikeAsync(mySteamId, entryId, on);
-		}
-		catch (Exception ex)
-		{
-			LogCommunityFailure("like", ex);
-			return;
-		}
+		HextechCommunityClient.CommunityApiResult result = await HextechCommunityClient.LikeAsync(mySteamId, entryId, on);
 
 		Callable.From(() =>
 		{
@@ -459,14 +441,7 @@ internal static partial class HextechRuneConfigMenuHooks
 	private static async Task DeleteOwnConfigAsync(Button remove, CommunityPanel panel, string entryId)
 	{
 		remove.Disabled = true;
-		try
-		{
-			await HextechCommunityClient.DeleteAsync(panel.MySteamId, entryId);
-		}
-		catch (Exception ex)
-		{
-			LogCommunityFailure("delete", ex);
-		}
+		await HextechCommunityClient.DeleteAsync(panel.MySteamId, entryId);
 
 		// 无论成败都刷新当前页签:列表以服务器为准。
 		Callable.From(() =>
@@ -483,14 +458,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		// 乐观 UI:点击立即置灰改字(Pressed 在主线程),网络结果不影响展示。
 		report.Disabled = true;
 		SetActionButtonText(report, L("HEXTECH_COMMUNITY_REPORTED"));
-		try
-		{
-			await HextechCommunityClient.ReportAsync(mySteamId, entryId);
-		}
-		catch (Exception ex)
-		{
-			LogCommunityFailure("report", ex);
-		}
+		await HextechCommunityClient.ReportAsync(mySteamId, entryId);
 	}
 
 	private static void OpenCommunityUploadDialog(CommunityPanel panel)
@@ -551,20 +519,11 @@ internal static partial class HextechRuneConfigMenuHooks
 		}
 
 		form.Confirm.Disabled = true;
-		HextechCommunityClient.CommunityApiResult result;
-		try
-		{
-			result = await HextechCommunityClient.UploadAsync(
-				panel.MySteamId,
-				HextechSteamIdentity.GetPersonaName(),
-				uploadTitle,
-				BuildPendingShareCode(panel.Menu));
-		}
-		catch (Exception ex)
-		{
-			LogCommunityFailure("upload", ex);
-			result = new HextechCommunityClient.CommunityApiResult(false, "network", null, -1);
-		}
+		HextechCommunityClient.CommunityApiResult result = await HextechCommunityClient.UploadAsync(
+			panel.MySteamId,
+			HextechSteamIdentity.GetPersonaName(),
+			uploadTitle,
+			BuildPendingShareCode(panel.Menu));
 
 		Callable.From(() =>
 		{
@@ -594,11 +553,6 @@ internal static partial class HextechRuneConfigMenuHooks
 				_ => L("HEXTECH_CONFIG_FEATURED_ERROR")
 			});
 		}).CallDeferred();
-	}
-
-	private static void LogCommunityFailure(string action, Exception ex)
-	{
-		HextechLog.Warn("Community", $"Community {action} failed: {ex.GetType().Name}: {ex.Message}");
 	}
 
 	/// <summary>三行本地化摘要：我方海克斯 启用/总数、敌方海克斯 启用/总数、双方每幕数量。</summary>

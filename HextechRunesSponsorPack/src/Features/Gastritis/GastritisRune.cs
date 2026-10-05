@@ -31,7 +31,6 @@ public sealed class GastritisRune : HextechRelicBase
 		CardModel? cardSource)
 	{
 		if (!IsDamageFromOwnerToEnemyOrPreview(target, dealer, cardSource)
-			|| Owner == null
 			|| target == null
 			|| target.CurrentHp <= Owner.Creature.CurrentHp)
 		{
@@ -49,8 +48,7 @@ public sealed class GastritisRune : HextechRelicBase
 		Creature target,
 		CardModel? cardSource)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| target.Side != CombatSide.Enemy
 			|| result.TotalDamage <= 0
 			|| target.CurrentHp <= Owner.Creature.CurrentHp

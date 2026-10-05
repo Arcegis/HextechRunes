@@ -14,8 +14,7 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 
 	public override Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature? applier, CardModel? cardSource)
 	{
-		if (Owner == null
-			|| power.Owner != Owner.Creature
+		if (power.Owner != Owner.Creature
 			|| power.GetType() != typeof(StrengthPower)
 			|| amount <= 0m
 			|| Owner.PlayerCombatState == null)
@@ -52,11 +51,6 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 
 	private CardModel? PickCardToMakeFree(int ordinal, int total)
 	{
-		if (Owner?.PlayerCombatState == null)
-		{
-			return null;
-		}
-
 		return HextechFreeCardPicker.Pick(
 			PileType.Hand.GetPile(Owner).Cards,
 			(candidates, tier) => PickCardToMakeFreeFromCandidates(candidates, ordinal, total, tier));
@@ -64,11 +58,6 @@ public sealed class GrowingStrongerRune : HextechRelicBase
 
 	private CardModel? PickCardToMakeFreeFromCandidates(IReadOnlyList<CardModel> candidates, int ordinal, int total, string tier)
 	{
-		if (Owner == null || candidates.Count == 0)
-		{
-			return null;
-		}
-
 		int index = HextechStableRandom.Index(
 			(RunState)Owner.RunState,
 			candidates.Count,

@@ -26,7 +26,8 @@ internal static class HextechMultiplayerScalingCompat
 
 	public static async Task NormalizeCombatEnemyHpIfNeeded(HextechMayhemModifier modifier, CombatRoom room)
 	{
-		foreach (Creature enemy in room.CombatState.Enemies.Where(static creature => creature.Side == CombatSide.Enemy && creature.IsAlive).ToList())
+		// 先取快照:归一化会 await 改最大生命。阵营与存活由 NormalizeEnemyHpIfNeeded 在轮到时再判。
+		foreach (Creature enemy in room.CombatState.Enemies.ToList())
 		{
 			await NormalizeEnemyHpIfNeeded(modifier, enemy);
 		}
@@ -98,7 +99,7 @@ internal static class HextechMultiplayerScalingCompat
 		}
 
 		int lostHp = Math.Max(0, creature.MaxHp - creature.CurrentHp);
-		await CreatureCmdCompat.SetMaxHp(creature, expectedMaxHp);
+		await CreatureCmd.SetMaxHp(creature, expectedMaxHp);
 		await CreatureCmd.SetCurrentHp(creature, Math.Max(0, expectedMaxHp - lostHp));
 	}
 

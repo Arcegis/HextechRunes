@@ -57,30 +57,26 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 			&& owner.GetRelic<AutomationUpgradeRune>() != null;
 	}
 
+	// 只在 ShouldUseUpgradedDraw 通过后调用：反射成员齐全、持有者存在且持有本符文。
 	internal static async Task AfterCardDrawnUpgraded(PlayerChoiceContext choiceContext, AutomationPower power, CardModel card, bool fromHandDraw)
 	{
-		Player? owner = power.Owner.Player;
-		if (owner == null
-			|| PowerGetInternalDataMethod == null
-			|| AutomationCardsLeftField == null
-			|| PowerInvokeDisplayAmountChangedMethod == null
-			|| PowerFlashMethod == null
-			|| PowerGetInternalDataMethod.Invoke(power, null) is not { } data
-			|| AutomationCardsLeftField.GetValue(data) is not int storedCardsLeft)
+		Player owner = power.Owner.Player!;
+		if (PowerGetInternalDataMethod!.Invoke(power, null) is not { } data
+			|| AutomationCardsLeftField!.GetValue(data) is not int storedCardsLeft)
 		{
 			return;
 		}
 
 		int cardsLeft = Math.Max(0, storedCardsLeft - 1);
 		AutomationCardsLeftField.SetValue(data, cardsLeft);
-		PowerInvokeDisplayAmountChangedMethod.Invoke(power, null);
+		PowerInvokeDisplayAmountChangedMethod!.Invoke(power, null);
 		if (cardsLeft > 0)
 		{
 			return;
 		}
 
 		// 原版触发:回能量并重置计数。
-		PowerFlashMethod.Invoke(power, null);
+		PowerFlashMethod!.Invoke(power, null);
 		await PlayerCmd.GainEnergy(power.Amount, owner);
 		AutomationCardsLeftField.SetValue(data, TriggerThreshold);
 		PowerInvokeDisplayAmountChangedMethod.Invoke(power, null);
@@ -91,9 +87,9 @@ public sealed class AutomationUpgradeRune : CardUpgradeRuneBase<Automation>
 			return;
 		}
 
-		AutomationUpgradeRune? rune = owner.GetRelic<AutomationUpgradeRune>();
-		rune?.Flash();
-		await CardPileCmd.Draw(choiceContext, rune?.DynamicVars.Cards.BaseValue ?? 2m, owner, fromHandDraw: false);
+		AutomationUpgradeRune rune = owner.GetRelic<AutomationUpgradeRune>()!;
+		rune.Flash();
+		await CardPileCmd.Draw(choiceContext, rune.DynamicVars.Cards.BaseValue, owner, fromHandDraw: false);
 	}
 
 	[HarmonyPatch(typeof(AutomationPower), nameof(AutomationPower.AfterCardDrawn), typeof(PlayerChoiceContext), typeof(CardModel), typeof(bool))]

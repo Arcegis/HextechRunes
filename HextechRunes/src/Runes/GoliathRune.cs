@@ -39,27 +39,18 @@ public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune, IH
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		// 主符文可能是先获得的另一个系数参与者(星界躯体/百分比锻造器),此时基础值已在它那里,按新乘积重算。
 		IHextechMaxHpBaseHolder primary = HextechMaxHpScaling.GetPrimary(Owner) ?? this;
 		HextechMaxHpScaling.EnsureBaseInitialized(Owner, primary, assumeAlreadyScaled: false);
-		await CreatureCmdCompat.SetMaxHp(Owner.Creature, primary.BaseMaxHp);
+		await CreatureCmd.SetMaxHp(Owner.Creature, primary.BaseMaxHp);
 		await CreatureCmd.Heal(Owner.Creature, Owner.Creature.MaxHp - Owner.Creature.CurrentHp);
-		Grow();
+		HextechPlayerBodyScaleHelper.Update(Owner);
 	}
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null)
-		{
-			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
-		}
-
-		Grow();
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
+		HextechPlayerBodyScaleHelper.Update(Owner);
 		return Task.CompletedTask;
 	}
 
@@ -70,17 +61,11 @@ public sealed class GoliathRune : HextechRelicBase, IHextechMaxHpScalingRune, IH
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? DynamicVars["SustainMultiplier"].BaseValue : 1m;
+		return target == Owner.Creature ? DynamicVars["SustainMultiplier"].BaseValue : 1m;
 	}
 
 	decimal IHextechHealingMultiplierProvider.ModifyHealingMultiplicative(Player player, Creature creature, decimal amount)
 	{
 		return IsFirstOwnedInstance(player) ? DynamicVars["SustainMultiplier"].BaseValue : 1m;
 	}
-
-	private void Grow()
-	{
-		HextechPlayerBodyScaleHelper.Update(Owner);
-	}
-
 }

@@ -9,8 +9,7 @@ public sealed class ZapUpgradeRune : CardUpgradeRuneBase<Zap>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| cardPlay.Card.Owner != Owner
+		if (cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not Zap
 			|| Owner.PlayerCombatState == null
 			|| Owner.Creature.IsDead)

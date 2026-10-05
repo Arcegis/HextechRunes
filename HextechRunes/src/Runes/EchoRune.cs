@@ -16,7 +16,6 @@ public sealed class EchoRune : HextechRelicBase
 	{
 		bool addedByPlayer = creator == Owner;
 		if (!addedByPlayer
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| card.Owner != Owner
 			|| !TryGetEchoPile(card, out PileType pileType))

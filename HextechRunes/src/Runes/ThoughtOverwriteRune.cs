@@ -34,7 +34,7 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 	public override async Task AfterObtained()
 	{
 		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
-		if (Owner == null || !IsNecrobinderPlayer(Owner))
+		if (!IsNecrobinderPlayer(Owner))
 		{
 			return;
 		}
@@ -62,29 +62,26 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 		Flash();
 		foreach (CardModel card in selectedCards)
 		{
-			ThoughtOverwriteKeywordPersistence.Track(card);
+			KeywordPersistenceTrackers.ThoughtOverwrite.Track(card);
 			CardCmd.ApplyKeyword(card, CardKeyword.Ethereal);
 		}
 	}
 
 	public override Task AfterCardEnteredCombat(CardModel card)
 	{
-		if (Owner == null || card.Owner != Owner)
+		if (card.Owner != Owner)
 		{
 			return Task.CompletedTask;
 		}
 
-		if (ThoughtOverwriteKeywordPersistence.IsTracked(card.DeckVersion))
-		{
-			ThoughtOverwriteKeywordPersistence.Restore(card);
-		}
+		KeywordPersistenceTrackers.ThoughtOverwrite.RestoreFromDeckVersion(card);
 
 		return Task.CompletedTask;
 	}
 
 	public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
 	{
-		if (Owner == null || card.Owner != Owner || !card.Keywords.Contains(CardKeyword.Ethereal))
+		if (card.Owner != Owner || !card.Keywords.Contains(CardKeyword.Ethereal))
 		{
 			return playCount;
 		}
@@ -94,7 +91,7 @@ public sealed class ThoughtOverwriteRune : HextechRelicBase
 
 	public override Task AfterModifyingCardPlayCount(CardModel card)
 	{
-		if (Owner != null && card.Owner == Owner && card.Keywords.Contains(CardKeyword.Ethereal))
+		if (card.Owner == Owner && card.Keywords.Contains(CardKeyword.Ethereal))
 		{
 			Flash();
 		}

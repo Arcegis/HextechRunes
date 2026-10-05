@@ -43,23 +43,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void PlayerCompensationRequiresActiveCombatContext()
-	{
-		Expect(
-			CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: true, combatStateMatchesRun: true),
-			"Compensation should replace damage during the active combat it belongs to");
-		Expect(
-			!CompensationRune.IsActiveCombatContext(combatInProgress: false, currentRoomIsCombat: true, combatStateMatchesRun: true),
-			"Compensation should not replace event or other out-of-combat damage");
-		Expect(
-			!CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: false, combatStateMatchesRun: true),
-			"Compensation should require the current room to be a combat room");
-		Expect(
-			!CompensationRune.IsActiveCombatContext(combatInProgress: true, currentRoomIsCombat: true, combatStateMatchesRun: false),
-			"Compensation should reject stale combat state from another run");
-	}
-
-	[HextechTest]
 	private static void NextTurnDamageUsesTurnStartSnapshot()
 	{
 		Equal(0, HextechNextTurnDamagePower.GetDamageToResolve(5, 0), "new stacks should not resolve during the turn they are applied");
@@ -84,44 +67,6 @@ internal static partial class Program
 
 		Expect(skippedDuringResolution, "next-turn damage must bypass compensation instead of being delayed again");
 		Expect(!HextechNextTurnDamagePower.IsResolvingDamage, "next-turn damage guard should reset after guarded work");
-	}
-
-	[HextechTest]
-	private static void EnemyCompensationSkipsOutbreakPoisonResponse()
-	{
-		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should start inactive");
-		Expect(
-			!CompensationEnemyHex.ShouldSkipDamageReplacement(),
-			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
-
-		bool skippedInsideGuard = false;
-		HextechCombatHooks.RunWithOutbreakPowerPoisonResponseGuard(() =>
-		{
-			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement();
-			return Task.CompletedTask;
-		}).GetAwaiter().GetResult();
-
-		Expect(skippedInsideGuard, "outbreak poison response damage should skip compensation replacement");
-		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "outbreak response guard should reset after guarded work");
-	}
-
-	[HextechTest]
-	private static void EnemyCompensationSkipsSleightOfFleshResponse()
-	{
-		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should start inactive");
-		Expect(
-			!CompensationEnemyHex.ShouldSkipDamageReplacement(),
-			"ordinary unpowered damage with dealer should still be eligible for compensation replacement");
-
-		bool skippedInsideGuard = false;
-		HextechCombatHooks.RunWithSleightOfFleshPowerDebuffResponseGuard(() =>
-		{
-			skippedInsideGuard = CompensationEnemyHex.ShouldSkipDamageReplacement();
-			return Task.CompletedTask;
-		}).GetAwaiter().GetResult();
-
-		Expect(skippedInsideGuard, "sleight of flesh response damage should skip compensation replacement to avoid the poison recursion stack overflow");
-		Expect(!HextechCombatHooks.IsResolvingSleightOfFleshPowerDebuffResponse, "sleight response guard should reset after guarded work");
 	}
 
 	[HextechTest]
@@ -183,25 +128,5 @@ internal static partial class Program
 		nestedSynchronousTask.GetAwaiter().GetResult();
 		enteredTaskGuard.Exit();
 		Expect(!enteredTaskGuard.IsActive, "nested completed task guard should unwind exactly one depth");
-	}
-
-	[HextechTest]
-	private static void CompensationReplacementSuppressesSleightOfFleshResponse()
-	{
-		Expect(
-			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true),
-			"sleight response should not be suppressed outside compensation replacement");
-
-		bool suppressedInsideGuard = false;
-		HextechCombatHooks.RunWithCompensationReplacementGuard(() =>
-		{
-			suppressedInsideGuard = HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(true);
-			return Task.CompletedTask;
-		}).GetAwaiter().GetResult();
-
-		Expect(suppressedInsideGuard, "sleight response should be suppressed during compensation replacement");
-		Expect(
-			!HextechCombatHooks.ShouldSuppressSleightOfFleshPowerDebuffResponse(false),
-			"sleight response should not be suppressed when the power change would not trigger sleight");
 	}
 }

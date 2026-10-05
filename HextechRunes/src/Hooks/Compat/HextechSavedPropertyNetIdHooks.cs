@@ -6,7 +6,7 @@ namespace HextechRunes;
 
 /// <summary>
 /// 把 <c>SavedPropertiesTypeCache</c> 的模组 net-id 布局规范化为确定性顺序,消除联机「1014 模组不匹配」的非确定性根因
-/// (运行时 SavedProperties net-id 因模组加载顺序在两端错位 → 抛异常 → 被断连兜底转成 ModMismatch)。
+/// (运行时 SavedProperties net-id 因模组加载顺序在两端错位 → (反)序列化抛异常 → 联机中断)。
 /// 仅 0.107.1 需要:0.109 起 ModelIdSerializationCache.Init 由游戏自己做确定性排序与哈希。
 ///
 /// 时序:挂在 <c>OneTimeInitialization.ExecuteEssential</c> 的后缀。该方法是固定启动状态机里唯一一次、且在
@@ -42,29 +42,18 @@ internal static class HextechSavedPropertyNetIdHooks
 
 		try
 		{
-			IReadOnlySet<string>? vanillaNames = BuildVanillaPropertyNameSet();
-			if (vanillaNames == null || vanillaNames.Count == 0)
+			IReadOnlySet<string> vanillaNames = BuildVanillaPropertyNameSet();
+			if (vanillaNames.Count == 0)
 			{
 				HextechLog.Error("MultiplayerCompat", $"Could not determine vanilla SavedProperty names; net-id canonicalization NOT applied (multiplayer with other SavedProperty mods may desync).");
 				return;
 			}
 
-			// SavedPropertiesTypeCache._netIdToPropertyNameMap / _propertyNameToNetIdMap（0.107.1 原版私有静态字段）。
-			FieldInfo? netIdToNameField = TryGetField(typeof(SavedPropertiesTypeCache), "_netIdToPropertyNameMap", StaticNonPublic);
-			FieldInfo? nameToNetIdField = TryGetField(typeof(SavedPropertiesTypeCache), "_propertyNameToNetIdMap", StaticNonPublic);
-			if (netIdToNameField?.GetValue(null) is not List<string> netIdToName
-				|| nameToNetIdField?.GetValue(null) is not Dictionary<string, int> nameToNetId)
-			{
-				HextechLog.Error("MultiplayerCompat", $"SavedPropertiesTypeCache maps unavailable; net-id canonicalization NOT applied.");
-				return;
-			}
-
-			List<string>? canonical = HextechSavedPropertyNetIdCanonicalizer.Canonicalize(netIdToName, vanillaNames);
-			if (canonical == null || canonical.Count != netIdToName.Count)
-			{
-				HextechLog.Error("MultiplayerCompat", $"Net-id canonicalization produced an invalid result (mapCount={netIdToName.Count}); map left unchanged, canonicalization NOT applied.");
-				return;
-			}
+			// SavedPropertiesTypeCache._netIdToPropertyNameMap / _propertyNameToNetIdMap:0.107.1 与 0.108.0 原版私有静态字段
+			// (宿主为这两版时才会加载本变体)。缺失时经 HookReflection 进启动摘要,下面的空引用由外层 catch 记错误。
+			List<string> netIdToName = (List<string>)TryGetField(typeof(SavedPropertiesTypeCache), "_netIdToPropertyNameMap", StaticNonPublic)!.GetValue(null)!;
+			Dictionary<string, int> nameToNetId = (Dictionary<string, int>)TryGetField(typeof(SavedPropertiesTypeCache), "_propertyNameToNetIdMap", StaticNonPublic)!.GetValue(null)!;
+			List<string> canonical = HextechSavedPropertyNetIdCanonicalizer.Canonicalize(netIdToName, vanillaNames);
 
 			// 原地重建两张表,保持原引用不变(其它代码可能持有同一 List/Dictionary 引用)。
 			netIdToName.Clear();
@@ -85,14 +74,16 @@ internal static class HextechSavedPropertyNetIdHooks
 
 			_canonicalized = true;
 			HextechLog.Info("MultiplayerCompat", $"Canonicalized SavedProperty net-id map: vanilla={vanillaNames.Count} total={canonical.Count} bitSize={SavedPropertiesTypeCache.NetIdBitSize}.");
-
-			// 规范化后终检:此刻拓展包/二创包的延迟注册均已完成,扫描所有引用本模组的程序集,
-			// 抓"包侧新增 [SavedProperty] 载体却忘了走 API 注册"的漏项(启动期那次自检看不到包外类型)。
-			HextechSavedPropertyBootstrap.WarnOnUninjectedSavedPropertyCarriers();
 		}
 		catch (Exception ex)
 		{
 			HextechLog.Error("MultiplayerCompat", $"SavedProperty net-id canonicalization failed (registration window is frozen, map may be unchanged): {ex.GetType().Name}: {ex.Message}");
+		}
+		finally
+		{
+			// 载体漏注入自检只在这里做一次(规范化成败都做,自检自带 catch):此刻本体与拓展包/二创包的注册窗口都已关闭,
+			// 扫描所有引用本模组的程序集,抓"新增 [SavedProperty] 载体却忘了登记"的漏项。
+			HextechSavedPropertyBootstrap.WarnOnUninjectedSavedPropertyCarriers();
 		}
 	}
 
@@ -101,17 +92,12 @@ internal static class HextechSavedPropertyNetIdHooks
 	/// 只需名字集合(用于把原版前缀与模组后缀区分开),不依赖游戏的排序细节,且随游戏版本自适应。
 	/// 必须与游戏 <c>CachePropertiesForType</c> 一致地用 Instance|Public|NonPublic 取属性。
 	/// </summary>
-	private static IReadOnlySet<string>? BuildVanillaPropertyNameSet()
+	private static IReadOnlySet<string> BuildVanillaPropertyNameSet()
 	{
 		const BindingFlags propertyFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 		HashSet<string> names = new(StringComparer.Ordinal);
 		foreach (Type type in AbstractModelSubtypes.All)
 		{
-			if (type == null)
-			{
-				continue;
-			}
-
 			foreach (PropertyInfo property in type.GetProperties(propertyFlags))
 			{
 				if (property.GetCustomAttribute<SavedPropertyAttribute>() != null)
@@ -127,13 +113,7 @@ internal static class HextechSavedPropertyNetIdHooks
 	private static bool TrySetNetIdBitSize(int bitSize)
 	{
 		// SavedPropertiesTypeCache.NetIdBitSize 的自动属性后备字段（0.107.1 原版只有 private set）。
-		FieldInfo? backing = TryGetField(typeof(SavedPropertiesTypeCache), "<NetIdBitSize>k__BackingField", StaticNonPublic);
-		if (backing == null)
-		{
-			return false;
-		}
-
-		backing.SetValue(null, bitSize);
+		TryGetField(typeof(SavedPropertiesTypeCache), "<NetIdBitSize>k__BackingField", StaticNonPublic)!.SetValue(null, bitSize);
 		return SavedPropertiesTypeCache.NetIdBitSize == bitSize;
 	}
 

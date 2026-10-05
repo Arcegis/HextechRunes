@@ -151,11 +151,8 @@ internal static class HextechPresetChallengeHooks
 {
 	private static IEnumerable<ModifierModel> CreatePresetChallenges()
 	{
-		yield return ModelDb.Modifier<StuffedToRuinChallengeModifier>().ToMutable();
-		yield return ModelDb.Modifier<DefenseCounterMasterChallengeModifier>().ToMutable();
-		yield return ModelDb.Modifier<BruteForceChallengeModifier>().ToMutable();
-		yield return ModelDb.Modifier<EightPennyGateChallengeModifier>().ToMutable();
-		yield return ModelDb.Modifier<ListlessChallengeModifier>().ToMutable();
+		return HextechCustomModelRegistry.CustomChallengeModifierTypes
+			.Select(static type => ModelDb.GetById<ModifierModel>(ModelDb.GetId(type)).ToMutable());
 	}
 
 	[HarmonyPatch(typeof(NCustomRunModifiersList), "GetAllModifiers")]

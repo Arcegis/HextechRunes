@@ -12,13 +12,10 @@ internal static partial class HextechFormVfxSafetyHooks
 		Serpent
 	}
 
-	internal static bool ShouldPreserveExistingForSymphony(
-		bool hasSymphonyOfWar,
-		FormVfxKind incoming,
-		FormVfxKind existing)
+	/// <summary>持有战争交响乐时,新形态特效进来后是否保留已有的这一层。</summary>
+	internal static bool ShouldPreserveExistingForSymphony(FormVfxKind incoming, FormVfxKind existing)
 	{
-		return hasSymphonyOfWar
-			&& existing is FormVfxKind.Demon or FormVfxKind.Serpent
+		return existing is FormVfxKind.Demon or FormVfxKind.Serpent
 			&& existing != incoming;
 	}
 }

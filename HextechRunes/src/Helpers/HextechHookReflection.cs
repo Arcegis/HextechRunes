@@ -18,12 +18,6 @@ internal static class HextechHookReflection
 		}
 	}
 
-	public static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
-	{
-		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
-			?? throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
-	}
-
 	public static MethodInfo? TryGetMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
 	{
 		return TryGetMethod(type, name, flags, warnIfMissing: true, parameters);
@@ -45,12 +39,6 @@ internal static class HextechHookReflection
 		}
 
 		return method;
-	}
-
-	public static FieldInfo RequireField(Type type, string name, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic)
-	{
-		return type.GetField(name, flags)
-			?? throw new InvalidOperationException($"Could not find required field {type.FullName}.{name}.");
 	}
 
 	public static FieldInfo? TryGetField(Type type, string name, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic)
@@ -82,12 +70,6 @@ internal static class HextechHookReflection
 		}
 
 		return nested;
-	}
-
-	public static MethodInfo RequireGetter(Type type, string propertyName, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-	{
-		return type.GetProperty(propertyName, flags)?.GetMethod
-			?? throw new InvalidOperationException($"Could not find property getter {type.FullName}.{propertyName}.");
 	}
 
 	/// <summary>取属性的（可能非公开的）setter；缺失时进启动摘要。</summary>

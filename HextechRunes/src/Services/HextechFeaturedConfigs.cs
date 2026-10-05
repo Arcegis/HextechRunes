@@ -11,11 +11,6 @@ internal static class HextechFeaturedConfigs
 {
 	private const int MaxEntries = 100;
 	private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
-	private static readonly HttpClient HttpClient = new()
-	{
-		Timeout = TimeSpan.FromSeconds(12)
-	};
-
 	private static readonly object CacheLock = new();
 	private static IReadOnlyList<FeaturedConfigEntry>? _cached;
 	private static DateTime _cachedAtUtc;
@@ -45,7 +40,7 @@ internal static class HextechFeaturedConfigs
 		try
 		{
 			using HttpResponseMessage response =
-				await HttpClient.GetAsync(HextechServerEndpoints.FeaturedConfigsEndpoint).ConfigureAwait(false);
+				await HextechHttp.GetAsync(HextechServerEndpoints.FeaturedConfigsEndpoint).ConfigureAwait(false);
 			if (!response.IsSuccessStatusCode)
 			{
 				HextechLog.Warn("FeaturedConfigs", $"HTTP {(int)response.StatusCode}");

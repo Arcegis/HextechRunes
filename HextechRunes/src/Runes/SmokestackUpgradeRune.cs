@@ -6,7 +6,7 @@ public sealed class SmokestackUpgradeRune : CardUpgradeRuneBase<Smokestack>
 
 	public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
 	{
-		if (Owner == null || card.Owner != Owner || card.Type != CardType.Status)
+		if (card.Owner != Owner || card.Type != CardType.Status)
 		{
 			return;
 		}

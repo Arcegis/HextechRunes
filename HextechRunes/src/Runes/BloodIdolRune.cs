@@ -9,7 +9,7 @@ public sealed class BloodIdolRune : HextechRelicBase
 
 	public override Task AfterGoldGained(Player player)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

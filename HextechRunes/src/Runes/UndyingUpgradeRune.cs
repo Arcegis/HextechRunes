@@ -29,11 +29,6 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 	{
 		// 先加入不死，再给全部不死（含刚加入的牌）加持久虚无词条。
 		await base.AfterObtained();
-		if (Owner == null)
-		{
-			return;
-		}
-
 		List<CardModel> undeaths = Owner.Deck.Cards
 			.Where(static card => card is Undeath)
 			.ToList();
@@ -51,15 +46,12 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 
 	public override Task AfterCardEnteredCombat(CardModel card)
 	{
-		if (Owner == null || card.Owner != Owner)
+		if (card.Owner != Owner)
 		{
 			return Task.CompletedTask;
 		}
 
-		if (UndyingEtherealKeywordPersistence.IsTracked(card.DeckVersion))
-		{
-			UndyingEtherealKeywordPersistence.Restore(card);
-		}
+		KeywordPersistenceTrackers.UndyingEthereal.RestoreFromDeckVersion(card);
 
 		return Task.CompletedTask;
 	}
@@ -80,7 +72,7 @@ public sealed class UndyingUpgradeRune : CardUpgradeRuneBase<Undeath>
 
 	private static void ApplyPersistentEthereal(CardModel card)
 	{
-		UndyingEtherealKeywordPersistence.Track(card);
+		KeywordPersistenceTrackers.UndyingEthereal.Track(card);
 		CardCmd.ApplyKeyword(card, CardKeyword.Ethereal);
 	}
 }

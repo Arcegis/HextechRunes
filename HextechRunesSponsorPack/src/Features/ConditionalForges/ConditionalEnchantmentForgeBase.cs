@@ -24,11 +24,6 @@ public abstract class ConditionalEnchantmentForgeBase : HextechForgeBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		IEnumerable<CardModel> selectedCards = await CardSelectCmd.FromDeckGeneric(
 			Owner,
 			new CardSelectorPrefs(CardSelectorPrefs.EnchantSelectionPrompt, SelectionCount),

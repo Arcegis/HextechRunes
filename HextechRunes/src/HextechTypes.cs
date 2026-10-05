@@ -9,7 +9,7 @@ public enum HextechRarityTier
 
 internal enum MonsterHexKind
 {
-	// 已移除的数值 18/47/64/71/72/82/96 保持空洞，勿复用。
+	// 已移除的数值 18/33/47/64/71/72/82/96 保持空洞，勿复用。
 	Slap = 0,
 	EscapePlan = 1,
 	HeavyHitter = 2,

@@ -24,7 +24,7 @@ public sealed class HailToTheKingRune : InitialForgeGrantRune, IHextechSharedCom
 
 	public Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

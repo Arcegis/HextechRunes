@@ -29,7 +29,6 @@ public sealed class MyriadSwordsRune : HextechRelicBase
 	public override async Task AfterShuffle(PlayerChoiceContext choiceContext, Player shuffler)
 	{
 		if (_discharging
-			|| Owner == null
 			|| shuffler != Owner
 			|| Owner.Creature.IsDead
 			|| Owner.PlayerCombatState == null
@@ -88,10 +87,7 @@ public sealed class MyriadSwordsRune : HextechRelicBase
 		}
 		finally
 		{
-			if (Owner?.PlayerCombatState != null && Owner.Creature.CombatState != null)
-			{
-				HextechSovereignBladeVfxSync.Reconcile(Owner);
-			}
+			HextechSovereignBladeVfxSync.Reconcile(Owner);
 			_discharging = false;
 		}
 	}

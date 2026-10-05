@@ -1,11 +1,6 @@
 namespace HextechRunes;
 
-public sealed class StatsOnStatsRune : InitialForgeGrantRune
+public sealed class StatsOnStatsRune : StatsRuneBase
 {
-	protected override IEnumerable<DynamicVar> CanonicalVars =>
-	[
-		new DynamicVar("ForgeCount", 4m)
-	];
-
-	protected override int InitialForgeCount => DynamicVars["ForgeCount"].IntValue;
+	protected override int ForgeCount => 4;
 }

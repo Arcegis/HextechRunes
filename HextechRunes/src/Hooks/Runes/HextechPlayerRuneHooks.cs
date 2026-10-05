@@ -79,21 +79,13 @@ internal static partial class HextechPlayerRuneHooks
 	internal static bool TryCreateManipulateRealityStatusCopy(CardModel card, [NotNullWhen(true)] out CardModel? copy)
 	{
 		copy = null;
-		try
+		if (card.Owner?.Creature.CombatState is not HextechCombatState combatState)
 		{
-			if (card.Owner?.Creature.CombatState is not HextechCombatState combatState)
-			{
-				return false;
-			}
-
-			copy = combatState.CloneCard(card);
-			return true;
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn("Mayhem", $"Failed to duplicate enemy generated status card for Manipulate Reality: card={card.Id.Entry} error={ex.GetType().Name}: {ex.Message}");
 			return false;
 		}
+
+		copy = combatState.CloneCard(card);
+		return true;
 	}
 
 	// 卡牌标签 getter 是热路径，图鉴/第三方会在规范模型上读它；规范模型的 Owner 会抛 CanonicalModelException，先判 IsCanonical。

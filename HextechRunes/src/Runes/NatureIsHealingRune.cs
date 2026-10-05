@@ -56,7 +56,7 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 
 	private void StartTimer()
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -127,8 +127,7 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 
 	private bool ShouldHeal()
 	{
-		return Owner != null
-			&& CombatManager.Instance?.IsInProgress == true
+		return CombatManager.Instance?.IsInProgress == true
 			&& Owner.RunState.CurrentRoom is CombatRoom
 			&& Owner.Creature.CombatState != null
 			&& !Owner.Creature.IsDead;
@@ -136,8 +135,6 @@ public sealed class NatureIsHealingRune : HextechRelicBase
 
 	private Task HealOwner()
 	{
-		return Owner == null
-			? Task.CompletedTask
-			: CreatureCmd.Heal(Owner.Creature, DynamicVars.Heal.BaseValue);
+		return CreatureCmd.Heal(Owner.Creature, DynamicVars.Heal.BaseValue);
 	}
 }

@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.Models.Exceptions;
-
 namespace HextechRunes;
 
 internal static class HextechStableRandom
@@ -42,7 +40,7 @@ internal static class HextechStableRandom
 		return (int)(HashRaw(parts) % (ulong)count);
 	}
 
-	public static ulong HashRaw(params string?[] parts)
+	private static ulong HashRaw(params string?[] parts)
 	{
 		ulong hash = OffsetBasis;
 		foreach (string? part in parts)
@@ -118,15 +116,16 @@ internal static class HextechStableRandom
 			return "none";
 		}
 
+		// 规范模型的 Owner getter 会抛 CanonicalModelException,先判 IsCanonical。
 		string ownerKey;
-		try
+		if (card.IsCanonical)
+		{
+			ownerKey = "owner:canonical";
+		}
+		else
 		{
 			Player? owner = card.Owner;
 			ownerKey = owner == null ? "owner:none" : PlayerKey(owner);
-		}
-		catch (CanonicalModelException)
-		{
-			ownerKey = "owner:canonical";
 		}
 
 		return string.Join(":",

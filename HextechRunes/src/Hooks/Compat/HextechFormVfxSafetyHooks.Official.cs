@@ -55,10 +55,7 @@ internal static partial class HextechFormVfxSafetyHooks
 				FormVfxKind existing = child is NFormVfx existingFormVfx
 					? GetFormVfxKind(existingFormVfx)
 					: FormVfxKind.Other;
-				if (!ShouldPreserveExistingForSymphony(
-					hasSymphonyOfWar: true,
-					incoming,
-					existing))
+				if (!ShouldPreserveExistingForSymphony(incoming, existing))
 				{
 					child.Free();
 				}

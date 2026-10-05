@@ -14,13 +14,13 @@ public sealed class ImmortalBoneRune : HextechRelicBase
 
 	public override Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead || !Owner.IsOstyAlive || Owner.Osty == null)
+		if (player != Owner || Owner.Creature.IsDead || Owner.Osty is not { IsAlive: true } osty)
 		{
 			return Task.CompletedTask;
 		}
 
-		Flash([Owner.Osty]);
-		int healAmount = Math.Max(1, FloorToInt(Owner.Osty.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
-		return CreatureCmd.Heal(Owner.Osty, healAmount);
+		Flash([osty]);
+		int healAmount = Math.Max(1, FloorToInt(osty.MaxHp * DynamicVars["HealPercent"].BaseValue / 100m));
+		return CreatureCmd.Heal(osty, healAmount);
 	}
 }

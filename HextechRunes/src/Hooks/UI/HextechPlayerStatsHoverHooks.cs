@@ -17,6 +17,9 @@ internal static class HextechPlayerStatsHoverHooks
 
 	private static readonly ConditionalWeakTable<NTopBarPortraitTip, Player> PortraitOwners = new();
 
+	// 两个补丁依赖的私有成员;缺任一项两个补丁都不安装(缺失项已进启动摘要),原版提示不受影响。
+	private static bool MembersAvailable => PortraitHoverTipField != null && HextechHoverTipAccess.CanSetDescription;
+
 	private readonly record struct CoefficientLabels(string Health, string Damage, string Block, string Healing)
 	{
 		// 每次刷新读一次当前语言文本:不跨调用缓存,切换语言后不会残留旧文案。
@@ -53,15 +56,14 @@ internal static class HextechPlayerStatsHoverHooks
 	{
 		try
 		{
-			if (PortraitHoverTipField == null
-				|| !HextechHoverTipAccess.CanSetDescription
-				|| !PortraitOwners.TryGetValue(portraitTip, out Player? player))
+			if (!PortraitOwners.TryGetValue(portraitTip, out Player? player))
 			{
 				return;
 			}
 
 			// 字段类型是 IHoverTip:取出的就是箱体本身,就地改写后字段里的提示同步更新。
-			if (PortraitHoverTipField.GetValue(portraitTip) is not HoverTip hoverTip)
+			FieldInfo portraitHoverTipField = PortraitHoverTipField!;
+			if (portraitHoverTipField.GetValue(portraitTip) is not HoverTip hoverTip)
 			{
 				return;
 			}
@@ -71,7 +73,7 @@ internal static class HextechPlayerStatsHoverHooks
 			HextechHoverTipAccess.TrySetDescription(
 				boxedHoverTip,
 				BuildDescription(RemoveExistingCoefficientLines(hoverTip.Description, labels), player, labels));
-			PortraitHoverTipField.SetValue(portraitTip, boxedHoverTip);
+			portraitHoverTipField.SetValue(portraitTip, boxedHoverTip);
 		}
 		catch (Exception ex)
 		{
@@ -112,6 +114,9 @@ internal static class HextechPlayerStatsHoverHooks
 	[HextechPatch("ui.player-stats-hover.init", "玩家属性悬浮")]
 	private static class InitializePatch
 	{
+		[HarmonyPrepare]
+		private static bool Prepare() => MembersAvailable;
+
 		[HarmonyPostfix]
 		private static void Postfix(NTopBarPortraitTip __instance, IRunState runState)
 		{
@@ -137,6 +142,9 @@ internal static class HextechPlayerStatsHoverHooks
 	[HextechPatch("ui.player-stats-hover.focus", "玩家属性悬浮")]
 	private static class OnFocusPatch
 	{
+		[HarmonyPrepare]
+		private static bool Prepare() => MembersAvailable;
+
 		[HarmonyPrefix]
 		private static void Prefix(NTopBarPortraitTip __instance)
 		{

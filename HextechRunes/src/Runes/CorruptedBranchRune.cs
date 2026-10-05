@@ -37,11 +37,6 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 
 	public override async Task AfterObtained()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		Flash();
 		CardModel card = Owner.RunState.CreateCard<Corruption>(Owner);
 		ApplyPersistentInnate(card);
@@ -64,15 +59,12 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 
 	public override Task AfterCardEnteredCombat(CardModel card)
 	{
-		if (Owner == null || card.Owner != Owner)
+		if (card.Owner != Owner)
 		{
 			return Task.CompletedTask;
 		}
 
-		if (CorruptedBranchInnateKeywordPersistence.IsTracked(card.DeckVersion))
-		{
-			CorruptedBranchInnateKeywordPersistence.Restore(card);
-		}
+		KeywordPersistenceTrackers.CorruptedBranchInnate.RestoreFromDeckVersion(card);
 
 		return Task.CompletedTask;
 	}
@@ -80,7 +72,6 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 	public override async Task AfterCardExhausted(PlayerChoiceContext choiceContext, CardModel card, bool causedByEthereal)
 	{
 		if (!IsOwnedCard(card)
-			|| Owner == null
 			|| Owner.Creature.IsDead
 			|| Owner.Creature.CombatState is not HextechCombatState combatState)
 		{
@@ -108,11 +99,6 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 
 	private CardModel? CreateRandomCombatCard(HextechCombatState combatState, CardModel sourceCard)
 	{
-		if (Owner == null)
-		{
-			return null;
-		}
-
 		List<CardModel> pool = BuildStableCombatGenerationPool(
 			Owner.Character.CardPool.GetUnlockedCards(Owner.UnlockState, Owner.RunState.CardMultiplayerConstraint));
 		if (pool.Count == 0)
@@ -162,7 +148,7 @@ public sealed class CorruptedBranchRune : HextechRelicBase
 
 	private static void ApplyPersistentInnate(CardModel card)
 	{
-		CorruptedBranchInnateKeywordPersistence.Track(card);
+		KeywordPersistenceTrackers.CorruptedBranchInnate.Track(card);
 		CardCmd.ApplyKeyword(card, CardKeyword.Innate);
 	}
 }

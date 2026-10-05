@@ -37,16 +37,7 @@ internal sealed partial class HextechMayhemModifier
 		out HextechRuneSelectionJournalEntry entry)
 	{
 		entry = default;
-		int playerSlot = -1;
-		for (int i = 0; i < RunState.Players.Count; i++)
-		{
-			if (ReferenceEquals(RunState.Players[i], player))
-			{
-				playerSlot = i;
-				break;
-			}
-		}
-
+		int playerSlot = RunState.GetPlayerSlotIndex(player);
 		if (playerSlot < 0)
 		{
 			return false;

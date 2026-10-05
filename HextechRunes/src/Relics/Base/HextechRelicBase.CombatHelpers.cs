@@ -5,13 +5,6 @@ namespace HextechRunes;
 
 public abstract partial class HextechRelicBase
 {
-	protected static bool DeckContains<TCard>(Player player)
-		where TCard : CardModel
-	{
-		ModelId cardId = ModelDb.GetId<TCard>();
-		return player.Deck.Cards.Any(card => card.CanonicalId() == cardId);
-	}
-
 	protected static int FloorToInt(decimal value)
 	{
 		return (int)decimal.Floor(value);
@@ -26,17 +19,6 @@ public abstract partial class HextechRelicBase
 
 	// 旧版本按"本场累计、战后发放"记金币，新触发已改为直接发放；SavedCountThisCombat 只剩旧存档里尚未领取的值。
 	// 战后把它补进奖励并清零，战斗开始时直接清零（传 null）。
-	protected void SettleLegacyCombatGold(CombatRoom? room, ref int legacyCount)
-	{
-		if (room != null && Owner != null && legacyCount > 0)
-		{
-			HextechGoldRewardHelper.AddFixedExtraGoldReward(room, Owner, legacyCount);
-		}
-
-		legacyCount = 0;
-		InvokeDisplayAmountChanged();
-	}
-
 	protected bool IsOwnedCard(CardModel? card)
 	{
 		return card?.Owner == Owner;
@@ -44,7 +26,7 @@ public abstract partial class HextechRelicBase
 
 	protected bool IsOwnedAttack(CardModel? card)
 	{
-		return Owner != null && card?.Owner == Owner && HextechCardEffectTypes.IsAttackForEffects(card, Owner);
+		return card?.Owner == Owner && HextechCardEffectTypes.IsAttackForEffects(card, Owner);
 	}
 
 	protected bool IsOwnedSkill(CardModel? card)
@@ -59,12 +41,12 @@ public abstract partial class HextechRelicBase
 			return true;
 		}
 
-		return Owner != null && HextechCardEffectTypes.IsOriginalOwnedSkill(cardSource, Owner);
+		return HextechCardEffectTypes.IsOriginalOwnedSkill(cardSource, Owner);
 	}
 
-	protected int CountOwnedAttackCardsPlayedFromHistory(bool firstInSeriesOnly = true, bool includeAutoPlay = false)
+	protected int CountOwnedAttackCardsPlayedFromHistory()
 	{
-		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayed(Owner, firstInSeriesOnly, includeAutoPlay);
+		return HextechCombatHistoryHelper.CountOwnedAttackCardsPlayed(Owner);
 	}
 
 	protected int CountOwnedCardsDrawnFromHistory()
@@ -101,11 +83,6 @@ public abstract partial class HextechRelicBase
 
 	protected bool IsPotionUseOwnedByOrTargetingOwner(PotionModel? potion, Creature? target)
 	{
-		if (Owner == null)
-		{
-			return false;
-		}
-
 		if (target == Owner.Creature)
 		{
 			return true;
@@ -126,7 +103,7 @@ public abstract partial class HextechRelicBase
 		target = power.Owner;
 		return amount > 0m
 			&& target?.Side == CombatSide.Enemy
-			&& applier == Owner?.Creature
+			&& applier == Owner.Creature
 			&& power.GetTypeForAmount(amount) == PowerType.Debuff
 			&& power is not ITemporaryPower;
 	}
@@ -137,7 +114,6 @@ public abstract partial class HextechRelicBase
 	{
 		target = power.Owner;
 		return amount > 0m
-			&& Owner != null
 			&& target == Owner.Creature
 			&& !target.IsDead
 			&& power.GetTypeForAmount(amount) == PowerType.Debuff
@@ -150,7 +126,6 @@ public abstract partial class HextechRelicBase
 	{
 		target = power.Owner;
 		return amount > 0m
-			&& Owner != null
 			&& target == Owner.Creature
 			&& !target.IsDead
 			&& power.IsVisible

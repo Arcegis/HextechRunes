@@ -8,7 +8,7 @@ public sealed partial class DoubleVisionRune
 {
 	private async Task DuplicateRewardCards(IReadOnlyList<CardModel> sourceCards)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return;
 		}
@@ -30,7 +30,7 @@ public sealed partial class DoubleVisionRune
 			}
 
 			SaveManager.Instance.MarkCardAsSeen(result.cardAdded);
-			TrySyncObtainedCard(result.cardAdded);
+			TrySyncObtainedReward("card", result.cardAdded.Id.Entry, () => RunManager.Instance.RewardSynchronizer.SyncLocalObtainedCard(result.cardAdded));
 			results.Add(result);
 		}
 
@@ -62,7 +62,7 @@ public sealed partial class DoubleVisionRune
 		Flash();
 		await RunWithCommandDuplicationSuppressed(
 			() => PlayerCmd.GainGold(amount, player, wasGoldStolenBack));
-		TrySyncObtainedGold(amount);
+		TrySyncObtainedReward("gold", amount.ToString(), () => RunManager.Instance.RewardSynchronizer.SyncLocalObtainedGold(amount));
 	}
 
 	private async Task DuplicatePotionReward(Player player, PotionReward reward)
@@ -87,7 +87,7 @@ public sealed partial class DoubleVisionRune
 		}
 
 		Flash();
-		TrySyncObtainedPotion(result.potion);
+		TrySyncObtainedReward("potion", result.potion.Id.Entry, () => RunManager.Instance.RewardSynchronizer.SyncLocalObtainedPotion(result.potion));
 	}
 
 	private async Task DuplicateRelicReward(Player player, RelicReward reward)
@@ -151,7 +151,7 @@ public sealed partial class DoubleVisionRune
 			() => RelicCmd.Obtain(copy, player));
 		if (syncReward)
 		{
-			TrySyncObtainedRelic(obtained);
+			TrySyncObtainedReward("relic", obtained.Id.Entry, () => RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(obtained));
 		}
 		if (LocalContext.IsMe(player))
 		{
@@ -161,88 +161,26 @@ public sealed partial class DoubleVisionRune
 
 	private async Task DuplicateDustyTome(Player player, DustyTome sourceTome, bool syncReward)
 	{
-		if (sourceTome.AncientCard == null)
+		if (sourceTome.AncientCard is not { } ancientCardId)
 		{
 			HextechLog.Warn("DoubleVision", $"Refused to duplicate Dusty Tome without an AncientCard.");
 			return;
 		}
 
-		DustyTome obtained = await DuplicateDustyTomeSpecialized(
-			sourceTome,
-			syncReward,
-			copy => RunWithCommandDuplicationSuppressed(async () =>
-				(DustyTome)await RelicCmd.Obtain(copy, player)),
-			static copy => TrySyncObtainedRelic(copy));
+		DustyTome copy = (DustyTome)ModelDb.GetById<RelicModel>(sourceTome.CanonicalId()).ToMutable();
+		CopyWaxState(sourceTome, copy);
+		copy.AncientCard = ancientCardId;
+		RelicModel obtained = await RunWithDustyTomeAfterObtainedSuppressed(
+			copy,
+			() => RunWithCommandDuplicationSuppressed(() => RelicCmd.Obtain(copy, player)));
+		if (syncReward)
+		{
+			TrySyncObtainedReward("relic", obtained.Id.Entry, () => RunManager.Instance.RewardSynchronizer.SyncLocalObtainedRelic(obtained));
+		}
 		if (LocalContext.IsMe(player))
 		{
 			Flash();
 		}
-	}
-
-	internal static Task<T> DuplicateDustyTomeSpecialized<T>(
-		DustyTome sourceTome,
-		bool syncReward,
-		Func<DustyTome, Task<T>> obtainCopy,
-		Action<T> synchronize)
-	{
-		return DuplicateDustyTomeSpecializedCore(
-			sourceTome,
-			syncReward,
-			obtainCopy,
-			synchronize,
-			createCopy: null,
-			assignAncientCard: null);
-	}
-
-	internal static Task<T> DuplicateDustyTomeSpecializedForTest<T>(
-		DustyTome sourceTome,
-		bool syncReward,
-		Func<DustyTome, Task<T>> obtainCopy,
-		Action<T> synchronize,
-		Func<DustyTome> createCopy,
-		Action<DustyTome, ModelId> assignAncientCard)
-	{
-		return DuplicateDustyTomeSpecializedCore(
-			sourceTome,
-			syncReward,
-			obtainCopy,
-			synchronize,
-			createCopy,
-			assignAncientCard);
-	}
-
-	private static async Task<T> DuplicateDustyTomeSpecializedCore<T>(
-		DustyTome sourceTome,
-		bool syncReward,
-		Func<DustyTome, Task<T>> obtainCopy,
-		Action<T> synchronize,
-		Func<DustyTome>? createCopy,
-		Action<DustyTome, ModelId>? assignAncientCard)
-	{
-		ArgumentNullException.ThrowIfNull(sourceTome);
-		ArgumentNullException.ThrowIfNull(obtainCopy);
-		ArgumentNullException.ThrowIfNull(synchronize);
-		if (sourceTome.AncientCard is not { } ancientCardId)
-		{
-			throw new InvalidOperationException("Cannot duplicate Dusty Tome without an AncientCard.");
-		}
-
-		DustyTome copy = createCopy?.Invoke()
-			?? (DustyTome)ModelDb
-				.GetById<RelicModel>(sourceTome.CanonicalId())
-				.ToMutable();
-		CopyWaxState(sourceTome, copy);
-		assignAncientCard ??= static (dustyTome, cardId) => dustyTome.AncientCard = cardId;
-		assignAncientCard(copy, ancientCardId);
-		T obtained = await RunWithDustyTomeAfterObtainedSuppressed(
-			copy,
-			() => obtainCopy(copy));
-		if (syncReward)
-		{
-			synchronize(obtained);
-		}
-
-		return obtained;
 	}
 
 	internal static void CopyWaxState(RelicModel source, RelicModel copy)
@@ -255,9 +193,11 @@ public sealed partial class DoubleVisionRune
 		return ReferenceEquals(SuppressedDustyTomeAfterObtained.Value, dustyTome);
 	}
 
-	private static async Task<T> RunWithDustyTomeAfterObtainedSuppressed<T>(
+	// 复制份只拿遗物本身：原版 DustyTome.AfterObtained 会再发一张先古卡，复制份不应重复发放。
+	// 抑制只认这一个实例，原件和同时获得的其他尘封之书照常结算。
+	internal static async Task<RelicModel> RunWithDustyTomeAfterObtainedSuppressed(
 		DustyTome dustyTome,
-		Func<Task<T>> action)
+		Func<Task<RelicModel>> action)
 	{
 		DustyTome? previous = SuppressedDustyTomeAfterObtained.Value;
 		SuppressedDustyTomeAfterObtained.Value = dustyTome;

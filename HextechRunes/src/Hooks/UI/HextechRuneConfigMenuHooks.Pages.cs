@@ -13,14 +13,12 @@ internal static partial class HextechRuneConfigMenuHooks
 			context,
 			L("HEXTECH_PLAYER_COUNT_TITLE"),
 			L("HEXTECH_PLAYER_COUNT_DESCRIPTION"),
-			pending.PlayerHexCounts,
-			HextechRuneConfiguration.ClampPlayerHexCount));
+			pending.PlayerHexCounts));
 		page.AddChild(CreateActCountSection(
 			context,
 			L("HEXTECH_ENEMY_COUNT_TITLE"),
 			L("HEXTECH_ENEMY_COUNT_DESCRIPTION"),
-			pending.EnemyHexCounts,
-			HextechRuneConfiguration.ClampEnemyHexCount));
+			pending.EnemyHexCounts));
 		page.AddChild(CreateRerollLimitSection(context));
 		page.AddChild(CreateGoldenRerollChanceSection(context));
 		if (HextechRuneGeneration.ChaosAvailable)
@@ -68,8 +66,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		ConfigMenuContext context,
 		string titleText,
 		string descriptionText,
-		int[] counts,
-		Func<int, int> clamp)
+		int[] counts)
 	{
 		Control[] steppers = new Control[counts.Length];
 		for (int act = 0; act < counts.Length; act++)
@@ -79,7 +76,7 @@ internal static partial class HextechRuneConfigMenuHooks
 				context,
 				GetActLabel(index),
 				() => counts[index],
-				value => counts[index] = clamp(value));
+				value => counts[index] = HextechRuneConfiguration.ClampActHexCount(value));
 		}
 
 		return CreateStepperCard(context, titleText, descriptionText, spacedRow: true, steppers);
@@ -150,7 +147,7 @@ internal static partial class HextechRuneConfigMenuHooks
 		foreach (IGrouping<int, RuneConfigEntry> rarityGroup in entries.GroupBy(static entry => entry.RarityOrder))
 		{
 			List<RuneConfigEntry> groupEntries = rarityGroup.ToList();
-			Color accent = GetRarityAccentColorByOrder(rarityGroup.Key);
+			Color accent = GetRarityAccentColor((HextechRarityTier)rarityGroup.Key);
 			VBoxContainer card = CreateCardSection(string.Empty, accent, compactLayout, out PanelContainer cardNode);
 			page.AddChild(cardNode);
 			card.AddChild(CreateRarityGroupHeaderRow(context, groupEntries.First().RarityText, accent, groupEntries, pendingDisabledIds));
@@ -302,11 +299,10 @@ internal static partial class HextechRuneConfigMenuHooks
 		return card;
 	}
 
-	// 「杂项」页的配置分享区:导出/导入配置码 + 社区配置入口。动作在页脚构建时绑定(BindShareActions)。
+	// 「杂项」页的配置分享区:导出/导入配置码 + 社区配置入口。
 	private static Control CreateShareSection(ConfigMenuContext context)
 	{
 		bool compactLayout = context.CompactLayout;
-		ConfigShareActions actions = context.ShareActions;
 		VBoxContainer section = CreateCardSection(L("HEXTECH_CONFIG_SHARE_TITLE"), null, compactLayout, out PanelContainer card);
 
 		Label hint = CreateLabel(L("HEXTECH_CONFIG_SHARE_HINT"), 12, HextechUiTheme.HintText);
@@ -319,9 +315,9 @@ internal static partial class HextechRuneConfigMenuHooks
 			SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin
 		};
 		buttons.AddThemeConstantOverride("separation", compactLayout ? 8 : 12);
-		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_EXPORT_CODE"), () => actions.ExportCode?.Invoke(), compactLayout));
-		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_IMPORT_CODE"), () => actions.ImportCode?.Invoke(), compactLayout));
-		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_FEATURED"), () => actions.OpenCommunity?.Invoke(), compactLayout));
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_EXPORT_CODE"), () => ExportShareCodeToClipboard(context), compactLayout));
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_IMPORT_CODE"), () => ImportShareCodeFromClipboard(context), compactLayout));
+		buttons.AddChild(CreateActionButton(L("HEXTECH_CONFIG_FEATURED"), () => OpenCommunityConfigsPanel(context), compactLayout));
 		section.AddChild(buttons);
 
 		return card;
@@ -423,7 +419,7 @@ internal static partial class HextechRuneConfigMenuHooks
 				context,
 				weights,
 				column,
-				GetRarityAccentColorByOrder(column),
+				GetRarityAccentColor((HextechRarityTier)column),
 				RefreshRowPercents,
 				out Action refreshThisCell));
 			refreshPercents.Add(refreshThisCell);
@@ -474,20 +470,17 @@ internal static partial class HextechRuneConfigMenuHooks
 		context.NumericBindings.Add(new NumericValueBinding(PercentText, percent));
 		refreshPercent = () => SetLabelText(percent, PercentText());
 
+		void Step(int delta)
+		{
+			weights[index] = HextechRuneConfiguration.ClampRarityWeight(weights[index] + delta);
+			SetLabelText(number, weights[index].ToString());
+			refreshRow();
+		}
+
 		Button minus = CreateStepButton("-", compactLayout);
 		Button plus = CreateStepButton("+", compactLayout);
-		AttachRepeatingStep(minus, () =>
-		{
-			weights[index] = HextechRuneConfiguration.ClampRarityWeight(weights[index] - 1);
-			SetLabelText(number, weights[index].ToString());
-			refreshRow();
-		});
-		AttachRepeatingStep(plus, () =>
-		{
-			weights[index] = HextechRuneConfiguration.ClampRarityWeight(weights[index] + 1);
-			SetLabelText(number, weights[index].ToString());
-			refreshRow();
-		});
+		AttachRepeatingStep(minus, () => Step(-1));
+		AttachRepeatingStep(plus, () => Step(1));
 
 		controls.AddChild(minus);
 		controls.AddChild(number);

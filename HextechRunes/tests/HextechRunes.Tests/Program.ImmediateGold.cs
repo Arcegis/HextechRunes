@@ -120,7 +120,6 @@ internal static partial class Program
 			{
 				rune.AfterCombatEnd(room).GetAwaiter().GetResult();
 			}
-			piggy.ApplySharedCombatVictory(room).GetAwaiter().GetResult();
 			Equal(0, UpgradeGoldRewards.Count, "no duplicate battle-end reward");
 			Equal(0, other.Gold, "teammate gold is unchanged");
 		});

@@ -26,7 +26,7 @@ hextech_prepare_output
 
 python3 "$ROOT/tools/validate_hextech_content.py"
 
-hextech_build_variants "$ROOT/src/$FILE_STEM.csproj" HextechSts2Target
+hextech_build_variants "$ROOT/src/$FILE_STEM.csproj"
 hextech_build_loader "$ROOT/loader/$FILE_STEM.Loader.csproj"
 hextech_generate_variant_manifest
 hextech_pack_assets

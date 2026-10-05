@@ -33,10 +33,9 @@ public sealed class SturdyRune : HextechRelicBase
 		decimal lowHpThresholdPercent,
 		decimal lowHpHealPercent)
 	{
-		int normalizedMaxHp = Math.Max(0, maxHp);
-		decimal percent = currentHp * 100m < normalizedMaxHp * lowHpThresholdPercent
+		decimal percent = currentHp * 100m < maxHp * lowHpThresholdPercent
 			? lowHpHealPercent
 			: healPercent;
-		return Math.Max(1, FloorToInt(normalizedMaxHp * Math.Max(0m, percent) / 100m));
+		return Math.Max(1, FloorToInt(maxHp * percent / 100m));
 	}
 }

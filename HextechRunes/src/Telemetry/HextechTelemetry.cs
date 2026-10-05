@@ -49,7 +49,8 @@ internal static partial class HextechTelemetry
 				return;
 			}
 
-			int playerSlot = GetPlayerSlot(runState, player);
+			// 原版 GetPlayerSlotIndex 就是 Players.IndexOf(Player 不重写相等性,即按引用);找不到时沿用旧口径记到 0 号槽。
+			int playerSlot = Math.Max(0, runState.GetPlayerSlotIndex(player));
 			RuneChoiceRecord record = new(
 				actIndex,
 				playerSlot,

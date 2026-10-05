@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using static HextechRunes.HextechSelectionHelpers;
 
 namespace HextechRunes;
@@ -48,7 +47,11 @@ internal static class HextechForgeSelectionCoordinator
 	{
 		try
 		{
-			HextechRuneSelectionScreen screen = await CreateForgeSelectionScreenAsync(options);
+			HextechRuneSelectionScreen screen = await HextechRuneSelectionCoordinator.CreateRuneSelectionScreenAsync(
+				options,
+				monsterHexRelic: null,
+				titleOverride: new LocString(HextechRuneLabels.LocTable, "HEXTECH_FORGE_SELECTION_TITLE").GetRawText(),
+				metadataMode: HextechSelectionMetadataMode.Forge);
 			RelicModel? selected = (await screen.RelicsSelected()).FirstOrDefault();
 			HextechLog.Info("ForgeChoice", $"Local selected: player={player.NetId} relic={selected?.CanonicalId()?.Entry ?? "null"} context={context}");
 			return selected;
@@ -58,25 +61,6 @@ internal static class HextechForgeSelectionCoordinator
 			HextechLog.Info("ForgeChoice", $"Selection cancelled: player={player.NetId} context={context}");
 			return null;
 		}
-	}
-
-	private static async Task<HextechRuneSelectionScreen> CreateForgeSelectionScreenAsync(IReadOnlyList<RelicModel> options)
-	{
-		await WaitForSingletonAsync(static () => NOverlayStack.Instance);
-		HextechRuneSelectionScreen screen = HextechRuneSelectionScreen.Create(
-			options,
-			monsterHexRelic: null,
-			rerollFunc: null,
-			enemyHexOptions: null,
-			titleOverride: new LocString(HextechRuneLabels.LocTable, "HEXTECH_FORGE_SELECTION_TITLE").GetRawText(),
-			metadataMode: HextechSelectionMetadataMode.Forge);
-		if (NOverlayStack.Instance == null)
-		{
-			throw new InvalidOperationException("NOverlayStack is not available for forge selection.");
-		}
-
-		NOverlayStack.Instance.Push(screen);
-		return screen;
 	}
 
 	private static bool ShouldDirectlyGrantRandomForge(Player player)
@@ -103,7 +87,7 @@ internal static class HextechForgeSelectionCoordinator
 			HextechStableRandom.PlayerKey(player),
 			context,
 			player.Relics.Count.ToString());
-		return options[Math.Clamp(index, 0, options.Count - 1)];
+		return options[index];
 	}
 
 }

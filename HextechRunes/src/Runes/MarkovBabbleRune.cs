@@ -17,13 +17,13 @@ public sealed class MarkovBabbleRune : HextechRelicBase
 	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
 		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead || !IsDefectOwner)
+		if (side != Owner.Creature.Side || Owner.Creature.IsDead || !IsDefectOwner)
 		{
 			return;
 		}
 
-		OrbQueue? orbQueue = Owner.PlayerCombatState?.OrbQueue;
-		int emptySlots = Math.Max(0, (orbQueue?.Capacity ?? 0) - (orbQueue?.Orbs.Count ?? 0));
+		OrbQueue orbQueue = Owner.PlayerCombatState!.OrbQueue;
+		int emptySlots = Math.Max(0, orbQueue.Capacity - orbQueue.Orbs.Count);
 		if (emptySlots <= 0)
 		{
 			return;

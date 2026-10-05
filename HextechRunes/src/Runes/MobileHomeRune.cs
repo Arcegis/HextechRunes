@@ -2,10 +2,8 @@ using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace HextechRunes;
 
-public sealed class MobileHomeRune : HextechRelicBase
+public sealed class MobileHomeRune : RelicBundleRuneBase
 {
-	public override bool HasUponPickupEffect => true;
-
 	private static readonly Type[] RelicTypes =
 	[
 		typeof(MeatCleaver),
@@ -14,16 +12,5 @@ public sealed class MobileHomeRune : HextechRelicBase
 		typeof(MiniatureTent)
 	];
 
-	protected override IEnumerable<IHoverTip> ExtraHoverTips => BundledRelicHoverTips(RelicTypes);
-
-	public override async Task AfterObtained()
-	{
-		if (Owner == null)
-		{
-			return;
-		}
-
-		Flash();
-		await RelicBundleGrantHelper.GrantRelics(Owner, RelicTypes);
-	}
+	protected override IReadOnlyList<Type> BundledRelicTypes => RelicTypes;
 }

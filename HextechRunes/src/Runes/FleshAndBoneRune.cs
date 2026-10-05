@@ -17,7 +17,7 @@ public sealed class FleshAndBoneRune : HextechRelicBase
 
 	public override async Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead || !IsNecrobinderPlayer(Owner))
+		if (Owner.Creature.IsDead || !IsNecrobinderPlayer(Owner))
 		{
 			return;
 		}
@@ -34,16 +34,14 @@ public sealed class FleshAndBoneRune : HextechRelicBase
 
 	public override Task AfterCombatEnd(CombatRoom room)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
-			|| !Owner.IsOstyAlive
-			|| Owner.Osty == null
+		if (Owner.Creature.IsDead
+			|| Owner.Osty is not { IsAlive: true } osty
 			|| !IsNecrobinderPlayer(Owner))
 		{
 			return Task.CompletedTask;
 		}
 
-		decimal healAmount = Math.Floor(Owner.Osty.MaxHp / DynamicVars["OstyMaxHpPerHeal"].BaseValue) * DynamicVars["OstyHeal"].BaseValue;
+		decimal healAmount = Math.Floor(osty.MaxHp / DynamicVars["OstyMaxHpPerHeal"].BaseValue) * DynamicVars["OstyHeal"].BaseValue;
 		if (healAmount <= 0m)
 		{
 			return Task.CompletedTask;

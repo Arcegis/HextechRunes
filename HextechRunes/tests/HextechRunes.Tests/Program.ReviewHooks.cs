@@ -165,17 +165,16 @@ internal static partial class Program
 		outbreakFinalizer.Invoke(null, [outbreakState[0], failure]);
 		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "Outbreak finalizer exits the guard after a synchronous failure");
 
-		Task outer = HextechCombatHooks.RunWithOutbreakPowerPoisonResponseGuard(() =>
-		{
-			object?[] nested = [null];
-			outbreakPrefix.Invoke(null, nested);
-			object?[] postfixArgs = [nested[0], Task.CompletedTask];
-			outbreakPostfix.Invoke(null, postfixArgs);
-			outbreakFinalizer.Invoke(null, [postfixArgs[0], failure]);
-			Expect(HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "a failure after the postfix must not pop the enclosing guard");
-			return Task.CompletedTask;
-		});
-		outer.GetAwaiter().GetResult();
+		// 外层再套一次疫情响应作为外围作用域，内层在 Postfix 之后失败不能把它弹掉。
+		object?[] enclosing = [null];
+		outbreakPrefix.Invoke(null, enclosing);
+		object?[] nested = [null];
+		outbreakPrefix.Invoke(null, nested);
+		object?[] postfixArgs = [nested[0], Task.CompletedTask];
+		outbreakPostfix.Invoke(null, postfixArgs);
+		outbreakFinalizer.Invoke(null, [postfixArgs[0], failure]);
+		Expect(HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "a failure after the postfix must not pop the enclosing guard");
+		outbreakFinalizer.Invoke(null, [enclosing[0], failure]);
 		Expect(!HextechCombatHooks.IsResolvingOutbreakPowerPoisonResponse, "caller context is clean after the enclosing guard");
 #endif
 	}
@@ -189,9 +188,9 @@ internal static partial class Program
 	private static void KeywordPersistenceMarkersKeepLegacySaveFormat()
 	{
 		StrikeIronclad card = CreateMutableTestModel<StrikeIronclad>();
-		ThoughtOverwriteKeywordPersistence.Track(card);
-		CorruptedBranchInnateKeywordPersistence.Track(card);
-		UndyingEtherealKeywordPersistence.Track(card);
+		KeywordPersistenceTrackers.ThoughtOverwrite.Track(card);
+		KeywordPersistenceTrackers.CorruptedBranchInnate.Track(card);
+		KeywordPersistenceTrackers.UndyingEthereal.Track(card);
 
 		SerializableCard saved = new();
 		saved.Props = new SavedProperties
@@ -227,8 +226,8 @@ internal static partial class Program
 		};
 		StrikeIronclad loaded = CreateMutableTestModel<StrikeIronclad>();
 		HextechThoughtOverwriteKeywordPersistenceHooks.RestoreFromMarkers(legacy, loaded);
-		Expect(loaded.Keywords.Contains(CardKeyword.Innate) && CosplayInnateKeywordPersistence.IsTracked(loaded), "legacy non-zero marker restores keyword and tracking");
-		Expect(!loaded.Keywords.Contains(CardKeyword.Retain) && !CurtainCallKeywordPersistence.IsTracked(loaded), "legacy zero marker stays inert");
+		Expect(loaded.Keywords.Contains(CardKeyword.Innate) && KeywordPersistenceTrackers.CosplayInnate.IsTracked(loaded), "legacy non-zero marker restores keyword and tracking");
+		Expect(!loaded.Keywords.Contains(CardKeyword.Retain) && !KeywordPersistenceTrackers.CurtainCall.IsTracked(loaded), "legacy zero marker stays inert");
 
 		SerializableCard resaved = new();
 		HextechThoughtOverwriteKeywordPersistenceHooks.WriteMarkers(loaded, resaved);

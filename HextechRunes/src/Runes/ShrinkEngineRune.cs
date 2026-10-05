@@ -22,7 +22,7 @@ public sealed class ShrinkEngineRune : HextechSharedCombatVictoryRuneBase
 
 	public override bool ShowCounter => true;
 
-	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
+	public override int DisplayAmount => _stacks;
 
 	internal float BodyScaleDelta => -_stacks * BodyScaleStepPerStack;
 
@@ -40,7 +40,7 @@ public sealed class ShrinkEngineRune : HextechSharedCombatVictoryRuneBase
 
 	public override Task ApplySharedCombatVictory(CombatRoom room)
 	{
-		if (Owner == null || Owner.Creature.IsDead)
+		if (Owner.Creature.IsDead)
 		{
 			return Task.CompletedTask;
 		}

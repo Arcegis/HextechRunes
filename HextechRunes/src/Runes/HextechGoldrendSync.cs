@@ -7,7 +7,6 @@ internal static class HextechGoldrendSync
 	private const int GoldrendStealAmount = 20;
 
 	private static readonly Dictionary<ulong, LocalGoldLossTransaction> PendingLocalCombatGoldLosses = new();
-	private static readonly SemaphoreSlim ApplyGate = new(1, 1);
 	private static RunState? _trackedRunState;
 
 	public static void ResetForRun(RunState runState)
@@ -68,20 +67,8 @@ internal static class HextechGoldrendSync
 		}
 	}
 
+	// 唯一调用点是 Mayhem 的 AfterCombatEnd，每场战斗顺序调用一次，不会重入。
 	public static async Task ApplyPendingCombatGoldLosses(RunState runState)
-	{
-		await ApplyGate.WaitAsync();
-		try
-		{
-			await ApplyPendingCombatGoldLossesCore(runState);
-		}
-		finally
-		{
-			ApplyGate.Release();
-		}
-	}
-
-	private static async Task ApplyPendingCombatGoldLossesCore(RunState runState)
 	{
 		if (PendingLocalCombatGoldLosses.Count == 0)
 		{
@@ -90,7 +77,7 @@ internal static class HextechGoldrendSync
 
 		if (!ReferenceEquals(_trackedRunState, runState))
 		{
-			Log.Error($"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Refusing to apply transactions outside their tracked run.");
+			HextechLog.Error("Goldrend", "[DESYNC-RISK] Refusing to apply transactions outside their tracked run.");
 			return;
 		}
 
@@ -104,30 +91,22 @@ internal static class HextechGoldrendSync
 			Player? targetPlayer = runState.Players.FirstOrDefault(player => player.NetId == targetNetId);
 			if (targetPlayer == null || targetPlayer.NetId != RunManager.Instance.NetService.NetId)
 			{
-				Log.Error(
-					$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Retaining transaction for unavailable local player "
+				HextechLog.Error(
+					"Goldrend", $"[DESYNC-RISK] Retaining transaction for unavailable local player "
 					+ $"netId={targetNetId} pending={transaction.PendingAmount} localApplied={transaction.LocalAppliedAmount}.");
 				continue;
 			}
 
 			if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 			{
-				Log.Warn(
-					$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Retaining transaction while multiplayer is disconnected "
+				HextechLog.Warn(
+					"Goldrend", $"[DESYNC-RISK] Retaining transaction while multiplayer is disconnected "
 					+ $"netId={targetNetId} pending={transaction.PendingAmount} localApplied={transaction.LocalAppliedAmount}.");
 				continue;
 			}
 
 			if (transaction.LocalAppliedAmount > 0 && !TryBroadcastAppliedGoldLoss(targetNetId, transaction))
 			{
-				continue;
-			}
-
-			if (!HextechPlayerContextHelper.IsMultiplayerConnected())
-			{
-				Log.Warn(
-					$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Retaining pending transaction after connection changed "
-					+ $"netId={targetNetId} pending={transaction.PendingAmount}.");
 				continue;
 			}
 
@@ -189,8 +168,8 @@ internal static class HextechGoldrendSync
 	{
 		if (!HextechPlayerContextHelper.IsMultiplayerConnected())
 		{
-			Log.Warn(
-				$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Retaining locally applied transaction before broadcast "
+			HextechLog.Warn(
+				"Goldrend", $"[DESYNC-RISK] Retaining locally applied transaction before broadcast "
 				+ $"because multiplayer is disconnected netId={targetNetId} amount={transaction.LocalAppliedAmount}.");
 			return false;
 		}
@@ -205,8 +184,8 @@ internal static class HextechGoldrendSync
 		}
 		catch (Exception ex)
 		{
-			Log.Error(
-				$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Gold loss delivery is unconfirmed; "
+			HextechLog.Error(
+				"Goldrend", $"[DESYNC-RISK] Gold loss delivery is unconfirmed; "
 				+ $"retaining locally applied transaction netId={targetNetId} amount={amount}: {ex}");
 			return false;
 		}
@@ -221,8 +200,8 @@ internal static class HextechGoldrendSync
 			return;
 		}
 
-		Log.Warn(
-			$"[{ModInfo.Id}][DESYNC-RISK][Goldrend] Clearing unresolved run-scoped transactions "
+		HextechLog.Warn(
+			"Goldrend", $"[DESYNC-RISK] Clearing unresolved run-scoped transactions "
 			+ $"reason={reason} pending={pending} localApplied={localApplied}.");
 	}
 

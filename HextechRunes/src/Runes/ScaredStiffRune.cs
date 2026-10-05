@@ -13,7 +13,7 @@ public sealed class ScaredStiffRune : HextechRelicBase
 	public override async Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
 	{
 		// 发放闸门之外，外部接口(RelicBundleGrantHelper)、控制台或其他模组可把本符文直接给任意角色，触发时再判角色。
-		if (_autoPlaying || Owner == null || Owner.Creature.IsDead || side != Owner.Creature.Side || !IsIroncladPlayer(Owner))
+		if (_autoPlaying || Owner.Creature.IsDead || side != Owner.Creature.Side || !IsIroncladPlayer(Owner))
 		{
 			return;
 		}
@@ -39,13 +39,13 @@ public sealed class ScaredStiffRune : HextechRelicBase
 				}
 
 				card.ExhaustOnNextPlay = true;
-				HextechCombatState? combatState = Owner.Creature.CombatState;
+				HextechCombatState combatState = Owner.Creature.CombatState!;
 				int targetOrdinal = ConsumeCombatProcOrdinal(nameof(ScaredStiffRune), ref _autoPlayTargetsThisCombat);
 				Creature? target = HextechRuneTargeting.PickRandomHittableEnemy(
 					Owner,
 					combatState,
 					"scared-stiff",
-					combatState?.RoundNumber.ToString() ?? "-1",
+					combatState.RoundNumber.ToString(),
 					i.ToString(),
 					targetOrdinal.ToString());
 				await HextechAutoPlayHelper.AutoPlayOrMoveToResultPile(choiceContext, card, target);

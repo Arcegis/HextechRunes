@@ -200,34 +200,13 @@ internal static class HextechEnemyNearDeath
 			return;
 		}
 
-		bool hadPreviousEntry = tracking.NearDeathFeastEnemyStrength.TryGetValue(combatId, out int previousGranted);
-		int delta = debt - previousGranted;
+		int delta = debt - tracking.NearDeathFeastEnemyStrength.GetValueOrDefault(combatId, 0);
 		if (delta <= 0)
 		{
 			return;
 		}
 
 		tracking.NearDeathFeastEnemyStrength[combatId] = debt;
-		try
-		{
-			await PowerCmd.Apply<StrengthPower>(creature, delta, creature, null);
-		}
-		catch
-		{
-			if (tracking.NearDeathFeastEnemyStrength.TryGetValue(combatId, out int currentGranted)
-				&& currentGranted == debt)
-			{
-				if (hadPreviousEntry)
-				{
-					tracking.NearDeathFeastEnemyStrength[combatId] = previousGranted;
-				}
-				else
-				{
-					tracking.NearDeathFeastEnemyStrength.Remove(combatId);
-				}
-			}
-
-			throw;
-		}
+		await PowerCmd.Apply<StrengthPower>(creature, delta, creature, null);
 	}
 }

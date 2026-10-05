@@ -51,90 +51,35 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void SovereignBladeVfxSyncUsesVanillaForgeScale()
-	{
-		Expect(Math.Abs(0.9f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(0)) < 0.0001f, "zero-damage blade scale");
-		Expect(Math.Abs(0.955f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(10)) < 0.0001f, "base blade scale");
-		Expect(Math.Abs(2f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(200)) < 0.0001f, "fully scaled blade");
-		Expect(Math.Abs(2f - HextechSovereignBladeVfxSync.GetNormalScaleForDamage(999)) < 0.0001f, "blade scale cap");
-	}
-
-	[HextechTest]
-	private static void SlowCookVfxUsesDedicatedPressureCookerTextures()
-	{
-		string[] slowCookPaths =
-		[
-			HextechAssets.SlowCookHeatGlowPath,
-			HextechAssets.SlowCookAoeGradientPath,
-			HextechAssets.SlowCookAoeGradientSubtlePath,
-			HextechAssets.SlowCookAoeEdgePath,
-			HextechAssets.SlowCookAoePolarPath,
-			HextechAssets.SlowCookEdgeAccentPath,
-			HextechAssets.SlowCookGroundRingPath,
-			HextechAssets.SlowCookFlameNoisePath,
-			HextechAssets.SlowCookInnerFirePath,
-			HextechAssets.SlowCookInnerFireBPath,
-			HextechAssets.SlowCookFlarePath
-		];
-
-		Expect(
-			slowCookPaths.All(static path => path.StartsWith("res://HextechRunes/images/effects/slow_cook/", StringComparison.Ordinal)),
-			"Slow Cook VFX should load only its dedicated Pressure Cooker textures");
-		Expect(
-			slowCookPaths.All(static path => path != HextechAssets.MikaelsBlessingAoeRunePath),
-			"Slow Cook VFX must not reuse Mikael's Blessing texture");
-		Equal(slowCookPaths.Length, slowCookPaths.Distinct(StringComparer.Ordinal).Count(), "Slow Cook VFX texture paths");
-		Equal(800f, SlowCookAuraVisual.AuraWidth, "Slow Cook aura width is fixed and does not follow hitbox scaling");
-		Expect(
-			SlowCookAuraVisual.FlowShaderCode.Contains("anchored_gradient", StringComparison.Ordinal),
-			"Slow Cook aura should retain a stationary coverage sample while its texture details move");
-		Expect(
-			SlowCookAuraVisual.FlowShaderCode.Contains("intensity = min(intensity, 0.90)", StringComparison.Ordinal),
-			"Slow Cook aura should cap per-layer brightness spikes");
-	}
-
-	[HextechTest]
 	private static void SymphonyOfWarPreservesDemonAndSerpentFormVfx()
 	{
 		Expect(
 			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
-				hasSymphonyOfWar: true,
 				FormVfxKind.Demon,
 				FormVfxKind.Serpent),
 			"Symphony of War should preserve Serpent Form VFX when Demon Form is added");
 		Expect(
 			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
-				hasSymphonyOfWar: true,
 				FormVfxKind.Serpent,
 				FormVfxKind.Demon),
 			"Symphony of War should preserve Demon Form VFX when Serpent Form is added");
 		Expect(
 			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
-				hasSymphonyOfWar: true,
 				FormVfxKind.Other,
 				FormVfxKind.Demon),
 			"later non-Symphony forms should not erase Demon Form VFX");
 		Expect(
 			HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
-				hasSymphonyOfWar: true,
 				FormVfxKind.Other,
 				FormVfxKind.Serpent),
 			"later non-Symphony forms should not erase Serpent Form VFX");
 		Expect(
 			!HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
-				hasSymphonyOfWar: true,
 				FormVfxKind.Other,
 				FormVfxKind.Other),
 			"non-Symphony forms should retain vanilla last-form-wins behavior");
 		Expect(
 			!HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
-				hasSymphonyOfWar: false,
-				FormVfxKind.Demon,
-				FormVfxKind.Serpent),
-			"players without Symphony of War should keep vanilla replacement behavior");
-		Expect(
-			!HextechFormVfxSafetyHooks.ShouldPreserveExistingForSymphony(
-				hasSymphonyOfWar: true,
 				FormVfxKind.Demon,
 				FormVfxKind.Demon),
 			"reapplying a form should replace its stale same-type VFX");

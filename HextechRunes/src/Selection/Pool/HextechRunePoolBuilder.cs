@@ -40,13 +40,7 @@ internal static class HextechRunePoolBuilder
 		IReadOnlySet<ModelId>? excludedIds = null,
 		bool useEndlessTagWindow = false)
 	{
-		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, excludedIds);
-		if (pool.Count == 0 && excludedIds is { Count: > 0 })
-		{
-			// 未见过的已经抽完:改从见过但没选的里抽(仍排除已拥有/互斥/禁用),与联机的稳定生成同一口径。
-			pool = BuildSelectableRunePool(player, rarity, runState, null);
-		}
-
+		List<RelicModel> pool = BuildPoolFallingBackFromSeen(player, rarity, runState, excludedIds, out _);
 		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
 		// 单机:候选按池原顺序,每次抽取推进一次原版 Niche 随机流。
 		HextechWeightedRuneOptions picked = PickWeightedDistinct(
@@ -68,24 +62,8 @@ internal static class HextechRunePoolBuilder
 		IReadOnlySet<ModelId>? excludedIds = null,
 		bool useEndlessTagWindow = false)
 	{
-		// excludedIds 在这里是「已展示过(seen)」的符文集合,用来避免同一局里反复刷到见过的符文。长局/无尽里
-		// 某稀有度的符文几乎都被展示过时,这层排除会把可选池清空。
-		// 兜底:若「已见」排除清空了池,就放宽到忽略「已见」(仍排除已拥有/互斥/禁用),未见的抽完才回到见过没选的;
-		// 同时把用于稳定随机的 salt 也一致地忽略「已见」,使重连/重开重建时能复现同一组选项(幂等、不再跳变)。
-		// 真正一个都不剩时由调用方显示"继续"界面。
-		IReadOnlySet<ModelId>? effectiveExcludedIds = excludedIds;
-		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, effectiveExcludedIds);
-		if (pool.Count == 0 && excludedIds is { Count: > 0 })
-		{
-			List<RelicModel> fallbackPool = BuildSelectableRunePool(player, rarity, runState, null);
-			if (fallbackPool.Count > 0)
-			{
-				HextechLog.Warn("Mayhem", $"{rarity} rune option pool exhausted by seen-history; falling back to the full pool (ignoring seen) so the selection is not emptied.");
-				pool = fallbackPool;
-				effectiveExcludedIds = null;
-			}
-		}
-
+		// 回退到见过没选的池时,稳定随机的 salt 也一致地忽略「已见」,使重连/重开重建时能复现同一组选项。
+		List<RelicModel> pool = BuildPoolFallingBackFromSeen(player, rarity, runState, excludedIds, out IReadOnlySet<ModelId>? effectiveExcludedIds);
 		Dictionary<string, int> tagCounts = BuildOwnedRuneTagCounts(player, useEndlessTagWindow);
 		string?[] saltParts =
 		[
@@ -115,6 +93,36 @@ internal static class HextechRunePoolBuilder
 					BuildWeightedPoolKey(slotCandidates, weights))));
 		return new HextechWeightedRuneOptions(HextechRuneGeneration.Transform(player, rarity, runState, selectionStageIndex,
 			picked.Select(relic => CreateSelectableRuneOption(player, relic)).ToList()), picked.CharacterWeightPercent);
+	}
+
+	/// <summary>
+	/// excludedIds 是本局「已展示过(seen)」的符文。长局/无尽里某稀有度几乎都被展示过时,这层排除会清空池:
+	/// 此时放宽到忽略「已见」(仍排除已拥有/互斥/禁用),未见的抽完才回到见过没选的。真正一个都不剩时由调用方
+	/// 显示"继续"界面。effectiveExcludedIds 是实际生效的排除集合,回退时为 null。不消耗随机数。
+	/// </summary>
+	private static List<RelicModel> BuildPoolFallingBackFromSeen(
+		Player player,
+		HextechRarityTier rarity,
+		RunState runState,
+		IReadOnlySet<ModelId>? excludedIds,
+		out IReadOnlySet<ModelId>? effectiveExcludedIds)
+	{
+		effectiveExcludedIds = excludedIds;
+		List<RelicModel> pool = BuildSelectableRunePool(player, rarity, runState, excludedIds);
+		if (pool.Count > 0 || excludedIds is not { Count: > 0 })
+		{
+			return pool;
+		}
+
+		List<RelicModel> fallbackPool = BuildSelectableRunePool(player, rarity, runState, null);
+		if (fallbackPool.Count == 0)
+		{
+			return pool;
+		}
+
+		HextechLog.Warn("Mayhem", $"{rarity} rune option pool exhausted by seen-history; falling back to the full pool (ignoring seen) so the selection is not emptied.");
+		effectiveExcludedIds = null;
+		return fallbackPool;
 	}
 
 	public static Dictionary<string, int> BuildOwnedRuneTagCounts(Player player, bool useEndlessTagWindow)
@@ -222,10 +230,9 @@ internal static class HextechRunePoolBuilder
 		IEnumerable<RelicModel> candidates,
 		bool upgradeAlreadySelected)
 	{
-		List<RelicModel> eligible = candidates
+		return candidates
 			.Where(relic => !upgradeAlreadySelected || !IsUpgradeRune(relic))
 			.ToList();
-		return eligible;
 	}
 
 	// 以首个候选的登记稀有度为准;不是可配置玩家符文(或列表为空)时按 Gold 处理,与原先逐个比对可配置列表的结果相同。
@@ -274,20 +281,10 @@ internal static class HextechRunePoolBuilder
 			return modifier.PlayerRuneConfigDisabledIds;
 		}
 
-		try
-		{
-			if (HextechPlayerContextHelper.IsClientRun(fallbackWhenUnavailable: true))
-			{
-				return new HashSet<string>(StringComparer.Ordinal);
-			}
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error("RuneConfig", $"Failed to read multiplayer service while resolving disabled player runes; using deterministic empty fallback: {ex}");
-			return new HashSet<string>(StringComparer.Ordinal);
-		}
-
-		return HextechRuneConfiguration.GetDisabledPlayerRuneIds();
+		// 联机客户端没有本局快照时不能用本地菜单值,按空集处理。
+		return HextechPlayerContextHelper.IsClientRun(fallbackWhenUnavailable: true)
+			? new HashSet<string>(StringComparer.Ordinal)
+			: HextechRuneConfiguration.GetDisabledPlayerRuneIds();
 	}
 
 	internal static IReadOnlyList<HextechRarityTier> GetEnabledPlayerRuneRarities(RunState runState)
@@ -344,7 +341,8 @@ internal static class HextechRunePoolBuilder
 			RelicModel chosen = slotCandidates[index];
 			selected.Add(chosen);
 			characterWeight = AdvanceCharacterWeight(player, characterWeight, chosen);
-			RemoveById(pool, GetRelicId(chosen));
+			ModelId chosenId = chosen.CanonicalId();
+			pool.RemoveAll(relic => relic.CanonicalId() == chosenId);
 		}
 
 		return new HextechWeightedRuneOptions(selected, characterWeight);
@@ -364,16 +362,6 @@ internal static class HextechRunePoolBuilder
 				(relic.CanonicalInstance ?? relic).GetType(),
 				out PlayerRuneRegistration registration)
 			&& registration.CharacterPool == characterPool;
-	}
-
-	private static ModelId GetRelicId(RelicModel relic)
-	{
-		return relic.CanonicalId();
-	}
-
-	private static void RemoveById(List<RelicModel> relics, ModelId id)
-	{
-		relics.RemoveAll(relic => GetRelicId(relic) == id);
 	}
 
 	private static int GetRuneTagWeight(RelicModel relic, IReadOnlyDictionary<string, int> tagCounts, bool useEndlessTagWindow)

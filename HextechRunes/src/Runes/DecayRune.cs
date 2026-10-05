@@ -21,7 +21,7 @@ public sealed class DecayRune : HextechRelicBase
 
 	public override async Task AfterSideTurnStart(CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side || Owner.Creature.IsDead)
+		if (side != Owner.Creature.Side || Owner.Creature.IsDead)
 		{
 			return;
 		}

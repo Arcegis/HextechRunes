@@ -11,7 +11,7 @@ public sealed class AnthonyBiasRune : HextechRelicBase, IHextechHealingMultiplie
 
 	public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel? cardSource, CardPlay? cardPlay)
 	{
-		return target == Owner?.Creature ? SustainMultiplier : 1m;
+		return target == Owner.Creature ? SustainMultiplier : 1m;
 	}
 
 	public override decimal ModifyDamageMultiplicativeCompat(Creature? target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
@@ -26,6 +26,6 @@ public sealed class AnthonyBiasRune : HextechRelicBase, IHextechHealingMultiplie
 
 	private int CountDeckCards()
 	{
-		return Owner?.Deck.Cards.Count ?? 0;
+		return Owner.Deck.Cards.Count;
 	}
 }

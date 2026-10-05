@@ -8,8 +8,7 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 
 	public Task HandleSustainGained(decimal amount)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| Owner.Creature.CombatState == null
 			|| !CombatManager.Instance.IsInProgress
 			|| amount <= 0m)
@@ -49,6 +48,6 @@ public sealed class CircleOfDeathRune : HextechRelicBase
 
 	public override Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
 	{
-		return creature == Owner?.Creature ? HandleSustainGained(amount) : Task.CompletedTask;
+		return creature == Owner.Creature ? HandleSustainGained(amount) : Task.CompletedTask;
 	}
 }

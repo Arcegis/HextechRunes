@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.GameActions;
-
 namespace HextechRunes;
 
 // 候选 ID 与已见历史之后、实例配方之前的可选尾部。旧存档默认从 150 开始，新联机选择必须带最终权重。
@@ -39,25 +37,6 @@ internal static class HextechRuneWeightCodec
 
 		weight = value;
 		cursor += 2;
-		return true;
-	}
-
-	internal static bool TryRestore(PlayerChoiceResult result, IReadOnlyList<RelicModel> options,
-		out List<RelicModel> weightedOptions)
-	{
-		weightedOptions = [];
-		if (!HextechChoiceCodec.TryGetIndexPayload(result, out List<int> payload)
-			|| !HextechChoiceCodec.TryReadRuneSelectionHeader(payload, out int optionsCursor)
-			|| !HextechStableModelIdListCodec.TryDecode(payload, optionsCursor, out List<ModelId> ids, out int cursor)
-			|| ids.Count != options.Count
-			|| !HextechRuneSeenHistoryCodec.TryRead(payload, ref cursor, out _)
-			|| !TryRead(payload, ref cursor, out int? weight)
-			|| !weight.HasValue)
-		{
-			return false;
-		}
-
-		weightedOptions = new HextechWeightedRuneOptions(options, weight.Value);
 		return true;
 	}
 }

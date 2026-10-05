@@ -31,7 +31,7 @@ public sealed class HundredRefinementsRune : HextechRelicBase
 
 	public override bool TryModifyCardRewardAlternatives(Player player, CardReward cardReward, List<CardRewardAlternative> alternatives)
 	{
-		if (player != Owner || Owner == null)
+		if (player != Owner)
 		{
 			return false;
 		}
@@ -52,11 +52,6 @@ public sealed class HundredRefinementsRune : HextechRelicBase
 
 	private async Task ForgeBodyForAllInstances()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		foreach (HundredRefinementsRune rune in GetActiveRunes(Owner))
 		{
 			await rune.ForgeBodyOnce();
@@ -65,11 +60,6 @@ public sealed class HundredRefinementsRune : HextechRelicBase
 
 	private async Task ForgeBodyOnce()
 	{
-		if (Owner == null)
-		{
-			return;
-		}
-
 		_bodyForgeCount++;
 		InvokeDisplayAmountChanged();
 		Flash();
@@ -83,7 +73,7 @@ public sealed class HundredRefinementsRune : HextechRelicBase
 
 	private static IReadOnlyList<HundredRefinementsRune> GetActiveRunes(Player player)
 	{
-		return player.Relics.OfType<HundredRefinementsRune>().Where(static rune => rune.Owner != null).ToList();
+		return player.Relics.OfType<HundredRefinementsRune>().ToList();
 	}
 
 	private int BodyForgeThreshold => Math.Max(1, DynamicVars["BodyForges"].IntValue);

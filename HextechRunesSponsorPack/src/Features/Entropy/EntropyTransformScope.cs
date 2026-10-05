@@ -17,18 +17,11 @@ internal static class EntropyTransformScope
 		return new Scope();
 	}
 
+	// 唯一用法是 using 语句,每个作用域只会 Dispose 一次。
 	private sealed class Scope : IDisposable
 	{
-		private bool _exited;
-
 		public void Dispose()
 		{
-			if (_exited)
-			{
-				return;
-			}
-
-			_exited = true;
 			Depth.Value--;
 		}
 	}

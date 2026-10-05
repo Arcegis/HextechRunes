@@ -84,7 +84,7 @@
 
 - **战斗内发金币一律在模型 Hook 里等待原版 `PlayerCmd.GainGold`，不按 `LocalContext` 筛选执行端，也不追加金币同步消息。** 确定性来自各端执行同一条触发链，不能从 UI 或本地回调补发。涉及献祭、收集者、炽燃利息、小猪存钱罐、夺金、升级：王国资产。
 - **小猪存钱罐、夺金、炽燃利息在自身发钱期间禁止自身重入（`finally` 解除）。** 防"获得金币 → 鲜血神像伤害 → 受击/反击 → 再次发钱"的循环；后续独立伤害仍正常触发。
-- **`SavedCountThisCombat` / `SavedCounter` 保留原序列化身份，但新触发不再增加计数。** 旧存档的遗留计数仍按原战后奖励路径发放一次后清零；改名或删除会破坏旧档。
+- **`SavedCountThisCombat` / `SavedCounter` 只是存档占位（getter 恒为 0、setter 丢弃），名称与类型保留。** 金币在触发时立即发放；旧档里的遗留计数读档后总会先经过 `BeforeCombatStart` 清零，所以不设战后补发路径。改名或删除这些属性会破坏旧档反序列化。
 - **欧洛巴斯二次强化只在 `TouchOfOrobas.GetUpgradedStarterRelic` 的 postfix 里、且原结果是头环时才补映射。** 不覆盖其他模组已有的非头环升级结果；已持有"+"版时再次获得仍映射到同一"+"版，不叠加也不降级。`OrobasPlusUpgrades`
 - **"+"版继承 `RelicModel` 而非 `HextechRelicBase`。** 因此不参加海克斯计数、重铸与候选生成，只注册到 EventRelicPool；保留 Starter 稀有度并默认在图鉴隐藏。类名是联机契约，不要改。
 - **启用判定复用 `HextechMayhemModifier.IsEnabledForRun`：缺少 modifier ≠ 禁用。** 单机旧局或控制台缺 modifier 时读菜单开关，否则单机会回退成头环；联机缺快照时不使用各端本地配置。

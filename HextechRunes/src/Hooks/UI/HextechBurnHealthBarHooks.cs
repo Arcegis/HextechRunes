@@ -31,48 +31,20 @@ internal static class HextechBurnHealthBarHooks
 	// 两个补丁都依赖的原版私有成员;任一缺失时两个补丁都不安装(缺失项已进启动摘要)。
 	private static readonly HealthBarMembers? Members = HealthBarMembers.TryResolve();
 
-	/// <summary>原版 <c>NHealthBar</c> 的私有成员(0.107.1 / 0.110.0 / 0.111.0 同名同签名)。</summary>
-	private sealed class HealthBarMembers
+	/// <summary>
+	/// 原版 <c>NHealthBar</c> 的私有成员(0.107.1 / 0.110.0 / 0.111.0 同名同签名):字段 <c>_creature</c>、
+	/// <c>_hpForeground</c>、<c>_poisonForeground</c>、<c>_doomForeground</c>、<c>_hpLabel</c>;
+	/// 私有属性 <c>MaxFgWidth</c> 的 getter 与私有方法 <c>GetFgWidth(int)</c> 预先绑定成委托,每帧调用不走反射。
+	/// </summary>
+	private sealed record HealthBarMembers(
+		FieldInfo Creature,
+		FieldInfo HpForeground,
+		FieldInfo PoisonForeground,
+		FieldInfo DoomForeground,
+		FieldInfo HpLabel,
+		Func<NHealthBar, float> MaxFgWidth,
+		Func<NHealthBar, int, float> GetFgWidth)
 	{
-		private HealthBarMembers(
-			FieldInfo creature,
-			FieldInfo hpForeground,
-			FieldInfo poisonForeground,
-			FieldInfo doomForeground,
-			FieldInfo hpLabel,
-			Func<NHealthBar, float> maxFgWidth,
-			Func<NHealthBar, int, float> getFgWidth)
-		{
-			Creature = creature;
-			HpForeground = hpForeground;
-			PoisonForeground = poisonForeground;
-			DoomForeground = doomForeground;
-			HpLabel = hpLabel;
-			MaxFgWidth = maxFgWidth;
-			GetFgWidth = getFgWidth;
-		}
-
-		/// <summary>原版 <c>NHealthBar._creature</c>。</summary>
-		internal FieldInfo Creature { get; }
-
-		/// <summary>原版 <c>NHealthBar._hpForeground</c>。</summary>
-		internal FieldInfo HpForeground { get; }
-
-		/// <summary>原版 <c>NHealthBar._poisonForeground</c>。</summary>
-		internal FieldInfo PoisonForeground { get; }
-
-		/// <summary>原版 <c>NHealthBar._doomForeground</c>。</summary>
-		internal FieldInfo DoomForeground { get; }
-
-		/// <summary>原版 <c>NHealthBar._hpLabel</c>。</summary>
-		internal FieldInfo HpLabel { get; }
-
-		/// <summary>原版私有属性 <c>NHealthBar.MaxFgWidth</c> 的 getter,预先绑定成委托,每帧调用不走反射。</summary>
-		internal Func<NHealthBar, float> MaxFgWidth { get; }
-
-		/// <summary>原版私有方法 <c>NHealthBar.GetFgWidth(int)</c>,同上。</summary>
-		internal Func<NHealthBar, int, float> GetFgWidth { get; }
-
 		internal static HealthBarMembers? TryResolve()
 		{
 			const BindingFlags InstanceFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
@@ -327,14 +299,9 @@ internal static class HextechBurnHealthBarHooks
 		[HarmonyPriority(Priority.Low)]
 		private static bool Prefix(NHealthBar __instance)
 		{
-			if (Members is not { } members)
-			{
-				return true;
-			}
-
 			try
 			{
-				return !TryRenderForeground(members, __instance);
+				return !TryRenderForeground(Members!, __instance);
 			}
 			catch (Exception ex)
 			{
@@ -358,11 +325,7 @@ internal static class HextechBurnHealthBarHooks
 		[HarmonyPostfix]
 		private static void Postfix(NHealthBar __instance)
 		{
-			if (Members is not { } members)
-			{
-				return;
-			}
-
+			HealthBarMembers members = Members!;
 			try
 			{
 				if (members.Creature.GetValue(__instance) is not Creature creature)

@@ -15,7 +15,7 @@ public sealed class ReforgedHelmetRune : HextechRelicBase
 	public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature? applier, out decimal modifiedAmount)
 	{
 		modifiedAmount = amount;
-		if (Owner == null || target != Owner.Creature || canonicalPower is not StrengthPower || amount <= 0m)
+		if (target != Owner.Creature || canonicalPower is not StrengthPower || amount <= 0m)
 		{
 			return false;
 		}

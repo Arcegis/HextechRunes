@@ -93,30 +93,23 @@ internal sealed class HextechForgeChoiceReward : Reward
 				break;
 			}
 
-			try
+			AbstractModel? model = ModelDb.GetByIdOrNull<AbstractModel>(id);
+			if (model is not RelicModel relic)
 			{
-				AbstractModel? model = ModelDb.GetByIdOrNull<AbstractModel>(id);
-				if (model is not RelicModel relic)
-				{
-					LogForgeRestoreSkip(id, model == null ? "model is not registered" : $"model type is {model.GetType().FullName}");
-					continue;
-				}
-
-				if (!HextechCatalog.IsHextechForgeRelic(relic))
-				{
-					LogForgeRestoreSkip(id, "model is no longer registered as a Hextech forge");
-					continue;
-				}
-
-				options.Add(relic);
-				if (options.Count >= requestedCount)
-				{
-					break;
-				}
+				LogForgeRestoreSkip(id, model == null ? "model is not registered" : $"model type is {model.GetType().FullName}");
+				continue;
 			}
-			catch (Exception ex)
+
+			if (!HextechCatalog.IsHextechForgeRelic(relic))
 			{
-				LogForgeRestoreSkip(id, $"{ex.GetType().Name}: {ex.Message}");
+				LogForgeRestoreSkip(id, "model is no longer registered as a Hextech forge");
+				continue;
+			}
+
+			options.Add(relic);
+			if (options.Count >= requestedCount)
+			{
+				break;
 			}
 		}
 
@@ -126,16 +119,9 @@ internal sealed class HextechForgeChoiceReward : Reward
 			return false;
 		}
 
-		try
-		{
-			reward = new HextechForgeChoiceReward(options, player);
-			return true;
-		}
-		catch (Exception ex)
-		{
-			LogForgeRestoreSkip(ModelId.none, $"failed to materialize restored options: {ex.GetType().Name}: {ex.Message}");
-			return false;
-		}
+		// 上面已确认每个选项都是登记过的锻造器，构造时按 ID 取规范实例不会失败。
+		reward = new HextechForgeChoiceReward(options, player);
+		return true;
 	}
 
 	private static RelicModel CreateMutableOption(RelicModel relic)

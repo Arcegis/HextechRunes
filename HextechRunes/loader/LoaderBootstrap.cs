@@ -27,9 +27,6 @@ public static partial class LoaderBootstrap
 	private const string CompatTargetMarkerName = "compat-target.txt";
 	private const BindingFlags InstanceMembers = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-	private static readonly object VariantAssembliesGate = new();
-	private static readonly List<Assembly> VariantAssemblies = [];
-
 	private static readonly MethodInfo? AssociateAssemblyWithModMethod =
 		typeof(ModManager).GetMethod(
 			"AssociateAssemblyWithMod",
@@ -38,17 +35,14 @@ public static partial class LoaderBootstrap
 			[typeof(string), typeof(Assembly)],
 			modifiers: null);
 
-	// Mod.assemblies:0.108+ 的程序集列表字段;0.107.1 没有,只有下面的单个 Mod.assembly。
+	// 加载器只针对 0.107.1 编译,下面两个字段按名字读取:Mod.assemblies 与 AssociateAssemblyWithMod 同在 0.108+,
+	// 0.107.x 两者都没有,只有单个 Mod.assembly。
 	private static readonly FieldInfo? ModAssembliesField = typeof(Mod).GetField("assemblies", InstanceMembers);
 
 	private static readonly FieldInfo? LegacyModAssemblyField = typeof(Mod).GetField("assembly", InstanceMembers);
 
-	// Mod.manifest 与 ModManifest.id(0.107.1 / 0.111.0 均为字段)。加载器只针对 0.107.1 编译,所以按名字读取。
-	private static readonly FieldInfo? ModManifestField = typeof(Mod).GetField("manifest", InstanceMembers);
-
-	private static readonly FieldInfo? ManifestIdField = ModManifestField?.FieldType.GetField("id", InstanceMembers);
-
 	private static Assembly? _selectedVariantAssembly;
+	private static Type[] _selectedVariantTypes = [];
 	private static bool _reflectionBridgeInstalled;
 	private static bool _legacyAssociationCallbackInstalled;
 
@@ -100,7 +94,6 @@ public static partial class LoaderBootstrap
 			Assembly realAssembly = context.LoadFromAssemblyPath(variant.DllPath);
 			ValidateVariantAssembly(realAssembly, variant);
 
-			RegisterVariantAssembly(realAssembly);
 			AssociateVariantAssemblyWithGame(realAssembly);
 			InvokeRealInitializer(realAssembly);
 		}
@@ -144,23 +137,16 @@ public static partial class LoaderBootstrap
 		}
 	}
 
-	private static void RegisterVariantAssembly(Assembly assembly)
-	{
-		lock (VariantAssembliesGate)
-		{
-			if (!VariantAssemblies.Any(candidate =>
-				string.Equals(candidate.Location, assembly.Location, StringComparison.Ordinal)))
-			{
-				VariantAssemblies.Add(assembly);
-			}
-		}
-	}
-
 	private static void InstallReflectionBridge()
 	{
 		if (_reflectionBridgeInstalled)
 		{
 			return;
+		}
+
+		if (_selectedVariantAssembly != null)
+		{
+			_selectedVariantTypes = GetLoadableTypes(_selectedVariantAssembly).ToArray();
 		}
 
 		MethodInfo? getter =
@@ -180,18 +166,9 @@ public static partial class LoaderBootstrap
 
 	private static void ReflectionHelperModTypesPostfix(ref Type[] __result)
 	{
-		Type[] variantTypes;
-		lock (VariantAssembliesGate)
+		if (_selectedVariantTypes.Length > 0)
 		{
-			variantTypes = VariantAssemblies
-				.SelectMany(GetLoadableTypes)
-				.Distinct()
-				.ToArray();
-		}
-
-		if (variantTypes.Length > 0)
-		{
-			__result = __result.Concat(variantTypes).Distinct().ToArray();
+			__result = __result.Concat(_selectedVariantTypes).Distinct().ToArray();
 		}
 	}
 
@@ -210,12 +187,12 @@ public static partial class LoaderBootstrap
 		}
 	}
 
-	// 三级回退,且只走一条:
-	//   ① 0.108+ ModManager.AssociateAssemblyWithMod → 游戏自己把变体程序集并入 Mod.assemblies,类型发现随之生效;
-	//   ② 反射向 Mod.assemblies 追加;
-	//   ③ 0.107.1 只有单个 Mod.assembly 字段,且 ModManager 在初始化器返回后会用 loader 覆盖它,
+	// 两条路径,只走一条:
+	//   ① 0.108+ ModManager.AssociateAssemblyWithMod → 游戏自己把变体程序集并入 Mod.assemblies,类型发现随之生效。
+	//      初始化器运行时本模组状态必为 None,原版在这一状态下总会登记成功,所以不再另写反射追加的回退。
+	//   ② 0.107.x 只有单个 Mod.assembly 字段,且 ModManager 在初始化器返回后会用 loader 覆盖它,
 	//      只能在 OnModDetected 里替换,并补 ReflectionHelper.ModTypes 后缀让类型发现看到变体。
-	// ①② 成功后绝不再装 ReflectionHelper.ModTypes 后缀:两条路径同时贡献类型会让 ModelDb 把同一个类型
+	// ① 成功后绝不再装 ReflectionHelper.ModTypes 后缀:两条路径同时贡献类型会让 ModelDb 把同一个类型
 	// 看成两个,进而触发 "Two AbstractModels X and X share an ID" 的自比较告警。
 	private static void AssociateVariantAssemblyWithGame(Assembly assembly)
 	{
@@ -240,12 +217,6 @@ public static partial class LoaderBootstrap
 			}
 		}
 
-		if (TryAssociateWithAssemblyList(assembly))
-		{
-			Log.Info($"{LogPrefix}Variant associated by appending to Mod.assemblies.");
-			return;
-		}
-
 		InstallReflectionBridge();
 		if (LegacyModAssemblyField != null && !_legacyAssociationCallbackInstalled)
 		{
@@ -262,7 +233,7 @@ public static partial class LoaderBootstrap
 	private static void OnLegacyModDetected(Mod mod)
 	{
 		if (_selectedVariantAssembly == null
-			|| !string.Equals(ReadManifestId(mod), ModId, StringComparison.Ordinal))
+			|| !string.Equals(mod.manifest?.id, ModId, StringComparison.Ordinal))
 		{
 			return;
 		}
@@ -275,21 +246,6 @@ public static partial class LoaderBootstrap
 			$"{_selectedVariantAssembly.GetName().Name} with the STS2 0.107.x mod record.");
 	}
 
-	private static bool TryAssociateWithAssemblyList(Assembly assembly)
-	{
-		if (!TryFindMod(out Mod? mod)
-			|| ModAssembliesField?.GetValue(mod) is not IList assemblies)
-		{
-			return false;
-		}
-
-		if (!assemblies.Cast<object>().Any(item => ReferenceEquals(item, assembly)))
-		{
-			assemblies.Add(assembly);
-		}
-		return true;
-	}
-
 	private static bool IsAssemblyAssociatedWithMod(Assembly assembly)
 	{
 		return TryFindMod(out Mod? mod)
@@ -300,14 +256,8 @@ public static partial class LoaderBootstrap
 	private static bool TryFindMod([NotNullWhen(true)] out Mod? mod)
 	{
 		mod = ModManager.Mods.FirstOrDefault(candidate =>
-			string.Equals(ReadManifestId(candidate), ModId, StringComparison.Ordinal));
+			string.Equals(candidate.manifest?.id, ModId, StringComparison.Ordinal));
 		return mod != null;
-	}
-
-	private static string? ReadManifestId(Mod mod)
-	{
-		object? manifest = ModManifestField?.GetValue(mod);
-		return manifest == null ? null : ManifestIdField?.GetValue(manifest) as string;
 	}
 
 	private static void InvokeRealInitializer(Assembly assembly)
@@ -347,7 +297,20 @@ public static partial class LoaderBootstrap
 			LoadVariantManifest(loaderDirectory, libRoot)
 				.OrderBy(candidate => candidate.Version)
 				.ToList();
-		return SelectVariant(variants, host);
+
+		// 只对选中的变体算 SHA256;不符就剔除后重选,结果与"先剔除所有不符的变体再选"相同。
+		while (SelectVariant(variants, host) is { } selected)
+		{
+			if (MatchesExpectedHash(selected.DllPath, selected.Sha256))
+			{
+				return selected;
+			}
+
+			Log.Error($"{LogPrefix}Ignoring hash-mismatched variant: {selected.DllPath}");
+			variants.Remove(selected);
+		}
+
+		return null;
 	}
 
 	/// <summary>
@@ -470,15 +433,13 @@ public static partial class LoaderBootstrap
 		}
 
 		string dllPath = Path.Combine(variantDirectory, assemblyName);
-		if (!File.Exists(dllPath) || !MatchesExpectedHash(dllPath, entry.Sha256))
+		if (!File.Exists(dllPath))
 		{
-			Log.Error(
-				$"{LogPrefix}Ignoring missing or hash-mismatched " +
-				$"variant: {dllPath}");
+			Log.Error($"{LogPrefix}Ignoring missing variant: {dllPath}");
 			return null;
 		}
 
-		return new VariantCandidate(compatTarget, version, dllPath);
+		return new VariantCandidate(compatTarget, version, dllPath, entry.Sha256);
 	}
 
 	private static bool IsUnderDirectory(string path, string root)
@@ -506,132 +467,17 @@ public static partial class LoaderBootstrap
 
 	private static HostVersionSnapshot ResolveHostVersion()
 	{
-		string? fallbackLabel = null;
-		try
-		{
-			string? label = ReleaseInfoManager.Instance.ReleaseInfo?.Version;
-			if (TryCaptureVersion(label, ref fallbackLabel, out HostVersionSnapshot snapshot))
-			{
-				return snapshot;
-			}
-		}
-		catch (Exception exception)
-		{
-			// 真实边界:早期初始化阶段 ReleaseInfoManager 可能尚不可用;回退到下面的 release_info.json / 程序集版本。
-			Log.Info($"{LogPrefix}ReleaseInfoManager unavailable, falling back: {exception.GetType().Name}: {exception.Message}");
-		}
-
-		foreach (string path in GetPublishedReleaseInfoPaths())
-		{
-			if (TryReadJsonVersion(
-				path,
-				ref fallbackLabel,
-				out HostVersionSnapshot snapshot))
-			{
-				return snapshot;
-			}
-		}
-
-		// 不回退到 sts2.dll 的程序集版本:各版本都是 0.1.0.0,会被当成已知的旧宿主而拒绝加载。
-		// 版本未知时交给 SelectVariant 用最新变体。
-		return new HostVersionSnapshot(null, fallbackLabel);
-	}
-
-	private static IEnumerable<string> GetPublishedReleaseInfoPaths()
-	{
-		string? executablePath = TryCallGodotOsString("GetExecutablePath");
-		string? executableDirectory = string.IsNullOrWhiteSpace(executablePath)
-			? null
-			: Path.GetDirectoryName(executablePath);
-		if (string.IsNullOrWhiteSpace(executableDirectory))
-		{
-			yield break;
-		}
-
-		if (string.Equals(
-			TryCallGodotOsString("GetName"),
-			"macOS",
-			StringComparison.Ordinal))
-		{
-			yield return Path.Combine(
-				executableDirectory,
-				"..",
-				"Resources",
-				"release_info.json");
-		}
-		yield return Path.Combine(executableDirectory, "release_info.json");
-	}
-
-	private static string? TryCallGodotOsString(string methodName)
-	{
-		try
-		{
-			Type? osType =
-				Type.GetType("Godot.OS, GodotSharp", throwOnError: false)
-				?? Type.GetType("Godot.OS, GodotSharpEditor", throwOnError: false)
-				?? AppDomain.CurrentDomain.GetAssemblies()
-					.Select(assembly => assembly.GetType("Godot.OS", throwOnError: false))
-					.FirstOrDefault(type => type != null);
-			MethodInfo? method = osType?.GetMethod(
-				methodName,
-				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-			return method?.Invoke(null, null) as string;
-		}
-		catch (Exception exception)
-		{
-			// 真实边界:按名字反射 Godot.OS,宿主/编辑器环境不同可能取不到;取不到只少一个候选路径。
-			Log.Info($"{LogPrefix}Godot.OS.{methodName} unavailable: {exception.GetType().Name}: {exception.Message}");
-			return null;
-		}
-	}
-
-	private static bool TryReadJsonVersion(
-		string path,
-		ref string? fallbackLabel,
-		out HostVersionSnapshot snapshot)
-	{
-		snapshot = default;
-		try
-		{
-			if (!File.Exists(path))
-			{
-				return false;
-			}
-
-			using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
-			return document.RootElement.TryGetProperty("version", out JsonElement version)
-				&& TryCaptureVersion(
-					version.GetString(),
-					ref fallbackLabel,
-					out snapshot);
-		}
-		catch (Exception exception)
-		{
-			// 真实边界:release_info.json 是游戏发行文件,读不到或格式不符时换下一个来源。
-			Log.Info($"{LogPrefix}Could not read host version from {path}: {exception.GetType().Name}: {exception.Message}");
-			return false;
-		}
-	}
-
-	private static bool TryCaptureVersion(
-		string? label,
-		ref string? fallbackLabel,
-		out HostVersionSnapshot snapshot)
-	{
-		snapshot = default;
+		// 原版懒单例:构造时按可执行文件目录查找 release_info.json(macOS 先找 ../Resources),
+		// 读不到或解析失败都在内部记日志并返回 null,不抛异常。0.107.1–0.111.0 的查找路径一致。
+		string? label = ReleaseInfoManager.Instance.ReleaseInfo?.Version;
 		if (string.IsNullOrWhiteSpace(label))
 		{
-			return false;
+			return new HostVersionSnapshot(null, null);
 		}
 
-		fallbackLabel ??= label;
-		if (!TryParseVersion(label, out Version version))
-		{
-			return false;
-		}
-
-		snapshot = new HostVersionSnapshot(version, label);
-		return true;
+		// 解析不了就当版本未知,交给 SelectVariant 用最新变体。不回退到 sts2.dll 的程序集版本:
+		// 各版本都是 0.1.0.0,会被当成已知的旧宿主而拒绝加载。
+		return new HostVersionSnapshot(TryParseVersion(label, out Version version) ? version : null, label);
 	}
 
 	private static bool TryParseVersion(string text, out Version version)
@@ -662,7 +508,8 @@ public static partial class LoaderBootstrap
 	internal sealed record VariantCandidate(
 		string CompatTarget,
 		Version Version,
-		string DllPath);
+		string DllPath,
+		string? Sha256 = null);
 
 	private readonly record struct HostVersionSnapshot(
 		Version? Numeric,

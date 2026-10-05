@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace HextechRunes;
@@ -21,12 +20,6 @@ internal static class HextechUiPreferences
 	private const string ConfigFileName = "ui_config.json";
 	private const string LogTag = "Mayhem";
 	private const int CurrentUiConfigVersion = 1;
-
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		WriteIndented = true,
-		PropertyNameCaseInsensitive = true
-	};
 
 	private static ModUiConfig? _config;
 
@@ -79,19 +72,8 @@ internal static class HextechUiPreferences
 
 	private static ModUiConfig LoadOrCreateConfig()
 	{
-		string? configPath = null;
-		try
+		return JsonConfigFile.Load(ConfigFileName, LogTag, CreateCurrentUiConfig, static config =>
 		{
-			configPath = GetConfigPath();
-			if (!File.Exists(configPath))
-			{
-				ModUiConfig defaultConfig = CreateCurrentUiConfig();
-				Save(defaultConfig);
-				return defaultConfig;
-			}
-
-			ModUiConfig? parsed = JsonSerializer.Deserialize<ModUiConfig>(File.ReadAllText(configPath), JsonOptions);
-			ModUiConfig config = parsed ?? new ModUiConfig();
 			// 0.8.4 一次性强制回默认(与 rune_config 的 v15 重置同批):旧 UI 偏好整体丢弃。
 			if (config.ConfigVersion < CurrentUiConfigVersion)
 			{
@@ -99,35 +81,8 @@ internal static class HextechUiPreferences
 				config = CreateCurrentUiConfig();
 			}
 
-			Save(config);
-			return config;
-		}
-		catch (JsonException ex)
-		{
-			HextechLog.Warn(LogTag, $"Relic visibility config JSON is invalid; using defaults: {ex.Message}");
-			ModUiConfig config = CreateCurrentUiConfig();
-			if (configPath != null && TryBackupCorruptConfig(configPath))
-			{
-				Save(config);
-			}
-
-			return config;
-		}
-		catch (UnauthorizedAccessException ex)
-		{
-			HextechLog.Warn(LogTag, $"Relic visibility config read was denied; using in-memory defaults without overwriting the file: {ex.Message}");
-			return CreateCurrentUiConfig();
-		}
-		catch (IOException ex)
-		{
-			HextechLog.Warn(LogTag, $"Relic visibility config read failed due to I/O; using in-memory defaults without overwriting the file: {ex.Message}");
-			return CreateCurrentUiConfig();
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error(LogTag, $"Unexpected relic visibility config read failure; using in-memory defaults without overwriting the file: {ex}");
-			return CreateCurrentUiConfig();
-		}
+			return (config, true);
+		});
 	}
 
 	private static ModUiConfig CreateCurrentUiConfig()
@@ -135,53 +90,9 @@ internal static class HextechUiPreferences
 		return new ModUiConfig { ConfigVersion = CurrentUiConfigVersion };
 	}
 
-	private static bool TryBackupCorruptConfig(string configPath)
-	{
-		try
-		{
-			File.Copy(configPath, configPath + ".corrupt.bak", overwrite: true);
-			return true;
-		}
-		catch (UnauthorizedAccessException ex)
-		{
-			HextechLog.Warn(LogTag, $"Could not back up corrupt relic visibility config; original file will not be overwritten: {ex.Message}");
-			return false;
-		}
-		catch (IOException ex)
-		{
-			HextechLog.Warn(LogTag, $"Could not back up corrupt relic visibility config; original file will not be overwritten: {ex.Message}");
-			return false;
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error(LogTag, $"Unexpected relic visibility config backup failure; original file will not be overwritten: {ex}");
-			return false;
-		}
-	}
-
 	private static void Save()
 	{
-		Save(Config);
-	}
-
-	private static void Save(ModUiConfig config)
-	{
-		try
-		{
-			string configPath = GetConfigPath();
-			Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-			string serialized = JsonSerializer.Serialize(config, JsonOptions);
-			File.WriteAllText(configPath, serialized);
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Warn(LogTag, $"Relic visibility config write failed: {ex.Message}");
-		}
-	}
-
-	private static string GetConfigPath()
-	{
-		return HextechDataPaths.GetFilePath(ConfigFileName);
+		JsonConfigFile.Save(ConfigFileName, LogTag, Config);
 	}
 
 	private sealed class ModUiConfig

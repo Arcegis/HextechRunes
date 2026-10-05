@@ -9,7 +9,7 @@ public sealed class ViolenceRune : HextechRelicBase
 
 	public override async Task BeforeHandDraw(Player player, PlayerChoiceContext choiceContext, HextechCombatState combatState)
 	{
-		if (player != Owner || Owner == null || Owner.Creature.IsDead)
+		if (player != Owner || Owner.Creature.IsDead)
 		{
 			return;
 		}

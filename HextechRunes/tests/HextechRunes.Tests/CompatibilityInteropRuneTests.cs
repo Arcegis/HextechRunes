@@ -56,9 +56,9 @@ internal static partial class Program
 	{
 		Action[] restore =
 		[
-			CaptureCompatibilityCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
-			CaptureCompatibilityCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
-			CaptureCompatibilityCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneAvailabilityByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneAvailabilityByModelId"),
 			CaptureExternalRegistryVersionRestore(),
 			SuppressCompatibilityWarnings(
 				"external-content.non-starter-rune",
@@ -118,10 +118,10 @@ internal static partial class Program
 	{
 		Action[] restore =
 		[
-			CaptureCompatibilityCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
-			CaptureCompatibilityCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
-			CaptureCompatibilityCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRunePoolLabelKeysByModelId"),
-			CaptureCompatibilityCollectionRestore(typeof(HextechExternalContentRegistry), "ConfigSectionTitleKeysByAssetModId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRuneRegistrations"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "AssetModIdsByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "PlayerRunePoolLabelKeysByModelId"),
+			CaptureStaticCollectionRestore(typeof(HextechExternalContentRegistry), "ConfigSectionTitleKeysByAssetModId"),
 			CaptureExternalRegistryVersionRestore(),
 			SuppressCompatibilityWarnings(
 				"external-content.pool-label-conflict",

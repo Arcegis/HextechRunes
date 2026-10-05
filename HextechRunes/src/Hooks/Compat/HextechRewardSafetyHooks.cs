@@ -27,6 +27,9 @@ internal static class HextechRewardSafetyHooks
 
 		Hook.ModifyCardRewardAlternatives(cardReward.Player.RunState, cardReward.Player, cardReward, alternatives);
 		IReadOnlyList<CardRewardAlternative> normalized = NormalizeCardRewardAlternativesForCompatibility(alternatives);
+		// 每个奖励固定返回同一个列表实例并原地刷新:原版 OnSelect 在开头取一次 Generate 结果,之后按下标取备选项;
+		// 浮木重掷会再次 Generate 并刷新界面,原地刷新才能让 OnSelect 手里的列表与界面一致
+		// (例如最后一次重掷用掉后“重掷”项消失,下标随之移位)。
 		CardRewardCompatibilityState state = CardRewardStates.GetOrCreateValue(cardReward);
 		state.Alternatives.Clear();
 		state.Alternatives.AddRange(normalized);
@@ -391,15 +394,15 @@ internal static class HextechRewardSafetyHooks
 		[HarmonyPostfix]
 		private static void Postfix(CardReward __instance, ref object? __state, ref Task<bool> __result)
 		{
-			CardRewardOnSelectState? state = __state as CardRewardOnSelectState;
+			// Prefix 只注入 __instance 与 __state,Harmony 不会因别的前缀跳过原方法而跳过它,__state 必已赋值。
+			CardRewardOnSelectState state = (CardRewardOnSelectState)__state!;
 			Task<bool> result = __result;
 			if (ShouldApplyForbiddenGrimoire(__instance))
 			{
-				int cardCountBeforeSelect = state?.CardCountBeforeSelect ?? __instance.Cards.Count();
-				result = CompleteForbiddenGrimoireCardRewardAsync(__instance, result, cardCountBeforeSelect);
+				result = CompleteForbiddenGrimoireCardRewardAsync(__instance, result, state.CardCountBeforeSelect);
 			}
 
-			__result = DoubleVisionRune.CompleteCardRewardAsync(result, state?.DoubleVisionScope);
+			__result = DoubleVisionRune.CompleteCardRewardAsync(result, state.DoubleVisionScope);
 			__state = null;
 		}
 

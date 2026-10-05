@@ -38,7 +38,7 @@ public abstract class SelfUpgradeOnPlayRuneBase<TCard> : CardUpgradeRuneBase<TCa
 
 	private Task RecordSelfUpgradeOnPlay(CardPlay cardPlay)
 	{
-		if (Owner == null || cardPlay.Card.Owner != Owner || cardPlay.Card is not TCard)
+		if (cardPlay.Card.Owner != Owner || cardPlay.Card is not TCard)
 		{
 			return Task.CompletedTask;
 		}

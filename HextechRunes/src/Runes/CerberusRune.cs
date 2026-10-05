@@ -79,9 +79,7 @@ public sealed class CerberusRune : TurnScopedRelicBase
 	private bool ShouldPlayAttackForFree(CardModel card)
 	{
 		EnsureTurnScopedStateCurrent();
-		return Owner != null
-			&& card.Owner == Owner
-			&& IsOwnedAttack(card)
+		return IsOwnedAttack(card)
 			&& card.Pile?.Type == PileType.Hand
 			&& !card.EnergyCost.CostsX
 			&& !HasTurnProcReachedLimit(nameof(CerberusRune), _attacksPlayedThisTurn, DynamicVars["FreeAttacks"].IntValue);

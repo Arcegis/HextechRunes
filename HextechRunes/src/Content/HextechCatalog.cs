@@ -20,10 +20,6 @@ internal static partial class HextechCatalog
 		new("NECROBINDER", PlayerRuneMetadata.TypesByCharacter[PlayerRuneCharacterPool.Necrobinder])
 	];
 
-	private static IReadOnlySet<Type> CharacterSpecificRuneTypes => PlayerRuneMetadata.GetCharacterSpecificTypes();
-
-	public static IReadOnlyList<Type> GetAllRuneTypes() => AllRuneTypes;
-
 	public static IReadOnlyList<Type> GetAllConfigurableRuneTypes()
 	{
 		return Enum.GetValues<HextechRarityTier>()
@@ -31,24 +27,14 @@ internal static partial class HextechCatalog
 			.ToArray();
 	}
 
-	public static bool IsPlayerRuneTypeSelectable(Type runeType)
-	{
-		return PlayerRuneMetadata.IsSelectable(runeType);
-	}
-
 	public static bool IsPlayerRuneTypeConfigurable(Type runeType)
 	{
 		return PlayerRuneMetadata.IsConfigurable(runeType);
 	}
 
-	public static bool IsPlayerRuneTypeVisible(Type runeType)
-	{
-		return PlayerRuneMetadata.IsVisible(runeType);
-	}
-
 	public static bool IsPlayerRuneTypeVisibleInCollection(Type runeType)
 	{
-		if (!AllRuneTypes.Contains(runeType))
+		if (!PlayerRuneMetadata.AllTypes.Contains(runeType))
 		{
 			return false;
 		}
@@ -58,14 +44,15 @@ internal static partial class HextechCatalog
 			return HextechRuneConfiguration.IsPlayerRuneEnabled(ModelDb.GetId(runeType).Entry);
 		}
 
-		return IsPlayerRuneTypeVisible(runeType);
+		return PlayerRuneMetadata.IsVisible(runeType);
 	}
 
 	public static IReadOnlyList<Type> GetGenericVisibleRuneTypes()
 	{
-		return AllRuneTypes
+		PlayerRuneMetadataCatalog metadata = PlayerRuneMetadata;
+		return metadata.AllTypes
 			.Where(IsPlayerRuneTypeVisibleInCollection)
-			.Where(static type => !CharacterSpecificRuneTypes.Contains(type))
+			.Where(type => !metadata.CharacterSpecificTypes.Contains(type))
 			.ToArray();
 	}
 
@@ -106,19 +93,31 @@ internal static partial class HextechCatalog
 
 	public static IReadOnlyList<Type> GetAllCustomRelicTypes() => AllCustomRelicTypes;
 
-	public static IReadOnlyList<Type> GetAllCustomCardTypes() => CustomCardTypes;
-
-	public static IReadOnlyList<Type> GetPlayerRuneTypesForRarity(HextechRarityTier rarity)
-	{
-		return PlayerRuneMetadata.GetSelectableTypesForRarity(rarity);
-	}
+	public static IReadOnlyList<Type> GetAllCustomCardTypes() => HextechCustomModelRegistry.CustomCardTypes;
 
 	public static IReadOnlyList<Type> GetConfigurablePlayerRuneTypesForRarity(HextechRarityTier rarity)
 	{
 		return PlayerRuneMetadata.GetConfigurableTypesForRarity(rarity);
 	}
 
+	// 配置格式只存 Entry，所以可配置符文的 Entry 必须唯一。校验与结果按注册表版本缓存，外部登记后重建；
+	// 冲突时每次调用都重新校验并抛出，不缓存失败。
 	public static IReadOnlySet<ModelId> GetConfigurablePlayerRuneIds()
+	{
+		int version = HextechContentRegistry.Version;
+		lock (ModelIdLookupLock)
+		{
+			if (_configurablePlayerRuneIds == null || _configurablePlayerRuneIdsVersion != version)
+			{
+				_configurablePlayerRuneIds = BuildConfigurablePlayerRuneIds();
+				_configurablePlayerRuneIdsVersion = version;
+			}
+
+			return _configurablePlayerRuneIds;
+		}
+	}
+
+	private static IReadOnlySet<ModelId> BuildConfigurablePlayerRuneIds()
 	{
 		Type[] configurableTypes = GetAllConfigurableRuneTypes().ToArray();
 		EnsureUniqueModelIds(configurableTypes, ModelDb.GetId);
@@ -159,7 +158,7 @@ internal static partial class HextechCatalog
 		IEnumerable<Type> knownModelTypes = EnumerateLoadedAbstractModelTypes()
 			.Concat(HextechContentRegistry.AllCustomRelicTypes)
 			.Concat(HextechContentRegistry.EventRelicTypes)
-			.Concat(HextechContentRegistry.CustomCardTypes)
+			.Concat(HextechCustomModelRegistry.CustomCardTypes)
 			.Concat(HextechCustomModelRegistry.AllCustomModifierTypes)
 			.Append(modelType);
 		EnsureModelIdAvailable(modelType, knownModelTypes, ModelDb.GetId);
@@ -271,17 +270,6 @@ internal static partial class HextechCatalog
 			.Where(IsPlayerRuneTypeConfigurable)
 			.Select(ModelDb.GetId)
 			.ToHashSet();
-	}
-
-	public static IReadOnlyList<Type> GetForgeTypesForRarity(HextechRarityTier rarity)
-	{
-		return rarity switch
-		{
-			HextechRarityTier.Silver => SilverForgeTypes,
-			HextechRarityTier.Gold => GoldForgeTypes,
-			HextechRarityTier.Prismatic => PrismaticForgeTypes,
-			_ => Array.Empty<Type>()
-		};
 	}
 
 	// 所有发放路径（选择池、奖励、锻造、宝箱替换）共用的唯一过滤口。

@@ -68,7 +68,7 @@ internal sealed partial class HextechRuneSelectionScreen
 			return cachedStream;
 		}
 
-		AudioStream? stream = GD.Load<AudioStream>(path) ?? ResourceLoader.Load<AudioStream>(path);
+		AudioStream? stream = ResourceLoader.Load<AudioStream>(path);
 		if (stream == null)
 		{
 			HextechLog.Warn("Mayhem", $"SelectionScreen.PlaySfx: failed to load sfx path={path}");

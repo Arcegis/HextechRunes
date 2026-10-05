@@ -37,7 +37,7 @@ public abstract partial class HextechRelicBase
 		params string?[] saltParts)
 	{
 		canonicalCardId = ModelId.none;
-		if (Owner == null || pool.Count == 0)
+		if (pool.Count == 0)
 		{
 			return null;
 		}
@@ -54,7 +54,7 @@ public abstract partial class HextechRelicBase
 	protected async Task AddCardCopiesToDeckOrHand<TCard>(int count, Action<CardModel>? configureCard = null)
 		where TCard : CardModel
 	{
-		if (Owner == null || count <= 0)
+		if (count <= 0)
 		{
 			return;
 		}
@@ -93,8 +93,7 @@ public abstract partial class HextechRelicBase
 	protected async Task AddCardCopiesToCombatHand<TCard>(int count, Action<CardModel>? configureCard = null)
 		where TCard : CardModel
 	{
-		if (Owner == null
-			|| count <= 0
+		if (count <= 0
 			|| Owner.PlayerCombatState == null
 			|| Owner.Creature.CombatState is not HextechCombatState combatState
 			|| !CombatManager.Instance.IsInProgress

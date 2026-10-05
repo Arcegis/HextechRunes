@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Runs.History;
 
 namespace HextechRunes;
 
@@ -10,19 +9,9 @@ internal static partial class HextechRunLifecycleHooks
 		static (manager, handler) => manager.RoomEntered -= handler,
 		OnRoomEntered);
 
-	private static readonly RunManagerEventSubscription RoomExitedSubscription = new(
-		static (manager, handler) => manager.RoomExited += handler,
-		static (manager, handler) => manager.RoomExited -= handler,
-		OnRoomExited);
-
 	private static void SubscribeRoomEnteredIfNeeded(bool force = false)
 	{
 		RoomEnteredSubscription.Ensure(RunManager.Instance, force);
-	}
-
-	private static void SubscribeRoomExitedIfNeeded(bool force = false)
-	{
-		RoomExitedSubscription.Ensure(RunManager.Instance, force);
 	}
 
 	/// <summary>
@@ -146,28 +135,6 @@ internal static partial class HextechRunLifecycleHooks
 		catch (Exception ex)
 		{
 			HextechLog.Error("Mayhem", $"OnRoomEntered enemy UI refresh failed: {ex}");
-		}
-	}
-
-	private static void OnRoomExited()
-	{
-		try
-		{
-			if (RunManager.Instance.DebugOnlyGetState() is not RunState runState)
-			{
-				HextechLog.Info("Mayhem", $"OnRoomExited: no run state");
-				return;
-			}
-
-			MapPointHistoryEntry? currentHistory = runState.CurrentMapPointHistoryEntry;
-			IReadOnlyList<MapPointRoomHistoryEntry>? rooms = currentHistory?.Rooms;
-			MapPointRoomHistoryEntry? roomHistory = rooms != null && rooms.Count > 0 ? rooms[^1] : null;
-			string modelEntry = roomHistory?.ModelId?.Entry ?? "null";
-			HextechLog.Info("Mayhem", $"OnRoomExited: currentRoom={(runState.CurrentRoom?.GetType().Name ?? "null")} lastHistoryRoom={roomHistory?.RoomType} model={modelEntry}");
-		}
-		catch (Exception ex)
-		{
-			HextechLog.Error("Mayhem", $"OnRoomExited failed: {ex}");
 		}
 	}
 

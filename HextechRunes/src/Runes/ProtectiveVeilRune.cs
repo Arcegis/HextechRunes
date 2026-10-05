@@ -23,7 +23,7 @@ public sealed class ProtectiveVeilRune : HextechRelicBase
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (room is not CombatRoom || Owner == null)
+		if (room is not CombatRoom)
 		{
 			return Task.CompletedTask;
 		}
@@ -41,7 +41,7 @@ public sealed class ProtectiveVeilRune : HextechRelicBase
 
 	public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, HextechCombatState combatState)
 	{
-		if (Owner == null || side != Owner.Creature.Side)
+		if (side != Owner.Creature.Side)
 		{
 			return;
 		}

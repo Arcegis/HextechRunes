@@ -31,7 +31,7 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 
 	public override bool ShowCounter => true;
 
-	public override int DisplayAmount => !IsCanonical ? _stacks : 0;
+	public override int DisplayAmount => _stacks;
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
 	[
@@ -52,10 +52,7 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 
 	public override Task AfterRoomEntered(AbstractRoom room)
 	{
-		if (Owner != null)
-		{
-			HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
-		}
+		HextechMaxHpScaling.EnsureScaledBaseInitialized(Owner);
 
 		Grow();
 		return Task.CompletedTask;
@@ -63,7 +60,7 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 
 	public override Task BeforeCombatStart()
 	{
-		if (Owner == null || Owner.Creature.IsDead || _stacks <= 0)
+		if (Owner.Creature.IsDead || _stacks <= 0)
 		{
 			return Task.CompletedTask;
 		}
@@ -73,7 +70,7 @@ public sealed class NineDragonPowerRune : HextechRelicBase, IHextechMaxHpScaling
 
 	public override async Task AfterPotionUsed(PotionModel potion, Creature? target)
 	{
-		if (Owner == null || Owner.Creature.IsDead || !IsPotionUseOwnedByOrTargetingOwner(potion, target))
+		if (Owner.Creature.IsDead || !IsPotionUseOwnedByOrTargetingOwner(potion, target))
 		{
 			return;
 		}

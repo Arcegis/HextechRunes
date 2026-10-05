@@ -4,7 +4,7 @@
 #
 # source 前调用方需设置 HEXTECH_TOOLS_DIR(本文件所在目录)。构建步骤函数另外读取调用方设置的:
 #   ROOT FILE_STEM VARIANT_MANIFEST_NAME REFS_ROOT BUILD_ROOT DIST MOD_DIR
-# 游戏安装位置可用环境变量 STS2_GAME_APP 覆盖(与 tools/mplab/run_mplab.sh、仓库根 Directory.Build.targets 一致)。
+# 游戏安装位置可用环境变量 STS2_GAME_APP 覆盖(与 tools/mplab/run_mplab.sh 一致)。
 
 # 发布目标的唯一清单;变体版本符号见仓库根 Directory.Build.targets。
 HEXTECH_TARGETS=(0.107.1 0.110.0 0.111.0)
@@ -95,27 +95,23 @@ hextech_prepare_output() {
 	rm -rf "$ROOT/src/bin" "$ROOT/src/obj" "$ROOT/loader/bin" "$ROOT/loader/obj"
 }
 
-# 用法: hextech_build_variants <工程> <目标属性名>...
-# 每个目标把列出的 MSBuild 属性都设为该目标版本,产物复制到 dist/lib/<目标>/。
+# 用法: hextech_build_variants <工程>
+# 每个目标以 HextechSts2Target=<目标> 构建(全局属性,拓展包引用的本体工程同样按该目标编译),
+# 产物复制到 dist/lib/<目标>/。各目标共用 obj 而宏定义不同,所以每个目标构建前都要 clean。
 hextech_build_variants() {
 	local project="$1"
-	shift
-	local target refs output property
+	local target refs output
 	for target in "${HEXTECH_TARGETS[@]}"; do
 		refs="$REFS_ROOT/$target/game-refs"
 		output="$BUILD_ROOT/variants/$target"
 		mkdir -p "$output"
-		local target_args=()
-		for property in "$@"; do
-			target_args+=("-p:$property=$target")
-		done
 
 		echo "Building $FILE_STEM implementation for STS2 $target using $refs"
 		"$DOTNET_BIN" clean "$project" -c Release --disable-build-servers \
-			"${target_args[@]}" \
+			-p:HextechSts2Target="$target" \
 			-p:GameDataDir="$refs" >/dev/null
 		"$DOTNET_BIN" build "$project" -c Release --disable-build-servers \
-			"${target_args[@]}" \
+			-p:HextechSts2Target="$target" \
 			-p:GameDataDir="$refs" \
 			-o "$output"
 
@@ -129,8 +125,8 @@ hextech_build_loader() {
 	local refs="$REFS_ROOT/$HEXTECH_LOADER_REFS_TARGET/game-refs"
 	local output="$BUILD_ROOT/loader"
 	mkdir -p "$output"
+	# loader 的 bin/obj 已在 hextech_prepare_output 里删掉,这里不必再 clean。
 	echo "Building stable $FILE_STEM loader against STS2 $HEXTECH_LOADER_REFS_TARGET references"
-	"$DOTNET_BIN" clean "$project" -c Release --disable-build-servers >/dev/null
 	"$DOTNET_BIN" build "$project" -c Release --disable-build-servers \
 		-p:GameDataDir="$refs" \
 		-o "$output"
@@ -198,7 +194,6 @@ hextech_deploy_or_skip() {
 	fi
 	mv "$stage" "$MOD_DIR"
 	rm -rf "$previous"
-	hextech_clean_macos_metadata "$MOD_DIR"
 	echo "Deployed multi-version package to $MOD_DIR"
 }
 

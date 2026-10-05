@@ -29,24 +29,9 @@ internal static partial class HextechEnemyPowerScalingHooks
 
 	private static decimal MultiplyByPlayerCount(decimal amount, int playerCount)
 	{
+		// 先夹到 int 范围再乘（倍率至多 MaxScalingPlayerCount），decimal 乘法不会溢出。
 		int scale = HextechEnemyHexContext.ClampScalingPlayerCount(playerCount);
-		if (scale <= 1)
-		{
-			return ClampPowerAmount(amount);
-		}
-
-		if (amount >= int.MaxValue / scale)
-		{
-			return int.MaxValue;
-		}
-
-		if (amount <= int.MinValue / scale)
-		{
-			return int.MinValue;
-		}
-
-		// 上面两道边界已保证乘积落在 int 范围内，decimal 乘法不会溢出。
-		return ClampPowerAmount(amount * scale);
+		return ClampPowerAmount(ClampPowerAmount(amount) * scale);
 	}
 
 	private static decimal ClampPowerAmount(decimal amount)
@@ -62,26 +47,5 @@ internal static partial class HextechEnemyPowerScalingHooks
 		}
 
 		return amount;
-	}
-
-	private static OverrideScope BeginOverride(ScalingOverride scalingOverride)
-	{
-		return new OverrideScope(scalingOverride);
-	}
-
-	private sealed class OverrideScope : IDisposable
-	{
-		private readonly ScalingOverride? _previousOverride;
-
-		public OverrideScope(ScalingOverride scalingOverride)
-		{
-			_previousOverride = CurrentOverride.Value;
-			CurrentOverride.Value = scalingOverride;
-		}
-
-		public void Dispose()
-		{
-			CurrentOverride.Value = _previousOverride;
-		}
 	}
 }

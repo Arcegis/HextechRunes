@@ -2,12 +2,6 @@ namespace HextechRunes;
 
 internal static partial class HextechRuneSelectionCoordinator
 {
-	// 玩家候选只排除本局已见过的符文。敌我同名不再互相回避:敌方持有的海克斯照样可以出现在玩家候选里。
-	private static HashSet<ModelId> CreateBaseExcludedIds(HextechMayhemModifier modifier, Player player)
-	{
-		return modifier.GetSeenPlayerRuneIds(player);
-	}
-
 	private static HashSet<ModelId> CreateSeenOptionIds(IEnumerable<RelicModel> options, IEnumerable<ModelId>? alreadySeenIds = null)
 	{
 		HashSet<ModelId> seenOptionIds = options
@@ -19,21 +13,6 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		return seenOptionIds;
-	}
-
-	private static MonsterHexKind? FirstMonsterHexOrNull(IEnumerable<MonsterHexKind>? monsterHexes)
-	{
-		if (monsterHexes == null)
-		{
-			return null;
-		}
-
-		foreach (MonsterHexKind monsterHex in monsterHexes)
-		{
-			return monsterHex;
-		}
-
-		return null;
 	}
 
 	// 敌方重掷只避开同一界面上其他敌方槽位的海克斯,不看玩家候选。

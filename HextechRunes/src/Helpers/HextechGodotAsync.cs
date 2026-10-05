@@ -11,13 +11,7 @@ internal static class HextechGodotAsync
 			return false;
 		}
 
-		SceneTree tree = node.GetTree();
-		if (tree == null)
-		{
-			return false;
-		}
-
-		await node.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+		await node.ToSignal(node.GetTree(), SceneTree.SignalName.ProcessFrame);
 		return GodotObject.IsInstanceValid(node) && node.IsInsideTree();
 	}
 }

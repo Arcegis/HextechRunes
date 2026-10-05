@@ -1,14 +1,10 @@
 using System.Text;
-using System.Text.Json;
 
 namespace HextechRunes;
 
 internal static partial class HextechTelemetry
 {
-	private static readonly HttpClient HttpClient = new()
-	{
-		Timeout = TimeSpan.FromSeconds(5)
-	};
+	private static readonly TimeSpan UploadTimeout = TimeSpan.FromSeconds(5);
 
 	// 一次上传事务 = 读待发队列 → 逐条 POST(最长约 MaxPendingLines × 超时) → 回写未发出的条目。
 	// 两局相继结束时若并发执行,会重复上传同一批条目或互相覆盖队列文件丢条目,所以整段串行化。
@@ -40,15 +36,10 @@ internal static partial class HextechTelemetry
 		List<string> unsent = [];
 		foreach (string payload in pending.TakeLast(MaxPendingLines))
 		{
-			if (IsShortRunPayload(payload))
-			{
-				continue;
-			}
-
 			try
 			{
 				using StringContent content = new(payload, Encoding.UTF8, "application/json");
-				using HttpResponseMessage response = await HttpClient.PostAsync(endpoint, content).ConfigureAwait(false);
+				using HttpResponseMessage response = await HextechHttp.PostAsync(endpoint, content, UploadTimeout).ConfigureAwait(false);
 				if (!response.IsSuccessStatusCode)
 				{
 					unsent.Add(payload);
@@ -69,26 +60,6 @@ internal static partial class HextechTelemetry
 		{
 			HextechLog.Warn("Mayhem", $"Telemetry upload deferred unsent={unsent.Count}");
 		}
-	}
-
-	private static bool IsShortRunPayload(string json)
-	{
-		try
-		{
-			using JsonDocument document = JsonDocument.Parse(json);
-			if (document.RootElement.TryGetProperty("run", out JsonElement run)
-				&& run.TryGetProperty("runTime", out JsonElement runTimeElement)
-				&& runTimeElement.TryGetInt64(out long runTime))
-			{
-				return runTime < MinRunTimeForUploadSeconds;
-			}
-		}
-		catch
-		{
-			return false;
-		}
-
-		return false;
 	}
 
 	private static List<string> ReadPendingPayloads()

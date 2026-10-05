@@ -83,6 +83,82 @@ internal static partial class Program
 		return creature;
 	}
 
+	/// <summary>
+	/// 测试进程不跑原版 ModelDb 初始化:临时注入本测试用到、尚未登记的模型;释放时只移除本次注入的,
+	/// 别的测试已登记的类型不受影响。
+	/// </summary>
+	private static IDisposable InjectMissingModels(params Type[] types)
+	{
+		Type[] added = types.Where(static type => !ModelDb.Contains(type)).ToArray();
+		foreach (Type type in added)
+		{
+			ModelDb.Inject(type);
+		}
+
+		return new InjectedModels(added);
+	}
+
+	private sealed class InjectedModels(Type[] types) : IDisposable
+	{
+		public void Dispose()
+		{
+			foreach (Type type in types)
+			{
+				ModelDb.Remove(type);
+			}
+		}
+	}
+
+	/// <summary>
+	/// 让 <see cref="HextechRuneConfiguration"/> 视为配置已加载,并可在测试里切换总开关,使启用判断走真实路径。
+	/// 只改测试进程内存;释放时还原 <c>_loaded</c> 与 <c>ModEnabled</c>。
+	/// </summary>
+	private sealed class ModEnabledOverride : IDisposable
+	{
+		private readonly FieldInfo _loadedField = AccessTools.Field(typeof(HextechRuneConfiguration), "_loaded");
+		private readonly object _config = AccessTools.Field(typeof(HextechRuneConfiguration), "_config").GetValue(null)!;
+		private readonly PropertyInfo _enabledProperty;
+		private readonly object? _wasLoaded;
+		private readonly object? _wasEnabled;
+
+		public ModEnabledOverride()
+		{
+			_enabledProperty = _config.GetType().GetProperty("ModEnabled")!;
+			_wasLoaded = _loadedField.GetValue(null);
+			_wasEnabled = _enabledProperty.GetValue(_config);
+			_loadedField.SetValue(null, true);
+		}
+
+		public bool Enabled
+		{
+			set => _enabledProperty.SetValue(_config, value);
+		}
+
+		public void Dispose()
+		{
+			_enabledProperty.SetValue(_config, _wasEnabled);
+			_loadedField.SetValue(null, _wasLoaded);
+		}
+	}
+
+	// PowerModel 的 Owner 与层数没有公开 setter;测试直接写字段,不走需要战斗与 Godot 节点的 PowerCmd。
+	private static T CreateTestPower<T>(int? amount = null, Creature? owner = null)
+		where T : PowerModel, new()
+	{
+		T power = CreateMutableTestModel<T>();
+		if (owner != null)
+		{
+			AccessTools.Property(typeof(PowerModel), nameof(PowerModel.Owner)).SetValue(power, owner);
+		}
+
+		if (amount != null)
+		{
+			AccessTools.Field(typeof(PowerModel), "_amount").SetValue(power, amount.Value);
+		}
+
+		return power;
+	}
+
 	private sealed class GeneratedTestRelic : RelicModel, IHextechGeneratedRune
 	{
 		public override RelicRarity Rarity => RelicRarity.Event;

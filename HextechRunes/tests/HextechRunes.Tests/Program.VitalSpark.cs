@@ -20,14 +20,10 @@ internal static partial class Program
 	[HextechTest]
 	private static void PlayerVitalSparkScopesCardsAndCleansUp()
 	{
+		using IDisposable models = InjectMissingModels(typeof(Tainted), typeof(TaintedPower));
 		Harmony harmony = new("HextechRunes.Tests.VitalSpark");
-		Type[] added = new[] { typeof(Tainted), typeof(TaintedPower) }.Where(type => !ModelDb.Contains(type)).ToArray();
 		try
 		{
-			foreach (Type type in added)
-			{
-				ModelDb.Inject(type);
-			}
 			foreach (Type patch in typeof(HextechVitalSparkCompatibilityHooks).GetNestedTypes(System.Reflection.BindingFlags.NonPublic))
 			{
 				if (patch.GetCustomAttributes(typeof(HarmonyPatch), false).Length > 0)
@@ -126,10 +122,6 @@ internal static partial class Program
 		{
 			harmony.UnpatchAll(harmony.Id);
 			VitalSparkApplications.Clear();
-			foreach (Type type in added)
-			{
-				ModelDb.Remove(type);
-			}
 		}
 	}
 

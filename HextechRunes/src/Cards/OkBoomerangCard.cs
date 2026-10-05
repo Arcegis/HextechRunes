@@ -17,12 +17,7 @@ public sealed class OkBoomerangCard : HextechOwnerPoolTokenCard
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		if (Owner?.Creature.CombatState == null)
-		{
-			return;
-		}
-
-		List<Creature> enemies = Owner.Creature.CombatState.HittableEnemies.ToList();
+		List<Creature> enemies = Owner.Creature.CombatState!.HittableEnemies.ToList();
 		if (enemies.Count == 0)
 		{
 			return;
@@ -52,7 +47,7 @@ public sealed class OkBoomerangCard : HextechOwnerPoolTokenCard
 
 	private async Task StrikeIfHittable(PlayerChoiceContext choiceContext, CardPlay cardPlay, Creature enemy)
 	{
-		if (enemy.IsDead || Owner?.Creature.CombatState == null)
+		if (enemy.IsDead || Owner.Creature.CombatState == null)
 		{
 			return;
 		}

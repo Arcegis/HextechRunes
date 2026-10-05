@@ -20,8 +20,7 @@ public sealed class ShriekUpgradeRune : CardUpgradeRuneBase<PiercingWail>
 
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
-		if (Owner == null
-			|| Owner.Creature.IsDead
+		if (Owner.Creature.IsDead
 			|| cardPlay.Card.Owner != Owner
 			|| cardPlay.Card is not PiercingWail
 			|| Owner.Creature.CombatState is not { } combatState)

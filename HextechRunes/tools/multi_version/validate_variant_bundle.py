@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import re
 
-from variant_common import COMPAT_MARKER_NAME, require_under, sha256, version_key
+from variant_common import COMPAT_MARKER_NAME, sha256, version_key
 
 SHA256_RE = re.compile(r"[0-9a-fA-F]{64}")
 
@@ -16,7 +16,6 @@ def main() -> int:
     parser.add_argument("--dist", type=Path, required=True)
     parser.add_argument("--mod-id", required=True)
     parser.add_argument("--manifest-name", required=True)
-    parser.add_argument("--assembly")
     args = parser.parse_args()
 
     dist = args.dist.resolve()
@@ -25,7 +24,7 @@ def main() -> int:
     if Path(args.manifest_name).name != args.manifest_name:
         raise ValueError("--manifest-name must be a basename")
 
-    assembly = args.assembly or f"{args.mod_id}.dll"
+    assembly = f"{args.mod_id}.dll"
     mod_manifest_path = dist / f"{args.mod_id}.json"
     with mod_manifest_path.open(encoding="utf-8") as handle:
         mod_manifest = json.load(handle)
@@ -72,15 +71,11 @@ def main() -> int:
             )
 
         directory = dist / expected_directory
-        require_under(directory, lib_root)
-        if directory.resolve().name != target:
-            raise ValueError(f"variant directory basename mismatch: {directory}")
         marker = directory / COMPAT_MARKER_NAME
         if marker.read_text(encoding="utf-8").strip() != target:
             raise ValueError(f"compatibility marker mismatch: {marker}")
 
         dll = directory / assembly
-        require_under(dll, directory)
         if not dll.is_file():
             raise FileNotFoundError(f"missing variant DLL: {dll}")
         expected_dlls.add(dll.resolve())

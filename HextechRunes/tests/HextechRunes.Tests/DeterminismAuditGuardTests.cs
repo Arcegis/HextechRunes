@@ -15,23 +15,15 @@ internal static partial class Program
 	private static void GameplayDeterminismApisRequireReviewedExceptions()
 	{
 		string pattern = @"\bSystem\s*\.\s*Random\b|\bnew\s+Random\s*\(|\bRandom\s*\.\s*Shared\b|\bGuid\s*\.\s*NewGuid\b|\bDateTime\s*\.\s*(?:Now|UtcNow)\b|\bStopwatch\b|\bTime\s*\.\s*GetTicks\w*\b|\bGodot\s*\.\s*Timer\b";
-		Dictionary<string, string> exceptions = new(StringComparer.Ordinal)
+		// 每个例外文件只放行一种 API,且必须写明为什么它不影响共享状态。
+		Dictionary<string, (string Api, string Reason)> exceptions = new(StringComparer.Ordinal)
 		{
-			["src/Services/HextechFeaturedConfigs.cs"] = "DateTime.UtcNow：只给推荐配置HTTP缓存定时，不驱动战斗状态或共享RNG。",
-			["src/Selection/UI/HextechGoldenRerollVisual.cs"] = "Time.GetTicksMsec：只计算重随机特效进度，不决定抽选结果。",
-			["src/Selection/UI/HextechRuneSelectionScreen.Interaction.cs"] = "Time.GetTicksMsec：仅防本地重复点击，最终选择按模型ID同步。",
-			["src/Hooks/UI/HextechRelicVisibilityHooks.ToggleUi.cs"] = "Godot.Timer：只重定位隐藏遗物按钮，不改模型或共享RNG。",
-			["src/Runes/NatureIsHealingRune.cs"] = "Godot.Timer：BeforeCombatStart仅在非联机创建；联机获取池禁用，旧档使用同步回合Hook。",
-			["src/EnemyHexes/NatureIsHealingEnemyHex.cs"] = "Godot.Timer：ApplyCombatStartToEnemy仅在非联机创建；联机池禁用，旧档使用同步回合Hook。"
-		};
-		Dictionary<string, string> allowedApis = new(StringComparer.Ordinal)
-		{
-			["src/Services/HextechFeaturedConfigs.cs"] = "DateTime.UtcNow",
-			["src/Selection/UI/HextechGoldenRerollVisual.cs"] = "Time.GetTicksMsec",
-			["src/Selection/UI/HextechRuneSelectionScreen.Interaction.cs"] = "Time.GetTicksMsec",
-			["src/Hooks/UI/HextechRelicVisibilityHooks.ToggleUi.cs"] = "Godot.Timer",
-			["src/Runes/NatureIsHealingRune.cs"] = "Godot.Timer",
-			["src/EnemyHexes/NatureIsHealingEnemyHex.cs"] = "Godot.Timer"
+			["src/Services/HextechFeaturedConfigs.cs"] = ("DateTime.UtcNow", "只给推荐配置HTTP缓存定时，不驱动战斗状态或共享RNG。"),
+			["src/Selection/UI/HextechGoldenRerollVisual.cs"] = ("Time.GetTicksMsec", "只计算重随机特效进度，不决定抽选结果。"),
+			["src/Selection/UI/HextechRuneSelectionScreen.Interaction.cs"] = ("Time.GetTicksMsec", "仅防本地重复点击，最终选择按模型ID同步。"),
+			["src/Hooks/UI/HextechRelicVisibilityHooks.ToggleUi.cs"] = ("Godot.Timer", "只重定位隐藏遗物按钮，不改模型或共享RNG。"),
+			["src/Runes/NatureIsHealingRune.cs"] = ("Godot.Timer", "BeforeCombatStart仅在非联机创建；联机获取池禁用，旧档使用同步回合Hook。"),
+			["src/EnemyHexes/NatureIsHealingEnemyHex.cs"] = ("Godot.Timer", "ApplyCombatStartToEnemy仅在非联机创建；联机池禁用，旧档使用同步回合Hook。")
 		};
 		List<string> violations = [];
 		HashSet<string> seenExceptions = new(StringComparer.Ordinal);
@@ -45,7 +37,7 @@ internal static partial class Program
 			foreach (Match match in Regex.Matches(AuditSource(file), pattern))
 			{
 				string api = Regex.Replace(match.Value, @"\s+", "");
-				if (allowedApis.TryGetValue(relative, out string? allowed) && api == allowed && !string.IsNullOrWhiteSpace(exceptions[relative]))
+				if (exceptions.TryGetValue(relative, out (string Api, string Reason) exception) && api == exception.Api && !string.IsNullOrWhiteSpace(exception.Reason))
 				{
 					seenExceptions.Add(relative);
 				}

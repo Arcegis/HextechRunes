@@ -176,33 +176,22 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 
 		HextechLog.Info("Mayhem", $"RuneChoice wait remote: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={selection.ChoiceId}");
-		(PlayerChoiceResult remoteChoice, uint receivedChoiceId)? received = await TryWaitForRemoteHextechChoice(
+		// 解码结果在 isExpected 回调里捕获:等待只会在它返回 true 时结束,之后不再二次解码。
+		RuneSelectionPayload? decoded = null;
+		(_, uint receivedChoiceId) = await WaitForRemoteHextechChoice(
 			synchronizer,
 			(RunState)selection.Player.RunState,
 			selection.Player,
 			selection.ChoiceId,
-			result => HextechChoiceCodec.IsRuneSelection(result, actIndex, choiceOrdinal),
+			result => HextechChoiceCodec.TryDecodeRuneSelection(result, actIndex, choiceOrdinal, out decoded),
 			context,
-			RemoteRuneChoicePollFrames,
-			() => ShouldKeepWaitingForRemoteRuneChoice((RunState)selection.Player.RunState),
 			cancellationToken: cancellationToken);
-		if (!received.HasValue)
-		{
-			throw new OperationCanceledException(
-				$"Remote rune selection was interrupted: {context} player={selection.Player.NetId} choiceId={selection.ChoiceId}.");
-		}
-
-		(PlayerChoiceResult remoteChoice, uint receivedChoiceId) = received.Value;
 		HextechLog.Info("Mayhem", $"RuneChoice remote received: act={actIndex} ordinal={choiceOrdinal} player={selection.Player.NetId} choiceId={receivedChoiceId}");
-		return ResolveRemoteRuneChoice(modifier, selection.Player, actIndex, choiceOrdinal, remoteChoice);
+		return ResolveRemoteRuneChoice(modifier, selection.Player, actIndex, choiceOrdinal, decoded!);
 	}
 
-	private static bool ShouldKeepWaitingForRemoteRuneChoice(RunState runState)
-	{
-		return IsCurrentRun(runState) && HextechPlayerContextHelper.IsMultiplayerConnected();
-	}
-
-	private static async Task<HextechRuneSelectionScreen> CreateRuneSelectionScreenAsync(
+	/// <summary>等待覆盖层栈就绪后创建并推入选择界面;符文、仅敌方、"无候选"与锻造三选一共用。</summary>
+	internal static async Task<HextechRuneSelectionScreen> CreateRuneSelectionScreenAsync(
 		IReadOnlyList<RelicModel> relics,
 		RelicModel? monsterHexRelic,
 		Func<IReadOnlyList<RelicModel>, int, int, IReadOnlyList<RelicModel>>? rerollFunc = null,
@@ -212,7 +201,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		HextechGoldenRerollSession? goldenRerollSession = null,
 		CancellationToken cancellationToken = default,
 		IReadOnlyList<RelicModel>? selfPickPool = null,
-		bool continueOnly = false)
+		bool continueOnly = false,
+		HextechSelectionMetadataMode metadataMode = HextechSelectionMetadataMode.PlayerRune)
 	{
 		await WaitForSingletonAsync(static () => NOverlayStack.Instance, cancellationToken: cancellationToken);
 		HextechRuneSelectionScreen selectionScreen = HextechRuneSelectionScreen.Create(
@@ -222,12 +212,13 @@ internal static partial class HextechRuneSelectionCoordinator
 			enemyHexOptions,
 			playerRuneRerollLimit,
 			titleOverride,
-			goldenRerollSession: goldenRerollSession,
-			selfPickPool: selfPickPool,
-			continueOnly: continueOnly);
+			metadataMode,
+			goldenRerollSession,
+			selfPickPool,
+			continueOnly);
 		if (NOverlayStack.Instance == null)
 		{
-			throw new InvalidOperationException("NOverlayStack is not available for rune selection.");
+			throw new InvalidOperationException("NOverlayStack is not available for hextech selection.");
 		}
 
 		NOverlayStack.Instance.Push(selectionScreen);
@@ -288,8 +279,8 @@ internal static partial class HextechRuneSelectionCoordinator
 		}
 		catch (Exception ex)
 		{
-			// 构造失败就退回普通的三选一界面,不阻断本幕选择。
-			HextechLog.Warn("Mayhem", $"Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex.GetType().Name}: {ex.Message}");
+			// 自选池只影响本机界面:构造失败就记错误并退回普通的三选一界面,不阻断本幕选择。
+			HextechLog.Error("Mayhem", $"Self-pick pool unavailable, falling back to regular choices: player={player.NetId} error={ex}");
 			return null;
 		}
 	}
@@ -320,16 +311,11 @@ internal static partial class HextechRuneSelectionCoordinator
 		Player player,
 		int actIndex,
 		int choiceOrdinal,
-		PlayerChoiceResult remoteChoice)
+		RuneSelectionPayload decoded)
 	{
-		if (!HextechChoiceCodec.TryDecodeRuneSelection(remoteChoice, actIndex, choiceOrdinal, out int selectedIndex, out List<int> rerollHistory, out List<ModelId> syncedOptionIds, out List<ModelId> offeredOptionIds))
-		{
-			string message =
-				$"Malformed rune selection payload: act={actIndex} ordinal={choiceOrdinal} " +
-				$"player={player.NetId} result={remoteChoice}";
-			throw CreateProtocolFailure($"rune-choice act={actIndex} ordinal={choiceOrdinal}", message);
-		}
-
+		int selectedIndex = decoded.SelectedIndex;
+		IReadOnlyList<ModelId> syncedOptionIds = decoded.FinalOptionIds;
+		IReadOnlyList<ModelId> offeredOptionIds = decoded.SeenOptionIds;
 		if (syncedOptionIds.Count == 0)
 		{
 			string message =
@@ -362,15 +348,17 @@ internal static partial class HextechRuneSelectionCoordinator
 			throw CreateProtocolFailure($"rune-choice act={actIndex} ordinal={choiceOrdinal}", message);
 		}
 
-		if (!HextechGeneratedRuneDataCodec.Restore(remoteChoice, syncedOptions))
+		if (!HextechGeneratedRuneDataCodec.Restore(decoded.GeneratedRuneData, syncedOptions))
 		{
 			throw CreateProtocolFailure("generated rune data", "Invalid or missing generated rune recipe.");
 		}
 
-		if (!HextechRuneWeightCodec.TryRestore(remoteChoice, syncedOptions, out syncedOptions))
+		if (decoded.CharacterWeightPercent is not int characterWeightPercent)
 		{
 			throw CreateProtocolFailure("character rune weight", "Rune selection omitted a valid final character weight.");
 		}
+
+		syncedOptions = new HextechWeightedRuneOptions(syncedOptions, characterWeightPercent);
 
 		if (selectedIndex < -1 || selectedIndex >= syncedOptions.Count)
 		{
@@ -385,8 +373,8 @@ internal static partial class HextechRuneSelectionCoordinator
 			selectedIndex >= 0 ? syncedOptions[selectedIndex] : null,
 			$"remote rune-choice act={actIndex} ordinal={choiceOrdinal} player={player.NetId}");
 		CommitSeenRuneSelection(modifier, player, offeredOptionIds, syncedOptions);
-		HextechLog.Info("Mayhem", $"ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", rerollHistory)} syncedOptions={string.Join(",", syncedOptions.Select(static o => o.CanonicalId().Entry))}");
-		return new RuneSelectionResult(syncedSelectedRelic, syncedOptions, rerollHistory.Count);
+		HextechLog.Info("Mayhem", $"ResolveRemoteRuneChoice: player={player.NetId} selectedIndex={selectedIndex} rerolls={string.Join(",", decoded.RerollHistory)} syncedOptions={string.Join(",", syncedOptions.Select(static o => o.CanonicalId().Entry))}");
+		return new RuneSelectionResult(syncedSelectedRelic, syncedOptions, decoded.RerollHistory.Count);
 	}
 
 	private static async Task<T> WaitForSelectionWithConcurrentFailure<T>(
