@@ -192,3 +192,33 @@ test("重建锁被占用时 --rebuild-derived 以非零退出", () => {
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("--rebuild-derived 计入文件末尾没有换行的完整记录，截断的末行计为格式错误", () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-tail-"));
+  try {
+    const resultsPath = path.join(dataDir, "run_results.jsonl");
+    const summaryPath = path.join(dataDir, "derived", "summary.json");
+    const record = (runId) => JSON.stringify({ receivedAtUtc: new Date().toISOString(), payloadHash: `hash-${runId}`, payload: makePayload(runId) });
+    const rebuild = () => spawnSync(process.execPath, [SERVER_FILE, "--rebuild-derived"], {
+      env: { ...process.env, DATA_DIR: dataDir },
+      encoding: "utf8"
+    });
+
+    fs.writeFileSync(resultsPath, `${record("run-tail-a")}\n${record("run-tail-b")}`, "utf8");
+    let result = rebuild();
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    let summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+    assert.equal(summary.runCount, 2, "complete last record without a trailing newline is counted");
+    assert.equal(summary.raw.malformedLines, 0);
+    assert.equal(summary._incremental.source.offset, fs.statSync(resultsPath).size);
+
+    fs.writeFileSync(resultsPath, `${record("run-tail-a")}\n${record("run-tail-b").slice(0, 40)}`, "utf8");
+    result = rebuild();
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+    assert.equal(summary.runCount, 1);
+    assert.equal(summary.raw.malformedLines, 1, "truncated last line is reported as malformed, not silently skipped");
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});

@@ -206,7 +206,10 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-function forEachJsonlLineFromOffset(filePath, requestedOffset, callback) {
+// includeUnterminatedTail:全量重建把文件末尾没有换行的最后一行也当成一行处理(完整 JSON 照常计入,
+// 截断的计为格式错误),因为重建的检查点设在文件末尾,这一行之后不会再被回放。增量回放不开启:
+// 末尾半行可能还在写入中,检查点停在最后一个换行处。
+function forEachJsonlLineFromOffset(filePath, requestedOffset, callback, { includeUnterminatedTail = false } = {}) {
   if (!fs.existsSync(filePath)) {
     return { lineCount: 0, endOffset: 0 };
   }
@@ -257,6 +260,18 @@ function forEachJsonlLineFromOffset(filePath, requestedOffset, callback) {
       carry = Buffer.from(chunk.subarray(lineStart));
       lineOffset = readOffset - carry.length;
     }
+
+    if (includeUnterminatedTail && carry.length > 0 && !skipPartialLine) {
+      let line = carry;
+      if (line[line.length - 1] === 13) {
+        line = line.subarray(0, line.length - 1);
+      }
+      if (line.toString("utf8").trim().length > 0) {
+        callback(line.toString("utf8"), lineOffset, readOffset);
+        lineCount += 1;
+      }
+      lineOffset = readOffset;
+    }
   } finally {
     fs.closeSync(fd);
   }
@@ -279,7 +294,7 @@ function buildRecordIndex() {
     } catch {
       malformedLines += 1;
     }
-  });
+  }, { includeUnterminatedTail: true });
 
   return {
     latestOffsets: new Set(latestOffsetsByRunId.values()),
@@ -300,7 +315,7 @@ function forEachLatestRecord(recordIndex, callback) {
     } catch {
       // Malformed latest lines are already counted during indexing.
     }
-  });
+  }, { includeUnterminatedTail: true });
 }
 
 function getRun(record) {
