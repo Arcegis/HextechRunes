@@ -61,7 +61,13 @@ internal static partial class HextechCombatHooks
 		RunState? runState,
 		HextechMayhemModifier? modifier)
 	{
-		if (creature.Side != CombatSide.Enemy || amount <= 0m || runState == null)
+		// 未启用本模组的局(或缺少本局 modifier)保持原版治疗:不在治疗回调里补挂 modifier,
+		// 也不改原版潜伏虫群的回血。
+		if (creature.Side != CombatSide.Enemy
+			|| amount <= 0m
+			|| runState == null
+			|| modifier == null
+			|| !modifier.IsModActiveForRun)
 		{
 			return false;
 		}
@@ -75,7 +81,6 @@ internal static partial class HextechCombatHooks
 			return false;
 		}
 
-		modifier ??= HextechRunLifecycleHooks.EnsureMayhemModifier(runState);
 		if (!modifier.QueueEnemyHealingBlock(creature, amount))
 		{
 			return false;
@@ -118,7 +123,7 @@ internal static partial class HextechCombatHooks
 				}
 			}
 
-			// 延迟格挡要按具体 RunState 挂回本局 Modifier（HextechRunLifecycleHooks.EnsureMayhemModifier 只接受 RunState）。
+			// 敌方回血修正与延迟格挡都记在本局 Modifier 上。
 			RunState? currentRunState = creature.CombatState?.RunState as RunState;
 			HextechMayhemModifier? modifier = null;
 			bool isEnemyReviveHeal = IsEnemyReviveHeal(creature, amount);

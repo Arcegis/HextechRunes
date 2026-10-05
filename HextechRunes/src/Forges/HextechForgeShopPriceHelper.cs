@@ -4,22 +4,11 @@ internal static class HextechForgeShopPriceHelper
 {
 	public static int GetCurrentRandomForgeShopPrice()
 	{
-		try
+		// 同 HextechForgeGrantHelper:有本局快照时不回落本地配置。
+		if (RunManager.Instance.DebugOnlyGetState() is RunState runState
+			&& TryGetRandomForgeShopPrice(runState, out int price))
 		{
-			if (RunManager.Instance.DebugOnlyGetState() is RunState runState
-				&& TryGetRandomForgeShopPrice(runState, out int price))
-			{
-				return price;
-			}
-		}
-		catch (InvalidOperationException ex)
-		{
-			if (HextechRunLogBudget.TryConsume("forge.shop-price-config-fallback", 3))
-			{
-				HextechLog.Warn(
-					"Forge", $"Could not read synchronized random forge shop price; "
-					+ $"using local configuration fallback: {ex.GetType().Name}: {ex.Message}");
-			}
+			return price;
 		}
 
 		return HextechRuneConfiguration.GetSnapshot().RandomForgeShopPrice;

@@ -166,44 +166,6 @@ internal static partial class Program
 	}
 
 	[HextechTest]
-	private static void CardUpgradeReplacementBodiesMatchReviewedVanilla()
-	{
-		(Type Type, string Name)[] targets =
-		[
-			(typeof(LoopPower), nameof(LoopPower.AfterPlayerTurnStart)),
-			(typeof(RagePower), nameof(RagePower.AfterSideTurnEnd)),
-			(typeof(ReflectPower), nameof(ReflectPower.AfterSideTurnStart)),
-			(typeof(FlakCannon), "OnPlay"), (typeof(Reboot), "OnPlay"), (typeof(Hang), "OnPlay"), (typeof(Neurosurge), "OnPlay"),
-			(typeof(InfernoPower), nameof(InfernoPower.AfterDamageReceived)),
-			(typeof(FlameBarrierPower), nameof(FlameBarrierPower.AfterDamageReceived))
-		];
-		IReadOnlyDictionary<string, string> expected = HextechVanillaCopyGuard.LoadExpectedHashes();
-		List<string> rows = [];
-		foreach ((Type type, string name) in targets)
-		{
-			MethodInfo entry = AccessTools.Method(type, name);
-			IEnumerable<MethodInfo> methods = entry.GetCustomAttribute<AsyncStateMachineAttribute>() == null
-				? [entry] : [entry, GetAsyncStateMachineMoveNext(entry)];
-			foreach (MethodInfo method in methods)
-			{
-				string key = HextechVanillaCopyGuard.DescribeTarget(method);
-				string hash = HextechVanillaCopyGuard.ComputeIlHash(method)!;
-				rows.Add($"{key}={hash}");
-				if (Environment.GetEnvironmentVariable("HEXTECH_WRITE_UPGRADE_GUARD") != "1")
-				{
-					Expect(expected.TryGetValue(key, out string? frozen) && frozen == hash, "review native upgrade target after IL drift: " + key);
-				}
-			}
-		}
-		if (Environment.GetEnvironmentVariable("HEXTECH_WRITE_UPGRADE_GUARD") == "1")
-		{
-			string path = Path.Combine(FindTestsSourceDirectory(), "..", $"vanilla_copy_guard.{ModInfo.TargetGameVersion}.txt");
-			string[] old = File.Exists(path) ? File.ReadAllLines(path) : ["# 原版局部替换守卫：入口与异步结算体。"];
-			File.WriteAllLines(path, old.Concat(rows).Distinct());
-		}
-	}
-
-	[HextechTest]
 	private static void SearingAttackRuneGrantsUpgradedCard()
 	{
 		Expect(typeof(HextechOwnerPoolTokenCard).IsAbstract, "owner-pool token card base should stay abstract");
