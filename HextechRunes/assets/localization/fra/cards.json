@@ -47,12 +47,12 @@
   "colorDiscoveryRune.selectionScreenPrompt": "Choisissez 1 Carte à ajouter à votre main.",
   "COLOR_DISCOVERY_RUNE.selectionScreenPrompt": "Choisissez 1 Carte à ajouter à votre main.",
   "FEEL_THE_BURN_CARD.title": "Brûle, brûle...",
-  "FEEL_THE_BURN_CARD.description": "Retirez tous les effets présents sur tous les ennemis.\nAppliquez  [blue]{HextechBurnPower}[/blue] [gold]Brûlure[/gold] sur chacun d'entre eux.",
+  "FEEL_THE_BURN_CARD.description": "Retirez tous les effets présents sur tous les ennemis.\nAppliquez [blue]{HextechBurnPower}[/blue] [gold]Brûlure[/gold] sur chacun d'entre eux.",
   "FEEL_THE_BURN_CARD.flavor": "Etouffez leur flamme...Et que la vôtre les consume !",
-  "OK_BOOMERANG_CARD.title": "OK Boomerang",
+  "OK_BOOMERANG_CARD.title": "OK Boomer-ang",
   "OK_BOOMERANG_CARD.description": "Infligez {Damage:diff()} dégâts à tous les ennemis [blue]{Hits}[/blue] fois.\n Cette carte revient dans votre Main.",
   "OK_BOOMERANG_CARD.flavor": "Un meme plus tenace qu'un percepteur d'impôts.",
   "QUANTUM_COMPUTING_CARD.title": "Balayages Tactiques",
-  "QUANTUM_COMPUTING_CARD.description": "Infligez aux ennemis des dégâts équivalents à {DamagePercent:diff()}% de leurs PV Max, puis Soignez-vous de {SoignezPercent:diff()}% des dégâts ainsi infligés.",
+  "QUANTUM_COMPUTING_CARD.description": "Infligez aux ennemis des dégâts équivalents à {DamagePercent:diff()}% de leurs PV Max, puis Soignez-vous de {HealPercent:diff()}% des dégâts ainsi infligés.",
   "QUANTUM_COMPUTING_CARD.flavor": "La réponse est toujours : Pas suffisamment de PV."
 }

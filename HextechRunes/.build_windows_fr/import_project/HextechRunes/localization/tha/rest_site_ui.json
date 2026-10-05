@@ -1,0 +1,5 @@
+{
+  "OPTION_STOKE.name": "เขี่ยไฟ",
+  "OPTION_STOKE.description": "กำจัดการ์ด [blue]1[/blue] ใบออกจากกองการ์ด",
+  "OPTION_STOKE.descriptionDisabled": "คุณไม่มีการ์ดที่กำจัดได้"
+}

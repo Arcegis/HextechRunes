@@ -1,0 +1,5 @@
+{
+  "OPTION_STOKE.name": "Alimentar o Fogo",
+  "OPTION_STOKE.description": "Remova [blue]1[/blue] carta do seu baralho.",
+  "OPTION_STOKE.descriptionDisabled": "Você não tem cartas removíveis."
+}

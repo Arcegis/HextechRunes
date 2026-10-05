@@ -1,0 +1,5 @@
+{
+  "OPTION_STOKE.name": "添柴",
+  "OPTION_STOKE.description": "从牌组中移除[blue]1[/blue]张牌。",
+  "OPTION_STOKE.descriptionDisabled": "没有可以移除的牌。"
+}
