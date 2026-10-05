@@ -46,7 +46,7 @@ async function waitForServer(port, child) {
   throw new Error("server did not become ready");
 }
 
-async function startServer(dataDir, port) {
+async function startServer(dataDir, port, extraEnv = {}) {
   const publicDir = path.join(dataDir, "public");
   fs.mkdirSync(publicDir, { recursive: true });
   for (const fileName of ["index.html", "latest-version.json"]) {
@@ -61,7 +61,8 @@ async function startServer(dataDir, port) {
       PUBLIC_DIR: publicDir,
       SUMMARY_FLUSH_INTERVAL_MS: "1000",
       RECENT_RUN_ID_LIMIT: "1000",
-      RECENT_RUN_ID_TAIL_BYTES: String(1024 * 1024)
+      RECENT_RUN_ID_TAIL_BYTES: String(1024 * 1024),
+      ...extraEnv
     },
     stdio: ["ignore", "pipe", "pipe"]
   });
@@ -218,6 +219,95 @@ test("--rebuild-derived 计入文件末尾没有换行的完整记录，截断�
     summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
     assert.equal(summary.runCount, 1);
     assert.equal(summary.raw.malformedLines, 1, "truncated last line is reported as malformed, not silently skipped");
+  } finally {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+const hasZstd = spawnSync("zstd", ["--version"]).status === 0;
+
+async function waitFor(predicate, message) {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    if (await predicate()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(message);
+}
+
+test("原始库按大小滚动进 archive/ 并压缩，去重与全量重建跨段生效", { skip: !hasZstd && "zstd not installed" }, async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-rotate-"));
+  const port = 39000 + Math.floor(Math.random() * 1000);
+  const env = { RESULTS_ROTATE_BYTES: "4096", ZSTD_LEVEL: "3" };
+  const archiveDir = path.join(dataDir, "archive");
+  const health = () => fetch(`http://127.0.0.1:${port}/health`).then((response) => response.json());
+  let server = await startServer(dataDir, port, env);
+  try {
+    for (let index = 0; index < 8; index += 1) {
+      await postRun(port, makePayload(`run-rotate-${String(index).padStart(16, "0")}`, index % 2 === 0));
+    }
+    await waitFor(async () => {
+      const status = (await health()).archive;
+      return status.compressedSegments >= 1 && status.pendingSegments === 0 && !status.compressing;
+    }, "archive segment was not compressed");
+    assert.ok(fs.readdirSync(archiveDir).every((name) => name.endsWith(".jsonl.zst")), "plain segments are removed after compression");
+    assert.ok(fs.statSync(path.join(dataDir, "run_results.jsonl")).size < 4096, "current segment restarted after rotation");
+
+    // 第一条已滚进归档段，内存里的近期窗口仍能拦住重传。
+    assert.equal((await postRun(port, makePayload(`run-rotate-${"0".padStart(16, "0")}`))).duplicate, true);
+    assert.equal((await health()).runs, 8);
+  } finally {
+    await stopServer(server);
+  }
+
+  // 重启后靠 recent-run-ids.json 继续拦住归档段里的重传。
+  server = await startServer(dataDir, port, env);
+  try {
+    assert.equal((await postRun(port, makePayload(`run-rotate-${"0".padStart(16, "0")}`))).duplicate, true);
+    assert.equal((await health()).runs, 8);
+  } finally {
+    await stopServer(server);
+  }
+
+  const rebuild = spawnSync(process.execPath, [SERVER_FILE, "--rebuild-derived"], {
+    env: { ...process.env, DATA_DIR: dataDir, ...env },
+    encoding: "utf8"
+  });
+  assert.equal(rebuild.status, 0, rebuild.stderr || rebuild.stdout);
+  const rebuilt = JSON.parse(fs.readFileSync(path.join(dataDir, "derived", "summary.json"), "utf8"));
+  assert.equal(rebuilt.runCount, 8, "full rebuild reads compressed archive segments and the current segment");
+  assert.equal(rebuilt.raw.physicalLines, 8);
+  fs.rmSync(dataDir, { recursive: true, force: true });
+});
+
+test("滚动在改名后、summary 落盘前中断时，启动先补完旧段再接着回放当前段", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hextech-telemetry-rotate-crash-"));
+  const port = 40000 + Math.floor(Math.random() * 1000);
+  const resultsPath = path.join(dataDir, "run_results.jsonl");
+  const record = (runId) => `${JSON.stringify({ receivedAtUtc: new Date().toISOString(), payloadHash: `hash-${runId}`, payload: makePayload(runId) })}\n`;
+  try {
+    fs.writeFileSync(resultsPath, record("run-crash-a-0000000000000000") + record("run-crash-b-0000000000000000"), "utf8");
+    const rebuild = spawnSync(process.execPath, [SERVER_FILE, "--rebuild-derived"], {
+      env: { ...process.env, DATA_DIR: dataDir },
+      encoding: "utf8"
+    });
+    assert.equal(rebuild.status, 0, rebuild.stderr || rebuild.stdout);
+
+    // 检查点之后旧段又写了一条，然后改名进 archive/、开了新段并写入一条，summary 没来得及落盘。
+    fs.appendFileSync(resultsPath, record("run-crash-c-0000000000000000"), "utf8");
+    fs.mkdirSync(path.join(dataDir, "archive"));
+    fs.renameSync(resultsPath, path.join(dataDir, "archive", "run_results-20260101T000000Z.jsonl"));
+    fs.writeFileSync(resultsPath, record("run-crash-d-0000000000000000"), "utf8");
+
+    const server = await startServer(dataDir, port, { ZSTD_BIN: "/nonexistent/zstd" });
+    try {
+      const status = await fetch(`http://127.0.0.1:${port}/health`).then((response) => response.json());
+      assert.equal(status.runs, 4);
+      assert.equal((await postRun(port, makePayload("run-crash-c-0000000000000000"))).duplicate, true);
+    } finally {
+      await stopServer(server);
+    }
   } finally {
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
