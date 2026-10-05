@@ -1,5 +1,7 @@
 const http = require("node:http");
 const fs = require("node:fs");
+const readline = require("node:readline");
+const { spawn } = require("node:child_process");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const community = require("./community");
@@ -15,6 +17,15 @@ const REBUILD_LOCK_FILE = path.join(DERIVED_DIR, ".summary-rebuild.lock");
 const LABELS_FILE = path.join(__dirname, "labels.json");
 const LATEST_VERSION_FILE = path.join(PUBLIC_DIR, "latest-version.json");
 const RESULTS_FILE = path.join(DATA_DIR, "run_results.jsonl");
+// 原始库按大小滚动：写满的段改名进 archive/，后台用 zstd 压成 .jsonl.zst，校验通过后删除明文段。
+const ARCHIVE_DIR = path.join(DATA_DIR, "archive");
+const ARCHIVE_SEGMENT_PATTERN = /^run_results-\d{8}T\d{6}Z\.jsonl(\.zst)?$/;
+const RECENT_RUN_IDS_FILE = path.join(DATA_DIR, "recent-run-ids.json");
+const parsedRotateBytes = Number.parseInt(process.env.RESULTS_ROTATE_BYTES || String(2 * 1024 * 1024 * 1024), 10);
+const RESULTS_ROTATE_BYTES = Number.isFinite(parsedRotateBytes) ? Math.max(1024, parsedRotateBytes) : 2 * 1024 * 1024 * 1024;
+const ZSTD_BIN = process.env.ZSTD_BIN || "zstd";
+const ZSTD_LEVEL = /^\d{1,2}$/.test(process.env.ZSTD_LEVEL || "") ? process.env.ZSTD_LEVEL : "19";
+const ARCHIVE_RETRY_DELAY_MS = 60 * 60 * 1000;
 const MAX_BODY_BYTES = 256 * 1024;
 const MIN_RUN_TIME_FOR_DEFAULT_STATS = 60;
 const parsedSummaryFlushIntervalMs = Number.parseInt(process.env.SUMMARY_FLUSH_INTERVAL_MS || "300000", 10);
@@ -43,6 +54,12 @@ const derivedState = {
 };
 let summaryBundle = null;
 let resultsEndOffset = fs.existsSync(RESULTS_FILE) ? fs.statSync(RESULTS_FILE).size : 0;
+const archiveState = {
+  rotateRetryAtMs: 0,
+  compressing: null,
+  retryTimer: null,
+  lastError: null
+};
 
 function loadLabels() {
   try {
@@ -71,6 +88,18 @@ function displayLabel(row) {
 
 function loadRecentRunIds() {
   const ids = new Map();
+  // 滚动后当前段很短，读不到足够的尾部；滚动时落盘的窗口补上旧段末尾的 runId。
+  try {
+    if (fs.existsSync(RECENT_RUN_IDS_FILE)) {
+      for (const runId of JSON.parse(fs.readFileSync(RECENT_RUN_IDS_FILE, "utf8"))) {
+        if (typeof runId === "string" && runId.length > 0) {
+          rememberRunId(ids, runId);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(`failed to load ${RECENT_RUN_IDS_FILE}: ${error.message}`);
+  }
   if (!fs.existsSync(RESULTS_FILE)) {
     return ids;
   }
@@ -199,6 +228,7 @@ async function handleIngest(req, res) {
   applyRecordToSummaryBundle(summaryBundle, record);
   markDerivedDirty(resultsEndOffset);
   scheduleSummaryFlush();
+  maybeRotateResults();
   return sendJson(res, 202, { ok: true, duplicate: false, runId });
 }
 
@@ -279,35 +309,115 @@ function forEachJsonlLineFromOffset(filePath, requestedOffset, callback, { inclu
   return { lineCount, endOffset: lineOffset };
 }
 
-function buildRecordIndex() {
-  const latestOffsetsByRunId = new Map();
+// 归档段按文件名（时间戳）排序，最后是当前段。同一段既有明文又有 .zst 时（压缩尚未收尾）读明文。
+function listResultSegments() {
+  const segments = [];
+  if (fs.existsSync(ARCHIVE_DIR)) {
+    const names = fs.readdirSync(ARCHIVE_DIR).filter((name) => ARCHIVE_SEGMENT_PATTERN.test(name));
+    const byBase = new Map();
+    for (const name of names) {
+      const base = name.replace(/\.zst$/, "");
+      const entry = byBase.get(base) || {};
+      if (name.endsWith(".zst")) {
+        entry.compressed = path.join(ARCHIVE_DIR, name);
+      } else {
+        entry.plain = path.join(ARCHIVE_DIR, name);
+      }
+      byBase.set(base, entry);
+    }
+    for (const base of [...byBase.keys()].sort()) {
+      const entry = byBase.get(base);
+      segments.push(entry.plain
+        ? { path: entry.plain, compressed: false }
+        : { path: entry.compressed, compressed: true });
+    }
+  }
+  segments.push({ path: RESULTS_FILE, compressed: false });
+  return segments;
+}
+
+function forEachZstdLine(filePath, callback) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(ZSTD_BIN, ["-dcq", filePath], { stdio: ["ignore", "pipe", "pipe"] });
+    let stderr = "";
+    let lineNumber = 0;
+    let callbackError = null;
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    const lines = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
+    lines.on("line", (line) => {
+      lineNumber += 1;
+      if (callbackError || line.trim().length === 0) {
+        return;
+      }
+      try {
+        callback(line, lineNumber);
+      } catch (error) {
+        callbackError = error;
+        child.kill();
+      }
+    });
+    child.on("close", (code) => {
+      if (callbackError) {
+        reject(callbackError);
+      } else if (code !== 0) {
+        reject(new Error(`zstd failed to read ${filePath} (exit ${code}): ${stderr.trim()}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+// 两遍扫描用同一份段列表与同一种读取方式，键为 段序号×2^40 + 段内位置（明文段是字节偏移、压缩段是行号），
+// 用数字而不是字符串，千万级记录的索引才放得进服务机内存。段在两遍之间被压缩或删除时直接报错。
+const SEGMENT_KEY_STRIDE = 2 ** 40;
+
+async function forEachResultsLine(segments, callback) {
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index];
+    if (!fs.existsSync(segment.path)) {
+      throw new Error(`results segment disappeared during rebuild: ${segment.path}; stop the service before --rebuild-derived`);
+    }
+    if (segment.compressed) {
+      await forEachZstdLine(segment.path, (line, lineNumber) => callback(line, index * SEGMENT_KEY_STRIDE + lineNumber));
+    } else {
+      forEachJsonlLineFromOffset(segment.path, 0, (line, offset) => callback(line, index * SEGMENT_KEY_STRIDE + offset), { includeUnterminatedTail: true });
+    }
+  }
+}
+
+async function buildRecordIndex(segments) {
+  const latestKeysByRunId = new Map();
   let physicalLines = 0;
   let malformedLines = 0;
-  forEachJsonlLineFromOffset(RESULTS_FILE, 0, (line, offset) => {
+  await forEachResultsLine(segments, (line, key) => {
     physicalLines += 1;
     try {
       const record = JSON.parse(line);
       const runId = record?.payload?.run?.runId;
       if (typeof runId === "string" && runId.length > 0) {
-        latestOffsetsByRunId.set(runId, offset);
+        latestKeysByRunId.set(runId, key);
       }
     } catch {
       malformedLines += 1;
     }
-  }, { includeUnterminatedTail: true });
+  });
 
   return {
-    latestOffsets: new Set(latestOffsetsByRunId.values()),
+    latestKeys: new Set(latestKeysByRunId.values()),
     physicalLines,
-    duplicateLines: Math.max(0, physicalLines - latestOffsetsByRunId.size - malformedLines),
+    duplicateLines: Math.max(0, physicalLines - latestKeysByRunId.size - malformedLines),
     malformedLines,
-    totalUniqueRuns: latestOffsetsByRunId.size
+    totalUniqueRuns: latestKeysByRunId.size
   };
 }
 
-function forEachLatestRecord(recordIndex, callback) {
-  forEachJsonlLineFromOffset(RESULTS_FILE, 0, (line, offset) => {
-    if (!recordIndex.latestOffsets.has(offset)) {
+async function forEachLatestRecord(segments, recordIndex, callback) {
+  await forEachResultsLine(segments, (line, key) => {
+    if (!recordIndex.latestKeys.has(key)) {
       return;
     }
     try {
@@ -315,7 +425,7 @@ function forEachLatestRecord(recordIndex, callback) {
     } catch {
       // Malformed latest lines are already counted during indexing.
     }
-  }, { includeUnterminatedTail: true });
+  });
 }
 
 function getRun(record) {
@@ -515,13 +625,14 @@ function finalizeSummary(summary, availableVersions) {
   return summary;
 }
 
-function buildSummaryBundle() {
-  const recordIndex = buildRecordIndex();
+async function buildSummaryBundle() {
+  const segments = listResultSegments();
+  const recordIndex = await buildRecordIndex(segments);
   const allSummary = createEmptySummary(null, recordIndex);
   const byVersion = {};
   const availableVersionCounts = {};
 
-  forEachLatestRecord(recordIndex, (record) => {
+  await forEachLatestRecord(segments, recordIndex, (record) => {
     const recordVersion = getModVersion(record);
     const isEligible = isDefaultEligible(record);
     if (!byVersion[recordVersion]) {
@@ -604,7 +715,18 @@ function initializeIncrementalSummary() {
     throw new Error(`summary.json has no supported incremental checkpoint (schema ${checkpoint?.schemaVersion}); stop the service and run node server.js --rebuild-derived`);
   }
   if (checkpoint.source?.device !== identity.device || checkpoint.source?.inode !== identity.inode) {
-    throw new Error("run_results.jsonl identity differs from summary checkpoint; stop the service and run node server.js --rebuild-derived");
+    // 滚动在改名之后、summary 落盘之前中断：检查点仍指向已改名进 archive/ 的明文段。补完它再从当前段开头接着回放。
+    const rotated = findArchivedPlainSegment(checkpoint.source);
+    if (!rotated) {
+      throw new Error("run_results.jsonl identity differs from summary checkpoint; stop the service and run node server.js --rebuild-derived");
+    }
+    summary.versionSummaries ||= {};
+    replayIncrementalTail(summary, checkpoint.source.offset, rotated.identity, rotated.path);
+    setIncrementalCheckpoint(summary, identity, 0);
+    writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summary, null, 2)}\n`);
+    derivedState.persistedOffset = 0;
+    replayIncrementalTail(summary, 0, identity);
+    return summary;
   }
   if (!Number.isSafeInteger(checkpoint.source.offset) || checkpoint.source.offset < 0 || checkpoint.source.offset > identity.size) {
     throw new Error("summary checkpoint offset is outside run_results.jsonl");
@@ -612,6 +734,140 @@ function initializeIncrementalSummary() {
   summary.versionSummaries ||= {};
   replayIncrementalTail(summary, checkpoint.source.offset, identity);
   return summary;
+}
+
+function findArchivedPlainSegment(source) {
+  if (!fs.existsSync(ARCHIVE_DIR)) {
+    return null;
+  }
+  for (const name of fs.readdirSync(ARCHIVE_DIR)) {
+    if (!ARCHIVE_SEGMENT_PATTERN.test(name) || name.endsWith(".zst")) {
+      continue;
+    }
+    const filePath = path.join(ARCHIVE_DIR, name);
+    const stat = fs.statSync(filePath);
+    if (String(stat.dev) === source?.device && String(stat.ino) === source?.inode) {
+      return { path: filePath, identity: { device: String(stat.dev), inode: String(stat.ino), size: stat.size } };
+    }
+  }
+  return null;
+}
+
+function archiveTimestamp(date = new Date()) {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+// 滚动失败不能影响写入：记下错误，一小时后再试；在那之前当前段照常追加。
+function maybeRotateResults() {
+  if (resultsEndOffset < RESULTS_ROTATE_BYTES || Date.now() < archiveState.rotateRetryAtMs) {
+    return;
+  }
+  try {
+    rotateResults();
+  } catch (error) {
+    archiveState.lastError = `rotate failed: ${error?.message || error}`;
+    archiveState.rotateRetryAtMs = Date.now() + ARCHIVE_RETRY_DELAY_MS;
+    console.error(archiveState.lastError);
+  }
+}
+
+// 在一次同步调用里完成改名、建新段与检查点切换，期间不会有上传插进来。
+// 先落盘近期 runId 窗口：重启后新段太短，单靠它的尾部拦不住刚滚动前已收过的重传。
+function rotateResults() {
+  fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
+  let segmentPath = path.join(ARCHIVE_DIR, `run_results-${archiveTimestamp()}.jsonl`);
+  if (fs.existsSync(segmentPath) || fs.existsSync(`${segmentPath}.zst`)) {
+    segmentPath = path.join(ARCHIVE_DIR, `run_results-${archiveTimestamp(new Date(Date.now() + 1000))}.jsonl`);
+  }
+  writeFileAtomic(RECENT_RUN_IDS_FILE, `${JSON.stringify([...recentRunIds.keys()])}\n`);
+  fs.renameSync(RESULTS_FILE, segmentPath);
+  fs.closeSync(fs.openSync(RESULTS_FILE, "a", 0o640));
+  resultsEndOffset = 0;
+  setIncrementalCheckpoint(summaryBundle, getResultsIdentity(), 0);
+  derivedState.dirty = true;
+  flushSummaryNow();
+  console.log(`rotated results into ${segmentPath}`);
+  compressPendingArchives();
+}
+
+function listPlainArchiveSegments() {
+  if (!fs.existsSync(ARCHIVE_DIR)) {
+    return [];
+  }
+  return fs.readdirSync(ARCHIVE_DIR)
+    .filter((name) => ARCHIVE_SEGMENT_PATTERN.test(name) && !name.endsWith(".zst"))
+    .sort()
+    .map((name) => path.join(ARCHIVE_DIR, name));
+}
+
+function runArchiveTool(args) {
+  return new Promise((resolve, reject) => {
+    // nice 让压缩只用空闲 CPU；服务机只有 2 核，不能和请求处理抢。
+    const child = spawn("nice", ["-n", "19", ZSTD_BIN, ...args], { stdio: ["ignore", "ignore", "pipe"] });
+    let stderr = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`zstd ${args.join(" ")} exited ${code}: ${stderr.trim()}`));
+      }
+    });
+  });
+}
+
+// 逐段压缩：先写 .partial，完整性校验通过后改名为 .zst，再删明文。服务重启会打断子进程，下次启动从明文重来。
+async function compressPendingArchives() {
+  if (archiveState.compressing || isRebuildProcess) {
+    return;
+  }
+  const source = listPlainArchiveSegments()[0];
+  if (!source) {
+    return;
+  }
+  const target = `${source}.zst`;
+  const partial = `${target}.partial`;
+  archiveState.compressing = source;
+  try {
+    fs.rmSync(partial, { force: true });
+    await runArchiveTool(["-q", `-${ZSTD_LEVEL}`, "-T1", "-f", source, "-o", partial]);
+    await runArchiveTool(["-tq", partial]);
+    fs.renameSync(partial, target);
+    fs.rmSync(source);
+    archiveState.lastError = null;
+    console.log(`compressed ${source}`);
+  } catch (error) {
+    fs.rmSync(partial, { force: true });
+    archiveState.lastError = error?.message || String(error);
+    console.error(`failed to compress ${source}: ${archiveState.lastError}`);
+    if (!archiveState.retryTimer) {
+      archiveState.retryTimer = setTimeout(() => {
+        archiveState.retryTimer = null;
+        compressPendingArchives();
+      }, ARCHIVE_RETRY_DELAY_MS);
+      archiveState.retryTimer.unref?.();
+    }
+    return;
+  } finally {
+    archiveState.compressing = null;
+  }
+  compressPendingArchives();
+}
+
+function getArchiveStatus() {
+  const names = fs.existsSync(ARCHIVE_DIR)
+    ? fs.readdirSync(ARCHIVE_DIR).filter((name) => ARCHIVE_SEGMENT_PATTERN.test(name))
+    : [];
+  return {
+    compressedSegments: names.filter((name) => name.endsWith(".zst")).length,
+    pendingSegments: names.filter((name) => !name.endsWith(".zst")).length,
+    compressing: archiveState.compressing ? path.basename(archiveState.compressing) : null,
+    lastError: archiveState.lastError,
+    rotateBytes: RESULTS_ROTATE_BYTES
+  };
 }
 
 function incrementGlobalRawCounters(summary, field) {
@@ -644,10 +900,10 @@ function recordMalformedIncrementalLine(summary) {
   incrementGlobalRawCounters(summary, "malformedLines");
 }
 
-function replayIncrementalTail(summary, startOffset, identity) {
+function replayIncrementalTail(summary, startOffset, identity, filePath = RESULTS_FILE) {
   let appliedRecords = 0;
   let malformedLines = 0;
-  const replay = forEachJsonlLineFromOffset(RESULTS_FILE, startOffset, (line) => {
+  const replay = forEachJsonlLineFromOffset(filePath, startOffset, (line) => {
     try {
       const record = JSON.parse(line);
       const runId = record?.payload?.run?.runId;
@@ -804,8 +1060,8 @@ function flushSummaryNow() {
 }
 
 // 只由离线 --rebuild-derived 进程调用，服务进程不会同时持有未落盘的增量状态。
-function rebuildDerivedTablesNow() {
-  const summary = buildSummaryBundle();
+async function rebuildDerivedTablesNow() {
+  const summary = await buildSummaryBundle();
   const identity = getResultsIdentity();
   setIncrementalCheckpoint(summary, identity, identity.size);
   writeFileAtomic(SUMMARY_FILE, `${JSON.stringify(summary, null, 2)}\n`);
@@ -821,7 +1077,7 @@ function lockLooksStale(lockPath) {
   }
 }
 
-function rebuildDerivedTablesWithLock() {
+async function rebuildDerivedTablesWithLock() {
   fs.mkdirSync(DERIVED_DIR, { recursive: true });
   let fd = null;
   try {
@@ -839,7 +1095,7 @@ function rebuildDerivedTablesWithLock() {
   }
   try {
     fs.writeFileSync(fd, `${process.pid}\n${new Date().toISOString()}\n`, "utf8");
-    return rebuildDerivedTablesNow();
+    return await rebuildDerivedTablesNow();
   } finally {
     if (fd != null) {
       fs.closeSync(fd);
@@ -1091,7 +1347,8 @@ const server = http.createServer(async (req, res) => {
       ok: true,
       service: "hextech-runes-telemetry",
       runs: summaryBundle?.raw?.totalUniqueRuns || 0,
-      derived: getDerivedStatus()
+      derived: getDerivedStatus(),
+      archive: getArchiveStatus()
     });
   }
   if (req.method === "GET" && url.pathname === "/api/hextech-runes/summary") {
@@ -1119,21 +1376,6 @@ const server = http.createServer(async (req, res) => {
   return sendText(res, 405, "method not allowed");
 });
 
-if (isRebuildProcess) {
-  try {
-    rebuildDerivedTablesWithLock();
-    process.exit(0);
-  } catch (error) {
-    console.error(error?.stack || error);
-    process.exit(1);
-  }
-}
-
-summaryBundle = initializeIncrementalSummary();
-resultsEndOffset = fs.statSync(RESULTS_FILE).size;
-derivedState.persistedOffset = summaryBundle._incremental.source.offset;
-community.init({ dataDir: DATA_DIR, publicDir: PUBLIC_DIR });
-
 function shutdown(signal) {
   if (derivedState.dirty) {
     flushSummaryNow();
@@ -1143,9 +1385,29 @@ function shutdown(signal) {
   console.log(`received ${signal}; telemetry summary flushed`);
 }
 
-process.once("SIGTERM", () => shutdown("SIGTERM"));
-process.once("SIGINT", () => shutdown("SIGINT"));
+function startService() {
+  summaryBundle = initializeIncrementalSummary();
+  resultsEndOffset = fs.statSync(RESULTS_FILE).size;
+  derivedState.persistedOffset = summaryBundle._incremental.source.offset;
+  community.init({ dataDir: DATA_DIR, publicDir: PUBLIC_DIR });
+  maybeRotateResults();
+  compressPendingArchives();
 
-server.listen(PORT, HOST, () => {
-  console.log(`hextech-runes-telemetry listening on ${HOST}:${PORT}`);
-});
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
+
+  server.listen(PORT, HOST, () => {
+    console.log(`hextech-runes-telemetry listening on ${HOST}:${PORT}`);
+  });
+}
+
+if (isRebuildProcess) {
+  rebuildDerivedTablesWithLock().then(
+    () => process.exit(0),
+    (error) => {
+      console.error(error?.stack || error);
+      process.exit(1);
+    });
+} else {
+  startService();
+}
