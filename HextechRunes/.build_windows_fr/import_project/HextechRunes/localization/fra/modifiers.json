@@ -1,0 +1,20 @@
+{
+  "HEXTECH_MAYHEM.title": "Hextech Mayhem",
+  "HEXTECH_MAYHEM.description": "Au début des Actes [blue]1[/blue], [blue]2[/blue], et [blue]3[/blue], choisissez une ou plusieurs Augmentations Hextech, puis faites de même pour les ennemis parmi un choix de la même rareté que les vôtres.",
+  "HEXTECH_SILVER_RUN.title": "Partie en Argent",
+  "HEXTECH_SILVER_RUN.description": "Toutes les Augmentations Hextech de cette partie seront de rareté Argent.",
+  "HEXTECH_GOLD_RUN.title": "Partie en Or",
+  "HEXTECH_GOLD_RUN.description": "Toutes les Augmentations Hextech de cette partie seront de rareté Or.",
+  "HEXTECH_PRISMATIC_RUN.title": "Partie Prismatique",
+  "HEXTECH_PRISMATIC_RUN.description": "Toutes les Augmentations Hextech de cette partie seront de rareté Prismatique.",
+  "HEXTECH_STUFFED_TO_RUIN_CHALLENGE.title": "Equipés pour accabler",
+  "HEXTECH_STUFFED_TO_RUIN_CHALLENGE.description": "Les Joueurs utilisent la configuration par défaut des Augmentations. Les Ennemis gagnent des Augmentations Hextech influant sur [red]les cartes de Statut[/red] .",
+  "HEXTECH_DEFENSE_COUNTER_MASTER_CHALLENGE.title": "Maître de la Contre-Attaque",
+  "HEXTECH_DEFENSE_COUNTER_MASTER_CHALLENGE.description": "Les Joueurs utilisent la configuration par défaut des Augmentations. Les Ennemis gagnent des Augmentations influant sur [red]la défense et la contre-attaque[/red].",
+  "HEXTECH_BRUTE_FORCE_CHALLENGE.title": "Force Brute",
+  "HEXTECH_BRUTE_FORCE_CHALLENGE.description": "Les Joueurs utilisent la configuration par défaut des Augmentations.. Les Ennemis gagnent des Augmentations influant sur [red]les stats brutes[/red].",
+  "HEXTECH_EIGHT_PENNY_GATE_CHALLENGE.title": "Les Portes de la Perception",
+  "HEXTECH_EIGHT_PENNY_GATE_CHALLENGE.description": "Les Joueurs utilisent la configuration par défaut des Augmentations.. Les Ennemis gagnent des Augmentations liées à [red]l'Huissier[/red].",
+  "HEXTECH_LISTLESS_CHALLENGE.title": "Si faible, si fragile...",
+  "HEXTECH_LISTLESS_CHALLENGE.description": "Les Joueurs utilisent la configuration par défaut des Augmentations. Les Ennemis gagnent des Augmentations influant sur [red]les réductions de stats[/red]."
+}

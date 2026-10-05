@@ -1,0 +1,5 @@
+{
+  "OPTION_STOKE.name": "Stoke",
+  "OPTION_STOKE.description": "Remove [blue]1[/blue] card from your deck.",
+  "OPTION_STOKE.descriptionDisabled": "You have no removable cards."
+}

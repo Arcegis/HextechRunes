@@ -1,0 +1,20 @@
+{
+  "HEXTECH_MAYHEM.title": "마법공학 아수라장",
+  "HEXTECH_MAYHEM.description": "[blue]1[/blue], [blue]2[/blue], [blue]3[/blue]막 시작 시 마법공학 룬을 선택하고 해당 막의 몬스터들에게 동일한 희귀도의 마법공학 보너스를 부여합니다.",
+  "HEXTECH_SILVER_RUN.title": "실버 등반",
+  "HEXTECH_SILVER_RUN.description": "이번 등반에서 새로고침되는 모든 마법공학 룬은 실버 등급입니다.",
+  "HEXTECH_GOLD_RUN.title": "골드 등반",
+  "HEXTECH_GOLD_RUN.description": "이번 등반에서 새로고침되는 모든 마법공학 룬은 골드 등급입니다.",
+  "HEXTECH_PRISMATIC_RUN.title": "프리즘 등반",
+  "HEXTECH_PRISMATIC_RUN.description": "이번 등반에서 새로고침되는 모든 마법공학 룬은 프리즘 등급입니다.",
+  "HEXTECH_STUFFED_TO_RUIN_CHALLENGE.title": "꽉 채워 망가뜨리기",
+  "HEXTECH_STUFFED_TO_RUIN_CHALLENGE.description": "플레이어는 기본 마법공학 설정을 사용합니다. 적은 [red]상태이상 카드[/red]와 관련된 고정 마법공학 룬을 얻습니다.",
+  "HEXTECH_DEFENSE_COUNTER_MASTER_CHALLENGE.title": "방어 반격의 달인",
+  "HEXTECH_DEFENSE_COUNTER_MASTER_CHALLENGE.description": "플레이어는 기본 마법공학 설정을 사용합니다. 적은 [red]방어 반격[/red]과 관련된 고정 마법공학 룬을 얻습니다.",
+  "HEXTECH_BRUTE_FORCE_CHALLENGE.title": "압도적인 힘",
+  "HEXTECH_BRUTE_FORCE_CHALLENGE.description": "플레이어는 기본 마법공학 설정을 사용합니다. 적은 [red]능력치[/red]와 관련된 고정 마법공학 룬을 얻습니다.",
+  "HEXTECH_EIGHT_PENNY_GATE_CHALLENGE.title": "8페니의 문",
+  "HEXTECH_EIGHT_PENNY_GATE_CHALLENGE.description": "플레이어는 기본 마법공학 설정을 사용합니다. 적은 [red]문 제작자[/red]와 관련된 고정 마법공학 룬을 얻습니다.",
+  "HEXTECH_LISTLESS_CHALLENGE.title": "기진맥진",
+  "HEXTECH_LISTLESS_CHALLENGE.description": "플레이어는 기본 마법공학 설정을 사용합니다. 적은 [red]능력치 감소[/red]와 관련된 고정 마법공학 룬을 얻습니다."
+}

@@ -1,0 +1,20 @@
+{
+  "HEXTECH_MAYHEM.title": "Хекстековый хаос",
+  "HEXTECH_MAYHEM.description": "В начале [blue]1[/blue]-го, [blue]2[/blue]-го и [blue]3[/blue]-го актов вы выбираете руны Хекстека, а монстры этого акта получают руну Хекстека той же редкости.",
+  "HEXTECH_SILVER_RUN.title": "Серебряный забег",
+  "HEXTECH_SILVER_RUN.description": "Все руны Хекстека становятся серебрянного уровеня.",
+  "HEXTECH_GOLD_RUN.title": "Золотой забег",
+  "HEXTECH_GOLD_RUN.description": "Все руны Хекстека становятся золотого уровеня.",
+  "HEXTECH_PRISMATIC_RUN.title": "Призматический забег",
+  "HEXTECH_PRISMATIC_RUN.description": "Все руны Хекстека становятся призматического уровеня.",
+  "HEXTECH_STUFFED_TO_RUIN_CHALLENGE.title": "Забить до отказа",
+  "HEXTECH_STUFFED_TO_RUIN_CHALLENGE.description": "Игроки используют настройки Хекстека по умолчанию. Враги получают фиксированные руны Хекстека, связанные с [red]картами статуса[/red].",
+  "HEXTECH_DEFENSE_COUNTER_MASTER_CHALLENGE.title": "Мастер контратаки",
+  "HEXTECH_DEFENSE_COUNTER_MASTER_CHALLENGE.description": "Игроки используют настройки Хекстека по умолчанию. Враги получают фиксированные руны Хекстека, связанные с [red]защитой и контратакой[/red].",
+  "HEXTECH_BRUTE_FORCE_CHALLENGE.title": "Грубая сила",
+  "HEXTECH_BRUTE_FORCE_CHALLENGE.description": "Игроки используют настройки Хекстека по умолчанию. Враги получают фиксированные руны Хекстека, связанные с [red]числовыми характеристиками[/red].",
+  "HEXTECH_EIGHT_PENNY_GATE_CHALLENGE.title": "Восьмипенсовые врата",
+  "HEXTECH_EIGHT_PENNY_GATE_CHALLENGE.description": "Игроки используют настройки Хекстека по умолчанию. Враги получают фиксированные руны Хекстека, связанные с [red]Создателем дверей[/red].",
+  "HEXTECH_LISTLESS_CHALLENGE.title": "Без сил",
+  "HEXTECH_LISTLESS_CHALLENGE.description": "Игроки используют настройки Хекстека по умолчанию. Враги получают фиксированные руны Хекстека, связанные со [red]снижением характеристик[/red]."
+}

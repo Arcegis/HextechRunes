@@ -1,0 +1,5 @@
+{
+  "OPTION_STOKE.name": "Разжечь",
+  "OPTION_STOKE.description": "Удалите [blue]1[/blue] карту из вашей колоды.",
+  "OPTION_STOKE.descriptionDisabled": "У вас нет карт для удаления."
+}
